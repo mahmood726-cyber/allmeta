@@ -1,5 +1,71 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "ROBINS-I",
+    folder: "C:\\HTML apps\\robins-i",
+    path: "./robins-i/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "Risk of Bias in Non-randomized Studies of Interventions: 7 domains with signaling questions and algorithmic Low/Moderate/Serious/Critical judgments, plus traffic-light chart.",
+    note: "Sterne 2016 decision rules. For non-randomized intervention studies.",
+    tags: ["robins-i", "non-randomized", "risk-of-bias", "appraisal"]
+  },
+  {
+    name: "QUADAS-2",
+    folder: "C:\\HTML apps\\quadas-2",
+    path: "./quadas-2/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "Quality Assessment of Diagnostic Accuracy Studies 2: four domains (patient selection, index test, reference standard, flow & timing) rated for risk of bias and applicability, with traffic-light chart.",
+    note: "Whiting 2011. For DTA studies — pairs with DTA SROC Explorer and HSROC.",
+    tags: ["quadas-2", "dta", "risk-of-bias", "applicability"]
+  },
+  {
+    name: "AMSTAR-2",
+    folder: "C:\\HTML apps\\amstar-2",
+    path: "./amstar-2/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "A Measurement Tool to Assess systematic Reviews 2: 16 items with 7 marked critical; derives an overall confidence rating (High / Moderate / Low / Critically Low) from the critical-flaw and non-critical-weakness counts.",
+    note: "Shea 2017. For appraising existing systematic reviews.",
+    tags: ["amstar-2", "systematic-review-appraisal", "umbrella-review"]
+  },
+  {
+    name: "CINeMA (NMA confidence)",
+    folder: "C:\\HTML apps\\cinema",
+    path: "./cinema/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Confidence In Network Meta-Analysis: rate six domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence) per comparison; derives High / Moderate / Low / Very low. Heatmap view.",
+    note: "Nikolakopoulou 2020.",
+    tags: ["cinema", "nma", "confidence", "certainty"]
+  },
+  {
+    name: "HSROC / Bivariate DTA",
+    folder: "C:\\HTML apps\\hsroc",
+    path: "./hsroc/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Diagnostic Test Accuracy",
+    summary: "Bivariate random-effects DTA meta-analysis on logit(Se) and logit(1-Sp), with summary operating point and an HSROC curve derived from the mean linear predictor. Approximates Reitsma via IGLS.",
+    note: "For rigorous estimates use R's mada; this is a browser-native sketch.",
+    tags: ["hsroc", "sroc", "bivariate", "dta", "reitsma"]
+  },
+  {
+    name: "GOSH Plot",
+    folder: "C:\\HTML apps\\gosh",
+    path: "./gosh/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Graphical display of study heterogeneity: enumerate every non-empty subset of studies (≤18 studies), compute its pooled effect and I², and scatter on a (mu, I²) plane. Clusters reveal influential studies or subgroup structure.",
+    note: "Olkin, Dahabreh, Trikalinos 2012.",
+    tags: ["gosh", "heterogeneity", "subset", "influence"]
+  },
+  {
     name: "PICO Formulator",
     folder: "C:\\HTML apps\\pico",
     path: "./pico/index.html",

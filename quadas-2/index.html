@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="QUADAS-2: Quality Assessment of Diagnostic Accuracy Studies — 4 domains × risk-of-bias and applicability concerns.">
+  <meta name="color-scheme" content="light dark">
+  <title>QUADAS-2</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --low:#0d7a27; --low-soft:#dff3e0;
+            --high:#912121; --high-soft:#fbd2d2;
+            --unclear:#5c6470; --unclear-soft:#e3e3e3; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --low:#5bc47b; --low-soft:#1e3a27;
+              --high:#ef7373; --high-soft:#3a1e1e;
+              --unclear:#98a0ae; --unclear-soft:#2f343a; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(360px, 1fr) minmax(320px, 1fr); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    details { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.75rem; background: var(--bg); }
+    details[open] { background: var(--panel); }
+    summary { cursor: pointer; padding: 0.65rem 0.85rem; font-weight: 600; font-size: 0.9rem;
+              display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    summary .verdicts { display: flex; gap: 0.4rem; }
+    summary .verdict { font-size: 0.7rem; padding: 0.12rem 0.5rem; border-radius: 999px; font-weight: 600; }
+    summary .verdict.low { background: var(--low-soft); color: var(--low); }
+    summary .verdict.high { background: var(--high-soft); color: var(--high); }
+    summary .verdict.unclear { background: var(--unclear-soft); color: var(--unclear); }
+    .domain-body { padding: 0 1rem 0.8rem; }
+    .q { margin: 0.5rem 0; font-size: 0.87rem; }
+    .q .prompt { display: block; margin-bottom: 0.2rem; }
+    .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
+                     border-radius: 5px; cursor: pointer; background: var(--input-bg); }
+    .q .opts input { display: none; }
+    .q .opts input:checked + span { color: var(--accent); font-weight: 600; }
+    .judge-row { margin-top: 0.75rem; font-size: 0.85rem; background: var(--accent-soft); padding: 0.55rem 0.75rem; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.75rem; }
+    .judge-row label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-bottom: 1rem; }
+    .summary-table th, .summary-table td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .summary-table th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .summary-table .chip { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; }
+    .summary-table .chip.low { background: var(--low-soft); color: var(--low); }
+    .summary-table .chip.high { background: var(--high-soft); color: var(--high); }
+    .summary-table .chip.unclear { background: var(--unclear-soft); color: var(--unclear); }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>QUADAS-2 — diagnostic accuracy studies</h1>
+    <p>Whiting et al., Ann Intern Med 2011. Four domains (Patient selection, Index test, Reference standard, Flow and timing), each judged for risk of bias and (for the first three) applicability concerns.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Signaling questions</h2>
+      <div id="domains"></div>
+      <button type="button" id="btn-eval" class="primary" style="width:100%; margin-top:0.5rem">Evaluate</button>
+    </section>
+    <section class="panel">
+      <h2>Summary</h2>
+      <table class="summary-table" id="summary-tbl">
+        <thead><tr><th>Domain</th><th>Risk of bias</th><th>Applicability</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h2 style="margin-top:0.8rem">Traffic light</h2>
+      <svg id="traffic" viewBox="0 0 600 240" role="img" aria-label="QUADAS-2 traffic-light plot"></svg>
+    </section>
+  </main>
+  <footer>
+    Applicability is judged for D1–D3 only (not for Flow & Timing). Judgments are Low / High / Unclear. The tool supplies signaling questions; reviewers still decide the final judgment, informed by the auto-suggested default.
+  </footer>
+  <script>
+    const Y = "Y", N = "N", U = "U";  // Yes, No, Unclear
+
+    const DOMAINS = [
+      {
+        id: "D1", name: "D1: Patient selection",
+        applicability: true,
+        questions: [
+          { id: "1.1", prompt: "Was a consecutive or random sample of patients enrolled?" },
+          { id: "1.2", prompt: "Was a case-control design avoided?" },
+          { id: "1.3", prompt: "Did the study avoid inappropriate exclusions?" },
+        ],
+        appPrompt: "Are there concerns that the included patients do not match the review question?",
+        suggestRoB: a => {
+          if (a["1.1"] === Y && a["1.2"] === Y && a["1.3"] === Y) return "low";
+          if (a["1.1"] === N || a["1.2"] === N || a["1.3"] === N) return "high";
+          return "unclear";
+        },
+      },
+      {
+        id: "D2", name: "D2: Index test",
+        applicability: true,
+        questions: [
+          { id: "2.1", prompt: "Were the index test results interpreted without knowledge of the reference standard?" },
+          { id: "2.2", prompt: "If a threshold was used, was it pre-specified?" },
+        ],
+        appPrompt: "Are there concerns that the index test, its conduct, or interpretation differ from the review question?",
+        suggestRoB: a => {
+          if (a["2.1"] === Y && a["2.2"] === Y) return "low";
+          if (a["2.1"] === N) return "high";
+          return "unclear";
+        },
+      },
+      {
+        id: "D3", name: "D3: Reference standard",
+        applicability: true,
+        questions: [
+          { id: "3.1", prompt: "Is the reference standard likely to correctly classify the target condition?" },
+          { id: "3.2", prompt: "Were the reference standard results interpreted without knowledge of the results of the index test?" },
+        ],
+        appPrompt: "Are there concerns that the target condition as defined by the reference standard does not match the review question?",
+        suggestRoB: a => {
+          if (a["3.1"] === Y && a["3.2"] === Y) return "low";
+          if (a["3.1"] === N) return "high";
+          return "unclear";
+        },
+      },
+      {
+        id: "D4", name: "D4: Flow and timing",
+        applicability: false,
+        questions: [
+          { id: "4.1", prompt: "Was there an appropriate interval between the index test and the reference standard?" },
+          { id: "4.2", prompt: "Did all patients receive a reference standard?" },
+          { id: "4.3", prompt: "Did all patients receive the same reference standard?" },
+          { id: "4.4", prompt: "Were all patients included in the analysis?" },
+        ],
+        suggestRoB: a => {
+          if (a["4.1"] === Y && a["4.2"] === Y && a["4.3"] === Y && a["4.4"] === Y) return "low";
+          if (a["4.2"] === N || a["4.4"] === N) return "high";
+          return "unclear";
+        },
+      },
+    ];
+
+    const STATE = {};
+
+    function render() {
+      const host = document.getElementById("domains");
+      host.innerHTML = "";
+      for (const d of DOMAINS) {
+        STATE[d.id] = STATE[d.id] || { rob: null, app: null };
+        const det = document.createElement("details");
+        det.id = "dom-" + d.id;
+        const headerHtml = `<summary>
+          <span>${d.name}</span>
+          <span class="verdicts">
+            <span class="verdict unclear" data-kind="rob">RoB: —</span>
+            ${d.applicability ? '<span class="verdict unclear" data-kind="app">App: —</span>' : ''}
+          </span>
+        </summary>`;
+        det.innerHTML = headerHtml;
+        const body = document.createElement("div");
+        body.className = "domain-body";
+        for (const q of d.questions) {
+          body.innerHTML += `<div class="q">
+            <span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
+            <span class="opts">
+              ${[Y, N, U].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}"><span>${v}</span></label>`).join("")}
+            </span>
+          </div>`;
+        }
+        // Manual judgement row
+        body.innerHTML += `<div class="judge-row">
+          <label>Risk of bias judgment
+            <select data-domain="${d.id}" data-judge="rob">
+              <option value="">auto</option><option value="low">Low</option><option value="high">High</option><option value="unclear">Unclear</option>
+            </select>
+          </label>
+          ${d.applicability ? `<label>Applicability concern
+            <select data-domain="${d.id}" data-judge="app">
+              <option value="">—</option><option value="low">Low</option><option value="high">High</option><option value="unclear">Unclear</option>
+            </select>
+          </label>` : `<div></div>`}
+        </div>`;
+        det.appendChild(body);
+        host.appendChild(det);
+      }
+    }
+
+    function evaluate() {
+      const results = {};
+      for (const d of DOMAINS) {
+        const a = {};
+        for (const q of d.questions) {
+          const c = document.querySelector(`input[name="${d.id}-${q.id}"]:checked`);
+          a[q.id] = c ? c.value : null;
+        }
+        const manualRob = document.querySelector(`select[data-domain="${d.id}"][data-judge="rob"]`)?.value;
+        const manualApp = document.querySelector(`select[data-domain="${d.id}"][data-judge="app"]`)?.value;
+        const allAns = d.questions.every(q => a[q.id] !== null);
+        const suggested = allAns ? d.suggestRoB(a) : "unclear";
+        const rob = manualRob || suggested;
+        const app = d.applicability ? (manualApp || "unclear") : null;
+        results[d.id] = { rob, app };
+        // update badges
+        const robBadge = document.querySelector(`#dom-${d.id} [data-kind="rob"]`);
+        robBadge.textContent = "RoB: " + rob.charAt(0).toUpperCase() + rob.slice(1);
+        robBadge.className = "verdict " + rob;
+        if (d.applicability) {
+          const appBadge = document.querySelector(`#dom-${d.id} [data-kind="app"]`);
+          appBadge.textContent = "App: " + app.charAt(0).toUpperCase() + app.slice(1);
+          appBadge.className = "verdict " + app;
+        }
+      }
+      renderSummary(results);
+      drawTraffic(results);
+    }
+
+    function renderSummary(r) {
+      const tbody = document.querySelector("#summary-tbl tbody");
+      tbody.innerHTML = "";
+      for (const d of DOMAINS) {
+        const rob = r[d.id].rob;
+        const app = r[d.id].app;
+        tbody.innerHTML += `<tr>
+          <td>${d.name}</td>
+          <td><span class="chip ${rob}">${rob}</span></td>
+          <td>${app ? `<span class="chip ${app}">${app}</span>` : "—"}</td>
+        </tr>`;
+      }
+    }
+
+    function drawTraffic(r) {
+      const svg = document.getElementById("traffic");
+      svg.innerHTML = "";
+      const W = 600, padL = 140, padT = 30;
+      const cols = DOMAINS.length * 2;
+      const cellW = (W - padL - 30) / cols;
+      const colors = { low: "var(--low)", high: "var(--high)", unclear: "var(--unclear)" };
+      // Header labels
+      DOMAINS.forEach((d, i) => {
+        const xRob = padL + (2 * i) * cellW + cellW / 2;
+        const xApp = padL + (2 * i + 1) * cellW + cellW / 2;
+        svg.innerHTML += `<text x="${xRob}" y="${padT - 2}" text-anchor="middle" font-size="10" fill="currentColor">${d.id}/RoB</text>`;
+        if (d.applicability) {
+          svg.innerHTML += `<text x="${xApp}" y="${padT - 2}" text-anchor="middle" font-size="10" fill="currentColor">${d.id}/App</text>`;
+        }
+      });
+      svg.innerHTML += `<text x="${padL - 10}" y="${padT + 40}" text-anchor="end" font-size="12" fill="currentColor">Study 1</text>`;
+      DOMAINS.forEach((d, i) => {
+        const xRob = padL + (2 * i) * cellW + cellW / 2;
+        const cy = padT + 40;
+        const robVal = r[d.id].rob;
+        svg.innerHTML += `<circle cx="${xRob}" cy="${cy}" r="15" fill="${colors[robVal]}" opacity="0.85"/>`;
+        const sym = { low: "+", high: "×", unclear: "?" }[robVal];
+        svg.innerHTML += `<text x="${xRob}" y="${cy + 5}" text-anchor="middle" font-size="15" fill="white" font-weight="700">${sym}</text>`;
+        if (d.applicability && r[d.id].app) {
+          const xApp = padL + (2 * i + 1) * cellW + cellW / 2;
+          const appVal = r[d.id].app;
+          svg.innerHTML += `<circle cx="${xApp}" cy="${cy}" r="15" fill="${colors[appVal]}" opacity="0.85"/>`;
+          svg.innerHTML += `<text x="${xApp}" y="${cy + 5}" text-anchor="middle" font-size="15" fill="white" font-weight="700">${{ low: "+", high: "×", unclear: "?" }[appVal]}</text>`;
+        }
+      });
+      let lx = padL; const ly = padT + 110;
+      for (const [k, l] of [["low", "Low"], ["high", "High"], ["unclear", "Unclear"]]) {
+        svg.innerHTML += `<circle cx="${lx + 8}" cy="${ly}" r="7" fill="${colors[k]}" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${lx + 22}" y="${ly + 4}" font-size="11" fill="currentColor">${l}</text>`;
+        lx += 90;
+      }
+    }
+
+    document.getElementById("btn-eval").addEventListener("click", evaluate);
+    render();
+    evaluate();
+  </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AMSTAR-2: A Measurement Tool to Assess systematic Reviews. 16 items with critical-flaw and overall confidence rating.">
+  <meta name="color-scheme" content="light dark">
+  <title>AMSTAR-2</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --high:#0d7a27; --high-soft:#dff3e0;
+            --mod:#a58300; --mod-soft:#fff4c4;
+            --low:#b05a1c; --low-soft:#fbeedd;
+            --clow:#912121; --clow-soft:#fbd2d2;
+            --critical:#912121; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --high:#5bc47b; --high-soft:#1e3a27;
+              --mod:#e5c060; --mod-soft:#3a3218;
+              --low:#e0a268; --low-soft:#3a2d1c;
+              --clow:#ef7373; --clow-soft:#3a1e1e;
+              --critical:#ef7373; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: 1fr minmax(300px, 22rem); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .item { display: grid; grid-template-columns: 2.5rem 1fr 9rem; gap: 0.5rem; padding: 0.6rem 0; border-bottom: 1px dotted var(--border); align-items: start; }
+    .item .num { font-weight: 700; color: var(--muted); font-size: 0.85rem; }
+    .item .text { font-size: 0.87rem; }
+    .item .text .critical { display: inline-block; margin-left: 0.3rem; padding: 0.05rem 0.4rem; border-radius: 4px; background: var(--crit-soft, var(--critical)); color: var(--critical); font-size: 0.72rem; font-weight: 600; border: 1px solid var(--critical); }
+    .item .status select { width: 100%; padding: 0.3rem 0.5rem; border: 1px solid var(--border);
+                           background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; font-size: 0.82rem; }
+    .overall { text-align: center; padding: 1rem 0; }
+    .overall .rating { font-size: 1.4rem; font-weight: 700; padding: 0.3rem 1rem; border-radius: 8px; display: inline-block; }
+    .overall .rating.high { background: var(--high-soft); color: var(--high); }
+    .overall .rating.mod { background: var(--mod-soft); color: var(--mod); }
+    .overall .rating.low { background: var(--low-soft); color: var(--low); }
+    .overall .rating.clow { background: var(--clow-soft); color: var(--clow); }
+    .counts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; }
+    .counts .card { background: var(--accent-soft); padding: 0.5rem 0.7rem; border-radius: 6px; }
+    .counts .card .k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .counts .card .v { display: block; font-size: 1.15rem; font-weight: 700; }
+    svg { width: 100%; height: auto; display: block; margin-top: 0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AMSTAR-2</h1>
+    <p>A Measurement Tool to Assess systematic Reviews 2 (Shea et al., BMJ 2017). Rate each of 16 items as Yes / Partial Yes / No / NA. Seven items are critical domains; the count of critical flaws and non-critical weaknesses drives the overall confidence rating.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Items</h2>
+      <div id="list"></div>
+    </section>
+    <section class="panel">
+      <h2>Overall confidence</h2>
+      <div class="overall"><span class="rating clow" id="rating">Critically low</span></div>
+      <div class="counts">
+        <div class="card"><span class="k">Critical flaws</span><span class="v" id="c-critical">0</span></div>
+        <div class="card"><span class="k">Non-critical weaknesses</span><span class="v" id="c-nonc">0</span></div>
+      </div>
+      <h2 style="margin-top:1rem">Item-level</h2>
+      <svg id="plot" viewBox="0 0 600 300" role="img" aria-label="Bar chart of AMSTAR-2 item ratings"></svg>
+    </section>
+  </main>
+  <footer>
+    Critical domains (Shea 2017): 2 (protocol pre-registered), 4 (comprehensive search), 7 (list of excluded studies with reasons), 9 (risk of bias in included studies), 11 (appropriate meta-analytic methods), 13 (accounted for RoB when interpreting), 15 (investigated publication bias). Overall: <strong>High</strong> = 0–1 non-critical weakness; <strong>Moderate</strong> = &gt;1 non-critical, 0 critical; <strong>Low</strong> = 1 critical; <strong>Critically Low</strong> = &gt;1 critical.
+  </footer>
+  <script>
+    const CRITICAL = new Set(["2", "4", "7", "9", "11", "13", "15"]);
+    const ITEMS = [
+      ["1", "Did the research questions and inclusion criteria for the review include the components of PICO?"],
+      ["2", "Did the report of the review contain an explicit statement that the review methods were established prior to the conduct of the review and did the report justify any significant deviations from the protocol?"],
+      ["3", "Did the review authors explain their selection of the study designs for inclusion in the review?"],
+      ["4", "Did the review authors use a comprehensive literature search strategy?"],
+      ["5", "Did the review authors perform study selection in duplicate?"],
+      ["6", "Did the review authors perform data extraction in duplicate?"],
+      ["7", "Did the review authors provide a list of excluded studies and justify the exclusions?"],
+      ["8", "Did the review authors describe the included studies in adequate detail?"],
+      ["9", "Did the review authors use a satisfactory technique for assessing the risk of bias in individual studies?"],
+      ["10", "Did the review authors report on the sources of funding for the studies included in the review?"],
+      ["11", "If meta-analysis was performed, did the review authors use appropriate methods for statistical combination of results?"],
+      ["12", "If meta-analysis was performed, did the review authors assess the potential impact of RoB in individual studies on the results?"],
+      ["13", "Did the review authors account for RoB in individual studies when interpreting or discussing the results?"],
+      ["14", "Did the review authors provide a satisfactory explanation for, and discussion of, any heterogeneity observed?"],
+      ["15", "If they performed quantitative synthesis, did the review authors carry out an adequate investigation of publication bias?"],
+      ["16", "Did the review authors report any potential sources of conflict of interest?"],
+    ];
+    const STATE = {};
+
+    function render() {
+      const host = document.getElementById("list");
+      host.innerHTML = "";
+      for (const [num, text] of ITEMS) {
+        const st = STATE[num] || "";
+        const row = document.createElement("div");
+        row.className = "item";
+        const isCritical = CRITICAL.has(num);
+        row.innerHTML = `
+          <div class="num">${num}${isCritical ? " ★" : ""}</div>
+          <div class="text">${text}${isCritical ? ' <span class="critical">CRITICAL</span>' : ""}</div>
+          <div class="status">
+            <select data-num="${num}">
+              <option value=""${st === "" ? " selected" : ""}>—</option>
+              <option value="Y"${st === "Y" ? " selected" : ""}>Yes</option>
+              <option value="PY"${st === "PY" ? " selected" : ""}>Partial Yes</option>
+              <option value="N"${st === "N" ? " selected" : ""}>No</option>
+              <option value="NA"${st === "NA" ? " selected" : ""}>NA</option>
+            </select>
+          </div>`;
+        host.appendChild(row);
+      }
+      host.addEventListener("change", e => {
+        if (e.target.dataset.num) {
+          STATE[e.target.dataset.num] = e.target.value;
+          evaluate();
+        }
+      });
+      evaluate();
+    }
+
+    function evaluate() {
+      let critical = 0, nonc = 0;
+      for (const [num] of ITEMS) {
+        const v = STATE[num];
+        if (v === "N") {
+          if (CRITICAL.has(num)) critical++;
+          else nonc++;
+        } else if (v === "PY" && !CRITICAL.has(num)) {
+          // Partial Yes on non-critical counts as non-critical weakness
+          nonc++;
+        }
+      }
+      document.getElementById("c-critical").textContent = critical;
+      document.getElementById("c-nonc").textContent = nonc;
+      let rating, cls;
+      if (critical > 1) { rating = "Critically low"; cls = "clow"; }
+      else if (critical === 1) { rating = "Low"; cls = "low"; }
+      else if (nonc > 1) { rating = "Moderate"; cls = "mod"; }
+      else { rating = "High"; cls = "high"; }
+      const el = document.getElementById("rating");
+      el.textContent = rating;
+      el.className = "rating " + cls;
+      drawPlot();
+    }
+
+    function drawPlot() {
+      const svg = document.getElementById("plot");
+      const W = 600, H = 300;
+      const padL = 40, padR = 20, padT = 20, padB = 40;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const n = ITEMS.length;
+      const bw = plotW / n;
+      svg.innerHTML = "";
+      const colorFor = (v, num) => {
+        if (v === "Y") return "var(--high)";
+        if (v === "PY") return CRITICAL.has(num) ? "var(--mod)" : "var(--mod)";
+        if (v === "N") return CRITICAL.has(num) ? "var(--clow)" : "var(--low)";
+        if (v === "NA") return "var(--muted)";
+        return "var(--border)";
+      };
+      ITEMS.forEach(([num], i) => {
+        const v = STATE[num] || "";
+        const h = v ? plotH * 0.85 : plotH * 0.15;
+        const x = padL + i * bw;
+        const y = padT + plotH - h;
+        svg.innerHTML += `<rect x="${x + 1}" y="${y}" width="${bw - 2}" height="${h}" fill="${colorFor(v, num)}" opacity="0.85" ${CRITICAL.has(num) ? 'stroke="var(--critical)" stroke-width="2"' : ""}/>`;
+        svg.innerHTML += `<text x="${x + bw / 2}" y="${padT + plotH + 14}" text-anchor="middle" font-size="10" fill="currentColor">${num}</text>`;
+      });
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Item (★ = critical)</text>`;
+    }
+
+    render();
+  </script>
+</body>
+</html>

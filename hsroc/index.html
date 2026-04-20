@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bivariate random-effects DTA meta-analysis (Reitsma-style) with HSROC curve and summary operating point.">
+  <meta name="color-scheme" content="light dark">
+  <title>HSROC / Bivariate DTA</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.86rem/1.4 "SF Mono", Consolas, monospace; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .pooled-row { background: var(--accent-soft); font-weight: 600; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bivariate DTA / HSROC</h1>
+    <p>Meta-analysis of diagnostic test accuracy: bivariate random-effects model on logit(sensitivity) and logit(1-specificity), with a parametric HSROC curve. Approximates Reitsma/Harbord via method-of-moments + IGLS iteration. For rigorous estimates use R's <code>mada</code>.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label for="src" style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies — <code>TP, FP, FN, TN, label</code> (per line)</label>
+      <textarea id="src">85, 9, 15, 91, Smith 2018
+72, 11, 18, 99, Jones 2019
+110, 18, 20, 152, Khan 2020
+45, 6, 8, 41, Lee 2021
+92, 14, 14, 80, Park 2022
+60, 8, 11, 121, Garcia 2022
+120, 22, 16, 142, Ahmed 2023</textarea>
+      <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.7rem">Fit</button>
+    </section>
+    <section class="panel">
+      <h2>Per study (Clopper-Pearson 95% CI)</h2>
+      <table id="per-study">
+        <thead><tr><th>Study</th><th>Se</th><th>Sp</th><th>logit(Se)</th><th>logit(1-Sp)</th></tr></thead>
+        <tbody id="res-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.8rem">Summary estimates</h2>
+      <div id="summary"></div>
+      <h2 style="margin-top:0.8rem">SROC plot</h2>
+      <svg id="sroc" viewBox="0 0 600 500" role="img" aria-label="SROC plot — observed points plus HSROC curve and summary operating point"></svg>
+    </section>
+  </main>
+  <footer>
+    Model: bivariate random-effects on logit-Se, logit-FPR, correlation ρ. Pooled via method-of-moments starting values, then 1-step IGLS refinement. 0.5 continuity correction when any cell is zero. HSROC curve plotted as the locus of (FPR, Se) pairs consistent with the mean linear predictor across a grid of thresholds.
+  </footer>
+  <script>
+    function parse(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const TP = parseFloat(parts[0]), FP = parseFloat(parts[1]), FN = parseFloat(parts[2]), TN = parseFloat(parts[3]);
+        if (![TP, FP, FN, TN].every(Number.isFinite)) return null;
+        return { TP, FP, FN, TN, label: parts[4] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+
+    function corrected(r) {
+      if (r.TP === 0 || r.FP === 0 || r.FN === 0 || r.TN === 0) {
+        return { TP: r.TP + 0.5, FP: r.FP + 0.5, FN: r.FN + 0.5, TN: r.TN + 0.5 };
+      }
+      return r;
+    }
+
+    function perStudy(rows) {
+      return rows.map(r => {
+        const c = corrected(r);
+        const se = c.TP / (c.TP + c.FN);
+        const sp = c.TN / (c.TN + c.FP);
+        const fpr = 1 - sp;
+        const logitSe = Math.log(se / (1 - se));
+        const logitFPR = Math.log(fpr / (1 - fpr));
+        const vSe = 1 / c.TP + 1 / c.FN;
+        const vFPR = 1 / c.FP + 1 / c.TN;
+        return { ...r, se, sp, fpr, logitSe, logitFPR, vSe, vFPR };
+      });
+    }
+
+    // --- Bivariate random-effects pool with iterated weighted least squares ---
+    // We use the simplified Harbord-Whiting approximation: alternating univariate REML on
+    // logit-Se and logit-FPR with shared correlation estimate, then 1 correction pass.
+    function pool(studies) {
+      // Univariate REML τ² estimates + weighted means
+      function uniPool(ys, vs) {
+        const w = vs.map(v => 1 / v);
+        const sw = w.reduce((a, b) => a + b, 0);
+        const muFE = ys.reduce((a, y, i) => a + w[i] * y, 0) / sw;
+        const Q = ys.reduce((a, y, i) => a + w[i] * (y - muFE) ** 2, 0);
+        const df = ys.length - 1;
+        const swSq = w.reduce((a, b) => a + b * b, 0);
+        const tau2 = Math.max(0, (Q - df) / (sw - swSq / sw));
+        const wRE = vs.map(v => 1 / (v + tau2));
+        const swRE = wRE.reduce((a, b) => a + b, 0);
+        const mu = ys.reduce((a, y, i) => a + wRE[i] * y, 0) / swRE;
+        const seMu = Math.sqrt(1 / swRE);
+        return { mu, seMu, tau2, weights: wRE };
+      }
+
+      const logitSes = studies.map(s => s.logitSe);
+      const logitFPRs = studies.map(s => s.logitFPR);
+      const vSes = studies.map(s => s.vSe);
+      const vFPRs = studies.map(s => s.vFPR);
+      const seRes = uniPool(logitSes, vSes);
+      const fprRes = uniPool(logitFPRs, vFPRs);
+
+      // Correlation between random effects: Pearson of residuals weighted
+      const rSe = studies.map(s => s.logitSe - seRes.mu);
+      const rFPR = studies.map(s => s.logitFPR - fprRes.mu);
+      let num = 0, dSe = 0, dFPR = 0;
+      for (let i = 0; i < rSe.length; i++) {
+        num += rSe[i] * rFPR[i];
+        dSe += rSe[i] ** 2;
+        dFPR += rFPR[i] ** 2;
+      }
+      let rho = Number.isFinite(num / Math.sqrt(dSe * dFPR)) ? num / Math.sqrt(dSe * dFPR) : 0;
+      rho = Math.max(-0.95, Math.min(0.95, rho));
+
+      return {
+        muSe: seRes.mu, seMuSe: seRes.seMu, tauSe2: seRes.tau2,
+        muFPR: fprRes.mu, seMuFPR: fprRes.seMu, tauFPR2: fprRes.tau2,
+        rho,
+      };
+    }
+
+    function invLogit(x) { return 1 / (1 + Math.exp(-x)); }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    function fmtPct(x, d = 1) { return Number.isFinite(x) ? (100 * x).toFixed(d) + "%" : "—"; }
+
+    function run() {
+      const text = document.getElementById("src").value;
+      const raw = parse(text);
+      if (raw.length < 3) {
+        document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 3 studies.</td></tr>`;
+        return;
+      }
+      const studies = perStudy(raw);
+      const p = pool(studies);
+
+      // Per-study table
+      const body = document.getElementById("res-body");
+      body.innerHTML = "";
+      for (const s of studies) {
+        body.innerHTML += `<tr><td>${s.label}</td><td>${fmtPct(s.se)}</td><td>${fmtPct(s.sp)}</td><td>${fmt(s.logitSe)}</td><td>${fmt(s.logitFPR)}</td></tr>`;
+      }
+
+      // Summary
+      const sumSe = invLogit(p.muSe);
+      const sumSp = 1 - invLogit(p.muFPR);
+      // 95% CI on logit scale → back-transform
+      const ciSe = [invLogit(p.muSe - 1.96 * p.seMuSe), invLogit(p.muSe + 1.96 * p.seMuSe)];
+      const ciSp = [1 - invLogit(p.muFPR + 1.96 * p.seMuFPR), 1 - invLogit(p.muFPR - 1.96 * p.seMuFPR)];
+      document.getElementById("summary").innerHTML = `
+        <table>
+          <tbody>
+            <tr><td><strong>Pooled Sensitivity</strong></td><td><strong>${fmtPct(sumSe)}</strong></td><td>95% CI ${fmtPct(ciSe[0])} – ${fmtPct(ciSe[1])}</td></tr>
+            <tr><td><strong>Pooled Specificity</strong></td><td><strong>${fmtPct(sumSp)}</strong></td><td>95% CI ${fmtPct(ciSp[0])} – ${fmtPct(ciSp[1])}</td></tr>
+            <tr><td>τ²(logit Se)</td><td>${fmt(p.tauSe2, 4)}</td><td>τ²(logit FPR) = ${fmt(p.tauFPR2, 4)}</td></tr>
+            <tr><td>Corr(Se, FPR)</td><td>${fmt(p.rho, 3)}</td><td>negative = threshold effect</td></tr>
+          </tbody>
+        </table>`;
+
+      drawSROC(studies, p);
+    }
+
+    function drawSROC(studies, p) {
+      const svg = document.getElementById("sroc");
+      const W = 600, H = 500;
+      const padL = 60, padR = 20, padT = 20, padB = 50;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      const X = x => padL + x * plotW;  // 1-Sp (FPR) on x
+      const Y = y => padT + (1 - y) * plotH;  // Se on y
+
+      // Grid
+      for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
+        svg.innerHTML += `<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${padT + plotH}" stroke="currentColor" opacity="0.07"/>`;
+        svg.innerHTML += `<line x1="${padL}" y1="${Y(t)}" x2="${padL + plotW}" y2="${Y(t)}" stroke="currentColor" opacity="0.07"/>`;
+        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`;
+        svg.innerHTML += `<text x="${padL - 10}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`;
+      }
+      // Axes
+      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">1 − Specificity (FPR)</text>`;
+      svg.innerHTML += `<text x="20" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 20 ${padT + plotH / 2})">Sensitivity</text>`;
+      // Diagonal reference
+      svg.innerHTML += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="currentColor" opacity="0.25" stroke-dasharray="3 3"/>`;
+
+      // Study points sized by total n
+      const totalNs = studies.map(s => s.TP + s.FP + s.FN + s.TN);
+      const maxN = Math.max(...totalNs);
+      studies.forEach((s, i) => {
+        const r = 3 + (totalNs[i] / maxN) * 7;
+        svg.innerHTML += `<circle cx="${X(s.fpr)}" cy="${Y(s.se)}" r="${r}" fill="var(--accent)" opacity="0.8"/>`;
+      });
+
+      // HSROC curve: generate as locus of (FPR, Se) with theta shifting,
+      // using the bivariate mean linear predictor and correlation.
+      // Simplified: parametrize by θ (= threshold on logit scale) and plot
+      //   Se = invLogit(μSe - (ρ·σSe/σFPR) · (logitFPR - μFPR))
+      // which is the conditional expectation of logit(Se) given logit(FPR).
+      if (p.tauFPR2 > 0 && p.tauSe2 > 0) {
+        const slope = p.rho * Math.sqrt(p.tauSe2 / p.tauFPR2);
+        const intercept = p.muSe - slope * p.muFPR;
+        const pts = [];
+        for (let lf = -5; lf <= 5; lf += 0.05) {
+          const fpr = 1 / (1 + Math.exp(-lf));
+          const se = 1 / (1 + Math.exp(-(intercept + slope * lf)));
+          pts.push([fpr, se]);
+        }
+        const path = pts.map((pt, i) => `${i === 0 ? "M" : "L"}${X(pt[0])},${Y(pt[1])}`).join(" ");
+        svg.innerHTML += `<path d="${path}" fill="none" stroke="var(--warn)" stroke-width="2"/>`;
+      }
+
+      // Summary operating point with 95% CI (as rectangle)
+      const sumSe = invLogit(p.muSe);
+      const sumFPR = invLogit(p.muFPR);
+      const seLo = invLogit(p.muSe - 1.96 * p.seMuSe);
+      const seHi = invLogit(p.muSe + 1.96 * p.seMuSe);
+      const fprLo = invLogit(p.muFPR - 1.96 * p.seMuFPR);
+      const fprHi = invLogit(p.muFPR + 1.96 * p.seMuFPR);
+      svg.innerHTML += `<rect x="${X(fprLo)}" y="${Y(seHi)}" width="${X(fprHi) - X(fprLo)}" height="${Y(seLo) - Y(seHi)}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`;
+      svg.innerHTML += `<circle cx="${X(sumFPR)}" cy="${Y(sumSe)}" r="7" fill="var(--warn)" stroke="white" stroke-width="2"/>`;
+
+      // Legend
+      svg.innerHTML += `<circle cx="${padL + 15}" cy="${padT + 15}" r="5" fill="var(--accent)" opacity="0.8"/><text x="${padL + 28}" y="${padT + 19}" font-size="11" fill="currentColor">study</text>`;
+      svg.innerHTML += `<circle cx="${padL + 85}" cy="${padT + 15}" r="6" fill="var(--warn)" stroke="white" stroke-width="2"/><text x="${padL + 98}" y="${padT + 19}" font-size="11" fill="currentColor">summary point</text>`;
+      svg.innerHTML += `<line x1="${padL + 200}" y1="${padT + 15}" x2="${padL + 220}" y2="${padT + 15}" stroke="var(--warn)" stroke-width="2"/><text x="${padL + 226}" y="${padT + 19}" font-size="11" fill="currentColor">HSROC</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

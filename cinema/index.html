@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CINeMA: Confidence In Network Meta-Analysis. Rate six domains per comparison to arrive at High / Moderate / Low / Very low confidence.">
+  <meta name="color-scheme" content="light dark">
+  <title>CINeMA</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --none:#0d7a27; --none-soft:#dff3e0;
+            --some:#a58300; --some-soft:#fff4c4;
+            --major:#912121; --major-soft:#fbd2d2;
+            --unclear:#5c6470; --unclear-soft:#e3e3e3;
+            --high:#0d7a27; --high-soft:#dff3e0;
+            --mod:#a58300; --mod-soft:#fff4c4;
+            --low:#b05a1c; --low-soft:#fbeedd;
+            --vlow:#912121; --vlow-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --none:#5bc47b; --none-soft:#1e3a27;
+              --some:#e5c060; --some-soft:#3a3218;
+              --major:#ef7373; --major-soft:#3a1e1e;
+              --unclear:#98a0ae; --unclear-soft:#2f343a;
+              --high:#5bc47b; --high-soft:#1e3a27;
+              --mod:#e5c060; --mod-soft:#3a3218;
+              --low:#e0a268; --low-soft:#3a2d1c;
+              --vlow:#ef7373; --vlow-soft:#3a1e1e; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    td input[type="text"] { width: 100%; padding: 0.3rem 0.45rem; border: 1px solid var(--border);
+                            background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; font-size: 0.85rem; }
+    td select { padding: 0.25rem 0.4rem; border: 1px solid var(--border);
+                background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; font-size: 0.78rem; }
+    .chip { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+    .chip.none { background: var(--none-soft); color: var(--none); }
+    .chip.some { background: var(--some-soft); color: var(--some); }
+    .chip.major { background: var(--major-soft); color: var(--major); }
+    .chip.unclear { background: var(--unclear-soft); color: var(--unclear); }
+    .chip.high { background: var(--high-soft); color: var(--high); }
+    .chip.mod { background: var(--mod-soft); color: var(--mod); }
+    .chip.low { background: var(--low-soft); color: var(--low); }
+    .chip.vlow { background: var(--vlow-soft); color: var(--vlow); }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.4rem 0.9rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.35rem 0.85rem; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    svg { width: 100%; height: auto; display: block; margin-top: 0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CINeMA — Confidence in NMA</h1>
+    <p>Rate each pairwise comparison in a network meta-analysis across six CINeMA domains (Nikolakopoulou et al., PLOS Med 2020): within-study bias, reporting bias, indirectness, imprecision, heterogeneity, incoherence. The tool derives a confidence rating from domain downgrades.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Comparisons</h2>
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>Comparison</th>
+            <th>Within-study bias</th>
+            <th>Reporting</th>
+            <th>Indirectness</th>
+            <th>Imprecision</th>
+            <th>Heterogeneity</th>
+            <th>Incoherence</th>
+            <th>Confidence</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="body"></tbody>
+      </table>
+      <div style="display:flex; gap:0.5rem; margin-top:0.7rem">
+        <button type="button" id="btn-add" class="primary">+ Add comparison</button>
+        <button type="button" id="btn-demo" class="secondary">Load demo</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Confidence heatmap</h2>
+      <svg id="heat" viewBox="0 0 600 300" role="img" aria-label="Heatmap of CINeMA confidence ratings per comparison and domain"></svg>
+    </section>
+  </main>
+  <footer>
+    Rating rule used: each domain contributes 0 (No concerns), 1 (Some concerns), or 2 (Major concerns) downgrade points. Total 0 → High; 1-2 → Moderate; 3-4 → Low; ≥5 → Very low. Reviewers may override based on judgment; the tool is an aid, not a substitute.
+  </footer>
+  <script>
+    const DOMAINS = ["within", "reporting", "indirect", "imprecision", "hetero", "incoherence"];
+    const DOMAIN_LABELS = {
+      within: "Within-study bias",
+      reporting: "Reporting bias",
+      indirect: "Indirectness",
+      imprecision: "Imprecision",
+      hetero: "Heterogeneity",
+      incoherence: "Incoherence",
+    };
+    const LEVELS = [
+      ["none", "No concerns", 0],
+      ["some", "Some concerns", 1],
+      ["major", "Major concerns", 2],
+      ["unclear", "Unclear", 1],
+    ];
+
+    const DEFAULT_ROWS = [
+      { comparison: "A vs B", within: "none", reporting: "none", indirect: "none", imprecision: "none", hetero: "some", incoherence: "none" },
+      { comparison: "A vs C", within: "some", reporting: "none", indirect: "none", imprecision: "some", hetero: "none", incoherence: "none" },
+      { comparison: "B vs C", within: "some", reporting: "some", indirect: "some", imprecision: "major", hetero: "some", incoherence: "some" },
+      { comparison: "A vs D", within: "major", reporting: "some", indirect: "some", imprecision: "major", hetero: "major", incoherence: "unclear" },
+    ];
+    let ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
+
+    function downgradeScore(row) {
+      let s = 0;
+      for (const d of DOMAINS) {
+        const lvl = LEVELS.find(l => l[0] === row[d]);
+        s += lvl ? lvl[2] : 0;
+      }
+      return s;
+    }
+
+    function confidenceFrom(score) {
+      if (score === 0) return ["high", "High"];
+      if (score <= 2) return ["mod", "Moderate"];
+      if (score <= 4) return ["low", "Low"];
+      return ["vlow", "Very low"];
+    }
+
+    function renderTable() {
+      const tb = document.getElementById("body");
+      tb.innerHTML = "";
+      ROWS.forEach((r, idx) => {
+        const score = downgradeScore(r);
+        const [cls, label] = confidenceFrom(score);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input type="text" data-idx="${idx}" data-key="comparison" value="${r.comparison}"></td>
+          ${DOMAINS.map(d => `<td>
+            <select data-idx="${idx}" data-key="${d}">
+              ${LEVELS.map(l => `<option value="${l[0]}"${r[d] === l[0] ? " selected" : ""}>${l[1]}</option>`).join("")}
+            </select>
+          </td>`).join("")}
+          <td><span class="chip ${cls}">${label}</span></td>
+          <td><button type="button" class="secondary" data-del="${idx}">×</button></td>`;
+        tb.appendChild(tr);
+      });
+      drawHeat();
+    }
+
+    document.getElementById("body").addEventListener("change", e => {
+      const idx = e.target.dataset.idx;
+      const key = e.target.dataset.key;
+      if (idx === undefined || !key) return;
+      ROWS[idx][key] = e.target.value;
+      renderTable();
+    });
+    document.getElementById("body").addEventListener("input", e => {
+      const idx = e.target.dataset.idx;
+      const key = e.target.dataset.key;
+      if (idx === undefined || key !== "comparison") return;
+      ROWS[idx][key] = e.target.value;
+      // Don't rerender on every keystroke to preserve focus; just redraw heatmap labels lazily.
+    });
+    document.getElementById("body").addEventListener("click", e => {
+      if (e.target.dataset.del !== undefined) {
+        ROWS.splice(Number(e.target.dataset.del), 1);
+        renderTable();
+      }
+    });
+    document.getElementById("btn-add").addEventListener("click", () => {
+      ROWS.push({ comparison: `Comparison ${ROWS.length + 1}`, within: "none", reporting: "none", indirect: "none", imprecision: "none", hetero: "none", incoherence: "none" });
+      renderTable();
+    });
+    document.getElementById("btn-demo").addEventListener("click", () => {
+      ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
+      renderTable();
+    });
+
+    function drawHeat() {
+      const svg = document.getElementById("heat");
+      const W = 600;
+      const padL = 130, padT = 30, padR = 110;
+      const nCols = DOMAINS.length + 1;  // + confidence
+      const cellW = (W - padL - padR) / nCols;
+      const cellH = 26;
+      const H = padT + ROWS.length * cellH + 30;
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+
+      const levelColor = { none: "var(--none)", some: "var(--some)", major: "var(--major)", unclear: "var(--unclear)" };
+      const confColor = { high: "var(--high)", mod: "var(--mod)", low: "var(--low)", vlow: "var(--vlow)" };
+
+      // headers
+      DOMAINS.forEach((d, i) => {
+        const x = padL + i * cellW + cellW / 2;
+        svg.innerHTML += `<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" transform="rotate(-20 ${x} ${padT - 6})">${DOMAIN_LABELS[d]}</text>`;
+      });
+      const xConf = padL + DOMAINS.length * cellW + cellW / 2;
+      svg.innerHTML += `<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`;
+
+      ROWS.forEach((r, i) => {
+        const y = padT + i * cellH;
+        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`;
+        DOMAINS.forEach((d, j) => {
+          const x = padL + j * cellW;
+          svg.innerHTML += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${levelColor[r[d]] || "var(--border)"}" opacity="0.85"/>`;
+        });
+        const score = downgradeScore(r);
+        const [cls, label] = confidenceFrom(score);
+        const xc = padL + DOMAINS.length * cellW;
+        svg.innerHTML += `<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${confColor[cls]}" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`;
+      });
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>

@@ -11,13 +11,17 @@ fail-plot-missing      NMA Pro v8
 fail-plot-missing      PRISMA Screening
 fail-plot-missing      TruthCert Pairwise Pro
 fail-plot-missing      WebR Validator
+pass                   AMSTAR-2
 pass                   Bayesian MA
+pass                   CINeMA (NMA confidence)
 pass                   Citation Dedup
 pass                   Cumulative + Subgroup
 pass                   DTA SROC Explorer
 pass                   Effect-Size Converter
 pass                   Forest Plot Viewer
 pass                   Funnel Plot Explorer
+pass                   GOSH Plot
+pass                   HSROC / Bivariate DTA
 pass                   Heterogeneity Explorer
 pass                   K-M IPD Reconstructor
 pass                   MA Workbench
@@ -29,6 +33,8 @@ pass                   PICO Formulator
 pass                   PRISMA 2020 Checklist
 pass                   PRISMA Flow
 pass                   Proportion MA
+pass                   QUADAS-2
+pass                   ROBINS-I
 pass                   RoB 2
 pass                   RoB Traffic Light
 pass                   Search Strategy Translator

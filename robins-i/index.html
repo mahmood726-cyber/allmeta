@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ROBINS-I: Risk of Bias in Non-randomized Studies of Interventions — 7 domains with signaling questions and algorithmic judgments.">
+  <meta name="color-scheme" content="light dark">
+  <title>ROBINS-I</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --low:#0d7a27; --low-soft:#dff3e0;
+            --mod:#a58300; --mod-soft:#fff4c4;
+            --ser:#b05a1c; --ser-soft:#fbeedd;
+            --crit:#912121; --crit-soft:#fbd2d2;
+            --ni:#5c6470; --ni-soft:#e3e3e3; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --low:#5bc47b; --low-soft:#1e3a27;
+              --mod:#e5c060; --mod-soft:#3a3218;
+              --ser:#e0a268; --ser-soft:#3a2d1c;
+              --crit:#ef7373; --crit-soft:#3a1e1e;
+              --ni:#98a0ae; --ni-soft:#2f343a; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(360px, 1fr) minmax(300px, 1fr); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    details { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.75rem; background: var(--bg); }
+    details[open] { background: var(--panel); }
+    summary { cursor: pointer; padding: 0.65rem 0.85rem; font-weight: 600; font-size: 0.9rem;
+              display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+    summary .verdict { font-size: 0.72rem; padding: 0.12rem 0.5rem; border-radius: 999px; font-weight: 600; }
+    summary .verdict.low { background: var(--low-soft); color: var(--low); }
+    summary .verdict.mod { background: var(--mod-soft); color: var(--mod); }
+    summary .verdict.ser { background: var(--ser-soft); color: var(--ser); }
+    summary .verdict.crit { background: var(--crit-soft); color: var(--crit); }
+    summary .verdict.ni { background: var(--ni-soft); color: var(--ni); }
+    .domain-body { padding: 0 1rem 0.8rem; }
+    .q { margin: 0.5rem 0; font-size: 0.87rem; }
+    .q .prompt { display: block; margin-bottom: 0.2rem; }
+    .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
+                     border-radius: 5px; cursor: pointer; background: var(--input-bg); }
+    .q .opts input { display: none; }
+    .q .opts input:checked + span { color: var(--accent); font-weight: 600; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    svg { width: 100%; height: auto; display: block; }
+    .summary-grid { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem 0.75rem; font-size: 0.88rem; margin-bottom: 1rem; }
+    .summary-grid .label { color: var(--muted); }
+    .summary-grid .chip { font-size: 0.74rem; padding: 0.12rem 0.55rem; border-radius: 999px; font-weight: 600; text-align: center; }
+    .summary-grid .chip.low { background: var(--low-soft); color: var(--low); }
+    .summary-grid .chip.mod { background: var(--mod-soft); color: var(--mod); }
+    .summary-grid .chip.ser { background: var(--ser-soft); color: var(--ser); }
+    .summary-grid .chip.crit { background: var(--crit-soft); color: var(--crit); }
+    .summary-grid .chip.ni { background: var(--ni-soft); color: var(--ni); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ROBINS-I — non-randomized studies</h1>
+    <p>Risk Of Bias In Non-randomized Studies — of Interventions (Sterne et al., BMJ 2016). Answer the signaling questions per domain; the algorithm produces a per-domain and overall judgment on a four-level scale.</p>
+  </header>
+  <main>
+    <section class="panel" id="form-panel">
+      <h2>Signaling questions</h2>
+      <div id="domains"></div>
+      <button type="button" id="btn-eval" class="primary" style="width:100%; margin-top:0.5rem">Evaluate</button>
+    </section>
+    <section class="panel">
+      <h2>Judgement</h2>
+      <div class="summary-grid" id="summary"></div>
+      <h2 style="margin-top:1rem">Traffic light</h2>
+      <svg id="traffic" viewBox="0 0 620 220" role="img" aria-label="Traffic-light plot of ROBINS-I domain judgments"></svg>
+    </section>
+  </main>
+  <footer>
+    Domains (Sterne 2016): Pre-intervention — D1 Confounding, D2 Selection of participants. At-intervention — D3 Classification of interventions. Post-intervention — D4 Deviations from intended interventions, D5 Missing data, D6 Measurement of outcomes, D7 Selection of reported result. Overall: the worst domain judgment (any critical → critical; any serious and no critical → serious; etc.). An NI for any domain leaves the overall as NI.
+  </footer>
+  <script>
+    const Y = "Y", PY = "PY", PN = "PN", N = "N", NI = "NI";
+    const yy = v => v === Y || v === PY;
+    const nn = v => v === N || v === PN;
+
+    const DOMAINS = [
+      {
+        id: "D1", name: "D1: Confounding",
+        questions: [
+          { id: "1.1", prompt: "Are there confounding domains important for this exposure-outcome relationship?" },
+          { id: "1.2", prompt: "Was the analysis based on splitting participants' follow-up according to intervention received?" },
+          { id: "1.3", prompt: "Were the intervention discontinuations or switches unlikely to be related to prognosis?" },
+          { id: "1.4", prompt: "Did the authors use an appropriate analysis method that controlled for all the important confounding domains?" },
+        ],
+        judge: a => {
+          if (yy(a["1.4"])) return "low";
+          if (nn(a["1.4"])) return "ser";
+          if (yy(a["1.1"]) && !yy(a["1.4"])) return "mod";
+          return "mod";
+        },
+      },
+      {
+        id: "D2", name: "D2: Selection of participants",
+        questions: [
+          { id: "2.1", prompt: "Was selection into the study related to the intervention and the outcome?" },
+          { id: "2.2", prompt: "Do start of follow-up and start of intervention coincide for most participants?" },
+          { id: "2.3", prompt: "Were adjustment techniques used that are likely to correct for the presence of selection biases?" },
+        ],
+        judge: a => {
+          if (!yy(a["2.1"]) && yy(a["2.2"])) return "low";
+          if (yy(a["2.1"]) && yy(a["2.3"])) return "mod";
+          if (yy(a["2.1"]) && nn(a["2.3"])) return "ser";
+          if (nn(a["2.2"])) return "mod";
+          return "mod";
+        },
+      },
+      {
+        id: "D3", name: "D3: Classification of interventions",
+        questions: [
+          { id: "3.1", prompt: "Were intervention groups clearly defined?" },
+          { id: "3.2", prompt: "Was the information used to define intervention groups recorded at the start of the intervention?" },
+          { id: "3.3", prompt: "Could classification of intervention status have been affected by knowledge of the outcome?" },
+        ],
+        judge: a => {
+          if (yy(a["3.1"]) && yy(a["3.2"]) && nn(a["3.3"])) return "low";
+          if (nn(a["3.1"]) || yy(a["3.3"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D4", name: "D4: Deviations from intended interventions",
+        questions: [
+          { id: "4.1", prompt: "Were there deviations from the intended intervention beyond what would be expected in usual practice?" },
+          { id: "4.2", prompt: "Were these deviations unbalanced between groups and likely to have affected the outcome?" },
+          { id: "4.3", prompt: "Was an appropriate analysis used to estimate the effect of starting and adhering to the intervention?" },
+        ],
+        judge: a => {
+          if (nn(a["4.1"])) return "low";
+          if (yy(a["4.2"]) && nn(a["4.3"])) return "ser";
+          if (yy(a["4.1"]) && nn(a["4.2"])) return "mod";
+          return "mod";
+        },
+      },
+      {
+        id: "D5", name: "D5: Missing data",
+        questions: [
+          { id: "5.1", prompt: "Were outcome data available for all, or nearly all, participants?" },
+          { id: "5.2", prompt: "Were participants excluded due to missing data on intervention status?" },
+          { id: "5.3", prompt: "Were participants excluded due to missing data on other variables needed for the analysis?" },
+          { id: "5.4", prompt: "Are the proportion and reasons for missing participants similar across interventions?" },
+        ],
+        judge: a => {
+          if (yy(a["5.1"]) && nn(a["5.2"]) && nn(a["5.3"])) return "low";
+          if (nn(a["5.1"]) && nn(a["5.4"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D6", name: "D6: Measurement of outcomes",
+        questions: [
+          { id: "6.1", prompt: "Could the outcome measure have been influenced by knowledge of the intervention received?" },
+          { id: "6.2", prompt: "Were outcome assessors aware of the intervention received by study participants?" },
+          { id: "6.3", prompt: "Were the methods of outcome assessment comparable across intervention groups?" },
+          { id: "6.4", prompt: "Were any systematic errors in measurement of the outcome unrelated to intervention received?" },
+        ],
+        judge: a => {
+          if (nn(a["6.1"]) && nn(a["6.2"]) && yy(a["6.3"])) return "low";
+          if (yy(a["6.1"]) && yy(a["6.2"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D7", name: "D7: Selection of reported result",
+        questions: [
+          { id: "7.1", prompt: "Is the reported effect estimate likely to be selected from multiple outcome measurements within the outcome domain?" },
+          { id: "7.2", prompt: "Is the reported effect estimate likely to be selected from multiple analyses?" },
+          { id: "7.3", prompt: "Is the reported effect estimate likely to be selected from different subgroups?" },
+        ],
+        judge: a => {
+          if (nn(a["7.1"]) && nn(a["7.2"]) && nn(a["7.3"])) return "low";
+          if (yy(a["7.1"]) || yy(a["7.2"]) || yy(a["7.3"])) return "ser";
+          return "mod";
+        },
+      },
+    ];
+
+    function overall(v) {
+      const vals = Object.values(v);
+      if (vals.some(x => x === "ni")) return "ni";
+      if (vals.some(x => x === "crit")) return "crit";
+      if (vals.some(x => x === "ser")) return "ser";
+      if (vals.some(x => x === "mod")) return "mod";
+      return "low";
+    }
+
+    function render() {
+      const host = document.getElementById("domains");
+      host.innerHTML = "";
+      for (const d of DOMAINS) {
+        const det = document.createElement("details");
+        det.id = "dom-" + d.id;
+        det.innerHTML = `<summary><span>${d.name}</span><span class="verdict ni" data-verdict>—</span></summary>`;
+        const body = document.createElement("div");
+        body.className = "domain-body";
+        for (const q of d.questions) {
+          body.innerHTML += `<div class="q">
+            <span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
+            <span class="opts">
+              ${[Y, PY, PN, N, NI].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}"><span>${v}</span></label>`).join("")}
+            </span>
+          </div>`;
+        }
+        det.appendChild(body);
+        host.appendChild(det);
+      }
+    }
+
+    function evaluate() {
+      const verdicts = {};
+      for (const d of DOMAINS) {
+        const a = {};
+        for (const q of d.questions) {
+          const c = document.querySelector(`input[name="${d.id}-${q.id}"]:checked`);
+          a[q.id] = c ? c.value : null;
+        }
+        const allAns = d.questions.every(q => a[q.id] !== null);
+        verdicts[d.id] = allAns ? d.judge(a) : "ni";
+        const badge = document.querySelector(`#dom-${d.id} [data-verdict]`);
+        badge.textContent = verdicts[d.id].toUpperCase();
+        badge.className = "verdict " + verdicts[d.id];
+      }
+      verdicts.overall = overall(verdicts);
+      renderSummary(verdicts);
+      drawTraffic(verdicts);
+    }
+
+    function renderSummary(v) {
+      const host = document.getElementById("summary");
+      host.innerHTML = "";
+      const labels = { D1: "D1 Confounding", D2: "D2 Selection", D3: "D3 Classification", D4: "D4 Deviations", D5: "D5 Missing data", D6: "D6 Measurement", D7: "D7 Reporting", overall: "Overall" };
+      const names = { low: "Low", mod: "Moderate", ser: "Serious", crit: "Critical", ni: "No information" };
+      for (const id of ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "overall"]) {
+        host.innerHTML += `<div class="label">${labels[id]}</div><div class="chip ${v[id]}">${names[v[id]] || "—"}</div>`;
+      }
+    }
+
+    function drawTraffic(v) {
+      const svg = document.getElementById("traffic");
+      svg.innerHTML = "";
+      const domains = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "overall"];
+      const colors = { low: "var(--low)", mod: "var(--mod)", ser: "var(--ser)", crit: "var(--crit)", ni: "var(--ni)" };
+      const W = 620, padL = 90, padT = 30;
+      const cellW = (W - padL - 30) / domains.length;
+      svg.innerHTML += `<text x="${padL - 10}" y="${padT}" text-anchor="end" font-size="12" fill="currentColor">Study 1</text>`;
+      domains.forEach((d, i) => {
+        const cx = padL + i * cellW + cellW / 2;
+        const cy = padT + 30;
+        svg.innerHTML += `<text x="${cx}" y="${padT}" text-anchor="middle" font-size="11" fill="currentColor">${d.toUpperCase()}</text>`;
+        svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="18" fill="${colors[v[d]]}" opacity="0.85"/>`;
+        const sym = { low: "+", mod: "~", ser: "−", crit: "×", ni: "?" }[v[d]];
+        svg.innerHTML += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="18" fill="white" font-weight="700">${sym}</text>`;
+      });
+      let lx = padL; const ly = padT + 110;
+      for (const [k, l] of [["low", "Low"], ["mod", "Moderate"], ["ser", "Serious"], ["crit", "Critical"], ["ni", "No information"]]) {
+        svg.innerHTML += `<circle cx="${lx + 8}" cy="${ly}" r="7" fill="${colors[k]}" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${lx + 22}" y="${ly + 4}" font-size="11" fill="currentColor">${l}</text>`;
+        lx += 105;
+      }
+    }
+
+    document.getElementById("btn-eval").addEventListener("click", evaluate);
+    render();
+    evaluate();
+  </script>
+</body>
+</html>
