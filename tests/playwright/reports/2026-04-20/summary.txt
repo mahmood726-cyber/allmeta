@@ -1,0 +1,25 @@
+fail-console-error     HTA Pro
+fail-console-error     Pairwise AI
+fail-plot-missing      Dose Response Pro
+fail-plot-missing      Evidence Board
+fail-plot-missing      Focus Studio
+fail-plot-missing      GRADE SoF Builder
+fail-plot-missing      IPD Meta-Pro
+fail-plot-missing      Kanban Lab
+fail-plot-missing      Living Meta
+fail-plot-missing      NMA Pro v8
+fail-plot-missing      PRISMA Screening
+fail-plot-missing      TruthCert Pairwise Pro
+fail-plot-missing      WebR Validator
+pass                   Bayesian MA
+pass                   Cumulative + Subgroup
+pass                   DTA SROC Explorer
+pass                   Forest Plot Viewer
+pass                   Funnel Plot Explorer
+pass                   Heterogeneity Explorer
+pass                   MA Workbench
+pass                   Meta-Regression
+pass                   NMA Dose-Response
+pass                   PRISMA Flow
+pass                   RoB Traffic Light
+pass                   TSA Calculator
