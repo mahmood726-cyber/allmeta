@@ -1,5 +1,93 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "PICO Formulator",
+    folder: "C:\\HTML apps\\pico",
+    path: "./pico/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Planning",
+    summary: "Frame a review question as PICO, PECO, PICOS, or PICOT. Generates a one-sentence question and a boolean-search skeleton, plus a visual PICO wheel.",
+    note: "Pairs with the Search Strategy Translator as the next step.",
+    tags: ["pico", "question-framework", "planning"]
+  },
+  {
+    name: "PRISMA 2020 Checklist",
+    folder: "C:\\HTML apps\\prisma-checklist",
+    path: "./prisma-checklist/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Reporting",
+    summary: "Interactive PRISMA 2020 checklist — all 27 items with status / location fields, progress donut, and JSON export/load.",
+    note: "Based on Page et al. 2021.",
+    tags: ["prisma-2020", "checklist", "reporting"]
+  },
+  {
+    name: "Search Strategy Translator",
+    folder: "C:\\HTML apps\\search-translator",
+    path: "./search-translator/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Search",
+    summary: "Translate a PubMed search into Embase (Emtree) and Cochrane CENTRAL syntax. Field tags, MeSH, and operators are rewritten with warnings for unmapped terms.",
+    note: "Syntactic aid — always proof-read the output.",
+    tags: ["search", "pubmed", "embase", "central", "translation"]
+  },
+  {
+    name: "Median → Mean/SD",
+    folder: "C:\\HTML apps\\median-to-mean",
+    path: "./median-to-mean/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Estimate mean and SD from reported median, IQR, min, and max using Wan 2014, Luo 2018, and Shi 2020 formulas. Three scenarios: 5-number / 3-number / IQR-only.",
+    note: "Modern default: Luo mean + Shi SD.",
+    tags: ["mean-sd", "median", "iqr", "wan", "luo", "shi"]
+  },
+  {
+    name: "RoB 2",
+    folder: "C:\\HTML apps\\rob2",
+    path: "./rob2/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "Cochrane Risk of Bias 2: signaling questions across 5 domains with algorithmic per-domain and overall judgements, plus traffic-light chart.",
+    note: "Sterne 2019 decision rules. For RCTs.",
+    tags: ["rob-2", "cochrane", "risk-of-bias", "appraisal"]
+  },
+  {
+    name: "PET-PEESE + Trim-and-Fill",
+    folder: "C:\\HTML apps\\pet-peese",
+    path: "./pet-peese/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Publication-bias adjustments: PET, PEESE, Stanley–Doucouliagos conditional procedure, and Duval–Tweedie trim-and-fill with L₀ / R₀ estimators. Funnel plot overlays the adjustments.",
+    note: "Goes beyond Egger's test when asymmetry is present.",
+    tags: ["publication-bias", "pet", "peese", "trim-and-fill", "funnel-plot"]
+  },
+  {
+    name: "Proportion MA",
+    folder: "C:\\HTML apps\\proportion-ma",
+    path: "./proportion-ma/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Meta-analysis of proportions / incidences. Freeman-Tukey double-arcsine, logit, or raw pooling with DL or Paule-Mandel τ². Clopper-Pearson per-study CIs; forest plot.",
+    note: "For single-arm event rates (e.g., adverse-event incidence, diagnostic yield).",
+    tags: ["proportion", "single-arm", "freeman-tukey", "logit"]
+  },
+  {
+    name: "K-M IPD Reconstructor",
+    folder: "C:\\HTML apps\\km-reconstructor",
+    path: "./km-reconstructor/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Reconstruct individual patient data (event times + censoring) from a digitized Kaplan-Meier curve plus at-risk table. Guyot 2012 algorithm. Exports IPD CSV and overlays the fit.",
+    note: "Use WebPlotDigitizer to get curve points from published figures.",
+    tags: ["kaplan-meier", "ipd", "survival", "guyot"]
+  },
+  {
     name: "Citation Dedup",
     folder: "C:\\HTML apps\\citation-dedup",
     path: "./citation-dedup/index.html",

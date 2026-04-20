@@ -19,9 +19,17 @@ pass                   Effect-Size Converter
 pass                   Forest Plot Viewer
 pass                   Funnel Plot Explorer
 pass                   Heterogeneity Explorer
+pass                   K-M IPD Reconstructor
 pass                   MA Workbench
+pass                   Median → Mean/SD
 pass                   Meta-Regression
 pass                   NMA Dose-Response
+pass                   PET-PEESE + Trim-and-Fill
+pass                   PICO Formulator
+pass                   PRISMA 2020 Checklist
 pass                   PRISMA Flow
+pass                   Proportion MA
+pass                   RoB 2
 pass                   RoB Traffic Light
+pass                   Search Strategy Translator
 pass                   TSA Calculator

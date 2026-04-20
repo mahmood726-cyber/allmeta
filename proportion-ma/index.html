@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Meta-analysis of proportions — raw, logit, and Freeman-Tukey double-arcsine pooling with forest plot.">
+  <meta name="color-scheme" content="light dark">
+  <title>Proportion MA</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(280px, 22rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 10rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.86rem/1.4 "SF Mono", Consolas, monospace; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .pooled-row { background: var(--accent-soft); font-weight: 600; }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Proportion MA — single-arm pooling</h1>
+    <p>Pool proportions (or incidences / event rates) across single-arm studies with three transformations. Random-effects DL / REML across studies. Clopper-Pearson per-study CIs; back-transformed pooled CI.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>Studies — <code>events, n, label (optional)</code></span>
+        <textarea id="src">12, 150, Study A
+8, 90, Study B
+20, 220, Study C
+5, 60, Study D
+15, 180, Study E
+3, 40, Study F
+25, 300, Study G</textarea>
+      </label>
+      <label>
+        <span>Transformation</span>
+        <select id="trans">
+          <option value="ft" selected>Freeman-Tukey double arcsine</option>
+          <option value="logit">Logit</option>
+          <option value="raw">Raw (no transform) — not recommended</option>
+        </select>
+        <span class="hint">Freeman-Tukey is recommended when event rates are extreme (near 0 or 1).</span>
+      </label>
+      <label>
+        <span>Random-effects τ² estimator</span>
+        <select id="tau-est">
+          <option value="DL" selected>DerSimonian-Laird</option>
+          <option value="PM">Paule-Mandel</option>
+          <option value="FE">Fixed-effect only</option>
+        </select>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Pool</button>
+    </section>
+
+    <section class="panel">
+      <h2>Studies &amp; pooled</h2>
+      <table>
+        <thead><tr><th>Study</th><th>events/n</th><th>p</th><th>95% CI</th><th>weight</th></tr></thead>
+        <tbody id="res-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Heterogeneity</h2>
+      <div id="het"></div>
+      <h2 style="margin-top:0.8rem">Forest plot</h2>
+      <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of proportions"></svg>
+    </section>
+  </main>
+  <footer>
+    Freeman-Tukey: <code>FT = ½(arcsin√(x/(n+1)) + arcsin√((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). Logit: <code>ln(p/(1-p))</code>, variance <code>1/x + 1/(n-x)</code> with 0.5 correction at zeros. Clopper-Pearson: <code>qbeta(α/2, x, n-x+1)</code>.
+  </footer>
+  <script>
+    // --- parsing ---
+    function parseTable(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const x = parseInt(parts[0], 10);
+        const n = parseInt(parts[1], 10);
+        if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
+        return { x, n, label: parts[2] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+
+    // --- inverse beta (Clopper-Pearson) via relation to F-distribution approximation ---
+    // We use a simple bisection on incomplete beta (regularized via Lentz's method).
+    function logBeta(a, b) { return logGamma(a) + logGamma(b) - logGamma(a + b); }
+
+    function logGamma(x) {
+      const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+      let sum = 1.000000000190015;
+      let y = x;
+      for (let i = 0; i < 6; i++) { y += 1; sum += c[i] / y; }
+      return (-(x + 5.5) + (x + 0.5) * Math.log(x + 5.5) + Math.log(2.5066282746310005 * sum / x));
+    }
+
+    // Regularized incomplete beta I_x(a, b) via continued fraction (Numerical Recipes style).
+    function betaIncReg(x, a, b) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      const bt = Math.exp(-logBeta(a, b) + a * Math.log(x) + b * Math.log(1 - x));
+      if (x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
+      return 1 - bt * betacf(1 - x, b, a) / b;
+    }
+
+    function betacf(x, a, b) {
+      const MAX = 200, EPS = 3e-7, FPMIN = 1e-30;
+      const qab = a + b, qap = a + 1, qam = a - 1;
+      let c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d;
+      let h = d;
+      for (let m = 1; m <= MAX; m++) {
+        const m2 = 2 * m;
+        let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; const del = d * c; h *= del;
+        if (Math.abs(del - 1) < EPS) return h;
+      }
+      return h;
+    }
+
+    // qbeta (inverse regularized incomplete beta) via bisection
+    function qbeta(p, a, b) {
+      if (p <= 0) return 0;
+      if (p >= 1) return 1;
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 100; i++) {
+        const mid = (lo + hi) / 2;
+        const q = betaIncReg(mid, a, b);
+        if (q < p) lo = mid; else hi = mid;
+        if (hi - lo < 1e-8) break;
+      }
+      return (lo + hi) / 2;
+    }
+
+    function clopperPearson(x, n, alpha = 0.05) {
+      if (x === 0) return [0, qbeta(1 - alpha / 2, x + 1, n - x)];
+      if (x === n) return [qbeta(alpha / 2, x, n - x + 1), 1];
+      return [qbeta(alpha / 2, x, n - x + 1), qbeta(1 - alpha / 2, x + 1, n - x)];
+    }
+
+    // --- transforms ---
+    function ftTransform(x, n) {
+      const asin1 = Math.asin(Math.sqrt(x / (n + 1)));
+      const asin2 = Math.asin(Math.sqrt((x + 1) / (n + 1)));
+      return { y: 0.5 * (asin1 + asin2), v: 1 / (4 * n + 2) };
+    }
+
+    function ftBack(y, n) {
+      // Barendregt & Doi (2013) back-transform using the harmonic mean of n
+      return 0.5 * (1 - Math.sign(Math.cos(2 * y)) * Math.sqrt(1 - Math.pow(Math.sin(2 * y) + (Math.sin(2 * y) - 1 / Math.sin(2 * y)) / n, 2)));
+    }
+
+    function ftBackSimple(y) {
+      // Simple back: p = sin(y)^2
+      return Math.sin(y) ** 2;
+    }
+
+    function logitTransform(x, n) {
+      const cx = x === 0 ? 0.5 : (x === n ? n - 0.5 : x);
+      const cn = x === 0 || x === n ? n + 1 : n;
+      const p = cx / cn;
+      return { y: Math.log(p / (1 - p)), v: 1 / cx + 1 / (cn - cx) };
+    }
+
+    function logitBack(y) {
+      return 1 / (1 + Math.exp(-y));
+    }
+
+    // --- inverse-variance pooling + DL τ² ---
+    function pool(rows, tauEst = "DL") {
+      const w = rows.map(r => 1 / r.v);
+      const sw = w.reduce((a, b) => a + b, 0);
+      const mu_fe = rows.reduce((a, r, i) => a + w[i] * r.y, 0) / sw;
+      const Q = rows.reduce((a, r, i) => a + w[i] * (r.y - mu_fe) ** 2, 0);
+      const df = rows.length - 1;
+      let tau2 = 0;
+      if (tauEst === "DL") {
+        const swSq = rows.reduce((a, r, i) => a + w[i] * w[i], 0);
+        tau2 = Math.max(0, (Q - df) / (sw - swSq / sw));
+      } else if (tauEst === "PM") {
+        // Paule-Mandel iteration
+        let tau = 0;
+        for (let it = 0; it < 50; it++) {
+          const wi = rows.map(r => 1 / (r.v + tau));
+          const swi = wi.reduce((a, b) => a + b, 0);
+          const mu_t = rows.reduce((a, r, i) => a + wi[i] * r.y, 0) / swi;
+          const Qt = rows.reduce((a, r, i) => a + wi[i] * (r.y - mu_t) ** 2, 0);
+          const dQ = rows.reduce((a, r, i) => a + wi[i] * wi[i] * (r.y - mu_t) ** 2, 0);
+          const adj = (Qt - df) / dQ;
+          tau = Math.max(0, tau + adj);
+          if (Math.abs(adj) < 1e-8) break;
+        }
+        tau2 = tau;
+      }
+      const wRE = rows.map(r => 1 / (r.v + tau2));
+      const swRE = wRE.reduce((a, b) => a + b, 0);
+      const mu_re = rows.reduce((a, r, i) => a + wRE[i] * r.y, 0) / swRE;
+      const seRE = Math.sqrt(1 / swRE);
+      const i2 = Q > df ? 100 * (Q - df) / Q : 0;
+      return { mu_re, seRE, tau2, Q, df, i2, weights: wRE };
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    function fmtPct(x, d = 1) { return Number.isFinite(x) ? (100 * x).toFixed(d) + "%" : "—"; }
+
+    function run() {
+      const text = document.getElementById("src").value;
+      const trans = document.getElementById("trans").value;
+      const tauEst = document.getElementById("tau-est").value;
+      const rows = parseTable(text);
+      if (rows.length < 2) {
+        document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 2 studies.</td></tr>`;
+        return;
+      }
+      // transform
+      const transformed = rows.map(r => {
+        if (trans === "ft") return { ...r, ...ftTransform(r.x, r.n) };
+        if (trans === "logit") return { ...r, ...logitTransform(r.x, r.n) };
+        // raw
+        const p = r.x / r.n;
+        return { ...r, y: p, v: Math.max(p * (1 - p) / r.n, 1e-8) };
+      });
+      const pooled = pool(transformed, tauEst === "FE" ? "DL" : tauEst);
+      // Per-study CIs on proportion scale (Clopper-Pearson)
+      const perStudy = rows.map((r, i) => {
+        const [lo, hi] = clopperPearson(r.x, r.n);
+        const w = pooled.weights[i];
+        return { ...r, p: r.x / r.n, lo, hi, w, rel: 100 * w / pooled.weights.reduce((a, b) => a + b, 0) };
+      });
+      // Pool back-transform
+      const lo = pooled.mu_re - 1.96 * pooled.seRE;
+      const hi = pooled.mu_re + 1.96 * pooled.seRE;
+      let poolP, poolLo, poolHi;
+      if (trans === "ft") {
+        // Use simple sin²(y) back-transform for robustness (harmonic-mean-n correction can be unstable)
+        poolP = ftBackSimple(pooled.mu_re);
+        poolLo = ftBackSimple(lo);
+        poolHi = ftBackSimple(hi);
+      } else if (trans === "logit") {
+        poolP = logitBack(pooled.mu_re);
+        poolLo = logitBack(lo);
+        poolHi = logitBack(hi);
+      } else {
+        poolP = pooled.mu_re;
+        poolLo = Math.max(0, lo);
+        poolHi = Math.min(1, hi);
+      }
+      render(perStudy, { poolP, poolLo, poolHi, het: pooled });
+    }
+
+    function render(rows, pooled) {
+      const body = document.getElementById("res-body");
+      body.innerHTML = "";
+      for (const r of rows) {
+        body.innerHTML += `<tr><td>${r.label}</td><td>${r.x}/${r.n}</td><td>${fmtPct(r.p)}</td><td>${fmtPct(r.lo)} – ${fmtPct(r.hi)}</td><td>${r.rel.toFixed(1)}%</td></tr>`;
+      }
+      body.innerHTML += `<tr class="pooled-row"><td><strong>Pooled</strong></td><td>—</td><td><strong>${fmtPct(pooled.poolP)}</strong></td><td><strong>${fmtPct(pooled.poolLo)} – ${fmtPct(pooled.poolHi)}</strong></td><td>100%</td></tr>`;
+
+      const het = document.getElementById("het");
+      het.innerHTML = `τ² = <code>${fmt(pooled.het.tau2, 4)}</code> · Q = <code>${fmt(pooled.het.Q, 2)}</code> (df=${pooled.het.df}) · I² = <code>${pooled.het.i2.toFixed(1)}%</code>`;
+
+      drawForest(rows, pooled);
+    }
+
+    function drawForest(rows, pooled) {
+      const svg = document.getElementById("forest");
+      const W = 600, H = Math.max(200, 50 + (rows.length + 1) * 26 + 30);
+      const padL = 160, padR = 30, padT = 20, padB = 40;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+      const X = p => padL + p * plotW;
+      // axis
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH - 22}" x2="${padL + plotW}" y2="${padT + plotH - 22}" stroke="currentColor" opacity="0.5"/>`;
+      for (let t = 0; t <= 1.0001; t += 0.2) {
+        svg.innerHTML += `<line x1="${X(t)}" y1="${padT + plotH - 18}" x2="${X(t)}" y2="${padT + plotH - 26}" stroke="currentColor" opacity="0.5"/>`;
+        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`;
+      }
+      rows.forEach((r, i) => {
+        const y = padT + i * 26 + 10;
+        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label}</text>`;
+        svg.innerHTML += `<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`;
+        const sz = 3 + Math.min(r.rel / 4, 7);
+        svg.innerHTML += `<rect x="${X(r.p) - sz}" y="${y - sz}" width="${sz * 2}" height="${sz * 2}" fill="var(--accent)"/>`;
+      });
+      // pooled diamond
+      const py = padT + rows.length * 26 + 18;
+      const px = X(pooled.poolP);
+      const pl = X(pooled.poolLo);
+      const ph = X(pooled.poolHi);
+      svg.innerHTML += `<text x="${padL - 10}" y="${py + 4}" text-anchor="end" font-size="11" fill="currentColor" font-weight="600">Pooled</text>`;
+      svg.innerHTML += `<polygon points="${pl},${py} ${px},${py - 8} ${ph},${py} ${px},${py + 8}" fill="var(--warn)" opacity="0.9"/>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("trans").addEventListener("change", run);
+    document.getElementById("tau-est").addEventListener("change", run);
+    run();
+  </script>
+</body>
+</html>

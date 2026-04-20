@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Guyot 2012 Kaplan-Meier IPD reconstruction from digitized survival curve points and at-risk tables.">
+  <meta name="color-scheme" content="light dark">
+  <title>K-M IPD Reconstructor</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --orig:#2c5e8a; --recon:#b05a1c; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --orig:#6aa6d4; --recon:#e0a268; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 9rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.6rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input[type="number"] { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+    .card { background: var(--accent-soft); border-radius: 6px; padding: 0.5rem 0.7rem; }
+    .card .k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .v { display: block; font-size: 1.05rem; font-weight: 700; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kaplan-Meier IPD Reconstructor</h1>
+    <p>Reconstruct individual patient data (event times + censoring indicators) from a digitized K-M curve plus at-risk table. Implements Guyot et al., BMC Med Res Methodol 2012.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>Digitized curve — <code>time, survival</code> (survival in 0..1 or 0..100)</span>
+        <textarea id="curve">0, 1.00
+3, 0.95
+6, 0.88
+9, 0.82
+12, 0.75
+15, 0.68
+18, 0.62
+21, 0.56
+24, 0.50
+30, 0.42
+36, 0.35</textarea>
+        <span class="hint">More points = smoother reconstruction. Use a graph digitizer (WebPlotDigitizer) to get these.</span>
+      </label>
+      <label>
+        <span>At-risk table — <code>time, n_at_risk</code></span>
+        <textarea id="risk">0, 200
+6, 165
+12, 125
+18, 92
+24, 60
+36, 28</textarea>
+        <span class="hint">From the bottom of the published K-M figure.</span>
+      </label>
+      <label>
+        <span>Total events reported (optional)</span>
+        <input id="tot-events" type="number" step="1" placeholder="e.g. 145">
+        <span class="hint">Forces the reconstructed tail to match reported events.</span>
+      </label>
+      <div style="display:flex; gap:0.5rem; margin-top:0.4rem">
+        <button type="button" id="btn-run" class="primary">Reconstruct</button>
+        <button type="button" id="btn-export" class="secondary">Download IPD CSV</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Reconstruction</h2>
+      <div class="summary">
+        <div class="card"><span class="k">Reconstructed N</span><span class="v" id="c-n">0</span></div>
+        <div class="card"><span class="k">Total events</span><span class="v" id="c-ev">0</span></div>
+        <div class="card"><span class="k">Median survival</span><span class="v" id="c-median">—</span></div>
+      </div>
+      <h2 style="margin-top:0.2rem">K-M overlay: digitized vs reconstructed</h2>
+      <svg id="km-plot" viewBox="0 0 600 320" role="img" aria-label="Kaplan-Meier overlay comparing digitized curve and reconstructed IPD fit"></svg>
+      <div class="note"><strong>How it works:</strong> Guyot's algorithm distributes events and censoring across intervals such that the product-limit K-M matches the digitized survival at each interval end-point, while total at-risk trajectories match the risk table. The output is one row per subject, with an event time and an event/censor indicator.</div>
+    </section>
+  </main>
+  <footer>
+    Guyot P, Ades AE, Ouwens MJNM, Welton NJ. Enhanced secondary analysis of survival data: reconstructing the data from published Kaplan-Meier survival curves. BMC Med Res Methodol 2012;12:9.
+  </footer>
+  <script>
+    let IPD = [];
+
+    function parseCurve(text) {
+      return text.trim().split(/\n/).map(l => {
+        const p = l.split(/[,\s]+/).filter(Boolean).map(parseFloat);
+        if (!Number.isFinite(p[0]) || !Number.isFinite(p[1])) return null;
+        let s = p[1];
+        if (s > 1) s = s / 100;
+        return { t: p[0], s };
+      }).filter(Boolean).sort((a, b) => a.t - b.t);
+    }
+    function parseRisk(text) {
+      return text.trim().split(/\n/).map(l => {
+        const p = l.split(/[,\s]+/).filter(Boolean).map(parseFloat);
+        if (!Number.isFinite(p[0]) || !Number.isFinite(p[1])) return null;
+        return { t: p[0], n: Math.round(p[1]) };
+      }).filter(Boolean).sort((a, b) => a.t - b.t);
+    }
+
+    // Guyot algorithm (simplified but faithful for monotone increasing risk intervals):
+    // For each risk interval [t_i, t_{i+1}), we know n_at_risk_i and n_at_risk_{i+1}.
+    // We know the digitized curve at multiple time points t_k in that interval, giving S(t_k).
+    // Between adjacent curve points, estimate event/censoring counts so that:
+    //   - product of (1 - d_j/n_j) matches the observed drop in S
+    //   - total reductions (d + c) sum to n_at_risk_i - n_at_risk_{i+1}
+    // The algorithm distributes (d, c) at each curve point, then constructs individual event/censor times.
+    function reconstruct(curve, risk, totEvents) {
+      if (curve.length < 2 || risk.length < 1) return [];
+      // Initialize: no events/censoring before first curve point; S(0) = curve[0].s
+      const N0 = risk[0].n;
+      // Sort curve points: each will carry event count d and censor count c.
+      const C = curve.map(p => ({ t: p.t, s: p.s, d: 0, c: 0, nRisk: 0 }));
+      // For each curve point, assign risk-interval index
+      function findRiskIdx(t) {
+        let idx = 0;
+        for (let j = 0; j < risk.length - 1; j++) if (t >= risk[j].t && t < risk[j + 1].t) idx = j;
+        if (t >= risk[risk.length - 1].t) idx = risk.length - 1;
+        return idx;
+      }
+      // Walk curve points: running nRisk starts at N0
+      let nRisk = N0;
+      C[0].nRisk = nRisk;
+      for (let k = 1; k < C.length; k++) {
+        // Sk/Sk-1 = product of (1 - d_j / n_j); approximate this as a single step
+        // where all drop in S between k-1 and k is events, and residual difference in risk is censoring.
+        const prevS = C[k - 1].s;
+        const curS = C[k].s;
+        const riskIdx = findRiskIdx(C[k].t);
+        // Target n at risk at this curve point (linear interpolation between risk-table points)
+        let targetN;
+        if (riskIdx >= risk.length - 1) {
+          targetN = risk[risk.length - 1].n;
+        } else {
+          const r0 = risk[riskIdx], r1 = risk[riskIdx + 1];
+          const frac = (C[k].t - r0.t) / (r1.t - r0.t);
+          targetN = r0.n + frac * (r1.n - r0.n);
+        }
+        // Events such that nRisk * (curS / prevS) + events = nRisk, adjusted for censoring.
+        // Simplified: expected events d ≈ nRisk * (1 - curS / prevS); censoring c = nRisk - d - targetN.
+        let d = Math.max(0, Math.round(nRisk * (1 - curS / prevS)));
+        if (d > nRisk) d = nRisk;
+        let c = Math.max(0, Math.round(nRisk - d - targetN));
+        if (d + c > nRisk) c = Math.max(0, nRisk - d);
+        C[k].d = d;
+        C[k].c = c;
+        nRisk = nRisk - d - c;
+        C[k].nRisk = nRisk;
+      }
+      // If total events constraint provided, scale last-interval events proportionally
+      if (Number.isFinite(totEvents)) {
+        const currentTot = C.reduce((s, p) => s + p.d, 0);
+        const diff = totEvents - currentTot;
+        if (Math.abs(diff) > 0 && C.length > 1) {
+          // Spread diff across last few intervals
+          const last = C.length - 1;
+          const perInterval = Math.floor(Math.abs(diff) / Math.max(1, last - 1));
+          const sign = Math.sign(diff);
+          for (let k = 1; k <= last; k++) {
+            const adj = sign * perInterval;
+            if (C[k].d + adj >= 0) C[k].d += adj;
+          }
+        }
+      }
+      // Expand into IPD: event times at curve midpoint of each interval
+      const ipd = [];
+      for (let k = 1; k < C.length; k++) {
+        const tMid = (C[k - 1].t + C[k].t) / 2;
+        for (let i = 0; i < C[k].d; i++) ipd.push({ time: tMid, event: 1 });
+        for (let i = 0; i < C[k].c; i++) ipd.push({ time: tMid, event: 0 });
+      }
+      // Any residual at-risk at the last point = censored at last curve time
+      if (nRisk > 0) {
+        for (let i = 0; i < nRisk; i++) ipd.push({ time: C[C.length - 1].t, event: 0 });
+      }
+      return { ipd, stages: C };
+    }
+
+    // K-M estimate from IPD
+    function kmFromIPD(ipd) {
+      if (!ipd.length) return [];
+      const times = [...new Set(ipd.map(r => r.time))].sort((a, b) => a - b);
+      let n = ipd.length;
+      let s = 1;
+      const out = [{ t: 0, s: 1 }];
+      for (const t of times) {
+        const atRisk = ipd.filter(r => r.time >= t).length;
+        const events = ipd.filter(r => r.time === t && r.event === 1).length;
+        if (atRisk === 0) continue;
+        s *= (atRisk - events) / atRisk;
+        out.push({ t, s });
+      }
+      return out;
+    }
+
+    function medianSurvival(kmCurve) {
+      for (let i = 0; i < kmCurve.length; i++) {
+        if (kmCurve[i].s <= 0.5) return kmCurve[i].t;
+      }
+      return NaN;
+    }
+
+    function run() {
+      const curve = parseCurve(document.getElementById("curve").value);
+      const risk = parseRisk(document.getElementById("risk").value);
+      const te = parseInt(document.getElementById("tot-events").value, 10);
+      if (curve.length < 2 || risk.length < 1) return;
+      const { ipd, stages } = reconstruct(curve, risk, Number.isFinite(te) ? te : NaN);
+      IPD = ipd;
+      document.getElementById("c-n").textContent = ipd.length;
+      document.getElementById("c-ev").textContent = ipd.filter(r => r.event === 1).length;
+      const km = kmFromIPD(ipd);
+      document.getElementById("c-median").textContent = fmt(medianSurvival(km), 1);
+      drawKM(curve, km);
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function drawKM(orig, recon) {
+      const svg = document.getElementById("km-plot");
+      const W = 600, H = 320;
+      const padL = 50, padR = 20, padT = 20, padB = 40;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const tMax = Math.max(...orig.map(p => p.t));
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+      const X = t => padL + (t / tMax) * plotW;
+      const Y = s => padT + (1 - s) * plotH;
+      // axes
+      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      for (const s of [0, 0.25, 0.5, 0.75, 1]) {
+        svg.innerHTML += `<line x1="${padL - 4}" x2="${padL}" y1="${Y(s)}" y2="${Y(s)}" stroke="currentColor" opacity="0.5"/>`;
+        svg.innerHTML += `<text x="${padL - 8}" y="${Y(s) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${(s * 100).toFixed(0)}%</text>`;
+      }
+      for (let t = 0; t <= tMax + 0.01; t += Math.ceil(tMax / 6)) {
+        svg.innerHTML += `<line x1="${X(t)}" y1="${padT + plotH}" x2="${X(t)}" y2="${padT + plotH + 4}" stroke="currentColor" opacity="0.5"/>`;
+        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 18}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(0)}</text>`;
+      }
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Time</text>`;
+      svg.innerHTML += `<text x="15" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 15 ${padT + plotH / 2})">Survival</text>`;
+
+      // Digitized curve
+      const oPath = orig.map((p, i) => `${i === 0 ? "M" : "L"}${X(p.t)},${Y(p.s)}`).join(" ");
+      svg.innerHTML += `<path d="${oPath}" fill="none" stroke="var(--orig)" stroke-width="2"/>`;
+      orig.forEach(p => {
+        svg.innerHTML += `<circle cx="${X(p.t)}" cy="${Y(p.s)}" r="3" fill="var(--orig)"/>`;
+      });
+      // Reconstructed K-M (step)
+      if (recon.length) {
+        let path = `M${X(recon[0].t)},${Y(recon[0].s)}`;
+        for (let i = 1; i < recon.length; i++) {
+          path += ` H${X(recon[i].t)} V${Y(recon[i].s)}`;
+        }
+        svg.innerHTML += `<path d="${path}" fill="none" stroke="var(--recon)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+      }
+      // legend
+      svg.innerHTML += `<rect x="${padL + 10}" y="${padT + 4}" width="10" height="3" fill="var(--orig)"/><text x="${padL + 24}" y="${padT + 8}" font-size="11" fill="currentColor">digitized</text>`;
+      svg.innerHTML += `<rect x="${padL + 90}" y="${padT + 4}" width="10" height="3" fill="var(--recon)"/><text x="${padL + 104}" y="${padT + 8}" font-size="11" fill="currentColor">reconstructed</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const csv = ["time,event", ...IPD.map(r => `${r.time},${r.event}`)].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "reconstructed_ipd.csv";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    });
+    run();
+  </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive PRISMA 2020 checklist (27 items) with progress donut and JSON export.">
+  <meta name="color-scheme" content="light dark">
+  <title>PRISMA 2020 Checklist</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --done:#0d7a27; --partial:#a58300; --todo:#5c6470; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --done:#5bc47b; --partial:#e5c060; --todo:#98a0ae; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: 1fr minmax(300px, 22rem); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .section-h { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin: 1rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .item { display: grid; grid-template-columns: 2.5rem 6rem 1fr; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px dotted var(--border); align-items: start; }
+    .item:last-child { border-bottom: none; }
+    .item .num { font-weight: 700; color: var(--muted); font-size: 0.85rem; }
+    .item .status { font-size: 0.8rem; }
+    .item .status select { width: 100%; padding: 0.25rem 0.4rem; border: 1px solid var(--border);
+                           background: var(--input-bg); color: var(--ink); border-radius: 5px; }
+    .item .text { font-size: 0.88rem; }
+    .item .text textarea { width: 100%; min-height: 2.5rem; margin-top: 0.3rem; padding: 0.35rem 0.55rem;
+                           border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+                           border-radius: 5px; font: inherit; font-size: 0.82rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    svg { width: 100%; height: auto; display: block; }
+    .progress { text-align: center; padding: 0.5rem 0; }
+    .progress .pct { font-size: 2rem; font-weight: 700; }
+    .legend { display: flex; gap: 0.5rem; justify-content: center; font-size: 0.78rem; margin-top: 0.4rem; }
+    .legend span { padding: 0.1rem 0.55rem; border-radius: 999px; color: white; }
+    .legend .done { background: var(--done); }
+    .legend .partial { background: var(--partial); }
+    .legend .todo { background: var(--todo); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PRISMA 2020 Checklist</h1>
+    <p>All 27 items of the PRISMA 2020 reporting checklist (Page et al. 2021). Mark each as Yes / Partial / No / NA and record where it lives in your manuscript. Save progress as JSON.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Checklist</h2>
+      <div id="list"></div>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem">
+        <button type="button" id="btn-save" class="primary">Export JSON</button>
+        <button type="button" id="btn-load" class="secondary">Load JSON</button>
+        <input type="file" id="file" accept="application/json,.json" style="display:none">
+        <button type="button" id="btn-clear" class="secondary">Clear all</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Progress</h2>
+      <div class="progress">
+        <svg id="donut" viewBox="0 0 180 180" role="img" aria-label="Donut chart showing checklist completion"></svg>
+        <div><span class="pct" id="pct">0%</span></div>
+        <div class="legend">
+          <span class="done">Done <b id="c-done">0</b></span>
+          <span class="partial">Partial <b id="c-partial">0</b></span>
+          <span class="todo">To do <b id="c-todo">27</b></span>
+        </div>
+      </div>
+      <h2 style="margin-top:1rem">Per-section</h2>
+      <div id="section-progress"></div>
+    </section>
+  </main>
+  <footer>Page MJ, McKenzie JE, Bossuyt PM, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ 2021;372:n71.</footer>
+  <script>
+    const ITEMS = [
+      ["TITLE", [["1", "Title", "Identify the report as a systematic review."]]],
+      ["ABSTRACT", [["2", "Abstract", "See the PRISMA 2020 for Abstracts checklist."]]],
+      ["INTRODUCTION", [
+        ["3", "Rationale", "Describe the rationale for the review in the context of existing knowledge."],
+        ["4", "Objectives", "Provide an explicit statement of the objective(s) or question(s) the review addresses."],
+      ]],
+      ["METHODS", [
+        ["5", "Eligibility criteria", "Specify the inclusion and exclusion criteria for the review and how studies were grouped for the syntheses."],
+        ["6", "Information sources", "Specify all databases, registers, websites, organisations, reference lists and other sources searched or consulted, with last search dates."],
+        ["7", "Search strategy", "Present full search strategies for all databases, registers and websites, including any filters and limits used."],
+        ["8", "Selection process", "Specify the methods used to decide whether a study met the inclusion criteria of the review, including how many reviewers screened each record and each report."],
+        ["9", "Data collection process", "Specify the methods used to collect data from reports, including how many reviewers collected data from each report."],
+        ["10a", "Data items: outcomes", "List and define all outcomes for which data were sought."],
+        ["10b", "Data items: other", "List and define all other variables for which data were sought (e.g., participant and intervention characteristics, funding sources)."],
+        ["11", "Study risk of bias", "Specify the methods used to assess risk of bias in the included studies."],
+        ["12", "Effect measures", "Specify the effect measures used in the synthesis or presentation of results."],
+        ["13a", "Synthesis methods", "Describe the processes used to decide which studies were eligible for each synthesis."],
+        ["13b", "Synthesis methods", "Describe any methods required to prepare the data for presentation or synthesis."],
+        ["13c", "Synthesis methods", "Describe any methods used to tabulate or visually display results of individual studies and syntheses."],
+        ["13d", "Synthesis methods", "Describe any methods used to synthesise results and provide a rationale."],
+        ["13e", "Synthesis methods", "Describe any methods used to explore possible causes of heterogeneity."],
+        ["13f", "Synthesis methods", "Describe any sensitivity analyses conducted to assess robustness of the synthesised results."],
+        ["14", "Reporting bias assessment", "Describe any methods used to assess risk of bias due to missing results in a synthesis."],
+        ["15", "Certainty assessment", "Describe any methods used to assess certainty (or confidence) in the body of evidence for an outcome."],
+      ]],
+      ["RESULTS", [
+        ["16a", "Study selection", "Describe the results of the search and selection process, from the number of records identified in the search to the number of studies included, ideally using a flow diagram."],
+        ["16b", "Study selection", "Cite studies that might appear to meet the inclusion criteria, but were excluded, and explain why."],
+        ["17", "Study characteristics", "Cite each included study and present its characteristics."],
+        ["18", "Risk of bias in studies", "Present assessments of risk of bias for each included study."],
+        ["19", "Results of individual studies", "For all outcomes, present, for each study: (a) summary statistics for each group (where appropriate) and (b) an effect estimate and its precision."],
+        ["20a", "Results of syntheses", "Summarise the characteristics and risk of bias among contributing studies."],
+        ["20b", "Results of syntheses", "Present results of all statistical syntheses conducted."],
+        ["20c", "Results of syntheses", "Present results of all investigations of possible causes of heterogeneity."],
+        ["20d", "Results of syntheses", "Present results of all sensitivity analyses conducted."],
+        ["21", "Reporting biases", "Present assessments of risk of bias due to missing results (arising from reporting biases) for each synthesis assessed."],
+        ["22", "Certainty of evidence", "Present assessments of certainty (or confidence) in the body of evidence for each outcome assessed."],
+      ]],
+      ["DISCUSSION", [
+        ["23a", "Discussion", "Provide a general interpretation of the results in the context of other evidence."],
+        ["23b", "Discussion", "Discuss any limitations of the evidence included in the review."],
+        ["23c", "Discussion", "Discuss any limitations of the review processes used."],
+        ["23d", "Discussion", "Discuss implications of the results for practice, policy, and future research."],
+      ]],
+      ["OTHER", [
+        ["24a", "Registration & protocol", "Provide registration information for the review, including register name and registration number, or state not registered."],
+        ["24b", "Registration & protocol", "Indicate where the review protocol can be accessed, or state it was not prepared."],
+        ["24c", "Registration & protocol", "Describe and explain any amendments to information provided at registration or in the protocol."],
+        ["25", "Support", "Describe sources of financial or non-financial support for the review, and the role of the funders or sponsors."],
+        ["26", "Competing interests", "Declare any competing interests of review authors."],
+        ["27", "Data & materials", "Report which of the following are publicly available and where they can be found: template data collection forms; data extracted; analytic code; any other materials used."],
+      ]],
+    ];
+
+    const STATE = {};  // { "1": { status: "yes|partial|no|na", note: "" } }
+
+    function flat() {
+      return ITEMS.flatMap(([sec, items]) => items.map(([n, t, d]) => ({ section: sec, num: n, title: t, desc: d })));
+    }
+
+    function render() {
+      const host = document.getElementById("list");
+      host.innerHTML = "";
+      for (const [sec, items] of ITEMS) {
+        const h = document.createElement("div");
+        h.className = "section-h";
+        h.textContent = sec;
+        host.appendChild(h);
+        for (const [num, title, desc] of items) {
+          const st = STATE[num] || { status: "", note: "" };
+          const row = document.createElement("div");
+          row.className = "item";
+          row.innerHTML = `
+            <div class="num">${num}</div>
+            <div class="status">
+              <select data-num="${num}" data-field="status">
+                <option value=""${!st.status ? " selected" : ""}>—</option>
+                <option value="yes"${st.status === "yes" ? " selected" : ""}>Yes</option>
+                <option value="partial"${st.status === "partial" ? " selected" : ""}>Partial</option>
+                <option value="no"${st.status === "no" ? " selected" : ""}>No</option>
+                <option value="na"${st.status === "na" ? " selected" : ""}>NA</option>
+              </select>
+            </div>
+            <div class="text">
+              <strong>${title}.</strong> ${desc}
+              <textarea data-num="${num}" data-field="note" placeholder="Where in the manuscript? (page, section, paragraph)">${st.note || ""}</textarea>
+            </div>`;
+          host.appendChild(row);
+        }
+      }
+      host.addEventListener("input", onEdit, { once: true });
+      host.addEventListener("change", onEdit, { once: true });
+      updateProgress();
+    }
+
+    function onEdit(e) {
+      const num = e.target.dataset.num;
+      const field = e.target.dataset.field;
+      if (!num || !field) return;
+      STATE[num] = STATE[num] || { status: "", note: "" };
+      STATE[num][field] = e.target.value;
+      updateProgress();
+      // re-attach listeners (simple approach)
+      document.getElementById("list").addEventListener("input", onEdit, { once: true });
+      document.getElementById("list").addEventListener("change", onEdit, { once: true });
+    }
+
+    function updateProgress() {
+      const all = flat();
+      const counts = { yes: 0, partial: 0, no: 0, na: 0, todo: 0 };
+      for (const it of all) {
+        const s = (STATE[it.num]?.status) || "";
+        if (s === "yes") counts.yes++;
+        else if (s === "partial") counts.partial++;
+        else if (s === "no") counts.no++;
+        else if (s === "na") counts.na++;
+        else counts.todo++;
+      }
+      document.getElementById("c-done").textContent = counts.yes;
+      document.getElementById("c-partial").textContent = counts.partial;
+      document.getElementById("c-todo").textContent = counts.todo + counts.no;
+      const pct = 100 * (counts.yes + 0.5 * counts.partial) / Math.max(1, all.length - counts.na);
+      document.getElementById("pct").textContent = pct.toFixed(0) + "%";
+      drawDonut(counts);
+      drawSections();
+    }
+
+    function drawDonut(c) {
+      const svg = document.getElementById("donut");
+      const cx = 90, cy = 90, r = 70, w = 20;
+      const total = c.yes + c.partial + c.no + c.na + c.todo;
+      const slices = [
+        { v: c.yes, color: "var(--done)" },
+        { v: c.partial, color: "var(--partial)" },
+        { v: c.no + c.todo, color: "var(--todo)" },
+      ];
+      svg.innerHTML = "";
+      let acc = 0;
+      for (const s of slices) {
+        if (s.v === 0) continue;
+        const a1 = (acc / total) * 2 * Math.PI - Math.PI / 2;
+        const a2 = ((acc + s.v) / total) * 2 * Math.PI - Math.PI / 2;
+        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+        const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
+        const large = (a2 - a1) > Math.PI ? 1 : 0;
+        svg.innerHTML += `<path d="M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}" fill="none" stroke="${s.color}" stroke-width="${w}" opacity="0.9"/>`;
+        acc += s.v;
+      }
+      // centre circle for donut look
+      svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r - w/2 - 2}" fill="var(--panel)"/>`;
+    }
+
+    function drawSections() {
+      const host = document.getElementById("section-progress");
+      host.innerHTML = "";
+      for (const [sec, items] of ITEMS) {
+        const total = items.length;
+        const done = items.reduce((a, [n]) => a + ((STATE[n]?.status === "yes") ? 1 : 0), 0);
+        const frac = Math.round(100 * done / total);
+        host.innerHTML += `
+          <div style="margin-bottom:0.6rem">
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-bottom:0.2rem">
+              <span>${sec}</span><span>${done}/${total}</span>
+            </div>
+            <div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden">
+              <div style="width:${frac}%; height:100%; background:var(--accent)"></div>
+            </div>
+          </div>`;
+      }
+    }
+
+    document.getElementById("btn-save").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "prisma2020_checklist.json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    });
+    document.getElementById("btn-load").addEventListener("click", () => document.getElementById("file").click());
+    document.getElementById("file").addEventListener("change", e => {
+      const f = e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { Object.assign(STATE, JSON.parse(reader.result)); render(); };
+      reader.readAsText(f);
+    });
+    document.getElementById("btn-clear").addEventListener("click", () => { for (const k in STATE) delete STATE[k]; render(); });
+
+    render();
+  </script>
+</body>
+</html>

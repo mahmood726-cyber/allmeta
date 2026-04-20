@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PICO(T)/PECO/PICOS question builder for systematic reviews, with a boolean-search skeleton export.">
+  <meta name="color-scheme" content="light dark">
+  <title>PICO Formulator</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --P:#2c5e8a; --I:#0d7a27; --C:#b05a1c; --O:#912121; --S:#5c6470; --T:#a58300; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --P:#6aa6d4; --I:#5bc47b; --C:#e0a268; --O:#ef7373; --S:#98a0ae; --T:#e5c060; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 30rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 600; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.15rem; }
+    textarea, input, select { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    textarea { min-height: 3rem; font-family: inherit; }
+    .question { background: var(--accent-soft); padding: 1rem; border-radius: 8px; margin-top: 0.75rem; font-size: 0.95rem; }
+    pre { margin: 0; padding: 0.7rem 0.85rem; background: var(--input-bg); border: 1px solid var(--border);
+          border-radius: 6px; white-space: pre-wrap; font: 0.84rem/1.45 "SF Mono", Consolas, monospace; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    svg { width: 100%; height: auto; display: block; margin-top: 0.5rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PICO Formulator</h1>
+    <p>Frame a review question as PICO, PECO, PICOS, or PICOT. Generates a one-sentence question and a boolean-search skeleton, ready to paste into PubMed or the Search Translator.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Question framework</h2>
+      <label>
+        <span class="lbl">Type</span>
+        <select id="frame">
+          <option value="PICO" selected>PICO (intervention review)</option>
+          <option value="PECO">PECO (exposure review)</option>
+          <option value="PICOS">PICOS (with study design)</option>
+          <option value="PICOT">PICOT (with time)</option>
+        </select>
+      </label>
+      <label><span class="lbl">Population / Problem (P)</span>
+        <textarea id="P" placeholder="adults with heart failure and reduced ejection fraction"></textarea></label>
+      <label id="row-I"><span class="lbl">Intervention (I)</span>
+        <textarea id="I" placeholder="SGLT2 inhibitor therapy"></textarea></label>
+      <label id="row-E" style="display:none"><span class="lbl">Exposure (E)</span>
+        <textarea id="E" placeholder="chronic air-pollution exposure"></textarea></label>
+      <label><span class="lbl">Comparison (C)</span>
+        <textarea id="C" placeholder="placebo or standard of care"></textarea></label>
+      <label><span class="lbl">Outcome (O)</span>
+        <textarea id="O" placeholder="cardiovascular mortality and heart-failure hospitalization"></textarea></label>
+      <label id="row-S" style="display:none"><span class="lbl">Study design (S)</span>
+        <select id="S"><option value="randomized controlled trials">RCTs</option>
+          <option value="cohort studies">cohort studies</option>
+          <option value="case-control studies">case-control</option>
+          <option value="cross-sectional studies">cross-sectional</option>
+          <option value="observational studies">observational</option>
+          <option value="systematic reviews">systematic reviews</option></select></label>
+      <label id="row-T" style="display:none"><span class="lbl">Time horizon (T)</span>
+        <input id="T" type="text" placeholder="over 12 months" /></label>
+    </section>
+    <section class="panel">
+      <h2>Generated</h2>
+      <div class="question" id="q-sentence">Fill the fields →</div>
+      <h2 style="margin-top:1rem">Boolean search skeleton</h2>
+      <pre id="bool"></pre>
+      <button type="button" id="btn-copy" class="secondary" style="margin-top:0.5rem">Copy to clipboard</button>
+      <h2 style="margin-top:1rem">PICO wheel</h2>
+      <svg id="wheel" viewBox="0 0 320 320" role="img" aria-label="PICO components arranged as a wheel"></svg>
+    </section>
+  </main>
+  <footer>Adapted from: Richardson, Wilson, Nishikawa, Hayward. The well-built clinical question (ACP J Club 1995). PECO for environmental reviews; PICOT per EBMed guidance.</footer>
+  <script>
+    const FIELDS = ["P", "I", "E", "C", "O", "S", "T"];
+    const COLORS = { P: "var(--P)", I: "var(--I)", E: "var(--I)", C: "var(--C)", O: "var(--O)", S: "var(--S)", T: "var(--T)" };
+
+    function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ""; }
+
+    function showRow(id, show) {
+      const row = document.getElementById("row-" + id);
+      if (row) row.style.display = show ? "" : "none";
+    }
+
+    function updateFramework() {
+      const f = document.getElementById("frame").value;
+      showRow("I", f !== "PECO");
+      showRow("E", f === "PECO");
+      showRow("S", f === "PICOS");
+      showRow("T", f === "PICOT");
+      render();
+    }
+
+    function render() {
+      const f = document.getElementById("frame").value;
+      const P = val("P");
+      const IorE = f === "PECO" ? val("E") : val("I");
+      const ioeLabel = f === "PECO" ? "exposure" : "intervention";
+      const C = val("C");
+      const O = val("O");
+      const S = f === "PICOS" ? val("S") : "";
+      const T = f === "PICOT" ? val("T") : "";
+      let sentence = "Among ";
+      sentence += P || "[P]";
+      sentence += f === "PECO" ? ", does " : ", does ";
+      sentence += IorE || `[${ioeLabel}]`;
+      sentence += ", compared with ";
+      sentence += C || "[comparison]";
+      sentence += ", ";
+      if (O) sentence += "affect " + O;
+      else sentence += "affect [outcome]";
+      if (T) sentence += " " + T;
+      if (S) sentence += " in " + S;
+      sentence += "?";
+      document.getElementById("q-sentence").textContent = sentence;
+
+      // Boolean skeleton: components joined with AND; within each, alternatives split on "or"/"and"/";" or "/"
+      const tokenize = s => (s || "").split(/\s*(?:\bor\b|;|\/|,)\s*/i).filter(Boolean)
+                               .map(t => t.includes(" ") ? `"${t}"` : t);
+      const boolBlocks = [];
+      boolBlocks.push(`(${tokenize(P).join(" OR ") || "[P]"})`);
+      boolBlocks.push(`(${tokenize(IorE).join(" OR ") || `[${ioeLabel}]`})`);
+      if (C) boolBlocks.push(`(${tokenize(C).join(" OR ")})`);
+      if (O) boolBlocks.push(`(${tokenize(O).join(" OR ")})`);
+      if (S) boolBlocks.push(`(${tokenize(S).join(" OR ")})`);
+      document.getElementById("bool").textContent = boolBlocks.join("\nAND\n");
+
+      drawWheel(f);
+    }
+
+    function drawWheel(frame) {
+      const slices = frame === "PECO" ? ["P", "E", "C", "O"]
+                   : frame === "PICOS" ? ["P", "I", "C", "O", "S"]
+                   : frame === "PICOT" ? ["P", "I", "C", "O", "T"]
+                   : ["P", "I", "C", "O"];
+      const svg = document.getElementById("wheel");
+      svg.innerHTML = "";
+      const cx = 160, cy = 160, rOuter = 130, rInner = 50;
+      const n = slices.length;
+      for (let i = 0; i < n; i++) {
+        const a1 = (i / n) * 2 * Math.PI - Math.PI / 2;
+        const a2 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+        const x1o = cx + rOuter * Math.cos(a1);
+        const y1o = cy + rOuter * Math.sin(a1);
+        const x2o = cx + rOuter * Math.cos(a2);
+        const y2o = cy + rOuter * Math.sin(a2);
+        const x1i = cx + rInner * Math.cos(a2);
+        const y1i = cy + rInner * Math.sin(a2);
+        const x2i = cx + rInner * Math.cos(a1);
+        const y2i = cy + rInner * Math.sin(a1);
+        const d = `M${x1o},${y1o} A${rOuter},${rOuter} 0 0 1 ${x2o},${y2o} L${x1i},${y1i} A${rInner},${rInner} 0 0 0 ${x2i},${y2i} Z`;
+        svg.innerHTML += `<path d="${d}" fill="${COLORS[slices[i]]}" opacity="0.25" stroke="${COLORS[slices[i]]}" stroke-width="1"/>`;
+        // label
+        const am = (a1 + a2) / 2;
+        const rL = (rInner + rOuter) / 2;
+        const lx = cx + rL * Math.cos(am);
+        const ly = cy + rL * Math.sin(am);
+        svg.innerHTML += `<text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="16" fill="currentColor" font-weight="700">${slices[i]}</text>`;
+      }
+      svg.innerHTML += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="14" fill="currentColor" font-weight="600">${frame}</text>`;
+    }
+
+    document.getElementById("frame").addEventListener("change", updateFramework);
+    for (const f of FIELDS) { const el = document.getElementById(f); if (el) el.addEventListener("input", render); }
+    document.getElementById("btn-copy").addEventListener("click", () => {
+      navigator.clipboard.writeText(document.getElementById("bool").textContent);
+    });
+    updateFramework();
+  </script>
+</body>
+</html>

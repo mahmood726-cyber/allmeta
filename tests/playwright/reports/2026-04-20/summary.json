@@ -3,7 +3,7 @@
     "app": "Pairwise AI",
     "path": "./Pairwiseai/Main screen.html",
     "status": "fail-console-error",
-    "duration_ms": 5813,
+    "duration_ms": 14988,
     "console_errors": [
       "Failed to load resource: the server responded with a status of 404 (Not Found)",
       "Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -18,115 +18,115 @@
     "app": "Dose Response Pro",
     "path": "./dosehtml/dose-response-pro.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1211,
+    "duration_ms": 1888,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "Evidence Board",
     "path": "./evidence-board/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1088,
+    "duration_ms": 1456,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "Focus Studio",
     "path": "./focus-studio/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1455,
+    "duration_ms": 2496,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "GRADE SoF Builder",
     "path": "./grade-sof/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 4796,
+    "duration_ms": 5298,
     "console_errors": [],
     "clicked_demo": true,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "HTA Pro",
     "path": "./HTA/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 10155,
+    "duration_ms": 18582,
     "console_errors": [],
     "clicked_demo": true,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "IPD Meta-Pro",
     "path": "./IPD-Meta-Pro/ipd-meta-pro.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1708,
+    "duration_ms": 3903,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "Kanban Lab",
     "path": "./kanban-lab/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1090,
+    "duration_ms": 1477,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "Living Meta",
     "path": "./living-meta/living-meta-complete.html",
     "status": "fail-plot-missing",
-    "duration_ms": 975,
+    "duration_ms": 2223,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "NMA Pro v8",
     "path": "./nma-pro-v2/nma-pro-v8.0.html",
     "status": "fail-plot-missing",
-    "duration_ms": 6330,
+    "duration_ms": 10375,
     "console_errors": [],
     "clicked_demo": true,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "PRISMA Screening",
     "path": "./prisma-screen/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 4234,
+    "duration_ms": 4399,
     "console_errors": [],
     "clicked_demo": true,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "TruthCert Pairwise Pro",
     "path": "./Truthcert1/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1009,
+    "duration_ms": 1296,
     "console_errors": [],
     "clicked_demo": false,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "WebR Validator",
     "path": "./webr-validator/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 4121,
+    "duration_ms": 4524,
     "console_errors": [],
     "clicked_demo": true,
-    "notes": "No plot surface on landing \u2014 app likely needs user input to render."
+    "notes": "No plot surface on landing — app likely needs user input to render."
   },
   {
     "app": "Bayesian MA",
     "path": "./bayesian-ma/index.html",
     "status": "pass",
-    "duration_ms": 972,
+    "duration_ms": 1228,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -135,7 +135,7 @@
     "app": "Citation Dedup",
     "path": "./citation-dedup/index.html",
     "status": "pass",
-    "duration_ms": 1049,
+    "duration_ms": 1400,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -144,7 +144,7 @@
     "app": "Cumulative + Subgroup",
     "path": "./cumulative-subgroup/index.html",
     "status": "pass",
-    "duration_ms": 923,
+    "duration_ms": 1333,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -153,7 +153,7 @@
     "app": "DTA SROC Explorer",
     "path": "./dta-sroc/index.html",
     "status": "pass",
-    "duration_ms": 1155,
+    "duration_ms": 1591,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -162,7 +162,7 @@
     "app": "Effect-Size Converter",
     "path": "./effect-size-converter/index.html",
     "status": "pass",
-    "duration_ms": 807,
+    "duration_ms": 1112,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -171,7 +171,7 @@
     "app": "Forest Plot Viewer",
     "path": "./forest-plot/index.html",
     "status": "pass",
-    "duration_ms": 1099,
+    "duration_ms": 1452,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -180,7 +180,7 @@
     "app": "Funnel Plot Explorer",
     "path": "./funnel-plot/index.html",
     "status": "pass",
-    "duration_ms": 1012,
+    "duration_ms": 1459,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -189,7 +189,16 @@
     "app": "Heterogeneity Explorer",
     "path": "./heterogeneity/index.html",
     "status": "pass",
-    "duration_ms": 1002,
+    "duration_ms": 1542,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "K-M IPD Reconstructor",
+    "path": "./km-reconstructor/index.html",
+    "status": "pass",
+    "duration_ms": 1491,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -198,7 +207,16 @@
     "app": "MA Workbench",
     "path": "./workbench/index.html",
     "status": "pass",
-    "duration_ms": 1070,
+    "duration_ms": 2042,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "Median → Mean/SD",
+    "path": "./median-to-mean/index.html",
+    "status": "pass",
+    "duration_ms": 1339,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -207,7 +225,7 @@
     "app": "Meta-Regression",
     "path": "./meta-regression/index.html",
     "status": "pass",
-    "duration_ms": 960,
+    "duration_ms": 1507,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -216,7 +234,34 @@
     "app": "NMA Dose-Response",
     "path": "./nma-dose-response-app/index.html",
     "status": "pass",
-    "duration_ms": 2304,
+    "duration_ms": 4792,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "PET-PEESE + Trim-and-Fill",
+    "path": "./pet-peese/index.html",
+    "status": "pass",
+    "duration_ms": 1080,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "PICO Formulator",
+    "path": "./pico/index.html",
+    "status": "pass",
+    "duration_ms": 1792,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "PRISMA 2020 Checklist",
+    "path": "./prisma-checklist/index.html",
+    "status": "pass",
+    "duration_ms": 2687,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -225,7 +270,25 @@
     "app": "PRISMA Flow",
     "path": "./prisma-flow/index.html",
     "status": "pass",
-    "duration_ms": 1166,
+    "duration_ms": 1502,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "Proportion MA",
+    "path": "./proportion-ma/index.html",
+    "status": "pass",
+    "duration_ms": 1505,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "RoB 2",
+    "path": "./rob2/index.html",
+    "status": "pass",
+    "duration_ms": 1220,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -234,7 +297,16 @@
     "app": "RoB Traffic Light",
     "path": "./rob-traffic-light/index.html",
     "status": "pass",
-    "duration_ms": 1076,
+    "duration_ms": 1501,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "Search Strategy Translator",
+    "path": "./search-translator/index.html",
+    "status": "pass",
+    "duration_ms": 1096,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -243,7 +315,7 @@
     "app": "TSA Calculator",
     "path": "./tsa/index.html",
     "status": "pass",
-    "duration_ms": 1038,
+    "duration_ms": 1513,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""

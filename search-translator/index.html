@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Translate a PubMed search strategy into Embase (Emtree) and Cochrane CENTRAL syntax. Browser-only.">
+  <meta name="color-scheme" content="light dark">
+  <title>Search Strategy Translator</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.86rem/1.4 "SF Mono", Consolas, monospace; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.primary:hover, button.secondary:hover { filter: brightness(1.05); }
+    .out-block { margin-bottom: 1rem; }
+    .out-block h3 { margin: 0 0 0.3rem; font-size: 0.82rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .out-block pre { margin: 0; padding: 0.7rem 0.85rem; background: var(--input-bg);
+                     border: 1px solid var(--border); border-radius: 6px; white-space: pre-wrap; font: 0.84rem/1.45 "SF Mono", Consolas, monospace; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    .note ul { margin: 0.3rem 0 0 1rem; padding: 0; }
+    svg { width: 100%; height: auto; display: block; margin-top: 0.5rem; }
+    .plot-wrap { margin-top: 1rem; }
+    .plot-wrap h3 { margin: 0 0 0.3rem; font-size: 0.82rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Search Strategy Translator</h1>
+    <p>Translate a PubMed search into Embase (Emtree) and Cochrane CENTRAL syntax. Field tags, MeSH, and operators are rewritten. This is a syntactic aid — always proof-read the output before running a real search.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>PubMed source</h2>
+      <textarea id="src">("heart failure"[MeSH Terms] OR "cardiac failure"[tiab] OR "heart failure"[tiab])
+AND
+("sodium-glucose transporter 2 inhibitors"[MeSH Terms] OR "SGLT2 inhibitors"[tiab] OR "empagliflozin"[tiab] OR "dapagliflozin"[tiab])
+AND
+("randomized controlled trial"[pt] OR "randomized"[tiab] OR "placebo"[tiab])</textarea>
+      <div style="display:flex; gap:0.5rem; margin-top:0.7rem">
+        <button type="button" id="btn-run" class="primary">Translate</button>
+        <button type="button" id="btn-clear" class="secondary">Clear</button>
+      </div>
+      <div class="note"><strong>Caveats:</strong>
+        <ul>
+          <li>MeSH → Emtree mapping uses a small built-in dictionary. Unmapped MeSH are emitted as free-text with a warning comment.</li>
+          <li>Embase <code>/exp</code> expands to narrower terms; PubMed MeSH major ≠ Embase major descriptors — review carefully.</li>
+          <li>Proximity operators (<code>ADJn</code>, <code>NEAR</code>) are not converted; use manual tuning.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Translations</h2>
+      <div class="out-block">
+        <h3>Embase (Emtree / Elsevier syntax)</h3>
+        <pre id="out-embase"></pre>
+      </div>
+      <div class="out-block">
+        <h3>Cochrane CENTRAL</h3>
+        <pre id="out-central"></pre>
+      </div>
+      <div class="out-block">
+        <h3>Warnings</h3>
+        <pre id="out-warn"></pre>
+      </div>
+      <div class="plot-wrap">
+        <h3>Token counts per version</h3>
+        <svg id="plot" viewBox="0 0 600 160" role="img" aria-label="Bar chart of token counts"></svg>
+      </div>
+    </section>
+  </main>
+  <footer>
+    PubMed field tags handled: <code>[MeSH Terms]</code>, <code>[Mesh]</code>, <code>[tiab]</code>, <code>[ti]</code>, <code>[tw]</code>, <code>[pt]</code>, <code>[all]</code>. Built-in MeSH→Emtree dictionary is minimal and focused on cardiology / pharmacology examples. This tool is a syntactic translator, not a concept mapper — you still need to review and tune the output.
+  </footer>
+  <script>
+    // --- small built-in MeSH → Emtree mapping (editable) ---
+    const MESH_TO_EMTREE = {
+      "heart failure": "heart failure",
+      "sodium-glucose transporter 2 inhibitors": "sodium glucose cotransporter 2 inhibitor",
+      "randomized controlled trial": "randomized controlled trial (topic)",
+      "diabetes mellitus, type 2": "non insulin dependent diabetes mellitus",
+      "hypertension": "hypertension",
+      "myocardial infarction": "heart infarction",
+      "stroke": "cerebrovascular accident",
+      "kidney diseases": "kidney disease",
+      "obesity": "obesity",
+      "hemoglobins": "hemoglobin",
+      "cholesterol": "cholesterol",
+      "systematic review": "systematic review (topic)",
+      "meta-analysis": "meta analysis (topic)",
+    };
+
+    const warnings = [];
+
+    function translateLine(line) {
+      // Normalize whitespace
+      let s = line.replace(/\s+/g, " ").trim();
+      if (!s) return { embase: "", central: "" };
+
+      const origS = s;
+      // Find each quoted term with its field tag and replace.
+      // Pattern: "quoted phrase"[TAG] OR bare word[TAG]
+      let embase = s;
+      let central = s;
+
+      // MeSH/Mesh with subheading variants
+      const meshRe = /"([^"]+)"\s*\[(MeSH Terms|Mesh|MeSH|mesh|MESH)[^\]]*\]/g;
+      embase = embase.replace(meshRe, (_, term) => {
+        const key = term.toLowerCase().trim();
+        if (MESH_TO_EMTREE[key]) return `'${MESH_TO_EMTREE[key]}'/exp`;
+        warnings.push(`Unmapped MeSH: "${term}" — emitted as free-text in Embase.`);
+        return `'${term}':ti,ab`;
+      });
+      central = central.replace(meshRe, (_, term) => `[mh "${term}"]`);
+
+      // Title/Abstract tags
+      const tiabRe = /"([^"]+)"\s*\[(tiab|Title\/Abstract)\]/g;
+      embase = embase.replace(tiabRe, (_, term) => `'${term}':ti,ab`);
+      central = central.replace(tiabRe, (_, term) => `("${term}"):ti,ab`);
+
+      const tiRe = /"([^"]+)"\s*\[(ti|Title)\]/g;
+      embase = embase.replace(tiRe, (_, term) => `'${term}':ti`);
+      central = central.replace(tiRe, (_, term) => `("${term}"):ti`);
+
+      // Text word [tw]
+      const twRe = /"([^"]+)"\s*\[(tw|Text Word)\]/g;
+      embase = embase.replace(twRe, (_, term) => `'${term}':ti,ab,kw`);
+      central = central.replace(twRe, (_, term) => `("${term}"):ti,ab,kw`);
+
+      // [all] — free-text everywhere
+      const allRe = /"([^"]+)"\s*\[(all|All Fields)\]/g;
+      embase = embase.replace(allRe, (_, term) => `'${term}'`);
+      central = central.replace(allRe, (_, term) => `"${term}"`);
+
+      // Publication type [pt]
+      const ptRe = /"([^"]+)"\s*\[pt\]/g;
+      embase = embase.replace(ptRe, (_, term) => {
+        const key = term.toLowerCase().trim();
+        if (key.includes("randomized controlled trial")) return "'randomized controlled trial'/de";
+        if (key.includes("meta-analysis")) return "'meta analysis'/de";
+        if (key.includes("systematic review")) return "'systematic review'/de";
+        return `'${term}':ti,ab`;
+      });
+      central = central.replace(ptRe, (_, term) => `("${term}"):pt`);
+
+      // Bare quoted phrases with no tag: leave as-is on the embase side but wrap for central
+      // Already handled.
+
+      return { embase, central };
+    }
+
+    function translate(text) {
+      warnings.length = 0;
+      const lines = text.split(/\n/);
+      const embaseLines = [];
+      const centralLines = [];
+      for (const raw of lines) {
+        const trimmed = raw.trim();
+        if (!trimmed) { embaseLines.push(""); centralLines.push(""); continue; }
+        // Keep standalone AND/OR/NOT lines verbatim
+        if (/^(AND|OR|NOT)$/i.test(trimmed)) {
+          embaseLines.push(trimmed.toUpperCase());
+          centralLines.push(trimmed.toUpperCase());
+          continue;
+        }
+        const { embase, central } = translateLine(trimmed);
+        embaseLines.push(embase);
+        centralLines.push(central);
+      }
+      return { embase: embaseLines.join("\n"), central: centralLines.join("\n") };
+    }
+
+    function countTokens(s) {
+      // Count non-whitespace tokens (words, operators, quoted phrases as single tokens)
+      const quotedCount = (s.match(/'[^']+'|"[^"]+"/g) || []).length;
+      const stripped = s.replace(/'[^']+'|"[^"]+"/g, " ");
+      const words = (stripped.match(/[A-Za-z0-9/_-]+/g) || []).length;
+      return quotedCount + words;
+    }
+
+    function drawBars(vals, labels) {
+      const svg = document.getElementById("plot");
+      const W = 600, H = 160;
+      const padL = 90, padR = 20, padT = 20, padB = 30;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const maxV = Math.max(1, ...vals);
+      svg.innerHTML = "";
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      const rowH = plotH / vals.length;
+      vals.forEach((v, i) => {
+        const y = padT + i * rowH + 4;
+        const bw = (v / maxV) * plotW;
+        svg.innerHTML += `<text x="${padL - 6}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${labels[i]}</text>`;
+        svg.innerHTML += `<rect x="${padL}" y="${y}" width="${bw}" height="${rowH - 8}" fill="var(--accent)" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${padL + bw + 6}" y="${y + rowH / 2 + 4}" font-size="11" fill="currentColor">${v}</text>`;
+      });
+    }
+
+    function run() {
+      const src = document.getElementById("src").value;
+      const { embase, central } = translate(src);
+      document.getElementById("out-embase").textContent = embase;
+      document.getElementById("out-central").textContent = central;
+      document.getElementById("out-warn").textContent = warnings.length ? warnings.join("\n") : "No warnings.";
+      const t1 = countTokens(src);
+      const t2 = countTokens(embase);
+      const t3 = countTokens(central);
+      drawBars([t1, t2, t3], ["PubMed (source)", "Embase", "CENTRAL"]);
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-clear").addEventListener("click", () => {
+      document.getElementById("src").value = "";
+      document.getElementById("out-embase").textContent = "";
+      document.getElementById("out-central").textContent = "";
+      document.getElementById("out-warn").textContent = "";
+      drawBars([0, 0, 0], ["PubMed", "Embase", "CENTRAL"]);
+    });
+    run();
+  </script>
+</body>
+</html>
