@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bayesian random-effects meta-analysis with a real Gibbs sampler on the normal-normal model, posterior distribution for mean and tau, and predictive intervals.">
+  <meta name="color-scheme" content="light dark">
+  <title>Bayesian MA — MCMC</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    svg { width: 100%; height: auto; display: block; }
+    .status { color: var(--muted); font-size: 0.82rem; margin: 0.5rem 0; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bayesian Meta-Analysis — Gibbs MCMC</h1>
+    <p>Fully Bayesian random-effects meta-analysis. Normal-normal hierarchical model: θ_i ~ N(μ, τ²), y_i ~ N(θ_i, s_i²). Priors: μ ~ N(0, 10⁶), τ ~ half-normal(0, 1). Real Gibbs sampler runs in the browser.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>Studies — <code>effect, SE, label</code></span>
+        <textarea id="src">0.25, 0.08, Smith
+0.18, 0.10, Jones
+0.40, 0.15, Khan
+0.30, 0.09, Lee
+0.12, 0.07, Park
+0.22, 0.08, Chen
+0.32, 0.12, Garcia
+0.45, 0.17, Ahmed
+0.28, 0.10, Brown</textarea>
+      </label>
+      <div class="grid-2">
+        <label><span>Iterations</span><input id="iter" type="number" step="1000" min="1000" value="10000"></label>
+        <label><span>Burn-in</span><input id="burn" type="number" step="500" min="100" value="2000"></label>
+      </div>
+      <div class="grid-2">
+        <label><span>τ prior scale</span><input id="tau-prior" type="number" step="0.1" min="0.01" value="1"><span class="hint">Half-normal SD.</span></label>
+        <label><span>Chains</span><input id="chains" type="number" step="1" min="1" max="4" value="2"></label>
+      </div>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Run MCMC</button>
+      <div class="status" id="status">Ready.</div>
+    </section>
+    <section class="panel">
+      <h2>Posterior summary</h2>
+      <table>
+        <thead><tr><th>Parameter</th><th>Mean</th><th>SD</th><th>95% CrI</th><th>R-hat</th><th>ESS</th></tr></thead>
+        <tbody id="body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Posterior of μ</h2>
+      <svg id="mu-density" viewBox="0 0 600 200" role="img" aria-label="Posterior density of the pooled mean"></svg>
+      <h2 style="margin-top:0.4rem">Posterior of τ</h2>
+      <svg id="tau-density" viewBox="0 0 600 200" role="img" aria-label="Posterior density of tau"></svg>
+      <h2 style="margin-top:0.4rem">Trace plot (μ)</h2>
+      <svg id="trace" viewBox="0 0 600 180" role="img" aria-label="Trace of chains for mu"></svg>
+    </section>
+  </main>
+  <footer>
+    Gibbs sampler: alternating conditional draws on μ | θ, τ, y; τ² via Metropolis-Hastings with normal proposal; θ_i | μ, τ, y_i. Convergence diagnostics: R-hat (Gelman-Rubin split chains) and ESS (effective sample size via autocorrelation). For serious Bayesian meta-analysis use <code>bayesmeta</code>, <code>RoBMA</code>, or Stan directly.
+  </footer>
+  <script>
+    function parse(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(parts[0]), se = parseFloat(parts[1]);
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        return { te, se, label: parts[2] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+
+    function rnorm(mu = 0, sigma = 1) {
+      const u1 = 1 - Math.random(), u2 = Math.random();
+      return mu + sigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    }
+    function runif() { return Math.random(); }
+
+    // One-chain Gibbs MCMC
+    function gibbs(rows, iter, burn, tauPrior, seed) {
+      const k = rows.length;
+      let theta = rows.map(r => r.te);
+      let mu = theta.reduce((a, b) => a + b, 0) / k;
+      let tau = Math.max(0.1, Math.sqrt(theta.reduce((a, v) => a + (v - mu) ** 2, 0) / k));
+      const muTrace = [], tauTrace = [], thetaTrace = Array.from({ length: k }, () => []);
+      const total = iter + burn;
+      // Metropolis step scale for tau
+      let tauStep = 0.3;
+      let accepted = 0;
+
+      const muPriorMean = 0, muPriorSD = 1e3;
+
+      for (let it = 0; it < total; it++) {
+        // Sample θ_i | μ, τ, y_i (conjugate normal)
+        for (let i = 0; i < k; i++) {
+          const post_var = 1 / (1 / (rows[i].se ** 2) + 1 / (tau ** 2));
+          const post_mean = post_var * (rows[i].te / (rows[i].se ** 2) + mu / (tau ** 2));
+          theta[i] = rnorm(post_mean, Math.sqrt(post_var));
+        }
+        // Sample μ | θ, τ (conjugate normal)
+        const mu_post_var = 1 / (k / (tau ** 2) + 1 / (muPriorSD ** 2));
+        const mu_post_mean = mu_post_var * (theta.reduce((a, b) => a + b, 0) / (tau ** 2) + muPriorMean / (muPriorSD ** 2));
+        mu = rnorm(mu_post_mean, Math.sqrt(mu_post_var));
+        // Sample τ via Metropolis (half-normal prior)
+        const tauProp = Math.abs(tau + rnorm(0, tauStep));
+        const logPost = (t) => {
+          if (t <= 0) return -Infinity;
+          let lp = 0;
+          for (const th of theta) lp += -0.5 * ((th - mu) / t) ** 2 - Math.log(t);
+          lp += -0.5 * (t / tauPrior) ** 2;  // half-normal prior
+          return lp;
+        };
+        const logRatio = logPost(tauProp) - logPost(tau);
+        if (Math.log(runif()) < logRatio) { tau = tauProp; accepted++; }
+        if (it < 500) {
+          // adapt step
+          if (accepted / (it + 1) > 0.5) tauStep *= 1.05;
+          else if (accepted / (it + 1) < 0.2) tauStep *= 0.95;
+        }
+        if (it >= burn) {
+          muTrace.push(mu);
+          tauTrace.push(tau);
+          for (let i = 0; i < k; i++) thetaTrace[i].push(theta[i]);
+        }
+      }
+      return { mu: muTrace, tau: tauTrace, theta: thetaTrace, acceptance: accepted / total };
+    }
+
+    function summary(vec) {
+      const sorted = [...vec].sort((a, b) => a - b);
+      const mean = vec.reduce((a, b) => a + b, 0) / vec.length;
+      const sd = Math.sqrt(vec.reduce((a, v) => a + (v - mean) ** 2, 0) / (vec.length - 1));
+      const q = p => sorted[Math.max(0, Math.min(sorted.length - 1, Math.floor(p * sorted.length)))];
+      return { mean, sd, lo: q(0.025), hi: q(0.975), median: q(0.5) };
+    }
+
+    // Gelman-Rubin R-hat with split chains
+    function rhat(chains) {
+      const m = chains.length * 2;  // split chains
+      const split = chains.flatMap(c => [c.slice(0, c.length / 2), c.slice(c.length / 2)]);
+      const n = split[0].length;
+      const means = split.map(c => c.reduce((a, b) => a + b, 0) / c.length);
+      const overallMean = means.reduce((a, b) => a + b, 0) / m;
+      const B = n * means.reduce((a, mn) => a + (mn - overallMean) ** 2, 0) / (m - 1);
+      const W = split.reduce((a, c, i) => {
+        const mn = means[i];
+        return a + c.reduce((s, v) => s + (v - mn) ** 2, 0) / (c.length - 1);
+      }, 0) / m;
+      const varHat = ((n - 1) * W / n + B / n);
+      return Math.sqrt(varHat / W);
+    }
+
+    // ESS via autocorrelation (truncated at lag where autocorr <= 0.05)
+    function ess(chain) {
+      const n = chain.length;
+      const mean = chain.reduce((a, b) => a + b, 0) / n;
+      const var0 = chain.reduce((a, v) => a + (v - mean) ** 2, 0) / n;
+      if (var0 === 0) return n;
+      let sumRho = 0;
+      for (let lag = 1; lag < Math.min(n / 4, 200); lag++) {
+        let s = 0;
+        for (let t = 0; t < n - lag; t++) s += (chain[t] - mean) * (chain[t + lag] - mean);
+        const rho = s / ((n - lag) * var0);
+        if (rho < 0.05) break;
+        sumRho += rho;
+      }
+      return n / (1 + 2 * sumRho);
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    async function run() {
+      const rows = parse(document.getElementById("src").value);
+      const iter = parseInt(document.getElementById("iter").value, 10);
+      const burn = parseInt(document.getElementById("burn").value, 10);
+      const tauPrior = parseFloat(document.getElementById("tau-prior").value);
+      const chainsN = parseInt(document.getElementById("chains").value, 10);
+      if (rows.length < 3) return;
+
+      const status = document.getElementById("status");
+      status.textContent = "Sampling…";
+      await new Promise(r => setTimeout(r, 30));
+
+      const chains = [];
+      for (let c = 0; c < chainsN; c++) {
+        status.textContent = `Chain ${c + 1} / ${chainsN}…`;
+        await new Promise(r => setTimeout(r, 10));
+        chains.push(gibbs(rows, iter, burn, tauPrior));
+      }
+
+      // Combine
+      const muAll = chains.flatMap(c => c.mu);
+      const tauAll = chains.flatMap(c => c.tau);
+
+      const sMu = summary(muAll);
+      const sTau = summary(tauAll);
+      const rMu = chainsN > 1 ? rhat(chains.map(c => c.mu)) : NaN;
+      const rTau = chainsN > 1 ? rhat(chains.map(c => c.tau)) : NaN;
+      const essMu = ess(muAll);
+      const essTau = ess(tauAll);
+
+      const body = document.getElementById("body");
+      body.innerHTML = "";
+      body.innerHTML += `<tr><td><code>μ</code></td><td>${fmt(sMu.mean)}</td><td>${fmt(sMu.sd)}</td><td>[${fmt(sMu.lo)}, ${fmt(sMu.hi)}]</td><td>${fmt(rMu, 3)}</td><td>${Math.round(essMu)}</td></tr>`;
+      body.innerHTML += `<tr><td><code>τ</code></td><td>${fmt(sTau.mean)}</td><td>${fmt(sTau.sd)}</td><td>[${fmt(sTau.lo)}, ${fmt(sTau.hi)}]</td><td>${fmt(rTau, 3)}</td><td>${Math.round(essTau)}</td></tr>`;
+      // Predictive interval
+      const predSamples = muAll.map((m, i) => m + rnorm(0, tauAll[i]));
+      const sPred = summary(predSamples);
+      body.innerHTML += `<tr><td><code>predictive</code></td><td>${fmt(sPred.mean)}</td><td>${fmt(sPred.sd)}</td><td>[${fmt(sPred.lo)}, ${fmt(sPred.hi)}]</td><td>—</td><td>—</td></tr>`;
+
+      drawDensity("mu-density", muAll, "μ posterior");
+      drawDensity("tau-density", tauAll, "τ posterior");
+      drawTrace(chains.map(c => c.mu));
+
+      status.textContent = `Done. ${chainsN} chain(s) × ${iter} iter. Acceptance ≈ ${(chains[0].acceptance * 100).toFixed(0)}%.`;
+    }
+
+    function drawDensity(svgId, samples, label) {
+      const svg = document.getElementById(svgId);
+      const W = 600, H = 200, padL = 40, padR = 20, padT = 20, padB = 30;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      // KDE via histogram with 50 bins
+      const xMin = Math.min(...samples), xMax = Math.max(...samples);
+      const nBins = 50;
+      const binW = (xMax - xMin) / nBins;
+      const counts = Array(nBins).fill(0);
+      for (const s of samples) {
+        const idx = Math.min(nBins - 1, Math.floor((s - xMin) / binW));
+        counts[idx]++;
+      }
+      const maxC = Math.max(...counts);
+      const X = v => padL + (v - xMin) / (xMax - xMin) * plotW;
+      const Y = c => padT + (1 - c / maxC) * plotH;
+      // Area
+      let path = `M${padL},${padT + plotH}`;
+      for (let i = 0; i < nBins; i++) {
+        const x = xMin + (i + 0.5) * binW;
+        path += ` L${X(x)},${Y(counts[i])}`;
+      }
+      path += ` L${padL + plotW},${padT + plotH} Z`;
+      svg.innerHTML += `<path d="${path}" fill="var(--accent)" fill-opacity="0.35" stroke="var(--accent)"/>`;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      for (const t of [xMin, (xMin + xMax) / 2, xMax]) {
+        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`;
+      }
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">${label}</text>`;
+    }
+
+    function drawTrace(chains) {
+      const svg = document.getElementById("trace");
+      const W = 600, H = 180, padL = 40, padR = 20, padT = 20, padB = 30;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      const all = chains.flat();
+      const yMin = Math.min(...all), yMax = Math.max(...all);
+      const colors = ["var(--accent)", "var(--warn)", "#912121", "#0d7a27"];
+      chains.forEach((chain, ci) => {
+        const step = Math.max(1, Math.floor(chain.length / plotW));
+        let path = "";
+        for (let i = 0, px = 0; i < chain.length; i += step, px += plotW / (chain.length / step)) {
+          const y = padT + (1 - (chain[i] - yMin) / (yMax - yMin)) * plotH;
+          path += (i === 0 ? "M" : "L") + (padL + px) + "," + y + " ";
+        }
+        svg.innerHTML += `<path d="${path}" fill="none" stroke="${colors[ci % colors.length]}" opacity="0.7" stroke-width="1"/>`;
+      });
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Iteration</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    // Auto-run for the plot to exist on first load (small sample)
+    run();
+  </script>
+</body>
+</html>

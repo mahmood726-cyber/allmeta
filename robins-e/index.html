@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ROBINS-E: Risk of Bias in Non-randomized Studies — of Exposures. 7 domains with signaling questions and algorithmic judgments.">
+  <meta name="color-scheme" content="light dark">
+  <title>ROBINS-E</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --low:#0d7a27; --low-soft:#dff3e0;
+            --mod:#a58300; --mod-soft:#fff4c4;
+            --ser:#b05a1c; --ser-soft:#fbeedd;
+            --crit:#912121; --crit-soft:#fbd2d2;
+            --ni:#5c6470; --ni-soft:#e3e3e3; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --low:#5bc47b; --low-soft:#1e3a27;
+              --mod:#e5c060; --mod-soft:#3a3218;
+              --ser:#e0a268; --ser-soft:#3a2d1c;
+              --crit:#ef7373; --crit-soft:#3a1e1e;
+              --ni:#98a0ae; --ni-soft:#2f343a; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(360px, 1fr) minmax(300px, 1fr); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    details { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.75rem; background: var(--bg); }
+    details[open] { background: var(--panel); }
+    summary { cursor: pointer; padding: 0.65rem 0.85rem; font-weight: 600; font-size: 0.9rem;
+              display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+    summary .verdict { font-size: 0.72rem; padding: 0.12rem 0.5rem; border-radius: 999px; font-weight: 600; }
+    summary .verdict.low { background: var(--low-soft); color: var(--low); }
+    summary .verdict.mod { background: var(--mod-soft); color: var(--mod); }
+    summary .verdict.ser { background: var(--ser-soft); color: var(--ser); }
+    summary .verdict.crit { background: var(--crit-soft); color: var(--crit); }
+    summary .verdict.ni { background: var(--ni-soft); color: var(--ni); }
+    .domain-body { padding: 0 1rem 0.8rem; }
+    .q { margin: 0.5rem 0; font-size: 0.87rem; }
+    .q .prompt { display: block; margin-bottom: 0.2rem; }
+    .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
+                     border-radius: 5px; cursor: pointer; background: var(--input-bg); }
+    .q .opts input { display: none; }
+    .q .opts input:checked + span { color: var(--accent); font-weight: 600; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    svg { width: 100%; height: auto; display: block; }
+    .summary-grid { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem 0.75rem; font-size: 0.88rem; margin-bottom: 1rem; }
+    .summary-grid .label { color: var(--muted); }
+    .summary-grid .chip { font-size: 0.74rem; padding: 0.12rem 0.55rem; border-radius: 999px; font-weight: 600; text-align: center; }
+    .summary-grid .chip.low { background: var(--low-soft); color: var(--low); }
+    .summary-grid .chip.mod { background: var(--mod-soft); color: var(--mod); }
+    .summary-grid .chip.ser { background: var(--ser-soft); color: var(--ser); }
+    .summary-grid .chip.crit { background: var(--crit-soft); color: var(--crit); }
+    .summary-grid .chip.ni { background: var(--ni-soft); color: var(--ni); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ROBINS-E — exposure studies</h1>
+    <p>Risk Of Bias In Non-randomized Studies of Exposures (Higgins et al., 2022 draft). Seven domains covering confounding, exposure measurement, selection, missing data, misclassification, outcome measurement, and selective reporting.</p>
+  </header>
+  <main>
+    <section class="panel" id="form-panel">
+      <h2>Signaling questions</h2>
+      <div id="domains"></div>
+      <button type="button" id="btn-eval" class="primary" style="width:100%; margin-top:0.5rem">Evaluate</button>
+    </section>
+    <section class="panel">
+      <h2>Judgement</h2>
+      <div class="summary-grid" id="summary"></div>
+      <h2 style="margin-top:1rem">Traffic light</h2>
+      <svg id="traffic" viewBox="0 0 620 220" role="img" aria-label="Traffic-light plot of ROBINS-E domain judgments"></svg>
+    </section>
+  </main>
+  <footer>
+    Domains: D1 Confounding, D2 Measurement of the exposure, D3 Selection into the study, D4 Post-exposure interventions, D5 Missing data, D6 Measurement of the outcome, D7 Selection of the reported result. Overall: the worst domain (any critical → critical; any serious otherwise → serious; any moderate → moderate; else low). NI in any domain → overall NI.
+  </footer>
+  <script>
+    const Y = "Y", PY = "PY", PN = "PN", N = "N", NI = "NI";
+    const yy = v => v === Y || v === PY;
+    const nn = v => v === N || v === PN;
+
+    const DOMAINS = [
+      {
+        id: "D1", name: "D1: Confounding",
+        questions: [
+          { id: "1.1", prompt: "Did the authors identify all important confounding factors?" },
+          { id: "1.2", prompt: "Did the authors measure the confounding factors validly and reliably?" },
+          { id: "1.3", prompt: "Was the effect estimated for the effect of exposure adjusted for these confounders?" },
+          { id: "1.4", prompt: "Is there concern about residual or unmeasured confounding?" },
+        ],
+        judge: a => {
+          if (yy(a["1.1"]) && yy(a["1.2"]) && yy(a["1.3"]) && nn(a["1.4"])) return "low";
+          if (yy(a["1.4"])) return "ser";
+          if (nn(a["1.3"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D2", name: "D2: Measurement of the exposure",
+        questions: [
+          { id: "2.1", prompt: "Was exposure measured using a well-established objective method?" },
+          { id: "2.2", prompt: "Was the exposure measured similarly across the exposure groups?" },
+          { id: "2.3", prompt: "Could the exposure measurement have been influenced by knowledge of the outcome?" },
+        ],
+        judge: a => {
+          if (yy(a["2.1"]) && yy(a["2.2"]) && nn(a["2.3"])) return "low";
+          if (nn(a["2.1"]) || yy(a["2.3"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D3", name: "D3: Selection into the study",
+        questions: [
+          { id: "3.1", prompt: "Was selection into the study unrelated to exposure or outcome status?" },
+          { id: "3.2", prompt: "Did start of follow-up coincide with start of exposure?" },
+          { id: "3.3", prompt: "Were adjustment methods used to correct for selection effects?" },
+        ],
+        judge: a => {
+          if (yy(a["3.1"]) && yy(a["3.2"])) return "low";
+          if (nn(a["3.1"]) && nn(a["3.3"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D4", name: "D4: Post-exposure interventions",
+        questions: [
+          { id: "4.1", prompt: "Were there post-exposure interventions differing between groups?" },
+          { id: "4.2", prompt: "Were those interventions likely to affect the outcome?" },
+          { id: "4.3", prompt: "Was an appropriate analysis used to address these post-exposure effects?" },
+        ],
+        judge: a => {
+          if (nn(a["4.1"])) return "low";
+          if (yy(a["4.2"]) && nn(a["4.3"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D5", name: "D5: Missing data",
+        questions: [
+          { id: "5.1", prompt: "Were outcome data reasonably complete (≥90% of randomized or enrolled)?" },
+          { id: "5.2", prompt: "Were exposure data reasonably complete?" },
+          { id: "5.3", prompt: "Was missingness likely to depend on the true outcome or exposure?" },
+          { id: "5.4", prompt: "Were appropriate imputation or analytical methods used?" },
+        ],
+        judge: a => {
+          if (yy(a["5.1"]) && yy(a["5.2"]) && nn(a["5.3"])) return "low";
+          if (yy(a["5.3"]) && nn(a["5.4"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D6", name: "D6: Measurement of the outcome",
+        questions: [
+          { id: "6.1", prompt: "Was the outcome measured using a valid method?" },
+          { id: "6.2", prompt: "Could the outcome measurement have been influenced by knowledge of exposure status?" },
+          { id: "6.3", prompt: "Were outcome assessors blinded to exposure status?" },
+        ],
+        judge: a => {
+          if (yy(a["6.1"]) && nn(a["6.2"]) && yy(a["6.3"])) return "low";
+          if (nn(a["6.1"]) || yy(a["6.2"])) return "ser";
+          return "mod";
+        },
+      },
+      {
+        id: "D7", name: "D7: Selection of the reported result",
+        questions: [
+          { id: "7.1", prompt: "Is the reported effect likely to have been selected from multiple estimates?" },
+          { id: "7.2", prompt: "Is the reported result likely to have been selected from multiple subgroups?" },
+          { id: "7.3", prompt: "Is there a pre-specified analysis plan available for comparison?" },
+        ],
+        judge: a => {
+          if (nn(a["7.1"]) && nn(a["7.2"]) && yy(a["7.3"])) return "low";
+          if (yy(a["7.1"]) || yy(a["7.2"])) return "ser";
+          return "mod";
+        },
+      },
+    ];
+
+    function overall(v) {
+      const vals = Object.values(v);
+      if (vals.some(x => x === "ni")) return "ni";
+      if (vals.some(x => x === "crit")) return "crit";
+      if (vals.some(x => x === "ser")) return "ser";
+      if (vals.some(x => x === "mod")) return "mod";
+      return "low";
+    }
+
+    function render() {
+      const host = document.getElementById("domains");
+      host.innerHTML = "";
+      for (const d of DOMAINS) {
+        const det = document.createElement("details");
+        det.id = "dom-" + d.id;
+        det.innerHTML = `<summary><span>${d.name}</span><span class="verdict ni" data-verdict>—</span></summary>`;
+        const body = document.createElement("div");
+        body.className = "domain-body";
+        for (const q of d.questions) {
+          body.innerHTML += `<div class="q">
+            <span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
+            <span class="opts">
+              ${[Y, PY, PN, N, NI].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}"><span>${v}</span></label>`).join("")}
+            </span>
+          </div>`;
+        }
+        det.appendChild(body);
+        host.appendChild(det);
+      }
+    }
+
+    function evaluate() {
+      const verdicts = {};
+      for (const d of DOMAINS) {
+        const a = {};
+        for (const q of d.questions) {
+          const c = document.querySelector(`input[name="${d.id}-${q.id}"]:checked`);
+          a[q.id] = c ? c.value : null;
+        }
+        const allAns = d.questions.every(q => a[q.id] !== null);
+        verdicts[d.id] = allAns ? d.judge(a) : "ni";
+        const badge = document.querySelector(`#dom-${d.id} [data-verdict]`);
+        badge.textContent = verdicts[d.id].toUpperCase();
+        badge.className = "verdict " + verdicts[d.id];
+      }
+      verdicts.overall = overall(verdicts);
+      renderSummary(verdicts);
+      drawTraffic(verdicts);
+    }
+
+    function renderSummary(v) {
+      const host = document.getElementById("summary");
+      host.innerHTML = "";
+      const labels = { D1: "D1 Confounding", D2: "D2 Exposure", D3: "D3 Selection", D4: "D4 Post-exposure", D5: "D5 Missing data", D6: "D6 Outcome", D7: "D7 Reporting", overall: "Overall" };
+      const names = { low: "Low", mod: "Moderate", ser: "Serious", crit: "Critical", ni: "No information" };
+      for (const id of ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "overall"]) {
+        host.innerHTML += `<div class="label">${labels[id]}</div><div class="chip ${v[id]}">${names[v[id]] || "—"}</div>`;
+      }
+    }
+
+    function drawTraffic(v) {
+      const svg = document.getElementById("traffic");
+      svg.innerHTML = "";
+      const domains = ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "overall"];
+      const colors = { low: "var(--low)", mod: "var(--mod)", ser: "var(--ser)", crit: "var(--crit)", ni: "var(--ni)" };
+      const W = 620, padL = 90, padT = 30;
+      const cellW = (W - padL - 30) / domains.length;
+      svg.innerHTML += `<text x="${padL - 10}" y="${padT}" text-anchor="end" font-size="12" fill="currentColor">Study 1</text>`;
+      domains.forEach((d, i) => {
+        const cx = padL + i * cellW + cellW / 2;
+        const cy = padT + 30;
+        svg.innerHTML += `<text x="${cx}" y="${padT}" text-anchor="middle" font-size="11" fill="currentColor">${d.toUpperCase()}</text>`;
+        svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="18" fill="${colors[v[d]]}" opacity="0.85"/>`;
+        const sym = { low: "+", mod: "~", ser: "−", crit: "×", ni: "?" }[v[d]];
+        svg.innerHTML += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="18" fill="white" font-weight="700">${sym}</text>`;
+      });
+      let lx = padL; const ly = padT + 110;
+      for (const [k, l] of [["low", "Low"], ["mod", "Moderate"], ["ser", "Serious"], ["crit", "Critical"], ["ni", "No information"]]) {
+        svg.innerHTML += `<circle cx="${lx + 8}" cy="${ly}" r="7" fill="${colors[k]}" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${lx + 22}" y="${ly + 4}" font-size="11" fill="currentColor">${l}</text>`;
+        lx += 105;
+      }
+    }
+
+    document.getElementById("btn-eval").addEventListener("click", evaluate);
+    render();
+    evaluate();
+  </script>
+</body>
+</html>

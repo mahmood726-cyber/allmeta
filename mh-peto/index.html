@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mantel-Haenszel and Peto one-step pooling of 2×2 tables for rare events. No continuity correction needed.">
+  <meta name="color-scheme" content="light dark">
+  <title>MH / Peto pooling</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 4px; }
+    .pooled-row { background: var(--accent-soft); font-weight: 600; }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MH / Peto pooling</h1>
+    <p>For rare events, inverse-variance pooling on log-OR is biased. Mantel-Haenszel (fixed-effect) and Peto one-step odds ratio avoid continuity correction and perform well when event rates are low (&lt; 1%).</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies — <code>events1, n1, events2, n2, label</code></label>
+      <textarea id="src">3, 500, 8, 500, Study A
+1, 200, 5, 200, Study B
+0, 150, 4, 150, Study C
+2, 400, 6, 400, Study D
+4, 600, 10, 600, Study E
+0, 100, 3, 100, Study F
+1, 300, 7, 300, Study G</textarea>
+      <label>
+        <span>Effect measure</span>
+        <select id="measure">
+          <option value="OR" selected>Odds ratio</option>
+          <option value="RR">Risk ratio</option>
+          <option value="RD">Risk difference</option>
+        </select>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Pool</button>
+    </section>
+    <section class="panel">
+      <h2>Pooled estimates</h2>
+      <table id="pooled">
+        <thead><tr><th>Method</th><th>Estimate</th><th>95% CI</th><th>z</th><th>p</th></tr></thead>
+        <tbody id="pooled-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Per-study</h2>
+      <table id="per-study">
+        <thead><tr><th>Study</th><th>e1/n1</th><th>e2/n2</th><th>Effect</th><th>95% CI</th></tr></thead>
+        <tbody id="per-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Forest</h2>
+      <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of per-study and pooled effects"></svg>
+    </section>
+  </main>
+  <footer>
+    MH for OR: Σ(a·d/n) / Σ(b·c/n), with Robins-Breslow-Greenland variance. Peto OR: exp(Σ(O-E) / Σ V). Cochrane Handbook 10.4.4 recommends MH or Peto for rare events over DerSimonian-Laird; Peto requires roughly balanced arms.
+  </footer>
+  <script>
+    function parse(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const e1 = parseInt(parts[0], 10), n1 = parseInt(parts[1], 10);
+        const e2 = parseInt(parts[2], 10), n2 = parseInt(parts[3], 10);
+        if (![e1, n1, e2, n2].every(Number.isFinite) || n1 <= 0 || n2 <= 0 || e1 < 0 || e2 < 0 || e1 > n1 || e2 > n2) return null;
+        return { e1, n1, e2, n2, label: parts[4] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+
+    function pnorm(x) {
+      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+    }
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function mhOR(rows) {
+      // Mantel-Haenszel OR with Robins-Breslow-Greenland SE
+      let num = 0, denom = 0;
+      let SR = 0, ST = 0, SS = 0;
+      for (const r of rows) {
+        const a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2, n = r.n1 + r.n2;
+        if (n === 0) continue;
+        num += a * d / n;
+        denom += b * c / n;
+        SR += ((a + d) * a * d) / (n * n);
+        ST += ((b + c) * a * d + (a + d) * b * c) / (n * n);
+        SS += ((b + c) * b * c) / (n * n);
+      }
+      if (denom === 0 || num === 0) return null;
+      const or = num / denom;
+      const varLogOR = 0.5 * (SR / (num * num) + ST / (num * denom) + SS / (denom * denom));
+      const seLog = Math.sqrt(varLogOR);
+      return { est: or, logEst: Math.log(or), seLog, lo: Math.exp(Math.log(or) - 1.96 * seLog), hi: Math.exp(Math.log(or) + 1.96 * seLog) };
+    }
+
+    function mhRR(rows) {
+      let num = 0, denom = 0;
+      let varNum = 0;
+      for (const r of rows) {
+        const a = r.e1, c = r.e2, n = r.n1 + r.n2;
+        num += a * r.n2 / n;
+        denom += c * r.n1 / n;
+        varNum += ((r.n1 * r.n2 * (a + c)) / (n * n) - (a * c) / n);
+      }
+      if (denom === 0) return null;
+      const rr = num / denom;
+      const varLogRR = varNum / (num * denom);
+      const seLog = Math.sqrt(Math.max(varLogRR, 0));
+      return { est: rr, logEst: Math.log(rr), seLog, lo: Math.exp(Math.log(rr) - 1.96 * seLog), hi: Math.exp(Math.log(rr) + 1.96 * seLog) };
+    }
+
+    function mhRD(rows) {
+      let num = 0, denom = 0, varNum = 0;
+      for (const r of rows) {
+        const n = r.n1 + r.n2;
+        const w = (r.n1 * r.n2) / n;
+        num += w * (r.e1 / r.n1 - r.e2 / r.n2);
+        denom += w;
+        varNum += (r.e1 * (r.n1 - r.e1) * r.n2 / (r.n1 * r.n1 * r.n1) + r.e2 * (r.n2 - r.e2) * r.n1 / (r.n2 * r.n2 * r.n2)) * w * w;
+      }
+      if (denom === 0) return null;
+      const rd = num / denom;
+      const se = Math.sqrt(varNum) / denom;
+      return { est: rd, se, lo: rd - 1.96 * se, hi: rd + 1.96 * se };
+    }
+
+    function peto(rows) {
+      let sumOE = 0, sumV = 0;
+      for (const r of rows) {
+        const n = r.n1 + r.n2, m1 = r.e1 + r.e2, m2 = n - m1;
+        const E = r.n1 * m1 / n;
+        const V = (r.n1 * r.n2 * m1 * m2) / (n * n * (n - 1));
+        sumOE += (r.e1 - E);
+        sumV += V;
+      }
+      if (sumV === 0) return null;
+      const logOR = sumOE / sumV;
+      const seLog = 1 / Math.sqrt(sumV);
+      return { est: Math.exp(logOR), logEst: logOR, seLog, lo: Math.exp(logOR - 1.96 * seLog), hi: Math.exp(logOR + 1.96 * seLog) };
+    }
+
+    function perStudy(rows, measure) {
+      return rows.map(r => {
+        // 0.5 correction for display
+        let a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2;
+        if (a === 0 || b === 0 || c === 0 || d === 0) { a += 0.5; b += 0.5; c += 0.5; d += 0.5; }
+        if (measure === "OR") {
+          const or = (a * d) / (b * c);
+          const varLog = 1 / a + 1 / b + 1 / c + 1 / d;
+          const se = Math.sqrt(varLog);
+          return { ...r, est: or, lo: Math.exp(Math.log(or) - 1.96 * se), hi: Math.exp(Math.log(or) + 1.96 * se) };
+        }
+        if (measure === "RR") {
+          const rr = (a / r.n1) / (c / r.n2);
+          const varLog = 1 / a - 1 / r.n1 + 1 / c - 1 / r.n2;
+          const se = Math.sqrt(Math.max(varLog, 0));
+          return { ...r, est: rr, lo: Math.exp(Math.log(rr) - 1.96 * se), hi: Math.exp(Math.log(rr) + 1.96 * se) };
+        }
+        const p1 = r.e1 / r.n1, p2 = r.e2 / r.n2;
+        const rd = p1 - p2;
+        const se = Math.sqrt(p1 * (1 - p1) / r.n1 + p2 * (1 - p2) / r.n2);
+        return { ...r, est: rd, lo: rd - 1.96 * se, hi: rd + 1.96 * se };
+      });
+    }
+
+    function run() {
+      const rows = parse(document.getElementById("src").value);
+      const measure = document.getElementById("measure").value;
+      if (rows.length < 2) return;
+
+      const pooled = [];
+      if (measure === "OR") {
+        const mh = mhOR(rows), pe = peto(rows);
+        pooled.push({ name: "MH OR", ...mh });
+        if (pe) pooled.push({ name: "Peto OR", ...pe });
+      } else if (measure === "RR") {
+        pooled.push({ name: "MH RR", ...mhRR(rows) });
+      } else {
+        pooled.push({ name: "MH RD", ...mhRD(rows) });
+      }
+
+      const body = document.getElementById("pooled-body");
+      body.innerHTML = "";
+      for (const p of pooled) {
+        if (!p) continue;
+        const z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
+        const pval = 2 * (1 - pnorm(Math.abs(z)));
+        body.innerHTML += `<tr><td><code>${p.name}</code></td><td>${fmt(p.est)}</td><td>[${fmt(p.lo)}, ${fmt(p.hi)}]</td><td>${fmt(z, 2)}</td><td>${fmt(pval, 3)}</td></tr>`;
+      }
+
+      const studies = perStudy(rows, measure);
+      const perBody = document.getElementById("per-body");
+      perBody.innerHTML = "";
+      for (const s of studies) {
+        perBody.innerHTML += `<tr><td>${s.label}</td><td>${s.e1}/${s.n1}</td><td>${s.e2}/${s.n2}</td><td>${fmt(s.est)}</td><td>[${fmt(s.lo)}, ${fmt(s.hi)}]</td></tr>`;
+      }
+      drawForest(studies, pooled, measure);
+    }
+
+    function drawForest(studies, pooled, measure) {
+      const svg = document.getElementById("forest");
+      const W = 600, H = Math.max(200, 40 + (studies.length + pooled.length + 1) * 26);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+      const padL = 130, padR = 30;
+      const plotW = W - padL - padR;
+      const all = [...studies, ...pooled.filter(Boolean)];
+      const loAll = all.map(r => r.lo);
+      const hiAll = all.map(r => r.hi);
+      const logScale = measure !== "RD";
+      const mapFn = v => logScale ? Math.log(Math.max(v, 1e-6)) : v;
+      const lo = Math.min(...loAll.map(mapFn));
+      const hi = Math.max(...hiAll.map(mapFn));
+      const pad = (hi - lo) * 0.1 || 0.3;
+      const X = v => padL + (mapFn(v) - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
+      const null_ = logScale ? 1 : 0;
+      svg.innerHTML += `<line x1="${X(null_)}" y1="10" x2="${X(null_)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      let y = 25;
+      studies.forEach(s => {
+        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${s.label}</text>`;
+        svg.innerHTML += `<line x1="${X(s.lo)}" y1="${y}" x2="${X(s.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`;
+        svg.innerHTML += `<rect x="${X(s.est) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`;
+        y += 22;
+      });
+      y += 6;
+      pooled.filter(Boolean).forEach(p => {
+        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">${p.name}</text>`;
+        svg.innerHTML += `<polygon points="${X(p.lo)},${y} ${X(p.est)},${y - 7} ${X(p.hi)},${y} ${X(p.est)},${y + 7}" fill="var(--warn)" opacity="0.9"/>`;
+        y += 24;
+      });
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("measure").addEventListener("change", run);
+    run();
+  </script>
+</body>
+</html>

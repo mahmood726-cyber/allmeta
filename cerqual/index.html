@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GRADE-CERQual: Confidence in Evidence from Reviews of Qualitative research. Rate four components per review finding.">
+  <meta name="color-scheme" content="light dark">
+  <title>GRADE-CERQual</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --none:#0d7a27; --none-soft:#dff3e0;
+            --minor:#a58300; --minor-soft:#fff4c4;
+            --mod:#b05a1c; --mod-soft:#fbeedd;
+            --ser:#912121; --ser-soft:#fbd2d2;
+            --high:#0d7a27; --high-soft:#dff3e0;
+            --modc:#a58300; --modc-soft:#fff4c4;
+            --low:#b05a1c; --low-soft:#fbeedd;
+            --vlow:#912121; --vlow-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --none:#5bc47b; --none-soft:#1e3a27;
+              --minor:#e5c060; --minor-soft:#3a3218;
+              --mod:#e0a268; --mod-soft:#3a2d1c;
+              --ser:#ef7373; --ser-soft:#3a1e1e;
+              --high:#5bc47b; --high-soft:#1e3a27;
+              --modc:#e5c060; --modc-soft:#3a3218;
+              --low:#e0a268; --low-soft:#3a2d1c;
+              --vlow:#ef7373; --vlow-soft:#3a1e1e; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    td input[type="text"] { width: 100%; padding: 0.3rem 0.5rem; border: 1px solid var(--border);
+                            background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; }
+    td select { padding: 0.25rem 0.4rem; border: 1px solid var(--border);
+                background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; font-size: 0.82rem; }
+    .chip { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; }
+    .chip.none { background: var(--none-soft); color: var(--none); }
+    .chip.minor { background: var(--minor-soft); color: var(--minor); }
+    .chip.mod { background: var(--mod-soft); color: var(--mod); }
+    .chip.ser { background: var(--ser-soft); color: var(--ser); }
+    .chip.high { background: var(--high-soft); color: var(--high); }
+    .chip.modc { background: var(--modc-soft); color: var(--modc); }
+    .chip.low { background: var(--low-soft); color: var(--low); }
+    .chip.vlow { background: var(--vlow-soft); color: var(--vlow); }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.4rem 0.9rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.35rem 0.85rem; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    svg { width: 100%; height: auto; display: block; margin-top: 0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GRADE-CERQual</h1>
+    <p>Confidence in Evidence from Reviews of Qualitative research (Lewin et al., PLOS Med 2018). Rate four components per review finding: methodological limitations, coherence, adequacy of data, and relevance. The tool derives an overall confidence rating from the component concerns.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Review findings</h2>
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>Finding</th>
+            <th>Methodological limitations</th>
+            <th>Coherence</th>
+            <th>Adequacy</th>
+            <th>Relevance</th>
+            <th>Confidence</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="body"></tbody>
+      </table>
+      <div style="display:flex; gap:0.5rem; margin-top:0.7rem">
+        <button type="button" id="btn-add" class="primary">+ Add finding</button>
+        <button type="button" id="btn-demo" class="secondary">Load demo</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Summary heatmap</h2>
+      <svg id="heat" viewBox="0 0 600 300" role="img" aria-label="Heatmap of CERQual concern ratings"></svg>
+    </section>
+  </main>
+  <footer>
+    Rating rule: each concern contributes 0 (No or very minor), 1 (Minor), 2 (Moderate), or 3 (Serious) downgrade points. Total 0 → High; 1-2 → Moderate; 3-5 → Low; ≥6 → Very low. Reviewers may adjust the final confidence by explicit judgment, especially when adequacy is driven by a single rich study.
+  </footer>
+  <script>
+    const LEVELS = [
+      ["none", "No / very minor", 0],
+      ["minor", "Minor", 1],
+      ["mod", "Moderate", 2],
+      ["ser", "Serious", 3],
+    ];
+    const COMPONENTS = ["method", "coherence", "adequacy", "relevance"];
+    const DEFAULT_ROWS = [
+      { finding: "Women fear stigma when seeking HIV care", method: "minor", coherence: "none", adequacy: "minor", relevance: "none" },
+      { finding: "Transport cost is a major access barrier", method: "mod", coherence: "minor", adequacy: "mod", relevance: "none" },
+      { finding: "Provider empathy builds trust", method: "minor", coherence: "none", adequacy: "minor", relevance: "minor" },
+      { finding: "Information gaps reduce second-dose uptake", method: "ser", coherence: "mod", adequacy: "ser", relevance: "mod" },
+    ];
+    let ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
+
+    function downgrade(r) {
+      return COMPONENTS.reduce((s, c) => {
+        const l = LEVELS.find(L => L[0] === r[c]);
+        return s + (l ? l[2] : 0);
+      }, 0);
+    }
+    function conf(score) {
+      if (score === 0) return ["high", "High"];
+      if (score <= 2) return ["modc", "Moderate"];
+      if (score <= 5) return ["low", "Low"];
+      return ["vlow", "Very low"];
+    }
+
+    function render() {
+      const tb = document.getElementById("body");
+      tb.innerHTML = "";
+      ROWS.forEach((r, i) => {
+        const score = downgrade(r);
+        const [cls, label] = conf(score);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input type="text" data-i="${i}" data-k="finding" value="${(r.finding || "").replace(/"/g, "&quot;")}"></td>
+          ${COMPONENTS.map(c => `<td><select data-i="${i}" data-k="${c}">
+            ${LEVELS.map(l => `<option value="${l[0]}"${r[c] === l[0] ? " selected" : ""}>${l[1]}</option>`).join("")}
+          </select></td>`).join("")}
+          <td><span class="chip ${cls}">${label}</span></td>
+          <td><button class="secondary" data-del="${i}">×</button></td>`;
+        tb.appendChild(tr);
+      });
+      drawHeat();
+    }
+
+    document.getElementById("body").addEventListener("change", e => {
+      const i = e.target.dataset.i, k = e.target.dataset.k;
+      if (i === undefined || !k) return;
+      ROWS[i][k] = e.target.value;
+      render();
+    });
+    document.getElementById("body").addEventListener("input", e => {
+      const i = e.target.dataset.i, k = e.target.dataset.k;
+      if (i === undefined || k !== "finding") return;
+      ROWS[i][k] = e.target.value;
+    });
+    document.getElementById("body").addEventListener("click", e => {
+      if (e.target.dataset.del !== undefined) { ROWS.splice(Number(e.target.dataset.del), 1); render(); }
+    });
+    document.getElementById("btn-add").addEventListener("click", () => {
+      ROWS.push({ finding: `Finding ${ROWS.length + 1}`, method: "none", coherence: "none", adequacy: "none", relevance: "none" });
+      render();
+    });
+    document.getElementById("btn-demo").addEventListener("click", () => { ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS)); render(); });
+
+    function drawHeat() {
+      const svg = document.getElementById("heat");
+      const W = 600;
+      const padL = 220, padT = 30, padR = 100;
+      const nCols = COMPONENTS.length + 1;
+      const cellW = (W - padL - padR) / nCols;
+      const cellH = 28;
+      const H = padT + ROWS.length * cellH + 30;
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+
+      const colors = { none: "var(--none)", minor: "var(--minor)", mod: "var(--mod)", ser: "var(--ser)" };
+      const cColors = { high: "var(--high)", modc: "var(--modc)", low: "var(--low)", vlow: "var(--vlow)" };
+      const labels = { method: "Methodology", coherence: "Coherence", adequacy: "Adequacy", relevance: "Relevance" };
+
+      COMPONENTS.forEach((c, i) => {
+        const x = padL + i * cellW + cellW / 2;
+        svg.innerHTML += `<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor">${labels[c]}</text>`;
+      });
+      const xConf = padL + COMPONENTS.length * cellW + cellW / 2;
+      svg.innerHTML += `<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`;
+
+      ROWS.forEach((r, i) => {
+        const y = padT + i * cellH;
+        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${(r.finding || "").slice(0, 40)}</text>`;
+        COMPONENTS.forEach((c, j) => {
+          const x = padL + j * cellW;
+          svg.innerHTML += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${colors[r[c]] || "var(--border)"}" opacity="0.85"/>`;
+        });
+        const score = downgrade(r);
+        const [cls, label] = conf(score);
+        const xc = padL + COMPONENTS.length * cellW;
+        svg.innerHTML += `<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${cColors[cls]}" opacity="0.9"/>`;
+        svg.innerHTML += `<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`;
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

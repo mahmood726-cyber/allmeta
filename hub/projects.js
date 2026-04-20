@@ -1,5 +1,126 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "GRADE-CERQual",
+    folder: "C:\\HTML apps\\cerqual",
+    path: "./cerqual/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Qualitative Synthesis",
+    summary: "Confidence in qualitative-review findings. Rate four components (methodological limitations, coherence, adequacy, relevance) per finding; derives High / Moderate / Low / Very low confidence.",
+    note: "Lewin 2018. Pairs with Thematic Synthesis.",
+    tags: ["cerqual", "qualitative", "confidence", "certainty"]
+  },
+  {
+    name: "ROBINS-E",
+    folder: "C:\\HTML apps\\robins-e",
+    path: "./robins-e/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "Risk of Bias in Non-randomized Studies of Exposures: 7 domains with signaling questions and algorithmic judgments, plus traffic-light chart.",
+    note: "Higgins 2022 (draft). For exposure epidemiology.",
+    tags: ["robins-e", "exposure", "environmental", "risk-of-bias"]
+  },
+  {
+    name: "Citation Chaser",
+    folder: "C:\\HTML apps\\citation-chaser",
+    path: "./citation-chaser/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Search",
+    summary: "Forward and backward citation chasing via the OpenAlex API. Paste DOIs as seeds; discover references and citing works. Deduplicated, exportable as CSV, with year histogram.",
+    note: "Uses OpenAlex public API — no key required.",
+    tags: ["citation-chasing", "openalex", "search", "reference-mining"]
+  },
+  {
+    name: "NMA Inconsistency",
+    folder: "C:\\HTML apps\\nma-inconsistency",
+    path: "./nma-inconsistency/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Node-splitting (Dias 2010) and design-by-treatment inconsistency test (Higgins 2012) for network meta-analysis. Compares direct vs indirect estimates per comparison.",
+    note: "Critical check before interpreting NMA results.",
+    tags: ["nma", "inconsistency", "node-splitting", "dbt"]
+  },
+  {
+    name: "Bucher Indirect",
+    folder: "C:\\HTML apps\\bucher",
+    path: "./bucher/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Bucher (1997) indirect comparison: estimate A vs B from direct A vs C and B vs C, with log-scale back-transform for ratios.",
+    note: "Simplest possible indirect comparison — the building block of NMA.",
+    tags: ["bucher", "indirect-comparison", "itc"]
+  },
+  {
+    name: "Multi-level MA",
+    folder: "C:\\HTML apps\\multilevel-ma",
+    path: "./multilevel-ma/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Three-level random-effects meta-analysis for dependent effect sizes nested within studies. Separates within-study (τ²_within) from between-study (τ²_study) heterogeneity.",
+    note: "Mirrors metafor::rma.mv with a moment-based iteration.",
+    tags: ["multi-level", "three-level", "nested", "rma.mv"]
+  },
+  {
+    name: "Pub-bias Tests",
+    folder: "C:\\HTML apps\\pubbias-tests",
+    path: "./pubbias-tests/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Suite of small-study-effect tests beyond Egger: Begg-Mazumdar rank correlation, Peters (for binary), Harbord-Egger, and Thompson-Sharp multiplicative.",
+    note: "Different tests have different power against different bias mechanisms — report multiple.",
+    tags: ["pub-bias", "egger", "begg", "peters", "harbord", "thompson"]
+  },
+  {
+    name: "Copas selection",
+    folder: "C:\\HTML apps\\copas",
+    path: "./copas/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Copas selection model: sensitivity of the pooled effect across plausible selection strengths γ. Shows how the adjusted estimate shifts as the assumed unpublished fraction grows.",
+    note: "Simplified browser implementation. Full MLE in metasens::copas.",
+    tags: ["copas", "pub-bias", "selection-model", "sensitivity"]
+  },
+  {
+    name: "Influence Diagnostics",
+    folder: "C:\\HTML apps\\influence",
+    path: "./influence/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Per-study influence on a random-effects MA: Cook's distance, hat values, studentized residuals, DFFITS, covariance ratio, leave-one-out pooled estimates, plus an influence plot.",
+    note: "Mirrors metafor::influence(). Flags studies in red on thresholds.",
+    tags: ["influence", "cooks-distance", "dffits", "hat", "leave-one-out"]
+  },
+  {
+    name: "Bayesian MA — MCMC",
+    folder: "C:\\HTML apps\\bayesian-mcmc",
+    path: "./bayesian-mcmc/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Real Gibbs MCMC for random-effects meta-analysis. Multi-chain with R-hat and ESS diagnostics. Posterior densities for μ and τ, trace plot, and predictive interval.",
+    note: "For serious use: bayesmeta / RoBMA / Stan. This is a browser-native implementation.",
+    tags: ["bayesian", "mcmc", "gibbs", "predictive", "bayesmeta"]
+  },
+  {
+    name: "MH / Peto pooling",
+    folder: "C:\\HTML apps\\mh-peto",
+    path: "./mh-peto/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Mantel-Haenszel pooling for OR/RR/RD and Peto one-step OR. Recommended for rare events (&lt; 1%) — no continuity correction required.",
+    note: "Cochrane Handbook 10.4.4.",
+    tags: ["mantel-haenszel", "peto", "rare-events", "2x2"]
+  },
+  {
     name: "Thematic Synthesis",
     folder: "C:\\HTML apps\\thematic-synthesis",
     path: "./thematic-synthesis/index.html",

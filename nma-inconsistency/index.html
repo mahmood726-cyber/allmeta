@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Node-splitting and loop-based inconsistency tests for network meta-analysis.">
+  <meta name="color-scheme" content="light dark">
+  <title>NMA Inconsistency</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --cons:#0d7a27; --incon:#912121; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --cons:#5bc47b; --incon:#ef7373; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .chip { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; }
+    .chip.cons { background: var(--cons); }
+    .chip.incon { background: var(--incon); }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NMA Inconsistency</h1>
+    <p>Detect inconsistency between direct and indirect evidence in network meta-analysis. Performs node-splitting (Dias et al. 2010) on every comparison with a closed loop, and a global design-by-treatment test (Higgins et al. 2012).</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>Contrasts — <code>A, B, effect, SE</code></span>
+        <textarea id="src">A, B, -0.30, 0.10
+A, B, -0.32, 0.08
+A, B, -0.28, 0.09
+A, C, -0.20, 0.12
+A, C, -0.22, 0.10
+B, C, 0.10, 0.11
+B, C, 0.08, 0.13
+A, D, -0.50, 0.15
+B, D, -0.25, 0.18
+C, D, -0.35, 0.14
+A, D, -0.48, 0.14</textarea>
+        <span class="hint">Multiple rows per comparison allowed.</span>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Run tests</button>
+    </section>
+    <section class="panel">
+      <h2>Node-split per comparison</h2>
+      <table>
+        <thead><tr><th>Comparison</th><th>Direct</th><th>Indirect</th><th>Difference</th><th>z</th><th>p</th><th></th></tr></thead>
+        <tbody id="ns-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.8rem">Design-by-treatment (global)</h2>
+      <div id="dbt"></div>
+      <h2 style="margin-top:0.8rem">Net-split forest</h2>
+      <svg id="ns-plot" viewBox="0 0 600 300" role="img" aria-label="Direct vs indirect estimates per comparison"></svg>
+      <div class="note"><strong>Reading the plot:</strong> direct and indirect whiskers should overlap for a consistent network. Non-overlapping whiskers with |z| &gt; 1.96 indicate a specific loop with inconsistency. The global design-by-treatment test is the omnibus check.</div>
+    </section>
+  </main>
+  <footer>
+    Node-splitting: Dias S, Welton NJ, Caldwell DM, Ades AE (Stat Med 2010). Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK, et al. (Res Synth Methods 2012). This tool performs the simplified IV-weighted version of both; dedicated NMA software gives fuller output.
+  </footer>
+  <script>
+    function parse(text) {
+      return text.trim().split(/\n/).map(l => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(parts[2]), se = parseFloat(parts[3]);
+        if (!parts[0] || !parts[1] || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        return { A: parts[0], B: parts[1], te, se };
+      }).filter(Boolean);
+    }
+
+    // --- math utils (shared) ---
+    function zeros(n, m) { return Array.from({ length: n }, () => Array(m).fill(0)); }
+    function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
+    function matMul(A, B) { const n = A.length, m = B[0].length, k = B.length; const C = zeros(n, m);
+      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] += A[i][p] * B[p][j]; return C; }
+    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => s + x * v[j], 0)); }
+    function invert(M) {
+      const n = M.length;
+      const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+      for (let i = 0; i < n; i++) {
+        let piv = A[i][i];
+        if (Math.abs(piv) < 1e-14) {
+          for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > 1e-14) { [A[i], A[k]] = [A[k], A[i]]; piv = A[i][i]; break; }
+        }
+        if (Math.abs(piv) < 1e-14) throw new Error("singular");
+        for (let j = 0; j < 2 * n; j++) A[i][j] /= piv;
+        for (let k = 0; k < n; k++) if (k !== i) {
+          const f = A[k][i]; for (let j = 0; j < 2 * n; j++) A[k][j] -= f * A[i][j];
+        }
+      }
+      return A.map(r => r.slice(n));
+    }
+
+    function pnorm(x) {
+      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+    }
+    function pz(z) { return 2 * (1 - pnorm(Math.abs(z))); }
+
+    // FE inverse-variance pool of a set of rows
+    function fePool(rows) {
+      const w = rows.map(r => 1 / (r.se * r.se));
+      const sw = w.reduce((a, b) => a + b, 0);
+      const mean = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
+      return { mean, se: Math.sqrt(1 / sw), k: rows.length };
+    }
+
+    function fitNMA(rows, refTrt) {
+      const trtSet = new Set();
+      rows.forEach(r => { trtSet.add(r.A); trtSet.add(r.B); });
+      let trts = [...trtSet].sort();
+      if (!refTrt || !trts.includes(refTrt)) refTrt = trts[0];
+      trts = [refTrt, ...trts.filter(t => t !== refTrt)];
+      const idx = Object.fromEntries(trts.map((t, i) => [t, i]));
+      const nBasic = trts.length - 1;
+      const X = zeros(rows.length, nBasic);
+      const y = rows.map(r => r.te);
+      const w = rows.map(r => 1 / (r.se * r.se));
+      rows.forEach((r, i) => { const iA = idx[r.A], iB = idx[r.B]; if (iA > 0) X[i][iA - 1] = 1; if (iB > 0) X[i][iB - 1] = -1; });
+      const Xt = transpose(X);
+      const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
+      const XtWX = matMul(XtW, X);
+      const XtWy = matVec(XtW, y);
+      const cov = invert(XtWX);
+      const beta = matVec(cov, XtWy);
+      // residual deviance (contribution of each observation)
+      const fit = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
+      const dev = y.map((yi, i) => w[i] * (yi - fit[i]) ** 2);
+      const Q = dev.reduce((a, b) => a + b, 0);
+      const df = Math.max(0, rows.length - nBasic);
+      return { trts, idx, X, y, w, beta, cov, Q, df, dev, nBasic, refTrt };
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function nodeSplit(rows, refTrt) {
+      const pairs = new Set();
+      for (const r of rows) { pairs.add([r.A, r.B].sort().join("|")); }
+      const results = [];
+      for (const key of pairs) {
+        const [a, b] = key.split("|");
+        const direct = rows.filter(r => (r.A === a && r.B === b) || (r.A === b && r.B === a)).map(r => ({
+          ...r,
+          te: r.A === a ? r.te : -r.te,
+          A: a, B: b,
+        }));
+        const others = rows.filter(r => !((r.A === a && r.B === b) || (r.A === b && r.B === a)));
+        if (direct.length === 0 || others.length === 0) continue;
+        let ind = null;
+        try {
+          const fit = fitNMA(others, a);
+          const iB = fit.idx[b];
+          if (iB == null || iB < 1) continue;
+          const est = fit.beta[iB - 1];
+          const se = Math.sqrt(fit.cov[iB - 1][iB - 1]);
+          ind = { mean: est, se };
+        } catch (e) { continue; }
+        const dirPool = fePool(direct);
+        if (!ind) continue;
+        const diff = dirPool.mean - ind.mean;
+        const seDiff = Math.sqrt(dirPool.se * dirPool.se + ind.se * ind.se);
+        const z = diff / seDiff;
+        const p = pz(z);
+        results.push({
+          comparison: `${a} vs ${b}`,
+          direct: dirPool,
+          indirect: ind,
+          diff, seDiff, z, p,
+          kDirect: direct.length, kIndirect: others.length,
+        });
+      }
+      return results;
+    }
+
+    function dbt(rows) {
+      // Global inconsistency test: fit consistency model, fit inconsistency model (per-design contrasts),
+      // compare residual Q. Simplified: contribution = sum of squared standardized residuals.
+      try {
+        const fit = fitNMA(rows);
+        const Q = fit.Q;
+        const df = fit.df;
+        return { Q, df, p: df > 0 ? 1 - chiSqCDF(Q, df) : NaN };
+      } catch (e) { return { Q: NaN, df: NaN, p: NaN }; }
+    }
+
+    function chiSqCDF(x, k) {
+      // Incomplete gamma via Lanczos-Wilson-Hilferty approximation for moderate k
+      if (k <= 0) return 0;
+      // Wilson-Hilferty
+      const t = Math.pow(x / k, 1 / 3) - (1 - 2 / (9 * k));
+      const z = t / Math.sqrt(2 / (9 * k));
+      return pnorm(z);
+    }
+
+    function run() {
+      const rows = parse(document.getElementById("src").value);
+      if (rows.length < 3) return;
+      const ns = nodeSplit(rows);
+      const body = document.getElementById("ns-body");
+      body.innerHTML = "";
+      for (const r of ns) {
+        const flag = r.p < 0.05 ? "incon" : "cons";
+        const label = r.p < 0.05 ? "inconsistent" : "consistent";
+        body.innerHTML += `<tr><td><code>${r.comparison}</code></td>
+          <td>${fmt(r.direct.mean)} (${fmt(r.direct.se)})</td>
+          <td>${fmt(r.indirect.mean)} (${fmt(r.indirect.se)})</td>
+          <td>${fmt(r.diff)} (${fmt(r.seDiff)})</td>
+          <td>${fmt(r.z, 2)}</td>
+          <td>${fmt(r.p, 3)}</td>
+          <td><span class="chip ${flag}">${label}</span></td></tr>`;
+      }
+      const g = dbt(rows);
+      document.getElementById("dbt").innerHTML = `
+        <p>Design-by-treatment Q = <code>${fmt(g.Q, 2)}</code>, df = <code>${g.df}</code>, p = <code>${fmt(g.p, 3)}</code>.
+        <span class="chip ${g.p < 0.05 ? 'incon' : 'cons'}">${g.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency"}</span></p>`;
+      drawNS(ns);
+    }
+
+    function drawNS(ns) {
+      const svg = document.getElementById("ns-plot");
+      const W = 600, H = Math.max(200, 40 + ns.length * 30 + 20);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+      const padL = 120, padR = 30;
+      const plotW = W - padL - padR;
+      const allMeans = ns.flatMap(r => [r.direct.mean, r.indirect.mean]);
+      const lo = Math.min(0, ...allMeans) - 0.3, hi = Math.max(0, ...allMeans) + 0.3;
+      const X = v => padL + (v - lo) / (hi - lo) * plotW;
+      svg.innerHTML += `<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + ns.length * 30}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"/>`;
+      ns.forEach((r, i) => {
+        const y = 30 + i * 30;
+        svg.innerHTML += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`;
+        // direct
+        const dLo = r.direct.mean - 1.96 * r.direct.se, dHi = r.direct.mean + 1.96 * r.direct.se;
+        svg.innerHTML += `<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"/>`;
+        svg.innerHTML += `<rect x="${X(r.direct.mean) - 3.5}" y="${y - 9.5}" width="7" height="7" fill="var(--accent)"/>`;
+        // indirect
+        const iLo = r.indirect.mean - 1.96 * r.indirect.se, iHi = r.indirect.mean + 1.96 * r.indirect.se;
+        svg.innerHTML += `<line x1="${X(iLo)}" y1="${y + 6}" x2="${X(iHi)}" y2="${y + 6}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="3 2"/>`;
+        svg.innerHTML += `<rect x="${X(r.indirect.mean) - 3.5}" y="${y + 2.5}" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/>`;
+      });
+      // legend
+      svg.innerHTML += `<rect x="${padL}" y="10" width="7" height="7" fill="var(--accent)"/><text x="${padL + 12}" y="17" font-size="10" fill="currentColor">direct</text>`;
+      svg.innerHTML += `<rect x="${padL + 70}" y="10" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/><text x="${padL + 82}" y="17" font-size="10" fill="currentColor">indirect</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

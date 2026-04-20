@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Forward and backward citation chasing via the OpenAlex API. Input DOIs or titles; discover references and works that cite them.">
+  <meta name="color-scheme" content="light dark">
+  <title>Citation Chaser</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea, input, select { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; font-size: 0.86rem; }
+    textarea { min-height: 5rem; font-family: "SF Mono", Consolas, monospace; font-size: 0.82rem; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.9rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+    .card { background: var(--accent-soft); padding: 0.5rem 0.7rem; border-radius: 6px; }
+    .card .k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .v { display: block; font-size: 1.15rem; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    td a { color: var(--accent); text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+    .status { font-size: 0.82rem; color: var(--muted); margin: 0.4rem 0; }
+    .status.active { color: var(--accent); }
+    .status.error { color: var(--warn); }
+    svg { width: 100%; height: auto; display: block; margin-top: 0.5rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Citation Chaser</h1>
+    <p>Backward (references) and forward (cited-by) citation chasing via the <a href="https://openalex.org" style="color:var(--accent)">OpenAlex</a> API. Paste one or more DOIs or OpenAlex IDs as seeds, then fan out to find related works. Results are deduplicated across seeds.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Seeds</h2>
+      <label>
+        <span class="lbl">DOIs or OpenAlex IDs (one per line)</span>
+        <textarea id="seeds">10.1056/NEJMoa1911303
+10.1056/NEJMoa2022190</textarea>
+        <span class="hint">DOIs like <code>10.1056/NEJMoa1911303</code> or OpenAlex IDs like <code>W4285775090</code>.</span>
+      </label>
+      <label>
+        <span class="lbl">Your email (OpenAlex polite pool — optional)</span>
+        <input id="mailto" type="email" placeholder="you@example.com"><span class="hint">Including your email routes requests through OpenAlex's faster polite pool.</span>
+      </label>
+      <label>
+        <span class="lbl">Direction</span>
+        <select id="direction">
+          <option value="both" selected>Both (references + cited-by)</option>
+          <option value="refs">Backward only (references)</option>
+          <option value="cites">Forward only (cited-by)</option>
+        </select>
+      </label>
+      <label>
+        <span class="lbl">Max cited-by per seed</span>
+        <input id="max-cites" type="number" step="1" min="10" max="200" value="50">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Chase citations</button>
+      <div class="status" id="status"></div>
+    </section>
+    <section class="panel">
+      <h2>Found works</h2>
+      <div class="metrics">
+        <div class="card"><span class="k">Unique works</span><span class="v" id="m-n">0</span></div>
+        <div class="card"><span class="k">From references</span><span class="v" id="m-ref">0</span></div>
+        <div class="card"><span class="k">From cited-by</span><span class="v" id="m-cite">0</span></div>
+      </div>
+      <button type="button" id="btn-export" class="secondary" style="margin-bottom:0.6rem">Download as CSV</button>
+      <table>
+        <thead><tr><th>Year</th><th>Title &amp; DOI</th><th>Cited-by</th><th>Source</th></tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+      <h2 style="margin-top:0.4rem">Year distribution</h2>
+      <svg id="years" viewBox="0 0 600 180" role="img" aria-label="Histogram of publication years"></svg>
+    </section>
+  </main>
+  <footer>
+    Uses the OpenAlex public API (no key required). OpenAlex is a free and open catalog of scholarly works. Forward citations are limited to the first N results per seed to avoid overwhelming the API — see the <code>Max cited-by</code> setting.
+  </footer>
+  <script>
+    const API = "https://api.openalex.org";
+    const DEDUP = new Map();  // id → { work, fromRef, fromCite }
+    let RUNNING = false;
+
+    function status(msg, cls = "active") {
+      const el = document.getElementById("status");
+      el.textContent = msg;
+      el.className = "status " + cls;
+    }
+
+    async function fetchJSON(url) {
+      const mailto = document.getElementById("mailto").value.trim();
+      const u = new URL(url);
+      if (mailto) u.searchParams.set("mailto", mailto);
+      const r = await fetch(u.toString());
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+      return r.json();
+    }
+
+    function parseSeedInput(text) {
+      return text.trim().split(/\n/).map(s => s.trim()).filter(Boolean).map(s => {
+        if (/^https:\/\/openalex\.org\/W\d+/i.test(s)) return { type: "openalex", id: s.split("/").pop() };
+        if (/^W\d+$/i.test(s)) return { type: "openalex", id: s.toUpperCase() };
+        if (/^10\./.test(s)) return { type: "doi", id: s };
+        if (s.startsWith("https://doi.org/")) return { type: "doi", id: s.slice("https://doi.org/".length) };
+        return null;
+      }).filter(Boolean);
+    }
+
+    async function resolveSeed(seed) {
+      const url = seed.type === "doi"
+        ? `${API}/works/doi:${encodeURIComponent(seed.id)}`
+        : `${API}/works/${seed.id}`;
+      return fetchJSON(url);
+    }
+
+    function shortId(openalexUrl) {
+      return openalexUrl.split("/").pop();
+    }
+
+    function normalize(work) {
+      return {
+        id: shortId(work.id),
+        title: work.title || "(no title)",
+        year: work.publication_year,
+        doi: work.doi ? work.doi.replace("https://doi.org/", "") : "",
+        cited_by_count: work.cited_by_count || 0,
+        authors: (work.authorships || []).slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join("; "),
+      };
+    }
+
+    async function fetchBackwards(seedWork) {
+      const ids = seedWork.referenced_works || [];
+      if (ids.length === 0) return [];
+      // Fetch in batches via the ids filter (up to 50 per request via pipe-separated)
+      const short = ids.map(shortId);
+      const batches = [];
+      for (let i = 0; i < short.length; i += 40) batches.push(short.slice(i, i + 40));
+      const out = [];
+      for (const b of batches) {
+        const url = `${API}/works?filter=openalex_id:${b.join("|")}&per-page=${b.length}`;
+        try {
+          const data = await fetchJSON(url);
+          for (const w of data.results || []) out.push(normalize(w));
+        } catch (e) { /* skip batch on error */ }
+      }
+      return out;
+    }
+
+    async function fetchForwards(seedId, max) {
+      const url = `${API}/works?filter=cites:${seedId}&per-page=${Math.min(200, max)}&sort=cited_by_count:desc`;
+      const data = await fetchJSON(url);
+      return (data.results || []).slice(0, max).map(normalize);
+    }
+
+    async function run() {
+      if (RUNNING) return;
+      RUNNING = true;
+      DEDUP.clear();
+      const seeds = parseSeedInput(document.getElementById("seeds").value);
+      if (seeds.length === 0) { status("No valid DOIs/OpenAlex IDs found in input.", "error"); RUNNING = false; return; }
+      const direction = document.getElementById("direction").value;
+      const maxCites = parseInt(document.getElementById("max-cites").value, 10) || 50;
+      let refCount = 0, citeCount = 0;
+
+      status(`Resolving ${seeds.length} seed(s)...`);
+      const seedWorks = [];
+      for (const s of seeds) {
+        try {
+          const w = await resolveSeed(s);
+          seedWorks.push(w);
+          const n = normalize(w);
+          DEDUP.set(n.id, { work: n, source: "seed" });
+        } catch (e) { status(`Seed error: ${e.message}`, "error"); }
+      }
+      render();
+
+      for (const sw of seedWorks) {
+        const sid = shortId(sw.id);
+        if (direction === "refs" || direction === "both") {
+          status(`Fetching references for ${sid}...`);
+          try {
+            const refs = await fetchBackwards(sw);
+            for (const r of refs) {
+              if (!DEDUP.has(r.id)) { DEDUP.set(r.id, { work: r, source: "references" }); refCount++; }
+            }
+          } catch (e) { status(`Ref error: ${e.message}`, "error"); }
+        }
+        if (direction === "cites" || direction === "both") {
+          status(`Fetching cited-by for ${sid}...`);
+          try {
+            const cites = await fetchForwards(sid, maxCites);
+            for (const c of cites) {
+              if (!DEDUP.has(c.id)) { DEDUP.set(c.id, { work: c, source: "cited-by" }); citeCount++; }
+            }
+          } catch (e) { status(`Cite error: ${e.message}`, "error"); }
+        }
+        render();
+      }
+      status(`Done. ${DEDUP.size} unique works, ${refCount} refs, ${citeCount} cited-by.`, "active");
+      RUNNING = false;
+    }
+
+    function render() {
+      const works = [...DEDUP.values()].map(v => ({ ...v.work, source: v.source }));
+      works.sort((a, b) => (b.year || 0) - (a.year || 0) || (b.cited_by_count || 0) - (a.cited_by_count || 0));
+      document.getElementById("m-n").textContent = works.length;
+      document.getElementById("m-ref").textContent = works.filter(w => w.source === "references").length;
+      document.getElementById("m-cite").textContent = works.filter(w => w.source === "cited-by").length;
+      const tb = document.getElementById("results");
+      tb.innerHTML = "";
+      for (const w of works.slice(0, 200)) {
+        const doiLink = w.doi ? `<a href="https://doi.org/${w.doi}" target="_blank" rel="noopener">${w.doi}</a>` : "";
+        tb.innerHTML += `<tr><td>${w.year || "—"}</td><td><strong>${w.title}</strong><br><span style="font-size:0.78rem; color:var(--muted)">${w.authors}</span><br>${doiLink}</td><td>${w.cited_by_count}</td><td>${w.source}</td></tr>`;
+      }
+      drawYears(works);
+    }
+
+    function drawYears(works) {
+      const svg = document.getElementById("years");
+      svg.innerHTML = "";
+      const years = works.map(w => w.year).filter(Number.isFinite);
+      if (years.length === 0) return;
+      const min = Math.min(...years), max = Math.max(...years);
+      const counts = {};
+      for (const y of years) counts[y] = (counts[y] || 0) + 1;
+      const W = 600, H = 180, padL = 40, padR = 20, padT = 20, padB = 30;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const nYears = max - min + 1;
+      const bw = plotW / nYears;
+      const maxC = Math.max(...Object.values(counts));
+      for (let y = min; y <= max; y++) {
+        const x = padL + (y - min) * bw;
+        const c = counts[y] || 0;
+        const h = (c / maxC) * plotH;
+        svg.innerHTML += `<rect x="${x + 1}" y="${padT + plotH - h}" width="${bw - 2}" height="${h}" fill="var(--accent)" opacity="0.8"/>`;
+      }
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<text x="${padL}" y="${H - 8}" font-size="11" fill="currentColor">${min}</text>`;
+      svg.innerHTML += `<text x="${padL + plotW}" y="${H - 8}" text-anchor="end" font-size="11" fill="currentColor">${max}</text>`;
+    }
+
+    function downloadCSV() {
+      const works = [...DEDUP.values()].map(v => ({ ...v.work, source: v.source }));
+      const header = ["id", "title", "year", "doi", "cited_by_count", "authors", "source"];
+      const esc = s => { if (s == null) return ""; const str = String(s); return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str; };
+      const csv = [header.join(","), ...works.map(w => header.map(k => esc(w[k])).join(","))].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "citation_chase.csv";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-export").addEventListener("click", downloadCSV);
+
+    // Init empty render so the plot surface exists
+    render();
+  </script>
+</body>
+</html>
