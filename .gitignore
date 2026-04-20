@@ -1,0 +1,20 @@
+# Playwright
+tests/playwright/node_modules/
+tests/playwright/artifacts/
+tests/playwright/playwright-report/
+tests/playwright/test-results/
+tests/playwright/blob-report/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

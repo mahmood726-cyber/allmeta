@@ -1,0 +1,369 @@
+/*!
+ * hub/app-style.css — shared polish layer for the MA Workbench apps.
+ * Linked from each app's <head> AFTER the inline <style> so its :root
+ * declarations win via later-wins cascade.
+ *
+ * Visual direction: dark-first data-science polish after TruthCert /
+ * Pairwise Pro — deep blue palette, warm gold accent, layered shadows
+ * with colored glow, modern typography stack (no external fonts).
+ *
+ * Offline-safe: no @import, no external URLs.
+ */
+
+:root {
+  /* ---- Primary Palette — Deep Scientific Blue ---- */
+  --color-primary-900: #0d1b2a;
+  --color-primary-800: #152336;
+  --color-primary-700: #1e3554;
+  --color-primary-600: #2a4d78;
+  --color-primary-500: #3a6aa4;
+  --color-primary-400: #5a89c5;
+  --color-primary-300: #86aee0;
+  --color-primary-200: #bcd4ef;
+  --color-primary-100: #e3eefb;
+
+  /* ---- Accent — Warm Gold ---- */
+  --color-accent-600: #c7900f;
+  --color-accent-500: #e6a919;
+  --color-accent-400: #f5c042;
+  --color-accent-300: #ffd666;
+  --color-accent-glow: rgba(230, 169, 25, 0.32);
+
+  /* ---- Semantic ---- */
+  --color-success-500: #10b981;
+  --color-success-400: #34d399;
+  --color-success-bg:  rgba(16, 185, 129, 0.12);
+  --color-warning-500: #f59e0b;
+  --color-warning-400: #fbbf24;
+  --color-warning-bg:  rgba(245, 158, 11, 0.12);
+  --color-danger-500:  #ef4444;
+  --color-danger-400:  #f87171;
+  --color-danger-bg:   rgba(239, 68, 68, 0.12);
+  --color-info-500:    #3b82f6;
+  --color-info-400:    #60a5fa;
+  --color-info-bg:     rgba(59, 130, 246, 0.12);
+
+  /* ---- Neutrals ---- */
+  --color-neutral-950: #f7f9fc;
+  --color-neutral-900: #f1f4f9;
+  --color-neutral-800: #e2e8f0;
+  --color-neutral-700: #cbd5e1;
+  --color-neutral-600: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-400: #475569;
+  --color-neutral-300: #334155;
+  --color-neutral-200: #1e293b;
+  --color-neutral-100: #0f172a;
+
+  /* ---- Surface tokens (light-first) ---- */
+  --bg:               var(--color-neutral-950);
+  --panel:            #ffffff;
+  --panel-raised:     #ffffff;
+  --panel-tint:       var(--color-primary-100);
+  --ink:              var(--color-neutral-200);
+  --muted:            var(--color-neutral-500);
+  --border:           var(--color-neutral-800);
+  --border-strong:    var(--color-neutral-600);
+  --input-bg:         #ffffff;
+  --accent:           var(--color-primary-500);
+  --accent-soft:      var(--color-primary-100);
+  --warn:             #b05a1c;
+  --warn-soft:        #fbeedd;
+
+  /* ---- Typography ---- */
+  --font-sans: "Plus Jakarta Sans", "Inter", "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---- Radii ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ---- Shadows (colour-tinted for depth) ---- */
+  --shadow-sm:    0 1px 2px rgba(13, 27, 42, 0.06);
+  --shadow-md:    0 6px 16px -4px rgba(13, 27, 42, 0.12), 0 2px 4px -1px rgba(13, 27, 42, 0.06);
+  --shadow-lg:    0 16px 32px -12px rgba(13, 27, 42, 0.18), 0 4px 10px -2px rgba(13, 27, 42, 0.08);
+  --shadow-glow:  0 0 0 1px rgba(58, 106, 164, 0.35), 0 12px 24px -10px rgba(58, 106, 164, 0.45);
+  --shadow-accent-glow: 0 0 0 1px rgba(230, 169, 25, 0.45), 0 10px 22px -10px rgba(230, 169, 25, 0.55);
+}
+
+/* ---- Dark mode ---- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-neutral-950: #0a0c10;
+    --color-neutral-900: #10141c;
+    --color-neutral-800: #181e2a;
+    --color-neutral-700: #252d3d;
+    --color-neutral-600: #3d4657;
+    --color-neutral-500: #64748b;
+    --color-neutral-400: #94a3b8;
+    --color-neutral-300: #cbd5e1;
+    --color-neutral-200: #e2e8f0;
+    --color-neutral-100: #f1f5f9;
+
+    --bg:            #0a0c10;
+    --panel:         #131821;
+    --panel-raised:  #1a2030;
+    --panel-tint:    #18253a;
+    --ink:           #e7e4dc;
+    --muted:         #98a0ae;
+    --border:        #252d3d;
+    --border-strong: #495262;
+    --input-bg:      #0f1420;
+    --accent:        var(--color-primary-400);
+    --accent-soft:   rgba(90, 137, 197, 0.16);
+    --warn:          var(--color-accent-300);
+    --warn-soft:     rgba(245, 192, 66, 0.14);
+
+    --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md:   0 8px 20px -6px rgba(0, 0, 0, 0.55), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+    --shadow-lg:   0 20px 40px -18px rgba(0, 0, 0, 0.7), 0 6px 14px -4px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 0 1px rgba(90, 137, 197, 0.45), 0 12px 28px -8px rgba(58, 106, 164, 0.55);
+  }
+}
+
+/* ---- Base typography + background ---- */
+body {
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(58, 106, 164, 0.14), transparent 60%),
+    radial-gradient(800px 500px at -15% 110%, rgba(230, 169, 25, 0.10), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Header — gradient hero ---- */
+header {
+  position: relative;
+  background: linear-gradient(135deg, var(--color-primary-900) 0%, var(--color-primary-700) 55%, var(--color-primary-600) 100%);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(600px 300px at 90% 0%, rgba(230, 169, 25, 0.22), transparent 70%),
+    radial-gradient(500px 250px at -10% 100%, rgba(90, 137, 197, 0.35), transparent 70%);
+  pointer-events: none;
+}
+header > * { position: relative; z-index: 1; }
+header h1 {
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+header p {
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 400;
+}
+header code {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  padding: 0.06rem 0.35rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+/* ---- Panels (cards) ---- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms;
+}
+.panel:hover { box-shadow: var(--shadow-lg); }
+.panel h2 {
+  color: var(--color-primary-600);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+@media (prefers-color-scheme: dark) {
+  .panel h2 { color: var(--color-primary-300); }
+}
+
+/* ---- Fieldsets ---- */
+fieldset {
+  background: linear-gradient(180deg, rgba(255,255,255,0.0) 0%, rgba(58, 106, 164, 0.03) 100%);
+  border-radius: var(--radius-md) !important;
+}
+legend {
+  color: var(--color-primary-600);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0 0.5rem;
+}
+@media (prefers-color-scheme: dark) {
+  fieldset { background: linear-gradient(180deg, rgba(255,255,255,0.0) 0%, rgba(90, 137, 197, 0.05) 100%); }
+  legend { color: var(--color-primary-300); }
+}
+
+/* ---- Inputs ---- */
+input[type="number"], input[type="text"], input[type="password"], textarea, select {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm) !important;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  transition: border-color 150ms, box-shadow 150ms;
+}
+textarea { font-family: var(--font-mono); }
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: var(--color-primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(58, 106, 164, 0.22) !important;
+}
+
+/* ---- Buttons ---- */
+button {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm) !important;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: transform 120ms, box-shadow 150ms, background 150ms, border-color 150ms;
+  cursor: pointer;
+}
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-500);
+}
+button:active:not(:disabled) { transform: translateY(0); }
+button.primary, button.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-500) 100%);
+  border-color: var(--color-primary-500);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+button.primary:hover:not(:disabled), button.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-400) 100%);
+  box-shadow: var(--shadow-glow), 0 0 0 3px rgba(58, 106, 164, 0.2);
+}
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(230, 169, 25, 0.4);
+}
+
+/* ---- Stat cards pop more ---- */
+.stat {
+  background: linear-gradient(180deg, var(--panel-tint) 0%, var(--accent-soft) 100%);
+  border: 1px solid rgba(58, 106, 164, 0.18);
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm);
+  transition: transform 140ms, box-shadow 140ms;
+}
+.stat:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.stat .k { color: var(--muted); font-weight: 600; }
+.stat .v { color: var(--color-primary-700); font-weight: 700; }
+@media (prefers-color-scheme: dark) {
+  .stat .v { color: var(--color-primary-200); }
+}
+
+/* ---- Tags / chips ---- */
+.tag-chip {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* ---- Preview / SVG host ---- */
+.preview-wrap svg, .preview-wrap .sof-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 200ms;
+}
+.preview-wrap:hover svg { box-shadow: var(--shadow-lg); }
+
+/* ---- Tiles (workbench) ---- */
+.tile {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md);
+  transition: transform 180ms, box-shadow 180ms, border-color 180ms;
+}
+.tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(58, 106, 164, 0.35);
+}
+.tile h3 { color: var(--color-primary-700); font-weight: 700; letter-spacing: -0.01em; }
+.tile h3 a {
+  background: var(--accent-soft);
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-600) !important;
+  font-weight: 600;
+  transition: background 150ms;
+}
+.tile h3 a:hover { background: var(--panel-tint); text-decoration: none !important; }
+@media (prefers-color-scheme: dark) {
+  .tile h3 { color: var(--color-primary-200); }
+  .tile h3 a { color: var(--color-primary-300) !important; }
+}
+
+/* ---- Warning banner ---- */
+.warn-banner.is-visible {
+  background: linear-gradient(180deg, var(--warn-soft) 0%, rgba(245, 192, 66, 0.08) 100%);
+  border-color: var(--color-accent-500);
+  border-left: 4px solid var(--color-accent-500);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Tables polish ---- */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+table th {
+  background: var(--panel-tint);
+  font-weight: 700;
+  color: var(--color-primary-700);
+  letter-spacing: 0.06em;
+}
+table tr:hover td { background: rgba(58, 106, 164, 0.04); }
+@media (prefers-color-scheme: dark) {
+  table th { color: var(--color-primary-200); }
+  table tr:hover td { background: rgba(134, 174, 224, 0.06); }
+}
+
+/* ---- Footer note ---- */
+.footer-note {
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+/* ---- Subtle entrance animation ---- */
+@keyframes appFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  main, .panel, .tile { animation: appFadeIn 300ms ease both; }
+  .panel:nth-child(2) { animation-delay: 60ms; }
+}
+
+/* ---- Selection ---- */
+::selection { background: var(--color-accent-300); color: var(--color-neutral-200); }
+
+/* ---- Scrollbar polish (WebKit) ---- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary-500); }

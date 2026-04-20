@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Launcher and catalog for the HTML apps workspace.">
+  <title>HTML Apps Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./hub/styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">C:\HTML apps</p>
+        <h1>One launch surface for the current HTML workspace and nearby C-drive research apps.</h1>
+        <p class="hero-text">
+          This hub catalogs both the apps stored in <code>C:\HTML apps</code> and the nearby root-level HTML research tools that
+          matter day to day, while still separating the newer productivity apps from the evidence-synthesis stack.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#catalog">Browse Apps</a>
+          <a class="button button-secondary" href="#run-notes">Run Notes</a>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="metric-grid">
+          <article class="metric-card">
+            <span class="metric-label">Launchable Now</span>
+            <strong id="launchable-count" class="metric-value">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Need HTTP / Build</span>
+            <strong id="server-count" class="metric-value">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">New Apps Added</span>
+            <strong id="new-count" class="metric-value">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Categories</span>
+            <strong id="category-count" class="metric-value">0</strong>
+          </article>
+        </div>
+        <div class="tip-card">
+          <p class="tip-title">Recommended launch path</p>
+          <p class="tip-copy">
+            For the smoothest experience, run <code>.\serve-html-apps.ps1 -Open</code> from this folder and browse the hub over
+            <code>http://localhost:8080</code>.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="controls-panel" id="catalog">
+        <div class="controls-row">
+          <label class="search-field" for="search-input">
+            <span>Search</span>
+            <input id="search-input" type="search" placeholder="Search by name, folder, tag, or purpose">
+          </label>
+          <div class="status-badge" id="results-summary">0 projects shown</div>
+        </div>
+        <div class="filters" id="filter-bar"></div>
+      </section>
+
+      <section class="featured-panel">
+        <article class="panel-card">
+          <h2>Featured Existing Tools</h2>
+          <p>
+            The cards below point at the main entry files for the research apps that already exist in the directory, with notes
+            about whether they are best opened directly or through a local server.
+          </p>
+        </article>
+        <article class="panel-card" id="run-notes">
+          <h2>Run Notes</h2>
+          <ul class="notes-list">
+            <li>Static single-file apps can usually open directly from <code>file://</code>.</li>
+            <li>Projects flagged <code>Needs HTTP</code> are better served with <code>.\serve-html-apps.ps1</code>.</li>
+            <li>Some cards target nearby folders outside <code>C:\HTML apps</code>; those links are intentional.</li>
+            <li>The new apps save data locally in your browser with <code>localStorage</code>.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="catalog-grid" id="project-grid" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <script src="./hub/projects.js"></script>
+  <script src="./hub/app.js"></script>
+</body>
+</html>
