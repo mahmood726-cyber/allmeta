@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pre-meta-analysis power and Required Information Size (RIS) with heterogeneity inflation.">
+  <meta name="color-scheme" content="light dark">
+  <title>PowerMA / RIS</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --ok:#0d7a27; --bad:#912121; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --ok:#5bc47b; --bad:#ef7373; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 0.5rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PowerMA / Required Information Size</h1>
+    <p>Plan a meta-analysis: given a target effect size, α, β, and anticipated heterogeneity, what total information (N) is needed to detect that effect? Includes RIS calculation per Trial Sequential Analysis (TSA) conventions.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Inputs</h2>
+      <fieldset>
+        <legend>Target effect</legend>
+        <label>
+          <span class="lbl">Outcome type</span>
+          <select id="outcome">
+            <option value="binary" selected>Binary (RRR / OR)</option>
+            <option value="continuous">Continuous (MD / SMD)</option>
+          </select>
+        </label>
+        <div class="grid-2" id="binary-fields">
+          <label><span class="lbl">Control event rate</span><input id="p0" type="number" step="any" min="0" max="1" value="0.15"></label>
+          <label><span class="lbl">Relative risk reduction</span><input id="rrr" type="number" step="any" value="0.20"><span class="hint">e.g., 0.20 = 20% RRR.</span></label>
+        </div>
+        <div class="grid-2" id="continuous-fields" style="display:none">
+          <label><span class="lbl">Mean difference</span><input id="md" type="number" step="any" value="0.4"></label>
+          <label><span class="lbl">SD</span><input id="sd-c" type="number" step="any" value="1"></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Design</legend>
+        <div class="grid-2">
+          <label><span class="lbl">α (two-sided)</span><input id="alpha" type="number" step="0.01" min="0.001" max="0.2" value="0.05"></label>
+          <label><span class="lbl">Power (1 − β)</span><input id="power" type="number" step="0.05" min="0.5" max="0.99" value="0.80"></label>
+        </div>
+        <label><span class="lbl">Ratio (experimental : control)</span><input id="ratio" type="number" step="any" min="0.25" max="4" value="1"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Heterogeneity adjustment</legend>
+        <div class="grid-2">
+          <label><span class="lbl">Anticipated I² (%)</span><input id="i2" type="number" step="5" min="0" max="95" value="25"></label>
+          <label><span class="lbl">Diversity D² (%)</span><input id="d2" type="number" step="5" min="0" max="95" value="25"><span class="hint">D² ≥ I²; use if known.</span></label>
+        </div>
+      </fieldset>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Compute</button>
+    </section>
+    <section class="panel">
+      <h2>Required information</h2>
+      <table>
+        <thead><tr><th>Scenario</th><th>N per arm</th><th>Total N</th><th>Event target (binary)</th></tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Power curve (N across possible true effects)</h2>
+      <svg id="plot" viewBox="0 0 600 300" role="img" aria-label="Power curve across target effect sizes"></svg>
+    </section>
+  </main>
+  <footer>
+    Formula (continuous): N_per_arm = 2·(z_{1-α/2} + z_{1-β})² / (MD/SD)². For binary with RRR: effect size d = arcsin√p1 − arcsin√p0 and N_per_arm = (z_{1-α/2} + z_{1-β})² / (d²·fractional allocation). RIS = N_per_arm × 2 × (1/(1 − D²)) when D² is the diversity inflation (Wetterslev 2008).
+  </footer>
+  <script>
+    function qnorm(p) {
+      if (p <= 0 || p >= 1) return NaN;
+      const q = p < 0.5 ? p : 1 - p;
+      const t = Math.sqrt(-2 * Math.log(q));
+      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
+      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
+      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
+      return p < 0.5 ? -x : x;
+    }
+    function fmt(x, d = 0) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    document.getElementById("outcome").addEventListener("change", e => {
+      const v = e.target.value;
+      document.getElementById("binary-fields").style.display = v === "binary" ? "" : "none";
+      document.getElementById("continuous-fields").style.display = v === "continuous" ? "" : "none";
+    });
+
+    function sampleSize(outcome, inputs) {
+      const alpha = inputs.alpha, power = inputs.power, ratio = inputs.ratio;
+      const za = qnorm(1 - alpha / 2);
+      const zb = qnorm(power);
+      let nPerArm, totalN, eventsTarget;
+      if (outcome === "binary") {
+        const p0 = inputs.p0, rrr = inputs.rrr;
+        const p1 = p0 * (1 - rrr);
+        if (p1 <= 0 || p1 >= 1) return null;
+        // arcsine variance-stabilising effect size
+        const phi0 = 2 * Math.asin(Math.sqrt(p0));
+        const phi1 = 2 * Math.asin(Math.sqrt(p1));
+        const d = Math.abs(phi1 - phi0);
+        if (d === 0) return null;
+        // unequal allocation factor (1/kappa + 1)/2 where kappa = n2/n1
+        nPerArm = Math.pow(za + zb, 2) / (d * d) * (1 + 1 / ratio);
+        totalN = nPerArm * (1 + ratio);
+        eventsTarget = Math.round(nPerArm * p0 + nPerArm * ratio * p1);
+      } else {
+        const md = inputs.md, sd = inputs.sdC;
+        const d = md / sd;
+        if (d === 0) return null;
+        nPerArm = 2 * Math.pow(za + zb, 2) / (d * d);
+        totalN = nPerArm * (1 + ratio);
+        eventsTarget = null;
+      }
+      return { nPerArm: Math.ceil(nPerArm), totalN: Math.ceil(totalN), eventsTarget };
+    }
+
+    function run() {
+      const outcome = document.getElementById("outcome").value;
+      const alpha = parseFloat(document.getElementById("alpha").value);
+      const power = parseFloat(document.getElementById("power").value);
+      const ratio = parseFloat(document.getElementById("ratio").value);
+      const i2 = parseFloat(document.getElementById("i2").value) / 100;
+      const d2 = parseFloat(document.getElementById("d2").value) / 100;
+      const inputs = {
+        alpha, power, ratio,
+        p0: parseFloat(document.getElementById("p0").value),
+        rrr: parseFloat(document.getElementById("rrr").value),
+        md: parseFloat(document.getElementById("md").value),
+        sdC: parseFloat(document.getElementById("sd-c").value),
+      };
+      const base = sampleSize(outcome, inputs);
+      if (!base) return;
+      const body = document.getElementById("tbl-body");
+      body.innerHTML = "";
+      body.innerHTML += `<tr><td><code>Single-study RCT</code></td><td>${base.nPerArm}</td><td>${base.totalN}</td><td>${base.eventsTarget || "—"}</td></tr>`;
+      // Heterogeneity adjustment: inflate by 1/(1 - D²) (for diversity) and / (1 - I²) for I²
+      const d2Adj = d2 < 1 ? 1 / (1 - d2) : NaN;
+      const i2Adj = i2 < 1 ? 1 / (1 - i2) : NaN;
+      body.innerHTML += `<tr><td><code>MA adjusted for I² (${(i2 * 100).toFixed(0)}%)</code></td><td>${fmt(base.nPerArm * i2Adj)}</td><td>${fmt(base.totalN * i2Adj)}</td><td>${base.eventsTarget ? fmt(base.eventsTarget * i2Adj) : "—"}</td></tr>`;
+      body.innerHTML += `<tr style="background:var(--accent-soft); font-weight:600"><td><code>RIS (D² = ${(d2 * 100).toFixed(0)}%)</code></td><td>${fmt(base.nPerArm * d2Adj)}</td><td>${fmt(base.totalN * d2Adj)}</td><td>${base.eventsTarget ? fmt(base.eventsTarget * d2Adj) : "—"}</td></tr>`;
+
+      drawCurve(outcome, inputs);
+    }
+
+    function drawCurve(outcome, inputs) {
+      const svg = document.getElementById("plot");
+      const W = 600, H = 300, padL = 60, padR = 20, padT = 20, padB = 40;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      // Vary the "effect" (RRR or d) and plot N_total for that effect.
+      let xs = [], ys = [], labels = [];
+      if (outcome === "binary") {
+        for (let rrr = 0.05; rrr <= 0.55; rrr += 0.05) {
+          const s = sampleSize("binary", { ...inputs, rrr });
+          if (!s) continue;
+          xs.push(rrr); ys.push(s.totalN);
+        }
+        labels = ["RRR", "Total N"];
+      } else {
+        for (let d = 0.05; d <= 1.0; d += 0.05) {
+          const s = sampleSize("continuous", { ...inputs, md: d, sdC: 1 });
+          if (!s) continue;
+          xs.push(d); ys.push(s.totalN);
+        }
+        labels = ["Cohen's d", "Total N"];
+      }
+      const xMin = Math.min(...xs), xMax = Math.max(...xs);
+      const yMin = Math.min(...ys), yMax = Math.max(...ys);
+      const X = v => padL + (v - xMin) / (xMax - xMin) * plotW;
+      const Y = v => padT + (1 - (Math.log(v) - Math.log(yMin)) / (Math.log(yMax) - Math.log(yMin))) * plotH;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      const path = xs.map((x, i) => (i === 0 ? "M" : "L") + X(x) + "," + Y(ys[i])).join(" ");
+      svg.innerHTML += `<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+      for (let i = 0; i < xs.length; i++) {
+        svg.innerHTML += `<circle cx="${X(xs[i])}" cy="${Y(ys[i])}" r="2.5" fill="var(--accent)"/>`;
+      }
+      // Axes ticks
+      for (const t of [xMin, (xMin + xMax) / 2, xMax]) {
+        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`;
+      }
+      // Log y ticks
+      const decades = [10, 100, 1000, 10000, 100000];
+      for (const d of decades) {
+        if (d >= yMin && d <= yMax) {
+          svg.innerHTML += `<line x1="${padL}" y1="${Y(d)}" x2="${padL + plotW}" y2="${Y(d)}" stroke="currentColor" opacity="0.07"/>`;
+          svg.innerHTML += `<text x="${padL - 8}" y="${Y(d) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${d.toLocaleString()}</text>`;
+        }
+      }
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">${labels[0]}</text>`;
+      svg.innerHTML += `<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ${padT + plotH / 2})">${labels[1]} (log)</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

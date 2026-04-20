@@ -3,7 +3,7 @@
     "app": "Pairwise AI",
     "path": "./Pairwiseai/Main screen.html",
     "status": "fail-console-error",
-    "duration_ms": 22538,
+    "duration_ms": 7548,
     "console_errors": [
       "Failed to load resource: the server responded with a status of 404 (Not Found)",
       "Failed to load resource: the server responded with a status of 404 (Not Found)",
@@ -18,7 +18,7 @@
     "app": "Dose Response Pro",
     "path": "./dosehtml/dose-response-pro.html",
     "status": "fail-plot-missing",
-    "duration_ms": 3405,
+    "duration_ms": 1319,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -27,7 +27,7 @@
     "app": "Evidence Board",
     "path": "./evidence-board/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1623,
+    "duration_ms": 1176,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -36,7 +36,7 @@
     "app": "Focus Studio",
     "path": "./focus-studio/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 2230,
+    "duration_ms": 1299,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -45,7 +45,7 @@
     "app": "GRADE SoF Builder",
     "path": "./grade-sof/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 6580,
+    "duration_ms": 4423,
     "console_errors": [],
     "clicked_demo": true,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -54,7 +54,7 @@
     "app": "HTA Pro",
     "path": "./HTA/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 17180,
+    "duration_ms": 10987,
     "console_errors": [],
     "clicked_demo": true,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -63,7 +63,7 @@
     "app": "IPD Meta-Pro",
     "path": "./IPD-Meta-Pro/ipd-meta-pro.html",
     "status": "fail-plot-missing",
-    "duration_ms": 3581,
+    "duration_ms": 1981,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -72,7 +72,7 @@
     "app": "Kanban Lab",
     "path": "./kanban-lab/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1847,
+    "duration_ms": 1139,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -81,7 +81,7 @@
     "app": "Living Meta",
     "path": "./living-meta/living-meta-complete.html",
     "status": "fail-plot-missing",
-    "duration_ms": 2906,
+    "duration_ms": 1075,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -90,7 +90,7 @@
     "app": "NMA Pro v8",
     "path": "./nma-pro-v2/nma-pro-v8.0.html",
     "status": "fail-plot-missing",
-    "duration_ms": 14054,
+    "duration_ms": 7100,
     "console_errors": [],
     "clicked_demo": true,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -99,7 +99,7 @@
     "app": "PRISMA Screening",
     "path": "./prisma-screen/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 4919,
+    "duration_ms": 4148,
     "console_errors": [],
     "clicked_demo": true,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -108,7 +108,7 @@
     "app": "TruthCert Pairwise Pro",
     "path": "./Truthcert1/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 1261,
+    "duration_ms": 910,
     "console_errors": [],
     "clicked_demo": false,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -117,7 +117,7 @@
     "app": "WebR Validator",
     "path": "./webr-validator/index.html",
     "status": "fail-plot-missing",
-    "duration_ms": 5750,
+    "duration_ms": 4265,
     "console_errors": [],
     "clicked_demo": true,
     "notes": "No plot surface on landing — app likely needs user input to render."
@@ -126,7 +126,7 @@
     "app": "AMSTAR-2",
     "path": "./amstar-2/index.html",
     "status": "pass",
-    "duration_ms": 1062,
+    "duration_ms": 861,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -135,7 +135,7 @@
     "app": "Bayesian MA",
     "path": "./bayesian-ma/index.html",
     "status": "pass",
-    "duration_ms": 2038,
+    "duration_ms": 1102,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -144,7 +144,7 @@
     "app": "Bayesian MA — MCMC",
     "path": "./bayesian-mcmc/index.html",
     "status": "pass",
-    "duration_ms": 1534,
+    "duration_ms": 899,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -153,7 +153,7 @@
     "app": "Bucher Indirect",
     "path": "./bucher/index.html",
     "status": "pass",
-    "duration_ms": 1519,
+    "duration_ms": 787,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -162,7 +162,7 @@
     "app": "CINeMA (NMA confidence)",
     "path": "./cinema/index.html",
     "status": "pass",
-    "duration_ms": 1057,
+    "duration_ms": 788,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -171,7 +171,7 @@
     "app": "Citation Chaser",
     "path": "./citation-chaser/index.html",
     "status": "pass",
-    "duration_ms": 826,
+    "duration_ms": 732,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -180,7 +180,7 @@
     "app": "Citation Dedup",
     "path": "./citation-dedup/index.html",
     "status": "pass",
-    "duration_ms": 1356,
+    "duration_ms": 890,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -189,7 +189,7 @@
     "app": "Component NMA",
     "path": "./component-nma/index.html",
     "status": "pass",
-    "duration_ms": 1320,
+    "duration_ms": 814,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -198,7 +198,7 @@
     "app": "Copas selection",
     "path": "./copas/index.html",
     "status": "pass",
-    "duration_ms": 1275,
+    "duration_ms": 800,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -207,7 +207,7 @@
     "app": "Cumulative + Subgroup",
     "path": "./cumulative-subgroup/index.html",
     "status": "pass",
-    "duration_ms": 2585,
+    "duration_ms": 1090,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -216,7 +216,7 @@
     "app": "DTA SROC Explorer",
     "path": "./dta-sroc/index.html",
     "status": "pass",
-    "duration_ms": 1979,
+    "duration_ms": 1108,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -225,7 +225,7 @@
     "app": "Effect-Size Converter",
     "path": "./effect-size-converter/index.html",
     "status": "pass",
-    "duration_ms": 1388,
+    "duration_ms": 790,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -234,7 +234,7 @@
     "app": "Forest Plot Viewer",
     "path": "./forest-plot/index.html",
     "status": "pass",
-    "duration_ms": 2076,
+    "duration_ms": 1062,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -243,7 +243,16 @@
     "app": "Funnel Plot Explorer",
     "path": "./funnel-plot/index.html",
     "status": "pass",
-    "duration_ms": 1670,
+    "duration_ms": 1052,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "GOSH Meta-Regression",
+    "path": "./gosh-metareg/index.html",
+    "status": "pass",
+    "duration_ms": 4683,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -252,7 +261,7 @@
     "app": "GOSH Plot",
     "path": "./gosh/index.html",
     "status": "pass",
-    "duration_ms": 3422,
+    "duration_ms": 2154,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -261,7 +270,7 @@
     "app": "GRADE-CERQual",
     "path": "./cerqual/index.html",
     "status": "pass",
-    "duration_ms": 1422,
+    "duration_ms": 822,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -270,7 +279,7 @@
     "app": "HSROC / Bivariate DTA",
     "path": "./hsroc/index.html",
     "status": "pass",
-    "duration_ms": 1352,
+    "duration_ms": 816,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -279,7 +288,7 @@
     "app": "Heterogeneity Explorer",
     "path": "./heterogeneity/index.html",
     "status": "pass",
-    "duration_ms": 2544,
+    "duration_ms": 1014,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -288,7 +297,7 @@
     "app": "Influence Diagnostics",
     "path": "./influence/index.html",
     "status": "pass",
-    "duration_ms": 1818,
+    "duration_ms": 884,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -297,7 +306,16 @@
     "app": "K-M IPD Reconstructor",
     "path": "./km-reconstructor/index.html",
     "status": "pass",
-    "duration_ms": 1234,
+    "duration_ms": 795,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "Limit meta-analysis",
+    "path": "./limit-ma/index.html",
+    "status": "pass",
+    "duration_ms": 871,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -306,7 +324,7 @@
     "app": "MA Workbench",
     "path": "./workbench/index.html",
     "status": "pass",
-    "duration_ms": 2244,
+    "duration_ms": 1236,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -315,7 +333,7 @@
     "app": "MCID & NI margin",
     "path": "./mcid/index.html",
     "status": "pass",
-    "duration_ms": 1554,
+    "duration_ms": 809,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -324,7 +342,7 @@
     "app": "MH / Peto pooling",
     "path": "./mh-peto/index.html",
     "status": "pass",
-    "duration_ms": 1017,
+    "duration_ms": 800,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -333,7 +351,7 @@
     "app": "Median → Mean/SD",
     "path": "./median-to-mean/index.html",
     "status": "pass",
-    "duration_ms": 956,
+    "duration_ms": 745,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -342,7 +360,7 @@
     "app": "Meta-Regression",
     "path": "./meta-regression/index.html",
     "status": "pass",
-    "duration_ms": 2561,
+    "duration_ms": 1087,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -351,7 +369,7 @@
     "app": "Multi-level MA",
     "path": "./multilevel-ma/index.html",
     "status": "pass",
-    "duration_ms": 1362,
+    "duration_ms": 848,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -360,7 +378,16 @@
     "app": "NMA Dose-Response",
     "path": "./nma-dose-response-app/index.html",
     "status": "pass",
-    "duration_ms": 8069,
+    "duration_ms": 2968,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "NMA Global Inconsistency",
+    "path": "./nma-global-inconsistency/index.html",
+    "status": "pass",
+    "duration_ms": 994,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -369,7 +396,7 @@
     "app": "NMA Inconsistency",
     "path": "./nma-inconsistency/index.html",
     "status": "pass",
-    "duration_ms": 1021,
+    "duration_ms": 837,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -378,7 +405,7 @@
     "app": "Network MA (SUCRA)",
     "path": "./bayesian-nma/index.html",
     "status": "pass",
-    "duration_ms": 1439,
+    "duration_ms": 893,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -387,7 +414,7 @@
     "app": "PET-PEESE + Trim-and-Fill",
     "path": "./pet-peese/index.html",
     "status": "pass",
-    "duration_ms": 2010,
+    "duration_ms": 775,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -396,7 +423,7 @@
     "app": "PICO Formulator",
     "path": "./pico/index.html",
     "status": "pass",
-    "duration_ms": 1885,
+    "duration_ms": 780,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -405,7 +432,7 @@
     "app": "PRISMA 2020 Checklist",
     "path": "./prisma-checklist/index.html",
     "status": "pass",
-    "duration_ms": 2292,
+    "duration_ms": 1225,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -414,7 +441,16 @@
     "app": "PRISMA Flow",
     "path": "./prisma-flow/index.html",
     "status": "pass",
-    "duration_ms": 2195,
+    "duration_ms": 1046,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "PowerMA / RIS",
+    "path": "./powerma/index.html",
+    "status": "pass",
+    "duration_ms": 861,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -423,7 +459,7 @@
     "app": "Proportion MA",
     "path": "./proportion-ma/index.html",
     "status": "pass",
-    "duration_ms": 1418,
+    "duration_ms": 815,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -432,7 +468,7 @@
     "app": "Pub-bias Tests",
     "path": "./pubbias-tests/index.html",
     "status": "pass",
-    "duration_ms": 1010,
+    "duration_ms": 766,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -441,7 +477,7 @@
     "app": "QUADAS-2",
     "path": "./quadas-2/index.html",
     "status": "pass",
-    "duration_ms": 1280,
+    "duration_ms": 789,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -450,7 +486,7 @@
     "app": "ROBINS-E",
     "path": "./robins-e/index.html",
     "status": "pass",
-    "duration_ms": 1069,
+    "duration_ms": 842,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -459,7 +495,7 @@
     "app": "ROBINS-I",
     "path": "./robins-i/index.html",
     "status": "pass",
-    "duration_ms": 1405,
+    "duration_ms": 871,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -468,7 +504,7 @@
     "app": "RoB 2",
     "path": "./rob2/index.html",
     "status": "pass",
-    "duration_ms": 1434,
+    "duration_ms": 822,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -477,7 +513,7 @@
     "app": "RoB Traffic Light",
     "path": "./rob-traffic-light/index.html",
     "status": "pass",
-    "duration_ms": 1666,
+    "duration_ms": 1058,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -486,7 +522,7 @@
     "app": "Search Strategy Translator",
     "path": "./search-translator/index.html",
     "status": "pass",
-    "duration_ms": 1006,
+    "duration_ms": 752,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -495,7 +531,7 @@
     "app": "TSA Calculator",
     "path": "./tsa/index.html",
     "status": "pass",
-    "duration_ms": 2272,
+    "duration_ms": 1057,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""
@@ -504,7 +540,16 @@
     "app": "Thematic Synthesis",
     "path": "./thematic-synthesis/index.html",
     "status": "pass",
-    "duration_ms": 1149,
+    "duration_ms": 780,
+    "console_errors": [],
+    "clicked_demo": false,
+    "notes": ""
+  },
+  {
+    "app": "p-curve / p-uniform",
+    "path": "./p-curve/index.html",
+    "status": "pass",
+    "duration_ms": 868,
     "console_errors": [],
     "clicked_demo": false,
     "notes": ""

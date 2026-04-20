@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Fit NMA under consistency and full design-inconsistency models; compare via likelihood-ratio test (Higgins 2012).">
+  <meta name="color-scheme" content="light dark">
+  <title>NMA Global Inconsistency</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --cons:#0d7a27; --incon:#912121; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --cons:#5bc47b; --incon:#ef7373; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(340px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .chip { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; }
+    .chip.cons { background: var(--cons); }
+    .chip.incon { background: var(--incon); }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NMA Global Inconsistency — LR test</h1>
+    <p>Fit the NMA under the consistency model (one effect per basic parameter) and the full inconsistency model (one effect per design). The residual-Q difference is distributed as χ² and provides an omnibus test of consistency across the network.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Contrasts — <code>treatmentA, treatmentB, effect, SE, design(optional)</code></label>
+      <textarea id="src">A, B, -0.30, 0.10, AB
+A, B, -0.32, 0.08, AB
+A, C, -0.20, 0.12, AC
+A, C, -0.25, 0.10, AC
+B, C, 0.10, 0.11, BC
+B, C, 0.08, 0.13, BC
+A, D, -0.50, 0.15, AD
+A, D, -0.48, 0.14, AD
+B, D, -0.25, 0.18, BD
+C, D, -0.35, 0.14, CD</textarea>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit &amp; test</button>
+    </section>
+    <section class="panel">
+      <h2>Model comparison</h2>
+      <table>
+        <thead><tr><th>Model</th><th>Q</th><th>df</th><th>τ²</th><th>I²</th></tr></thead>
+        <tbody id="cmp-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.6rem">Likelihood-ratio test</h2>
+      <div id="lr-result"></div>
+      <h2 style="margin-top:0.6rem">Per-design effect on the observed contrast</h2>
+      <table>
+        <thead><tr><th>Design</th><th>Observed effect</th><th>Consistency-model prediction</th><th>Residual</th></tr></thead>
+        <tbody id="per-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.6rem">Residual-by-design plot</h2>
+      <svg id="plot" viewBox="0 0 600 260" role="img" aria-label="Residuals per design under consistency model"></svg>
+    </section>
+  </main>
+  <footer>
+    Method: fit WLS consistency model (X' W X)⁻¹ X' W y with pooled τ². Fit "design model": effect = basic-parameter sum + design-specific deviation. Q_cons - Q_full has Chi-squared distribution on (n_designs - n_basic) df.
+  </footer>
+  <script>
+    function parse(text) {
+      return text.trim().split(/\n/).map(l => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(parts[2]), se = parseFloat(parts[3]);
+        if (!parts[0] || !parts[1] || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        return { A: parts[0], B: parts[1], te, se, design: parts[4] || `${parts[0]}${parts[1]}` };
+      }).filter(Boolean);
+    }
+
+    function zeros(n, m) { return Array.from({ length: n }, () => Array(m).fill(0)); }
+    function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
+    function matMul(A, B) { const n = A.length, m = B[0].length, k = B.length; const C = zeros(n, m);
+      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] += A[i][p] * B[p][j]; return C; }
+    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => s + x * v[j], 0)); }
+    function invert(M) {
+      const n = M.length;
+      const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+      for (let i = 0; i < n; i++) {
+        let piv = A[i][i];
+        if (Math.abs(piv) < 1e-14) {
+          for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > 1e-14) { [A[i], A[k]] = [A[k], A[i]]; piv = A[i][i]; break; }
+        }
+        if (Math.abs(piv) < 1e-12) return null;
+        for (let j = 0; j < 2 * n; j++) A[i][j] /= piv;
+        for (let k = 0; k < n; k++) if (k !== i) {
+          const f = A[k][i]; for (let j = 0; j < 2 * n; j++) A[k][j] -= f * A[i][j];
+        }
+      }
+      return A.map(r => r.slice(n));
+    }
+
+    function fit(rows, refTrt, designExpansion = false) {
+      const trtSet = new Set();
+      rows.forEach(r => { trtSet.add(r.A); trtSet.add(r.B); });
+      let trts = [...trtSet].sort();
+      if (!refTrt || !trts.includes(refTrt)) refTrt = trts[0];
+      trts = [refTrt, ...trts.filter(t => t !== refTrt)];
+      const idx = Object.fromEntries(trts.map((t, i) => [t, i]));
+      const nBasic = trts.length - 1;
+
+      const designs = [...new Set(rows.map(r => r.design))].sort();
+      const designIdx = Object.fromEntries(designs.map((d, i) => [d, i]));
+
+      const cols = designExpansion ? nBasic + Math.max(0, designs.length - nBasic) : nBasic;
+      const X = zeros(rows.length, cols);
+      const y = rows.map(r => r.te);
+      const w = rows.map(r => 1 / (r.se * r.se));
+
+      rows.forEach((r, i) => {
+        const iA = idx[r.A], iB = idx[r.B];
+        if (iA > 0) X[i][iA - 1] = 1;
+        if (iB > 0) X[i][iB - 1] = -1;
+      });
+      if (designExpansion) {
+        // Add design-specific deviation columns (one per design beyond the first n_basic designs)
+        const extra = designs.slice(nBasic);
+        rows.forEach((r, i) => {
+          const e = extra.indexOf(r.design);
+          if (e >= 0) X[i][nBasic + e] = 1;
+        });
+      }
+      const Xt = transpose(X);
+      const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
+      const XtWX = matMul(XtW, X);
+      const inv = invert(XtWX);
+      if (!inv) return null;
+      const XtWy = matVec(XtW, y);
+      const beta = matVec(inv, XtWy);
+      const fit_ = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
+      const Q = y.reduce((s, yi, i) => s + w[i] * (yi - fit_[i]) ** 2, 0);
+      const df = Math.max(0, rows.length - cols);
+      // I² = (Q - df)/Q
+      const I2 = Q > df ? 100 * (Q - df) / Q : 0;
+      // tau² via DL
+      const sumW = w.reduce((a, b) => a + b, 0);
+      const sumW2 = w.reduce((a, b) => a + b * b, 0);
+      const tau2 = df > 0 ? Math.max(0, (Q - df) / (sumW - sumW2 / sumW)) : 0;
+      return { beta, fit: fit_, Q, df, I2, tau2, trts, designs, nBasic };
+    }
+
+    function pchi(x, k) {
+      // Wilson-Hilferty
+      if (k <= 0 || x < 0) return NaN;
+      const t = Math.pow(x / k, 1 / 3) - (1 - 2 / (9 * k));
+      const z = t / Math.sqrt(2 / (9 * k));
+      const t2 = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
+      const y = 1 - (((((1.061405429 * t2 - 1.453152027) * t2) + 1.421413741) * t2 - 0.284496736) * t2 + 0.254829592) * t2 * Math.exp(-z * z / 2);
+      const p = z >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+      return p;  // CDF
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function run() {
+      const rows = parse(document.getElementById("src").value);
+      if (rows.length < 3) return;
+      const cons = fit(rows, null, false);
+      const full = fit(rows, null, true);
+      if (!cons || !full) {
+        document.getElementById("lr-result").innerHTML = `<div style="color:var(--warn)">Matrix singular — check that every treatment appears in the network with sufficient contrasts.</div>`;
+        return;
+      }
+      const dQ = Math.max(0, cons.Q - full.Q);
+      const dDf = cons.df - full.df;
+      const p = dDf > 0 ? 1 - pchi(dQ, dDf) : NaN;
+
+      const body = document.getElementById("cmp-body");
+      body.innerHTML = "";
+      body.innerHTML += `<tr><td><code>Consistency</code></td><td>${fmt(cons.Q, 2)}</td><td>${cons.df}</td><td>${fmt(cons.tau2, 4)}</td><td>${cons.I2.toFixed(1)}%</td></tr>`;
+      body.innerHTML += `<tr><td><code>Design (full)</code></td><td>${fmt(full.Q, 2)}</td><td>${full.df}</td><td>${fmt(full.tau2, 4)}</td><td>${full.I2.toFixed(1)}%</td></tr>`;
+
+      const lr = document.getElementById("lr-result");
+      const flag = p < 0.05 ? "incon" : "cons";
+      const label = p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency";
+      lr.innerHTML = `<p>ΔQ = <code>${fmt(dQ, 2)}</code>, Δdf = <code>${dDf}</code>, p = <code>${fmt(p, 3)}</code>. <span class="chip ${flag}">${label}</span></p>`;
+
+      // Per-design residuals under consistency model
+      const perBody = document.getElementById("per-body");
+      perBody.innerHTML = "";
+      const designs = [...new Set(rows.map(r => r.design))];
+      const residuals = [];
+      for (const d of designs) {
+        const dRows = rows.filter(r => r.design === d);
+        const wTot = dRows.reduce((a, r) => a + 1 / (r.se * r.se), 0);
+        const meanObs = dRows.reduce((a, r) => a + (1 / (r.se * r.se)) * r.te, 0) / wTot;
+        const predArr = dRows.map((r, i) => cons.fit[rows.indexOf(r)]);
+        const meanPred = predArr.reduce((a, b) => a + b, 0) / predArr.length;
+        const res = meanObs - meanPred;
+        residuals.push({ design: d, obs: meanObs, pred: meanPred, res });
+        perBody.innerHTML += `<tr><td><code>${d}</code></td><td>${fmt(meanObs)}</td><td>${fmt(meanPred)}</td><td>${fmt(res)}</td></tr>`;
+      }
+      drawResiduals(residuals);
+    }
+
+    function drawResiduals(residuals) {
+      const svg = document.getElementById("plot");
+      const W = 600, H = 260, padL = 80, padR = 20, padT = 20, padB = 50;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      const res = residuals.map(r => r.res);
+      const maxAbs = Math.max(0.1, ...res.map(Math.abs));
+      const X = v => padL + (v + maxAbs) / (2 * maxAbs) * plotW;
+      svg.innerHTML += `<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      residuals.forEach((r, i) => {
+        const y = padT + 10 + i * ((plotH - 20) / Math.max(residuals.length - 1, 1));
+        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.design}</text>`;
+        const col = Math.abs(r.res) > 0.3 ? "var(--incon)" : "var(--cons)";
+        svg.innerHTML += `<line x1="${X(0)}" y1="${y}" x2="${X(r.res)}" y2="${y}" stroke="${col}" stroke-width="3"/>`;
+        svg.innerHTML += `<circle cx="${X(r.res)}" cy="${y}" r="4" fill="${col}"/>`;
+      });
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Residual (observed − consistency prediction)</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="All-subset meta-regression: scatter the moderator coefficient and R² across all non-trivial subsets.">
+  <meta name="color-scheme" content="light dark">
+  <title>GOSH Meta-Regression</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 12rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    input { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+    .card { background: var(--accent-soft); padding: 0.5rem 0.7rem; border-radius: 6px; }
+    .card .k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .v { display: block; font-size: 1.1rem; font-weight: 700; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GOSH Meta-Regression</h1>
+    <p>For every non-trivial subset of studies, re-fit a univariable meta-regression on a single continuous moderator and scatter the moderator coefficient against the within-subset I². Reveals how robust the moderator effect is to subset choice.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>Studies — <code>effect, SE, moderator, label(optional)</code></span>
+        <textarea id="src">0.25, 0.08, 45, Smith
+0.18, 0.10, 38, Jones
+0.40, 0.15, 62, Khan
+0.30, 0.09, 55, Lee
+0.12, 0.07, 30, Park
+0.55, 0.20, 70, Garcia
+0.22, 0.08, 42, Chen
+0.32, 0.12, 58, Ahmed
+0.45, 0.17, 65, Brown
+0.28, 0.10, 50, Davis</textarea>
+        <span class="hint">k ≤ 18 studies. Moderator: mean age, baseline risk, year, etc.</span>
+      </label>
+      <label>
+        <span>Minimum subset size</span>
+        <input id="min-k" type="number" step="1" min="3" value="4">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Compute</button>
+    </section>
+    <section class="panel">
+      <h2>Summary</h2>
+      <div class="metrics">
+        <div class="card"><span class="k">Subsets</span><span class="v" id="m-n">0</span></div>
+        <div class="card"><span class="k">Median β</span><span class="v" id="m-b">—</span></div>
+        <div class="card"><span class="k">β SD</span><span class="v" id="m-sd">—</span></div>
+        <div class="card"><span class="k">β sign consistent</span><span class="v" id="m-sign">—</span></div>
+      </div>
+      <h2>β × I² scatter</h2>
+      <svg id="plot" viewBox="0 0 600 360" role="img" aria-label="GOSH meta-regression scatter"></svg>
+      <div class="note"><strong>Reading the plot:</strong> a horizontal cloud of β values near zero means the moderator does not robustly predict effect size. A diagonal gradient from high-β / low-I² to low-β / high-I² indicates the moderator captures most of the heterogeneity. Vertical streaks suggest one or two outlier studies drive the moderator coefficient.</div>
+    </section>
+  </main>
+  <footer>
+    Adapted from Olkin-Dahabreh-Trikalinos GOSH (RSM 2012) with a meta-regression layer. Random-effects DL model; moderator coefficient β from weighted least squares with τ²-adjusted weights.
+  </footer>
+  <script>
+    function parse(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const parts = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(parts[0]), se = parseFloat(parts[1]), mod = parseFloat(parts[2]);
+        if (![te, se, mod].every(Number.isFinite) || se <= 0) return null;
+        return { te, se, mod, label: parts[3] || `S${i + 1}` };
+      }).filter(Boolean);
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function wls(rows) {
+      const w0 = rows.map(r => 1 / (r.se * r.se));
+      // DL tau²
+      const sw = w0.reduce((a, b) => a + b, 0);
+      const mu0 = rows.reduce((a, r, i) => a + w0[i] * r.te, 0) / sw;
+      const Q0 = rows.reduce((a, r, i) => a + w0[i] * (r.te - mu0) ** 2, 0);
+      const df0 = rows.length - 1;
+      const sW2 = w0.reduce((a, b) => a + b * b, 0);
+      const tau2 = df0 > 0 ? Math.max(0, (Q0 - df0) / (sw - sW2 / sw)) : 0;
+      // WLS of te on mod
+      const w = rows.map(r => 1 / (r.se * r.se + tau2));
+      let sW = 0, sWx = 0, sWy = 0, sWxx = 0, sWxy = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const x = rows[i].mod, y = rows[i].te, wi = w[i];
+        sW += wi; sWx += wi * x; sWy += wi * y; sWxx += wi * x * x; sWxy += wi * x * y;
+      }
+      const det = sW * sWxx - sWx * sWx;
+      if (Math.abs(det) < 1e-14) return null;
+      const b0 = (sWxx * sWy - sWx * sWxy) / det;
+      const b1 = (sW * sWxy - sWx * sWy) / det;
+      // Residual I²
+      let Q = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const res = rows[i].te - (b0 + b1 * rows[i].mod);
+        Q += w0[i] * res * res;
+      }
+      const df = rows.length - 2;
+      const I2 = df > 0 && Q > df ? 100 * (Q - df) / Q : 0;
+      return { b1, I2, tau2, k: rows.length };
+    }
+
+    function run() {
+      const rows = parse(document.getElementById("src").value);
+      const minK = parseInt(document.getElementById("min-k").value, 10) || 4;
+      if (rows.length < 3 || rows.length > 18) return;
+      const k = rows.length;
+      const total = 1 << k;
+      const results = [];
+      for (let m = 0; m < total; m++) {
+        const subset = [];
+        for (let i = 0; i < k; i++) if (m & (1 << i)) subset.push(rows[i]);
+        if (subset.length < Math.max(minK, 3)) continue;
+        const r = wls(subset);
+        if (r) results.push(r);
+      }
+      document.getElementById("m-n").textContent = results.length.toLocaleString();
+      const bs = results.map(r => r.b1).sort((a, b) => a - b);
+      const median = bs[Math.floor(bs.length / 2)];
+      const mean = bs.reduce((a, b) => a + b, 0) / bs.length;
+      const sd = Math.sqrt(bs.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, bs.length - 1));
+      const pos = bs.filter(b => b > 0).length / bs.length;
+      const signCons = pos > 0.95 || pos < 0.05;
+      document.getElementById("m-b").textContent = fmt(median);
+      document.getElementById("m-sd").textContent = fmt(sd);
+      document.getElementById("m-sign").textContent = signCons ? "yes" : `no (${(pos * 100).toFixed(0)}% positive)`;
+      draw(results);
+    }
+
+    function draw(pts) {
+      const svg = document.getElementById("plot");
+      const W = 600, H = 360, padL = 60, padR = 20, padT = 20, padB = 50;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      const bs = pts.map(p => p.b1);
+      const xMin = Math.min(0, ...bs), xMax = Math.max(0, ...bs);
+      const xPad = (xMax - xMin) * 0.1 || 0.01;
+      const X = v => padL + (v - (xMin - xPad)) / ((xMax + xPad) - (xMin - xPad)) * plotW;
+      const Y = v => padT + (1 - v / 100) * plotH;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      svg.innerHTML += `<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      // points
+      const alpha = Math.max(0.03, Math.min(0.4, 8 / Math.sqrt(pts.length)));
+      for (const p of pts) {
+        svg.innerHTML += `<circle cx="${X(p.b1)}" cy="${Y(p.I2)}" r="2" fill="var(--accent)" fill-opacity="${alpha}"/>`;
+      }
+      for (const yTick of [0, 25, 50, 75, 100]) {
+        svg.innerHTML += `<text x="${padL - 8}" y="${Y(yTick) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${yTick}%</text>`;
+      }
+      const xTicks = [xMin, (xMin + xMax) / 2, xMax];
+      for (const t of xTicks) {
+        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(3)}</text>`;
+      }
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">β (moderator coefficient)</text>`;
+      svg.innerHTML += `<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ${padT + plotH / 2})">Residual I²</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

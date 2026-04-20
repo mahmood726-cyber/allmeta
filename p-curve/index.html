@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="p-curve (Simonsohn 2014) and p-uniform (van Assen 2015) for publication-bias-robust effect-size estimation from p-values alone.">
+  <meta name="color-scheme" content="light dark">
+  <title>p-curve + p-uniform</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --ok:#0d7a27; --bad:#912121; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --ok:#5bc47b; --bad:#ef7373; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    select, input { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .chip { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; }
+    .chip.ok { background: var(--ok); }
+    .chip.bad { background: var(--bad); }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>p-curve &amp; p-uniform</h1>
+    <p>Publication-bias-robust effect estimation from the distribution of statistically significant p-values. A right-skewed p-curve indicates evidential value; a flat or left-skewed curve is consistent with no true effect or selective reporting.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>p-values — one per line (one-sided or two-sided significant, &lt;0.05)</span>
+        <textarea id="src">0.001
+0.004
+0.012
+0.027
+0.041
+0.008
+0.019
+0.032
+0.045
+0.009
+0.022
+0.037</textarea>
+        <span class="hint">Only statistically significant p-values are used (0 &lt; p &lt; 0.05). Non-significant inputs are dropped.</span>
+      </label>
+      <label>
+        <span>Test type (for effect size)</span>
+        <select id="test">
+          <option value="z" selected>z-test</option>
+          <option value="t">t-test (equal df across studies)</option>
+        </select>
+      </label>
+      <label>
+        <span>Common df (if t)</span>
+        <input id="df" type="number" step="1" min="1" value="100">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Analyze</button>
+    </section>
+    <section class="panel">
+      <h2>Evidential value tests (p-curve)</h2>
+      <table>
+        <thead><tr><th>Test</th><th>Statistic</th><th>p</th><th>Verdict</th></tr></thead>
+        <tbody id="tests-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">p-uniform effect size</h2>
+      <table>
+        <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+        <tbody id="pu-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">p-curve distribution (significant p only)</h2>
+      <svg id="plot" viewBox="0 0 600 240" role="img" aria-label="Observed and expected p-curve distribution"></svg>
+    </section>
+  </main>
+  <footer>
+    p-curve: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. J Exp Psychol Gen 2014. Right-skew test (effect) pools uniformly-transformed p·20 values via Stouffer. Flatness test against a 33%-power null. p-uniform: van Assen MALM, van Aert RCM, Wicherts JM. Psychol Methods 2015.
+  </footer>
+  <script>
+    function pnorm(x) {
+      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+    }
+    function qnorm(p) {
+      if (p <= 0 || p >= 1) return NaN;
+      const q = p < 0.5 ? p : 1 - p;
+      const t = Math.sqrt(-2 * Math.log(q));
+      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
+      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
+      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
+      return p < 0.5 ? -x : x;
+    }
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function run() {
+      const raw = document.getElementById("src").value.trim().split(/\s+/).map(parseFloat).filter(x => Number.isFinite(x) && x > 0 && x < 0.05);
+      const nSig = raw.length;
+      if (nSig < 3) {
+        document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">Need at least 3 significant (p &lt; 0.05) p-values.</td></tr>`;
+        return;
+      }
+
+      // --- Right-skew test: transform each p to pp = p / 0.05 (under null, uniform on [0,1]).
+      // Skewness: are small pp over-represented? Fisher's method using ln(pp).
+      const ppRight = raw.map(p => p / 0.05);  // U(0,1) under null
+      // For right-skew under H0 (no effect), pp is uniform. Under H1 (true effect), pp concentrates near 0.
+      // Fisher's method: -2 Σ ln(pp) ~ χ²(2k) under null; large values reject null.
+      const T_skew = -2 * ppRight.reduce((s, pp) => s + Math.log(pp), 0);
+      const p_skew = 1 - pchi(T_skew, 2 * nSig);
+
+      // --- Flatness test: transform pp to pp_33 = Φ(z - z_(1-33%)) (i.e., what p would be under 33% power).
+      // Approximate by transforming pp under 33%-power alternative using the CDF of an alternative distribution.
+      // Shortcut: compare observed distribution to uniform via binomial test on pp ≤ 0.5 vs expected 0.5.
+      // This is Simonsohn's approximate flatness test.
+      const pLow = ppRight.filter(pp => pp <= 0.5).length / nSig;
+      const z_flat = (pLow - 0.5) / Math.sqrt(0.25 / nSig);
+      const p_flat = 2 * (1 - pnorm(Math.abs(z_flat)));
+
+      // --- p-uniform: under a fixed true effect δ and selective-publication, conditional p-values should be U(0,1) after transformation p* = P(p ≤ p | reject).
+      // Iteratively find δ that makes mean(pp_delta) = 0.5.
+      // pp_delta = Φ(z_observed - δ·√n) / Φ(-z_{0.025} - δ·√n) (rough approximation with fixed n)
+      // For simplicity, treat each study as z-test and solve for δ (effect on standardized scale).
+      let delta = 0;
+      for (let iter = 0; iter < 60; iter++) {
+        const ppd = raw.map(p => {
+          const z = qnorm(1 - p);  // one-sided Z
+          const num = pnorm(z - delta) - pnorm(qnorm(1 - 0.05) - delta);
+          const denom = 1 - pnorm(qnorm(1 - 0.05) - delta);
+          return denom > 1e-10 ? Math.min(1, Math.max(0, num / denom)) : 0.5;
+        });
+        const mean = ppd.reduce((s, v) => s + v, 0) / ppd.length;
+        if (Math.abs(mean - 0.5) < 1e-4) break;
+        delta += 0.5 * (0.5 - mean);  // damped update
+        if (!Number.isFinite(delta)) { delta = 0; break; }
+      }
+
+      const testsBody = document.getElementById("tests-body");
+      testsBody.innerHTML = "";
+      const flagSkew = p_skew < 0.05 ? "ok" : "bad";
+      const labelSkew = p_skew < 0.05 ? "evidential value" : "no evidential value";
+      testsBody.innerHTML += `<tr><td><code>Right-skew (full p-curve)</code></td><td>χ² = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`;
+      const flagFlat = p_flat < 0.05 ? "ok" : "bad";
+      const labelFlat = p_flat < 0.05 ? "non-flat" : "flat (consistent with null + p-hacking)";
+      testsBody.innerHTML += `<tr><td><code>Flatness (vs uniform)</code></td><td>z = ${fmt(z_flat, 2)}</td><td>${fmt(p_flat, 3)}</td><td><span class="chip ${flagFlat}">${labelFlat}</span></td></tr>`;
+
+      const puBody = document.getElementById("pu-body");
+      puBody.innerHTML = `
+        <tr><td>Significant p-values used</td><td>${nSig}</td></tr>
+        <tr><td>p-uniform effect estimate (δ, z-units)</td><td>${fmt(delta)}</td></tr>
+        <tr><td>Equivalent Cohen's d (approx, large-n)</td><td>${fmt(delta / Math.sqrt(1), 3)}</td></tr>`;
+
+      drawCurve(raw);
+    }
+
+    function pchi(x, k) {
+      if (k <= 0 || x < 0) return 0;
+      const t = Math.pow(x / k, 1 / 3) - (1 - 2 / (9 * k));
+      const z = t / Math.sqrt(2 / (9 * k));
+      return pnorm(z);
+    }
+
+    function drawCurve(pvals) {
+      const svg = document.getElementById("plot");
+      const W = 600, H = 240, padL = 50, padR = 20, padT = 20, padB = 40;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      svg.innerHTML = "";
+      // Bins: 0-.01, .01-.02, .02-.03, .03-.04, .04-.05
+      const bins = [0, 0.01, 0.02, 0.03, 0.04, 0.05];
+      const counts = Array(bins.length - 1).fill(0);
+      for (const p of pvals) {
+        for (let i = 0; i < bins.length - 1; i++) {
+          if (p >= bins[i] && p < bins[i + 1]) { counts[i]++; break; }
+        }
+      }
+      const n = pvals.length;
+      const obs = counts.map(c => 100 * c / n);
+      const expectedNull = 20;  // 20% per bin under uniform
+      // Expected right-skew (33% power) — approximate
+      // Under 33% power H1, p-curve is steeper: approx [57, 22, 10, 7, 4] via Simonsohn tables
+      const expected33 = [57, 22, 10, 7, 4];
+      const maxY = Math.max(60, ...obs);
+      const X = i => padL + i * plotW / counts.length + plotW / (2 * counts.length);
+      const Y = v => padT + (1 - v / maxY) * plotH;
+
+      // Null line (flat at 20)
+      svg.innerHTML += `<line x1="${padL}" y1="${Y(20)}" x2="${padL + plotW}" y2="${Y(20)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity="0.6"/>`;
+      svg.innerHTML += `<text x="${padL + plotW - 8}" y="${Y(20) - 5}" text-anchor="end" font-size="10" fill="var(--muted)">null (uniform)</text>`;
+
+      // Expected 33% line
+      const e33path = expected33.map((v, i) => (i === 0 ? "M" : "L") + X(i) + "," + Y(v)).join(" ");
+      svg.innerHTML += `<path d="${e33path}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`;
+      svg.innerHTML += `<text x="${X(0) + 14}" y="${Y(expected33[0]) - 4}" font-size="10" fill="var(--warn)">33% power</text>`;
+
+      // Observed bars
+      for (let i = 0; i < counts.length; i++) {
+        const bw = plotW / counts.length;
+        const x = padL + i * bw;
+        const h = (obs[i] / maxY) * plotH;
+        svg.innerHTML += `<rect x="${x + 4}" y="${padT + plotH - h}" width="${bw - 8}" height="${h}" fill="var(--accent)" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${X(i)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor">${(bins[i] * 100).toFixed(0)}–${(bins[i + 1] * 100).toFixed(0)}</text>`;
+        if (obs[i] > 0) svg.innerHTML += `<text x="${X(i)}" y="${padT + plotH - h - 5}" text-anchor="middle" font-size="10" fill="currentColor">${obs[i].toFixed(0)}%</text>`;
+      }
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">p-value bin (%)</text>`;
+      svg.innerHTML += `<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">% of studies</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

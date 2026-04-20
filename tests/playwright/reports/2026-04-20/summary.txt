@@ -25,12 +25,14 @@ pass                   DTA SROC Explorer
 pass                   Effect-Size Converter
 pass                   Forest Plot Viewer
 pass                   Funnel Plot Explorer
+pass                   GOSH Meta-Regression
 pass                   GOSH Plot
 pass                   GRADE-CERQual
 pass                   HSROC / Bivariate DTA
 pass                   Heterogeneity Explorer
 pass                   Influence Diagnostics
 pass                   K-M IPD Reconstructor
+pass                   Limit meta-analysis
 pass                   MA Workbench
 pass                   MCID & NI margin
 pass                   MH / Peto pooling
@@ -38,12 +40,14 @@ pass                   Median → Mean/SD
 pass                   Meta-Regression
 pass                   Multi-level MA
 pass                   NMA Dose-Response
+pass                   NMA Global Inconsistency
 pass                   NMA Inconsistency
 pass                   Network MA (SUCRA)
 pass                   PET-PEESE + Trim-and-Fill
 pass                   PICO Formulator
 pass                   PRISMA 2020 Checklist
 pass                   PRISMA Flow
+pass                   PowerMA / RIS
 pass                   Proportion MA
 pass                   Pub-bias Tests
 pass                   QUADAS-2
@@ -54,3 +58,4 @@ pass                   RoB Traffic Light
 pass                   Search Strategy Translator
 pass                   TSA Calculator
 pass                   Thematic Synthesis
+pass                   p-curve / p-uniform

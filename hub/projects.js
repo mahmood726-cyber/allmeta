@@ -1,5 +1,60 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "NMA Global Inconsistency",
+    folder: "C:\\HTML apps\\nma-global-inconsistency",
+    path: "./nma-global-inconsistency/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Fit NMA under consistency vs full design-inconsistency model; compare with a likelihood-ratio test (Higgins 2012). Per-design residual plot to localise inconsistent loops.",
+    note: "Complements the per-comparison node-splitting tool.",
+    tags: ["nma", "inconsistency", "lr-test", "design-by-treatment"]
+  },
+  {
+    name: "p-curve / p-uniform",
+    folder: "C:\\HTML apps\\p-curve",
+    path: "./p-curve/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Publication-bias-robust effect estimation from p-values alone. Right-skew and flatness tests (Simonsohn 2014) plus p-uniform effect size (van Assen 2015).",
+    note: "Uses only significant p-values; complements Funnel / PET-PEESE.",
+    tags: ["p-curve", "p-uniform", "evidential-value", "p-hacking"]
+  },
+  {
+    name: "Limit meta-analysis",
+    folder: "C:\\HTML apps\\limit-ma",
+    path: "./limit-ma/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Rücker limit meta-analysis: extrapolates to the zero-variance limit to adjust for small-study effects. Outputs the FE, RE, and limit estimate with a funnel overlay.",
+    note: "Matches metasens::limitmeta (simplified).",
+    tags: ["limit-meta", "rucker", "small-study-adjustment"]
+  },
+  {
+    name: "GOSH Meta-Regression",
+    folder: "C:\\HTML apps\\gosh-metareg",
+    path: "./gosh-metareg/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "All-subset meta-regression: for every non-trivial subset, fit a single-moderator meta-regression and scatter β against residual I². Reveals whether the moderator effect is subset-robust.",
+    note: "k ≤ 18 studies. Extends GOSH with a regression layer.",
+    tags: ["gosh", "meta-regression", "robustness", "moderator"]
+  },
+  {
+    name: "PowerMA / RIS",
+    folder: "C:\\HTML apps\\powerma",
+    path: "./powerma/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Trial Design",
+    summary: "Pre-meta-analysis power and Required Information Size (RIS) calculator. Binary (RRR) or continuous (MD/SMD) outcomes, α and power, with I² and D² heterogeneity inflation per Wetterslev TSA conventions.",
+    note: "Plan a review's target N before starting.",
+    tags: ["power", "ris", "sample-size", "tsa"]
+  },
+  {
     name: "GRADE-CERQual",
     folder: "C:\\HTML apps\\cerqual",
     path: "./cerqual/index.html",
