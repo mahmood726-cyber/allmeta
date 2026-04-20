@@ -14,29 +14,30 @@
   <div class="page-shell">
     <header class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">C:\HTML apps</p>
-        <h1>One launch surface for the current HTML workspace and nearby C-drive research apps.</h1>
+        <p class="eyebrow">allmeta</p>
+        <h1>Open tools for evidence synthesis, in your browser.</h1>
         <p class="hero-text">
-          This hub catalogs both the apps stored in <code>C:\HTML apps</code> and the nearby root-level HTML research tools that
-          matter day to day, while still separating the newer productivity apps from the evidence-synthesis stack.
+          A catalog of browser-only research tools for systematic review, meta-analysis, trial design, and clinical
+          dashboards. Each app runs without a backend — data stays on your device. The source is on
+          <a href="https://github.com/mahmood726-cyber/allmeta">GitHub</a>.
         </p>
         <div class="hero-actions">
-          <a class="button button-primary" href="#catalog">Browse Apps</a>
-          <a class="button button-secondary" href="#run-notes">Run Notes</a>
+          <a class="button button-primary" href="#catalog">Browse the catalog</a>
+          <a class="button button-secondary" href="#about">About</a>
         </div>
       </div>
       <div class="hero-panel">
         <div class="metric-grid">
           <article class="metric-card">
-            <span class="metric-label">Launchable Now</span>
+            <span class="metric-label">Apps in the catalog</span>
             <strong id="launchable-count" class="metric-value">0</strong>
           </article>
           <article class="metric-card">
-            <span class="metric-label">Need HTTP / Build</span>
+            <span class="metric-label">Linked externally</span>
             <strong id="server-count" class="metric-value">0</strong>
           </article>
           <article class="metric-card">
-            <span class="metric-label">New Apps Added</span>
+            <span class="metric-label">Productivity tools</span>
             <strong id="new-count" class="metric-value">0</strong>
           </article>
           <article class="metric-card">
@@ -45,10 +46,10 @@
           </article>
         </div>
         <div class="tip-card">
-          <p class="tip-title">Recommended launch path</p>
+          <p class="tip-title">Run it locally</p>
           <p class="tip-copy">
-            For the smoothest experience, run <code>.\serve-html-apps.ps1 -Open</code> from this folder and browse the hub over
-            <code>http://localhost:8080</code>.
+            Clone the repo and serve it with any static file server:
+            <code>python -m http.server 8080</code>, then open <code>http://localhost:8080</code>.
           </p>
         </div>
       </div>
@@ -66,21 +67,23 @@
         <div class="filters" id="filter-bar"></div>
       </section>
 
-      <section class="featured-panel">
+      <section class="featured-panel" id="about">
         <article class="panel-card">
-          <h2>Featured Existing Tools</h2>
+          <h2>What's in the catalog</h2>
           <p>
-            The cards below point at the main entry files for the research apps that already exist in the directory, with notes
-            about whether they are best opened directly or through a local server.
+            Tools for pairwise and network meta-analysis, dose-response modelling, diagnostic test accuracy,
+            risk-of-bias assessment, PRISMA flow diagrams, GRADE summary of findings, trial sequential analysis,
+            clinical prediction, adaptive trial design, and health technology assessment — plus a handful of
+            productivity apps for focus, triage, and planning.
           </p>
         </article>
-        <article class="panel-card" id="run-notes">
-          <h2>Run Notes</h2>
+        <article class="panel-card">
+          <h2>How they work</h2>
           <ul class="notes-list">
-            <li>Static single-file apps can usually open directly from <code>file://</code>.</li>
-            <li>Projects flagged <code>Needs HTTP</code> are better served with <code>.\serve-html-apps.ps1</code>.</li>
-            <li>Some cards target nearby folders outside <code>C:\HTML apps</code>; those links are intentional.</li>
-            <li>The new apps save data locally in your browser with <code>localStorage</code>.</li>
+            <li>Each card opens a self-contained HTML app. Some run in this tab; some open in a new tab.</li>
+            <li>All computation happens in your browser. Nothing is uploaded.</li>
+            <li>Data you enter is stored locally (browser <code>localStorage</code>) unless you export it.</li>
+            <li>The source for each app is in the linked repository.</li>
           </ul>
         </article>
       </section>

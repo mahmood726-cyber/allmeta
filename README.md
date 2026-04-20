@@ -1,23 +1,25 @@
-# allmeta — HTML Apps Hub
+# allmeta
 
-Live site: https://mahmood726-cyber.github.io/allmeta/
+Open, browser-only tools for evidence synthesis.
 
-Mirror of the portable, browser-only evidence-synthesis tools in `C:\HTML apps`. Each app is a single-file HTML artifact (or a small bundle of HTML + JS + CSS) and runs without a backend.
+**Live:** https://mahmood726-cyber.github.io/allmeta/
 
-## Local use
+A catalog of research tools for systematic review, meta-analysis, trial design, diagnostic test accuracy, risk-of-bias assessment, GRADE, PRISMA, TSA, and clinical decision support. Each app is self-contained HTML + JS + CSS. No backend. Data stays on your device.
+
+## Run it locally
 
 ```bash
 git clone https://github.com/mahmood726-cyber/allmeta
 cd allmeta
 python -m http.server 8080
-# Open http://localhost:8080
 ```
 
-## What's shipped
+Open http://localhost:8080.
 
-- **25 internal apps** copied into this repo.
-- **5 external cards** in the hub (AdaptSim, Al-Mizan, CardioOracle, CardioSynth Phase 0, NICECardiology) link to their own GitHub Pages deployments.
+## What's inside
+
+Twenty-five apps ship in this repository. Five more — AdaptSim, Al-Mizan, CardioOracle, CardioSynth, NICE Cardiology — are hosted in their own GitHub Pages sites and linked from the hub.
 
 ## Testing
 
-Every push runs a Playwright pre-flight that screenshots each app and verifies at least one plot surface renders. See `tests/playwright/`.
+A Playwright pre-flight (`tests/playwright/`) screenshots every internal app and checks for a rendered plot surface. CI runs on every push.

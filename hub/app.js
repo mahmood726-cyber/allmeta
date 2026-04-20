@@ -22,7 +22,7 @@
   function updateMetrics() {
     const categories = new Set(projects.map((project) => project.category));
     counts.launchable.textContent = String(projects.filter((project) => project.mode === "file").length);
-    counts.server.textContent = String(projects.filter((project) => project.mode === "server").length);
+    counts.server.textContent = String(projects.filter((project) => project.mode === "url").length);
     counts.added.textContent = String(projects.filter((project) => project.collection === "new").length);
     counts.categories.textContent = String(categories.size);
   }
