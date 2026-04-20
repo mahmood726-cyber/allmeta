@@ -44,7 +44,6 @@ def closure(src_root: Path, entry: Path, max_depth: int = 3) -> set[Path]:
                 ref = m.group(1)
                 if ref.startswith(("http://", "https://", "//", "data:", "mailto:")):
                     continue
-                ref = ref.lstrip("./")
                 candidate = (file.parent / ref).resolve()
                 try:
                     candidate.relative_to(src_root.resolve())
