@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Convert between effect sizes (OR, RR, RD, SMD, MD, HR) and derive standard errors from t, F, p, or CI. Browser-only, no backend.">
+  <meta name="color-scheme" content="light dark">
+  <title>Effect-Size Converter</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+        --ok:#5bc47b; --ok-soft:#1e3a27;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 0.5rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.6rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input[type="number"], input[type="text"], select {
+      width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.75rem; }
+    button.primary {
+      background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+      border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer;
+    }
+    button.primary:hover { filter: brightness(1.05); }
+    .results table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .results th, .results td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .results th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .results td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.88rem; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; color: var(--ink); }
+    .note strong { color: var(--warn); }
+    .plot-wrap { margin-top: 1rem; }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Effect-Size Converter</h1>
+    <p>Convert between OR, RR, RD, SMD, MD, and HR. Derive standard errors from t-statistic, F-statistic, p-value, or confidence interval. Everything runs in your browser.</p>
+  </header>
+  <main>
+    <section class="panel" aria-label="Inputs">
+      <h2>Input</h2>
+      <fieldset>
+        <legend>Effect size</legend>
+        <label>
+          <span class="lbl">Type</span>
+          <select id="in-type">
+            <option value="OR">Odds ratio (OR)</option>
+            <option value="RR">Risk ratio (RR)</option>
+            <option value="RD">Risk difference (RD)</option>
+            <option value="SMD">Standardised mean difference (SMD)</option>
+            <option value="MD">Mean difference (MD)</option>
+            <option value="HR">Hazard ratio (HR)</option>
+          </select>
+        </label>
+        <div class="grid-2">
+          <label>
+            <span class="lbl">Point estimate</span>
+            <input id="in-est" type="number" step="any" value="0.75">
+          </label>
+          <label>
+            <span class="lbl">SE (on log scale for ratios)</span>
+            <input id="in-se" type="number" step="any" value="0.12">
+            <span class="hint">Or derive below.</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Context (required for some conversions)</legend>
+        <div class="grid-2">
+          <label>
+            <span class="lbl">Baseline risk p₀</span>
+            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20">
+            <span class="hint">OR ↔ RR ↔ RD.</span>
+          </label>
+          <label>
+            <span class="lbl">Pooled SD</span>
+            <input id="ctx-sd" type="number" step="any" value="1">
+            <span class="hint">MD ↔ SMD.</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Derive SE from…</legend>
+        <div class="grid-2">
+          <label>
+            <span class="lbl">t-statistic</span>
+            <input id="der-t" type="number" step="any" placeholder="e.g. 2.1">
+          </label>
+          <label>
+            <span class="lbl">n₁</span>
+            <input id="der-n1" type="number" step="1" placeholder="group 1 n">
+          </label>
+          <label>
+            <span class="lbl">F-statistic (2 groups)</span>
+            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41">
+          </label>
+          <label>
+            <span class="lbl">n₂</span>
+            <input id="der-n2" type="number" step="1" placeholder="group 2 n">
+          </label>
+          <label>
+            <span class="lbl">Two-sided p-value</span>
+            <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031">
+          </label>
+          <label>
+            <span class="lbl">|point estimate| (for p→SE)</span>
+            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD">
+          </label>
+          <label>
+            <span class="lbl">CI lower</span>
+            <input id="der-lo" type="number" step="any" placeholder="raw for MD, raw ratio for OR/RR/HR">
+          </label>
+          <label>
+            <span class="lbl">CI upper</span>
+            <input id="der-hi" type="number" step="any" placeholder="same scale as lower">
+          </label>
+        </div>
+        <label style="margin-top:0.5rem">
+          <span class="lbl">CI is on</span>
+          <select id="der-scale">
+            <option value="log">log scale (enter upper/lower of the ratio itself; we'll log-transform)</option>
+            <option value="raw">raw scale (e.g. MD)</option>
+          </select>
+        </label>
+        <button type="button" id="btn-derive" class="primary">Derive & fill SE</button>
+      </fieldset>
+
+      <button type="button" id="btn-convert" class="primary" style="width:100%; margin-top:0.5rem">Convert</button>
+    </section>
+
+    <section class="panel results" aria-label="Results">
+      <h2>Conversions</h2>
+      <div id="warn-slot"></div>
+      <table>
+        <thead>
+          <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th></tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+      <div class="plot-wrap">
+        <h2 style="margin-top:1rem">Forest comparison (SMD scale)</h2>
+        <svg id="forest-plot" viewBox="0 0 600 260" role="img" aria-label="Forest plot of converted effect sizes on SMD scale">
+          <g id="forest-bg"></g>
+          <g id="forest-points"></g>
+          <g id="forest-labels"></g>
+          <g id="forest-axis"></g>
+        </svg>
+        <p class="note">All conversions are mapped to the SMD scale for visual comparison (binary ratios converted via Cox's constant √3/π ≈ 0.5513). The plot area is always rendered so automated checks can confirm the canvas is live; the dot + whisker show each scale's estimate with its 95% CI after conversion.</p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Formulas follow Borenstein et al., <em>Introduction to Meta-Analysis</em> (Wiley, 2009). Cox constant <code>√3/π ≈ 0.5513</code>. HR → OR approximation valid only when event rate is low and follow-up balanced. Hedges' <em>g</em> correction applied when df is known.
+  </footer>
+  <script>
+    // --- math helpers ---
+    const Z95 = 1.959963984540054;
+    const COX = Math.sqrt(3) / Math.PI;  // 0.5513288954...
+
+    // Abramowitz & Stegun 26.2.23 approximation for qnorm (inverse std normal CDF).
+    // Accurate to ~4.5e-4 over the tails we use. Good enough for two-sided p in [1e-6, 1].
+    function qnorm(p) {
+      if (p <= 0 || p >= 1) return NaN;
+      const q = p < 0.5 ? p : 1 - p;
+      const t = Math.sqrt(-2 * Math.log(q));
+      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
+      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
+      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
+      return p < 0.5 ? -x : x;
+    }
+
+    // CDF of std normal (Abramowitz & Stegun 7.1.26 via erf approximation).
+    function pnorm(x) {
+      // erf approximation (Abramowitz & Stegun 7.1.26)
+      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+    }
+
+    function hedgesJ(df) {
+      if (!Number.isFinite(df) || df <= 1) return 1;
+      return 1 - 3 / (4 * df - 1);
+    }
+
+    // --- conversion core ---
+    // All ratio inputs (OR, RR, HR) are given on the NATURAL scale, SE on the LOG scale.
+    function convert(type, est, se, p0, pooledSd) {
+      const rows = [];
+      const push = (scale, point, se_, note) => rows.push({ scale, point, se: se_, note: note || "" });
+
+      if (type === "OR") {
+        const logOR = Math.log(est);
+        push("OR",     est,                    se, "log-scale SE");
+        push("ln(OR)", logOR,                  se);
+        if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
+          const rr = est / (1 - p0 + p0 * est);
+          // SE(logRR) via delta method from SE(logOR):
+          //   d(ln RR)/d(ln OR) = 1 - p0 * RR
+          const seLogRR = Math.abs(1 - p0 * rr) * se;
+          push("RR", rr, seLogRR, "via OR→RR given p₀; log-scale SE");
+          const p1 = est * p0 / (1 - p0 + est * p0);
+          push("RD", p1 - p0, NaN, "point only; SE(RD) needs the 2×2 table");
+        }
+        // Cox: SMD = ln(OR) * √3/π, SE propagates linearly
+        push("SMD (Cox)", logOR * COX, se * COX, "Cox's constant √3/π ≈ 0.5513");
+      } else if (type === "RR") {
+        const logRR = Math.log(est);
+        push("RR",     est, se, "log-scale SE");
+        push("ln(RR)", logRR, se);
+        if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
+          const or = est * (1 - p0) / (1 - est * p0);
+          // SE(logOR) via delta from SE(logRR):
+          //   d(ln OR)/d(ln RR) = 1 / (1 - p0 * RR)
+          const seLogOR = se / Math.abs(1 - p0 * est);
+          push("OR", or, seLogOR, "via RR→OR given p₀; log-scale SE");
+          push("RD", (est - 1) * p0, NaN, "point only");
+          push("SMD (Cox via OR)", Math.log(or) * COX, seLogOR * COX, "Cox's constant");
+        }
+      } else if (type === "RD") {
+        push("RD", est, se);
+        if (Number.isFinite(p0) && p0 > 0 && p0 < 1 && Number.isFinite(est)) {
+          const p1 = p0 + est;
+          if (p1 > 0 && p1 < 1) {
+            const rr = p1 / p0;
+            const or = (p1 / (1 - p1)) / (p0 / (1 - p0));
+            push("RR (implied)", rr, NaN, "point only; SE on RR requires 2×2 table");
+            push("OR (implied)", or, NaN, "point only");
+          }
+        }
+      } else if (type === "SMD") {
+        push("SMD", est, se);
+        push("OR (Cox)", Math.exp(est / COX), se / COX, "inverse Cox's constant; log-scale SE");
+        if (Number.isFinite(pooledSd) && pooledSd > 0) {
+          push("MD", est * pooledSd, se * pooledSd, "multiply by pooled SD");
+        }
+      } else if (type === "MD") {
+        push("MD", est, se);
+        if (Number.isFinite(pooledSd) && pooledSd > 0) {
+          push("SMD", est / pooledSd, se / pooledSd, "divide by pooled SD");
+        }
+      } else if (type === "HR") {
+        const logHR = Math.log(est);
+        push("HR",     est, se, "log-scale SE");
+        push("ln(HR)", logHR, se);
+        push("OR (approx)", est, se, "valid only when events are rare and follow-up balanced");
+        push("SMD (Cox-ish)", logHR * COX, se * COX, "HR→OR→SMD, same caveat");
+      }
+      return rows;
+    }
+
+    function withCI(row) {
+      const out = { ...row };
+      if (Number.isFinite(row.se)) {
+        const isRatio = /^OR|^RR|^HR/.test(row.scale);
+        if (isRatio && /^(OR|RR|HR)\b/.test(row.scale)) {
+          const lnPt = Math.log(row.point);
+          out.lo = Math.exp(lnPt - Z95 * row.se);
+          out.hi = Math.exp(lnPt + Z95 * row.se);
+        } else {
+          out.lo = row.point - Z95 * row.se;
+          out.hi = row.point + Z95 * row.se;
+        }
+      }
+      return out;
+    }
+
+    // --- derive SE from one of several sources ---
+    function deriveSE() {
+      const t = parseFloat(document.getElementById("der-t").value);
+      const F = parseFloat(document.getElementById("der-f").value);
+      const p = parseFloat(document.getElementById("der-p").value);
+      const ptAbs = parseFloat(document.getElementById("der-pointabs").value);
+      const n1 = parseFloat(document.getElementById("der-n1").value);
+      const n2 = parseFloat(document.getElementById("der-n2").value);
+      const lo = parseFloat(document.getElementById("der-lo").value);
+      const hi = parseFloat(document.getElementById("der-hi").value);
+      const scale = document.getElementById("der-scale").value;
+
+      // Priority: explicit CI > t + n + n > F + n + n > p + |point|
+      if (Number.isFinite(lo) && Number.isFinite(hi)) {
+        if (scale === "log") {
+          if (lo > 0 && hi > 0) return (Math.log(hi) - Math.log(lo)) / (2 * Z95);
+        } else {
+          return (hi - lo) / (2 * Z95);
+        }
+      }
+      if (Number.isFinite(t) && Number.isFinite(n1) && Number.isFinite(n2) && n1 > 0 && n2 > 0) {
+        // t → SMD: d = t * sqrt((n1+n2)/(n1*n2)); SE(d) ≈ sqrt((n1+n2)/(n1*n2) + d^2/(2*(n1+n2)))
+        const d = t * Math.sqrt((n1 + n2) / (n1 * n2));
+        return Math.sqrt((n1 + n2) / (n1 * n2) + d * d / (2 * (n1 + n2)));
+      }
+      if (Number.isFinite(F) && Number.isFinite(n1) && Number.isFinite(n2) && n1 > 0 && n2 > 0) {
+        const d = Math.sqrt(F * (n1 + n2) / (n1 * n2));
+        return Math.sqrt((n1 + n2) / (n1 * n2) + d * d / (2 * (n1 + n2)));
+      }
+      if (Number.isFinite(p) && p > 0 && p < 1 && Number.isFinite(ptAbs) && ptAbs > 0) {
+        const z = Math.abs(qnorm(1 - p / 2));
+        return ptAbs / z;
+      }
+      return NaN;
+    }
+
+    // --- render ---
+    function fmt(n, digits = 3) {
+      if (!Number.isFinite(n)) return "—";
+      if (Math.abs(n) >= 1000 || (Math.abs(n) < 1e-3 && n !== 0)) return n.toExponential(2);
+      return n.toFixed(digits);
+    }
+
+    function render(rows, warn) {
+      const warnSlot = document.getElementById("warn-slot");
+      warnSlot.innerHTML = warn ? `<div class="note"><strong>Note:</strong> ${warn}</div>` : "";
+
+      const tbody = document.getElementById("results-body");
+      tbody.innerHTML = "";
+      for (const r of rows.map(withCI)) {
+        const ci = Number.isFinite(r.lo) && Number.isFinite(r.hi)
+          ? `[${fmt(r.lo)}, ${fmt(r.hi)}]`
+          : "—";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td><code>${r.scale}</code></td><td>${fmt(r.point)}</td><td>${fmt(r.se)}</td><td>${ci}</td>`;
+        if (r.note) tr.title = r.note;
+        tbody.appendChild(tr);
+      }
+      renderForest(rows);
+    }
+
+    // --- forest plot on SMD scale ---
+    function toSmdView(r) {
+      // Convert (row) to SMD-scale point + SE for plotting.
+      // Returns { pt, se, lo, hi } or null if not plottable.
+      let pt, se;
+      if (/^SMD/.test(r.scale)) { pt = r.point; se = r.se; }
+      else if (/^MD\b/.test(r.scale)) {
+        const sd = parseFloat(document.getElementById("ctx-sd").value);
+        if (!Number.isFinite(sd) || sd <= 0) return null;
+        pt = r.point / sd; se = r.se / sd;
+      } else if (/^OR\b/.test(r.scale) || /^HR\b/.test(r.scale)) {
+        pt = Math.log(r.point) * COX; se = r.se * COX;
+      } else if (/^ln\(/.test(r.scale)) {
+        pt = r.point * COX; se = r.se * COX;
+      } else if (/^RR\b/.test(r.scale)) {
+        pt = Math.log(r.point) * COX; se = r.se * COX;
+      } else {
+        return null;
+      }
+      if (!Number.isFinite(pt)) return null;
+      const lo = Number.isFinite(se) ? pt - Z95 * se : NaN;
+      const hi = Number.isFinite(se) ? pt + Z95 * se : NaN;
+      return { pt, se, lo, hi };
+    }
+
+    function renderForest(rows) {
+      const views = rows.map(r => ({ scale: r.scale, ...(toSmdView(r) || {}) }))
+                        .filter(v => Number.isFinite(v.pt));
+      const svg = document.getElementById("forest-plot");
+      const W = 600, H = Math.max(200, 60 + views.length * 28);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      const bg = document.getElementById("forest-bg");
+      const pts = document.getElementById("forest-points");
+      const lbls = document.getElementById("forest-labels");
+      const ax = document.getElementById("forest-axis");
+      bg.innerHTML = pts.innerHTML = lbls.innerHTML = ax.innerHTML = "";
+
+      // X range: symmetric, fit all points & CIs, min |x| of 1.
+      const xs = views.flatMap(v => [v.pt, v.lo, v.hi].filter(Number.isFinite));
+      const maxAbs = Math.max(1, ...xs.map(Math.abs));
+      const xPad = maxAbs * 1.15;
+      const leftPad = 160, rightPad = 30;
+      const plotW = W - leftPad - rightPad;
+      const X = x => leftPad + (x + xPad) / (2 * xPad) * plotW;
+      const y0 = 30;
+      const rowH = 28;
+
+      // zero line
+      ax.innerHTML += `<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + views.length * rowH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      // axis
+      ax.innerHTML += `<line x1="${leftPad}" y1="${y0 + views.length * rowH + 10}" x2="${W - rightPad}" y2="${y0 + views.length * rowH + 10}" stroke="currentColor" opacity="0.5"/>`;
+      for (const t of [-2, -1, 0, 1, 2]) {
+        if (Math.abs(t) > xPad) continue;
+        ax.innerHTML += `<line x1="${X(t)}" y1="${y0 + views.length * rowH + 6}" x2="${X(t)}" y2="${y0 + views.length * rowH + 14}" stroke="currentColor" opacity="0.5"/>`;
+        ax.innerHTML += `<text x="${X(t)}" y="${y0 + views.length * rowH + 28}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t}</text>`;
+      }
+      ax.innerHTML += `<text x="${(leftPad + W - rightPad) / 2}" y="${y0 + views.length * rowH + 46}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">SMD scale</text>`;
+
+      views.forEach((v, i) => {
+        const y = y0 + i * rowH;
+        // label
+        lbls.innerHTML += `<text x="${leftPad - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor">${v.scale}</text>`;
+        // whisker
+        if (Number.isFinite(v.lo) && Number.isFinite(v.hi)) {
+          pts.innerHTML += `<line x1="${X(v.lo)}" y1="${y}" x2="${X(v.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>`;
+        }
+        // point
+        pts.innerHTML += `<rect x="${X(v.pt) - 5}" y="${y - 5}" width="10" height="10" fill="var(--accent)"/>`;
+      });
+    }
+
+    // --- glue ---
+    document.getElementById("btn-derive").addEventListener("click", () => {
+      const se = deriveSE();
+      if (Number.isFinite(se)) {
+        document.getElementById("in-se").value = se.toFixed(6);
+      } else {
+        alert("Could not derive SE. Provide either CI bounds, t+n₁+n₂, F+n₁+n₂, or p + |point estimate|.");
+      }
+    });
+
+    document.getElementById("btn-convert").addEventListener("click", runConvert);
+    document.getElementById("in-type").addEventListener("change", runConvert);
+
+    function runConvert() {
+      const type = document.getElementById("in-type").value;
+      const est = parseFloat(document.getElementById("in-est").value);
+      const se = parseFloat(document.getElementById("in-se").value);
+      const p0 = parseFloat(document.getElementById("ctx-p0").value);
+      const sd = parseFloat(document.getElementById("ctx-sd").value);
+      if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return; }
+      const rows = convert(type, est, se, p0, sd);
+      const warn = type === "HR"
+        ? "HR → OR approximation assumes low event rate and balanced follow-up. For non-rare events, the approximation overstates the OR. Use caution for survival data with many events."
+        : type === "OR" && Number.isFinite(p0) && p0 > 0.1
+        ? "At baseline risk p₀ > 0.10 the OR can materially differ from RR. Report the metric as specified in the protocol."
+        : "";
+      render(rows, warn);
+    }
+
+    // initial render
+    runConvert();
+  </script>
+</body>
+</html>

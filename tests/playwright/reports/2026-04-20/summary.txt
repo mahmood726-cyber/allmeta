@@ -12,8 +12,10 @@ fail-plot-missing      PRISMA Screening
 fail-plot-missing      TruthCert Pairwise Pro
 fail-plot-missing      WebR Validator
 pass                   Bayesian MA
+pass                   Citation Dedup
 pass                   Cumulative + Subgroup
 pass                   DTA SROC Explorer
+pass                   Effect-Size Converter
 pass                   Forest Plot Viewer
 pass                   Funnel Plot Explorer
 pass                   Heterogeneity Explorer

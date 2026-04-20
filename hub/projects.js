@@ -1,5 +1,38 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "Citation Dedup",
+    folder: "C:\\HTML apps\\citation-dedup",
+    path: "./citation-dedup/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Screening & Extraction",
+    summary: "Flag duplicate citations in a pasted list via DOI match, normalised-title trigram Jaccard, first-author surname, and year tolerance. Export cleaned CSV or grouped JSON.",
+    note: "Pairs with Screenr as the upstream dedup step before title/abstract screening.",
+    tags: ["deduplication", "systematic-review", "jaccard", "trigram"]
+  },
+  {
+    name: "Effect-Size Converter",
+    folder: "C:\\HTML apps\\effect-size-converter",
+    path: "./effect-size-converter/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Convert between OR, RR, RD, SMD, MD, and HR. Derive standard errors from t, F, p-value, or CI. Cox's √3/π transform for OR↔SMD; delta-method propagation for OR↔RR.",
+    note: "Browser-only, no backend. Live forest comparison on the SMD scale.",
+    tags: ["effect-size", "conversion", "standard-error", "delta-method"]
+  },
+  {
+    name: "Screenr",
+    folder: "C:\\Projects\\rayyanreplacement",
+    path: "https://mahmood726-cyber.github.io/rayyanreplacement/",
+    collection: "existing",
+    mode: "url",
+    category: "Screening & Extraction",
+    summary: "Browser-only Rayyan/Covidence alternative: dual screening with conflict detection, SAFE stopping rules, ML prioritization (TF-IDF + logistic regression), Cohen's κ, and structured data extraction.",
+    note: "Hosted as its own GitHub Pages site; linked here as the canonical screening workbench.",
+    tags: ["screening", "rayyan", "dual-reviewer", "ml-prioritization", "data-extraction"]
+  },
+  {
     name: "Dose Response Pro",
     folder: "C:\\HTML apps\\dosehtml",
     path: "./dosehtml/dose-response-pro.html",

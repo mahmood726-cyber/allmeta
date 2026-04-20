@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Deduplicate systematic review citations by DOI, normalized title similarity (trigram Jaccard), first-author surname, and year. Browser-only.">
+  <meta name="color-scheme" content="light dark">
+  <title>Citation Dedup</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+      --dup:#912121; --dup-soft:#fbd2d2;
+      --keep:#0d7a27; --keep-soft:#dff3e0;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+        --dup:#ef7373; --dup-soft:#3a1e1e;
+        --keep:#5bc47b; --keep-soft:#1e3a27;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 0.5rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.6rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    textarea, input[type="number"], select, input[type="text"] {
+      width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit;
+    }
+    textarea { min-height: 8rem; font-family: "SF Mono", "Cascadia Code", Consolas, monospace; font-size: 0.82rem; }
+    button.primary {
+      background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+      border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer;
+    }
+    button.secondary {
+      background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+      padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+    }
+    button.primary:hover, button.secondary:hover { filter: brightness(1.05); }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+    .metric { background: var(--accent-soft); border-radius: 6px; padding: 0.5rem 0.7rem; }
+    .metric .k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .metric .v { display: block; font-size: 1.15rem; font-weight: 700; }
+    .group { border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 0.75rem; background: var(--bg); }
+    .group.size-1 { background: var(--keep-soft); border-color: var(--keep); }
+    .group.size-gt-1 { background: var(--dup-soft); border-color: var(--dup); }
+    .group h3 { margin: 0 0 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+    .rec { font-size: 0.85rem; padding: 0.2rem 0; border-bottom: 1px dotted var(--border); }
+    .rec:last-child { border-bottom: none; }
+    .rec .title { font-weight: 500; }
+    .rec .meta { color: var(--muted); font-size: 0.78rem; }
+    .rec.kept { color: var(--keep); font-weight: 500; }
+    .rec.dropped { color: var(--dup); text-decoration: line-through; opacity: 0.8; }
+    svg { width: 100%; height: auto; display: block; }
+    .plot-wrap { margin-top: 1rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Citation Dedup</h1>
+    <p>Given a list of citations, flag likely duplicates via DOI match, normalized title similarity (trigram Jaccard), first-author surname, and year. Export the cleaned set as CSV. Everything runs in your browser.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <fieldset>
+        <legend>Paste citations</legend>
+        <label>
+          <span class="lbl">Format</span>
+          <select id="format">
+            <option value="csv">CSV: id,title,authors,year,journal,doi</option>
+            <option value="titles">Titles only (one per line)</option>
+          </select>
+        </label>
+        <label>
+          <span class="lbl">Citations</span>
+          <textarea id="input" placeholder="R001,Effect of SGLT2 inhibitors in heart failure,Smith J; Doe A,2023,NEJM,10.1056/abc123
+R002,Effects of SGLT2 inhibitor in heart failure patients,Smith J,2023,NEJM,10.1056/abc123
+R003,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,10.1016/xyz
+R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textarea>
+          <span class="hint">CSV: first line headers optional. Case and punctuation in titles are normalized.</span>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Matching</legend>
+        <label>
+          <span class="lbl">Title similarity threshold (Jaccard)</span>
+          <input id="threshold" type="number" step="0.01" min="0" max="1" value="0.85">
+          <span class="hint">Lower = more aggressive (more groups). 0.85 ≈ typical SR dedup.</span>
+        </label>
+        <label>
+          <span class="lbl">Year tolerance (± years)</span>
+          <input id="year-tol" type="number" step="1" min="0" value="1">
+        </label>
+        <label>
+          <span class="lbl">Require first-author surname match</span>
+          <select id="req-author">
+            <option value="no">No — title similarity alone can flag</option>
+            <option value="yes" selected>Yes — title AND surname (if surname present)</option>
+          </select>
+        </label>
+      </fieldset>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Run dedup</button>
+      <button type="button" id="btn-demo" class="secondary" style="width:100%; margin-top:0.5rem">Load demo</button>
+    </section>
+
+    <section class="panel">
+      <h2>Results</h2>
+      <div class="metrics" id="metrics">
+        <div class="metric"><span class="k">Input records</span><span class="v" id="m-in">0</span></div>
+        <div class="metric"><span class="k">Unique clusters</span><span class="v" id="m-clust">0</span></div>
+        <div class="metric"><span class="k">Duplicates flagged</span><span class="v" id="m-dup">0</span></div>
+        <div class="metric"><span class="k">Max cluster size</span><span class="v" id="m-max">0</span></div>
+      </div>
+      <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem">
+        <button type="button" id="btn-export-clean" class="secondary">Download cleaned CSV</button>
+        <button type="button" id="btn-export-groups" class="secondary">Download groups JSON</button>
+      </div>
+      <div id="groups"></div>
+      <div class="plot-wrap">
+        <h2 style="margin-top:1rem">Cluster-size histogram</h2>
+        <svg id="hist" viewBox="0 0 600 200" role="img" aria-label="Histogram of cluster sizes">
+          <g id="hist-bars"></g>
+          <g id="hist-axis"></g>
+        </svg>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Title normalisation: lowercase, strip punctuation, collapse whitespace, drop stopwords (<code>a/an/the/of/in/on/for/and/or/to</code>). Similarity: Jaccard on character trigrams (n=3) over the normalised title.
+  </footer>
+  <script>
+    // --- normalisation ---
+    const STOPWORDS = new Set(["a","an","the","of","in","on","for","and","or","to","with","at","by"]);
+
+    function normTitle(s) {
+      if (!s) return "";
+      return s.toLowerCase()
+              .replace(/[\u2013\u2014\u2010\u2011]/g, "-")   // normalize dashes
+              .replace(/[^\p{L}\p{N}\s-]/gu, " ")            // strip punct but keep letters/nums
+              .split(/\s+/)
+              .filter(w => w && !STOPWORDS.has(w))
+              .join(" ")
+              .trim();
+    }
+
+    function normDOI(s) {
+      if (!s) return "";
+      return s.toLowerCase()
+              .replace(/^\s*https?:\/\/(dx\.)?doi\.org\//, "")
+              .replace(/^doi:\s*/, "")
+              .trim();
+    }
+
+    function firstAuthorSurname(authors) {
+      if (!authors) return "";
+      // authors: semicolon- or ampersand-separated; take first; surname = last token before comma or first token overall
+      const first = authors.split(/[;&]/)[0].trim();
+      if (!first) return "";
+      if (first.includes(",")) return first.split(",")[0].trim().toLowerCase();
+      const parts = first.split(/\s+/);
+      return parts[parts.length - 1].toLowerCase();
+    }
+
+    // --- trigram Jaccard similarity ---
+    function trigrams(s, n = 3) {
+      if (!s || s.length < n) return new Set([s || ""]);
+      const out = new Set();
+      for (let i = 0; i <= s.length - n; i++) out.add(s.slice(i, i + n));
+      return out;
+    }
+
+    function jaccard(a, b) {
+      if (a.size === 0 && b.size === 0) return 1;
+      let inter = 0;
+      for (const t of a) if (b.has(t)) inter++;
+      const union = a.size + b.size - inter;
+      return union === 0 ? 0 : inter / union;
+    }
+
+    // --- parse input ---
+    function parseInput(text, format) {
+      const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+      if (format === "titles") {
+        return lines.map((t, i) => ({ id: `R${i + 1}`, title: t, authors: "", year: "", journal: "", doi: "" }));
+      }
+      // CSV — simple split (handles quotes minimally)
+      const records = [];
+      for (let idx = 0; idx < lines.length; idx++) {
+        const line = lines[idx];
+        if (idx === 0 && /^(id|record_?id|title)\b/i.test(line) && line.includes(",")) continue; // skip header
+        const fields = splitCSVLine(line);
+        while (fields.length < 6) fields.push("");
+        records.push({
+          id: fields[0] || `R${idx + 1}`,
+          title: fields[1] || "",
+          authors: fields[2] || "",
+          year: fields[3] || "",
+          journal: fields[4] || "",
+          doi: fields[5] || "",
+        });
+      }
+      return records;
+    }
+
+    function splitCSVLine(line) {
+      const out = []; let cur = ""; let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { inQ = !inQ; continue; }
+        if (c === "," && !inQ) { out.push(cur); cur = ""; continue; }
+        cur += c;
+      }
+      out.push(cur);
+      return out.map(s => s.trim());
+    }
+
+    // --- clustering via union-find ---
+    class UF {
+      constructor(n) { this.p = Array.from({ length: n }, (_, i) => i); }
+      find(x) { while (this.p[x] !== x) { this.p[x] = this.p[this.p[x]]; x = this.p[x]; } return x; }
+      union(a, b) { const ra = this.find(a), rb = this.find(b); if (ra !== rb) this.p[ra] = rb; }
+    }
+
+    function dedup(records, threshold, yearTol, requireAuthor) {
+      const n = records.length;
+      const uf = new UF(n);
+      const feats = records.map(r => ({
+        titleN: normTitle(r.title),
+        trig: trigrams(normTitle(r.title)),
+        doi: normDOI(r.doi),
+        surname: firstAuthorSurname(r.authors),
+        year: parseInt(r.year, 10) || NaN,
+      }));
+
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          let dup = false;
+          // DOI exact match → duplicate
+          if (feats[i].doi && feats[i].doi === feats[j].doi) {
+            dup = true;
+          } else {
+            // title similarity check
+            const sim = jaccard(feats[i].trig, feats[j].trig);
+            if (sim >= threshold) {
+              let ok = true;
+              if (requireAuthor === "yes" && feats[i].surname && feats[j].surname && feats[i].surname !== feats[j].surname) {
+                ok = false;
+              }
+              if (Number.isFinite(feats[i].year) && Number.isFinite(feats[j].year)
+                  && Math.abs(feats[i].year - feats[j].year) > yearTol) {
+                ok = false;
+              }
+              if (ok) dup = true;
+            }
+          }
+          if (dup) uf.union(i, j);
+        }
+      }
+
+      // Group indices by root
+      const groups = new Map();
+      for (let i = 0; i < n; i++) {
+        const r = uf.find(i);
+        if (!groups.has(r)) groups.set(r, []);
+        groups.get(r).push(i);
+      }
+      return [...groups.values()].map(g => g.sort((a, b) => a - b));
+    }
+
+    // --- render ---
+    let LAST_STATE = { records: [], groups: [] };
+
+    function render() {
+      const { records, groups } = LAST_STATE;
+      const container = document.getElementById("groups");
+      container.innerHTML = "";
+      const dupCount = records.length - groups.length;
+      document.getElementById("m-in").textContent = String(records.length);
+      document.getElementById("m-clust").textContent = String(groups.length);
+      document.getElementById("m-dup").textContent = String(dupCount);
+      document.getElementById("m-max").textContent = String(groups.reduce((m, g) => Math.max(m, g.length), 0));
+
+      groups.sort((a, b) => b.length - a.length || a[0] - b[0]);
+      for (const g of groups) {
+        const div = document.createElement("div");
+        div.className = "group " + (g.length === 1 ? "size-1" : "size-gt-1");
+        const heading = document.createElement("h3");
+        heading.textContent = `Cluster of ${g.length}`;
+        div.appendChild(heading);
+        g.forEach((idx, pos) => {
+          const r = records[idx];
+          const rec = document.createElement("div");
+          rec.className = "rec " + (pos === 0 ? "kept" : "dropped");
+          const title = document.createElement("div");
+          title.className = "title";
+          title.textContent = r.title || "(no title)";
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          const parts = [r.authors, r.year, r.journal].filter(Boolean);
+          meta.textContent = (pos === 0 ? "[KEEP] " : "[DROP] ") + (r.id ? r.id + " · " : "") + parts.join(" · ") + (r.doi ? ` · ${r.doi}` : "");
+          rec.appendChild(title);
+          rec.appendChild(meta);
+          div.appendChild(rec);
+        });
+        container.appendChild(div);
+      }
+      renderHist(groups);
+    }
+
+    function renderHist(groups) {
+      const sizes = groups.map(g => g.length);
+      const maxSize = Math.max(1, ...sizes);
+      const counts = Array.from({ length: maxSize }, (_, i) => sizes.filter(s => s === i + 1).length);
+      const W = 600, H = 200;
+      const padL = 40, padR = 20, padT = 20, padB = 40;
+      const plotW = W - padL - padR, plotH = H - padT - padB;
+      const maxCount = Math.max(1, ...counts);
+      const bars = document.getElementById("hist-bars");
+      const ax = document.getElementById("hist-axis");
+      bars.innerHTML = ""; ax.innerHTML = "";
+
+      const barW = plotW / counts.length;
+      counts.forEach((c, i) => {
+        const x = padL + i * barW;
+        const h = (c / maxCount) * plotH;
+        const y = padT + plotH - h;
+        bars.innerHTML += `<rect x="${x + 1}" y="${y}" width="${barW - 2}" height="${h}" fill="var(--accent)" opacity="0.85"/>`;
+        bars.innerHTML += `<text x="${x + barW / 2}" y="${padT + plotH + 14}" text-anchor="middle" font-size="11" fill="currentColor">${i + 1}</text>`;
+        if (c > 0) {
+          bars.innerHTML += `<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" font-size="11" fill="currentColor">${c}</text>`;
+        }
+      });
+      // axes
+      ax.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      ax.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      ax.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Cluster size</text>`;
+      ax.innerHTML += `<text x="15" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 15 ${padT + plotH / 2})">Clusters</text>`;
+    }
+
+    // --- exports ---
+    function downloadFile(name, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+
+    function csvEscape(s) {
+      if (s == null) return "";
+      const str = String(s);
+      return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    }
+
+    document.getElementById("btn-export-clean").addEventListener("click", () => {
+      const { records, groups } = LAST_STATE;
+      const rows = [["id", "title", "authors", "year", "journal", "doi"]];
+      for (const g of groups) {
+        const r = records[g[0]];
+        rows.push([r.id, r.title, r.authors, r.year, r.journal, r.doi]);
+      }
+      const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
+      downloadFile("citations_dedup.csv", csv, "text/csv;charset=utf-8");
+    });
+
+    document.getElementById("btn-export-groups").addEventListener("click", () => {
+      const { records, groups } = LAST_STATE;
+      const out = groups.map(g => g.map(i => records[i]));
+      downloadFile("citations_groups.json", JSON.stringify(out, null, 2), "application/json;charset=utf-8");
+    });
+
+    // --- glue ---
+    document.getElementById("btn-run").addEventListener("click", () => {
+      const text = document.getElementById("input").value;
+      const format = document.getElementById("format").value;
+      const threshold = parseFloat(document.getElementById("threshold").value) || 0.85;
+      const yearTol = parseInt(document.getElementById("year-tol").value, 10) || 0;
+      const requireAuthor = document.getElementById("req-author").value;
+      const records = parseInput(text, format);
+      if (records.length === 0) { alert("No citations parsed."); return; }
+      const groups = dedup(records, threshold, yearTol, requireAuthor);
+      LAST_STATE = { records, groups };
+      render();
+    });
+
+    document.getElementById("btn-demo").addEventListener("click", () => {
+      // Already has demo text; just run
+      document.getElementById("btn-run").click();
+    });
+
+    // Auto-run on load with the default demo content
+    document.getElementById("btn-run").click();
+  </script>
+</body>
+</html>
