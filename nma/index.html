@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Network meta-analysis: contrast-based pooling, network graph, SUCRA, league table.">
+  <meta name="color-scheme" content="light dark">
+  <title>Network Meta-Analysis</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:72ch; }
+    .layout { display:grid; grid-template-columns:minmax(320px,28rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; margin-bottom:1rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.9rem;
+    }
+    textarea { resize:vertical; min-height:12rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
+    .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
+    table.league { width:100%; border-collapse:collapse; font-size:0.78rem; font-variant-numeric:tabular-nums; }
+    table.league th, table.league td { padding:0.35rem 0.5rem; border:1px solid var(--border); text-align:center; }
+    table.league th { font-weight:700; background:var(--accent-soft); color:var(--accent); }
+    table.league td.diag { background:var(--accent-soft); font-weight:700; color:var(--accent); }
+    table.league td.pos { color:#0d7a27; }
+    table.league td.neg { color:#912121; }
+    .sucra-row { display:grid; grid-template-columns:8rem 1fr 3rem; gap:0.5rem; align-items:center; padding:0.2rem 0; font-size:0.85rem; }
+    .sucra-bar { height:12px; background:var(--border); border-radius:6px; overflow:hidden; position:relative; }
+    .sucra-bar > span { display:block; height:100%; background:linear-gradient(90deg, #2c5e8a 0%, #6aa6d4 100%); border-radius:6px; transition:width 200ms; }
+    .sucra-val { font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
+    .warn-banner { margin-top:0.5rem; padding:0.5rem 0.75rem; background:var(--warn-soft);
+                   color:var(--warn); border:1px solid var(--warn); border-radius:6px; font-size:0.82rem; display:none; }
+    .warn-banner.is-visible { display:block; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>Network Meta-Analysis</h1>
+    <p>Contrast-based frequentist NMA over an arbitrary treatment network. Connectivity check, network-graph preview, SUCRA with probability-of-best, league table of all relative effects. Multi-arm-trial correction off; use with caution per advanced-stats.md.</p>
+  </header>
+
+  <main class="layout">
+    <section>
+      <div class="panel" aria-label="Input form">
+        <h2>Contrasts</h2>
+        <fieldset>
+          <legend>Data</legend>
+          <label>
+            <span class="lbl">CSV: <code>study, treatment1, treatment2, estimate, SE</code></span>
+            <textarea id="f-data" spellcheck="false"></textarea>
+            <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. logOR).</span>
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Options</legend>
+          <label>
+            <span class="lbl">Reference treatment</span>
+            <select id="f-ref"></select>
+            <span class="hint">Set to the comparator for the league table; all effects are re-expressed relative to it.</span>
+          </label>
+          <label>
+            <span class="lbl">Model</span>
+            <select id="f-model">
+              <option value="fe" selected>Fixed effect (inverse-variance)</option>
+              <option value="re">Random effects (shared τ², DerSimonian-Laird on contrasts)</option>
+            </select>
+          </label>
+          <label>
+            <span class="lbl">Plot title</span>
+            <input type="text" id="f-title" placeholder="e.g. Antihypertensives — incident HF">
+          </label>
+        </fieldset>
+
+        <div id="stats-wrap"></div>
+        <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+        <div class="actions">
+          <button type="button" id="btn-svg" class="primary">Download network SVG</button>
+          <button type="button" id="btn-league">Download league CSV</button>
+          <button type="button" id="btn-json">Download JSON</button>
+          <button type="button" id="btn-import">Import JSON</button>
+          <button type="button" id="btn-example">Load example</button>
+          <button type="button" id="btn-reset">Reset</button>
+          <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        </div>
+      </div>
+    </section>
+
+    <section class="preview-wrap">
+      <div class="panel" aria-label="Network graph">
+        <h2>Network graph</h2>
+        <div id="svg-host"></div>
+      </div>
+      <div class="panel" aria-label="SUCRA">
+        <h2>SUCRA &amp; rank probabilities (MC, 10k samples)</h2>
+        <div id="sucra-host"></div>
+      </div>
+      <div class="panel" aria-label="League table">
+        <h2>League table — rows vs columns</h2>
+        <div id="league-host" style="overflow-x:auto"></div>
+      </div>
+    </section>
+  </main>
+
+  <p class="footer-note">Contrast-level WLS per Lu &amp; Ades (2004) simplified: no multi-arm τ²/2 off-diagonal correction, no node-splitting in v1. SUCRA reports probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md).</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "nma-v1";
+    const BUS_KEY = "ma-studies-v1";
+
+    const fields = { data:"f-data", ref:"f-ref", model:"f-model", title:"f-title" };
+    const EXAMPLE = [
+      "# study, treatment1, treatment2, est, SE   (logOR)",
+      "TRIAL1, Placebo, DrugA, -0.22, 0.12",
+      "TRIAL2, Placebo, DrugA, -0.31, 0.14",
+      "TRIAL3, Placebo, DrugB, -0.15, 0.11",
+      "TRIAL4, Placebo, DrugB, -0.19, 0.10",
+      "TRIAL5, Placebo, DrugC, -0.05, 0.13",
+      "TRIAL6, DrugA, DrugB, 0.08, 0.13",
+      "TRIAL7, DrugA, DrugC, 0.18, 0.15",
+      "TRIAL8, DrugB, DrugC, 0.10, 0.14",
+      "TRIAL9, DrugA, DrugD, -0.06, 0.16",
+      "TRIAL10, Placebo, DrugD, -0.28, 0.13"
+    ].join("\n");
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+    const statsWrap = document.getElementById("stats-wrap");
+    const sucraHost = document.getElementById("sucra-host");
+    const leagueHost = document.getElementById("league-host");
+
+    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value; } return o; }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+
+    function parseContrasts(text) {
+      const rows=[], warnings=[];
+      const lines = String(text||"").split(/\r?\n/);
+      for (let i=0;i<lines.length;i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 5) { warnings.push("Line "+(i+1)+": need 5 columns"); continue; }
+        const study = parts[0];
+        const t1 = parts[1];
+        const t2 = parts[2];
+        const est = parseFloat(parts[3]);
+        const se = parseFloat(parts[4]);
+        if (!isFinite(est) || !isFinite(se)) {
+          if (rows.length === 0 && i < 3) continue;
+          warnings.push("Line "+(i+1)+": non-numeric"); continue;
+        }
+        if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
+        if (t1 === t2) { warnings.push("Line "+(i+1)+": self-loop ignored"); continue; }
+        rows.push({ study, t1, t2, est, se, v: se*se });
+      }
+      return { rows, warnings };
+    }
+
+    function uniqueTreatments(rows) {
+      const set = new Set();
+      for (const r of rows) { set.add(r.t1); set.add(r.t2); }
+      return Array.from(set).sort();
+    }
+
+    // BFS connectivity on undirected graph
+    function isConnected(treatments, rows) {
+      if (!treatments.length) return true;
+      const adj = {};
+      for (const t of treatments) adj[t] = new Set();
+      for (const r of rows) { adj[r.t1].add(r.t2); adj[r.t2].add(r.t1); }
+      const seen = new Set([treatments[0]]);
+      const q = [treatments[0]];
+      while (q.length) { const n = q.shift(); for (const m of adj[n]) if (!seen.has(m)) { seen.add(m); q.push(m); } }
+      return seen.size === treatments.length;
+    }
+
+    // ---- Matrix utilities (small, for up to ~20 treatments) ----
+    function zeros(r, c) { const M = new Array(r); for (let i=0;i<r;i++) { M[i]=new Array(c).fill(0); } return M; }
+    function matmul(A, B) {
+      const m=A.length, n=A[0].length, p=B[0].length;
+      const C = zeros(m, p);
+      for (let i=0;i<m;i++) for (let j=0;j<p;j++) { let s=0; for (let k=0;k<n;k++) s += A[i][k]*B[k][j]; C[i][j] = s; }
+      return C;
+    }
+    function transpose(A) { const m=A.length, n=A[0].length; const B=zeros(n,m); for (let i=0;i<m;i++) for (let j=0;j<n;j++) B[j][i]=A[i][j]; return B; }
+    function invert(A) {
+      const n = A.length;
+      const M = zeros(n, 2*n);
+      for (let i=0;i<n;i++) { for (let j=0;j<n;j++) M[i][j] = A[i][j]; M[i][n+i] = 1; }
+      for (let i=0;i<n;i++) {
+        let pivot = M[i][i];
+        let piv_row = i;
+        for (let r=i+1;r<n;r++) if (Math.abs(M[r][i]) > Math.abs(pivot)) { pivot = M[r][i]; piv_row = r; }
+        if (Math.abs(pivot) < 1e-12) return null;
+        if (piv_row !== i) { const tmp=M[i]; M[i]=M[piv_row]; M[piv_row]=tmp; }
+        const inv = 1/M[i][i];
+        for (let j=0;j<2*n;j++) M[i][j] *= inv;
+        for (let r=0;r<n;r++) if (r!==i) { const f = M[r][i]; if (f !== 0) for (let j=0;j<2*n;j++) M[r][j] -= f * M[i][j]; }
+      }
+      const Inv = zeros(n, n);
+      for (let i=0;i<n;i++) for (let j=0;j<n;j++) Inv[i][j] = M[i][n+j];
+      return Inv;
+    }
+    function cholesky(A) {
+      const n = A.length;
+      const L = zeros(n, n);
+      for (let i=0;i<n;i++) {
+        for (let j=0;j<=i;j++) {
+          let s = 0;
+          for (let k=0;k<j;k++) s += L[i][k]*L[j][k];
+          if (i === j) {
+            const val = A[i][i] - s;
+            if (val <= 0) return null;
+            L[i][j] = Math.sqrt(val);
+          } else {
+            L[i][j] = (A[i][j] - s) / L[j][j];
+          }
+        }
+      }
+      return L;
+    }
+
+    // Box-Muller
+    let normState = null;
+    function rnorm() {
+      if (normState !== null) { const z = normState; normState = null; return z; }
+      let u=0, v=0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      const R = Math.sqrt(-2*Math.log(u));
+      const theta = 2*Math.PI*v;
+      normState = R*Math.sin(theta);
+      return R*Math.cos(theta);
+    }
+
+    // ---- Contrast-based NMA via WLS ----
+    function fitNMA(rows, treatments, refTreat, model) {
+      const nonref = treatments.filter(t => t !== refTreat);
+      const K = nonref.length;
+      const idx = {};
+      for (let k=0;k<K;k++) idx[nonref[k]] = k;
+      const n = rows.length;
+
+      // Design matrix X (n × K)
+      const X = zeros(n, K);
+      const y = new Array(n);
+      const w = new Array(n);
+      for (let i=0;i<n;i++) {
+        const r = rows[i];
+        y[i] = r.est;
+        w[i] = 1 / r.v;
+        // sign convention: y = d_t2 - d_t1
+        if (r.t2 !== refTreat) X[i][idx[r.t2]] += 1;
+        if (r.t1 !== refTreat) X[i][idx[r.t1]] -= 1;
+      }
+
+      // RE: estimate τ² via DL on contrast-level Q (simplified; treats all contrasts as "one meta" without adjustment)
+      let tau2 = 0;
+      if (model === "re" && n >= 2) {
+        // First FE solve, then DL from residuals
+        const feRes = solveWLS(X, y, w);
+        if (feRes) {
+          let Q = 0;
+          for (let i=0;i<n;i++) {
+            let yhat = 0;
+            for (let k=0;k<K;k++) yhat += X[i][k] * feRes.d[k];
+            Q += w[i] * (y[i] - yhat) * (y[i] - yhat);
+          }
+          const df = Math.max(1, n - K);
+          const wSum = w.reduce((a,b)=>a+b,0);
+          const w2Sum = w.reduce((a,b)=>a+b*b, 0);
+          const denom = wSum - w2Sum/wSum;
+          if (denom > 0) tau2 = Math.max(0, (Q - df) / denom);
+        }
+      }
+
+      // Apply τ² by inflating variances
+      const wAdj = rows.map(r => 1/(r.v + tau2));
+      const res = solveWLS(X, y, wAdj);
+      if (!res) return { error: "Design matrix is singular (disconnected network or insufficient contrasts)." };
+
+      // Relative effects: d_kk' = d_k' - d_k (both referenced to ref)
+      // Variance: var(d_k' - d_k) = var(d_k') + var(d_k) - 2 cov(d_k', d_k)
+      return {
+        K, nonref, refTreat, d: res.d, cov: res.cov, tau2
+      };
+    }
+
+    function solveWLS(X, y, w) {
+      const n = X.length, K = X[0] ? X[0].length : 0;
+      if (n === 0 || K === 0) return null;
+      // X'WX
+      const XtWX = zeros(K, K);
+      for (let a=0;a<K;a++) {
+        for (let b=0;b<K;b++) {
+          let s = 0;
+          for (let i=0;i<n;i++) s += X[i][a] * w[i] * X[i][b];
+          XtWX[a][b] = s;
+        }
+      }
+      // X'Wy
+      const XtWy = new Array(K).fill(0);
+      for (let a=0;a<K;a++) { let s=0; for (let i=0;i<n;i++) s += X[i][a]*w[i]*y[i]; XtWy[a] = s; }
+      const inv = invert(XtWX);
+      if (!inv) return null;
+      const d = new Array(K).fill(0);
+      for (let a=0;a<K;a++) { let s=0; for (let b=0;b<K;b++) s += inv[a][b] * XtWy[b]; d[a] = s; }
+      return { d, cov: inv };
+    }
+
+    function relEffect(fit, treatA, treatB) {
+      // Return d_{B vs A} = d_B - d_A (with ref as implicit zero)
+      const idx = {}; for (let k=0;k<fit.K;k++) idx[fit.nonref[k]] = k;
+      const dA = treatA === fit.refTreat ? 0 : fit.d[idx[treatA]];
+      const dB = treatB === fit.refTreat ? 0 : fit.d[idx[treatB]];
+      const varA = treatA === fit.refTreat ? 0 : fit.cov[idx[treatA]][idx[treatA]];
+      const varB = treatB === fit.refTreat ? 0 : fit.cov[idx[treatB]][idx[treatB]];
+      const covAB = (treatA === fit.refTreat || treatB === fit.refTreat) ? 0 : fit.cov[idx[treatA]][idx[treatB]];
+      const est = dB - dA;
+      const se = Math.sqrt(Math.max(0, varB + varA - 2*covAB));
+      return { est, se, lo: est - 1.96*se, hi: est + 1.96*se };
+    }
+
+    // MC SUCRA: sample d from MVN(estimate, cov), rank each sample, aggregate
+    function mcSucra(fit, treatments, nSamples) {
+      if (!nSamples) nSamples = 10000;
+      const T = treatments.length;
+      const idx = {}; for (let k=0;k<fit.K;k++) idx[fit.nonref[k]] = k;
+      const L = cholesky(fit.cov);
+      if (!L) return null;
+
+      const rankSum = new Array(T).fill(0);
+      const bestCount = new Array(T).fill(0);
+      for (let s=0; s<nSamples; s++) {
+        // sample z
+        const z = new Array(fit.K);
+        for (let i=0;i<fit.K;i++) z[i] = rnorm();
+        // d_sample = μ + L*z
+        const dSample = new Array(fit.K);
+        for (let i=0;i<fit.K;i++) {
+          let v = fit.d[i];
+          for (let j=0;j<=i;j++) v += L[i][j] * z[j];
+          dSample[i] = v;
+        }
+        // Build treatment effect array (ref = 0)
+        const effs = treatments.map(t => t === fit.refTreat ? 0 : dSample[idx[t]]);
+        // Rank: lower effect = better (for effect favouring intervention)
+        const ordered = effs.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
+        for (let r=0;r<T;r++) rankSum[ordered[r].i] += (r+1);
+        bestCount[ordered[0].i] += 1;
+      }
+      // SUCRA_t = (T - mean_rank_t) / (T - 1)
+      const sucra = rankSum.map(rs => (T - rs/nSamples) / Math.max(1, T-1));
+      const pBest = bestCount.map(c => c / nSamples);
+      return { sucra, pBest, nSamples };
+    }
+
+    function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
+    function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?2:d); }
+
+    function buildNetworkSvg(state, treatments, rows, fit) {
+      const W=720, H=540, cx=W/2, cy=H/2, r=Math.min(W,H)*0.36;
+      const T = treatments.length;
+      const pos = treatments.map((t, i) => {
+        const theta = -Math.PI/2 + 2*Math.PI * i / T;
+        return { x: cx + r*Math.cos(theta), y: cy + r*Math.sin(theta), name: t };
+      });
+      // Count studies per edge
+      const edges = {};
+      for (const row of rows) {
+        const k = row.t1 < row.t2 ? row.t1+"|"+row.t2 : row.t2+"|"+row.t1;
+        edges[k] = (edges[k] || 0) + 1;
+      }
+      const maxEdge = Math.max(1, ...Object.values(edges));
+
+      const p = [];
+      p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
+      if (state.title) p.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
+
+      // Edges first (behind nodes)
+      for (const [k, n] of Object.entries(edges)) {
+        const [a, b] = k.split("|");
+        const pa = pos[treatments.indexOf(a)];
+        const pb = pos[treatments.indexOf(b)];
+        const w = 1 + 4 * (n/maxEdge);
+        p.push("<line x1=\""+pa.x+"\" y1=\""+pa.y+"\" x2=\""+pb.x+"\" y2=\""+pb.y+"\" stroke=\"#2c5e8a\" stroke-opacity=\"0.55\" stroke-width=\""+w.toFixed(2)+"\"/>");
+        const mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
+        p.push("<text x=\""+mx+"\" y=\""+(my-4)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+n+"</text>");
+      }
+      // Nodes
+      for (const node of pos) {
+        const isRef = node.name === state.ref;
+        const fill = isRef ? "#e6a919" : "#2c5e8a";
+        const rad = isRef ? 22 : 18;
+        p.push("<circle cx=\""+node.x+"\" cy=\""+node.y+"\" r=\""+rad+"\" fill=\""+fill+"\" stroke=\"#15181d\" stroke-width=\"1\"/>");
+        p.push("<text x=\""+node.x+"\" y=\""+(node.y+4)+"\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"700\" fill=\"#fff\">"+escapeXml(node.name)+"</text>");
+      }
+
+      // Legend
+      p.push("<text x=\"20\" y=\""+(H-15)+"\" font-size=\"10\" fill=\"#5c6470\">Edge labels = # direct comparisons · Yellow node = reference treatment</text>");
+      p.push("</svg>");
+      return p.join("");
+    }
+
+    function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
+
+    function populateRef(treatments, current) {
+      const sel = document.getElementById("f-ref");
+      const prev = current || sel.value;
+      sel.innerHTML = "";
+      for (const t of treatments) {
+        const opt = document.createElement("option");
+        opt.value = t; opt.textContent = t;
+        sel.appendChild(opt);
+      }
+      if (treatments.includes(prev)) sel.value = prev;
+      else if (treatments.length) sel.value = treatments[0];
+    }
+
+    function render() {
+      const state = readState();
+      const parsed = parseContrasts(state.data);
+      const rows = parsed.rows;
+      const treatments = uniqueTreatments(rows);
+
+      populateRef(treatments, state.ref);
+      const refTreat = document.getElementById("f-ref").value || treatments[0] || "";
+
+      const extras = [...parsed.warnings];
+      let connected = true;
+      if (treatments.length >= 2) connected = isConnected(treatments, rows);
+      if (!connected) extras.push("Network is DISCONNECTED — NMA cannot run. Check that every treatment is linked via at least one path of direct comparisons.");
+
+      const parts = [];
+      parts.push(statCard("Studies", String(new Set(rows.map(r=>r.study)).size)));
+      parts.push(statCard("Contrasts", String(rows.length)));
+      parts.push(statCard("Treatments", String(treatments.length)));
+      parts.push(statCard("Reference", refTreat));
+
+      if (rows.length && treatments.length >= 2 && connected) {
+        const fit = fitNMA(rows, treatments, refTreat, state.model || "fe");
+        if (fit.error) {
+          extras.push(fit.error);
+          sucraHost.innerHTML = "";
+          leagueHost.innerHTML = "";
+        } else {
+          parts.push(statCard("τ²", fmt(fit.tau2, 4)));
+
+          // SUCRA
+          const mc = mcSucra(fit, treatments, 10000);
+          if (mc) {
+            const pairs = treatments.map((t, i) => ({ t, sucra: mc.sucra[i], pBest: mc.pBest[i] }))
+              .sort((a, b) => b.sucra - a.sucra);
+            sucraHost.innerHTML = pairs.map(p => [
+              "<div class=\"sucra-row\">",
+              "<div>" + escapeXml(p.t) + "</div>",
+              "<div class=\"sucra-bar\"><span style=\"width:" + (p.sucra*100).toFixed(1) + "%\"></span></div>",
+              "<div class=\"sucra-val\">" + (p.sucra*100).toFixed(1) + "%</div>",
+              "</div>"
+            ].join("")).join("") + "<p style=\"color:var(--muted);font-size:0.75rem;margin-top:0.5rem\">SUCRA: probability of being best over all ranks — <strong>not</strong> an effect size. P(best) and the league table are the decision inputs.</p>";
+          }
+
+          // League table
+          const tbl = ["<table class=\"league\"><thead><tr><th></th>"];
+          for (const t of treatments) tbl.push("<th>" + escapeXml(t) + "</th>");
+          tbl.push("</tr></thead><tbody>");
+          for (const row of treatments) {
+            tbl.push("<tr><th>" + escapeXml(row) + "</th>");
+            for (const col of treatments) {
+              if (row === col) { tbl.push("<td class=\"diag\">—</td>"); continue; }
+              const re = relEffect(fit, row, col);
+              const cls = re.est > 0 ? "pos" : (re.est < 0 ? "neg" : "");
+              tbl.push("<td class=\"" + cls + "\">" + fmt(re.est) + "<br><span style=\"color:var(--muted);font-size:0.72rem\">[" + fmt(re.lo) + ", " + fmt(re.hi) + "]</span></td>");
+            }
+            tbl.push("</tr>");
+          }
+          tbl.push("</tbody></table>");
+          leagueHost.innerHTML = tbl.join("");
+        }
+      } else {
+        sucraHost.innerHTML = "<p style=\"color:var(--muted);font-size:0.85rem\">Need ≥2 treatments in a connected network to fit NMA.</p>";
+        leagueHost.innerHTML = "";
+      }
+
+      statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+
+      if (!extras.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
+      else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+extras.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
+
+      // Network graph
+      const svg = (rows.length && treatments.length >= 2)
+        ? buildNetworkSvg(state, treatments, rows, null)
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste contrasts to render network.</text></svg>";
+      svgHost.innerHTML = svg;
+
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function loadSaved() {
+      try { const raw = localStorage.getItem(LS_KEY); if (!raw) return false;
+        const p = JSON.parse(raw); if (p && typeof p === "object") { writeState(p); return true; }
+      } catch(e) {}
+      return false;
+    }
+    function downloadBlob(blob, fn) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+
+    function onDownloadSvg() {
+      const state = readState();
+      const parsed = parseContrasts(state.data);
+      const treatments = uniqueTreatments(parsed.rows);
+      if (!parsed.rows.length || treatments.length < 2) return alert("Need ≥2 treatments.");
+      const svg = buildNetworkSvg(state, treatments, parsed.rows, null);
+      downloadBlob(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}), "nma-"+slugify(state.title,"network")+".svg");
+    }
+    function onDownloadLeague() {
+      const state = readState();
+      const parsed = parseContrasts(state.data);
+      const treatments = uniqueTreatments(parsed.rows);
+      if (!parsed.rows.length || treatments.length < 2) return alert("Need ≥2 treatments.");
+      if (!isConnected(treatments, parsed.rows)) return alert("Network disconnected.");
+      const refTreat = document.getElementById("f-ref").value || treatments[0];
+      const fit = fitNMA(parsed.rows, treatments, refTreat, state.model || "fe");
+      if (fit.error) return alert(fit.error);
+      const header = ["vs"].concat(treatments).join(",");
+      const lines = [header];
+      for (const row of treatments) {
+        const cells = [row];
+        for (const col of treatments) {
+          if (row === col) cells.push("-");
+          else { const re = relEffect(fit, row, col); cells.push(fmt(re.est)+" ["+fmt(re.lo)+", "+fmt(re.hi)+"]"); }
+        }
+        lines.push(cells.join(","));
+      }
+      downloadBlob(new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"}), "nma-league.csv");
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema:"nma-v1", _savedAt:new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "nma-state.json");
+    }
+    function onImportJson(file) {
+      const r = new FileReader();
+      r.onload = function () {
+        try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
+        catch(e) { alert("Could not parse JSON: "+e.message); }
+      };
+      r.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear inputs?")) return;
+      document.getElementById("f-data").value = "";
+      document.getElementById("f-model").value = "fe";
+      document.getElementById("f-title").value = "";
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo";
+      render();
+    }
+
+    function attach() {
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      document.getElementById("f-ref").addEventListener("change", render);
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-league").addEventListener("click", onDownloadLeague);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
+      document.getElementById("file-import").addEventListener("change", function(e){
+        const f = e.target.files && e.target.files[0]; if (f) onImportJson(f); e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo"; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

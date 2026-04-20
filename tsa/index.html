@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Trial sequential analysis: cumulative Z with O'Brien-Fleming alpha-spending boundaries.">
+  <meta name="color-scheme" content="light dark">
+  <title>TSA Calculator</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
+    .layout { display:grid; grid-template-columns:minmax(320px,26rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="number"],input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.9rem;
+    }
+    textarea { resize:vertical; min-height:8rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+    .row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
+    .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
+    .warn-banner { margin-top:0.5rem; padding:0.5rem 0.75rem; background:var(--warn-soft);
+                   color:var(--warn); border:1px solid var(--warn); border-radius:6px; font-size:0.82rem; display:none; }
+    .warn-banner.is-visible { display:block; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>TSA Calculator</h1>
+    <p>Cumulative Z-score vs O'Brien-Fleming alpha-spending monitoring boundaries. Supply studies in order; the app cumulates inverse-variance information and computes the required information size (RIS).</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Studies (in order)</h2>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">CSV: <code>label, estimate, SE</code></span>
+          <textarea id="f-data" spellcheck="false"></textarea>
+          <span class="hint">Studies are cumulated in the order given. Effect size should be logOR / logRR / MD / SMD.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Information size</legend>
+        <label>
+          <span class="lbl">RIS source</span>
+          <select id="f-ris-mode">
+            <option value="auto">Auto from target effect + power</option>
+            <option value="manual">Manual (inverse-variance units)</option>
+          </select>
+        </label>
+        <div class="row-3">
+          <label>
+            <span class="lbl">Target effect δ</span>
+            <input type="number" id="f-delta" step="any" value="0.20">
+          </label>
+          <label>
+            <span class="lbl">α (two-sided)</span>
+            <input type="number" id="f-alpha" step="0.001" min="0.001" max="0.5" value="0.05">
+          </label>
+          <label>
+            <span class="lbl">Power (1-β)</span>
+            <input type="number" id="f-power" step="0.01" min="0.5" max="0.99" value="0.80">
+          </label>
+        </div>
+        <label>
+          <span class="lbl">Manual RIS (Σ 1/SE² at target)</span>
+          <input type="number" id="f-ris-manual" step="any" value="200">
+        </label>
+        <label>
+          <span class="lbl">Diversity adjustment D (≥1, from random-effects)</span>
+          <input type="number" id="f-diversity" step="0.01" min="1" value="1.00">
+          <span class="hint">RIS is multiplied by D. Use 1.0 for fixed-effect plan.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <span class="lbl">Plot title</span>
+          <input type="text" id="f-title" placeholder="e.g. SGLT2i — ACM trial sequential analysis">
+        </label>
+      </fieldset>
+
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
+        <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Preview</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">O'Brien-Fleming boundary z<sub>k</sub> = z<sub>α/2</sub>/√t<sub>k</sub> where t<sub>k</sub> is the information fraction (per advanced-stats.md). Non-binding futility is shown if enabled.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "tsa-v1";
+
+    const fields = {
+      data:"f-data", risMode:"f-ris-mode", delta:"f-delta", alpha:"f-alpha",
+      power:"f-power", risManual:"f-ris-manual", diversity:"f-diversity", title:"f-title"
+    };
+    const EXAMPLE = "# Cumulative trials (logOR, SE)\nTrial A 2015, -0.18, 0.22\nTrial B 2017, -0.25, 0.18\nTrial C 2019, -0.28, 0.12\nTrial D 2021, -0.22, 0.08\nTrial E 2023, -0.19, 0.06";
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+    const statsWrap = document.getElementById("stats-wrap");
+
+    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value; } return o; }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+
+    function parseStudies(text) {
+      const studies=[], warnings=[];
+      const lines = String(text||"").split(/\r?\n/);
+      for (let i=0;i<lines.length;i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 columns"); continue; }
+        const est = parseFloat(parts[parts.length-2]);
+        const se = parseFloat(parts[parts.length-1]);
+        if (!isFinite(est) || !isFinite(se)) {
+          if (studies.length === 0 && i < 3) continue;
+          warnings.push("Line "+(i+1)+": non-numeric"); continue;
+        }
+        if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
+        const label = parts.slice(0, parts.length-2).join(", ") || ("Study "+(studies.length+1));
+        studies.push({ label, est, se, v: se*se });
+      }
+      return { studies, warnings };
+    }
+
+    // Standard normal quantile (Beasley-Springer-Moro)
+    function normQuantile(p) {
+      if (p <= 0 || p >= 1) return NaN;
+      const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239];
+      const b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572];
+      const c=[-0.007784894002430293,-0.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783];
+      const d=[0.007784695709041462,0.3224671290700398,2.445134137142996,3.754408661907416];
+      const pLow=0.02425, pHigh=1-pLow;
+      let q, r;
+      if (p < pLow) { q = Math.sqrt(-2*Math.log(p)); return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+      if (p <= pHigh) { q = p-0.5; r = q*q; return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1); }
+      q = Math.sqrt(-2*Math.log(1-p));
+      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+    }
+    function normCDF(z) {
+      // Abramowitz & Stegun 7.1.26
+      const b1=0.319381530, b2=-0.356563782, b3=1.781477937, b4=-1.821255978, b5=1.330274429, p=0.2316419, c2=0.3989422804014327;
+      const az = Math.abs(z);
+      const t = 1/(1+p*az);
+      const b = c2*Math.exp(-az*az/2);
+      const n = 1 - b*(b1*t + b2*t*t + b3*t*t*t + b4*Math.pow(t,4) + b5*Math.pow(t,5));
+      return z >= 0 ? n : 1 - n;
+    }
+
+    function computeRIS(state) {
+      const manual = parseFloat(state.risManual);
+      const D = Math.max(1, parseFloat(state.diversity) || 1);
+      if (state.risMode === "manual") {
+        return isFinite(manual) && manual > 0 ? manual * D : null;
+      }
+      const alpha = parseFloat(state.alpha);
+      const power = parseFloat(state.power);
+      const delta = parseFloat(state.delta);
+      if (!(alpha > 0 && alpha < 0.5) || !(power >= 0.5 && power < 1) || !(delta > 0)) return null;
+      const za = normQuantile(1 - alpha/2);
+      const zb = normQuantile(power);
+      const baseRIS = Math.pow(za + zb, 2) / (delta * delta);
+      return baseRIS * D;
+    }
+
+    function cumulative(studies) {
+      const out = [];
+      let sw=0, swy=0;
+      for (const s of studies) {
+        const w = 1/s.v;
+        sw += w; swy += s.est * w;
+        const mu = swy/sw;
+        const se = Math.sqrt(1/sw);
+        const z = mu / se;
+        out.push({ label: s.label, est: s.est, se: s.se, cumInfo: sw, cumMu: mu, cumSE: se, z: z });
+      }
+      return out;
+    }
+
+    function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
+    function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?2:d); }
+    function niceTicks(lo,hi,n) {
+      if (!(hi>lo)) return [lo];
+      const r=hi-lo, s0=r/Math.max(1,n);
+      const m=Math.pow(10,Math.floor(Math.log10(s0))), nm=s0/m;
+      let step = nm<1.5?m:(nm<3?2*m:(nm<7?5*m:10*m));
+      const start=Math.ceil(lo/step)*step; const t=[];
+      for (let v=start;v<=hi+1e-9;v+=step) t.push(v);
+      return t;
+    }
+
+    function buildSvg(state, studies, series, ris, alpha) {
+      const W=780, H=520, L=70, R=30, T=state.title?60:40, B=70;
+      const plotW=W-L-R, plotH=H-T-B;
+      const maxInfo = Math.max(ris*1.05, series.length ? series[series.length-1].cumInfo*1.1 : 1);
+      let zMax = 5;
+      for (const s of series) zMax = Math.max(zMax, Math.abs(s.z) + 0.5);
+
+      function x(info) { return L + (info/maxInfo) * plotW; }
+      function y(z) { return T + plotH/2 - (z/zMax) * (plotH/2 - 10); }
+
+      const za = normQuantile(1 - alpha/2);
+      function ofZ(t) { return za / Math.sqrt(Math.max(t, 1e-6)); }
+
+      const parts = [];
+      parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      parts.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
+      if (state.title) {
+        parts.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
+      }
+      // Frame
+      parts.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
+      // Zero line
+      parts.push("<line x1=\""+L+"\" y1=\""+y(0)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(0)+"\" stroke=\"#7a8294\" stroke-width=\"1\"/>");
+      // Conventional ±1.96 lines
+      parts.push("<line x1=\""+L+"\" y1=\""+y(1.96)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(1.96)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
+      parts.push("<line x1=\""+L+"\" y1=\""+y(-1.96)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(-1.96)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
+
+      // O'Brien-Fleming boundaries (sampled over t in [0.05, 1])
+      const boundPts = [];
+      for (let ti = 0.05; ti <= 1.0001; ti += 0.02) {
+        const info = ti * ris;
+        const zb = ofZ(ti);
+        boundPts.push({info: info, zUp: zb, zLo: -zb});
+      }
+      if (boundPts.length) {
+        const pUp = boundPts.map(p => x(p.info)+","+y(p.zUp)).join(" ");
+        const pLo = boundPts.map(p => x(p.info)+","+y(p.zLo)).join(" ");
+        parts.push("<polyline points=\""+pUp+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.5\"/>");
+        parts.push("<polyline points=\""+pLo+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.5\"/>");
+      }
+
+      // RIS vertical line
+      parts.push("<line x1=\""+x(ris)+"\" y1=\""+T+"\" x2=\""+x(ris)+"\" y2=\""+(T+plotH)+"\" stroke=\"#2c5e8a\" stroke-dasharray=\"5 3\" stroke-width=\"1\"/>");
+      parts.push("<text x=\""+x(ris)+"\" y=\""+(T-6)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#2c5e8a\">RIS</text>");
+
+      // Cumulative Z path
+      if (series.length) {
+        const path = series.map(s => x(s.cumInfo)+","+y(s.z)).join(" ");
+        parts.push("<polyline points=\""+path+"\" fill=\"none\" stroke=\"#15181d\" stroke-width=\"1.5\"/>");
+        for (const s of series) {
+          parts.push("<circle cx=\""+x(s.cumInfo)+"\" cy=\""+y(s.z)+"\" r=\"3.5\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
+          parts.push("<text x=\""+x(s.cumInfo)+"\" y=\""+(y(s.z)-8)+"\" text-anchor=\"middle\" font-size=\"9\" fill=\"#15181d\">"+escapeXml(s.label)+"</text>");
+        }
+      }
+
+      // X-axis
+      const axisY = T + plotH;
+      const xTicks = niceTicks(0, maxInfo, 6);
+      for (const t of xTicks) {
+        parts.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
+        parts.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,0)+"</text>");
+      }
+      parts.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative information (Σ 1/SE²)</text>");
+      // Y-axis
+      for (let z=-4; z<=4; z+=2) {
+        parts.push("<line x1=\""+L+"\" y1=\""+y(z)+"\" x2=\""+(L-4)+"\" y2=\""+y(z)+"\" stroke=\"#15181d\"/>");
+        parts.push("<text x=\""+(L-8)+"\" y=\""+(y(z)+3)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">"+z+"</text>");
+      }
+      parts.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative Z</text>");
+
+      parts.push("</svg>");
+      return parts.join("");
+    }
+
+    function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
+
+    function render() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const ris = computeRIS(state);
+      const series = cumulative(parsed.studies);
+      const alpha = parseFloat(state.alpha) || 0.05;
+      const za = normQuantile(1 - alpha/2);
+
+      // Stats
+      const parts = [];
+      parts.push(statCard("k", String(parsed.studies.length)));
+      if (ris != null) {
+        parts.push(statCard("RIS", fmt(ris, 1)));
+        if (series.length) {
+          const cur = series[series.length-1];
+          parts.push(statCard("Current info", fmt(cur.cumInfo, 1) + " (" + fmt(100*cur.cumInfo/ris, 1) + "%)"));
+          parts.push(statCard("Cumulative Z", fmt(cur.z, 2)));
+          parts.push(statCard("Pooled μ", fmt(cur.cumMu, 3) + " [" + fmt(cur.cumMu-1.96*cur.cumSE,3) + ", " + fmt(cur.cumMu+1.96*cur.cumSE,3) + "]"));
+          const t = cur.cumInfo / ris;
+          const bnd = za / Math.sqrt(Math.max(t, 1e-6));
+          parts.push(statCard("OF boundary (now)", "±" + fmt(bnd, 2)));
+          const crossed = Math.abs(cur.z) > bnd ? "Yes" : "No";
+          parts.push(statCard("Crossed?", crossed));
+        }
+      }
+      statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+
+      // Warnings
+      const extras = [];
+      if (ris == null) extras.push("RIS cannot be computed — check target effect, α, and power values.");
+      if (parsed.studies.length && ris != null) {
+        const info = series[series.length-1].cumInfo;
+        if (info < 0.05 * ris) extras.push("Information fraction < 5% — boundary is plotted from t=0.05 onward only.");
+      }
+      const all = parsed.warnings.concat(extras);
+      if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
+      else {
+        warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>";
+        warnEl.classList.add("is-visible");
+      }
+
+      // Plot
+      const svg = (parsed.studies.length && ris != null)
+        ? buildSvg(state, parsed.studies, series, ris, alpha)
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Enter studies and a valid RIS setup.</text></svg>";
+      svgHost.innerHTML = svg;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return false;
+        const p = JSON.parse(raw);
+        if (p && typeof p === "object") { writeState(p); return true; }
+      } catch(e) {}
+      return false;
+    }
+    function downloadBlob(blob,fn) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+    function currentSvg() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const ris = computeRIS(state);
+      if (!parsed.studies.length || ris == null) return null;
+      const series = cumulative(parsed.studies);
+      const alpha = parseFloat(state.alpha) || 0.05;
+      return { state, svg: buildSvg(state, parsed.studies, series, ris, alpha) };
+    }
+    function onDownloadSvg() {
+      const r = currentSvg(); if (!r) return alert("Need valid studies and RIS.");
+      downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "tsa-"+slugify(r.state.title,"plot")+".svg");
+    }
+    function onDownloadPng() {
+      const r = currentSvg(); if (!r) return alert("Need valid studies and RIS.");
+      const W=780,H=520,scale=2;
+      const img = new Image();
+      const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width=W*scale; canvas.height=H*scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function(b){ if (b) downloadBlob(b, "tsa-"+slugify(r.state.title,"plot")+".png"); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.src = url;
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema:"tsa-v1", _savedAt:new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "tsa-state.json");
+    }
+    function onImportJson(file) {
+      const r = new FileReader();
+      r.onload = function () {
+        try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
+        catch(e) { alert("Could not parse JSON: "+e.message); }
+      };
+      r.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear all inputs?")) return;
+      document.getElementById("f-data").value = "";
+      document.getElementById("f-ris-mode").value = "auto";
+      document.getElementById("f-delta").value = "0.20";
+      document.getElementById("f-alpha").value = "0.05";
+      document.getElementById("f-power").value = "0.80";
+      document.getElementById("f-ris-manual").value = "200";
+      document.getElementById("f-diversity").value = "1.00";
+      document.getElementById("f-title").value = "";
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = "Example TSA — logOR for mortality";
+      render();
+    }
+    // ---- Shared MA bus (ma-studies-v1) ----
+    function onBusLoad() {
+      try {
+        const raw = localStorage.getItem("ma-studies-v1");
+        if (!raw) { alert("No shared studies yet."); return; }
+        const p = JSON.parse(raw);
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed shared payload."); return; }
+        const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
+        document.getElementById("f-data").value = lines.join("\n");
+        render();
+      } catch (e) { alert("Could not load shared: " + e.message); }
+    }
+    function onBusSave() {
+      const parsed = parseStudies(document.getElementById("f-data").value);
+      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      const payload = {
+        "_schema": "ma-studies-v1",
+        "_savedAt": new Date().toISOString(),
+        "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: null, group: null, year: null }))
+      };
+      try {
+        localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
+        alert("Saved " + parsed.studies.length + " studies to shared bus.");
+      } catch (e) { alert("Could not save: " + e.message); }
+    }
+
+    function attach() {
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
+      document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
+      document.getElementById("btn-validate-webr").addEventListener("click", function () {
+        onBusSave();
+        window.open("../webr-validator/index.html?fromBus=1", "_blank");
+      });
+      document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
+      document.getElementById("file-import").addEventListener("change", function(e){
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f); e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example TSA — logOR for mortality"; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

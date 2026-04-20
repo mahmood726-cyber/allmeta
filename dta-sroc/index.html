@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Diagnostic Test Accuracy: Moses SROC curve in ROC space with threshold-effect check.">
+  <meta name="color-scheme" content="light dark">
+  <title>DTA SROC Explorer</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
+    .layout { display:grid; grid-template-columns:minmax(320px,28rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="number"],input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.9rem;
+    }
+    textarea { resize:vertical; min-height:10rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
+    .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
+    .warn-banner { margin-top:0.5rem; padding:0.5rem 0.75rem; background:var(--warn-soft);
+                   color:var(--warn); border:1px solid var(--warn); border-radius:6px; font-size:0.82rem; display:none; }
+    .warn-banner.is-visible { display:block; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>DTA SROC Explorer</h1>
+    <p>Diagnostic test accuracy: enter 2×2 counts per study (TP, FP, FN, TN). Plots each study in ROC space, fits the Moses SROC curve, and flags threshold effect via the Spearman correlation between logit(Se) and logit(1−Sp).</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Study data</h2>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">CSV: <code>label, TP, FP, FN, TN</code></span>
+          <textarea id="f-data" spellcheck="false"></textarea>
+          <span class="hint">TP = true positives, FP = false positives, FN = false negatives, TN = true negatives. Continuity correction (+0.5 to all cells) applied only if any cell is zero (advanced-stats.md).</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <span class="lbl">Plot title</span>
+          <input type="text" id="f-title" placeholder="e.g. Troponin for acute MI — SROC">
+        </label>
+      </fieldset>
+
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>ROC space + Moses SROC</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">Moses SROC: weighted OLS of D = logit(Se) − logit(1−Sp) on S = logit(Se) + logit(1−Sp) (Moses et&nbsp;al., Stat Med 1993). Bivariate / HSROC require iterative ML — out of scope for this app.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "dta-sroc-v1";
+
+    const fields = { data:"f-data", title:"f-title" };
+    const EXAMPLE = "# Example: TP, FP, FN, TN per study\nStudy A, 85, 10, 15, 140\nStudy B, 62, 12, 18, 108\nStudy C, 110, 25, 40, 200\nStudy D, 55, 6, 8, 90\nStudy E, 130, 40, 30, 300\nStudy F, 92, 18, 25, 185\nStudy G, 74, 8, 12, 130";
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+    const statsWrap = document.getElementById("stats-wrap");
+
+    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+
+    function parseStudies(text) {
+      const studies=[], warnings=[];
+      const lines = String(text||"").split(/\r?\n/);
+      for (let i=0;i<lines.length;i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 5) { warnings.push("Line "+(i+1)+": need 5 columns"); continue; }
+        const tn = parseFloat(parts[parts.length-1]);
+        const fn = parseFloat(parts[parts.length-2]);
+        const fp = parseFloat(parts[parts.length-3]);
+        const tp = parseFloat(parts[parts.length-4]);
+        if (![tp,fp,fn,tn].every(v => Number.isFinite(v) && v >= 0)) {
+          if (studies.length === 0 && i < 3) continue;
+          warnings.push("Line "+(i+1)+": non-numeric or negative cell"); continue;
+        }
+        const label = parts.slice(0, parts.length-4).join(", ") || ("Study "+(studies.length+1));
+        // Continuity correction: +0.5 if ANY cell is zero (per advanced-stats.md)
+        const zero = tp===0 || fp===0 || fn===0 || tn===0;
+        const k = zero ? 0.5 : 0;
+        const tpA = tp+k, fpA = fp+k, fnA = fn+k, tnA = tn+k;
+        const se = tpA / (tpA + fnA);
+        const sp = tnA / (tnA + fpA);
+        const fpr = 1 - sp;
+        const logitSe = Math.log(se / (1 - se));
+        const logitFPR = Math.log(fpr / (1 - fpr));
+        const varSe = 1/tpA + 1/fnA;
+        const varFPR = 1/fpA + 1/tnA;
+        studies.push({
+          label: label, tp: tp, fp: fp, fn: fn, tn: tn,
+          corrected: zero,
+          se: se, sp: sp, fpr: fpr,
+          logitSe: logitSe, logitFPR: logitFPR,
+          varSe: varSe, varFPR: varFPR,
+          D: logitSe - logitFPR,
+          S: logitSe + logitFPR,
+          varD: varSe + varFPR
+        });
+      }
+      return { studies, warnings };
+    }
+
+    // Unweighted OLS (Moses method typically uses unweighted OLS of D on S; weighted variants exist)
+    function regressDS(studies) {
+      const n = studies.length;
+      if (n < 2) return null;
+      const xs = studies.map(s => s.S);
+      const ys = studies.map(s => s.D);
+      const xbar = xs.reduce((a,b)=>a+b,0)/n;
+      const ybar = ys.reduce((a,b)=>a+b,0)/n;
+      let sxx=0, sxy=0;
+      for (let i=0;i<n;i++) { sxx += (xs[i]-xbar)*(xs[i]-xbar); sxy += (xs[i]-xbar)*(ys[i]-ybar); }
+      if (sxx <= 0) return null;
+      const beta = sxy / sxx;
+      const alpha = ybar - beta * xbar;
+      return { alpha, beta, xbar, ybar, sxx };
+    }
+
+    function spearman(studies) {
+      const n = studies.length;
+      if (n < 2) return null;
+      function ranks(arr) {
+        const indexed = arr.map((v,i) => ({v,i}));
+        indexed.sort((a,b) => a.v - b.v);
+        const r = new Array(n);
+        // Average rank on ties
+        let i = 0;
+        while (i < n) {
+          let j = i;
+          while (j+1 < n && indexed[j+1].v === indexed[i].v) j++;
+          const rk = (i + j) / 2 + 1;
+          for (let m=i; m<=j; m++) r[indexed[m].i] = rk;
+          i = j + 1;
+        }
+        return r;
+      }
+      const rSe = ranks(studies.map(s => s.logitSe));
+      const rFPR = ranks(studies.map(s => s.logitFPR));
+      const mean = n => n*(n+1)/2 / n;
+      const mbar = (n+1)/2;
+      let sxy=0, sxx=0, syy=0;
+      for (let i=0;i<n;i++) {
+        const dx = rSe[i]-mbar, dy = rFPR[i]-mbar;
+        sxy += dx*dy; sxx += dx*dx; syy += dy*dy;
+      }
+      if (sxx <= 0 || syy <= 0) return null;
+      return sxy / Math.sqrt(sxx * syy);
+    }
+
+    function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
+    function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
+
+    function buildSvg(state, studies, fit) {
+      const W=620, H=620, L=70, R=30, T=state.title?60:40, B=70;
+      const plotW=W-L-R, plotH=H-T-B;
+
+      function x(fpr) { return L + fpr * plotW; }
+      function y(se) { return T + (1 - se) * plotH; }
+
+      const p = [];
+      p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
+      if (state.title) {
+        p.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
+      }
+
+      // Frame
+      p.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
+
+      // Gridlines at 0.25, 0.5, 0.75
+      for (const v of [0.25, 0.5, 0.75]) {
+        p.push("<line x1=\""+x(v)+"\" y1=\""+T+"\" x2=\""+x(v)+"\" y2=\""+(T+plotH)+"\" stroke=\"#eee\" stroke-width=\"0.8\"/>");
+        p.push("<line x1=\""+L+"\" y1=\""+y(v)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(v)+"\" stroke=\"#eee\" stroke-width=\"0.8\"/>");
+      }
+
+      // Chance diagonal (from (0,0) to (1,1))
+      p.push("<line x1=\""+x(0)+"\" y1=\""+y(0)+"\" x2=\""+x(1)+"\" y2=\""+y(1)+"\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
+
+      // SROC curve: for each S in range, D = α + β*S, logitSe = (D+S)/2, logitFPR = (S-D)/2
+      if (fit) {
+        const curvePts = [];
+        for (let fpr = 0.001; fpr < 0.999; fpr += 0.005) {
+          const logitFPR = Math.log(fpr / (1 - fpr));
+          // D = α + β*S ⇒ logitSe - logitFPR = α + β*(logitSe + logitFPR)
+          // ⇒ logitSe*(1-β) = α + logitFPR*(1+β)
+          // ⇒ logitSe = (α + (1+β)*logitFPR) / (1 - β)
+          if (Math.abs(1 - fit.beta) < 1e-6) continue;
+          const logitSe = (fit.alpha + (1 + fit.beta) * logitFPR) / (1 - fit.beta);
+          const se = 1 / (1 + Math.exp(-logitSe));
+          if (se > 1.001 || se < -0.001) continue;
+          curvePts.push(x(fpr) + "," + y(se));
+        }
+        if (curvePts.length > 2) {
+          p.push("<polyline points=\""+curvePts.join(" ")+"\" fill=\"none\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
+        }
+      }
+
+      // Points with size proportional to total N
+      let maxN = 0;
+      for (const s of studies) { const N = s.tp + s.fp + s.fn + s.tn; if (N > maxN) maxN = N; }
+      for (const s of studies) {
+        const N = s.tp + s.fp + s.fn + s.tn;
+        const r = 3 + (maxN > 0 ? (N / maxN) * 7 : 0);
+        p.push("<circle cx=\""+x(s.fpr)+"\" cy=\""+y(s.se)+"\" r=\""+r+"\" fill=\"#2c5e8a\" fill-opacity=\"0.55\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
+      }
+
+      // Axes
+      const axisY = T + plotH;
+      for (let t=0; t<=1.0001; t+=0.25) {
+        p.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
+        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
+        p.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+      }
+      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">1 − Specificity (false-positive rate)</text>");
+      p.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Sensitivity</text>");
+
+      p.push("</svg>");
+      return p.join("");
+    }
+
+    function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
+
+    function meanSe(studies) {
+      if (!studies.length) return null;
+      const n = studies.length;
+      let sumSe = 0, sumFPR = 0;
+      for (const s of studies) { sumSe += s.se; sumFPR += s.fpr; }
+      return { se: sumSe/n, fpr: sumFPR/n };
+    }
+
+    function render() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const fit = regressDS(parsed.studies);
+      const rho = spearman(parsed.studies);
+      const m = meanSe(parsed.studies);
+
+      const parts = [];
+      parts.push(statCard("k", String(parsed.studies.length)));
+      if (m) {
+        parts.push(statCard("Mean Se", fmt(m.se, 3)));
+        parts.push(statCard("Mean Sp", fmt(1 - m.fpr, 3)));
+      }
+      if (fit) {
+        parts.push(statCard("SROC α (intercept)", fmt(fit.alpha, 3)));
+        parts.push(statCard("SROC β (slope)", fmt(fit.beta, 3)));
+      }
+      if (rho != null) {
+        const flag = Math.abs(rho) > 0.6 ? " ⚠" : "";
+        parts.push(statCard("Spearman ρ (threshold)", fmt(rho, 3) + flag));
+      }
+      statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+
+      const extras = [];
+      if (rho != null && Math.abs(rho) > 0.6) {
+        extras.push("Spearman |ρ| > 0.6 — threshold effect likely. Report SROC curve rather than a single pooled Se/Sp pair (advanced-stats.md).");
+      }
+      if (parsed.studies.some(s => s.corrected)) {
+        extras.push("One or more studies had a zero cell — 0.5 continuity correction applied to that study only.");
+      }
+      if (parsed.studies.length && parsed.studies.length < 4) {
+        extras.push("k = " + parsed.studies.length + " — Moses SROC is unreliable for very small k (consider k ≥ 4).");
+      }
+      const all = parsed.warnings.concat(extras);
+      if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
+      else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
+
+      const svg = parsed.studies.length
+        ? buildSvg(state, parsed.studies, fit)
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Enter at least one study.</text></svg>";
+      svgHost.innerHTML = svg;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return false;
+        const p = JSON.parse(raw);
+        if (p && typeof p === "object") { writeState(p); return true; }
+      } catch(e) {}
+      return false;
+    }
+    function downloadBlob(blob, fn) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+    function currentSvg() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      if (!parsed.studies.length) return null;
+      const fit = regressDS(parsed.studies);
+      return { state, svg: buildSvg(state, parsed.studies, fit) };
+    }
+    function onDownloadSvg() {
+      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "sroc-"+slugify(r.state.title,"plot")+".svg");
+    }
+    function onDownloadPng() {
+      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      const W=620,H=620,scale=2;
+      const img = new Image();
+      const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width=W*scale; canvas.height=H*scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function(b){ if (b) downloadBlob(b, "sroc-"+slugify(r.state.title,"plot")+".png"); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.src = url;
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema:"dta-sroc-v1", _savedAt:new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "sroc-state.json");
+    }
+    function onImportJson(file) {
+      const r = new FileReader();
+      r.onload = function () {
+        try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
+        catch(e) { alert("Could not parse JSON: "+e.message); }
+      };
+      r.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear all inputs?")) return;
+      document.getElementById("f-data").value = "";
+      document.getElementById("f-title").value = "";
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = "Example SROC — diagnostic test";
+      render();
+    }
+    function attach() {
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
+      document.getElementById("file-import").addEventListener("change", function(e){
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f); e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example SROC — diagnostic test"; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

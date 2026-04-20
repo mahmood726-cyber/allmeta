@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PRISMA 2020 flow diagram generator. Enter record counts, export SVG/PNG.">
+  <meta name="color-scheme" content="light dark">
+  <title>PRISMA Flow Generator</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --panel: #ffffff;
+      --ink: #15181d;
+      --muted: #5c6470;
+      --accent: #2c5e8a;
+      --accent-soft: #e8f0f7;
+      --warn: #b05a1c;
+      --warn-soft: #fbeedd;
+      --border: #d9d5cc;
+      --border-strong: #7a8294;
+      --input-bg: #fbfaf6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141618;
+        --panel: #1c1f23;
+        --ink: #e7e4dc;
+        --muted: #98a0ae;
+        --accent: #6aa6d4;
+        --accent-soft: #223044;
+        --warn: #e0a268;
+        --warn-soft: #3a2d1c;
+        --border: #2f343a;
+        --border-strong: #495262;
+        --input-bg: #23272c;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    header {
+      padding: 2rem clamp(1rem, 3vw, 3rem) 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 60ch; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 28rem) 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem clamp(1rem, 3vw, 3rem);
+      align-items: start;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    fieldset {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem 1rem;
+      margin: 0 0 1rem;
+    }
+    legend {
+      padding: 0 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.88rem;
+    }
+    label span.lbl {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: var(--ink);
+    }
+    label span.hint {
+      display: block;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 0.1rem;
+    }
+    input[type="number"], input[type="text"], textarea {
+      width: 100%;
+      padding: 0.4rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.9rem;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 2.5rem; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed var(--border);
+    }
+    button {
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    button:hover { filter: brightness(0.96); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .preview-wrap {
+      position: sticky;
+      top: 1rem;
+    }
+    .preview-wrap svg {
+      width: 100%;
+      height: auto;
+      background: #ffffff;
+      display: block;
+      border-radius: 6px;
+    }
+    .warn-banner {
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid var(--warn);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      display: none;
+    }
+    .warn-banner.is-visible { display: block; }
+    .warn-banner ul { margin: 0.25rem 0 0 1rem; padding: 0; }
+    .footer-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: right;
+      padding: 0 clamp(1rem, 3vw, 3rem) 1.5rem;
+    }
+    .footer-note a { color: inherit; }
+    .file-input-hidden { display: none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>PRISMA 2020 Flow Diagram Generator</h1>
+    <p>Enter record counts; the flow diagram renders live. Export as SVG or PNG for your manuscript, or save the state as JSON and reload later. Works offline.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Record counts</h2>
+
+      <fieldset>
+        <legend>Identification</legend>
+        <div class="row-2">
+          <label><span class="lbl">Databases (n)</span>
+            <input type="number" id="f-db" min="0" step="1" inputmode="numeric" value="0">
+          </label>
+          <label><span class="lbl">Registers (n)</span>
+            <input type="number" id="f-reg" min="0" step="1" inputmode="numeric" value="0">
+          </label>
+        </div>
+        <label><span class="lbl">Records removed before screening (total n)</span>
+          <input type="number" id="f-removed" min="0" step="1" inputmode="numeric" value="0">
+          <span class="hint">Duplicates, automation flags, and other reasons combined.</span>
+        </label>
+        <label><span class="lbl">Removal breakdown (optional)</span>
+          <textarea id="f-removed-breakdown" rows="2" placeholder="e.g. duplicates n=X; automation n=Y; other n=Z"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Screening</legend>
+        <label><span class="lbl">Records screened (n)</span>
+          <input type="number" id="f-screened" min="0" step="1" inputmode="numeric" value="0">
+          <span class="hint">Normally equals (databases + registers) − removed.</span>
+        </label>
+        <label><span class="lbl">Records excluded (n)</span>
+          <input type="number" id="f-excluded-screen" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label><span class="lbl">Reports sought for retrieval (n)</span>
+          <input type="number" id="f-sought" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label><span class="lbl">Reports not retrieved (n)</span>
+          <input type="number" id="f-not-retrieved" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label><span class="lbl">Reports assessed for eligibility (n)</span>
+          <input type="number" id="f-assessed" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label><span class="lbl">Reports excluded with reasons (n)</span>
+          <input type="number" id="f-excluded-eligible" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label><span class="lbl">Exclusion-reason breakdown (optional)</span>
+          <textarea id="f-excluded-breakdown" rows="2" placeholder="e.g. wrong design n=X; wrong population n=Y"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Included</legend>
+        <label><span class="lbl">Studies included in review (n)</span>
+          <input type="number" id="f-studies" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label><span class="lbl">Reports of included studies (n)</span>
+          <input type="number" id="f-reports" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Review metadata (optional)</legend>
+        <label><span class="lbl">Review title</span>
+          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors in HFpEF — systematic review">
+        </label>
+      </fieldset>
+
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Preview</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">PRISMA 2020 flow template after Page et&nbsp;al., BMJ 2021;372:n71. Generated client-side; no data leaves the browser.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "prisma-flow-v1";
+
+    const fields = {
+      db: "f-db",
+      reg: "f-reg",
+      removed: "f-removed",
+      removedBreakdown: "f-removed-breakdown",
+      screened: "f-screened",
+      excludedScreen: "f-excluded-screen",
+      sought: "f-sought",
+      notRetrieved: "f-not-retrieved",
+      assessed: "f-assessed",
+      excludedEligible: "f-excluded-eligible",
+      excludedBreakdown: "f-excluded-breakdown",
+      studies: "f-studies",
+      reports: "f-reports",
+      title: "f-title"
+    };
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+
+    function readState() {
+      const out = {};
+      for (const [k, id] of Object.entries(fields)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.type === "number") {
+          const raw = el.value;
+          const parsed = parseInt(raw, 10);
+          out[k] = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+        } else {
+          out[k] = el.value || "";
+        }
+      }
+      return out;
+    }
+
+    function writeState(state) {
+      for (const [k, id] of Object.entries(fields)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (k in state) {
+          el.value = state[k];
+        }
+      }
+    }
+
+    function validate(s) {
+      const warnings = [];
+      const idTotal = s.db + s.reg;
+      const expectedScreened = Math.max(0, idTotal - s.removed);
+      if (s.screened && idTotal && s.screened !== expectedScreened) {
+        warnings.push("Records screened (" + s.screened + ") should equal identified (" + idTotal + ") minus removed (" + s.removed + ") = " + expectedScreened + ".");
+      }
+      if (s.excludedScreen > s.screened) {
+        warnings.push("Records excluded at screening (" + s.excludedScreen + ") exceeds records screened (" + s.screened + ").");
+      }
+      const expectedSought = Math.max(0, s.screened - s.excludedScreen);
+      if (s.sought && s.screened && s.sought !== expectedSought) {
+        warnings.push("Reports sought (" + s.sought + ") should equal screened (" + s.screened + ") minus excluded (" + s.excludedScreen + ") = " + expectedSought + ".");
+      }
+      const expectedAssessed = Math.max(0, s.sought - s.notRetrieved);
+      if (s.assessed && s.sought && s.assessed !== expectedAssessed) {
+        warnings.push("Reports assessed (" + s.assessed + ") should equal sought (" + s.sought + ") minus not retrieved (" + s.notRetrieved + ") = " + expectedAssessed + ".");
+      }
+      if (s.excludedEligible > s.assessed) {
+        warnings.push("Reports excluded with reasons (" + s.excludedEligible + ") exceeds assessed (" + s.assessed + ").");
+      }
+      return warnings;
+    }
+
+    function renderWarnings(list) {
+      if (!list.length) {
+        warnEl.classList.remove("is-visible");
+        warnEl.innerHTML = "";
+        return;
+      }
+      const lis = list.map(w => "<li>" + escapeXml(w) + "</li>").join("");
+      warnEl.innerHTML = "<strong>Consistency checks</strong><ul>" + lis + "</ul>";
+      warnEl.classList.add("is-visible");
+    }
+
+    function escapeXml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function wrapText(text, maxChars) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      const lines = [];
+      let line = "";
+      for (const w of words) {
+        const next = line ? line + " " + w : w;
+        if (next.length > maxChars && line) {
+          lines.push(line);
+          line = w;
+        } else {
+          line = next;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    function box(x, y, w, h, lines, opts) {
+      opts = opts || {};
+      const fill = opts.fill || "#ffffff";
+      const stroke = opts.stroke || "#222";
+      const anchorY = y + 16;
+      const lineHeight = 15;
+      const labels = lines.map((ln, i) =>
+        "<text x=\"" + (x + w / 2) + "\" y=\"" + (anchorY + i * lineHeight) + "\" text-anchor=\"middle\" font-size=\"12\" font-family=\"system-ui, sans-serif\" fill=\"#15181d\">" + escapeXml(ln) + "</text>"
+      ).join("");
+      return "<rect x=\"" + x + "\" y=\"" + y + "\" width=\"" + w + "\" height=\"" + h + "\" fill=\"" + fill + "\" stroke=\"" + stroke + "\" stroke-width=\"1.2\" rx=\"3\"/>" + labels;
+    }
+
+    function sectionLabel(x, y, text) {
+      return "<text x=\"" + x + "\" y=\"" + y + "\" font-size=\"13\" font-weight=\"700\" font-family=\"system-ui, sans-serif\" fill=\"#2c5e8a\" letter-spacing=\"0.05em\">" + escapeXml(text.toUpperCase()) + "</text>";
+    }
+
+    function arrow(x1, y1, x2, y2) {
+      return "<line x1=\"" + x1 + "\" y1=\"" + y1 + "\" x2=\"" + x2 + "\" y2=\"" + y2 + "\" stroke=\"#222\" stroke-width=\"1.2\" marker-end=\"url(#arrowhead)\"/>";
+    }
+
+    function buildSvg(s) {
+      // Canvas: 840 x 1060
+      const W = 840, H = 1060;
+      const mainX = 200, mainW = 340;
+      const sideX = 580, sideW = 220;
+      const boxH = 56;
+      const idTotal = s.db + s.reg;
+
+      const parts = [];
+      parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\">");
+      parts.push("<defs><marker id=\"arrowhead\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#222\"/></marker></defs>");
+      parts.push("<rect x=\"0\" y=\"0\" width=\"" + W + "\" height=\"" + H + "\" fill=\"#ffffff\"/>");
+
+      if (s.title) {
+        parts.push("<text x=\"" + (W / 2) + "\" y=\"34\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"700\" fill=\"#15181d\">" + escapeXml(s.title) + "</text>");
+      }
+
+      // Section labels
+      parts.push(sectionLabel(40, 78, "Identification"));
+      parts.push(sectionLabel(40, 360, "Screening"));
+      parts.push(sectionLabel(40, 900, "Included"));
+
+      // Left rail separators
+      parts.push("<line x1=\"160\" y1=\"60\" x2=\"160\" y2=\"" + (H - 40) + "\" stroke=\"#d9d5cc\" stroke-width=\"1\"/>");
+
+      // Row 1: two identification boxes
+      const idRowY = 90;
+      const idBoxW = 160;
+      parts.push(box(mainX, idRowY, idBoxW, boxH, ["Records identified from:", "Databases (n = " + s.db + ")"], {fill: "#f4f8fc"}));
+      parts.push(box(mainX + idBoxW + 20, idRowY, idBoxW, boxH, ["Records identified from:", "Registers (n = " + s.reg + ")"], {fill: "#f4f8fc"}));
+
+      // Combined total line
+      parts.push("<text x=\"" + (mainX + mainW / 2) + "\" y=\"" + (idRowY + boxH + 18) + "\" text-anchor=\"middle\" font-size=\"11\" fill=\"#5c6470\">Total identified (n = " + idTotal + ")</text>");
+
+      // Arrow down to removed
+      const removedY = idRowY + boxH + 40;
+      parts.push(arrow(mainX + mainW / 2, idRowY + boxH + 22, mainX + mainW / 2, removedY - 2));
+
+      // Records removed box
+      const removedLines = ["Records removed before screening:", "Total (n = " + s.removed + ")"];
+      if (s.removedBreakdown && s.removedBreakdown.trim()) {
+        const extra = wrapText(s.removedBreakdown.trim(), 40);
+        for (const e of extra) removedLines.push(e);
+      }
+      const removedH = Math.max(boxH, 14 + removedLines.length * 15);
+      parts.push(box(mainX, removedY, mainW, removedH, removedLines, {fill: "#fbeedd"}));
+
+      // Screening — records screened
+      const screenedY = removedY + removedH + 40;
+      parts.push(arrow(mainX + mainW / 2, removedY + removedH, mainX + mainW / 2, screenedY - 2));
+      parts.push(box(mainX, screenedY, mainW, boxH, ["Records screened", "(n = " + s.screened + ")"]));
+      // Side: excluded
+      parts.push(arrow(mainX + mainW, screenedY + boxH / 2, sideX - 2, screenedY + boxH / 2));
+      parts.push(box(sideX, screenedY, sideW, boxH, ["Records excluded", "(n = " + s.excludedScreen + ")"], {fill: "#fbeedd"}));
+
+      // Reports sought
+      const soughtY = screenedY + boxH + 40;
+      parts.push(arrow(mainX + mainW / 2, screenedY + boxH, mainX + mainW / 2, soughtY - 2));
+      parts.push(box(mainX, soughtY, mainW, boxH, ["Reports sought for retrieval", "(n = " + s.sought + ")"]));
+      parts.push(arrow(mainX + mainW, soughtY + boxH / 2, sideX - 2, soughtY + boxH / 2));
+      parts.push(box(sideX, soughtY, sideW, boxH, ["Reports not retrieved", "(n = " + s.notRetrieved + ")"], {fill: "#fbeedd"}));
+
+      // Reports assessed
+      const assessedY = soughtY + boxH + 40;
+      parts.push(arrow(mainX + mainW / 2, soughtY + boxH, mainX + mainW / 2, assessedY - 2));
+      parts.push(box(mainX, assessedY, mainW, boxH, ["Reports assessed for eligibility", "(n = " + s.assessed + ")"]));
+      // Side: excluded with reasons
+      const excludedLines = ["Reports excluded:", "With reasons (n = " + s.excludedEligible + ")"];
+      if (s.excludedBreakdown && s.excludedBreakdown.trim()) {
+        const extra = wrapText(s.excludedBreakdown.trim(), 30);
+        for (const e of extra) excludedLines.push(e);
+      }
+      const excludedH = Math.max(boxH, 14 + excludedLines.length * 15);
+      parts.push(arrow(mainX + mainW, assessedY + boxH / 2, sideX - 2, assessedY + boxH / 2));
+      parts.push(box(sideX, assessedY, sideW, excludedH, excludedLines, {fill: "#fbeedd"}));
+
+      // Included
+      const includedY = Math.max(assessedY + boxH + 40, assessedY + excludedH + 20);
+      parts.push(arrow(mainX + mainW / 2, assessedY + boxH, mainX + mainW / 2, includedY - 2));
+      parts.push(box(mainX, includedY, mainW, boxH + 10, [
+        "Studies included in review (n = " + s.studies + ")",
+        "Reports of included studies (n = " + s.reports + ")"
+      ], {fill: "#e8f0f7"}));
+
+      parts.push("</svg>");
+      return parts.join("");
+    }
+
+    function render() {
+      const state = readState();
+      const warnings = validate(state);
+      renderWarnings(warnings);
+      const svg = buildSvg(state);
+      svgHost.innerHTML = svg;
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+      } catch (e) {
+        // ignore quota / private-mode errors
+      }
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") writeState(parsed);
+      } catch (e) {
+        // ignore corrupted state
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function slugify(text, fallback) {
+      const s = String(text || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      return s || fallback;
+    }
+
+    function onDownloadSvg() {
+      const state = readState();
+      const svg = buildSvg(state);
+      const blob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
+      downloadBlob(blob, "prisma-" + slugify(state.title, "flow") + ".svg");
+    }
+
+    function onDownloadPng() {
+      const state = readState();
+      const svg = buildSvg(state);
+      const scale = 2;
+      const W = 840, H = 1060;
+      const img = new Image();
+      const svgBlob = new Blob([svg], {type: "image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = W * scale;
+        canvas.height = H * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (blob) {
+          if (blob) downloadBlob(blob, "prisma-" + slugify(state.title, "flow") + ".png");
+        }, "image/png");
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        alert("PNG render failed. Try Download SVG instead.");
+      };
+      img.src = url;
+    }
+
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema: "prisma-flow-v1", _savedAt: new Date().toISOString()}, state);
+      const blob = new Blob([JSON.stringify(out, null, 2)], {type: "application/json"});
+      downloadBlob(blob, "prisma-" + slugify(state.title, "state") + ".json");
+    }
+
+    function onImportJson(file) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (parsed && typeof parsed === "object") {
+            writeState(parsed);
+            render();
+          }
+        } catch (e) {
+          alert("Could not parse JSON: " + e.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function onReset() {
+      if (!confirm("Reset all fields to zero?")) return;
+      for (const id of Object.values(fields)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.value = el.type === "number" ? "0" : "";
+      }
+      render();
+    }
+
+    function attachInputs() {
+      for (const id of Object.values(fields)) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("input", render);
+      }
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-import").addEventListener("click", function () {
+        document.getElementById("file-import").click();
+      });
+      document.getElementById("file-import").addEventListener("change", function (e) {
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f);
+        e.target.value = "";
+      });
+    }
+
+    loadSaved();
+    attachInputs();
+    render();
+  })();
+  </script>
+</body>
+</html>

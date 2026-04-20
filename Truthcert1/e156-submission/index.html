@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TruthCert-MA: A Cross-Platform JavaScript Meta-Analysis Engine Validated Against R — E156</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FDFCFA;--text:#1a1a1a;--text2:#555;--accent:#7A5A10;
+  --card:#F5F3EE;--border:#E5E0D6;--link:#2E6B8A;
+  --s1:#2E86C1;--s2:#28B463;--s3:#7D3C98;--s4:#CB4335;
+  --s5:#D68910;--s6:#148F77;--s7:#85929E
+}
+body{
+  font-family:Georgia,'Times New Roman',serif;
+  background:var(--bg);color:var(--text);line-height:1.7;
+  -webkit-font-smoothing:antialiased;padding:0
+}
+.page{max-width:780px;margin:0 auto;padding:3rem 2rem 4rem}
+
+/* ── Masthead ──────────────────────────────────── */
+.masthead{
+  text-align:center;padding:2rem 0 1.5rem;
+  border-bottom:3px double var(--border);margin-bottom:2.5rem
+}
+.masthead-label{
+  font-family:system-ui,-apple-system,sans-serif;font-size:.65rem;
+  font-weight:700;letter-spacing:.25em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:1.2rem
+}
+.masthead h1{font-size:2rem;font-weight:700;line-height:1.25;margin-bottom:.8rem}
+.masthead .byline{
+  font-family:system-ui,sans-serif;font-size:.85rem;color:var(--text2)
+}
+.masthead .byline a{color:var(--link);text-decoration:none}
+
+/* ── Body ──────────────────────────────────────── */
+.body-section{margin-bottom:3rem}
+.body-text{
+  font-size:1.18rem;line-height:2;text-align:justify;hyphens:auto;
+  margin-bottom:1.5rem
+}
+.body-text .s{
+  cursor:pointer;transition:background .2s;border-radius:3px;padding:1px 4px;
+  position:relative
+}
+.body-text .s:hover{background:rgba(0,0,0,.06)}
+.body-text .s[data-r="1"]:hover{background:rgba(46,134,193,.12)}
+.body-text .s[data-r="2"]:hover{background:rgba(40,180,99,.12)}
+.body-text .s[data-r="3"]:hover{background:rgba(125,60,152,.12)}
+.body-text .s[data-r="4"]:hover{background:rgba(203,67,53,.15)}
+.body-text .s[data-r="5"]:hover{background:rgba(214,137,16,.12)}
+.body-text .s[data-r="6"]:hover{background:rgba(20,143,119,.12)}
+.body-text .s[data-r="7"]:hover{background:rgba(133,146,158,.12)}
+.body-text .s::after{
+  content:attr(data-label);position:absolute;bottom:calc(100% + 4px);
+  left:50%;transform:translateX(-50%);font-family:system-ui,sans-serif;
+  font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:#fff;padding:3px 8px;border-radius:3px;white-space:nowrap;
+  opacity:0;transition:opacity .15s;pointer-events:none;z-index:10
+}
+.body-text .s:hover::after{opacity:1}
+.body-text .s[data-r="1"]::after{background:var(--s1)}
+.body-text .s[data-r="2"]::after{background:var(--s2)}
+.body-text .s[data-r="3"]::after{background:var(--s3)}
+.body-text .s[data-r="4"]::after{background:var(--s4)}
+.body-text .s[data-r="5"]::after{background:var(--s5)}
+.body-text .s[data-r="6"]::after{background:var(--s6)}
+.body-text .s[data-r="7"]::after{background:var(--s7)}
+
+/* ── Sentence map ──────────────────────────────── */
+.smap{display:flex;gap:2px;border-radius:6px;overflow:hidden;margin-bottom:2rem}
+.smap-seg{
+  flex:1;padding:8px 4px;text-align:center;cursor:pointer;
+  color:#fff;transition:opacity .15s;font-family:system-ui,sans-serif;
+  font-size:.6rem;font-weight:700;letter-spacing:.04em
+}
+.smap-seg:hover{opacity:.8}
+
+/* ── Figures gallery ───────────────────────────── */
+.figures-section{margin-bottom:3rem}
+.figures-section h2{
+  font-family:system-ui,sans-serif;font-size:.7rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)
+}
+.fig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem}
+.fig-card{
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;transition:box-shadow .2s
+}
+.fig-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.fig-card img{width:100%;height:auto;display:block}
+.fig-card .fig-caption{
+  padding:.6rem .8rem;font-family:system-ui,sans-serif;font-size:.75rem;
+  color:var(--text2);border-top:1px solid var(--border)
+}
+
+/* ── App link ──────────────────────────────────── */
+.app-link-section{margin-bottom:3rem;text-align:center}
+.app-btn{
+  display:inline-block;padding:12px 32px;background:var(--accent);color:#fff;
+  font-family:system-ui,sans-serif;font-size:.9rem;font-weight:600;
+  text-decoration:none;border-radius:6px;transition:background .2s;
+  letter-spacing:.02em
+}
+.app-btn:hover{background:#6d5210}
+
+/* ── Notes ─────────────────────────────────────── */
+.notes-section{
+  background:var(--card);border-radius:8px;padding:1.5rem 1.8rem;
+  margin-bottom:2.5rem
+}
+.notes-section h2{
+  font-family:system-ui,sans-serif;font-size:.7rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:1rem
+}
+.notes-grid{display:grid;grid-template-columns:auto 1fr;gap:.35rem 1rem}
+.notes-grid dt{
+  font-family:system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--text)
+}
+.notes-grid dd{font-size:.85rem;color:var(--text2)}
+.notes-grid dd a{color:var(--link);text-decoration:none;word-break:break-all}
+
+/* ── References ────────────────────────────────── */
+.refs-section{margin-bottom:2.5rem}
+.refs-section h2{
+  font-family:system-ui,sans-serif;font-size:.7rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:.8rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)
+}
+.refs-section ol{
+  font-family:system-ui,sans-serif;font-size:.82rem;color:var(--text2);
+  padding-left:1.2rem;line-height:1.8
+}
+
+/* ── Disclosure ────────────────────────────────── */
+.disclosure{
+  font-family:system-ui,sans-serif;font-size:.78rem;color:var(--text2);
+  line-height:1.7;padding:1.2rem 1.5rem;background:var(--card);
+  border-radius:8px;margin-bottom:2.5rem;border-left:3px solid var(--accent)
+}
+.disclosure strong{color:var(--text);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
+
+/* ── Footer ────────────────────────────────────── */
+.footer{
+  padding-top:1.5rem;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem
+}
+.footer .meta{font-family:system-ui,sans-serif;font-size:.72rem;color:var(--text2)}
+.footer .meta .check{color:#28B463}
+.footer .actions{display:flex;gap:.5rem}
+.footer .actions button{
+  font-family:system-ui,sans-serif;font-size:.72rem;padding:6px 14px;
+  border:1px solid var(--border);border-radius:4px;background:#fff;
+  color:var(--text);cursor:pointer;transition:background .15s
+}
+.footer .actions button:hover{background:var(--card)}
+
+/* ── Print ─────────────────────────────────────── */
+@media print{
+  .smap,.footer .actions,.app-link-section,.skip-link{display:none!important}
+  .s::after{display:none!important}
+  body{padding:0;background:#fff}
+  .page{max-width:100%;padding:1rem}
+  .fig-card{break-inside:avoid}
+  .fig-card img{max-height:400px;object-fit:contain}
+  .refs-section{page-break-before:auto}
+}
+
+/* ── Mobile ────────────────────────────────────── */
+@media(max-width:640px){
+  .page{padding:1.5rem 1rem}
+  .masthead h1{font-size:1.5rem}
+  .body-text{font-size:1.05rem}
+  .fig-grid{grid-template-columns:1fr}
+  .smap-seg{font-size:.5rem;padding:6px 2px}
+}
+@media(max-width:400px){
+  .page{padding:1rem .7rem}
+  .masthead h1{font-size:1.2rem}
+  .body-text{font-size:.95rem}
+}
+
+/* ── Skip link ─────────────────────────────────── */
+.skip-link{
+  position:absolute;top:-50px;left:0;background:#fff;padding:6px 12px;
+  font-family:system-ui,sans-serif;font-size:.82rem;z-index:999;
+  border:1px solid var(--border);border-radius:4px
+}
+.skip-link:focus{top:8px;left:8px}
+
+/* ── Reduced motion ────────────────────────────── */
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a href="#notes" class="skip-link">Skip to notes</a>
+<div class="page">
+
+  <header class="masthead">
+    <div class="masthead-label">E156 Micro-Paper</div>
+    <h1 id="title"></h1>
+    <div class="byline" id="byline"></div>
+  </header>
+
+  <section class="body-section">
+    <p class="body-text" id="body"></p>
+    <div class="smap" id="smap" role="group" aria-label="Sentence roles"></div>
+  </section>
+
+  <section class="figures-section" id="figures-section" style="display:none">
+    <h2>Figures</h2>
+    <div class="fig-grid" id="fig-grid"></div>
+  </section>
+
+  <section class="app-link-section" id="app-section" style="display:none">
+    <a class="app-btn" id="app-btn" target="_blank">Open Interactive App</a>
+  </section>
+
+  <section class="notes-section" id="notes">
+    <h2>Outside Notes</h2>
+    <dl class="notes-grid" id="notes-grid"></dl>
+  </section>
+
+  <section class="refs-section" id="refs-section" style="display:none">
+    <h2>References</h2>
+    <ol id="refs-list"></ol>
+  </section>
+
+  <section class="disclosure" id="disclosure" style="display:none">
+    <strong>AI Disclosure</strong><br><br>
+    <span id="disclosure-text"></span>
+  </section>
+
+  <footer class="footer">
+    <div class="meta">
+      <span id="wc"></span> words <span class="check" id="wc-check"></span> &middot;
+      7 sentences &middot; E156 v0.2
+    </div>
+    <div class="actions">
+      <button onclick="copyBody(event)">Copy</button>
+      <button onclick="downloadJSON()">JSON</button>
+      <button onclick="window.print()">Print</button>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const D = {
+  "title": "TruthCert-MA: A Cross-Platform JavaScript Meta-Analysis Engine Validated Against R",
+  "summary": "A TypeScript meta-analysis library distributed as CLI, Node package, browser bundle, and REST API, validated against R metafor.",
+  "type": "methods",
+  "primary_estimand": "Pooled effect size (OR/RR/MD/SMD)",
+  "study_count": null,
+  "participant_count": null,
+  "version": "1.0",
+  "date": "2026-03-26",
+  "certainty": "",
+  "app": "TruthCert-MA v1.0",
+  "data": "R metafor validation benchmarks (OR, RR, MD, SMD)",
+  "code": "https://github.com/mahmood726-cyber/truthcert1",
+  "doi": "",
+  "protocol": "",
+  "source_article": "",
+  "body": "Can a single JavaScript library provide a complete meta-analysis engine validated for both browser and server-side deployment scenarios? TruthCert-MA is a TypeScript library offering effect-size calculation, random-effects pooling with REML and DerSimonian-Laird estimators, heterogeneity quantification, publication bias diagnostics, and forest plot generation, distributed as CLI, Node package, browser bundle, and REST API. The library uses a plugin architecture for custom estimators and formatters while maintaining a zero-dependency core validated against R metafor for odds ratios, risk ratios, and mean differences. All pooled estimates matched R metafor within 0.001 for point estimates and 0.01 for confidence interval bounds across the full benchmark suite. Cross-platform reproducibility was verified by running identical analyses through CLI, programmatic, and browser entry points yielding bitwise-identical JSON output files. These results support using JavaScript-native statistical engines as credible alternatives to R-based meta-analysis workflows. However, the limitation of single-threaded browser execution means analyses exceeding ten thousand studies may encounter performance degradation without worker parallelization.",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a quantitative result such as a percentage, count, or interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "Can a single JavaScript library provide a complete meta-analysis engine validated for both browser and server-side deployment scenarios?"
+    },
+    {
+      "role": "Dataset",
+      "text": "TruthCert-MA is a TypeScript library offering effect-size calculation, random-effects pooling with REML and DerSimonian-Laird estimators, heterogeneity quantification, publication bias diagnostics, and forest plot generation, distributed as CLI, Node package, browser bundle, and REST API."
+    },
+    {
+      "role": "Method",
+      "text": "The library uses a plugin architecture for custom estimators and formatters while maintaining a zero-dependency core validated against R metafor for odds ratios, risk ratios, and mean differences."
+    },
+    {
+      "role": "Primary result",
+      "text": "All pooled estimates matched R metafor within 0.001 for point estimates and 0.01 for confidence interval bounds across the full benchmark suite."
+    },
+    {
+      "role": "Robustness",
+      "text": "Cross-platform reproducibility was verified by running identical analyses through CLI, programmatic, and browser entry points yielding bitwise-identical JSON output files."
+    },
+    {
+      "role": "Interpretation",
+      "text": "These results support using JavaScript-native statistical engines as credible alternatives to R-based meta-analysis workflows."
+    },
+    {
+      "role": "Boundary",
+      "text": "However, the limitation of single-threaded browser execution means analyses exceeding ten thousand studies may encounter performance degradation without worker parallelization."
+    }
+  ],
+  "primary_plot": {},
+  "studies": [],
+  "search_strategy": {},
+  "prisma": {},
+  "included_papers": [],
+  "analysis_modules": [],
+  "author": "Mahmood Ahmad",
+  "affiliation": "Tahir Heart Institute",
+  "email": "mahmood.ahmad2@nhs.net",
+  "slug": "truthcert-ma-js-engine",
+  "references": [
+    "Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. BMJ. 1997;315(7109):629-634.",
+    "Duval S, Tweedie R. Trim and fill: a simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. Biometrics. 2000;56(2):455-463.",
+    "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR. Introduction to Meta-Analysis. 2nd ed. Wiley; 2021."
+  ],
+  "_assets": [
+    "Main screen.html",
+    "TruthCert-Fast.html",
+    "TruthCert-PairwisePro-v1.0-bundle.backup-20260118-215949.html",
+    "TruthCert-PairwisePro-v1.0-bundle.backup-20260118.html",
+    "TruthCert-PairwisePro-v1.0-bundle.backup-pre-features.html",
+    "TruthCert-PairwisePro-v1.0-bundle.html",
+    "TruthCert-PairwisePro-v1.0-dist.html",
+    "TruthCert-PairwisePro-v1.0-fast.html",
+    "TruthCert-PairwisePro-v1.0-min.html",
+    "TruthCert-PairwisePro-v1.0-optimized.html",
+    "TruthCert-PairwisePro-v1.0-production.html",
+    "TruthCert-PairwisePro-v1.0.backup-20260119-221035.html",
+    "TruthCert-PairwisePro-v1.0.html",
+    "TruthCert_v8-8-2_S14HTA_v1_4_2_FIXED2.html",
+    "figure01_overview_fullpage.png",
+    "figure02_model_fullpage.png",
+    "figure03_results_fullpage.png",
+    "figure04_bias_fullpage.png",
+    "figure05_report_fullpage.png",
+    "figure06_workflow_infographic.png",
+    "figure07_architecture_infographic.png",
+    "figure08_data_journey_infographic.png",
+    "figure09_analysis_lifecycle_infographic.png",
+    "figure10_quality_governance_infographic.png",
+    "figure11_output_package_infographic.png",
+    "figures_figure01_overview_fullpage.png",
+    "figures_figure02_model_fullpage.png",
+    "figures_figure03_results_fullpage.png",
+    "figures_figure04_bias_fullpage.png",
+    "figures_figure05_report_fullpage.png",
+    "figures_figure06_workflow_infographic.png",
+    "figures_figure07_architecture_infographic.png",
+    "figures_figure08_data_journey_infographic.png",
+    "figures_figure09_analysis_lifecycle_infographic.png",
+    "figures_figure10_quality_governance_infographic.png",
+    "figures_figure11_output_package_infographic.png",
+    "index.html",
+    "pairwise-pro-v2_2_evalue (5).html",
+    "test_advanced.html",
+    "truthcert-course.html",
+    "wizard_insert.html"
+  ],
+  "_disclosure": "This work represents a compiler-generated evidence micro-publication. AI is used as a constrained synthesis engine operating on structured inputs and predefined rules, rather than as an autonomous author. All results and text were reviewed and verified by the author, who takes full responsibility for the content."
+};
+
+const ROLES = [
+  {key:"question",      label:"S1 Question",      color:"#2E86C1"},
+  {key:"dataset",        label:"S2 Dataset",        color:"#28B463"},
+  {key:"method",         label:"S3 Method",         color:"#7D3C98"},
+  {key:"result",         label:"S4 Primary Result", color:"#CB4335"},
+  {key:"robustness",     label:"S5 Robustness",     color:"#D68910"},
+  {key:"interpretation", label:"S6 Interpretation", color:"#148F77"},
+  {key:"boundary",       label:"S7 Boundary",       color:"#85929E"}
+];
+
+function esc(s){const d=document.createElement("div");d.textContent=String(s??"");return d.innerHTML}
+
+// ── Title + byline ──
+document.getElementById("title").textContent = D.title || "Untitled";
+document.title = (D.title||"E156") + " \u2014 E156 Interactive Paper";
+
+const parts = [];
+if(D.author) parts.push(esc(D.author));
+if(D.affiliation) parts.push(esc(D.affiliation));
+if(D.email) parts.push('<a href="mailto:'+esc(D.email)+'">'+esc(D.email)+'</a>');
+if(D.date) parts.push(esc(D.date));
+document.getElementById("byline").innerHTML = parts.join(" &middot; ");
+
+// ── Body with sentence highlighting ──
+const body = D.body || "";
+const sents = D.sentences || [];
+const bodyEl = document.getElementById("body");
+
+if(sents.length === 7){
+  bodyEl.innerHTML = sents.map((s,i) => {
+    const txt = typeof s === "string" ? s : (s.text || "");
+    return '<span class="s" tabindex="0" role="note" aria-label="'+ROLES[i].label+'" data-r="'+(i+1)+'" data-label="'+ROLES[i].label+'">'+esc(txt)+'</span>';
+  }).join(" ");
+} else {
+  bodyEl.textContent = body;
+}
+
+// ── Sentence map ──
+const smap = document.getElementById("smap");
+ROLES.forEach((r,i) => {
+  const seg = document.createElement("div");
+  seg.className = "smap-seg";
+  seg.style.background = r.color;
+  seg.textContent = r.label.split(" ")[0];
+  seg.title = r.label;
+  seg.setAttribute("tabindex","0");
+  seg.setAttribute("role","button");
+  seg.setAttribute("aria-label",r.label);
+  const activate = () => {
+    const s = bodyEl.querySelector('.s[data-r="'+(i+1)+'"]');
+    if(s){s.scrollIntoView({behavior:"smooth",block:"center"});
+      bodyEl.querySelectorAll(".s").forEach(x=>x.style.background="");
+      const colors = ["","rgba(46,134,193,.15)","rgba(40,180,99,.15)","rgba(125,60,152,.15)",
+        "rgba(203,67,53,.18)","rgba(214,137,16,.15)","rgba(20,143,119,.15)","rgba(133,146,158,.15)"];
+      s.style.background = colors[i+1] || "";
+    }
+  };
+  seg.addEventListener("click", activate);
+  seg.addEventListener("keydown", e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();activate();}});
+  smap.appendChild(seg);
+});
+
+// ── Figures from assets ──
+const assets = D._assets || [];
+const imgAssets = assets.filter(a => /\.(png|jpg|jpeg|svg|gif|webp)$/i.test(a));
+if(imgAssets.length > 0){
+  document.getElementById("figures-section").style.display = "";
+  const grid = document.getElementById("fig-grid");
+  imgAssets.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "fig-card";
+    const img = document.createElement("img");
+    img.src = "assets/" + a;
+    img.alt = a.replace(/[-_]/g," ").replace(/\.\w+$/,"");
+    img.loading = "lazy";
+    card.appendChild(img);
+    const cap = document.createElement("div");
+    cap.className = "fig-caption";
+    cap.textContent = a.replace(/[-_]/g," ").replace(/\.\w+$/,"");
+    card.appendChild(cap);
+    grid.appendChild(card);
+  });
+}
+
+// ── App link ──
+const htmlAssets = assets.filter(a => /\.html$/i.test(a) && a !== "index.html");
+if(htmlAssets.length > 0){
+  document.getElementById("app-section").style.display = "";
+  const btn = document.getElementById("app-btn");
+  btn.href = "assets/" + htmlAssets[0];
+  btn.rel = "noopener noreferrer";
+  btn.textContent = "Open Interactive App \u2192 " + htmlAssets[0].replace(/[-_]/g," ").replace(/\.html$/,"");
+}
+
+// ── Notes ──
+const notes = D.notes || {};
+const noteFields = [
+  ["Type", D.type], ["Primary Estimand", D.primary_estimand],
+  ["App", notes.app], ["Data", notes.data], ["Code", notes.code],
+  ["DOI", notes.doi], ["Version", notes.version || D.version],
+  ["Certainty", notes.certainty || D.certainty],
+  ["Validation", notes.validation || (D.validation||{}).status]
+];
+const ng = document.getElementById("notes-grid");
+noteFields.forEach(([label, val]) => {
+  if(!val) return;
+  const dt = document.createElement("dt");
+  dt.textContent = label;
+  ng.appendChild(dt);
+  const dd = document.createElement("dd");
+  if(/^https?:/.test(val)){
+    const a = document.createElement("a");
+    a.href = val; a.textContent = val; a.target = "_blank"; a.rel = "noopener";
+    dd.appendChild(a);
+  } else {
+    dd.textContent = val;
+  }
+  ng.appendChild(dd);
+});
+
+// ── References ──
+const refs = D.references || [];
+if(refs.length > 0){
+  document.getElementById("refs-section").style.display = "";
+  const ol = document.getElementById("refs-list");
+  refs.forEach(r => {
+    const li = document.createElement("li");
+    li.textContent = r;
+    ol.appendChild(li);
+  });
+}
+
+// ── Disclosure ──
+const disc = D._disclosure || "";
+if(disc){
+  document.getElementById("disclosure").style.display = "";
+  document.getElementById("disclosure-text").textContent = disc;
+}
+
+// ── Footer ──
+const wc = body.split(/\s+/).filter(Boolean).length;
+document.getElementById("wc").textContent = wc;
+document.getElementById("wc-check").textContent = wc === 156 ? "\u2713" : "\u2717 ("+wc+")";
+
+// ── Actions ──
+function copyBody(e){
+  navigator.clipboard.writeText(body).then(()=>{
+    const b=e&&e.target?e.target:document.querySelector(".actions button");
+    b.textContent="Copied!";setTimeout(()=>b.textContent="Copy",1500);
+  });
+}
+function downloadJSON(){
+  const b=new Blob([JSON.stringify(D,null,2)],{type:"application/json"});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement("a");
+  a.href=u;a.download=(D.slug||"e156")+".json";
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(u);
+}
+</script>
+</body>
+</html>

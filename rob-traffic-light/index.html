@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Risk-of-bias traffic-light and summary-bar plot (robvis-style).">
+  <meta name="color-scheme" content="light dark">
+  <title>Risk-of-Bias Traffic Light</title>
+  <style>
+    :root {
+      --bg: #f6f4ef; --panel: #fff; --ink: #15181d; --muted: #5c6470;
+      --accent: #2c5e8a; --accent-soft: #e8f0f7; --warn: #b05a1c;
+      --warn-soft: #fbeedd; --border: #d9d5cc; --border-strong: #7a8294;
+      --input-bg: #fbfaf6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141618; --panel: #1c1f23; --ink: #e7e4dc; --muted: #98a0ae;
+        --accent: #6aa6d4; --accent-soft: #223044; --warn: #e0a268;
+        --warn-soft: #3a2d1c; --border: #2f343a; --border-strong: #495262;
+        --input-bg: #23272c;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 66ch; }
+    .layout { display: grid; grid-template-columns: minmax(320px, 28rem) 1fr;
+              gap: 1.5rem; padding: 1.5rem clamp(1rem, 3vw, 3rem); align-items: start; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.9rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+    label { display: block; margin-bottom: 0.5rem; font-size: 0.88rem; }
+    label span.lbl { display: block; margin-bottom: 0.15rem; }
+    label span.hint { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.1rem; }
+    input[type="text"], textarea, select {
+      width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--input-bg); color: var(--ink); font: inherit; font-size: 0.9rem;
+    }
+    textarea { resize: vertical; min-height: 10rem; font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace; font-size: 0.8rem; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
+    button { font: inherit; font-size: 0.85rem; padding: 0.45rem 0.85rem; border-radius: 6px;
+             border: 1px solid var(--border-strong); background: var(--panel); color: var(--ink); cursor: pointer; }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button:hover { filter: brightness(0.96); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .legend-key { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.8rem; margin-top: 0.5rem; }
+    .legend-key span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .legend-key i { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 1px solid #15181d; }
+    .preview-wrap { position: sticky; top: 1rem; }
+    .preview-wrap svg { width: 100%; height: auto; background: #fff; display: block; border-radius: 6px; }
+    .warn-banner { margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: var(--warn-soft);
+                   color: var(--warn); border: 1px solid var(--warn); border-radius: 6px; font-size: 0.82rem; display: none; }
+    .warn-banner.is-visible { display: block; }
+    .footer-note { margin: 0; color: var(--muted); font-size: 0.78rem; text-align: right;
+                   padding: 0 clamp(1rem, 3vw, 3rem) 1.5rem; }
+    .file-input-hidden { display: none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>Risk-of-Bias Traffic Light</h1>
+    <p>Paste study-by-domain ratings — <code>low</code>, <code>some</code>, <code>high</code>, <code>unclear</code>, or <code>na</code>. Renders the robvis-style traffic-light plot and the weighted summary bar. SVG / PNG export.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Ratings</h2>
+
+      <fieldset>
+        <legend>Domains</legend>
+        <label>
+          <span class="lbl">Comma-separated domain headers</span>
+          <input type="text" id="f-domains" value="D1: Randomization, D2: Deviations, D3: Missing data, D4: Outcome, D5: Selection, Overall">
+          <span class="hint">Leave the last column as <code>Overall</code> to display it in bold. Any number of columns is accepted.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">One study per line: <code>label, rating1, rating2, …</code></span>
+          <textarea id="f-data" spellcheck="false"></textarea>
+          <span class="hint">Ratings accepted (any case): <code>low</code>/<code>l</code>/<code>+</code>, <code>some</code>/<code>s</code>/<code>?</code>, <code>high</code>/<code>h</code>/<code>-</code>, <code>unclear</code>/<code>u</code>, <code>na</code>.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <span class="lbl">Plot title</span>
+          <input type="text" id="f-title" placeholder="e.g. RoB 2 — mortality outcome">
+        </label>
+        <label>
+          <span class="lbl">View</span>
+          <select id="f-view">
+            <option value="both">Traffic light + summary bar</option>
+            <option value="tl">Traffic light only</option>
+            <option value="bar">Summary bar only</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <div class="legend-key" aria-label="Colour key">
+        <span><i style="background:#14a550"></i>Low</span>
+        <span><i style="background:#f8c100"></i>Some concerns</span>
+        <span><i style="background:#e03b3b"></i>High</span>
+        <span><i style="background:#888888"></i>Unclear</span>
+        <span><i style="background:#ffffff"></i>N/A</span>
+      </div>
+
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Preview</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">Colour palette matches the robvis convention (Cochrane RoB 2). Generated client-side; no data leaves the browser.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "rob-traffic-light-v1";
+
+    const fields = {
+      domains: "f-domains", data: "f-data", title: "f-title", view: "f-view"
+    };
+
+    const EXAMPLE = "# Example RoB 2 ratings\nSmith 2018, low, low, low, some, low, low\nJones 2019, low, high, low, low, low, high\nLee 2020, some, some, low, low, low, some\nPatel 2021, low, low, high, low, some, high\nKhan 2022, low, low, low, low, low, low\nOkafor 2023, some, low, unclear, low, low, some\nTanaka 2024, high, high, low, low, low, high";
+
+    const RATING_MAP = {
+      "low": "low", "l": "low", "+": "low",
+      "some": "some", "some concerns": "some", "s": "some", "sc": "some", "?": "some", "moderate": "some",
+      "high": "high", "h": "high", "-": "high", "serious": "high", "critical": "high",
+      "unclear": "unclear", "u": "unclear", "x": "unclear", "no info": "unclear",
+      "na": "na", "n/a": "na"
+    };
+    const COLOURS = {
+      "low": "#14a550", "some": "#f8c100", "high": "#e03b3b",
+      "unclear": "#888888", "na": "#ffffff"
+    };
+    const LETTERS = {
+      "low": "+", "some": "?", "high": "-", "unclear": "", "na": ""
+    };
+    const ORDER = ["low", "some", "high", "unclear", "na"];
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+
+    function readState() {
+      const o = {};
+      for (const [k, id] of Object.entries(fields)) { const el = document.getElementById(id); if (el) o[k] = el.value || ""; }
+      return o;
+    }
+    function writeState(s) {
+      for (const [k, id] of Object.entries(fields)) { const el = document.getElementById(id); if (el && k in s) el.value = s[k]; }
+    }
+
+    function normalizeRating(raw) {
+      const key = String(raw || "").trim().toLowerCase();
+      return RATING_MAP[key] || null;
+    }
+
+    function parseDomains(text) {
+      return String(text || "").split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    function parseStudies(text, nDomains) {
+      const rows = [], warnings = [];
+      const lines = String(text || "").split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*,\s*/);
+        const label = parts[0] || ("Study " + (rows.length + 1));
+        const ratings = [];
+        let bad = false;
+        for (let j = 0; j < nDomains; j++) {
+          const cell = parts[j + 1];
+          if (cell == null || cell === "") { ratings.push(null); continue; }
+          const norm = normalizeRating(cell);
+          if (norm == null) {
+            warnings.push("Line " + (i+1) + " col " + (j+2) + ": unrecognized rating \"" + cell + "\"");
+            ratings.push(null);
+            bad = true;
+          } else {
+            ratings.push(norm);
+          }
+        }
+        rows.push({ label: label, ratings: ratings });
+        if (!bad && parts.length - 1 < nDomains) {
+          warnings.push("Line " + (i+1) + ": only " + (parts.length - 1) + " of " + nDomains + " domain ratings supplied");
+        }
+      }
+      return { rows: rows, warnings: warnings };
+    }
+
+    function summarise(rows, nDomains) {
+      const out = [];
+      for (let j = 0; j < nDomains; j++) {
+        const counts = { low: 0, some: 0, high: 0, unclear: 0, na: 0 };
+        let total = 0;
+        for (const r of rows) {
+          const v = r.ratings[j];
+          if (!v) continue;
+          counts[v] = (counts[v] || 0) + 1;
+          total += 1;
+        }
+        out.push({ counts: counts, total: total });
+      }
+      return out;
+    }
+
+    function escapeXml(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+    }
+
+    function buildSvg(state, rows, domains, summary) {
+      const view = state.view || "both";
+      const showTL = view === "both" || view === "tl";
+      const showBar = view === "both" || view === "bar";
+
+      // Traffic-light geometry
+      const cell = 32;
+      const labelW = 180;
+      const domainHdrH = 100; // for rotated labels
+      const tlMarginTop = state.title ? 60 : 30;
+      const nRows = rows.length;
+      const nCols = domains.length;
+      const tlBodyW = labelW + nCols * cell + 16;
+      const tlBodyH = nRows * cell + 20;
+
+      const barMarginTop = 40;
+      const barRowH = 28;
+      const barLabelW = 180;
+      const barBodyW = 360;
+      const barBodyH = nCols * barRowH + 20;
+
+      const bodyW = Math.max(tlBodyW, barLabelW + barBodyW + 120);
+      let W = bodyW + 40;
+      let H = tlMarginTop + (showTL ? domainHdrH + tlBodyH + 30 : 0) + (showBar ? barMarginTop + barBodyH + 40 : 0) + 20;
+      if (H < 220) H = 220;
+
+      const parts = [];
+      parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\">");
+      parts.push("<rect x=\"0\" y=\"0\" width=\"" + W + "\" height=\"" + H + "\" fill=\"#fff\"/>");
+
+      if (state.title) {
+        parts.push("<text x=\"" + (W/2) + "\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">" + escapeXml(state.title) + "</text>");
+      }
+
+      let cursorY = tlMarginTop;
+
+      if (showTL) {
+        // Section title
+        parts.push("<text x=\"20\" y=\"" + cursorY + "\" font-size=\"11\" font-weight=\"700\" letter-spacing=\"0.08em\" text-transform=\"uppercase\" fill=\"#2c5e8a\">TRAFFIC LIGHT</text>");
+        const tlTop = cursorY + 10;
+
+        // Domain headers (rotated)
+        for (let j = 0; j < nCols; j++) {
+          const cx = 20 + labelW + j * cell + cell / 2;
+          const txt = domains[j];
+          const fw = (txt.toLowerCase() === "overall") ? "700" : "400";
+          parts.push("<text transform=\"translate(" + cx + "," + (tlTop + domainHdrH - 8) + ") rotate(-55)\" font-size=\"11\" font-weight=\"" + fw + "\" fill=\"#15181d\">" + escapeXml(txt) + "</text>");
+        }
+
+        // Rows
+        const bodyTop = tlTop + domainHdrH;
+        for (let i = 0; i < nRows; i++) {
+          const r = rows[i];
+          const rowY = bodyTop + i * cell + cell / 2;
+          // Row label
+          parts.push("<text x=\"" + (20 + labelW - 6) + "\" y=\"" + (rowY + 4) + "\" text-anchor=\"end\" font-size=\"12\" fill=\"#15181d\">" + escapeXml(r.label) + "</text>");
+          // Cells
+          for (let j = 0; j < nCols; j++) {
+            const cx = 20 + labelW + j * cell + cell / 2;
+            const rating = r.ratings[j];
+            if (!rating || rating === "na") {
+              parts.push("<circle cx=\"" + cx + "\" cy=\"" + rowY + "\" r=\"10\" fill=\"#fff\" stroke=\"#d9d5cc\" stroke-width=\"1\"/>");
+              if (rating === "na") {
+                parts.push("<text x=\"" + cx + "\" y=\"" + (rowY + 4) + "\" text-anchor=\"middle\" font-size=\"9\" fill=\"#5c6470\">NA</text>");
+              }
+              continue;
+            }
+            const colour = COLOURS[rating];
+            parts.push("<circle cx=\"" + cx + "\" cy=\"" + rowY + "\" r=\"12\" fill=\"" + colour + "\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
+            const glyph = LETTERS[rating];
+            if (glyph) {
+              parts.push("<text x=\"" + cx + "\" y=\"" + (rowY + 4.5) + "\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"700\" fill=\"#fff\">" + escapeXml(glyph) + "</text>");
+            }
+          }
+        }
+        cursorY = bodyTop + nRows * cell + 20;
+      }
+
+      if (showBar) {
+        cursorY += 20;
+        parts.push("<text x=\"20\" y=\"" + cursorY + "\" font-size=\"11\" font-weight=\"700\" letter-spacing=\"0.08em\" text-transform=\"uppercase\" fill=\"#2c5e8a\">WEIGHTED SUMMARY</text>");
+        const barTop = cursorY + 12;
+
+        for (let j = 0; j < nCols; j++) {
+          const rowY = barTop + j * barRowH;
+          const s = summary[j];
+          // Label
+          parts.push("<text x=\"" + (20 + barLabelW - 6) + "\" y=\"" + (rowY + barRowH / 2 + 4) + "\" text-anchor=\"end\" font-size=\"11\" fill=\"#15181d\">" + escapeXml(domains[j]) + "</text>");
+          // Bar
+          const barX0 = 20 + barLabelW + 8;
+          let offset = 0;
+          const total = s.total || 1;
+          for (const key of ORDER) {
+            const n = s.counts[key] || 0;
+            if (!n) continue;
+            const w = barBodyW * (n / total);
+            const colour = COLOURS[key];
+            const strokeW = (key === "na") ? 1 : 0;
+            parts.push("<rect x=\"" + (barX0 + offset) + "\" y=\"" + (rowY + 4) + "\" width=\"" + w + "\" height=\"" + (barRowH - 10) + "\" fill=\"" + colour + "\" stroke=\"#15181d\" stroke-width=\"" + strokeW + "\"/>");
+            // % label
+            const pct = (n / total) * 100;
+            if (pct >= 10) {
+              const labelX = barX0 + offset + w / 2;
+              parts.push("<text x=\"" + labelX + "\" y=\"" + (rowY + barRowH / 2 + 3) + "\" text-anchor=\"middle\" font-size=\"10\" font-weight=\"600\" fill=\"" + (key === "some" ? "#15181d" : "#fff") + "\">" + Math.round(pct) + "%</text>");
+            }
+            offset += w;
+          }
+          // Frame
+          parts.push("<rect x=\"" + barX0 + "\" y=\"" + (rowY + 4) + "\" width=\"" + barBodyW + "\" height=\"" + (barRowH - 10) + "\" fill=\"none\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
+        }
+
+        // Axis-ish
+        const axisY = barTop + nCols * barRowH + 4;
+        parts.push("<text x=\"" + (20 + barLabelW + 8) + "\" y=\"" + (axisY + 12) + "\" font-size=\"10\" fill=\"#5c6470\">0%</text>");
+        parts.push("<text x=\"" + (20 + barLabelW + 8 + barBodyW) + "\" y=\"" + (axisY + 12) + "\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">100%</text>");
+      }
+
+      parts.push("</svg>");
+      return parts.join("");
+    }
+
+    function renderWarnings(list) {
+      if (!list.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; return; }
+      warnEl.innerHTML = "<strong>Parse notes</strong><ul>" + list.map(w => "<li>" + escapeXml(w) + "</li>").join("") + "</ul>";
+      warnEl.classList.add("is-visible");
+    }
+
+    function render() {
+      const state = readState();
+      const domains = parseDomains(state.domains);
+      const parsed = parseStudies(state.data, domains.length);
+      const summary = summarise(parsed.rows, domains.length);
+      renderWarnings(parsed.warnings);
+      const svg = (domains.length && parsed.rows.length)
+        ? buildSvg(state, parsed.rows, domains, summary)
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Enter domains and at least one study row.</text></svg>";
+      svgHost.innerHTML = svg;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") { writeState(parsed); return true; }
+      } catch (e) {}
+      return false;
+    }
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t, fallback) {
+      const s = String(t || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      return s || fallback;
+    }
+    function currentSvg() {
+      const state = readState();
+      const domains = parseDomains(state.domains);
+      const parsed = parseStudies(state.data, domains.length);
+      if (!(domains.length && parsed.rows.length)) return null;
+      const summary = summarise(parsed.rows, domains.length);
+      return { state: state, svg: buildSvg(state, parsed.rows, domains, summary) };
+    }
+    function onDownloadSvg() {
+      const r = currentSvg(); if (!r) return alert("Nothing to export.");
+      downloadBlob(new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"}),
+                   "rob-" + slugify(r.state.title, "traffic-light") + ".svg");
+    }
+    function onDownloadPng() {
+      const r = currentSvg(); if (!r) return alert("Nothing to export.");
+      const m = r.svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
+      const W = m ? Math.round(parseFloat(m[1])) : 820;
+      const H = m ? Math.round(parseFloat(m[2])) : 600;
+      const scale = 2;
+      const img = new Image();
+      const svgBlob = new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = W * scale; canvas.height = H * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (blob) { if (blob) downloadBlob(blob, "rob-" + slugify(r.state.title, "traffic-light") + ".png"); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.src = url;
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema: "rob-traffic-light-v1", _savedAt: new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out, null, 2)], {type: "application/json"}),
+                   "rob-" + slugify(state.title, "state") + ".json");
+    }
+    function onImportJson(file) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (parsed && typeof parsed === "object") { writeState(parsed); render(); }
+        } catch (e) { alert("Could not parse JSON: " + e.message); }
+      };
+      reader.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear all inputs?")) return;
+      for (const id of Object.values(fields)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (id === "f-domains") el.value = "D1: Randomization, D2: Deviations, D3: Missing data, D4: Outcome, D5: Selection, Overall";
+        else if (id === "f-view") el.value = "both";
+        else el.value = "";
+      }
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = "Example RoB 2 — mortality outcome";
+      render();
+    }
+    function attach() {
+      for (const id of Object.values(fields)) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("input", render);
+      }
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-import").addEventListener("click", function () {
+        document.getElementById("file-import").click();
+      });
+      document.getElementById("file-import").addEventListener("change", function (e) {
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f);
+        e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example RoB 2 — mortality outcome"; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

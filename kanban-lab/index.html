@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Persistent drag-and-drop kanban board.">
+  <title>Kanban Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #251d17;
+      --muted: #65584d;
+      --panel: rgba(255, 249, 240, 0.86);
+      --border: rgba(37, 29, 23, 0.11);
+      --shadow: 0 22px 46px rgba(77, 57, 34, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --accent: #cf5037;
+      --accent-2: #255f65;
+      --column-backlog: #efe7ff;
+      --column-doing: #fff1d6;
+      --column-review: #dff3ec;
+      --column-done: #e3f5df;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Sora", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(207, 80, 55, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(37, 95, 101, 0.16), transparent 30%),
+        linear-gradient(180deg, #fbf4eb 0%, #f0e1cf 100%);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1320px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 40px;
+    }
+
+    .hero,
+    .controls,
+    .board,
+    .card,
+    .column {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 18px;
+      border-radius: var(--radius-xl);
+      padding: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.82rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 4rem);
+      line-height: 0.98;
+      max-width: 12ch;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 62ch;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--border);
+    }
+
+    .stat span {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .controls {
+      margin-top: 18px;
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      flex: 1;
+      min-width: 180px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .button {
+      min-height: 48px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 150ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .search-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .board {
+      margin-top: 18px;
+      border-radius: var(--radius-xl);
+      padding: 18px;
+      overflow-x: auto;
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(260px, 1fr));
+      gap: 14px;
+      min-width: 1080px;
+    }
+
+    .column {
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      min-height: 520px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .column[data-status="backlog"] { background: var(--column-backlog); }
+    .column[data-status="doing"] { background: var(--column-doing); }
+    .column[data-status="review"] { background: var(--column-review); }
+    .column[data-status="done"] { background: var(--column-done); }
+
+    .column-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .column h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(37, 29, 23, 0.08);
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: 0.84rem;
+    }
+
+    .cards {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      border-radius: var(--radius-md);
+      padding: 14px;
+      cursor: grab;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .card.dragging {
+      opacity: 0.55;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    .card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.88rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(37, 95, 101, 0.11);
+      color: var(--accent-2);
+      font-size: 0.76rem;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      cursor: pointer;
+    }
+
+    .drop-target {
+      outline: 2px dashed rgba(37, 95, 101, 0.28);
+      outline-offset: -6px;
+    }
+
+    .empty {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px dashed rgba(37, 29, 23, 0.18);
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.46);
+    }
+
+    @media (max-width: 960px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Kanban Lab</p>
+        <h1>Sort the work before it starts sorting you.</h1>
+        <p>
+          Kanban Lab gives you a fast local planning board with drag-and-drop movement, search, and lightweight editing.
+          It is intentionally simple enough to use in minutes and persistent enough to stay useful.
+        </p>
+      </div>
+      <div class="stats">
+        <article class="stat">
+          <span>Total Cards</span>
+          <strong id="totalCards">0</strong>
+        </article>
+        <article class="stat">
+          <span>In Progress</span>
+          <strong id="doingCards">0</strong>
+        </article>
+        <article class="stat">
+          <span>Review Queue</span>
+          <strong id="reviewCards">0</strong>
+        </article>
+        <article class="stat">
+          <span>Done</span>
+          <strong id="doneCards">0</strong>
+        </article>
+      </div>
+    </header>
+
+    <section class="controls">
+      <form class="toolbar" id="cardForm">
+        <label>Title
+          <input id="titleInput" type="text" placeholder="Refactor project hub copy">
+        </label>
+        <label>Label
+          <input id="labelInput" type="text" placeholder="design, code, docs">
+        </label>
+        <label>Column
+          <select id="statusInput">
+            <option value="backlog">Backlog</option>
+            <option value="doing">Doing</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+        <button class="button primary" type="submit">Add Card</button>
+      </form>
+
+      <label>Description
+        <textarea id="descriptionInput" placeholder="Capture the actual next step, not just the headline."></textarea>
+      </label>
+
+      <div class="search-row">
+        <label>Search
+          <input id="searchInput" type="search" placeholder="Filter cards by title, label, or text">
+        </label>
+        <button class="button" id="seedBoard" type="button">Reset Seed Data</button>
+      </div>
+    </section>
+
+    <section class="board">
+      <div class="columns" id="columns"></div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "kanban-lab-state-v1";
+      const STATUSES = [
+        { key: "backlog", label: "Backlog" },
+        { key: "doing", label: "Doing" },
+        { key: "review", label: "Review" },
+        { key: "done", label: "Done" }
+      ];
+
+      const SEED = [
+        { id: crypto.randomUUID(), title: "Audit top-level launch files", detail: "Confirm which existing apps should be linked from the main hub.", label: "hub", status: "doing" },
+        { id: crypto.randomUUID(), title: "Tighten first-run copy", detail: "Make onboarding language direct and less cluttered.", label: "ux", status: "review" },
+        { id: crypto.randomUUID(), title: "Add one more standalone utility", detail: "Keep it single-file and locally persistent.", label: "build", status: "backlog" }
+      ];
+
+      let state = loadState();
+      let draggedId = null;
+
+      const columns = document.getElementById("columns");
+      const searchInput = document.getElementById("searchInput");
+      const cardForm = document.getElementById("cardForm");
+      const titleInput = document.getElementById("titleInput");
+      const labelInput = document.getElementById("labelInput");
+      const descriptionInput = document.getElementById("descriptionInput");
+      const statusInput = document.getElementById("statusInput");
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return { cards: SEED.slice() };
+          }
+          const parsed = JSON.parse(raw);
+          return { cards: Array.isArray(parsed.cards) ? parsed.cards : SEED.slice() };
+        } catch (error) {
+          return { cards: SEED.slice() };
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function filteredCards(status) {
+        const query = searchInput.value.trim().toLowerCase();
+        return state.cards.filter((card) => {
+          if (card.status !== status) {
+            return false;
+          }
+          if (!query) {
+            return true;
+          }
+          return [card.title, card.detail, card.label].join(" ").toLowerCase().includes(query);
+        });
+      }
+
+      function updateStats() {
+        document.getElementById("totalCards").textContent = String(state.cards.length);
+        document.getElementById("doingCards").textContent = String(state.cards.filter((card) => card.status === "doing").length);
+        document.getElementById("reviewCards").textContent = String(state.cards.filter((card) => card.status === "review").length);
+        document.getElementById("doneCards").textContent = String(state.cards.filter((card) => card.status === "done").length);
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderCard(card) {
+        const article = document.createElement("article");
+        article.className = "card";
+        article.draggable = true;
+        article.innerHTML = `
+          <h3>${escapeHtml(card.title)}</h3>
+          <p>${escapeHtml(card.detail || "No extra detail added.")}</p>
+          <div class="meta">
+            <span class="tag">${escapeHtml(card.label || "general")}</span>
+          </div>
+          <div class="card-actions">
+            <button class="mini" data-action="edit">Edit</button>
+            <button class="mini" data-action="delete">Delete</button>
+          </div>
+        `;
+
+        article.addEventListener("dragstart", function () {
+          draggedId = card.id;
+          article.classList.add("dragging");
+        });
+
+        article.addEventListener("dragend", function () {
+          draggedId = null;
+          article.classList.remove("dragging");
+        });
+
+        article.querySelector('[data-action="edit"]').addEventListener("click", function () {
+          const title = prompt("Edit title", card.title);
+          if (title === null) { return; }
+          const detail = prompt("Edit detail", card.detail || "");
+          if (detail === null) { return; }
+          const label = prompt("Edit label", card.label || "");
+          if (label === null) { return; }
+          card.title = title.trim() || card.title;
+          card.detail = detail.trim();
+          card.label = label.trim();
+          persistAndRender();
+        });
+
+        article.querySelector('[data-action="delete"]').addEventListener("click", function () {
+          state.cards = state.cards.filter((item) => item.id !== card.id);
+          persistAndRender();
+        });
+
+        return article;
+      }
+
+      function renderColumn(statusConfig) {
+        const cards = filteredCards(statusConfig.key);
+        const section = document.createElement("section");
+        section.className = "column";
+        section.dataset.status = statusConfig.key;
+        section.innerHTML = `
+          <div class="column-head">
+            <h2>${statusConfig.label}</h2>
+            <span class="count">${cards.length}</span>
+          </div>
+          <div class="cards"></div>
+        `;
+
+        section.addEventListener("dragover", function (event) {
+          event.preventDefault();
+          section.classList.add("drop-target");
+        });
+
+        section.addEventListener("dragleave", function () {
+          section.classList.remove("drop-target");
+        });
+
+        section.addEventListener("drop", function (event) {
+          event.preventDefault();
+          section.classList.remove("drop-target");
+          if (!draggedId) {
+            return;
+          }
+          const card = state.cards.find((item) => item.id === draggedId);
+          if (!card) {
+            return;
+          }
+          card.status = statusConfig.key;
+          persistAndRender();
+        });
+
+        const cardsContainer = section.querySelector(".cards");
+        if (!cards.length) {
+          cardsContainer.innerHTML = '<div class="empty">No cards in this column.</div>';
+        } else {
+          cards.forEach((card) => cardsContainer.appendChild(renderCard(card)));
+        }
+        return section;
+      }
+
+      function persistAndRender() {
+        saveState();
+        render();
+      }
+
+      function render() {
+        updateStats();
+        columns.innerHTML = "";
+        STATUSES.forEach((status) => columns.appendChild(renderColumn(status)));
+      }
+
+      cardForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const title = titleInput.value.trim();
+        if (!title) {
+          return;
+        }
+        state.cards.unshift({
+          id: crypto.randomUUID(),
+          title: title,
+          detail: descriptionInput.value.trim(),
+          label: labelInput.value.trim(),
+          status: statusInput.value
+        });
+        cardForm.reset();
+        statusInput.value = "backlog";
+        persistAndRender();
+      });
+
+      searchInput.addEventListener("input", render);
+
+      document.getElementById("seedBoard").addEventListener("click", function () {
+        state.cards = SEED.slice();
+        persistAndRender();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

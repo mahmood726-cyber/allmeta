@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bayesian meta-analysis via conjugate normal-normal model. No MCMC; deterministic posterior.">
+  <meta name="color-scheme" content="light dark">
+  <title>Bayesian Meta-Analysis</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:72ch; }
+    .layout { display:grid; grid-template-columns:minmax(320px,28rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="number"],input[type="text"],textarea,select,input[type="range"] {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.9rem;
+    }
+    input[type="range"] { padding:0; }
+    textarea { resize:vertical; min-height:10rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.5rem; margin-top:0.5rem; }
+    .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
+    .slider-val { display:inline-block; min-width:3em; text-align:right; font-variant-numeric:tabular-nums; color:var(--accent); font-weight:600; }
+    .warn-banner { margin-top:0.5rem; padding:0.5rem 0.75rem; background:var(--warn-soft);
+                   color:var(--warn); border:1px solid var(--warn); border-radius:6px; font-size:0.82rem; display:none; }
+    .warn-banner.is-visible { display:block; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>Bayesian Meta-Analysis</h1>
+    <p>Conjugate normal-normal posterior — paste studies, set a prior, get a closed-form posterior for the pooled effect with credible intervals and posterior-probability summaries. No MCMC, no stan; deterministic, reproducible, fully offline.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Studies &amp; prior</h2>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">CSV: <code>label, estimate, SE</code></span>
+          <textarea id="f-data" spellcheck="false"></textarea>
+          <span class="hint">Estimates should be on the analysis scale (e.g. logOR, logRR, MD).</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Prior on θ (effect size)</legend>
+        <div class="row-2">
+          <label>
+            <span class="lbl">Prior mean μ₀</span>
+            <input type="number" id="f-mu0" step="any" value="0">
+          </label>
+          <label>
+            <span class="lbl">Prior SD τ₀</span>
+            <input type="number" id="f-tau0" step="any" min="0.01" value="1">
+            <span class="hint">Large SD = weakly informative. 1000 ≈ flat.</span>
+          </label>
+        </div>
+        <label>
+          <span class="lbl">Prior strength slider — τ₀ on log10 scale</span>
+          <input type="range" id="f-slider" min="-2" max="3" step="0.05" value="0">
+          <span class="hint">Slide to explore how a more or less informative prior changes the posterior. <span id="slider-val" class="slider-val">1.00</span></span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Between-study variance (random effects)</legend>
+        <label>
+          <span class="lbl">τ² estimator</span>
+          <select id="f-tau-method">
+            <option value="0">Fixed effect (τ² = 0)</option>
+            <option value="PM" selected>Plug-in τ² via Paule-Mandel (empirical Bayes)</option>
+            <option value="manual">Manual τ²</option>
+          </select>
+        </label>
+        <label>
+          <span class="lbl">Manual τ²</span>
+          <input type="number" id="f-tau2-manual" step="any" min="0" value="0">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Probability targets</legend>
+        <label>
+          <span class="lbl">Posterior P(θ &lt; c), c =</span>
+          <input type="number" id="f-threshold" step="any" value="0">
+        </label>
+        <label>
+          <span class="lbl">ROPE half-width (practical equivalence |θ| ≤ δ)</span>
+          <input type="number" id="f-rope" step="any" min="0" value="0.1">
+        </label>
+      </fieldset>
+
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Prior (orange) vs posterior (blue)</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">Conjugate model: y<sub>i</sub> ∼ N(θ, v<sub>i</sub>+τ²), θ ∼ N(μ₀, τ₀²). Posterior: θ | data ∼ N(μ*, τ*²) with τ*² = (1/τ₀² + Σ 1/(v<sub>i</sub>+τ²))<sup>−1</sup>. Posterior probabilities come from the Gaussian CDF.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "bayesian-ma-v1";
+    const BUS_KEY = "ma-studies-v1";
+
+    const fields = {
+      data:"f-data", mu0:"f-mu0", tau0:"f-tau0",
+      tauMethod:"f-tau-method", tau2Manual:"f-tau2-manual",
+      threshold:"f-threshold", rope:"f-rope"
+    };
+    const EXAMPLE = "# logOR — low event rate outcome\nTrial A, -0.12, 0.20\nTrial B, -0.45, 0.22\nTrial C, -0.18, 0.18\nTrial D, -0.34, 0.15\nTrial E, 0.05, 0.25\nTrial F, -0.22, 0.16";
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+    const statsWrap = document.getElementById("stats-wrap");
+
+    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value; } return o; }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+
+    function parseStudies(text) {
+      const studies=[], warnings=[];
+      const lines = String(text||"").split(/\r?\n/);
+      for (let i=0;i<lines.length;i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 cols"); continue; }
+        const est = parseFloat(parts[parts.length-2]);
+        const se = parseFloat(parts[parts.length-1]);
+        if (!isFinite(est) || !isFinite(se)) {
+          if (studies.length === 0 && i < 3) continue;
+          warnings.push("Line "+(i+1)+": non-numeric"); continue;
+        }
+        if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
+        const label = parts.slice(0, parts.length-2).join(", ") || ("Study "+(studies.length+1));
+        studies.push({ label, est, se, v: se*se });
+      }
+      return { studies, warnings };
+    }
+
+    // ---- PM τ² (same as forest-plot / heterogeneity) ----
+    function wsum(studies, tau2) {
+      let sw=0, swy=0;
+      for (const s of studies) { const w = 1/(s.v+tau2); sw += w; swy += w*s.est; }
+      const mu = sw > 0 ? swy/sw : 0;
+      let Q = 0;
+      for (const s of studies) { const w = 1/(s.v+tau2); Q += w*(s.est-mu)*(s.est-mu); }
+      return { sw, swy, mu, Q };
+    }
+    function tau2PM(studies) {
+      const k = studies.length;
+      if (k < 2) return 0;
+      const target = k - 1;
+      if (wsum(studies, 0).Q <= target) return 0;
+      let lo=0, hi=100, g=0;
+      while (g<60 && hi<1e9 && wsum(studies,hi).Q > target) { hi *= 2; g++; }
+      for (let i=0;i<100;i++) { const m=(lo+hi)/2; if (wsum(studies,m).Q > target) lo=m; else hi=m; if (hi-lo<1e-9) break; }
+      return (lo+hi)/2;
+    }
+
+    // Posterior θ | y (normal prior × normal likelihoods with known var+τ²)
+    function posterior(studies, mu0, tau0, tau2) {
+      if (!studies.length) return null;
+      let precSum = 1/(tau0*tau0);
+      let mpSum = mu0 / (tau0*tau0);
+      for (const s of studies) {
+        const vi = s.v + tau2;
+        precSum += 1/vi;
+        mpSum += s.est / vi;
+      }
+      const postVar = 1 / precSum;
+      const postMean = mpSum * postVar;
+      const postSD = Math.sqrt(postVar);
+      return { mu: postMean, sd: postSD, lo: postMean - 1.96*postSD, hi: postMean + 1.96*postSD };
+    }
+
+    // Standard normal CDF
+    function normCDF(z) {
+      const b1=0.319381530, b2=-0.356563782, b3=1.781477937, b4=-1.821255978, b5=1.330274429, p=0.2316419, c2=0.3989422804014327;
+      const az = Math.abs(z);
+      const t = 1/(1+p*az);
+      const b = c2*Math.exp(-az*az/2);
+      const n = 1 - b*(b1*t + b2*t*t + b3*t*t*t + b4*Math.pow(t,4) + b5*Math.pow(t,5));
+      return z >= 0 ? n : 1 - n;
+    }
+
+    function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
+    function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
+    function niceTicks(lo,hi,n) {
+      if (!(hi>lo)) return [lo];
+      const r=hi-lo, s0=r/Math.max(1,n);
+      const m=Math.pow(10,Math.floor(Math.log10(s0))), nm=s0/m;
+      let step = nm<1.5?m:(nm<3?2*m:(nm<7?5*m:10*m));
+      const start=Math.ceil(lo/step)*step; const t=[];
+      for (let v=start;v<=hi+1e-9;v+=step) t.push(v);
+      return t;
+    }
+
+    function normalPdf(x, mu, sd) { const z = (x-mu)/sd; return Math.exp(-0.5*z*z) / (sd * Math.sqrt(2*Math.PI)); }
+
+    function buildSvg(state, studies, post, mu0, tau0) {
+      const W=720, H=480, L=70, R=30, T=40, B=80;
+      const plotW=W-L-R, plotH=H-T-B;
+      const threshold = parseFloat(state.threshold);
+      const rope = parseFloat(state.rope);
+
+      // Domain: cover both prior and posterior 4-sigma ranges
+      const priorLo = mu0 - 4*tau0, priorHi = mu0 + 4*tau0;
+      const postLo = post.mu - 4*post.sd, postHi = post.mu + 4*post.sd;
+      let xLo = Math.min(priorLo, postLo), xHi = Math.max(priorHi, postHi);
+      if (isFinite(threshold)) { xLo = Math.min(xLo, threshold); xHi = Math.max(xHi, threshold); }
+      if (isFinite(rope) && rope > 0) { xLo = Math.min(xLo, -rope*1.2); xHi = Math.max(xHi, rope*1.2); }
+      // Add padding
+      const pad = (xHi-xLo)*0.05; xLo -= pad; xHi += pad;
+
+      // Sample densities
+      const N = 240;
+      const xs = [];
+      for (let i=0;i<=N;i++) xs.push(xLo + (i/N)*(xHi-xLo));
+      const priorY = xs.map(x => normalPdf(x, mu0, tau0));
+      const postY = xs.map(x => normalPdf(x, post.mu, post.sd));
+      const yMax = Math.max(...priorY, ...postY) * 1.05;
+
+      function x(v) { return L + (v - xLo)/(xHi - xLo) * plotW; }
+      function y(v) { return T + plotH - (v/yMax) * plotH; }
+
+      const p = [];
+      p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
+      p.push("<text x=\""+(W/2)+"\" y=\"26\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"700\" fill=\"#15181d\">Prior &amp; Posterior — effect θ</text>");
+
+      // Frame
+      p.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
+
+      // ROPE band
+      if (isFinite(rope) && rope > 0) {
+        p.push("<rect x=\""+x(-rope)+"\" y=\""+T+"\" width=\""+(x(rope)-x(-rope))+"\" height=\""+plotH+"\" fill=\"#e8f0f7\" stroke=\"none\"/>");
+      }
+
+      // Threshold line
+      if (isFinite(threshold)) {
+        p.push("<line x1=\""+x(threshold)+"\" y1=\""+T+"\" x2=\""+x(threshold)+"\" y2=\""+(T+plotH)+"\" stroke=\"#7a8294\" stroke-dasharray=\"3 3\"/>");
+        p.push("<text x=\""+x(threshold)+"\" y=\""+(T-6)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">c = "+fmt(threshold,2)+"</text>");
+      }
+
+      // Prior (orange, thinner)
+      const priorPath = xs.map((x_, i) => x(x_)+","+y(priorY[i])).join(" ");
+      p.push("<polyline points=\""+priorPath+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.4\" stroke-opacity=\"0.7\"/>");
+
+      // Posterior (blue, filled)
+      const postPath = xs.map((x_, i) => x(x_)+","+y(postY[i])).join(" ");
+      const postFillPath = "M" + x(xs[0]) + "," + y(0) + " L" + postPath.replace(/ /g, " L") + " L" + x(xs[xs.length-1]) + "," + y(0) + " Z";
+      p.push("<path d=\""+postFillPath+"\" fill=\"#2c5e8a\" fill-opacity=\"0.22\" stroke=\"none\"/>");
+      p.push("<polyline points=\""+postPath+"\" fill=\"none\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
+
+      // 95% CrI marks on posterior
+      p.push("<line x1=\""+x(post.lo)+"\" y1=\""+y(0)+"\" x2=\""+x(post.lo)+"\" y2=\""+y(normalPdf(post.lo, post.mu, post.sd))+"\" stroke=\"#2c5e8a\" stroke-dasharray=\"2 2\"/>");
+      p.push("<line x1=\""+x(post.hi)+"\" y1=\""+y(0)+"\" x2=\""+x(post.hi)+"\" y2=\""+y(normalPdf(post.hi, post.mu, post.sd))+"\" stroke=\"#2c5e8a\" stroke-dasharray=\"2 2\"/>");
+      p.push("<line x1=\""+x(post.mu)+"\" y1=\""+y(0)+"\" x2=\""+x(post.mu)+"\" y2=\""+y(normalPdf(post.mu, post.mu, post.sd))+"\" stroke=\"#2c5e8a\" stroke-width=\"1.5\"/>");
+
+      // X-axis
+      const axisY = T+plotH;
+      p.push("<line x1=\""+L+"\" y1=\""+axisY+"\" x2=\""+(L+plotW)+"\" y2=\""+axisY+"\" stroke=\"#15181d\"/>");
+      const ticks = niceTicks(xLo, xHi, 6);
+      for (const t of ticks) {
+        p.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
+        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+      }
+      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Effect θ</text>");
+
+      // Legend
+      p.push("<rect x=\""+(L+plotW-148)+"\" y=\""+(T+4)+"\" width=\"142\" height=\"36\" fill=\"#fff\" stroke=\"#d9d5cc\"/>");
+      p.push("<line x1=\""+(L+plotW-140)+"\" y1=\""+(T+14)+"\" x2=\""+(L+plotW-120)+"\" y2=\""+(T+14)+"\" stroke=\"#b05a1c\" stroke-width=\"1.4\" stroke-opacity=\"0.7\"/>");
+      p.push("<text x=\""+(L+plotW-114)+"\" y=\""+(T+17)+"\" font-size=\"10\" fill=\"#15181d\">Prior N("+fmt(mu0,2)+", "+fmt(tau0,2)+"²)</text>");
+      p.push("<line x1=\""+(L+plotW-140)+"\" y1=\""+(T+30)+"\" x2=\""+(L+plotW-120)+"\" y2=\""+(T+30)+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
+      p.push("<text x=\""+(L+plotW-114)+"\" y=\""+(T+33)+"\" font-size=\"10\" fill=\"#15181d\">Posterior N("+fmt(post.mu,2)+", "+fmt(post.sd,2)+"²)</text>");
+
+      p.push("</svg>");
+      return p.join("");
+    }
+
+    function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
+
+    function resolveTau2(state, studies) {
+      const m = state.tauMethod;
+      if (m === "0") return { tau2: 0, label: "fixed effect" };
+      if (m === "manual") { const v = parseFloat(state.tau2Manual); return { tau2: isFinite(v) && v >= 0 ? v : 0, label: "manual" }; }
+      return { tau2: tau2PM(studies), label: "PM (empirical Bayes)" };
+    }
+
+    function render() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const mu0 = parseFloat(state.mu0);
+      const tau0 = parseFloat(state.tau0);
+      const t = resolveTau2(state, parsed.studies);
+
+      const parts = [];
+      parts.push(statCard("k", String(parsed.studies.length)));
+      parts.push(statCard("Prior", "N(" + fmt(mu0, 2) + ", " + fmt(tau0, 2) + "²)"));
+      parts.push(statCard("τ² strategy", t.label + " = " + fmt(t.tau2, 4)));
+
+      let svg = "";
+      if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0) {
+        const post = posterior(parsed.studies, mu0, tau0, t.tau2);
+        parts.push(statCard("Posterior mean", fmt(post.mu, 3)));
+        parts.push(statCard("95% CrI", "[" + fmt(post.lo, 3) + ", " + fmt(post.hi, 3) + "]"));
+        const threshold = parseFloat(state.threshold);
+        if (isFinite(threshold)) {
+          const pLess = normCDF((threshold - post.mu) / post.sd);
+          parts.push(statCard("P(θ < " + fmt(threshold, 2) + ")", fmt(pLess, 3)));
+        }
+        const rope = parseFloat(state.rope);
+        if (isFinite(rope) && rope > 0) {
+          const pInside = normCDF((rope - post.mu) / post.sd) - normCDF((-rope - post.mu) / post.sd);
+          parts.push(statCard("P(|θ| < " + fmt(rope, 2) + ")", fmt(pInside, 3)));
+        }
+        svg = buildSvg(state, parsed.studies, post, mu0, tau0);
+      } else {
+        svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need studies and a valid prior (τ₀ > 0).</text></svg>";
+      }
+
+      statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+      svgHost.innerHTML = svg;
+
+      if (parsed.warnings.length) {
+        warnEl.innerHTML = "<strong>Parse notes</strong><ul>"+parsed.warnings.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>";
+        warnEl.classList.add("is-visible");
+      } else {
+        warnEl.classList.remove("is-visible"); warnEl.innerHTML = "";
+      }
+
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function onSlider() {
+      const raw = parseFloat(document.getElementById("f-slider").value);
+      const tau0 = Math.pow(10, raw);
+      document.getElementById("slider-val").textContent = tau0.toFixed(2);
+      document.getElementById("f-tau0").value = tau0.toFixed(4);
+      render();
+    }
+
+    function loadSaved() {
+      try { const raw = localStorage.getItem(LS_KEY); if (!raw) return false;
+        const p = JSON.parse(raw); if (p && typeof p === "object") { writeState(p); return true; }
+      } catch(e) {}
+      return false;
+    }
+    function downloadBlob(blob,fn) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+    function currentSvg() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const mu0 = parseFloat(state.mu0), tau0 = parseFloat(state.tau0);
+      if (!parsed.studies.length || !isFinite(mu0) || !isFinite(tau0) || tau0 <= 0) return null;
+      const t = resolveTau2(state, parsed.studies);
+      const post = posterior(parsed.studies, mu0, tau0, t.tau2);
+      return { state, svg: buildSvg(state, parsed.studies, post, mu0, tau0) };
+    }
+    function onDownloadSvg() {
+      const r = currentSvg(); if (!r) return alert("Need valid inputs.");
+      downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "bayes-ma.svg");
+    }
+    function onDownloadPng() {
+      const r = currentSvg(); if (!r) return alert("Need valid inputs.");
+      const W=720,H=480,scale=2;
+      const img = new Image();
+      const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width=W*scale; canvas.height=H*scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function(b){ if (b) downloadBlob(b, "bayes-ma.png"); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.src = url;
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema:"bayesian-ma-v1", _savedAt:new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "bayes-ma-state.json");
+    }
+    function onImportJson(file) {
+      const r = new FileReader();
+      r.onload = function () {
+        try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
+        catch(e) { alert("Could not parse JSON: "+e.message); }
+      };
+      r.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear inputs?")) return;
+      document.getElementById("f-data").value = "";
+      document.getElementById("f-mu0").value = "0";
+      document.getElementById("f-tau0").value = "1";
+      document.getElementById("f-tau-method").value = "PM";
+      document.getElementById("f-tau2-manual").value = "0";
+      document.getElementById("f-threshold").value = "0";
+      document.getElementById("f-rope").value = "0.1";
+      document.getElementById("f-slider").value = "0";
+      document.getElementById("slider-val").textContent = "1.00";
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      render();
+    }
+
+    // ---- Shared MA bus (ma-studies-v1) ----
+    function onBusLoad() {
+      try {
+        const raw = localStorage.getItem(BUS_KEY);
+        if (!raw) { alert("No shared studies yet."); return; }
+        const p = JSON.parse(raw);
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed bus payload."); return; }
+        const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
+        document.getElementById("f-data").value = lines.join("\n");
+        render();
+      } catch (e) { alert("Could not load: " + e.message); }
+    }
+    function onBusSave() {
+      const parsed = parseStudies(document.getElementById("f-data").value);
+      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      const payload = {
+        "_schema": "ma-studies-v1",
+        "_savedAt": new Date().toISOString(),
+        "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: null, group: null, year: null }))
+      };
+      try { localStorage.setItem(BUS_KEY, JSON.stringify(payload)); alert("Saved " + parsed.studies.length + " studies to shared bus."); }
+      catch (e) { alert("Could not save: " + e.message); }
+    }
+
+    function attach() {
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      document.getElementById("f-slider").addEventListener("input", onSlider);
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
+      document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
+      document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
+      document.getElementById("file-import").addEventListener("change", function(e){
+        const f = e.target.files && e.target.files[0]; if (f) onImportJson(f); e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

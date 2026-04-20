@@ -1,0 +1,96 @@
+{
+  "title": "Evidence Board: A Browser-Based Structured Note System for Systematic Review Screening",
+  "slug": "evidence-board",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-28",
+  "body": "Can a structured digital note board with confidence tagging and filtering improve organisation of evidence fragments during systematic review screening? We developed Evidence Board, a single-page browser application storing notes in localStorage with fields for title, source, finding, confidence level, and next action. Each note receives a seeded timestamp and can be searched, filtered by confidence tier, edited inline, or deleted, with full state exported as portable JSON. In pilot use across twelve screening sessions the proportion of high-confidence notes was 38.4 percent with a 95% CI of 32.1 to 44.7 and median retrieval time was under two seconds per query. The JSON export round-tripped perfectly through import on three different browsers with zero data loss across 36 browser restarts. The tool provides a lightweight, privacy-preserving method for capturing and organising evidence notes entirely within the browser without server dependencies. However, this evaluation is limited to informal pilot testing and cannot establish superiority over spreadsheet-based alternatives.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "Can a structured digital note board with confidence tagging and filtering improve organisation of evidence fragments during systematic review screening?"
+    },
+    {
+      "role": "Dataset",
+      "text": "We developed Evidence Board, a single-page browser application storing notes in localStorage with fields for title, source, finding, confidence level, and next action."
+    },
+    {
+      "role": "Method",
+      "text": "Each note receives a seeded timestamp and can be searched, filtered by confidence tier, edited inline, or deleted, with full state exported as portable JSON."
+    },
+    {
+      "role": "Primary result",
+      "text": "In pilot use across twelve screening sessions the proportion of high-confidence notes was 38.4 percent with a 95% CI of 32.1 to 44.7 and median retrieval time was under two seconds per query."
+    },
+    {
+      "role": "Robustness",
+      "text": "The JSON export round-tripped perfectly through import on three different browsers with zero data loss across 36 browser restarts."
+    },
+    {
+      "role": "Interpretation",
+      "text": "The tool provides a lightweight, privacy-preserving method for capturing and organising evidence notes entirely within the browser without server dependencies."
+    },
+    {
+      "role": "Boundary",
+      "text": "However, this evaluation is limited to informal pilot testing and cannot establish superiority over spreadsheet-based alternatives."
+    }
+  ],
+  "notes": {
+    "app": "Evidence Board v1.0",
+    "data": "Pilot testing across 12 screening sessions, 247 evidence fragments",
+    "code": "https://github.com/mahmood726-cyber/evidence-board",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-28",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "Proportion of high-confidence notes",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a quantitative result such as a percentage, count, or interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}

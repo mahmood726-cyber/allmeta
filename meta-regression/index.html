@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Random-effects meta-regression with one moderator. Knapp-Hartung CI.">
+  <meta name="color-scheme" content="light dark">
+  <title>Meta-Regression</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
+    .layout { display:grid; grid-template-columns:minmax(320px,26rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.9rem;
+    }
+    textarea { resize:vertical; min-height:10rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
+    .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
+    .warn-banner { margin-top:0.5rem; padding:0.5rem 0.75rem; background:var(--warn-soft);
+                   color:var(--warn); border:1px solid var(--warn); border-radius:6px; font-size:0.82rem; display:none; }
+    .warn-banner.is-visible { display:block; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>Meta-Regression</h1>
+    <p>Fit a random-effects meta-regression with one moderator. Paule-Mandel τ² + Knapp-Hartung t(k-2) CIs (with <code>max(1, …)</code> floor per advanced-stats.md). Bubble plot with fitted line.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Studies</h2>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">CSV: <code>label, estimate, SE, moderator</code></span>
+          <textarea id="f-data" spellcheck="false"></textarea>
+          <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <span class="lbl">Plot title</span>
+          <input type="text" id="f-title" placeholder="e.g. SGLT2i — effect by baseline LVEF">
+        </label>
+        <label>
+          <span class="lbl">Moderator label (x-axis)</span>
+          <input type="text" id="f-modlabel" placeholder="e.g. Baseline LVEF (%)">
+        </label>
+        <label>
+          <span class="lbl">Effect label (y-axis)</span>
+          <input type="text" id="f-effectlabel" value="Effect (logOR)">
+        </label>
+      </fieldset>
+
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
+        <button type="button" id="btn-rscript">Export R script</button>
+        <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Bubble plot</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">τ² via Paule-Mandel bisection; CIs use Knapp-Hartung <code>t(k−2)</code> with <code>q = max(1, RSS/(k−2))</code> floor. Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="PM", test="knha")</code>.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "meta-regression-v1";
+
+    const fields = { data:"f-data", title:"f-title", modlabel:"f-modlabel", effectlabel:"f-effectlabel" };
+    const EXAMPLE = "# label, logOR, SE, moderator (baseline LVEF %)\nTrial A, -0.28, 0.12, 32\nTrial B, -0.22, 0.09, 35\nTrial C, -0.15, 0.11, 42\nTrial D, -0.10, 0.13, 48\nTrial E, 0.04, 0.15, 55\nTrial F, -0.05, 0.14, 51\nTrial G, -0.32, 0.11, 29\nTrial H, -0.20, 0.10, 38";
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+    const statsWrap = document.getElementById("stats-wrap");
+
+    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+
+    function parseStudies(text) {
+      const studies=[], warnings=[];
+      const lines = String(text||"").split(/\r?\n/);
+      for (let i=0;i<lines.length;i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 4) { warnings.push("Line "+(i+1)+": need 4 columns"); continue; }
+        const x = parseFloat(parts[parts.length-1]);
+        const se = parseFloat(parts[parts.length-2]);
+        const est = parseFloat(parts[parts.length-3]);
+        if (![est,se,x].every(Number.isFinite)) {
+          if (studies.length === 0 && i < 3) continue;
+          warnings.push("Line "+(i+1)+": non-numeric"); continue;
+        }
+        if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
+        const label = parts.slice(0, parts.length-3).join(", ") || ("Study "+(studies.length+1));
+        studies.push({ label, est, se, x, v: se*se });
+      }
+      return { studies, warnings };
+    }
+
+    function fit(studies, tau2) {
+      let sw=0, swx=0, swxx=0, swy=0, swxy=0;
+      for (const s of studies) {
+        const w = 1/(s.v+tau2);
+        sw += w; swx += w*s.x; swxx += w*s.x*s.x;
+        swy += w*s.est; swxy += w*s.x*s.est;
+      }
+      const det = sw*swxx - swx*swx;
+      if (!isFinite(det) || det <= 0) return null;
+      const b0 = (swxx*swy - swx*swxy) / det;
+      const b1 = (sw*swxy - swx*swy) / det;
+      let rss = 0;
+      for (const s of studies) {
+        const w = 1/(s.v+tau2);
+        const r = s.est - b0 - b1*s.x;
+        rss += w*r*r;
+      }
+      return { b0, b1, rss, sw, swx, swxx, det };
+    }
+
+    // τ² via Paule-Mandel: find τ² s.t. weighted RSS = k-2.
+    function fitPM(studies) {
+      const k = studies.length;
+      const target = k - 2;
+      if (k < 3) return null;
+      const f0 = fit(studies, 0);
+      if (!f0) return null;
+      if (f0.rss <= target) return { tau2: 0, fit: f0 };
+      let lo = 0, hi = 100, guard = 0;
+      while (guard < 60 && hi < 1e9) {
+        const fh = fit(studies, hi);
+        if (!fh) return null;
+        if (fh.rss <= target) break;
+        hi *= 2; guard++;
+      }
+      for (let i=0; i<100; i++) {
+        const mid = (lo+hi)/2;
+        const fm = fit(studies, mid);
+        if (!fm) return null;
+        if (fm.rss > target) lo = mid; else hi = mid;
+        if (hi-lo < 1e-10) break;
+      }
+      const tau2 = (lo+hi)/2;
+      return { tau2, fit: fit(studies, tau2) };
+    }
+
+    // Knapp-Hartung variance with HKSJ floor
+    function hksj(k, p, fittedRSS, swxx, sw, det) {
+      const df = k - p;
+      if (df <= 0) return null;
+      const q_raw = fittedRSS / df;
+      const q = Math.max(1, q_raw);  // HKSJ floor per advanced-stats.md
+      return {
+        varB0: q * swxx / det,
+        varB1: q * sw / det,
+        q, df
+      };
+    }
+
+    // --- t-CDF via incomplete beta ---
+    function lnGamma(x) {
+      const cof=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,1.208650973866179e-3,-5.395239384953e-6];
+      let y=x, tmp=x+5.5;
+      tmp -= (x+0.5)*Math.log(tmp);
+      let ser=1.000000000190015;
+      for (let j=0;j<6;j++) { y+=1; ser += cof[j]/y; }
+      return -tmp + Math.log(2.5066282746310005*ser/x);
+    }
+    function betaCF(x,a,b) {
+      const MAXIT=200, EPS=3e-10, FPMIN=1e-30;
+      const qab=a+b, qap=a+1, qam=a-1;
+      let c=1, d=1-qab*x/qap;
+      if (Math.abs(d)<FPMIN) d=FPMIN;
+      d=1/d; let h=d;
+      for (let m=1;m<=MAXIT;m++) {
+        const m2=2*m;
+        let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+        d=1+aa*d; if (Math.abs(d)<FPMIN) d=FPMIN;
+        c=1+aa/c; if (Math.abs(c)<FPMIN) c=FPMIN;
+        d=1/d; h*=d*c;
+        aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+        d=1+aa*d; if (Math.abs(d)<FPMIN) d=FPMIN;
+        c=1+aa/c; if (Math.abs(c)<FPMIN) c=FPMIN;
+        d=1/d;
+        const del=d*c; h*=del;
+        if (Math.abs(del-1)<EPS) break;
+      }
+      return h;
+    }
+    function betaInc(a,b,x) {
+      if (x<=0) return 0; if (x>=1) return 1;
+      const bt = Math.exp(lnGamma(a+b)-lnGamma(a)-lnGamma(b)+a*Math.log(x)+b*Math.log(1-x));
+      if (x < (a+1)/(a+b+2)) return bt*betaCF(x,a,b)/a;
+      return 1 - bt*betaCF(1-x,b,a)/b;
+    }
+    function tTwoSidedP(t,df) {
+      if (!isFinite(t) || df<=0) return NaN;
+      const x = df/(df+t*t);
+      return betaInc(df/2, 0.5, x);
+    }
+    function tQuantile975(df) {
+      if (df <= 0) return NaN;
+      let lo=0, hi=100;
+      for (let i=0;i<80;i++) {
+        const mid=(lo+hi)/2;
+        if (tTwoSidedP(mid, df) > 0.05) lo=mid; else hi=mid;
+        if (hi-lo < 1e-6) break;
+      }
+      return (lo+hi)/2;
+    }
+
+    function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
+    function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
+    function niceTicks(lo,hi,n) {
+      if (!(hi>lo)) return [lo];
+      const r=hi-lo, s0=r/Math.max(1,n);
+      const m=Math.pow(10,Math.floor(Math.log10(s0))), nm=s0/m;
+      let step = nm<1.5?m:(nm<3?2*m:(nm<7?5*m:10*m));
+      const start=Math.ceil(lo/step)*step; const t=[];
+      for (let v=start;v<=hi+1e-9;v+=step) t.push(v);
+      return t;
+    }
+
+    function buildSvg(state, studies, fitted) {
+      const W=720, H=520, L=70, R=30, T=state.title?60:40, B=80;
+      const plotW=W-L-R, plotH=H-T-B;
+
+      let xLo=Infinity, xHi=-Infinity, yLo=Infinity, yHi=-Infinity;
+      for (const s of studies) {
+        if (s.x < xLo) xLo = s.x; if (s.x > xHi) xHi = s.x;
+        const cl = s.est - 1.96*s.se, ch = s.est + 1.96*s.se;
+        if (cl < yLo) yLo = cl; if (ch > yHi) yHi = ch;
+      }
+      if (!(xHi > xLo)) { xLo = (xLo||0)-1; xHi = (xHi||0)+1; }
+      if (!(yHi > yLo)) { yLo = (yLo||0)-1; yHi = (yHi||0)+1; }
+      const xPad=(xHi-xLo)*0.08, yPad=(yHi-yLo)*0.1;
+      xLo -= xPad; xHi += xPad; yLo -= yPad; yHi += yPad;
+
+      function x(v) { return L + (v-xLo)/(xHi-xLo) * plotW; }
+      function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
+
+      const p = [];
+      p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
+      if (state.title) p.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
+
+      // Frame
+      p.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
+
+      // Zero line
+      if (yLo < 0 && yHi > 0) p.push("<line x1=\""+L+"\" y1=\""+y(0)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(0)+"\" stroke=\"#7a8294\" stroke-dasharray=\"3 3\"/>");
+
+      // Fitted line + CI band
+      if (fitted && fitted.fit) {
+        const f = fitted.fit;
+        const tau2 = fitted.tau2;
+        const k = studies.length;
+        const hk = hksj(k, 2, f.rss, f.swxx, f.sw, f.det);
+        const tCrit = tQuantile975(hk.df);
+
+        const linePts = [], upperPts = [], lowerPts = [];
+        const STEP = (xHi - xLo) / 200;
+        for (let xv = xLo; xv <= xHi + 1e-9; xv += STEP) {
+          const yHat = f.b0 + f.b1 * xv;
+          // Var(β0 + β1·x) = Var(β0) + x²·Var(β1) + 2x·Cov(β0, β1)
+          // Cov(β0, β1) = -q·Σwx/det
+          const covB01 = -hk.q * f.swx / f.det;
+          const varMean = hk.varB0 + xv*xv*hk.varB1 + 2*xv*covB01;
+          const seMean = Math.sqrt(Math.max(0, varMean));
+          linePts.push(x(xv)+","+y(yHat));
+          upperPts.push(x(xv)+","+y(yHat + tCrit*seMean));
+          lowerPts.push(x(xv)+","+y(yHat - tCrit*seMean));
+        }
+        // CI band
+        const bandPts = upperPts.concat(lowerPts.slice().reverse()).join(" ");
+        p.push("<polygon points=\""+bandPts+"\" fill=\"#e8f0f7\" stroke=\"none\"/>");
+        // Line
+        p.push("<polyline points=\""+linePts.join(" ")+"\" fill=\"none\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
+      }
+
+      // Bubbles
+      let maxW = 0;
+      for (const s of studies) { const w = 1/s.v; if (w > maxW) maxW = w; }
+      for (const s of studies) {
+        const rel = maxW > 0 ? (1/s.v)/maxW : 0.5;
+        const r = 4 + rel * 10;
+        p.push("<circle cx=\""+x(s.x)+"\" cy=\""+y(s.est)+"\" r=\""+r+"\" fill=\"#2c5e8a\" fill-opacity=\"0.55\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
+      }
+
+      // Axes
+      const axisY = T + plotH;
+      const xTicks = niceTicks(xLo, xHi, 6);
+      for (const t of xTicks) {
+        p.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
+        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,1)+"</text>");
+      }
+      const yTicks = niceTicks(yLo, yHi, 6);
+      for (const t of yTicks) {
+        p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
+        p.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+      }
+      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">"+escapeXml(state.modlabel || "Moderator")+"</text>");
+      p.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">"+escapeXml(state.effectlabel || "Effect")+"</text>");
+
+      p.push("</svg>");
+      return p.join("");
+    }
+
+    function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
+
+    function render() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const fitted = fitPM(parsed.studies);
+
+      const parts = [];
+      parts.push(statCard("k", String(parsed.studies.length)));
+      if (fitted) {
+        const f = fitted.fit;
+        const k = parsed.studies.length;
+        const hk = hksj(k, 2, f.rss, f.swxx, f.sw, f.det);
+        const tCrit = tQuantile975(hk.df);
+        const seB0 = Math.sqrt(hk.varB0), seB1 = Math.sqrt(hk.varB1);
+        const tB1 = f.b1 / seB1;
+        const pB1 = tTwoSidedP(Math.abs(tB1), hk.df);
+        parts.push(statCard("β₀ (intercept)", fmt(f.b0,3) + " [" + fmt(f.b0 - tCrit*seB0, 3) + ", " + fmt(f.b0 + tCrit*seB0, 3) + "]"));
+        parts.push(statCard("β₁ (slope)", fmt(f.b1,4) + " [" + fmt(f.b1 - tCrit*seB1, 4) + ", " + fmt(f.b1 + tCrit*seB1, 4) + "]"));
+        parts.push(statCard("β₁ test", "t(" + hk.df + ") = " + fmt(tB1,2) + ", p = " + fmt(pB1,3)));
+        parts.push(statCard("τ² (PM)", fmt(fitted.tau2, 4)));
+        parts.push(statCard("HKSJ q", fmt(hk.q, 3) + (hk.q === 1 ? " (floored)" : "")));
+      }
+      statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+
+      const extras = [];
+      if (parsed.studies.length && parsed.studies.length < 4) {
+        extras.push("k = " + parsed.studies.length + " — meta-regression with 1 moderator needs k ≥ 4 to be informative.");
+      }
+      const all = parsed.warnings.concat(extras);
+      if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
+      else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
+
+      const svg = parsed.studies.length >= 3
+        ? buildSvg(state, parsed.studies, fitted)
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥3 studies.</text></svg>";
+      svgHost.innerHTML = svg;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function rScript(studies, state) {
+      const lines = [
+        "# Auto-generated from the browser Meta-Regression app",
+        "# Run with: Rscript this_file.R  (requires the 'metafor' package)",
+        "library(metafor)",
+        "",
+        "yi <- c(" + studies.map(s => s.est).join(", ") + ")",
+        "se <- c(" + studies.map(s => s.se).join(", ") + ")",
+        "x  <- c(" + studies.map(s => s.x).join(", ") + ")",
+        "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
+        "",
+        "res <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"knha\", slab = labels)",
+        "print(res)",
+        "",
+        "# Expected browser output (for diff):",
+        "# β0 (intercept), β1 (slope), τ², HKSJ q, t-stat on β1, p-value."
+      ];
+      return lines.join("\n");
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return false;
+        const p = JSON.parse(raw);
+        if (p && typeof p === "object") { writeState(p); return true; }
+      } catch(e) {}
+      return false;
+    }
+    function downloadBlob(blob,fn) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+    function currentSvg() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      if (parsed.studies.length < 3) return null;
+      const fitted = fitPM(parsed.studies);
+      return { state, svg: buildSvg(state, parsed.studies, fitted) };
+    }
+    function onDownloadSvg() {
+      const r = currentSvg(); if (!r) return alert("Need ≥3 studies.");
+      downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "metareg-"+slugify(r.state.title,"plot")+".svg");
+    }
+    function onDownloadPng() {
+      const r = currentSvg(); if (!r) return alert("Need ≥3 studies.");
+      const W=720,H=520,scale=2;
+      const img = new Image();
+      const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width=W*scale; canvas.height=H*scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function(b){ if (b) downloadBlob(b, "metareg-"+slugify(r.state.title,"plot")+".png"); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.src = url;
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema:"meta-regression-v1", _savedAt:new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "metareg-state.json");
+    }
+    function onExportR() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      if (!parsed.studies.length) return alert("No studies to export.");
+      downloadBlob(new Blob([rScript(parsed.studies, state)],{type:"text/x-rsrc;charset=utf-8"}), "metareg-validate.R");
+    }
+    function onImportJson(file) {
+      const r = new FileReader();
+      r.onload = function () {
+        try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
+        catch(e) { alert("Could not parse JSON: "+e.message); }
+      };
+      r.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear inputs?")) return;
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.value = ""; }
+      document.getElementById("f-effectlabel").value = "Effect (logOR)";
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = "Example meta-regression";
+      document.getElementById("f-modlabel").value = "Baseline LVEF (%)";
+      render();
+    }
+
+    // ---- Shared MA bus (ma-studies-v1) ----
+    function onBusLoad() {
+      try {
+        const raw = localStorage.getItem("ma-studies-v1");
+        if (!raw) { alert("No shared studies yet."); return; }
+        const p = JSON.parse(raw);
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed shared payload."); return; }
+        const lines = p.studies.map(s => {
+          const mod = s.moderator == null ? "" : s.moderator;
+          return [s.label, s.est, s.se, mod].join(", ");
+        });
+        document.getElementById("f-data").value = lines.join("\n");
+        render();
+      } catch (e) { alert("Could not load shared: " + e.message); }
+    }
+    function onBusSave() {
+      const parsed = parseStudies(document.getElementById("f-data").value);
+      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      const payload = {
+        "_schema": "ma-studies-v1",
+        "_savedAt": new Date().toISOString(),
+        "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: s.x, group: null, year: null }))
+      };
+      try {
+        localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
+        alert("Saved " + parsed.studies.length + " studies to shared bus.");
+      } catch (e) { alert("Could not save: " + e.message); }
+    }
+
+    function attach() {
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-rscript").addEventListener("click", onExportR);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
+      document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
+      document.getElementById("btn-validate-webr").addEventListener("click", function () {
+        onBusSave();
+        window.open("../webr-validator/index.html?fromBus=1", "_blank");
+      });
+      document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
+      document.getElementById("file-import").addEventListener("change", function(e){
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f); e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example meta-regression"; document.getElementById("f-modlabel").value = "Baseline LVEF (%)"; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Funnel plot explorer with Egger's regression test.">
+  <meta name="color-scheme" content="light dark">
+  <title>Funnel Plot Explorer</title>
+  <style>
+    :root {
+      --bg: #f6f4ef; --panel: #fff; --ink: #15181d; --muted: #5c6470;
+      --accent: #2c5e8a; --accent-soft: #e8f0f7; --warn: #b05a1c;
+      --warn-soft: #fbeedd; --border: #d9d5cc; --border-strong: #7a8294;
+      --input-bg: #fbfaf6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141618; --panel: #1c1f23; --ink: #e7e4dc; --muted: #98a0ae;
+        --accent: #6aa6d4; --accent-soft: #223044; --warn: #e0a268;
+        --warn-soft: #3a2d1c; --border: #2f343a; --border-strong: #495262;
+        --input-bg: #23272c;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 66ch; }
+    .layout { display: grid; grid-template-columns: minmax(320px, 26rem) 1fr;
+              gap: 1.5rem; padding: 1.5rem clamp(1rem, 3vw, 3rem); align-items: start; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.9rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+    label { display: block; margin-bottom: 0.5rem; font-size: 0.88rem; }
+    label span.lbl { display: block; margin-bottom: 0.15rem; }
+    label span.hint { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.1rem; }
+    input[type="number"], input[type="text"], textarea, select {
+      width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--input-bg); color: var(--ink); font: inherit; font-size: 0.9rem;
+    }
+    textarea { resize: vertical; min-height: 10rem; font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace; font-size: 0.8rem; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); }
+    button { font: inherit; font-size: 0.85rem; padding: 0.45rem 0.85rem; border-radius: 6px;
+             border: 1px solid var(--border-strong); background: var(--panel); color: var(--ink); cursor: pointer; }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button:hover { filter: brightness(0.96); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+    .stat { background: var(--accent-soft); padding: 0.5rem 0.75rem; border-radius: 6px; }
+    .stat .k { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .stat .v { display: block; font-size: 0.95rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .preview-wrap { position: sticky; top: 1rem; }
+    .preview-wrap svg { width: 100%; height: auto; background: #fff; display: block; border-radius: 6px; }
+    .warn-banner { margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: var(--warn-soft);
+                   color: var(--warn); border: 1px solid var(--warn); border-radius: 6px; font-size: 0.82rem; display: none; }
+    .warn-banner.is-visible { display: block; }
+    .footer-note { margin: 0; color: var(--muted); font-size: 0.78rem; text-align: right;
+                   padding: 0 clamp(1rem, 3vw, 3rem) 1.5rem; }
+    .file-input-hidden { display: none; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>Funnel Plot Explorer</h1>
+    <p>Paste study-level effect sizes on the analysis scale. Renders a funnel plot with 95% pseudo-CI limits; reports Egger's regression test for small-study effects.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Studies</h2>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">CSV-style: <code>label, estimate, SE</code> per line</span>
+          <textarea id="f-data" spellcheck="false"></textarea>
+          <span class="hint">Lines starting with <code>#</code> and blanks are skipped. SE must be positive.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <span class="lbl">Centre the funnel on</span>
+          <select id="f-center">
+            <option value="fe">Fixed-effect pooled mean</option>
+            <option value="null">Null value</option>
+          </select>
+        </label>
+        <div class="row-2">
+          <label>
+            <span class="lbl">Null value (on input scale)</span>
+            <input type="number" id="f-null" step="any" value="0">
+          </label>
+          <label>
+            <span class="lbl">Plot title</span>
+            <input type="text" id="f-title" placeholder="e.g. Small-study effects">
+          </label>
+        </div>
+        <label>
+          <span class="lbl">Effect label (axis)</span>
+          <input type="text" id="f-effect" value="Effect (log scale)">
+        </label>
+      </fieldset>
+
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-svg" class="primary">Download SVG</button>
+        <button type="button" id="btn-png">Download PNG</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
+        <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Preview</h2>
+      <div id="svg-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">Egger's regression: intercept from unweighted OLS of <code>est/SE</code> on <code>1/SE</code>. Power is low for k&lt;10 (per advanced-stats.md). Generated client-side.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "funnel-plot-v1";
+
+    const fields = {
+      data: "f-data", center: "f-center", nullVal: "f-null",
+      title: "f-title", effect: "f-effect"
+    };
+
+    const EXAMPLE = "# Example with mild small-study effect (logOR)\nSmall trial 1, -0.50, 0.30\nSmall trial 2, -0.42, 0.28\nSmall trial 3, -0.60, 0.32\nMid trial 1, -0.25, 0.15\nMid trial 2, -0.30, 0.14\nLarge trial 1, -0.18, 0.06\nLarge trial 2, -0.15, 0.05\nLarge trial 3, -0.10, 0.04\nLarge trial 4, -0.12, 0.05\nLarge trial 5, -0.08, 0.04";
+
+    const warnEl = document.getElementById("warn-banner");
+    const svgHost = document.getElementById("svg-host");
+    const statsWrap = document.getElementById("stats-wrap");
+
+    function readState() {
+      const out = {};
+      for (const [k, id] of Object.entries(fields)) { const el = document.getElementById(id); if (el) out[k] = el.value || ""; }
+      return out;
+    }
+    function writeState(s) {
+      for (const [k, id] of Object.entries(fields)) { const el = document.getElementById(id); if (el && k in s) el.value = s[k]; }
+    }
+
+    function parseStudies(text) {
+      const studies = [], warnings = [];
+      const lines = String(text || "").split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        const parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 3) { warnings.push("Line " + (i+1) + ": fewer than 3 columns"); continue; }
+        const est = parseFloat(parts[parts.length - 2]);
+        const se = parseFloat(parts[parts.length - 1]);
+        if (!isFinite(est) || !isFinite(se)) {
+          if (studies.length === 0 && i < 3) continue;
+          warnings.push("Line " + (i+1) + ": non-numeric est or SE"); continue;
+        }
+        if (se <= 0) { warnings.push("Line " + (i+1) + ": SE must be > 0"); continue; }
+        const label = parts.slice(0, parts.length - 2).join(", ") || ("Study " + (studies.length + 1));
+        studies.push({ label: label, est: est, se: se, v: se * se });
+      }
+      return { studies: studies, warnings: warnings };
+    }
+
+    function poolFE(studies) {
+      if (!studies.length) return null;
+      let sw = 0, swy = 0;
+      for (const s of studies) { sw += 1/s.v; swy += s.est/s.v; }
+      const mu = swy / sw;
+      const se = Math.sqrt(1 / sw);
+      return { mu: mu, se: se, lo: mu - 1.96 * se, hi: mu + 1.96 * se };
+    }
+
+    // Egger's regression: y_i = est_i/se_i, x_i = 1/se_i. Unweighted OLS.
+    function egger(studies) {
+      const n = studies.length;
+      if (n < 3) return null;
+      const xs = [], ys = [];
+      for (const s of studies) { xs.push(1/s.se); ys.push(s.est/s.se); }
+      const xbar = xs.reduce((a,b)=>a+b,0)/n;
+      const ybar = ys.reduce((a,b)=>a+b,0)/n;
+      let sxx = 0, sxy = 0;
+      for (let i = 0; i < n; i++) { sxx += (xs[i]-xbar)*(xs[i]-xbar); sxy += (xs[i]-xbar)*(ys[i]-ybar); }
+      if (sxx <= 0) return null;
+      const beta = sxy / sxx;
+      const alpha = ybar - beta * xbar;
+      let rss = 0;
+      for (let i = 0; i < n; i++) { const r = ys[i] - alpha - beta * xs[i]; rss += r*r; }
+      const df = n - 2;
+      if (df <= 0) return null;
+      const sigma2 = rss / df;
+      const seAlpha = Math.sqrt(sigma2 * (1/n + xbar*xbar/sxx));
+      const seBeta = Math.sqrt(sigma2 / sxx);
+      const tAlpha = alpha / seAlpha;
+      const p = tTwoSidedP(tAlpha, df);
+      return { alpha: alpha, seAlpha: seAlpha, tAlpha: tAlpha, df: df, p: p,
+               beta: beta, seBeta: seBeta };
+    }
+
+    // Numerical support: log-gamma and regularized incomplete beta for t-CDF.
+    function lnGamma(x) {
+      const cof = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+                   -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
+      let y = x, tmp = x + 5.5;
+      tmp -= (x + 0.5) * Math.log(tmp);
+      let ser = 1.000000000190015;
+      for (let j = 0; j < 6; j++) { y += 1; ser += cof[j] / y; }
+      return -tmp + Math.log(2.5066282746310005 * ser / x);
+    }
+    function betaCF(x, a, b) {
+      const MAXIT = 200, EPS = 3e-10, FPMIN = 1e-30;
+      const qab = a + b, qap = a + 1, qam = a - 1;
+      let c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d;
+      let h = d;
+      for (let m = 1; m <= MAXIT; m++) {
+        const m2 = 2 * m;
+        let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d;
+        const del = d * c; h *= del;
+        if (Math.abs(del - 1) < EPS) break;
+      }
+      return h;
+    }
+    function betaInc(a, b, x) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      const bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+      if (x < (a + 1) / (a + b + 2)) return bt * betaCF(x, a, b) / a;
+      return 1 - bt * betaCF(1 - x, b, a) / b;
+    }
+    function tTwoSidedP(t, df) {
+      if (!isFinite(t) || df <= 0) return NaN;
+      const x = df / (df + t * t);
+      return betaInc(df / 2, 0.5, x);
+    }
+
+    function escapeXml(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+    }
+    function fmt(x, d) { if (!isFinite(x)) return "--"; return x.toFixed(d == null ? 3 : d); }
+    function niceTicks(lo, hi, n) {
+      if (!(hi > lo)) return [lo];
+      const range = hi - lo;
+      const step0 = range / Math.max(1, n);
+      const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+      const norm = step0 / mag;
+      let step;
+      if (norm < 1.5) step = mag;
+      else if (norm < 3) step = 2 * mag;
+      else if (norm < 7) step = 5 * mag;
+      else step = 10 * mag;
+      const start = Math.ceil(lo / step) * step;
+      const ticks = [];
+      for (let t = start; t <= hi + 1e-9; t += step) ticks.push(t);
+      return ticks;
+    }
+
+    function buildSvg(state, studies, fe, egg) {
+      const W = 720, H = 560;
+      const L = 70, R = 30, T = state.title ? 60 : 40, B = 80;
+      const plotW = W - L - R, plotH = H - T - B;
+
+      const nullV = parseFloat(state.nullVal);
+      const centre = state.center === "null" && isFinite(nullV) ? nullV : (fe ? fe.mu : 0);
+
+      // SE axis: 0 at top, maxSE at bottom
+      let maxSE = 0;
+      for (const s of studies) if (s.se > maxSE) maxSE = s.se;
+      maxSE = maxSE * 1.15 || 1;
+
+      // Effect axis: encompass all study CIs and the funnel limits at maxSE (±1.96*maxSE)
+      let xLo = Infinity, xHi = -Infinity;
+      for (const s of studies) {
+        if (s.est - 1.96 * s.se < xLo) xLo = s.est - 1.96 * s.se;
+        if (s.est + 1.96 * s.se > xHi) xHi = s.est + 1.96 * s.se;
+      }
+      const funLo = centre - 1.96 * maxSE, funHi = centre + 1.96 * maxSE;
+      if (funLo < xLo) xLo = funLo;
+      if (funHi > xHi) xHi = funHi;
+      if (isFinite(nullV)) { if (nullV < xLo) xLo = nullV; if (nullV > xHi) xHi = nullV; }
+      if (!(isFinite(xLo) && isFinite(xHi)) || xLo === xHi) { xLo = -1; xHi = 1; }
+      const xPad = (xHi - xLo) * 0.05; xLo -= xPad; xHi += xPad;
+
+      function x(v) { return L + (v - xLo) / (xHi - xLo) * plotW; }
+      function y(se) { return T + (se / maxSE) * plotH; }
+
+      const p = [];
+      p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\">");
+      p.push("<rect x=\"0\" y=\"0\" width=\"" + W + "\" height=\"" + H + "\" fill=\"#fff\"/>");
+
+      if (state.title) {
+        p.push("<text x=\"" + (W/2) + "\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">" + escapeXml(state.title) + "</text>");
+      }
+
+      // Plot frame
+      p.push("<rect x=\"" + L + "\" y=\"" + T + "\" width=\"" + plotW + "\" height=\"" + plotH + "\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
+
+      // Pseudo-CI funnel: lines from (centre, 0) to (centre ± 1.96*maxSE, maxSE)
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - 1.96 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + 1.96 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
+
+      // 99% funnel (faint)
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - 2.58 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + 2.58 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");
+
+      // Vertical centre line
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + T + "\" x2=\"" + x(centre) + "\" y2=\"" + (T + plotH) + "\" stroke=\"#2c5e8a\" stroke-width=\"1\"/>");
+
+      // Null line if distinct
+      if (isFinite(nullV) && Math.abs(nullV - centre) > 1e-9) {
+        p.push("<line x1=\"" + x(nullV) + "\" y1=\"" + T + "\" x2=\"" + x(nullV) + "\" y2=\"" + (T + plotH) + "\" stroke=\"#b05a1c\" stroke-dasharray=\"5 3\" stroke-width=\"1\"/>");
+      }
+
+      // Points
+      for (const s of studies) {
+        p.push("<circle cx=\"" + x(s.est) + "\" cy=\"" + y(s.se) + "\" r=\"4\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
+      }
+
+      // X-axis
+      const axisY = T + plotH;
+      const xTicks = niceTicks(xLo, xHi, 6);
+      for (const t of xTicks) {
+        p.push("<line x1=\"" + x(t) + "\" y1=\"" + axisY + "\" x2=\"" + x(t) + "\" y2=\"" + (axisY + 4) + "\" stroke=\"#15181d\"/>");
+        p.push("<text x=\"" + x(t) + "\" y=\"" + (axisY + 16) + "\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">" + fmt(t, 2) + "</text>");
+      }
+      p.push("<text x=\"" + (L + plotW / 2) + "\" y=\"" + (axisY + 36) + "\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">" + escapeXml(state.effect || "Effect") + "</text>");
+
+      // Y-axis (SE, inverted)
+      const yTicks = niceTicks(0, maxSE, 5);
+      for (const t of yTicks) {
+        p.push("<line x1=\"" + L + "\" y1=\"" + y(t) + "\" x2=\"" + (L - 4) + "\" y2=\"" + y(t) + "\" stroke=\"#15181d\"/>");
+        p.push("<text x=\"" + (L - 8) + "\" y=\"" + (y(t) + 3) + "\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">" + fmt(t, 2) + "</text>");
+      }
+      p.push("<text transform=\"translate(" + (L - 46) + "," + (T + plotH / 2) + ") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Standard error</text>");
+
+      // Egger note
+      if (egg) {
+        const note = "Egger: intercept = " + fmt(egg.alpha) + " (SE " + fmt(egg.seAlpha) + "), t(" + egg.df + ") = " + fmt(egg.tAlpha, 2) + ", p = " + fmt(egg.p, 3);
+        p.push("<text x=\"" + (W / 2) + "\" y=\"" + (H - 22) + "\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">" + escapeXml(note) + "</text>");
+      }
+
+      p.push("</svg>");
+      return p.join("");
+    }
+
+    function statCard(k, v) {
+      return "<div class=\"stat\"><span class=\"k\">" + escapeXml(k) + "</span><span class=\"v\">" + escapeXml(v) + "</span></div>";
+    }
+    function renderStats(studies, fe, egg) {
+      const k = studies.length;
+      if (!k) { statsWrap.innerHTML = ""; return; }
+      const parts = [];
+      parts.push(statCard("k", String(k)));
+      if (fe) parts.push(statCard("FE pooled", fmt(fe.mu) + " [" + fmt(fe.lo) + ", " + fmt(fe.hi) + "]"));
+      if (egg) {
+        parts.push(statCard("Egger intercept", fmt(egg.alpha) + " (SE " + fmt(egg.seAlpha) + ")"));
+        parts.push(statCard("t(df)", fmt(egg.tAlpha, 2) + " (" + egg.df + ")"));
+        parts.push(statCard("p-value", fmt(egg.p, 3)));
+      }
+      statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>";
+    }
+
+    function renderWarnings(list) {
+      const extra = [];
+      if (list.length === 0) { /* no parse warnings */ }
+      // Add low-k power note
+      const k = parseStudies(document.getElementById("f-data").value).studies.length;
+      if (k > 0 && k < 10) extra.push("k = " + k + " — Egger's regression is under-powered for k<10.");
+      const all = list.concat(extra);
+      if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; return; }
+      warnEl.innerHTML = "<strong>Notes</strong><ul>" + all.map(w => "<li>" + escapeXml(w) + "</li>").join("") + "</ul>";
+      warnEl.classList.add("is-visible");
+    }
+
+    function render() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const fe = poolFE(parsed.studies);
+      const egg = egger(parsed.studies);
+      renderWarnings(parsed.warnings);
+      renderStats(parsed.studies, fe, egg);
+      const svg = parsed.studies.length ? buildSvg(state, parsed.studies, fe, egg)
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste at least 3 study rows to render.</text></svg>";
+      svgHost.innerHTML = svg;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") { writeState(parsed); return true; }
+      } catch (e) {}
+      return false;
+    }
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t, fallback) {
+      const s = String(t || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      return s || fallback;
+    }
+    function currentSvg() {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      if (!parsed.studies.length) return null;
+      const fe = poolFE(parsed.studies);
+      const egg = egger(parsed.studies);
+      return { state: state, svg: buildSvg(state, parsed.studies, fe, egg) };
+    }
+    function onDownloadSvg() {
+      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      downloadBlob(new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"}),
+                   "funnel-" + slugify(r.state.title, "plot") + ".svg");
+    }
+    function onDownloadPng() {
+      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      const m = r.svg.match(/viewBox="0 0 (\d+) (\d+)"/);
+      const W = m ? parseInt(m[1], 10) : 720;
+      const H = m ? parseInt(m[2], 10) : 560;
+      const scale = 2;
+      const img = new Image();
+      const svgBlob = new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = W * scale; canvas.height = H * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (blob) { if (blob) downloadBlob(blob, "funnel-" + slugify(r.state.title, "plot") + ".png"); }, "image/png");
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.src = url;
+    }
+    function onDownloadJson() {
+      const state = readState();
+      const out = Object.assign({_schema: "funnel-plot-v1", _savedAt: new Date().toISOString()}, state);
+      downloadBlob(new Blob([JSON.stringify(out, null, 2)], {type: "application/json"}),
+                   "funnel-" + slugify(state.title, "state") + ".json");
+    }
+    function onImportJson(file) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (parsed && typeof parsed === "object") { writeState(parsed); render(); }
+        } catch (e) { alert("Could not parse JSON: " + e.message); }
+      };
+      reader.readAsText(file);
+    }
+    function onReset() {
+      if (!confirm("Clear all inputs?")) return;
+      for (const id of Object.values(fields)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (id === "f-center") el.value = "fe";
+        else if (id === "f-null") el.value = "0";
+        else if (id === "f-effect") el.value = "Effect (log scale)";
+        else el.value = "";
+      }
+      render();
+    }
+    function onExample() {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = "Example funnel — small-study effect";
+      render();
+    }
+    // ---- Shared MA bus (ma-studies-v1) ----
+    function onBusLoad() {
+      try {
+        const raw = localStorage.getItem("ma-studies-v1");
+        if (!raw) { alert("No shared studies yet."); return; }
+        const p = JSON.parse(raw);
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) {
+          alert("Shared studies payload malformed."); return;
+        }
+        const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
+        document.getElementById("f-data").value = lines.join("\n");
+        render();
+      } catch (e) { alert("Could not load shared: " + e.message); }
+    }
+    function onBusSave() {
+      const parsed = parseStudies(document.getElementById("f-data").value);
+      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      const payload = {
+        "_schema": "ma-studies-v1",
+        "_savedAt": new Date().toISOString(),
+        "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: null, group: null, year: null }))
+      };
+      try {
+        localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
+        alert("Saved " + parsed.studies.length + " studies to shared bus.");
+      } catch (e) { alert("Could not save: " + e.message); }
+    }
+
+    function attach() {
+      for (const id of Object.values(fields)) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("input", render);
+      }
+      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
+      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
+      document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
+      document.getElementById("btn-validate-webr").addEventListener("click", function () {
+        onBusSave();
+        window.open("../webr-validator/index.html?fromBus=1", "_blank");
+      });
+      document.getElementById("btn-import").addEventListener("click", function () {
+        document.getElementById("file-import").click();
+      });
+      document.getElementById("file-import").addEventListener("change", function (e) {
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f);
+        e.target.value = "";
+      });
+    }
+
+    const loaded = loadSaved();
+    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example funnel — small-study effect"; }
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>

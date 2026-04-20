@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Focus timer, task manager, and session tracker.">
+  <title>Focus Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1728;
+      --bg-soft: rgba(16, 24, 41, 0.72);
+      --panel: rgba(12, 19, 31, 0.86);
+      --card: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f5f7fb;
+      --muted: #a9b4cb;
+      --accent: #ff7b54;
+      --accent-2: #66d0c7;
+      --shadow: 0 28px 60px rgba(0, 0, 0, 0.35);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --progress: 1turn;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 123, 84, 0.24), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(102, 208, 199, 0.18), transparent 30%),
+        linear-gradient(180deg, #11192d 0%, #0a1020 100%);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      padding: 28px 30px;
+      background: var(--bg-soft);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.82rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 6vw, 4.4rem);
+      line-height: 0.94;
+      max-width: 10ch;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 60ch;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 12px;
+      min-width: min(360px, 100%);
+    }
+
+    .stat {
+      padding: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.05fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      background: var(--bg-soft);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .timer-panel {
+      display: grid;
+      gap: 18px;
+    }
+
+    .mode-switches,
+    .control-row,
+    .durations,
+    .task-form,
+    .task-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip,
+    .control,
+    .inline-button {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border-radius: 999px;
+      min-height: 44px;
+      padding: 0 16px;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .chip.active,
+    .control.primary,
+    .inline-button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .chip:hover,
+    .control:hover,
+    .inline-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .timer-core {
+      display: grid;
+      place-items: center;
+      padding: 16px 0;
+    }
+
+    .timer-ring {
+      position: relative;
+      width: min(340px, 72vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(10, 16, 32, 0.92) 0 58%, transparent 58%),
+        conic-gradient(var(--accent) var(--progress), rgba(255, 255, 255, 0.08) 0turn);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .timer-ring::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .timer-label {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .timer-mode {
+      display: inline-block;
+      color: var(--accent-2);
+      font-size: 0.82rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .timer-value {
+      display: block;
+      margin-top: 12px;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      font-size: clamp(2.8rem, 10vw, 5rem);
+      line-height: 1;
+    }
+
+    .timer-caption {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .section-head h2,
+    .section-head h3 {
+      margin: 0;
+      font-size: 1.12rem;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .card strong {
+      display: block;
+      font-size: 1.5rem;
+      margin-top: 8px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    input,
+    select {
+      min-height: 46px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+    }
+
+    .durations label,
+    .task-form label {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .task-list,
+    .session-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .task {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 12px;
+    }
+
+    .task.is-done {
+      opacity: 0.7;
+    }
+
+    .task-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .task-title {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(102, 208, 199, 0.14);
+      color: var(--accent-2);
+    }
+
+    .session {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 20px, 1220px);
+      }
+
+      .hero,
+      .panel {
+        padding: 20px;
+      }
+
+      .hero-stats,
+      .card-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Focus Studio</p>
+        <h1>Run deep sessions without losing the thread.</h1>
+        <p>
+          Focus Studio combines a clear timer, an active task list, and a compact session log. Everything stays in your browser,
+          so you can use it as a lightweight local workspace.
+        </p>
+      </div>
+      <div class="hero-stats">
+        <article class="stat">
+          <span>Sessions Today</span>
+          <strong id="sessionsToday">0</strong>
+        </article>
+        <article class="stat">
+          <span>Total Focus Sessions</span>
+          <strong id="sessionsTotal">0</strong>
+        </article>
+        <article class="stat">
+          <span>Completed Tasks</span>
+          <strong id="tasksDone">0</strong>
+        </article>
+        <article class="stat">
+          <span>Active Task</span>
+          <strong id="activeTaskLabel">None</strong>
+        </article>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel timer-panel">
+        <div class="mode-switches">
+          <button class="chip active" data-mode="focus">Focus</button>
+          <button class="chip" data-mode="short">Short Break</button>
+          <button class="chip" data-mode="long">Long Break</button>
+        </div>
+
+        <div class="timer-core">
+          <div class="timer-ring" id="timerRing">
+            <div class="timer-label">
+              <span class="timer-mode" id="timerModeLabel">Focus</span>
+              <span class="timer-value" id="timerValue">25:00</span>
+              <div class="timer-caption" id="timerCaption">Pick a task, then start the clock.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-row">
+          <button class="control primary" id="toggleTimer">Start</button>
+          <button class="control" id="resetTimer">Reset</button>
+          <button class="control" id="skipMode">Skip</button>
+        </div>
+
+        <div class="section-head">
+          <div>
+            <h2>Durations</h2>
+            <p>Adjust session lengths in minutes.</p>
+          </div>
+        </div>
+
+        <div class="durations">
+          <label>Focus
+            <input id="focusDuration" type="number" min="1" max="120">
+          </label>
+          <label>Short
+            <input id="shortDuration" type="number" min="1" max="60">
+          </label>
+          <label>Long
+            <input id="longDuration" type="number" min="1" max="90">
+          </label>
+        </div>
+      </section>
+
+      <section class="stack">
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Momentum</h2>
+              <p>Quick read on how the day is going.</p>
+            </div>
+          </div>
+          <div class="card-grid">
+            <article class="card">
+              <span class="muted">Minutes Focused Today</span>
+              <strong id="minutesToday">0</strong>
+            </article>
+            <article class="card">
+              <span class="muted">Tasks Remaining</span>
+              <strong id="tasksRemaining">0</strong>
+            </article>
+            <article class="card">
+              <span class="muted">Current Mode</span>
+              <strong id="modeReadout">Focus</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Task Queue</h2>
+              <p>Choose one active task so the timer has a target.</p>
+            </div>
+          </div>
+          <form class="task-form" id="taskForm">
+            <label>Task
+              <input id="taskTitle" type="text" placeholder="Write methods section">
+            </label>
+            <label>Tag
+              <input id="taskTag" type="text" placeholder="paper, code, admin">
+            </label>
+            <button class="inline-button primary" type="submit">Add Task</button>
+          </form>
+          <div class="task-list" id="taskList"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <h3>Session Log</h3>
+              <p>Each completed focus block is recorded here.</p>
+            </div>
+          </div>
+          <div class="session-list" id="sessionList"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "focus-studio-state-v1";
+      const DEFAULT_STATE = {
+        mode: "focus",
+        durations: { focus: 25, short: 5, long: 15 },
+        remaining: 25 * 60,
+        running: false,
+        lastTick: null,
+        sessionsCompleted: 0,
+        tasks: [
+          { id: crypto.randomUUID(), title: "Review active app ideas", tag: "planning", done: false },
+          { id: crypto.randomUUID(), title: "Polish one project end-to-end", tag: "build", done: false }
+        ],
+        activeTaskId: null,
+        log: []
+      };
+
+      let state = loadState();
+      let intervalId = null;
+
+      const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
+      const timerRing = document.getElementById("timerRing");
+      const timerModeLabel = document.getElementById("timerModeLabel");
+      const timerValue = document.getElementById("timerValue");
+      const timerCaption = document.getElementById("timerCaption");
+      const toggleTimer = document.getElementById("toggleTimer");
+      const resetTimer = document.getElementById("resetTimer");
+      const skipMode = document.getElementById("skipMode");
+      const focusDuration = document.getElementById("focusDuration");
+      const shortDuration = document.getElementById("shortDuration");
+      const longDuration = document.getElementById("longDuration");
+      const taskForm = document.getElementById("taskForm");
+      const taskList = document.getElementById("taskList");
+      const sessionList = document.getElementById("sessionList");
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return structuredClone(DEFAULT_STATE);
+          }
+          return Object.assign(structuredClone(DEFAULT_STATE), JSON.parse(raw));
+        } catch (error) {
+          return structuredClone(DEFAULT_STATE);
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatClock(seconds) {
+        const mins = Math.floor(seconds / 60).toString().padStart(2, "0");
+        const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+        return mins + ":" + secs;
+      }
+
+      function modeLabel(mode) {
+        return mode === "focus" ? "Focus" : mode === "short" ? "Short Break" : "Long Break";
+      }
+
+      function computeProgress() {
+        const total = Math.max(1, state.durations[state.mode] * 60);
+        return Math.max(0, Math.min(1, state.remaining / total));
+      }
+
+      function activeTask() {
+        return state.tasks.find((task) => task.id === state.activeTaskId) || null;
+      }
+
+      function sessionsToday() {
+        const today = new Date().toDateString();
+        return state.log.filter((entry) => new Date(entry.completedAt).toDateString() === today).length;
+      }
+
+      function minutesToday() {
+        const today = new Date().toDateString();
+        return state.log
+          .filter((entry) => new Date(entry.completedAt).toDateString() === today)
+          .reduce((total, entry) => total + entry.minutes, 0);
+      }
+
+      function setMode(mode, shouldReset) {
+        state.mode = mode;
+        if (shouldReset) {
+          state.remaining = state.durations[mode] * 60;
+          state.running = false;
+          state.lastTick = null;
+        }
+        persistAndRender();
+      }
+
+      function nextMode() {
+        if (state.mode === "focus") {
+          return state.sessionsCompleted > 0 && state.sessionsCompleted % 4 === 0 ? "long" : "short";
+        }
+        return "focus";
+      }
+
+      function beep() {
+        try {
+          const context = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = "triangle";
+          oscillator.frequency.value = 660;
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          gain.gain.setValueAtTime(0.001, context.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.22);
+          oscillator.start();
+          oscillator.stop(context.currentTime + 0.24);
+        } catch (error) {
+        }
+      }
+
+      function finishTimer() {
+        state.running = false;
+        state.lastTick = null;
+        if (state.mode === "focus") {
+          state.sessionsCompleted += 1;
+          state.log.unshift({
+            id: crypto.randomUUID(),
+            completedAt: new Date().toISOString(),
+            minutes: state.durations.focus,
+            taskTitle: activeTask() ? activeTask().title : "Untargeted focus block"
+          });
+          state.log = state.log.slice(0, 20);
+        }
+        beep();
+        const next = nextMode();
+        state.mode = next;
+        state.remaining = state.durations[next] * 60;
+        persistAndRender();
+      }
+
+      function tick() {
+        if (!state.running) {
+          return;
+        }
+        const now = Date.now();
+        const lastTick = state.lastTick || now;
+        const elapsed = Math.floor((now - lastTick) / 1000);
+        if (elapsed <= 0) {
+          return;
+        }
+        state.lastTick = now;
+        state.remaining = Math.max(0, state.remaining - elapsed);
+        if (state.remaining <= 0) {
+          finishTimer();
+          return;
+        }
+        persistAndRender(false);
+      }
+
+      function ensureTicker() {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+        intervalId = setInterval(tick, 250);
+      }
+
+      function toggleRunning() {
+        state.running = !state.running;
+        state.lastTick = Date.now();
+        persistAndRender();
+      }
+
+      function resetCurrentMode() {
+        state.running = false;
+        state.lastTick = null;
+        state.remaining = state.durations[state.mode] * 60;
+        persistAndRender();
+      }
+
+      function handleDurationChange(mode, value) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric < 1) {
+          return;
+        }
+        state.durations[mode] = Math.round(numeric);
+        if (state.mode === mode && !state.running) {
+          state.remaining = state.durations[mode] * 60;
+        }
+        persistAndRender();
+      }
+
+      function persistAndRender(shouldSave) {
+        if (shouldSave !== false) {
+          saveState();
+        }
+        render();
+      }
+
+      function renderStats() {
+        document.getElementById("sessionsToday").textContent = String(sessionsToday());
+        document.getElementById("sessionsTotal").textContent = String(state.sessionsCompleted);
+        document.getElementById("tasksDone").textContent = String(state.tasks.filter((task) => task.done).length);
+        document.getElementById("activeTaskLabel").textContent = activeTask() ? activeTask().title : "None";
+        document.getElementById("minutesToday").textContent = String(minutesToday());
+        document.getElementById("tasksRemaining").textContent = String(state.tasks.filter((task) => !task.done).length);
+        document.getElementById("modeReadout").textContent = modeLabel(state.mode);
+      }
+
+      function renderTimer() {
+        timerRing.style.setProperty("--progress", computeProgress() + "turn");
+        timerModeLabel.textContent = modeLabel(state.mode);
+        timerValue.textContent = formatClock(state.remaining);
+        timerCaption.textContent = state.running
+          ? "Stay on the active task until this block closes."
+          : activeTask()
+            ? "Next up: " + activeTask().title
+            : "Pick a task, then start the clock.";
+        toggleTimer.textContent = state.running ? "Pause" : "Start";
+        modeButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.mode === state.mode);
+        });
+        focusDuration.value = state.durations.focus;
+        shortDuration.value = state.durations.short;
+        longDuration.value = state.durations.long;
+      }
+
+      function renderTasks() {
+        if (!state.tasks.length) {
+          taskList.innerHTML = '<div class="empty">No tasks yet. Add one and assign the timer to it.</div>';
+          return;
+        }
+
+        taskList.innerHTML = "";
+        state.tasks.forEach((task) => {
+          const article = document.createElement("article");
+          article.className = "task" + (task.done ? " is-done" : "");
+          const activeBadge = task.id === state.activeTaskId ? '<span class="badge">Active</span>' : "";
+          article.innerHTML = `
+            <div class="task-top">
+              <div>
+                <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                <div class="task-meta">
+                  <span>${task.tag ? escapeHtml(task.tag) : "untagged"}</span>
+                  ${activeBadge}
+                  <span>${task.done ? "completed" : "open"}</span>
+                </div>
+              </div>
+            </div>
+            <div class="task-actions">
+              <button class="inline-button primary" data-action="active">${task.id === state.activeTaskId ? "Selected" : "Set Active"}</button>
+              <button class="inline-button" data-action="toggle">${task.done ? "Reopen" : "Complete"}</button>
+              <button class="inline-button" data-action="remove">Remove</button>
+            </div>
+          `;
+          article.querySelector('[data-action="active"]').addEventListener("click", function () {
+            state.activeTaskId = task.id;
+            persistAndRender();
+          });
+          article.querySelector('[data-action="toggle"]').addEventListener("click", function () {
+            task.done = !task.done;
+            if (task.done && state.activeTaskId === task.id) {
+              state.activeTaskId = null;
+            }
+            persistAndRender();
+          });
+          article.querySelector('[data-action="remove"]').addEventListener("click", function () {
+            state.tasks = state.tasks.filter((item) => item.id !== task.id);
+            if (state.activeTaskId === task.id) {
+              state.activeTaskId = null;
+            }
+            persistAndRender();
+          });
+          taskList.appendChild(article);
+        });
+      }
+
+      function renderSessions() {
+        if (!state.log.length) {
+          sessionList.innerHTML = '<div class="empty">Completed focus sessions will appear here.</div>';
+          return;
+        }
+        sessionList.innerHTML = "";
+        state.log.forEach((entry) => {
+          const item = document.createElement("article");
+          item.className = "session";
+          const date = new Date(entry.completedAt);
+          item.innerHTML = `
+            <div>
+              <strong>${escapeHtml(entry.taskTitle)}</strong>
+              <div class="muted">${date.toLocaleString()}</div>
+            </div>
+            <div class="badge">${entry.minutes} min</div>
+          `;
+          sessionList.appendChild(item);
+        });
+      }
+
+      function render() {
+        renderStats();
+        renderTimer();
+        renderTasks();
+        renderSessions();
+      }
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          setMode(button.dataset.mode, true);
+        });
+      });
+
+      toggleTimer.addEventListener("click", toggleRunning);
+      resetTimer.addEventListener("click", resetCurrentMode);
+      skipMode.addEventListener("click", function () {
+        setMode(nextMode(), true);
+      });
+      focusDuration.addEventListener("change", function () { handleDurationChange("focus", focusDuration.value); });
+      shortDuration.addEventListener("change", function () { handleDurationChange("short", shortDuration.value); });
+      longDuration.addEventListener("change", function () { handleDurationChange("long", longDuration.value); });
+
+      taskForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const title = document.getElementById("taskTitle").value.trim();
+        const tag = document.getElementById("taskTag").value.trim();
+        if (!title) {
+          return;
+        }
+        const task = { id: crypto.randomUUID(), title: title, tag: tag, done: false };
+        state.tasks.unshift(task);
+        if (!state.activeTaskId) {
+          state.activeTaskId = task.id;
+        }
+        taskForm.reset();
+        persistAndRender();
+      });
+
+      ensureTicker();
+      render();
+    })();
+  </script>
+</body>
+</html>

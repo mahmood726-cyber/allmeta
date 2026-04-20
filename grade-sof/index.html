@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GRADE Summary of Findings table builder. Print-ready HTML export.">
+  <meta name="color-scheme" content="light dark">
+  <title>GRADE SoF Builder</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
+    .layout { display:grid; grid-template-columns:minmax(340px,28rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1100px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="number"],input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.88rem;
+    }
+    textarea { resize:vertical; min-height:2.4rem; font-size:0.82rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; }
+    .row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button.danger { border-color:#b05a1c; color:#b05a1c; background:transparent; }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .outcome-row { border:1px solid var(--border); border-radius:8px; padding:0.75rem; margin-bottom:0.75rem; background:var(--input-bg); }
+    .outcome-row .row-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
+    .outcome-row .row-head strong { font-size:0.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .sof-wrap { overflow-x:auto; background:#fff; padding:1.25rem; border-radius:6px; border:1px solid var(--border); }
+    .sof-title { margin:0 0 0.75rem; font-size:1rem; font-weight:700; color:#15181d; }
+    .sof-subtitle { margin:0 0 1rem; font-size:0.85rem; color:#5c6470; }
+    table.sof { width:100%; border-collapse:collapse; font-size:0.82rem; color:#15181d; }
+    table.sof th, table.sof td { border:1px solid #cfd5de; padding:0.55rem 0.6rem; vertical-align:top; text-align:left; }
+    table.sof thead th { background:#e8f0f7; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#2c5e8a; }
+    table.sof thead tr.risk-header th { background:#f3f6fa; font-size:0.7rem; color:#5c6470; }
+    table.sof tr.outcome-row td { background:#fff; }
+    table.sof td.num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    table.sof td.cert { text-align:center; white-space:nowrap; }
+    .grade-pill { display:inline-block; font-size:0.78rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:10px; }
+    .grade-high { background:#dff3e0; color:#0d7a27; }
+    .grade-moderate { background:#fff4d5; color:#7a5a0d; }
+    .grade-low { background:#fde1d3; color:#a34a12; }
+    .grade-verylow { background:#fbd2d2; color:#912121; }
+    .sof-legend { margin-top:0.75rem; font-size:0.75rem; color:#5c6470; line-height:1.5; }
+    .sof-legend strong { color:#15181d; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+    @media print {
+      body { background:#fff; }
+      header, .panel[aria-label="Input form"], .footer-note { display:none; }
+      .layout { display:block; padding:0; }
+      .panel.preview-wrap { position:static; border:none; padding:0; }
+    }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+  <header>
+    <h1>GRADE Summary of Findings Builder</h1>
+    <p>Assemble a Cochrane-style SoF table: outcomes, assumed and corresponding risk, relative effect, participants, certainty of evidence, comments. Print-ready HTML; state saved locally.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Review</h2>
+
+      <fieldset>
+        <legend>Header</legend>
+        <label>
+          <span class="lbl">PICO / review question</span>
+          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors compared with placebo for heart failure">
+        </label>
+        <div class="row-2">
+          <label>
+            <span class="lbl">Patient / population</span>
+            <input type="text" id="f-population" placeholder="e.g. Adults with HFpEF">
+          </label>
+          <label>
+            <span class="lbl">Setting</span>
+            <input type="text" id="f-setting" placeholder="e.g. Outpatient clinic">
+          </label>
+        </div>
+        <div class="row-2">
+          <label>
+            <span class="lbl">Intervention</span>
+            <input type="text" id="f-intervention" placeholder="e.g. SGLT2 inhibitor">
+          </label>
+          <label>
+            <span class="lbl">Comparator</span>
+            <input type="text" id="f-comparator" placeholder="e.g. Placebo">
+          </label>
+        </div>
+      </fieldset>
+
+      <div id="outcomes-wrap"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-add" class="primary">+ Add outcome</button>
+        <button type="button" id="btn-html">Download HTML</button>
+        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-reset">Reset</button>
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+      </div>
+    </section>
+
+    <section class="panel preview-wrap" aria-label="Preview">
+      <h2>Preview</h2>
+      <div id="sof-host"></div>
+    </section>
+  </main>
+
+  <p class="footer-note">Columns after the Cochrane SoF template (GRADE Handbook). Four-tier certainty: High, Moderate, Low, Very low. Use your browser's print dialog to PDF the preview.</p>
+
+  <script>
+  (function () {
+    "use strict";
+    const LS_KEY = "grade-sof-v1";
+
+    const HEADER_FIELDS = { title:"f-title", population:"f-population", setting:"f-setting", intervention:"f-intervention", comparator:"f-comparator" };
+
+    const CERT_LABEL = {
+      "high": "⊕⊕⊕⊕ High",
+      "moderate": "⊕⊕⊕○ Moderate",
+      "low": "⊕⊕○○ Low",
+      "verylow": "⊕○○○ Very low"
+    };
+    const CERT_CLASS = {
+      "high": "grade-high", "moderate": "grade-moderate",
+      "low": "grade-low", "verylow": "grade-verylow"
+    };
+
+    const EXAMPLE_STATE = {
+      title: "SGLT2 inhibitors compared with placebo for HFpEF",
+      population: "Adults with heart failure and preserved ejection fraction",
+      setting: "Outpatient clinic",
+      intervention: "SGLT2 inhibitor",
+      comparator: "Placebo",
+      outcomes: [
+        {
+          outcome: "All-cause mortality",
+          followup: "Median 26 months",
+          assumed: "72 per 1,000",
+          corresponding: "61 per 1,000 (49 to 76)",
+          effectType: "RR",
+          effect: "0.85",
+          ciLo: "0.68",
+          ciHi: "1.06",
+          participants: "12,400",
+          studies: "4",
+          certainty: "moderate",
+          comments: "Downgraded for imprecision (CI crosses null)."
+        },
+        {
+          outcome: "Hospitalisation for heart failure",
+          followup: "Median 26 months",
+          assumed: "118 per 1,000",
+          corresponding: "84 per 1,000 (71 to 99)",
+          effectType: "RR",
+          effect: "0.71",
+          ciLo: "0.60",
+          ciHi: "0.84",
+          participants: "12,400",
+          studies: "4",
+          certainty: "high",
+          comments: "Consistent effect across trials."
+        },
+        {
+          outcome: "Serious adverse events",
+          followup: "Median 26 months",
+          assumed: "215 per 1,000",
+          corresponding: "211 per 1,000 (198 to 226)",
+          effectType: "RR",
+          effect: "0.98",
+          ciLo: "0.92",
+          ciHi: "1.05",
+          participants: "12,120",
+          studies: "4",
+          certainty: "moderate",
+          comments: "Indirectness unclear in elderly subgroup."
+        }
+      ]
+    };
+
+    const outcomesWrap = document.getElementById("outcomes-wrap");
+    const host = document.getElementById("sof-host");
+
+    let state = null;
+
+    function emptyOutcome() {
+      return { outcome:"", followup:"", assumed:"", corresponding:"", effectType:"RR", effect:"", ciLo:"", ciHi:"", participants:"", studies:"", certainty:"moderate", comments:"" };
+    }
+
+    function readHeader() {
+      const o = {};
+      for (const [k, id] of Object.entries(HEADER_FIELDS)) { const el = document.getElementById(id); o[k] = el ? el.value : ""; }
+      return o;
+    }
+    function writeHeader(h) {
+      for (const [k, id] of Object.entries(HEADER_FIELDS)) { const el = document.getElementById(id); if (el && k in h) el.value = h[k] || ""; }
+    }
+
+    function readOutcomesFromForm() {
+      const rows = outcomesWrap.querySelectorAll(".outcome-row");
+      const out = [];
+      rows.forEach((row) => {
+        const r = { effectType: "RR", certainty: "moderate" };
+        row.querySelectorAll("[data-field]").forEach((el) => {
+          r[el.dataset.field] = el.value || "";
+        });
+        out.push(r);
+      });
+      return out;
+    }
+
+    function escapeHtml(s) {
+      return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+
+    function renderOutcomeRow(o, idx) {
+      const div = document.createElement("div");
+      div.className = "outcome-row";
+      div.innerHTML = [
+        '<div class="row-head">',
+        '  <strong>Outcome ' + (idx+1) + '</strong>',
+        '  <button type="button" class="danger" data-action="remove" data-idx="' + idx + '">Remove</button>',
+        '</div>',
+        '<label><span class="lbl">Outcome name</span><input type="text" data-field="outcome" value="' + escapeHtml(o.outcome) + '"></label>',
+        '<label><span class="lbl">Follow-up</span><input type="text" data-field="followup" value="' + escapeHtml(o.followup) + '" placeholder="e.g. Median 26 months"></label>',
+        '<div class="row-2">',
+        '  <label><span class="lbl">Assumed risk (control)</span><input type="text" data-field="assumed" value="' + escapeHtml(o.assumed) + '" placeholder="e.g. 72 per 1,000"></label>',
+        '  <label><span class="lbl">Corresponding risk</span><input type="text" data-field="corresponding" value="' + escapeHtml(o.corresponding) + '" placeholder="e.g. 61 per 1,000 (49 to 76)"></label>',
+        '</div>',
+        '<div class="row-3">',
+        '  <label><span class="lbl">Effect type</span><select data-field="effectType">',
+        '    <option value="RR"' + (o.effectType==="RR"?' selected':'') + '>RR</option>',
+        '    <option value="OR"' + (o.effectType==="OR"?' selected':'') + '>OR</option>',
+        '    <option value="HR"' + (o.effectType==="HR"?' selected':'') + '>HR</option>',
+        '    <option value="MD"' + (o.effectType==="MD"?' selected':'') + '>MD</option>',
+        '    <option value="SMD"' + (o.effectType==="SMD"?' selected':'') + '>SMD</option>',
+        '  </select></label>',
+        '  <label><span class="lbl">Point estimate</span><input type="text" data-field="effect" value="' + escapeHtml(o.effect) + '" placeholder="0.85"></label>',
+        '  <label><span class="lbl">CI low</span><input type="text" data-field="ciLo" value="' + escapeHtml(o.ciLo) + '" placeholder="0.68"></label>',
+        '</div>',
+        '<div class="row-3">',
+        '  <label><span class="lbl">CI high</span><input type="text" data-field="ciHi" value="' + escapeHtml(o.ciHi) + '" placeholder="1.06"></label>',
+        '  <label><span class="lbl">№ participants</span><input type="text" data-field="participants" value="' + escapeHtml(o.participants) + '"></label>',
+        '  <label><span class="lbl">№ studies</span><input type="text" data-field="studies" value="' + escapeHtml(o.studies) + '"></label>',
+        '</div>',
+        '<label><span class="lbl">Certainty</span><select data-field="certainty">',
+        '  <option value="high"' + (o.certainty==="high"?' selected':'') + '>High</option>',
+        '  <option value="moderate"' + (o.certainty==="moderate"?' selected':'') + '>Moderate</option>',
+        '  <option value="low"' + (o.certainty==="low"?' selected':'') + '>Low</option>',
+        '  <option value="verylow"' + (o.certainty==="verylow"?' selected':'') + '>Very low</option>',
+        '</select></label>',
+        '<label><span class="lbl">Comments</span><textarea data-field="comments" rows="2" placeholder="Reasons for down/up-grading, caveats">' + escapeHtml(o.comments) + '</textarea></label>'
+      ].join("\n");
+      return div;
+    }
+
+    function renderForm() {
+      outcomesWrap.innerHTML = "";
+      state.outcomes.forEach((o, i) => outcomesWrap.appendChild(renderOutcomeRow(o, i)));
+      // Attach per-row input listener
+      outcomesWrap.querySelectorAll("[data-field]").forEach((el) => {
+        el.addEventListener("input", function () {
+          state.outcomes = readOutcomesFromForm();
+          renderPreview();
+          persist();
+        });
+      });
+      outcomesWrap.querySelectorAll("[data-action='remove']").forEach((b) => {
+        b.addEventListener("click", function () {
+          const idx = parseInt(b.dataset.idx, 10);
+          if (state.outcomes.length > 1) {
+            state.outcomes.splice(idx, 1);
+            renderForm();
+            renderPreview();
+            persist();
+          }
+        });
+      });
+    }
+
+    function effectString(o) {
+      if (!o.effect) return "—";
+      const low = o.ciLo || "?";
+      const high = o.ciHi || "?";
+      return escapeHtml(o.effectType) + " " + escapeHtml(o.effect) + " (95% CI " + escapeHtml(low) + " to " + escapeHtml(high) + ")";
+    }
+
+    function renderPreview() {
+      const h = readHeader();
+      const hasContent = state.outcomes.some(o => o.outcome);
+      if (!hasContent && !h.title) {
+        host.innerHTML = '<div class="sof-wrap"><p style="color:#5c6470;font-size:0.88rem;margin:0">Enter a review title or at least one outcome.</p></div>';
+        return;
+      }
+
+      const rows = state.outcomes.map((o) => {
+        const certClass = CERT_CLASS[o.certainty] || "grade-moderate";
+        const certLabel = CERT_LABEL[o.certainty] || CERT_LABEL.moderate;
+        const nStudies = o.studies ? " (" + escapeHtml(o.studies) + ")" : "";
+        return [
+          '<tr class="outcome-row">',
+          '<td><strong>' + escapeHtml(o.outcome) + '</strong>' + (o.followup ? '<br><span style="color:#5c6470;font-size:0.78rem">' + escapeHtml(o.followup) + '</span>' : '') + '</td>',
+          '<td class="num">' + escapeHtml(o.assumed) + '</td>',
+          '<td class="num">' + escapeHtml(o.corresponding) + '</td>',
+          '<td class="num">' + effectString(o) + '</td>',
+          '<td class="num">' + escapeHtml(o.participants) + nStudies + '</td>',
+          '<td class="cert"><span class="grade-pill ' + certClass + '">' + escapeHtml(certLabel) + '</span></td>',
+          '<td>' + escapeHtml(o.comments) + '</td>',
+          '</tr>'
+        ].join("");
+      }).join("");
+
+      const subtitleBits = [];
+      if (h.population) subtitleBits.push("<strong>Patient or population:</strong> " + escapeHtml(h.population));
+      if (h.setting) subtitleBits.push("<strong>Setting:</strong> " + escapeHtml(h.setting));
+      if (h.intervention) subtitleBits.push("<strong>Intervention:</strong> " + escapeHtml(h.intervention));
+      if (h.comparator) subtitleBits.push("<strong>Comparison:</strong> " + escapeHtml(h.comparator));
+
+      const html = [
+        '<div class="sof-wrap">',
+        h.title ? '<h3 class="sof-title">' + escapeHtml(h.title) + '</h3>' : '',
+        subtitleBits.length ? '<p class="sof-subtitle">' + subtitleBits.join(" &middot; ") + '</p>' : '',
+        '<table class="sof">',
+        '<thead>',
+        '<tr>',
+        '<th rowspan="2" style="width:14%">Outcomes<br><span style="font-weight:400;font-size:0.72rem;color:#5c6470">(follow-up)</span></th>',
+        '<th colspan="2" style="width:22%">Anticipated absolute effects<sup>*</sup> (95% CI)</th>',
+        '<th rowspan="2" style="width:16%">Relative effect (95% CI)</th>',
+        '<th rowspan="2" style="width:12%">№ of participants (studies)</th>',
+        '<th rowspan="2" style="width:12%">Certainty of the evidence (GRADE)</th>',
+        '<th rowspan="2">Comments</th>',
+        '</tr>',
+        '<tr class="risk-header">',
+        '<th style="width:11%">Risk with ' + escapeHtml(h.comparator || "comparator") + '</th>',
+        '<th style="width:11%">Risk with ' + escapeHtml(h.intervention || "intervention") + '</th>',
+        '</tr>',
+        '</thead>',
+        '<tbody>',
+        rows,
+        '</tbody>',
+        '</table>',
+        '<p class="sof-legend">* The risk with ' + escapeHtml(h.intervention || "intervention") + ' (and its 95% confidence interval) is based on the assumed risk in the comparison group and the <strong>relative effect</strong> of the intervention (and its 95% CI).</p>',
+        '<p class="sof-legend"><strong>GRADE certainty:</strong> <strong>High</strong> — we are very confident; <strong>Moderate</strong> — moderately confident; <strong>Low</strong> — confidence is limited; <strong>Very low</strong> — we have very little confidence.</p>',
+        '</div>'
+      ].join("");
+      host.innerHTML = html;
+    }
+
+    function render() {
+      writeHeader(state);
+      renderForm();
+      renderPreview();
+      persist();
+    }
+
+    function persist() {
+      try {
+        const snapshot = Object.assign({}, readHeader(), { outcomes: state.outcomes });
+        localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+      } catch (e) {}
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return null;
+        const p = JSON.parse(raw);
+        if (p && typeof p === "object" && Array.isArray(p.outcomes)) return p;
+      } catch (e) {}
+      return null;
+    }
+
+    function downloadBlob(blob, fn) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+    function slugify(t, f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+
+    function currentHtml() {
+      const h = readHeader();
+      const html = host.querySelector(".sof-wrap") ? host.innerHTML : "";
+      return [
+        '<!DOCTYPE html>',
+        '<html lang="en"><head><meta charset="UTF-8"><title>' + escapeHtml(h.title || "Summary of Findings") + '</title>',
+        '<style>',
+        'body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:#15181d; max-width:1100px; margin:2rem auto; padding:0 1rem; }',
+        '.sof-wrap { padding:1.25rem; }',
+        '.sof-title { margin:0 0 0.5rem; font-size:1.15rem; }',
+        '.sof-subtitle { color:#5c6470; margin:0 0 1rem; font-size:0.88rem; }',
+        'table.sof { width:100%; border-collapse:collapse; font-size:0.85rem; }',
+        'table.sof th, table.sof td { border:1px solid #cfd5de; padding:0.55rem 0.6rem; vertical-align:top; text-align:left; }',
+        'table.sof thead th { background:#e8f0f7; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:#2c5e8a; }',
+        'table.sof thead tr.risk-header th { background:#f3f6fa; font-size:0.7rem; color:#5c6470; }',
+        'table.sof td.num { font-variant-numeric:tabular-nums; white-space:nowrap; }',
+        'table.sof td.cert { text-align:center; white-space:nowrap; }',
+        '.grade-pill { display:inline-block; font-size:0.78rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:10px; }',
+        '.grade-high { background:#dff3e0; color:#0d7a27; }',
+        '.grade-moderate { background:#fff4d5; color:#7a5a0d; }',
+        '.grade-low { background:#fde1d3; color:#a34a12; }',
+        '.grade-verylow { background:#fbd2d2; color:#912121; }',
+        '.sof-legend { margin-top:0.75rem; font-size:0.75rem; color:#5c6470; line-height:1.5; }',
+        '</style></head><body>',
+        html,
+        '</body></html>'
+      ].join("\n");
+    }
+
+    function onDownloadHtml() {
+      const h = readHeader();
+      const blob = new Blob([currentHtml()], {type:"text/html;charset=utf-8"});
+      downloadBlob(blob, "sof-" + slugify(h.title, "table") + ".html");
+    }
+    function onDownloadJson() {
+      const snapshot = Object.assign({ _schema:"grade-sof-v1", _savedAt:new Date().toISOString() }, readHeader(), { outcomes: state.outcomes });
+      downloadBlob(new Blob([JSON.stringify(snapshot, null, 2)], {type:"application/json"}),
+                   "sof-" + slugify(snapshot.title, "state") + ".json");
+    }
+    function onImportJson(file) {
+      const r = new FileReader();
+      r.onload = function () {
+        try {
+          const p = JSON.parse(r.result);
+          if (p && typeof p === "object" && Array.isArray(p.outcomes)) {
+            state = { outcomes: p.outcomes.length ? p.outcomes : [emptyOutcome()] };
+            for (const k of Object.keys(HEADER_FIELDS)) state[k] = p[k] || "";
+            render();
+          }
+        } catch (e) { alert("Could not parse JSON: " + e.message); }
+      };
+      r.readAsText(file);
+    }
+    function onAdd() {
+      state.outcomes = readOutcomesFromForm();
+      state.outcomes.push(emptyOutcome());
+      renderForm();
+      renderPreview();
+      persist();
+    }
+    function onReset() {
+      if (!confirm("Clear all content?")) return;
+      state = { outcomes: [emptyOutcome()] };
+      for (const k of Object.keys(HEADER_FIELDS)) state[k] = "";
+      render();
+    }
+    function onExample() {
+      state = JSON.parse(JSON.stringify(EXAMPLE_STATE));
+      render();
+    }
+
+    function attach() {
+      for (const id of Object.values(HEADER_FIELDS)) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("input", function () { renderPreview(); persist(); });
+      }
+      document.getElementById("btn-add").addEventListener("click", onAdd);
+      document.getElementById("btn-html").addEventListener("click", onDownloadHtml);
+      document.getElementById("btn-json").addEventListener("click", onDownloadJson);
+      document.getElementById("btn-reset").addEventListener("click", onReset);
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
+      document.getElementById("file-import").addEventListener("change", function(e){
+        const f = e.target.files && e.target.files[0];
+        if (f) onImportJson(f); e.target.value = "";
+      });
+    }
+
+    const saved = loadSaved();
+    if (saved) {
+      state = { outcomes: saved.outcomes.length ? saved.outcomes : [emptyOutcome()] };
+      for (const k of Object.keys(HEADER_FIELDS)) state[k] = saved[k] || "";
+    } else {
+      state = JSON.parse(JSON.stringify(EXAMPLE_STATE));
+    }
+
+    attach();
+    render();
+  })();
+  </script>
+</body>
+</html>
