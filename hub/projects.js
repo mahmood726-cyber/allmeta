@@ -1,5 +1,49 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "Thematic Synthesis",
+    folder: "C:\\HTML apps\\thematic-synthesis",
+    path: "./thematic-synthesis/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Qualitative Synthesis",
+    summary: "Organise qualitative evidence for systematic reviews. Add participant quotes with study source, descriptive code, and analytical theme, then view as a hierarchical theme tree. Exports themed JSON.",
+    note: "Thomas & Harden (2008) thematic-synthesis method.",
+    tags: ["qualitative", "thematic-synthesis", "coding"]
+  },
+  {
+    name: "Network MA (SUCRA)",
+    folder: "C:\\HTML apps\\bayesian-nma",
+    path: "./bayesian-nma/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Contrast-based NMA under a consistency model via weighted least squares, with Monte-Carlo posterior sampling for SUCRA treatment rankings. Network diagram, forest of contrasts, SUCRA bars.",
+    note: "Fast approximation suitable for exploration. Use MCMC software for publication.",
+    tags: ["nma", "sucra", "consistency", "ranking"]
+  },
+  {
+    name: "Component NMA",
+    folder: "C:\\HTML apps\\component-nma",
+    path: "./component-nma/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Additive component network meta-analysis (Welton 2009) for multi-component interventions. Decomposes complex interventions into per-component effects and derives implied combination effects.",
+    note: "Assumes additivity on the analysis scale; add interaction terms for synergy.",
+    tags: ["component-nma", "complex-interventions", "additive"]
+  },
+  {
+    name: "MCID & NI margin",
+    folder: "C:\\HTML apps\\mcid",
+    path: "./mcid/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Trial Design",
+    summary: "Minimum clinically important difference via distribution-based (0.5·SD, 1·SEM, SDC) and anchor-based (Juniper) methods, plus a non-inferiority margin derived from active-comparator effect and preservation fraction.",
+    note: "Triangulate multiple methods; MCID depends on context.",
+    tags: ["mcid", "non-inferiority", "ni-margin", "responder"]
+  },
+  {
     name: "ROBINS-I",
     folder: "C:\\HTML apps\\robins-i",
     path: "./robins-i/index.html",

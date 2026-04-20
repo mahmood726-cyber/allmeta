@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Thematic synthesis workbench: organise qualitative quotes into codes and analytical themes with a hierarchical tree view.">
+  <meta name="color-scheme" content="light dark">
+  <title>Thematic Synthesis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --theme:#2c5e8a; --subtheme:#0d7a27; --code:#a58300; --quote:#5c6470; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --theme:#6aa6d4; --subtheme:#5bc47b; --code:#e5c060; --quote:#98a0ae; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea, input, select { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; font-size: 0.85rem; }
+    textarea { min-height: 4rem; font-family: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 600; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.9rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 0.8rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Thematic Synthesis</h1>
+    <p>Organise qualitative data for systematic reviews. Paste participant quotes, assign each to a descriptive code, then group codes under higher-order analytical themes. View the result as a hierarchical tree and export as JSON.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Add data</h2>
+      <label><span class="lbl">Quote</span>
+        <textarea id="q-text" placeholder="Verbatim participant extract, including study source."></textarea></label>
+      <div class="grid-2">
+        <label><span class="lbl">Study source</span>
+          <input id="q-study" type="text" placeholder="e.g. Ahmed 2020"></label>
+        <label><span class="lbl">Descriptive code</span>
+          <input id="q-code" type="text" placeholder="e.g. fear of stigma"></label>
+      </div>
+      <label><span class="lbl">Analytical theme</span>
+        <input id="q-theme" type="text" placeholder="e.g. social barriers to care"></label>
+      <button type="button" id="btn-add" class="primary" style="width:100%; margin-top:0.3rem">+ Add quote</button>
+      <button type="button" id="btn-demo" class="secondary" style="width:100%; margin-top:0.4rem">Load demo</button>
+
+      <h2 style="margin-top:1rem">Entries</h2>
+      <table>
+        <thead><tr><th>Study</th><th>Code</th><th>Theme</th><th></th></tr></thead>
+        <tbody id="tbl"></tbody>
+      </table>
+      <button type="button" id="btn-export" class="secondary" style="margin-right:0.5rem">Export JSON</button>
+      <button type="button" id="btn-clear" class="secondary">Clear</button>
+    </section>
+
+    <section class="panel">
+      <h2>Hierarchical map</h2>
+      <svg id="tree" viewBox="0 0 800 500" role="img" aria-label="Tree map of themes, codes, and quotes"></svg>
+    </section>
+  </main>
+  <footer>
+    Method: Thomas &amp; Harden (BMC Med Res Methodol 2008) three stages — line-by-line coding, development of descriptive themes, generation of analytical themes. This tool supports the second and third stages. The first stage (initial coding) is done by the reviewer.
+  </footer>
+  <script>
+    const DEMO = [
+      { study: "Ahmed 2020", quote: "I was too afraid of what the neighbours would say.", code: "fear of stigma", theme: "Social barriers" },
+      { study: "Ahmed 2020", quote: "My husband said I should not go alone.", code: "family restriction", theme: "Social barriers" },
+      { study: "Patel 2021", quote: "We could not afford the bus fare to the clinic.", code: "transport cost", theme: "Structural barriers" },
+      { study: "Patel 2021", quote: "The clinic closes before I finish work.", code: "clinic opening hours", theme: "Structural barriers" },
+      { study: "Khan 2022", quote: "The nurse was kind, she explained everything.", code: "provider empathy", theme: "Positive care experiences" },
+      { study: "Khan 2022", quote: "I felt heard for the first time.", code: "provider empathy", theme: "Positive care experiences" },
+      { study: "Khan 2022", quote: "After that visit I trusted the health centre more.", code: "trust building", theme: "Positive care experiences" },
+      { study: "Singh 2023", quote: "Nobody explained why I needed the second dose.", code: "information gap", theme: "Information barriers" },
+    ];
+    let DATA = [];
+
+    function render() {
+      const tbody = document.getElementById("tbl");
+      tbody.innerHTML = "";
+      DATA.forEach((r, i) => {
+        tbody.innerHTML += `<tr><td>${r.study}</td><td>${r.code}</td><td>${r.theme}</td><td><button class="secondary" data-del="${i}">×</button></td></tr>`;
+      });
+      drawTree();
+    }
+
+    document.getElementById("tbl").addEventListener("click", e => {
+      if (e.target.dataset.del !== undefined) {
+        DATA.splice(Number(e.target.dataset.del), 1);
+        render();
+      }
+    });
+
+    document.getElementById("btn-add").addEventListener("click", () => {
+      const quote = document.getElementById("q-text").value.trim();
+      const study = document.getElementById("q-study").value.trim();
+      const code = document.getElementById("q-code").value.trim();
+      const theme = document.getElementById("q-theme").value.trim();
+      if (!quote || !code || !theme) { alert("Quote, code, and theme are required."); return; }
+      DATA.push({ study: study || "—", quote, code, theme });
+      for (const id of ["q-text", "q-code"]) document.getElementById(id).value = "";
+      render();
+    });
+
+    document.getElementById("btn-demo").addEventListener("click", () => {
+      DATA = JSON.parse(JSON.stringify(DEMO));
+      render();
+    });
+
+    document.getElementById("btn-export").addEventListener("click", () => {
+      // Group into hierarchy
+      const byTheme = {};
+      for (const r of DATA) {
+        byTheme[r.theme] ||= {};
+        byTheme[r.theme][r.code] ||= [];
+        byTheme[r.theme][r.code].push({ study: r.study, quote: r.quote });
+      }
+      const blob = new Blob([JSON.stringify(byTheme, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "thematic_synthesis.json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    });
+
+    document.getElementById("btn-clear").addEventListener("click", () => { DATA = []; render(); });
+
+    function drawTree() {
+      const svg = document.getElementById("tree");
+      const byTheme = {};
+      for (const r of DATA) {
+        byTheme[r.theme] ||= {};
+        byTheme[r.theme][r.code] ||= 0;
+        byTheme[r.theme][r.code]++;
+      }
+      const themes = Object.keys(byTheme);
+      if (themes.length === 0) {
+        svg.innerHTML = `<text x="400" y="250" text-anchor="middle" fill="currentColor" opacity="0.5" font-size="14">Add entries to see the theme tree.</text>`;
+        return;
+      }
+      // Layout: root in middle-left; themes stack vertically; codes fan out to the right of their theme
+      const W = 800;
+      let totalCodes = 0;
+      const themeSizes = themes.map(t => Object.keys(byTheme[t]).length);
+      totalCodes = themeSizes.reduce((a, b) => a + b, 0);
+      const H = Math.max(500, 50 + totalCodes * 32 + 30);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+
+      const padT = 30, rootX = 40;
+      const themeX = 230, codeX = 500;
+      let yCursor = padT;
+
+      // root label
+      svg.innerHTML += `<rect x="${rootX}" y="${padT + totalCodes * 16 - 20}" width="150" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/>`;
+      svg.innerHTML += `<text x="${rootX + 75}" y="${padT + totalCodes * 16 + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">Synthesis</text>`;
+
+      themes.forEach((theme, ti) => {
+        const codes = Object.entries(byTheme[theme]);
+        const themeY = yCursor + (codes.length - 1) * 16;
+        // connect root to theme
+        svg.innerHTML += `<path d="M${rootX + 150},${padT + totalCodes * 16} C${rootX + 180},${padT + totalCodes * 16} ${themeX - 20},${themeY} ${themeX},${themeY}" fill="none" stroke="currentColor" opacity="0.35"/>`;
+        svg.innerHTML += `<rect x="${themeX}" y="${themeY - 14}" width="230" height="28" rx="5" fill="none" stroke="var(--theme)"/>`;
+        svg.innerHTML += `<text x="${themeX + 115}" y="${themeY + 4}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--theme)">${theme}</text>`;
+        codes.forEach(([code, count], ci) => {
+          const codeY = yCursor + ci * 32;
+          svg.innerHTML += `<path d="M${themeX + 230},${themeY} C${themeX + 250},${themeY} ${codeX - 20},${codeY} ${codeX},${codeY}" fill="none" stroke="currentColor" opacity="0.25"/>`;
+          svg.innerHTML += `<rect x="${codeX}" y="${codeY - 12}" width="240" height="24" rx="4" fill="var(--accent-soft)" opacity="0.5"/>`;
+          svg.innerHTML += `<text x="${codeX + 8}" y="${codeY + 4}" font-size="11" fill="var(--ink)">${code}</text>`;
+          svg.innerHTML += `<text x="${codeX + 232}" y="${codeY + 4}" text-anchor="end" font-size="10" fill="var(--muted)">×${count}</text>`;
+        });
+        yCursor += Math.max(codes.length * 32, 40);
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

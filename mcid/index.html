@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Minimum clinically important difference (MCID) estimation — distribution-based and anchor-based — plus non-inferiority margin derivation.">
+  <meta name="color-scheme" content="light dark">
+  <title>MCID + Non-inferiority margin</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 0.5rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MCID &amp; Non-inferiority margin</h1>
+    <p>Estimate the minimum clinically important difference (MCID) via distribution- and anchor-based methods, then derive a non-inferiority margin as a fraction of the MCID or of the active-comparator effect.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Inputs</h2>
+      <fieldset>
+        <legend>Distribution-based</legend>
+        <label><span class="lbl">Baseline SD</span><input id="d-sd" type="number" step="any" value="12"></label>
+        <label><span class="lbl">SEM (standard error of measurement)</span><input id="d-sem" type="number" step="any" value="5"><span class="hint">Used for 1·SEM and 1.96·SEM rules.</span></label>
+      </fieldset>
+      <fieldset>
+        <legend>Anchor-based (change by global-rating category)</legend>
+        <label><span class="lbl">Mean change in patients reporting "somewhat improved"</span>
+          <input id="a-somewhat" type="number" step="any" value="6.5"></label>
+        <label><span class="lbl">Mean change in "no change"</span>
+          <input id="a-none" type="number" step="any" value="0.5"></label>
+        <span class="hint">MCID = mean change in "somewhat improved" minus mean change in "no change" (Juniper 1994).</span>
+      </fieldset>
+      <fieldset>
+        <legend>Non-inferiority margin</legend>
+        <label><span class="lbl">Active-comparator effect vs placebo (historical)</span>
+          <input id="ni-hist" type="number" step="any" value="8"></label>
+        <label><span class="lbl">Preservation fraction (M1 → M2)</span>
+          <input id="ni-frac" type="number" step="any" min="0" max="1" value="0.5">
+          <span class="hint">FDA NI guidance: 50% preservation of the active comparator's effect is common.</span>
+        </label>
+      </fieldset>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Estimate</button>
+    </section>
+    <section class="panel">
+      <h2>Estimates</h2>
+      <table id="tbl">
+        <thead><tr><th>Method</th><th>Value</th><th>Rationale</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <h2 style="margin-top:0.7rem">Visual scale</h2>
+      <svg id="plot" viewBox="0 0 600 260" role="img" aria-label="Scale showing MCID and NI-margin estimates"></svg>
+      <div class="note"><strong>Use sensibly:</strong> MCID is context-dependent — it varies by baseline severity, direction of change, and the anchor used. Report more than one method and triangulate. For NI trials, the margin must be pre-specified and justified relative to the historical evidence base.</div>
+    </section>
+  </main>
+  <footer>
+    Distribution-based rules: Norman's 0.5·SD (Norman, Sloan &amp; Wyrwich, Med Care 2003); 1·SEM (Wyrwich 1999); 1.96·SEM ≈ 95% smallest detectable change. Anchor-based: Juniper EF et al., J Clin Epidemiol 1994. NI margin: ICH E10, FDA guidance on non-inferiority clinical trials (2016).
+  </footer>
+  <script>
+    function num(id) { return parseFloat(document.getElementById(id).value); }
+
+    function run() {
+      const sd = num("d-sd");
+      const sem = num("d-sem");
+      const somewhat = num("a-somewhat");
+      const none = num("a-none");
+      const hist = num("ni-hist");
+      const frac = num("ni-frac");
+
+      const rows = [];
+      if (Number.isFinite(sd)) {
+        rows.push({ m: "0.5·SD (Norman)", v: 0.5 * sd, rat: "Half a baseline SD; robust distribution anchor." });
+        rows.push({ m: "0.3·SD", v: 0.3 * sd, rat: "Lower-bound effect detection; sometimes used as 'small' effect." });
+      }
+      if (Number.isFinite(sem)) {
+        rows.push({ m: "1·SEM", v: sem, rat: "One SEM; matches SD in highly reliable measures." });
+        rows.push({ m: "1.96·SEM (SDC)", v: 1.96 * sem, rat: "Smallest detectable change — outside test-retest noise." });
+      }
+      if (Number.isFinite(somewhat) && Number.isFinite(none)) {
+        rows.push({ m: "Anchor (Juniper)", v: somewhat - none, rat: "Mean change for 'somewhat improved' − 'no change'." });
+      }
+      if (Number.isFinite(hist) && Number.isFinite(frac)) {
+        rows.push({ m: `NI margin (${(frac * 100).toFixed(0)}% of active effect)`, v: (1 - frac) * hist, rat: "Worst acceptable loss vs active comparator." });
+      }
+
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
+      for (const r of rows) {
+        tbody.innerHTML += `<tr><td><code>${r.m}</code></td><td>${r.v.toFixed(2)}</td><td>${r.rat}</td></tr>`;
+      }
+      drawScale(rows);
+    }
+
+    function drawScale(rows) {
+      const svg = document.getElementById("plot");
+      const W = 600, H = Math.max(180, 30 + rows.length * 26 + 30);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+      const padL = 240, padR = 30;
+      const plotW = W - padL - padR;
+      const vals = rows.map(r => r.v);
+      const maxV = Math.max(1, ...vals.map(Math.abs));
+      const X = v => padL + ((v + maxV) / (2 * maxV)) * plotW;
+      // axis
+      svg.innerHTML += `<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + rows.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      svg.innerHTML += `<line x1="${padL}" y1="${10 + rows.length * 26}" x2="${padL + plotW}" y2="${10 + rows.length * 26}" stroke="currentColor" opacity="0.5"/>`;
+      rows.forEach((r, i) => {
+        const y = 20 + i * 26;
+        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.m}</text>`;
+        svg.innerHTML += `<rect x="${X(Math.min(0, r.v))}" y="${y - 5}" width="${Math.abs(X(r.v) - X(0))}" height="10" fill="var(--accent)" opacity="0.8"/>`;
+        svg.innerHTML += `<text x="${X(r.v) + (r.v >= 0 ? 6 : -6)}" y="${y + 4}" text-anchor="${r.v >= 0 ? 'start' : 'end'}" font-size="11" fill="currentColor">${r.v.toFixed(2)}</text>`;
+      });
+      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${10 + rows.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Units of the outcome scale</text>`;
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>

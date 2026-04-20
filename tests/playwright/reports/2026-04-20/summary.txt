@@ -15,6 +15,7 @@ pass                   AMSTAR-2
 pass                   Bayesian MA
 pass                   CINeMA (NMA confidence)
 pass                   Citation Dedup
+pass                   Component NMA
 pass                   Cumulative + Subgroup
 pass                   DTA SROC Explorer
 pass                   Effect-Size Converter
@@ -25,9 +26,11 @@ pass                   HSROC / Bivariate DTA
 pass                   Heterogeneity Explorer
 pass                   K-M IPD Reconstructor
 pass                   MA Workbench
+pass                   MCID & NI margin
 pass                   Median → Mean/SD
 pass                   Meta-Regression
 pass                   NMA Dose-Response
+pass                   Network MA (SUCRA)
 pass                   PET-PEESE + Trim-and-Fill
 pass                   PICO Formulator
 pass                   PRISMA 2020 Checklist
@@ -39,3 +42,4 @@ pass                   RoB 2
 pass                   RoB Traffic Light
 pass                   Search Strategy Translator
 pass                   TSA Calculator
+pass                   Thematic Synthesis

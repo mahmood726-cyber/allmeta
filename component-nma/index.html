@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Component network meta-analysis under an additive model (Welton 2009): decompose complex interventions into per-component effects.">
+  <meta name="color-scheme" content="light dark">
+  <title>Component NMA</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(340px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Component NMA</h1>
+    <p>Additive model for multi-component interventions (Welton et al., Am J Epidemiol 2009). Each intervention is a set of components (e.g., "drug + exercise + education"). The model estimates one effect per component; any combination's effect is the sum of its components.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span>Contrasts — <code>intervention A components | intervention B components | effect | SE</code></span>
+        <textarea id="src">drug+exercise | control | -0.45 | 0.12
+drug | control | -0.30 | 0.10
+exercise | control | -0.20 | 0.11
+drug+education | control | -0.40 | 0.14
+drug+exercise+education | control | -0.55 | 0.15
+exercise+education | control | -0.30 | 0.13
+drug | exercise | -0.12 | 0.10
+drug+exercise | drug | -0.18 | 0.11</textarea>
+        <span class="hint">Components separated by <code>+</code>. Use <code>control</code> for no intervention.</span>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit</button>
+    </section>
+    <section class="panel">
+      <h2>Component effects</h2>
+      <table id="comp-tbl">
+        <thead><tr><th>Component</th><th>Effect</th><th>SE</th><th>95% CI</th></tr></thead>
+        <tbody id="comp-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.6rem">Implied intervention effects vs control</h2>
+      <table id="int-tbl">
+        <thead><tr><th>Intervention</th><th>Effect</th><th>95% CI</th></tr></thead>
+        <tbody id="int-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.6rem">Forest</h2>
+      <svg id="forest" viewBox="0 0 600 360" role="img" aria-label="Forest plot of component and intervention effects"></svg>
+      <div class="note"><strong>Assumption:</strong> component effects are additive on the outcome scale you used. If interactions between components matter (synergy / antagonism), add interaction terms (e.g., include <code>drug&amp;exercise</code> as a separate component) or use a full interaction model.</div>
+    </section>
+  </main>
+  <footer>
+    Welton NJ, Caldwell DM, Adamopoulos E, Vedhara K. Mixed treatment comparison meta-analysis of complex interventions: psychological interventions in coronary heart disease. Am J Epidemiol 2009;169:1158-1165.
+  </footer>
+  <script>
+    // Parse: arm A components, arm B components, effect, SE
+    function parse(text) {
+      return text.trim().split(/\n/).map(l => {
+        const parts = l.split(/\|/).map(s => s.trim());
+        if (parts.length < 4) return null;
+        const te = parseFloat(parts[2]), se = parseFloat(parts[3]);
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        const splitArm = s => s.toLowerCase() === "control" ? [] : s.split(/\s*\+\s*/).map(c => c.toLowerCase());
+        return { A: splitArm(parts[0]), B: splitArm(parts[1]), te, se };
+      }).filter(Boolean);
+    }
+
+    // --- matrix math (copy from NMA tool) ---
+    function zeros(n, m) { return Array.from({ length: n }, () => Array(m).fill(0)); }
+    function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
+    function matMul(A, B) {
+      const n = A.length, m = B[0].length, k = B.length;
+      const C = zeros(n, m);
+      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] += A[i][p] * B[p][j];
+      return C;
+    }
+    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => s + x * v[j], 0)); }
+    function invert(M) {
+      const n = M.length;
+      const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+      for (let i = 0; i < n; i++) {
+        let piv = A[i][i];
+        if (Math.abs(piv) < 1e-14) {
+          for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > 1e-14) { [A[i], A[k]] = [A[k], A[i]]; piv = A[i][i]; break; }
+        }
+        if (Math.abs(piv) < 1e-14) throw new Error("singular — check that components are identifiable from the contrasts");
+        for (let j = 0; j < 2 * n; j++) A[i][j] /= piv;
+        for (let k = 0; k < n; k++) if (k !== i) {
+          const f = A[k][i];
+          for (let j = 0; j < 2 * n; j++) A[k][j] -= f * A[i][j];
+        }
+      }
+      return A.map(r => r.slice(n));
+    }
+
+    function fit(rows) {
+      // Collect components
+      const compsSet = new Set();
+      for (const r of rows) { for (const c of r.A) compsSet.add(c); for (const c of r.B) compsSet.add(c); }
+      const comps = [...compsSet].sort();
+      const p = comps.length;
+      // Design: each row has +1 per component in A, -1 per component in B
+      const X = zeros(rows.length, p);
+      rows.forEach((r, i) => {
+        for (const c of r.A) X[i][comps.indexOf(c)] += 1;
+        for (const c of r.B) X[i][comps.indexOf(c)] -= 1;
+      });
+      const y = rows.map(r => r.te);
+      const w = rows.map(r => 1 / (r.se * r.se));
+      const Xt = transpose(X);
+      function wls(weights) {
+        const W = weights;
+        const XtW = Xt.map(r => r.map((x, j) => x * W[j]));
+        const XtWX = matMul(XtW, X);
+        const XtWy = matVec(XtW, y);
+        const cov = invert(XtWX);
+        const beta = matVec(cov, XtWy);
+        return { beta, cov };
+      }
+      let { beta } = wls(w);
+      const res = y.map((yi, i) => yi - X[i].reduce((s, x, j) => s + x * beta[j], 0));
+      const Q = res.reduce((s, r, i) => s + w[i] * r * r, 0);
+      const df = Math.max(1, rows.length - p);
+      const sumW = w.reduce((a, b) => a + b, 0);
+      const sumW2 = w.reduce((a, b) => a + b * b, 0);
+      const tau2 = Math.max(0, (Q - df) / (sumW - sumW2 / sumW));
+      const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
+      const res2 = wls(wRE);
+      return { comps, beta: res2.beta, cov: res2.cov, tau2, Q, df };
+    }
+
+    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function run() {
+      const rows = parse(document.getElementById("src").value);
+      if (rows.length < 2) return;
+      let f;
+      try { f = fit(rows); }
+      catch (e) { alert(e.message); return; }
+
+      // Component table
+      const cBody = document.getElementById("comp-body");
+      cBody.innerHTML = "";
+      const compRows = f.comps.map((c, i) => {
+        const e = f.beta[i], se = Math.sqrt(f.cov[i][i]);
+        return { name: c, e, se, lo: e - 1.96 * se, hi: e + 1.96 * se };
+      });
+      for (const r of compRows) {
+        cBody.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+      }
+
+      // Implied intervention effects: all unique combinations present in input
+      const intSet = new Set();
+      for (const r of rows) {
+        if (r.A.length) intSet.add(r.A.slice().sort().join("+"));
+        if (r.B.length) intSet.add(r.B.slice().sort().join("+"));
+      }
+      const iBody = document.getElementById("int-body");
+      iBody.innerHTML = "";
+      const intRows = [...intSet].sort().map(name => {
+        const parts = name.split("+");
+        // sum of components; var = sum + 2·cov
+        let mean = 0, varSum = 0;
+        for (const p1 of parts) {
+          const i = f.comps.indexOf(p1); mean += f.beta[i]; varSum += f.cov[i][i];
+        }
+        for (let a = 0; a < parts.length; a++) for (let b = a + 1; b < parts.length; b++) {
+          const ia = f.comps.indexOf(parts[a]), ib = f.comps.indexOf(parts[b]);
+          varSum += 2 * f.cov[ia][ib];
+        }
+        const se = Math.sqrt(Math.max(varSum, 0));
+        return { name, e: mean, se, lo: mean - 1.96 * se, hi: mean + 1.96 * se };
+      });
+      for (const r of intRows) {
+        iBody.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+      }
+
+      drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
+    }
+
+    function drawForest(items) {
+      const svg = document.getElementById("forest");
+      const W = 600, H = Math.max(220, 40 + items.length * 26 + 30);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.innerHTML = "";
+      const padL = 220, padR = 30;
+      const plotW = W - padL - padR;
+      const allLo = items.map(r => r.lo), allHi = items.map(r => r.hi);
+      const lo = Math.min(0, ...allLo), hi = Math.max(0, ...allHi);
+      const pad = (hi - lo) * 0.1 || 0.5;
+      const X = x => padL + (x - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
+      const y0 = 30;
+      // zero line
+      svg.innerHTML += `<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + items.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      items.forEach((r, i) => {
+        const y = y0 + i * 26;
+        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor" ${r.kind === "component" ? 'font-weight="600"' : ""}>${r.kind === "component" ? "[C] " : ""}${r.name}</text>`;
+        svg.innerHTML += `<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>`;
+        const c = r.kind === "component" ? "var(--accent)" : "var(--warn)";
+        svg.innerHTML += `<rect x="${X(r.e) - 4}" y="${y - 4}" width="8" height="8" fill="${c}"/>`;
+      });
+      // axis
+      svg.innerHTML += `<line x1="${padL}" y1="${y0 + items.length * 26}" x2="${padL + plotW}" y2="${y0 + items.length * 26}" stroke="currentColor" opacity="0.5"/>`;
+      for (const t of [lo, 0, hi]) {
+        svg.innerHTML += `<text x="${X(t)}" y="${y0 + items.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`;
+      }
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  </script>
+</body>
+</html>
