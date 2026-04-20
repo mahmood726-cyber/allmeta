@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="One-command local R install for reproducing allmeta analyses with full CRAN packages including Stan, JAGS, and gemtc.">
+  <meta name="color-scheme" content="light dark">
+  <title>Local R Install</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.55; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.7rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); max-width: 56rem; margin: 0 auto; }
+    section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.3rem 1.5rem; margin-bottom: 1.5rem; }
+    section h2 { margin: 0 0 0.75rem; font-size: 1.05rem; font-weight: 700; }
+    section h3 { margin: 1rem 0 0.4rem; font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+    section p, section li { font-size: 0.93rem; }
+    pre { margin: 0.6rem 0; padding: 0.8rem 1rem; background: var(--input-bg); border: 1px solid var(--border);
+          border-radius: 6px; font: 0.84rem/1.5 "SF Mono", Consolas, monospace; overflow: auto; white-space: pre-wrap; }
+    code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+    button.copy { background: transparent; border: 1px solid var(--accent); color: var(--accent);
+                  padding: 0.15rem 0.55rem; border-radius: 4px; font-size: 0.76rem; cursor: pointer; float: right; margin-bottom: -1.3rem; }
+    button.copy:hover { background: var(--accent-soft); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; margin: 0.5rem 0; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; background: var(--accent); }
+    .pill.webr { background: var(--warn); }
+    .pill.local { background: var(--accent); }
+    a.button { display: inline-block; background: var(--accent); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.88rem; margin-right: 0.4rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Local R Install</h1>
+    <p>For tasks that genuinely need native R (Stan / JAGS MCMC, very large networks, custom priors), install R locally. This page is a one-stop recipe: install R, add the CRAN packages allmeta uses, and reproduce any analysis on your machine. WebR covers 90% of use cases in the browser — this is the 10%.</p>
+  </header>
+  <main>
+    <section>
+      <h2>When do I need local R?</h2>
+      <p>For the full capability matrix between browser-only, WebR, and local R:</p>
+      <table>
+        <thead><tr><th>Capability</th><th>Browser</th><th>WebR</th><th>Local R</th></tr></thead>
+        <tbody>
+          <tr><td>Pairwise / NMA / DTA / meta-regression</td><td>✓</td><td>✓ (real <code>metafor</code>/<code>netmeta</code>)</td><td>✓</td></tr>
+          <tr><td>Frequentist inconsistency (<code>netsplit</code>, <code>netheat</code>)</td><td>approx</td><td>✓ real</td><td>✓</td></tr>
+          <tr><td>Sensitivity (Copas, limit-MA)</td><td>approx</td><td>✓ real <code>metasens</code></td><td>✓</td></tr>
+          <tr><td>Exact Bayesian MA (<code>bayesmeta</code>)</td><td>—</td><td>✓</td><td>✓</td></tr>
+          <tr><td>Bayesian NMA with MCMC (<code>gemtc</code>, <code>multinma</code>)</td><td>—</td><td>—</td><td>✓ (needs JAGS/Stan)</td></tr>
+          <tr><td>Full HMC / NUTS (<code>rstan</code>, <code>brms</code>, <code>cmdstanr</code>)</td><td>—</td><td>—</td><td>✓</td></tr>
+          <tr><td>IPD models (<code>ipdmeta</code>, <code>nlme</code>)</td><td>—</td><td>partial</td><td>✓</td></tr>
+          <tr><td>Very large networks (&gt;40 treatments)</td><td>—</td><td>slow</td><td>✓</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:1rem">
+        <a class="button" href="../webr-studio/">Try WebR Studio first</a>
+        <a class="button" href="../">Back to hub</a>
+      </p>
+    </section>
+
+    <section>
+      <h2>Install R + core stack</h2>
+      <h3>Step 1 — base R</h3>
+      <p>Download from <a href="https://cran.r-project.org/">CRAN</a>. On Windows, also install <a href="https://cran.r-project.org/bin/windows/Rtools/">Rtools</a> so that packages with compiled code build correctly. Recommended R version: <code>≥ 4.3</code>.</p>
+      <h3>Step 2 — editor (optional but recommended)</h3>
+      <p><a href="https://posit.co/download/rstudio-desktop/">RStudio Desktop</a> (free) or <a href="https://quarto.org/">Quarto</a> for reproducible reports.</p>
+      <h3>Step 3 — the allmeta package set</h3>
+      <p>Copy this into your R console. It covers everything this hub does natively, plus the MCMC packages that only work locally:</p>
+      <pre id="pkg-script">button<button class="copy" data-target="pkg-script">Copy</button>
+# allmeta — full CRAN stack
+pkgs <- c(
+  # Pairwise + random-effects
+  "metafor", "meta", "metaSEM", "clubSandwich", "robumeta",
+  # Network meta-analysis
+  "netmeta", "gemtc", "multinma", "bnma",
+  # Diagnostic test accuracy
+  "mada", "CopulaDTA",
+  # Publication bias / sensitivity
+  "metasens", "puniform", "weightr", "dmetar",
+  # Bayesian
+  "bayesmeta", "brms", "baggr", "RoBMA",
+  # IPD
+  "ipdmeta", "ecoreg",
+  # Risk of bias / GRADE
+  "robvis", "metaumbrella",
+  # K-M reconstruction
+  "IPDfromKM",
+  # Screening / data formatting
+  "revtools", "synthesisr", "metagear"
+)
+install.packages(pkgs, dependencies = TRUE)
+# MCMC back-ends
+# JAGS: install from https://sourceforge.net/projects/mcmc-jags/
+# Stan / rstan:
+install.packages("rstan", repos = c("https://stan-dev.r-universe.dev", "https://cloud.r-project.org"))
+# Or cmdstanr + CmdStan:
+install.packages("cmdstanr", repos = c("https://stan-dev.r-universe.dev", "https://cloud.r-project.org"))
+cmdstanr::install_cmdstan()</pre>
+    </section>
+
+    <section>
+      <h2>Reproducing each allmeta app</h2>
+      <p>Every browser app in allmeta can be replicated in local R. Here are the one-liners:</p>
+
+      <h3><span class="pill local">Pairwise MA</span> equivalent to MA Workbench / Forest Plot / TruthCert</h3>
+      <pre>library(metafor)
+dat &lt;- data.frame(yi = c(0.25, 0.18, 0.40, 0.30, 0.12),
+                  sei = c(0.08, 0.10, 0.15, 0.09, 0.07))
+res &lt;- rma(yi = yi, sei = sei, data = dat, method = "REML", test = "knha")
+print(res); forest(res)</pre>
+
+      <h3><span class="pill local">NMA</span> equivalent to NMA Pro / Bayesian NMA / Inconsistency</h3>
+      <pre>library(netmeta)
+d &lt;- data.frame(treat1 = c("A","A","B","A","B","C"),
+                treat2 = c("B","C","C","D","D","D"),
+                TE     = c(-0.30, -0.20, 0.10, -0.50, -0.25, -0.35),
+                seTE   = c( 0.10,  0.12, 0.11,  0.15,  0.18,  0.14),
+                studlab= paste0("S", 1:6))
+nm &lt;- netmeta(TE, seTE, treat1, treat2, studlab, data = d, reference.group = "A", random = TRUE)
+print(nm); netsplit(nm); netheat(nm); netrank(nm)</pre>
+
+      <h3><span class="pill local">Bayesian NMA</span> equivalent to Network MA with SUCRA — real MCMC</h3>
+      <pre>library(gemtc)
+# Requires JAGS (install separately)
+net &lt;- mtc.network(data.re = d)  # d = per-comparison effect + se
+model &lt;- mtc.model(net, type = "consistency", link = "identity", likelihood = "normal")
+fit &lt;- mtc.run(model, n.adapt = 2000, n.iter = 20000, thin = 5, n.chain = 3)
+print(summary(fit)); rank.probability(fit); sucra(rank.probability(fit))</pre>
+
+      <h3><span class="pill local">DTA</span> equivalent to HSROC / DTA SROC</h3>
+      <pre>library(mada)
+d &lt;- data.frame(TP = c(85, 72, 110, 45, 92),
+                FP = c( 9, 11,  18,  6, 14),
+                FN = c(15, 18,  20,  8, 14),
+                TN = c(91, 99, 152, 41, 80))
+reit &lt;- reitsma(d); print(summary(reit)); plot(reit)</pre>
+
+      <h3><span class="pill local">Publication bias — Copas</span></h3>
+      <pre>library(meta); library(metasens)
+m &lt;- metagen(TE, seTE, data = d)
+co &lt;- copas(m); print(co); plot(co)</pre>
+
+      <h3><span class="pill local">Multi-level (3-level) MA</span></h3>
+      <pre>library(metafor)
+# data: study, outcome, yi, vi
+res &lt;- rma.mv(yi, V = vi, random = ~ 1 | study/outcome, data = d, method = "REML")
+print(res); summary(res)</pre>
+
+      <h3><span class="pill local">Risk of bias — RoB 2 / ROBINS-I / QUADAS-2</span></h3>
+      <pre>library(robvis)
+d &lt;- read.csv("your_rob2_assessments.csv")  # one row per study, columns per domain
+rob_traffic_light(data = d, tool = "ROB2")
+rob_summary(data = d, tool = "ROB2")</pre>
+
+      <h3><span class="pill local">K-M IPD reconstruction</span></h3>
+      <pre>library(IPDfromKM)
+# curve: data.frame(time, surv)
+# risk:  data.frame(time, nrisk)
+pre &lt;- preprocess(dat = curve, trisk = risk$time, nrisk = risk$nrisk)
+ipd &lt;- getIPD(pre, armID = 1, tot.events = 145)
+head(ipd)</pre>
+    </section>
+
+    <section>
+      <h2>MCMC back-ends</h2>
+      <h3>JAGS (for <code>gemtc</code>, <code>rjags</code>, <code>R2jags</code>, <code>multinma</code>)</h3>
+      <p>Download from <a href="https://sourceforge.net/projects/mcmc-jags/">mcmc-jags</a>. On Windows, JAGS auto-registers with R. On macOS with Homebrew: <code>brew install jags</code>. On Linux: <code>apt-get install jags</code>.</p>
+      <h3>Stan (for <code>rstan</code>, <code>brms</code>, <code>cmdstanr</code>, <code>bayesmeta</code>+Stan)</h3>
+      <p><code>cmdstanr</code> is the modern, recommended path. After <code>install.packages("cmdstanr")</code> run <code>cmdstanr::install_cmdstan()</code> which compiles Stan in the background (5-15 minutes first time). On Windows, Rtools provides the C++ toolchain.</p>
+      <h3>Verify</h3>
+      <pre>library(rstan)
+# Tiny HMC test
+fit &lt;- stan(model_code = "parameters { real y; } model { y ~ normal(0, 1); }", iter = 200)
+print(fit)</pre>
+    </section>
+
+    <section>
+      <h2>Reproducibility harness</h2>
+      <p>For every allmeta result you publish, save the exact R session that produced it:</p>
+      <pre>library(renv)
+renv::init()           # creates a lock-file of package versions
+renv::snapshot()       # call this after you finish the analysis
+# distribute your script + renv.lock so others can reproduce exactly</pre>
+      <p>Or use a Docker image: <code>rocker/verse</code> has R, RStudio, and the tidyverse pre-installed; add the allmeta stack on top.</p>
+    </section>
+  </main>
+  <footer>
+    This install recipe is plain R. Nothing here depends on allmeta. Every browser app in the hub corresponds to at least one line of R in the list above.
+  </footer>
+  <script>
+    document.querySelectorAll("button.copy").forEach(b => {
+      b.addEventListener("click", () => {
+        const target = document.getElementById(b.dataset.target);
+        const text = target.textContent.replace(/^button<button[^>]+>Copy<\/button>\n/, "");
+        navigator.clipboard.writeText(text);
+        b.textContent = "Copied!";
+        setTimeout(() => { b.textContent = "Copy"; }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>

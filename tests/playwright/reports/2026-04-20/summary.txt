@@ -7,9 +7,11 @@ fail-plot-missing      HTA Pro
 fail-plot-missing      IPD Meta-Pro
 fail-plot-missing      Kanban Lab
 fail-plot-missing      Living Meta
+fail-plot-missing      Local R Install
 fail-plot-missing      NMA Pro v8
 fail-plot-missing      PRISMA Screening
 fail-plot-missing      TruthCert Pairwise Pro
+fail-plot-missing      WebR Studio
 fail-plot-missing      WebR Validator
 pass                   AMSTAR-2
 pass                   Bayesian MA

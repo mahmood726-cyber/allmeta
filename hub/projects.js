@@ -1,5 +1,27 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "WebR Studio",
+    folder: "C:\\HTML apps\\webr-studio",
+    path: "./webr-studio/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "R / WASM",
+    summary: "Run real R in your browser via WebR. Curated templates for metafor, meta, netmeta, metasens, bayesmeta, and mada — genuine CRAN package output, no server. First load downloads ~30 MB.",
+    note: "Use for gold-standard validation and analyses the browser-native apps can only approximate.",
+    tags: ["webr", "r", "wasm", "metafor", "netmeta", "bayesmeta", "metasens", "mada"]
+  },
+  {
+    name: "Local R Install",
+    folder: "C:\\HTML apps\\local-install",
+    path: "./local-install/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "R / WASM",
+    summary: "One-stop recipe for installing R + the allmeta CRAN stack locally, including Stan / JAGS back-ends for real MCMC (gemtc, multinma, rstan, cmdstanr, brms, bayesmeta). Reproduces every browser app in native R.",
+    note: "For the 10% of tasks that need local compute.",
+    tags: ["r", "install", "stan", "jags", "local", "reproducibility"]
+  },
+  {
     name: "NMA Global Inconsistency",
     folder: "C:\\HTML apps\\nma-global-inconsistency",
     path: "./nma-global-inconsistency/index.html",

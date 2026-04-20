@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Run real R with metafor, netmeta, metasens, and bayesmeta in the browser via WebR. No server, no install.">
+  <meta name="color-scheme" content="light dark">
+  <title>WebR Studio</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --ok:#0d7a27; --ok-soft:#dff3e0;
+            --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --ok:#5bc47b; --ok-soft:#1e3a27;
+              --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    .status-badge { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; margin-left: 0.5rem; }
+    .status-badge.loading { background: var(--warn-soft); color: var(--warn); }
+    .status-badge.ready { background: var(--ok-soft); color: var(--ok); }
+    .status-badge.error { background: var(--warn-soft); color: var(--warn); }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    select, input, textarea { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; font-size: 0.86rem; }
+    textarea { min-height: 10rem; font-family: "SF Mono", Consolas, monospace; font-size: 0.82rem; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.86rem; cursor: pointer; }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    pre#r-output { margin: 0; padding: 0.8rem 1rem; background: var(--input-bg); border: 1px solid var(--border);
+                   border-radius: 6px; font: 0.84rem/1.5 "SF Mono", Consolas, monospace; overflow: auto; max-height: 38rem;
+                   white-space: pre-wrap; word-break: break-word; }
+    .plot-wrap { margin-top: 1rem; background: white; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; }
+    svg, canvas { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    .kbd-hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; }
+    .kbd-hint code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 3px; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .packages { font-size: 0.8rem; margin-top: 0.4rem; }
+    .packages span { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 4px; margin: 0.1rem 0.2rem 0.1rem 0; background: var(--accent-soft); color: var(--accent); font-family: "SF Mono", Consolas, monospace; font-size: 0.74rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WebR Studio <span id="status" class="status-badge loading">booting</span></h1>
+    <p>Real R, in your browser, via <a href="https://docs.r-wasm.org/webr/" style="color:var(--accent)">WebR</a>. Runs <code>metafor</code>, <code>meta</code>, <code>netmeta</code>, <code>metasens</code>, <code>bayesmeta</code>, and <code>mada</code> as genuine R packages — same output you'd get on your desktop.</p>
+    <div class="packages" id="packages"></div>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Template</h2>
+      <label><span class="lbl">Analysis</span>
+        <select id="tpl">
+          <optgroup label="metafor">
+            <option value="rma" selected>Random-effects MA (REML)</option>
+            <option value="rma-mh">Mantel-Haenszel (binary)</option>
+            <option value="rma-peto">Peto one-step OR</option>
+            <option value="rma-mv">Multi-level (rma.mv)</option>
+            <option value="metareg">Meta-regression</option>
+            <option value="influence">Influence diagnostics</option>
+            <option value="trimfill">Trim-and-fill</option>
+          </optgroup>
+          <optgroup label="netmeta">
+            <option value="netmeta">NMA consistency + SUCRA</option>
+            <option value="netsplit">Node-splitting inconsistency</option>
+            <option value="netheat">Net-heat contribution plot</option>
+            <option value="bucher">Bucher indirect</option>
+          </optgroup>
+          <optgroup label="metasens">
+            <option value="copas">Copas selection model</option>
+            <option value="limitmeta">Limit meta-analysis (Rücker)</option>
+          </optgroup>
+          <optgroup label="bayesmeta">
+            <option value="bayesmeta">Bayesian MA (exact posterior)</option>
+          </optgroup>
+          <optgroup label="mada">
+            <option value="reitsma">Bivariate DTA (reitsma)</option>
+          </optgroup>
+        </select>
+      </label>
+      <label><span class="lbl">Input data (see hint)</span>
+        <textarea id="data"></textarea>
+        <span class="hint" id="data-hint">—</span>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%" disabled>Run in R</button>
+      <div class="kbd-hint">Tip: edit the R code below to customise the call. <code>Ctrl+Enter</code> runs.</div>
+      <h2 style="margin-top:1rem">R code</h2>
+      <textarea id="r-code" style="min-height:12rem" spellcheck="false"></textarea>
+      <div class="note" id="first-load-note" style="display:none"><strong>First run:</strong> WebR downloads ~30 MB and installs R packages on demand. Subsequent runs are instant (cached by the browser).</div>
+    </section>
+    <section class="panel">
+      <h2>Output</h2>
+      <pre id="r-output">Waiting for WebR to initialise…</pre>
+      <div class="plot-wrap" id="plot-wrap" style="display:none">
+        <h2 style="margin-top:0">Plot</h2>
+        <div id="plot-host"></div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    WebR (<code>webr.r-wasm.org</code>) is a full R distribution compiled to WebAssembly. First load fetches ~30 MB; packages are installed from the <code>webr</code> binary repo on first use. Everything runs locally — your data never leaves the browser. For very large models or real MCMC (Stan), see the <a href="../local-install/">Local R Install</a> recipe.
+  </footer>
+  <script type="module">
+    const statusEl = document.getElementById("status");
+    const outEl = document.getElementById("r-output");
+    const plotWrap = document.getElementById("plot-wrap");
+    const plotHost = document.getElementById("plot-host");
+    const btnRun = document.getElementById("btn-run");
+    const firstLoadNote = document.getElementById("first-load-note");
+
+    const TEMPLATES = {
+      rma: {
+        hint: "Effect, SE, label — one per line.",
+        data: `0.25, 0.08, Smith
+0.18, 0.10, Jones
+0.40, 0.15, Khan
+0.30, 0.09, Lee
+0.12, 0.07, Park
+0.55, 0.20, Garcia
+0.22, 0.08, Chen
+0.32, 0.12, Ahmed
+0.45, 0.17, Brown
+0.28, 0.10, Davis`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+res <- rma(yi = d$te, sei = d$se, method = "REML", test = "knha", slab = d$label)
+print(res)
+cat("\\nHeterogeneity:\\n"); cat("I^2 =", round(res$I2, 1), "%\\n")
+cat("Prediction interval:\\n"); print(predict(res))`,
+        parse: parseTESELabel,
+      },
+      "rma-mh": {
+        hint: "events1, n1, events2, n2, label — one per line.",
+        data: `3, 500, 8, 500, Study A
+1, 200, 5, 200, Study B
+0, 150, 4, 150, Study C
+2, 400, 6, 400, Study D
+4, 600, 10, 600, Study E`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+res <- rma.mh(ai = d$e1, n1i = d$n1, ci = d$e2, n2i = d$n2, measure = "OR", slab = d$label)
+print(res)`,
+        parse: parse2x2,
+      },
+      "rma-peto": {
+        hint: "events1, n1, events2, n2, label — one per line.",
+        data: `3, 500, 8, 500, Study A
+1, 200, 5, 200, Study B
+0, 150, 4, 150, Study C
+2, 400, 6, 400, Study D
+4, 600, 10, 600, Study E`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+res <- rma.peto(ai = d$e1, n1i = d$n1, ci = d$e2, n2i = d$n2, slab = d$label)
+print(res)`,
+        parse: parse2x2,
+      },
+      "rma-mv": {
+        hint: "study, effect, SE, label — multiple rows per study allowed.",
+        data: `1, 0.35, 0.12, outA
+1, 0.28, 0.11, outB
+1, 0.40, 0.14, outC
+2, 0.18, 0.09, primary
+2, 0.22, 0.10, secondary
+3, 0.50, 0.15, a
+3, 0.48, 0.14, b
+3, 0.55, 0.17, c
+4, 0.10, 0.08, main
+5, 0.25, 0.11, main
+5, 0.30, 0.13, sub`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+d$effect <- seq_len(nrow(d))
+res <- rma.mv(yi = te, V = se^2, random = ~ 1 | study/effect, data = d, method = "REML")
+print(res)
+cat("\\nVariance decomposition:\\n"); print(res$sigma2)`,
+        parse: parseMulti,
+      },
+      metareg: {
+        hint: "effect, SE, moderator, label",
+        data: `0.25, 0.08, 45, Smith
+0.18, 0.10, 38, Jones
+0.40, 0.15, 62, Khan
+0.30, 0.09, 55, Lee
+0.12, 0.07, 30, Park
+0.55, 0.20, 70, Garcia
+0.22, 0.08, 42, Chen
+0.32, 0.12, 58, Ahmed`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+res <- rma(yi = te, sei = se, mods = ~ mod, data = d, slab = label, method = "REML", test = "knha")
+print(res)
+cat("\\nR^2 =", round(res$R2, 1), "%\\n")`,
+        parse: parseTESEmodLabel,
+      },
+      influence: {
+        hint: "effect, SE, label",
+        data: `0.25, 0.08, Smith
+0.18, 0.10, Jones
+0.40, 0.15, Khan
+0.30, 0.09, Lee
+0.12, 0.07, Park
+0.85, 0.09, Outlier
+0.22, 0.08, Chen`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+res <- rma(yi = te, sei = se, data = d, slab = label)
+inf <- influence(res)
+print(inf)`,
+        parse: parseTESELabel,
+      },
+      trimfill: {
+        hint: "effect, SE",
+        data: `0.25, 0.08
+0.18, 0.10
+0.40, 0.15
+0.30, 0.09
+0.12, 0.07
+0.55, 0.20
+0.22, 0.08`,
+        code: () => `library(metafor)
+d <- .allmeta.data
+res <- rma(yi = te, sei = se, data = d)
+tf <- trimfill(res)
+print(tf)
+cat("\\n", tf$k0, "studies imputed (", tf$side, ").\\n", sep="")`,
+        parse: parseTESE,
+      },
+      netmeta: {
+        hint: "treatmentA, treatmentB, effect, SE, study",
+        data: `A, B, -0.30, 0.10, S1
+A, C, -0.20, 0.12, S2
+B, C, 0.10, 0.11, S3
+A, D, -0.50, 0.15, S4
+B, D, -0.25, 0.18, S5
+C, D, -0.35, 0.14, S6
+A, B, -0.32, 0.08, S7`,
+        code: () => `library(netmeta)
+d <- .allmeta.data
+res <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, data = d,
+               reference.group = "A", sm = "SMD", fixed = FALSE, random = TRUE)
+print(res)
+cat("\\nSUCRA:\\n"); print(netrank(res, small.values = "good"))`,
+        parse: parseContrasts,
+        packages: ["meta", "netmeta"],
+      },
+      netsplit: {
+        hint: "treatmentA, treatmentB, effect, SE, study",
+        data: `A, B, -0.30, 0.10, S1
+A, C, -0.20, 0.12, S2
+B, C, 0.10, 0.11, S3
+A, D, -0.50, 0.15, S4
+B, D, -0.25, 0.18, S5
+C, D, -0.35, 0.14, S6
+A, B, -0.32, 0.08, S7`,
+        code: () => `library(netmeta)
+d <- .allmeta.data
+nm <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, data = d, sm = "SMD", random = TRUE)
+ns <- netsplit(nm)
+print(ns)`,
+        parse: parseContrasts,
+        packages: ["meta", "netmeta"],
+      },
+      netheat: {
+        hint: "treatmentA, treatmentB, effect, SE, study",
+        data: `A, B, -0.30, 0.10, S1
+A, C, -0.20, 0.12, S2
+B, C, 0.10, 0.11, S3
+A, D, -0.50, 0.15, S4
+B, D, -0.25, 0.18, S5
+C, D, -0.35, 0.14, S6`,
+        code: () => `library(netmeta)
+d <- .allmeta.data
+nm <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, data = d, sm = "SMD", random = TRUE)
+netheat(nm)`,
+        parse: parseContrasts,
+        plotsOn: true,
+        packages: ["meta", "netmeta"],
+      },
+      bucher: {
+        hint: "treatmentA, treatmentB, effect, SE, study — for A-vs-B direct-effect combination",
+        data: `A, C, -0.30, 0.10, Smith
+B, C, -0.18, 0.12, Jones`,
+        code: () => `library(netmeta)
+d <- .allmeta.data
+res <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, data = d, sm = "SMD")
+print(res)`,
+        parse: parseContrasts,
+        packages: ["meta", "netmeta"],
+      },
+      copas: {
+        hint: "effect, SE",
+        data: `0.25, 0.08
+0.18, 0.10
+0.40, 0.15
+0.30, 0.09
+0.12, 0.07
+0.55, 0.20
+0.22, 0.08
+0.32, 0.12
+0.45, 0.17
+0.28, 0.10`,
+        code: () => `library(meta)
+library(metasens)
+d <- .allmeta.data
+m <- metagen(TE = te, seTE = se, data = d)
+res <- copas(m)
+print(res)`,
+        parse: parseTESE,
+        packages: ["meta", "metasens"],
+      },
+      limitmeta: {
+        hint: "effect, SE",
+        data: `0.25, 0.08
+0.18, 0.10
+0.40, 0.15
+0.30, 0.09
+0.12, 0.07
+0.55, 0.20
+0.22, 0.08`,
+        code: () => `library(meta)
+library(metasens)
+d <- .allmeta.data
+m <- metagen(TE = te, seTE = se, data = d)
+res <- limitmeta(m)
+print(res)`,
+        parse: parseTESE,
+        packages: ["meta", "metasens"],
+      },
+      bayesmeta: {
+        hint: "effect, SE, label",
+        data: `0.25, 0.08, Smith
+0.18, 0.10, Jones
+0.40, 0.15, Khan
+0.30, 0.09, Lee
+0.12, 0.07, Park`,
+        code: () => `library(bayesmeta)
+d <- .allmeta.data
+res <- bayesmeta(y = d$te, sigma = d$se, labels = d$label,
+                 mu.prior = c(0, 100),
+                 tau.prior = function(t) dhalfnormal(t, scale = 1))
+print(res)
+cat("\\nPosterior mean (mu):", round(res$summary["median", "mu"], 3), "\\n")
+cat("Prediction interval:\\n"); print(res$summary[c("95% lower", "95% upper"), "theta"])`,
+        parse: parseTESELabel,
+        packages: ["bayesmeta"],
+      },
+      reitsma: {
+        hint: "TP, FP, FN, TN, label",
+        data: `85, 9, 15, 91, Smith
+72, 11, 18, 99, Jones
+110, 18, 20, 152, Khan
+45, 6, 8, 41, Lee
+92, 14, 14, 80, Park`,
+        code: () => `library(mada)
+d <- .allmeta.data
+res <- reitsma(d, formula = cbind(tsens, tfpr) ~ 1)
+print(summary(res))`,
+        parse: parseDTA,
+        packages: ["mvmeta", "mada"],
+      },
+    };
+
+    function parseTESE(text) {
+      return text.trim().split(/\n/).map(l => {
+        const p = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(p[0]), se = parseFloat(p[1]);
+        if (!Number.isFinite(te) || !Number.isFinite(se)) return null;
+        return { te, se };
+      }).filter(Boolean);
+    }
+    function parseTESELabel(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const p = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(p[0]), se = parseFloat(p[1]);
+        if (!Number.isFinite(te) || !Number.isFinite(se)) return null;
+        return { te, se, label: p[2] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+    function parseTESEmodLabel(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const p = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(p[0]), se = parseFloat(p[1]), mod = parseFloat(p[2]);
+        if (![te, se, mod].every(Number.isFinite)) return null;
+        return { te, se, mod, label: p[3] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+    function parse2x2(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const p = l.split(/,/).map(s => s.trim());
+        const e1 = parseInt(p[0], 10), n1 = parseInt(p[1], 10), e2 = parseInt(p[2], 10), n2 = parseInt(p[3], 10);
+        if ([e1, n1, e2, n2].some(v => !Number.isFinite(v))) return null;
+        return { e1, n1, e2, n2, label: p[4] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+    function parseMulti(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const p = l.split(/,/).map(s => s.trim());
+        const study = p[0], te = parseFloat(p[1]), se = parseFloat(p[2]);
+        if (!study || !Number.isFinite(te) || !Number.isFinite(se)) return null;
+        return { study, te, se, label: p[3] || "" };
+      }).filter(Boolean);
+    }
+    function parseContrasts(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const p = l.split(/,/).map(s => s.trim());
+        const te = parseFloat(p[2]), se = parseFloat(p[3]);
+        if (!p[0] || !p[1] || !Number.isFinite(te) || !Number.isFinite(se)) return null;
+        return { A: p[0], B: p[1], te, se, study: p[4] || `S${i + 1}` };
+      }).filter(Boolean);
+    }
+    function parseDTA(text) {
+      return text.trim().split(/\n/).map((l, i) => {
+        const p = l.split(/,/).map(s => s.trim());
+        const TP = +p[0], FP = +p[1], FN = +p[2], TN = +p[3];
+        if ([TP, FP, FN, TN].some(v => !Number.isFinite(v))) return null;
+        const tsens = TP / (TP + FN), tfpr = FP / (FP + TN);
+        return { TP, FP, FN, TN, tsens, tfpr, label: p[4] || `Study ${i + 1}` };
+      }).filter(Boolean);
+    }
+
+    // Build a WebR data frame from parsed JSON.
+    function toRDataFrame(rows) {
+      const keys = Object.keys(rows[0]);
+      const cols = keys.map(k => {
+        const vals = rows.map(r => r[k]);
+        // Quote strings; leave numbers as literals
+        if (vals.every(v => typeof v === "number")) return `${k} = c(${vals.join(",")})`;
+        return `${k} = c(${vals.map(v => JSON.stringify(v)).join(",")})`;
+      });
+      return `.allmeta.data <- data.frame(${cols.join(", ")}, stringsAsFactors = FALSE)`;
+    }
+
+    // UI glue
+    function updateTemplate() {
+      const key = document.getElementById("tpl").value;
+      const tpl = TEMPLATES[key];
+      document.getElementById("data").value = tpl.data;
+      document.getElementById("data-hint").textContent = tpl.hint;
+      document.getElementById("r-code").value = tpl.code();
+    }
+    document.getElementById("tpl").addEventListener("change", updateTemplate);
+    updateTemplate();
+
+    // Ctrl+Enter to run
+    document.getElementById("r-code").addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); btnRun.click(); }
+    });
+    document.getElementById("data").addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); btnRun.click(); }
+    });
+
+    // WebR boot
+    let webR = null;
+    const loadedPkgs = new Set();
+
+    async function boot() {
+      try {
+        firstLoadNote.style.display = "block";
+        outEl.textContent = "Fetching WebR runtime…";
+        const { WebR } = await import("https://webr.r-wasm.org/latest/webr.mjs");
+        webR = new WebR({ interactive: false });
+        await webR.init();
+        outEl.textContent = "WebR ready. Click 'Run in R' to install packages and run the selected template.";
+        statusEl.textContent = "ready";
+        statusEl.className = "status-badge ready";
+        btnRun.disabled = false;
+        document.getElementById("packages").textContent = "Bundled R + CRAN binary repo. Packages install on first use.";
+        firstLoadNote.style.display = "none";
+      } catch (err) {
+        statusEl.textContent = "error";
+        statusEl.className = "status-badge error";
+        outEl.textContent = "Failed to load WebR:\n" + String(err) + "\n\nCheck your network; WebR loads from https://webr.r-wasm.org/.";
+      }
+    }
+
+    async function ensurePackages(list) {
+      if (!list) return;
+      const missing = list.filter(p => !loadedPkgs.has(p));
+      if (missing.length === 0) return;
+      statusEl.textContent = "installing " + missing.join(", ");
+      statusEl.className = "status-badge loading";
+      await webR.installPackages(missing, { quiet: true });
+      missing.forEach(p => loadedPkgs.add(p));
+      statusEl.textContent = "ready";
+      statusEl.className = "status-badge ready";
+    }
+
+    btnRun.addEventListener("click", async () => {
+      if (!webR) return;
+      const key = document.getElementById("tpl").value;
+      const tpl = TEMPLATES[key];
+      const parsed = tpl.parse(document.getElementById("data").value);
+      if (parsed.length === 0) { outEl.textContent = "No valid rows parsed from input."; return; }
+      const dfCode = toRDataFrame(parsed);
+      const userCode = document.getElementById("r-code").value;
+
+      outEl.textContent = "Running…";
+      plotWrap.style.display = "none";
+      plotHost.innerHTML = "";
+
+      try {
+        await ensurePackages(["metafor", ...(tpl.packages || [])]);
+        statusEl.textContent = "running"; statusEl.className = "status-badge loading";
+        // Capture stdout
+        const shelter = await new webR.Shelter();
+        await webR.evalR(dfCode);
+        // Optional plot capture: open SVG device, run plot code, close, read file
+        const wantsPlot = /plot\s*\(|hist\s*\(|forest\s*\(|funnel\s*\(|baujat\s*\(|netgraph\s*\(|netheat\s*\(/.test(userCode);
+        if (wantsPlot) {
+          await webR.evalR(`svg("/tmp/plot.svg", width = 8, height = 6)`);
+        }
+        const res = await shelter.captureR(userCode, { withAutoprint: true });
+        if (wantsPlot) {
+          try {
+            await webR.evalR(`dev.off()`);
+            const fs = await webR.FS.readFile("/tmp/plot.svg");
+            const svg = new TextDecoder().decode(fs);
+            plotHost.innerHTML = svg;
+            plotWrap.style.display = "block";
+          } catch (_) { /* no plot produced */ }
+        }
+        const out = res.output.filter(x => x.type === "stdout" || x.type === "stderr")
+                             .map(x => x.data).join("\n");
+        outEl.textContent = out || "(no textual output)";
+        await shelter.purge();
+        statusEl.textContent = "ready"; statusEl.className = "status-badge ready";
+      } catch (err) {
+        outEl.textContent = "R error:\n" + String(err);
+        statusEl.textContent = "ready"; statusEl.className = "status-badge ready";
+      }
+    });
+
+    boot();
+  </script>
+</body>
+</html>
