@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-03-01T12:37:08.810Z",
+  "runs_per_model": 12,
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "models": [
+    {
+      "model": "markov_age_dependent",
+      "runs": 12,
+      "unique_hashes": 1,
+      "first_hash": "ed8dff5a482b96330749ab759cfe08c4587cd38295656e557191a640b6980386",
+      "passed": true
+    },
+    {
+      "model": "markov_simple",
+      "runs": 12,
+      "unique_hashes": 1,
+      "first_hash": "dad0aa2d5f578850f9957bace8d578af439c83f4187b3cadcaf6c74d95eb142a",
+      "passed": true
+    },
+    {
+      "model": "psa_demo",
+      "runs": 12,
+      "unique_hashes": 1,
+      "first_hash": "c630e4ee82318617ef7e57831932a33b42103a639945698b01c44bdf3a4e702e",
+      "passed": true
+    }
+  ]
+}

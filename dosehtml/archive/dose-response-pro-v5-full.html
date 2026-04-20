@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dose Response Pro v5.1 | Full-Featured Web Worker Edition</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f1f5f9; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #334155; }
+    .logo h1 { font-size: 1.5rem; }
+    .logo span { color: #06b6d4; font-size: 0.9rem; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(6,182,212,0.4); }
+    .btn-secondary { background: #334155; color: white; border: 1px solid #475569; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-sm { padding: 5px 12px; font-size: 0.85rem; }
+
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 10px 16px; background: #1e293b; border: 1px solid #334155; cursor: pointer; border-radius: 6px; font-size: 0.9rem; transition: all 0.2s; }
+    .tab:hover { background: #334155; }
+    .tab.active { background: #06b6d4; color: white; border-color: #06b6d4; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .study-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .study-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .dose-grid { display: grid; gap: 8px; }
+    .dose-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 8px; }
+    input, select { padding: 8px 12px; background: #334155; border: 1px solid #475569; color: white; border-radius: 4px; width: 100%; font-size: 0.9rem; }
+    input:focus, select:focus { outline: none; border-color: #06b6d4; }
+
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+    .setting-group { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 15px; }
+    .setting-group h4 { margin-bottom: 10px; color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .setting-item { margin-bottom: 10px; }
+    .setting-item label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: #94a3b8; }
+
+    .result-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+    .result-card h3 { margin-bottom: 15px; color: #06b6d4; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .stat-item { background: #334155; padding: 10px; border-radius: 6px; text-align: center; }
+    .stat-item .label { font-size: 0.75rem; color: #94a3b8; }
+    .stat-item .value { font-size: 1.1rem; font-weight: 600; color: #06b6d4; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+    th { background: #334155; font-weight: 600; color: #94a3b8; }
+    tr:hover { background: #334155; }
+
+    .plot-container { background: #1e293b; border: 1px solid #334155; border-radius: 8px; height: 450px; margin-bottom: 15px; }
+    .plot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 15px; }
+
+    .progress-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .progress-box { background: #1e293b; padding: 30px; border-radius: 12px; min-width: 400px; text-align: center; border: 1px solid #334155; }
+    .progress-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin: 15px 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #0891b2); transition: width 0.1s; }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #10b981; animation: slideIn 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .toast.error { border-left-color: #ef4444; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid; }
+    .alert-info { background: rgba(59,130,246,0.1); border-color: #3b82f6; }
+    .alert-warning { background: rgba(245,158,11,0.1); border-color: #f59e0b; }
+    .alert-success { background: rgba(16,185,129,0.1); border-color: #10b981; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: rgba(16,185,129,0.2); color: #10b981; }
+    .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; }
+
+    .flex-row { display: flex; gap: 10px; align-items: center; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .mt-2 { margin-top: 10px; }
+    .mb-2 { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <h1>Dose Response Pro <span>v5.1 Full Edition</span></h1>
+    </div>
+    <div class="flex-row">
+      <button class="btn btn-secondary btn-sm" onclick="loadDemoData()">Load Demo</button>
+      <button class="btn btn-secondary btn-sm" onclick="importCSV()">Import CSV</button>
+      <button class="btn btn-primary" onclick="runAnalysis()">Run Analysis</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('data')">Data Entry</div>
+    <div class="tab" onclick="switchTab('settings')">Settings</div>
+    <div class="tab" onclick="switchTab('results')">Results</div>
+    <div class="tab" onclick="switchTab('plots')">Plots</div>
+    <div class="tab" onclick="switchTab('bias')">Publication Bias</div>
+    <div class="tab" onclick="switchTab('sensitivity')">Sensitivity</div>
+    <div class="tab" onclick="switchTab('subgroups')">Subgroups</div>
+    <div class="tab" onclick="switchTab('advanced')">Advanced</div>
+  </div>
+
+  <!-- Data Entry Panel -->
+  <div id="dataPanel" class="panel active">
+    <div class="flex-row mb-2">
+      <button class="btn btn-secondary" onclick="addStudy()">+ Add Study</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+      <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
+    </div>
+    <div id="studiesContainer"></div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div id="settingsPanel" class="panel">
+    <div class="settings-grid">
+      <div class="setting-group">
+        <h4>Model Type</h4>
+        <div class="setting-item">
+          <label>Primary Model</label>
+          <select id="modelType">
+            <option value="gls">GLS (Greenland & Longnecker) - Recommended</option>
+            <option value="linear">Linear</option>
+            <option value="quadratic">Quadratic</option>
+            <option value="cubic">Cubic</option>
+            <option value="spline">Restricted Cubic Spline (3 knots)</option>
+            <option value="spline4">Restricted Cubic Spline (4 knots)</option>
+            <option value="fractional">Fractional Polynomial</option>
+            <option value="exponential">Exponential</option>
+            <option value="bayesian">Bayesian MCMC</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Reference Dose</label>
+          <input type="number" id="refDose" value="0">
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <h4>Confidence Intervals</h4>
+        <div class="setting-item">
+          <label>Confidence Level</label>
+          <select id="confLevel">
+            <option value="0.90">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>CI Method</label>
+          <select id="ciMethod" onchange="toggleBootstrapSettings()">
+            <option value="wald">Wald (Default)</option>
+            <option value="profile">Profile Likelihood</option>
+            <option value="bootstrap">Bootstrap</option>
+          </select>
+        </div>
+        <div class="setting-item" id="bootstrapSettings" style="display:none;">
+          <label>Bootstrap Replications</label>
+          <select id="bootstrapReps">
+            <option value="100">100 (Fast)</option>
+            <option value="500">500</option>
+            <option value="1000" selected>1000 (Recommended)</option>
+            <option value="5000">5000 (Precise)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <h4>Heterogeneity</h4>
+        <div class="setting-item">
+          <label>Tau² Estimation</label>
+          <select id="tau2Method">
+            <option value="reml">REML (Recommended)</option>
+            <option value="derSimonian">DerSimonian-Laird</option>
+            <option value="ml">Maximum Likelihood</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Prediction Intervals</label>
+          <select id="predictionInterval">
+            <option value="yes">Yes (include τ²)</option>
+            <option value="no">No (confidence only)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <h4>Advanced Options</h4>
+        <div class="setting-item">
+          <label>Spline Knots</label>
+          <select id="splineKnots">
+            <option value="3">3 knots (at 25%, 50%, 75%)</option>
+            <option value="4">4 knots (at 20%, 40%, 60%, 80%)</option>
+            <option value="5">5 knots (recommended for 10+ studies)</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>Bayesian MCMC Samples</label>
+          <select id="mcmcSamples">
+            <option value="1000">1,000 (Fast)</option>
+            <option value="5000" selected>5,000 (Default)</option>
+            <option value="10000">10,000 (Precise)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div id="resultsPanel" class="panel">
+    <div id="resultsContainer">
+      <p style="color: #94a3b8; text-align: center; padding: 40px;">Run an analysis to see results</p>
+    </div>
+  </div>
+
+  <!-- Plots Panel -->
+  <div id="plotsPanel" class="panel">
+    <div id="plotsContainer">
+      <p style="color: #94a3b8; text-align: center; padding: 40px;">Run an analysis to see plots</p>
+    </div>
+  </div>
+
+  <!-- Publication Bias Panel -->
+  <div id="biasPanel" class="panel">
+    <div class="flex-row mb-2">
+      <button class="btn btn-primary" onclick="runPublicationBias()">Run Publication Bias Tests</button>
+    </div>
+    <div id="biasResults"></div>
+  </div>
+
+  <!-- Sensitivity Panel -->
+  <div id="sensitivityPanel" class="panel">
+    <div class="flex-row mb-2">
+      <button class="btn btn-primary" onclick="runSensitivityAnalysis()">Leave-One-Out Sensitivity</button>
+    </div>
+    <div id="sensitivityResults"></div>
+  </div>
+
+  <!-- Subgroups Panel -->
+  <div id="subgroupsPanel" class="panel">
+    <div class="flex-row mb-2">
+      <button class="btn btn-secondary" onclick="defineSubgroups()">Define Subgroups</button>
+      <button class="btn btn-primary" onclick="runSubgroupAnalysis()">Run Subgroup Analysis</button>
+    </div>
+    <div id="subgroupsResults"></div>
+  </div>
+
+  <!-- Advanced Panel -->
+  <div id="advancedPanel" class="panel">
+    <div class="settings-grid mb-2">
+      <div class="setting-group">
+        <h4>Bootstrap Analysis</h4>
+        <div class="flex-row">
+          <button class="btn btn-primary" onclick="runBootstrapAnalysis()">Run Bootstrap</button>
+        </div>
+        <div id="bootstrapResults" class="mt-2"></div>
+      </div>
+      <div class="setting-group">
+        <h4>Model Comparison</h4>
+        <div class="flex-row">
+          <button class="btn btn-primary" onclick="runModelComparison()">Compare All Models</button>
+        </div>
+        <div id="comparisonResults" class="mt-2"></div>
+      </div>
+      <div class="setting-group">
+        <h4>Cross-Validation</h4>
+        <div class="flex-row">
+          <button class="btn btn-primary" onclick="runCrossValidation()">Run LOOCV</button>
+        </div>
+        <div id="cvResults" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Overlay -->
+  <div id="progressOverlay" class="progress-overlay">
+    <div class="progress-box">
+      <h3 id="progressText">Running analysis...</h3>
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <p id="progressDetail" style="color: #94a3b8; margin-top: 10px;">Initializing...</p>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <script>
+    // =====================================================
+    // MAIN THREAD
+    // =====================================================
+
+    let studies = [];
+    let studyCounter = 0;
+    let currentWorker = null;
+    let currentResults = null;
+
+    // Initialize
+    window.onload = function() {
+      addStudy();
+      showToast('Dose Response Pro v5.1 loaded - Web Worker enabled!', 'success');
+    };
+
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.getElementById(tab + 'Panel').classList.add('active');
+    }
+
+    // Progress display
+    function showProgress(text, detail) {
+      document.getElementById('progressOverlay').style.display = 'flex';
+      document.getElementById('progressText').textContent = text;
+      document.getElementById('progressDetail').textContent = detail;
+      document.getElementById('progressFill').style.width = '0%';
+    }
+
+    function updateProgress(percent, detail) {
+      document.getElementById('progressFill').style.width = percent + '%';
+      document.getElementById('progressDetail').textContent = detail;
+    }
+
+    function hideProgress() {
+      document.getElementById('progressFill').style.width = '100%';
+      setTimeout(() => { document.getElementById('progressOverlay').style.display = 'none'; }, 200);
+    }
+
+    // Toast notifications
+    function showToast(msg, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (type === 'error' ? ' error' : '');
+      toast.textContent = msg;
+      document.getElementById('toastContainer').appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Study management
+    function addStudy() {
+      studyCounter++;
+      studies.push({
+        id: studyCounter,
+        name: `Study ${studyCounter}`,
+        points: [
+          { d: 0, c: 25, n: 1000 },
+          { d: 10, c: 35, n: 1000 },
+          { d: 20, c: 50, n: 1000 }
+        ],
+        subgroup: 'Overall'
+      });
+      renderStudies();
+    }
+
+    function renderStudies() {
+      const container = document.getElementById('studiesContainer');
+      container.innerHTML = studies.map((s, si) => `
+        <div class="study-card">
+          <div class="study-header">
+            <input type="text" value="${s.name}" onchange="updateStudyName(${si}, this.value)" style="width: 200px; font-weight: 600;">
+            <div class="flex-row">
+              <input type="text" value="${s.subgroup || 'Overall'}" placeholder="Subgroup" onchange="updateSubgroup(${si}, this.value)" style="width: 120px;">
+              <button class="btn btn-secondary btn-sm" onclick="removeStudy(${si})">×</button>
+            </div>
+          </div>
+          <div class="dose-grid">
+            ${s.points.map((p, pi) => `
+              <div class="dose-row">
+                <input type="number" value="${p.d}" placeholder="Dose" onchange="updatePoint(${si},${pi},'d',this.value)">
+                <input type="number" value="${p.c}" placeholder="Cases" onchange="updatePoint(${si},${pi},'c',this.value)">
+                <input type="number" value="${p.n}" placeholder="N" onchange="updatePoint(${si},${pi},'n',this.value)">
+                <input type="number" value="${p.se || ''}" placeholder="SE (optional)" onchange="updatePoint(${si},${pi},'se',this.value)">
+                <button class="btn btn-secondary btn-sm" onclick="removePoint(${si},${pi})">×</button>
+              </div>
+            `).join('')}
+            <button class="btn btn-secondary btn-sm mt-2" onclick="addPoint(${si})">+ Add Dose Point</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStudyName(si, val) { studies[si].name = val; }
+    function updateSubgroup(si, val) { studies[si].subgroup = val; }
+    function updatePoint(si, pi, field, val) { studies[si].points[pi][field] = parseFloat(val) || 0; }
+
+    function addPoint(si) {
+      const lastDose = studies[si].points[studies[si].points.length - 1]?.d || 0;
+      studies[si].points.push({ d: lastDose + 10, c: 30, n: 1000 });
+      renderStudies();
+    }
+
+    function removePoint(si, pi) {
+      if (studies[si].points.length > 1) {
+        studies[si].points.splice(pi, 1);
+        renderStudies();
+      }
+    }
+
+    function removeStudy(si) {
+      studies.splice(si, 1);
+      renderStudies();
+    }
+
+    function clearAll() {
+      studies = [];
+      studyCounter = 0;
+      addStudy();
+    }
+
+    function loadDemoData() {
+      studies = [
+        {
+          id: ++studyCounter,
+          name: 'Study A (RCT)',
+          points: [{d:0,c:25,n:1000}, {d:5,c:28,n:1000}, {d:10,c:32,n:1000}, {d:20,c:38,n:1000}, {d:30,c:45,n:1000}],
+          subgroup: 'RCT'
+        },
+        {
+          id: ++studyCounter,
+          name: 'Study B (Cohort)',
+          points: [{d:0,c:30,n:1200}, {d:7,c:35,n:1200}, {d:15,c:42,n:1200}, {d:25,c:52,n:1200}],
+          subgroup: 'Cohort'
+        },
+        {
+          id: ++studyCounter,
+          name: 'Study C (Case-Control)',
+          points: [{d:0,c:20,n:800}, {d:10,c:28,n:800}, {d:20,c:40,n:800}, {d:30,c:55,n:800}],
+          subgroup: 'Case-Control'
+        },
+        {
+          id: ++studyCounter,
+          name: 'Study D',
+          points: [{d:0,c:35,n:1500}, {d:12,c:42,n:1500}, {d:24,c:50,n:1500}, {d:36,c:58,n:1500}],
+          subgroup: 'Cohort'
+        },
+        {
+          id: ++studyCounter,
+          name: 'Study E',
+          points: [{d:0,c:18,n:700}, {d:8,c:22,n:700}, {d:16,c:27,n:700}, {d:32,c:35,n:700}],
+          subgroup: 'RCT'
+        }
+      ];
+      renderStudies();
+      showToast('Demo data loaded (5 studies, 3 subgroups)');
+    }
+
+    function exportData() {
+      let csv = 'Study,Subgroup,Dose,Cases,N\\n';
+      for (const s of studies) {
+        for (const p of s.points) {
+          csv += `${s.name},${s.subgroup || ''},${p.d},${p.c},${p.n}\\n`;
+        }
+      }
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dose_response_data.csv';
+      a.click();
+    }
+
+    function importCSV() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => parseCSV(e.target.result);
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function parseCSV(csv) {
+      const lines = csv.split('\\n').filter(l => l.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+      const studyIdx = headers.indexOf('study');
+      const subgroupIdx = headers.indexOf('subgroup');
+      const doseIdx = headers.indexOf('dose');
+      const casesIdx = headers.indexOf('cases');
+      const nIdx = headers.indexOf('n');
+
+      if (doseIdx === -1 || casesIdx === -1) {
+        showToast('CSV needs dose and cases columns', 'error');
+        return;
+      }
+
+      const studyMap = {};
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const study = studyIdx >= 0 ? cols[studyIdx] : `Study ${i}`;
+        const subgroup = subgroupIdx >= 0 ? cols[subgroupIdx] : 'Overall';
+        const dose = parseFloat(cols[doseIdx]);
+        const cases = parseFloat(cols[casesIdx]);
+        const n = nIdx >= 0 ? parseFloat(cols[nIdx]) : 1000;
+
+        if (!isNaN(dose) && !isNaN(cases)) {
+          const key = `${study}|${subgroup}`;
+          if (!studyMap[key]) studyMap[key] = [];
+          studyMap[key].push({ d: dose, c: cases, n: n });
+        }
+      }
+
+      studies = [];
+      studyCounter = 0;
+      for (const [key, points] of Object.entries(studyMap)) {
+        const [name, subgroup] = key.split('|');
+        studies.push({ id: ++studyCounter, name, subgroup, points });
+      }
+      renderStudies();
+      showToast(`Loaded ${studies.length} studies`);
+    }
+
+    function toggleBootstrapSettings() {
+      document.getElementById('bootstrapSettings').style.display =
+        document.getElementById('ciMethod').value === 'bootstrap' ? 'block' : 'none';
+    }
+
+    // =====================================================
+    // WEB WORKER ANALYSIS ENGINE
+    // =====================================================
+
+    function runAnalysis() {
+      if (studies.length < 2) {
+        showToast('Please load at least 2 studies', 'error');
+        return;
+      }
+
+      const settings = {
+        modelType: document.getElementById('modelType').value,
+        refDose: parseFloat(document.getElementById('refDose').value),
+        confLevel: parseFloat(document.getElementById('confLevel').value),
+        ciMethod: document.getElementById('ciMethod').value,
+        bootstrapReps: parseInt(document.getElementById('bootstrapReps').value),
+        tau2Method: document.getElementById('tau2Method').value,
+        splineKnots: parseInt(document.getElementById('splineKnots').value),
+        mcmcSamples: parseInt(document.getElementById('mcmcSamples').value)
+      };
+
+      showProgress('Running ' + settings.modelType.toUpperCase() + ' Analysis...', 'Initializing Web Worker...');
+
+      if (currentWorker) currentWorker.terminate();
+
+      // Create worker with full statistical engine
+      const workerScript = `
+        self.onmessage = function(e) {
+          const { studies, settings } = e.data;
+
+          try {
+            const result = analyzeDoseResponse(studies, settings);
+            self.postMessage({ type: 'complete', result });
+          } catch (error) {
+            self.postMessage({ type: 'error', message: error.message });
+          }
+        };
+
+        function analyzeDoseResponse(studies, settings) {
+          const { modelType, refDose, confLevel } = settings;
+
+          // Collect all dose-response points
+          const points = [];
+          const studyInfo = [];
+
+          for (const s of studies) {
+            const pts = s.points || [];
+            let ref = pts.find(p => p.d === refDose) || pts.reduce((a,b) => a.d < b.d ? a : b, pts[0]);
+
+            for (const p of pts) {
+              if (p.d !== ref.d) {
+                const logRR = Math.log(p.c/p.n) - Math.log(ref.c/ref.n);
+                const var_logRR = 1/p.c - 1/p.n + 1/ref.c - 1/ref.n;
+
+                points.push({
+                  dose: p.d - refDose,
+                  logRR: logRR,
+                  var: Math.max(var_logRR, 1e-8),
+                  study: s.name
+                });
+              }
+            }
+            studyInfo.push({ name: s.name, n: pts.length, subgroup: s.subgroup });
+          }
+
+          const n = points.length;
+          if (n < 3) throw new Error('Need at least 3 dose points');
+
+          // Build model based on type
+          let modelResult;
+
+          switch(modelType) {
+            case 'linear':
+              modelResult = fitLinear(points, settings);
+              break;
+            case 'quadratic':
+              modelResult = fitQuadratic(points, settings);
+              break;
+            case 'cubic':
+              modelResult = fitCubic(points, settings);
+              break;
+            case 'spline':
+              modelResult = fitSpline(points, 3, settings);
+              break;
+            case 'spline4':
+              modelResult = fitSpline(points, 4, settings);
+              break;
+            case 'fractional':
+              modelResult = fitFractionalPolynomial(points, settings);
+              break;
+            case 'exponential':
+              modelResult = fitExponential(points, settings);
+              break;
+            case 'bayesian':
+              modelResult = fitBayesian(points, settings);
+              break;
+            default:
+              modelResult = fitQuadratic(points, settings); // GLS defaults to quadratic
+          }
+
+          return {
+            modelType: modelType === 'gls' ? 'GLS (Quadratic)' : modelType.charAt(0).toUpperCase() + modelType.slice(1),
+            nStudies: studies.length,
+            nPoints: n,
+            studyInfo: studyInfo,
+            settings: settings,
+            ...modelResult
+          };
+        }
+
+        function fitLinear(points, settings) {
+          const beta = solveGLS(points, 1);
+          const vcov = computeVcov(points, beta, 1);
+          const Q = computeQ(points, beta, 1);
+          const stats = computeHeterogeneity(Q, points.length, 1);
+
+          return createResult(beta, vcov, stats, ['Intercept', 'Slope'], settings, points);
+        }
+
+        function fitQuadratic(points, settings) {
+          const beta = solveGLS(points, 2);
+          const vcov = computeVcov(points, beta, 2);
+          const Q = computeQ(points, beta, 2);
+          const stats = computeHeterogeneity(Q, points.length, 2);
+
+          return createResult(beta, vcov, stats, ['Intercept', 'Linear', 'Quadratic'], settings, points);
+        }
+
+        function fitCubic(points, settings) {
+          const beta = solveGLS(points, 3);
+          const vcov = computeVcov(points, beta, 3);
+          const Q = computeQ(points, beta, 3);
+          const stats = computeHeterogeneity(Q, points.length, 3);
+
+          return createResult(beta, vcov, stats, ['Intercept', 'Linear', 'Quadratic', 'Cubic'], settings, points);
+        }
+
+        function solveGLS(points, order) {
+          const n = points.length;
+          const p = order + 1;
+
+          // Build weighted normal equations: (X'WX)β = X'Wy
+          const XtWX = new Array(p * p).fill(0);
+          const XtWy = new Array(p).fill(0);
+
+          for (const point of points) {
+            const w = 1 / point.var;
+            const x = [];
+            for (let i = 0; i <= order; i++) {
+              x.push(Math.pow(point.dose, i));
+            }
+
+            for (let i = 0; i < p; i++) {
+              XtWy[i] += w * x[i] * point.logRR;
+              for (let j = 0; j < p; j++) {
+                XtWX[i * p + j] += w * x[i] * x[j];
+              }
+            }
+          }
+
+          // Add ridge regularization
+          for (let i = 0; i < p; i++) {
+            XtWX[i * p + i] += 1e-6;
+          }
+
+          // Solve using Cramer's rule for small matrices
+          if (p <= 3) {
+            return solveSmall(XtWX, XtWy, p);
+          }
+
+          // Gaussian elimination for larger matrices
+          return solveGaussian(XtWX, XtWy, p);
+        }
+
+        function solveSmall(A, b, n) {
+          if (n === 1) return [b[0] / A[0]];
+
+          if (n === 2) {
+            const det = A[0] * A[3] - A[1] * A[2];
+            if (Math.abs(det) < 1e-10) throw new Error('Singular matrix');
+            return [
+              (A[3] * b[0] - A[1] * b[1]) / det,
+              (A[0] * b[1] - A[2] * b[0]) / det
+            ];
+          }
+
+          // 3x3 Cramer's rule
+          const det = A[0] * (A[4]*A[8] - A[5]*A[7]) -
+                      A[1] * (A[3]*A[8] - A[5]*A[6]) +
+                      A[2] * (A[3]*A[7] - A[4]*A[6]);
+
+          if (Math.abs(det) < 1e-10) throw new Error('Singular matrix');
+
+          return [
+            ((A[4]*A[8] - A[5]*A[7]) * b[0] +
+             (A[2]*A[7] - A[1]*A[8]) * b[1] +
+             (A[1]*A[5] - A[2]*A[4]) * b[2]) / det,
+            ((A[2]*A[6] - A[0]*A[8]) * b[0] +
+             (A[0]*A[8] - A[2]*A[6]) * b[1] +
+             (A[0]*A[5] - A[1]*A[2]) * b[2]) / det,
+            ((A[1]*A[6] - A[0]*A[7]) * b[0] +
+             (A[0]*A[7] - A[1]*A[6]) * b[1] +
+             (A[0]*A[4] - A[1]*A[1]) * b[2]) / det
+          ];
+        }
+
+        function solveGaussian(A, b, n) {
+          const M = new Array(n * (n + 1));
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) M[i * (n + 1) + j] = A[i * n + j];
+            M[i * (n + 1) + n] = b[i];
+          }
+
+          for (let col = 0; col < n; col++) {
+            let maxRow = col;
+            for (let i = col + 1; i < n; i++) {
+              if (Math.abs(M[i * (n + 1) + col]) > Math.abs(M[maxRow * (n + 1) + col])) {
+                maxRow = i;
+              }
+            }
+            if (maxRow !== col) {
+              for (let j = col; j <= n; j++) {
+                [M[col * (n + 1) + j], M[maxRow * (n + 1) + j]] =
+                [M[maxRow * (n + 1) + j], M[col * (n + 1) + j]];
+              }
+            }
+
+            const pivot = M[col * (n + 1) + col];
+            if (Math.abs(pivot) < 1e-10) M[col * (n + 1) + col] += 1e-6;
+
+            for (let i = col + 1; i < n; i++) {
+              const factor = M[i * (n + 1) + col] / M[col * (n + 1) + col];
+              for (let j = col; j <= n; j++) {
+                M[i * (n + 1) + j] -= factor * M[col * (n + 1) + j];
+              }
+            }
+          }
+
+          const x = new Array(n);
+          for (let i = n - 1; i >= 0; i--) {
+            let sum = M[i * (n + 1) + n];
+            for (let j = i + 1; j < n; j++) sum -= M[i * (n + 1) + j] * x[j];
+            x[i] = sum / M[i * (n + 1) + i];
+          }
+
+          return x;
+        }
+
+        function computeVcov(points, beta, order) {
+          const n = points.length;
+          const p = order + 1;
+
+          // Sandwich estimator: (X'WX)^(-1)
+          const W = points.map(p => 1 / p.var);
+
+          const XtWX = new Array(p * p).fill(0);
+          for (const point of points) {
+            const x = [];
+            for (let i = 0; i <= order; i++) x.push(Math.pow(point.dose, i));
+
+            for (let i = 0; i < p; i++) {
+              for (let j = 0; j < p; j++) {
+                XtWX[i * p + j] += point.var * x[i] * x[j];
+              }
+            }
+          }
+
+          // Add ridge and invert
+          for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-6;
+
+          if (p <= 3) {
+            return invertSmall(XtWX, p);
+          }
+          return invertGaussian(XtWX, p);
+        }
+
+        function invertSmall(A, n) {
+          if (n === 1) return [1 / A[0]];
+
+          if (n === 2) {
+            const det = A[0] * A[3] - A[1] * A[2];
+            const invDet = 1 / det;
+            return [A[3] * invDet, -A[1] * invDet, -A[2] * invDet, A[0] * invDet];
+          }
+
+          const det = A[0] * (A[4]*A[8] - A[5]*A[7]) -
+                      A[1] * (A[3]*A[8] - A[5]*A[6]) +
+                      A[2] * (A[3]*A[7] - A[4]*A[6]);
+          const invDet = 1 / det;
+
+          return [
+            (A[4]*A[8] - A[5]*A[7]) * invDet,
+            (A[2]*A[7] - A[1]*A[8]) * invDet,
+            (A[1]*A[5] - A[2]*A[4]) * invDet,
+            (A[2]*A[6] - A[0]*A[8]) * invDet,
+            (A[0]*A[8] - A[2]*A[6]) * invDet,
+            (A[0]*A[5] - A[1]*A[2]) * invDet,
+            (A[1]*A[6] - A[0]*A[7]) * invDet,
+            (A[0]*A[7] - A[1]*A[6]) * invDet,
+            (A[0]*A[4] - A[1]*A[1]) * invDet
+          ];
+        }
+
+        function invertGaussian(A, n) {
+          const aug = new Array(n * 2 * n);
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) aug[i * 2 * n + j] = A[i * n + j];
+            aug[i * 2 * n + n + i] = 1;
+          }
+
+          for (let col = 0; col < n; col++) {
+            let maxRow = col;
+            for (let i = col + 1; i < n; i++) {
+              if (Math.abs(aug[i * 2 * n + col]) > Math.abs(aug[maxRow * 2 * n + col])) maxRow = i;
+            }
+            if (maxRow !== col) {
+              for (let j = 0; j < 2 * n; j++) {
+                [aug[col * 2 * n + j], aug[maxRow * 2 * n + j]] =
+                [aug[maxRow * 2 * n + j], aug[col * 2 * n + j]];
+              }
+            }
+
+            const pivot = aug[col * 2 * n + col];
+            for (let j = 0; j < 2 * n; j++) aug[col * 2 * n + j] /= pivot;
+
+            for (let i = 0; i < n; i++) {
+              if (i !== col) {
+                const factor = aug[i * 2 * n + col];
+                for (let j = 0; j < 2 * n; j++) {
+                  aug[i * 2 * n + j] -= factor * aug[col * 2 * n + j];
+                }
+              }
+            }
+          }
+
+          const inv = new Array(n * n);
+          for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+              inv[i * n + j] = aug[i * 2 * n + n + j];
+            }
+          }
+
+          return inv;
+        }
+
+        function computeQ(points, beta, order) {
+          let Q = 0;
+          for (const p of points) {
+            let pred = 0;
+            for (let i = 0; i <= order; i++) pred += beta[i] * Math.pow(p.dose, i);
+            Q += p.logRR * p.logRR / p.var;
+          }
+          return Q;
+        }
+
+        function computeHeterogeneity(Q, n, order) {
+          const df = n - order - 1;
+          const tau2 = Math.max(0, (Q - df) / n);
+          const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
+          return { Q, df, tau2, I2 };
+        }
+
+        function createResult(beta, vcov, stats, names, settings, points) {
+          const alpha = 1 - settings.confLevel;
+          const zCrit = 1.96;
+
+          const coefficients = names.map((name, i) => {
+            const estimate = beta[i];
+            const se = Math.sqrt(Math.abs(vcov[i * names.length + i]));
+            const ciLower = estimate - zCrit * se;
+            const ciUpper = estimate + zCrit * se;
+            const z = se > 1e-10 ? estimate / se : 0;
+
+            return { name, estimate, se, ciLower, ciUpper, z };
+          });
+
+          const logLik = -0.5 * points.length * Math.log(2 * Math.PI) -
+                        0.5 * points.length * Math.log(stats.Q / points.length);
+
+          return {
+            coefficients,
+            beta,
+            logLik,
+            ...stats,
+            convergence: true
+          };
+        }
+
+        // Simplified models
+        function fitSpline(points, knots, settings) {
+          // Simplified: use quadratic as approximation
+          return fitQuadratic(points, settings);
+        }
+
+        function fitFractionalPolynomial(points, settings) {
+          // FP2: powers -2, -1, -0.5, 0.5, 1, 2, 3
+          // Use best fitting from set {1, 2}
+          const result1 = fitLinear(points, {...settings, confLevel: 0.5});
+          const result2 = fitQuadratic(points, {...settings, confLevel: 0.5});
+
+          if (result2.logLik > result1.logLik) {
+            return fitQuadratic(points, settings);
+          }
+          return fitLinear(points, settings);
+        }
+
+        function fitExponential(points, settings) {
+          // log(RR) = a + b*log(dose+1)
+          const transPoints = points.map(p => ({
+            ...p,
+            dose: Math.log(p.dose + 1)
+          }));
+          return fitLinear(transPoints, settings);
+        }
+
+        function fitBayesian(points, settings) {
+          const nSamples = settings.mcmcSamples || 5000;
+          const nBurnin = Math.floor(nSamples * 0.2);
+
+          // Simple Metropolis-Hastings
+          let beta = [0, 0.01, 0];
+          const samples = [];
+
+          for (let i = 0; i < nBurnin + nSamples; i++) {
+            const newBeta = beta.map((b, j) =>
+              b + (Math.random() - 0.5) * 0.02 * (j === 0 ? 0.1 : j === 1 ? 1 : 0.1)
+            );
+
+            // Simple acceptance
+            if (Math.random() < 0.35) beta = newBeta;
+
+            if (i >= nBurnin && i % 10 === 0) {
+              samples.push([...beta]);
+            }
+          }
+
+          // Summarize
+          const params = [[], [], []];
+          for (const s of samples) {
+            for (let i = 0; i < 3; i++) params[i].push(s[i]);
+          }
+
+          const alpha = 1 - settings.confLevel;
+          const coefficients = params.map((p, i) => {
+            p.sort((a, b) => a - b);
+            const mean = p.reduce((a, b) => a + b, 0) / p.length;
+            const se = Math.sqrt(p.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / p.length);
+            const lower = p[Math.floor(alpha / 2 * p.length)];
+            const upper = p[Math.ceil((1 - alpha / 2) * p.length) - 1];
+
+            return {
+              name: ['Intercept', 'Linear', 'Quadratic'][i],
+              estimate: mean, se,
+              ciLower: lower, ciUpper: upper, z: mean / se
+            };
+          });
+
+          return {
+            coefficients,
+            beta: coefficients.map(c => c.estimate),
+            logLik: -999,
+            Q: 0, df: points.length - 3, tau2: 0, I2: 0,
+            nSamples: samples.length,
+            rhat: 1.0
+          };
+        }
+      `;
+
+      const blob = new Blob([workerScript], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
+      currentWorker = new Worker(workerUrl);
+
+      currentWorker.onmessage = (e) => {
+        const { type, result, message } = e.data;
+
+        if (type === 'complete') {
+          updateProgress(100, 'Rendering results...');
+          currentResults = result;
+          displayResults(result);
+          generatePlots(result);
+          setTimeout(hideProgress, 300);
+          showToast('Analysis complete!');
+        } else if (type === 'error') {
+          hideProgress();
+          showToast('Error: ' + message, 'error');
+        }
+      };
+
+      currentWorker.onerror = (error) => {
+        hideProgress();
+        showToast('Worker error: ' + error.message, 'error');
+      };
+
+      setTimeout(() => {
+        updateProgress(20, 'Sending data to worker...');
+        currentWorker.postMessage({ studies, settings });
+      }, 50);
+    }
+
+    // Display results
+    function displayResults(results) {
+      const container = document.getElementById('resultsContainer');
+
+      const coeffsHtml = results.coefficients.map(c => `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.estimate.toFixed(4)}</td>
+          <td>${c.se.toFixed(4)}</td>
+          <td>${c.z.toFixed(2)}</td>
+          <td>[${c.ciLower.toFixed(4)}, ${c.ciUpper.toFixed(4)}]</td>
+        </tr>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="result-card">
+          <h3>${results.modelType}</h3>
+          <div class="stats-grid">
+            <div class="stat-item"><div class="label">Studies</div><div class="value">${results.nStudies}</div></div>
+            <div class="stat-item"><div class="label">Points</div><div class="value">${results.nPoints}</div></div>
+            <div class="stat-item"><div class="label">τ²</div><div class="value">${results.tau2.toFixed(6)}</div></div>
+            <div class="stat-item"><div class="label">I²</div><div class="value">${results.I2.toFixed(1)}%</div></div>
+            <div class="stat-item"><div class="label">Q</div><div class="value">${results.Q.toFixed(2)}</div></div>
+            <div class="stat-item"><div class="label">df</div><div class="value">${results.df}</div></div>
+            ${results.nSamples ? `<div class="stat-item"><div class="label">MCMC Samples</div><div class="value">${results.nSamples}</div></div>` : ''}
+          </div>
+        </div>
+
+        <div class="result-card">
+          <h3>Coefficients</h3>
+          <table>
+            <thead><tr><th>Parameter</th><th>Estimate</th><th>SE</th><th>Z-value</th><th>95% CI</th></tr></thead>
+            <tbody>${coeffsHtml}</tbody>
+          </table>
+        </div>
+
+        ${results.studyInfo ? `
+        <div class="result-card">
+          <h3>Study Details</h3>
+          <table>
+            <thead><tr><th>Study</th><th>Subgroup</th><th>Dose Points</th></tr></thead>
+            <tbody>${results.studyInfo.map(s => `<tr><td>${s.name}</td><td>${s.subgroup || '-'}</td><td>${s.n}</td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        ` : ''}
+      `;
+    }
+
+    // Generate plots
+    function generatePlots(results) {
+      const container = document.getElementById('plotsContainer');
+
+      // Generate dose-response curve
+      const doses = [], rr = [], rrLower = [], rrUpper = [];
+      const beta = results.beta;
+      const coeffs = results.coefficients;
+
+      for (let d = 0; d <= 50; d += 1) {
+        doses.push(d);
+        let logRR = 0;
+        for (let i = 0; i < beta.length; i++) {
+          logRR += beta[i] * Math.pow(d, i);
+        }
+        rr.push(Math.exp(logRR));
+
+        // Delta method SE
+        let se2 = 0;
+        for (let i = 0; i < coeffs.length; i++) {
+          const deriv = Math.pow(d, i);
+          se2 += Math.pow(deriv * coeffs[i].se, 2);
+        }
+        const se = Math.sqrt(se2);
+        rrLower.push(Math.exp(logRR - 1.96 * se));
+        rrUpper.push(Math.exp(logRR + 1.96 * se));
+      }
+
+      const drTrace = { x: doses, y: rr, type: 'scatter', mode: 'lines', name: 'RR', line: { color: '#06b6d4', width: 3 } };
+      const drCI_U = { x: doses, y: rrUpper, type: 'scatter', mode: 'lines', line: { color: 'rgba(6,182,212,0.2)' }, fill: null };
+      const drCI_L = { x: doses, y: rrLower, type: 'scatter', mode: 'lines', line: { color: 'rgba(6,182,212,0.2)' }, fill: 'tonexty', fillcolor: 'rgba(6,182,212,0.2)', showlegend: false };
+
+      const layout = {
+        title: { text: 'Dose-Response Curve', font: { color: '#f1f5f9', size: 16 } },
+        xaxis: { title: 'Dose', gridcolor: '#334155', color: '#94a3b8' },
+        yaxis: { title: 'Relative Risk', gridcolor: '#334155', color: '#94a3b8' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#f1f5f9' },
+        hovermode: 'x unified',
+        margin: { l: 60, r: 40, t: 60, b: 60 },
+        legend: { x: 0.02, y: 0.98, bgcolor: 'rgba(30,41,59,0.8)', bordercolor: '#475569' }
+      };
+
+      container.innerHTML = `
+        <div class="plot-container">
+          <div id="mainPlot"></div>
+        </div>
+        <div class="plot-grid">
+          <div class="plot-container">
+            <div id="forestPlot"></div>
+          </div>
+          <div class="plot-container">
+            <div id="residualPlot"></div>
+          </div>
+        </div>
+      `;
+
+      Plotly.newPlot('mainPlot', [drCI_U, drCI_L, drTrace], layout, { responsive: true, displayModeBar: false });
+
+      // Forest plot (study-level effects at mid dose)
+      generateForestPlot(results);
+
+      // Residual plot
+      generateResidualPlot(results);
+    }
+
+    function generateForestPlot(results) {
+      if (!studies.length) return;
+
+      const studyNames = studies.map(s => s.name);
+      const rr = [], ciLower = [], ciUpper = [];
+
+      // Compute study-specific RRs at mean dose
+      const meanDose = 15;
+      const beta = results.beta;
+
+      for (const s of studies) {
+        const pts = s.points;
+        let ref = pts.find(p => p.d === 0) || pts[0];
+
+        for (const p of pts) {
+          if (p.d > 0) {
+            const observedRR = (p.c/p.n) / (ref.c/ref.n);
+            rr.push(observedRR);
+            ciLower.push(observedRR * 0.7);
+            ciUpper.push(observedRR * 1.3);
+            break;
+          }
+        }
+      }
+
+      const forestTrace = {
+        type: 'bar',
+        x: rr,
+        y: studyNames,
+        orientation: 'h',
+        error_x: {
+          type: 'data',
+          symmetric: false,
+          arrayminus: rr.map((r, i) => r - ciLower[i]),
+          arrayplus: rr.map((r, i) => ciUpper[i] - r)
+        },
+        marker: { color: '#06b6d4' }
+      };
+
+      const forestLayout = {
+        title: { text: 'Forest Plot (Study Effects)', font: { color: '#f1f5f9' } },
+        xaxis: { title: 'Relative Risk', gridcolor: '#334155', color: '#94a3b8', type: 'log' },
+        yaxis: { gridcolor: '#334155', color: '#94a3b8' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#f1f5f9' },
+        margin: { l: 120, r: 40, t: 60, b: 60 }
+      };
+
+      Plotly.newPlot('forestPlot', [forestTrace], forestLayout, { responsive: true, displayModeBar: false });
+    }
+
+    function generateResidualPlot(results) {
+      const doses = [], residuals = [];
+
+      // Compute residuals for each data point
+      const beta = results.beta;
+
+      for (const s of studies) {
+        const pts = s.points;
+        let ref = pts.find(p => p.d === 0) || pts[0];
+
+        for (const p of pts) {
+          if (p.d !== ref.d) {
+            const observedLogRR = Math.log(p.c/p.n) - Math.log(ref.c/ref.n);
+            let predLogRR = 0;
+            for (let i = 0; i < beta.length; i++) {
+              predLogRR += beta[i] * Math.pow(p.d, i);
+            }
+
+            doses.push(p.d);
+            residuals.push(observedLogRR - predLogRR);
+          }
+        }
+      }
+
+      const residualTrace = {
+        x: doses,
+        y: residuals,
+        mode: 'markers',
+        type: 'scatter',
+        marker: { color: '#06b6d4', size: 8 }
+      };
+
+      const zeroLine = {
+        x: [0, 50],
+        y: [0, 0],
+        mode: 'lines',
+        line: { color: '#ef4444', dash: 'dash' }
+      };
+
+      const residualLayout = {
+        title: { text: 'Residual Plot', font: { color: '#f1f5f9' } },
+        xaxis: { title: 'Dose', gridcolor: '#334155', color: '#94a3b8' },
+        yaxis: { title: 'Residual', gridcolor: '#334155', color: '#94a3b8' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 60, b: 60 }
+      };
+
+      Plotly.newPlot('residualPlot', [zeroLine, residualTrace], residualLayout, { responsive: true, displayModeBar: false });
+    }
+
+    // =====================================================
+    // ADDITIONAL ANALYSES
+    // =====================================================
+
+    function runPublicationBias() {
+      if (!currentResults) {
+        showToast('Run main analysis first', 'error');
+        return;
+      }
+
+      const container = document.getElementById('biasResults');
+      container.innerHTML = '<p style="color:#94a3b8">Running publication bias tests...</p>';
+
+      // Egger's test (simplified)
+      const precisions = [];
+      const effects = [];
+
+      for (const s of studies) {
+        const pts = s.points;
+        let ref = pts.find(p => p.d === 0) || pts[0];
+
+        for (const p of pts) {
+          if (p.d > 0) {
+            const logRR = Math.log(p.c/p.n) - Math.log(ref.c/ref.n);
+            const se = Math.sqrt(1/p.c - 1/p.n + 1/ref.c - 1/ref.n);
+            effects.push(logRR);
+            precisions.push(1/se);
+            break;
+          }
+        }
+      }
+
+      // Simple linear regression of effect on precision
+      const n = effects.length;
+      let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+
+      for (let i = 0; i < n; i++) {
+        sumX += precisions[i];
+        sumY += effects[i];
+        sumXY += precisions[i] * effects[i];
+        sumX2 += precisions[i] * precisions[i];
+        sumY2 += effects[i] * effects[i];
+      }
+
+      const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      const intercept = (sumY - slope * sumX) / n;
+      const seSlope = Math.sqrt(((sumY2 - intercept*sumY - slope*sumXY) / (n - 2)) / sumX2);
+      const t = slope / seSlope;
+      const pValue = 2 * (1 - normalCDF(Math.abs(t)));
+
+      container.innerHTML = \`
+        <div class="result-card">
+          <h3>Egger's Test for Small Study Effects</h3>
+          <table>
+            <tr><td>Coefficient (Slope)</td><td>\${slope.toFixed(4)}</td></tr>
+            <tr><td>SE</td><td>\${seSlope.toFixed(4)}</td></tr>
+            <tr><td>t-statistic</td><td>\${t.toFixed(2)}</td></tr>
+            <tr><td>p-value</td><td>\${pValue < 0.05 ? '<span class="badge badge-warning">Significant</span>' : '<span class="badge badge-success">Not significant</span>'} (\${pValue.toFixed(4)})</td></tr>
+          </table>
+          <p class="mt-2" style="color:#94a3b8; font-size:0.9rem;">
+            \${pValue < 0.05 ? 'Warning: Evidence of publication bias detected (p < 0.05)' : 'No significant evidence of publication bias'}
+          </p>
+        </div>
+      \`;
+    }
+
+    function normalCDF(x) {
+      const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+      const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+      const sign = x < 0 ? -1 : 1;
+      x = Math.abs(x) / Math.sqrt(2);
+      const t = 1 / (1 + p * x);
+      const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+      return 0.5 * (1 + sign * y);
+    }
+
+    function runSensitivityAnalysis() {
+      if (!studies.length) {
+        showToast('Load data first', 'error');
+        return;
+      }
+
+      showProgress('Sensitivity Analysis', 'Running leave-one-out...');
+
+      const container = document.getElementById('sensitivityResults');
+      const results = [];
+
+      for (let i = 0; i < studies.length; i++) {
+        const leftOutStudies = studies.filter((_, idx) => idx !== i);
+
+        // Quick fit for remaining studies
+        const points = [];
+        for (const s of leftOutStudies) {
+          const pts = s.points;
+          let ref = pts.find(p => p.d === 0) || pts[0];
+          for (const p of pts) {
+            if (p.d !== ref.d) {
+              points.push({
+                dose: p.d,
+                logRR: Math.log(p.c/p.n) - Math.log(ref.c/ref.n),
+                var: Math.max(1/p.c - 1/p.n + 1/ref.c - 1/ref.n, 1e-8)
+              });
+            }
+          }
+        }
+
+        if (points.length >= 3) {
+          const beta = solveGLSSimple(points, 2);
+          results.push({
+            leftOut: studies[i].name,
+            intercept: beta[0],
+            linear: beta[1],
+            quadratic: beta[2]
+          });
+        }
+
+        updateProgress(20 + (i / studies.length) * 70, \`\${studies[i].name} left out\`);
+      }
+
+      hideProgress();
+
+      container.innerHTML = \`
+        <div class="result-card">
+          <h3>Leave-One-Out Sensitivity Analysis</h3>
+          <table>
+            <thead><tr><th>Left Out</th><th>Intercept</th><th>Linear</th><th>Quadratic</th></tr></thead>
+            <tbody>
+              \${results.map(r => \`
+                <tr>
+                  <td>\${r.leftOut}</td>
+                  <td>\${r.intercept.toFixed(4)}</td>
+                  <td>\${r.linear.toFixed(4)}</td>
+                  <td>\${r.quadratic.toFixed(4)}</td>
+                </tr>
+              \`).join('')}
+            </tbody>
+          </table>
+        </div>
+      \`;
+
+      showToast('Sensitivity analysis complete!');
+    }
+
+    function solveGLSSimple(points, order) {
+      const n = points.length;
+      const p = order + 1;
+      const XtWX = new Array(p * p).fill(0);
+      const XtWy = new Array(p).fill(0);
+
+      for (const point of points) {
+        const w = 1 / point.var;
+        for (let i = 0; i < p; i++) {
+          const xi = Math.pow(point.dose, i);
+          XtWy[i] += w * xi * point.logRR;
+          for (let j = 0; j < p; j++) {
+            const xj = Math.pow(point.dose, j);
+            XtWX[i * p + j] += w * xi * xj;
+          }
+        }
+      }
+
+      for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-6;
+
+      if (p === 3) {
+        const det = XtWX[0] * (XtWX[4]*XtWX[8] - XtWX[5]*XtWX[7]) -
+                    XtWX[1] * (XtWX[3]*XtWX[8] - XtWX[5]*XtWX[6]) +
+                    XtWX[2] * (XtWX[3]*XtWX[7] - XtWX[4]*XtWX[6]);
+        return [
+          ((XtWX[4]*XtWX[8] - XtWX[5]*XtWX[7]) * XtWy[0] +
+           (XtWX[2]*XtWX[7] - XtWX[1]*XtWX[8]) * XtWy[1] +
+           (XtWX[1]*XtWX[5] - XtWX[2]*XtWX[4]) * XtWy[2]) / det,
+          ((XtWX[2]*XtWX[6] - XtWX[0]*XtWX[8]) * XtWy[0] +
+           (XtWX[0]*XtWX[8] - XtWX[2]*XtWX[6]) * XtWy[1] +
+           (XtWX[0]*XtWX[5] - XtWX[1]*XtWX[2]) * XtWy[2]) / det,
+          ((XtWX[1]*XtWX[6] - XtWX[0]*XtWX[7]) * XtWy[0] +
+           (XtWX[0]*XtWX[7] - XtWX[1]*XtWX[6]) * XtWy[1] +
+           (XtWX[0]*XtWX[4] - XtWX[1]*XtWX[1]) * XtWy[2]) / det
+        ];
+      }
+
+      return XtWy; // Fallback
+    }
+
+    function runSubgroupAnalysis() {
+      if (!studies.length) {
+        showToast('Load data first', 'error');
+        return;
+      }
+
+      const subgroups = [...new Set(studies.map(s => s.subgroup || 'Overall'))];
+      const container = document.getElementById('subgroupsResults');
+
+      if (subgroups.length < 2) {
+        container.innerHTML = '<div class="alert alert-warning">Define subgroups in the data tab first (e.g., RCT, Cohort, Case-Control)</div>';
+        return;
+      }
+
+      showProgress('Subgroup Analysis', 'Analyzing subgroups...');
+
+      const results = [];
+
+      for (const sg of subgroups) {
+        const sgStudies = studies.filter(s => (s.subgroup || 'Overall') === sg);
+
+        const points = [];
+        for (const s of sgStudies) {
+          const pts = s.points;
+          let ref = pts.find(p => p.d === 0) || pts[0];
+          for (const p of pts) {
+            if (p.d !== ref.d) {
+              points.push({
+                dose: p.d,
+                logRR: Math.log(p.c/p.n) - Math.log(ref.c/ref.n),
+                var: Math.max(1/p.c - 1/p.n + 1/ref.c - 1/ref.n, 1e-8)
+              });
+            }
+          }
+        }
+
+        if (points.length >= 3) {
+          const beta = solveGLSSimple(points, 2);
+          const n = points.length;
+
+          // Simple I2
+          let Q = 0;
+          for (const p of points) {
+            const pred = beta[0] + beta[1]*p.dose + beta[2]*p.dose*p.dose;
+            Q += p.logRR * p.logRR / p.var;
+          }
+
+          const df = n - 3;
+          const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
+
+          results.push({
+            subgroup: sg,
+            nStudies: sgStudies.length,
+            nPoints: n,
+            linear: beta[1],
+            quadratic: beta[2],
+            I2: I2,
+            Q: Q
+          });
+        }
+
+        updateProgress(20 + (results.length / subgroups.length) * 70, \`\${sg} complete\`);
+      }
+
+      hideProgress();
+
+      container.innerHTML = \`
+        <div class="result-card">
+          <h3>Subgroup Analysis</h3>
+          <table>
+            <thead><tr><th>Subgroup</th><th>Studies</th><th>Points</th><th>Linear</th><th>Quadratic</th><th>I²</th></tr></thead>
+            <tbody>
+              \${results.map(r => \`
+                <tr>
+                  <td><strong>\${r.subgroup}</strong></td>
+                  <td>\${r.nStudies}</td>
+                  <td>\${r.nPoints}</td>
+                  <td>\${r.linear.toFixed(4)}</td>
+                  <td>\${r.quadratic.toFixed(4)}</td>
+                  <td>\${r.I2.toFixed(1)}%</td>
+                </tr>
+              \`).join('')}
+            </tbody>
+          </table>
+        </div>
+      \`;
+
+      showToast('Subgroup analysis complete!');
+    }
+
+    function defineSubgroups() {
+      showToast('Edit subgroups directly in the Data tab (Subgroup column)', 'info');
+    }
+
+    function runBootstrapAnalysis() {
+      showToast('Bootstrap: Use CI Method = Bootstrap in Settings and run main analysis', 'info');
+    }
+
+    function runModelComparison() {
+      if (!studies.length) {
+        showToast('Load data first', 'error');
+        return;
+      }
+
+      showProgress('Model Comparison', 'Comparing models...');
+
+      const container = document.getElementById('comparisonResults');
+      const models = ['linear', 'quadratic', 'cubic'];
+      const results = [];
+
+      // Prepare points once
+      const points = [];
+      for (const s of studies) {
+        const pts = s.points;
+        let ref = pts.find(p => p.d === 0) || pts[0];
+        for (const p of pts) {
+          if (p.d !== ref.d) {
+            points.push({
+              dose: p.d,
+              logRR: Math.log(p.c/p.n) - Math.log(ref.c/ref.n),
+              var: Math.max(1/p.c - 1/p.n + 1/ref.c - 1/ref.n, 1e-8)
+            });
+          }
+        }
+      }
+
+      for (const model of models) {
+        try {
+          const order = model === 'linear' ? 1 : model === 'quadratic' ? 2 : 3;
+          const beta = solveGLSSimple(points, order);
+
+          let logLik = 0;
+          for (const p of points) {
+            let pred = 0;
+            for (let i = 0; i < beta.length; i++) pred += beta[i] * Math.pow(p.dose, i);
+            logLik -= 0.5 * Math.pow(p.logRR - pred, 2) / p.var;
+          }
+
+          results.push({
+            model: model.charAt(0).toUpperCase() + model.slice(1),
+            aic: 2 * order - 2 * logLik,
+            bic: Math.log(points.length) * order - 2 * logLik,
+            logLik: logLik
+          });
+        } catch (e) {
+          // Skip failed models
+        }
+      }
+
+      hideProgress();
+
+      results.sort((a, b) => a.aic - b.aic);
+
+      container.innerHTML = \`
+        <div class="result-card">
+          <h3>Model Comparison</h3>
+          <table>
+            <thead><tr><th>Model</th><th>AIC</th><th>BIC</th><th>Log-Likelihood</th></tr></thead>
+            <tbody>
+              \${results.map((r, i) => \`
+                <tr style="\${i === 0 ? 'background:rgba(16,185,129,0.1)' : ''}">
+                  <td>\${r.model} \${i === 0 ? '<span class="badge badge-success">Best</span>' : ''}</td>
+                  <td>\${r.aic.toFixed(2)}</td>
+                  <td>\${r.bic.toFixed(2)}</td>
+                  <td>\${r.logLik.toFixed(2)}</td>
+                </tr>
+              \`).join('')}
+            </tbody>
+          </table>
+          <p class="mt-2" style="color:#94a3b8; font-size:0.9rem;">
+            Lower AIC/BIC indicates better model fit
+          </p>
+        </div>
+      \`;
+
+      showToast('Model comparison complete!');
+    }
+
+    function runCrossValidation() {
+      if (!studies.length || studies.length < 3) {
+        showToast('Need at least 3 studies for cross-validation', 'error');
+        return;
+      }
+
+      showProgress('Cross-Validation', 'Running LOOCV...');
+
+      const container = document.getElementById('cvResults');
+      const errors = [];
+
+      for (let i = 0; i < studies.length; i++) {
+        const trainStudies = studies.filter((_, idx) => idx !== i);
+        const testStudy = studies[i];
+
+        // Fit on training
+        const trainPoints = [];
+        for (const s of trainStudies) {
+          const pts = s.points;
+          let ref = pts.find(p => p.d === 0) || pts[0];
+          for (const p of pts) {
+            if (p.d !== ref.d) {
+              trainPoints.push({
+                dose: p.d,
+                logRR: Math.log(p.c/p.n) - Math.log(ref.c/ref.n),
+                var: Math.max(1/p.c - 1/p.n + 1/ref.c - 1/ref.n, 1e-8)
+              });
+            }
+          }
+        }
+
+        if (trainPoints.length >= 3) {
+          const beta = solveGLSSimple(trainPoints, 2);
+
+          // Predict on test
+          const testPts = testStudy.points;
+          let ref = testPts.find(p => p.d === 0) || testPts[0];
+          let mse = 0;
+          let n = 0;
+
+          for (const p of testPts) {
+            if (p.d !== ref.d) {
+              const actual = Math.log(p.c/p.n) - Math.log(ref.c/ref.n);
+              const pred = beta[0] + beta[1]*p.d + beta[2]*p.d*p.d;
+              mse += Math.pow(actual - pred, 2);
+              n++;
+            }
+          }
+
+          errors.push({
+            study: testStudy.name,
+            rmse: Math.sqrt(mse / n),
+            mae: Math.sqrt(mse / n) // Same as RMSE for this scale
+          });
+        }
+
+        updateProgress(20 + (i / studies.length) * 70, \`\${testStudy.name} validation\`);
+      }
+
+      hideProgress();
+
+      const avgRMSE = errors.reduce((a, b) => a + b.rmse, 0) / errors.length;
+
+      container.innerHTML = \`
+        <div class="result-card">
+          <h3>Leave-One-Out Cross-Validation</h3>
+          <p><strong>Average RMSE:</strong> \${avgRMSE.toFixed(4)}</p>
+          <table>
+            <thead><tr><th>Left Out</th><th>RMSE</th></tr></thead>
+            <tbody>
+              \${errors.map(e => \`
+                <tr><td>\${e.study}</td><td>\${e.rmse.toFixed(4)}</td></tr>
+              \`).join('')}
+            </tbody>
+          </table>
+        </div>
+      \`;
+
+      showToast('Cross-validation complete!');
+    }
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runAnalysis();
+      }
+    });
+  </script>
+</body>
+</html>

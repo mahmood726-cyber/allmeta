@@ -1,0 +1,20 @@
+{
+  "version": "0.1",
+  "model_id": "psa_demo",
+  "generated_at": "2026-03-01T12:35:45Z",
+  "comparator": "R",
+  "source": "Independent R Markov fixture runner",
+  "r_version": "R version 4.5.2 (2025-10-31 ucrt)",
+  "strategies": {
+    "intervention": {
+      "total_costs": 31406.3095,
+      "total_qalys": 4.6945,
+      "life_years": 6.2562
+    },
+    "comparator": {
+      "total_costs": 30787.9,
+      "total_qalys": 4.084,
+      "life_years": 5.8604
+    }
+  }
+}

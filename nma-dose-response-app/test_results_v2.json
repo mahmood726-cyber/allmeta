@@ -1,0 +1,42 @@
+{
+  "buttons": {
+    "tested": 116,
+    "failed": 0
+  },
+  "tabs": {
+    "tested": 5,
+    "failed": 0
+  },
+  "plots": {
+    "found": 5,
+    "rendered": 3,
+    "empty": [
+      "doseChart",
+      "networkChart"
+    ]
+  },
+  "functions": {
+    "passed": [
+      "StatUtils.normalCDF",
+      "StatUtils.normalQuantile",
+      "StatUtils.tCDF",
+      "StatUtils.chiSquareCDF",
+      "BootstrapCI",
+      "EggerTest",
+      "TrimAndFill",
+      "BeggMazumdarTest",
+      "InfluenceDiagnostics",
+      "ModelFitStatistics",
+      "ValidationSuite",
+      "EdgeCaseHandler",
+      "REMLEstimator",
+      "PetersTest",
+      "PETPEESE",
+      "ZCurveAnalysis",
+      "CumulativeMetaAnalysis",
+      "LeaveOneOutBias"
+    ],
+    "failed": []
+  },
+  "console_errors": []
+}

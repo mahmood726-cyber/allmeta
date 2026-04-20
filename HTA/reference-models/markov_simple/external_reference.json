@@ -1,0 +1,29 @@
+{
+  "version": "0.2",
+  "model_id": "markov_simple",
+  "generated_at": "2026-03-01T12:36:59.679Z",
+  "comparators": {
+    "r_reference": {
+      "source": "Independent R Markov fixture runner",
+      "strict": true,
+      "tolerance": {
+        "costs": 0.01,
+        "qalys": 0.0001,
+        "relative": 0.001
+      },
+      "strategies": {
+        "base": {
+          "total_costs": 5395.1763,
+          "total_qalys": 4.3161,
+          "life_years": 5.3952
+        }
+      },
+      "provenance": {
+        "file": "external-comparators\\r\\markov_simple\\results.json",
+        "sha256": "aa05a8b125d2efc994a2f06b380ca40248ff4e64b564411f2411d7ee21c9e7de",
+        "generated_at": "2026-03-01T12:35:45Z",
+        "comparator": "R"
+      }
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "id": "markov_simple",
+    "name": "Simple Two-State Markov Model",
+    "description": "Minimal Markov cohort model for validation testing (Alive → Dead)",
+    "author": "HTA Standard Reference",
+    "created": "2024-01-01T00:00:00Z",
+    "version": "1.0.0",
+    "tags": ["reference", "golden-fixture", "markov"]
+  },
+  "settings": {
+    "time_horizon": 10,
+    "cycle_length": 1,
+    "discount_rate_costs": 0.035,
+    "discount_rate_qalys": 0.035,
+    "half_cycle_correction": "trapezoidal",
+    "currency": "GBP",
+    "starting_age": 60
+  },
+  "model": {
+    "type": "markov_cohort"
+  },
+  "parameters": {
+    "p_death": {
+      "value": 0.1,
+      "label": "Annual mortality probability",
+      "description": "Probability of death per cycle",
+      "distribution": {
+        "type": "beta",
+        "alpha": 10,
+        "beta": 90
+      }
+    },
+    "c_alive": {
+      "value": 1000,
+      "label": "Annual cost in Alive state",
+      "unit": "GBP",
+      "distribution": {
+        "type": "gamma",
+        "mean": 1000,
+        "se": 100
+      }
+    },
+    "u_alive": {
+      "value": 0.8,
+      "label": "Utility in Alive state",
+      "distribution": {
+        "type": "beta",
+        "alpha": 80,
+        "beta": 20
+      }
+    }
+  },
+  "states": {
+    "alive": {
+      "label": "Alive",
+      "description": "Patient is alive",
+      "type": "transient",
+      "initial_probability": 1.0,
+      "cost": "c_alive",
+      "utility": "u_alive"
+    },
+    "dead": {
+      "label": "Dead",
+      "description": "Absorbing state",
+      "type": "absorbing",
+      "initial_probability": 0,
+      "cost": 0,
+      "utility": 0
+    }
+  },
+  "transitions": {
+    "alive_to_alive": {
+      "from": "alive",
+      "to": "alive",
+      "probability": "1 - p_death"
+    },
+    "alive_to_dead": {
+      "from": "alive",
+      "to": "dead",
+      "probability": "p_death"
+    },
+    "dead_to_dead": {
+      "from": "dead",
+      "to": "dead",
+      "probability": 1.0
+    }
+  },
+  "strategies": {
+    "base": {
+      "label": "Base Case",
+      "description": "Standard mortality",
+      "is_comparator": true
+    }
+  },
+  "evidence": {
+    "ev_mortality": {
+      "source": "National Life Tables",
+      "citation": "ONS 2023",
+      "notes": "Simplified for demonstration"
+    }
+  }
+}

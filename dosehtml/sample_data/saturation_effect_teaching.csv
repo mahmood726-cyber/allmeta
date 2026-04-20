@@ -1,0 +1,72 @@
+# Sample Dataset 4: Saturation Effect (Plateau)
+# Teaching Example - Demonstrates exponential saturation
+# Expected Results: Linear model inadequate, exponential fits better
+# Use For: Teaching when to use exponential models
+#
+# Scenario: Nutrient intake and deficiency risk
+# This dataset shows SATURATION effect:
+#   - Low doses: Risk decreases rapidly with each unit
+#   - High doses: Additional benefit diminishes (plateau)
+# This is common for: nutrients, vitamins, drugs
+#
+# The relationship follows: RR = exp(β₀ + β₁ × (1 - e^(-α×dose)))
+
+study,dose,cases,n
+Study_A,0,120,40000
+Study_A,1,80,42000
+Study_A,2,55,43000
+Study_A,3,42,44000
+Study_A,4,35,44500
+Study_A,5,32,44700
+Study_B,0,115,38000
+Study_B,1,75,40000
+Study_B,2,52,41000
+Study_B,3,40,42000
+Study_B,4,33,42500
+Study_B,5,30,42700
+Study_C,0,125,42000
+Study_C,1,85,44000
+Study_C,2,58,45000
+Study_C,3,45,46000
+Study_C,4,37,46500
+Study_C,5,34,46700
+Study_D,0,110,36000
+Study_D,1,72,38000
+Study_D,2,50,39000
+Study_D,3,38,40000
+Study_D,4,31,40500
+Study_D,5,28,40700
+Study_E,0,118,39000
+Study_E,1,78,41000
+Study_E,2,54,42000
+Study_E,3,41,43000
+Study_E,4,34,43500
+Study_E,5,31,43700
+
+# EXPECTED ANALYSIS RESULTS:
+# =========================
+# Model: GLS (Quadratic) - Will NOT fit well!
+#
+# Problem with Quadratic Model:
+#   - β₂ will be significant but wrong direction
+#   - Model may predict decreasing then increasing (incorrect)
+#   - Residuals will show systematic pattern
+#
+# Model: Exponential - Fits CORRECTLY!
+#
+# Exponential Model Parameters:
+#   β₀: Approximately -7.0 (baseline risk)
+#   β₁: Negative (protective effect)
+#   α: Approximately 0.5-1.0 (saturation rate)
+#
+# Interpretation:
+#   - Risk decreases rapidly at low doses
+#   - Plateau reached around dose = 3/α
+#   - Little additional benefit beyond plateau
+#
+# Teaching Points:
+#   1. NOT all dose-response relationships are polynomial!
+#   2. Exponential models for: nutrients, drugs with saturation
+#   3. Look for diminishing returns pattern
+#   4. Always plot your data before choosing model
+#   5. Compare AIC/BIC between models to choose best fit

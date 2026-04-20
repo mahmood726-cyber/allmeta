@@ -1,0 +1,420 @@
+{
+  "data_handling": [
+    {
+      "test": "Load Sample Data",
+      "passed": true,
+      "detail": "Loaded"
+    },
+    {
+      "test": "Validation: Empty arrays",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Mismatched lengths",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Zero SE rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Negative SE rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Valid data accepted",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: NaN effect rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Infinity rejection",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "dose_response_tab": [
+    {
+      "test": "DoseResponseModels exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Linear model",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Emax model",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Quadratic model",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Dose chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "GaussianProcess DR",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "OptimalDoseFinder",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "ranking_tab": [
+    {
+      "test": "RankingAnalysis exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "SUCRA calculation",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "P-score calculation",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Rank chart exists",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "network_tab": [
+    {
+      "test": "Network chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "NetworkVisualization",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "renderNetwork function",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "ComponentNMA",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "TransitivityAssessment",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "bias_tab": [
+    {
+      "test": "Egger's test",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Begg-Mazumdar test",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Trim and Fill",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Peters' test",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "PET-PEESE",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Z-Curve analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "SelectionModelComparison",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "ContourFunnelPlot",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Bias chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Egger test execution",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Begg test execution",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Trim-Fill execution",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "diagnostics_tab": [
+    {
+      "test": "Influence diagnostics",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Leave-one-out analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Cumulative meta-analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Model fit statistics",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Diagnostics chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Influence analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Model fit stats",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Cumulative MA",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "statistical_functions": [
+    {
+      "test": "Normal CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Normal quantile",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "t-distribution CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Chi-square CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "DLEstimator exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "DLEstimator.calculate",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "REML estimator",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Bootstrap CI",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation suite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "predictionInterval",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "hartungKnappAdjustment",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "DL calculation works",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "ValidationSuite.validateDL",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "ui_elements": [
+    {
+      "test": "App Load",
+      "passed": true,
+      "detail": "NMA Dose Response Studio"
+    },
+    {
+      "test": "Notification system",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Functional buttons",
+      "passed": true,
+      "detail": "118 buttons"
+    },
+    {
+      "test": "Canvas: doseChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: rankChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: networkChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: biasChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: diagnosticsChart",
+      "passed": true,
+      "detail": "exists"
+    }
+  ],
+  "export_features": [
+    {
+      "test": "ExportManager exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "exportToCSV function",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "exportToPNG function",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "exportSummaryCsv",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "exportCharts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "exportJson",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "error_handling": [
+    {
+      "test": "Handles empty input",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Handles null input",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Handles single study",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Returns error message",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "advanced_features": [
+    {
+      "test": "NMAStudio namespace",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "DesignByTreatmentInteraction",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Bootstrap CI execution",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "REML estimation",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "console_errors": []
+}

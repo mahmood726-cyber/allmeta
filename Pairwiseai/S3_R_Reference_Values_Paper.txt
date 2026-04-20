@@ -1,0 +1,262 @@
+====================================================================== 
+TruthCert-PairwisePro R Reference Values
+For Research Synthesis Methods Paper Supplement
+====================================================================== 
+
+Generated: 2026-01-20 11:27:55 
+R Version: R version 4.5.2 (2025-10-31 ucrt) 
+metafor Version: 4.8.0 
+meta Version: 8.2.1 
+
+---------------------------------------------------------------------- 
+SECTION 1: BCG VACCINE DATASET (k=13)
+Reference: Colditz et al. (1994) JAMA
+---------------------------------------------------------------------- 
+
+1.1 Effect Size Calculations (Log Odds Ratio)
+Study	yi (log OR)	vi (variance)	SE
+1	-0.938694	0.357125	0.597599
+2	-1.666191	0.208132	0.456215
+3	-1.386294	0.433413	0.658341
+4	-1.456444	0.020314	0.142529
+5	-0.219141	0.051952	0.227929
+6	-0.958122	0.009905	0.099525
+7	-1.633776	0.227010	0.476455
+8	0.012021	0.004007	0.063301
+9	-0.471746	0.056977	0.238699
+10	-1.401210	0.075422	0.274630
+11	-0.340850	0.012525	0.111916
+12	0.446635	0.534162	0.730864
+13	-0.017342	0.071635	0.267647
+
+1.2 Random Effects Models - All tau² Estimators
+
+Note: GENQ estimator error: Must specify the 'weights' argument when method='GENQ'.
+Estimator	tau²		I²		Pooled Est	SE
+DL		0.366343	92.6455%	-0.747392	0.192263
+REML		0.337772	92.0727%	-0.745178	0.186028
+ML		0.302457	91.2283%	-0.741967	0.177953
+PM		0.341176	92.1456%	-0.745458	0.186784
+HS		0.268250	90.2191%	-0.738225	0.169678
+SJ		0.368420	92.6839%	-0.747542	0.192707
+HE		0.349453	92.3173%	-0.746120	0.188607
+EB		0.341205	92.1462%	-0.745460	0.186790
+
+1.3 REML Model (Primary Reference)
+  Pooled log(OR): -0.745178
+  SE: 0.186028
+  95% CI: [-1.109786, -0.380570]
+  z-value: -4.005731
+  p-value: 0.000062
+  tau²: 0.337772
+  tau: 0.581182
+  I²: 92.0727%
+  H²: 12.6146
+  Q: 163.164915
+  Q df: 12
+  Q p-value: 0.000000
+
+1.4 Odds Ratio Scale
+  OR: 0.474650
+  OR 95% CI: [0.329630, 0.683472]
+
+1.5 HKSJ-Adjusted Confidence Interval
+  HKSJ CI: [-1.152019, -0.338336]
+  HKSJ t-value: -3.990751
+  HKSJ df: 12
+  HKSJ p-value: 0.001791
+  OR HKSJ CI: [0.315998, 0.712955]
+
+1.6 Prediction Interval
+  PI: [-1.941203, 0.450847]
+  OR PI: [0.143531, 1.569642]
+
+1.7 tau² Confidence Interval (Q-Profile Method)
+  tau² CI: [0.130161, 1.181190]
+
+---------------------------------------------------------------------- 
+SECTION 2: PUBLICATION BIAS TESTS (BCG Dataset)
+---------------------------------------------------------------------- 
+
+2.1 Egger's Regression Test
+  Intercept: -0.157099
+  z-value: -1.506951
+  p-value: 0.159991
+
+2.2 Begg's Rank Correlation Test
+  Kendall's tau: 0.025641
+  p-value: 0.952362
+
+2.3 Trim-and-Fill Analysis
+  Imputed studies (k0): 0
+  Adjusted estimate: -0.745178
+  Adjusted SE: 0.186028
+  Adjusted OR: 0.474650
+
+2.4 Fail-Safe N (Rosenthal)
+  Fail-safe N: 607
+  p-value: 0.000000
+
+---------------------------------------------------------------------- 
+SECTION 3: SENSITIVITY ANALYSIS (BCG Dataset)
+---------------------------------------------------------------------- 
+
+3.1 Leave-One-Out Analysis
+Study	Estimate	SE		tau²		I²
+1	-0.736772	0.196312	0.361635	93.0795%
+2	-0.681558	0.186619	0.314224	92.0727%
+3	-0.715499	0.192353	0.346443	92.8079%
+4	-0.663436	0.186086	0.297138	90.5316%
+5	-0.797519	0.198032	0.351513	92.5514%
+6	-0.725562	0.205255	0.379094	91.2211%
+7	-0.686259	0.187857	0.320257	92.2193%
+8	-0.828427	0.185919	0.294194	86.7802%
+9	-0.774414	0.203198	0.375141	93.0220%
+10	-0.684136	0.191688	0.326435	92.1602%
+11	-0.791246	0.202024	0.364688	91.4251%
+12	-0.793418	0.188277	0.331097	92.5088%
+13	-0.811297	0.191606	0.325735	92.1289%
+
+3.2 Influence Diagnostics
+Study	rstudent	dfbetas		cook.d		hat
+
+---------------------------------------------------------------------- 
+SECTION 4: META-REGRESSION (BCG Dataset - Latitude)
+---------------------------------------------------------------------- 
+
+4.1 Meta-Regression: Effect of Latitude
+  Intercept: 0.301034 (SE: 0.214649, p=0.160780)
+  Latitude slope: -0.031534 (SE: 0.006276, p=0.000001)
+  R²: 85.0649%
+  QM: 25.242380 (p=0.000001)
+  Residual tau²: 0.050447
+
+---------------------------------------------------------------------- 
+SECTION 5: OTHER EFFECT SIZE CALCULATIONS
+---------------------------------------------------------------------- 
+
+5.1 Risk Ratio (BCG Dataset)
+  Pooled log(RR): -0.714532
+  Pooled RR: 0.489421
+  95% CI: [0.344074, 0.696166]
+
+5.2 Risk Difference (BCG Dataset)
+  Pooled RD: -0.025174
+  95% CI: [-0.046397, -0.003950]
+
+5.3 Standardized Mean Difference (Hedges' g)
+  Hedges' g: -0.582411
+  Variance: 0.042564
+  SE: 0.206310
+
+5.4 Correlation Coefficients (Fisher's z transformation)
+Study	r	Fisher z	Variance
+1	0.35	0.365444	0.012195
+2	0.42	0.447692	0.008547
+3	0.28	0.287682	0.010870
+4	0.51	0.562730	0.013889
+5	0.39	0.411800	0.009346
+
+  Pooled Fisher z: 0.411473
+  Pooled r (back-transformed): 0.389723
+
+5.5 Proportions (Freeman-Tukey Double Arcsine)
+Study	Proportion	FT		Variance
+1	0.1500		0.402484	0.002488
+2	0.1500		0.401702	0.002075
+3	0.1053		0.336978	0.002618
+4	0.1538		0.406680	0.001916
+5	0.1412		0.391076	0.002924
+
+---------------------------------------------------------------------- 
+SECTION 6: THREE-LEVEL MODEL VALIDATION
+---------------------------------------------------------------------- 
+
+6.1 Example Data (5 studies, 3 effects each)
+Study	Effect	yi		vi
+1	1	-0.500000	0.050000
+1	2	-0.600000	0.050000
+1	3	-0.400000	0.050000
+2	4	-0.300000	0.050000
+2	5	-0.200000	0.050000
+2	6	-0.400000	0.050000
+3	7	-0.700000	0.050000
+3	8	-0.800000	0.050000
+3	9	-0.600000	0.050000
+4	10	-0.400000	0.050000
+4	11	-0.500000	0.050000
+4	12	-0.300000	0.050000
+5	13	-0.600000	0.050000
+5	14	-0.500000	0.050000
+5	15	-0.700000	0.050000
+
+6.2 Three-Level Model Results
+  Pooled estimate: -0.500000
+  SE: 0.070711
+  95% CI: [-0.638590, -0.361410]
+  sigma²_between (Level 3): 0.008333
+  sigma²_within (Level 2): 0.000000
+  Total heterogeneity: 0.008333
+  ICC: 1.000000
+
+---------------------------------------------------------------------- 
+SECTION 7: GOSH ANALYSIS (BCG Dataset)
+---------------------------------------------------------------------- 
+
+7.1 GOSH Analysis Summary (1000 random subsets)
+  Number of subsets: 1000
+  Mean estimate: -0.753322
+  SD estimate: 0.210948
+  Min estimate: -1.483230
+  Max estimate: 0.446635
+  Mean I²: 85.0128%
+  Mean tau²: 0.333608
+
+---------------------------------------------------------------------- 
+SECTION 8: ROBUST VARIANCE ESTIMATION
+---------------------------------------------------------------------- 
+
+8.1 RVE Results (CR2 Small-Sample Correction)
+  Estimate: -0.500000
+  RVE SE: 0.070711
+  RVE df (Satterthwaite): 4.00
+  t-value: -7.071068
+  p-value: 0.002111
+
+====================================================================== 
+SUMMARY REFERENCE TABLE FOR VALIDATION
+====================================================================== 
+
+BCG Dataset (k=13) REML Results:
+  log(OR) = -0.745178 (SE = 0.186028)
+  OR = 0.474650 [0.329630, 0.683472]
+  tau² = 0.337772
+  I² = 92.07%
+  Q = 163.1649 (df=12, p=0.000000)
+
+HKSJ Adjustment:
+  log(OR) HKSJ CI = [-1.152019, -0.338336]
+  OR HKSJ CI = [0.315998, 0.712955]
+
+Prediction Interval:
+  log(OR) PI = [-1.941203, 0.450847]
+  OR PI = [0.143531, 1.569642]
+
+tau² Estimators (BCG Dataset):
+  DL: tau² = 0.366343
+  REML: tau² = 0.337772
+  ML: tau² = 0.302457
+  PM: tau² = 0.341176
+  HS: tau² = 0.268250
+  SJ: tau² = 0.368420
+  HE: tau² = 0.349453
+  EB: tau² = 0.341205
+
+Publication Bias:
+  Egger p-value = 0.159991
+  Begg p-value = 0.952362
+  Trim-fill k0 = 0
+
+====================================================================== 
+END OF R REFERENCE VALUES
+====================================================================== 

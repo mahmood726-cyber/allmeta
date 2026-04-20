@@ -1,0 +1,27 @@
+{
+  "passed": [
+    "Class StatUtils defined",
+    "Class ValidationSuite defined",
+    "Class BootstrapCI defined",
+    "Class InfluenceDiagnostics defined",
+    "Class ModelFitStatistics defined",
+    "Class EdgeCaseHandler defined",
+    "Class TrimAndFill defined",
+    "Class EggerTest defined",
+    "Class REMLEstimator defined",
+    "Class BeggMazumdarTest defined",
+    "Class PetersTest defined",
+    "Class PETPEESE defined",
+    "StatUtils.normalCDF(0) = 0.5000",
+    "StatUtils.normalCDF(1.96) = 0.9750",
+    "StatUtils.normalQuantile(0.5) = 0.0000",
+    "StatUtils.normalQuantile(0.975) = 1.9600",
+    "BootstrapCI: effect=-0.506",
+    "EggerTest: intercept=2.912",
+    "TrimAndFill: k0=0",
+    "ValidationSuite: DL validation PASSED",
+    "Found 5 canvas elements",
+    "Found 117 buttons"
+  ],
+  "errors": []
+}

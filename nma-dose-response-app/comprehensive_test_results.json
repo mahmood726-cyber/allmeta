@@ -1,0 +1,353 @@
+{
+  "data_handling": [
+    {
+      "test": "Load Sample Data",
+      "passed": null,
+      "detail": "No data"
+    },
+    {
+      "test": "Validation: Empty arrays",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Mismatched lengths",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Zero SE rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Negative SE rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Valid data accepted",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: NaN effect rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation: Infinity rejection",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "dose_response_tab": [
+    {
+      "test": "Linear model",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Emax model",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Spline model",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Dose chart exists",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "ranking_tab": [
+    {
+      "test": "SUCRA calculation",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "P-score calculation",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Rank chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Ranking table exists",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "network_tab": [
+    {
+      "test": "Network chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Network rendering function",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Node positioning",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "bias_tab": [
+    {
+      "test": "Egger's test",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Begg-Mazumdar test",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Trim and Fill",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Peters' test",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "PET-PEESE",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Z-Curve analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Funnel plot exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Egger test execution",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Begg test execution",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Trim-Fill execution",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "diagnostics_tab": [
+    {
+      "test": "Influence diagnostics",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Leave-one-out analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Cumulative meta-analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Model fit statistics",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Diagnostics chart exists",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Influence analysis",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Model fit stats",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Cumulative MA",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "statistical_functions": [
+    {
+      "test": "Normal CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Normal quantile",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "t-distribution CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Chi-square CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "F-distribution CDF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "DerSimonian-Laird",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "REML estimator",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Bootstrap CI",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Validation suite",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "DL effect accuracy",
+      "passed": null,
+      "detail": ""
+    },
+    {
+      "test": "I-squared accuracy",
+      "passed": null,
+      "detail": ""
+    }
+  ],
+  "ui_elements": [
+    {
+      "test": "App Load",
+      "passed": true,
+      "detail": "NMA Dose Response Studio"
+    },
+    {
+      "test": "Notification system",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Functional buttons",
+      "passed": true,
+      "detail": "116 buttons"
+    },
+    {
+      "test": "Canvas: doseChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: rankChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: networkChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: biasChart",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Canvas: diagnosticsChart",
+      "passed": true,
+      "detail": "exists"
+    }
+  ],
+  "export_features": [
+    {
+      "test": "Export to CSV function",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Export to PNG function",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "test": "Download function",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Button: PARSE CSV",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Button: EXPORT POSTERIORS",
+      "passed": true,
+      "detail": "exists"
+    },
+    {
+      "test": "Button: EXPORT FOR THREE.JS",
+      "passed": true,
+      "detail": "exists"
+    }
+  ],
+  "error_handling": [
+    {
+      "test": "Handles empty input",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Handles null input",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Handles single study",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "test": "Returns error message",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "console_errors": []
+}

@@ -1,0 +1,151 @@
+{
+  "timestamp": "2026-03-18T07:45:01.950Z",
+  "status": "PASS",
+  "summary": {
+    "passed": 28,
+    "failed": 0,
+    "total": 28
+  },
+  "tests": [
+    {
+      "name": "Stats.mean returns arithmetic mean",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Stats.sd default matches population SD",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Stats.sd sample mode remains available",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "getConfZ honors 95% confidence",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "getConfZ honors 99% confidence",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "SurvivalAnalysis.kaplanMeier preserves terminal zero survival",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "SurvivalAnalysis.kaplanMeier avoids null CI/SE when the final risk set is exhausted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "SurvivalAnalysis.logRankTest returns a neutral result when variance is zero",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ipdResolveBinaryArmMapping accepts string 1/0 treatment labels",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ipdResolveBinaryArmMapping preserves intervention/placebo arm splits",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ipdResolveBinaryArmMapping rejects ambiguous arm coding",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PRISMA-IPD flow summary is dataset-derived and deterministic",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PRISMA-IPD risk of bias labels fall back to not assessed instead of random values",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ipdCreateDeterministicSampler produces reproducible sequences",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "PRISMAIPDGenerator avoids Math.random placeholders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "runGOSHPlot uses deterministic subset sampling",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.fixedEffect estimate matches reference",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.fixedEffect SE matches reference",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.fixedEffect exposes summary aliases",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsDL estimate matches benchmark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsDL tau2 matches benchmark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsDL I2 matches benchmark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsDL exposes CI aliases",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsREML estimate matches benchmark",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsREML tau2 matches benchmark tolerance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.randomEffectsREML SE matches benchmark tolerance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.applyHKSJ widens or preserves CI width",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MetaAnalysis.predictionInterval is wider than CI",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

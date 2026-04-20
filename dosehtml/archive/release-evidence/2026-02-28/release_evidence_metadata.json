@@ -1,0 +1,32 @@
+﻿{
+    "generated_at_utc":  "2026-02-28T18:43:44Z",
+    "date_tag":  "2026-02-28",
+    "archive_path":  "C:\\HTML apps\\dosehtml\\archive\\release-evidence\\2026-02-28",
+    "files_copied":  19,
+    "files_missing":  0,
+    "copied":  [
+                   "README.md",
+                   "CHANGELOG.md",
+                   "dose-response-pro.html",
+                   "scripts/build_release_readiness_summary.py",
+                   "docs/RELEASE_NOTES_2026-02-28.md",
+                   "docs/RSM_MANUSCRIPT_DRAFT_2026-02-28.md",
+                   "docs/REPRODUCIBILITY_APPENDIX_2026-02-28.md",
+                   "docs/RSM_SUBMISSION_CHECKLIST_2026-02-28.md",
+                   "docs/CROSS_PACKAGE_MULTIPERSONA_REVIEW_2026-02-28.md",
+                   "docs/STRICT_BEAT_R_BENCHMARK_2026-02-28.md",
+                   "tests/r_validation_results.json",
+                   "tests/r_validation_results.txt",
+                   "tests/r_simulation_benchmark_results.json",
+                   "tests/strict_beat_r_benchmark_results.json",
+                   "tests/cross_package_benchmark_results.json",
+                   "tests/release_validation_2026-02-28/test_dose_response_app.log",
+                   "tests/release_validation_2026-02-28/test_dose_response_main.log",
+                   "tests/release_validation_2026-02-28/selenium_full_test.log",
+                   "tests/release_validation_2026-02-28/release_readiness_summary.json"
+               ],
+    "missing":  [
+
+                ],
+    "manifest":  "SHA256SUMS.txt"
+}

@@ -1,0 +1,106 @@
+name: Validation
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-validation:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Run browser-facing validation gate
+        run: python dev/build-scripts/release_checklist.py --skip-selenium
+
+      - name: Upload browser validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-validation-artifacts
+          if-no-files-found: warn
+          path: |
+            dev/benchmarks/latest_browser_test_runner.json
+            dev/benchmarks/latest_core_stats_meta_test.json
+            dev/benchmarks/latest_user_flow_smoke_test.json
+
+  parity-gate:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Install R parity dependencies
+        run: Rscript dev/build-scripts/install_r_parity_dependencies.R
+
+      - name: Verify modular build is in sync
+        run: python dev/build.py verify
+
+      - name: Run parity gate
+        run: python dev/build-scripts/ipd_parity_gate.py --with-frontier-gap --with-loop7
+
+      - name: Upload parity artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-gate-artifacts
+          if-no-files-found: warn
+          path: |
+            dev/benchmarks/latest_advanced_survival_r_benchmark.json
+            dev/benchmarks/latest_advanced_survival_r_benchmark.md
+            dev/benchmarks/latest_ipd_parity_gate.json
+            dev/benchmarks/latest_ipd_parity_gate.md
+            dev/benchmarks/latest_ipd_superiority_snapshot.json
+            dev/benchmarks/latest_ipd_superiority_snapshot.md
+            dev/benchmarks/latest_frontier_gap_methods_benchmark.json
+            dev/benchmarks/latest_frontier_gap_methods_benchmark.md
+            dev/benchmarks/latest_ipd_simulation_lab_benchmark.json
+            dev/benchmarks/latest_ipd_simulation_lab_benchmark.md
+            dev/benchmarks/latest_publication_replication_gate.json
+            dev/benchmarks/latest_publication_replication_gate.md

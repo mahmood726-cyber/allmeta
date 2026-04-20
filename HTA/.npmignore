@@ -1,0 +1,14 @@
+tests/
+docs/
+paper/
+.github/
+review-findings.md
+BENCHMARK_VS_TREEAGE.md
+WORLD_CLASS_ENHANCEMENTS.md
+EDITORIAL_FIXES_APPLIED.md
+external-comparators/
+scripts/
+dist/
+.eslintrc*
+eslint.config.js
+*.test.js

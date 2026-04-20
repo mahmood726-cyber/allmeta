@@ -1,0 +1,96 @@
+{
+  "title": "IPD Meta-Analysis Pro: A Browser-Based Platform for Individual Participant Data Evidence Synthesis",
+  "slug": "ipd-meta-pro",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "body": "How can researchers conduct individual participant data meta-analysis reproducibly without fragmenting workflows across multiple statistical platforms? IPD Meta-Analysis Pro is a 51,305-line browser application providing IPD synthesis with one-stage and two-stage pooling, subgroup stratification, covariate-adjusted modeling, and GRADE appraisal panels. The engine implements mixed-effects logistic and linear regression, stratified Cox models, interaction testing, and heterogeneity diagnostics through modular JavaScript validated against R equivalents via WebR. A release pipeline comprising 56 automated regression tests achieved a 100 percent pass rate, with R parity gates confirming agreement for pooled HR and MD estimates within 95% CI tolerance. Browser test harness, user-flow smoke suite, and core statistics validation collectively verify stability across data import, model configuration, diagnostic inspection, and export pathways. IPD Meta-Analysis Pro removes operational barriers to participant-level evidence synthesis while preserving full methodological transparency and audit capability. The tool cannot replace purpose-built Bayesian hierarchical frameworks or handle time-to-event competing risks natively, requiring external software for those analyses.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "How can researchers conduct individual participant data meta-analysis reproducibly without fragmenting workflows across multiple statistical platforms?"
+    },
+    {
+      "role": "Dataset",
+      "text": "IPD Meta-Analysis Pro is a 51,305-line browser application providing IPD synthesis with one-stage and two-stage pooling, subgroup stratification, covariate-adjusted modeling, and GRADE appraisal panels."
+    },
+    {
+      "role": "Method",
+      "text": "The engine implements mixed-effects logistic and linear regression, stratified Cox models, interaction testing, and heterogeneity diagnostics through modular JavaScript validated against R equivalents via WebR."
+    },
+    {
+      "role": "Primary result",
+      "text": "A release pipeline comprising 56 automated regression tests achieved a 100 percent pass rate, with R parity gates confirming agreement for pooled HR and MD estimates within 95% CI tolerance."
+    },
+    {
+      "role": "Robustness",
+      "text": "Browser test harness, user-flow smoke suite, and core statistics validation collectively verify stability across data import, model configuration, diagnostic inspection, and export pathways."
+    },
+    {
+      "role": "Interpretation",
+      "text": "IPD Meta-Analysis Pro removes operational barriers to participant-level evidence synthesis while preserving full methodological transparency and audit capability."
+    },
+    {
+      "role": "Boundary",
+      "text": "The tool cannot replace purpose-built Bayesian hierarchical frameworks or handle time-to-event competing risks natively, requiring external software for those analyses."
+    }
+  ],
+  "notes": {
+    "app": "IPD Meta-Analysis Pro v1.0",
+    "data": "51,305-line browser application with WebR validation",
+    "code": "https://github.com/mahmood726-cyber/ipd-meta-pro",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "Pooled IPD treatment effect",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a quantitative result such as a percentage, count, or interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}

@@ -1,0 +1,96 @@
+{
+  "title": "TruthCert PairwisePro: Browser-Based Pairwise Meta-Analysis with Regional Health-Economic Overlays",
+  "slug": "truthcert-pairwisepro-regional-hta",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "body": "Can a unified browser application deliver production-grade pairwise meta-analysis across thirteen regional health-economic contexts simultaneously? TruthCert PairwisePro v1.0 is a 27,076-line single-file HTML application providing random-effects meta-analysis with DerSimonian-Laird, REML, and Paule-Mandel estimators, HKSJ adjustment, prediction intervals, and thirteen country-specific cost-effectiveness overlays for Africa-focused health technology assessment applications. The system implements forest plots, funnel plots, Egger regression, trim-and-fill, leave-one-out sensitivity, and cumulative meta-analysis with automated GRADE certainty assessment, all running client-side without server dependencies or installation. Pooled estimates matched R metafor within 0.0001 for tau-squared across all validation benchmarks, with 101 of 101 regression tests passing on the production bundle. Sensitivity analysis confirmed stable conclusions across all three heterogeneity estimators and both confidence interval methods for each benchmark dataset. This architecture demonstrates that a zero-installation browser tool can serve both statistical rigor and health-economic translation in resource-limited settings. Nonetheless, the limitation of fixed country-level cost parameters means site-specific pharmacoeconomic adaptation requires manual override by local analysts.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "Can a unified browser application deliver production-grade pairwise meta-analysis across thirteen regional health-economic contexts simultaneously?"
+    },
+    {
+      "role": "Dataset",
+      "text": "TruthCert PairwisePro v1.0 is a 27,076-line single-file HTML application providing random-effects meta-analysis with DerSimonian-Laird, REML, and Paule-Mandel estimators, HKSJ adjustment, prediction intervals, and thirteen country-specific cost-effectiveness overlays for Africa-focused health technology assessment applications."
+    },
+    {
+      "role": "Method",
+      "text": "The system implements forest plots, funnel plots, Egger regression, trim-and-fill, leave-one-out sensitivity, and cumulative meta-analysis with automated GRADE certainty assessment, all running client-side without server dependencies or installation."
+    },
+    {
+      "role": "Primary result",
+      "text": "Pooled estimates matched R metafor within 0.0001 for tau-squared across all validation benchmarks, with 101 of 101 regression tests passing on the production bundle."
+    },
+    {
+      "role": "Robustness",
+      "text": "Sensitivity analysis confirmed stable conclusions across all three heterogeneity estimators and both confidence interval methods for each benchmark dataset."
+    },
+    {
+      "role": "Interpretation",
+      "text": "This architecture demonstrates that a zero-installation browser tool can serve both statistical rigor and health-economic translation in resource-limited settings."
+    },
+    {
+      "role": "Boundary",
+      "text": "Nonetheless, the limitation of fixed country-level cost parameters means site-specific pharmacoeconomic adaptation requires manual override by local analysts."
+    }
+  ],
+  "notes": {
+    "app": "TruthCert PairwisePro v1.0",
+    "data": "13 African countries, 7 disease groups, metafor validation benchmarks",
+    "code": "https://github.com/mahmood726-cyber/pairwiseai",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "Pooled effect size (OR/RR/MD/SMD)",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a quantitative result such as a percentage, count, or interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dose Response Pro v7</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { color: #38bdf8; margin-bottom: 20px; font-size: 1.8rem; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.card { background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+.card h2 { color: #38bdf8; font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+.btn-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+.btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+.btn:hover { background: #2563eb; transform: translateY(-1px); }
+.btn:disabled { background: #475569; cursor: not-allowed; transform: none; }
+.btn.secondary { background: #64748b; }
+.btn.secondary:hover { background: #475569; }
+textarea { width: 100%; height: 200px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: 12px; font-family: 'Consolas', monospace; font-size: 0.85rem; resize: vertical; }
+select, input { background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; padding: 8px 12px; font-size: 0.9rem; }
+label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 0.85rem; }
+.form-group { margin-bottom: 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat-box { background: #0f172a; padding: 12px; border-radius: 8px; text-align: center; }
+.stat-value { font-size: 1.5rem; font-weight: bold; color: #38bdf8; }
+.stat-label { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
+#plot { background: #0f172a; border-radius: 8px; min-height: 400px; }
+.progress { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 1000; }
+.progress.active { display: block; }
+.progress-bar { width: 300px; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #38bdf8); transition: width 0.3s; width: 0%; }
+.progress-text { text-align: center; font-size: 0.9rem; }
+.toast { position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transform: translateY(100px); transition: transform 0.3s; z-index: 1001; }
+.toast.show { transform: translateY(0); }
+.toast.error { background: #ef4444; }
+.results-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+.results-table th, .results-table td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+.results-table th { background: #0f172a; color: #38bdf8; }
+.results-table tr:hover { background: #0f172a; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress">
+  <div class="progress-text" id="progressText">Analyzing...</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <h1>Dose Response Meta-Analysis v7</h1>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Data Input</h2>
+      <div class="btn-group">
+        <button class="btn secondary" onclick="clearData()">Clear</button>
+      </div>
+      <textarea id="dataInput">id,author,type,dose,cases,n,logRR,se
+1,Bianchi,cc,0,126,414,0,NA
+1,Bianchi,cc,9.06,61,261,-0.223,0.223
+1,Bianchi,cc,27,69,228,0,0.234
+1,Bianchi,cc,45,22,44,0.531,0.377
+1,Bianchi,cc,64.8,19,34,0.875,0.444
+2,Bobak,cc,0,77,258,0,NA
+2,Bobak,cc,16.05,88,413,-0.431,0.221
+2,Bobak,cc,46.42,24,202,-1.079,0.298
+2,Bobak,cc,77.16,13,64,-0.616,0.387</textarea>
+    </div>
+
+    <div class="card">
+      <h2>Analysis Settings</h2>
+      <div class="form-group">
+        <label>Model Type</label>
+        <select id="modelType">
+          <option value="quadratic">Quadratic (2nd degree)</option>
+          <option value="linear">Linear</option>
+          <option value="cubic">Cubic (3rd degree)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Dose Range for Plot</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="number" id="doseMin" value="0" placeholder="Min">
+          <input type="number" id="doseMax" value="80" placeholder="Max">
+        </div>
+      </div>
+      <button class="btn" id="runBtn" onclick="runAnalysis()" style="width: 100%; margin-top: 10px;">Run Analysis</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Results</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value" id="statStudies">-</div>
+          <div class="stat-label">Studies</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statQ">-</div>
+          <div class="stat-label">Q Statistic</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statI2">-</div>
+          <div class="stat-label">Heterogeneity (I²)</div>
+        </div>
+      </div>
+      <div id="coefficients"></div>
+    </div>
+
+    <div class="card">
+      <h2>Dose-Response Plot</h2>
+      <canvas id="plot"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// Simple WLS solver without Web Worker for reliability
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  const data = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = lines[i].split(',').map(v => v.trim());
+    const row = {};
+    headers.forEach((h, idx) => {
+      const val = values[idx];
+      row[h] = (h === 'author' || h === 'type') ? val : parseFloat(val) || 0;
+    });
+
+    const logrrIdx = headers.indexOf('logRR');
+    const seIdx = headers.indexOf('se');
+    const logrrVal = values[logrrIdx];
+    const seVal = values[seIdx];
+
+    row.logRR = (logrrVal === 'NA' || logrrVal === '' || logrrVal === '0' && row.dose === 0) ? 0 : parseFloat(logrrVal);
+    row.se = (seVal === 'NA' || seVal === '') ? 0 : parseFloat(seVal);
+
+    if (!isNaN(row.dose) && row.dose >= 0) {
+      data.push(row);
+    }
+  }
+  return data;
+}
+
+function solveWLS(points, order) {
+  const n = points.length;
+  const p = order + 1;
+
+  const XtWX = new Array(p * p).fill(0);
+  const XtWy = new Array(p).fill(0);
+
+  for (const pt of points) {
+    const w = pt.se > 0 ? 1 / (pt.se * pt.se) : 1;
+    for (let i = 0; i < p; i++) {
+      const xi = Math.pow(pt.dose, i);
+      XtWy[i] += w * xi * pt.logRR;
+      for (let j = 0; j < p; j++) {
+        XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+      }
+    }
+  }
+
+  for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-8;
+
+  const beta = solveSystem(XtWX, XtWy, p);
+
+  const XtWXInv = invertMatrix(XtWX, p);
+  const se = new Array(p);
+  for (let i = 0; i < p; i++) {
+    se[i] = Math.sqrt(Math.abs(XtWXInv[i * p + i]));
+  }
+
+  let Q = 0;
+  for (const pt of points) {
+    let pred = 0;
+    for (let j = 0; j < p; j++) {
+      pred += beta[j] * Math.pow(pt.dose, j);
+    }
+    Q += (pt.logRR - pred) * (pt.logRR - pred) / Math.max(pt.se * pt.se, 1e-8);
+  }
+
+  const I2 = Math.max(0, 100 * (1 - (n - p) / Math.max(Q, 0.001)));
+
+  return { beta, se, Q, I2 };
+}
+
+function solveSystem(A, b, n) {
+  if (n === 1) return [b[0] / A[0]];
+  if (n === 2) {
+    const det = A[0] * A[3] - A[1] * A[2];
+    return [(A[3] * b[0] - A[1] * b[1]) / det, (A[0] * b[1] - A[2] * b[0]) / det];
+  }
+  if (n === 3) {
+    const det = A[0] * (A[4]*A[8] - A[5]*A[7]) - A[1] * (A[3]*A[8] - A[5]*A[6]) + A[2] * (A[3]*A[7] - A[4]*A[6]);
+    return [
+      ((A[4]*A[8] - A[5]*A[7]) * b[0] + (A[2]*A[7] - A[1]*A[8]) * b[1] + (A[1]*A[5] - A[2]*A[4]) * b[2]) / det,
+      ((A[2]*A[6] - A[0]*A[8]) * b[0] + (A[0]*A[8] - A[2]*A[6]) * b[1] + (A[0]*A[5] - A[1]*A[2]) * b[2]) / det,
+      ((A[1]*A[6] - A[0]*A[7]) * b[0] + (A[0]*A[7] - A[1]*A[6]) * b[1] + (A[0]*A[4] - A[1]*A[1]) * b[2]) / det
+    ];
+  }
+
+  const M = [];
+  for (let i = 0; i < n; i++) {
+    M.push([...A.slice(i*n, (i+1)*n), b[i]]);
+  }
+
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[maxRow][col])) maxRow = r;
+    }
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+    if (Math.abs(M[col][col]) < 1e-10) M[col][col] = 1e-8;
+
+    for (let r = col + 1; r < n; r++) {
+      const factor = M[r][col] / M[col][col];
+      for (let c = col; c <= n; c++) {
+        M[r][c] -= factor * M[col][c];
+      }
+    }
+  }
+
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = M[i][n];
+    for (let j = i + 1; j < n; j++) x[i] -= M[i][j] * x[j];
+    x[i] /= M[i][i];
+  }
+  return x;
+}
+
+function invertMatrix(A, n) {
+  const inv = new Array(n * n).fill(0);
+  const M = [];
+
+  for (let i = 0; i < n; i++) {
+    const row = [...A.slice(i*n, (i+1)*n)];
+    for (let j = 0; j < n; j++) {
+      row.push(i === j ? 1 : 0);
+    }
+    M.push(row);
+  }
+
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[maxRow][col])) maxRow = r;
+    }
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+
+    const pivot = M[col][col];
+    for (let c = 0; c < 2 * n; c++) {
+      M[col][c] /= pivot;
+    }
+
+    for (let r = 0; r < n; r++) {
+      if (r !== col) {
+        const factor = M[r][col];
+        for (let c = 0; c < 2 * n; c++) {
+          M[r][c] -= factor * M[col][c];
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      inv[i * n + j] = M[i][n + j];
+    }
+  }
+
+  return inv;
+}
+
+function clearData() {
+  document.getElementById('dataInput').value = '';
+}
+
+function runAnalysis() {
+  const csvData = document.getElementById('dataInput').value.trim();
+  if (!csvData) {
+    showToast('Please enter data first', true);
+    return;
+  }
+
+  const studies = parseCSV(csvData);
+  if (studies.length === 0) {
+    showToast('No valid data found', true);
+    return;
+  }
+
+  showProgress('Running Analysis...');
+
+  setTimeout(() => {
+    try {
+      const modelType = document.getElementById('modelType').value;
+      const order = modelType === 'linear' ? 1 : modelType === 'quadratic' ? 2 : 3;
+
+      const points = [];
+      const studyMap = new Map();
+
+      for (const s of studies) {
+        if (!studyMap.has(s.id)) {
+          studyMap.set(s.id, []);
+        }
+        if (s.logRR !== null && !isNaN(s.logRR) && s.se > 0) {
+          studyMap.get(s.id).push(s);
+        }
+      }
+
+      for (const [id, doses] of studyMap) {
+        for (const pt of doses) {
+          points.push({ dose: pt.dose, logRR: pt.logRR, se: pt.se });
+        }
+      }
+
+      if (points.length < order + 1) {
+        throw new Error('Need at least ' + (order + 1) + ' dose points');
+      }
+
+      const result = solveWLS(points, order);
+
+      const ciLower = [];
+      const ciUpper = [];
+      for (let i = 0; i < result.beta.length; i++) {
+        const se = result.se[i];
+        ciLower.push(result.beta[i] - 1.96 * se);
+        ciUpper.push(result.beta[i] + 1.96 * se);
+      }
+
+      const finalResult = {
+        beta: result.beta,
+        se: result.se,
+        ciLower: ciLower,
+        ciUpper: ciUpper,
+        Q: result.Q,
+        I2: result.I2,
+        nStudies: studyMap.size,
+        points: points
+      };
+
+      hideProgress();
+      displayResults(finalResult);
+      generatePlot(finalResult);
+      showToast('Analysis complete!');
+    } catch (error) {
+      hideProgress();
+      showToast('Error: ' + error.message, true);
+    }
+  }, 100);
+}
+
+function displayResults(result) {
+  document.getElementById('statStudies').textContent = result.nStudies;
+  document.getElementById('statQ').textContent = result.Q.toFixed(2);
+  document.getElementById('statI2').textContent = result.I2.toFixed(1) + '%';
+
+  const labels = ['Intercept', 'Linear', 'Quadratic', 'Cubic'];
+  let html = '<h3 style="margin: 15px 0 10px; color: #38bdf8;">Coefficients</h3>';
+  html += '<table class="results-table"><thead><tr><th>Term</th><th>β</th><th>SE</th><th>95% CI</th></tr></thead><tbody>';
+
+  for (let i = 0; i < result.beta.length; i++) {
+    html += '<tr><td>' + labels[i] + '</td><td>' + result.beta[i].toFixed(4) + '</td><td>' + result.se[i].toFixed(4) + '</td><td>' + result.ciLower[i].toFixed(3) + ' to ' + result.ciUpper[i].toFixed(3) + '</td></tr>';
+  }
+
+  html += '</tbody></table>';
+  document.getElementById('coefficients').innerHTML = html;
+}
+
+function generatePlot(result) {
+  const canvas = document.getElementById('plot');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 40;
+  canvas.height = 400;
+
+  const margin = { top: 20, right: 20, bottom: 50, left: 60 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const doseMin = parseFloat(document.getElementById('doseMin').value) || 0;
+  const doseMax = parseFloat(document.getElementById('doseMax').value) || 50;
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const beta = result.beta;
+  const predict = (d) => {
+    let sum = 0;
+    for (let j = 0; j < beta.length; j++) {
+      sum += beta[j] * Math.pow(d, j);
+    }
+    return sum;
+  };
+
+  const points = result.points;
+  const yValues = points.map(p => p.logRR).concat(
+    Array.from({length: 100}, (_, i) => predict(doseMin + (doseMax - doseMin) * i / 99))
+  );
+  const yMin = Math.min(...yValues) - 0.3;
+  const yMax = Math.max(...yValues) + 0.3;
+
+  const xScale = (d) => margin.left + (d - doseMin) / (doseMax - doseMin) * width;
+  const yScale = (y) => margin.top + height - (y - yMin) / (yMax - yMin) * height;
+
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(xScale(doseMin), yScale(0));
+  ctx.lineTo(xScale(doseMax), yScale(0));
+  ctx.stroke();
+
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= 100; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 100;
+    const y = predict(d);
+    if (i === 0) ctx.moveTo(xScale(d), yScale(y));
+    else ctx.lineTo(xScale(d), yScale(y));
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#fbbf24';
+  for (const pt of points) {
+    ctx.beginPath();
+    ctx.arc(xScale(pt.dose), yScale(pt.logRR), 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '12px -apple-system';
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i <= 5; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 5;
+    ctx.fillText(d.toFixed(1), xScale(d), canvas.height - 15);
+  }
+
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const y = yMin + (yMax - yMin) * i / 5;
+    ctx.fillText(y.toFixed(2), margin.left - 10, yScale(y) + 4);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '14px -apple-system';
+  ctx.fillText('Dose', margin.left + width / 2, canvas.height - 5);
+
+  ctx.save();
+  ctx.translate(15, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log Relative Risk', 0, 0);
+  ctx.restore();
+}
+
+function showProgress(text) {
+  document.getElementById('progress').classList.add('active');
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressFill').style.width = '50%';
+  document.getElementById('runBtn').disabled = true;
+}
+
+function hideProgress() {
+  document.getElementById('progress').classList.remove('active');
+  document.getElementById('runBtn').disabled = false;
+}
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = isError ? 'toast show error' : 'toast show';
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+# Sample Dataset 1: Perfect Linear Trend
+# Teaching Example - Demonstrates clear linear dose-response relationship
+# Expected Results: β₁ > 0 (significant), β₂ ≈ 0 (non-significant)
+# Use For: Teaching basic dose-response concepts
+#
+# Scenario: Alcohol consumption and liver disease risk
+# This dataset was constructed to show a CLEAN linear relationship
+# Each additional drink/day increases risk by ~20%
+
+study,dose,cases,n
+Study_A,0,45,50000
+Study_A,1,54,48000
+Study_A,2,65,45000
+Study_A,3,78,40000
+Study_B,0,38,42000
+Study_B,1,46,40000
+Study_B,2,55,38000
+Study_B,3,66,35000
+Study_C,0,52,55000
+Study_C,1,62,52000
+Study_C,2,74,48000
+Study_C,3,88,44000
+Study_D,0,41,48000
+Study_D,1,50,46000
+Study_D,2,60,43000
+Study_D,3,72,39000
+Study_E,0,48,52000
+Study_E,1,58,50000
+Study_E,2,69,47000
+Study_E,3,82,42000
+
+# EXPECTED ANALYSIS RESULTS:
+# =========================
+# Model: GLS (Quadratic)
+#
+# Coefficients:
+#   β₀ (Intercept):  Approximately -7.0
+#   β₁ (Linear):     Approximately +0.18 to +0.20 (SIGNIFICANT, p < 0.001)
+#   β₂ (Quadratic):  Approximately 0 or very small (NOT significant, p > 0.5)
+#
+# Interpretation:
+#   - Each additional drink/day increases log rate by ~0.18
+#   - RR per drink = exp(0.18) ≈ 1.20 (20% increase)
+#   - No evidence of non-linearity (β₂ not significant)
+#
+# Heterogeneity:
+#   - I²: Low to moderate (< 30%)
+#   - Tau²: Small (< 0.01)
+#   - This is by design - studies were constructed to be homogeneous
+#
+# Teaching Points:
+#   1. When β₂ is not significant, consider using linear model
+#   2. Low I² indicates consistent results across studies
+#   3. Linear trend: risk increases steadily with dose

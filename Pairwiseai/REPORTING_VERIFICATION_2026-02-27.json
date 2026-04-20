@@ -1,0 +1,187 @@
+﻿{
+  "app": "C:\\HTML apps\\Truthcert1_work\\TruthCert-PairwisePro-v1.0.html",
+  "analysis_ready": true,
+  "styles": {
+    "general": {
+      "collected": [
+        {
+          "len": 2129,
+          "title": "Methods"
+        },
+        {
+          "len": 2162,
+          "title": "Results"
+        },
+        {
+          "len": 3946,
+          "title": "TruthCert Verdict"
+        },
+        {
+          "len": 418,
+          "title": "Health Technology Assessment"
+        }
+      ],
+      "has_grade": false,
+      "has_hta": true,
+      "has_methods": true,
+      "has_prisma": false,
+      "has_results": true,
+      "has_verdict": true,
+      "md_len": 8832,
+      "methods_len": 2129,
+      "ok": true,
+      "results_excerpt": "Main Results\n\nA total of 6 studies met inclusion criteria, comprising 73,431 participants with 1,006 events.\n\nThe pooled odds ratio was OR = 0.37 (95% CI: 0.23 to 0.61; p=<0.001), indicating a statistically significant reduction. This corresponds to a 63% relative reduction in risk.\n\nThe 95% prediction interval ranged from 0.08 to 1.76, crossing the null value, indicating that effects in future similar settings may v",
+      "results_has_cross_disc": true,
+      "results_len": 2162,
+      "section_titles": [
+        "Methods Section",
+        "Results Section",
+        "TruthCert Verdict",
+        "Health Technology Assessment"
+      ],
+      "style": "general",
+      "txt_len": 9093,
+      "word_looks_html": true
+    },
+    "prisma": {
+      "collected": [
+        {
+          "len": 2129,
+          "title": "Methods"
+        },
+        {
+          "len": 2162,
+          "title": "Results"
+        },
+        {
+          "len": 3946,
+          "title": "TruthCert Verdict"
+        },
+        {
+          "len": 418,
+          "title": "Health Technology Assessment"
+        },
+        {
+          "len": 807,
+          "title": "PRISMA Checklist"
+        }
+      ],
+      "has_grade": false,
+      "has_hta": true,
+      "has_methods": true,
+      "has_prisma": true,
+      "has_results": true,
+      "has_verdict": true,
+      "md_len": 9662,
+      "methods_len": 2129,
+      "ok": true,
+      "results_excerpt": "Main Results\n\nA total of 6 studies met inclusion criteria, comprising 73,431 participants with 1,006 events.\n\nThe pooled odds ratio was OR = 0.37 (95% CI: 0.23 to 0.61; p=<0.001), indicating a statistically significant reduction. This corresponds to a 63% relative reduction in risk.\n\nThe 95% prediction interval ranged from 0.08 to 1.76, crossing the null value, indicating that effects in future similar settings may v",
+      "results_has_cross_disc": true,
+      "results_len": 2162,
+      "section_titles": [
+        "Methods Section",
+        "Results Section",
+        "TruthCert Verdict",
+        "Health Technology Assessment",
+        "PRISMA 2020 Checklist (Synthesis Methods)"
+      ],
+      "style": "prisma",
+      "txt_len": 9961,
+      "word_looks_html": true
+    },
+    "grade": {
+      "collected": [
+        {
+          "len": 2129,
+          "title": "Methods"
+        },
+        {
+          "len": 2162,
+          "title": "Results"
+        },
+        {
+          "len": 3946,
+          "title": "TruthCert Verdict"
+        },
+        {
+          "len": 418,
+          "title": "Health Technology Assessment"
+        },
+        {
+          "len": 421,
+          "title": "GRADE Evidence Profile"
+        }
+      ],
+      "has_grade": true,
+      "has_hta": true,
+      "has_methods": true,
+      "has_prisma": false,
+      "has_results": true,
+      "has_verdict": true,
+      "md_len": 9282,
+      "methods_len": 2129,
+      "ok": true,
+      "results_excerpt": "Main Results\n\nA total of 6 studies met inclusion criteria, comprising 73,431 participants with 1,006 events.\n\nThe pooled odds ratio was OR = 0.37 (95% CI: 0.23 to 0.61; p=<0.001), indicating a statistically significant reduction. This corresponds to a 63% relative reduction in risk.\n\nThe 95% prediction interval ranged from 0.08 to 1.76, crossing the null value, indicating that effects in future similar settings may v",
+      "results_has_cross_disc": true,
+      "results_len": 2162,
+      "section_titles": [
+        "Methods Section",
+        "Results Section",
+        "TruthCert Verdict",
+        "Health Technology Assessment",
+        "GRADE Evidence Profile"
+      ],
+      "style": "grade",
+      "txt_len": 9581,
+      "word_looks_html": true
+    }
+  },
+  "downloads": {
+    "clicked": [
+      {
+        "download": "meta-analysis-report.txt",
+        "href": "blob:mock"
+      },
+      {
+        "download": "meta-analysis-report.md",
+        "href": "blob:mock"
+      },
+      {
+        "download": "meta-analysis-report.doc",
+        "href": "blob:mock"
+      }
+    ],
+    "created": [
+      {
+        "size": 9643,
+        "type": "text/plain"
+      },
+      {
+        "size": 9344,
+        "type": "text/markdown"
+      },
+      {
+        "size": 10972,
+        "type": "application/msword"
+      }
+    ],
+    "error": null
+  },
+  "checks": {
+    "general_has_methods_results": true,
+    "general_has_hta": true,
+    "general_has_cross_disc_text": true,
+    "prisma_has_checklist": true,
+    "grade_has_profile": true,
+    "txt_markdown_built": true,
+    "word_html_builder_ok": true,
+    "download_blob_types_ok": {
+      "text/plain": true,
+      "text/markdown": true,
+      "application/msword": true
+    },
+    "download_invocations": 3
+  },
+  "errors": [],
+  "hta_ready": true
+}

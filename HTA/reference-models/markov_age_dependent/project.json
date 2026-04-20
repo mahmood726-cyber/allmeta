@@ -1,0 +1,133 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "id": "markov_age_dependent",
+    "name": "Age-Dependent Markov Model",
+    "description": "Three-state Markov model with age-dependent mortality",
+    "author": "HTA Standard Reference",
+    "created": "2024-01-01T00:00:00Z",
+    "version": "1.0.0",
+    "tags": ["reference", "golden-fixture", "markov", "age-dependent"]
+  },
+  "settings": {
+    "time_horizon": 20,
+    "cycle_length": 1,
+    "discount_rate_costs": 0.035,
+    "discount_rate_qalys": 0.035,
+    "half_cycle_correction": "trapezoidal",
+    "currency": "GBP",
+    "starting_age": 50
+  },
+  "model": {
+    "type": "markov_cohort"
+  },
+  "parameters": {
+    "p_progression_base": {
+      "value": 0.05,
+      "label": "Base progression probability",
+      "distribution": { "type": "beta", "alpha": 5, "beta": 95 }
+    },
+    "p_death_healthy_base": {
+      "value": 0.01,
+      "label": "Base death probability (healthy)",
+      "distribution": { "type": "beta", "alpha": 1, "beta": 99 }
+    },
+    "p_death_diseased_base": {
+      "value": 0.08,
+      "label": "Base death probability (diseased)",
+      "distribution": { "type": "beta", "alpha": 8, "beta": 92 }
+    },
+    "age_mortality_factor": {
+      "value": 0.03,
+      "label": "Mortality increase per year of age",
+      "description": "Multiplier for age-dependent mortality"
+    },
+    "c_healthy": {
+      "value": 500,
+      "label": "Annual cost (healthy state)",
+      "unit": "GBP",
+      "distribution": { "type": "gamma", "mean": 500, "se": 50 }
+    },
+    "c_diseased": {
+      "value": 5000,
+      "label": "Annual cost (diseased state)",
+      "unit": "GBP",
+      "distribution": { "type": "gamma", "mean": 5000, "se": 500 }
+    },
+    "u_healthy": {
+      "value": 0.95,
+      "label": "Utility (healthy)",
+      "distribution": { "type": "beta", "alpha": 95, "beta": 5 }
+    },
+    "u_diseased": {
+      "value": 0.65,
+      "label": "Utility (diseased)",
+      "distribution": { "type": "beta", "alpha": 65, "beta": 35 }
+    }
+  },
+  "states": {
+    "healthy": {
+      "label": "Healthy",
+      "description": "Patient is in good health",
+      "type": "transient",
+      "initial_probability": 1.0,
+      "cost": "c_healthy",
+      "utility": "u_healthy"
+    },
+    "diseased": {
+      "label": "Diseased",
+      "description": "Patient has disease progression",
+      "type": "transient",
+      "initial_probability": 0,
+      "cost": "c_diseased",
+      "utility": "u_diseased"
+    },
+    "dead": {
+      "label": "Dead",
+      "description": "Absorbing state",
+      "type": "absorbing",
+      "initial_probability": 0,
+      "cost": 0,
+      "utility": 0
+    }
+  },
+  "transitions": {
+    "healthy_to_healthy": {
+      "from": "healthy",
+      "to": "healthy",
+      "probability": "1 - p_progression_base - p_death_healthy_base * (1 + age_mortality_factor * (age - 50))"
+    },
+    "healthy_to_diseased": {
+      "from": "healthy",
+      "to": "diseased",
+      "probability": "p_progression_base"
+    },
+    "healthy_to_dead": {
+      "from": "healthy",
+      "to": "dead",
+      "probability": "p_death_healthy_base * (1 + age_mortality_factor * (age - 50))"
+    },
+    "diseased_to_diseased": {
+      "from": "diseased",
+      "to": "diseased",
+      "probability": "1 - p_death_diseased_base * (1 + age_mortality_factor * (age - 50))"
+    },
+    "diseased_to_dead": {
+      "from": "diseased",
+      "to": "dead",
+      "probability": "p_death_diseased_base * (1 + age_mortality_factor * (age - 50))"
+    },
+    "dead_to_dead": {
+      "from": "dead",
+      "to": "dead",
+      "probability": 1.0
+    }
+  },
+  "strategies": {
+    "natural_history": {
+      "label": "Natural History",
+      "description": "No intervention",
+      "is_comparator": true
+    }
+  }
+}

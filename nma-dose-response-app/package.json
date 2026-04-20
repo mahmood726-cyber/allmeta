@@ -1,0 +1,31 @@
+{
+  "name": "nma-dose-response-app",
+  "version": "2.0.0",
+  "description": "NMA Dose Response Studio - Statistical analysis tool for network meta-analysis with dose-response modeling",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
+    "test:npx": "npx --node-options=--experimental-vm-modules jest",
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "terser": "^5.44.1",
+    "jest": "^29.7.0",
+    "@babel/preset-env": "^7.23.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "testMatch": [
+      "**/src/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.test.js"
+    ],
+    "moduleFileExtensions": ["js", "mjs"],
+    "verbose": true
+  }
+}

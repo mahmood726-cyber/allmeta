@@ -1,0 +1,106 @@
+# This CITATION.cff file was generated for HTA Artifact Standard v0.5
+# For more information about the Citation File Format, see: https://citation-file-format.github.io/
+
+cff-version: 1.2.0
+title: "HTA Artifact Standard: A Web-Based Platform for Health Technology Assessment"
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+version: "0.5.0"
+date-released: "2026-01-19"
+license: MIT
+
+authors:
+  - family-names: "HTA Development Team"
+    affiliation: "Health Economics Research"
+
+abstract: >-
+  HTA Artifact Standard is a comprehensive, single-file web application for
+  Health Technology Assessment (HTA). It provides integrated tools for Markov
+  cohort modeling, probabilistic sensitivity analysis (PSA), deterministic
+  sensitivity analysis (DSA), network meta-analysis (NMA), pairwise meta-analysis,
+  diagnostic test accuracy (DTA) analysis, and value of information (EVPI/EVPPI)
+  calculations. The application runs entirely in the browser without requiring
+  installation or server-side computation.
+
+keywords:
+  - health technology assessment
+  - cost-effectiveness analysis
+  - Markov model
+  - network meta-analysis
+  - probabilistic sensitivity analysis
+  - value of information
+  - EVPI
+  - EVPPI
+  - meta-analysis
+  - decision modeling
+
+repository-code: "https://github.com/hta-artifact-standard/hta-v0.5"
+
+references:
+  - type: article
+    authors:
+      - family-names: "Strong"
+        given-names: "M"
+      - family-names: "Oakley"
+        given-names: "JE"
+      - family-names: "Brennan"
+        given-names: "A"
+    title: "Estimating multiparameter partial expected value of perfect information from a probabilistic sensitivity analysis sample"
+    journal: "Medical Decision Making"
+    year: 2014
+    volume: 34
+    issue: 3
+    start: 311
+    end: 326
+    doi: "10.1177/0272989X13505910"
+
+  - type: article
+    authors:
+      - family-names: "Jalal"
+        given-names: "H"
+      - family-names: "Alarid-Escudero"
+        given-names: "F"
+    title: "A Gaussian approximation approach for value of information analysis"
+    journal: "Medical Decision Making"
+    year: 2018
+    volume: 38
+    issue: 2
+    start: 174
+    end: 188
+    doi: "10.1177/0272989X17715627"
+
+  - type: article
+    authors:
+      - family-names: "Veroniki"
+        given-names: "AA"
+    title: "Methods to estimate the between-study variance and its uncertainty in meta-analysis"
+    journal: "Research Synthesis Methods"
+    year: 2016
+    volume: 7
+    issue: 1
+    start: 55
+    end: 79
+    doi: "10.1002/jrsm.1164"
+
+  - type: article
+    authors:
+      - family-names: "Higgins"
+        given-names: "JPT"
+    title: "Measuring inconsistency in meta-analyses"
+    journal: "BMJ"
+    year: 2003
+    volume: 327
+    start: 557
+    end: 560
+
+preferred-citation:
+  type: software
+  title: "HTA Artifact Standard v0.5"
+  authors:
+    - family-names: "HTA Development Team"
+  year: 2026
+  version: "0.5.0"
+  url: "https://github.com/hta-artifact-standard/hta-v0.5"
+  notes: >-
+    A web-based platform for Health Technology Assessment including
+    Markov modeling, PSA, NMA, and value of information analysis.

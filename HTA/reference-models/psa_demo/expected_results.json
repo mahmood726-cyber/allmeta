@@ -1,0 +1,25 @@
+{
+  "version": "0.1",
+  "model_id": "psa_demo",
+  "description": "Expected deterministic strategy results for psa_demo fixture",
+  "tolerance": {
+    "costs": 0.01,
+    "qalys": 0.0001,
+    "relative": 0.001
+  },
+  "deterministic": {
+    "strategies": {
+      "intervention": {
+        "total_costs": 31406.30948135021,
+        "total_qalys": 4.694486553477004,
+        "life_years": 6.256179730444676
+      },
+      "comparator": {
+        "total_costs": 30787.900040921715,
+        "total_qalys": 4.083953312236153,
+        "life_years": 5.860414868632481
+      }
+    }
+  },
+  "verification_seed": 12345
+}

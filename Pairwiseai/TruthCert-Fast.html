@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruthCert-PairwisePro v1.0 (Fast)</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    :root {
+      --color-primary: #2563eb;
+      --color-success: #16a34a;
+      --color-warning: #d97706;
+      --color-danger: #dc2626;
+      --color-bg: #ffffff;
+      --color-bg-alt: #f8fafc;
+      --color-text: #1e293b;
+      --color-text-secondary: #64748b;
+      --color-border: #e2e8f0;
+    }
+    [data-theme="dark"] {
+      --color-bg: #0f172a;
+      --color-bg-alt: #1e293b;
+      --color-text: #f1f5f9;
+      --color-text-secondary: #94a3b8;
+      --color-border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem; border-bottom: 1px solid var(--color-border);
+    }
+    .header h1 { font-size: 1.5rem; }
+    .tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--color-border); padding: 0.5rem; }
+    .tab-btn {
+      padding: 0.5rem 1rem; border: none; background: none;
+      cursor: pointer; color: var(--color-text-secondary);
+      border-radius: 0.25rem;
+    }
+    .tab-btn:hover { background: var(--color-bg-alt); }
+    .tab-btn.active { background: var(--color-primary); color: white; }
+    .panel { display: none; padding: 1rem; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--color-bg-alt); border-radius: 0.5rem;
+      padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--color-border);
+    }
+    .btn {
+      padding: 0.5rem 1rem; border: none; border-radius: 0.25rem;
+      cursor: pointer; font-weight: 500;
+    }
+    .btn-primary { background: var(--color-primary); color: white; }
+    .btn-primary:hover { opacity: 0.9; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.5rem; border: 1px solid var(--color-border); text-align: left; }
+    th { background: var(--color-bg-alt); }
+    input, select {
+      padding: 0.5rem; border: 1px solid var(--color-border);
+      border-radius: 0.25rem; background: var(--color-bg);
+      color: var(--color-text);
+    }
+    .verdict-badge {
+      display: inline-block; padding: 0.25rem 0.75rem;
+      border-radius: 1rem; font-weight: 600; font-size: 0.875rem;
+    }
+    .verdict-STABLE { background: #dcfce7; color: #166534; }
+    .verdict-STABLE-NID { background: #dbeafe; color: #1e40af; }
+    .verdict-MODERATE { background: #fef3c7; color: #92400e; }
+    .verdict-EXPOSED { background: #ffedd5; color: #c2410c; }
+    .verdict-UNCERTAIN { background: #fee2e2; color: #991b1b; }
+    .loading { text-align: center; padding: 2rem; color: var(--color-text-secondary); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    #forestPlot, #funnelPlot { min-height: 400px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>TruthCert-PairwisePro v1.0</h1>
+      <div>
+        <button class="btn" onclick="toggleTheme()">Toggle Theme</button>
+        <button class="btn btn-primary" onclick="loadDemo()">Load Demo</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="data">Data</button>
+      <button class="tab-btn" data-tab="analysis">Analysis</button>
+      <button class="tab-btn" data-tab="verdict">Verdict</button>
+    </div>
+
+    <div id="panel-data" class="panel active">
+      <div class="card">
+        <h3>Study Data</h3>
+        <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">
+          Enter effect sizes (log scale for OR/RR/HR) and standard errors
+        </p>
+        <table id="studyTable">
+          <thead>
+            <tr>
+              <th>Study</th>
+              <th>Effect (yi)</th>
+              <th>SE</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studyBody"></tbody>
+        </table>
+        <div style="margin-top: 1rem;">
+          <button class="btn" onclick="addRow()">+ Add Study</button>
+          <button class="btn btn-primary" onclick="runAnalysis()" style="margin-left: 0.5rem;">Run Analysis</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-analysis" class="panel">
+      <div class="card">
+        <h3>Pooled Estimate</h3>
+        <div id="resultsTable"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Forest Plot</h3>
+          <div id="forestPlot"></div>
+        </div>
+        <div class="card">
+          <h3>Funnel Plot</h3>
+          <div id="funnelPlot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-verdict" class="panel">
+      <div class="card">
+        <h3>TruthCert Verdict</h3>
+        <div id="verdictDisplay">
+          <p style="color: var(--color-text-secondary);">Run analysis to see verdict</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Web Worker for heavy calculations
+    let worker = null;
+    try {
+      worker = new Worker('worker.js');
+    } catch (e) {
+      console.warn('Web Worker not available, using main thread');
+    }
+
+    // App state
+    const state = {
+      studies: [],
+      results: null,
+      config: { delta: 0.1054, minK: 4, method: 'REML' }
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      initTabs();
+      addRow(); addRow(); addRow();
+    });
+
+    function initTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+        });
+      });
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+    }
+
+    function addRow() {
+      const tbody = document.getElementById('studyBody');
+      const idx = tbody.children.length + 1;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="Study ${idx}" style="width:100%"></td>
+        <td><input type="number" step="0.01" placeholder="0.00" style="width:100%"></td>
+        <td><input type="number" step="0.01" placeholder="0.10" style="width:100%"></td>
+        <td><button class="btn" onclick="this.closest('tr').remove()">Remove</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function getStudies() {
+      const rows = document.querySelectorAll('#studyBody tr');
+      const studies = [];
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const name = inputs[0].value;
+        const yi = parseFloat(inputs[1].value);
+        const se = parseFloat(inputs[2].value);
+        if (!isNaN(yi) && !isNaN(se) && se > 0) {
+          studies.push({ name, yi, vi: se * se, se });
+        }
+      });
+      return studies;
+    }
+
+    function loadDemo() {
+      const demo = [
+        { name: 'Trial A', yi: -0.35, se: 0.12 },
+        { name: 'Trial B', yi: -0.28, se: 0.15 },
+        { name: 'Trial C', yi: -0.42, se: 0.18 },
+        { name: 'Trial D', yi: -0.31, se: 0.14 },
+        { name: 'Trial E', yi: -0.38, se: 0.16 },
+        { name: 'Trial F', yi: -0.25, se: 0.20 },
+        { name: 'Trial G', yi: -0.33, se: 0.13 },
+        { name: 'Trial H', yi: -0.29, se: 0.17 }
+      ];
+      document.getElementById('studyBody').innerHTML = '';
+      demo.forEach(s => {
+        const tbody = document.getElementById('studyBody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" value="${s.name}" style="width:100%"></td>
+          <td><input type="number" step="0.01" value="${s.yi}" style="width:100%"></td>
+          <td><input type="number" step="0.01" value="${s.se}" style="width:100%"></td>
+          <td><button class="btn" onclick="this.closest('tr').remove()">Remove</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function runAnalysis() {
+      const studies = getStudies();
+      if (studies.length < 2) {
+        alert('Need at least 2 studies');
+        return;
+      }
+
+      state.studies = studies;
+
+      if (worker) {
+        // Use Web Worker
+        worker.postMessage({
+          type: 'meta-analysis',
+          data: { studies },
+          config: state.config
+        });
+        worker.onmessage = (e) => {
+          if (e.data.success) {
+            state.results = e.data.result;
+            renderResults();
+          } else {
+            alert('Error: ' + e.data.error);
+          }
+        };
+      } else {
+        // Fallback: main thread
+        state.results = runMetaAnalysisSync(studies);
+        renderResults();
+      }
+    }
+
+    // Fallback sync calculation
+    function runMetaAnalysisSync(studies) {
+      const yi = studies.map(s => s.yi);
+      const vi = studies.map(s => s.vi);
+      const k = studies.length;
+
+      // DL estimator for tau²
+      const wi_fe = vi.map(v => 1/v);
+      const sumW = wi_fe.reduce((a,b) => a+b, 0);
+      const theta_fe = yi.reduce((s, y, i) => s + wi_fe[i] * y, 0) / sumW;
+      const Q = yi.reduce((s, y, i) => s + wi_fe[i] * (y - theta_fe)**2, 0);
+      const C = sumW - wi_fe.reduce((s, w) => s + w*w, 0) / sumW;
+      const tau2 = Math.max(0, (Q - (k-1)) / C);
+
+      // Random effects
+      const wi = vi.map(v => 1/(v + tau2));
+      const sumW_re = wi.reduce((a,b) => a+b, 0);
+      const theta = yi.reduce((s, y, i) => s + wi[i] * y, 0) / sumW_re;
+      const se = Math.sqrt(1 / sumW_re);
+
+      const z = 1.96;
+      const I2 = k > 1 ? Math.max(0, 100 * (Q - (k-1)) / Q) : 0;
+
+      return {
+        theta, se, tau2,
+        ci_lower: theta - z * se,
+        ci_upper: theta + z * se,
+        Q, I2, k,
+        weights: wi.map(w => w / sumW_re)
+      };
+    }
+
+    function renderResults() {
+      const r = state.results;
+      if (!r) return;
+
+      // Results table
+      document.getElementById('resultsTable').innerHTML = `
+        <table>
+          <tr><td><strong>Pooled Effect</strong></td><td>${r.theta.toFixed(3)} (95% CI: ${r.ci_lower.toFixed(3)} to ${r.ci_upper.toFixed(3)})</td></tr>
+          <tr><td><strong>Standard Error</strong></td><td>${r.se.toFixed(4)}</td></tr>
+          <tr><td><strong>tau²</strong></td><td>${r.tau2.toFixed(4)}</td></tr>
+          <tr><td><strong>I²</strong></td><td>${r.I2.toFixed(1)}%</td></tr>
+          <tr><td><strong>Q statistic</strong></td><td>${r.Q.toFixed(2)} (df = ${r.k - 1})</td></tr>
+          <tr><td><strong>Studies</strong></td><td>${r.k}</td></tr>
+        </table>
+      `;
+
+      // Verdict
+      const verdict = determineVerdictSync(r);
+      document.getElementById('verdictDisplay').innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+          <span class="verdict-badge verdict-${verdict.verdict}">${verdict.verdict}</span>
+          <p style="margin-top: 1rem; color: var(--color-text-secondary);">
+            Threats detected: ${verdict.threatCheck.n_threats}<br>
+            Heterogeneity score: ${verdict.threatCheck.hetScore.toFixed(1)}
+          </p>
+        </div>
+      `;
+
+      // Plots
+      renderForestPlot();
+      renderFunnelPlot();
+
+      // Switch to analysis tab
+      document.querySelector('[data-tab="analysis"]').click();
+    }
+
+    function determineVerdictSync(r) {
+      const config = state.config;
+      const delta = config.delta;
+      const threats = [];
+      let hetScore = 0;
+
+      if (r.k < config.minK) threats.push('small_k');
+      if (r.I2 > 75) hetScore += 1.5;
+      else if (r.I2 > 50) hetScore += 0.5;
+      if (hetScore >= 1.5) threats.push('high_heterogeneity');
+
+      const ci_width = r.ci_upper - r.ci_lower;
+      const ci_excludes = (r.ci_lower > 0) || (r.ci_upper < 0);
+      const prec_good = ci_width < delta * 4;
+      const prec_adequate = ci_width < delta * 8;
+      const near_null = Math.abs(r.theta) < delta;
+
+      let verdict = 'UNCERTAIN';
+      if (r.k < 3) verdict = 'UNCERTAIN';
+      else if (threats.length >= 2) verdict = 'EXPOSED';
+      else if (threats.length === 1) {
+        if (ci_excludes && prec_good) verdict = 'MODERATE';
+        else if (prec_adequate) verdict = 'EXPOSED';
+        else verdict = 'UNCERTAIN';
+      } else {
+        if (ci_excludes && prec_good) verdict = 'STABLE';
+        else if (near_null && prec_good) verdict = 'STABLE-NID';
+        else if (prec_adequate) verdict = 'MODERATE';
+        else verdict = 'UNCERTAIN';
+      }
+
+      return { verdict, threatCheck: { n_threats: threats.length, hetScore } };
+    }
+
+    function renderForestPlot() {
+      const studies = state.studies;
+      const r = state.results;
+
+      const names = [...studies.map(s => s.name), 'Pooled'];
+      const effects = [...studies.map(s => s.yi), r.theta];
+      const lower = [...studies.map(s => s.yi - 1.96 * s.se), r.ci_lower];
+      const upper = [...studies.map(s => s.yi + 1.96 * s.se), r.ci_upper];
+
+      Plotly.newPlot('forestPlot', [{
+        x: effects,
+        y: names,
+        error_x: {
+          type: 'data',
+          symmetric: false,
+          arrayminus: effects.map((e, i) => e - lower[i]),
+          array: upper.map((u, i) => u - effects[i])
+        },
+        mode: 'markers',
+        marker: { size: 10, color: names.map((_, i) => i === names.length - 1 ? '#dc2626' : '#2563eb') },
+        type: 'scatter'
+      }], {
+        title: 'Forest Plot',
+        xaxis: { title: 'Effect Size', zeroline: true },
+        yaxis: { automargin: true },
+        shapes: [{ type: 'line', x0: 0, x1: 0, y0: -0.5, y1: names.length - 0.5, line: { dash: 'dash', color: 'gray' } }],
+        margin: { l: 120 }
+      }, { responsive: true });
+    }
+
+    function renderFunnelPlot() {
+      const studies = state.studies;
+      const r = state.results;
+
+      Plotly.newPlot('funnelPlot', [{
+        x: studies.map(s => s.yi),
+        y: studies.map(s => s.se),
+        mode: 'markers',
+        marker: { size: 10, color: '#2563eb' },
+        type: 'scatter',
+        name: 'Studies'
+      }], {
+        title: 'Funnel Plot',
+        xaxis: { title: 'Effect Size' },
+        yaxis: { title: 'Standard Error', autorange: 'reversed' },
+        shapes: [{ type: 'line', x0: r.theta, x1: r.theta, y0: 0, y1: Math.max(...studies.map(s => s.se)) * 1.1, line: { dash: 'dash', color: 'red' } }]
+      }, { responsive: true });
+    }
+  </script>
+</body>
+</html>

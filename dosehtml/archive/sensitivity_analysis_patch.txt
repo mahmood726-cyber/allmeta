@@ -1,0 +1,363 @@
+// =============================================
+// ENHANCED SENSITIVITY ANALYSIS FUNCTIONS
+// =============================================
+
+/**
+ * Perform leave-one-out sensitivity analysis
+ * @param {Array} studies - Study data
+ * @param {string} modelType - Type of model to fit
+ * @returns {Object} - Sensitivity analysis results
+ */
+function sensitivityAnalysis(studies, modelType = 'gls') {
+  if (studies.length < 3) {
+    throw new Error('Need at least 3 studies for sensitivity analysis');
+  }
+
+  const settings = getAnalysisSettings();
+  const refDose = settings.referenceDose || 0;
+
+  // Fit full model with all studies
+  let fullModel;
+
+  switch (modelType) {
+    case 'gls':
+      fullModel = glsDoseResponse(studies, refDose, settings);
+      break;
+    case 'linear':
+      fullModel = linearDoseResponse(studies, refDose, settings);
+      break;
+    case 'quadratic':
+      fullModel = quadraticDoseResponse(studies, refDose, settings);
+      break;
+    default:
+      fullModel = glsDoseResponse(studies, refDose, settings);
+  }
+
+  // Extract original values
+  const originalSlope = fullModel.coefficients?.[1]?.estimate || fullModel.slope || 0;
+  const originalSE = fullModel.coefficients?.[1]?.se || fullModel.seSlope || 0;
+  const originalI2 = fullModel.I2 || 0;
+
+  // Leave-one-out analysis
+  const leaveOneOut = [];
+
+  for (let i = 0; i < studies.length; i++) {
+    const remainingStudies = studies.filter((_, idx) => idx !== i);
+
+    if (remainingStudies.length < 2) continue;
+
+    try {
+      let model;
+      switch (modelType) {
+        case 'gls':
+          model = glsDoseResponse(remainingStudies, refDose, settings);
+          break;
+        case 'linear':
+          model = linearDoseResponse(remainingStudies, refDose, settings);
+          break;
+        case 'quadratic':
+          model = quadraticDoseResponse(remainingStudies, refDose, settings);
+          break;
+        default:
+          model = glsDoseResponse(remainingStudies, refDose, settings);
+      }
+
+      const slope = model.coefficients?.[1]?.estimate || model.slope || 0;
+      const se = model.coefficients?.[1]?.se || model.seSlope || 0;
+      const i2 = model.I2 || 0;
+
+      // Calculate influence metrics
+      const slopeChange = originalSlope !== 0 ? ((slope - originalSlope) / originalSlope * 100) : 0;
+      const i2Change = i2 - originalI2;
+
+      // Cook's distance (simplified)
+      const cookD = originalSE !== 0 ? Math.pow(slope - originalSlope, 2) / (originalSE * originalSE) : 0;
+
+      // DFITS (simplified)
+      const dfits = se !== 0 ? (slope - originalSlope) / se : 0;
+
+      leaveOneOut.push({
+        omitted: studies[i].name,
+        slope: slope,
+        se: se,
+        i2: i2,
+        slopeChange: parseFloat(slopeChange.toFixed(2)),
+        i2Change: parseFloat(i2Change.toFixed(1)),
+        cookD: cookD,
+        dfits: Math.abs(dfits),
+        influential: Math.abs(dfits) > 2 || cookD > 4
+      });
+    } catch (e) {
+      console.warn('Study failed in LOO:', studies[i].name, e.message);
+    }
+  }
+
+  return {
+    fullModel: fullModel,
+    originalSlope: originalSlope,
+    originalSE: originalSE,
+    originalI2: originalI2,
+    leaveOneOut: leaveOneOut,
+    influentialStudies: leaveOneOut.filter(s => s.influential),
+    modelType: modelType
+  };
+}
+
+/**
+ * Run sensitivity analysis and update UI
+ */
+function runSensitivityAnalysis() {
+  try {
+    const studies = getStudyData();
+    if (studies.length < 3) {
+      showToast('Need at least 3 studies for sensitivity analysis', 'warning');
+      return;
+    }
+
+    showProgress('Running sensitivity analysis...');
+
+    setTimeout(() => {
+      try {
+        const modelType = document.getElementById('sensitivityModel')?.value || 'gls';
+        const results = sensitivityAnalysis(studies, modelType);
+        AppState.sensitivityResults = results;
+
+        updateSensitivityUI(results);
+        generateSensitivityPlot(results);
+        generateBaujatPlot(results.leaveOneOut);
+
+        hideProgress();
+        showToast('Sensitivity analysis complete', 'success');
+      } catch (error) {
+        hideProgress();
+        showToast('Sensitivity analysis error: ' + error.message, 'error');
+        console.error(error);
+      }
+    }, 100);
+  } catch (error) {
+    showToast('Error: ' + error.message, 'error');
+    console.error(error);
+  }
+}
+
+function updateSensitivityUI(results) {
+  document.getElementById('sensitivityPlaceholder').classList.add('hidden');
+  document.getElementById('sensitivityContent').classList.remove('hidden');
+
+  // Show summary
+  const summaryDiv = document.getElementById('sensitivitySummary');
+  const nInfluential = results.influentialStudies.length;
+
+  const boxClass = nInfluential > 0 ? 'warning' : 'success';
+  const icon = nInfluential > 0 ? '⚠️' : '✓';
+  const title = nInfluential > 0 ? 'Influential Studies Detected' : 'No Influential Studies';
+
+  summaryDiv.innerHTML = `
+    <div class="stat-card stat-card--${boxClass}" style="padding: var(--space-4);">
+      <h4 style="margin: 0 0 var(--space-2) 0;">${icon} ${title}</h4>
+      <p style="margin: var(--space-2) 0;">
+        Removed <strong>${results.influentialStudies.length}</strong> of ${results.leaveOneOut.length} studies
+        caused significant changes (&gt;2 DFITS or &gt;4 Cook's D).
+      </p>
+      <p style="margin: var(--space-2) 0;">
+        <strong>Original:</strong> Slope = ${results.originalSlope.toFixed(4)}, I² = ${results.originalI2.toFixed(1)}%
+      </p>
+    </div>
+  `;
+
+  // Show table
+  const tbody = document.getElementById('sensitivityTableBody');
+  tbody.innerHTML = results.leaveOneOut.map(s => {
+    const slopeChangeClass = Math.abs(s.slopeChange) > 10 ? ' color: #e74c3c;' : '';
+    const cookDClass = s.cookD > 4 ? ' color: #e74c3c;' : '';
+    const dfitsClass = s.dfits > 2 ? ' color: #e74c3c;' : '';
+    const rowClass = s.influential ? 'background: rgba(231, 76, 60, 0.1);' : '';
+
+    return `
+      <tr style="${rowClass}">
+        <td class="font-mono">${s.omitted}</td>
+        <td class="font-mono">${s.slope.toFixed(4)}</td>
+        <td class="font-mono">${s.se.toFixed(4)}</td>
+        <td class="font-mono">${s.i2.toFixed(1)}%</td>
+        <td class="font-mono" style="${slopeChangeClass}">${s.slopeChange > 0 ? '+' : ''}${s.slopeChange}%</td>
+        <td class="font-mono">${s.i2Change > 0 ? '+' : ''}${s.i2Change}%</td>
+        <td class="font-mono" style="${cookDClass}">${s.cookD.toFixed(2)}</td>
+        <td class="font-mono" style="${dfitsClass}">${s.dfits.toFixed(2)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // Show influential studies
+  const infDiv = document.getElementById('influentialStudies');
+  if (results.influentialStudies.length > 0) {
+    infDiv.innerHTML = `
+      <div class="stat-card stat-card--warning" style="padding: var(--space-4);">
+        <h4 style="margin: 0 0 var(--space-2) 0;">Influential Studies:</h4>
+        <ul style="margin: var(--space-2) 0;">
+          ${results.influentialStudies.map(s => `
+            <li>
+              <strong>${s.omitted}</strong> -
+              Slope change: ${s.slopeChange}%,
+              Cook's D: ${s.cookD.toFixed(2)},
+              DFITS: ${s.dfits.toFixed(2)}
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+  } else {
+    infDiv.innerHTML = `
+      <div class="stat-card stat-card--success" style="padding: var(--space-4);">
+        <p style="margin: 0;">No influential studies detected. All studies contribute similarly to the overall estimate.</p>
+      </div>
+    `;
+  }
+}
+
+function generateSensitivityPlot(results) {
+  const colors = getPlotColors();
+
+  // Create influence plot
+  const studyNames = results.leaveOneOut.map(s => s.omitted);
+  const slopeChanges = results.leaveOneOut.map(s => s.slopeChange);
+  const cookD = results.leaveOneOut.map(s => s.cookD);
+  const isInf = results.leaveOneOut.map(s => s.influential);
+
+  const trace1 = {
+    x: studyNames,
+    y: slopeChanges,
+    mode: 'markers+lines',
+    type: 'scatter',
+    name: 'Slope Change (%)',
+    marker: {
+      size: results.leaveOneOut.map(s => 10 + s.cookD * 3),
+      color: results.leaveOneOut.map(s => s.influential ? colors.danger : colors.points),
+      line: {
+        color: results.leaveOneOut.map(s => s.influential ? '#c0392b' : '#2980b9'),
+        width: 2
+      }
+    },
+    line: {
+      color: colors.points,
+      width: 1
+    },
+    text: results.leaveOneOut.map(s =>
+      `Study: ${s.omitted}<br>` +
+      `Slope Change: ${s.slopeChange}%<br>` +
+      `Cook's D: ${s.cookD.toFixed(2)}<br>` +
+      `DFITS: ${s.dfits.toFixed(2)}<br>` +
+      `Influential: ${s.influential ? 'Yes' : 'No'}`
+    ),
+    hovertemplate: '%{text}<extra></extra>'
+  };
+
+  const layout = {
+    title: {
+      text: 'Leave-One-Out Sensitivity Analysis',
+      font: { size: 14, color: colors.text }
+    },
+    xaxis: {
+      title: { text: 'Omitted Study', font: { color: colors.text } },
+      tickfont: { color: colors.text },
+      gridcolor: colors.grid
+    },
+    yaxis: {
+      title: { text: 'Slope Change (%)', font: { color: colors.text } },
+      tickfont: { color: colors.text },
+      gridcolor: colors.grid,
+      zeroline: true,
+      zerolinecolor: '#7f8c8d',
+      zerolinewidth: 2
+    },
+    plot_bgcolor: colors.background,
+    paper_bgcolor: colors.background,
+    font: { color: colors.text },
+    shapes: [
+      {
+        type: 'line',
+        x0: -0.5,
+        x1: studyNames.length - 0.5,
+        y0: 0,
+        y1: 0,
+        line: { color: '#95a5a6', width: 2, dash: 'dash' }
+      },
+      // Add threshold lines for significant changes
+      {
+        type: 'line',
+        x0: -0.5,
+        x1: studyNames.length - 0.5,
+        y0: 10,
+        y1: 10,
+        line: { color: '#e74c3c', width: 1, dash: 'dot' }
+      },
+      {
+        type: 'line',
+        x0: -0.5,
+        x1: studyNames.length - 0.5,
+        y0: -10,
+        y1: -10,
+        line: { color: '#e74c3c', width: 1, dash: 'dot' }
+      }
+    ],
+    annotations: [
+      {
+        x: 0.02,
+        y: 0.98,
+        xref: 'paper',
+        yref: 'paper',
+        text: `Original Slope: ${results.originalSlope.toFixed(4)}<br>` +
+              `I²: ${results.originalI2.toFixed(1)}%<br>` +
+              `Model: ${results.modelType.toUpperCase()}`,
+        showarrow: false,
+        font: { size: 11 },
+        bgcolor: colors.background,
+        bordercolor: colors.grid,
+        borderwidth: 1,
+        borderpad: 5
+      }
+    ],
+    margin: { t: 60, r: 40, b: 80, l: 60 }
+  };
+
+  Plotly.newPlot('sensitivityPlot', [trace1], layout, {responsive: true});
+}
+
+function generateBaujatPlot(looResults) {
+  const colors = getPlotColors();
+
+  const trace = {
+    x: looResults.map(r => Math.abs(r.slopeChange)),
+    y: looResults.map(r => Math.abs(r.cookD)),
+    mode: 'markers+text',
+    name: 'Studies',
+    marker: {
+      size: looResults.map(r => 10 + r.cookD * 3),
+      color: looResults.map(r => r.influential ? colors.danger : colors.points)
+    },
+    text: looResults.map(r => r.omitted.split(' ')[0]),
+    textposition: 'top center',
+    hovertemplate: '%{text}<br>Slope Change: %{x:.2f}%<br>Cook\'s D: %{y:.4f}<extra></extra>'
+  };
+
+  const layout = {
+    title: { text: "Baujat Plot (Influence Diagnostics)", font: { color: colors.text } },
+    xaxis: { title: 'Contribution to Heterogeneity', gridcolor: colors.grid, color: colors.text },
+    yaxis: { title: 'Influence (Cook\'s Distance)', gridcolor: colors.grid, color: colors.text },
+    plot_bgcolor: colors.background,
+    paper_bgcolor: colors.background,
+    font: { color: colors.text },
+    hovermode: 'closest',
+    shapes: [
+      {
+        type: 'line',
+        x0: 0,
+        x1: Math.max(...looResults.map(r => Math.abs(r.slopeChange))),
+        y0: 4,
+        y1: 4,
+        line: { color: '#e74c3c', width: 1, dash: 'dot' }
+      }
+    ]
+  };
+
+  Plotly.newPlot('baujatPlot', [trace], layout, { responsive: true });
+}

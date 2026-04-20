@@ -1,0 +1,26 @@
+{
+  "version": "0.1",
+  "model_id": "markov_simple",
+  "description": "Expected results for markov_simple golden fixture",
+  "tolerance": {
+    "costs": 0.01,
+    "qalys": 0.0001,
+    "relative": 0.001
+  },
+  "deterministic": {
+    "strategies": {
+      "base": {
+        "total_costs": 5395.176272793299,
+        "total_qalys": 4.31614101823464,
+        "life_years": 5.395176272793299
+      }
+    }
+  },
+  "notes": [
+    "Results calculated using trapezoidal half-cycle correction",
+    "Discount rate 3.5% for both costs and QALYs",
+    "10-year time horizon with annual cycles",
+    "Starting cohort = 1.0 in Alive state"
+  ],
+  "verification_seed": 12345
+}

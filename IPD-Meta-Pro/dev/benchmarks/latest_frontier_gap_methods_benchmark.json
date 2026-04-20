@@ -1,0 +1,711 @@
+{
+  "app_build_id": "2026-03-07-fixall-1",
+  "generated_at": "2026-03-12T10:20:11Z",
+  "seed": 12345,
+  "datasets": [
+    "hiv_survival",
+    "ovarian_survival"
+  ],
+  "km_imputations": 80,
+  "federated_epsilon": 8.0,
+  "app": {
+    "km_reconstruction": {
+      "hiv_survival": {
+        "app": {
+          "error": null,
+          "event_flip_rate": 0.007579412947326096,
+          "interaction_p": 0.5032099496476943,
+          "interaction_se": 0.12161062168912015,
+          "n_imputations": 80,
+          "n_subgroups": 2,
+          "subgroup_effects": [
+            {
+              "betweenImputationVar": 5.3240623472180064e-05,
+              "ci": {
+                "lower": 0.46173580998225533,
+                "upper": 0.5837517718233997
+              },
+              "meanI2": 0.0009291601338754235,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 1.3608984921129404e-07,
+              "nImputationsUsed": 80,
+              "nRows": 3705,
+              "pooledHR": 0.5191715489040729,
+              "pooledLogHR": -0.6555209130442724,
+              "se": 0.05981817988208554,
+              "subgroup": "Male",
+              "withinImputationVar": 0.0035243085131399614
+            },
+            {
+              "betweenImputationVar": 0.00044849434252199814,
+              "ci": {
+                "lower": 0.3887501053280456,
+                "upper": 0.589166081646169
+              },
+              "meanI2": 1.5696737705161716,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 0.0008045321921484992,
+              "nImputationsUsed": 80,
+              "nRows": 1269,
+              "pooledHR": 0.47857954019751003,
+              "pooledLogHR": -0.7369328536955433,
+              "se": 0.10606607688970449,
+              "subgroup": "Female",
+              "withinImputationVar": 0.010795912144969182
+            }
+          ]
+        },
+        "dataset": "hiv_survival",
+        "inferred": {
+          "event": "event",
+          "study": "study_id",
+          "subgroup": "sex",
+          "time": "time_months",
+          "treatment": "treatment"
+        },
+        "n": 4976,
+        "n_studies": 4
+      },
+      "ovarian_survival": {
+        "app": {
+          "error": null,
+          "event_flip_rate": 0.02091633466135458,
+          "interaction_p": 0.6527193409827317,
+          "interaction_se": 0.28221889017678453,
+          "n_imputations": 80,
+          "n_subgroups": 2,
+          "subgroup_effects": [
+            {
+              "betweenImputationVar": 0.0008983917502426733,
+              "ci": {
+                "lower": 0.35640140465998665,
+                "upper": 0.9003665106338226
+              },
+              "meanI2": 52.755596539856356,
+              "meanStudiesPerImputation": 5,
+              "meanTau2": 0.14647136046115763,
+              "nImputationsUsed": 80,
+              "nRows": 294,
+              "pooledHR": 0.5664732024541895,
+              "pooledLogHR": -0.5683255033325085,
+              "se": 0.23641870059676232,
+              "subgroup": "III",
+              "withinImputationVar": 0.05498418034474084
+            },
+            {
+              "betweenImputationVar": 0.001077106900267704,
+              "ci": {
+                "lower": 0.4752934038783281,
+                "upper": 0.870368995008137
+              },
+              "meanI2": 0.23855062241665453,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 0.00030853241776854863,
+              "nImputationsUsed": 80,
+              "nRows": 208,
+              "pooledHR": 0.6431801009574044,
+              "pooledLogHR": -0.44133049916218126,
+              "se": 0.15433573078150908,
+              "subgroup": "IV",
+              "withinImputationVar": 0.0227289470593414
+            }
+          ]
+        },
+        "dataset": "ovarian_survival",
+        "inferred": {
+          "event": "event",
+          "study": "study_id",
+          "subgroup": "figo_stage",
+          "time": "time_months",
+          "treatment": "treatment"
+        },
+        "n": 504,
+        "n_studies": 5
+      }
+    },
+    "transport_iow": {
+      "hiv_survival": {
+        "app": {
+          "error": null,
+          "ess": 3163.1201029960143,
+          "max_abs_smd_post": 0.07475877706204656,
+          "max_abs_smd_pre": 0.643216960791272,
+          "n_target": 1173,
+          "n_trial": 3803,
+          "overlap_fraction": 0.16928401617757347,
+          "sate": -0.17373865771010202,
+          "sate_se": 0.014994647355813904,
+          "target_definition": "observed domain split: target=UK",
+          "tate": -0.17324871544119155,
+          "tate_se": 0.01635463026857188,
+          "transport_ratio": 0.9971800042928386,
+          "transport_shift": 0.0004899422689104704
+        },
+        "dataset": "hiv_survival",
+        "inferred": {
+          "covariates": [
+            "age",
+            "baseline_cd4",
+            "baseline_viral_load",
+            "time_months",
+            "study_year"
+          ],
+          "domain": "region",
+          "outcome": "event",
+          "study": "study_id",
+          "treatment": "treatment"
+        },
+        "n": 4976,
+        "n_studies": 4
+      },
+      "ovarian_survival": {
+        "app": {
+          "error": null,
+          "ess": 259.670889948764,
+          "max_abs_smd_post": 0.0983026951630216,
+          "max_abs_smd_pre": 0.8025918581584454,
+          "n_target": 102,
+          "n_trial": 402,
+          "overlap_fraction": 0.5059650471822857,
+          "sate": -0.07510979876429869,
+          "sate_se": 0.028874088089851778,
+          "target_definition": "study split: last 1 studies as target",
+          "tate": -0.08866157926031015,
+          "tate_se": 0.03752450337048667,
+          "transport_ratio": 1.1804262655334516,
+          "transport_shift": -0.013551780496011467
+        },
+        "dataset": "ovarian_survival",
+        "inferred": {
+          "covariates": [
+            "age",
+            "time_months",
+            "grade",
+            "study_year"
+          ],
+          "domain": null,
+          "outcome": "event",
+          "study": "study_id",
+          "treatment": "treatment"
+        },
+        "n": 504,
+        "n_studies": 5
+      }
+    },
+    "federated_survival": {
+      "hiv_survival": {
+        "app": {
+          "centralized_loghr": -0.688744136763538,
+          "dp_applied": true,
+          "dp_loghr": -0.6943255667594933,
+          "dp_se": 0.051676726416995375,
+          "epsilon": 8,
+          "error": null,
+          "mean_abs_noise": 0.0031868245896414446,
+          "n_sites": 4,
+          "utility_gap": -0.005581429995955345
+        },
+        "dataset": "hiv_survival",
+        "inferred": {
+          "event": "event",
+          "study": "study_id",
+          "time": "time_months",
+          "treatment": "treatment"
+        },
+        "n": 4976,
+        "n_studies": 4
+      },
+      "ovarian_survival": {
+        "app": {
+          "centralized_loghr": -0.5362128178884881,
+          "dp_applied": true,
+          "dp_loghr": -0.5302794776602642,
+          "dp_se": 0.1354429100573763,
+          "epsilon": 8,
+          "error": null,
+          "mean_abs_noise": 0.0045979452328511455,
+          "n_sites": 5,
+          "utility_gap": 0.005933340228223893
+        },
+        "dataset": "ovarian_survival",
+        "inferred": {
+          "event": "event",
+          "study": "study_id",
+          "time": "time_months",
+          "treatment": "treatment"
+        },
+        "n": 504,
+        "n_studies": 5
+      }
+    },
+    "transport_sensitivity": {
+      "hiv_survival": {
+        "app": {
+          "base_se": 0.01635463026857188,
+          "base_tate": -0.17324871544119155,
+          "delta_needed_for_null": 0.17324871544119155,
+          "error": null,
+          "first_null_delta": 0.2,
+          "monotonic": true,
+          "scenario0_tate": -0.17324871544119155,
+          "scenario_count": 9,
+          "zero_delta_matches_base": true
+        },
+        "dataset": "hiv_survival",
+        "inferred": {
+          "covariates": [
+            "age",
+            "baseline_cd4",
+            "baseline_viral_load",
+            "time_months",
+            "study_year"
+          ],
+          "domain": "region",
+          "outcome": "event",
+          "study": "study_id",
+          "treatment": "treatment"
+        },
+        "n": 4976,
+        "n_studies": 4
+      },
+      "ovarian_survival": {
+        "app": {
+          "base_se": 0.03752450337048667,
+          "base_tate": -0.08866157926031015,
+          "delta_needed_for_null": 0.08866157926031015,
+          "error": null,
+          "first_null_delta": 0.05,
+          "monotonic": true,
+          "scenario0_tate": -0.08866157926031015,
+          "scenario_count": 9,
+          "zero_delta_matches_base": true
+        },
+        "dataset": "ovarian_survival",
+        "inferred": {
+          "covariates": [
+            "age",
+            "time_months",
+            "grade",
+            "study_year"
+          ],
+          "domain": null,
+          "outcome": "event",
+          "study": "study_id",
+          "treatment": "treatment"
+        },
+        "n": 504,
+        "n_studies": 5
+      }
+    },
+    "transport_overlap": {
+      "hiv_survival": {
+        "app": {
+          "error": null,
+          "min_ess_fraction": 0.8317319703431064,
+          "min_overlap_fraction": 0.16928401617757347,
+          "n_scenarios": 5,
+          "n_stable_scenarios": 0,
+          "preferred_se": 0.016354587086160215,
+          "preferred_tate": -0.17324490409454277,
+          "sign_consistent": true,
+          "stable_scenarios_from_rows": 0,
+          "stable_window_available": false,
+          "tate_span_stable": null
+        },
+        "dataset": "hiv_survival",
+        "inferred": {
+          "covariates": [
+            "age",
+            "baseline_cd4",
+            "baseline_viral_load",
+            "time_months",
+            "study_year"
+          ],
+          "domain": "region",
+          "outcome": "event",
+          "study": "study_id",
+          "treatment": "treatment"
+        },
+        "n": 4976,
+        "n_studies": 4
+      },
+      "ovarian_survival": {
+        "app": {
+          "error": null,
+          "min_ess_fraction": 0.6454656529253101,
+          "min_overlap_fraction": 0.5059650471822857,
+          "n_scenarios": 5,
+          "n_stable_scenarios": 5,
+          "preferred_se": 0.03755947248326048,
+          "preferred_tate": -0.08900816546996593,
+          "sign_consistent": true,
+          "stable_scenarios_from_rows": 5,
+          "stable_window_available": true,
+          "tate_span_stable": 0.0023651797873979197
+        },
+        "dataset": "ovarian_survival",
+        "inferred": {
+          "covariates": [
+            "age",
+            "time_months",
+            "grade",
+            "study_year"
+          ],
+          "domain": null,
+          "outcome": "event",
+          "study": "study_id",
+          "treatment": "treatment"
+        },
+        "n": 504,
+        "n_studies": 5
+      }
+    }
+  },
+  "comparison": {
+    "rows": [
+      {
+        "track": "km_reconstruction",
+        "dataset": "hiv_survival",
+        "app": {
+          "error": null,
+          "event_flip_rate": 0.007579412947326096,
+          "interaction_p": 0.5032099496476943,
+          "interaction_se": 0.12161062168912015,
+          "n_imputations": 80,
+          "n_subgroups": 2,
+          "subgroup_effects": [
+            {
+              "betweenImputationVar": 5.3240623472180064e-05,
+              "ci": {
+                "lower": 0.46173580998225533,
+                "upper": 0.5837517718233997
+              },
+              "meanI2": 0.0009291601338754235,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 1.3608984921129404e-07,
+              "nImputationsUsed": 80,
+              "nRows": 3705,
+              "pooledHR": 0.5191715489040729,
+              "pooledLogHR": -0.6555209130442724,
+              "se": 0.05981817988208554,
+              "subgroup": "Male",
+              "withinImputationVar": 0.0035243085131399614
+            },
+            {
+              "betweenImputationVar": 0.00044849434252199814,
+              "ci": {
+                "lower": 0.3887501053280456,
+                "upper": 0.589166081646169
+              },
+              "meanI2": 1.5696737705161716,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 0.0008045321921484992,
+              "nImputationsUsed": 80,
+              "nRows": 1269,
+              "pooledHR": 0.47857954019751003,
+              "pooledLogHR": -0.7369328536955433,
+              "se": 0.10606607688970449,
+              "subgroup": "Female",
+              "withinImputationVar": 0.010795912144969182
+            }
+          ]
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_imputations": true,
+          "has_subgroups": true,
+          "has_positive_ses": true,
+          "has_interaction": true,
+          "event_flip_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "track": "km_reconstruction",
+        "dataset": "ovarian_survival",
+        "app": {
+          "error": null,
+          "event_flip_rate": 0.02091633466135458,
+          "interaction_p": 0.6527193409827317,
+          "interaction_se": 0.28221889017678453,
+          "n_imputations": 80,
+          "n_subgroups": 2,
+          "subgroup_effects": [
+            {
+              "betweenImputationVar": 0.0008983917502426733,
+              "ci": {
+                "lower": 0.35640140465998665,
+                "upper": 0.9003665106338226
+              },
+              "meanI2": 52.755596539856356,
+              "meanStudiesPerImputation": 5,
+              "meanTau2": 0.14647136046115763,
+              "nImputationsUsed": 80,
+              "nRows": 294,
+              "pooledHR": 0.5664732024541895,
+              "pooledLogHR": -0.5683255033325085,
+              "se": 0.23641870059676232,
+              "subgroup": "III",
+              "withinImputationVar": 0.05498418034474084
+            },
+            {
+              "betweenImputationVar": 0.001077106900267704,
+              "ci": {
+                "lower": 0.4752934038783281,
+                "upper": 0.870368995008137
+              },
+              "meanI2": 0.23855062241665453,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 0.00030853241776854863,
+              "nImputationsUsed": 80,
+              "nRows": 208,
+              "pooledHR": 0.6431801009574044,
+              "pooledLogHR": -0.44133049916218126,
+              "se": 0.15433573078150908,
+              "subgroup": "IV",
+              "withinImputationVar": 0.0227289470593414
+            }
+          ]
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_imputations": true,
+          "has_subgroups": true,
+          "has_positive_ses": true,
+          "has_interaction": true,
+          "event_flip_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_iow",
+        "dataset": "hiv_survival",
+        "app": {
+          "error": null,
+          "ess": 3163.1201029960143,
+          "max_abs_smd_post": 0.07475877706204656,
+          "max_abs_smd_pre": 0.643216960791272,
+          "n_target": 1173,
+          "n_trial": 3803,
+          "overlap_fraction": 0.16928401617757347,
+          "sate": -0.17373865771010202,
+          "sate_se": 0.014994647355813904,
+          "target_definition": "observed domain split: target=UK",
+          "tate": -0.17324871544119155,
+          "tate_se": 0.01635463026857188,
+          "transport_ratio": 0.9971800042928386,
+          "transport_shift": 0.0004899422689104704
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_trial_target_samples": true,
+          "has_sate_tate": true,
+          "has_positive_ses": true,
+          "overlap_in_unit_interval": true,
+          "ess_positive": true,
+          "post_balance_reported": true,
+          "post_balance_reasonable": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_iow",
+        "dataset": "ovarian_survival",
+        "app": {
+          "error": null,
+          "ess": 259.670889948764,
+          "max_abs_smd_post": 0.0983026951630216,
+          "max_abs_smd_pre": 0.8025918581584454,
+          "n_target": 102,
+          "n_trial": 402,
+          "overlap_fraction": 0.5059650471822857,
+          "sate": -0.07510979876429869,
+          "sate_se": 0.028874088089851778,
+          "target_definition": "study split: last 1 studies as target",
+          "tate": -0.08866157926031015,
+          "tate_se": 0.03752450337048667,
+          "transport_ratio": 1.1804262655334516,
+          "transport_shift": -0.013551780496011467
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_trial_target_samples": true,
+          "has_sate_tate": true,
+          "has_positive_ses": true,
+          "overlap_in_unit_interval": true,
+          "ess_positive": true,
+          "post_balance_reported": true,
+          "post_balance_reasonable": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_sensitivity",
+        "dataset": "hiv_survival",
+        "app": {
+          "base_se": 0.01635463026857188,
+          "base_tate": -0.17324871544119155,
+          "delta_needed_for_null": 0.17324871544119155,
+          "error": null,
+          "first_null_delta": 0.2,
+          "monotonic": true,
+          "scenario0_tate": -0.17324871544119155,
+          "scenario_count": 9,
+          "zero_delta_matches_base": true
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_base_estimate": true,
+          "has_base_se": true,
+          "min_scenarios": true,
+          "monotonic_response": true,
+          "zero_delta_consistent": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_sensitivity",
+        "dataset": "ovarian_survival",
+        "app": {
+          "base_se": 0.03752450337048667,
+          "base_tate": -0.08866157926031015,
+          "delta_needed_for_null": 0.08866157926031015,
+          "error": null,
+          "first_null_delta": 0.05,
+          "monotonic": true,
+          "scenario0_tate": -0.08866157926031015,
+          "scenario_count": 9,
+          "zero_delta_matches_base": true
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_base_estimate": true,
+          "has_base_se": true,
+          "min_scenarios": true,
+          "monotonic_response": true,
+          "zero_delta_consistent": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_overlap",
+        "dataset": "hiv_survival",
+        "app": {
+          "error": null,
+          "min_ess_fraction": 0.8317319703431064,
+          "min_overlap_fraction": 0.16928401617757347,
+          "n_scenarios": 5,
+          "n_stable_scenarios": 0,
+          "preferred_se": 0.016354587086160215,
+          "preferred_tate": -0.17324490409454277,
+          "sign_consistent": true,
+          "stable_scenarios_from_rows": 0,
+          "stable_window_available": false,
+          "tate_span_stable": null
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_scenarios": true,
+          "has_preferred_estimate": true,
+          "has_preferred_se": true,
+          "has_stability_diagnostics": true,
+          "sign_consistent": true,
+          "overlap_in_unit_interval": true,
+          "ess_fraction_positive": true,
+          "stable_span_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_overlap",
+        "dataset": "ovarian_survival",
+        "app": {
+          "error": null,
+          "min_ess_fraction": 0.6454656529253101,
+          "min_overlap_fraction": 0.5059650471822857,
+          "n_scenarios": 5,
+          "n_stable_scenarios": 5,
+          "preferred_se": 0.03755947248326048,
+          "preferred_tate": -0.08900816546996593,
+          "sign_consistent": true,
+          "stable_scenarios_from_rows": 5,
+          "stable_window_available": true,
+          "tate_span_stable": 0.0023651797873979197
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_scenarios": true,
+          "has_preferred_estimate": true,
+          "has_preferred_se": true,
+          "has_stability_diagnostics": true,
+          "sign_consistent": true,
+          "overlap_in_unit_interval": true,
+          "ess_fraction_positive": true,
+          "stable_span_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "track": "federated_survival",
+        "dataset": "hiv_survival",
+        "app": {
+          "centralized_loghr": -0.688744136763538,
+          "dp_applied": true,
+          "dp_loghr": -0.6943255667594933,
+          "dp_se": 0.051676726416995375,
+          "epsilon": 8,
+          "error": null,
+          "mean_abs_noise": 0.0031868245896414446,
+          "n_sites": 4,
+          "utility_gap": -0.005581429995955345
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_sites": true,
+          "has_dp_estimate": true,
+          "has_centralized_reference": true,
+          "utility_gap_bounded": true,
+          "privacy_noise_present": true,
+          "dp_applied": true
+        },
+        "pass": true
+      },
+      {
+        "track": "federated_survival",
+        "dataset": "ovarian_survival",
+        "app": {
+          "centralized_loghr": -0.5362128178884881,
+          "dp_applied": true,
+          "dp_loghr": -0.5302794776602642,
+          "dp_se": 0.1354429100573763,
+          "epsilon": 8,
+          "error": null,
+          "mean_abs_noise": 0.0045979452328511455,
+          "n_sites": 5,
+          "utility_gap": 0.005933340228223893
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_sites": true,
+          "has_dp_estimate": true,
+          "has_centralized_reference": true,
+          "utility_gap_bounded": true,
+          "privacy_noise_present": true,
+          "dp_applied": true
+        },
+        "pass": true
+      }
+    ],
+    "summary": {
+      "rows": 10,
+      "overall_pass_rate": 1.0,
+      "km_pass_rate": 1.0,
+      "transport_iow_pass_rate": 1.0,
+      "transport_sensitivity_pass_rate": 1.0,
+      "transport_overlap_pass_rate": 1.0,
+      "federated_pass_rate": 1.0,
+      "max_abs_utility_gap": 0.005933340228223893,
+      "mean_abs_utility_gap": 0.005757385112089619
+    }
+  }
+}

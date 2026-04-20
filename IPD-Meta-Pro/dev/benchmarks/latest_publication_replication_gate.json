@@ -1,0 +1,339 @@
+{
+  "app_build_id": "2026-03-07-fixall-1",
+  "generated_at": "2026-03-12T10:20:39Z",
+  "seed": 12345,
+  "profiles": [
+    {
+      "id": "survival_reml",
+      "dataset": "survival",
+      "method": "REML",
+      "outcome_kind": "survival",
+      "effect_range": [
+        -0.5,
+        -0.24
+      ],
+      "i2_max": 40.0,
+      "description": "Overall mortality survival profile (log-HR)"
+    },
+    {
+      "id": "binary_reml",
+      "dataset": "binary",
+      "method": "REML",
+      "outcome_kind": "binary",
+      "effect_range": [
+        -0.4,
+        -0.23
+      ],
+      "i2_max": 5.0,
+      "description": "Binary endpoint profile (log-OR/log-RR scale as configured)"
+    },
+    {
+      "id": "continuous_reml",
+      "dataset": "continuous",
+      "method": "REML",
+      "outcome_kind": "continuous",
+      "effect_range": [
+        1.85,
+        2.35
+      ],
+      "i2_max": 75.0,
+      "description": "Continuous endpoint profile (mean difference style scale)"
+    },
+    {
+      "id": "ovarian_survival_reml",
+      "dataset": "ovarian_survival",
+      "method": "REML",
+      "outcome_kind": "survival",
+      "effect_range": [
+        -0.56,
+        -0.34
+      ],
+      "i2_max": 25.0,
+      "description": "Ovarian survival profile (log-HR)"
+    },
+    {
+      "id": "statin_cvd_reml",
+      "dataset": "statin_cvd",
+      "method": "REML",
+      "outcome_kind": "binary",
+      "effect_range": [
+        -0.33,
+        -0.14
+      ],
+      "i2_max": 50.0,
+      "description": "Statin CVD profile (relative risk reduction)"
+    },
+    {
+      "id": "hiv_survival_reml",
+      "dataset": "hiv_survival",
+      "method": "REML",
+      "outcome_kind": "survival",
+      "effect_range": [
+        -0.78,
+        -0.58
+      ],
+      "i2_max": 5.0,
+      "description": "HIV survival profile (log-HR)"
+    }
+  ],
+  "app": {
+    "profiles": {
+      "survival_reml": {
+        "error": null,
+        "i2": 25.351759958088525,
+        "k": 12,
+        "pooled": -0.37196867178834725,
+        "q": 12.647999269235452,
+        "runtime_ms": 41.5,
+        "se": 0.12953993646454737,
+        "tau2": 0.04842902436625978
+      },
+      "binary_reml": {
+        "error": null,
+        "i2": 0.0003723820675837023,
+        "k": 8,
+        "pooled": -0.3171707425004847,
+        "q": 7.63658522264196,
+        "runtime_ms": 173.79999999701977,
+        "se": 0.06104458346702563,
+        "tau2": 1.1508749584007851e-07
+      },
+      "continuous_reml": {
+        "error": null,
+        "i2": 66.58015972546376,
+        "k": 10,
+        "pooled": 2.1095028456823073,
+        "q": 23.551271576036385,
+        "runtime_ms": 15.099999994039536,
+        "se": 0.6183499997973372,
+        "tau2": 2.2379239909302555
+      },
+      "ovarian_survival_reml": {
+        "error": null,
+        "i2": 12.00161528431902,
+        "k": 5,
+        "pooled": -0.4502192194952824,
+        "q": 4.641454607321215,
+        "runtime_ms": 25.5,
+        "se": 0.10847930462760799,
+        "tau2": 0.007888475726909734
+      },
+      "statin_cvd_reml": {
+        "error": null,
+        "i2": 36.850195384369435,
+        "k": 5,
+        "pooled": -0.2333908982228895,
+        "q": 6.074438229432689,
+        "runtime_ms": 122.40000000596046,
+        "se": 0.12285767204991604,
+        "tau2": 0.026879557859119396
+      },
+      "hiv_survival_reml": {
+        "error": null,
+        "i2": 0,
+        "k": 4,
+        "pooled": -0.6829919665341968,
+        "q": 0.5813738486287787,
+        "runtime_ms": 113.40000000596046,
+        "se": 0.05154653232083982,
+        "tau2": 0
+      }
+    }
+  },
+  "comparison": {
+    "rows": [
+      {
+        "profile_id": "survival_reml",
+        "dataset": "survival",
+        "method": "REML",
+        "description": "Overall mortality survival profile (log-HR)",
+        "target": {
+          "effect_range": [
+            -0.5,
+            -0.24
+          ],
+          "i2_max": 40.0
+        },
+        "app": {
+          "error": null,
+          "i2": 25.351759958088525,
+          "k": 12,
+          "pooled": -0.37196867178834725,
+          "q": 12.647999269235452,
+          "runtime_ms": 41.5,
+          "se": 0.12953993646454737,
+          "tau2": 0.04842902436625978
+        },
+        "checks": {
+          "no_error": true,
+          "has_pooled": true,
+          "effect_in_range": true,
+          "min_studies": true,
+          "i2_within_cap": true
+        },
+        "pass": true
+      },
+      {
+        "profile_id": "binary_reml",
+        "dataset": "binary",
+        "method": "REML",
+        "description": "Binary endpoint profile (log-OR/log-RR scale as configured)",
+        "target": {
+          "effect_range": [
+            -0.4,
+            -0.23
+          ],
+          "i2_max": 5.0
+        },
+        "app": {
+          "error": null,
+          "i2": 0.0003723820675837023,
+          "k": 8,
+          "pooled": -0.3171707425004847,
+          "q": 7.63658522264196,
+          "runtime_ms": 173.79999999701977,
+          "se": 0.06104458346702563,
+          "tau2": 1.1508749584007851e-07
+        },
+        "checks": {
+          "no_error": true,
+          "has_pooled": true,
+          "effect_in_range": true,
+          "min_studies": true,
+          "i2_within_cap": true
+        },
+        "pass": true
+      },
+      {
+        "profile_id": "continuous_reml",
+        "dataset": "continuous",
+        "method": "REML",
+        "description": "Continuous endpoint profile (mean difference style scale)",
+        "target": {
+          "effect_range": [
+            1.85,
+            2.35
+          ],
+          "i2_max": 75.0
+        },
+        "app": {
+          "error": null,
+          "i2": 66.58015972546376,
+          "k": 10,
+          "pooled": 2.1095028456823073,
+          "q": 23.551271576036385,
+          "runtime_ms": 15.099999994039536,
+          "se": 0.6183499997973372,
+          "tau2": 2.2379239909302555
+        },
+        "checks": {
+          "no_error": true,
+          "has_pooled": true,
+          "effect_in_range": true,
+          "min_studies": true,
+          "i2_within_cap": true
+        },
+        "pass": true
+      },
+      {
+        "profile_id": "ovarian_survival_reml",
+        "dataset": "ovarian_survival",
+        "method": "REML",
+        "description": "Ovarian survival profile (log-HR)",
+        "target": {
+          "effect_range": [
+            -0.56,
+            -0.34
+          ],
+          "i2_max": 25.0
+        },
+        "app": {
+          "error": null,
+          "i2": 12.00161528431902,
+          "k": 5,
+          "pooled": -0.4502192194952824,
+          "q": 4.641454607321215,
+          "runtime_ms": 25.5,
+          "se": 0.10847930462760799,
+          "tau2": 0.007888475726909734
+        },
+        "checks": {
+          "no_error": true,
+          "has_pooled": true,
+          "effect_in_range": true,
+          "min_studies": true,
+          "i2_within_cap": true
+        },
+        "pass": true
+      },
+      {
+        "profile_id": "statin_cvd_reml",
+        "dataset": "statin_cvd",
+        "method": "REML",
+        "description": "Statin CVD profile (relative risk reduction)",
+        "target": {
+          "effect_range": [
+            -0.33,
+            -0.14
+          ],
+          "i2_max": 50.0
+        },
+        "app": {
+          "error": null,
+          "i2": 36.850195384369435,
+          "k": 5,
+          "pooled": -0.2333908982228895,
+          "q": 6.074438229432689,
+          "runtime_ms": 122.40000000596046,
+          "se": 0.12285767204991604,
+          "tau2": 0.026879557859119396
+        },
+        "checks": {
+          "no_error": true,
+          "has_pooled": true,
+          "effect_in_range": true,
+          "min_studies": true,
+          "i2_within_cap": true
+        },
+        "pass": true
+      },
+      {
+        "profile_id": "hiv_survival_reml",
+        "dataset": "hiv_survival",
+        "method": "REML",
+        "description": "HIV survival profile (log-HR)",
+        "target": {
+          "effect_range": [
+            -0.78,
+            -0.58
+          ],
+          "i2_max": 5.0
+        },
+        "app": {
+          "error": null,
+          "i2": 0,
+          "k": 4,
+          "pooled": -0.6829919665341968,
+          "q": 0.5813738486287787,
+          "runtime_ms": 113.40000000596046,
+          "se": 0.05154653232083982,
+          "tau2": 0
+        },
+        "checks": {
+          "no_error": true,
+          "has_pooled": true,
+          "effect_in_range": true,
+          "min_studies": true,
+          "i2_within_cap": true
+        },
+        "pass": true
+      }
+    ],
+    "summary": {
+      "rows": 6,
+      "overall_pass_rate": 1.0,
+      "effect_range_pass_rate": 1.0,
+      "i2_pass_rate": 1.0
+    }
+  }
+}

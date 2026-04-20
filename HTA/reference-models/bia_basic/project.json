@@ -1,0 +1,36 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "id": "bia_basic",
+    "name": "Basic Budget Impact Analysis",
+    "description": "3-year BIA for a new drug vs standard of care in Type 2 Diabetes",
+    "author": "HTA Artifact Standard",
+    "created": "2026-03-16"
+  },
+  "model": {
+    "type": "budget_impact"
+  },
+  "settings": {
+    "time_horizon": 3,
+    "population": 500000,
+    "prevalence": 0.08,
+    "currency": "USD"
+  },
+  "parameters": {
+    "uptake_year1": {"value": 0.05, "description": "Year 1 market uptake"},
+    "uptake_year2": {"value": 0.15, "description": "Year 2 market uptake"},
+    "uptake_year3": {"value": 0.30, "description": "Year 3 market uptake"},
+    "new_drug_cost": {"value": 4500, "description": "Annual cost of new drug per patient"},
+    "current_drug_cost": {"value": 1200, "description": "Annual cost of current treatment"},
+    "admin_cost_new": {"value": 300, "description": "Administration cost for new drug"},
+    "admin_cost_current": {"value": 200, "description": "Administration cost for current"},
+    "hospitalization_offset": {"value": -800, "description": "Annual hospitalization savings per patient on new drug"}
+  },
+  "expected_results": {
+    "eligible_population": 40000,
+    "year1_incremental": "positive, ~5.6M",
+    "year3_incremental": "positive, ~33.6M",
+    "total_incremental": "~56M over 3 years",
+    "per_patient_incremental": "~2800"
+  }
+}

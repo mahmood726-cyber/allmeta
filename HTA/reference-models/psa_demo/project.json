@@ -1,0 +1,164 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "id": "psa_demo",
+    "name": "PSA Demonstration Model",
+    "description": "Model designed to demonstrate PSA with known seed results",
+    "author": "HTA Standard Reference",
+    "created": "2024-01-01T00:00:00Z",
+    "version": "1.0.0",
+    "tags": ["reference", "golden-fixture", "psa"]
+  },
+  "settings": {
+    "time_horizon": 10,
+    "cycle_length": 1,
+    "discount_rate_costs": 0.035,
+    "discount_rate_qalys": 0.035,
+    "half_cycle_correction": "trapezoidal",
+    "currency": "GBP",
+    "starting_age": 55
+  },
+  "model": {
+    "type": "markov_cohort"
+  },
+  "parameters": {
+    "p_response_int": {
+      "value": 0.6,
+      "label": "Response probability (Intervention)",
+      "distribution": { "type": "beta", "alpha": 60, "beta": 40 }
+    },
+    "p_response_comp": {
+      "value": 0.4,
+      "label": "Response probability (Comparator)",
+      "distribution": { "type": "beta", "alpha": 40, "beta": 60 }
+    },
+    "p_death_responder": {
+      "value": 0.05,
+      "label": "Death probability (Responders)",
+      "distribution": { "type": "beta", "alpha": 5, "beta": 95 }
+    },
+    "p_death_nonresponder": {
+      "value": 0.15,
+      "label": "Death probability (Non-responders)",
+      "distribution": { "type": "beta", "alpha": 15, "beta": 85 }
+    },
+    "c_intervention": {
+      "value": 10000,
+      "label": "Intervention cost per cycle",
+      "unit": "GBP",
+      "distribution": { "type": "gamma", "mean": 10000, "se": 1000 }
+    },
+    "c_comparator": {
+      "value": 2000,
+      "label": "Comparator cost per cycle",
+      "unit": "GBP",
+      "distribution": { "type": "gamma", "mean": 2000, "se": 200 }
+    },
+    "c_responder": {
+      "value": 3000,
+      "label": "Additional responder cost",
+      "unit": "GBP",
+      "distribution": { "type": "gamma", "mean": 3000, "se": 300 }
+    },
+    "c_nonresponder": {
+      "value": 8000,
+      "label": "Non-responder cost",
+      "unit": "GBP",
+      "distribution": { "type": "gamma", "mean": 8000, "se": 800 }
+    },
+    "u_responder": {
+      "value": 0.85,
+      "label": "Utility (Responders)",
+      "distribution": { "type": "beta", "alpha": 85, "beta": 15 }
+    },
+    "u_nonresponder": {
+      "value": 0.55,
+      "label": "Utility (Non-responders)",
+      "distribution": { "type": "beta", "alpha": 55, "beta": 45 }
+    }
+  },
+  "states": {
+    "start": {
+      "label": "Starting",
+      "type": "transient",
+      "initial_probability": 1.0,
+      "cost": "c_intervention",
+      "utility": 0.7
+    },
+    "responder": {
+      "label": "Responder",
+      "type": "transient",
+      "initial_probability": 0,
+      "cost": "c_responder",
+      "utility": "u_responder"
+    },
+    "nonresponder": {
+      "label": "Non-Responder",
+      "type": "transient",
+      "initial_probability": 0,
+      "cost": "c_nonresponder",
+      "utility": "u_nonresponder"
+    },
+    "dead": {
+      "label": "Dead",
+      "type": "absorbing",
+      "initial_probability": 0,
+      "cost": 0,
+      "utility": 0
+    }
+  },
+  "transitions": {
+    "start_to_responder": {
+      "from": "start",
+      "to": "responder",
+      "probability": "p_response_int"
+    },
+    "start_to_nonresponder": {
+      "from": "start",
+      "to": "nonresponder",
+      "probability": "1 - p_response_int"
+    },
+    "responder_to_responder": {
+      "from": "responder",
+      "to": "responder",
+      "probability": "1 - p_death_responder"
+    },
+    "responder_to_dead": {
+      "from": "responder",
+      "to": "dead",
+      "probability": "p_death_responder"
+    },
+    "nonresponder_to_nonresponder": {
+      "from": "nonresponder",
+      "to": "nonresponder",
+      "probability": "1 - p_death_nonresponder"
+    },
+    "nonresponder_to_dead": {
+      "from": "nonresponder",
+      "to": "dead",
+      "probability": "p_death_nonresponder"
+    },
+    "dead_to_dead": {
+      "from": "dead",
+      "to": "dead",
+      "probability": 1.0
+    }
+  },
+  "strategies": {
+    "intervention": {
+      "label": "New Intervention",
+      "description": "New treatment with higher response rate",
+      "is_comparator": false,
+      "parameter_overrides": {}
+    },
+    "comparator": {
+      "label": "Standard Care",
+      "description": "Current standard of care",
+      "is_comparator": true,
+      "parameter_overrides": {
+        "p_response_int": "p_response_comp",
+        "c_intervention": "c_comparator"
+      }
+    }
+  }
+}

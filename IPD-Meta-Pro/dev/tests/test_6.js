@@ -1,0 +1,1 @@
+const obj = { f: function() { return 1 / 2; } };

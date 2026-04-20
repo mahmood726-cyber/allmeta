@@ -1,0 +1,38 @@
+{
+  "name": "dose-response-pro",
+  "version": "19.0.0",
+  "description": "Advanced Dose-Response Meta-Analysis - Better Than R",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:wasm": "wasm-pack test --node",
+    "build:wasm": "wasm-pack build ./crate --target web --out-dir ./pkg"
+  },
+  "dependencies": {
+    "plotly.js-dist-min": "^2.27.0",
+    "d3": "^7.9.0",
+    "chroma-js": "^2.4.2"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0",
+    "wasm-pack": "^0.12.0"
+  },
+  "keywords": [
+    "meta-analysis",
+    "dose-response",
+    "epidemiology",
+    "statistics",
+    "research"
+  ],
+  "author": "M25 Evidence Synthesis Lab",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/m25-lab/dose-response-pro"
+  }
+}

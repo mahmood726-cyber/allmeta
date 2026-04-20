@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dose Response Pro v18.1 - Developer Worksheet</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-result {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .pass { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
+    .summary {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .summary.pass { background: #d4edda; }
+    .summary.fail { background: #f8d7da; }
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dose Response Pro v18.1 - Developer Worksheet</h1>
+  <p>Development-only checks for core numerical helpers. This page is not the production R-parity harness.</p>
+
+  <div id="testResults"></div>
+  <div id="summary"></div>
+
+  <script>
+    // Import constants from main file
+    const NUMERICAL_TOLERANCE = 1e-10;
+    const DETERMINANT_THRESHOLD = 1e-10;
+    const VALIDATION_TOLERANCE = 1e-4;
+
+    // Test results tracking
+    let testsPassed = 0;
+    let testsFailed = 0;
+    const results = [];
+
+    function assert(condition, testName, details = '') {
+      const result = condition ? 'PASS' : 'FAIL';
+      if (condition) {
+        testsPassed++;
+      } else {
+        testsFailed++;
+      }
+      results.push({ name: testName, result, details });
+      return condition;
+    }
+
+    function assertClose(actual, expected, tolerance, testName, details = '') {
+      const diff = Math.abs(actual - expected);
+      const condition = diff <= tolerance;
+      const fullDetails = `${details}\nExpected: ${expected}\nActual: ${actual}\nDifference: ${diff}`;
+      return assert(condition, testName, fullDetails);
+    }
+
+    function assertArrayClose(actual, expected, tolerance, testName, details = '') {
+      if (actual.length !== expected.length) {
+        return assert(false, testName, `${details}\nArray length mismatch: ${actual.length} vs ${expected.length}`);
+      }
+      for (let i = 0; i < actual.length; i++) {
+        if (Math.abs(actual[i] - expected[i]) > tolerance) {
+          const fullDetails = `${details}\nIndex ${i}: Expected ${expected[i]}, got ${actual[i]}`;
+          return assert(false, testName, fullDetails);
+        }
+      }
+      return assert(true, testName, details);
+    }
+
+    // ================================================================
+    // MATRIX INVERSION TESTS
+    // ================================================================
+
+    function invertMatrix(V, n) {
+      const aug = new Array(n * 2 * n).fill(0);
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          aug[i * 2 * n + j] = V[i * n + j];
+        }
+        aug[i * 2 * n + n + i] = 1;
+      }
+
+      for (let col = 0; col < n; col++) {
+        let maxRow = col;
+        let maxVal = Math.abs(aug[col * 2 * n + col]);
+        for (let row = col + 1; row < n; row++) {
+          if (Math.abs(aug[row * 2 * n + col]) > maxVal) {
+            maxVal = Math.abs(aug[row * 2 * n + col]);
+            maxRow = row;
+          }
+        }
+
+        if (maxRow !== col) {
+          for (let j = 0; j < 2 * n; j++) {
+            [aug[col * 2 * n + j], aug[maxRow * 2 * n + j]] =
+              [aug[maxRow * 2 * n + j], aug[col * 2 * n + j]];
+          }
+        }
+
+        if (Math.abs(aug[col * 2 * n + col]) < DETERMINANT_THRESHOLD) {
+          aug[col * 2 * n + col] += NUMERICAL_TOLERANCE;
+        }
+
+        const pivot = aug[col * 2 * n + col];
+        for (let j = 0; j < 2 * n; j++) {
+          aug[col * 2 * n + j] /= pivot;
+        }
+
+        for (let row = 0; row < n; row++) {
+          if (row !== col) {
+            const factor = aug[row * 2 * n + col];
+            for (let j = 0; j < 2 * n; j++) {
+              aug[row * 2 * n + j] -= factor * aug[col * 2 * n + j];
+            }
+          }
+        }
+      }
+
+      const inv = new Array(n * n);
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          inv[i * n + j] = aug[i * 2 * n + n + j];
+        }
+      }
+
+      return inv;
+    }
+
+    function testMatrixInversion() {
+      // Test 1: 2x2 identity matrix
+      const I2 = [1, 0, 0, 1];
+      const invI2 = invertMatrix(I2, 2);
+      assertArrayClose(invI2, I2, 1e-10, 'Matrix: 2x2 Identity inversion');
+
+      // Test 2: 2x2 simple matrix
+      const A2 = [4, 7, 2, 6];
+      const expected2 = [0.6, -0.7, -0.2, 0.4];
+      const invA2 = invertMatrix(A2, 2);
+      assertArrayClose(invA2, expected2, 1e-6, 'Matrix: 2x2 simple inversion');
+
+      // Test 3: 3x3 matrix
+      const A3 = [2, -1, 0, -1, 2, -1, 0, -1, 2];
+      const invA3 = invertMatrix(A3, 3);
+      // Verify by multiplying: A * A^(-1) should equal I
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          let sum = 0;
+          for (let k = 0; k < 3; k++) {
+            sum += A3[i * 3 + k] * invA3[k * 3 + j];
+          }
+          const expected = (i === j) ? 1 : 0;
+          assertClose(sum, expected, 1e-6,
+            `Matrix: 3x3 inversion verification [${i}][${j}]`);
+        }
+      }
+
+      // Test 4: Symmetric positive definite (common in meta-analysis)
+      const SPD = [0.01, 0.005, 0.005, 0.02];
+      const invSPD = invertMatrix(SPD, 2);
+      // Verify SPD property
+      assertClose(invSPD[0], 114.2857, 1e-3, 'Matrix: SPD inverse [0][0]');
+      assertClose(invSPD[3], 57.1429, 1e-3, 'Matrix: SPD inverse [1][1]');
+    }
+
+    // ================================================================
+    // GLT COVARIANCE TESTS
+    // ================================================================
+
+    function testGLSCovariance() {
+      // Test case: Study with 3 dose points
+      // SE values: 0.1, 0.15, 0.2
+      const studyPoints = [
+        { se: 0.1 },
+        { se: 0.15 },
+        { se: 0.2 }
+      ];
+
+      const V = new Array(9).fill(0);
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (i === j) {
+            V[i * 3 + j] = studyPoints[i].se * studyPoints[i].se;
+          } else {
+            V[i * 3 + j] = Math.min(0.5 * studyPoints[i].se * studyPoints[j].se, Math.min(studyPoints[i].se * studyPoints[i].se, studyPoints[j].se * studyPoints[j].se) * 0.9);
+          }
+        }
+      }
+
+      // Check diagonal elements (variances)
+      assertClose(V[0], 0.01, 1e-10, 'GLS Covariance: V[0][0]');
+      assertClose(V[4], 0.0225, 1e-10, 'GLS Covariance: V[1][1]');
+      assertClose(V[8], 0.04, 1e-10, 'GLS Covariance: V[2][2]');
+
+      // Check off-diagonal bounded covariance approximation
+      assertClose(V[1], 0.0075, 1e-10, 'GLS Covariance: V[0][1]');
+      assertClose(V[2], 0.009, 1e-10, 'GLS Covariance: V[0][2]');
+      assertClose(V[5], 0.015, 1e-10, 'GLS Covariance: V[1][2]');
+
+      // Symmetry check
+      assertClose(V[1], V[3], 1e-10, 'GLS Covariance: Symmetry V[0][1] = V[1][0]');
+      assertClose(V[2], V[6], 1e-10, 'GLS Covariance: Symmetry V[0][2] = V[2][0]');
+    }
+
+    // ================================================================
+    // TAU² ESTIMATION TESTS
+    // ================================================================
+
+    function testTau2Estimation() {
+      // Known test case from literature
+      // 3 studies, each with data at multiple dose points
+
+      // Simulated data where expected tau2 = 0.05
+      const Q = 15.5;
+      const K = 3;  // number of studies
+      const p = 3;  // number of parameters
+      const sumTrV = 8.5;  // trace of covariance matrices
+
+      const df = (K - 1) * p;  // Correct df for multivariate
+      const expected_tau2 = Math.max(0, (Q - df) / (sumTrV - df));
+
+      assertClose(df, 6, 1e-10, 'Tau²: Degrees of freedom calculation');
+
+      // Verify the formula
+      const tau2_calc = Math.max(0, (15.5 - 6) / (8.5 - 6));
+      assertClose(tau2_calc, expected_tau2, 0.01, 'Tau²: Estimation formula');
+
+      // Test edge cases
+      const tau2_zero = Math.max(0, (5 - 6) / (8.5 - 6));
+      assert(tau2_zero === 0, 'Tau²: Zero case (Q < df)');
+
+      const estimateTau2LinearGuarded = (Qval, dfVal, sumTrVVal) => {
+        const denom = sumTrVVal - dfVal;
+        if (!Number.isFinite(Qval) || !Number.isFinite(denom) || denom <= 0) return 0;
+        return Math.max(0, (Qval - dfVal) / denom);
+      };
+
+      const tau2_denominator_guard = estimateTau2LinearGuarded(12, 6, 5);
+      assert(tau2_denominator_guard === 0, 'Tau²: Guard non-positive denominator');
+
+      const tau2_nonfinite_guard = estimateTau2LinearGuarded(NaN, 6, 8.5);
+      assert(tau2_nonfinite_guard === 0, 'Tau²: Guard non-finite inputs');
+    }
+
+    // ================================================================
+    // I² CALCULATION TESTS
+    // ================================================================
+
+    function testI2Calculation() {
+      // I² = max(0, (Q - df) / Q * 100)
+
+      // Test 1: Low heterogeneity
+      const I2_low = Math.max(0, 100 * (10 - 6) / Math.max(10, 0.001));
+      assertClose(I2_low, 40, 0.1, 'I²: Low heterogeneity (40%)');
+
+      // Test 2: High heterogeneity
+      const I2_high = Math.max(0, 100 * (25 - 6) / Math.max(25, 0.001));
+      assertClose(I2_high, 76, 0.1, 'I²: High heterogeneity (76%)');
+
+      // Test 3: No heterogeneity (Q < df)
+      const I2_zero = Math.max(0, 100 * (5 - 6) / Math.max(5, 0.001));
+      assert(I2_zero === 0, 'I²: No heterogeneity (Q < df)');
+
+      // Test 4: Perfect heterogeneity
+      const I2_perfect = Math.max(0, 100 * (100 - 6) / Math.max(100, 0.001));
+      assertClose(I2_perfect, 94, 0.1, 'I²: High heterogeneity (94%)');
+    }
+
+    // ================================================================
+    // STATISTICAL DISTRIBUTION TESTS
+    // ================================================================
+
+    function normCDF(x) {
+      const a1 = .254829592, a2 = -.284496736, a3 = 1.421413741;
+      const a4 = -1.453152027, a5 = 1.061405429, p = .3275911;
+      const s = x < 0 ? -1 : 1;
+      const xAbs = Math.abs(x) / Math.sqrt(2);
+      const t = 1 / (1 + p * xAbs);
+      const erf = s * (1 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t) *
+               Math.exp(-xAbs * xAbs));
+      return .5 * (1 + erf);
+    }
+
+    function testNormalCDF() {
+      // Standard normal CDF values
+      assertClose(normCDF(0), 0.5, 1e-4, 'Normal CDF: z = 0');
+      assertClose(normCDF(1.96), 0.975, 1e-3, 'Normal CDF: z = 1.96');
+      assertClose(normCDF(-1.96), 0.025, 1e-3, 'Normal CDF: z = -1.96');
+      assertClose(normCDF(2.58), 0.995, 1e-3, 'Normal CDF: z = 2.58');
+    }
+
+    // ================================================================
+    // 3x3 MATRIX SOLVE TESTS
+    // ================================================================
+
+    function solve3x3(A, b) {
+      const det = A[0] * (A[4]*A[8] - A[5]*A[7]) -
+                  A[1] * (A[3]*A[8] - A[5]*A[6]) +
+                  A[2] * (A[3]*A[7] - A[4]*A[6]);
+
+      if (Math.abs(det) < DETERMINANT_THRESHOLD) return [0, 0, 0];
+
+      const x0 = (b[0] * (A[4]*A[8] - A[5]*A[7]) -
+                 b[1] * (A[1]*A[8] - A[2]*A[7]) +
+                 b[2] * (A[1]*A[5] - A[2]*A[4])) / det;
+      const x1 = (A[0] * (b[1]*A[8] - b[2]*A[7]) -
+                 A[1] * (b[0]*A[8] - b[2]*A[6]) +
+                 A[2] * (b[0]*A[7] - b[1]*A[6])) / det;
+      const x2 = (A[0] * (A[4]*b[2] - A[5]*b[1]) -
+                 A[1] * (A[3]*b[2] - A[5]*b[0]) +
+                 A[2] * (A[3]*b[1] - A[4]*b[0])) / det;
+
+      return [x0, x1, x2];
+    }
+
+    function test3x3Solver() {
+      // Test 1: Identity matrix
+      const I3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+      const b1 = [2, 3, 4];
+      const x1 = solve3x3(I3, b1);
+      assertArrayClose(x1, b1, 1e-10, '3x3 Solve: Identity matrix');
+
+      // Test 2: Diagonal matrix
+      const D = [2, 0, 0, 0, 3, 0, 0, 0, 4];
+      const b2 = [6, 9, 16];
+      const x2 = solve3x3(D, b2);
+      assertArrayClose(x2, [3, 3, 4], 1e-10, '3x3 Solve: Diagonal matrix');
+
+      // Test 3: General 3x3
+      const A = [2, 1, 0, 1, 2, 1, 0, 1, 2];
+      const b3 = [1, 2, 3];
+      const x3 = solve3x3(A, b3);
+
+      // Verify solution: Ax should equal b
+      for (let i = 0; i < 3; i++) {
+        let sum = 0;
+        for (let j = 0; j < 3; j++) {
+          sum += A[i * 3 + j] * x3[j];
+        }
+        assertClose(sum, b3[i], 1e-6, `3x3 Solve: Verification row ${i}`);
+      }
+    }
+
+    // ================================================================
+    // SENSITIVITY ANALYSIS METRICS TESTS
+    // ================================================================
+
+    function testInfluenceMetrics() {
+      // Cook's Distance: D = (Δ² / SE²)
+      const delta = 0.5;
+      const se = 0.25;
+      const cookD = (delta * delta) / (se * se);
+
+      assertClose(cookD, 4, 0.01, 'Influence: Cook\'s Distance calculation');
+      assert(cookD >= 4, 'Influence: Cook\'s D threshold detection');
+
+      // DFITS: DFITS = Δ / SE_loo
+      const delta_loo = 0.3;
+      const se_loo = 0.2;
+      const dfits = Math.abs(delta_loo / se_loo);
+
+      assertClose(dfits, 1.5, 0.01, 'Influence: DFITS calculation');
+      assert(dfits < 2, 'Influence: DFITS threshold detection');
+
+      // Slope change percentage
+      const original = 1.0;
+      const loo = 1.15;
+      const slopeChange = ((loo - original) / original) * 100;
+
+      assertClose(slopeChange, 15, 0.1, 'Influence: Slope change percentage');
+    }
+
+    // ================================================================
+    // DATA HANDLING TESTS
+    // ================================================================
+
+    function resolveZeroReferenceCandidates(points) {
+      const studyPointsMap = new Map();
+      points.forEach(p => {
+        if (!studyPointsMap.has(p.id)) studyPointsMap.set(p.id, []);
+        studyPointsMap.get(p.id).push(p);
+      });
+
+      const resolved = [];
+      for (const [studyId, studyPoints] of studyPointsMap.entries()) {
+        const hasDoseZero = studyPoints.some(p => p.dose === 0);
+        const candidates = studyPoints.filter(p => p._zeroRefCandidate);
+
+        if (hasDoseZero) {
+          studyPoints.forEach(p => {
+            if (!p._zeroRefCandidate) resolved.push(p);
+          });
+        } else if (candidates.length <= 1) {
+          studyPoints.forEach(p => resolved.push(p));
+        } else {
+          let keep = candidates[0];
+          for (const cand of candidates) {
+            if (cand.dose < keep.dose) keep = cand;
+          }
+          studyPoints.forEach(p => {
+            if (!p._zeroRefCandidate || p === keep) resolved.push(p);
+          });
+        }
+      }
+      return resolved;
+    }
+
+    function testZeroReferenceResolution() {
+      const points = [
+        { id: 1, dose: 0, logRR: 0, se: 0 },
+        { id: 1, dose: 5, logRR: 0, se: 0, _zeroRefCandidate: true },
+        { id: 1, dose: 10, logRR: 0.2, se: 0.1 },
+        { id: 2, dose: 1, logRR: 0, se: 0, _zeroRefCandidate: true },
+        { id: 2, dose: 2, logRR: 0, se: 0, _zeroRefCandidate: true },
+        { id: 2, dose: 3, logRR: 0.1, se: 0.2 }
+      ];
+
+      const resolved = resolveZeroReferenceCandidates(points);
+      const study1 = resolved.filter(p => p.id === 1);
+      const study2 = resolved.filter(p => p.id === 2);
+
+      assert(study1.length === 2, 'Zero-ref resolution: remove non-zero candidate when dose=0 exists');
+      assert(study2.length === 2, 'Zero-ref resolution: keep single candidate when multiple present');
+      assert(study2.some(p => p.dose === 1), 'Zero-ref resolution: keep lowest-dose candidate');
+    }
+
+    function orderByStudy(points) {
+      const studyIds = [];
+      for (const p of points) {
+        if (!studyIds.includes(p.study_id)) studyIds.push(p.study_id);
+      }
+      return points
+        .map((p, idx) => ({ ...p, _idx: idx }))
+        .sort((a, b) => {
+          const aOrder = studyIds.indexOf(a.study_id);
+          const bOrder = studyIds.indexOf(b.study_id);
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return a._idx - b._idx;
+        })
+        .map(p => {
+          delete p._idx;
+          return p;
+        });
+    }
+
+    function testStudyOrdering() {
+      const points = [
+        { study_id: 2, dose: 0 },
+        { study_id: 1, dose: 1 },
+        { study_id: 2, dose: 2 },
+        { study_id: 1, dose: 3 }
+      ];
+
+      const ordered = orderByStudy(points);
+      const orderKey = ordered.map(p => `${p.study_id}:${p.dose}`).join(',');
+      assert(orderKey === '2:0,2:2,1:1,1:3', 'Study ordering: preserve study order and within-study order');
+    }
+
+    function computeSeFloor(values, ridge) {
+      const positive = values.filter(v => Number.isFinite(v) && v > 0);
+      if (positive.length === 0) return ridge;
+      return Math.max(ridge, Math.min(...positive));
+    }
+
+    function testSeFloor() {
+      const ridge = 1e-10;
+      const seFloor = computeSeFloor([0, 0.2, 0.05, 0.1], ridge);
+      assertClose(seFloor, 0.05, 1e-12, 'SE floor: uses min positive');
+
+      const seFloorFallback = computeSeFloor([0, -1, NaN], ridge);
+      assertClose(seFloorFallback, ridge, 1e-20, 'SE floor: fallback to ridge');
+    }
+
+    // ================================================================
+    // RUN ALL TESTS
+    // ================================================================
+
+    function runAllTests() {
+      console.log('Running Dose Response Pro v18.1 Unit Tests...\n');
+
+      testMatrixInversion();
+      testGLSCovariance();
+      testTau2Estimation();
+      testI2Calculation();
+      testNormalCDF();
+      test3x3Solver();
+      testInfluenceMetrics();
+      testZeroReferenceResolution();
+      testStudyOrdering();
+      testSeFloor();
+
+      // Display results
+      displayResults();
+    }
+
+    function displayResults() {
+      const resultsDiv = document.getElementById('testResults');
+      const summaryDiv = document.getElementById('summary');
+
+      let html = '<div class="test-section"><h2>Test Results</h2>';
+
+      for (const result of results) {
+        const cssClass = result.result === 'PASS' ? 'pass' : 'fail';
+        html += `<div class="test-result ${cssClass}">
+          <strong>[${result.result}]</strong> ${result.name}`;
+        if (result.details) {
+          html += `<pre>${result.details}</pre>`;
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+      resultsDiv.innerHTML = html;
+
+      // Summary
+      const total = testsPassed + testsFailed;
+      const passRate = ((testsPassed / total) * 100).toFixed(1);
+      const allPassed = testsFailed === 0;
+      const summaryClass = allPassed ? 'pass' : 'fail';
+
+      summaryDiv.innerHTML = `
+        <div class="summary ${summaryClass}">
+          <h2>Summary</h2>
+          <p>Total Tests: ${total}</p>
+          <p>Passed: ${testsPassed} (${passRate}%)</p>
+          <p>Failed: ${testsFailed}</p>
+          <p>${allPassed ? '✓ ALL TESTS PASSED' : '✗ SOME TESTS FAILED'}</p>
+        </div>
+      `;
+
+      console.log(`\nTests passed: ${testsPassed}/${total} (${passRate}%)`);
+      console.log(allPassed ? 'All tests passed!' : 'Some tests failed!');
+    }
+
+    // Run tests on load
+    window.onload = runAllTests;
+  </script>
+</body>
+</html>
+

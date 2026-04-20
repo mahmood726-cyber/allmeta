@@ -1,0 +1,58 @@
+{
+  "title": "IPD Meta-Analysis Pro: A Browser-Based Platform for Individual Participant Data Evidence Synthesis",
+  "slug": "ipd-meta-pro",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "path": "C:\\Projects\\ipd-meta-pro-link",
+  "type": "methods",
+  "primary_estimand": "Pooled IPD treatment effect",
+  "summary": "A 51,305-line browser application for IPD meta-analysis with one-stage and two-stage pooling, achieving 100% pass rate across 56 automated regression tests.",
+  "body": "How can researchers conduct individual participant data meta-analysis reproducibly without fragmenting workflows across multiple statistical platforms? IPD Meta-Analysis Pro is a 51,305-line browser application providing IPD synthesis with one-stage and two-stage pooling, subgroup stratification, covariate-adjusted modeling, and GRADE appraisal panels. The engine implements mixed-effects logistic and linear regression, stratified Cox models, interaction testing, and heterogeneity diagnostics through modular JavaScript validated against R equivalents via WebR. A release pipeline comprising 56 automated regression tests achieved a 100 percent pass rate, with R parity gates confirming agreement for pooled HR and MD estimates within 95% CI tolerance. Browser test harness, user-flow smoke suite, and core statistics validation collectively verify stability across data import, model configuration, diagnostic inspection, and export pathways. IPD Meta-Analysis Pro removes operational barriers to participant-level evidence synthesis while preserving full methodological transparency and audit capability. The tool cannot replace purpose-built Bayesian hierarchical frameworks or handle time-to-event competing risks natively, requiring external software for those analyses.",
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "How can researchers conduct individual participant data meta-analysis reproducibly without fragmenting workflows across multiple statistical platforms?"
+    },
+    {
+      "role": "Dataset",
+      "text": "IPD Meta-Analysis Pro is a 51,305-line browser application providing IPD synthesis with one-stage and two-stage pooling, subgroup stratification, covariate-adjusted modeling, and GRADE appraisal panels."
+    },
+    {
+      "role": "Method",
+      "text": "The engine implements mixed-effects logistic and linear regression, stratified Cox models, interaction testing, and heterogeneity diagnostics through modular JavaScript validated against R equivalents via WebR."
+    },
+    {
+      "role": "Primary result",
+      "text": "A release pipeline comprising 56 automated regression tests achieved a 100 percent pass rate, with R parity gates confirming agreement for pooled HR and MD estimates within 95% CI tolerance."
+    },
+    {
+      "role": "Robustness",
+      "text": "Browser test harness, user-flow smoke suite, and core statistics validation collectively verify stability across data import, model configuration, diagnostic inspection, and export pathways."
+    },
+    {
+      "role": "Interpretation",
+      "text": "IPD Meta-Analysis Pro removes operational barriers to participant-level evidence synthesis while preserving full methodological transparency and audit capability."
+    },
+    {
+      "role": "Boundary",
+      "text": "The tool cannot replace purpose-built Bayesian hierarchical frameworks or handle time-to-event competing risks natively, requiring external software for those analyses."
+    }
+  ],
+  "notes": {
+    "app": "IPD Meta-Analysis Pro v1.0",
+    "data": "51,305-line browser application with WebR validation",
+    "code": "https://github.com/mahmood726-cyber/ipd-meta-pro",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "affiliation": "Tahir Heart Institute",
+  "email": "mahmood.ahmad2@nhs.net",
+  "references": [
+    "Roever C. Bayesian random-effects meta-analysis using the bayesmeta R package. J Stat Softw. 2020;93(6):1-51.",
+    "Higgins JPT, Thompson SG, Spiegelhalter DJ. A re-evaluation of random-effects meta-analysis. J R Stat Soc Ser A. 2009;172(1):137-159.",
+    "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR. Introduction to Meta-Analysis. 2nd ed. Wiley; 2021."
+  ],
+  "submitted": false
+}

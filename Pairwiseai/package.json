@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "build:min": "terser app.js -c -o app.min.js",
+    "oracle:r": "powershell -ExecutionPolicy Bypass -File ./run_oracle_benchmark.ps1"
+  },
+  "devDependencies": {
+    "terser": "^5.44.1"
+  }
+}

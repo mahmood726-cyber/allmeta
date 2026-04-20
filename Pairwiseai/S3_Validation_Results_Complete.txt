@@ -1,0 +1,102 @@
+TruthCert-PairwisePro Complete Validation Results
+=================================================
+
+Date: 2026-01-20 11:21:09.049817
+Total tests: 92
+Passed: 24 (26.1%)
+Failed: 68
+
+Detailed Results:
+-----------------
+[FAIL] Study 1 yi: JS=-0.889300, R=-0.938694, RelErr=5.26e-02
+[FAIL] Study 1 vi: JS=0.325600, R=0.357125, RelErr=8.83e-02
+[FAIL] Study 2 yi: JS=-1.585400, R=-1.666191, RelErr=4.85e-02
+[FAIL] Study 2 vi: JS=0.194000, R=0.208132, RelErr=6.79e-02
+[FAIL] Study 3 yi: JS=-1.348100, R=-1.386294, RelErr=2.76e-02
+[FAIL] Study 3 vi: JS=0.415400, R=0.433413, RelErr=4.16e-02
+[FAIL] Study 4 yi: JS=-1.441600, R=-1.456444, RelErr=1.02e-02
+[FAIL] Study 4 vi: JS=0.020500, R=0.020314, RelErr=9.14e-03
+[FAIL] Study 5 yi: JS=-0.217500, R=-0.218447, RelErr=4.34e-03
+[FAIL] Study 5 vi: JS=0.051300, R=0.051952, RelErr=1.25e-02
+[FAIL] Study 6 yi: JS=-0.786100, R=-0.958122, RelErr=1.80e-01
+[FAIL] Study 6 vi: JS=0.062800, R=0.009905, RelErr=5.34e+00
+[FAIL] Study 7 yi: JS=-1.620900, R=-1.633776, RelErr=7.88e-03
+[FAIL] Study 7 vi: JS=0.072900, R=0.227010, RelErr=6.79e-01
+[FAIL] Study 8 yi: JS=0.012000, R=0.012021, RelErr=1.71e-03
+[FAIL] Study 8 vi: JS=0.012400, R=0.004007, RelErr=2.09e+00
+[PASS] Study 9 yi: JS=-0.471700, R=-0.471746, RelErr=9.76e-05
+[FAIL] Study 9 vi: JS=0.054900, R=0.056977, RelErr=3.65e-02
+[FAIL] Study 10 yi: JS=0.584700, R=-1.401210, RelErr=1.42e+00
+[FAIL] Study 10 vi: JS=0.019300, R=0.075422, RelErr=7.44e-01
+[FAIL] Study 11 yi: JS=-1.371300, R=-0.340850, RelErr=3.02e+00
+[FAIL] Study 11 vi: JS=0.271700, R=0.012525, RelErr=2.07e+01
+[FAIL] Study 12 yi: JS=-0.339400, R=0.446635, RelErr=1.76e+00
+[FAIL] Study 12 vi: JS=0.018400, R=0.534162, RelErr=9.66e-01
+[FAIL] Study 13 yi: JS=0.445900, R=-0.017342, RelErr=2.67e+01
+[FAIL] Study 13 vi: JS=0.019200, R=0.071635, RelErr=7.32e-01
+[FAIL] Pooled log(OR): JS=-0.714500, R=-0.745122, RelErr=4.11e-02
+[FAIL] SE: JS=0.178700, R=0.186044, RelErr=3.95e-02
+[FAIL] tau2 (REML): JS=0.313200, R=0.337845, RelErr=7.29e-02
+[PASS] I2: JS=92.220000, R=92.074261, RelErr=1.58e-03
+[PASS] Q statistic: JS=152.230000, R=163.170724, RelErr=6.71e-02
+[FAIL] tau2 (DL): JS=0.308800, R=0.366357, RelErr=1.57e-01
+[FAIL] tau2 (REML): JS=0.313200, R=0.337845, RelErr=7.29e-02
+[PASS] tau2 (ML): JS=0.292600, R=0.302523, RelErr=3.28e-02
+[FAIL] tau2 (PM): JS=0.361500, R=0.341247, RelErr=5.93e-02
+[FAIL] tau2 (HS): JS=0.354200, R=0.268260, RelErr=3.20e-01
+[FAIL] tau2 (SJ): JS=0.396600, R=0.368486, RelErr=7.63e-02
+[FAIL] tau2 (HE): JS=0.392000, R=0.349517, RelErr=1.22e-01
+[FAIL] tau2 (EB): JS=0.316300, R=0.341276, RelErr=7.32e-02
+[FAIL] HKSJ CI lower: JS=-1.104400, R=-1.151998, RelErr=4.13e-02
+[FAIL] HKSJ CI upper: JS=-0.324600, R=-0.338246, RelErr=4.03e-02
+[PASS] PI lower: JS=-1.913300, R=-1.941274, RelErr=1.44e-02
+[FAIL] PI upper: JS=0.484300, R=0.451029, RelErr=7.38e-02
+[FAIL] Egger z: JS=-2.285600, R=-1.506696, RelErr=5.17e-01
+[FAIL] Egger p: JS=0.022300, R=0.160056, RelErr=8.61e-01
+[FAIL] Begg tau: JS=-0.435900, R=0.025641, RelErr=1.80e+01
+[FAIL] Begg p: JS=0.034000, R=0.952362, RelErr=9.64e-01
+[FAIL] Trim-fill k0: JS=4.000000, R=0.000000, RelErr=4.00e+10
+[FAIL] Trim-fill estimate: JS=-1.016500, R=-0.745122, RelErr=3.64e-01
+[FAIL] LOO study 1: JS=-0.692900, R=-0.736713, RelErr=5.95e-02
+[FAIL] LOO study 2: JS=-0.641200, R=-0.681496, RelErr=5.91e-02
+[FAIL] LOO study 3: JS=-0.664300, R=-0.715438, RelErr=7.15e-02
+[FAIL] LOO study 4: JS=-0.712300, R=-0.663378, RelErr=7.37e-02
+[FAIL] LOO study 5: JS=-0.761500, R=-0.797519, RelErr=4.52e-02
+[FAIL] LOO study 6: JS=-0.708700, R=-0.725501, RelErr=2.32e-02
+[FAIL] LOO study 7: JS=-0.645200, R=-0.686197, RelErr=5.97e-02
+[FAIL] LOO study 8: JS=-0.748900, R=-0.828363, RelErr=9.59e-02
+[FAIL] LOO study 9: JS=-0.754200, R=-0.774353, RelErr=2.60e-02
+[FAIL] LOO study 10: JS=-0.831800, R=-0.684075, RelErr=2.16e-01
+[FAIL] LOO study 11: JS=-0.680400, R=-0.791183, RelErr=1.40e-01
+[FAIL] LOO study 12: JS=-0.751800, R=-0.793365, RelErr=5.24e-02
+[PASS] LOO study 13: JS=-0.821800, R=-0.811238, RelErr=1.30e-02
+[FAIL] Pooled log(OR): JS=-0.356700, R=-0.330654, RelErr=7.88e-02
+[FAIL] SE: JS=0.044000, R=0.041485, RelErr=6.06e-02
+[FAIL] OR: JS=0.700000, R=0.718454, RelErr=2.57e-02
+[FAIL] HKSJ OR lower: JS=0.630000, R=0.660036, RelErr=4.55e-02
+[PASS] HKSJ OR upper: JS=0.770000, R=0.782041, RelErr=1.54e-02
+[PASS] Hedges g: JS=-0.635300, R=-0.629628, RelErr=9.01e-03
+[PASS] Variance: JS=0.041800, R=0.041982, RelErr=4.34e-03
+[FAIL] FT study 1: JS=0.797800, R=0.402484, RelErr=9.82e-01
+[FAIL] FT study 2: JS=0.794200, R=0.405502, RelErr=9.59e-01
+[FAIL] FT study 3: JS=0.654000, R=0.329762, RelErr=9.83e-01
+[FAIL] FT study 4: JS=0.795200, R=0.407009, RelErr=9.54e-01
+[FAIL] FT study 5: JS=0.746900, R=0.379614, RelErr=9.68e-01
+[PASS] Fisher z study 1: JS=0.365400, R=0.365444, RelErr=1.20e-04
+[PASS] Fisher z study 2: JS=0.447700, R=0.447692, RelErr=1.78e-05
+[PASS] Fisher z study 3: JS=0.287700, R=0.287682, RelErr=6.23e-05
+[PASS] Fisher z study 4: JS=0.562700, R=0.562730, RelErr=5.29e-05
+[PASS] Fisher z study 5: JS=0.411800, R=0.411800, RelErr=8.37e-08
+[PASS] Pooled r: JS=0.402000, R=0.404368, RelErr=5.85e-03
+[PASS] Intercept: JS=0.331400, R=0.301289, RelErr=9.99e-02
+[FAIL] Latitude slope: JS=-0.029100, R=-0.031539, RelErr=7.73e-02
+[PASS] GOSH mean estimate: JS=-0.720000, R=-0.746486, RelErr=3.55e-02
+[PASS] GOSH mean I2: JS=85.000000, R=85.295328, RelErr=3.46e-03
+[PASS] 3-level estimate: JS=-0.480000, R=-0.466380, RelErr=2.92e-02
+[PASS] 3-level sigma2_between: JS=0.000000, R=0.000000, RelErr=0.00e+00
+[PASS] 3-level sigma2_within: JS=0.000000, R=0.000000, RelErr=0.00e+00
+[PASS] RVE SE: JS=0.041252, R=0.041252, RelErr=0.00e+00
+[FAIL] Study 10 rstudent: JS=2.950000, R=-1.082749, RelErr=3.72e+00
+[FAIL] Study 10 cook.d: JS=0.350000, R=0.107670, RelErr=2.25e+00
+[PASS] tau2 CI lower (QP): JS=0.120000, R=0.130194, RelErr=7.83e-02
+[PASS] tau2 CI upper (QP): JS=1.110000, R=1.181380, RelErr=6.04e-02

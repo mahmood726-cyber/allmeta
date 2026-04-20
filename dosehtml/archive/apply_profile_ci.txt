@@ -1,0 +1,23 @@
+            // Apply profile likelihood confidence intervals if selected
+            if (settings.ciMethod === 'profile' && results && results.coefficients) {
+              try {
+                results.ciMethod = 'profile-likelihood';
+                results.confLevel = settings.confLevel;
+
+                results.coefficients = results.coefficients.map((coef, idx) => {
+                  const profileCI = calculateProfileLikelihoodCI(results, idx, settings.confLevel);
+                  return {
+                    ...coef,
+                    ciLower: profileCI.lower,
+                    ciUpper: profileCI.upper,
+                    ciMethod: 'profile-likelihood'
+                  };
+                });
+              } catch (error) {
+                console.warn('Profile likelihood CI calculation failed, falling back to Wald:', error);
+                results.ciMethod = 'wald (profile failed)';
+              }
+            } else if (results) {
+              results.ciMethod = 'wald';
+              results.confLevel = settings.confLevel;
+            }

@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruthCert Africa Packs: A Complete Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #1E2761;
+      --deep-navy: #141B3D;
+      --gold: #D4AF37;
+      --cream: #FAF8F5;
+      --light-cream: #FFFFFF;
+      --text: #2D3748;
+      --light-text: #718096;
+      --red: #C53030;
+      --green: #22c55e;
+      --teal: #00D4AA;
+      --purple: #A855F7;
+      --transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Source Sans Pro', sans-serif;
+      background: var(--deep-navy);
+      color: var(--cream);
+    }
+
+    /* ====== COURSE SHELL ====== */
+    .course-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ====== SIDEBAR NAV ====== */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, var(--deep-navy) 0%, #0a0f1a 100%);
+      border-right: 1px solid rgba(212,175,55,0.2);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(212,175,55,0.2);
+    }
+
+    .sidebar-header h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 0.25rem;
+    }
+
+    .sidebar-header p {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .module-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 0;
+    }
+
+    .module-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .module-item:hover {
+      background: rgba(212,175,55,0.1);
+    }
+
+    .module-item.active {
+      background: rgba(212,175,55,0.15);
+      border-left-color: var(--gold);
+    }
+
+    .module-item.completed .module-number {
+      background: var(--green);
+      color: white;
+    }
+
+    .module-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .module-item.active .module-number {
+      background: var(--gold);
+      color: var(--navy);
+    }
+
+    .module-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .module-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .module-subtitle {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .sidebar-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(212,175,55,0.2);
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ====== MAIN CONTENT ====== */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .content-header {
+      padding: 1rem 2rem;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid rgba(212,175,55,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .breadcrumb {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .breadcrumb span {
+      color: var(--gold);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      color: var(--cream);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(212,175,55,0.2);
+      border-color: var(--gold);
+    }
+
+    .btn.primary {
+      background: var(--gold);
+      color: var(--navy);
+      border-color: var(--gold);
+      font-weight: 600;
+    }
+
+    .content-body {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ====== SLIDES AREA ====== */
+    .slides-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .module-slides {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .module-slides.active {
+      display: block;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 2rem 2rem 4rem 2rem;
+      padding-top: 3rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition), visibility var(--transition);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .slide .content {
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+
+    .slide > * {
+      max-width: 100%;
+      word-wrap: break-word;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .slide.dark { background: var(--deep-navy); color: var(--cream); }
+    .slide.light { background: var(--cream); color: var(--text); }
+    .slide.black { background: #000; color: var(--cream); }
+    .slide.gradient { background: linear-gradient(135deg, var(--deep-navy) 0%, #2a1a4a 100%); color: var(--cream); }
+
+    /* Typography */
+    .serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+    .title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .title.navy { color: var(--navy); }
+    .title.gold { color: var(--gold); }
+    .title.cream { color: var(--cream); }
+
+    .subtitle {
+      font-size: clamp(1rem, 2vw, 1.5rem);
+      color: var(--light-text);
+      margin-bottom: 2rem;
+    }
+
+    .slide.dark .subtitle { color: rgba(255,255,255,0.7); }
+
+    .big-number {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(4rem, 15vw, 10rem);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .big-number.navy { color: var(--navy); }
+    .big-number.gold { color: var(--gold); }
+
+    .refrain {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-style: italic;
+      color: var(--gold);
+      text-align: center;
+      max-width: 800px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--light-cream);
+      border: 1px solid var(--gold);
+      padding: 1.5rem 2rem;
+      margin: 0.75rem 0;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .card.navy-bg {
+      background: var(--navy);
+      color: var(--cream);
+    }
+
+    .card.teal-border { border: 2px solid var(--teal); }
+    .card.purple-border { border: 2px solid var(--purple); }
+    .card.red-border { border: 2px solid var(--red); }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-text {
+      font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+    }
+
+    .card.navy-bg .card-text { color: var(--cream); }
+
+    /* Stats grid */
+    .stats-grid {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .stat-box {
+      background: var(--navy);
+      color: var(--cream);
+      padding: 1rem 1.5rem;
+      text-align: center;
+      min-width: 140px;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      opacity: 0.8;
+      margin-top: 0.25rem;
+    }
+
+    /* Country grid */
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .country-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .country-item {
+      background: rgba(255,255,255,0.1);
+      border-left: 3px solid var(--gold);
+      padding: 0.75rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .country-item:hover {
+      background: rgba(212,175,55,0.2);
+    }
+
+    .country-code {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .country-name {
+      font-size: 0.7rem;
+      opacity: 0.8;
+    }
+
+    /* Disease grid */
+    .disease-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .disease-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(212,175,55,0.3);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .disease-code {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 0.5rem 0.75rem;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .disease-name {
+      font-size: 0.9rem;
+    }
+
+    /* File tree */
+    .file-tree {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(212,175,55,0.3);
+      padding: 1.5rem;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      max-width: 500px;
+      text-align: left;
+    }
+
+    .file-tree .folder { color: var(--gold); }
+    .file-tree .file { color: var(--teal); }
+    .file-tree .comment { color: rgba(255,255,255,0.4); font-style: italic; }
+
+    /* Lesson items */
+    .lesson-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin: 0.75rem 0;
+      max-width: 800px;
+    }
+
+    .lesson-number {
+      background: var(--gold);
+      color: var(--navy);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .lesson-content h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 0.25rem;
+    }
+
+    .lesson-content p {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* Gold line */
+    .gold-line {
+      width: 150px;
+      height: 2px;
+      background: var(--gold);
+      margin: 1.5rem auto;
+    }
+
+    /* Content wrapper */
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    /* Animation */
+    .slide.active .animate { animation: fadeUp 0.6s ease-out forwards; }
+    .slide.active .animate.delay-1 { animation-delay: 0.1s; }
+    .slide.active .animate.delay-2 { animation-delay: 0.2s; }
+    .slide.active .animate.delay-3 { animation-delay: 0.3s; }
+    .slide.active .animate.delay-4 { animation-delay: 0.4s; }
+    .slide.active .animate.delay-5 { animation-delay: 0.5s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate { opacity: 0; }
+
+    /* ====== SLIDE NAV ====== */
+    .slide-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 1rem 1rem 1.5rem 1rem;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .nav-btn {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      font-size: 1.25rem;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 0.2s;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      pointer-events: auto;
+    }
+
+    .nav-btn:hover {
+      opacity: 1;
+      background: rgba(0,0,0,0.7);
+      border-color: var(--gold);
+    }
+    .nav-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+    .nav-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      pointer-events: auto;
+    }
+
+    .slide-counter {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.85rem;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .progress { display: flex; gap: 4px; }
+
+    .progress-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .progress-dot.active {
+      background: var(--gold);
+      transform: scale(1.3);
+    }
+
+    .progress-dot:hover { background: rgba(255,255,255,0.6); }
+
+    /* Code block */
+    .code-block {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(212,175,55,0.3);
+      padding: 1rem 1.5rem;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      max-width: 700px;
+      text-align: left;
+      overflow-x: auto;
+    }
+
+    .code-block .key { color: var(--teal); }
+    .code-block .value { color: var(--gold); }
+    .code-block .comment { color: rgba(255,255,255,0.4); }
+
+    /* Certainty badges */
+    .certainty-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      max-width: 700px;
+    }
+
+    .certainty-badge {
+      padding: 1rem;
+      text-align: center;
+      border-radius: 8px;
+    }
+
+    .certainty-badge.stable {
+      background: linear-gradient(135deg, rgba(34,197,94,0.3), rgba(34,197,94,0.1));
+      border: 2px solid var(--green);
+    }
+
+    .certainty-badge.moderate {
+      background: linear-gradient(135deg, rgba(212,175,55,0.3), rgba(212,175,55,0.1));
+      border: 2px solid var(--gold);
+    }
+
+    .certainty-badge.exposed {
+      background: linear-gradient(135deg, rgba(249,115,22,0.3), rgba(249,115,22,0.1));
+      border: 2px solid #F97316;
+    }
+
+    .certainty-badge.uncertain {
+      background: linear-gradient(135deg, rgba(197,48,48,0.3), rgba(197,48,48,0.1));
+      border: 2px solid var(--red);
+    }
+
+    .certainty-badge h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .certainty-badge p {
+      font-size: 0.75rem;
+      opacity: 0.9;
+    }
+
+    /* Principle box */
+    .principle-box {
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(0,0,0,0.2));
+      border: 2px solid var(--gold);
+      padding: 1.5rem 2rem;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    .principle-box .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .principle-box h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .principle-box p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    /* Quiz styles */
+    .quiz-container {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(212,175,55,0.3);
+      padding: 2rem;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .quiz-question {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      margin-bottom: 1.5rem;
+      color: var(--gold);
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .quiz-option {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .quiz-option:hover {
+      background: rgba(212,175,55,0.1);
+      border-color: var(--gold);
+    }
+
+    .quiz-option.selected {
+      background: rgba(212,175,55,0.2);
+      border-color: var(--gold);
+    }
+
+    .quiz-option.correct {
+      background: rgba(34,197,94,0.2);
+      border-color: var(--green);
+    }
+
+    .quiz-option.incorrect {
+      background: rgba(197,48,48,0.2);
+      border-color: var(--red);
+    }
+
+    .quiz-feedback {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .quiz-feedback.show { display: block; }
+
+    .quiz-feedback.correct {
+      background: rgba(34,197,94,0.2);
+      border: 1px solid var(--green);
+    }
+
+    .quiz-feedback.incorrect {
+      background: rgba(197,48,48,0.2);
+      border: 1px solid var(--red);
+    }
+
+    /* HTA workflow */
+    .workflow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 600px;
+    }
+
+    .workflow-step {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255,255,255,0.05);
+      padding: 1rem;
+      border-left: 3px solid var(--gold);
+    }
+
+    .workflow-step .step-num {
+      background: var(--gold);
+      color: var(--navy);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .workflow-step .step-content h4 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .workflow-step .step-content p {
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    /* Focus box */
+    .focus-box {
+      background: var(--navy);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .focus-box .main {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.3rem;
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .focus-box .sub {
+      font-size: 0.9rem;
+      color: var(--cream);
+      margin-top: 0.5rem;
+    }
+
+    .text-center { text-align: center; }
+    .mb-1 { margin-bottom: 1rem; }
+    .mb-2 { margin-bottom: 2rem; }
+    .mt-1 { margin-top: 1rem; }
+    .mt-2 { margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="course-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h1>TruthCert Africa</h1>
+        <p>Health Technology Assessment</p>
+      </div>
+      <div class="module-list" id="moduleList">
+        <!-- Module items will be injected by JS -->
+      </div>
+      <div class="sidebar-footer">
+        TruthCert v6.8.8 + HTA+ S14 + AFR S13
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="content-header">
+        <div class="breadcrumb">
+          TruthCert Course &gt; <span id="currentModule">Introduction</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn" onclick="showGlossary()">Glossary</button>
+          <button class="btn primary" onclick="nextSlide()">Continue</button>
+        </div>
+      </header>
+
+      <div class="content-body">
+        <div class="slides-container">
+
+          <!-- ==================== MODULE 1: INTRODUCTION ==================== -->
+          <div class="module-slides active" data-module="1">
+
+            <!-- Slide 1.1: Title -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">TruthCert Africa Packs</div>
+                <div class="subtitle animate delay-1">Schema-First Health Technology Assessment for Africa</div>
+                <div class="gold-line animate delay-2"></div>
+                <p class="animate delay-3" style="max-width:600px;margin:0 auto;">
+                  A deterministic, audit-ready framework for evaluating health interventions across 13 African countries and 7 disease groups.
+                </p>
+              </div>
+            </div>
+
+            <!-- Slide 1.2: What is TruthCert -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">What is TruthCert?</div>
+                <div class="subtitle animate delay-1">Proof-Carrying Numbers for Health Decisions</div>
+                <div class="stats-grid animate delay-2">
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--teal)">13</div>
+                    <div class="stat-label">Countries</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--gold)">7</div>
+                    <div class="stat-label">Disease Groups</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--purple)">91</div>
+                    <div class="stat-label">Country-Disease Packs</div>
+                  </div>
+                </div>
+                <p class="animate delay-3" style="max-width:600px;margin-top:1.5rem;">
+                  TruthCert ensures every health statistic comes with verifiable evidence, provenance, and certification status.
+                </p>
+              </div>
+            </div>
+
+            <!-- Slide 1.3: The Problem -->
+            <div class="slide light">
+              <div class="content text-center">
+                <div class="title navy animate">The Problem We Solve</div>
+                <div class="card red-border animate delay-1">
+                  <div class="card-label" style="color:var(--red)">THE CHALLENGE</div>
+                  <div class="card-text" style="color:var(--text)">
+                    Health policy decisions in Africa often rely on evidence from high-income countries.
+                    But treatment effects, costs, and outcomes may not transfer directly across contexts.
+                  </div>
+                </div>
+                <div class="card teal-border animate delay-2">
+                  <div class="card-label" style="color:var(--teal)">OUR SOLUTION</div>
+                  <div class="card-text" style="color:var(--text)">
+                    TruthCert Africa Packs provide structured, transparent frameworks for adapting evidence
+                    to local contexts while maintaining rigorous certification standards.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 1.4: Core Principles -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Three Core Principles</div>
+                <div class="lesson-item animate delay-1">
+                  <div class="lesson-number">1</div>
+                  <div class="lesson-content">
+                    <h4>Schema-First Design</h4>
+                    <p>All data follows explicit YAML schemas that are machine-readable and human-auditable.</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-2">
+                  <div class="lesson-number">2</div>
+                  <div class="lesson-content">
+                    <h4>Deterministic Reproducibility</h4>
+                    <p>Fixed seeds ensure every analysis can be exactly replicated on any device.</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-3">
+                  <div class="lesson-number">3</div>
+                  <div class="lesson-content">
+                    <h4>Local Currency, Local Context</h4>
+                    <p>All outputs use local currencies (LCU) and respect local policy frameworks.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== MODULE 2: STRUCTURE ==================== -->
+          <div class="module-slides" data-module="2">
+
+            <!-- Slide 2.1: File Structure -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">File Structure</div>
+                <div class="subtitle animate delay-1">How the Packs are Organized</div>
+                <div class="file-tree animate delay-2">
+                  <div><span class="folder">TruthCert1/</span></div>
+                  <div>&nbsp;&nbsp;├── <span class="file">index.yaml</span> <span class="comment"># Master index</span></div>
+                  <div>&nbsp;&nbsp;├── <span class="file">run_config.yaml</span> <span class="comment"># Deterministic seeds</span></div>
+                  <div>&nbsp;&nbsp;├── <span class="folder">countries/</span> <span class="comment"># 13 country packs</span></div>
+                  <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">NGA.yaml</span></div>
+                  <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">GHA.yaml</span></div>
+                  <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">...</span></div>
+                  <div>&nbsp;&nbsp;└── <span class="folder">country_disease/</span> <span class="comment"># 91 combinations</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">NGA__HIV.yaml</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">NGA__MAL.yaml</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">...</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2.2: Countries -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">13 African Countries</div>
+                <div class="subtitle animate delay-1">Each with local currency and context</div>
+                <div class="country-grid animate delay-2">
+                  <div class="country-item"><div class="country-code">BEN</div><div class="country-name">Benin</div></div>
+                  <div class="country-item"><div class="country-code">BFA</div><div class="country-name">Burkina Faso</div></div>
+                  <div class="country-item"><div class="country-code">CIV</div><div class="country-name">Cote d'Ivoire</div></div>
+                  <div class="country-item"><div class="country-code">GMB</div><div class="country-name">The Gambia</div></div>
+                  <div class="country-item"><div class="country-code">GHA</div><div class="country-name">Ghana</div></div>
+                  <div class="country-item"><div class="country-code">KEN</div><div class="country-name">Kenya</div></div>
+                  <div class="country-item"><div class="country-code">LBR</div><div class="country-name">Liberia</div></div>
+                  <div class="country-item"><div class="country-code">NGA</div><div class="country-name">Nigeria</div></div>
+                  <div class="country-item"><div class="country-code">SLE</div><div class="country-name">Sierra Leone</div></div>
+                  <div class="country-item"><div class="country-code">ZAF</div><div class="country-name">South Africa</div></div>
+                  <div class="country-item"><div class="country-code">SWZ</div><div class="country-name">Eswatini</div></div>
+                  <div class="country-item"><div class="country-code">TZA</div><div class="country-name">Tanzania</div></div>
+                  <div class="country-item"><div class="country-code">UGA</div><div class="country-name">Uganda</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2.3: Disease Groups -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">7 Disease Groups</div>
+                <div class="subtitle animate delay-1">Covering major health priorities</div>
+                <div class="disease-grid animate delay-2">
+                  <div class="disease-item"><div class="disease-code">HIV</div><div class="disease-name">HIV/AIDS</div></div>
+                  <div class="disease-item"><div class="disease-code">MAL</div><div class="disease-name">Malaria</div></div>
+                  <div class="disease-item"><div class="disease-code">MCH</div><div class="disease-name">Maternal & Child Health</div></div>
+                  <div class="disease-item"><div class="disease-code">NCD</div><div class="disease-name">Non-Communicable Diseases</div></div>
+                  <div class="disease-item"><div class="disease-code">CVD</div><div class="disease-name">Cardiovascular Disease</div></div>
+                  <div class="disease-item"><div class="disease-code">NTD</div><div class="disease-name">Neglected Tropical Diseases</div></div>
+                  <div class="disease-item"><div class="disease-code">HSP</div><div class="disease-name">Health Systems & Policy</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2.4: Index.yaml -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">The Master Index</div>
+                <div class="subtitle animate delay-1">index.yaml ties everything together</div>
+                <div class="code-block animate delay-2">
+                  <div><span class="key">version:</span> <span class="value">"TruthCert-AfricaPacks-1.0"</span></div>
+                  <div><span class="key">truthcert_version:</span> <span class="value">"6.8.8"</span></div>
+                  <div><span class="key">hta_supplement:</span> <span class="value">"S14-HTA+ (1.3)"</span></div>
+                  <div><span class="key">africa_extension:</span> <span class="value">"S13-AFR (1.0)"</span></div>
+                  <div><span class="comment"># Defines all countries, currencies, and disease groups</span></div>
+                  <div><span class="key">countries:</span></div>
+                  <div>&nbsp;&nbsp;- <span class="key">iso3:</span> <span class="value">"NGA"</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">currency:</span> <span class="value">"NGN"</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== MODULE 3: COUNTRY PACKS ==================== -->
+          <div class="module-slides" data-module="3">
+
+            <!-- Slide 3.1: Country Pack Overview -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">Country Packs</div>
+                <div class="subtitle animate delay-1">What each country file contains</div>
+                <div class="lesson-item animate delay-2">
+                  <div class="lesson-number">1</div>
+                  <div class="lesson-content">
+                    <h4>Currency Configuration</h4>
+                    <p>Local currency code (NGN, GHS, KES, etc.) and display formatting</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-3">
+                  <div class="lesson-number">2</div>
+                  <div class="lesson-content">
+                    <h4>HTA Defaults</h4>
+                    <p>Discounting rates, perspectives, WTP threshold policies</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-4">
+                  <div class="lesson-number">3</div>
+                  <div class="lesson-content">
+                    <h4>Africa Extension Rules</h4>
+                    <p>Go/No-Go criteria for evidence extraction (MIN_K = 4 studies)</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-5">
+                  <div class="lesson-number">4</div>
+                  <div class="lesson-content">
+                    <h4>Healthcare Footprint</h4>
+                    <p>Local delivery infrastructure (hospitals, clinics, missions)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3.2: HTA Perspectives -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">HTA Perspectives</div>
+                <div class="subtitle animate delay-1">Three viewpoints for cost analysis</div>
+                <div class="stats-grid animate delay-2">
+                  <div class="stat-box" style="background:var(--teal);min-width:180px;">
+                    <div class="stat-value" style="font-size:1.2rem;color:white;">Health System</div>
+                    <div class="stat-label" style="color:rgba(255,255,255,0.9);">Primary perspective</div>
+                  </div>
+                  <div class="stat-box" style="background:var(--purple);min-width:180px;">
+                    <div class="stat-value" style="font-size:1.2rem;color:white;">Societal</div>
+                    <div class="stat-label" style="color:rgba(255,255,255,0.9);">Optional (indirect costs)</div>
+                  </div>
+                  <div class="stat-box" style="background:var(--gold);min-width:180px;">
+                    <div class="stat-value" style="font-size:1.2rem;color:var(--navy);">Donor Program</div>
+                    <div class="stat-label" style="color:var(--navy);">For external funders</div>
+                  </div>
+                </div>
+                <p class="animate delay-3" style="max-width:600px;margin-top:1.5rem;opacity:0.8;">
+                  Each perspective determines which costs are included in the economic evaluation.
+                </p>
+              </div>
+            </div>
+
+            <!-- Slide 3.3: Discounting -->
+            <div class="slide light">
+              <div class="content text-center">
+                <div class="title navy animate">Discounting Parameters</div>
+                <div class="card animate delay-1">
+                  <div class="card-label">DEFAULT DISCOUNT RATE</div>
+                  <div class="card-text" style="color:var(--text);">
+                    <strong style="font-size:2rem;color:var(--gold);">3%</strong> per year for both costs and outcomes
+                  </div>
+                </div>
+                <div class="card animate delay-2">
+                  <div class="card-label">SENSITIVITY ANALYSIS</div>
+                  <div class="card-text" style="color:var(--text);">
+                    Test with <strong>0%</strong>, <strong>3%</strong>, and <strong>5%</strong> to assess robustness
+                  </div>
+                </div>
+                <p class="animate delay-3" style="max-width:500px;color:var(--light-text);margin-top:1rem;">
+                  Discounting ensures future costs and benefits are expressed in present-day terms.
+                </p>
+              </div>
+            </div>
+
+            <!-- Slide 3.4: Go/No-Go Rules -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Evidence Go/No-Go Rules</div>
+                <div class="subtitle animate delay-1">Minimum studies required for meta-analysis</div>
+                <div class="certainty-grid animate delay-2">
+                  <div class="certainty-badge stable">
+                    <h4>GO (k >= 4)</h4>
+                    <p>Proceed with full HTA analysis</p>
+                  </div>
+                  <div class="certainty-badge moderate">
+                    <h4>CAUTION (k = 2-3)</h4>
+                    <p>Proceed with explicit uncertainty</p>
+                  </div>
+                  <div class="certainty-badge exposed">
+                    <h4>NO-GO (k = 1)</h4>
+                    <p>Pivot to broader disease group</p>
+                  </div>
+                  <div class="certainty-badge uncertain">
+                    <h4>BLOCK (k = 0)</h4>
+                    <p>Cannot certify any claims</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== MODULE 4: CERTIFICATION ==================== -->
+          <div class="module-slides" data-module="4">
+
+            <!-- Slide 4.1: Certification Levels -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">TruthCert Certification</div>
+                <div class="subtitle animate delay-1">Four levels of evidence certainty</div>
+                <div class="certainty-grid animate delay-2">
+                  <div class="certainty-badge stable">
+                    <h4>STABLE</h4>
+                    <p>Full HTA, PSA, and VOI allowed. High confidence in results.</p>
+                  </div>
+                  <div class="certainty-badge moderate">
+                    <h4>MODERATE</h4>
+                    <p>Full analysis with widened uncertainty. Emphasize regret framing.</p>
+                  </div>
+                  <div class="certainty-badge exposed">
+                    <h4>EXPOSED</h4>
+                    <p>Limited HTA. Scenario-bounded outputs with structural uncertainty.</p>
+                  </div>
+                  <div class="certainty-badge uncertain">
+                    <h4>UNCERTAIN</h4>
+                    <p>No precision allowed. Bounds-only, worst-case, value-of-research.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4.2: No Naked Numbers -->
+            <div class="slide gradient">
+              <div class="content text-center">
+                <div class="principle-box animate">
+                  <div class="icon">&#128274;</div>
+                  <h3>No Naked Numbers</h3>
+                  <p>
+                    Every number shown to users must come from a certified claim in a TruthCert bundle,
+                    or be explicitly labelled <strong>UNCERTIFIED</strong>.
+                  </p>
+                </div>
+                <div class="refrain animate delay-2 mt-2">
+                  "If you can't show the evidence locator, you can't show the number."
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4.3: Evidence Requirements -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Evidence Requirements</div>
+                <div class="subtitle animate delay-1">What every certified claim needs</div>
+                <div class="lesson-item animate delay-2">
+                  <div class="lesson-number">1</div>
+                  <div class="lesson-content">
+                    <h4>Evidence Locator</h4>
+                    <p>URL, API record ID, or file path within the bundle</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-3">
+                  <div class="lesson-number">2</div>
+                  <div class="lesson-content">
+                    <h4>Content Hash</h4>
+                    <p>Cryptographic hash of the raw input data</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-4">
+                  <div class="lesson-number">3</div>
+                  <div class="lesson-content">
+                    <h4>Transformation Steps</h4>
+                    <p>Provenance trail showing what code produced the result</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-5">
+                  <div class="lesson-number">4</div>
+                  <div class="lesson-content">
+                    <h4>Validator Outcomes</h4>
+                    <p>Pass / Warn / Block status from automated checks</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4.4: Memory Leak Block -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Memory-Leak = BLOCK</div>
+                <div class="card red-border navy-bg animate delay-1">
+                  <div class="card-label" style="color:var(--red);">CRITICAL RULE</div>
+                  <div class="card-text">
+                    If a claim's evidence references <code style="background:rgba(0,0,0,0.3);padding:2px 6px;">memory:*</code>
+                    or any memory-based source, certification must <strong>BLOCK</strong>.
+                  </div>
+                </div>
+                <p class="animate delay-2" style="max-width:500px;margin-top:1rem;opacity:0.8;">
+                  Memory can guide planning, but it can never serve as evidence for certified claims.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== MODULE 5: DETERMINISM ==================== -->
+          <div class="module-slides" data-module="5">
+
+            <!-- Slide 5.1: Why Determinism -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">Why Determinism Matters</div>
+                <div class="subtitle animate delay-1">Reproducibility is non-negotiable</div>
+                <div class="card navy-bg animate delay-2">
+                  <div class="card-label">THE GOAL</div>
+                  <div class="card-text">
+                    Any analyst, anywhere in the world, running the same analysis should get
+                    <strong style="color:var(--gold);">exactly the same result</strong>.
+                  </div>
+                </div>
+                <div class="stats-grid animate delay-3">
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--teal);">786888</div>
+                    <div class="stat-label">Master Seed</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--gold);">Fixed</div>
+                    <div class="stat-label">All RNG Seeds</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 5.2: Seed Configuration -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">run_config.yaml</div>
+                <div class="subtitle animate delay-1">Deterministic seed configuration</div>
+                <div class="code-block animate delay-2">
+                  <div><span class="key">run_config:</span></div>
+                  <div>&nbsp;&nbsp;<span class="key">deterministic:</span> <span class="value">true</span></div>
+                  <div>&nbsp;&nbsp;<span class="key">seed_master:</span> <span class="value">786888</span></div>
+                  <div>&nbsp;&nbsp;<span class="key">rng:</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">bootstrap_seed:</span> <span class="value">786889</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">permutation_seed:</span> <span class="value">786890</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">psa_seed:</span> <span class="value">786891</span></div>
+                  <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">voi_seed:</span> <span class="value">786892</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 5.3: Performance Targets -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Performance Targets</div>
+                <div class="subtitle animate delay-1">Designed to run on ordinary laptops</div>
+                <div class="stats-grid animate delay-2">
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--gold);">60s</div>
+                    <div class="stat-label">TruthCert Core</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--teal);">30s</div>
+                    <div class="stat-label">HTA Cost-Effectiveness</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--purple);">45s</div>
+                    <div class="stat-label">PSA (5000 draws)</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-value" style="color:var(--gold);">30s</div>
+                    <div class="stat-label">VOI Analysis</div>
+                  </div>
+                </div>
+                <p class="animate delay-3" style="margin-top:1rem;opacity:0.8;">
+                  Target device: "ordinary laptop; browser-only"
+                </p>
+              </div>
+            </div>
+
+            <!-- Slide 5.4: PSA Draws -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">PSA Configuration</div>
+                <div class="subtitle animate delay-1">Probabilistic Sensitivity Analysis</div>
+                <div class="lesson-item animate delay-2">
+                  <div class="lesson-number" style="background:var(--teal);">D</div>
+                  <div class="lesson-content">
+                    <h4>Default Draws: 5,000</h4>
+                    <p>Standard number of Monte Carlo simulations</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-3">
+                  <div class="lesson-number" style="background:var(--gold);">M</div>
+                  <div class="lesson-content">
+                    <h4>Maximum Draws: 20,000</h4>
+                    <p>For high-stakes decisions requiring more precision</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-4">
+                  <div class="lesson-number" style="background:var(--purple);">L</div>
+                  <div class="lesson-content">
+                    <h4>Low Resource: 2,000</h4>
+                    <p>For quick exploratory analyses</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== MODULE 6: HTA WORKFLOW ==================== -->
+          <div class="module-slides" data-module="6">
+
+            <!-- Slide 6.1: HTA Overview -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">Health Technology Assessment</div>
+                <div class="subtitle animate delay-1">The systematic evaluation of health interventions</div>
+                <div class="focus-box animate delay-2">
+                  <div class="main">"Is this intervention worth it?"</div>
+                  <div class="sub">Comparing costs vs. health outcomes in a specific context</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 6.2: HTA Wizard Steps -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">HTA Wizard Workflow</div>
+                <div class="subtitle animate delay-1">Four-step progressive disclosure</div>
+                <div class="workflow-steps animate delay-2">
+                  <div class="workflow-step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                      <h4>Context</h4>
+                      <p>Select jurisdiction and decision type</p>
+                    </div>
+                  </div>
+                  <div class="workflow-step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                      <h4>Evidence Requirements</h4>
+                      <p>RWE level, time horizon, population definition</p>
+                    </div>
+                  </div>
+                  <div class="workflow-step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                      <h4>Economic Parameters</h4>
+                      <p>Discount rate, perspective, WTP threshold</p>
+                    </div>
+                  </div>
+                  <div class="workflow-step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                      <h4>Review & Generate</h4>
+                      <p>Verify selections, generate configuration pack</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 6.3: WTP Thresholds -->
+            <div class="slide light">
+              <div class="content text-center">
+                <div class="title navy animate">WTP Threshold Policy</div>
+                <div class="card animate delay-1">
+                  <div class="card-label" style="color:var(--red);">IMPORTANT</div>
+                  <div class="card-text" style="color:var(--text);">
+                    TruthCert does <strong>NOT</strong> assume GDP-multiple thresholds by default.
+                    This avoids well-known criticisms of arbitrary cost-effectiveness thresholds.
+                  </div>
+                </div>
+                <div class="card animate delay-2">
+                  <div class="card-label">RECOMMENDED APPROACH</div>
+                  <div class="card-text" style="color:var(--text);">
+                    Use <strong>affordability analysis</strong> and <strong>net health benefit framing</strong>
+                    instead of fixed WTP thresholds.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 6.4: Local Inputs Required -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Local Inputs Required</div>
+                <div class="subtitle animate delay-1">What each country must supply</div>
+                <div class="lesson-item animate delay-2">
+                  <div class="lesson-number">1</div>
+                  <div class="lesson-content">
+                    <h4>Unit Costs (LCU)</h4>
+                    <p>Drug costs, hospitalization, procedures in local currency</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-3">
+                  <div class="lesson-number">2</div>
+                  <div class="lesson-content">
+                    <h4>Target Population Size</h4>
+                    <p>Number of eligible patients for the intervention</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-4">
+                  <div class="lesson-number">3</div>
+                  <div class="lesson-content">
+                    <h4>Budget Envelope (LCU)</h4>
+                    <p>For budget impact and affordability modules</p>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-5">
+                  <div class="lesson-number">4</div>
+                  <div class="lesson-content">
+                    <h4>Baseline Risk/Incidence</h4>
+                    <p>Or allow wide priors for uncertainty analysis</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== MODULE 7: QUIZ ==================== -->
+          <div class="module-slides" data-module="7">
+
+            <!-- Slide 7.1: Quiz 1 -->
+            <div class="slide dark active">
+              <div class="content text-center">
+                <div class="title gold animate">Knowledge Check</div>
+                <div class="quiz-container animate delay-1">
+                  <div class="quiz-question">How many African countries are covered by TruthCert Africa Packs?</div>
+                  <div class="quiz-options" id="quiz1Options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">7 countries</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">13 countries</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">20 countries</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">54 countries</div>
+                  </div>
+                  <div class="quiz-feedback" id="quiz1Feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 7.2: Quiz 2 -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Knowledge Check</div>
+                <div class="quiz-container animate delay-1">
+                  <div class="quiz-question">What is the minimum number of studies (k) for a "GO" decision?</div>
+                  <div class="quiz-options" id="quiz2Options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">k >= 1</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">k >= 2</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">k >= 4</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">k >= 10</div>
+                  </div>
+                  <div class="quiz-feedback" id="quiz2Feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 7.3: Quiz 3 -->
+            <div class="slide dark">
+              <div class="content text-center">
+                <div class="title gold animate">Knowledge Check</div>
+                <div class="quiz-container animate delay-1">
+                  <div class="quiz-question">What happens if a claim's evidence references "memory:*"?</div>
+                  <div class="quiz-options" id="quiz3Options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">It's certified as MODERATE</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A warning is issued but it proceeds</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">Certification must BLOCK</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">It's automatically validated</div>
+                  </div>
+                  <div class="quiz-feedback" id="quiz3Feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 7.4: Course Complete -->
+            <div class="slide gradient">
+              <div class="content text-center">
+                <div class="big-number gold animate" style="font-size:6rem;">&#10003;</div>
+                <div class="title gold animate delay-1">Course Complete!</div>
+                <div class="subtitle animate delay-2">You now understand TruthCert Africa Packs</div>
+                <div class="gold-line animate delay-3"></div>
+                <div class="lesson-item animate delay-4" style="text-align:left;">
+                  <div class="lesson-number" style="background:var(--green);">&#10003;</div>
+                  <div class="lesson-content">
+                    <h4>Schema-first, deterministic design</h4>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-4" style="text-align:left;">
+                  <div class="lesson-number" style="background:var(--green);">&#10003;</div>
+                  <div class="lesson-content">
+                    <h4>13 countries x 7 disease groups = 91 packs</h4>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-5" style="text-align:left;">
+                  <div class="lesson-number" style="background:var(--green);">&#10003;</div>
+                  <div class="lesson-content">
+                    <h4>No naked numbers without certification</h4>
+                  </div>
+                </div>
+                <div class="lesson-item animate delay-5" style="text-align:left;">
+                  <div class="lesson-number" style="background:var(--green);">&#10003;</div>
+                  <div class="lesson-content">
+                    <h4>Local currency, local context</h4>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Slide Navigation -->
+          <div class="slide-nav">
+            <button class="nav-btn" onclick="prevSlide()">&#8592;</button>
+            <div class="nav-center">
+              <div class="slide-counter" id="slideCounter">1 / 4</div>
+              <div class="progress" id="progressDots"></div>
+            </div>
+            <button class="nav-btn" onclick="nextSlide()">&#8594;</button>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Module data
+    const modules = [
+      { id: 1, title: "Introduction", subtitle: "What is TruthCert?", slides: 4 },
+      { id: 2, title: "Structure", subtitle: "File organization", slides: 4 },
+      { id: 3, title: "Country Packs", subtitle: "Configuration details", slides: 4 },
+      { id: 4, title: "Certification", subtitle: "Evidence standards", slides: 4 },
+      { id: 5, title: "Determinism", subtitle: "Reproducibility", slides: 4 },
+      { id: 6, title: "HTA Workflow", subtitle: "Assessment process", slides: 4 },
+      { id: 7, title: "Quiz", subtitle: "Test your knowledge", slides: 4 }
+    ];
+
+    let currentModule = 1;
+    let currentSlide = 1;
+    const completedModules = new Set();
+
+    // Initialize
+    function init() {
+      renderModuleList();
+      updateSlideNav();
+
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          prevSlide();
+        }
+      });
+    }
+
+    function renderModuleList() {
+      const list = document.getElementById('moduleList');
+      list.innerHTML = modules.map(m => `
+        <div class="module-item ${m.id === currentModule ? 'active' : ''} ${completedModules.has(m.id) ? 'completed' : ''}"
+             onclick="goToModule(${m.id})">
+          <div class="module-number">${completedModules.has(m.id) ? '&#10003;' : m.id}</div>
+          <div class="module-info">
+            <div class="module-title">${m.title}</div>
+            <div class="module-subtitle">${m.subtitle}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function goToModule(moduleId) {
+      // Mark current module as completed if moving forward
+      if (moduleId > currentModule) {
+        completedModules.add(currentModule);
+      }
+
+      currentModule = moduleId;
+      currentSlide = 1;
+
+      // Update module visibility
+      document.querySelectorAll('.module-slides').forEach(el => {
+        el.classList.remove('active');
+      });
+      document.querySelector(`.module-slides[data-module="${moduleId}"]`).classList.add('active');
+
+      // Update slides
+      updateSlideVisibility();
+      updateSlideNav();
+      renderModuleList();
+
+      // Update breadcrumb
+      document.getElementById('currentModule').textContent = modules[moduleId - 1].title;
+    }
+
+    function updateSlideVisibility() {
+      const moduleSlides = document.querySelector(`.module-slides[data-module="${currentModule}"]`);
+      const slides = moduleSlides.querySelectorAll('.slide');
+
+      slides.forEach((slide, index) => {
+        slide.classList.toggle('active', index + 1 === currentSlide);
+      });
+    }
+
+    function updateSlideNav() {
+      const module = modules[currentModule - 1];
+      const counter = document.getElementById('slideCounter');
+      const dots = document.getElementById('progressDots');
+
+      counter.textContent = `${currentSlide} / ${module.slides}`;
+
+      dots.innerHTML = Array.from({ length: module.slides }, (_, i) =>
+        `<div class="progress-dot ${i + 1 === currentSlide ? 'active' : ''}" onclick="goToSlide(${i + 1})"></div>`
+      ).join('');
+    }
+
+    function goToSlide(slideNum) {
+      currentSlide = slideNum;
+      updateSlideVisibility();
+      updateSlideNav();
+    }
+
+    function nextSlide() {
+      const module = modules[currentModule - 1];
+
+      if (currentSlide < module.slides) {
+        currentSlide++;
+        updateSlideVisibility();
+        updateSlideNav();
+      } else if (currentModule < modules.length) {
+        goToModule(currentModule + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlideVisibility();
+        updateSlideNav();
+      } else if (currentModule > 1) {
+        const prevModuleSlides = modules[currentModule - 2].slides;
+        currentModule--;
+        currentSlide = prevModuleSlides;
+
+        document.querySelectorAll('.module-slides').forEach(el => {
+          el.classList.remove('active');
+        });
+        document.querySelector(`.module-slides[data-module="${currentModule}"]`).classList.add('active');
+
+        updateSlideVisibility();
+        updateSlideNav();
+        renderModuleList();
+        document.getElementById('currentModule').textContent = modules[currentModule - 1].title;
+      }
+    }
+
+    function checkAnswer(element, isCorrect) {
+      const container = element.closest('.quiz-container');
+      const options = container.querySelectorAll('.quiz-option');
+      const feedback = container.querySelector('.quiz-feedback');
+
+      // Disable all options
+      options.forEach(opt => {
+        opt.style.pointerEvents = 'none';
+        if (opt === element) {
+          opt.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+      });
+
+      // Show feedback
+      feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+      feedback.textContent = isCorrect
+        ? 'Correct! Well done.'
+        : 'Not quite. Review the material and try again.';
+    }
+
+    function showGlossary() {
+      alert('Glossary:\n\n' +
+        'HTA - Health Technology Assessment\n' +
+        'PSA - Probabilistic Sensitivity Analysis\n' +
+        'VOI - Value of Information\n' +
+        'WTP - Willingness to Pay\n' +
+        'LCU - Local Currency Unit\n' +
+        'RWE - Real World Evidence\n' +
+        'QALY - Quality-Adjusted Life Year\n' +
+        'DALY - Disability-Adjusted Life Year');
+    }
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>

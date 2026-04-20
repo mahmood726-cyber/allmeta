@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Python cache (dev-time Selenium scripts)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Jest/Playwright output
+coverage/
+playwright-report/
+test-results/
+
+# Temp
+*.log
+*.tmp
+
+# Build output (rebuilt from src/ via scripts/build.js)
+dist/
+
+# Figures — large .eps infographics (25MB each) that exceed GitHub's
+# sensible per-file size; regenerate from scripts if needed.
+figures/
+
+# === Sentinel hook output (auto-added by install) ===
+STUCK_FAILURES.md
+STUCK_FAILURES.jsonl
+sentinel-findings.md
+sentinel-findings.jsonl
+review-findings.md
+review-findings.jsonl

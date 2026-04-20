@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-04-20T02:04:08Z",
+  "status": "PASS",
+  "passed": [
+    "App loaded successfully",
+    "Example data 'binary' loaded successfully",
+    "Smoke flow produced pooled analysis output (k=8, effect=-0.28986718481281915)",
+    "Smoke flow switched to 'results' panel",
+    "Smoke flow switched to 'guardian' panel",
+    "Help modal opens via Quick Start",
+    "Quick Start content visible",
+    "Export modal opens",
+    "Export options found: HTML, PDF, CSV, R Code, Stata",
+    "Smoke flow captured CSV export download"
+  ],
+  "failed": [],
+  "warnings": []
+}

@@ -1,0 +1,46 @@
+{
+  "version": "0.1",
+  "metadata": {
+    "id": "partsa_basic",
+    "name": "Partitioned Survival Analysis - Oncology",
+    "description": "3-state (PFS/PPS/Dead) partitioned survival model for advanced NSCLC",
+    "author": "HTA Artifact Standard",
+    "created": "2026-03-16"
+  },
+  "model": {
+    "type": "partitioned_survival"
+  },
+  "settings": {
+    "time_horizon": 10,
+    "cycle_length": 0.25,
+    "discount_rate_costs": 0.035,
+    "discount_rate_outcomes": 0.035
+  },
+  "states": {
+    "PFS": {"label": "Progression-Free Survival", "cost": 2500, "utility": 0.75},
+    "PPS": {"label": "Post-Progression Survival", "cost": 6000, "utility": 0.45},
+    "Dead": {"label": "Dead", "cost": 0, "utility": 0}
+  },
+  "survival_models": {
+    "OS": {"distribution": "weibull", "shape": 1.2, "scale": 3.5},
+    "PFS": {"distribution": "weibull", "shape": 1.4, "scale": 2.0}
+  },
+  "strategies": {
+    "treatment": {
+      "drug_cost_per_cycle": 5000,
+      "os": {"distribution": "weibull", "shape": 1.15, "scale": 4.5},
+      "pfs": {"distribution": "weibull", "shape": 1.3, "scale": 2.8}
+    },
+    "comparator": {
+      "drug_cost_per_cycle": 1000,
+      "os": {"distribution": "weibull", "shape": 1.2, "scale": 3.5},
+      "pfs": {"distribution": "weibull", "shape": 1.4, "scale": 2.0}
+    }
+  },
+  "expected_results": {
+    "treatment_total_qalys": "approximately 2.0-2.5",
+    "comparator_total_qalys": "approximately 1.5-2.0",
+    "incremental_qalys": "approximately 0.3-0.6",
+    "icer_range": "50000-150000 per QALY"
+  }
+}

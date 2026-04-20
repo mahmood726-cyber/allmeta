@@ -1,0 +1,2998 @@
+{
+  "generated_at": "2026-03-07T11:46:13Z",
+  "seed": 12345,
+  "datasets": [
+    "continuous"
+  ],
+  "methods": [
+    "FE",
+    "DL",
+    "REML",
+    "PM",
+    "SJ",
+    "HE",
+    "ML"
+  ],
+  "app": {
+    "datasets": {
+      "continuous": {
+        "outcome_kind": "continuous",
+        "time_var": null,
+        "event_var": "hamd_change",
+        "rows": [
+          {
+            "event": 6.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.1,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.4,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.9,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 4.5,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.9,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.5,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.9,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.4,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.7,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 2.5,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 16,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.1,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 6.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.6,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.1,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.8,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.1,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.1,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.4,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.1,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.4,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.3,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.4,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.2,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.9,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.6,
+            "study_id": "DeRubeis2005",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.5,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.6,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.6,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.9,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.7,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.9,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.9,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.5,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.1,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.2,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.2,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.3,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.2,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.2,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.1,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.1,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.5,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.6,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.9,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.2,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.7,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.8,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.8,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.7,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.1,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.6,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.2,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 17.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 17.7,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.8,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 17.4,
+            "study_id": "Dimidjian2006",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.5,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 6.4,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.9,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.7,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.2,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 3.9,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.2,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.9,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.6,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.3,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.3,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.3,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.3,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.5,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.9,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.5,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.8,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.9,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.4,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.8,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.5,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.4,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 17,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.2,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.7,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.1,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.3,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.9,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.2,
+            "study_id": "Elkin1989",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 20.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.1,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.1,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.2,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.2,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.6,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.6,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.2,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 3.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 17.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 18.2,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.5,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 4.5,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.2,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 2,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 16,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 6.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.6,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.6,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 17.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 19.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.1,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.8,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 18.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 17.4,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 18.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.9,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.6,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.5,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.3,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.7,
+            "study_id": "Hollon2014",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.6,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.3,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.1,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.2,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.3,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.2,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.1,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.9,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.5,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.8,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.1,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.9,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.5,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.5,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.3,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.9,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.4,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.7,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.1,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.1,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13,
+            "study_id": "Jarrett1999",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.2,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.2,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 18.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 17.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 17.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 18,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.2,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 16.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 19,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 16.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 15,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 16.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.1,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.4,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.6,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.7,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.2,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.2,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 17.5,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.3,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.8,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.9,
+            "study_id": "Keller2000",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.8,
+            "study_id": "Rush1977",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.9,
+            "study_id": "Rush1977",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13,
+            "study_id": "Rush1977",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.8,
+            "study_id": "Rush1977",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.6,
+            "study_id": "Rush1977",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.4,
+            "study_id": "Rush1977",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.2,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.7,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.3,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.2,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.6,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.8,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 18,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.2,
+            "study_id": "Blackburn1981",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.3,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.8,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.8,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.1,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.6,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.6,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.2,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.5,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 3.4,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 4.3,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 16.8,
+            "study_id": "Murphy1984",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.4,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 17.1,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.6,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 5.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.2,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.2,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 6.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 8.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 3.7,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 7.9,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 7.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.1,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.2,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.9,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.3,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.4,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 9.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 11.1,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.7,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.1,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 6.3,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 14.9,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.4,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.7,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 16.1,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 12.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 11.4,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 14.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 9.4,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 10.3,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.4,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.9,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 10.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 5.9,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 13.6,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 12.6,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 8,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 1
+          },
+          {
+            "event": 13.1,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          },
+          {
+            "event": 15.5,
+            "study_id": "Cuijpers2020",
+            "time": null,
+            "treatment": 0
+          }
+        ],
+        "study_vectors": {
+          "effects": [
+            1.4600619195046445,
+            0.17692307692307452,
+            2.652272727272729,
+            3.1295553618134253,
+            -0.013076923076921432,
+            2.2985415845486745,
+            0.0,
+            5.833333333333334,
+            3.7055555555555557,
+            0.7709565217391301
+          ],
+          "variances": [
+            1.334203409406781,
+            1.2779769888231425,
+            1.0672681523022431,
+            0.8555807750546621,
+            0.9895128862590401,
+            0.40250896663536406,
+            1000000.0,
+            1.2041111111111114,
+            6.423086419753087,
+            0.786666580282981
+          ]
+        },
+        "methods": {
+          "FE": {
+            "pooled": 2.073926003366921,
+            "se": 0.32633514616742954,
+            "tau2": 0.0,
+            "i2": 61.78550287213547,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 6.0,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          },
+          "DL": {
+            "pooled": 2.102966086546218,
+            "se": 0.5768238417045591,
+            "tau2": 1.8161984721644404,
+            "i2": 61.78550287213547,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 3.7999999970197678,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          },
+          "REML": {
+            "pooled": 2.1095028456823073,
+            "se": 0.6183499997973372,
+            "tau2": 2.2379239909302555,
+            "i2": 66.58015972546376,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 3.7999999970197678,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          },
+          "PM": {
+            "pooled": 2.1032007473421763,
+            "se": 0.5782926043944522,
+            "tau2": 1.8305542794817238,
+            "i2": 61.9712248235967,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 3.7000000029802322,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          },
+          "SJ": {
+            "pooled": 2.1091711910363378,
+            "se": 0.6162082467584395,
+            "tau2": 2.215371139432661,
+            "i2": 66.35440901696691,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 3.1000000089406967,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          },
+          "HE": {
+            "pooled": 2.073926003366921,
+            "se": 0.32633514616742954,
+            "tau2": 0.0,
+            "i2": 0.0,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 2.5999999940395355,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          },
+          "ML": {
+            "pooled": 2.1031232031619376,
+            "se": 0.5778070956681026,
+            "tau2": 1.8258043192909965,
+            "i2": 61.90997445557936,
+            "q": 23.551271576036385,
+            "k": 10,
+            "runtime_ms": 3.2999999970197678,
+            "repeat_diff": {
+              "pooled": 0.0,
+              "se": 0.0,
+              "tau2": 0.0,
+              "i2": 0.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "reference": {
+    "metafor": {
+      "continuous": {
+        "FE": {
+          "pooled": 2.073926003366923,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 61.78550287213545,
+          "q": 23.551271576036378
+        },
+        "DL": {
+          "pooled": 2.10296608654622,
+          "se": 0.5768238417045591,
+          "tau2": 1.8161984721644395,
+          "i2": 61.78550287213545,
+          "q": 23.551271576036378
+        },
+        "REML": {
+          "pooled": 2.1095028456823086,
+          "se": 0.6183499997973371,
+          "tau2": 2.237923990930254,
+          "i2": 66.58015972546373,
+          "q": 23.551271576036378
+        },
+        "PM": {
+          "pooled": 2.1032003999943822,
+          "se": 0.5782904292904677,
+          "tau2": 1.8305329893797528,
+          "i2": 61.970950728871166,
+          "q": 23.551271576036378
+        },
+        "SJ": {
+          "pooled": 2.109171191036339,
+          "se": 0.6162082467584394,
+          "tau2": 2.2153711394326603,
+          "i2": 66.3544090169669,
+          "q": 23.551271576036378
+        },
+        "HE": {
+          "pooled": 2.073926003366923,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 0,
+          "q": 23.551271576036378
+        },
+        "ML": {
+          "pooled": 2.1031232031619393,
+          "se": 0.5778070956681026,
+          "tau2": 1.825804319290996,
+          "i2": 61.90997445557936,
+          "q": 23.551271576036378
+        }
+      }
+    },
+    "meta": {
+      "continuous": {
+        "FE": {
+          "pooled": 2.0739260033669233,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "DL": {
+          "pooled": 2.1029660865462185,
+          "se": 0.5768238417045589,
+          "tau2": 1.8161984721644395,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "REML": {
+          "pooled": 2.1095028456823086,
+          "se": 0.6183499997973372,
+          "tau2": 2.2379239909302555,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "PM": {
+          "pooled": 2.103200399994382,
+          "se": 0.5782904292904677,
+          "tau2": 1.8305329893797528,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "SJ": {
+          "pooled": 2.109171191036338,
+          "se": 0.6162082467584393,
+          "tau2": 2.2153711394326603,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "HE": {
+          "pooled": 2.0739260033669233,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "ML": {
+          "pooled": 2.103123203161939,
+          "se": 0.5778070956681026,
+          "tau2": 1.8258043192909958,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        }
+      }
+    }
+  },
+  "comparison": {
+    "rows": [
+      {
+        "dataset": "continuous",
+        "method": "FE",
+        "app": {
+          "pooled": 2.073926003366921,
+          "se": 0.32633514616742954,
+          "tau2": 0.0,
+          "i2": 61.78550287213547,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 6.0,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.073926003366923,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 61.78550287213545,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.0739260033669233,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 1.4210854715202004e-14
+        },
+        "diff_meta": {
+          "pooled": 2.220446049250313e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 61.167647843414116
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "continuous",
+        "method": "DL",
+        "app": {
+          "pooled": 2.102966086546218,
+          "se": 0.5768238417045591,
+          "tau2": 1.8161984721644404,
+          "i2": 61.78550287213547,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 3.7999999970197678,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.10296608654622,
+          "se": 0.5768238417045591,
+          "tau2": 1.8161984721644395,
+          "i2": 61.78550287213545,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.1029660865462185,
+          "se": 0.5768238417045589,
+          "tau2": 1.8161984721644395,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 8.881784197001252e-16,
+          "i2": 1.4210854715202004e-14
+        },
+        "diff_meta": {
+          "pooled": 4.440892098500626e-16,
+          "se": 2.220446049250313e-16,
+          "tau2": 8.881784197001252e-16,
+          "i2": 61.167647843414116
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "continuous",
+        "method": "REML",
+        "app": {
+          "pooled": 2.1095028456823073,
+          "se": 0.6183499997973372,
+          "tau2": 2.2379239909302555,
+          "i2": 66.58015972546376,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 3.7999999970197678,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.1095028456823086,
+          "se": 0.6183499997973371,
+          "tau2": 2.237923990930254,
+          "i2": 66.58015972546373,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.1095028456823086,
+          "se": 0.6183499997973372,
+          "tau2": 2.2379239909302555,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 1.1102230246251565e-16,
+          "tau2": 1.3322676295501878e-15,
+          "i2": 2.842170943040401e-14
+        },
+        "diff_meta": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 65.96230469674241
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "continuous",
+        "method": "PM",
+        "app": {
+          "pooled": 2.1032007473421763,
+          "se": 0.5782926043944522,
+          "tau2": 1.8305542794817238,
+          "i2": 61.9712248235967,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 3.7000000029802322,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.1032003999943822,
+          "se": 0.5782904292904677,
+          "tau2": 1.8305329893797528,
+          "i2": 61.970950728871166,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.103200399994382,
+          "se": 0.5782904292904677,
+          "tau2": 1.8305329893797528,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 3.473477940829639e-07,
+          "se": 2.1751039844808417e-06,
+          "tau2": 2.1290101970938835e-05,
+          "i2": 0.0002740947255333026
+        },
+        "diff_meta": {
+          "pooled": 3.473477945270531e-07,
+          "se": 2.1751039844808417e-06,
+          "tau2": 2.1290101970938835e-05,
+          "i2": 61.35336979487535
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "continuous",
+        "method": "SJ",
+        "app": {
+          "pooled": 2.1091711910363378,
+          "se": 0.6162082467584395,
+          "tau2": 2.215371139432661,
+          "i2": 66.35440901696691,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 3.1000000089406967,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.109171191036339,
+          "se": 0.6162082467584394,
+          "tau2": 2.2153711394326603,
+          "i2": 66.3544090169669,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.109171191036338,
+          "se": 0.6162082467584393,
+          "tau2": 2.2153711394326603,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 1.1102230246251565e-16,
+          "tau2": 8.881784197001252e-16,
+          "i2": 1.4210854715202004e-14
+        },
+        "diff_meta": {
+          "pooled": 4.440892098500626e-16,
+          "se": 2.220446049250313e-16,
+          "tau2": 8.881784197001252e-16,
+          "i2": 65.73655398824556
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "continuous",
+        "method": "HE",
+        "app": {
+          "pooled": 2.073926003366921,
+          "se": 0.32633514616742954,
+          "tau2": 0.0,
+          "i2": 0.0,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 2.5999999940395355,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.073926003366923,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 0,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.0739260033669233,
+          "se": 0.32633514616742954,
+          "tau2": 0,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 0.0
+        },
+        "diff_meta": {
+          "pooled": 2.220446049250313e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 0.6178550287213546
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "continuous",
+        "method": "ML",
+        "app": {
+          "pooled": 2.1031232031619376,
+          "se": 0.5778070956681026,
+          "tau2": 1.8258043192909965,
+          "i2": 61.90997445557936,
+          "q": 23.551271576036385,
+          "k": 10,
+          "runtime_ms": 3.2999999970197678,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": 2.1031232031619393,
+          "se": 0.5778070956681026,
+          "tau2": 1.825804319290996,
+          "i2": 61.90997445557936,
+          "q": 23.551271576036378
+        },
+        "meta": {
+          "pooled": 2.103123203161939,
+          "se": 0.5778070956681026,
+          "tau2": 1.8258043192909958,
+          "i2": 0.6178550287213546,
+          "q": 23.551271576036378
+        },
+        "diff_metafor": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 4.440892098500626e-16,
+          "i2": 0.0
+        },
+        "diff_meta": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 0.0,
+          "tau2": 6.661338147750939e-16,
+          "i2": 61.29211942685801
+        },
+        "pass_metafor": true
+      }
+    ],
+    "by_method": {
+      "FE": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 1.4210854715202004e-14
+        },
+        "max_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 1.4210854715202004e-14
+        }
+      },
+      "DL": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 8.881784197001252e-16,
+          "i2": 1.4210854715202004e-14
+        },
+        "max_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 8.881784197001252e-16,
+          "i2": 1.4210854715202004e-14
+        }
+      },
+      "REML": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 1.1102230246251565e-16,
+          "tau2": 1.3322676295501878e-15,
+          "i2": 2.842170943040401e-14
+        },
+        "max_abs_diff": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 1.1102230246251565e-16,
+          "tau2": 1.3322676295501878e-15,
+          "i2": 2.842170943040401e-14
+        }
+      },
+      "PM": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 3.473477940829639e-07,
+          "se": 2.1751039844808417e-06,
+          "tau2": 2.1290101970938835e-05,
+          "i2": 0.0002740947255333026
+        },
+        "max_abs_diff": {
+          "pooled": 3.473477940829639e-07,
+          "se": 2.1751039844808417e-06,
+          "tau2": 2.1290101970938835e-05,
+          "i2": 0.0002740947255333026
+        }
+      },
+      "SJ": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 1.1102230246251565e-16,
+          "tau2": 8.881784197001252e-16,
+          "i2": 1.4210854715202004e-14
+        },
+        "max_abs_diff": {
+          "pooled": 1.3322676295501878e-15,
+          "se": 1.1102230246251565e-16,
+          "tau2": 8.881784197001252e-16,
+          "i2": 1.4210854715202004e-14
+        }
+      },
+      "HE": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 0.0
+        },
+        "max_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 0.0,
+          "i2": 0.0
+        }
+      },
+      "ML": {
+        "rows": 1,
+        "pass_rate": 1.0,
+        "mean_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 4.440892098500626e-16,
+          "i2": 0.0
+        },
+        "max_abs_diff": {
+          "pooled": 1.7763568394002505e-15,
+          "se": 0.0,
+          "tau2": 4.440892098500626e-16,
+          "i2": 0.0
+        }
+      }
+    },
+    "summary": {
+      "rows": 7,
+      "overall_pass_rate_metafor": 1.0,
+      "max_repeat_diff": 0.0,
+      "runtime_ms": {
+        "median": 3.7000000029802322,
+        "p95": 6.0,
+        "max": 6.0
+      }
+    }
+  }
+}

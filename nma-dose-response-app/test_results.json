@@ -1,0 +1,39 @@
+{
+  "passed": [
+    "Class StatUtils defined",
+    "Class ValidationSuite defined",
+    "Class BootstrapCI defined",
+    "Class InfluenceDiagnostics defined",
+    "Class ModelFitStatistics defined",
+    "Class EdgeCaseHandler defined",
+    "Class TrimAndFill defined",
+    "Class EggerTest defined",
+    "Class REMLEstimator defined",
+    "Class BeggMazumdarTest defined",
+    "Class PetersTest defined",
+    "Class PETPEESE defined",
+    "Class ZCurveAnalysis defined",
+    "Class CumulativeMetaAnalysis defined",
+    "Class LeaveOneOutBias defined",
+    "StatUtils.normalCDF(0) = 0.5000 (expected ~0.5)",
+    "StatUtils.normalCDF(1.96) = 0.9750 (expected ~0.975)",
+    "StatUtils.normalQuantile(0.5) = 0.0000 (expected ~0)",
+    "StatUtils.normalQuantile(0.975) = 1.9600 (expected ~1.96)",
+    "StatUtils.tCDF(0, 10) = 0.5000 (expected ~0.5)",
+    "StatUtils.chiSquareCDF(10, 5) = 0.9248 (expected ~0.925)",
+    "Found 117 buttons",
+    "Found 5 canvas elements",
+    "Found 5 tab elements"
+  ],
+  "errors": [
+    "DL calculation issue: None",
+    "Bootstrap test error: 'NoneType' object has no attribute 'get'",
+    "Influence test error: 'NoneType' object has no attribute 'get'",
+    "TrimAndFill test error: 'NoneType' object has no attribute 'get'",
+    "Egger test error: 'NoneType' object has no attribute 'get'",
+    "ValidationSuite: DL validation FAILED"
+  ],
+  "console_errors": [
+    "http://localhost:8765/favicon.ico - Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+}

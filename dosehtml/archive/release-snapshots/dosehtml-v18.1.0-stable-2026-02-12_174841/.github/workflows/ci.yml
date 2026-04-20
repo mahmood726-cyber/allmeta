@@ -1,0 +1,78 @@
+name: dosehtml-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SELENIUM_HEADLESS: "1"
+      SELENIUM_BROWSER: "firefox"
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Firefox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-ci.txt
+
+      - name: Python compile checks
+        run: |
+          python -m py_compile dose-response-cli.py test_dose_response_main.py test_dose_response_app.py test_v19_comprehensive.py selenium_full_test.py
+
+      - name: JavaScript syntax check
+        run: |
+          node --check dose-response-worker.js
+
+      - name: CLI smoke test
+        run: |
+          python dose-response-cli.py --input sample_dose_response_data.csv --output - --pretty > cli_output.json
+
+      - name: Selenium suite (v18 main)
+        run: |
+          python test_dose_response_main.py
+
+      - name: Selenium suite (v18 app)
+        run: |
+          python test_dose_response_app.py
+
+      - name: Selenium suite (v19 comprehensive)
+        run: |
+          python test_v19_comprehensive.py
+
+      - name: Selenium suite (Firefox full)
+        run: |
+          python selenium_full_test.py
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dosehtml-test-artifacts
+          path: |
+            cli_output.json
+            test_results.json
+            test_screenshots
+            validation_report_*.txt

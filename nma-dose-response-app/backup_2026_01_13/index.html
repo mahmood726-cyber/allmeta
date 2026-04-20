@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NMA Dose Response Studio</title>
+  <style>
+    :root {
+      --bg-1: #0f1419;
+      --bg-2: #15202b;
+      --bg-3: #192734;
+      --panel: #1e2a38;
+      --panel-strong: #243447;
+      --border: #38444d;
+      --text: #e7e9ea;
+      --muted: #8b98a5;
+      --accent: #1d9bf0;
+      --accent-2: #00ba7c;
+      --accent-3: #f91880;
+      --accent-4: #ffd700;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Gill Sans", "Trebuchet MS", sans-serif;
+      color: var(--text);
+      background: var(--bg-1);
+      overflow-x: hidden;
+    }
+
+    body::before { display: none; }
+
+    .orb { display: none; }
+
+    .orb.one {
+      width: 280px;
+      height: 280px;
+      top: -60px;
+      left: -40px;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 107, 107, 0.55), rgba(255, 107, 107, 0.05) 60%, transparent 70%);
+    }
+
+    .orb.two {
+      width: 320px;
+      height: 320px;
+      right: -90px;
+      top: 120px;
+      background: radial-gradient(circle at 40% 40%, rgba(0, 180, 216, 0.5), rgba(0, 180, 216, 0.08) 60%, transparent 70%);
+    }
+
+    .orb.three {
+      width: 380px;
+      height: 380px;
+      left: 35%;
+      bottom: -140px;
+      background: radial-gradient(circle at 45% 35%, rgba(128, 237, 153, 0.45), rgba(128, 237, 153, 0.05) 60%, transparent 70%);
+    }
+
+    .hero {
+      max-width: 1200px;
+      margin: 36px auto 20px;
+      padding: 0 24px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #2a3544;
+      border: 1px solid #38444d;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    #status {
+      font-size: 12px;
+      color: var(--muted);
+      background: #15202b;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #2a3544;
+    }
+
+    h1 {
+      font-family: "Cinzel", "Bodoni MT", "Didot", "Times New Roman", serif;
+      font-size: clamp(2rem, 2.8vw, 3.4rem);
+      margin: 0 0 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .layout {
+      max-width: 1200px;
+      margin: 0 auto 60px;
+      padding: 0 24px 60px;
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr);
+      gap: 22px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px 18px 20px;
+      box-shadow: var(--shadow);
+      
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+
+    .drop-zone {
+      border: 1px dashed #4a5568;
+      border-radius: 16px;
+      padding: 18px;
+      background: #1a2633;
+      text-align: center;
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: var(--accent-2);
+      background: rgba(0, 180, 216, 0.15);
+    }
+
+    .drop-zone input {
+      margin-top: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      margin-top: 12px;
+      border-radius: 16px;
+      border: 1px solid #38444d;
+      background: #0d1520;
+      color: var(--text);
+      padding: 12px;
+      font-size: 12.5px;
+      font-family: "IBM Plex Mono", "Courier New", monospace;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button.secondary {
+      background: #243447;
+      color: var(--text);
+      border: 1px solid #38444d;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 26px rgba(0, 0, 0, 0.5);
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .control.inline {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .control .inline-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    label {
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    select,
+    input[type="number"],
+    input[type="range"] {
+      border-radius: 12px;
+      border: 1px solid #38444d;
+      background: #0d1520;
+      color: var(--text);
+      padding: 8px 10px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr 90px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #2a3544;
+      text-align: left;
+    }
+
+    .summary-table th {
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid #2a3544;
+      background: #15202b;
+    }
+
+    .table-wrap table {
+      min-width: 1240px;
+    }
+
+    .quality-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .quality-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid #243447;
+      background: #1a2633;
+      font-size: 12px;
+    }
+
+    .quality-item span {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+    }
+
+    .quality-item strong {
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .quality-warnings {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--accent);
+      line-height: 1.4;
+    }
+
+    .charts {
+      padding: 20px;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tab-button {
+      appearance: none;
+      border: 1px solid #38444d;
+      background: #2a3544;
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .tab-button.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.4);
+    }
+
+    .chart-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .chart-card {
+      background: var(--panel-strong);
+      border: 1px solid #38444d;
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    @keyframes tabFade {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .card-header .card-title {
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .card-header .card-meta {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #0d1520;
+      border: 1px solid #243447;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+      animation: tabFade 0.35s ease;
+    }
+
+    .tab-empty {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px dashed #38444d;
+      background: #15202b;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      background: #15202b;
+      border: 1px solid #38444d;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--text);
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+      z-index: 3;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .tab-bar {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .range-row {
+        grid-template-columns: 1fr;
+      }
+
+      .quality-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-wrap {
+        height: 220px;
+      }
+    }
+
+    /* Accessibility: Skip link */
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      z-index: 999;
+      padding: 1em;
+      background: var(--accent);
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .skip-link:focus {
+      left: 50%;
+      transform: translateX(-50%);
+      top: 10px;
+    }
+
+    /* Accessibility: Focus indicators */
+    *:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    *:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    *:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+  
+    .badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="orb three"></div>
+
+  <header class="hero">
+    <div class="hero-top">
+      <span class="pill">NMA Dose Response</span>
+      <span id="status" role="status" aria-live="polite">Loading engine...</span>
+    </div>
+    <h1>Glass NMA Dose Response Studio</h1>
+    <p>Upload CSV, run network dose-response synthesis with study baselines, random-effects and covariate options, and explore model rankings with uncertainty.</p>
+  </header>
+
+  <main class="layout" role="main" aria-label="Analysis workspace" id="main-content">
+    <section class="stack">
+      <div class="panel">
+        <h2>Data Intake</h2>
+        <div class="drop-zone" id="dropZone" role="region" aria-label="File upload area" tabindex="0">
+          Drop a CSV file here or browse.
+          <input type="file" id="fileInput" accept=".csv" aria-label="Upload CSV file" />
+        </div>
+        <div class="actions">
+          <button id="loadSample" aria-label="Load sample dataset">Load sample</button>
+          <button class="secondary" id="parseCsv" aria-label="Parse CSV data from text area">Parse CSV</button>
+        </div>
+        <textarea id="csvInput" spellcheck="false" placeholder="study,treatment,dose,effect,se" aria-label="CSV data input area"></textarea>
+        <div class="hint">Expected columns: study, treatment, dose, effect, se. Optional: covariate/moderator. Effect can be mean difference or log-odds ratio.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Data Quality</h2>
+        <div class="quality-grid" role="list" aria-label="Data quality metrics">
+          <div class="quality-item" role="listitem"><span>Rows parsed</span><strong id="qualityRows">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Rows used</span><strong id="qualityUsed">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Studies</span><strong id="qualityStudies">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Treatments</span><strong id="qualityTreatments">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Missing SE</span><strong id="qualityMissingSe">-</strong></div>
+          <div class="quality-item" role="listitem"><span>No fit study</span><strong id="qualityMissingBaseline">-</strong></div>
+        </div>
+        <div class="quality-warnings" id="qualityWarnings" role="alert" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Model Controls</h2>
+        <div class="control">
+          <label for="referenceSelect">Reference treatment</label>
+          <select id="referenceSelect"></select>
+        </div>
+        <div class="control">
+          <label for="modelSelect">Model selection</label>
+          <select id="modelSelect">
+            <option value="auto">Auto (AICc)</option>
+            <option value="emax">Emax</option>
+            <option value="hill">Sigmoid Emax (Hill)</option>
+            <option value="log_linear">Log-linear</option>
+            <option value="rcs">Restricted cubic spline</option>
+            <option value="fp">Fractional polynomial</option>
+          </select>
+        </div>
+        <div class="control inline">
+          <label class="toggle"><input type="checkbox" id="baselineToggle" />Free baseline (E0)</label>
+          <label class="toggle"><input type="checkbox" id="logDoseToggle" />Log dose axis</label>
+          <label class="toggle"><input type="checkbox" id="higherBetterToggle" checked />Higher is better</label>
+          <label class="toggle"><input type="checkbox" id="showBandsToggle" checked />Show 95% bands</label>
+          <label class="toggle"><input type="checkbox" id="randomEffectsToggle" />Random effects (tau2)</label>
+          <label class="toggle"><input type="checkbox" id="multiArmToggle" checked />Multi-arm adjust</label>
+          <label class="toggle"><input type="checkbox" id="covariateToggle" />Use covariate</label>
+        </div>
+        <div class="control">
+          <label for="tau2Method">Tau2 estimator</label>
+          <select id="tau2Method">
+            <option value="dl">DerSimonian-Laird</option>
+            <option value="pm">Paule-Mandel</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="rankMetric">Ranking metric</label>
+          <select id="rankMetric">
+            <option value="target">Target effect</option>
+            <option value="sucra">SUCRA</option>
+            <option value="pbest">P(best)</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="selectionBias">Selection bias sensitivity</label>
+          <select id="selectionBias">
+            <option value="none">None</option>
+            <option value="mild">Mild (Copas)</option>
+            <option value="moderate">Moderate (Copas)</option>
+            <option value="strong">Strong (Copas)</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="targetDose">Target dose for ranking</label>
+          <div class="range-row">
+            <input type="range" id="targetDose" min="0" max="100" value="10" step="0.1" />
+            <input type="number" id="targetDoseNumber" min="0" max="100" value="10" step="0.1" />
+          </div>
+        </div>
+        <div class="control">
+          <label for="bootstrapIter">Bootstrap iterations</label>
+          <div class="inline-actions">
+            <input type="number" id="bootstrapIter" min="50" max="1000" value="200" step="10" />
+            <input type="number" id="bootstrapSeed" min="1" max="999999" value="" placeholder="Seed (optional)" title="Random seed for reproducibility" style="width:120px" />
+            <button class="secondary" id="runBootstrap">Run bootstrap</button>
+            <button class="secondary" id="clearBootstrap">Clear</button>
+          </div>
+          <div class="hint" id="bootstrapStatus">Bootstrap not run. Set seed for reproducible results.</div>
+        </div>
+        <div class="control">
+          <label>Statistical Options</label>
+          <div class="inline-actions">
+            <label class="toggle-label" title="Use Hartung-Knapp-Sidik-Jonkman small-sample correction">
+              <input type="checkbox" id="useKnappHartung" />
+              <span>Knapp-Hartung correction</span>
+            </label>
+            <label class="toggle-label" title="Show prediction intervals (requires tau^2 > 0)">
+              <input type="checkbox" id="showPredictionInterval" />
+              <span>Prediction intervals</span>
+            </label>
+          </div>
+        </div>
+        <div class="control">
+          <label>Reporting &amp; Assessment</label>
+          <div class="inline-actions">
+            <button class="secondary" id="exportPRISMA" title="Export PRISMA-NMA checklist as markdown">PRISMA Checklist</button>
+            <button class="secondary" id="runCINeMA" title="Run CINeMA certainty assessment">CINeMA Assessment</button>
+            <button class="secondary" id="exportNodeSplit" title="Node-splitting inconsistency test">Node-Split</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Advanced Analytics <span class="badge">Beyond R</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Cutting-edge features not available in standard R packages</div>
+
+        <div class="control">
+          <label>Bayesian Model Averaging</label>
+          <div class="inline-actions">
+            <input type="number" id="bmaMCMC" min="1000" max="20000" value="5000" step="1000" title="MCMC iterations" style="width:80px" />
+            <button class="secondary" id="runBMA" title="Run Bayesian model averaging with MCMC">Run BMA</button>
+            <button class="secondary" id="exportPosteriors" title="Export full posterior distributions">Export Posteriors</button>
+          </div>
+          <div class="hint" id="bmaStatus">Full posterior distributions with credible intervals</div>
+        </div>
+
+        <div class="control">
+          <label>Optimal Dose Analysis</label>
+          <div class="inline-actions">
+            <input type="number" id="targetEffectInput" placeholder="Target effect" style="width:100px" title="Target effect size to achieve" />
+            <input type="number" id="safetyThreshold" placeholder="Safety limit" style="width:100px" title="Maximum acceptable effect (safety)" />
+            <button class="secondary" id="findOptimalDose" title="Find optimal dose with uncertainty">Find Optimal</button>
+            <button class="secondary" id="findMED" title="Find minimum effective dose">Find MED</button>
+          </div>
+          <div class="hint" id="optimalDoseResult">Optimal dose with risk-adjusted uncertainty quantification</div>
+        </div>
+
+        <div class="control">
+          <label>Heterogeneity Detection</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runClustering" title="K-means clustering of studies">Cluster Studies</button>
+            <button class="secondary" id="detectOutliers" title="AI-assisted outlier detection">Detect Outliers</button>
+            <button class="secondary" id="featureImportance" title="Feature importance for heterogeneity">Feature Importance</button>
+          </div>
+        </div>
+
+        <div class="control">
+          <label>GOSH Analysis</label>
+          <div class="inline-actions">
+            <input type="number" id="goshSubsets" min="100" max="5000" value="1000" step="100" title="Number of subsets" style="width:80px" />
+            <button class="secondary" id="runGOSH" title="Graphical Overview of Study Heterogeneity">Run GOSH</button>
+          </div>
+          <div class="hint">Visualize study influence on heterogeneity</div>
+        </div>
+
+        <div class="control">
+          <label>Living Review Simulation</label>
+          <div class="inline-actions">
+            <input type="number" id="studiesPerYear" min="1" max="20" value="3" title="Expected studies per year" style="width:60px" />
+            <input type="number" id="simulationYears" min="1" max="10" value="5" title="Years to simulate" style="width:60px" />
+            <button class="secondary" id="runLivingReview" title="Simulate future evidence accumulation">Simulate Future</button>
+            <button class="secondary" id="findStability" title="Estimate when evidence stabilizes">Find Stability</button>
+          </div>
+          <div class="hint" id="livingReviewStatus">Predict how conclusions evolve with new studies</div>
+        </div>
+
+        <div class="control">
+          <label>Component NMA</label>
+          <div class="inline-actions">
+            <input type="text" id="componentList" placeholder="Components (comma-separated)" style="width:200px" title="e.g., counseling, medication, exercise" />
+            <button class="secondary" id="runComponentNMA" title="Decompose complex interventions">Analyze Components</button>
+          </div>
+          <div class="hint">Decompose multi-component interventions into additive effects</div>
+        </div>
+
+        <div class="control">
+          <label>NMA Power Analysis</label>
+          <div class="inline-actions">
+            <input type="number" id="targetPower" min="0.5" max="0.99" value="0.8" step="0.05" title="Target power" style="width:70px" />
+            <input type="number" id="expectedEffect" placeholder="Effect size" style="width:80px" title="Expected treatment effect" />
+            <button class="secondary" id="calcSampleSize" title="Calculate required sample size">Sample Size</button>
+            <button class="secondary" id="suggestDesign" title="Suggest optimal network design">Suggest Design</button>
+          </div>
+          <div class="hint" id="powerResult">Prospective NMA planning tool</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Statistical Standards <span class="badge" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">RSM</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Research Synthesis Methods editorial standards</div>
+
+        <div class="control">
+          <label>Tau-squared Estimation</label>
+          <div class="inline-actions">
+            <select id="tau2Estimator" class="dropdown" style="width:140px">
+              <option value="REML" selected>REML (recommended)</option>
+              <option value="DL">DerSimonian-Laird</option>
+              <option value="PM">Paule-Mandel</option>
+              <option value="EB">Empirical Bayes</option>
+            </select>
+            <label class="toggle-label" title="Show profile likelihood CI for tau-squared">
+              <input type="checkbox" id="showTau2CI" />
+              <span>Show tau� CI</span>
+            </label>
+          </div>
+          <div class="hint" id="tau2Result">REML is the gold standard estimator</div>
+        </div>
+
+        <div class="control">
+          <label>Robust Variance Estimation</label>
+          <div class="inline-actions">
+            <label class="toggle-label" title="Use cluster-robust standard errors (CR2)">
+              <input type="checkbox" id="useRobustSE" />
+              <span>Robust SE (CR2)</span>
+            </label>
+            <label class="toggle-label" title="Apply small-sample correction">
+              <input type="checkbox" id="smallSampleCorrection" checked />
+              <span>Small-sample correction</span>
+            </label>
+          </div>
+          <div class="hint">Accounts for dependent effect sizes within studies</div>
+        </div>
+
+        <div class="control">
+          <label>Inconsistency Assessment</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runDesignByTreatment" title="Design-by-treatment interaction test">Design�Treatment</button>
+            <button class="secondary" id="computeContribution" title="Compute contribution matrix">Contribution Matrix</button>
+            <button class="secondary" id="runNetHeat" title="Generate net heat plot data">Net Heat Plot</button>
+          </div>
+          <div class="hint" id="inconsistencyResult">Gold-standard inconsistency detection methods</div>
+        </div>
+
+        <div class="control">
+          <label>Model Comparison</label>
+          <div class="inline-actions">
+            <button class="secondary" id="compareModels" title="Compare contrast-based vs arm-based models">Contrast vs Arm-based</button>
+            <button class="secondary" id="runMultivariate" title="Fit multivariate meta-analysis">Multivariate MA</button>
+          </div>
+          <div class="hint">Systematic model comparison per Hong et al. (2016)</div>
+        </div>
+
+        <div class="control">
+          <label>Sensitivity Analysis</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runLeaveOneOut" title="Leave-one-out analysis">Leave-One-Out</button>
+            <button class="secondary" id="runCumulative" title="Cumulative meta-analysis">Cumulative MA</button>
+            <button class="secondary" id="runInfluence" title="Influence diagnostics (DFBETAS, Cook's D)">Influence Diagnostics</button>
+          </div>
+          <div class="hint" id="sensitivityResult">Comprehensive sensitivity per Viechtbauer & Cheung (2010)</div>
+        </div>
+
+        <div class="control">
+          <label>Export Standards</label>
+          <div class="inline-actions">
+            <button class="secondary" id="exportREMLReport" title="Export REML analysis report">REML Report</button>
+            <button class="secondary" id="exportSensitivity" title="Export sensitivity analysis">Sensitivity Report</button>
+            <button class="secondary" id="exportFullAudit" title="Export complete analysis audit trail">Full Audit Trail</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Beyond R: Tier 1 <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">AI</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">High-impact features not available in R packages</div>
+
+        <div class="control">
+          <label>Gaussian Process Dose-Response</label>
+          <div class="inline-actions">
+            <select id="gpKernel" class="dropdown" style="width:120px">
+              <option value="rbf" selected>RBF (Smooth)</option>
+              <option value="matern32">Matern 3/2</option>
+              <option value="matern52">Matern 5/2</option>
+            </select>
+            <button class="secondary" id="fitGP" title="Fit Gaussian Process model">Fit GP</button>
+            <button class="secondary" id="sampleGPPosterior" title="Draw posterior samples">Sample Posterior</button>
+          </div>
+          <div class="hint" id="gpResult">Non-parametric Bayesian dose-response with uncertainty</div>
+        </div>
+
+        <div class="control">
+          <label>Quantile Meta-Analysis</label>
+          <div class="inline-actions">
+            <button class="secondary" id="poolMedians" title="Pool study medians">Pool Medians</button>
+            <button class="secondary" id="poolIQRs" title="Pool interquartile ranges">Pool IQRs</button>
+            <button class="secondary" id="estimateMeanSD" title="Convert median/IQR to mean/SD">Estimate Mean/SD</button>
+          </div>
+          <div class="hint" id="quantileResult">Meta-analysis when only medians/IQR reported</div>
+        </div>
+
+        <div class="control">
+          <label>Personalized Dose Optimizer</label>
+          <div class="inline-actions">
+            <input type="number" id="patientAge" placeholder="Age" style="width:60px" value="50" />
+            <input type="number" id="patientWeight" placeholder="Weight" style="width:70px" value="70" />
+            <select id="patientRenal" class="dropdown" style="width:80px">
+              <option value="90" selected>Normal</option>
+              <option value="60">Mild CKD</option>
+              <option value="30">Moderate CKD</option>
+              <option value="15">Severe CKD</option>
+            </select>
+            <button class="secondary" id="optimizeDose" title="Find optimal dose for patient">Optimize</button>
+          </div>
+          <div class="hint" id="personalizedResult">Patient-specific dose recommendations</div>
+        </div>
+
+        <div class="control">
+          <label>Interactive 3D Surface</label>
+          <div class="inline-actions">
+            <button class="secondary" id="generate3DSurface" title="Generate 3D dose-response surface">Generate 3D</button>
+            <button class="secondary" id="export3DData" title="Export for Three.js">Export for Three.js</button>
+            <label class="toggle-label">
+              <input type="checkbox" id="show3DWireframe" checked />
+              <span>Wireframe</span>
+            </label>
+          </div>
+          <div class="hint">WebGL 3D visualization with dose � covariate � effect</div>
+        </div>
+
+        <div class="control">
+          <label>Data Quality Tests</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runGRIME" title="GRIME test for means">GRIME</button>
+            <button class="secondary" id="runSPRITE" title="SPRITE sample reconstruction">SPRITE</button>
+            <button class="secondary" id="runRIVETS" title="RIVETS rounding test">RIVETS</button>
+            <button class="secondary" id="runBenford" title="Benford's Law test">Benford</button>
+          </div>
+          <div class="hint" id="dataQualityResult">Detect fabrication, errors, and suspicious patterns</div>
+        </div>
+
+        <div class="control">
+          <label>Live Meta-Analysis</label>
+          <div class="inline-actions">
+            <button class="secondary" id="startLiveMA" title="Start live monitoring">Start Monitoring</button>
+            <button class="secondary" id="stopLiveMA" title="Stop monitoring" disabled>Stop</button>
+            <button class="secondary" id="exportLiveReport" title="Export update report">Export Report</button>
+          </div>
+          <div class="hint" id="liveMAStatus">Real-time updating meta-analysis with sequential monitoring</div>
+        </div>
+
+        <div class="control">
+          <label>Export</label>
+          <div class="inline-actions">
+            <button class="secondary" id="exportTier1Report" title="Export comprehensive Tier 1 analysis">Full Tier 1 Report</button>
+            <button class="secondary" id="exportGPCurve" title="Export GP predictions as CSV">GP Curve CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Publication Bias <span class="badge" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">RSM</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Research Synthesis Methods editorial standards</div>
+
+        <div class="control">
+          <label>Trim-and-Fill</label>
+          <div class="inline-actions">
+            <select id="tafEstimator" class="dropdown" style="width:70px">
+              <option value="L0" selected>L0</option>
+              <option value="R0">R0</option>
+              <option value="Q0">Q0</option>
+            </select>
+            <select id="tafSide" class="dropdown" style="width:80px">
+              <option value="auto" selected>Auto</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
+            <button class="secondary" id="runTrimFill" title="Duval & Tweedie trim-and-fill">Run T&F</button>
+          </div>
+          <div class="hint" id="trimFillResult">Nonparametric bias adjustment (Duval & Tweedie 2000)</div>
+        </div>
+
+        <div class="control">
+          <label>PET-PEESE</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runPET" title="Precision-Effect Test">PET</button>
+            <button class="secondary" id="runPEESE" title="Precision-Effect Estimate with SE">PEESE</button>
+            <button class="secondary" id="runPETPEESE" title="Combined PET-PEESE">PET-PEESE</button>
+          </div>
+          <div class="hint" id="petpeeseResult">Stanley & Doucouliagos (2014) bias correction</div>
+        </div>
+
+        <div class="control">
+          <label>Doi Plot & LFK Index</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runDoiPlot" title="Generate Doi plot">Doi Plot</button>
+            <button class="secondary" id="computeLFK" title="Compute LFK asymmetry index">LFK Index</button>
+          </div>
+          <div class="hint" id="lfkResult">Furuya-Kanamori asymmetry assessment</div>
+        </div>
+
+        <div class="control">
+          <label>Selection Models</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runVeveaHedges" title="Vevea-Hedges weight-function model">Vevea-Hedges</button>
+            <button class="secondary" id="runSelectionSensitivity" title="Sensitivity to selection">Sensitivity</button>
+          </div>
+          <div class="hint" id="selectionResult">Weight-function selection model (1995)</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Diagnostics <span class="badge" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">QA</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Model validation and outlier detection</div>
+
+        <div class="control">
+          <label>Outlier Diagnostics</label>
+          <div class="inline-actions">
+            <button class="secondary" id="computeCooksD" title="Cook's distance">Cook's D</button>
+            <button class="secondary" id="computeDFFITS" title="Difference in fits">DFFITS</button>
+            <button class="secondary" id="computeStudentized" title="Studentized residuals">Studentized</button>
+          </div>
+          <div class="hint" id="outlierResult">Viechtbauer & Cheung (2010) influence diagnostics</div>
+        </div>
+
+        <div class="control">
+          <label>Cross-Validation</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runLOOCV" title="Leave-one-out cross-validation">LOOCV</button>
+            <button class="secondary" id="computeRMSE" title="Root mean squared error">RMSE</button>
+          </div>
+          <div class="hint" id="cvResult">Model validation metrics</div>
+        </div>
+
+        <div class="control">
+          <label>Transitivity Assessment</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runTransitivity" title="Assess NMA transitivity assumption">Assess Transitivity</button>
+            <button class="secondary" id="exportTransitivity" title="Export transitivity report">Export Report</button>
+          </div>
+          <div class="hint" id="transitivityResult">Covariate balance across comparisons</div>
+        </div>
+
+        <div class="control">
+          <label>Multivariate Outcomes</label>
+          <div class="inline-actions">
+            <input type="number" id="outcomeCorrelation" placeholder="rho" style="width:60px" value="0.5" step="0.1" min="-1" max="1" />
+            <button class="secondary" id="runMultivariate" title="Multivariate meta-analysis">Pool Bivariate</button>
+          </div>
+          <div class="hint" id="multivariateResult">Correlated outcomes (Jackson et al. 2011)</div>
+        </div>
+
+        <div class="control">
+          <label>Export</label>
+          <div class="inline-actions">
+            <button class="secondary" id="exportBiasReport" title="Export publication bias report">Bias Report</button>
+            <button class="secondary" id="exportDiagnostics" title="Export diagnostics">Diagnostics CSV</button>
+            <button class="secondary" id="exportRSMChecklist" title="RSM checklist">RSM Checklist</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Evidential Value <span class="badge" style="background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);">RSM-2</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">P-curve, Failsafe N, Excess Significance</div>
+
+        <div class="control">
+          <label>P-Curve Analysis</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runPCurve" title="Simonsohn et al. (2014)">P-Curve</button>
+            <button class="secondary" id="exportPCurve" title="Export p-curve results">Export</button>
+          </div>
+          <div class="hint" id="pcurveResult">Tests for evidential value vs p-hacking</div>
+        </div>
+
+        <div class="control">
+          <label>Failsafe N</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runRosenthal" title="Rosenthal (1979)">Rosenthal</button>
+            <button class="secondary" id="runOrwin" title="Orwin (1983)">Orwin</button>
+            <button class="secondary" id="runRosenberg" title="Rosenberg (2005)">Rosenberg</button>
+          </div>
+          <div class="hint" id="failsafeResult">Null studies needed to nullify effect</div>
+        </div>
+
+        <div class="control">
+          <label>Excess Significance</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runExcessSig" title="Ioannidis & Trikalinos (2007)">Run Test</button>
+          </div>
+          <div class="hint" id="excessSigResult">Detects excess significant findings</div>
+        </div>
+
+        <div class="control">
+          <label>Permutation Test</label>
+          <div class="inline-actions">
+            <input type="number" id="permutations" placeholder="5000" style="width:70px" value="5000" step="1000" min="1000" max="10000" />
+            <button class="secondary" id="runPermutation" title="Non-parametric bias test">Permutation</button>
+          </div>
+          <div class="hint" id="permutationResult">Kendall tau permutation test</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Advanced Bias <span class="badge" style="background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);">RSM-2</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Selection models, Galbraith plot, Harbord</div>
+
+        <div class="control">
+          <label>3PSM Selection Model</label>
+          <div class="inline-actions">
+            <button class="secondary" id="run3PSM" title="McShane et al. (2016)">Run 3PSM</button>
+          </div>
+          <div class="hint" id="threepsmResult">Three-parameter selection model</div>
+        </div>
+
+        <div class="control">
+          <label>Radial Plot</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runRadialPlot" title="Galbraith (1988)">Galbraith Plot</button>
+            <button class="secondary" id="identifyOutliers" title="Flag outliers on plot">Outliers</button>
+          </div>
+          <div class="hint" id="radialResult">Standardized effect vs precision</div>
+        </div>
+
+        <div class="control">
+          <label>Harbord's Test</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runHarbord" title="Harbord et al. (2006)">Run Harbord</button>
+          </div>
+          <div class="hint" id="harbordResult">Modified Egger for binary outcomes</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Statistical Inference <span class="badge" style="background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);">RSM-2</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Heterogeneity CIs, finite-sample, MR diagnostics</div>
+
+        <div class="control">
+          <label>I&sup2; Confidence Interval</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runQProfile" title="Q-profile method">Q-Profile</button>
+            <button class="secondary" id="runBootstrapI2" title="Bootstrap CI">Bootstrap</button>
+          </div>
+          <div class="hint" id="i2ciResult">Higgins & Thompson (2002) heterogeneity CI</div>
+        </div>
+
+        <div class="control">
+          <label>Finite-Sample Corrections</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runSatterthwaite" title="Satterthwaite df">Satterthwaite</button>
+            <button class="secondary" id="runKenwardRoger" title="Kenward-Roger">KR</button>
+          </div>
+          <div class="hint" id="finiteSampleResult">Small-sample inference adjustments</div>
+        </div>
+
+        <div class="control">
+          <label>Meta-Regression QA</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runVIF" title="Variance inflation factors">VIF</button>
+            <button class="secondary" id="runMRResiduals" title="Studentized residuals">Residuals</button>
+          </div>
+          <div class="hint" id="mrDiagResult">Multicollinearity & outlier detection</div>
+        </div>
+
+        <div class="control">
+          <label>Export</label>
+          <div class="inline-actions">
+            <button class="secondary" id="exportRSMv2Report" title="Full RSM v2 report">Bias Report</button>
+            <button class="secondary" id="exportRSMv2Checklist" title="RSM v2 checklist">Checklist</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Beyond R <span class="badge" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);">ULTRA</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Methods surpassing metafor, weightr, RoBMA</div>
+
+        <div class="control">
+          <label>Copas Selection Model</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runCopas" title="Copas & Shi (2000)">Run Copas</button>
+            <button class="secondary" id="copasSensitivity" title="Sensitivity analysis">Sensitivity</button>
+          </div>
+          <div class="hint" id="copasResult">Most sophisticated selection model</div>
+        </div>
+
+        <div class="control">
+          <label>P-uniform*</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runPUniformStar" title="van Aert et al. (2016)">P-uniform*</button>
+          </div>
+          <div class="hint" id="puniformResult">Heterogeneity-adjusted p-curve</div>
+        </div>
+
+        <div class="control">
+          <label>Limit Meta-Analysis</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runLimitMA" title="Rucker et al. (2011)">Limit MA</button>
+          </div>
+          <div class="hint" id="limitResult">Extrapolation to infinite precision</div>
+        </div>
+
+        <div class="control">
+          <label>RoBMA</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runRoBMA" title="Robust Bayesian Meta-Analysis">Run RoBMA</button>
+          </div>
+          <div class="hint" id="robmaResult">Bayesian Model Averaging</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Sensitivity <span class="badge" style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);">ULTRA</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Bias sensitivity, WAAP-WLS, Z-curve</div>
+
+        <div class="control">
+          <label>Publication Bias Sensitivity</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runBiasSensitivity" title="Mathur & VanderWeele">Sensitivity</button>
+            <button class="secondary" id="runWorstCase" title="Worst-case bias">Worst Case</button>
+          </div>
+          <div class="hint" id="sensitivityResult">Selection strength to nullify effect</div>
+        </div>
+
+        <div class="control">
+          <label>WAAP-WLS</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runWAAP" title="Adequately powered studies">WAAP</button>
+            <button class="secondary" id="runWLS" title="Weighted Least Squares">WLS</button>
+          </div>
+          <div class="hint" id="waapResult">Stanley & Doucouliagos method</div>
+        </div>
+
+        <div class="control">
+          <label>Z-Curve Analysis</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runZCurve" title="Brunner & Schimmack">Z-Curve</button>
+            <button class="secondary" id="runSunset" title="Sunset power analysis">Sunset</button>
+          </div>
+          <div class="hint" id="zcurveResult">Replicability & discovery rate</div>
+        </div>
+
+        <div class="control">
+          <label>Selection Model Comparison</label>
+          <div class="inline-actions">
+            <button class="secondary" id="compareSelectionModels" title="Compare all models">Compare All</button>
+          </div>
+          <div class="hint" id="comparisonResult">Model averaging across methods</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Regression Tests <span class="badge" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">ULTRA</span></h2>
+        <div class="hint" style="margin-bottom: 16px;">Begg, Peters, Macaskill, Deeks, Arcsine</div>
+
+        <div class="control">
+          <label>Rank Correlation Tests</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runBeggMazumdar" title="Begg & Mazumdar (1994)">Begg</button>
+          </div>
+          <div class="hint" id="beggResult">Non-parametric rank correlation</div>
+        </div>
+
+        <div class="control">
+          <label>Sample Size Tests</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runPeters" title="Peters et al. (2006)">Peters</button>
+            <button class="secondary" id="runMacaskill" title="Macaskill et al.">Macaskill</button>
+            <button class="secondary" id="runDeeks" title="Deeks et al.">Deeks</button>
+          </div>
+          <div class="hint" id="regressionResult">Sample size based bias tests</div>
+        </div>
+
+        <div class="control">
+          <label>Advanced Diagnostics</label>
+          <div class="inline-actions">
+            <button class="secondary" id="runContourFunnel" title="Contour-enhanced funnel">Contour Plot</button>
+            <button class="secondary" id="runCumulativeMA" title="By precision">Cumulative</button>
+            <button class="secondary" id="runLOOBias" title="Leave-one-out influence">LOO Bias</button>
+          </div>
+          <div class="hint" id="advDiagResult">Advanced diagnostic plots</div>
+        </div>
+
+        <div class="control">
+          <label>Export</label>
+          <div class="inline-actions">
+            <button class="secondary" id="exportBeyondRReport" title="Complete bias report">Full Report</button>
+            <button class="secondary" id="exportBeyondRChecklist" title="Methods checklist">Checklist</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Model Summary</h2>
+        <div class="table-wrap">
+          <table class="summary-table" role="table" aria-label="Model summary statistics">
+            <thead>
+              <tr>
+                <th>Treatment</th>
+                <th>Model</th>
+                <th>Detail</th>
+                <th>N</th>
+                <th>E0</th>
+                <th>Emax/Slope</th>
+                <th>ED50</th>
+                <th>Hill</th>
+                <th>AIC</th>
+                <th>AICc</th>
+                <th>BIC</th>
+                <th>Q</th>
+                <th>df</th>
+                <th>Q/df</th>
+                <th>Tau2</th>
+                <th>PI 95%</th>
+                <th>RMSE</th>
+                <th>R2</th>
+                <th>AUC</th>
+                <th>AUC MA</th>
+                <th>Target</th>
+                <th>Target MA</th>
+                <th>Target Copas</th>
+                <th>Target 95% CI</th>
+                <th>SUCRA</th>
+                <th>P(best)</th>
+              </tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+        </div>
+        <div class="hint">AICc uses weighted SSE across Emax/Hill/log-linear/RCS/FP. SUCRA and CI require bootstrap. Model-averaged AUC/Target use AICc weights. Random-effects toggle applies per-treatment tau2 without correlation.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Advanced Diagnostics</h2>
+        <div class="quality-grid" role="list" aria-label="Data quality metrics">
+          <div class="quality-item" role="listitem"><span>Global Q</span><strong id="diagQ">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Global Q p</span><strong id="diagQp">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Global df</span><strong id="diagDf">-</strong></div>
+          <div class="quality-item" role="listitem"><span>I2</span><strong id="diagI2">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Q/df</span><strong id="diagDispersion">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Tau2</span><strong id="diagTau2">-</strong></div>
+          <div class="quality-item" role="listitem"><span>H2</span><strong id="diagH2">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Mean RMSE</span><strong id="diagRmse">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Mean R2</span><strong id="diagR2">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Inconsistency Q</span><strong id="diagIncQ">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Inconsistency df</span><strong id="diagIncDf">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Inconsistency p</span><strong id="diagIncP">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Design Q</span><strong id="diagDesignQ">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Design df</span><strong id="diagDesignDf">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Design p</span><strong id="diagDesignP">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Covariate beta</span><strong id="diagCovBeta">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Covariate mean</span><strong id="diagCovMean">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Network density</span><strong id="diagDensity">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Components</span><strong id="diagComponents">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Mean degree</span><strong id="diagMeanDegree">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Loop count</span><strong id="diagLoopCount">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Max |IF|</span><strong id="diagLoopMax">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Loop Q</span><strong id="diagLoopQ">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Loop p</span><strong id="diagLoopP">-</strong></div>
+        </div>
+        <div class="control" style="margin-top: 14px;">
+          <label for="diagnosticTreatment">Treatment diagnostics</label>
+          <select id="diagnosticTreatment"></select>
+        </div>
+        <div class="quality-grid" role="list" aria-label="Data quality metrics">
+          <div class="quality-item" role="listitem"><span>AIC</span><strong id="diagTreatAic">-</strong></div>
+          <div class="quality-item" role="listitem"><span>AICc</span><strong id="diagTreatAicc">-</strong></div>
+          <div class="quality-item" role="listitem"><span>BIC</span><strong id="diagTreatBic">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Q</span><strong id="diagTreatQ">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Q p</span><strong id="diagTreatQp">-</strong></div>
+          <div class="quality-item" role="listitem"><span>df</span><strong id="diagTreatDf">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Q/df</span><strong id="diagTreatDispersion">-</strong></div>
+          <div class="quality-item" role="listitem"><span>LogLik</span><strong id="diagTreatLogLik">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Tau2</span><strong id="diagTreatTau2">-</strong></div>
+          <div class="quality-item" role="listitem"><span>PI low</span><strong id="diagTreatPiLow">-</strong></div>
+          <div class="quality-item" role="listitem"><span>PI high</span><strong id="diagTreatPiHigh">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Egger int</span><strong id="diagTreatEgger">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Egger p</span><strong id="diagTreatEggerP">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Begg tau</span><strong id="diagTreatBegg">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Begg p</span><strong id="diagTreatBeggP">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Influence</span><strong id="diagTreatInfluence">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Max |std resid|</span><strong id="diagTreatMaxStdResid">-</strong></div>
+          <div class="quality-item" role="listitem"><span>RMSE</span><strong id="diagTreatRmse">-</strong></div>
+          <div class="quality-item" role="listitem"><span>R2</span><strong id="diagTreatR2">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Model detail</span><strong id="diagTreatModelDetail">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Node split direct</span><strong id="diagNodeDirect">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Node split indirect</span><strong id="diagNodeIndirect">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Node split diff</span><strong id="diagNodeDiff">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Node split p</span><strong id="diagNodeP">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Trim-fill missing</span><strong id="diagTrimFill">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Funnel contours</span><strong id="diagFunnelContours">-</strong></div>
+          <div class="quality-item" role="listitem"><span>HK scale</span><strong id="diagHkScale">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Robust SE</span><strong id="diagRobustSe">-</strong></div>
+          <div class="quality-item" role="listitem"><span>Copas target</span><strong id="diagCopasTarget">-</strong></div>
+        </div>
+        <div class="hint" id="diagModelWeights">AICc weights reflect relative support among candidate models. Egger/Begg/loop/node/trim-fill are screening diagnostics with approximate p-values.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Export</h2>
+        <div class="actions">
+          <button id="exportJson" aria-label="Export analysis as JSON file">Export JSON</button>
+          <button class="secondary" id="exportSummaryCsv" aria-label="Export summary statistics as CSV">Export summary CSV</button>
+          <button class="secondary" id="exportPredCsv" aria-label="Export model predictions as CSV">Export predictions CSV</button>
+          <button class="secondary" id="exportCharts" aria-label="Export all charts as PNG images">Export charts PNG</button>
+          <button class="secondary" id="copyLink" aria-label="Copy shareable settings link to clipboard">Copy settings link</button>
+        </div>
+        <div class="hint" id="exportStatus"></div>
+      </div>
+    </section>
+
+    <section class="panel charts">
+      <div class="tab-bar" id="chartTabs" role="tablist" aria-label="Chart type selection">
+        <button class="tab-button" data-tab-button="dose" role="tab" aria-selected="false" aria-controls="dosePanel">Dose Response</button>
+        <button class="tab-button" data-tab-button="rank" role="tab" aria-selected="false" aria-controls="rankPanel">Ranking</button>
+        <button class="tab-button" data-tab-button="network" role="tab" aria-selected="false" aria-controls="networkPanel">Network</button>
+        <button class="tab-button" data-tab-button="bias" role="tab" aria-selected="false" aria-controls="biasPanel">Bias</button>
+        <button class="tab-button" data-tab-button="diagnostics" role="tab" aria-selected="false" aria-controls="diagnosticsPanel">Diagnostics</button>
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <span class="card-title" id="chartHeader">Select a chart tab</span>
+          <span class="card-meta" id="rankTitle"></span>
+        </div>
+        <div class="tab-empty" id="chartEmpty">Choose a tab to display the plot.</div>
+        <div class="tab-panel" data-tab="dose" id="dosePanel" role="tabpanel" aria-label="Dose response chart">
+          <div class="canvas-wrap">
+            <canvas id="doseChart" aria-label="Dose-response curve visualization" role="img"></canvas>
+            <div class="tooltip" id="doseTooltip"></div>
+          </div>
+        </div>
+        <div class="tab-panel" data-tab="rank" id="rankPanel" role="tabpanel" aria-label="Treatment ranking chart">
+          <div class="canvas-wrap">
+            <canvas id="rankChart" aria-label="Treatment ranking visualization" role="img"></canvas>
+          </div>
+        </div>
+        <div class="tab-panel" data-tab="network" id="networkPanel" role="tabpanel" aria-label="Treatment network graph">
+          <div class="canvas-wrap">
+            <canvas id="networkChart" aria-label="Treatment network visualization" role="img"></canvas>
+          </div>
+        </div>
+        <div class="tab-panel" data-tab="bias" id="biasPanel" role="tabpanel" aria-label="Bias assessment charts">
+          <div class="control" style="margin-bottom: 12px;">
+            <label for="biasPlotSelect">Bias plot</label>
+            <select id="biasPlotSelect">
+              <option value="funnel">Funnel plot</option>
+              <option value="baujat">Baujat plot</option>
+            </select>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="biasChart" aria-label="Bias assessment visualization" role="img"></canvas>
+          </div>
+        </div>
+        <div class="tab-panel" data-tab="diagnostics" id="diagnosticsPanel" role="tabpanel" aria-label="Model diagnostics plots">
+          <div class="control" style="margin-bottom: 12px;">
+            <label for="diagnosticPlotSelect">Diagnostic plot</label>
+            <select id="diagnosticPlotSelect">
+              <option value="residual">Residuals vs Fitted</option>
+              <option value="qq">Normal Q-Q Plot</option>
+            </select>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="diagnosticsChart" aria-label="Model diagnostics visualization" role="img"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

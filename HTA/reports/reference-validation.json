@@ -1,0 +1,369 @@
+{
+  "generated_at": "2026-03-01T12:37:08.288Z",
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "informational": 0,
+    "external_comparators_checked": 3
+  },
+  "fixtures": [
+    {
+      "model": "markov_age_dependent",
+      "status": "passed",
+      "expected_file": "reference-models\\markov_age_dependent\\expected_results.json",
+      "deterministic": {
+        "passed": true,
+        "tolerance": {
+          "costs": 0.01,
+          "qalys": 0.0001,
+          "relative": 0.001
+        },
+        "strategies": [
+          {
+            "strategy": "natural_history",
+            "passed": true,
+            "metrics": [
+              {
+                "metric": "total_costs",
+                "observed": 17717.34703670179,
+                "expected": 17717.34703670179,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.01,
+                "passed": true
+              },
+              {
+                "metric": "total_qalys",
+                "observed": 10.075303247612213,
+                "expected": 10.075303247612213,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.0001,
+                "passed": true
+              },
+              {
+                "metric": "life_years",
+                "observed": 11.447247169551526,
+                "expected": 11.447247169551526,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.001,
+                "passed": true
+              }
+            ]
+          }
+        ]
+      },
+      "external_reference_file": "reference-models\\markov_age_dependent\\external_reference.json",
+      "external_comparators": [
+        {
+          "comparator": "r_reference",
+          "source": "Independent R Markov fixture runner",
+          "strict": true,
+          "passed": true,
+          "tolerance": {
+            "costs": 0.01,
+            "qalys": 0.0001,
+            "relative": 0.001
+          },
+          "strategies": [
+            {
+              "strategy": "natural_history",
+              "passed": true,
+              "metrics": [
+                {
+                  "metric": "total_costs",
+                  "observed": 17717.34703670179,
+                  "expected": 17717.347,
+                  "absolute_error": 0.000036701789213111624,
+                  "relative_error": 2.0715172092701927e-9,
+                  "tolerance": 0.01,
+                  "passed": true
+                },
+                {
+                  "metric": "total_qalys",
+                  "observed": 10.075303247612213,
+                  "expected": 10.0753,
+                  "absolute_error": 0.000003247612212931017,
+                  "relative_error": 3.2233404592726937e-7,
+                  "tolerance": 0.0001,
+                  "passed": true
+                },
+                {
+                  "metric": "life_years",
+                  "observed": 11.447247169551526,
+                  "expected": 11.4472,
+                  "absolute_error": 0.00004716955152517244,
+                  "relative_error": 0.000004120619149239328,
+                  "tolerance": 0.001,
+                  "passed": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "model": "markov_simple",
+      "status": "passed",
+      "expected_file": "reference-models\\markov_simple\\expected_results.json",
+      "deterministic": {
+        "passed": true,
+        "tolerance": {
+          "costs": 0.01,
+          "qalys": 0.0001,
+          "relative": 0.001
+        },
+        "strategies": [
+          {
+            "strategy": "base",
+            "passed": true,
+            "metrics": [
+              {
+                "metric": "total_costs",
+                "observed": 5395.176272793299,
+                "expected": 5395.176272793299,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.01,
+                "passed": true
+              },
+              {
+                "metric": "total_qalys",
+                "observed": 4.31614101823464,
+                "expected": 4.31614101823464,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.0001,
+                "passed": true
+              },
+              {
+                "metric": "life_years",
+                "observed": 5.395176272793299,
+                "expected": 5.395176272793299,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.001,
+                "passed": true
+              }
+            ]
+          }
+        ]
+      },
+      "external_reference_file": "reference-models\\markov_simple\\external_reference.json",
+      "external_comparators": [
+        {
+          "comparator": "r_reference",
+          "source": "Independent R Markov fixture runner",
+          "strict": true,
+          "passed": true,
+          "tolerance": {
+            "costs": 0.01,
+            "qalys": 0.0001,
+            "relative": 0.001
+          },
+          "strategies": [
+            {
+              "strategy": "base",
+              "passed": true,
+              "metrics": [
+                {
+                  "metric": "total_costs",
+                  "observed": 5395.176272793299,
+                  "expected": 5395.1763,
+                  "absolute_error": 0.000027206700906390324,
+                  "relative_error": 5.042782551219007e-9,
+                  "tolerance": 0.01,
+                  "passed": true
+                },
+                {
+                  "metric": "total_qalys",
+                  "observed": 4.31614101823464,
+                  "expected": 4.3161,
+                  "absolute_error": 0.00004101823463997789,
+                  "relative_error": 0.00000950354130812027,
+                  "tolerance": 0.0001,
+                  "passed": true
+                },
+                {
+                  "metric": "life_years",
+                  "observed": 5.395176272793299,
+                  "expected": 5.3952,
+                  "absolute_error": 0.00002372720670074102,
+                  "relative_error": 0.000004397836354674715,
+                  "tolerance": 0.001,
+                  "passed": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "model": "psa_demo",
+      "status": "passed",
+      "expected_file": "reference-models\\psa_demo\\expected_results.json",
+      "deterministic": {
+        "passed": true,
+        "tolerance": {
+          "costs": 0.01,
+          "qalys": 0.0001,
+          "relative": 0.001
+        },
+        "strategies": [
+          {
+            "strategy": "intervention",
+            "passed": true,
+            "metrics": [
+              {
+                "metric": "total_costs",
+                "observed": 31406.30948135021,
+                "expected": 31406.30948135021,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.01,
+                "passed": true
+              },
+              {
+                "metric": "total_qalys",
+                "observed": 4.694486553477004,
+                "expected": 4.694486553477004,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.0001,
+                "passed": true
+              },
+              {
+                "metric": "life_years",
+                "observed": 6.256179730444676,
+                "expected": 6.256179730444676,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.001,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "strategy": "comparator",
+            "passed": true,
+            "metrics": [
+              {
+                "metric": "total_costs",
+                "observed": 30787.900040921715,
+                "expected": 30787.900040921715,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.01,
+                "passed": true
+              },
+              {
+                "metric": "total_qalys",
+                "observed": 4.083953312236153,
+                "expected": 4.083953312236153,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.0001,
+                "passed": true
+              },
+              {
+                "metric": "life_years",
+                "observed": 5.860414868632481,
+                "expected": 5.860414868632481,
+                "absolute_error": 0,
+                "relative_error": 0,
+                "tolerance": 0.001,
+                "passed": true
+              }
+            ]
+          }
+        ]
+      },
+      "external_reference_file": "reference-models\\psa_demo\\external_reference.json",
+      "external_comparators": [
+        {
+          "comparator": "r_reference",
+          "source": "Independent R Markov fixture runner",
+          "strict": true,
+          "passed": true,
+          "tolerance": {
+            "costs": 0.01,
+            "qalys": 0.0001,
+            "relative": 0.001
+          },
+          "strategies": [
+            {
+              "strategy": "intervention",
+              "passed": true,
+              "metrics": [
+                {
+                  "metric": "total_costs",
+                  "observed": 31406.30948135021,
+                  "expected": 31406.3095,
+                  "absolute_error": 0.000018649789126357064,
+                  "relative_error": 5.938230063725592e-10,
+                  "tolerance": 0.01,
+                  "passed": true
+                },
+                {
+                  "metric": "total_qalys",
+                  "observed": 4.694486553477004,
+                  "expected": 4.6945,
+                  "absolute_error": 0.000013446522995508303,
+                  "relative_error": 0.000002864314196508319,
+                  "tolerance": 0.0001,
+                  "passed": true
+                },
+                {
+                  "metric": "life_years",
+                  "observed": 6.256179730444676,
+                  "expected": 6.2562,
+                  "absolute_error": 0.000020269555323970678,
+                  "relative_error": 0.000003239914856297861,
+                  "tolerance": 0.001,
+                  "passed": true
+                }
+              ]
+            },
+            {
+              "strategy": "comparator",
+              "passed": true,
+              "metrics": [
+                {
+                  "metric": "total_costs",
+                  "observed": 30787.900040921715,
+                  "expected": 30787.9,
+                  "absolute_error": 0.000040921713662100956,
+                  "relative_error": 1.3291492327213274e-9,
+                  "tolerance": 0.01,
+                  "passed": true
+                },
+                {
+                  "metric": "total_qalys",
+                  "observed": 4.083953312236153,
+                  "expected": 4.084,
+                  "absolute_error": 0.00004668776384697537,
+                  "relative_error": 0.000011431871656947938,
+                  "tolerance": 0.0001,
+                  "passed": true
+                },
+                {
+                  "metric": "life_years",
+                  "observed": 5.860414868632481,
+                  "expected": 5.8604,
+                  "absolute_error": 0.000014868632480791177,
+                  "relative_error": 0.000002537136113710869,
+                  "tolerance": 0.001,
+                  "passed": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

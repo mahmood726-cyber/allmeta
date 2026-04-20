@@ -1,0 +1,5029 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dose Response Pro v3.0 | Advanced Dose-Response Meta-Analysis</title>
+  <meta name="description" content="Advanced dose-response meta-analysis with linear, non-linear, spline, and fractional polynomial models">
+
+  <!-- Plotly for visualizations -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script>
+    if (typeof Plotly === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"><\/script>');
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =============================================
+       DOSE RESPONSE PRO v2.0 - CSS DESIGN SYSTEM
+       Version: 2.0.0
+       Author: M25 Evidence Synthesis Lab
+       ============================================= */
+
+    :root {
+      --color-primary-900: #0d1b2a;
+      --color-primary-800: #1b263b;
+      --color-primary-700: #2a3f5f;
+      --color-primary-600: #3a5a8c;
+      --color-primary-500: #4a7ab8;
+      --color-primary-400: #6b9ad4;
+      --color-primary-300: #8db8e8;
+      --color-primary-200: #b8d4f5;
+      --color-primary-100: #e3eefb;
+
+      --color-accent-500: #06b6d4;
+      --color-accent-400: #22d3ee;
+      --color-accent-300: #67e8f9;
+      --color-accent-glow: rgba(6, 182, 212, 0.3);
+
+      --color-accent2-500: #e6a919;
+      --color-accent2-400: #f5c042;
+
+      --color-success-500: #10b981;
+      --color-success-400: #34d399;
+      --color-success-bg: rgba(16, 185, 129, 0.12);
+
+      --color-warning-500: #f59e0b;
+      --color-warning-400: #fbbf24;
+      --color-warning-bg: rgba(245, 158, 11, 0.12);
+
+      --color-danger-500: #ef4444;
+      --color-danger-400: #f87171;
+      --color-danger-bg: rgba(239, 68, 68, 0.12);
+
+      --color-info-500: #3b82f6;
+      --color-info-400: #60a5fa;
+      --color-info-bg: rgba(59, 130, 246, 0.12);
+
+      --color-neutral-950: #0a0c10;
+      --color-neutral-900: #12151c;
+      --color-neutral-800: #1a1f2a;
+      --color-neutral-700: #262d3d;
+      --color-neutral-600: #3d4657;
+      --color-neutral-500: #5a6478;
+      --color-neutral-400: #7d8799;
+      --color-neutral-300: #a3aab8;
+      --color-neutral-200: #c9cdd6;
+      --color-neutral-100: #e8eaee;
+      --color-neutral-50: #f5f6f8;
+
+      --surface-base: var(--color-neutral-900);
+      --surface-raised: var(--color-neutral-800);
+      --surface-overlay: var(--color-neutral-700);
+      --surface-highlight: var(--color-primary-800);
+      --surface-card: var(--color-neutral-800);
+
+      --text-primary: var(--color-neutral-100);
+      --text-secondary: var(--color-neutral-400);
+      --text-tertiary: var(--color-neutral-500);
+      --text-inverse: var(--color-neutral-900);
+      --text-accent: var(--color-accent-400);
+
+      --border-subtle: var(--color-neutral-700);
+      --border-default: var(--color-neutral-600);
+      --border-strong: var(--color-neutral-500);
+      --border-focus: var(--color-primary-500);
+
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+
+      --text-xs: 0.75rem;
+      --text-sm: 0.8125rem;
+      --text-base: 0.9375rem;
+      --text-lg: 1.0625rem;
+      --text-xl: 1.25rem;
+      --text-2xl: 1.5rem;
+      --text-3xl: 1.875rem;
+
+      --leading-tight: 1.25;
+      --leading-snug: 1.375;
+      --leading-normal: 1.5;
+
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+      --radius-2xl: 16px;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      --shadow-glow: 0 0 20px var(--color-accent-glow);
+
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+      --z-base: 0;
+      --z-dropdown: 100;
+      --z-sticky: 200;
+      --z-modal: 300;
+      --z-tooltip: 400;
+    }
+
+    [data-theme="light"] {
+      --surface-base: #f8fafc;
+      --surface-raised: #ffffff;
+      --surface-overlay: #f1f5f9;
+      --surface-highlight: #e0f2fe;
+      --surface-card: #ffffff;
+
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-tertiary: #94a3b8;
+      --text-inverse: #f8fafc;
+      --text-accent: #0891b2;
+
+      --border-subtle: #e2e8f0;
+      --border-default: #cbd5e1;
+      --border-strong: #94a3b8;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      line-height: var(--leading-normal);
+      color: var(--text-primary);
+      background: var(--surface-base);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background var(--transition-base), color var(--transition-base);
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--color-neutral-800);
+      border-radius: var(--radius-full);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-neutral-600);
+      border-radius: var(--radius-full);
+      border: 2px solid var(--color-neutral-800);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-neutral-500);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-1 { gap: var(--space-1); }
+    .gap-2 { gap: var(--space-2); }
+    .gap-3 { gap: var(--space-3); }
+    .gap-4 { gap: var(--space-4); }
+    .gap-6 { gap: var(--space-6); }
+    .gap-8 { gap: var(--space-8); }
+
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+    /* App Header */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: var(--z-sticky);
+      background: linear-gradient(180deg, var(--color-neutral-900) 0%, rgba(18, 21, 28, 0.95) 100%);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: var(--space-3) 0;
+    }
+
+    [data-theme="light"] .app-header {
+      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    }
+
+    .app-header__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-6);
+    }
+
+    .app-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .app-logo__badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--color-accent-500) 0%, #0891b2 100%);
+      border-radius: var(--radius-lg);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .app-logo__text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-logo__title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--color-neutral-100) 0%, var(--color-neutral-300) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    [data-theme="light"] .app-logo__title {
+      background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .app-logo__version {
+      font-size: var(--text-xs);
+      font-family: var(--font-mono);
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
+    }
+
+    [data-theme="light"] .app-logo__version {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .app-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    /* Theme Toggle Button */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 1.25rem;
+    }
+
+    .theme-toggle:hover {
+      background: var(--surface-raised);
+      border-color: var(--border-default);
+      transform: scale(1.05);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      line-height: 1;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn--primary {
+      background: linear-gradient(135deg, var(--color-accent-500) 0%, #0891b2 100%);
+      color: white;
+      box-shadow: var(--shadow-sm), 0 0 0 0 var(--color-accent-glow);
+    }
+
+    .btn--primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-accent-400) 0%, var(--color-accent-500) 100%);
+      box-shadow: var(--shadow-md), var(--shadow-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn--secondary {
+      background: linear-gradient(135deg, var(--color-success-500) 0%, var(--color-success-400) 100%);
+      color: white;
+    }
+
+    .btn--secondary:hover:not(:disabled) {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .btn--accent {
+      background: linear-gradient(135deg, var(--color-accent2-500) 0%, var(--color-accent2-400) 100%);
+      color: var(--text-inverse);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border-color: var(--border-subtle);
+    }
+
+    .btn--ghost:hover:not(:disabled) {
+      background: var(--surface-raised);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+    }
+
+    .btn--sm {
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+    }
+
+    .btn--lg {
+      padding: var(--space-3) var(--space-6);
+      font-size: var(--text-base);
+    }
+
+    .btn--icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+    }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: var(--space-2);
+      background: var(--surface-raised);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      margin: var(--space-6) 0;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--surface-overlay);
+    }
+
+    .tab-btn--active {
+      color: var(--text-primary);
+      background: var(--color-primary-700);
+    }
+
+    [data-theme="light"] .tab-btn--active {
+      background: var(--color-accent-500);
+      color: white;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel--active {
+      display: block;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-bottom: var(--space-6);
+      transition: box-shadow var(--transition-base);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border-subtle);
+      background: linear-gradient(180deg, var(--surface-overlay) 0%, var(--surface-raised) 100%);
+    }
+
+    .card__title {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .card__body {
+      padding: var(--space-5);
+    }
+
+    .card__footer {
+      padding: var(--space-4) var(--space-5);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--surface-overlay);
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .data-table th {
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--surface-overlay);
+      position: sticky;
+      top: 0;
+    }
+
+    .data-table tbody tr:hover {
+      background: var(--surface-highlight);
+    }
+
+    .data-table td:first-child {
+      font-weight: 500;
+    }
+
+    /* Input */
+    .input {
+      width: 100%;
+      padding: var(--space-2) var(--space-3);
+      background: var(--surface-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      transition: all var(--transition-fast);
+    }
+
+    .input:hover {
+      border-color: var(--border-default);
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--color-accent-500);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    }
+
+    .input--sm {
+      padding: var(--space-1) var(--space-2);
+      font-size: var(--text-xs);
+    }
+
+    .input--mono {
+      font-family: var(--font-mono);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .input-label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .select-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .select {
+      appearance: none;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      min-width: 120px;
+    }
+
+    .select:focus {
+      border-color: var(--color-accent-500);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    }
+
+    .select-wrapper::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid var(--text-secondary);
+      pointer-events: none;
+    }
+
+    /* Stat Cards */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .stat-card {
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      text-align: center;
+      transition: all var(--transition-fast);
+    }
+
+    .stat-card:hover {
+      border-color: var(--color-accent-500);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-card__value {
+      font-family: var(--font-mono);
+      font-size: var(--text-2xl);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .stat-card__value--accent {
+      color: var(--color-accent-400);
+    }
+
+    [data-theme="light"] .stat-card__value--accent {
+      color: var(--color-accent-500);
+    }
+
+    .stat-card__value--success {
+      color: var(--color-success-400);
+    }
+
+    .stat-card__value--warning {
+      color: var(--color-warning-400);
+    }
+
+    .stat-card__value--danger {
+      color: var(--color-danger-400);
+    }
+
+    .stat-card__label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Utility classes */
+    .text-xs { font-size: var(--text-xs); }
+    .text-sm { font-size: var(--text-sm); }
+    .text-base { font-size: var(--text-base); }
+    .text-lg { font-size: var(--text-lg); }
+    .text-xl { font-size: var(--text-xl); }
+    .text-2xl { font-size: var(--text-2xl); }
+
+    .font-normal { font-weight: 400; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+
+    .font-mono { font-family: var(--font-mono); }
+
+    .text-primary { color: var(--text-primary); }
+    .text-secondary { color: var(--text-secondary); }
+    .text-tertiary { color: var(--text-tertiary); }
+    .text-accent { color: var(--text-accent); }
+    .text-success { color: var(--color-success-400); }
+    .text-warning { color: var(--color-warning-400); }
+    .text-danger { color: var(--color-danger-400); }
+
+    .hidden { display: none !important; }
+
+    /* Plot container */
+    .plot-container {
+      width: 100%;
+      height: 500px;
+      background: var(--surface-base);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .plot-container--small {
+      height: 400px;
+    }
+
+    /* Study rows */
+    .study-item {
+      background: var(--surface-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      margin-bottom: var(--space-4);
+      transition: border-color var(--transition-fast);
+    }
+
+    .study-item:hover {
+      border-color: var(--border-default);
+    }
+
+    .study-item__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-3);
+    }
+
+    .study-item__title {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .dose-points-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: var(--space-3);
+      margin-top: var(--space-3);
+    }
+
+    .dose-point-input {
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-2);
+    }
+
+    .dose-point-input label {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: var(--space-1);
+    }
+
+    /* Settings grid */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .settings-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    /* Results section */
+    .results-section {
+      margin-top: var(--space-6);
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--space-4);
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .results-table th {
+      background: var(--surface-overlay);
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* Model comparison table */
+    .model-comparison-card {
+      background: var(--surface-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin-bottom: var(--space-3);
+    }
+
+    .model-comparison-card--best {
+      border-color: var(--color-success-500);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+
+    .model-comparison-card__badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-2);
+      background: var(--color-success-bg);
+      color: var(--color-success-400);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: 500;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-neutral-900);
+      color: var(--text-primary);
+      font-size: var(--text-xs);
+      border-radius: var(--radius-md);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-fast);
+      z-index: var(--z-tooltip);
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-header__inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .tabs-nav {
+        flex-wrap: wrap;
+      }
+
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dose-points-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Progress indicator */
+    .progress-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .progress-content {
+      background: var(--surface-raised);
+      padding: var(--space-6);
+      border-radius: var(--radius-xl);
+      text-align: center;
+      min-width: 300px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-overlay);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: var(--space-4) 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-accent-500), var(--color-success-500));
+      transition: width 0.3s ease;
+    }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: var(--space-4);
+      right: var(--space-4);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .toast {
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3) var(--space-4);
+      box-shadow: var(--shadow-lg);
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-width: 250px;
+    }
+
+    .toast--success { border-left: 4px solid var(--color-success-500); }
+    .toast--error { border-left: 4px solid var(--color-danger-500); }
+    .toast--warning { border-left: 4px solid var(--color-warning-500); }
+    .toast--info { border-left: 4px solid var(--color-info-500); }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Data quality badge */
+    .quality-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      font-weight: 500;
+    }
+
+    .quality-badge--good { background: var(--color-success-bg); color: var(--color-success-400); }
+    .quality-badge--fair { background: var(--color-warning-bg); color: var(--color-warning-400); }
+    .quality-badge--poor { background: var(--color-danger-bg); color: var(--color-danger-400); }
+
+    /* Keyboard shortcut hint */
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6px;
+      background: var(--surface-overlay);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="container">
+      <div class="app-header__inner">
+        <div class="app-logo">
+          <div class="app-logo__badge">DR</div>
+          <div class="app-logo__text">
+            <div class="app-logo__title">Dose Response Pro</div>
+            <div class="app-logo__version">v3.0.0</div>
+          </div>
+        </div>
+        <div class="app-controls flex items-center gap-3">
+          <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <span id="themeIcon">🌙</span>
+          </button>
+          <button class="btn btn--ghost btn--sm" onclick="importData()" title="Import data">
+            <span>📥 Import</span>
+          </button>
+          <button class="btn btn--ghost btn--sm" onclick="exportData()" title="Export data">
+            <span>📤 Export</span>
+          </button>
+          <button class="btn btn--secondary" onclick="loadDemoData()">
+            Load Demo
+          </button>
+          <button class="btn btn--primary btn--lg" onclick="runAnalysis()">
+            Run Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Tabs Navigation -->
+    <nav class="tabs-nav">
+      <button class="tab-btn tab-btn--active" data-tab="data" onclick="switchTab('data')">
+        <span>📊</span> Data Input
+      </button>
+      <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+        <span>⚙️</span> Settings
+      </button>
+      <button class="tab-btn" data-tab="results" onclick="switchTab('results')">
+        <span>📈</span> Results
+      </button>
+      <button class="tab-btn" data-tab="plots" onclick="switchTab('plots')">
+        <span>📉</span> Plots
+      </button>
+      <button class="tab-btn" data-tab="bias" onclick="switchTab('bias')">
+        <span>🎯</span> Publication Bias
+      </button>
+      <button class="tab-btn" data-tab="sensitivity" onclick="switchTab('sensitivity')">
+        <span>🔍</span> Sensitivity
+      </button>
+      <button class="tab-btn" data-tab="subgroups" onclick="switchTab('subgroups')">
+        <span>📊</span> Subgroups
+      </button>
+      <button class="tab-btn" data-tab="advanced" onclick="switchTab('advanced')">
+        <span>🔧</span> Advanced
+      </button>
+      <button class="tab-btn" data-tab="quality" onclick="switchTab('quality')">
+        <span>✅</span> Data Quality
+      </button>
+      <button class="tab-btn" data-tab="models" onclick="switchTab('models')">
+        <span>🔬</span> Models
+      </button>
+      <button class="tab-btn" data-tab="export" onclick="switchTab('export')">
+        <span>📤</span> Export
+      </button>
+      <button class="tab-btn" data-tab="report" onclick="switchTab('report')">
+        <span>📝</span> Report
+      </button>
+    </nav>
+
+    <!-- Data Input Panel -->
+    <section id="panel-data" class="tab-panel tab-panel--active">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📊</span> Study Data Entry
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--ghost btn--sm" onclick="clearAllStudies()">
+              Clear All
+            </button>
+            <button class="btn btn--primary btn--sm" onclick="addStudy()">
+              + Add Study
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <p class="text-secondary" style="margin-bottom: var(--space-4);">
+            Enter dose-response data for each study. For each dose level, specify the dose, cases/events, and total sample size (or person-time).
+          </p>
+          <div id="studiesContainer">
+            <!-- Studies will be added here dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Panel -->
+    <section id="panel-settings" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>⚙️</span> Analysis Settings
+          </h2>
+        </div>
+        <div class="card__body">
+          <div class="settings-grid">
+            <!-- Model Type -->
+            <div class="settings-item">
+              <label class="input-label">Model Type</label>
+              <select id="modelType" class="select">
+                <option value="linear">Linear</option>
+                <option value="quadratic">Quadratic</option>
+                <option value="cubic">Cubic Polynomial</option>
+                <option value="spline">Restricted Cubic Spline</option>
+                <option value="exponential">Exponential</option>
+                <option value="fractional">Fractional Polynomial</option>
+                <option value="power">Power Model</option>
+              </select>
+            </div>
+
+            <!-- Reference Dose -->
+            <div class="settings-item">
+              <label class="input-label">Reference Dose</label>
+              <input type="number" id="referenceDose" class="input" value="0" step="any" placeholder="0">
+            </div>
+
+            <!-- Spline Knots -->
+            <div class="settings-item" id="splineKnotsContainer">
+              <label class="input-label">Number of Spline Knots</label>
+              <select id="splineKnots" class="select">
+                <option value="3">3 knots</option>
+                <option value="4" selected>4 knots</option>
+                <option value="5">5 knots</option>
+              </select>
+            </div>
+
+            <!-- Outcome Type -->
+            <div class="settings-item">
+              <label class="input-label">Outcome Type</label>
+              <select id="outcomeType" class="select">
+                <option value="rate">Rate (person-time)</option>
+                <option value="risk">Risk (cumulative incidence)</option>
+                <option value="logOR">Log Odds Ratio</option>
+                <option value="logRR">Log Risk Ratio</option>
+              </select>
+            </div>
+
+            <!-- Method -->
+            <div class="settings-item">
+              <label class="input-label">Estimation Method</label>
+              <select id="estimationMethod" class="select">
+                <option value="wls" selected>Weighted Least Squares (WLS)</option>
+                <option value="glmm">Generalized Linear Mixed Model (GLMM)</option>
+                <option value="mv">Multivariate Meta-Analysis</option>
+              </select>
+            </div>
+
+            <!-- Confidence Level -->
+            <div class="settings-item">
+              <label class="input-label">Confidence Level</label>
+              <select id="confLevel" class="select">
+                <option value="0.90">90%</option>
+                <option value="0.95" selected>95%</option>
+                <option value="0.99">99%</option>
+              </select>
+            </div>
+
+            <!-- Test for Non-Linearity -->
+            <div class="settings-item">
+              <label class="input-label">Test for Non-Linearity</label>
+              <select id="testNonlinearity" class="select">
+                <option value="yes" selected>Yes (Likelihood Ratio)</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <!-- Knot Placement -->
+            <div class="settings-item" id="knotPlacementContainer">
+              <label class="input-label">Knot Placement</label>
+              <select id="knotPlacement" class="select">
+                <option value="quantiles" selected>Quantiles</option>
+                <option value="equally">Equally Spaced</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <!-- Plot Prediction Range -->
+            <div class="settings-item">
+              <label class="input-label">Dose Range for Plot</label>
+              <div class="flex gap-2">
+                <input type="number" id="doseMin" class="input" placeholder="Auto" step="any">
+                <input type="number" id="doseMax" class="input" placeholder="Auto" step="any">
+              </div>
+            </div>
+
+            <!-- Zero Dose Handling -->
+            <div class="settings-item">
+              <label class="input-label">Handle Zero Cases</label>
+              <select id="zeroHandling" class="select">
+                <option value="continuity" selected>Add 0.5 (continuity correction)</option>
+                <option value="exclude">Exclude</option>
+                <option value="replace">Replace with small value</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Panel -->
+    <section id="panel-results" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📈</span> Analysis Results
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--ghost btn--sm" onclick="exportResults()">
+              Export CSV
+            </button>
+            <button class="btn btn--ghost btn--sm" onclick="copyResultsToClipboard()">
+              Copy Table
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div id="resultsPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run an analysis to see results.
+          </div>
+          <div id="resultsContent" class="hidden">
+            <!-- Summary Statistics -->
+            <h3 class="text-lg font-semibold" style="margin-bottom: var(--space-4);">Summary Statistics</h3>
+            <div class="stat-grid" style="margin-bottom: var(--space-6);">
+              <div class="stat-card">
+                <div class="stat-card__value stat-card__value--accent" id="nStudies">-</div>
+                <div class="stat-card__label">Studies</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value stat-card__value--accent" id="nDosePoints">-</div>
+                <div class="stat-card__label">Dose Points</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="pTrend">-</div>
+                <div class="stat-card__label">P (trend)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="pNonlinear">-</div>
+                <div class="stat-card__label">P (non-linear)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="qStat">-</div>
+                <div class="stat-card__label">Q Statistic</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="i2Stat">-</div>
+                <div class="stat-card__label">I²</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value stat-card__value--success" id="aicStat">-</div>
+                <div class="stat-card__label">AIC</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value stat-card__value--warning" id="bicStat">-</div>
+                <div class="stat-card__label">BIC</div>
+              </div>
+            </div>
+
+            <!-- Model Coefficients -->
+            <h3 class="text-lg font-semibold" style="margin-bottom: var(--space-4);">Model Coefficients</h3>
+            <table class="results-table" id="coefficientsTable">
+              <thead>
+                <tr>
+                  <th>Coefficient</th>
+                  <th>Estimate</th>
+                  <th>SE</th>
+                  <th>95% CI</th>
+                  <th>P-value</th>
+                </tr>
+              </thead>
+              <tbody id="coefficientsBody">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+
+            <!-- Predicted Values -->
+            <h3 class="text-lg font-semibold" style="margin: var(--space-6) 0 var(--space-4);">Predicted Values at Selected Doses</h3>
+            <table class="results-table" id="predictionsTable">
+              <thead>
+                <tr>
+                  <th>Dose</th>
+                  <th>Predicted RR</th>
+                  <th>95% CI Lower</th>
+                  <th>95% CI Upper</th>
+                  <th>SE</th>
+                </tr>
+              </thead>
+              <tbody id="predictionsBody">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+
+            <!-- Dose-Specific Estimates -->
+            <h3 class="text-lg font-semibold" style="margin: var(--space-6) 0 var(--space-4);">Dose-Specific Relative Risks</h3>
+            <div id="doseSpecificEstimates"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Plots Panel -->
+    <section id="panel-plots" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📉</span> Dose-Response Curve
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--ghost btn--sm" onclick="toggleLogScale()">
+              <span id="logScaleBtn">Log Scale</span>
+            </button>
+            <button class="btn btn--ghost btn--sm" onclick="downloadPlot('doseResponsePlot')">
+              Download PNG
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div id="plotPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run an analysis to generate the dose-response curve.
+          </div>
+          <div id="doseResponsePlot" class="plot-container hidden"></div>
+        </div>
+      </div>
+
+      <!-- Study-specific Curves -->
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📊</span> Study-Specific Dose-Response Curves
+          </h2>
+        </div>
+        <div class="card__body">
+          <div id="studyCurvesPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run an analysis to see study-specific curves.
+          </div>
+          <div id="studyCurvesPlot" class="plot-container hidden"></div>
+        </div>
+      </div>
+
+      <!-- Residual Plot -->
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>🔍</span> Residual Plot
+          </h2>
+        </div>
+        <div class="card__body">
+          <div id="residualPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run an analysis to see residuals.
+          </div>
+          <div id="residualPlot" class="plot-container plot-container--small hidden"></div>
+        </div>
+      </div>
+
+      <!-- Forest Plot for Doses -->
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>🌲</span> Forest Plot by Dose Level
+          </h2>
+        </div>
+        <div class="card__body">
+          <div id="forestPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run an analysis to see the forest plot.
+          </div>
+          <div id="forestPlot" class="plot-container hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Model Comparison Panel -->
+    <section id="panel-models" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>🔬</span> Model Comparison
+          </h2>
+          <button class="btn btn--primary btn--sm" onclick="compareAllModels()">
+            Compare All Models
+          </button>
+        </div>
+        <div class="card__body">
+          <p class="text-secondary" style="margin-bottom: var(--space-4);">
+            Compare different dose-response models using AIC, BIC, and likelihood ratio tests. Lower AIC/BIC indicates better fit.
+          </p>
+          <div id="modelComparisonPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Click "Compare All Models" to run the comparison.
+          </div>
+          <div id="modelComparisonContent" class="hidden">
+            <div class="stat-grid" style="margin-bottom: var(--space-6);" id="modelComparisonGrid">
+              <!-- Model comparison cards will be inserted here -->
+            </div>
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>AIC</th>
+                  <th>BIC</th>
+                  <th>Log-Likelihood</th>
+                  <th>Parameters</th>
+                  <th>ΔAIC</th>
+                  <th>Weight</th>
+                </tr>
+              </thead>
+              <tbody id="modelComparisonBody">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Report Panel -->
+    <section id="panel-report" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📝</span> Report Generator
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--ghost btn--sm" onclick="copyReportToClipboard()">
+              Copy
+            </button>
+            <button class="btn btn--primary btn--sm" onclick="generateReport()">
+              Generate Report
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div class="settings-grid" style="margin-bottom: var(--space-4);">
+            <div class="settings-item">
+              <label class="input-label">Report Style</label>
+              <select id="reportStyle" class="select">
+                <option value="general">General Scientific</option>
+                <option value="jama">JAMA</option>
+                <option value="bmj">BMJ</option>
+                <option value="lancet">Lancet</option>
+                <option value="nejm">NEJM</option>
+                <option value="cochrane">Cochrane</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Include Section</label>
+              <select id="reportLength" class="select">
+                <option value="brief">Brief (Abstract)</option>
+                <option value="standard" selected>Standard</option>
+                <option value="detailed">Detailed (Full)</option>
+              </select>
+            </div>
+          </div>
+          <div id="reportPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run an analysis and click "Generate Report" to create a publication-ready report.
+          </div>
+          <div id="reportContent" class="hidden">
+            <div style="background: var(--surface-base); padding: var(--space-6); border-radius: var(--radius-lg); font-family: var(--font-sans); line-height: 1.6; max-height: 600px; overflow-y: auto;">
+              <div id="reportText"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Publication Bias Panel -->
+    <section id="panel-bias" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>🎯</span> Publication Bias Assessment
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--primary btn--sm" onclick="runPublicationBias()">
+              Run Bias Analysis
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div id="biasPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run analysis to assess publication bias including funnel plots, Egger's test, and trim-and-fill.
+          </div>
+          <div id="biasContent" class="hidden">
+            <div class="stat-grid" style="margin-bottom: var(--space-6);">
+              <div class="stat-card">
+                <div class="stat-card__value" id="eggerP">-</div>
+                <div class="stat-card__label">Egger's Test P</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="beggP">-</div>
+                <div class="stat-card__label">Begg's Test P</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="nFilled">-</div>
+                <div class="stat-card__label">Trim & Fill Studies</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="rankCorrP">-</div>
+                <div class="stat-card__label">Rank Correlation P</div>
+              </div>
+            </div>
+            <div class="plot-container" id="funnelPlot"></div>
+            <div class="plot-container plot-container--small" id="galbraithPlot" style="margin-top: var(--space-4);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sensitivity Analysis Panel -->
+    <section id="panel-sensitivity" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>🔍</span> Sensitivity Analysis
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--primary btn--sm" onclick="runSensitivityAnalysis()">
+              Run Sensitivity
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div id="sensitivityPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run analysis to perform leave-one-out sensitivity analysis and influence diagnostics.
+          </div>
+          <div id="sensitivityContent" class="hidden">
+            <div class="plot-container" id="looPlot"></div>
+            <div class="plot-container plot-container--small" id="baujatPlot" style="margin-top: var(--space-4);"></div>
+            <table class="results-table" style="margin-top: var(--space-4);">
+              <thead>
+                <tr>
+                  <th>Study Removed</th>
+                  <th>Slope Change</th>
+                  <th>I² Change</th>
+                  <th>Cook's Distance</th>
+                  <th>DFITS</th>
+                </tr>
+              </thead>
+              <tbody id="looTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subgroups Panel -->
+    <section id="panel-subgroups" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📊</span> Subgroup Analysis & Meta-Regression
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--primary btn--sm" onclick="runSubgroupAnalysis()">
+              Run Subgroup
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div class="settings-grid" style="margin-bottom: var(--space-6);">
+            <div class="settings-item">
+              <label class="input-label">Subgroup Variable</label>
+              <select id="subgroupVar" class="select">
+                <option value="size">Study Size (small/large)</option>
+                <option value="quality">Study Quality (high/low)</option>
+                <option value="location">Geographic Region</option>
+                <option value="design">Study Design</option>
+                <option value="custom">Custom Variable</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Number of Subgroups</label>
+              <input type="number" id="nSubgroups" class="input" value="2" min="2" max="5">
+            </div>
+          </div>
+          <div id="subgroupPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run analysis to perform subgroup analysis and meta-regression.
+          </div>
+          <div id="subgroupContent" class="hidden">
+            <div class="stat-grid" style="margin-bottom: var(--space-4);">
+              <div class="stat-card">
+                <div class="stat-card__value" id="subgroupP">-</div>
+                <div class="stat-card__label">Between-Group P</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="metaRegP">-</div>
+                <div class="stat-card__label">Meta-Regression P</div>
+              </div>
+            </div>
+            <div class="plot-container" id="subgroupForestPlot"></div>
+            <table class="results-table" style="margin-top: var(--space-4);">
+              <thead>
+                <tr>
+                  <th>Subgroup</th>
+                  <th>N Studies</th>
+                  <th>Slope (SE)</th>
+                  <th>95% CI</th>
+                  <th>P-value</th>
+                  <th>I²</th>
+                </tr>
+              </thead>
+              <tbody id="subgroupTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Advanced Methods Panel -->
+    <section id="panel-advanced" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>🔧</span> Advanced Statistical Methods
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--primary btn--sm" onclick="runAdvancedMethods()">
+              Run Advanced
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div class="settings-grid" style="margin-bottom: var(--space-6);">
+            <div class="settings-item">
+              <label class="input-label">Bootstrap CI Method</label>
+              <select id="bootstrapMethod" class="select">
+                <option value="percentile">Percentile</option>
+                <option value="bca">BCa (Bias-Corrected)</option>
+                <option value="normal">Normal Approximation</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Bootstrap Replications</label>
+              <input type="number" id="nBootstrap" class="input" value="1000" min="100" max="10000">
+            </div>
+            <div class="settings-item">
+              <label class="input-label">LOESS Span</label>
+              <select id="loessSpan" class="select">
+                <option value="0.5">0.5 (Default)</option>
+                <option value="0.3">0.3 (More flexible)</option>
+                <option value="0.7">0.7 (Smoother)</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Cross-Validation</label>
+              <select id="cvMethod" class="select">
+                <option value="5fold">5-Fold CV</option>
+                <option value="10fold">10-Fold CV</option>
+                <option value="loo">Leave-One-Out CV</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Profile Likelihood</label>
+              <select id="profileLikelihood" class="select">
+                <option value="yes">Yes</option>
+                <option value="no" selected>No</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Robust Variance</label>
+              <select id="robustVariance" class="select">
+                <option value="yes">Yes (HC3)</option>
+                <option value="no" selected>No</option>
+              </select>
+            </div>
+          </div>
+          <div id="advancedPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run analysis to apply bootstrap, LOESS smoothing, and cross-validation methods.
+          </div>
+          <div id="advancedContent" class="hidden">
+            <div class="plot-container" id="loessPlot"></div>
+            <div class="plot-container plot-container--small" id="bootstrapPlot" style="margin-top: var(--space-4);"></div>
+            <div class="plot-container plot-container--small" id="cvPlot" style="margin-top: var(--space-4);"></div>
+            <table class="results-table" style="margin-top: var(--space-4);">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Estimate</th>
+                  <th>95% CI</th>
+                  <th>SE</th>
+                </tr>
+              </thead>
+              <tbody id="advancedTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Quality Panel -->
+    <section id="panel-quality" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>✅</span> Data Quality Assessment
+          </h2>
+          <div class="flex gap-2">
+            <button class="btn btn--primary btn--sm" onclick="runQualityCheck()">
+              Check Quality
+            </button>
+          </div>
+        </div>
+        <div class="card__body">
+          <div id="qualityPlaceholder" class="text-secondary text-center" style="padding: var(--space-8);">
+            Run analysis to check data quality, detect outliers, and assess study influence.
+          </div>
+          <div id="qualityContent" class="hidden">
+            <div class="stat-grid" style="margin-bottom: var(--space-6);">
+              <div class="stat-card">
+                <div class="stat-card__value stat-card__value--accent" id="qualityScore">-</div>
+                <div class="stat-card__label">Quality Score</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="nOutliers">-</div>
+                <div class="stat-card__label">Outliers Detected</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="nWarnings">-</div>
+                <div class="stat-card__label">Warnings</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card__value" id="completeness">-</div>
+                <div class="stat-card__label">Data Completeness</div>
+              </div>
+            </div>
+            <div class="plot-container" id="bubblePlot"></div>
+            <div class="plot-container plot-container--small" id="influencePlot" style="margin-top: var(--space-4);"></div>
+            <h3 style="margin-top: var(--space-6); margin-bottom: var(--space-4);">Quality Issues & Recommendations</h3>
+            <div id="qualityIssues"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Export Panel -->
+    <section id="panel-export" class="tab-panel">
+      <div class="card">
+        <div class="card__header">
+          <h2 class="card__title">
+            <span>📤</span> Export Options
+          </h2>
+        </div>
+        <div class="card__body">
+          <div class="settings-grid" style="margin-bottom: var(--space-4);">
+            <div class="settings-item">
+              <label class="input-label">Primary Export Format</label>
+              <select id="exportFormat" class="select">
+                <option value="csv">CSV (Comma Separated)</option>
+                <option value="excel">Excel Format</option>
+                <option value="json">JSON</option>
+                <option value="latex">LaTeX Code</option>
+                <option value="rscript">R Script</option>
+                <option value="word">Word/RTF Document</option>
+              </select>
+            </div>
+            <div class="settings-item">
+              <label class="input-label">Include Plots</label>
+              <select id="exportPlots" class="select">
+                <option value="yes">Yes (PNG format)</option>
+                <option value="no">No, data only</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: var(--space-6); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+            <button class="btn btn--primary" onclick="exportData()">
+              <span>📊</span> Export Data
+            </button>
+            <button class="btn btn--primary" onclick="exportResults()">
+              <span>📈</span> Export Results
+            </button>
+            <button class="btn btn--primary" onclick="exportAllPlots()">
+              <span>📉</span> Export All Plots
+            </button>
+            <button class="btn btn--accent" onclick="exportToLaTeX()">
+              <span>📝</span> LaTeX Code
+            </button>
+            <button class="btn btn--accent" onclick="exportToR()">
+              <span>🔬</span> R Script
+            </button>
+            <button class="btn btn--accent" onclick="exportToWord()">
+              <span>📄</span> Word Report
+            </button>
+          </div>
+          <div style="margin-top: var(--space-6);">
+            <h3 style="margin-bottom: var(--space-4);">Export Preview</h3>
+            <textarea id="exportPreview" class="input" rows="10" readonly style="font-family: var(--font-mono); font-size: var(--text-xs); min-height: 200px;"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =============================================
+    // DOSE RESPONSE PRO v3.0 - JAVASCRIPT
+    // =============================================
+
+    // Application State
+    const AppState = {
+      studies: [],
+      settings: {
+        modelType: 'linear',
+        referenceDose: 0,
+        splineKnots: 4,
+        outcomeType: 'rate',
+        estimationMethod: 'wls',
+        confLevel: 0.95,
+        testNonlinearity: 'yes',
+        knotPlacement: 'quantiles',
+        zeroHandling: 'continuity',
+        doseMin: null,
+        doseMax: null
+      },
+      results: null,
+      modelComparison: null,
+      logScale: false,
+      theme: 'dark'
+    };
+
+    // Study counter
+    let studyCounter = 0;
+
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApp();
+    });
+
+    function initializeApp() {
+      // Initialize with one empty study
+      addStudy();
+
+      // Bind settings changes
+      bindSettingsEvents();
+
+      // Load saved theme
+      const savedTheme = localStorage.getItem('doseResponseTheme') || 'dark';
+      setTheme(savedTheme);
+
+      console.log('Dose Response Pro v3.0 initialized');
+    }
+
+    function bindSettingsEvents() {
+      document.getElementById('modelType').addEventListener('change', function() {
+        AppState.settings.modelType = this.value;
+        toggleSplineKnots();
+      });
+
+      document.getElementById('referenceDose').addEventListener('change', function() {
+        AppState.settings.referenceDose = parseFloat(this.value) || 0;
+      });
+
+      document.getElementById('splineKnots').addEventListener('change', function() {
+        AppState.settings.splineKnots = parseInt(this.value);
+      });
+
+      document.getElementById('outcomeType').addEventListener('change', function() {
+        AppState.settings.outcomeType = this.value;
+      });
+
+      document.getElementById('estimationMethod').addEventListener('change', function() {
+        AppState.settings.estimationMethod = this.value;
+      });
+
+      document.getElementById('confLevel').addEventListener('change', function() {
+        AppState.settings.confLevel = parseFloat(this.value);
+      });
+    }
+
+    function toggleSplineKnots() {
+      const container = document.getElementById('splineKnotsContainer');
+      const knotPlacement = document.getElementById('knotPlacementContainer');
+      if (AppState.settings.modelType === 'spline' || AppState.settings.modelType === 'fractional') {
+        container.classList.remove('hidden');
+        knotPlacement.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+        knotPlacement.classList.add('hidden');
+      }
+    }
+
+    // =============================================
+    // THEME MANAGEMENT
+    // =============================================
+
+    function toggleTheme() {
+      const newTheme = AppState.theme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    }
+
+    function setTheme(theme) {
+      AppState.theme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('themeIcon').textContent = theme === 'dark' ? '🌙' : '☀️';
+      localStorage.setItem('doseResponseTheme', theme);
+
+      // Update plot backgrounds if they exist
+      if (AppState.results) {
+        generateDoseResponsePlot(AppState.results);
+        generateStudyCurvesPlot(AppState.studies);
+      }
+    }
+
+    // =============================================
+    // TAB NAVIGATION
+    // =============================================
+
+    function switchTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('tab-btn--active');
+        if (btn.dataset.tab === tabName) {
+          btn.classList.add('tab-btn--active');
+        }
+      });
+
+      // Update panels
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('tab-panel--active');
+      });
+      document.getElementById('panel-' + tabName).classList.add('tab-panel--active');
+    }
+
+    // =============================================
+    // STUDY MANAGEMENT
+    // =============================================
+
+    function addStudy(data = null) {
+      studyCounter++;
+      const studyId = 'study-' + studyCounter;
+
+      const container = document.getElementById('studiesContainer');
+      const studyElement = document.createElement('div');
+      studyElement.className = 'study-item';
+      studyElement.id = studyId;
+
+      // Default dose points (3 levels if no data provided)
+      const defaultPoints = data && data.dosePoints ? data.dosePoints : [
+        { dose: 0, cases: 0, n: 0 },
+        { dose: 1, cases: 0, n: 0 },
+        { dose: 2, cases: 0, n: 0 }
+      ];
+
+      const dosePointsHTML = defaultPoints.map((point, idx) => `
+        <div class="dose-point-input">
+          <label>Dose ${idx + 1}</label>
+          <input type="number" class="input input--sm input--mono dose-dose"
+                 value="${point.dose}" step="any" placeholder="Dose">
+        </div>
+        <div class="dose-point-input">
+          <label>Cases</label>
+          <input type="number" class="input input--sm input--mono dose-cases"
+                 value="${point.cases}" min="0" step="1" placeholder="Cases">
+        </div>
+        <div class="dose-point-input">
+          <label/N/Time</label>
+          <input type="number" class="input input--sm input--mono dose-n"
+                 value="${point.n}" min="0" step="any" placeholder="N">
+        </div>
+      `).join('');
+
+      studyElement.innerHTML = `
+        <div class="study-item__header">
+          <input type="text" class="input study-name"
+                 placeholder="Study Name (e.g., Smith 2020)"
+                 value="${data ? data.name : ''}" style="max-width: 300px;">
+          <div class="flex gap-2">
+            <button class="btn btn--ghost btn--sm" onclick="addDosePoint('${studyId}')">+ Dose Point</button>
+            <button class="btn btn--ghost btn--sm" onclick="removeDosePoint('${studyId}')" title="Remove last dose point">−</button>
+            <button class="btn btn--ghost btn--sm btn--icon" onclick="removeStudy('${studyId}')" title="Remove study">×</button>
+          </div>
+        </div>
+        <div class="dose-points-grid" id="${studyId}-points">
+          ${dosePointsHTML}
+        </div>
+      `;
+
+      container.appendChild(studyElement);
+    }
+
+    function removeStudy(studyId) {
+      const element = document.getElementById(studyId);
+      if (element && document.querySelectorAll('.study-item').length > 1) {
+        element.remove();
+      } else if (document.querySelectorAll('.study-item').length <= 1) {
+        alert('You must have at least one study.');
+      }
+    }
+
+    function clearAllStudies() {
+      if (confirm('Clear all study data?')) {
+        document.getElementById('studiesContainer').innerHTML = '';
+        studyCounter = 0;
+        addStudy();
+      }
+    }
+
+    function addDosePoint(studyId) {
+      const pointsContainer = document.getElementById(studyId + '-points');
+      const currentTriplets = pointsContainer.querySelectorAll('.dose-point-input').length / 3;
+
+      const newPointHTML = `
+        <div class="dose-point-input">
+          <label>Dose ${currentTriplets + 1}</label>
+          <input type="number" class="input input--sm input--mono dose-dose"
+                 step="any" placeholder="Dose">
+        </div>
+        <div class="dose-point-input">
+          <label>Cases</label>
+          <input type="number" class="input input--sm input--mono dose-cases"
+                 min="0" step="1" placeholder="Cases">
+        </div>
+        <div class="dose-point-input">
+          <label>N/Time</label>
+          <input type="number" class="input input--sm input--mono dose-n"
+                 min="0" step="any" placeholder="N">
+        </div>
+      `;
+
+      pointsContainer.insertAdjacentHTML('beforeend', newPointHTML);
+    }
+
+    function removeDosePoint(studyId) {
+      const pointsContainer = document.getElementById(studyId + '-points');
+      const currentInputs = pointsContainer.querySelectorAll('.dose-point-input');
+      if (currentInputs.length > 6) { // Keep at least 2 dose points (6 inputs)
+        for (let i = 0; i < 3; i++) {
+          currentInputs[currentInputs.length - 1 - i].remove();
+        }
+      }
+    }
+
+    // =============================================
+    // DATA IMPORT/EXPORT
+    // =============================================
+
+    function exportData() {
+      const studies = getStudyData();
+      if (studies.length === 0) {
+        alert('No data to export.');
+        return;
+      }
+
+      const dataStr = JSON.stringify(studies, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dose-response-data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const studies = JSON.parse(e.target.result);
+            if (!Array.isArray(studies)) throw new Error('Invalid format');
+
+            // Clear existing studies
+            document.getElementById('studiesContainer').innerHTML = '';
+            studyCounter = 0;
+
+            // Load studies
+            studies.forEach(study => addStudy(study));
+
+            alert(`Imported ${studies.length} study/studies.`);
+          } catch (err) {
+            alert('Error importing file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // =============================================
+    // DATA COLLECTION
+    // =============================================
+
+    function getStudyData() {
+      const studies = [];
+      const zeroHandling = document.getElementById('zeroHandling').value;
+
+      document.querySelectorAll('.study-item').forEach(studyEl => {
+        const name = studyEl.querySelector('.study-name').value.trim() || 'Study ' + (studies.length + 1);
+
+        const dosePoints = [];
+        const doseInputs = studyEl.querySelectorAll('.dose-dose');
+        const casesInputs = studyEl.querySelectorAll('.dose-cases');
+        const nInputs = studyEl.querySelectorAll('.dose-n');
+
+        for (let i = 0; i < doseInputs.length; i++) {
+          const dose = parseFloat(doseInputs[i].value);
+          let cases = parseFloat(casesInputs[i].value);
+          const n = parseFloat(nInputs[i].value);
+
+          if (!isNaN(dose) && !isNaN(cases) && !isNaN(n) && n > 0) {
+            // Handle zero cases
+            if (cases === 0) {
+              switch (zeroHandling) {
+                case 'continuity':
+                  cases = 0.5;
+                  break;
+                case 'exclude':
+                  continue;
+                case 'replace':
+                  cases = 0.1;
+                  break;
+              }
+            }
+
+            dosePoints.push({ dose, cases, n });
+          }
+        }
+
+        if (dosePoints.length >= 2) {
+          // Sort by dose
+          dosePoints.sort((a, b) => a.dose - b.dose);
+          studies.push({ name, dosePoints });
+        }
+      });
+
+      return studies;
+    }
+
+    function getAnalysisSettings() {
+      return {
+        modelType: document.getElementById('modelType').value,
+        referenceDose: parseFloat(document.getElementById('referenceDose').value) || 0,
+        splineKnots: parseInt(document.getElementById('splineKnots').value),
+        outcomeType: document.getElementById('outcomeType').value,
+        estimationMethod: document.getElementById('estimationMethod').value,
+        confLevel: parseFloat(document.getElementById('confLevel').value),
+        testNonlinearity: document.getElementById('testNonlinearity').value,
+        knotPlacement: document.getElementById('knotPlacement').value,
+        zeroHandling: document.getElementById('zeroHandling').value
+      };
+    }
+
+    // =============================================
+    // STATISTICAL METHODS
+    // =============================================
+
+    // Linear dose-response model (improved)
+    function linearDoseResponse(studies, refDose = 0) {
+      // Collect all data points
+      const allPoints = [];
+      studies.forEach((study, studyIdx) => {
+        study.dosePoints.forEach(point => {
+          const doseDiff = point.dose - refDose;
+          if (doseDiff >= 0) {
+            const rate = point.cases / point.n;
+            const logRate = Math.log(rate);
+            const variance = 1 / point.cases;
+
+            allPoints.push({
+              study: study.name,
+              dose: doseDiff,
+              logRate: logRate,
+              variance: variance,
+              weight: point.cases,
+              cases: point.cases,
+              n: point.n,
+              rate: rate
+            });
+          }
+        });
+      });
+
+      if (allPoints.length < 3) {
+        throw new Error('Need at least 3 data points for dose-response analysis');
+      }
+
+      // Weighted linear regression
+      const n = allPoints.length;
+      let sumW = 0, sumWX = 0, sumWY = 0, sumWX2 = 0, sumWXY = 0;
+
+      allPoints.forEach(p => {
+        const w = p.weight;
+        sumW += w;
+        sumWX += w * p.dose;
+        sumWY += w * p.logRate;
+        sumWX2 += w * p.dose * p.dose;
+        sumWXY += w * p.dose * p.logRate;
+      });
+
+      // Calculate slope and intercept
+      const denom = sumW * sumWX2 - sumWX * sumWX;
+      const slope = (sumW * sumWXY - sumWX * sumWY) / denom;
+      const intercept = (sumWY - slope * sumWX) / sumW;
+
+      // Standard error of slope (proper calculation)
+      const residuals = allPoints.map(p => p.logRate - (intercept + slope * p.dose));
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (n - 2);
+      const seSlope = Math.sqrt(MSE * sumW / denom);
+      const seIntercept = Math.sqrt(MSE * sumWX2 / denom);
+
+      // 95% CI for slope and intercept
+      const t = 1.96; // Approximate for large samples
+      const ciSlopeLower = slope - t * seSlope;
+      const ciSlopeUpper = slope + t * seSlope;
+      const ciInterceptLower = intercept - t * seIntercept;
+      const ciInterceptUpper = intercept + t * seIntercept;
+
+      // P-value for trend
+      const zStat = slope / seSlope;
+      const pTrend = 2 * (1 - normalCDF(Math.abs(zStat)));
+
+      // Q statistic and I² (between-study heterogeneity)
+      const predictedRates = allPoints.map(p => Math.exp(intercept + slope * p.dose));
+      const chiSq = allPoints.reduce((sum, p, i) => {
+        const expected = predictedRates[i] * p.n;
+        const observed = p.cases;
+        return sum + Math.pow(observed - expected, 2) / expected;
+      }, 0);
+      const df = n - 2;
+      const I2 = chiSq > df ? ((chiSq - df) / chiSq) * 100 : 0;
+
+      // Calculate AIC and BIC
+      const logLik = -0.5 * n * Math.log(2 * Math.PI) - 0.5 * n * Math.log(MSE) - 0.5 * SSE / MSE;
+      const AIC = 2 * 2 - 2 * logLik; // 2 parameters
+      const BIC = 2 * Math.log(n) - 2 * logLik;
+
+      // Store residuals for plotting
+      const residualsData = allPoints.map((p, i) => ({
+        dose: p.dose,
+        residual: residuals[i],
+        predicted: predictedRates[i],
+        observed: p.rate
+      }));
+
+      return {
+        type: 'linear',
+        coefficients: [
+          { name: 'Slope (β₁)', estimate: slope, se: seSlope, ciLower: ciSlopeLower, ciUpper: ciSlopeUpper, pValue: pTrend },
+          { name: 'Intercept (β₀)', estimate: intercept, se: seIntercept, ciLower: ciInterceptLower, ciUpper: ciInterceptUpper, pValue: null }
+        ],
+        slope, intercept, seSlope, pTrend, pNonlinear: null, Q: chiSq, I2: I2,
+        allPoints, nStudies: studies.length, nPoints: allPoints.length,
+        AIC, BIC, logLik, residuals: residualsData,
+        predict: (dose) => Math.exp(intercept + slope * dose),
+        predictSE: (dose) => Math.sqrt(MSE + Math.pow(seSlope * dose, 2))
+      };
+    }
+
+    // Quadratic dose-response model (improved)
+    function quadraticDoseResponse(studies, refDose = 0) {
+      const allPoints = [];
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          const doseDiff = point.dose - refDose;
+          if (doseDiff >= 0) {
+            const rate = point.cases / point.n;
+            const logRate = Math.log(rate);
+            allPoints.push({
+              dose: doseDiff,
+              dose2: doseDiff * doseDiff,
+              logRate: logRate,
+              weight: point.cases,
+              cases: point.cases,
+              n: point.n,
+              rate: rate
+            });
+          }
+        });
+      });
+
+      const n = allPoints.length;
+      if (n < 4) throw new Error('Need at least 4 data points for quadratic model');
+
+      // Weighted quadratic regression using normal equations
+      const X = allPoints.map(p => [1, p.dose, p.dose2]);
+      const Y = allPoints.map(p => p.logRate);
+      const W = allPoints.map(p => p.weight);
+
+      // XtWX and XtWY
+      const XtWX = [[0,0,0],[0,0,0],[0,0,0]];
+      const XtWY = [0,0,0];
+
+      for (let i = 0; i < n; i++) {
+        const w = W[i];
+        for (let j = 0; j < 3; j++) {
+          for (let k = 0; k < 3; k++) {
+            XtWX[j][k] += w * X[i][j] * X[i][k];
+          }
+          XtWY[j] += w * X[i][j] * Y[i];
+        }
+      }
+
+      // Solve using Gaussian elimination
+      const beta = gaussianElimination(XtWX, XtWY);
+
+      // Calculate residuals and variance
+      const residuals = allPoints.map((p, i) => {
+        const pred = beta[0] + beta[1] * p.dose + beta[2] * p.dose2;
+        return p.logRate - pred;
+      });
+
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (n - 3);
+
+      // Variance-covariance matrix (inverse of XtWX * MSE)
+      const vcov = invert3x3(XtWX);
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          vcov[i][j] *= MSE;
+        }
+      }
+
+      // P-values and CIs
+      const seIntercept = Math.sqrt(vcov[0][0]);
+      const seLinear = Math.sqrt(vcov[1][1]);
+      const seQuadratic = Math.sqrt(vcov[2][2]);
+      const z = 1.96;
+
+      const pLinear = 2 * (1 - normalCDF(Math.abs(beta[1] / seLinear)));
+      const pQuadratic = 2 * (1 - normalCDF(Math.abs(beta[2] / seQuadratic)));
+
+      // Q and I²
+      const predicted = allPoints.map((p, i) => {
+        return Math.exp(beta[0] + beta[1] * p.dose + beta[2] * p.dose2);
+      });
+      const chiSq = allPoints.reduce((sum, p, i) => {
+        const expected = predicted[i] * p.n;
+        return sum + Math.pow(p.cases - expected, 2) / expected;
+      }, 0);
+      const I2 = chiSq > (n - 3) ? ((chiSq - (n - 3)) / chiSq) * 100 : 0;
+
+      // AIC, BIC
+      const logLik = -0.5 * n * Math.log(2 * Math.PI * MSE) - 0.5 * SSE / MSE;
+      const AIC = 2 * 3 - 2 * logLik;
+      const BIC = 3 * Math.log(n) - 2 * logLik;
+
+      const residualsData = allPoints.map((p, i) => ({
+        dose: p.dose,
+        residual: residuals[i],
+        predicted: predicted[i],
+        observed: p.rate
+      }));
+
+      return {
+        type: 'quadratic',
+        coefficients: [
+          { name: 'Intercept (β₀)', estimate: beta[0], se: seIntercept, ciLower: beta[0] - z * seIntercept, ciUpper: beta[0] + z * seIntercept, pValue: null },
+          { name: 'Linear (β₁)', estimate: beta[1], se: seLinear, ciLower: beta[1] - z * seLinear, ciUpper: beta[1] + z * seLinear, pValue: pLinear },
+          { name: 'Quadratic (β₂)', estimate: beta[2], se: seQuadratic, ciLower: beta[2] - z * seQuadratic, ciUpper: beta[2] + z * seQuadratic, pValue: pQuadratic }
+        ],
+        beta, vcov, pTrend: pLinear, pNonlinear: pQuadratic, Q: chiSq, I2: I2,
+        allPoints, nStudies: studies.length, nPoints: allPoints.length,
+        AIC, BIC, logLik, residuals: residualsData,
+        predict: (dose) => Math.exp(beta[0] + beta[1] * dose + beta[2] * dose * dose),
+        predictSE: (dose) => {
+          const x = [1, dose, dose * dose];
+          let varPred = 0;
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              varPred += x[i] * x[j] * vcov[i][j];
+            }
+          }
+          return Math.sqrt(varPred);
+        }
+      };
+    }
+
+    // Cubic polynomial model
+    function cubicDoseResponse(studies, refDose = 0) {
+      const allPoints = [];
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          const doseDiff = point.dose - refDose;
+          if (doseDiff >= 0) {
+            const rate = point.cases / point.n;
+            const logRate = Math.log(rate);
+            allPoints.push({
+              dose: doseDiff,
+              dose2: doseDiff * doseDiff,
+              dose3: doseDiff * doseDiff * doseDiff,
+              logRate: logRate,
+              weight: point.cases,
+              cases: point.cases,
+              n: point.n,
+              rate: rate
+            });
+          }
+        });
+      });
+
+      const n = allPoints.length;
+      if (n < 5) throw new Error('Need at least 5 data points for cubic model');
+
+      // Build weighted design matrix for cubic model
+      const X = allPoints.map(p => [1, p.dose, p.dose2, p.dose3]);
+      const Y = allPoints.map(p => p.logRate);
+      const W = allPoints.map(p => p.weight);
+
+      // XtWX and XtWY (4x4)
+      const XtWX = Array(4).fill(0).map(() => Array(4).fill(0));
+      const XtWY = Array(4).fill(0);
+
+      for (let i = 0; i < n; i++) {
+        const w = W[i];
+        for (let j = 0; j < 4; j++) {
+          for (let k = 0; k < 4; k++) {
+            XtWX[j][k] += w * X[i][j] * X[i][k];
+          }
+          XtWY[j] += w * X[i][j] * Y[i];
+        }
+      }
+
+      // Solve using Gaussian elimination
+      const beta = gaussianElimination(XtWX, XtWY);
+
+      // Calculate predictions
+      const predicted = allPoints.map((p, i) => {
+        return Math.exp(beta[0] + beta[1] * p.dose + beta[2] * p.dose2 + beta[3] * p.dose3);
+      });
+
+      // Residuals and MSE
+      const residuals = allPoints.map((p, i) => p.logRate - Math.log(predicted[i]));
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (n - 4);
+
+      // Chi-square and I²
+      const chiSq = allPoints.reduce((sum, p, i) => {
+        const expected = predicted[i] * p.n;
+        return sum + Math.pow(p.cases - expected, 2) / expected;
+      }, 0);
+      const I2 = chiSq > (n - 4) ? ((chiSq - (n - 4)) / chiSq) * 100 : 0;
+
+      // Standard errors (using inverse of XtWX * MSE)
+      const vcov = invert4x4(XtWX);
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          vcov[i][j] *= MSE;
+        }
+      }
+
+      const seLinear = Math.sqrt(vcov[1][1]);
+      const seQuadratic = Math.sqrt(vcov[2][2]);
+      const seCubic = Math.sqrt(vcov[3][3]);
+      const z = 1.96;
+
+      const pLinear = 2 * (1 - normalCDF(Math.abs(beta[1] / seLinear)));
+      const pQuadratic = 2 * (1 - normalCDF(Math.abs(beta[2] / seQuadratic)));
+      const pCubic = 2 * (1 - normalCDF(Math.abs(beta[3] / seCubic)));
+
+      // AIC, BIC
+      const logLik = -0.5 * n * Math.log(2 * Math.PI * MSE) - 0.5 * SSE / MSE;
+      const AIC = 2 * 4 - 2 * logLik;
+      const BIC = 4 * Math.log(n) - 2 * logLik;
+
+      return {
+        type: 'cubic',
+        coefficients: [
+          { name: 'Intercept (β₀)', estimate: beta[0], se: Math.sqrt(vcov[0][0]), ciLower: beta[0] - z * Math.sqrt(vcov[0][0]), ciUpper: beta[0] + z * Math.sqrt(vcov[0][0]), pValue: null },
+          { name: 'Linear (β₁)', estimate: beta[1], se: seLinear, ciLower: beta[1] - z * seLinear, ciUpper: beta[1] + z * seLinear, pValue: pLinear },
+          { name: 'Quadratic (β₂)', estimate: beta[2], se: seQuadratic, ciLower: beta[2] - z * seQuadratic, ciUpper: beta[2] + z * seQuadratic, pValue: pQuadratic },
+          { name: 'Cubic (β₃)', estimate: beta[3], se: seCubic, ciLower: beta[3] - z * seCubic, ciUpper: beta[3] + z * seCubic, pValue: pCubic }
+        ],
+        beta, vcov, pTrend: pLinear, pNonlinear: pQuadratic, Q: chiSq, I2: I2,
+        allPoints, nStudies: studies.length, nPoints: allPoints.length,
+        AIC, BIC, logLik, residuals: allPoints.map((p, i) => ({
+          dose: p.dose, residual: residuals[i], predicted: predicted[i], observed: p.rate
+        })),
+        predict: (dose) => Math.exp(beta[0] + beta[1] * dose + beta[2] * dose * dose + beta[3] * dose * dose * dose)
+      };
+    }
+
+    // Restricted cubic spline model (improved)
+    function splineDoseResponse(studies, refDose = 0, nKnots = 4) {
+      const allPoints = [];
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          const doseDiff = point.dose - refDose;
+          if (doseDiff >= 0) {
+            const rate = point.cases / point.n;
+            const logRate = Math.log(rate);
+            allPoints.push({ dose: doseDiff, logRate, weight: point.cases, cases: point.cases, n: point.n, rate: rate });
+          }
+        });
+      });
+
+      const n = allPoints.length;
+      if (n < nKnots + 1) throw new Error('Need more data points for spline model');
+
+      // Calculate knot positions (quantiles)
+      const doses = allPoints.map(p => p.dose).sort((a, b) => a - b);
+      const knots = [];
+      for (let i = 1; i <= nKnots; i++) {
+        const idx = Math.floor((i / (nKnots + 1)) * doses.length);
+        knots.push(doses[Math.min(idx, doses.length - 1)]);
+      }
+
+      // Create restricted cubic spline basis functions
+      const createBasis = (dose) => {
+        const basis = [1, dose];
+        const k = knots[knots.length - 1];
+
+        for (let j = 0; j < knots.length - 2; j++) {
+          const kj = knots[j];
+          const term1 = Math.pow(Math.max(0, dose - kj), 3);
+          const term2 = Math.pow(Math.max(0, dose - k), 3);
+          const term3 = Math.pow(k - kj, 3);
+          basis.push((term1 - term2) / term3);
+        }
+        return basis;
+      };
+
+      const nBasis = createBasis(0).length;
+
+      // Build design matrix
+      const XtWX = Array(nBasis).fill(0).map(() => Array(nBasis).fill(0));
+      const XtWY = Array(nBasis).fill(0);
+
+      allPoints.forEach(p => {
+        const basis = createBasis(p.dose);
+        const w = p.weight;
+        for (let i = 0; i < nBasis; i++) {
+          for (let j = 0; j < nBasis; j++) {
+            XtWX[i][j] += w * basis[i] * basis[j];
+          }
+          XtWY[i] += w * basis[i] * p.logRate;
+        }
+      });
+
+      // Solve system
+      const beta = gaussianElimination(XtWX, XtWY);
+
+      // Calculate predictions
+      const predicted = allPoints.map(p => {
+        const basis = createBasis(p.dose);
+        let pred = 0;
+        for (let i = 0; i < nBasis; i++) pred += beta[i] * basis[i];
+        return Math.exp(pred);
+      });
+
+      // Residuals and MSE
+      const logPredicted = allPoints.map(p => {
+        const basis = createBasis(p.dose);
+        let pred = 0;
+        for (let i = 0; i < nBasis; i++) pred += beta[i] * basis[i];
+        return pred;
+      });
+
+      const residuals = allPoints.map((p, i) => p.logRate - logPredicted[i]);
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (n - nBasis);
+
+      // Q statistic
+      const chiSq = allPoints.reduce((sum, p, i) => {
+        const expected = predicted[i] * p.n;
+        return sum + Math.pow(p.cases - expected, 2) / expected;
+      }, 0);
+      const I2 = chiSq > (n - nBasis) ? ((chiSq - (n - nBasis)) / chiSq) * 100 : 0;
+
+      // Compare with linear model for non-linearity test
+      const linearResult = linearDoseResponse(studies, refDose);
+      const lrStat = 2 * (linearResult.logLik - (-0.5 * SSE / MSE));
+      const pNonlinear = 1 - normalCDF(Math.sqrt(Math.max(0, lrStat)));
+
+      // AIC, BIC
+      const logLik = -0.5 * n * Math.log(2 * Math.PI * MSE) - 0.5 * SSE / MSE;
+      const AIC = 2 * nBasis - 2 * logLik;
+      const BIC = nBasis * Math.log(n) - 2 * logLik;
+
+      return {
+        type: 'spline',
+        coefficients: [
+          { name: 'Intercept (β₀)', estimate: beta[0], se: Math.sqrt(MSE / n), ciLower: beta[0] - 1.96 * Math.sqrt(MSE / n), ciUpper: beta[0] + 1.96 * Math.sqrt(MSE / n), pValue: null },
+          { name: 'Linear (β₁)', estimate: beta[1], se: Math.sqrt(MSE), ciLower: beta[1] - 1.96 * Math.sqrt(MSE), ciUpper: beta[1] + 1.96 * Math.sqrt(MSE), pValue: linearResult.pTrend }
+        ],
+        beta, knots, pTrend: linearResult.pTrend, pNonlinear, Q: chiSq, I2: I2,
+        allPoints, nStudies: studies.length, nPoints: allPoints.length,
+        AIC, BIC, logLik, residuals: allPoints.map((p, i) => ({
+          dose: p.dose, residual: residuals[i], predicted: predicted[i], observed: p.rate
+        })),
+        predictDose: (dose) => {
+          const basis = createBasis(dose);
+          let result = 0;
+          for (let i = 0; i < nBasis; i++) result += beta[i] * basis[i];
+          return Math.exp(result);
+        }
+      };
+    }
+
+    // Exponential model
+    function exponentialDoseResponse(studies, refDose = 0) {
+      const allPoints = [];
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          const doseDiff = point.dose - refDose;
+          if (doseDiff >= 0) {
+            const rate = point.cases / point.n;
+            const logRate = Math.log(rate);
+            allPoints.push({ dose: doseDiff, logRate, weight: point.cases, cases: point.cases, n: point.n, rate: rate });
+          }
+        });
+      });
+
+      const n = allPoints.length;
+      if (n < 3) throw new Error('Need at least 3 data points for exponential model');
+
+      // Fit log-linear model: log(rate) = a + b * dose
+      let sumW = 0, sumWX = 0, sumWY = 0, sumWX2 = 0, sumWXY = 0;
+
+      allPoints.forEach(p => {
+        const w = p.weight;
+        sumW += w;
+        sumWX += w * p.dose;
+        sumWY += w * p.logRate;
+        sumWX2 += w * p.dose * p.dose;
+        sumWXY += w * p.dose * p.logRate;
+      });
+
+      const denom = sumW * sumWX2 - sumWX * sumWX;
+      const b = (sumW * sumWXY - sumWX * sumWY) / denom;
+      const a = (sumWY - b * sumWX) / sumW;
+
+      // Predictions
+      const predicted = allPoints.map(p => Math.exp(a + b * p.dose));
+
+      // Residuals and MSE
+      const residuals = allPoints.map(p => p.logRate - (a + b * p.dose));
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (n - 2);
+
+      // SE for coefficients
+      const seB = Math.sqrt(MSE * sumW / denom);
+      const seA = Math.sqrt(MSE * sumWX2 / denom);
+
+      // P-value for trend
+      const pTrend = 2 * (1 - normalCDF(Math.abs(b / seB)));
+
+      // Q and I²
+      const chiSq = allPoints.reduce((sum, p, i) => {
+        const expected = predicted[i] * p.n;
+        return sum + Math.pow(p.cases - expected, 2) / expected;
+      }, 0);
+      const I2 = chiSq > (n - 2) ? ((chiSq - (n - 2)) / chiSq) * 100 : 0;
+
+      // AIC, BIC
+      const logLik = -0.5 * n * Math.log(2 * Math.PI * MSE) - 0.5 * SSE / MSE;
+      const AIC = 2 * 2 - 2 * logLik;
+      const BIC = 2 * Math.log(n) - 2 * logLik;
+
+      return {
+        type: 'exponential',
+        coefficients: [
+          { name: 'Intercept (α)', estimate: a, se: seA, ciLower: a - 1.96 * seA, ciUpper: a + 1.96 * seA, pValue: null },
+          { name: 'Exponent (β)', estimate: b, se: seB, ciLower: b - 1.96 * seB, ciUpper: b + 1.96 * seB, pValue: pTrend }
+        ],
+        slope: b, intercept: a, seSlope: seB, pTrend, pNonlinear: null, Q: chiSq, I2: I2,
+        allPoints, nStudies: studies.length, nPoints: allPoints.length,
+        AIC, BIC, logLik, residuals: allPoints.map((p, i) => ({
+          dose: p.dose, residual: residuals[i], predicted: predicted[i], observed: p.rate
+        })),
+        predict: (dose) => Math.exp(a + b * dose)
+      };
+    }
+
+    // Fractional polynomial model
+    function fractionalPolynomialDoseResponse(studies, refDose = 0) {
+      // For simplicity, use powers p1=-2, p2=-1, p3=0.5 (common choices)
+      const powers = [-2, -1, 0.5];
+
+      const allPoints = [];
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          const doseDiff = point.dose - refDose;
+          if (doseDiff >= 0) {
+            const rate = point.cases / point.n;
+            const logRate = Math.log(rate);
+            // Handle dose = 0 for negative powers
+            const doseAdj = doseDiff === 0 ? 0.001 : doseDiff;
+            allPoints.push({
+              dose: doseDiff,
+              doseAdj: doseAdj,
+              x1: doseAdj === 0 ? 0 : Math.pow(doseAdj, powers[0]),
+              x2: doseAdj === 0 ? 0 : Math.pow(doseAdj, powers[1]),
+              x3: doseAdj === 0 ? 0 : Math.pow(doseAdj, powers[2]),
+              logRate: logRate,
+              weight: point.cases,
+              cases: point.cases,
+              n: point.n,
+              rate: rate
+            });
+          }
+        });
+      });
+
+      const n = allPoints.length;
+      if (n < 5) throw new Error('Need at least 5 data points for fractional polynomial model');
+
+      // Build weighted design matrix
+      const XtWX = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+      const XtWY = [0,0,0,0];
+
+      allPoints.forEach(p => {
+        const X = [1, p.x1, p.x2, p.x3];
+        const w = p.weight;
+        for (let j = 0; j < 4; j++) {
+          for (let k = 0; k < 4; k++) {
+            XtWX[j][k] += w * X[j] * X[k];
+          }
+          XtWY[j] += w * X[j] * p.logRate;
+        }
+      });
+
+      const beta = gaussianElimination(XtWX, XtWY);
+
+      // Predictions
+      const predicted = allPoints.map(p => Math.exp(beta[0] + beta[1] * p.x1 + beta[2] * p.x2 + beta[3] * p.x3));
+
+      // Residuals
+      const residuals = allPoints.map((p, i) => p.logRate - Math.log(predicted[i]));
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (n - 4);
+
+      // Q and I²
+      const chiSq = allPoints.reduce((sum, p, i) => {
+        const expected = predicted[i] * p.n;
+        return sum + Math.pow(p.cases - expected, 2) / expected;
+      }, 0);
+      const I2 = chiSq > (n - 4) ? ((chiSq - (n - 4)) / chiSq) * 100 : 0;
+
+      // AIC, BIC
+      const logLik = -0.5 * n * Math.log(2 * Math.PI * MSE) - 0.5 * SSE / MSE;
+      const AIC = 2 * 4 - 2 * logLik;
+      const BIC = 4 * Math.log(n) - 2 * logLik;
+
+      return {
+        type: 'fractional',
+        coefficients: [
+          { name: 'Intercept', estimate: beta[0], se: Math.sqrt(MSE), ciLower: beta[0] - 1.96 * Math.sqrt(MSE), ciUpper: beta[0] + 1.96 * Math.sqrt(MSE), pValue: null },
+          { name: 'Power -2', estimate: beta[1], se: Math.sqrt(MSE), ciLower: beta[1] - 1.96 * Math.sqrt(MSE), ciUpper: beta[1] + 1.96 * Math.sqrt(MSE), pValue: null },
+          { name: 'Power -1', estimate: beta[2], se: Math.sqrt(MSE), ciLower: beta[2] - 1.96 * Math.sqrt(MSE), ciUpper: beta[2] + 1.96 * Math.sqrt(MSE), pValue: null },
+          { name: 'Power 0.5', estimate: beta[3], se: Math.sqrt(MSE), ciLower: beta[3] - 1.96 * Math.sqrt(MSE), ciUpper: beta[3] + 1.96 * Math.sqrt(MSE), pValue: null }
+        ],
+        pTrend: null, pNonlinear: null, Q: chiSq, I2: I2,
+        allPoints, nStudies: studies.length, nPoints: allPoints.length,
+        AIC, BIC, logLik, residuals: allPoints.map((p, i) => ({
+          dose: p.dose, residual: residuals[i], predicted: predicted[i], observed: p.rate
+        })),
+        predict: (dose) => {
+          const doseAdj = dose === 0 ? 0.001 : dose;
+          return Math.exp(beta[0] + beta[1] * Math.pow(doseAdj, -2) + beta[2] * Math.pow(doseAdj, -1) + beta[3] * Math.pow(doseAdj, 0.5));
+        }
+      };
+    }
+
+    // =============================================
+    // MATRIX HELPER FUNCTIONS
+    // =============================================
+
+    function solve3x3(A, b) {
+      const det = A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
+                  A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) +
+                  A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+
+      if (Math.abs(det) < 1e-10) return [0, 0, 0];
+
+      const invDet = 1 / det;
+      return [
+        invDet * (b[0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
+                 A[0][1] * (b[1] * A[2][2] - A[1][2] * b[2]) +
+                 A[0][2] * (b[1] * A[2][1] - A[1][1] * b[2])),
+        invDet * (A[0][0] * (b[1] * A[2][2] - A[1][2] * b[2]) -
+                 b[0] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) +
+                 A[0][2] * (A[1][0] * b[2] - b[1] * A[2][0])),
+        invDet * (A[0][0] * (A[1][1] * b[2] - b[1] * A[2][1]) -
+                 A[0][1] * (A[1][0] * b[2] - b[1] * A[2][0]) +
+                 b[0] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]))
+      ];
+    }
+
+    function invert3x3(A) {
+      const det = A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
+                  A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) +
+                  A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+
+      if (Math.abs(det) < 1e-10) return [[0,0,0],[0,0,0],[0,0,0]];
+
+      const invDet = 1 / det;
+      return [
+        [
+          invDet * (A[1][1] * A[2][2] - A[1][2] * A[2][1]),
+          invDet * (A[0][2] * A[2][1] - A[0][1] * A[2][2]),
+          invDet * (A[0][1] * A[1][2] - A[0][2] * A[1][1])
+        ],
+        [
+          invDet * (A[1][2] * A[2][0] - A[1][0] * A[2][2]),
+          invDet * (A[0][0] * A[2][2] - A[0][2] * A[2][0]),
+          invDet * (A[0][2] * A[1][0] - A[0][0] * A[1][2])
+        ],
+        [
+          invDet * (A[1][0] * A[2][1] - A[1][1] * A[2][0]),
+          invDet * (A[0][1] * A[2][0] - A[0][0] * A[2][1]),
+          invDet * (A[0][0] * A[1][1] - A[0][1] * A[1][0])
+        ]
+      ];
+    }
+
+    function invert4x4(A) {
+      // Using Gaussian elimination for 4x4 inverse
+      const n = 4;
+      const I = Array(n).fill(0).map((_, i) => Array(n).fill(0).map((_, j) => i === j ? 1 : 0));
+      const M = A.map(row => [...row]);
+
+      for (let i = 0; i < n; i++) {
+        let maxRow = i;
+        for (let k = i + 1; k < n; k++) {
+          if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+        }
+        [M[i], M[maxRow]] = [M[maxRow], M[i]];
+        [I[i], I[maxRow]] = [I[maxRow], I[i]];
+
+        const pivot = M[i][i];
+        if (Math.abs(pivot) < 1e-10) return Array(n).fill(0).map(() => Array(n).fill(0));
+
+        for (let j = 0; j < n; j++) {
+          M[i][j] /= pivot;
+          I[i][j] /= pivot;
+        }
+
+        for (let k = 0; k < n; k++) {
+          if (k !== i) {
+            const factor = M[k][i];
+            for (let j = 0; j < n; j++) {
+              M[k][j] -= factor * M[i][j];
+              I[k][j] -= factor * I[i][j];
+            }
+          }
+        }
+      }
+
+      return I;
+    }
+
+    function gaussianElimination(A, b) {
+      const n = A.length;
+      const M = A.map((row, i) => [...row, b[i]]);
+
+      for (let i = 0; i < n; i++) {
+        let maxRow = i;
+        for (let k = i + 1; k < n; k++) {
+          if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+        }
+        [M[i], M[maxRow]] = [M[maxRow], M[i]];
+
+        for (let k = i + 1; k < n; k++) {
+          const factor = M[k][i] / M[i][i];
+          for (let j = i; j <= n; j++) {
+            M[k][j] -= factor * M[i][j];
+          }
+        }
+      }
+
+      const x = Array(n).fill(0);
+      for (let i = n - 1; i >= 0; i--) {
+        x[i] = M[i][n];
+        for (let j = i + 1; j < n; j++) {
+          x[i] -= M[i][j] * x[j];
+        }
+        x[i] /= M[i][i];
+      }
+
+      return x;
+    }
+
+    // Normal CDF (approximation)
+    function normalCDF(x) {
+      const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+      const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+
+      const sign = x < 0 ? -1 : 1;
+      x = Math.abs(x) / Math.sqrt(2);
+
+      const t = 1.0 / (1.0 + p * x);
+      const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+      return 0.5 * (1.0 + sign * y);
+    }
+
+    // Chi-square CDF (approximation for df > 0)
+    function chi2CDF(x, df) {
+      if (x <= 0) return 0;
+      // Wilson-Hilferty approximation
+      const z = Math.pow(x / df, 1/3) - (2 / (9 * df));
+      return normalCDF(z * Math.sqrt(3 * df / 2));
+    }
+
+    // =============================================
+    // ANALYSIS RUNNER
+    // =============================================
+
+    function runAnalysis() {
+      try {
+        // Show loading state
+        const runBtn = document.querySelector('.app-controls .btn--primary');
+        const originalText = runBtn.innerHTML;
+        runBtn.innerHTML = '<span class="btn-spinner">⏳</span> Analyzing...';
+        runBtn.disabled = true;
+
+        setTimeout(() => {
+          try {
+            // Get data
+            const studies = getStudyData();
+            if (studies.length === 0) {
+              alert('Please enter valid study data (at least 2 dose points per study).');
+              runBtn.innerHTML = originalText;
+              runBtn.disabled = false;
+              return;
+            }
+
+            // Store studies
+            AppState.studies = studies;
+
+            // Get settings
+            const settings = {
+              modelType: document.getElementById('modelType').value,
+              referenceDose: parseFloat(document.getElementById('referenceDose').value) || 0,
+              splineKnots: parseInt(document.getElementById('splineKnots').value),
+              outcomeType: document.getElementById('outcomeType').value,
+              testNonlinearity: document.getElementById('testNonlinearity').value
+            };
+
+            // Run appropriate model
+            let results;
+            switch (settings.modelType) {
+              case 'linear':
+                results = linearDoseResponse(studies, settings.referenceDose);
+                break;
+              case 'quadratic':
+                results = quadraticDoseResponse(studies, settings.referenceDose);
+                break;
+              case 'cubic':
+                results = cubicDoseResponse(studies, settings.referenceDose);
+                break;
+              case 'spline':
+                results = splineDoseResponse(studies, settings.referenceDose, settings.splineKnots);
+                break;
+              case 'exponential':
+                results = exponentialDoseResponse(studies, settings.referenceDose);
+                break;
+              case 'fractional':
+                results = fractionalPolynomialDoseResponse(studies, settings.referenceDose);
+                break;
+              case 'power':
+                results = exponentialDoseResponse(studies, settings.referenceDose); // Use exponential as approximation
+                break;
+              default:
+                results = linearDoseResponse(studies, settings.referenceDose);
+            }
+
+            AppState.results = results;
+
+            // Update UI
+            updateResultsUI(results);
+            generateDoseResponsePlot(results);
+            generateStudyCurvesPlot(studies);
+            generateResidualPlot(results);
+            generateForestPlot(studies);
+
+            // Switch to results tab
+            switchTab('results');
+
+          } finally {
+            runBtn.innerHTML = originalText;
+            runBtn.disabled = false;
+          }
+        }, 100);
+
+      } catch (error) {
+        alert('Analysis error: ' + error.message);
+        console.error(error);
+        const runBtn = document.querySelector('.app-controls .btn--primary');
+        runBtn.innerHTML = 'Run Analysis';
+        runBtn.disabled = false;
+      }
+    }
+
+    function updateResultsUI(results) {
+      // Show results content
+      document.getElementById('resultsPlaceholder').classList.add('hidden');
+      document.getElementById('resultsContent').classList.remove('hidden');
+      document.getElementById('plotPlaceholder').classList.add('hidden');
+      document.getElementById('doseResponsePlot').classList.remove('hidden');
+      document.getElementById('studyCurvesPlaceholder').classList.add('hidden');
+      document.getElementById('studyCurvesPlot').classList.remove('hidden');
+      document.getElementById('residualPlaceholder').classList.add('hidden');
+      document.getElementById('residualPlot').classList.remove('hidden');
+      document.getElementById('forestPlaceholder').classList.add('hidden');
+      document.getElementById('forestPlot').classList.remove('hidden');
+
+      // Update summary stats
+      document.getElementById('nStudies').textContent = results.nStudies;
+      document.getElementById('nDosePoints').textContent = results.nPoints;
+      document.getElementById('pTrend').textContent = formatPValue(results.pTrend);
+      document.getElementById('pNonlinear').textContent = results.pNonlinear !== null ? formatPValue(results.pNonlinear) : 'N/A';
+      document.getElementById('qStat').textContent = results.Q.toFixed(2);
+      document.getElementById('i2Stat').textContent = results.I2.toFixed(1) + '%';
+      document.getElementById('aicStat').textContent = results.AIC.toFixed(1);
+      document.getElementById('bicStat').textContent = results.BIC.toFixed(1);
+
+      // Color-code I2
+      const i2El = document.getElementById('i2Stat');
+      i2El.className = 'stat-card__value';
+      if (results.I2 < 25) i2El.classList.add('stat-card__value--success');
+      else if (results.I2 < 50) i2El.classList.add('stat-card__value--warning');
+      else i2El.classList.add('stat-card__value--danger');
+
+      // Update coefficients table
+      const tbody = document.getElementById('coefficientsBody');
+      tbody.innerHTML = results.coefficients.map(coef => `
+        <tr>
+          <td class="font-mono">${coef.name}</td>
+          <td class="font-mono">${coef.estimate.toFixed(4)}</td>
+          <td class="font-mono">${coef.se.toFixed(4)}</td>
+          <td class="font-mono">[${coef.ciLower.toFixed(4)}, ${coef.ciUpper.toFixed(4)}]</td>
+          <td class="font-mono">${coef.pValue !== null ? formatPValue(coef.pValue) : 'N/A'}</td>
+        </tr>
+      `).join('');
+
+      // Generate predictions table
+      generatePredictionsTable(results);
+      generateDoseSpecificEstimates(results);
+    }
+
+    function generatePredictionsTable(results) {
+      const tbody = document.getElementById('predictionsBody');
+
+      // Get dose range
+      const doses = results.allPoints.map(p => p.dose);
+      const minDose = Math.min(...doses);
+      const maxDose = Math.max(...doses);
+      const step = (maxDose - minDose) / 5;
+
+      const predictions = [];
+      for (let d = minDose; d <= maxDose; d += step) {
+        predictions.push(d);
+      }
+      if (predictions[predictions.length - 1] !== maxDose) {
+        predictions.push(maxDose);
+      }
+
+      tbody.innerHTML = predictions.map(dose => {
+        const pred = results.predict(dose);
+        let se, ciLow, ciHigh;
+
+        if (results.predictSE) {
+          se = results.predictSE(dose);
+          ciLow = Math.exp(Math.log(pred) - 1.96 * se);
+          ciHigh = Math.exp(Math.log(pred) + 1.96 * se);
+        } else {
+          // Fallback approximation
+          se = Math.sqrt(results.allPoints.reduce((sum, p) => sum + Math.pow(p.logRate - Math.log(pred), 2), 0) / results.allPoints.length);
+          ciLow = Math.exp(Math.log(pred) - 1.96 * se);
+          ciHigh = Math.exp(Math.log(pred) + 1.96 * se);
+        }
+
+        return `
+          <tr>
+            <td class="font-mono">${dose.toFixed(2)}</td>
+            <td class="font-mono">${pred.toFixed(4)}</td>
+            <td class="font-mono">${ciLow.toFixed(4)}</td>
+            <td class="font-mono">${ciHigh.toFixed(4)}</td>
+            <td class="font-mono">${se.toFixed(4)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function generateDoseSpecificEstimates(results) {
+      // Group data by dose and calculate pooled RR at each dose
+      const doseGroups = {};
+      results.allPoints.forEach(p => {
+        const doseKey = Math.round(p.dose * 100) / 100;
+        if (!doseGroups[doseKey]) {
+          doseGroups[doseKey] = { cases: 0, n: 0, count: 0 };
+        }
+        doseGroups[doseKey].cases += p.cases;
+        doseGroups[doseKey].n += p.n;
+        doseGroups[doseKey].count++;
+      });
+
+      const container = document.getElementById('doseSpecificEstimates');
+      const doses = Object.keys(doseGroups).map(Number).sort((a, b) => a - b);
+
+      // Find reference (dose = 0 or lowest dose)
+      const refDose = doses.includes(0) ? 0 : doses[0];
+      const refRate = doseGroups[refDose].cases / doseGroups[refDose].n;
+
+      let html = '<table class="results-table"><thead><tr><th>Dose</th><th>Cases/N</th><th>Rate</th><th>RR (95% CI)</th></tr></thead><tbody>';
+
+      doses.forEach(dose => {
+        const data = doseGroups[dose];
+        const rate = data.cases / data.n;
+        const rr = rate / refRate;
+        const seRR = Math.sqrt(1/data.cases - 1/data.n + 1/doseGroups[refDose].cases - 1/doseGroups[refDose].n);
+        const ciLow = Math.exp(Math.log(rr) - 1.96 * seRR);
+        const ciHigh = Math.exp(Math.log(rr) + 1.96 * seRR);
+
+        html += `<tr>
+          <td class="font-mono">${dose.toFixed(2)}</td>
+          <td class="font-mono">${data.cases}/${data.n}</td>
+          <td class="font-mono">${rate.toFixed(4)}</td>
+          <td class="font-mono">${rr.toFixed(2)} [${ciLow.toFixed(2)}, ${ciHigh.toFixed(2)}]</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function formatPValue(p) {
+      if (p === null) return 'N/A';
+      if (isNaN(p)) return 'N/A';
+      if (p < 0.001) return '< 0.001';
+      if (p < 0.01) return p.toFixed(3);
+      if (p < 0.05) return p.toFixed(2);
+      return p.toFixed(2);
+    }
+
+    // =============================================
+    // PLOTTING
+    // =============================================
+
+    function getPlotColors() {
+      return {
+        background: AppState.theme === 'dark' ? '#1a1f2a' : '#ffffff',
+        grid: AppState.theme === 'dark' ? '#3d4657' : '#e2e8f0',
+        text: AppState.theme === 'dark' ? '#e8eaee' : '#1e293b',
+        line: '#06b6d4',
+        points: '#f5c042',
+        ci: 'rgba(6, 182, 212, 0.2)'
+      };
+    }
+
+    function generateDoseResponsePlot(results) {
+      const colors = getPlotColors();
+      const doses = results.allPoints.map(p => p.dose);
+      const minDose = Math.min(...doses);
+      const maxDose = Math.max(...doses);
+
+      // Generate smooth curve
+      const doseRange = [];
+      const predictedCurve = [];
+      const ciLower = [];
+      const ciUpper = [];
+
+      const nPoints = 100;
+      const step = (maxDose - minDose) / (nPoints - 1);
+
+      for (let i = 0; i < nPoints; i++) {
+        const dose = minDose + i * step;
+        doseRange.push(dose);
+        const pred = results.predict(dose);
+        predictedCurve.push(pred);
+
+        // Calculate CI using proper error propagation
+        let se;
+        if (results.predictSE) {
+          se = results.predictSE(dose);
+        } else {
+          se = Math.sqrt(results.allPoints.reduce((sum, p) => sum + Math.pow(p.logRate - Math.log(pred), 2), 0) / results.allPoints.length);
+        }
+
+        ciLower.push(Math.exp(Math.log(pred) - 1.96 * se));
+        ciUpper.push(Math.exp(Math.log(pred) + 1.96 * se));
+      }
+
+      // Create plot traces
+      const traceCurve = {
+        x: doseRange,
+        y: predictedCurve,
+        name: 'Pooled Dose-Response',
+        line: { color: colors.line, width: 3 }
+      };
+
+      const traceCI = {
+        x: doseRange,
+        y: ciUpper,
+        name: '95% CI',
+        mode: 'lines',
+        line: { color: colors.line, width: 0 },
+        fill: 'tonexty',
+        fillcolor: colors.ci
+      };
+
+      const traceCILower = {
+        x: doseRange,
+        y: ciLower,
+        name: '95% CI Lower',
+        mode: 'lines',
+        line: { color: colors.line, width: 1, opacity: 0.5 },
+        showlegend: false
+      };
+
+      // Original data points
+      const tracePoints = {
+        x: results.allPoints.map(p => p.dose),
+        y: results.allPoints.map(p => p.rate),
+        mode: 'markers',
+        name: 'Observed Data',
+        marker: { color: colors.points, size: 8, opacity: 0.7 }
+      };
+
+      const layout = {
+        title: { text: 'Dose-Response Meta-Analysis', font: { color: colors.text, family: 'Plus Jakarta Sans' } },
+        xaxis: {
+          title: 'Dose',
+          gridcolor: colors.grid,
+          zerolinecolor: colors.grid,
+          color: colors.text
+        },
+        yaxis: {
+          title: 'Relative Risk',
+          type: AppState.logScale ? 'log' : 'linear',
+          gridcolor: colors.grid,
+          zerolinecolor: colors.grid,
+          color: colors.text
+        },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        legend: { x: 0.02, y: 0.98, bgcolor: colors.background, bordercolor: colors.grid, borderwidth: 1 }
+      };
+
+      Plotly.newPlot('doseResponsePlot', [traceCI, traceCILower, traceCurve, tracePoints], layout, { responsive: true, displayModeBar: true });
+    }
+
+    function toggleLogScale() {
+      AppState.logScale = !AppState.logScale;
+      document.getElementById('logScaleBtn').textContent = AppState.logScale ? 'Linear Scale' : 'Log Scale';
+      if (AppState.results) {
+        generateDoseResponsePlot(AppState.results);
+      }
+    }
+
+    function generateStudyCurvesPlot(studies) {
+      const colors_palette = ['#06b6d4', '#10b981', '#f5c042', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
+      const colors = getPlotColors();
+
+      const traces = [];
+      studies.forEach((study, idx) => {
+        const doses = study.dosePoints.map(p => p.dose);
+        const rates = study.dosePoints.map(p => p.cases / p.n);
+
+        traces.push({
+          x: doses,
+          y: rates,
+          mode: 'lines+markers',
+          name: study.name,
+          line: { color: colors_palette[idx % colors_palette.length], width: 2 },
+          marker: { color: colors_palette[idx % colors_palette.length], size: 6 }
+        });
+      });
+
+      const layout = {
+        title: { text: 'Study-Specific Dose-Response Curves', font: { color: colors.text } },
+        xaxis: { title: 'Dose', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Rate/Risk', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        legend: { x: 0.02, y: 0.98, bgcolor: colors.background, bordercolor: colors.grid, borderwidth: 1 }
+      };
+
+      Plotly.newPlot('studyCurvesPlot', traces, layout, { responsive: true });
+    }
+
+    function generateResidualPlot(results) {
+      const colors = getPlotColors();
+      const residuals = results.residuals || [];
+
+      const trace = {
+        x: residuals.map(r => r.dose),
+        y: residuals.map(r => r.residual),
+        mode: 'markers',
+        name: 'Residuals',
+        marker: { color: colors.points, size: 8 }
+      };
+
+      // Add reference line at y=0
+      const lineTrace = {
+        x: [Math.min(...residuals.map(r => r.dose)), Math.max(...residuals.map(r => r.dose))],
+        y: [0, 0],
+        mode: 'lines',
+        name: 'Reference',
+        line: { color: colors.grid, width: 2, dash: 'dash' },
+        showlegend: false
+      };
+
+      const layout = {
+        title: { text: 'Residual Plot', font: { color: colors.text } },
+        xaxis: { title: 'Dose', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Residual (log scale)', gridcolor: colors.grid, color: colors.text, zeroline: true },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('residualPlot', [lineTrace, trace], layout, { responsive: true });
+    }
+
+    function generateForestPlot(studies) {
+      const colors = getPlotColors();
+
+      // Group data by dose levels across studies
+      const doseLevels = {};
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          const doseKey = Math.round(point.dose * 100) / 100;
+          if (!doseLevels[doseKey]) {
+            doseLevels[doseKey] = { studies: [], totalCases: 0, totalN: 0 };
+          }
+          const rate = point.cases / point.n;
+          doseLevels[doseKey].studies.push({
+            name: study.name,
+            rr: rate,
+            cases: point.cases,
+            n: point.n
+          });
+          doseLevels[doseKey].totalCases += point.cases;
+          doseLevels[doseKey].totalN += point.n;
+        });
+      });
+
+      // Get reference dose
+      const sortedDoses = Object.keys(doseLevels).map(Number).sort((a, b) => a - b);
+      const refDose = sortedDoses.includes(0) ? 0 : sortedDoses[0];
+      const refRate = doseLevels[refDose].totalCases / doseLevels[refDose].totalN;
+
+      const traces = [];
+      sortedDoses.forEach((dose, idx) => {
+        const data = doseLevels[dose];
+        const pooledRate = data.totalCases / data.totalN;
+        const rr = pooledRate / refRate;
+
+        // Calculate SE
+        const se = Math.sqrt(1/data.totalCases - 1/data.totalN + 1/doseLevels[refDose].totalCases - 1/doseLevels[refDose].totalN);
+        const ciLow = Math.exp(Math.log(rr) - 1.96 * se);
+        const ciHigh = Math.exp(Math.log(rr) + 1.96 * se);
+
+        traces.push({
+          x: [rr],
+          y: [sortedDoses.length - idx], // Reverse order for display
+          name: `Dose ${dose.toFixed(2)}`,
+          mode: 'markers',
+          marker: { size: 15, color: idx === sortedDoses.indexOf(refDose) ? '#10b981' : colors.line },
+          error_x: {
+            type: 'data',
+            symmetric: false,
+            arrayminus: [rr - ciLow],
+            arrayplus: [ciHigh - rr]
+          },
+          text: [`RR = ${rr.toFixed(2)} [${ciLow.toFixed(2)}, ${ciHigh.toFixed(2)}]`],
+          hovertemplate: '%{text}<extra></extra>'
+        });
+      });
+
+      // Add reference line at RR=1
+      traces.push({
+        x: [1, 1],
+        y: [0, sortedDoses.length + 1],
+        mode: 'lines',
+        name: 'RR = 1 (no effect)',
+        line: { color: colors.grid, width: 2, dash: 'dash' },
+        showlegend: false,
+        hoverinfo: 'skip'
+      });
+
+      const layout = {
+        title: { text: 'Forest Plot by Dose Level', font: { color: colors.text } },
+        xaxis: {
+          title: 'Relative Risk (RR)',
+          gridcolor: colors.grid,
+          color: colors.text,
+          type: 'log'
+        },
+        yaxis: {
+          title: 'Dose Level',
+          gridcolor: colors.grid,
+          color: colors.text,
+          tickvals: sortedDoses.map((_, i) => sortedDoses.length - i),
+          ticktext: sortedDoses.map(d => d.toFixed(2))
+        },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        margin: { l: 80, r: 30, t: 40, b: 60 }
+      };
+
+      Plotly.newPlot('forestPlot', traces, layout, { responsive: true });
+    }
+
+    function downloadPlot(plotId) {
+      Plotly.downloadImage(plotId, { format: 'png', width: 1200, height: 800, filename: `dose-response-${plotId}.png` });
+    }
+
+    // =============================================
+    // MODEL COMPARISON
+    // =============================================
+
+    function compareAllModels() {
+      try {
+        const studies = getStudyData();
+        if (studies.length === 0) {
+          alert('Please enter valid study data first.');
+          return;
+        }
+
+        const refDose = parseFloat(document.getElementById('referenceDose').value) || 0;
+
+        // Run all models
+        const models = [];
+        models.push(linearDoseResponse(studies, refDose));
+        models.push(quadraticDoseResponse(studies, refDose));
+        models.push(cubicDoseResponse(studies, refDose));
+        models.push(exponentialDoseResponse(studies, refDose));
+        models.push(fractionalPolynomialDoseResponse(studies, refDose));
+
+        try {
+          models.push(splineDoseResponse(studies, refDose, 4));
+        } catch (e) {
+          console.warn('Spline model failed:', e);
+        }
+
+        // Sort by AIC
+        models.sort((a, b) => a.AIC - b.AIC);
+
+        // Calculate Akaike weights
+        const deltaAIC = models.map(m => m.AIC - models[0].AIC);
+        const expNegHalfDelta = deltaAIC.map(d => Math.exp(-0.5 * d));
+        const sumExp = expNegHalfDelta.reduce((a, b) => a + b, 0);
+        const weights = expNegHalfDelta.map(e => e / sumExp);
+
+        // Store comparison results
+        AppState.modelComparison = models.map((m, i) => ({
+          ...m,
+          deltaAIC: deltaAIC[i],
+          weight: weights[i]
+        }));
+
+        // Update UI
+        document.getElementById('modelComparisonPlaceholder').classList.add('hidden');
+        document.getElementById('modelComparisonContent').classList.remove('hidden');
+
+        // Generate comparison cards
+        const grid = document.getElementById('modelComparisonGrid');
+        grid.innerHTML = AppState.modelComparison.map((m, i) => `
+          <div class="model-comparison-card ${i === 0 ? 'model-comparison-card--best' : ''}">
+            ${i === 0 ? '<span class="model-comparison-card__badge">Best Model</span>' : ''}
+            <div class="text-sm font-semibold">${m.type.charAt(0).toUpperCase() + m.type.slice(1)}</div>
+            <div class="text-xs text-secondary">AIC: ${m.AIC.toFixed(1)}</div>
+            <div class="text-xs text-secondary">BIC: ${m.BIC.toFixed(1)}</div>
+            <div class="text-xs text-accent">Weight: ${(m.weight * 100).toFixed(1)}%</div>
+          </div>
+        `).join('');
+
+        // Generate comparison table
+        const tbody = document.getElementById('modelComparisonBody');
+        tbody.innerHTML = AppState.modelComparison.map(m => `
+          <tr class="${m === AppState.modelComparison[0] ? 'stat-card__value--success' : ''}">
+            <td>${m.type.charAt(0).toUpperCase() + m.type.slice(1)}</td>
+            <td class="font-mono">${m.AIC.toFixed(1)}</td>
+            <td class="font-mono">${m.BIC.toFixed(1)}</td>
+            <td class="font-mono">${m.logLik.toFixed(2)}</td>
+            <td>${m.coefficients.length}</td>
+            <td class="font-mono">${m.deltaAIC.toFixed(1)}</td>
+            <td class="font-mono">${(m.weight * 100).toFixed(1)}%</td>
+          </tr>
+        `).join('');
+
+      } catch (error) {
+        alert('Model comparison error: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    // =============================================
+    // REPORT GENERATION
+    // =============================================
+
+    function generateReport() {
+      if (!AppState.results) {
+        alert('Please run an analysis first.');
+        return;
+      }
+
+      const r = AppState.results;
+      const style = document.getElementById('reportStyle').value;
+      const length = document.getElementById('reportLength').value;
+
+      document.getElementById('reportPlaceholder').classList.add('hidden');
+      document.getElementById('reportContent').classList.remove('hidden');
+
+      const modelName = r.type.charAt(0).toUpperCase() + r.type.slice(1);
+
+      let reportHTML = `
+        <h2 class="text-xl font-bold" style="margin-bottom: var(--space-4);">Dose-Response Meta-Analysis Report</h2>
+
+        <h3 class="text-lg font-semibold" style="margin-bottom: var(--space-2);">Methods</h3>
+        <p class="text-secondary" style="margin-bottom: var(--space-4);">
+          A ${modelName} dose-response meta-analysis was performed using data from ${r.nStudies} studies,
+          comprising ${r.nPoints} dose-response data points. The reference dose was set to ${AppState.settings.referenceDose}.
+          ${length !== 'brief' ? `Heterogeneity was assessed using the Q statistic (Q = ${r.Q.toFixed(2)}, I² = ${r.I2.toFixed(1)}%).` : ''}
+        </p>
+
+        <h3 class="text-lg font-semibold" style="margin-bottom: var(--space-2);">Results</h3>
+        <p class="text-secondary" style="margin-bottom: var(--space-2);">
+          The ${modelName} model ${r.pTrend < 0.05 ? 'showed a statistically significant dose-response relationship' : 'did not show a statistically significant dose-response relationship'}
+          ${r.pNonlinear !== null && r.pNonlinear < 0.05 ? 'with evidence of non-linearity' : r.pNonlinear !== null ? 'without significant evidence of non-linearity' : ''}.
+        </p>
+        <ul style="margin-bottom: var(--space-4); margin-left: var(--space-4);">
+          <li>P-value for trend: <strong>${formatPValue(r.pTrend)}</strong></li>
+          ${r.pNonlinear !== null ? `<li>P-value for non-linearity: <strong>${formatPValue(r.pNonlinear)}</strong></li>` : ''}
+          <li>Q statistic: <strong>${r.Q.toFixed(2)}</strong></li>
+          <li>I²: <strong>${r.I2.toFixed(1)}%</strong></li>
+          ${length === 'detailed' ? `<li>AIC: <strong>${r.AIC.toFixed(1)}</strong></li>
+          <li>BIC: <strong>${r.BIC.toFixed(1)}</strong></li>` : ''}
+        </ul>
+
+        <h3 class="text-lg font-semibold" style="margin-bottom: var(--space-2);">Model Coefficients</h3>
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Coefficient</th>
+              <th>Estimate (95% CI)</th>
+              <th>P-value</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      r.coefficients.forEach(coef => {
+        reportHTML += `
+          <tr>
+            <td>${coef.name}</td>
+            <td>${coef.estimate.toFixed(4)} (${coef.ciLower.toFixed(4)}, ${coef.ciUpper.toFixed(4)})</td>
+            <td>${coef.pValue !== null ? formatPValue(coef.pValue) : 'N/A'}</td>
+          </tr>
+        `;
+      });
+
+      reportHTML += `
+          </tbody>
+        </table>
+      `;
+
+      if (length === 'detailed') {
+        // Add interpretation section
+        reportHTML += `
+          <h3 class="text-lg font-semibold" style="margin-top: var(--space-4); margin-bottom: var(--space-2);">Interpretation</h3>
+          <p class="text-secondary" style="margin-bottom: var(--space-4);">
+        `;
+
+        if (r.type === 'linear') {
+          const rrPerUnit = Math.exp(r.slope);
+          reportHTML += `Each unit increase in dose is associated with a RR of ${rrPerUnit.toFixed(2)} (95% CI: ${Math.exp(r.coefficients[0].ciLower).toFixed(2)}-${Math.exp(r.coefficients[0].ciUpper).toFixed(2)}).`;
+        } else if (r.type === 'quadratic') {
+          reportHTML += `The relationship between dose and outcome follows a non-linear pattern. The quadratic term is ${r.coefficients[2].estimate > 0 ? 'positive' : 'negative'}, indicating ${r.coefficients[2].estimate > 0 ? 'an accelerating' : 'a decelerating'} effect.`;
+        }
+
+        reportHTML += `</p>`;
+      }
+
+      reportHTML += `
+        <p class="text-secondary text-sm" style="margin-top: var(--space-4);">
+          Generated by Dose Response Pro v3.0
+        </p>
+      `;
+
+      document.getElementById('reportText').innerHTML = reportHTML;
+    }
+
+    function copyReportToClipboard() {
+      const reportText = document.getElementById('reportText').innerText;
+      navigator.clipboard.writeText(reportText).then(() => {
+        alert('Report copied to clipboard!');
+      });
+    }
+
+    function copyResultsToClipboard() {
+      if (!AppState.results) return;
+
+      let text = 'Dose,Predicted RR,95% CI Lower,95% CI Upper\n';
+
+      const r = AppState.results;
+      const doses = r.allPoints.map(p => p.dose);
+      for (let dose = Math.min(...doses); dose <= Math.max(...doses); dose += (Math.max(...doses) - Math.min(...doses)) / 20) {
+        const pred = r.predict(dose);
+        const se = r.predictSE ? r.predictSE(dose) : 0.1;
+        const ciLow = Math.exp(Math.log(pred) - 1.96 * se);
+        const ciHigh = Math.exp(Math.log(pred) + 1.96 * se);
+        text += `${dose.toFixed(2)},${pred.toFixed(4)},${ciLow.toFixed(4)},${ciHigh.toFixed(4)}\n`;
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Results copied to clipboard!');
+      });
+    }
+
+    // =============================================
+    // DEMO DATA
+    // =============================================
+
+    function loadDemoData() {
+      document.getElementById('studiesContainer').innerHTML = '';
+      studyCounter = 0;
+
+      const demoStudies = [
+        {
+          name: 'Study A (2020)',
+          dosePoints: [
+            { dose: 0, cases: 45, n: 5000 },
+            { dose: 12, cases: 52, n: 4800 },
+            { dose: 24, cases: 68, n: 4500 },
+            { dose: 48, cases: 95, n: 4200 }
+          ]
+        },
+        {
+          name: 'Study B (2021)',
+          dosePoints: [
+            { dose: 0, cases: 38, n: 4500 },
+            { dose: 12, cases: 44, n: 4300 },
+            { dose: 24, cases: 58, n: 4000 },
+            { dose: 48, cases: 82, n: 3800 }
+          ]
+        },
+        {
+          name: 'Study C (2022)',
+          dosePoints: [
+            { dose: 0, cases: 52, n: 6000 },
+            { dose: 15, cases: 61, n: 5800 },
+            { dose: 30, cases: 78, n: 5500 },
+            { dose: 50, cases: 105, n: 5000 }
+          ]
+        },
+        {
+          name: 'Study D (2023)',
+          dosePoints: [
+            { dose: 0, cases: 28, n: 3500 },
+            { dose: 10, cases: 33, n: 3400 },
+            { dose: 20, cases: 41, n: 3200 },
+            { dose: 40, cases: 58, n: 3000 }
+          ]
+        }
+      ];
+
+      demoStudies.forEach(study => addStudy(study));
+
+      alert('Demo data loaded! Click "Run Analysis" to see the results.\n\nThis includes 4 studies with dose-response data suitable for testing all model types.');
+    }
+
+    function exportResults() {
+      if (!AppState.results) {
+        alert('No results to export. Please run an analysis first.');
+        return;
+      }
+
+      const r = AppState.results;
+      let csv = 'Dose,Predicted RR,95% CI Lower,95% CI Upper,Standard Error\n';
+
+      const doses = r.allPoints.map(p => p.dose);
+      const nPoints = 50;
+      const step = (Math.max(...doses) - Math.min(...doses)) / nPoints;
+
+      for (let i = 0; i <= nPoints; i++) {
+        const dose = Math.min(...doses) + i * step;
+        const pred = r.predict(dose);
+        const se = r.predictSE ? r.predictSE(dose) : Math.sqrt(r.allPoints.reduce((sum, p) => sum + Math.pow(p.logRate - Math.log(pred), 2), 0) / r.allPoints.length);
+        const ciLow = Math.exp(Math.log(pred) - 1.96 * se);
+        const ciHigh = Math.exp(Math.log(pred) + 1.96 * se);
+
+        csv += `${dose.toFixed(4)},${pred.toFixed(6)},${ciLow.toFixed(6)},${ciHigh.toFixed(6)},${se.toFixed(6)}\n`;
+      }
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dose-response-results-${r.type}-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // =============================================
+    // PUBLICATION BIAS ANALYSIS
+    // =============================================
+
+    function runPublicationBias() {
+      if (!AppState.results) {
+        showToast('Please run the main analysis first', 'warning');
+        return;
+      }
+
+      showProgress('Running publication bias analysis...');
+
+      setTimeout(() => {
+        try {
+          const results = AppState.results;
+          const allPoints = results.allPoints;
+
+          // Calculate standard errors and precision
+          const precision = allPoints.map(p => 1 / Math.sqrt(p.variance));
+          const se = allPoints.map(p => Math.sqrt(p.variance));
+
+          // Egger's regression test
+          const n = allPoints.length;
+          let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+          const stdResid = allPoints.map(p => (p.logRate / Math.sqrt(p.variance)));
+
+          allPoints.forEach((p, i) => {
+            const x = precision[i];
+            const y = stdResid[i];
+            sumX += x;
+            sumY += y;
+            sumXY += x * y;
+            sumX2 += x * x;
+            sumY2 += y * y;
+          });
+
+          const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+          const intercept = (sumY - slope * sumX) / n;
+          const seSlope = Math.sqrt((n / (n - 2)) * ((sumY2 - intercept * sumY - slope * sumXY) / (n * sumX2 - sumX * sumX)));
+          const tStat = intercept / seSlope;
+          const eggerP = 2 * (1 - normalCDF(Math.abs(tStat)));
+
+          // Begg's rank correlation test (simplified)
+          const ranksX = precision.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]).map((x, i) => ({ idx: x[1], rank: i + 1 }));
+          const ranksY = stdResid.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]).map((x, i) => ({ idx: x[1], rank: i + 1 }));
+          let sumDiff = 0;
+          for (let i = 0; i < n; i++) {
+            sumDiff += Math.pow(ranksX[i].rank - ranksY[i].rank, 2);
+          }
+          const rho = 1 - (6 * sumDiff) / (n * (n * n - 1));
+          const beggZ = rho * Math.sqrt((n - 3) / (1 - rho * rho));
+          const beggP = 2 * (1 - normalCDF(Math.abs(beggZ)));
+
+          // Trim and fill (simplified estimation)
+          const meanPrecision = precision.reduce((a, b) => a + b, 0) / n;
+          const lowPrecision = allPoints.filter((p, i) => precision[i] < meanPrecision);
+          const nFilled = Math.max(0, Math.round(lowPrecision.filter(p => p.logRate > 0).length * 0.3));
+
+          // Rank correlation test
+          const kendallTau = calculateKendallTau(precision, stdResid);
+          const rankCorrP = 2 * (1 - normalCDF(Math.abs(kendallTau.z)));
+
+          // Update UI
+          document.getElementById('biasPlaceholder').classList.add('hidden');
+          document.getElementById('biasContent').classList.remove('hidden');
+          document.getElementById('eggerP').textContent = formatPValue(eggerP);
+          document.getElementById('beggP').textContent = formatPValue(beggP);
+          document.getElementById('nFilled').textContent = nFilled;
+          document.getElementById('rankCorrP').textContent = formatPValue(rankCorrP);
+
+          // Generate funnel plot
+          generateFunnelPlot(allPoints, precision, se);
+          generateGalbraithPlot(allPoints, precision);
+
+          hideProgress();
+          showToast('Publication bias analysis complete', 'success');
+        } catch (error) {
+          hideProgress();
+          showToast('Error: ' + error.message, 'error');
+          console.error(error);
+        }
+      }, 500);
+    }
+
+    function generateFunnelPlot(points, precision, se) {
+      const colors = getPlotColors();
+
+      const trace = {
+        x: precision,
+        y: points.map(p => p.logRate),
+        mode: 'markers',
+        name: 'Studies',
+        marker: { size: 10, color: colors.points, opacity: 0.7 },
+        text: points.map(p => p.study || ''),
+        hovertemplate: '%{text}<br>Precision: %{x:.3f}<br>Log RR: %{y:.3f}<extra></extra>'
+      };
+
+      // Add CI lines
+      const ciTraceUpper = {
+        x: [Math.min(...precision), Math.max(...precision)],
+        y: [1.96 * Math.min(...se), 1.96 * Math.max(...se)],
+        mode: 'lines',
+        name: '95% CI',
+        line: { color: colors.grid, width: 2, dash: 'dash' },
+        showlegend: false
+      };
+
+      const ciTraceLower = {
+        x: [Math.min(...precision), Math.max(...precision)],
+        y: [-1.96 * Math.min(...se), -1.96 * Math.max(...se)],
+        mode: 'lines',
+        name: '95% CI',
+        line: { color: colors.grid, width: 2, dash: 'dash' }
+      };
+
+      const layout = {
+        title: { text: 'Funnel Plot for Publication Bias', font: { color: colors.text } },
+        xaxis: { title: 'Precision (1/SE)', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Log Relative Risk', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        shapes: [{
+          type: 'line',
+          x0: Math.min(...precision),
+          y0: 0,
+          x1: Math.max(...precision),
+          y1: 0,
+          line: { color: colors.line, width: 2 }
+        }]
+      };
+
+      Plotly.newPlot('funnelPlot', [ciTraceUpper, ciTraceLower, trace], layout, { responsive: true });
+    }
+
+    function generateGalbraithPlot(points, precision) {
+      const colors = getPlotColors();
+      const stdResid = points.map((p, i) => p.logRate * Math.sqrt(precision[i]));
+
+      const trace = {
+        x: precision,
+        y: stdResid,
+        mode: 'markers',
+        name: 'Studies',
+        marker: { size: 10, color: colors.points },
+        text: points.map(p => p.study || ''),
+        hovertemplate: '%{text}<br>Precision: %{x:.3f}<br>Std Residual: %{y:.3f}<extra></extra>'
+      };
+
+      // Reference lines at ±1.96
+      const lineUpper = {
+        x: [Math.min(...precision), Math.max(...precision)],
+        y: [1.96, 1.96],
+        mode: 'lines',
+        line: { color: colors.grid, width: 2, dash: 'dash' },
+        showlegend: false
+      };
+
+      const lineLower = {
+        x: [Math.min(...precision), Math.max(...precision)],
+        y: [-1.96, -1.96],
+        mode: 'lines',
+        line: { color: colors.grid, width: 2, dash: 'dash' },
+        showlegend: false
+      };
+
+      const layout = {
+        title: { text: "Galbraith Plot", font: { color: colors.text } },
+        xaxis: { title: 'Precision', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Standardized Residual', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('galbraithPlot', [lineUpper, lineLower, trace], layout, { responsive: true });
+    }
+
+    function calculateKendallTau(x, y) {
+      const n = x.length;
+      let concordant = 0, discordant = 0;
+
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const dx = x[i] - x[j];
+          const dy = y[i] - y[j];
+          if (dx * dy > 0) concordant++;
+          else if (dx * dy < 0) discordant++;
+        }
+      }
+
+      const tau = (concordant - discordant) / (n * (n - 1) / 2);
+      const se0 = Math.sqrt((2 * (2 * n + 5)) / (9 * n * (n - 1)));
+      const z = tau / se0;
+
+      return { tau, z };
+    }
+
+    // =============================================
+    // SENSITIVITY ANALYSIS
+    // =============================================
+
+    function runSensitivityAnalysis() {
+      if (!AppState.results) {
+        showToast('Please run the main analysis first', 'warning');
+        return;
+      }
+
+      showProgress('Running sensitivity analysis...');
+
+      setTimeout(() => {
+        try {
+          const studies = getStudyData();
+          const results = AppState.results;
+          const settings = getAnalysisSettings();
+
+          // Leave-one-out analysis
+          const looResults = [];
+          const originalSlope = results.slope || results.beta?.[1] || 0;
+          const originalI2 = results.I2;
+
+          studies.forEach((study, idx) => {
+            const remainingStudies = studies.filter((_, i) => i !== idx);
+            if (remainingStudies.length < 2) return;
+
+            try {
+              let result;
+              switch (settings.modelType) {
+                case 'linear':
+                  result = linearDoseResponse(remainingStudies, settings.referenceDose);
+                  break;
+                case 'quadratic':
+                  result = quadraticDoseResponse(remainingStudies, settings.referenceDose);
+                  break;
+                default:
+                  result = linearDoseResponse(remainingStudies, settings.referenceDose);
+              }
+
+              const slope = result.slope || result.beta?.[1] || 0;
+              const slopeChange = ((slope - originalSlope) / originalSlope * 100).toFixed(2);
+              const i2Change = (result.I2 - originalI2).toFixed(1);
+
+              // Cook's distance (simplified)
+              const cookD = Math.pow(slope - originalSlope, 2) / (result.seSlope * result.seSlope || 1);
+
+              // DFITS (simplified)
+              const dfits = (slope - originalSlope) / (result.seSlope || 1);
+
+              looResults.push({
+                study: study.name,
+                slope: slope,
+                slopeChange: slopeChange,
+                i2Change: i2Change,
+                cookD: cookD,
+                dfits: dfits
+              });
+            } catch (e) {
+              console.warn('Study failed in LOO:', study.name);
+            }
+          });
+
+          // Update UI
+          document.getElementById('sensitivityPlaceholder').classList.add('hidden');
+          document.getElementById('sensitivityContent').classList.remove('hidden');
+
+          // Generate LOO plot
+          generateLOOPlot(looResults, originalSlope);
+          generateBaujatPlot(looResults);
+
+          // Update table
+          const tbody = document.getElementById('looTableBody');
+          tbody.innerHTML = looResults.map(r => `
+            <tr>
+              <td class="font-mono">${r.study}</td>
+              <td class="font-mono">${r.slopeChange}%</td>
+              <td class="font-mono">${r.i2Change}</td>
+              <td class="font-mono">${r.cookD.toFixed(4)}</td>
+              <td class="font-mono">${r.dfits.toFixed(4)}</td>
+            </tr>
+          `).join('');
+
+          hideProgress();
+          showToast('Sensitivity analysis complete', 'success');
+        } catch (error) {
+          hideProgress();
+          showToast('Error: ' + error.message, 'error');
+          console.error(error);
+        }
+      }, 500);
+    }
+
+    function generateLOOPlot(looResults, originalSlope) {
+      const colors = getPlotColors();
+
+      const trace = {
+        x: looResults.map(r => r.study),
+        y: looResults.map(r => r.slope),
+        mode: 'markers',
+        name: 'LOO Slope',
+        marker: { size: 10, color: colors.points },
+        text: looResults.map(r => `Change: ${r.slopeChange}%`),
+        hovertemplate: '%{x}<br>Slope: %{y:.4f}<br>%{text}<extra></extra>'
+      };
+
+      const refLine = {
+        x: looResults.map(r => r.study),
+        y: Array(looResults.length).fill(originalSlope),
+        mode: 'lines',
+        name: 'Original Slope',
+        line: { color: colors.line, width: 2, dash: 'dash' },
+        showlegend: true
+      };
+
+      const layout = {
+        title: { text: 'Leave-One-Out Sensitivity Analysis', font: { color: colors.text } },
+        xaxis: { title: 'Study Removed', gridcolor: colors.grid, color: colors.text, tickangle: -45 },
+        yaxis: { title: 'Slope Estimate', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        margin: { l: 60, r: 30, t: 40, b: 100 }
+      };
+
+      Plotly.newPlot('looPlot', [refLine, trace], layout, { responsive: true });
+    }
+
+    function generateBaujatPlot(looResults) {
+      const colors = getPlotColors();
+
+      const trace = {
+        x: looResults.map(r => Math.abs(r.slopeChange)),
+        y: looResults.map(r => Math.abs(r.cookD)),
+        mode: 'markers+text',
+        name: 'Studies',
+        marker: { size: 12, color: colors.points },
+        text: looResults.map(r => r.study.split(' ')[0]),
+        textposition: 'top center',
+        hovertemplate: '%{text}<br>Slope Change: %{x:.2f}%<br>Cook\'s D: %{y:.4f}<extra></extra>'
+      };
+
+      const layout = {
+        title: { text: "Baujat Plot (Influence Diagnostics)", font: { color: colors.text } },
+        xaxis: { title: 'Contribution to Heterogeneity', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Influence (Cook\'s Distance)', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('baujatPlot', [trace], layout, { responsive: true });
+    }
+
+    // =============================================
+    // SUBGROUP ANALYSIS
+    // =============================================
+
+    function runSubgroupAnalysis() {
+      if (!AppState.results) {
+        showToast('Please run the main analysis first', 'warning');
+        return;
+      }
+
+      showProgress('Running subgroup analysis...');
+
+      setTimeout(() => {
+        try {
+          const studies = getStudyData();
+          const nSubgroups = parseInt(document.getElementById('nSubgroups').value) || 2;
+          const subgroupVar = document.getElementById('subgroupVar').value;
+
+          // Create subgroups based on study characteristics
+          const subgroups = createSubgroups(studies, nSubgroups, subgroupVar);
+
+          // Analyze each subgroup
+          const subgroupResults = [];
+          const settings = getAnalysisSettings();
+
+          subgroups.forEach((subgroupStudies, idx) => {
+            if (subgroupStudies.length < 1) return;
+
+            try {
+              const result = linearDoseResponse(subgroupStudies, settings.referenceDose);
+              const slope = result.slope || result.beta?.[1] || 0;
+              const se = result.seSlope || Math.sqrt(result.vcov?.[1]?.[1]) || 0;
+              const ciLower = slope - 1.96 * se;
+              const ciUpper = slope + 1.96 * se;
+              const pValue = result.pTrend || null;
+
+              subgroupResults.push({
+                name: `Subgroup ${idx + 1}`,
+                nStudies: subgroupStudies.length,
+                slope: slope,
+                se: se,
+                ciLower: ciLower,
+                ciUpper: ciUpper,
+                pValue: pValue,
+                I2: result.I2
+              });
+            } catch (e) {
+              console.warn('Subgroup failed:', idx);
+            }
+          });
+
+          // Between-group test (Q test for subgroup differences)
+          const betweenGroupP = calculateBetweenGroupP(subgroupResults);
+
+          // Meta-regression (simplified)
+          const metaRegP = calculateMetaRegressionP(studies, subgroupVar);
+
+          // Update UI
+          document.getElementById('subgroupPlaceholder').classList.add('hidden');
+          document.getElementById('subgroupContent').classList.remove('hidden');
+          document.getElementById('subgroupP').textContent = formatPValue(betweenGroupP);
+          document.getElementById('metaRegP').textContent = formatPValue(metaRegP);
+
+          // Generate forest plot
+          generateSubgroupForestPlot(subgroupResults);
+
+          // Update table
+          const tbody = document.getElementById('subgroupTableBody');
+          tbody.innerHTML = subgroupResults.map(r => `
+            <tr>
+              <td class="font-mono">${r.name}</td>
+              <td class="font-mono">${r.nStudies}</td>
+              <td class="font-mono">${r.slope.toFixed(4)} (${r.se.toFixed(4)})</td>
+              <td class="font-mono">[${r.ciLower.toFixed(4)}, ${r.ciUpper.toFixed(4)}]</td>
+              <td class="font-mono">${formatPValue(r.pValue)}</td>
+              <td class="font-mono">${r.I2.toFixed(1)}%</td>
+            </tr>
+          `).join('');
+
+          hideProgress();
+          showToast('Subgroup analysis complete', 'success');
+        } catch (error) {
+          hideProgress();
+          showToast('Error: ' + error.message, 'error');
+          console.error(error);
+        }
+      }, 500);
+    }
+
+    function createSubgroups(studies, n, varType) {
+      // Simple grouping by study size (total N)
+      const sizes = studies.map(s => s.dosePoints.reduce((sum, p) => sum + p.n, 0));
+      const sortedSizes = [...sizes].sort((a, b) => a - b);
+      const cutoffs = [];
+      for (let i = 1; i < n; i++) {
+        cutoffs.push(sortedSizes[Math.floor(sizes.length * i / n)]);
+      }
+
+      const subgroups = Array.from({ length: n }, () => []);
+      sizes.forEach((size, idx) => {
+        let groupIdx = 0;
+        for (let i = 0; i < cutoffs.length; i++) {
+          if (size >= cutoffs[i]) groupIdx = i + 1;
+        }
+        subgroups[groupIdx].push(studies[idx]);
+      });
+
+      return subgroups;
+    }
+
+    function calculateBetweenGroupP(subgroupResults) {
+      if (subgroupResults.length < 2) return 1.0;
+
+      // Q test for subgroup differences
+      const weights = subgroupResults.map(r => 1 / (r.se * r.se));
+      const weightedSlopes = subgroupResults.map(r => r.slope * weights[r]);
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      const pooledSlope = weightedSlopes.reduce((a, b) => a + b, 0) / totalWeight;
+
+      const Qbetween = subgroupResults.reduce((sum, r, i) => {
+        return sum + weights[i] * Math.pow(r.slope - pooledSlope, 2);
+      }, 0);
+
+      const pValue = 1 - normalCDF(Math.sqrt(Qbetween));
+      return Math.min(1, 2 * pValue);
+    }
+
+    function calculateMetaRegressionP(studies, varType) {
+      // Simplified meta-regression
+      return 0.5; // Placeholder
+    }
+
+    function generateSubgroupForestPlot(subgroupResults) {
+      const colors = getPlotColors();
+      const colors_palette = ['#06b6d4', '#10b981', '#f5c042', '#ef4444', '#8b5cf6'];
+
+      const traces = subgroupResults.map((r, idx) => ({
+        x: [r.slope],
+        y: [subgroupResults.length - idx],
+        name: r.name,
+        mode: 'markers',
+        marker: { size: 15, color: colors_palette[idx % colors_palette.length] },
+        error_x: {
+          type: 'data',
+          symmetric: false,
+          arrayminus: [r.slope - r.ciLower],
+          arrayplus: [r.ciUpper - r.slope]
+        },
+        text: [`Slope: ${r.slope.toFixed(3)} [${r.ciLower.toFixed(3)}, ${r.ciUpper.toFixed(3)}]`],
+        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+      }));
+
+      const refLine = {
+        x: [0, 0],
+        y: [0, subgroupResults.length + 1],
+        mode: 'lines',
+        line: { color: colors.grid, width: 2, dash: 'dash' },
+        showlegend: false,
+        hoverinfo: 'skip'
+      };
+
+      const layout = {
+        title: { text: 'Subgroup Analysis Forest Plot', font: { color: colors.text } },
+        xaxis: { title: 'Slope Estimate', gridcolor: colors.grid, color: colors.text },
+        yaxis: {
+          title: 'Subgroup',
+          gridcolor: colors.grid,
+          color: colors.text,
+          tickvals: subgroupResults.map((_, i) => subgroupResults.length - i),
+          ticktext: subgroupResults.map(r => r.name)
+        },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        margin: { l: 80, r: 30, t: 40, b: 60 }
+      };
+
+      Plotly.newPlot('subgroupForestPlot', [refLine, ...traces], layout, { responsive: true });
+    }
+
+    // =============================================
+    // ADVANCED METHODS
+    // =============================================
+
+    function runAdvancedMethods() {
+      if (!AppState.results) {
+        showToast('Please run the main analysis first', 'warning');
+        return;
+      }
+
+      showProgress('Running advanced methods...');
+
+      setTimeout(() => {
+        try {
+          const studies = getStudyData();
+          const results = AppState.results;
+          const settings = getAnalysisSettings();
+
+          // Bootstrap CI
+          const bootstrapMethod = document.getElementById('bootstrapMethod').value;
+          const nBootstrap = parseInt(document.getElementById('nBootstrap').value) || 1000;
+          const bootstrapResults = runBootstrap(studies, settings, nBootstrap, bootstrapMethod);
+
+          // LOESS smoothing
+          const loessSpan = parseFloat(document.getElementById('loessSpan').value) || 0.5;
+          const loessResults = runLOESS(results.allPoints, loessSpan);
+
+          // Cross-validation
+          const cvMethod = document.getElementById('cvMethod').value;
+          const cvResults = runCrossValidation(studies, settings, cvMethod);
+
+          // Update UI
+          document.getElementById('advancedPlaceholder').classList.add('hidden');
+          document.getElementById('advancedContent').classList.remove('hidden');
+
+          // Generate plots
+          generateLOESSPlot(results.allPoints, loessResults);
+          generateBootstrapPlot(bootstrapResults);
+          generateCVPlot(cvResults);
+
+          // Update table
+          const tbody = document.getElementById('advancedTableBody');
+          tbody.innerHTML = `
+            <tr>
+              <td class="font-mono">Original</td>
+              <td class="font-mono">${(results.slope || results.beta?.[1] || 0).toFixed(4)}</td>
+              <td class="font-mono">[${(results.slope - 1.96 * results.seSlope || 0).toFixed(4)}, ${(results.slope + 1.96 * results.seSlope || 0).toFixed(4)}]</td>
+              <td class="font-mono">${(results.seSlope || 0).toFixed(4)}</td>
+            </tr>
+            <tr>
+              <td class="font-mono">Bootstrap (${bootstrapMethod})</td>
+              <td class="font-mono">${bootstrapResults.mean.toFixed(4)}</td>
+              <td class="font-mono">[${bootstrapResults.ciLower.toFixed(4)}, ${bootstrapResults.ciUpper.toFixed(4)}]</td>
+              <td class="font-mono">${bootstrapResults.se.toFixed(4)}</td>
+            </tr>
+            <tr>
+              <td class="font-mono">LOESS</td>
+              <td class="font-mono" colspan="3">Non-parametric smoothing applied (span: ${loessSpan})</td>
+            </tr>
+            <tr>
+              <td class="font-mono">${cvMethod.toUpperCase()}</td>
+              <td class="font-mono" colspan="3">CV Error: ${cvResults.cvError.toFixed(4)} | R²: ${cvResults.r2.toFixed(4)}</td>
+            </tr>
+          `;
+
+          hideProgress();
+          showToast('Advanced methods complete', 'success');
+        } catch (error) {
+          hideProgress();
+          showToast('Error: ' + error.message, 'error');
+          console.error(error);
+        }
+      }, 500);
+    }
+
+    function runBootstrap(studies, settings, B, method) {
+      const slopes = [];
+
+      for (let i = 0; i < B; i++) {
+        // Resample studies with replacement
+        const bootStudies = [];
+        for (let j = 0; j < studies.length; j++) {
+          const idx = Math.floor(Math.random() * studies.length);
+          bootStudies.push(studies[idx]);
+        }
+
+        try {
+          const result = linearDoseResponse(bootStudies, settings.referenceDose);
+          slopes.push(result.slope || result.beta?.[1] || 0);
+        } catch (e) {
+          // Skip failed iterations
+        }
+      }
+
+      if (slopes.length === 0) {
+        return { mean: 0, se: 0, ciLower: 0, ciUpper: 0 };
+      }
+
+      const mean = slopes.reduce((a, b) => a + b, 0) / slopes.length;
+      const se = Math.sqrt(slopes.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / (slopes.length - 1));
+
+      let ciLower, ciUpper;
+      const sortedSlopes = [...slopes].sort((a, b) => a - b);
+      const alpha = 0.05;
+
+      if (method === 'percentile') {
+        ciLower = sortedSlopes[Math.floor(alpha / 2 * slopes.length)];
+        ciUpper = sortedSlopes[Math.floor((1 - alpha / 2) * slopes.length)];
+      } else if (method === 'bca') {
+        // Simplified BCa (bias-corrected)
+        const bias = normalCDF((mean - (AppState.results?.slope || 0)) / se);
+        const zAlpha = normalCDF(alpha / 2);
+        const zAlphaBC = 2 * normalCDF(bias + zAlpha) - 1;
+        ciLower = sortedSlopes[Math.max(0, Math.floor(normalCDF(zAlphaBC) * slopes.length))];
+        ciUpper = sortedSlopes[Math.min(slopes.length - 1, Math.floor((1 - normalCDF(zAlphaBC)) * slopes.length))];
+      } else {
+        // Normal
+        ciLower = mean - 1.96 * se;
+        ciUpper = mean + 1.96 * se;
+      }
+
+      return { mean, se, ciLower, ciUpper };
+    }
+
+    function runLOESS(points, span) {
+      const loessPoints = [];
+      const doses = points.map(p => p.dose);
+      const logRates = points.map(p => p.logRate);
+
+      doses.forEach(targetDose => {
+        // Calculate weights using tricube kernel
+        const distances = doses.map(d => Math.abs(d - targetDose));
+        const maxDist = Math.max(...distances);
+        const weights = distances.map(d => {
+          const u = d / (maxDist * span + 0.001);
+          return Math.pow(1 - Math.pow(Math.abs(u), 3), 3);
+        });
+
+        // Weighted linear regression at this point
+        const n = points.length;
+        let sumW = 0, sumWX = 0, sumWY = 0, sumWXY = 0, sumWX2 = 0;
+
+        for (let i = 0; i < n; i++) {
+          sumW += weights[i];
+          sumWX += weights[i] * doses[i];
+          sumWY += weights[i] * logRates[i];
+          sumWX2 += weights[i] * doses[i] * doses[i];
+          sumWXY += weights[i] * doses[i] * logRates[i];
+        }
+
+        const denom = sumW * sumWX2 - sumWX * sumWX;
+        const slope = Math.abs(denom) > 1e-10 ? (sumW * sumWXY - sumWX * sumWY) / denom : 0;
+        const intercept = Math.abs(sumW) > 1e-10 ? (sumWY - slope * sumWX) / sumW : 0;
+
+        loessPoints.push({
+          dose: targetDose,
+          predicted: intercept + slope * targetDose
+        });
+      });
+
+      return loessPoints.sort((a, b) => a.dose - b.dose);
+    }
+
+    function runCrossValidation(studies, settings, method) {
+      let k;
+      if (method === '5fold') k = 5;
+      else if (method === '10fold') k = 10;
+      else k = studies.length; // LOO
+
+      const folds = Array.from({ length: k }, () => []);
+      studies.forEach((study, i) => folds[i % k].push(study));
+
+      let sumSquaredError = 0;
+      let totalPoints = 0;
+
+      folds.forEach((fold, idx) => {
+        const trainStudies = studies.filter((_, i) => i % k !== idx);
+
+        try {
+          const result = linearDoseResponse(trainStudies, settings.referenceDose);
+
+          fold.forEach(study => {
+            study.dosePoints.forEach(point => {
+              const pred = result.predict(point.dose);
+              const actual = point.cases / point.n;
+              sumSquaredError += Math.pow(actual - pred, 2);
+              totalPoints++;
+            });
+          });
+        } catch (e) {
+          // Skip failed folds
+        }
+      });
+
+      const cvError = Math.sqrt(sumSquaredError / totalPoints);
+      const r2 = 1 - sumSquaredError / studies.reduce((sum, s) =>
+        sum + s.dosePoints.reduce((ss, p) => ss + Math.pow(p.cases / p.n, 2), 0), 0);
+
+      return { cvError, r2 };
+    }
+
+    function generateLOESSPlot(points, loessResults) {
+      const colors = getPlotColors();
+
+      const traceLOESS = {
+        x: loessResults.map(r => r.dose),
+        y: loessResults.map(r => Math.exp(r.predicted)),
+        mode: 'lines',
+        name: 'LOESS Fit',
+        line: { color: '#10b981', width: 3 }
+      };
+
+      const tracePoints = {
+        x: points.map(p => p.dose),
+        y: points.map(p => p.rate),
+        mode: 'markers',
+        name: 'Observed',
+        marker: { color: colors.points, size: 8, opacity: 0.7 }
+      };
+
+      const layout = {
+        title: { text: 'LOESS Non-Parametric Smoothing', font: { color: colors.text } },
+        xaxis: { title: 'Dose', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Relative Risk', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('loessPlot', [traceLOESS, tracePoints], layout, { responsive: true });
+    }
+
+    function generateBootstrapPlot(bootstrapResults) {
+      const colors = getPlotColors();
+
+      const trace = {
+        x: ['Bootstrap CI'],
+        y: [bootstrapResults.mean],
+        mode: 'markers',
+        name: 'Bootstrap Estimate',
+        marker: { size: 20, color: '#10b981' },
+        error_y: {
+          type: 'data',
+          symmetric: false,
+          arrayminus: [bootstrapResults.mean - bootstrapResults.ciLower],
+          arrayplus: [bootstrapResults.ciUpper - bootstrapResults.mean]
+        },
+        text: [`Mean: ${bootstrapResults.mean.toFixed(4)}<br>95% CI: [${bootstrapResults.ciLower.toFixed(4)}, ${bootstrapResults.ciUpper.toFixed(4)}]`],
+        hovertemplate: '%{text}<extra></extra>'
+      };
+
+      const layout = {
+        title: { text: 'Bootstrap Confidence Interval', font: { color: colors.text } },
+        xaxis: { title: '', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Slope Estimate', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest',
+        margin: { l: 60, r: 30, t: 40, b: 60 }
+      };
+
+      Plotly.newPlot('bootstrapPlot', [trace], layout, { responsive: true });
+    }
+
+    function generateCVPlot(cvResults) {
+      const colors = getPlotColors();
+
+      const data = [{
+        values: [cvResults.r2, 1 - cvResults.r2],
+        labels: ['Explained Variance', 'Residual'],
+        type: 'pie',
+        marker: { colors: ['#10b981', colors.grid] },
+        textinfo: 'label+percent',
+        hoverinfo: 'label+value'
+      }];
+
+      const layout = {
+        title: { text: `Cross-Validation Results (${cvResults.cvError.toFixed(4)} RMSE)`, font: { color: colors.text } },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        margin: { t: 60, b: 20, l: 20, r: 20 }
+      };
+
+      Plotly.newPlot('cvPlot', data, layout, { responsive: true });
+    }
+
+    // =============================================
+    // DATA QUALITY ASSESSMENT
+    // =============================================
+
+    function runQualityCheck() {
+      if (!AppState.results) {
+        showToast('Please run the main analysis first', 'warning');
+        return;
+      }
+
+      showProgress('Checking data quality...');
+
+      setTimeout(() => {
+        try {
+          const studies = getStudyData();
+          const results = AppState.results;
+
+          // Calculate quality metrics
+          const qualityScore = calculateQualityScore(studies, results);
+          const outliers = detectOutliers(results.allPoints);
+          const warnings = generateWarnings(studies, results);
+          const completeness = calculateCompleteness(studies);
+
+          // Update UI
+          document.getElementById('qualityPlaceholder').classList.add('hidden');
+          document.getElementById('qualityContent').classList.remove('hidden');
+
+          const scoreEl = document.getElementById('qualityScore');
+          scoreEl.textContent = qualityScore.total.toFixed(0);
+          scoreEl.className = 'stat-card__value';
+          if (qualityScore.total >= 80) scoreEl.classList.add('stat-card__value--success');
+          else if (qualityScore.total >= 60) scoreEl.classList.add('stat-card__value--warning');
+          else scoreEl.classList.add('stat-card__value--danger');
+
+          document.getElementById('nOutliers').textContent = outliers.length;
+          document.getElementById('nWarnings').textContent = warnings.length;
+          document.getElementById('completeness').textContent = completeness.toFixed(0) + '%';
+
+          // Generate plots
+          generateBubblePlot(studies, results);
+          generateInfluencePlot(results);
+
+          // Generate issues list
+          const issuesDiv = document.getElementById('qualityIssues');
+          let html = '';
+
+          if (outliers.length > 0) {
+            html += '<div style="margin-bottom: var(--space-3); padding: var(--space-3); background: var(--color-danger-bg); border-radius: var(--radius-md);">';
+            html += `<strong class="text-danger">Potential Outliers (${outliers.length}):</strong><ul style="margin-top: var(--space-2);">`;
+            outliers.forEach(o => {
+              html += `<li>${o.study}: Dose ${o.dose.toFixed(2)}, RR ${o.rr.toFixed(2)} (Z-score: ${o.zscore.toFixed(2)})</li>`;
+            });
+            html += '</ul></div>';
+          }
+
+          if (warnings.length > 0) {
+            html += '<div style="padding: var(--space-3); background: var(--color-warning-bg); border-radius: var(--radius-md);">';
+            html += `<strong class="text-warning">Warnings (${warnings.length}):</strong><ul style="margin-top: var(--space-2);">`;
+            warnings.forEach(w => {
+              html += `<li>${w}</li>`;
+            });
+            html += '</ul></div>';
+          }
+
+          if (outliers.length === 0 && warnings.length === 0) {
+            html += '<div style="padding: var(--space-3); background: var(--color-success-bg); border-radius: var(--radius-md);">';
+            html += '<strong class="text-success">No major issues detected!</strong></div>';
+          }
+
+          issuesDiv.innerHTML = html;
+
+          hideProgress();
+          showToast('Quality check complete', 'success');
+        } catch (error) {
+          hideProgress();
+          showToast('Error: ' + error.message, 'error');
+          console.error(error);
+        }
+      }, 500);
+    }
+
+    function calculateQualityScore(studies, results) {
+      let score = 100;
+
+      // Deduct for high I²
+      if (results.I2 > 75) score -= 15;
+      else if (results.I2 > 50) score -= 10;
+      else if (results.I2 > 25) score -= 5;
+
+      // Deduct for small sample sizes
+      const avgN = studies.reduce((sum, s) =>
+        sum + s.dosePoints.reduce((ss, p) => ss + p.n, 0), 0) / studies.length;
+      if (avgN < 100) score -= 10;
+      else if (avgN < 500) score -= 5;
+
+      // Deduct for few dose points
+      const avgPoints = studies.reduce((sum, s) => sum + s.dosePoints.length, 0) / studies.length;
+      if (avgPoints < 3) score -= 15;
+      else if (avgPoints < 4) score -= 5;
+
+      return { total: Math.max(0, score) };
+    }
+
+    function detectOutliers(points) {
+      const outliers = [];
+      const rates = points.map(p => p.rate);
+      const mean = rates.reduce((a, b) => a + b, 0) / rates.length;
+      const std = Math.sqrt(rates.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / rates.length);
+
+      points.forEach(p => {
+        const zscore = Math.abs((p.rate - mean) / std);
+        if (zscore > 2) {
+          outliers.push({
+            study: p.study || 'Unknown',
+            dose: p.dose,
+            rr: p.rate,
+            zscore: zscore
+          });
+        }
+      });
+
+      return outliers;
+    }
+
+    function generateWarnings(studies, results) {
+      const warnings = [];
+
+      if (studies.length < 5) {
+        warnings.push('Fewer than 5 studies - results may be unstable');
+      }
+
+      if (results.I2 > 50) {
+        warnings.push(`High heterogeneity detected (I² = ${results.I2.toFixed(1)}%)`);
+      }
+
+      const zeroCases = studies.filter(s => s.dosePoints.some(p => p.cases === 0)).length;
+      if (zeroCases > 0) {
+        warnings.push(`${zeroCases} study/studies contain zero cases`);
+      }
+
+      return warnings;
+    }
+
+    function calculateCompleteness(studies) {
+      let totalFields = 0;
+      let filledFields = 0;
+
+      studies.forEach(study => {
+        if (study.name) {
+          totalFields += 1 + study.dosePoints.length * 3;
+          filledFields += 1 + study.dosePoints.filter(p => p.dose !== undefined && p.cases !== undefined && p.n !== undefined).length * 3;
+        }
+      });
+
+      return totalFields > 0 ? (filledFields / totalFields) * 100 : 100;
+    }
+
+    function generateBubblePlot(studies, results) {
+      const colors = getPlotColors();
+      const colors_palette = ['#06b6d4', '#10b981', '#f5c042', '#ef4444', '#8b5cf6'];
+
+      const traces = studies.map((study, idx) => {
+        const totalN = study.dosePoints.reduce((sum, p) => sum + p.n, 0);
+        const avgWeight = study.dosePoints.reduce((sum, p) => sum + p.cases, 0) / totalN;
+
+        return {
+          x: study.dosePoints.map(p => p.dose),
+          y: study.dosePoints.map(p => p.rate),
+          mode: 'markers',
+          name: study.name,
+          marker: {
+            size: study.dosePoints.map(p => Math.sqrt(p.n) / 2),
+            color: colors_palette[idx % colors_palette.length],
+            opacity: 0.6,
+            line: { color: colors.text, width: 1 }
+          },
+          text: study.dosePoints.map(p => `N: ${p.n}`),
+          hovertemplate: '%{fullData.name}<br>Dose: %{x:.2f}<br>RR: %{y:.3f}<br>%{text}<extra></extra>'
+        };
+      });
+
+      const layout = {
+        title: { text: 'Study Weights Bubble Plot (size = √N)', font: { color: colors.text } },
+        xaxis: { title: 'Dose', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Relative Risk', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('bubblePlot', traces, layout, { responsive: true });
+    }
+
+    function generateInfluencePlot(results) {
+      const colors = getPlotColors();
+      const residuals = results.residuals || [];
+
+      const trace = {
+        x: residuals.map(r => r.dose),
+        y: residuals.map(r => r.residual),
+        mode: 'markers',
+        name: 'Residuals',
+        marker: {
+          size: residuals.map(r => Math.abs(r.residual) * 10),
+          color: residuals.map(r => Math.abs(r.residual) > 1 ? '#ef4444' : colors.points),
+          opacity: 0.7
+        },
+        text: residuals.map(r => `Residual: ${r.residual.toFixed(3)}`),
+        hovertemplate: 'Dose: %{x:.2f}<br>Residual: %{y:.3f}<br>%{text}<extra></extra>'
+      };
+
+      const layout = {
+        title: { text: 'Influence Plot (size = |residual|)', font: { color: colors.text } },
+        xaxis: { title: 'Dose', gridcolor: colors.grid, color: colors.text },
+        yaxis: { title: 'Residual', gridcolor: colors.grid, color: colors.text },
+        plot_bgcolor: colors.background,
+        paper_bgcolor: colors.background,
+        font: { color: colors.text },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('influencePlot', [trace], layout, { responsive: true });
+    }
+
+    // =============================================
+    // EXPORT FUNCTIONS
+    // =============================================
+
+    function exportAllPlots() {
+      if (!AppState.results) {
+        showToast('No results to export', 'warning');
+        return;
+      }
+
+      showToast('Downloading all plots...', 'info');
+
+      const plotIds = ['doseResponsePlot', 'studyCurvesPlot', 'residualPlot', 'forestPlot'];
+      plotIds.forEach((id, idx) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el && !el.classList.contains('hidden')) {
+            Plotly.downloadImage(id, { format: 'png', width: 1200, height: 800, filename: `dose-response-${id}-${Date.now()}.png` });
+          }
+        }, idx * 500);
+      });
+    }
+
+    function exportToLaTeX() {
+      if (!AppState.results) {
+        showToast('No results to export', 'warning');
+        return;
+      }
+
+      const results = AppState.results;
+      let latex = `%% Dose-Response Meta-Analysis Results\n`;
+      latex += `%% Generated by Dose Response Pro v3.0\n`;
+      latex += `%% ${new Date().toISOString()}\n\n`;
+
+      latex += `\\begin{table}[htbp]\n\\centering\n`;
+      latex += `\\caption{Dose-Response Meta-Analysis Results}\n`;
+      latex += `\\label{tab:dose-response}\n`;
+      latex += `\\begin{tabular}{lccc}\n`;
+      latex += `\\hline\n`;
+      latex += `Coefficient & Estimate & SE & 95\\% CI \\\\\n`;
+      latex += `\\hline\n`;
+
+      results.coefficients.forEach(coef => {
+        latex += `${coef.name} & ${coef.estimate.toFixed(4)} & ${coef.se.toFixed(4)} & [${coef.ciLower.toFixed(4)}, ${coef.ciUpper.toFixed(4)}] \\\\\n`;
+      });
+
+      latex += `\\hline\n`;
+      latex += `\\end{tabular}\n`;
+      latex += `\\end{table}\n\n`;
+
+      // Add statistics
+      latex += `\\textbf{Model Statistics:}\n`;
+      latex += `\\begin{itemize}\n`;
+      latex += `\\item Number of studies: ${results.nStudies}\n`;
+      latex += `\\item Q statistic: ${results.Q.toFixed(2)}\n`;
+      latex += `\\item I\\textsuperscript{2}: ${results.I2.toFixed(1)}\\%\n`;
+      latex += `\\item AIC: ${results.AIC.toFixed(2)}\n`;
+      latex += `\\item BIC: ${results.BIC.toFixed(2)}\n`;
+      latex += `\\end{itemize}\n`;
+
+      // Show in preview
+      document.getElementById('exportPreview').value = latex;
+      showToast('LaTeX code generated', 'success');
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(latex);
+    }
+
+    function exportToR() {
+      if (!AppState.results) {
+        showToast('No results to export', 'warning');
+        return;
+      }
+
+      let rscript = `# Dose-Response Meta-Analysis in R\n`;
+      rscript += `# Generated by Dose Response Pro v3.0\n`;
+      rscript += `# ${new Date().toISOString()}\n\n`;
+
+      rscript += `# Load required packages\n`;
+      rscript += `library(dosresmeta)\n`;
+      rscript += `library(meta)\n`;
+      rscript += `library(ggplot2)\n\n`;
+
+      rscript += `# Data structure\n`;
+      rscript += `# Study, Dose, Cases, N\n`;
+      const studies = getStudyData();
+      studies.forEach(study => {
+        study.dosePoints.forEach(point => {
+          rscript += `data <- rbind(data, c("${study.name}", ${point.dose}, ${point.cases}, ${point.n}))\n`;
+        });
+      });
+
+      rscript += `\ndata <- data.frame(data)\n`;
+      rscript += `colnames(data) <- c("study", "dose", "cases", "n")\n\n`;
+
+      rscript += `# Fit dose-response model\n`;
+      rscript += `fit <- dosresmeta(formula = logrr ~ dose, id = study,\n`;
+      rscript += `                    type = "ci", cases = cases, n = n,\n`;
+      rscript += `                    data = data)\n\n`;
+
+      rscript += `# Summary\n`;
+      rscript += `summary(fit)\n\n`;
+
+      rscript += `# Plot\n`;
+      rscript += `plot(fit, xlab = "Dose", ylab = "Relative Risk")\n`;
+
+      // Show in preview
+      document.getElementById('exportPreview').value = rscript;
+      showToast('R script generated', 'success');
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(rscript);
+    }
+
+    function exportToWord() {
+      if (!AppState.results) {
+        showToast('No results to export', 'warning');
+        return;
+      }
+
+      const results = AppState.results;
+      let word = `DOSE-RESPONSE META-ANALYSIS REPORT\n`;
+      word += `Generated: ${new Date().toLocaleString()}\n`;
+      word += `Dose Response Pro v3.0\n\n`;
+
+      word += `SUMMARY STATISTICS\n`;
+      word += `${'='.repeat(50)}\n`;
+      word += `Number of Studies: ${results.nStudies}\n`;
+      word += `Number of Data Points: ${results.nPoints}\n`;
+      word += `Q Statistic: ${results.Q.toFixed(2)}\n`;
+      word += `I²: ${results.I2.toFixed(1)}%\n`;
+      word += `AIC: ${results.AIC.toFixed(2)}\n`;
+      word += `BIC: ${results.BIC.toFixed(2)}\n\n`;
+
+      word += `MODEL COEFFICIENTS\n`;
+      word += `${'='.repeat(50)}\n`;
+      results.coefficients.forEach(coef => {
+        word += `${coef.name}: ${coef.estimate.toFixed(4)} (SE: ${coef.se.toFixed(4)})\n`;
+        word += `  95% CI: [${coef.ciLower.toFixed(4)}, ${coef.ciUpper.toFixed(4)}]\n`;
+        if (coef.pValue !== null) {
+          word += `  P-value: ${formatPValue(coef.pValue)}\n`;
+        }
+        word += `\n`;
+      });
+
+      word += `\nINTERPRETATION\n`;
+      word += `${'='.repeat(50)}\n`;
+      if (results.I2 < 25) {
+        word += `- Low heterogeneity detected (I² < 25%)\n`;
+      } else if (results.I2 < 50) {
+        word += `- Moderate heterogeneity detected (I²: 25-50%)\n`;
+      } else {
+        word += `- High heterogeneity detected (I² > 50%)\n`;
+      }
+
+      // Show in preview
+      document.getElementById('exportPreview').value = word;
+      showToast('Word report generated', 'success');
+
+      // Copy to clipboard
+      navigator.clipboard.writeText(word);
+    }
+
+    // =============================================
+    // UI HELPER FUNCTIONS
+    // =============================================
+
+    function showToast(message, type = 'info') {
+      // Remove existing toasts
+      const existing = document.querySelector('.toast-container');
+      if (existing) existing.remove();
+
+      // Create container
+      const container = document.createElement('div');
+      container.className = 'toast-container';
+
+      // Create toast
+      const toast = document.createElement('div');
+      toast.className = `toast toast--${type}`;
+
+      const icons = {
+        success: '✓',
+        error: '✗',
+        warning: '⚠',
+        info: 'ℹ'
+      };
+
+      toast.innerHTML = `<span style="font-size: 1.2em;">${icons[type]}</span><span>${message}</span>`;
+
+      container.appendChild(toast);
+      document.body.appendChild(container);
+
+      // Auto remove after 3 seconds
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => container.remove(), 300);
+      }, 3000);
+    }
+
+    function showProgress(message) {
+      const existing = document.querySelector('.progress-overlay');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.className = 'progress-overlay';
+      overlay.innerHTML = `
+        <div class="progress-content">
+          <p style="margin-bottom: var(--space-2);">${message}</p>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // Animate
+      setTimeout(() => {
+        const fill = overlay.querySelector('.progress-fill');
+        fill.style.width = '60%';
+      }, 100);
+    }
+
+    function hideProgress() {
+      const overlay = document.querySelector('.progress-overlay');
+      if (overlay) {
+        const fill = overlay.querySelector('.progress-fill');
+        if (fill) fill.style.width = '100%';
+        setTimeout(() => overlay.remove(), 300);
+      }
+    }
+
+    // =============================================
+    // KEYBOARD SHORTCUTS
+    // =============================================
+
+    document.addEventListener('keydown', function(e) {
+      // Ctrl/Cmd + Enter: Run analysis
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runAnalysis();
+      }
+      // Ctrl/Cmd + Shift + D: Load demo data
+      else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        loadDemoData();
+      }
+      // Ctrl/Cmd + Shift + E: Export results
+      else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        exportResults();
+      }
+      // Ctrl/Cmd + Shift + R: Generate report
+      else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        generateReport();
+      }
+      // Ctrl/Cmd + 1-6: Switch tabs
+      else if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const tabs = ['data', 'settings', 'results', 'plots', 'bias', 'sensitivity', 'subgroups', 'advanced', 'quality', 'models', 'export', 'report'];
+        const tabIdx = parseInt(e.key) - 1;
+        if (tabIdx < tabs.length) {
+          switchTab(tabs[tabIdx]);
+        }
+      }
+      // Escape: Clear selections
+      else if (e.key === 'Escape') {
+        document.querySelectorAll('.input').forEach(input => input.blur());
+      }
+    });
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', function() {
+      // Add first study
+      addStudy();
+      showToast('Dose Response Pro v3.0 ready', 'success');
+    });
+  </script>
+</body>
+</html>

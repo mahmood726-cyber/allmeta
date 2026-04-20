@@ -1,0 +1,15 @@
+{
+  "version": "0.1",
+  "model_id": "markov_simple",
+  "generated_at": "2026-03-01T12:35:45Z",
+  "comparator": "R",
+  "source": "Independent R Markov fixture runner",
+  "r_version": "R version 4.5.2 (2025-10-31 ucrt)",
+  "strategies": {
+    "base": {
+      "total_costs": 5395.1763,
+      "total_qalys": 4.3161,
+      "life_years": 5.3952
+    }
+  }
+}

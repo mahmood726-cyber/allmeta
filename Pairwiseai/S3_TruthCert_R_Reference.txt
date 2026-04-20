@@ -1,0 +1,197 @@
+====================================================================== 
+TruthCert-PairwisePro R Reference Values
+Using EXACT datasets from TruthCert-PairwisePro
+====================================================================== 
+
+Generated: 2026-01-20 11:32:51 
+R Version: R version 4.5.2 (2025-10-31 ucrt) 
+metafor Version: 4.8.0 
+
+---------------------------------------------------------------------- 
+DATASET 1: SGLT2i - All-Cause Mortality (k=5)
+Source: Pooled SGLT2 trials
+---------------------------------------------------------------------- 
+
+1.1 Effect Sizes (Log Odds Ratio)
+Study				yi (log OR)	vi (variance)	SE
+DAPA-HF 2019	-0.202235	0.007629	0.087346
+EMPEROR-Reduced 2020	-0.074131	0.009020	0.094972
+DELIVER 2022	-0.067398	0.004677	0.068386
+EMPEROR-Preserved 2021	-0.111143	0.005313	0.072893
+SOLOIST-WHF 2021	-0.130414	0.040443	0.201105
+
+1.2 Random Effects Models - All tau² Estimators
+
+Estimator	tau²		I²		Pooled Est	SE
+DL		0.000000	0.0000%	-0.109586	0.038671
+REML		0.000000	0.0000%	-0.109586	0.038671
+ML		0.000000	0.0000%	-0.109586	0.038671
+PM		0.000000	0.0000%	-0.109586	0.038671
+HS		0.000000	0.0000%	-0.109586	0.038671
+SJ		0.000726	8.3522%	-0.110265	0.040917
+HE		0.000000	0.0000%	-0.109586	0.038671
+EB		0.000000	0.0000%	-0.109586	0.038671
+
+1.3 REML Model (Primary Reference)
+  Pooled log(OR): -0.109586
+  SE: 0.038671
+  95% CI: [-0.185379, -0.033792]
+  z-value: -2.833812
+  p-value: 0.004600
+  tau²: 0.000000
+  tau: 0.000000
+  I²: 0.0000%
+  H²: 1.0000
+  Q: 1.656246
+  Q df: 4
+  Q p-value: 0.798649
+
+1.4 Odds Ratio Scale
+  OR: 0.896205
+  OR 95% CI: [0.830789, 0.966772]
+
+1.5 HKSJ-Adjusted Confidence Interval
+  HKSJ CI: [-0.178674, -0.040497]
+  OR HKSJ CI: [0.836378, 0.960312]
+  HKSJ t-value: -4.403912
+  HKSJ df: 4
+  HKSJ p-value: 0.011656
+
+1.6 Prediction Interval
+  PI: [-0.185379, -0.033792]
+  OR PI: [0.830789, 0.966772]
+
+1.7 Publication Bias - Egger's Test
+  Intercept: -0.071842
+  z-value: -0.413245
+  p-value: 0.707189
+
+1.8 Publication Bias - Begg's Test
+  Kendall's tau: -0.400000
+  p-value: 0.483333
+
+1.9 Trim-and-Fill
+  Imputed studies (k0): 0
+  Adjusted estimate: -0.109586
+  Adjusted OR: 0.896205
+
+1.10 Leave-One-Out Analysis
+Study				Estimate	SE		tau²
+DAPA-HF 2019	-0.086998	0.043128	0.000000
+EMPEROR-Reduced 2020	-0.116633	0.042340	0.000000
+DELIVER 2022	-0.129418	0.046887	0.000000
+EMPEROR-Preserved 2021	-0.108976	0.045620	0.000000
+SOLOIST-WHF 2021	-0.108786	0.039406	0.000000
+
+---------------------------------------------------------------------- 
+DATASET 2: BCG Vaccine for TB Prevention (k=6)
+Source: Colditz et al. (1994), JAMA - TruthCert subset
+---------------------------------------------------------------------- 
+
+2.1 Effect Sizes (Log Odds Ratio)
+Study			yi (log OR)	vi (variance)
+Aronson 1948	-0.938694	0.357125
+Ferguson 1949	-1.666191	0.208132
+Rosenthal 1960	-1.386294	0.433413
+Hart 1977	-1.456444	0.020314
+Frimodt-Moller 1973	-0.219141	0.051952
+Comstock 1974	-0.682148	0.008361
+
+2.2 REML Results
+  Pooled log(OR): -0.988076
+  SE: 0.251054
+  OR: 0.372292 [0.227607, 0.608950]
+  tau²: 0.256405
+  I²: 85.1082%
+  Q: 32.974174 (df=5, p=0.000004)
+
+2.3 All tau² Estimators (BCG)
+  DL: tau² = 0.251009, pooled = -0.987221
+  REML: tau² = 0.256405, pooled = -0.988076
+  ML: tau² = 0.199176, pooled = -0.977835
+  PM: tau² = 0.209320, pooled = -0.979856
+  HS: tau² = 0.136237, pooled = -0.962712
+  SJ: tau² = 0.218435, pooled = -0.981590
+  HE: tau² = 0.119240, pooled = -0.957697
+  EB: tau² = 0.209295, pooled = -0.979851
+
+---------------------------------------------------------------------- 
+DATASET 3: Blood Pressure Reduction (Continuous, k=5)
+---------------------------------------------------------------------- 
+
+3.1 Mean Difference
+Study		MD		Variance
+Trial A 2018	-8.300000	0.859348
+Trial B 2019	-7.300000	0.766489
+Trial C 2020	-9.100000	0.678214
+Trial D 2021	-6.500000	1.084655
+Trial E 2022	-6.700000	2.055558
+
+3.2 Pooled MD (REML)
+  Pooled MD: -7.763485 (SE: 0.515009)
+  95% CI: [-8.772884, -6.754085]
+  tau²: 0.362294
+  I²: 27.4184%
+
+3.3 Standardized Mean Difference (Hedges' g)
+Study		g		Variance
+Trial A 2018	-1.034371	0.015219
+Trial B 2019	-0.827870	0.010724
+Trial C 2020	-1.171622	0.013203
+Trial D 2021	-0.805220	0.018170
+Trial E 2022	-0.667605	0.021669
+
+3.4 Pooled SMD (REML)
+  Pooled g: -0.910505 (SE: 0.088008)
+  95% CI: [-1.082998, -0.738013]
+  tau²: 0.023297
+  I²: 60.6559%
+
+====================================================================== 
+SUMMARY: KEY REFERENCE VALUES FOR JavaScript VALIDATION
+====================================================================== 
+
+SGLT2_ACM Dataset (k=5, REML):
+  yi[1] = -0.202235, vi[1] = 0.007629
+  yi[2] = -0.074131, vi[2] = 0.009020
+  yi[3] = -0.067398, vi[3] = 0.004677
+  yi[4] = -0.111143, vi[4] = 0.005313
+  yi[5] = -0.130414, vi[5] = 0.040443
+  Pooled log(OR) = -0.109586
+  SE = 0.038671
+  OR = 0.896205
+  tau² = 0.000000
+  I² = 0.0000%
+  Q = 1.656246
+  HKSJ CI = [-0.178674, -0.040497]
+  PI = [-0.185379, -0.033792]
+
+tau² Estimator Values (SGLT2_ACM):
+  DL = 0.000000
+  REML = 0.000000
+  ML = 0.000000
+  PM = 0.000000
+  HS = 0.000000
+  SJ = 0.000726
+  HE = 0.000000
+  EB = 0.000000
+
+BCG Dataset (k=6, REML):
+  Pooled log(OR) = -0.988076
+  OR = 0.372292
+  tau² = 0.256405
+  I² = 85.1082%
+
+BP_REDUCTION Dataset (k=5, MD):
+  Pooled MD = -7.763485
+  tau² = 0.362294
+  I² = 27.4184%
+
+BP_REDUCTION Dataset (k=5, SMD/Hedges' g):
+  Pooled g = -0.910505
+  tau² = 0.023297
+  I² = 60.6559%
+
+====================================================================== 
+END OF R REFERENCE VALUES
+====================================================================== 

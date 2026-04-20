@@ -1,0 +1,20 @@
+{
+  "defaults": {
+    "iterations": 40,
+    "warmup": 5
+  },
+  "models": {
+    "markov_simple": {
+      "max_mean_ms": 8,
+      "max_p95_ms": 15
+    },
+    "markov_age_dependent": {
+      "max_mean_ms": 12,
+      "max_p95_ms": 25
+    },
+    "psa_demo": {
+      "max_mean_ms": 18,
+      "max_p95_ms": 35
+    }
+  }
+}

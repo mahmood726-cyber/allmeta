@@ -1,0 +1,96 @@
+{
+  "title": "Dose Response Pro: Browser-Based Dose-Response Meta-Analysis Matching R Accuracy",
+  "slug": "dose-response-pro-browser",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "body": "Can browser-based dose-response meta-analysis match the numerical accuracy of established R packages while providing interactive visualization? Dose Response Pro v18.1 is a 10,022-line single-file HTML application implementing the Greenland-Longnecker two-stage method for dose-response meta-analysis with linear, quadratic, and restricted cubic spline models, plus leave-one-out sensitivity analysis. The tool provides interactive dose-response curve plotting, CSV import with flexible column detection, R code export for reproducibility checks, and a command-line interface for batch processing alongside the browser application. Strict benchmarking against the R dosresmeta package showed exact parity on 120 of 120 comparable datasets with a median runtime speedup of 1.92x over the R implementation. Deterministic CLI validation confirmed three-of-three passed checks including grid-based coefficient verification against independently computed reference values. This demonstrates that client-side JavaScript can deliver publication-quality dose-response synthesis with performance exceeding dedicated statistical environments. However, the limitation of exploratory spline model status means complex non-linear relationships require independent validation before clinical interpretation of inflection points.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "Can browser-based dose-response meta-analysis match the numerical accuracy of established R packages while providing interactive visualization?"
+    },
+    {
+      "role": "Dataset",
+      "text": "Dose Response Pro v18.1 is a 10,022-line single-file HTML application implementing the Greenland-Longnecker two-stage method for dose-response meta-analysis with linear, quadratic, and restricted cubic spline models, plus leave-one-out sensitivity analysis."
+    },
+    {
+      "role": "Method",
+      "text": "The tool provides interactive dose-response curve plotting, CSV import with flexible column detection, R code export for reproducibility checks, and a command-line interface for batch processing alongside the browser application."
+    },
+    {
+      "role": "Primary result",
+      "text": "Strict benchmarking against the R dosresmeta package showed exact parity on 120 of 120 comparable datasets with a median runtime speedup of 1.92x over the R implementation."
+    },
+    {
+      "role": "Robustness",
+      "text": "Deterministic CLI validation confirmed three-of-three passed checks including grid-based coefficient verification against independently computed reference values."
+    },
+    {
+      "role": "Interpretation",
+      "text": "This demonstrates that client-side JavaScript can deliver publication-quality dose-response synthesis with performance exceeding dedicated statistical environments."
+    },
+    {
+      "role": "Boundary",
+      "text": "However, the limitation of exploratory spline model status means complex non-linear relationships require independent validation before clinical interpretation of inflection points."
+    }
+  ],
+  "notes": {
+    "app": "Dose Response Pro v18.1",
+    "data": "120 R dosresmeta benchmark datasets",
+    "code": "https://github.com/mahmood726-cyber/dosehtml",
+    "doi": "",
+    "version": "18.1",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "Dose-response trend coefficient",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a quantitative result such as a percentage, count, or interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}

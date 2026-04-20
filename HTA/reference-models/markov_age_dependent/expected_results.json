@@ -1,0 +1,20 @@
+{
+  "version": "0.1",
+  "model_id": "markov_age_dependent",
+  "description": "Expected results for markov_age_dependent deterministic fixture",
+  "tolerance": {
+    "costs": 0.01,
+    "qalys": 0.0001,
+    "relative": 0.001
+  },
+  "deterministic": {
+    "strategies": {
+      "natural_history": {
+        "total_costs": 17717.34703670179,
+        "total_qalys": 10.075303247612213,
+        "life_years": 11.447247169551526
+      }
+    }
+  },
+  "verification_seed": 12345
+}

@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-03-12T10:20:40Z",
+  "app_build_id": "2026-03-07-fixall-1",
+  "source_artifacts": {
+    "parity_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_parity_gate.json",
+    "frontier_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_frontier_gap_methods_benchmark.json",
+    "simulation_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_simulation_lab_benchmark.json",
+    "replication_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_publication_replication_gate.json"
+  },
+  "artifact_availability": {
+    "parity": true,
+    "frontier": true,
+    "simulation": true,
+    "replication": true
+  },
+  "scorecards": {
+    "composite_validated_score": 1.0,
+    "loop2_score": 1.0,
+    "frontier_score": 1.0,
+    "loop7_score": 1.0
+  },
+  "metrics": [
+    {
+      "label": "Two-stage parity vs metafor",
+      "key": "two_stage_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "One-stage parity vs lme4",
+      "key": "one_stage_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Frailty parity vs coxph",
+      "key": "frailty_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Centered interaction parity",
+      "key": "centered_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Piecewise survival parity",
+      "key": "piecewise_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "RMST parity",
+      "key": "rmst_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Extended survival parity",
+      "key": "extended_survival_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Advanced survival parity",
+      "key": "advanced_survival_pass_rate",
+      "group": "loop2",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "KM uncertainty method pass",
+      "key": "km_pass_rate",
+      "group": "frontier",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Transportability IOW pass",
+      "key": "transport_iow_pass_rate",
+      "group": "frontier",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Transport sensitivity pass",
+      "key": "transport_sensitivity_pass_rate",
+      "group": "frontier",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Transport overlap stress pass",
+      "key": "transport_overlap_pass_rate",
+      "group": "frontier",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Federated survival pass",
+      "key": "federated_pass_rate",
+      "group": "frontier",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Simulation lab pass",
+      "key": "simulation_lab_pass_rate",
+      "group": "loop7",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    },
+    {
+      "label": "Publication replication pass",
+      "key": "publication_replication_pass_rate",
+      "group": "loop7",
+      "value": 1.0,
+      "gate": 1.0,
+      "gap_to_gate": 0.0,
+      "status": "target"
+    }
+  ],
+  "positioning": {
+    "level": "world-class",
+    "message": "Available compatible benchmark artifacts show high pass rates."
+  }
+}

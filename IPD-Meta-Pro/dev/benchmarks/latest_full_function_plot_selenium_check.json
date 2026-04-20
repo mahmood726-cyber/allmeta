@@ -1,0 +1,77 @@
+{
+  "total": 14,
+  "passed": 14,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "onclick_handlers_exist",
+      "ok": true,
+      "detail": "checked=190, missing=0"
+    },
+    {
+      "name": "run_analysis_survival",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forest_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 700, \"nonBlank\": true, \"visible\": true, \"width\": 1248}"
+    },
+    {
+      "name": "survival_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 700, \"nonBlank\": true, \"visible\": true, \"width\": 1248}"
+    },
+    {
+      "name": "funnel_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 600, \"nonBlank\": true, \"visible\": true, \"width\": 800}"
+    },
+    {
+      "name": "qprofile_plot_exists",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 360, \"nonBlank\": true, \"visible\": true, \"width\": 1248}"
+    },
+    {
+      "name": "run_bayesian",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "trace_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 700, \"nonBlank\": true, \"visible\": true, \"width\": 1248}"
+    },
+    {
+      "name": "posterior_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 700, \"nonBlank\": true, \"visible\": true, \"width\": 1248}"
+    },
+    {
+      "name": "bubble_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 150, \"nonBlank\": true, \"visible\": true, \"width\": 300}"
+    },
+    {
+      "name": "run_analysis_network_dataset",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "network_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 600, \"nonBlank\": true, \"visible\": true, \"width\": 800}"
+    },
+    {
+      "name": "rankogram_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 600, \"nonBlank\": true, \"visible\": true, \"width\": 800}"
+    },
+    {
+      "name": "cumulative_rank_plot_visible_nonblank",
+      "ok": true,
+      "detail": "{\"exists\": true, \"height\": 600, \"nonBlank\": true, \"visible\": true, \"width\": 800}"
+    }
+  ]
+}

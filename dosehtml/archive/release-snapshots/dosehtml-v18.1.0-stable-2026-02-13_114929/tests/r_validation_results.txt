@@ -1,0 +1,34 @@
+Dose Response Pro v18.1 - R Validation Results
+Generated: 2026-02-13T11:48:30Z
+R: R version 4.5.2 (2025-10-31 ucrt)
+dosresmeta: 2.2.0 | metafor: 4.8.0 | mvmeta: 1.0.3
+Overall: PASS
+Total tests: 3 | Passed: 3 | Failed: 0
+Tolerance(beta): 0.020 | Tolerance(SE): 1.00
+
+Per-test details
+============================================================
+[PASS] Test 1: Simple Linear Trend
+  Fit OK: yes
+  Beta match: yes
+  SE match: yes
+  linear -> beta diff: -0.008947 | se diff: -0.129495
+  quadratic -> beta diff: 0.005544 | se diff: -0.042031
+  tau2(ours): 0.000000 | tau2(R): 0.000000 | diff: -0.000000
+
+[PASS] Test 2: Quadratic Trend
+  Fit OK: yes
+  Beta match: yes
+  SE match: yes
+  linear -> beta diff: 0.001903 | se diff: -0.096337
+  quadratic -> beta diff: -0.000268 | se diff: -0.021917
+  tau2(ours): 0.000000 | tau2(R): 0.000000 | diff: -0.000000
+
+[PASS] Test 3: High Heterogeneity
+  Fit OK: yes
+  Beta match: yes
+  SE match: yes
+  linear -> beta diff: 0.012308 | se diff: -0.209788
+  quadratic -> beta diff: -0.005850 | se diff: -0.093866
+  tau2(ours): 0.000000 | tau2(R): 0.000000 | diff: -0.000000
+

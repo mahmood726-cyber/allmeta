@@ -1,0 +1,140 @@
+{
+  "timestamp": "2026-02-24T08:46:46.719595",
+  "passed": 17,
+  "failed": 0,
+  "tests": [
+    {
+      "section": "S1",
+      "name": "Core functions available",
+      "pass": true
+    },
+    {
+      "section": "S2",
+      "name": "BCG analysis produced results",
+      "pass": true
+    },
+    {
+      "section": "S2",
+      "name": "yi array finite",
+      "pass": true,
+      "actual": 6
+    },
+    {
+      "section": "S2",
+      "name": "vi array finite",
+      "pass": true,
+      "actual": 6
+    },
+    {
+      "section": "S2",
+      "name": "tau2 DL consistency",
+      "pass": true,
+      "actual": 0.25100946722907524,
+      "expected": 0.25100946722907524
+    },
+    {
+      "section": "S2",
+      "name": "tau2 REML consistency",
+      "pass": true,
+      "actual": 0.25640414089273555,
+      "expected": 0.25640414089273555
+    },
+    {
+      "section": "S2",
+      "name": "tau2 ML consistency",
+      "pass": true,
+      "actual": 0.19917607529240994,
+      "expected": 0.19917607529240994
+    },
+    {
+      "section": "S2",
+      "name": "pooled theta consistency",
+      "pass": true,
+      "actual": -0.9880763438745314,
+      "expected": -0.9880763438745314
+    },
+    {
+      "section": "S2",
+      "name": "pooled se consistency",
+      "pass": true,
+      "actual": 0.25105365840312194,
+      "expected": 0.25105365840312194
+    },
+    {
+      "section": "S2",
+      "name": "HKSJ CI lower consistency",
+      "pass": true,
+      "actual": -1.7452027135265813,
+      "expected": -1.7452027135265813
+    },
+    {
+      "section": "S2",
+      "name": "HKSJ CI upper consistency",
+      "pass": true,
+      "actual": -0.23094997422248154,
+      "expected": -0.23094997422248154
+    },
+    {
+      "section": "S2",
+      "name": "PI available and finite",
+      "pass": true,
+      "actual": {
+        "lower": -2.8917999855477716,
+        "upper": 0.915647297798709
+      }
+    },
+    {
+      "section": "S2",
+      "name": "Egger output available",
+      "pass": true,
+      "actual": {
+        "caveats": [
+          "Egger's test assumes no true relationship between study size and effect",
+          "For odds ratios, inherent correlation between precision and effect may cause spurious asymmetry",
+          "Consider contour-enhanced funnel plots to distinguish bias from heterogeneity"
+        ],
+        "df": 4,
+        "intercept": -3.6099317914146813,
+        "interpretation": "Significant asymmetry detected (p=-0.0076). May indicate: (1) publication bias, (2) true small-study effects (different populations), (3) heterogeneity, or (4) artifact of effect measure. Further investigation recommended.",
+        "p_value": -0.007565470786584427,
+        "p_value_onesided": -0.0037827353932922136,
+        "reference": "Egger M, et al. BMJ 1997;315:629-634",
+        "se": 4.0038474635962995,
+        "t_statistic": -0.9016157144438768,
+        "warnings": [
+          "Very low power with k=6 (recommend k\u226510 for reliable results)",
+          "For binary outcomes, consider Peters' test which is less affected by effect-precision correlation",
+          "High heterogeneity (I\u00b2=85%) may cause asymmetry unrelated to publication bias"
+        ]
+      }
+    },
+    {
+      "section": "S3",
+      "name": "Proportion demo produced yi",
+      "pass": true,
+      "actual": 6
+    },
+    {
+      "section": "S3",
+      "name": "Continuous SMD pooled SE finite",
+      "pass": true,
+      "actual": 0.08756992518013734
+    },
+    {
+      "section": "S3",
+      "name": "runThreeLevelModel available",
+      "pass": true
+    },
+    {
+      "section": "S3",
+      "name": "runGOSHAnalysis available",
+      "pass": true
+    }
+  ],
+  "summary": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "pass_rate": 100.0
+  }
+}

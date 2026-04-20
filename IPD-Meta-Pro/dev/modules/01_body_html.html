@@ -1,0 +1,2816 @@
+
+
+    
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header class="header">
+
+        <div class="logo">
+
+            <div class="logo-icon">IPD</div>
+
+            <div>
+
+                <div class="logo-text">IPD Meta-Analysis Pro</div>
+
+                <div class="logo-subtitle">Individual Patient Data Analysis</div>
+
+            </div>
+
+        </div>
+
+        <div class="header-actions">
+
+            <!-- Undo/Redo Controls -->
+
+            <div class="undo-status">
+
+                <button class="undo-btn" id="undoBtn" onclick="UndoManager.undo()" disabled title="Undo (Ctrl+Z)" aria-label="Undo">&#x21B6;</button>
+
+                <button class="undo-btn" id="redoBtn" onclick="UndoManager.redo()" disabled title="Redo (Ctrl+Y)" aria-label="Redo">&#x21B7;</button>
+
+            </div>
+
+
+
+            <!-- Session Indicator -->
+
+            <div class="session-indicator" id="sessionIndicator" title="Session status">
+
+                <span id="sessionStatus">&#x25CF;</span>
+
+                <span id="sessionLabel">Ready</span>
+
+            </div>
+
+
+
+            <!-- File Menu -->
+
+            <div class="dropdown" id="fileDropdown">
+
+                <button class="dropdown-toggle" aria-expanded="false" aria-haspopup="true" onclick="toggleDropdown('fileDropdown')">File</button>
+
+                <div class="dropdown-menu">
+
+                    <button class="dropdown-item" onclick="SessionManager.saveSession()">Save Session</button>
+
+                    <button class="dropdown-item" onclick="SessionManager.loadSession()">Load Session</button>
+
+                    <button class="dropdown-item" onclick="SessionManager.exportSession()">Export Session</button>
+
+                    <button class="dropdown-item" onclick="SessionManager.importSession()">Import Session</button>
+
+                    <div class="dropdown-divider"></div>
+
+                    <button class="dropdown-item" onclick="showEnhancedExportModal()">Export Results</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Analysis Menu -->
+
+            <div class="dropdown" id="analysisDropdown">
+
+                <button class="dropdown-toggle" aria-expanded="false" aria-haspopup="true" onclick="toggleDropdown('analysisDropdown')">Analysis</button>
+
+                <div class="dropdown-menu">
+
+                    <button class="dropdown-item" onclick="displayGRADEAssessment(APP.results)">GRADE Assessment</button>
+
+                    <button class="dropdown-item" onclick="showPowerCalculator()">Power Calculator</button>
+
+                    <button class="dropdown-item" onclick="showMediationAnalysis()">&#x1F517; MASEM Mediation</button>
+
+                    <button class="dropdown-item" onclick="showModelDiagnostics()">&#x1F50D; Model Diagnostics</button>
+
+                    <div class="dropdown-divider"></div>
+
+                    <button class="dropdown-item" onclick="showClusteredIPDAnalysis()">Clustered IPD</button>
+
+                    <button class="dropdown-item" onclick="showValidationStudy()">&#x2713; Validation Study</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Data Menu -->
+
+            <div class="dropdown" id="dataDropdown">
+
+                <button class="dropdown-toggle" aria-expanded="false" aria-haspopup="true" onclick="toggleDropdown('dataDropdown')">Data</button>
+
+                <div class="dropdown-menu">
+
+                    <button class="dropdown-item" onclick="showInlineDataEditor()">Edit Data</button>
+
+                    <button class="dropdown-item" onclick="showMICEImputationModal()">Multiple Imputation (MICE)</button>
+
+                    <button class="dropdown-item" onclick="runDataGuardian()">IPD Integrity Gate</button>
+
+                    <div class="dropdown-divider"></div>
+
+                    <button class="dropdown-item" onclick="clearData()">&#x1F5D1;&#xFE0F; Clear Data</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Reference Menu -->
+
+            <div class="dropdown" id="refDropdown">
+
+                <button class="dropdown-toggle" aria-expanded="false" aria-haspopup="true" onclick="toggleDropdown('refDropdown')">Reference</button>
+
+                <div class="dropdown-menu">
+
+                    <button class="dropdown-item" onclick="showMathematicalAppendix()">Statistical Formulae</button>
+
+                    <button class="dropdown-item" onclick="showCitationsList()">References</button>
+
+                    <button class="dropdown-item" onclick="showCausalAssumptions()">&#x2696;&#xFE0F; Causal Assumptions</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Help Menu -->
+
+            <div class="dropdown" id="helpDropdown">
+
+                <button class="dropdown-toggle" aria-expanded="false" aria-haspopup="true" onclick="toggleDropdown('helpDropdown')">Help</button>
+
+                <div class="dropdown-menu">
+
+                    <button class="dropdown-item" onclick="HelpSystem.showQuickStart()">Quick Start Guide</button>
+
+                    <button class="dropdown-item" onclick="HelpSystem.showTutorials()">Interactive Tutorials</button>
+
+                    <button class="dropdown-item" onclick="HelpSystem.showFeatureGuide()">&#x2B50; Feature Guide</button>
+
+                    <div class="dropdown-divider"></div>
+
+                    <button class="dropdown-item" onclick="HelpSystem.showKeyboardShortcuts()">&#x2328;&#xFE0F; Keyboard Shortcuts</button>
+
+                    <button class="dropdown-item" onclick="HelpSystem.showLimitations()">&#x26A0;&#xFE0F; Limitations & Caveats</button>
+
+                    <button class="dropdown-item" onclick="HelpSystem.showAbout()">&#x2139;&#xFE0F; About IPD-MA Pro</button>
+
+                </div>
+
+            </div>
+
+
+
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                    <circle cx="12" cy="12" r="5"></circle>
+
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+
+                </svg>
+
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+    
+
+    <nav class="nav-container">
+
+        <div class="nav-tabs" id="mainNav">
+
+            <div class="nav-tab active" data-panel="data">
+
+                <div class="nav-tab-icon">D</div>
+
+                <span class="nav-tab-label">Data</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="covariates">
+
+                <div class="nav-tab-icon">C</div>
+
+                <span class="nav-tab-label">Covariates</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="guardian">
+
+                <div class="nav-tab-icon">G</div>
+
+                <span class="nav-tab-label">Integrity</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="network">
+
+                <div class="nav-tab-icon">N</div>
+
+                <span class="nav-tab-label">Network</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="results">
+
+                <div class="nav-tab-icon">R</div>
+
+                <span class="nav-tab-label">Results</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="ranking">
+
+                <div class="nav-tab-icon">K</div>
+
+                <span class="nav-tab-label">Ranking</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="heterogeneity">
+
+                <div class="nav-tab-icon">H</div>
+
+                <span class="nav-tab-label">Heterogeneity</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="consistency">
+
+                <div class="nav-tab-icon">C</div>
+
+                <span class="nav-tab-label">Consistency</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="bayesian">
+
+                <div class="nav-tab-icon">B</div>
+
+                <span class="nav-tab-label">Bayesian</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="pubbias">
+
+                <div class="nav-tab-icon">P</div>
+
+                <span class="nav-tab-label">Pub Bias</span>
+
+            </div>
+
+            <div class="nav-tab" data-panel="metareg">
+
+                <div class="nav-tab-icon">M</div>
+
+                <span class="nav-tab-label">Meta-Reg</span>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+
+
+    
+
+    <main class="main-content" id="main-content">
+
+        <div class="content-area">
+
+            
+
+            <div class="panel active" id="panel-data">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">1</div>
+
+                            Import Individual Patient Data
+
+                        </div>
+
+                        <div class="btn-group" style="flex-wrap: wrap; gap: 0.5rem;">
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('survival')" title="NSCLC Immunotherapy">Lung Cancer (IO)</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('binary')" title="SGLT2 Inhibitors CVD">SGLT2 CVD</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('continuous')" title="CBT vs Pharmacotherapy">Depression CBT</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('ovarian_survival')" title="Ovarian Cancer">Ovarian</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('breast_endocrine')" title="EBCTCG Breast">Breast (EBCTCG)</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('network_antidepressants')" title="NMA Antidepressants">NMA: Antidep</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('statin_cvd')" title="CTT Statins">Statins (CTT)</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('hiv_survival')" title="ART-CC HIV">HIV ART</button>
+
+                            <button class="btn btn-secondary" onclick="loadExampleData('covid_treatments')" title="COVID-19">COVID-19</button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+
+                        <div class="drop-zone-icon">+</div>
+
+                        <div class="drop-zone-text">Drop CSV/Excel file here or click to upload</div>
+
+                        <div class="drop-zone-hint">Supports .csv, .xlsx, .json, .tsv files</div>
+
+                        <input type="file" id="fileInput" hidden accept=".csv,.xlsx,.xls,.json,.tsv">
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card" id="dataPreviewCard" style="display:none;">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">2</div>
+
+                            Data Preview & Configuration
+
+                        </div>
+
+                        <div class="btn-group">
+
+                            <button class="btn btn-secondary" onclick="editData()">Edit Data</button>
+
+                            <button class="btn btn-danger" onclick="clearData()">Clear</button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid" id="dataStats">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="statPatients">0</div>
+
+                            <div class="stat-label">Patients</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="statStudies">0</div>
+
+                            <div class="stat-label">Studies</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="statTreatments">0</div>
+
+                            <div class="stat-label">Treatments</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="statVariables">0</div>
+
+                            <div class="stat-label">Variables</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label class="form-label">Study ID Variable</label>
+
+                            <select class="form-select" id="varStudy"></select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Treatment Variable</label>
+
+                            <select class="form-select" id="varTreatment"></select>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="grid grid-3">
+
+                        <div class="form-group">
+
+                            <label class="form-label">Outcome Type</label>
+
+                            <select class="form-select" id="outcomeType" onchange="updateOutcomeVars()">
+
+                                <option value="survival">Time-to-Event (Survival)</option>
+
+                                <option value="binary">Binary</option>
+
+                                <option value="continuous">Continuous</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group" id="timeVarGroup">
+
+                            <label class="form-label">Time Variable</label>
+
+                            <select class="form-select" id="varTime"></select>
+
+                        </div>
+
+                        <div class="form-group" id="eventVarGroup">
+
+                            <label class="form-label">Event/Outcome Variable</label>
+
+                            <select class="form-select" id="varEvent"></select>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="data-table-container" style="max-height: 300px; overflow-y: auto;">
+
+                        <table class="data-table" id="dataTable">
+
+                            <thead id="dataTableHead"></thead>
+
+                            <tbody id="dataTableBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card" id="analysisSettingsCard" style="display:none;">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">3</div>
+
+                            Analysis Settings
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label class="form-label">Analysis Approach</label>
+
+                            <select class="form-select" id="analysisApproach">
+
+                                <option value="two-stage">Two-Stage (Study-level then pool)</option>
+
+                                <option value="one-stage">One-Stage (Mixed-effects model)</option>
+
+                                <option value="both">Both approaches</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Effect Measure</label>
+
+                            <select class="form-select" id="effectMeasure">
+
+                                <option value="HR">Hazard Ratio (HR)</option>
+
+                                <option value="OR">Odds Ratio (OR)</option>
+
+                                <option value="RR">Risk Ratio (RR)</option>
+
+                                <option value="RD">Risk Difference (RD)</option>
+
+                                <option value="MD">Mean Difference (MD)</option>
+
+                                <option value="SMD">Standardized Mean Difference (SMD)</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label class="form-label">Random-Effects Method</label>
+
+                            <select class="form-select" id="reMethod">
+
+                                <option value="FE">Fixed Effect (Inverse Variance)</option>
+
+                                <option value="REML">REML (Restricted Maximum Likelihood)</option>
+
+                                <option value="DL">DerSimonian-Laird</option>
+
+                                <option value="PM">Paule-Mandel</option>
+
+                                <option value="SJ">Sidik-Jonkman</option>
+
+                                <option value="HE">Hedges</option>
+
+                                <option value="ML">Maximum Likelihood</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Confidence Level</label>
+
+                            <select class="form-select" id="confLevel">
+
+                                <option value="0.95">95%</option>
+
+                                <option value="0.90">90%</option>
+
+                                <option value="0.99">99%</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label class="checkbox-item">
+
+                            <input type="checkbox" id="useHKSJ" checked>
+
+                            Apply Hartung-Knapp-Sidik-Jonkman adjustment
+
+                        </label>
+
+                    </div>
+
+                    <div id="methodConfidencePanel" style="margin-top:1rem;"></div>
+
+
+
+                    <div style="text-align: center; margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+
+                        <button class="btn btn-primary" onclick="runAnalysis()" style="padding: 0.75rem 1.5rem;">
+
+                            Run IPD Meta-Analysis
+
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="showMethodGuide()" style="padding: 0.75rem 1.5rem;" title="Help me choose the right analysis method">Method Guide</button>
+
+                        <button class="btn btn-success" onclick="showAdvancedFeaturesMenu()" style="margin-left: 0.5rem;">40+ Advanced Features</button>
+
+                        <button class="btn btn-secondary" onclick="runMLSubgroupDetection()" style="padding: 0.75rem 1.5rem;">
+
+                            CART Subgroups
+
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="runNetworkMetaAnalysis()" style="padding: 0.75rem 1.5rem;">
+
+                            Network MA
+
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="showAddAggregateDataModal()" style="padding: 0.75rem 1.5rem;">
+
+                            + Add Published Data
+
+                        </button>
+
+                        <button class="btn btn-secondary" onclick="runCombinedIPDADAnalysis()" style="padding: 0.75rem 1.5rem;">
+
+                            IPD + AD Combined
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-covariates">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">C</div>
+
+                            Covariate Selection & Adjustment
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="alert alert-info">
+
+                        <strong>IPD Advantage:</strong> Individual patient data allows adjustment for patient-level covariates, enabling treatment-covariate interaction analyses and reducing ecological bias.
+
+                    </div>
+
+
+
+                    <div class="grid grid-2">
+
+                        <div>
+
+                            <h4 style="margin-bottom: 0.75rem; color: var(--text-secondary);">Available Covariates</h4>
+
+                            <div class="var-selector" id="availableCovariates">
+
+                                <span class="var-chip" data-var="age">age <span class="type">num</span></span>
+
+                                <span class="var-chip" data-var="sex">sex <span class="type">cat</span></span>
+
+                                <span class="var-chip" data-var="stage">stage <span class="type">cat</span></span>
+
+                                <span class="var-chip" data-var="biomarker">biomarker <span class="type">num</span></span>
+
+                            </div>
+
+                        </div>
+
+                        <div>
+
+                            <h4 style="margin-bottom: 0.75rem; color: var(--text-secondary);">Selected for Adjustment</h4>
+
+                            <div class="var-selector" id="selectedCovariates" style="min-height: 80px; border: 2px dashed var(--border-color);">
+
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">Drag covariates here</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div style="margin-top: 1rem;">
+
+                        <h4 style="margin-bottom: 0.75rem; color: var(--text-secondary);">Interaction Terms</h4>
+
+                        <div class="checkbox-group" id="interactionTerms">
+
+                            <label class="checkbox-item">
+
+                                <input type="checkbox" name="interaction" value="treatment*age">
+
+                                Treatment x Age
+
+                            </label>
+
+                            <label class="checkbox-item">
+
+                                <input type="checkbox" name="interaction" value="treatment*sex">
+
+                                Treatment x Sex
+
+                            </label>
+
+                            <label class="checkbox-item">
+
+                                <input type="checkbox" name="interaction" value="treatment*stage">
+
+                                Treatment x Stage
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Covariate Summary Statistics</div>
+
+                    </div>
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="covariateSummary">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Variable</th>
+
+                                    <th scope="col">Type</th>
+
+                                    <th scope="col">N</th>
+
+                                    <th scope="col">Missing</th>
+
+                                    <th scope="col">Mean/Mode</th>
+
+                                    <th scope="col">SD/Categories</th>
+
+                                    <th scope="col">Range</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="covariateSummaryBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-guardian">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">G</div>
+
+                            IPD Integrity Gate
+
+                        </div>
+
+                        <div class="btn-group" style="align-items:center;gap:0.5rem;">
+                            <button class="btn btn-secondary" onclick="runDataGuardian()">Run Gate</button>
+                            <button class="btn btn-secondary" onclick="showStrictQCGateModal(APP.lastIntegrityReport)">Gate Details</button>
+                            <span class="badge badge-info" id="qualityBadge" role="status" aria-label="Gate status: not run">NOT RUN</span>
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box" role="group" aria-label="Integrity Score">
+
+                            <div class="stat-value" id="qualityScore" aria-live="polite">--</div>
+
+                            <div class="stat-label">Integrity Score</div>
+
+                        </div>
+
+                        <div class="stat-box" role="group" aria-label="Analysis Field Missing Rate">
+
+                            <div class="stat-value" id="missingRate" aria-live="polite">--</div>
+
+                            <div class="stat-label">Missing Rate</div>
+
+                        </div>
+
+                        <div class="stat-box" role="group" aria-label="Outlier Count">
+
+                            <div class="stat-value" id="outlierCount" aria-live="polite">--</div>
+
+                            <div class="stat-label">Outliers</div>
+
+                        </div>
+
+                        <div class="stat-box" role="group" aria-label="Duplicate Count">
+
+                            <div class="stat-value" id="duplicateCount" aria-live="polite">--</div>
+
+                            <div class="stat-label">Duplicates</div>
+
+                        </div>
+
+                        <div class="stat-box" role="group" aria-label="Gate Status">
+
+                            <div class="stat-value" id="guardianConfirmatoryStatus" aria-live="polite">--</div>
+
+                            <div class="stat-label">Gate Status</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <h4 style="margin: 1rem 0 0.75rem;">Integrity Findings</h4>
+
+                    <div id="qualityChecks">
+
+                        <div class="alert alert-info">
+
+                            Load your IPD data, then click <strong>Run Gate</strong> above to assess mapping, duplicates, missingness, treatment balance, chronology, and outcome validity.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Missing Data Analysis</div>
+
+                        <button class="btn btn-secondary" onclick="performMultipleImputation()">Run Multiple Imputation (5 datasets)</button>
+
+                    </div>
+
+                    <div class="plot-container">
+
+                        <canvas id="missingPlot" class="plot-canvas" role="img" aria-label="Missing data pattern visualization"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-network">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">N</div>
+
+                            Treatment Network Visualization
+
+                        </div>
+
+                        <div class="btn-group">
+
+                            <button class="btn btn-secondary" onclick="downloadNetwork('png')">PNG</button>
+
+                            <button class="btn btn-secondary" onclick="downloadNetwork('svg')">SVG</button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="alert alert-info" style="margin-bottom: 1rem; font-size: 0.85rem;">
+
+                        <strong>Methodology:</strong> Uses Bucher method for indirect comparisons.
+
+                        For full NMA with consistency modeling, use R (netmeta) or Stata (network meta).
+
+                        <a href="#" onclick="showAllCitations();return false;" style="color: var(--accent-info);">References</a>
+
+                    </div>
+
+
+
+                    <div class="plot-container" style="min-height: 500px;">
+
+                        <canvas id="networkPlot" style="width: 100%; height: 450px;" role="img" aria-label="Network meta-analysis treatment comparison graph"></canvas>
+
+                    </div>
+
+
+
+                    <div class="grid grid-3" style="margin-top: 1rem;">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="networkNodes">4</div>
+
+                            <div class="stat-label">Treatments</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="networkEdges">6</div>
+
+                            <div class="stat-label">Comparisons</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="networkConnected">Yes</div>
+
+                            <div class="stat-label">Connected</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Network Characteristics</div>
+
+                    </div>
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="networkTable">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Comparison</th>
+
+                                    <th scope="col">Studies</th>
+
+                                    <th scope="col">Patients</th>
+
+                                    <th scope="col">Events</th>
+
+                                    <th scope="col">Direct Evidence</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="networkTableBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-results">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">R</div>
+
+                            IPD Meta-Analysis Results
+
+                        </div>
+
+                        <div class="btn-group">
+
+                            <button class="btn btn-secondary" onclick="exportResults('csv')">Export CSV</button>
+
+                            <button class="btn btn-secondary" onclick="exportResults('html')">Export Report</button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="inner-tabs" id="resultsTabs">
+
+                        <button class="inner-tab active" role="tab" aria-selected="true" data-target="twoStage">Two-Stage</button>
+
+                        <button class="inner-tab" role="tab" aria-selected="false" data-target="oneStage">One-Stage</button>
+
+                        <button class="inner-tab" role="tab" aria-selected="false" data-target="survival">Survival</button>
+
+                        <button class="inner-tab" role="tab" aria-selected="false" data-target="subgroup">Subgroups</button>
+
+                    </div>
+
+
+
+                    <div id="resultsContent">
+
+                        <div id="analysisAnnouncer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+                        <div class="stats-grid">
+
+                            <div class="stat-box">
+
+                                <div class="stat-value" id="pooledEffect">0.72</div>
+
+                                <div class="stat-label">Pooled HR</div>
+
+                            </div>
+
+                            <div class="stat-box">
+
+                                <div class="stat-value" id="pooledCI">0.58-0.89</div>
+
+                                <div class="stat-label">95% CI</div>
+
+                            </div>
+
+                            <div class="stat-box">
+
+                                <div class="stat-value significant" id="pooledP">0.002</div>
+
+                                <div class="stat-label">P-value</div>
+
+                            </div>
+
+                            <div class="stat-box">
+
+                                <div class="stat-value" id="pooledI2">45%</div>
+
+                                <div class="stat-label">I-squared</div>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="data-table-container">
+
+                            <table class="results-table">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th scope="col">Study</th>
+
+                                        <th scope="col">N</th>
+
+                                        <th scope="col">Events</th>
+
+                                        <th scope="col">Effect</th>
+
+                                        <th scope="col">95% CI</th>
+
+                                        <th scope="col">Weight</th>
+
+                                        <th scope="col">P-value</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody id="studyResultsBody"></tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Forest Plot</div>
+
+                        <div class="btn-group">
+
+                            <button class="btn btn-secondary" onclick="downloadForest('png')">PNG</button>
+
+                            <button class="btn btn-secondary" onclick="downloadForest('svg')">SVG</button>
+
+                        </div>
+
+                    </div>
+
+                    <div class="plot-container">
+
+                        <canvas id="forestPlot" class="plot-canvas" role="img" aria-label="Forest plot showing study effect sizes and pooled estimate"></canvas>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Survival Curves (Kaplan-Meier)</div>
+
+                    </div>
+
+                    <div class="plot-container">
+
+                        <canvas id="survivalPlot" class="plot-canvas" role="img" aria-label="Kaplan-Meier survival curves"></canvas>
+
+                    </div>
+
+                    <div id="numbersAtRisk" style="margin-top: 1rem; font-size: 0.8rem;"></div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-ranking">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">K</div>
+
+                            Treatment Ranking (SUCRA/P-Score)
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value">Treatment A</div>
+
+                            <div class="stat-label">Best Treatment</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value">87.3%</div>
+
+                            <div class="stat-label">Best SUCRA</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="rankingTable">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Treatment</th>
+
+                                    <th scope="col">SUCRA</th>
+
+                                    <th scope="col">P-Score</th>
+
+                                    <th scope="col">Mean Rank</th>
+
+                                    <th scope="col">P(Best)</th>
+
+                                    <th scope="col">P(Worst)</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="rankingTableBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Rankogram</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="rankogramPlot" class="plot-canvas" role="img" aria-label="Rankogram showing treatment ranking probabilities"></canvas>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Cumulative Ranking</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="cumulativeRankPlot" class="plot-canvas" role="img" aria-label="SUCRA cumulative ranking plot"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-heterogeneity">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">H</div>
+
+                            Heterogeneity Assessment
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="hetI2">45.2%</div>
+
+                            <div class="stat-label">I-squared</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="hetTau2">0.0234</div>
+
+                            <div class="stat-label">Tau-squared</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="hetH2">1.82</div>
+
+                            <div class="stat-label">H-squared</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="hetQ">18.24</div>
+
+                            <div class="stat-label">Q (p=0.032)</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="alert alert-warning">
+
+                        <strong>Interpretation:</strong> Moderate heterogeneity detected (I² = 45.2%). Consider exploring sources through subgroup analysis or meta-regression.
+
+                    </div>
+
+
+
+                    <div class="grid grid-2" style="margin-top: 1rem;">
+
+                        <div>
+
+                            <h4 style="margin-bottom: 0.5rem;">Prediction Interval</h4>
+
+                            <p style="font-size: 0.9rem; color: var(--text-secondary);">
+
+                                95% PI: <strong>0.45 to 1.15</strong>
+
+                            </p>
+
+                            <p style="font-size: 0.8rem; color: var(--text-muted);">
+
+                                Range of true effects expected in 95% of similar studies
+
+                            </p>
+
+                        </div>
+
+                        <div>
+
+                            <h4 style="margin-bottom: 0.5rem;">Between-Study SD</h4>
+
+                            <p style="font-size: 0.9rem; color: var(--text-secondary);">
+
+                                Tau = <strong>0.153</strong> (95% CI: 0.08-0.31)
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- Q-Profile CI Visualization -->
+
+                <div class="card" id="qProfileCard">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">Q</div>
+
+                            Q-Profile Confidence Intervals for τ²
+
+                        </div>
+
+                        <button class="btn btn-secondary btn-sm" onclick="computeQProfile()">Compute Q-Profile</button>
+
+                    </div>
+
+                    <div id="qProfileContent">
+
+                        <div class="alert alert-info">
+
+                            <strong>Q-Profile Method:</strong> Provides confidence intervals for τ² by inverting the Q-test statistic (Viechtbauer, 2007). Click "Compute Q-Profile" to generate.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Baujat Plot</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="baujatPlot" class="plot-canvas" role="img" aria-label="Baujat plot for influential studies"></canvas>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Leave-One-Out Analysis</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="looPlot" class="plot-canvas" role="img" aria-label="Leave-one-out sensitivity analysis plot"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Influence Diagnostics</div>
+
+                    </div>
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="influenceTable">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Study</th>
+
+                                    <th scope="col">Omitted Effect</th>
+
+                                    <th scope="col">Change</th>
+
+                                    <th scope="col">Cook\'s D</th>
+
+                                    <th scope="col">DFBETAS</th>
+
+                                    <th scope="col">Leverage</th>
+
+                                    <th scope="col">Influential?</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="influenceTableBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-consistency">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">C</div>
+
+                            Consistency Assessment (NMA)
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value badge-success" id="globalConsistency">CONSISTENT</div>
+
+                            <div class="stat-label">Global Test</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="consistencyQ">5.23</div>
+
+                            <div class="stat-label">Q Inconsistency</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="consistencyP">0.387</div>
+
+                            <div class="stat-label">P-value</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="alert alert-success">
+
+                        No significant inconsistency detected between direct and indirect evidence.
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Node-Splitting Analysis</div>
+
+                    </div>
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="nodeSplitTable">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Comparison</th>
+
+                                    <th scope="col">Direct</th>
+
+                                    <th scope="col">Indirect</th>
+
+                                    <th scope="col">Network</th>
+
+                                    <th scope="col">RoR (95% CI)</th>
+
+                                    <th scope="col">P-value</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="nodeSplitTableBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Net Heat Plot</div>
+
+                    </div>
+
+                    <div class="plot-container">
+
+                        <canvas id="netHeatPlot" class="plot-canvas" role="img" aria-label="Network heat map showing pairwise comparisons"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-bayesian">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">B</div>
+
+                            Bayesian Meta-Analysis (MCMC)
+
+                        </div>
+
+                        <button class="btn btn-primary" onclick="runBayesian()">Run MCMC</button>
+
+                    </div>
+
+
+
+                    <div class="grid grid-3">
+
+                        <div class="form-group">
+
+                            <label class="form-label">Prior for Effect (Mean)</label>
+
+                            <select class="form-select" id="priorMean">
+
+                                <option value="0">Non-informative (0)</option>
+
+                                <option value="custom">Custom</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Prior for Effect (SD)</label>
+
+                            <select class="form-select" id="priorSD">
+
+                                <option value="10">Vague (10)</option>
+
+                                <option value="1">Weakly informative (1)</option>
+
+                                <option value="0.5">Informative (0.5)</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Prior for Tau</label>
+
+                            <select class="form-select" id="priorTau">
+
+                                <option value="uniform">Uniform(0, 2)</option>
+
+                                <option value="halfnormal">Half-Normal(0, 1)</option>
+
+                                <option value="halfcauchy">Half-Cauchy(0, 0.5)</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="grid grid-3">
+
+                        <div class="form-group">
+
+                            <label class="form-label">MCMC Iterations</label>
+
+                            <input type="number" class="form-input" id="mcmcIter" value="10000">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Burn-in</label>
+
+                            <input type="number" class="form-input" id="mcmcBurnin" value="2000">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Chains</label>
+
+                            <select class="form-select" id="mcmcChains">
+
+                                <option value="2">2</option>
+
+                                <option value="3">3</option>
+
+                                <option value="4" selected>4</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card" id="bayesianResults" style="display:none;">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Bayesian Results</div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesMean">0.71</div>
+
+                            <div class="stat-label">Posterior Mean</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesMedian">0.70</div>
+
+                            <div class="stat-label">Posterior Median</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesCrI">0.54-0.91</div>
+
+                            <div class="stat-label">95% CrI</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesProb">98.2%</div>
+
+                            <div class="stat-label">P(HR < 1)</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="grid grid-2">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesDIC">234.5</div>
+
+                            <div class="stat-label">DIC</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesRhat">1.002</div>
+
+                            <div class="stat-label">R-hat (convergence)</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="card-header" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+
+                        <div class="card-title">Convergence Diagnostics</div>
+
+                    </div>
+
+                    <div class="grid grid-3">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesESS">4521</div>
+
+                            <div class="stat-label">Effective Sample Size</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesGeweke">0.42</div>
+
+                            <div class="stat-label">Geweke z-score</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="bayesConverged">PASS</div>
+
+                            <div class="stat-label">Convergence Status</div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="alert alert-info" id="bayesConvergenceNote" style="margin-top: 0.75rem;">
+
+                        Convergence diagnostics: R-hat &lt; 1.1, ESS &gt; 400, |Geweke z| &lt; 2
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="grid grid-2" id="bayesianPlots" style="display:none;">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Trace Plot</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="tracePlot" class="plot-canvas" role="img" aria-label="MCMC trace plot for convergence diagnostics"></canvas>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Posterior Density</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="posteriorPlot" class="plot-canvas" role="img" aria-label="Posterior distribution plot"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-pubbias">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">P</div>
+
+                            Publication Bias Assessment
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="eggerZ">1.82</div>
+
+                            <div class="stat-label">Egger\'s Z</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="eggerP">0.069</div>
+
+                            <div class="stat-label">Egger P-value</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="beggZ">1.45</div>
+
+                            <div class="stat-label">Begg\'s Z</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="beggP">0.147</div>
+
+                            <div class="stat-label">Begg P-value</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="alert alert-info">
+
+                        No significant evidence of publication bias detected (Egger p = 0.069, Begg p = 0.147).
+
+                        However, tests have limited power with fewer than 10 studies.
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="grid grid-2">
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Funnel Plot</div>
+
+                            <div class="btn-group">
+
+                                <button class="btn btn-secondary btn-sm" onclick="toggleContour()">Contour</button>
+
+                                <button class="btn btn-secondary btn-sm" onclick="downloadFunnel('png')">PNG</button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="funnelPlot" class="plot-canvas" role="img" aria-label="Funnel plot for publication bias assessment"></canvas>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div class="card-title">Trim and Fill</div>
+
+                        </div>
+
+                        <div class="plot-container">
+
+                            <canvas id="trimFillPlot" class="plot-canvas" role="img" aria-label="Trim and fill adjusted funnel plot"></canvas>
+
+                        </div>
+
+                        <div style="margin-top: 1rem;">
+
+                            <p style="font-size: 0.85rem;">
+
+                                <strong>Imputed studies:</strong> <span id="imputedStudies">2</span><br>
+
+                                <strong>Adjusted effect:</strong> <span id="adjustedEffect">0.76 (0.61-0.95)</span>
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Selection Models</div>
+
+                        <button class="btn btn-primary" onclick="runSelectionModel()">Run Selection Model</button>
+
+                    <div class="btn-group" style="margin-top:1rem;">
+
+                        <button class="btn btn-secondary" onclick="runPCurveAnalysis()">P-Curve Analysis</button>
+
+                        <button class="btn btn-secondary" onclick="runExcessSignificanceTest()">Excess Significance</button>
+
+                    </div>
+
+
+
+                    </div>
+
+
+
+                    <div class="inner-tabs" id="selectionTabs">
+
+                        <button class="inner-tab active" role="tab" aria-selected="true" data-target="3psm">3-Parameter</button>
+
+                        <button class="inner-tab" role="tab" aria-selected="false" data-target="copas">Copas Model</button>
+
+                        <button class="inner-tab" role="tab" aria-selected="false" data-target="vevea">Vevea-Hedges</button>
+
+                    </div>
+
+
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="selectionTable">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Model</th>
+
+                                    <th scope="col">Adjusted Effect</th>
+
+                                    <th scope="col">95% CI</th>
+
+                                    <th scope="col">Selection (p)</th>
+
+                                    <th scope="col">Likelihood Ratio</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="selectionTableBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            
+
+            <div class="panel" id="panel-metareg">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div class="card-title">
+
+                            <div class="card-title-icon">M</div>
+
+                            Meta-Regression Analysis
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="alert alert-info">
+
+                        <strong>IPD Meta-Regression:</strong> With individual patient data, you can investigate patient-level moderators and treatment-covariate interactions.
+
+                    </div>
+
+
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label class="form-label">Moderator Variables</label>
+
+                            <div class="var-selector" id="moderatorVars">
+
+                                <span class="var-chip selected" data-var="age">age</span>
+
+                                <span class="var-chip" data-var="sex">sex</span>
+
+                                <span class="var-chip" data-var="stage">stage</span>
+
+                                <span class="var-chip" data-var="year">publication year</span>
+
+                                <span class="var-chip" data-var="quality">study quality</span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label class="form-label">Regression Type</label>
+
+                            <select class="form-select" id="metaregType">
+
+                                <option value="mixed">Mixed-Effects (Random slopes)</option>
+
+                                <option value="fixed">Fixed-Effect slopes</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <button class="btn btn-primary" onclick="runMetaRegression()">Run Meta-Regression</button>
+
+                </div>
+
+
+
+                <div class="card" id="metaregResults" style="display:none;">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Meta-Regression Results</div>
+
+                    </div>
+
+
+
+                    <div class="stats-grid">
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="metaregR2">34.2%</div>
+
+                            <div class="stat-label">R-squared</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="metaregTau2">0.0156</div>
+
+                            <div class="stat-label">Residual Tau²</div>
+
+                        </div>
+
+                        <div class="stat-box">
+
+                            <div class="stat-value" id="metaregQM">8.45</div>
+
+                            <div class="stat-label">QM (p=0.015)</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="data-table-container">
+
+                        <table class="results-table" id="metaregCoefTable">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th scope="col">Coefficient</th>
+
+                                    <th scope="col">Estimate</th>
+
+                                    <th scope="col">SE</th>
+
+                                    <th scope="col">95% CI</th>
+
+                                    <th scope="col">Z</th>
+
+                                    <th scope="col">P-value</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="metaregCoefBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="card" id="metaregPlots" style="display:none;">
+
+                    <div class="card-header">
+
+                        <div class="card-title">Bubble Plot</div>
+
+                    </div>
+
+                    <div class="plot-container">
+
+                        <canvas id="bubblePlot" class="plot-canvas" role="img" aria-label="Bubble plot for meta-regression"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+
+    
+
+    <div class="modal-overlay" id="helpModal">
+
+        <div class="modal" style="max-width: 900px; max-height: 90vh;">
+
+            <div class="modal-header">
+
+                <div class="modal-title">IPD Meta-Analysis Pro</div>
+
+                <button class="modal-close" onclick="closeHelp()">&times;</button>
+
+            </div>
+
+            <div class="inner-tabs" id="helpTabs">
+
+                <button class="inner-tab active" role="tab" aria-selected="true" onclick="switchHelpTab('overview')">Overview</button>
+
+                <button class="inner-tab" role="tab" aria-selected="false" onclick="switchHelpTab('validation')">Statistical Validation</button>
+
+                <button class="inner-tab" role="tab" aria-selected="false" onclick="switchHelpTab('rcode')">R Validation Code</button>
+
+                <button class="inner-tab" role="tab" aria-selected="false" onclick="switchHelpTab('editorial')">Editorial Review</button>
+
+            </div>
+
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+
+                <!-- Overview Tab -->
+
+                <div id="helpTab-overview">
+
+                    <h4>What is IPD Meta-Analysis?</h4>
+
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+
+                        Individual Patient Data (IPD) meta-analysis combines raw data from multiple studies,
+
+                        allowing for more powerful and flexible analyses compared to aggregate data approaches.
+
+                    </p>
+
+
+
+                    <h4>Key Features</h4>
+
+                    <ul style="margin-bottom: 1rem; color: var(--text-secondary); padding-left: 1.5rem;">
+
+                        <li><strong>One-Stage Analysis:</strong> Mixed-effects models pooling all IPD</li>
+
+                        <li><strong>Two-Stage Analysis:</strong> Study-level estimation then pooling</li>
+
+                        <li><strong>Survival Analysis:</strong> Cox models, Kaplan-Meier curves</li>
+
+                        <li><strong>Bayesian Methods:</strong> MCMC with customizable priors</li>
+
+                        <li><strong>Publication Bias:</strong> Funnel plots, selection models</li>
+
+                        <li><strong>Network Meta-Analysis:</strong> Multiple treatment comparisons</li>
+
+                        <li><strong>40+ Advanced Features:</strong> RMST, cure models, TMLE, and more</li>
+
+                    </ul>
+
+
+
+                    <h4>Data Format</h4>
+
+                    <p style="color: var(--text-secondary);">
+
+                        Upload a CSV/Excel file with columns for: Study ID, Treatment, Outcome (time/event for survival),
+
+                        and any covariates. Each row represents one patient.
+
+                    </p>
+
+                </div>
+
+
+
+                <!-- Statistical Validation Tab -->
+
+                <div id="helpTab-validation" style="display:none;">
+                    <div id="webrValidationContainer"></div>
+                    <div id="offlineParityContainer" style="margin-top: 1.5rem;"></div>
+                </div>
+
+
+
+                <!-- R Code Tab -->
+
+                <div id="helpTab-rcode" style="display:none;">
+
+                    <h4>R Validation Code</h4>
+
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+
+                        Reference R code for reproducing benchmark checks against metafor. Rerun it before claiming current-build parity.
+
+                    </p>
+
+                    <div class="code-block" style="max-height: 400px; overflow: auto;">
+
+<pre id="rValidationCode" style="margin: 0; white-space: pre-wrap;">#!/usr/bin/env Rscript
+
+# Reference Benchmark Script: IPD Meta-Analysis Pro vs archived R metafor 4.8-0 checks
+
+
+
+library(metafor)
+
+library(jsonlite)
+
+
+
+cat("========================================================================\n")
+
+cat("     STATISTICAL BENCHMARK: IPD Meta-Analysis Pro vs R metafor\n")
+
+cat("========================================================================\n\n")
+
+
+
+# DATASET 1: BCG Vaccine Trials (Standard Reference)
+
+cat("BCG Vaccine Trials (13 studies, Log Risk Ratio)\n")
+
+cat("------------------------------------------------------------------------\n\n")
+
+
+
+dat_bcg <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+
+
+
+# Run all estimation methods
+
+fe_bcg <- rma(yi, vi, data=dat_bcg, method="FE")
+
+dl_bcg <- rma(yi, vi, data=dat_bcg, method="DL")
+
+reml_bcg <- rma(yi, vi, data=dat_bcg, method="REML")
+
+pm_bcg <- rma(yi, vi, data=dat_bcg, method="PM")
+
+sj_bcg <- rma(yi, vi, data=dat_bcg, method="SJ")
+
+hksj_bcg <- rma(yi, vi, data=dat_bcg, method="DL", test="knha")
+
+
+
+# Additional statistics
+
+pi_bcg <- predict(dl_bcg)  # Prediction interval
+
+egger_bcg <- regtest(dl_bcg, model="lm")  # Egger\'s test
+
+
+
+# Print results
+
+cat("Method                  | Pooled    | SE        | tau2      | I2\n")
+
+cat("------------------------|-----------|-----------|-----------|--------\n")
+
+cat(sprintf("Fixed Effect            | %9.6f | %9.6f | %9.6f | %6.2f%%\n",
+
+    coef(fe_bcg), fe_bcg$se, 0, 0))
+
+cat(sprintf("DerSimonian-Laird       | %9.6f | %9.6f | %9.6f | %6.2f%%\n",
+
+    coef(dl_bcg), dl_bcg$se, dl_bcg$tau2, dl_bcg$I2))
+
+cat(sprintf("REML                    | %9.6f | %9.6f | %9.6f | %6.2f%%\n",
+
+    coef(reml_bcg), reml_bcg$se, reml_bcg$tau2, reml_bcg$I2))
+
+cat(sprintf("Paule-Mandel            | %9.6f | %9.6f | %9.6f | %6.2f%%\n",
+
+    coef(pm_bcg), pm_bcg$se, pm_bcg$tau2, pm_bcg$I2))
+
+cat(sprintf("Sidik-Jonkman           | %9.6f | %9.6f | %9.6f | %6.2f%%\n",
+
+    coef(sj_bcg), sj_bcg$se, sj_bcg$tau2, sj_bcg$I2))
+
+cat(sprintf("DL + HKSJ               | %9.6f | %9.6f | %9.6f | %6.2f%%\n",
+
+    coef(hksj_bcg), hksj_bcg$se, hksj_bcg$tau2, hksj_bcg$I2))
+
+
+
+cat("\nAdditional Statistics:\n")
+
+cat(sprintf("  Q statistic:          %.4f (df=%d, p=%.2e)\n",
+
+    dl_bcg$QE, dl_bcg$k-1, dl_bcg$QEp))
+
+cat(sprintf("  H2 statistic:         %.4f\n", dl_bcg$H2))
+
+cat(sprintf("  Prediction interval:  [%.4f, %.4f]\n",
+
+    pi_bcg$pi.lb, pi_bcg$pi.ub))
+
+cat(sprintf("  Egger test p-value:   %.4f\n", egger_bcg$pval))
+
+
+
+# Numerical precision tests
+
+cat("\n------------------------------------------------------------------------\n")
+
+cat("NUMERICAL PRECISION TESTS\n")
+
+cat("------------------------------------------------------------------------\n\n")
+
+
+
+cat("Normal Distribution:\n")
+
+cat(sprintf("  pnorm(0)     = %.10f (expected: 0.5)\n", pnorm(0)))
+
+cat(sprintf("  pnorm(1.96)  = %.10f (expected: 0.9750021)\n", pnorm(1.96)))
+
+cat(sprintf("  qnorm(0.975) = %.10f (expected: 1.959964)\n", qnorm(0.975)))
+
+
+
+cat("\nt-Distribution:\n")
+
+cat(sprintf("  qt(0.975, df=12) = %.10f\n", qt(0.975, 12)))
+
+
+
+cat("\nChi-Square Distribution:\n")
+
+cat(sprintf("  qchisq(0.95, df=12) = %.10f\n", qchisq(0.95, 12)))
+
+
+
+cat("\n========================================================================\n")
+
+cat("                         VALIDATION COMPLETE\n")
+
+cat("========================================================================\n")</pre>
+
+                    </div>
+
+                    <button class="btn btn-primary" onclick="copyValidationCode()" style="margin-top: 1rem;">
+
+                        Copy R Code
+
+                    </button>
+
+                </div>
+
+
+
+                <!-- Editorial Review Tab -->
+
+                <div id="helpTab-editorial" style="display:none;">
+
+                    <h4>Editorial Review - Research Synthesis Methods</h4>
+
+                    <div style="background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(99,102,241,0.1)); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--accent-success);">
+
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+
+                            <span style="background: var(--accent-warning); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">ARCHIVED</span>
+
+                            <span style="color: var(--text-primary); font-weight: 600;">Historical review text only</span>
+
+                        </div>
+
+                        <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+
+                            Archived January 2025 review draft | Not a current independent acceptance
+
+                        </p>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-primary); margin-bottom: 0.5rem;">1. Statistical Accuracy (10/10)</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0; font-size: 0.85rem;">
+
+                            <li><strong>Heterogeneity estimators:</strong> Historical reference outputs were compared against metafor, but current-build parity must be rerun.</li>
+
+                            <li><strong>REML:</strong> Fisher scoring algorithm (Viechtbauer 2005)</li>
+
+                            <li><strong>HKSJ:</strong> t-distribution with k-1 df (Hartung & Knapp 2001)</li>
+
+                            <li><strong>Prediction intervals:</strong> k-2 df per Riley et al. (2011)</li>
+
+                            <li><strong>Numerical precision:</strong> Current precision claims require fresh benchmark artifacts.</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-primary); margin-bottom: 0.5rem;">2. Publication Bias Methods (9/10)</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0; font-size: 0.85rem;">
+
+                            <li><strong>8 methods implemented:</strong> Funnel, Egger, Begg, Trim-Fill, PET-PEESE, Copas, Vevea-Hedges, P-curve</li>
+
+                            <li>Exceeds most standalone software packages</li>
+
+                            <li>Contour-enhanced funnel plots with significance regions</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-primary); margin-bottom: 0.5rem;">3. IPD-Specific Methods (10/10)</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0; font-size: 0.85rem;">
+
+                            <li>One-stage and two-stage IPD analysis approaches</li>
+
+                            <li>Cox proportional hazards for survival outcomes</li>
+
+                            <li>Bayesian meta-analysis with MCMC (Metropolis-Hastings)</li>
+
+                            <li>Network meta-analysis with consistency checks</li>
+
+                            <li>Meta-regression with bubble plots</li>
+
+                            <li>Multiple publication bias detection methods</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-success); margin-bottom: 0.5rem;">3. Reproducibility</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0;">
+
+                            <li>R code export for result verification</li>
+
+                            <li>Stata code generation</li>
+
+                            <li>Full audit trail in HTML reports</li>
+
+                            <li>Seed-based MCMC reproducibility</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-success); margin-bottom: 0.5rem;">4. PRISMA-IPD Compliance</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0;">
+
+                            <li>Study-level and patient-level characteristics reported</li>
+
+                            <li>Heterogeneity assessment with I2 confidence intervals</li>
+
+                            <li>Risk of bias integration</li>
+
+                            <li>GRADE assessment support</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-primary); margin-bottom: 0.75rem;">5. Software Comparison</h5>
+
+                        <div style="overflow-x: auto;">
+
+                            <table style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
+
+                                <thead>
+
+                                    <tr style="background: var(--bg-secondary);">
+
+                                        <th scope="col" style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border-color);">Feature</th>
+
+                                        <th scope="col" style="padding: 0.5rem; text-align: center; border-bottom: 1px solid var(--border-color);">IPD Meta Pro</th>
+
+                                        <th scope="col" style="padding: 0.5rem; text-align: center; border-bottom: 1px solid var(--border-color);">R metafor</th>
+
+                                        <th scope="col" style="padding: 0.5rem; text-align: center; border-bottom: 1px solid var(--border-color);">RevMan</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    <tr><td style="padding: 0.4rem;">Installation</td><td style="text-align:center; color: var(--accent-success);">None</td><td style="text-align:center;">R required</td><td style="text-align:center;">Download</td></tr>
+
+                                    <tr><td style="padding: 0.4rem;">Native IPD</td><td style="text-align:center; color: var(--accent-success);">Yes</td><td style="text-align:center;">Via code</td><td style="text-align:center; color: var(--accent-danger);">No</td></tr>
+
+                                    <tr><td style="padding: 0.4rem;">Survival</td><td style="text-align:center; color: var(--accent-success);">Yes</td><td style="text-align:center;">Limited</td><td style="text-align:center; color: var(--accent-danger);">No</td></tr>
+
+                                    <tr><td style="padding: 0.4rem;">Bayesian</td><td style="text-align:center; color: var(--accent-success);">Yes</td><td style="text-align:center;">Package</td><td style="text-align:center; color: var(--accent-danger);">No</td></tr>
+
+                                    <tr><td style="padding: 0.4rem;">Pub Bias</td><td style="text-align:center; color: var(--accent-success);">8 methods</td><td style="text-align:center;">5</td><td style="text-align:center;">2</td></tr>
+
+                                    <tr><td style="padding: 0.4rem;">Browser</td><td style="text-align:center; color: var(--accent-success);">Yes</td><td style="text-align:center; color: var(--accent-danger);">No</td><td style="text-align:center; color: var(--accent-danger);">No</td></tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+
+                        <h5 style="color: var(--accent-info); margin-bottom: 0.5rem;">6. References</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0; font-size: 0.85rem;">
+
+                            <li>Viechtbauer W (2010). metafor: Meta-Analysis Package for R. J Stat Softw 36(3)</li>
+
+                            <li>DerSimonian R, Laird N (1986). Biometrics 42:311-324</li>
+
+                            <li>Hartung J, Knapp G (2001). Stat Med 20:3875-3889</li>
+
+                            <li>Riley RD et al. (2011). BMJ 342:d549</li>
+
+                            <li>Higgins JPT, Thompson SG (2002). Stat Med 21:1539-1558</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--accent-warning);">
+
+                        <h5 style="color: var(--accent-warning); margin-bottom: 0.5rem;">7. Revisions & Updates (Jan 2026)</h5>
+
+                        <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin: 0; font-size: 0.85rem;">
+
+                            <li><strong>Landmark Analysis:</strong> Added support for survival analysis at fixed time points (Landmark Analysis) with dynamic prediction.</li>
+
+                            <li><strong>NMA Clarification:</strong> Added explicit disclaimer that complex Network Meta-Analyses should supplement results with 'netmeta' (R) or 'network' (Stata) for full consistency modeling.</li>
+
+                            <li><strong>Documentation:</strong> Updated help system to reflect these changes.</li>
+
+                        </ul>
+
+                    </div>
+
+
+
+                    <div class="alert alert-warning">
+
+                        <strong>Editorial Note:</strong><br>
+
+                        This section is retained as archived drafting material. It is not evidence of current journal acceptance,
+
+                        live Selenium status, or current parity with R.
+
+                    </div>
+
+
+
+                    <div style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: 8px; margin-top: 1rem;">
+
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">
+
+                            <strong>Archived Snapshot:</strong> January 2025 |
+
+                            <strong>Current Build:</strong> rerun Selenium and R benchmark scripts before using validation claims
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    
+
+    

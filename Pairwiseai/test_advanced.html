@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Advanced Methods</title>
+</head>
+<body>
+  <h1>Testing Advanced Methods</h1>
+  <div id="output" style="font-family: monospace; white-space: pre;"></div>
+
+  <script src="app.min.js"></script>
+  <script>
+    const out = document.getElementById('output');
+    function log(msg) {
+      out.textContent += msg + '\n';
+      console.log(msg);
+    }
+
+    // Wait for DOM
+    setTimeout(function() {
+      log('=== Testing Window Exports ===');
+      log('window.runGOSHAnalysis: ' + (typeof window.runGOSHAnalysis));
+      log('window.runTSAAnalysis: ' + (typeof window.runTSAAnalysis));
+      log('window.runPCurveAnalysis: ' + (typeof window.runPCurveAnalysis));
+      log('window.runZCurveAnalysis: ' + (typeof window.runZCurveAnalysis));
+      log('window.runCR2Analysis: ' + (typeof window.runCR2Analysis));
+      log('window.runRoBMA: ' + (typeof window.runRoBMA));
+      log('window.renderContourFunnelPlot: ' + (typeof window.renderContourFunnelPlot));
+      log('window.renderSunsetPlot: ' + (typeof window.renderSunsetPlot));
+      log('');
+      log('window.AppState: ' + (typeof window.AppState));
+      log('window.showToast: ' + (typeof window.showToast));
+      log('');
+      log('Plotly loaded: ' + (typeof Plotly));
+
+      if (window.AppState) {
+        log('AppState.results: ' + (window.AppState.results ? 'exists' : 'null'));
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

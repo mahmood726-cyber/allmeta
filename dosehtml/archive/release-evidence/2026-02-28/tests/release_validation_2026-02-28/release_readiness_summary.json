@@ -1,0 +1,127 @@
+{
+  "validation_date": "2026-02-28",
+  "gui_test_runs": {
+    "test_dose_response_app.py": {
+      "total": 34,
+      "passed": 34,
+      "failed": 0,
+      "success_rate_pct": 100.0,
+      "log_path": "C:\\HTML apps\\dosehtml\\tests\\release_validation_2026-02-28\\test_dose_response_app.log"
+    },
+    "test_dose_response_main.py": {
+      "total": 74,
+      "passed": 74,
+      "failed": 0,
+      "warnings": 0,
+      "duration_seconds": 90.3,
+      "log_path": "C:\\HTML apps\\dosehtml\\tests\\release_validation_2026-02-28\\test_dose_response_main.log"
+    },
+    "selenium_full_test.py": {
+      "total": 53,
+      "passed": 53,
+      "failed": 0,
+      "pass_rate_pct": 100.0,
+      "log_path": "C:\\HTML apps\\dosehtml\\tests\\release_validation_2026-02-28\\selenium_full_test.log"
+    }
+  },
+  "gui_aggregate": {
+    "total_tests": 161,
+    "passed_tests": 161,
+    "failed_tests": 0,
+    "all_passed": true
+  },
+  "benchmarks": {
+    "r_validation": {
+      "available": true,
+      "overall_pass": true,
+      "total_tests": 3,
+      "passed_tests": 3,
+      "max_abs_beta_diff": 7.56e-06,
+      "max_abs_se_diff": 4.3774e-06,
+      "package_versions": {
+        "dosresmeta": "2.2.0",
+        "metafor": "4.8.0",
+        "mvmeta": "1.0.3"
+      },
+      "timestamp": "2026-02-28T16:23:29Z"
+    },
+    "simulation": {
+      "available": true,
+      "total": 6,
+      "passed": 6,
+      "fit_mode": "robust",
+      "overall_pass": true,
+      "generated_at": "2026-02-28T12:24:34.424Z"
+    },
+    "strict_r": {
+      "available": true,
+      "overall_pass": true,
+      "beats_r": true,
+      "n_total": 120,
+      "p95_abs_beta_diff": 0.006760504833900883,
+      "p95_abs_se_diff": 0.011506353356679308,
+      "p95_abs_tau2_diff": 0.0011968159284591671,
+      "runtime_speedup_ratio": 2.9976792979583644,
+      "generated_at": "2026-02-28T16:23:05+00:00"
+    },
+    "vote_counts": {
+      "YES": 11,
+      "NO": 0,
+      "CONDITIONAL": 1
+    },
+    "stata_evidence": {
+      "tool": "Stata",
+      "available": true,
+      "evidence_level": "internet",
+      "local_artifact_available": false,
+      "internet_reference_available": true,
+      "local_tests": 0,
+      "internet_reference_count": 3,
+      "internet_source_urls": [
+        "https://www.stata.com/stata16/meta-analysis/",
+        "https://www.stata.com/training/webinar_series/meta-analysis/materials.html"
+      ],
+      "internet_source_titles": [
+        "Meta-analysis | New in Stata 16",
+        "Stata meta webinar materials"
+      ],
+      "internet_scenarios": [
+        "meta summarize on stdmdiff/se (19 studies, REML)",
+        "meta trimfill (stdmdiff, REML)",
+        "meta trimfill (log odds ratio, random effects)"
+      ],
+      "rationale": "Internet reference fallback active for Stata: 3 scenario(s), 2 source(s)."
+    },
+    "spss_evidence": {
+      "tool": "SPSS",
+      "available": true,
+      "evidence_level": "internet",
+      "local_artifact_available": false,
+      "internet_reference_available": true,
+      "local_tests": 0,
+      "internet_reference_count": 3,
+      "internet_source_urls": [
+        "https://www.mdpi.com/2624-8611/4/4/49",
+        "https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=meta-analysis-procedures"
+      ],
+      "internet_source_titles": [
+        "A Tutorial on How to Conduct Meta-Analysis with IBM SPSS Statistics",
+        "IBM SPSS Statistics 30 Documentation - Meta Analysis Procedures"
+      ],
+      "internet_scenarios": [
+        "Random-effects meta-analysis on pre-calculated effect sizes",
+        "Subgroup analysis contrast",
+        "Procedure availability confirmation"
+      ],
+      "rationale": "Internet reference fallback active for SPSS: 3 scenario(s), 2 source(s)."
+    },
+    "cross_package_generated_at": "2026-02-28T16:23:30+00:00",
+    "strict_benchmark_generated_at": "2026-02-28T16:23:05+00:00"
+  },
+  "release_readiness": {
+    "ready_to_release": true,
+    "ready_to_submit_rsm": true,
+    "full_unconditional_12_of_12": false,
+    "remaining_condition": "Local executable SPSS/Stata benchmark artifacts are still missing; current evidence uses internet-reference fallback."
+  }
+}

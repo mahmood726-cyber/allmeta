@@ -1,0 +1,20 @@
+# Deterministic run configuration (merge into master TruthCert config)
+run_config:
+  deterministic: true
+  seed_master: 786888  # change only via locked re-run; logged in audit trail
+  rng:
+    bootstrap_seed: 786889
+    permutation_seed: 786890
+    psa_seed: 786891
+    voi_seed: 786892
+  performance:
+    target_device: "ordinary laptop; browser-only"
+    max_seconds_per_module:
+      truthcert_core: 60
+      hta_ce: 30
+      hta_psa: 45
+      hta_voi: 30
+    psa:
+      default_draws: 5000
+      max_draws: 20000
+      low_resource_draws: 2000

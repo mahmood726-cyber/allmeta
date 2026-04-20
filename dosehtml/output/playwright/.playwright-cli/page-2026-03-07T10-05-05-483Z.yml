@@ -1,0 +1,192 @@
+- generic [active] [ref=e1]:
+  - status [ref=e2]
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: 🚀 Dose Response Pro v18.1
+        - generic [ref=e7]: ULTIMATE EDITION
+        - generic [ref=e8]: Real-Time Interactive + Statistical Rigor
+        - generic [ref=e9]:
+          - generic [ref=e10]: ✓ Corrected GLS
+          - generic [ref=e11]: ✓ metafor R Export
+          - generic [ref=e12]: ✓ Real-Time
+      - generic [ref=e13]:
+        - generic [ref=e14]: "Status: Ready (18 rows parsed)"
+        - button "💾 Save" [ref=e15] [cursor=pointer]
+        - button "📂 Load" [ref=e16] [cursor=pointer]
+        - button "📄 PDF" [ref=e17] [cursor=pointer]
+        - button "📋 Audit" [ref=e18] [cursor=pointer]
+        - button "🌙" [ref=e19] [cursor=pointer]
+    - generic [ref=e20]:
+      - button "📁 Data" [ref=e21] [cursor=pointer]
+      - button "🎛️ Real-Time" [ref=e22] [cursor=pointer]
+      - button "📊 Results" [ref=e23] [cursor=pointer]
+      - button "⚖️ Methods" [ref=e24] [cursor=pointer]
+      - button "🔍 Influence" [ref=e25] [cursor=pointer]
+      - button "👥 Subgroups" [ref=e26] [cursor=pointer]
+      - button "🧭 Wizard" [ref=e27] [cursor=pointer]
+      - button "📦 R Code" [ref=e28] [cursor=pointer]
+      - button "📈 Plots" [ref=e29] [cursor=pointer]
+      - button "Bias" [ref=e30] [cursor=pointer]
+      - button "✓ Validation" [ref=e31] [cursor=pointer]
+      - button "📚 Refs" [ref=e32] [cursor=pointer]
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - heading "◆ 📥 Data Input" [level=2] [ref=e36]
+        - generic [ref=e37]:
+          - button "Load Sample" [ref=e38] [cursor=pointer]
+          - button "Clear" [ref=e39] [cursor=pointer]
+          - button "📁 Import CSV" [ref=e40] [cursor=pointer]
+          - button "▶ Run Analysis" [ref=e41] [cursor=pointer]
+        - generic [ref=e42]:
+          - text: Primary Model
+          - combobox [ref=e43]:
+            - option "Quadratic (Default)" [selected]
+            - option "Linear"
+        - textbox [ref=e44]: id,author,type,dose,cases,n,logRR,se,covariate 1,Bianchi,cc,0,126,414,0,NA,1.2 1,Bianchi,cc,9.06,61,261,-0.223,0.223,1.5 1,Bianchi,cc,27,69,228,0,0.234,1.8 1,Bianchi,cc,45,22,44,0.531,0.377,2.1 1,Bianchi,cc,64.8,19,34,0.875,0.444,2.4 2,Bobak,cc,0,77,258,0,NA,0.8 2,Bobak,cc,16.05,88,413,-0.431,0.221,1.1 2,Bobak,cc,46.42,24,202,-1.079,0.298,1.4 2,Bobak,cc,77.16,13,64,-0.616,0.387,1.7 3,Kuratsu,cc,0,52,263,0,NA,0.9 3,Kuratsu,cc,12.5,39,224,-0.562,0.212,1.2 3,Kuratsu,cc,35,17,142,-0.847,0.318,1.5 4,Launoy,cc,0,31,154,0,NA,1.0 4,Launoy,cc,10.5,25,132,-0.315,0.198,1.3 4,Launoy,cc,31.5,18,98,-0.512,0.256,1.6 5,Enslein,cc,0,45,210,0,NA,0.9 5,Enslein,cc,15,32,175,-0.187,0.175,1.2 5,Enslein,cc,40,18,95,-0.654,0.289,1.8
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - generic [ref=e48]: Rows Parsed
+              - text: 18/18 (100%)
+            - generic [ref=e49]:
+              - generic [ref=e50]: Studies
+              - text: "5"
+            - generic [ref=e51]:
+              - generic [ref=e52]: Dose Range
+              - text: 0 to 77.16
+            - generic [ref=e53]:
+              - generic [ref=e54]: Dropped Rows
+              - text: "0"
+          - generic [ref=e56]: Input looks structurally valid for analysis.
+        - generic [ref=e57]: "Shortcuts: Ctrl/Cmd+Enter = Run Analysis, Ctrl/Cmd+Shift+L = Load Sample, Ctrl/Cmd+Shift+R = Results tab."
+      - generic [ref=e58]:
+        - heading "◆ 👁️ Data Preview" [level=2] [ref=e59]
+        - generic [ref=e60]:
+          - table [ref=e61]:
+            - rowgroup [ref=e62]:
+              - row "id author type dose cases n logRR se covariate _zeroRefCandidate" [ref=e63]:
+                - columnheader "id" [ref=e64]
+                - columnheader "author" [ref=e65]
+                - columnheader "type" [ref=e66]
+                - columnheader "dose" [ref=e67]
+                - columnheader "cases" [ref=e68]
+                - columnheader "n" [ref=e69]
+                - columnheader "logRR" [ref=e70]
+                - columnheader "se" [ref=e71]
+                - columnheader "covariate" [ref=e72]
+                - columnheader "_zeroRefCandidate" [ref=e73]
+            - rowgroup [ref=e74]:
+              - row "1 Bianchi cc 0 126 414 0 0 1.2 false" [ref=e75]:
+                - cell "1" [ref=e76]
+                - cell "Bianchi" [ref=e77]
+                - cell "cc" [ref=e78]
+                - cell "0" [ref=e79]
+                - cell "126" [ref=e80]
+                - cell "414" [ref=e81]
+                - cell "0" [ref=e82]
+                - cell "0" [ref=e83]
+                - cell "1.2" [ref=e84]
+                - cell "false" [ref=e85]
+              - row "1 Bianchi cc 9.06 61 261 -0.223 0.223 1.5 false" [ref=e86]:
+                - cell "1" [ref=e87]
+                - cell "Bianchi" [ref=e88]
+                - cell "cc" [ref=e89]
+                - cell "9.06" [ref=e90]
+                - cell "61" [ref=e91]
+                - cell "261" [ref=e92]
+                - cell "-0.223" [ref=e93]
+                - cell "0.223" [ref=e94]
+                - cell "1.5" [ref=e95]
+                - cell "false" [ref=e96]
+              - row "1 Bianchi cc 27 69 228 0 0.234 1.8 false" [ref=e97]:
+                - cell "1" [ref=e98]
+                - cell "Bianchi" [ref=e99]
+                - cell "cc" [ref=e100]
+                - cell "27" [ref=e101]
+                - cell "69" [ref=e102]
+                - cell "228" [ref=e103]
+                - cell "0" [ref=e104]
+                - cell "0.234" [ref=e105]
+                - cell "1.8" [ref=e106]
+                - cell "false" [ref=e107]
+              - row "1 Bianchi cc 45 22 44 0.531 0.377 2.1 false" [ref=e108]:
+                - cell "1" [ref=e109]
+                - cell "Bianchi" [ref=e110]
+                - cell "cc" [ref=e111]
+                - cell "45" [ref=e112]
+                - cell "22" [ref=e113]
+                - cell "44" [ref=e114]
+                - cell "0.531" [ref=e115]
+                - cell "0.377" [ref=e116]
+                - cell "2.1" [ref=e117]
+                - cell "false" [ref=e118]
+              - row "1 Bianchi cc 64.8 19 34 0.875 0.444 2.4 false" [ref=e119]:
+                - cell "1" [ref=e120]
+                - cell "Bianchi" [ref=e121]
+                - cell "cc" [ref=e122]
+                - cell "64.8" [ref=e123]
+                - cell "19" [ref=e124]
+                - cell "34" [ref=e125]
+                - cell "0.875" [ref=e126]
+                - cell "0.444" [ref=e127]
+                - cell "2.4" [ref=e128]
+                - cell "false" [ref=e129]
+              - row "2 Bobak cc 0 77 258 0 0 0.8 false" [ref=e130]:
+                - cell "2" [ref=e131]
+                - cell "Bobak" [ref=e132]
+                - cell "cc" [ref=e133]
+                - cell "0" [ref=e134]
+                - cell "77" [ref=e135]
+                - cell "258" [ref=e136]
+                - cell "0" [ref=e137]
+                - cell "0" [ref=e138]
+                - cell "0.8" [ref=e139]
+                - cell "false" [ref=e140]
+              - row "2 Bobak cc 16.05 88 413 -0.431 0.221 1.1 false" [ref=e141]:
+                - cell "2" [ref=e142]
+                - cell "Bobak" [ref=e143]
+                - cell "cc" [ref=e144]
+                - cell "16.05" [ref=e145]
+                - cell "88" [ref=e146]
+                - cell "413" [ref=e147]
+                - cell "-0.431" [ref=e148]
+                - cell "0.221" [ref=e149]
+                - cell "1.1" [ref=e150]
+                - cell "false" [ref=e151]
+              - row "2 Bobak cc 46.42 24 202 -1.079 0.298 1.4 false" [ref=e152]:
+                - cell "2" [ref=e153]
+                - cell "Bobak" [ref=e154]
+                - cell "cc" [ref=e155]
+                - cell "46.42" [ref=e156]
+                - cell "24" [ref=e157]
+                - cell "202" [ref=e158]
+                - cell "-1.079" [ref=e159]
+                - cell "0.298" [ref=e160]
+                - cell "1.4" [ref=e161]
+                - cell "false" [ref=e162]
+              - row "2 Bobak cc 77.16 13 64 -0.616 0.387 1.7 false" [ref=e163]:
+                - cell "2" [ref=e164]
+                - cell "Bobak" [ref=e165]
+                - cell "cc" [ref=e166]
+                - cell "77.16" [ref=e167]
+                - cell "13" [ref=e168]
+                - cell "64" [ref=e169]
+                - cell "-0.616" [ref=e170]
+                - cell "0.387" [ref=e171]
+                - cell "1.7" [ref=e172]
+                - cell "false" [ref=e173]
+              - row "3 Kuratsu cc 0 52 263 0 0 0.9 false" [ref=e174]:
+                - cell "3" [ref=e175]
+                - cell "Kuratsu" [ref=e176]
+                - cell "cc" [ref=e177]
+                - cell "0" [ref=e178]
+                - cell "52" [ref=e179]
+                - cell "263" [ref=e180]
+                - cell "0" [ref=e181]
+                - cell "0" [ref=e182]
+                - cell "0.9" [ref=e183]
+                - cell "false" [ref=e184]
+          - paragraph [ref=e185]: ...and 8 more rows
+    - text: ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆ ◆
+  - text: ◆

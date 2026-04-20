@@ -1,0 +1,57 @@
+{
+  "title": "NMA Dose-Response Studio: Browser-Based Network Meta-Analysis with Dose-Response Modeling",
+  "slug": "nma-dose-response-studio",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "path": "C:\\HTML apps\\nma-dose-response-app",
+  "type": "methods",
+  "primary_estimand": "Pooled treatment effect with dose-response curve",
+  "summary": "A browser app combining NMA, dose-response modeling, Bayesian model averaging, and DTA synthesis, validated with 79/79 tests against R.",
+  "body": "Can network meta-analysis be combined with dose-response modeling in a single browser environment accessible to clinical researchers? NMA Dose-Response Studio v2.0.1 is a browser application implementing network meta-analysis with five heterogeneity estimators, six dose-response model families including Emax and fractional polynomials, Bayesian model averaging, and diagnostic accuracy synthesis, validated with 79 of 79 tests passing against R metafor. The platform provides SUCRA and P-score ranking, node-splitting inconsistency tests, eight publication bias methods, and data quality checks including GRIME and SPRITE with keyboard accessibility. All heterogeneity estimates, pooled effects, and ranking probabilities matched reference R packages within pre-specified tolerances across the validation suite. Bootstrap analyses using reproducible seeds with up to 10,000 iterations confirmed stable treatment rankings and consistent confidence intervals. These results demonstrate that complex multi-method evidence synthesis can operate reliably within browser computation constraints. However, the limitation of client-side Gaussian process fitting means very large treatment networks may exhaust available memory before convergence is achieved.",
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "Can network meta-analysis be combined with dose-response modeling in a single browser environment accessible to clinical researchers?"
+    },
+    {
+      "role": "Dataset",
+      "text": "NMA Dose-Response Studio v2.0.1 is a browser application implementing network meta-analysis with five heterogeneity estimators, six dose-response model families including Emax and fractional polynomials, Bayesian model averaging, and diagnostic accuracy synthesis, validated with 79 of 79 tests passing against R metafor."
+    },
+    {
+      "role": "Method",
+      "text": "The platform provides SUCRA and P-score ranking, node-splitting inconsistency tests, eight publication bias methods, and data quality checks including GRIME and SPRITE with keyboard accessibility."
+    },
+    {
+      "role": "Primary result",
+      "text": "All heterogeneity estimates, pooled effects, and ranking probabilities matched reference R packages within pre-specified tolerances across the validation suite."
+    },
+    {
+      "role": "Robustness",
+      "text": "Bootstrap analyses using reproducible seeds with up to 10,000 iterations confirmed stable treatment rankings and consistent confidence intervals."
+    },
+    {
+      "role": "Interpretation",
+      "text": "These results demonstrate that complex multi-method evidence synthesis can operate reliably within browser computation constraints."
+    },
+    {
+      "role": "Boundary",
+      "text": "However, the limitation of client-side Gaussian process fitting means very large treatment networks may exhaust available memory before convergence is achieved."
+    }
+  ],
+  "notes": {
+    "app": "NMA Dose-Response Studio v2.0.1",
+    "data": "R metafor and netmeta validation benchmarks",
+    "code": "https://github.com/mahmood726-cyber/nma-dose-response-app",
+    "doi": "",
+    "version": "2.0.1",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "affiliation": "Tahir Heart Institute",
+  "email": "author@example.com",
+  "references": [
+    "Carlisle JB. Data fabrication and other reasons for non-random sampling in 5087 randomised, controlled trials in anaesthetic and general medical journals. Anaesthesia. 2017;72(8):944-952.",
+    "Brown NJL, Heathers JAJ. The GRIM test: a simple technique detects numerous anomalies in the reporting of results in psychology. Soc Psychol Personal Sci. 2017;8(4):363-369.",
+    "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR. Introduction to Meta-Analysis. 2nd ed. Wiley; 2021."
+  ]
+}

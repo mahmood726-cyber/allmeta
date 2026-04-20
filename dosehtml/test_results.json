@@ -1,0 +1,172 @@
+[
+  {
+    "test": "Navigate to App",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Page title check",
+    "status": "PASS",
+    "message": "Dose Response Pro v18.1 - Ultimate Edition"
+  },
+  {
+    "test": "Tab 'data' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'realtime' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'results' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'compare' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'influence' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'subgroups' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'wizard' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'rcode' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'plots' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Tab 'refs' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Data input textarea exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Data preview div exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Button 'Load Sample' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Button 'Clear' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Button 'Import CSV' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Button 'Run Analysis' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Run Analysis button clicked",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Analysis results displayed",
+    "status": "PASS",
+    "message": "Found 28 stat elements"
+  },
+  {
+    "test": "Subgroup variable dropdown exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Subgroup model dropdown exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Subgroup dose-response canvas exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Subgroup forest plot canvas exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Subgroup Analysis button exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Slider 'tau2Slider' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Slider 'ciSlider' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Slider 'thresholdSlider' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Coefficients table exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Interpretation div exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Canvas 'mainPlot' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Canvas 'forestPlot' exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Sensitivity Analysis button exists",
+    "status": "PASS",
+    "message": ""
+  },
+  {
+    "test": "Console errors check",
+    "status": "PASS",
+    "message": "No errors found"
+  }
+]

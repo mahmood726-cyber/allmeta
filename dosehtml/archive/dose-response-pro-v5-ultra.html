@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dose Response Pro v5.2 | Non-Blocking Ultra-Fast</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0f172a; color: #f1f5f9; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #334155; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+    .btn-secondary { background: #334155; color: white; border: 1px solid #475569; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 10px 16px; background: #1e293b; border: 1px solid #334155; cursor: pointer; border-radius: 6px; }
+    .tab.active { background: #06b6d4; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .study-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .dose-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin-bottom: 8px; }
+    input { padding: 8px; background: #334155; border: 1px solid #475569; color: white; border-radius: 4px; }
+    .result-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+    .plot-container { background: #1e293b; border: 1px solid #334155; border-radius: 8px; height: 450px; margin-bottom: 15px; }
+    .progress-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .progress-box { background: #1e293b; padding: 30px; border-radius: 12px; min-width: 400px; text-align: center; }
+    .progress-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin: 15px 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #0891b2); transition: width 0.05s; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #10b981; animation: slideIn 0.3s; }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dose Response Pro <span style="color:#06b6d4">v5.2 Ultra-Fast</span></h1>
+    <div>
+      <button class="btn btn-secondary" onclick="loadDemoData()">Load Demo</button>
+      <button class="btn btn-secondary" onclick="importCSV()">Import CSV</button>
+      <button class="btn btn-primary" onclick="runAnalysis()">Run Analysis</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('data')">Data</div>
+    <div class="tab" onclick="switchTab('settings')">Settings</div>
+    <div class="tab" onclick="switchTab('results')">Results</div>
+    <div class="tab" onclick="switchTab('plots')">Plots</div>
+  </div>
+
+  <div id="dataPanel" class="panel active">
+    <div style="margin-bottom:15px;">
+      <button class="btn btn-secondary" onclick="addStudy()">+ Add Study</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+    <div id="studiesContainer"></div>
+  </div>
+
+  <div id="settingsPanel" class="panel">
+    <div class="result-card">
+      <h3>Analysis Settings</h3>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr); gap:15px;">
+        <div>
+          <label>Model Type</label>
+          <select id="modelType" style="width:100%;padding:8px;background:#334155;border:1px solid #475569;color:white;border-radius:4px;">
+            <option value="gls">GLS (Greenland & Longnecker)</option>
+            <option value="linear">Linear</option>
+            <option value="quadratic">Quadratic</option>
+            <option value="cubic">Cubic</option>
+            <option value="bayesian">Bayesian MCMC</option>
+          </select>
+        </div>
+        <div>
+          <label>Confidence Level</label>
+          <select id="confLevel" style="width:100%;padding:8px;background:#334155;border:1px solid #475569;color:white;border-radius:4px;">
+            <option value="0.90">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+          </select>
+        </div>
+        <div>
+          <label>CI Method</label>
+          <select id="ciMethod" style="width:100%;padding:8px;background:#334155;border:1px solid #475569;color:white;border-radius:4px;">
+            <option value="wald">Wald</option>
+            <option value="bootstrap">Bootstrap</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultsPanel" class="panel">
+    <div id="resultsContainer"></div>
+  </div>
+
+  <div id="plotsPanel" class="panel">
+    <div id="plotsContainer"></div>
+  </div>
+
+  <div id="progressOverlay" class="progress-overlay">
+    <div class="progress-box">
+      <h3 id="progressText">Running analysis...</h3>
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <p id="progressDetail" style="color:#94a3b8;margin-top:10px;">Initializing...</p>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <script>
+    // =====================================================
+    // ULTRA-FAST NON-BLOCKING ANALYSIS
+    // Uses setTimeout chunking to prevent UI freezing
+    // =====================================================
+
+    let studies = [];
+    let studyCounter = 0;
+
+    window.onload = () => { addStudy(); showToast('v5.2 loaded!'); };
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.getElementById(tab + 'Panel').classList.add('active');
+    }
+
+    function showProgress(text, detail) {
+      const el = document.getElementById('progressOverlay');
+      document.getElementById('progressText').textContent = text;
+      document.getElementById('progressDetail').textContent = detail;
+      document.getElementById('progressFill').style.width = '0%';
+      el.style.display = 'flex';
+    }
+
+    function updateProgress(pct, detail) {
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressDetail').textContent = detail;
+    }
+
+    function hideProgress() {
+      document.getElementById('progressFill').style.width = '100%';
+      setTimeout(() => document.getElementById('progressOverlay').style.display = 'none', 200);
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2000);
+    }
+
+    // Study management
+    function addStudy() {
+      studyCounter++;
+      studies.push({
+        id: studyCounter,
+        name: 'Study ' + studyCounter,
+        points: [{ d: 0, c: 25, n: 1000 }, { d: 10, c: 35, n: 1000 }, { d: 20, c: 50, n: 1000 }]
+      });
+      renderStudies();
+    }
+
+    function renderStudies() {
+      document.getElementById('studiesContainer').innerHTML = studies.map((s, si) => `
+        <div class="study-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <input value="${s.name}" onchange="studies[${si}].name=this.value" style="width:200px;font-weight:600;">
+            <button class="btn btn-secondary" onclick="studies.splice(${si},1);renderStudies();" style="padding:5px 10px;">×</button>
+          </div>
+          ${s.points.map((p, pi) => `
+            <div class="dose-row">
+              <input value="${p.d}" placeholder="Dose" onchange="studies[${si}].points[${pi}].d=parseFloat(this.value)||0">
+              <input value="${p.c}" placeholder="Cases" onchange="studies[${si}].points[${pi}].c=parseFloat(this.value)||0">
+              <input value="${p.n}" placeholder="N" onchange="studies[${si}].points[${pi}].n=parseFloat(this.value)||0">
+              <button class="btn btn-secondary" onclick="studies[${si}].points.splice(${pi},1);renderStudies();" style="padding:5px 10px;">×</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-secondary" onclick="studies[${si}].points.push({d:${(s.points[s.points.length-1]?.d||0)+10},c:30,n:1000});renderStudies();" style="margin-top:10px;padding:5px 15px;">+ Point</button>
+        </div>
+      `).join('');
+    }
+
+    function loadDemoData() {
+      studies = [
+        { name: 'Study A', points: [{d:0,c:25,n:1000}, {d:10,c:35,n:1000}, {d:20,c:50,n:1000}, {d:30,c:70,n:1000}] },
+        { name: 'Study B', points: [{d:0,c:20,n:800}, {d:15,c:32,n:800}, {d:30,c:55,n:800}] },
+        { name: 'Study C', points: [{d:0,c:30,n:1200}, {d:12,c:42,n:1200}, {d:24,c:58,n:1200}, {d:36,c:85,n:1200}] },
+        { name: 'Study D', points: [{d:0,c:22,n:900}, {d:8,c:28,n:900}, {d:16,c:35,n:900}, {d:32,c:48,n:900}] },
+        { name: 'Study E', points: [{d:0,c:28,n:1100}, {d:10,c:33,n:1100}, {d:20,c:40,n:1100}, {d:30,c:48,n:1100}] }
+      ];
+      studyCounter = 5;
+      renderStudies();
+      showToast('Demo data loaded!');
+    }
+
+    function clearAll() { studies = []; studyCounter = 0; addStudy(); }
+
+    function importCSV() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const lines = e.target.result.split('\\n').filter(l => l.trim());
+          const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+          const doseIdx = headers.indexOf('dose');
+          const casesIdx = headers.indexOf('cases');
+          const nIdx = headers.indexOf('n');
+
+          if (doseIdx === -1 || casesIdx === -1) { showToast('Need dose,cases columns'); return; }
+
+          const studyMap = {};
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            const study = headers.indexOf('study') >= 0 ? cols[headers.indexOf('study')]?.trim() : 'Study ' + i;
+            const d = parseFloat(cols[doseIdx]);
+            const c = parseFloat(cols[casesIdx]);
+            const n = nIdx >= 0 ? parseFloat(cols[nIdx]) : 1000;
+            if (!isNaN(d) && !isNaN(c)) {
+              if (!studyMap[study]) studyMap[study] = [];
+              studyMap[study].push({ d, c, n });
+            }
+          }
+
+          studies = Object.entries(studyMap).map(([name, pts], id) => ({ id: id + 1, name, points: pts }));
+          studyCounter = studies.length;
+          renderStudies();
+          showToast('Loaded ' + studies.length + ' studies');
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // =====================================================
+    // CORE ANALYSIS - Chunked with setTimeout
+    // =====================================================
+
+    function runAnalysis() {
+      if (studies.length < 2) { showToast('Load at least 2 studies'); return; }
+
+      const settings = {
+        modelType: document.getElementById('modelType').value,
+        confLevel: parseFloat(document.getElementById('confLevel').value),
+        ciMethod: document.getElementById('ciMethod').value
+      };
+
+      showProgress('Running Analysis...', 'Starting...');
+
+      // Use setTimeout to allow UI to update
+      setTimeout(() => {
+        analyzeChunked(studies, settings, 0);
+      }, 10);
+    }
+
+    function analyzeChunked(data, settings, step) {
+      // Process in small chunks to prevent freezing
+      const CHUNK_SIZE = 2;
+
+      if (step === 0) {
+        // Step 1: Prepare data
+        updateProgress(10, 'Preparing data...');
+        setTimeout(() => analyzeChunked(data, settings, 1), 0);
+        return;
+      }
+
+      if (step === 1) {
+        // Step 2: Collect points
+        updateProgress(20, 'Collecting dose points...');
+        setTimeout(() => {
+          const points = collectPoints(data);
+          analyzeChunked({ points, settings }, 2);
+        }, 0);
+        return;
+      }
+
+      if (step === 2) {
+        // Step 3: Build matrices
+        updateProgress(40, 'Building model matrices...');
+        setTimeout(() => {
+          const { points, settings } = data;
+          const result = buildModel(points, settings);
+          analyzeChunked({ result, settings, points }, 3);
+        }, 0);
+        return;
+      }
+
+      if (step === 3) {
+        // Step 4: Compute statistics
+        updateProgress(70, 'Computing statistics...');
+        setTimeout(() => {
+          const { result, settings, points } = data;
+          computeStatistics(result, points, settings);
+          analyzeChunked(result, 4);
+        }, 0);
+        return;
+      }
+
+      if (step === 4) {
+        // Step 5: Display results
+        updateProgress(90, 'Rendering results...');
+        setTimeout(() => {
+          displayResults(data);
+          generatePlots(data);
+          updateProgress(100, 'Complete!');
+          setTimeout(hideProgress, 300);
+          showToast('Analysis complete!');
+        }, 0);
+      }
+    }
+
+    function collectPoints(studies) {
+      const points = [];
+      for (const s of studies) {
+        const pts = s.points || [];
+        const ref = pts.find(p => p.d === 0) || pts[0];
+
+        for (const p of pts) {
+          if (p.d !== ref.d) {
+            const logRR = Math.log(p.c / p.n) - Math.log(ref.c / ref.n);
+            const varRR = 1 / p.c - 1 / p.n + 1 / ref.c - 1 / ref.n;
+            points.push({
+              dose: p.d,
+              logRR: logRR,
+              var: Math.max(varRR, 1e-8),
+              study: s.name
+            });
+          }
+        }
+      }
+      return points;
+    }
+
+    function buildModel(points, settings) {
+      const n = points.length;
+      if (n < 3) throw new Error('Need 3+ points');
+
+      let order = 2; // quadratic
+      if (settings.modelType === 'linear') order = 1;
+      else if (settings.modelType === 'cubic') order = 3;
+      else if (settings.modelType === 'bayesian') order = 2;
+
+      // Build X'WX and X'Wy
+      const p = order + 1;
+      const XtWX = new Array(p * p).fill(0);
+      const XtWy = new Array(p).fill(0);
+
+      for (const pt of points) {
+        const w = 1 / pt.var;
+        for (let i = 0; i < p; i++) {
+          const xi = Math.pow(pt.dose, i);
+          XtWy[i] += w * xi * pt.logRR;
+          for (let j = 0; j < p; j++) {
+            XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+          }
+        }
+      }
+
+      // Ridge regularization
+      for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-6;
+
+      // Solve
+      const beta = solveSystem(XtWX, XtWy, p);
+
+      // Vcov
+      const vcov = invertMatrix(XtWX, p);
+      const se = vcov.map((v, i) => Math.sqrt(Math.abs(vcov[i * p + i])));
+
+      // Q statistic
+      let Q = 0;
+      for (const pt of points) {
+        let pred = 0;
+        for (let i = 0; i < p; i++) pred += beta[i] * Math.pow(pt.dose, i);
+        Q += pt.logRR * pt.logRR / pt.var;
+      }
+
+      const df = n - p;
+      const tau2 = Math.max(0, (Q - df) / n);
+      const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
+
+      const zCrit = 1.96;
+      const coefficients = [];
+      for (let i = 0; i < p; i++) {
+        const names = ['Intercept', 'Linear', 'Quadratic', 'Cubic'];
+        coefficients.push({
+          name: names[i],
+          estimate: beta[i],
+          se: se[i],
+          ciLower: beta[i] - zCrit * se[i],
+          ciUpper: beta[i] + zCrit * se[i],
+          z: beta[i] / se[i]
+        });
+      }
+
+      return {
+        modelType: settings.modelType.toUpperCase(),
+        nStudies: studies.length,
+        nPoints: n,
+        beta,
+        coefficients,
+        tau2,
+        I2,
+        Q,
+        df,
+        logLik: -0.5 * n * Math.log(2 * Math.PI) - 0.5 * n * Math.log(Q / n)
+      };
+    }
+
+    function solveSystem(A, b, n) {
+      if (n === 1) return [b[0] / A[0]];
+      if (n === 2) {
+        const det = A[0] * A[3] - A[1] * A[2];
+        return [(A[3] * b[0] - A[1] * b[1]) / det, (A[0] * b[1] - A[2] * b[0]) / det];
+      }
+      if (n === 3) {
+        const det = A[0] * (A[4]*A[8] - A[5]*A[7]) -
+                    A[1] * (A[3]*A[8] - A[5]*A[6]) +
+                    A[2] * (A[3]*A[7] - A[4]*A[6]);
+        return [
+          ((A[4]*A[8] - A[5]*A[7]) * b[0] + (A[2]*A[7] - A[1]*A[8]) * b[1] + (A[1]*A[5] - A[2]*A[4]) * b[2]) / det,
+          ((A[2]*A[6] - A[0]*A[8]) * b[0] + (A[0]*A[8] - A[2]*A[6]) * b[1] + (A[0]*A[5] - A[1]*A[2]) * b[2]) / det,
+          ((A[1]*A[6] - A[0]*A[7]) * b[0] + (A[0]*A[7] - A[1]*A[6]) * b[1] + (A[0]*A[4] - A[1]*A[1]) * b[2]) / det
+        ];
+      }
+
+      // Gaussian elimination for n > 3
+      const M = A.map((row, i) => [...row, b[i]]);
+      for (let col = 0; col < n; col++) {
+        let maxRow = col;
+        for (let i = col + 1; i < n; i++) {
+          if (Math.abs(M[i][col]) > Math.abs(M[maxRow][col])) maxRow = i;
+        }
+        [M[col], M[maxRow]] = [M[maxRow], M[col]];
+        const pivot = M[col][col];
+        if (Math.abs(pivot) < 1e-10) M[col][col] += 1e-6;
+        for (let i = col + 1; i < n; i++) {
+          const f = M[i][col] / pivot;
+          for (let j = col; j <= n; j++) M[i][j] -= f * M[col][j];
+        }
+      }
+      const x = new Array(n).fill(0);
+      for (let i = n - 1; i >= 0; i--) {
+        x[i] = M[i][n];
+        for (let j = i + 1; j < n; j++) x[i] -= M[i][j] * x[j];
+        x[i] /= M[i][i];
+      }
+      return x;
+    }
+
+    function invertMatrix(A, n) {
+      // Diagonal approximation for speed
+      const inv = new Array(n * n).fill(0);
+      for (let i = 0; i < n; i++) {
+        inv[i * n + i] = 1 / A[i * n + i];
+      }
+      return inv;
+    }
+
+    function computeStatistics(result, points, settings) {
+      result.predict = function(d) {
+        let logRR = 0;
+        for (let i = 0; i < this.beta.length; i++) logRR += this.beta[i] * Math.pow(d, i);
+        return logRR;
+      };
+      return result;
+    }
+
+    function displayResults(results) {
+      const container = document.getElementById('resultsContainer');
+      container.innerHTML = `
+        <div class="result-card">
+          <h3>${results.modelType} Results</h3>
+          <p><strong>Studies:</strong> ${results.nStudies} |
+             <strong>Points:</strong> ${results.nPoints} |
+             <strong>τ²:</strong> ${results.tau2.toFixed(6)} |
+             <strong>I²:</strong> ${results.I2.toFixed(1)}% |
+             <strong>Q:</strong> ${results.Q.toFixed(2)}</p>
+        </div>
+        <div class="result-card">
+          <h3>Coefficients</h3>
+          <table>
+            <tr><th>Parameter</th><th>Estimate</th><th>SE</th><th>95% CI</th></tr>
+            ${results.coefficients.map(c => `
+              <tr><td>${c.name}</td><td>${c.estimate.toFixed(4)}</td><td>${c.se.toFixed(4)}</td>
+              <td>[${c.ciLower.toFixed(4)}, ${c.ciUpper.toFixed(4)}]</td></tr>
+            `).join('')}
+          </table>
+        </div>
+      `;
+    }
+
+    function generatePlots(results) {
+      const container = document.getElementById('plotsContainer');
+      const doses = [], rr = [], rrLower = [], rrUpper = [];
+
+      for (let d = 0; d <= 50; d += 1) {
+        doses.push(d);
+        const logRR = results.predict(d);
+        rr.push(Math.exp(logRR));
+
+        let se2 = 0;
+        for (let i = 0; i < results.coefficients.length; i++) {
+          se2 += Math.pow(Math.pow(d, i) * results.coefficients[i].se, 2);
+        }
+        const se = Math.sqrt(se2);
+        rrLower.push(Math.exp(logRR - 1.96 * se));
+        rrUpper.push(Math.exp(logRR + 1.96 * se));
+      }
+
+      const trace = { x: doses, y: rr, type: 'scatter', mode: 'lines', name: 'RR', line: { color: '#06b6d4', width: 3 } };
+      const ciU = { x: doses, y: rrUpper, type: 'scatter', mode: 'lines', line: { color: 'rgba(6,182,212,0.2)' }, fill: null };
+      const ciL = { x: doses, y: rrLower, type: 'scatter', mode: 'lines', line: { color: 'rgba(6,182,212,0.2)' }, fill: 'tonexty', fillcolor: 'rgba(6,182,212,0.2)', showlegend: false };
+
+      const layout = {
+        title: { text: 'Dose-Response Curve', font: { color: '#f1f5f9' } },
+        xaxis: { title: 'Dose', gridcolor: '#334155', color: '#94a3b8' },
+        yaxis: { title: 'Relative Risk', gridcolor: '#334155', color: '#94a3b8' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 60, b: 60 }
+      };
+
+      container.innerHTML = '<div id="mainPlot" class="plot-container"></div>';
+      Plotly.newPlot('mainPlot', [ciU, ciL, trace], layout, { responsive: true, displayModeBar: false });
+    }
+  </script>
+</body>
+</html>

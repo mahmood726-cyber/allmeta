@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-03-01T12:37:09.453Z",
+  "iterations": 30,
+  "warmup": 4,
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "models": [
+    {
+      "model": "markov_age_dependent",
+      "stats": {
+        "iterations": 30,
+        "min_ms": 0.8478,
+        "max_ms": 2.9181,
+        "mean_ms": 1.6283333333333334,
+        "median_ms": 1.3763,
+        "p95_ms": 2.6631
+      },
+      "thresholds": {
+        "max_mean_ms": 12,
+        "max_p95_ms": 25
+      },
+      "passed": true,
+      "checks": {
+        "mean_within_budget": true,
+        "p95_within_budget": true
+      }
+    },
+    {
+      "model": "markov_simple",
+      "stats": {
+        "iterations": 30,
+        "min_ms": 0.1622,
+        "max_ms": 0.3731,
+        "mean_ms": 0.19732333333333338,
+        "median_ms": 0.1741,
+        "p95_ms": 0.3367
+      },
+      "thresholds": {
+        "max_mean_ms": 8,
+        "max_p95_ms": 15
+      },
+      "passed": true,
+      "checks": {
+        "mean_within_budget": true,
+        "p95_within_budget": true
+      }
+    },
+    {
+      "model": "psa_demo",
+      "stats": {
+        "iterations": 30,
+        "min_ms": 1.0278,
+        "max_ms": 3.076,
+        "mean_ms": 1.483946666666667,
+        "median_ms": 1.353,
+        "p95_ms": 2.5822
+      },
+      "thresholds": {
+        "max_mean_ms": 18,
+        "max_p95_ms": 35
+      },
+      "passed": true,
+      "checks": {
+        "mean_within_budget": true,
+        "p95_within_budget": true
+      }
+    }
+  ]
+}

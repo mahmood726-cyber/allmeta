@@ -1,0 +1,425 @@
+#!/usr/bin/env python3
+"""Script to fix the Bayesian MCMC function in dose-response-pro-v4.html"""
+
+# Read the file
+with open('C:\\dosehtml\\dose-response-pro-v4.html', 'r', encoding='utf-8') as f:
+    lines = f.readlines()
+
+# Find the start and end of the function
+start_line = None
+end_line = None
+
+for i, line in enumerate(lines):
+    if '    // Bayesian Dose-Response Meta-Analysis using MCMC' in line:
+        start_line = i
+    if start_line is not None and line.strip() == '    }':
+        # Make sure this is the right closing brace by checking the next line
+        if i + 1 < len(lines) and '    // Helper: Initialize beta using OLS' in lines[i + 1]:
+            end_line = i
+            break
+
+if start_line is None or end_line is None:
+    print(f"ERROR: Could not find function boundaries. start_line={start_line}, end_line={end_line}")
+    exit(1)
+
+print(f"Found function from line {start_line + 1} to {end_line + 1}")
+
+# New function code
+new_function = '''    // Bayesian Dose-Response Meta-Analysis using MCMC
+    function fitBayesianModel(studies, settings) {
+      // Collect data
+      const allData = [];
+      studies.forEach((study, studyIdx) => {
+        if (!study.dosePoints || study.dosePoints.length === 0) return;
+        study.dosePoints.forEach(point => {
+          if (point.dose === null || point.cases === null || point.n === null) return;
+          if (point.n <= 0) return;
+
+          const dose = point.dose;
+          const rate = point.cases / point.n;
+
+          allData.push({
+            dose,
+            x1: dose,
+            x2: dose * dose,
+            cases: point.cases,
+            n: point.n,
+            rate,
+            logRate: Math.log(rate + (rate === 0 ? 0.0001 : 0))
+          });
+        });
+      });
+
+      const N = allData.length;
+      if (N < 4) throw new Error('Bayesian model requires at least 4 data points');
+
+      // MCMC settings
+      const nBurnin = 5000;
+      const nSamples = 10000;
+      const thin = 5;
+      const nChains = 3; // Run multiple chains for convergence diagnostics
+
+      // Priors (weakly informative)
+      // beta ~ N(0, 10^2)
+      // sigma ~ Inv-Gamma(0.001, 0.001)
+
+      // Calculate log-likelihood
+      function logLikelihood(beta, sigma) {
+        let ll = 0;
+        allData.forEach(p => {
+          const mu = beta[0] + beta[1] * p.x1 + beta[2] * p.x2;
+          const ll_i = -0.5 * Math.log(2 * Math.PI * sigma * sigma)
+                       - 0.5 * Math.pow(p.logRate - mu, 2) / (sigma * sigma);
+          ll += ll_i;
+        });
+        return ll;
+      }
+
+      // Log prior
+      function logPrior(beta, sigma) {
+        let lp = 0;
+
+        // Normal priors on beta
+        lp += -0.5 * Math.pow(beta[0] / 10, 2);
+        lp += -0.5 * Math.pow(beta[1] / 10, 2);
+        lp += -0.5 * Math.pow(beta[2] / 10, 2);
+
+        // Inverse-Gamma prior on sigma
+        lp += -0.001 / sigma - 1.001 * Math.log(sigma + 1e-10);
+
+        return lp;
+      }
+
+      // Log posterior
+      function logPost(beta, sigma) {
+        return logLikelihood(beta, sigma) + logPrior(beta, sigma);
+      }
+
+      // Run a single MCMC chain
+      function runChain(chainId, startBeta, startSigma) {
+        const chain = {
+          beta0: [],
+          beta1: [],
+          beta2: [],
+          sigma: [],
+          trace: { iterations: [], beta0: [], beta1: [], beta2: [], sigma: [] }
+        };
+
+        let currentBeta = [...startBeta];
+        let currentSigma = startSigma;
+
+        // Proposal distributions
+        const betaScale = 0.1;
+        const sigmaScale = 0.1;
+
+        let acceptCount = 0;
+        let totalProposals = 0;
+
+        // Burn-in phase
+        for (let iter = 0; iter < nBurnin; iter++) {
+          // Propose new beta
+          const newBeta = currentBeta.map(b => b + (Math.random() - 0.5) * betaScale);
+          const logRatio = logPost(newBeta, currentSigma) - logPost(currentBeta, currentSigma);
+
+          totalProposals++;
+          if (Math.log(Math.random()) < logRatio) {
+            currentBeta = newBeta;
+            acceptCount++;
+          }
+
+          // Propose new sigma (log-scale)
+          const newSigma = currentSigma * Math.exp((Math.random() - 0.5) * sigmaScale);
+          const logRatioSigma = logPost(currentBeta, newSigma) - logPost(currentBeta, currentSigma);
+
+          totalProposals++;
+          if (Math.log(Math.random()) < logRatioSigma) {
+            currentSigma = newSigma;
+            acceptCount++;
+          }
+        }
+
+        // Sampling phase
+        const effectiveSamples = Math.floor(nSamples / thin);
+        let sampleCount = 0;
+
+        for (let iter = 0; iter < nSamples; iter++) {
+          // Propose new beta
+          const newBeta = currentBeta.map(b => b + (Math.random() - 0.5) * betaScale);
+          const logRatio = logPost(newBeta, currentSigma) - logPost(currentBeta, currentSigma);
+
+          totalProposals++;
+          if (Math.log(Math.random()) < logRatio) {
+            currentBeta = newBeta;
+            acceptCount++;
+          }
+
+          // Propose new sigma
+          const newSigma = currentSigma * Math.exp((Math.random() - 0.5) * sigmaScale);
+          const logRatioSigma = logPost(currentBeta, newSigma) - logPost(currentBeta, currentSigma);
+
+          totalProposals++;
+          if (Math.log(Math.random()) < logRatioSigma) {
+            currentSigma = newSigma;
+            acceptCount++;
+          }
+
+          // Store samples (with thinning)
+          if (iter % thin === 0) {
+            chain.beta0.push(currentBeta[0]);
+            chain.beta1.push(currentBeta[1]);
+            chain.beta2.push(currentBeta[2]);
+            chain.sigma.push(currentSigma);
+
+            // Store trace data (store every 10th sample to save memory)
+            if (sampleCount % 10 === 0) {
+              chain.trace.iterations.push(sampleCount);
+              chain.trace.beta0.push(currentBeta[0]);
+              chain.trace.beta1.push(currentBeta[1]);
+              chain.trace.beta2.push(currentBeta[2]);
+              chain.trace.sigma.push(currentSigma);
+            }
+            sampleCount++;
+          }
+        }
+
+        const acceptanceRate = acceptCount / totalProposals;
+
+        return { chain, acceptanceRate };
+      }
+
+      // Initialize from MLE (using OLS as starting point)
+      const startBeta = initializeBeta(allData);
+
+      // Run multiple chains with different starting points
+      const allChains = [];
+      const acceptanceRates = [];
+
+      for (let c = 0; c < nChains; c++) {
+        // Vary starting points for different chains
+        const variedStartBeta = startBeta.map(b => b * (1 + (Math.random() - 0.5)));
+        const variedStartSigma = 1.0 + (Math.random() - 0.5);
+
+        const { chain, acceptanceRate } = runChain(c, variedStartBeta, variedStartSigma);
+        allChains.push(chain);
+        acceptanceRates.push(acceptanceRate);
+      }
+
+      // Combine chains for posterior summaries
+      const combinedChains = {
+        beta0: [],
+        beta1: [],
+        beta2: [],
+        sigma: []
+      };
+
+      allChains.forEach(chain => {
+        combinedChains.beta0.push(...chain.beta0);
+        combinedChains.beta1.push(...chain.beta1);
+        combinedChains.beta2.push(...chain.beta2);
+        combinedChains.sigma.push(...chain.sigma);
+      });
+
+      // Calculate R-hat (Gelman-Rubin) statistic
+      function calculateRhat(chains, paramName) {
+        const m = chains.length; // number of chains
+        const n = chains[0][paramName].length; // samples per chain
+
+        // Calculate within-chain variance
+        let W = 0;
+        chains.forEach(chain => {
+          const samples = chain[paramName];
+          const mean = samples.reduce((a, b) => a + b, 0) / n;
+          const var = samples.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / (n - 1);
+          W += var;
+        });
+        W /= m;
+
+        // Calculate between-chain variance
+        const chainMeans = chains.map(chain => {
+          return chain[paramName].reduce((a, b) => a + b, 0) / n;
+        });
+        const grandMean = chainMeans.reduce((a, b) => a + b, 0) / m;
+        const B = n * chainMeans.reduce((sum, mean) => sum + Math.pow(mean - grandMean, 2), 0) / (m - 1);
+
+        // Estimated marginal posterior variance
+        const Vhat = ((n - 1) / n) * W + (1 / n) * B;
+
+        // R-hat statistic
+        const Rhat = Math.sqrt(Vhat / W);
+
+        return Rhat;
+      }
+
+      // Calculate Effective Sample Size (ESS) using autocorrelation
+      function calculateESS(samples) {
+        const n = samples.length;
+        const mean = samples.reduce((a, b) => a + b, 0) / n;
+        const variance = samples.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / (n - 1);
+
+        // Calculate autocorrelation at different lags
+        function autocorr(samples, lag, mean, variance) {
+          let sum = 0;
+          for (let i = 0; i < samples.length - lag; i++) {
+            sum += (samples[i] - mean) * (samples[i + lag] - mean);
+          }
+          return sum / ((samples.length - lag) * variance);
+        }
+
+        // Sum autocorrelations until they become negligible
+        let sumAutocorr = 0;
+        for (let lag = 1; lag < Math.min(n / 2, 1000); lag++) {
+          const rho = Math.abs(autocorr(samples, lag, mean, variance));
+          sumAutocorr += rho;
+          if (rho < 0.05) break; // Stop when autocorrelation becomes small
+        }
+
+        const ESS = n / (1 + 2 * sumAutocorr);
+        return Math.max(1, Math.floor(ESS));
+      }
+
+      // Calculate convergence diagnostics
+      const rhatBeta0 = calculateRhat(allChains, 'beta0');
+      const rhatBeta1 = calculateRhat(allChains, 'beta1');
+      const rhatBeta2 = calculateRhat(allChains, 'beta2');
+      const rhatSigma = calculateRhat(allChains, 'sigma');
+
+      const essBeta0 = calculateESS(combinedChains.beta0);
+      const essBeta1 = calculateESS(combinedChains.beta1);
+      const essBeta2 = calculateESS(combinedChains.beta2);
+      const essSigma = calculateESS(combinedChains.sigma);
+
+      const avgAcceptanceRate = acceptanceRates.reduce((a, b) => a + b, 0) / acceptanceRates.length;
+
+      // Check for convergence warnings
+      const convergenceWarnings = [];
+      if (rhatBeta0 > 1.1 || rhatBeta1 > 1.1 || rhatBeta2 > 1.1 || rhatSigma > 1.1) {
+        convergenceWarnings.push('R-hat > 1.1: Chains may not have converged. Consider increasing burn-in.');
+      }
+      if (essBeta0 < 400 || essBeta1 < 400 || essBeta2 < 400 || essSigma < 400) {
+        convergenceWarnings.push('ESS < 400: Low effective sample size. Consider increasing iterations.');
+      }
+      if (avgAcceptanceRate < 0.2) {
+        convergenceWarnings.push('Acceptance rate < 20%: Proposal scale may be too large.');
+      }
+      if (avgAcceptanceRate > 0.5) {
+        convergenceWarnings.push('Acceptance rate > 50%: Proposal scale may be too small.');
+      }
+
+      // Posterior summaries
+      function posteriorSummary(samples) {
+        samples.sort((a, b) => a - b);
+        const n = samples.length;
+
+        const mean = samples.reduce((a, b) => a + b, 0) / n;
+        const median = samples[Math.floor(n / 2)];
+        const sd = Math.sqrt(samples.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / (n - 1));
+
+        const ciLower = samples[Math.floor(n * 0.025)];
+        const ciUpper = samples[Math.floor(n * 0.975)];
+
+        return { mean, median, sd, ciLower, ciUpper };
+      }
+
+      const summaryBeta0 = posteriorSummary(combinedChains.beta0);
+      const summaryBeta1 = posteriorSummary(combinedChains.beta1);
+      const summaryBeta2 = posteriorSummary(combinedChains.beta2);
+      const summarySigma = posteriorSummary(combinedChains.sigma);
+
+      // Proper Bayesian p-value calculation (two-tailed)
+      function calculateBayesianPValue(samples) {
+        const probPositive = samples.filter(s => s > 0).length / samples.length;
+        const probNegative = 1 - probPositive;
+        return 2 * Math.min(probPositive, probNegative);
+      }
+
+      const pBeta1 = calculateBayesianPValue(combinedChains.beta1);
+      const pBeta2 = calculateBayesianPValue(combinedChains.beta2);
+
+      // Predictions using posterior means
+      const predicted = allData.map(p =>
+        Math.exp(summaryBeta0.mean + summaryBeta1.mean * p.x1 + summaryBeta2.mean * p.x2)
+      );
+
+      // Residuals
+      const residuals = allData.map((p, i) => p.logRate - Math.log(predicted[i]));
+      const SSE = residuals.reduce((sum, r) => sum + r * r, 0);
+      const MSE = SSE / (N - 3);
+
+      // WAIC (Watanabe-Akaike Information Criterion)
+      const logLikMean = -0.5 * N * Math.log(2 * Math.PI * summarySigma.mean * summarySigma.mean)
+                         - 0.5 * SSE / (summarySigma.mean * summarySigma.mean);
+      const WAIC = -2 * logLikMean + 2 * 3; // penalty for 3 parameters
+
+      const effectiveSamples = Math.floor(nSamples / thin);
+
+      return {
+        type: 'bayesian',
+        name: 'Bayesian MCMC',
+        description: 'Probabilistic framework with MCMC sampling',
+        mcmcSettings: {
+          nBurnin,
+          nSamples,
+          thin,
+          effectiveSamples,
+          nChains
+        },
+        convergence: {
+          rhat: {
+            beta0: rhatBeta0,
+            beta1: rhatBeta1,
+            beta2: rhatBeta2,
+            sigma: rhatSigma
+          },
+          ess: {
+            beta0: essBeta0,
+            beta1: essBeta1,
+            beta2: essBeta2,
+            sigma: essSigma
+          },
+          acceptanceRate: avgAcceptanceRate,
+          chainAcceptanceRates: acceptanceRates,
+          warnings: convergenceWarnings
+        },
+        traceData: allChains.map(chain => chain.trace),
+        coefficients: [
+          { name: 'Intercept', estimate: summaryBeta0.mean, se: summaryBeta0.sd,
+            ciLower: summaryBeta0.ciLower, ciUpper: summaryBeta0.ciUpper,
+            pValue: 2 * Math.min(pBeta1, 1 - pBeta1) },
+          { name: 'Linear (dose)', estimate: summaryBeta1.mean, se: summaryBeta1.sd,
+            ciLower: summaryBeta1.ciLower, ciUpper: summaryBeta1.ciUpper,
+            pValue: pBeta1 },
+          { name: 'Quadratic (dose²)', estimate: summaryBeta2.mean, se: summaryBeta2.sd,
+            ciLower: summaryBeta2.ciLower, ciUpper: summaryBeta2.ciUpper,
+            pValue: pBeta2 }
+        ],
+        pTrend: pBeta1,
+        pNonlinear: pBeta2,
+        sigma: summarySigma,
+        WAIC,
+        logLik: logLikMean,
+        allData,
+        nStudies: studies.length,
+        nPoints: N,
+        residuals: allData.map((p, i) => ({
+          dose: p.dose,
+          residual: residuals[i],
+          predicted: predicted[i],
+          observed: p.rate
+        })),
+        predict: (dose) => {
+          return Math.exp(summaryBeta0.mean + summaryBeta1.mean * dose + summaryBeta2.mean * dose * dose);
+        }
+      };
+    }
+'''
+
+# Replace the function
+new_lines = lines[:start_line] + [new_function + '\n'] + lines[end_line + 1:]
+
+# Write back
+with open('C:\\dosehtml\\dose-response-pro-v4.html', 'w', encoding='utf-8') as f:
+    f.writelines(new_lines)
+
+print(f"Successfully replaced function!")
+print(f"Old function was {end_line - start_line + 1} lines")
+print(f"New function is {len(new_function.split(chr(10)))} lines")

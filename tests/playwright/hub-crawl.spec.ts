@@ -6,7 +6,13 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const artifactsDir = resolve(__dirname, "artifacts");
+const rowsDir = resolve(artifactsDir, "rows");
 if (!existsSync(artifactsDir)) mkdirSync(artifactsDir, { recursive: true });
+if (!existsSync(rowsDir)) mkdirSync(rowsDir, { recursive: true });
+
+function writeRow(slug: string, row: Row): void {
+  writeFileSync(resolve(rowsDir, `${slug}.json`), JSON.stringify(row, null, 2));
+}
 
 const PLOT_SELECTOR = [
   "canvas",
@@ -29,16 +35,9 @@ interface Row {
   notes: string;
 }
 
-const results: Row[] = [];
-
-test.afterAll(async () => {
-  writeFileSync(
-    resolve(artifactsDir, "summary.json"),
-    JSON.stringify(results, null, 2),
-  );
-  const table = results.map(r => `${r.status.padEnd(22)} ${r.app}`).join("\n");
-  writeFileSync(resolve(artifactsDir, "summary.txt"), table);
-});
+// Per-test rows are written to artifacts/rows/<slug>.json. A separate script
+// concatenates them into summary.json after the run — this avoids the Playwright
+// module-state / afterAll timing issues that caused only 2 rows to be captured.
 
 for (const app of INTERNAL_APPS) {
   test(`${app.name}`, async ({ page }) => {
@@ -58,15 +57,14 @@ for (const app of INTERNAL_APPS) {
     }
 
     if (loadError) {
-      results.push({
+      writeRow(app.slug, {
         app: app.name, path: app.path, status: "fail-load",
         duration_ms: Date.now() - started,
         console_errors: consoleErrors, clicked_demo: false, notes: loadError,
       });
       await page.screenshot({ path: resolve(artifactsDir, `${app.slug}.png`), fullPage: true })
         .catch(() => { /* page may be in a bad state */ });
-      test.fail(true, `Load failed: ${loadError}`);
-      return;
+      throw new Error(`Load failed: ${loadError}`);
     }
 
     let plotCount = await countPlots(page);
@@ -85,27 +83,25 @@ for (const app of INTERNAL_APPS) {
     await page.screenshot({ path: resolve(artifactsDir, `${app.slug}.png`), fullPage: true });
 
     if (consoleErrors.length > 0) {
-      results.push({
+      writeRow(app.slug, {
         app: app.name, path: app.path, status: "fail-console-error",
         duration_ms: Date.now() - started,
         console_errors: consoleErrors, clicked_demo: clicked, notes: "",
       });
-      test.fail(true, `Console errors: ${consoleErrors.slice(0, 3).join(" | ")}`);
-      return;
+      throw new Error(`Console errors: ${consoleErrors.slice(0, 3).join(" | ")}`);
     }
 
     if (plotCount === 0) {
-      results.push({
+      writeRow(app.slug, {
         app: app.name, path: app.path, status: "fail-plot-missing",
         duration_ms: Date.now() - started,
         console_errors: [], clicked_demo: clicked,
         notes: "No plot surface found (canvas/svg/plotly/[id*=chart|plot]).",
       });
-      test.fail(true, "No plot surface rendered.");
-      return;
+      throw new Error("No plot surface rendered.");
     }
 
-    results.push({
+    writeRow(app.slug, {
       app: app.name, path: app.path, status: "pass",
       duration_ms: Date.now() - started,
       console_errors: [], clicked_demo: clicked, notes: "",

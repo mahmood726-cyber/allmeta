@@ -1,0 +1,114 @@
+{
+  "timestamp": "2026-03-01T10:07:29.239Z",
+  "criteria": {
+    "reproducibility": 1,
+    "security": 1,
+    "transparency": 1,
+    "methodologicalRigor": 1,
+    "maintainability": 1,
+    "frontierCompleteness": 0.9
+  },
+  "checks": {
+    "build_ok": true,
+    "lint_ok": true,
+    "test_ok": true,
+    "no_eval_in_advanced_ui": true,
+    "csp_worker_enabled": true,
+    "csp_external_data_enabled": true,
+    "sanitizer_usage_in_app": true,
+    "no_fake_demo_success_messages": true,
+    "meaningful_markov_tests": true,
+    "meaningful_editorial_tests": true,
+    "advanced_meta_placeholder_count": 1,
+    "unavailable_method_count": 0
+  },
+  "panel": [
+    {
+      "reviewer": "R1",
+      "role": "HTA committee chair",
+      "score": 0.99,
+      "threshold": 0.8,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R2",
+      "role": "NICE-style economic modeler",
+      "score": 0.985,
+      "threshold": 0.82,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R3",
+      "role": "Hospital HTA lead",
+      "score": 0.995,
+      "threshold": 0.78,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R4",
+      "role": "Methods transparency specialist",
+      "score": 1,
+      "threshold": 0.8,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R5",
+      "role": "Regulatory evidence reviewer",
+      "score": 0.995,
+      "threshold": 0.81,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R6",
+      "role": "Health economist (payer)",
+      "score": 0.98,
+      "threshold": 0.79,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R7",
+      "role": "Biostatistician",
+      "score": 0.99,
+      "threshold": 0.8,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R8",
+      "role": "Evidence synthesis lead",
+      "score": 0.98,
+      "threshold": 0.79,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R9",
+      "role": "Clinical guideline methodologist",
+      "score": 0.995,
+      "threshold": 0.78,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R10",
+      "role": "Open-science reproducibility auditor",
+      "score": 1,
+      "threshold": 0.83,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R11",
+      "role": "Digital health safety reviewer",
+      "score": 1,
+      "threshold": 0.8,
+      "switch_now": true
+    },
+    {
+      "reviewer": "R12",
+      "role": "Frontier methods purist",
+      "score": 0.95,
+      "threshold": 0.86,
+      "switch_now": true
+    }
+  ],
+  "approvals": 12,
+  "target": 11,
+  "decision": "TARGET_MET"
+}

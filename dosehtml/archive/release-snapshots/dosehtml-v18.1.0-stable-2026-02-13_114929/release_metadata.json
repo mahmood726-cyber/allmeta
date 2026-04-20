@@ -1,0 +1,35 @@
+﻿{
+    "snapshot_name":  "dosehtml-v18.1.0-stable-2026-02-13_114929",
+    "version":  "18.1.0",
+    "release_tag":  "stable",
+    "created_at_utc":  "2026-02-13T11:49:31Z",
+    "source_root":  "C:\\HTML apps\\dosehtml",
+    "files_copied":  20,
+    "files_missing":  0,
+    "captured_items":  [
+                           "dose-response-pro.html",
+                           "dose-response-worker.js",
+                           "dose-response-cli.py",
+                           "selenium_full_test.py",
+                           "test_dose_response_main.py",
+                           "test_dose_response_app.py",
+                           "test_v19_comprehensive.py",
+                           "_run_full_validation_suite.py",
+                           "tests/validate_dose_response_pro.R",
+                           "tests/r_validation_results.json",
+                           "tests/r_validation_results.txt",
+                           "tests/r_validation_output.txt",
+                           "tests/unit_tests.html",
+                           "sample_dose_response_data.csv",
+                           "README.md",
+                           "package.json",
+                           "package-lock.json",
+                           "requirements-ci.txt",
+                           ".github/workflows/ci.yml",
+                           "scripts/freeze_release_snapshot.ps1"
+                       ],
+    "missing_items":  [
+
+                      ],
+    "sha256_manifest":  "SHA256SUMS.txt"
+}

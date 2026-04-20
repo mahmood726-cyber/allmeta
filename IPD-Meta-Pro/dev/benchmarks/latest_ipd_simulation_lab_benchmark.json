@@ -1,0 +1,3374 @@
+{
+  "app_build_id": "2026-03-07-fixall-1",
+  "generated_at": "2026-03-12T10:20:25Z",
+  "seed": 12345,
+  "scenarios": [
+    "null",
+    "linear",
+    "nonlinear"
+  ],
+  "replicates": 40,
+  "min_valid_reps": 30,
+  "app": {
+    "scenarios": {
+      "linear": {
+        "replicates": [
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.4145445525215422,
+              "high_low_se": 0.12497516991657505,
+              "interaction_est": 0.2072722762607711,
+              "interaction_se": 0.062487584958287525
+            },
+            "rep": 1,
+            "spline": {
+              "curvature_ci_high": 0.2093882857678077,
+              "curvature_ci_low": -0.07302940774806081,
+              "curvature_est": 0.06817943900987346,
+              "curvature_p": 0.3439836396632123,
+              "curvature_se": 0.07204665379462469,
+              "error": null,
+              "high_low_ci_high": 0.8263452139987888,
+              "high_low_ci_low": 0.13949386452393447,
+              "high_low_est": 0.48291953926136166,
+              "high_low_se": 0.17522040056320023,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.593920510354408,
+              "high_low_se": 0.1428121284599436,
+              "interaction_est": 0.296960255177204,
+              "interaction_se": 0.0714060642299718
+            },
+            "rep": 2,
+            "spline": {
+              "curvature_ci_high": 0.1131460959743234,
+              "curvature_ci_low": -0.1732445346059704,
+              "curvature_est": -0.030049219315823494,
+              "curvature_p": 0.6808568786774849,
+              "curvature_se": 0.07306017677069983,
+              "error": null,
+              "high_low_ci_high": 0.913004645253864,
+              "high_low_ci_low": -0.0048747712546611255,
+              "high_low_est": 0.45406493699960143,
+              "high_low_se": 0.23415721487961974,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.6806273574680236,
+              "high_low_se": 0.1841345361658805,
+              "interaction_est": 0.3403136787340118,
+              "interaction_se": 0.09206726808294025
+            },
+            "rep": 3,
+            "spline": {
+              "curvature_ci_high": 0.053040940507588064,
+              "curvature_ci_low": -0.34860263781874773,
+              "curvature_est": -0.14778084865557983,
+              "curvature_p": 0.14921794000315902,
+              "curvature_se": 0.10246197919212811,
+              "error": null,
+              "high_low_ci_high": 0.9784289954462453,
+              "high_low_ci_low": 0.1797966298821962,
+              "high_low_est": 0.5791128126642208,
+              "high_low_se": 0.2037364898589195,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.6043686160054148,
+              "high_low_se": 0.12892775760921169,
+              "interaction_est": 0.3021843080027074,
+              "interaction_se": 0.06446387880460584
+            },
+            "rep": 4,
+            "spline": {
+              "curvature_ci_high": 0.12850442117316427,
+              "curvature_ci_low": -0.1275142112012039,
+              "curvature_est": 0.0004951049859801765,
+              "curvature_p": 0.9939516068934839,
+              "curvature_se": 0.06531207567776906,
+              "error": null,
+              "high_low_ci_high": 1.0067592500451852,
+              "high_low_ci_low": 0.2751367199199274,
+              "high_low_est": 0.6409479849825562,
+              "high_low_se": 0.1866418299791124,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.45728764325230564,
+              "high_low_se": 0.13300617104034018,
+              "interaction_est": 0.22864382162615282,
+              "interaction_se": 0.06650308552017009
+            },
+            "rep": 5,
+            "spline": {
+              "curvature_ci_high": 0.19655724932217966,
+              "curvature_ci_low": -0.1570059553790012,
+              "curvature_est": 0.019775646971589247,
+              "curvature_p": 0.8264545065391431,
+              "curvature_se": 0.09019635238325714,
+              "error": null,
+              "high_low_ci_high": 0.7092647307535284,
+              "high_low_ci_low": 0.03391072478338908,
+              "high_low_est": 0.3715877277684587,
+              "high_low_se": 0.17228735087806943,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.49088356667697525,
+              "high_low_se": 0.14536022879028263,
+              "interaction_est": 0.24544178333848762,
+              "interaction_se": 0.07268011439514131
+            },
+            "rep": 6,
+            "spline": {
+              "curvature_ci_high": 0.05654499298630465,
+              "curvature_ci_low": -0.1933933223154619,
+              "curvature_est": -0.06842416466457862,
+              "curvature_p": 0.2832101306412613,
+              "curvature_se": 0.06376094588261456,
+              "error": null,
+              "high_low_ci_high": 0.8810995533450758,
+              "high_low_ci_low": 0.23001197525309597,
+              "high_low_est": 0.5555557642990859,
+              "high_low_se": 0.16609682185559604,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.45739328013610364,
+              "high_low_se": 0.1326536823048362,
+              "interaction_est": 0.22869664006805182,
+              "interaction_se": 0.0663268411524181
+            },
+            "rep": 7,
+            "spline": {
+              "curvature_ci_high": 0.05900819481776677,
+              "curvature_ci_low": -0.2629368294926131,
+              "curvature_est": -0.10196431733742316,
+              "curvature_p": 0.21442336885496482,
+              "curvature_se": 0.0821303418303311,
+              "error": null,
+              "high_low_ci_high": 0.8375689414030992,
+              "high_low_ci_low": 0.13506330074916106,
+              "high_low_est": 0.48631612107613015,
+              "high_low_se": 0.17921391556907335,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.66835156809855,
+              "high_low_se": 0.12749104051763482,
+              "interaction_est": 0.334175784049275,
+              "interaction_se": 0.06374552025881741
+            },
+            "rep": 8,
+            "spline": {
+              "curvature_ci_high": 0.14284750208443925,
+              "curvature_ci_low": -0.17904705664490017,
+              "curvature_est": -0.018099777280230475,
+              "curvature_p": 0.82554936690368,
+              "curvature_se": 0.0821174677210623,
+              "error": null,
+              "high_low_ci_high": 0.7697487172013324,
+              "high_low_ci_low": 0.11181842799107555,
+              "high_low_est": 0.440783572596204,
+              "high_low_se": 0.16784244350138514,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.6233409130071853,
+              "high_low_se": 0.13506473751614692,
+              "interaction_est": 0.31167045650359265,
+              "interaction_se": 0.06753236875807346
+            },
+            "rep": 9,
+            "spline": {
+              "curvature_ci_high": 0.13350308930884305,
+              "curvature_ci_low": -0.16233973662038245,
+              "curvature_est": -0.014418323655769692,
+              "curvature_p": 0.8484916917594139,
+              "curvature_se": 0.07547149540100859,
+              "error": null,
+              "high_low_ci_high": 0.9008915953349806,
+              "high_low_ci_low": 0.19382240754953328,
+              "high_low_est": 0.547357001442257,
+              "high_low_se": 0.18037810714703773,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.45097521132192736,
+              "high_low_se": 0.12234221614717869,
+              "interaction_est": 0.22548760566096368,
+              "interaction_se": 0.061171108073589345
+            },
+            "rep": 10,
+            "spline": {
+              "curvature_ci_high": 0.1157810635052293,
+              "curvature_ci_low": -0.15340735817476975,
+              "curvature_est": -0.018813147334770228,
+              "curvature_p": 0.7841173275898168,
+              "curvature_se": 0.06867177753935808,
+              "error": null,
+              "high_low_ci_high": 0.7036735669535411,
+              "high_low_ci_low": 0.05097210797921714,
+              "high_low_est": 0.3773228374663791,
+              "high_low_se": 0.1665085337272868,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.4142175002770629,
+              "high_low_se": 0.13185521179504162,
+              "interaction_est": 0.20710875013853144,
+              "interaction_se": 0.06592760589752081
+            },
+            "rep": 11,
+            "spline": {
+              "curvature_ci_high": 0.2673387890407284,
+              "curvature_ci_low": -0.10297711342401461,
+              "curvature_est": 0.08218083780835689,
+              "curvature_p": 0.38434743903947055,
+              "curvature_se": 0.09447007829919211,
+              "error": null,
+              "high_low_ci_high": 0.7378353223736043,
+              "high_low_ci_low": 0.05874820219557514,
+              "high_low_est": 0.39829176228458973,
+              "high_low_se": 0.17323969342985268,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5854225399277667,
+              "high_low_se": 0.13391674066953976,
+              "interaction_est": 0.29271126996388336,
+              "interaction_se": 0.06695837033476988
+            },
+            "rep": 12,
+            "spline": {
+              "curvature_ci_high": 0.1306749974585909,
+              "curvature_ci_low": -0.13804134389192746,
+              "curvature_est": -0.0036831732166682854,
+              "curvature_p": 0.9571512513270011,
+              "curvature_se": 0.06855134667102993,
+              "error": null,
+              "high_low_ci_high": 1.0457235430310101,
+              "high_low_ci_low": 0.37146996419946177,
+              "high_low_est": 0.708596753615236,
+              "high_low_se": 0.1720066245110587,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.027083955487295957,
+              "high_low_se": 0.13353971175319537,
+              "interaction_est": 0.013541977743647978,
+              "interaction_se": 0.06676985587659769
+            },
+            "rep": 13,
+            "spline": {
+              "curvature_ci_high": 0.20409200706548178,
+              "curvature_ci_low": -0.07713299036648788,
+              "curvature_est": 0.06347950834949695,
+              "curvature_p": 0.3762506584224443,
+              "curvature_se": 0.07174238899885671,
+              "error": null,
+              "high_low_ci_high": 0.4558383616342665,
+              "high_low_ci_low": -0.22735948032981534,
+              "high_low_est": 0.11423944065222556,
+              "high_low_se": 0.17428836621546592,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5825460688048416,
+              "high_low_se": 0.17125554705444423,
+              "interaction_est": 0.2912730344024208,
+              "interaction_se": 0.08562777352722212
+            },
+            "rep": 14,
+            "spline": {
+              "curvature_ci_high": 0.08029184251285815,
+              "curvature_ci_low": -0.19276354505464777,
+              "curvature_est": -0.05623585127089481,
+              "curvature_p": 0.4194875957406976,
+              "curvature_se": 0.06965826655520005,
+              "error": null,
+              "high_low_ci_high": 0.9821360627394433,
+              "high_low_ci_low": 0.27597375936551277,
+              "high_low_est": 0.629054911052478,
+              "high_low_se": 0.1801467548319087,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5348099102689003,
+              "high_low_se": 0.13431908665095033,
+              "interaction_est": 0.2674049551344502,
+              "interaction_se": 0.06715954332547516
+            },
+            "rep": 15,
+            "spline": {
+              "curvature_ci_high": 0.17761592359644762,
+              "curvature_ci_low": -0.13315936377976584,
+              "curvature_est": 0.022228279908340892,
+              "curvature_p": 0.7791907467953187,
+              "curvature_se": 0.07928086678556837,
+              "error": null,
+              "high_low_ci_high": 0.9488550161580998,
+              "high_low_ci_low": 0.2480507400318963,
+              "high_low_est": 0.598452878094998,
+              "high_low_se": 0.17877988603083103,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5025864900878794,
+              "high_low_se": 0.18834527197558779,
+              "interaction_est": 0.2512932450439397,
+              "interaction_se": 0.09417263598779389
+            },
+            "rep": 16,
+            "spline": {
+              "curvature_ci_high": 0.3238565945660782,
+              "curvature_ci_low": 0.0031073387620917936,
+              "curvature_est": 0.163481966664085,
+              "curvature_p": 0.04572324037444098,
+              "curvature_se": 0.08182529323891272,
+              "error": null,
+              "high_low_ci_high": 1.0091658264547334,
+              "high_low_ci_low": 0.12397127261885871,
+              "high_low_est": 0.566568549536796,
+              "high_low_se": 0.22581908649968174,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.2779224223772513,
+              "high_low_se": 0.1340047312494575,
+              "interaction_est": 0.13896121118862564,
+              "interaction_se": 0.06700236562472875
+            },
+            "rep": 17,
+            "spline": {
+              "curvature_ci_high": 0.058706874843326234,
+              "curvature_ci_low": -0.26881207556451336,
+              "curvature_est": -0.10505260036059355,
+              "curvature_p": 0.20863503499320135,
+              "curvature_se": 0.08355228788059844,
+              "error": null,
+              "high_low_ci_high": 0.7451831394040149,
+              "high_low_ci_low": 0.06767214848029918,
+              "high_low_est": 0.406427643942157,
+              "high_low_se": 0.17283761225247515,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.354158738450324,
+              "high_low_se": 0.13706963732789074,
+              "interaction_est": 0.177079369225162,
+              "interaction_se": 0.06853481866394537
+            },
+            "rep": 18,
+            "spline": {
+              "curvature_ci_high": 0.24895930890733498,
+              "curvature_ci_low": -0.046766607061766496,
+              "curvature_est": 0.10109635092278424,
+              "curvature_p": 0.18022591082398232,
+              "curvature_se": 0.07544167088358072,
+              "error": null,
+              "high_low_ci_high": 0.8107652195453887,
+              "high_low_ci_low": 0.09116748059789315,
+              "high_low_est": 0.45096635007164093,
+              "high_low_se": 0.183574224843784,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.4461602488192472,
+              "high_low_se": 0.13725333405937817,
+              "interaction_est": 0.2230801244096236,
+              "interaction_se": 0.06862666702968909
+            },
+            "rep": 19,
+            "spline": {
+              "curvature_ci_high": 0.20178860880055416,
+              "curvature_ci_low": -0.07789740749263953,
+              "curvature_est": 0.06194560065395731,
+              "curvature_p": 0.38528702055509134,
+              "curvature_se": 0.07134978455569486,
+              "error": null,
+              "high_low_ci_high": 0.8781272953902305,
+              "high_low_ci_low": 0.17425426300151436,
+              "high_low_est": 0.5261907791958724,
+              "high_low_se": 0.17956274640077777,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5866557988012151,
+              "high_low_se": 0.14056532253105544,
+              "interaction_est": 0.29332789940060755,
+              "interaction_se": 0.07028266126552772
+            },
+            "rep": 20,
+            "spline": {
+              "curvature_ci_high": 0.12058017364455216,
+              "curvature_ci_low": -0.14730966527718647,
+              "curvature_est": -0.013364745816317152,
+              "curvature_p": 0.8449537082845926,
+              "curvature_se": 0.06834050034052776,
+              "error": null,
+              "high_low_ci_high": 1.0153594767878926,
+              "high_low_ci_low": 0.2731716626776827,
+              "high_low_est": 0.6442655697327877,
+              "high_low_se": 0.18933710500961604,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.23187710415527002,
+              "high_low_se": 0.13513064000686273,
+              "interaction_est": 0.11593855207763501,
+              "interaction_se": 0.06756532000343136
+            },
+            "rep": 21,
+            "spline": {
+              "curvature_ci_high": 0.12107095471200738,
+              "curvature_ci_low": -0.1907834144517768,
+              "curvature_est": -0.0348562298698847,
+              "curvature_p": 0.6612893328249712,
+              "curvature_se": 0.07955614780991686,
+              "error": null,
+              "high_low_ci_high": 0.7438367388427848,
+              "high_low_ci_low": 0.04952378948462299,
+              "high_low_est": 0.3966802641637039,
+              "high_low_se": 0.17712390489699104,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.6376278974166173,
+              "high_low_se": 0.1346059185861431,
+              "interaction_est": 0.31881394870830865,
+              "interaction_se": 0.06730295929307155
+            },
+            "rep": 22,
+            "spline": {
+              "curvature_ci_high": 0.15013810756060336,
+              "curvature_ci_low": -0.14802436141687803,
+              "curvature_est": 0.0010568730718626819,
+              "curvature_p": 0.9889139948748045,
+              "curvature_se": 0.07606325194977244,
+              "error": null,
+              "high_low_ci_high": 0.9343828445029148,
+              "high_low_ci_low": 0.24840173934301452,
+              "high_low_est": 0.5913922919229646,
+              "high_low_se": 0.1749983953832283,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.46488749222396886,
+              "high_low_se": 0.12814580348154528,
+              "interaction_est": 0.23244374611198443,
+              "interaction_se": 0.06407290174077264
+            },
+            "rep": 23,
+            "spline": {
+              "curvature_ci_high": 0.11074683150187899,
+              "curvature_ci_low": -0.15680166441951357,
+              "curvature_est": -0.023027416458817295,
+              "curvature_p": 0.7358296181849688,
+              "curvature_se": 0.06825342144449616,
+              "error": null,
+              "high_low_ci_high": 0.926350721886964,
+              "high_low_ci_low": 0.2575022939360945,
+              "high_low_est": 0.5919265079115292,
+              "high_low_se": 0.1706277341541551,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.47663261118817146,
+              "high_low_se": 0.131062645278542,
+              "interaction_est": 0.23831630559408573,
+              "interaction_se": 0.065531322639271
+            },
+            "rep": 24,
+            "spline": {
+              "curvature_ci_high": 0.0882462307216301,
+              "curvature_ci_low": -0.21267537723419136,
+              "curvature_est": -0.06221457325628064,
+              "curvature_p": 0.4176916455514317,
+              "curvature_se": 0.0767671268673422,
+              "error": null,
+              "high_low_ci_high": 0.6791598560285379,
+              "high_low_ci_low": 0.01085971689060361,
+              "high_low_est": 0.34500978645957076,
+              "high_low_se": 0.17048786198894747,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5751249771764002,
+              "high_low_se": 0.23560637836066997,
+              "interaction_est": 0.2875624885882001,
+              "interaction_se": 0.11780318918033499
+            },
+            "rep": 25,
+            "spline": {
+              "curvature_ci_high": 0.30949228415837277,
+              "curvature_ci_low": -0.18146372168859676,
+              "curvature_est": 0.064014281234888,
+              "curvature_p": 0.6092756326287618,
+              "curvature_se": 0.12524618036957685,
+              "error": null,
+              "high_low_ci_high": 1.1740767471697835,
+              "high_low_ci_low": 0.27963912754506576,
+              "high_low_est": 0.7268579373574247,
+              "high_low_se": 0.22817705477213457,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5823998605670369,
+              "high_low_se": 0.12418510428722762,
+              "interaction_est": 0.2911999302835184,
+              "interaction_se": 0.06209255214361381
+            },
+            "rep": 26,
+            "spline": {
+              "curvature_ci_high": 0.23832416813540752,
+              "curvature_ci_low": -0.07379791037367452,
+              "curvature_est": 0.0822631288808665,
+              "curvature_p": 0.3015387992081162,
+              "curvature_se": 0.07962444226511954,
+              "error": null,
+              "high_low_ci_high": 0.9570258307622049,
+              "high_low_ci_low": 0.2745551334818338,
+              "high_low_est": 0.6157904821220194,
+              "high_low_se": 0.17410286671423528,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5817380218534338,
+              "high_low_se": 0.12553619802955313,
+              "interaction_est": 0.2908690109267169,
+              "interaction_se": 0.06276809901477656
+            },
+            "rep": 27,
+            "spline": {
+              "curvature_ci_high": 0.06570703824457842,
+              "curvature_ci_low": -0.20705299806971483,
+              "curvature_est": -0.0706729799125682,
+              "curvature_p": 0.3097886617785317,
+              "curvature_se": 0.06958292046330647,
+              "error": null,
+              "high_low_ci_high": 0.9864072175217399,
+              "high_low_ci_low": 0.26965146800996764,
+              "high_low_est": 0.6280293427658538,
+              "high_low_se": 0.18284921421709663,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.41626765403235694,
+              "high_low_se": 0.12902952819147542,
+              "interaction_est": 0.20813382701617847,
+              "interaction_se": 0.06451476409573771
+            },
+            "rep": 28,
+            "spline": {
+              "curvature_ci_high": 0.05367005506820842,
+              "curvature_ci_low": -0.24446895414630743,
+              "curvature_est": -0.09539944953904951,
+              "curvature_p": 0.20972908346553054,
+              "curvature_se": 0.07605726720639663,
+              "error": null,
+              "high_low_ci_high": 0.6675988971525866,
+              "high_low_ci_low": -0.018844351684376648,
+              "high_low_est": 0.32437727273410494,
+              "high_low_se": 0.17511629134466836,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.3011596786088025,
+              "high_low_se": 0.13307909400719065,
+              "interaction_est": 0.15057983930440125,
+              "interaction_se": 0.06653954700359532
+            },
+            "rep": 29,
+            "spline": {
+              "curvature_ci_high": 0.13871061819202873,
+              "curvature_ci_low": -0.15103777922844497,
+              "curvature_est": -0.006163580518208129,
+              "curvature_p": 0.9335450112966817,
+              "curvature_se": 0.07391676568354681,
+              "error": null,
+              "high_low_ci_high": 0.6138942824328785,
+              "high_low_ci_low": -0.09518209799393162,
+              "high_low_est": 0.2593560922194734,
+              "high_low_se": 0.18089015549475662,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5340371036583129,
+              "high_low_se": 0.17564468858826826,
+              "interaction_est": 0.26701855182915646,
+              "interaction_se": 0.08782234429413413
+            },
+            "rep": 30,
+            "spline": {
+              "curvature_ci_high": 0.015834601737481607,
+              "curvature_ci_low": -0.2513948996455474,
+              "curvature_est": -0.11778014895403291,
+              "curvature_p": 0.08404383786931247,
+              "curvature_se": 0.06817204379148249,
+              "error": null,
+              "high_low_ci_high": 1.2268402692274485,
+              "high_low_ci_low": 0.3254687099954308,
+              "high_low_est": 0.7761544896114396,
+              "high_low_se": 0.22994594941928206,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.6052644458316059,
+              "high_low_se": 0.13707106419018705,
+              "interaction_est": 0.30263222291580294,
+              "interaction_se": 0.06853553209509353
+            },
+            "rep": 31,
+            "spline": {
+              "curvature_ci_high": 0.17657615952389913,
+              "curvature_ci_low": -0.20191395419916977,
+              "curvature_est": -0.012668897337635314,
+              "curvature_p": 0.8956102552834286,
+              "curvature_se": 0.09655537458938238,
+              "error": null,
+              "high_low_ci_high": 0.9169553583942771,
+              "high_low_ci_low": 0.17375432058280693,
+              "high_low_est": 0.545354839488542,
+              "high_low_se": 0.18959558519303663,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.7067430918568209,
+              "high_low_se": 0.13346395933638117,
+              "interaction_est": 0.35337154592841047,
+              "interaction_se": 0.06673197966819058
+            },
+            "rep": 32,
+            "spline": {
+              "curvature_ci_high": 0.17234078248674897,
+              "curvature_ci_low": -0.10359828384380307,
+              "curvature_est": 0.03437124932147295,
+              "curvature_p": 0.6253584284441676,
+              "curvature_se": 0.07039391240978396,
+              "error": null,
+              "high_low_ci_high": 0.8614841871393599,
+              "high_low_ci_low": 0.1820512349970141,
+              "high_low_est": 0.521767711068187,
+              "high_low_se": 0.17332791749079604,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5379680780788445,
+              "high_low_se": 0.17816329133579914,
+              "interaction_est": 0.26898403903942225,
+              "interaction_se": 0.08908164566789957
+            },
+            "rep": 33,
+            "spline": {
+              "curvature_ci_high": 0.19505915623110734,
+              "curvature_ci_low": -0.09516314904745879,
+              "curvature_est": 0.049948003591824275,
+              "curvature_p": 0.4999110452256421,
+              "curvature_se": 0.0740376627667199,
+              "error": null,
+              "high_low_ci_high": 1.0582982675657644,
+              "high_low_ci_low": -0.019407829568180213,
+              "high_low_est": 0.519445218998792,
+              "high_low_se": 0.2749300764620922,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.7149746878218073,
+              "high_low_se": 0.1511201425228363,
+              "interaction_est": 0.35748734391090364,
+              "interaction_se": 0.07556007126141814
+            },
+            "rep": 34,
+            "spline": {
+              "curvature_ci_high": 0.09215727671582528,
+              "curvature_ci_low": -0.2046670469561102,
+              "curvature_est": -0.05625488512014247,
+              "curvature_p": 0.4575334160040643,
+              "curvature_se": 0.07572188207894263,
+              "error": null,
+              "high_low_ci_high": 1.0718508127870987,
+              "high_low_ci_low": 0.4191877875730879,
+              "high_low_est": 0.7455193001800933,
+              "high_low_se": 0.1664987290164387,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.4044480553247758,
+              "high_low_se": 0.13063986794383026,
+              "interaction_est": 0.2022240276623879,
+              "interaction_se": 0.06531993397191513
+            },
+            "rep": 35,
+            "spline": {
+              "curvature_ci_high": 0.13293075492016312,
+              "curvature_ci_low": -0.16035080998388926,
+              "curvature_est": -0.013710027531863076,
+              "curvature_p": 0.8546059670756128,
+              "curvature_se": 0.07481810048066538,
+              "error": null,
+              "high_low_ci_high": 0.4092217103189142,
+              "high_low_ci_low": -0.2541028653009043,
+              "high_low_est": 0.07755942250900495,
+              "high_low_se": 0.16921856225860776,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.33322120984402737,
+              "high_low_se": 0.128361724203177,
+              "interaction_est": 0.16661060492201368,
+              "interaction_se": 0.0641808621015885
+            },
+            "rep": 36,
+            "spline": {
+              "curvature_ci_high": 0.05896014019192747,
+              "curvature_ci_low": -0.22685315959960856,
+              "curvature_est": -0.08394650970384054,
+              "curvature_p": 0.24959817849244237,
+              "curvature_se": 0.072912895802058,
+              "error": null,
+              "high_low_ci_high": 0.8549175913921397,
+              "high_low_ci_low": 0.1605491278773704,
+              "high_low_est": 0.5077333596347551,
+              "high_low_se": 0.17713806693185513,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5128108695812023,
+              "high_low_se": 0.1670633860083916,
+              "interaction_est": 0.2564054347906011,
+              "interaction_se": 0.0835316930041958
+            },
+            "rep": 37,
+            "spline": {
+              "curvature_ci_high": 0.09121814051013508,
+              "curvature_ci_low": -0.19033986450479898,
+              "curvature_est": -0.049560861997331944,
+              "curvature_p": 0.49019418584279206,
+              "curvature_se": 0.07182734147383142,
+              "error": null,
+              "high_low_ci_high": 0.837478694245176,
+              "high_low_ci_low": 0.14791028139188073,
+              "high_low_est": 0.4926944878185283,
+              "high_low_se": 0.17591354171214024,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.35707631548048646,
+              "high_low_se": 0.1312308326423111,
+              "interaction_est": 0.17853815774024323,
+              "interaction_se": 0.06561541632115556
+            },
+            "rep": 38,
+            "spline": {
+              "curvature_ci_high": 0.13860201691502144,
+              "curvature_ci_low": -0.1401981772882071,
+              "curvature_est": -0.0007980801865928206,
+              "curvature_p": 0.9910471078973617,
+              "curvature_se": 0.07112380538050639,
+              "error": null,
+              "high_low_ci_high": 0.6877180233278724,
+              "high_low_ci_low": 0.016776050000754772,
+              "high_low_est": 0.35224703666431356,
+              "high_low_se": 0.1711618116655466,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.44464940094049255,
+              "high_low_se": 0.1210404681933343,
+              "interaction_est": 0.22232470047024627,
+              "interaction_se": 0.06052023409666715
+            },
+            "rep": 39,
+            "spline": {
+              "curvature_ci_high": 0.18085858702801014,
+              "curvature_ci_low": -0.13330062936917145,
+              "curvature_est": 0.023778978829419335,
+              "curvature_p": 0.7666935298069211,
+              "curvature_se": 0.0801441298467603,
+              "error": null,
+              "high_low_ci_high": 0.9840054038889436,
+              "high_low_ci_low": 0.19084110663334414,
+              "high_low_est": 0.5874232552611439,
+              "high_low_se": 0.20234154884286704,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.7165479550679389,
+              "high_low_se": 0.13049518262548274,
+              "interaction_est": 0.35827397753396945,
+              "interaction_se": 0.06524759131274137
+            },
+            "rep": 40,
+            "spline": {
+              "curvature_ci_high": 0.09536261412135749,
+              "curvature_ci_low": -0.18028294045374432,
+              "curvature_est": -0.04246016316619341,
+              "curvature_p": 0.5459621112117734,
+              "curvature_se": 0.07031903558614618,
+              "error": null,
+              "high_low_ci_high": 0.949965308174834,
+              "high_low_ci_low": 0.2546594580649311,
+              "high_low_est": 0.6023123831198826,
+              "high_low_se": 0.1773772005592513,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0.5
+            }
+          }
+        ],
+        "truth": {
+          "curvature": 0,
+          "high_low": 0.5
+        }
+      },
+      "nonlinear": {
+        "replicates": [
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.04848841444498356,
+              "high_low_se": 0.20689668910730424,
+              "interaction_est": 0.02424420722249178,
+              "interaction_se": 0.10344834455365212
+            },
+            "rep": 1,
+            "spline": {
+              "curvature_ci_high": 0.41164125946262786,
+              "curvature_ci_low": 0.1396205138467659,
+              "curvature_est": 0.27563088665469687,
+              "curvature_p": 7.128622603413959e-05,
+              "curvature_se": 0.06939432243199907,
+              "error": null,
+              "high_low_ci_high": 0.5420209275583994,
+              "high_low_ci_low": -0.46573381186710017,
+              "high_low_est": 0.038143557845649614,
+              "high_low_se": 0.2570850144599797,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.1874029056643302,
+              "high_low_se": 0.1561996997119447,
+              "interaction_est": 0.0937014528321651,
+              "interaction_se": 0.07809984985597235
+            },
+            "rep": 2,
+            "spline": {
+              "curvature_ci_high": 0.4933787019843957,
+              "curvature_ci_low": -0.0013542420977734337,
+              "curvature_est": 0.24601222994331112,
+              "curvature_p": 0.05126749491138338,
+              "curvature_se": 0.1262097027255861,
+              "error": null,
+              "high_low_ci_high": 0.3528241124063669,
+              "high_low_ci_low": -0.31776056162182786,
+              "high_low_est": 0.01753177539226953,
+              "high_low_se": 0.17107066221039,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.07109298089003242,
+              "high_low_se": 0.13366422814414897,
+              "interaction_est": 0.03554649044501621,
+              "interaction_se": 0.06683211407207448
+            },
+            "rep": 3,
+            "spline": {
+              "curvature_ci_high": 0.4072897442204929,
+              "curvature_ci_low": 0.13244866766724087,
+              "curvature_est": 0.2698692059438669,
+              "curvature_p": 0.00011859301128014366,
+              "curvature_se": 0.07011380783003769,
+              "error": null,
+              "high_low_ci_high": 0.47862051315714343,
+              "high_low_ci_low": -0.20493319078981226,
+              "high_low_est": 0.1368436611836656,
+              "high_low_se": 0.1743791490016278,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.34357898778473334,
+              "high_low_se": 0.1321803282287019,
+              "interaction_est": 0.17178949389236667,
+              "interaction_se": 0.06609016411435095
+            },
+            "rep": 4,
+            "spline": {
+              "curvature_ci_high": 0.4077512485188167,
+              "curvature_ci_low": 0.11569074856171258,
+              "curvature_est": 0.26172099854026465,
+              "curvature_p": 0.00044354064716323194,
+              "curvature_se": 0.07450659859706052,
+              "error": null,
+              "high_low_ci_high": 0.7124723359973837,
+              "high_low_ci_low": 0.04088513584882242,
+              "high_low_est": 0.3766787359231031,
+              "high_low_se": 0.17132641336894855,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.37506693238299865,
+              "high_low_se": 0.13046208850355348,
+              "interaction_est": 0.18753346619149933,
+              "interaction_se": 0.06523104425177674
+            },
+            "rep": 5,
+            "spline": {
+              "curvature_ci_high": 0.3375315044676782,
+              "curvature_ci_low": 0.07368960505973968,
+              "curvature_est": 0.20561055476370893,
+              "curvature_p": 0.0022522679395708955,
+              "curvature_se": 0.06730784373498136,
+              "error": null,
+              "high_low_ci_high": 0.6207428086809017,
+              "high_low_ci_low": -0.05417844217132434,
+              "high_low_est": 0.28328218325478866,
+              "high_low_se": 0.17217695213580225,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.24518178432613452,
+              "high_low_se": 0.13748801440158678,
+              "interaction_est": 0.12259089216306726,
+              "interaction_se": 0.06874400720079339
+            },
+            "rep": 6,
+            "spline": {
+              "curvature_ci_high": 0.5658310998875277,
+              "curvature_ci_low": 0.27915136323649425,
+              "curvature_est": 0.42249123156201096,
+              "curvature_p": 7.606578034113909e-09,
+              "curvature_se": 0.07313392967452535,
+              "error": null,
+              "high_low_ci_high": 0.6455502592181803,
+              "high_low_ci_low": -0.04448332763342572,
+              "high_low_est": 0.3005334657923773,
+              "high_low_se": 0.1760322107289194,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.2870767457566789,
+              "high_low_se": 0.13439809892091895,
+              "interaction_est": 0.14353837287833945,
+              "interaction_se": 0.06719904946045947
+            },
+            "rep": 7,
+            "spline": {
+              "curvature_ci_high": 0.4426922504912304,
+              "curvature_ci_low": 0.15455523423531947,
+              "curvature_est": 0.29862374236327494,
+              "curvature_p": 4.8530508848454446e-05,
+              "curvature_se": 0.0735056915066808,
+              "error": null,
+              "high_low_ci_high": 0.5391165032134978,
+              "high_low_ci_low": -0.15018947238438543,
+              "high_low_est": 0.19446351541455617,
+              "high_low_se": 0.17584659220253945,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.29616139443554274,
+              "high_low_se": 0.14505748660982767,
+              "interaction_est": 0.14808069721777137,
+              "interaction_se": 0.07252874330491384
+            },
+            "rep": 8,
+            "spline": {
+              "curvature_ci_high": 0.4623534579059011,
+              "curvature_ci_low": 0.11719308311066065,
+              "curvature_est": 0.2897732705082809,
+              "curvature_p": 0.0009986528414023255,
+              "curvature_se": 0.0880527339378555,
+              "error": null,
+              "high_low_ci_high": 0.735590097668241,
+              "high_low_ci_low": 0.009870334821882543,
+              "high_low_est": 0.37273021624506175,
+              "high_low_se": 0.18513599433093195,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.09530677221346444,
+              "high_low_se": 0.1968732259294623,
+              "interaction_est": 0.04765338610673222,
+              "interaction_se": 0.09843661296473115
+            },
+            "rep": 9,
+            "spline": {
+              "curvature_ci_high": 0.4236528615771234,
+              "curvature_ci_low": 0.14832065710768533,
+              "curvature_est": 0.28598675934240436,
+              "curvature_p": 4.668774954952326e-05,
+              "curvature_se": 0.07023909786589143,
+              "error": null,
+              "high_low_ci_high": 0.4815519305453264,
+              "high_low_ci_low": -0.36662056215898464,
+              "high_low_est": 0.057465684193170864,
+              "high_low_se": 0.2163745096110906,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.10451389537782997,
+              "high_low_se": 0.18186148174164013,
+              "interaction_est": 0.052256947688914986,
+              "interaction_se": 0.09093074087082006
+            },
+            "rep": 10,
+            "spline": {
+              "curvature_ci_high": 0.502550954932174,
+              "curvature_ci_low": 0.21289789683952257,
+              "curvature_est": 0.3577244258858483,
+              "curvature_p": 1.2908969957425853e-06,
+              "curvature_se": 0.0738924439795519,
+              "error": null,
+              "high_low_ci_high": 0.6509683712609271,
+              "high_low_ci_low": -0.06246797269962073,
+              "high_low_est": 0.29425019928065316,
+              "high_low_se": 0.18200241152716676,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.011054636607953383,
+              "high_low_se": 0.13374680620483737,
+              "interaction_est": -0.005527318303976692,
+              "interaction_se": 0.06687340310241868
+            },
+            "rep": 11,
+            "spline": {
+              "curvature_ci_high": 0.33128148174489397,
+              "curvature_ci_low": 0.05223492899196058,
+              "curvature_est": 0.19175820536842728,
+              "curvature_p": 0.007065564107145761,
+              "curvature_se": 0.07118665310409965,
+              "error": null,
+              "high_low_ci_high": 0.23441344731746286,
+              "high_low_ci_low": -0.5254311472417867,
+              "high_low_est": -0.14550884996216193,
+              "high_low_se": 0.19384146850151665,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.6395321276362723,
+              "high_low_se": 0.1295673619686766,
+              "interaction_est": 0.31976606381813616,
+              "interaction_se": 0.0647836809843383
+            },
+            "rep": 12,
+            "spline": {
+              "curvature_ci_high": 0.38052568809564896,
+              "curvature_ci_low": 0.10240636813797344,
+              "curvature_est": 0.2414660281168112,
+              "curvature_p": 0.0006657192166050763,
+              "curvature_se": 0.07095010977936914,
+              "error": null,
+              "high_low_ci_high": 1.0400105759202125,
+              "high_low_ci_low": 0.3745829947000039,
+              "high_low_est": 0.7072967853101082,
+              "high_low_se": 0.1697550531368287,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.06379167427422053,
+              "high_low_se": 0.13233084535685027,
+              "interaction_est": 0.031895837137110264,
+              "interaction_se": 0.06616542267842514
+            },
+            "rep": 13,
+            "spline": {
+              "curvature_ci_high": 0.37798025430327836,
+              "curvature_ci_low": 0.09146888171178036,
+              "curvature_est": 0.23472456800752936,
+              "curvature_p": 0.0013208869355292308,
+              "curvature_se": 0.07309097887014125,
+              "error": null,
+              "high_low_ci_high": 0.5262696148548691,
+              "high_low_ci_low": -0.26806696090776794,
+              "high_low_est": 0.1291013269735506,
+              "high_low_se": 0.20264060497740297,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.10135955228320327,
+              "high_low_se": 0.13199109598640402,
+              "interaction_est": 0.050679776141601636,
+              "interaction_se": 0.06599554799320201
+            },
+            "rep": 14,
+            "spline": {
+              "curvature_ci_high": 0.31171897727997805,
+              "curvature_ci_low": 0.03808125655627298,
+              "curvature_est": 0.17490011691812551,
+              "curvature_p": 0.012228274930127458,
+              "curvature_se": 0.0698068236614334,
+              "error": null,
+              "high_low_ci_high": 0.3300065522435021,
+              "high_low_ci_low": -0.36689763310208595,
+              "high_low_est": -0.018445540429291942,
+              "high_low_se": 0.17778494663188427,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.2674410713942433,
+              "high_low_se": 0.13661767752429926,
+              "interaction_est": 0.13372053569712164,
+              "interaction_se": 0.06830883876214963
+            },
+            "rep": 15,
+            "spline": {
+              "curvature_ci_high": 0.37539244147103523,
+              "curvature_ci_low": 0.09924706050511842,
+              "curvature_est": 0.23731975098807684,
+              "curvature_p": 0.0007549840507401484,
+              "curvature_se": 0.07044654466140333,
+              "error": null,
+              "high_low_ci_high": 0.5362689079341829,
+              "high_low_ci_low": -0.2122444582743152,
+              "high_low_est": 0.16201222482993383,
+              "high_low_se": 0.19095079590982736,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.5232717250032274,
+              "high_low_se": 0.13378207553237517,
+              "interaction_est": 0.2616358625016137,
+              "interaction_se": 0.06689103776618759
+            },
+            "rep": 16,
+            "spline": {
+              "curvature_ci_high": 0.3585866842482148,
+              "curvature_ci_low": 0.056236184774234727,
+              "curvature_est": 0.2074114345112248,
+              "curvature_p": 0.007165406985412792,
+              "curvature_se": 0.07713164670757335,
+              "error": null,
+              "high_low_ci_high": 0.635347440715872,
+              "high_low_ci_low": -0.06123995628076062,
+              "high_low_est": 0.2870537422175557,
+              "high_low_se": 0.17770413179263242,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.049121145537795945,
+              "high_low_se": 0.19470349882250182,
+              "interaction_est": -0.024560572768897972,
+              "interaction_se": 0.09735174941125091
+            },
+            "rep": 17,
+            "spline": {
+              "curvature_ci_high": 0.319691818803675,
+              "curvature_ci_low": 0.04286062604648083,
+              "curvature_est": 0.1812762224250779,
+              "curvature_p": 0.010262101805896595,
+              "curvature_se": 0.07062149986367593,
+              "error": null,
+              "high_low_ci_high": 0.5079990400893557,
+              "high_low_ci_low": -0.24966479618936116,
+              "high_low_est": 0.12916712194999724,
+              "high_low_se": 0.1932851423914513,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.05097023866995259,
+              "high_low_se": 0.2043060288470943,
+              "interaction_est": 0.025485119334976294,
+              "interaction_se": 0.10215301442354716
+            },
+            "rep": 18,
+            "spline": {
+              "curvature_ci_high": 0.587856089395373,
+              "curvature_ci_low": 0.24437306461756586,
+              "curvature_est": 0.4161145770064695,
+              "curvature_p": 2.0460661684928994e-06,
+              "curvature_se": 0.08762483066276686,
+              "error": null,
+              "high_low_ci_high": 0.6929972781337181,
+              "high_low_ci_low": -0.3891242367431522,
+              "high_low_est": 0.15193652069528296,
+              "high_low_se": 0.27605647923637644,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.2656408633896454,
+              "high_low_se": 0.14538912801962117,
+              "interaction_est": 0.1328204316948227,
+              "interaction_se": 0.07269456400981059
+            },
+            "rep": 19,
+            "spline": {
+              "curvature_ci_high": 0.4870165796573184,
+              "curvature_ci_low": 0.10183678244914168,
+              "curvature_est": 0.29442668105323005,
+              "curvature_p": 0.002732375260993569,
+              "curvature_se": 0.09826195785634083,
+              "error": null,
+              "high_low_ci_high": 0.8851851451341786,
+              "high_low_ci_low": -0.06469537709157591,
+              "high_low_est": 0.4102448840213013,
+              "high_low_se": 0.24232091225973756,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.21940007667250785,
+              "high_low_se": 0.1350017355756853,
+              "interaction_est": 0.10970003833625393,
+              "interaction_se": 0.06750086778784264
+            },
+            "rep": 20,
+            "spline": {
+              "curvature_ci_high": 0.34796279474212094,
+              "curvature_ci_low": 0.06647271375292063,
+              "curvature_est": 0.20721775424752079,
+              "curvature_p": 0.0039062030485523813,
+              "curvature_se": 0.07181001359785646,
+              "error": null,
+              "high_low_ci_high": 0.6447478615966336,
+              "high_low_ci_low": -0.054711244061760256,
+              "high_low_est": 0.2950183087674366,
+              "high_low_se": 0.1784367239938406,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.05687096081768844,
+              "high_low_se": 0.1275712427964753,
+              "interaction_est": -0.02843548040884422,
+              "interaction_se": 0.06378562139823765
+            },
+            "rep": 21,
+            "spline": {
+              "curvature_ci_high": 0.37192090524612653,
+              "curvature_ci_low": 0.1085743728229818,
+              "curvature_est": 0.24024763903455415,
+              "curvature_p": 0.0003487587944790427,
+              "curvature_se": 0.06718147228420425,
+              "error": null,
+              "high_low_ci_high": 0.08794160231454956,
+              "high_low_ci_low": -0.5492154999308849,
+              "high_low_est": -0.23063694880816765,
+              "high_low_se": 0.16254306373932545,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.35807906914140736,
+              "high_low_se": 0.15532939263769227,
+              "interaction_est": 0.17903953457070368,
+              "interaction_se": 0.07766469631884614
+            },
+            "rep": 22,
+            "spline": {
+              "curvature_ci_high": 0.41182846524392513,
+              "curvature_ci_low": 0.1415767683421094,
+              "curvature_est": 0.2767026167930173,
+              "curvature_p": 5.982581232721884e-05,
+              "curvature_se": 0.06894302620243212,
+              "error": null,
+              "high_low_ci_high": 1.0309558336099565,
+              "high_low_ci_low": 0.10851197813870611,
+              "high_low_est": 0.5697339058743313,
+              "high_low_se": 0.23532163396972777,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.20807762841951585,
+              "high_low_se": 0.13278322255651573,
+              "interaction_est": 0.10403881420975793,
+              "interaction_se": 0.06639161127825786
+            },
+            "rep": 23,
+            "spline": {
+              "curvature_ci_high": 0.31901681134508536,
+              "curvature_ci_low": 0.05001347974375492,
+              "curvature_est": 0.18451514554442014,
+              "curvature_p": 0.007171741439604418,
+              "curvature_se": 0.06862455981495616,
+              "error": null,
+              "high_low_ci_high": 0.581208926454386,
+              "high_low_ci_low": -0.10787807673652852,
+              "high_low_est": 0.23666542485892875,
+              "high_low_se": 0.17579073086821917,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.07533860067867744,
+              "high_low_se": 0.14284627456778165,
+              "interaction_est": 0.03766930033933872,
+              "interaction_se": 0.07142313728389083
+            },
+            "rep": 24,
+            "spline": {
+              "curvature_ci_high": 0.4010280014620812,
+              "curvature_ci_low": 0.08029718361200949,
+              "curvature_est": 0.24066259253704533,
+              "curvature_p": 0.003267902162587877,
+              "curvature_se": 0.08182058959281378,
+              "error": null,
+              "high_low_ci_high": 0.5091469370804342,
+              "high_low_ci_low": -0.20704727483426344,
+              "high_low_est": 0.1510498311230854,
+              "high_low_se": 0.18270596219791382,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.007138767702807696,
+              "high_low_se": 0.1315117703770422,
+              "interaction_est": -0.003569383851403848,
+              "interaction_se": 0.0657558851885211
+            },
+            "rep": 25,
+            "spline": {
+              "curvature_ci_high": 0.3823372471324127,
+              "curvature_ci_low": 0.10836332384181704,
+              "curvature_est": 0.24535028548711488,
+              "curvature_p": 0.0004474491566712757,
+              "curvature_se": 0.06989259119830435,
+              "error": null,
+              "high_low_ci_high": 0.463245803726566,
+              "high_low_ci_low": -0.21302564161459714,
+              "high_low_est": 0.12511008105598442,
+              "high_low_se": 0.17252139583438517,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.43919903813507266,
+              "high_low_se": 0.17456239992606687,
+              "interaction_est": 0.21959951906753633,
+              "interaction_se": 0.08728119996303343
+            },
+            "rep": 26,
+            "spline": {
+              "curvature_ci_high": 0.3939154309118339,
+              "curvature_ci_low": 0.1203135538212283,
+              "curvature_est": 0.2571144923665311,
+              "curvature_p": 0.00022986270918834428,
+              "curvature_se": 0.06979767970946456,
+              "error": null,
+              "high_low_ci_high": 0.8543139361904266,
+              "high_low_ci_low": 0.16186691348206345,
+              "high_low_est": 0.508090424836245,
+              "high_low_se": 0.17664789445419402,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.10533342434921025,
+              "high_low_se": 0.15565462872250804,
+              "interaction_est": 0.052666712174605126,
+              "interaction_se": 0.07782731436125402
+            },
+            "rep": 27,
+            "spline": {
+              "curvature_ci_high": 0.5012425373772453,
+              "curvature_ci_low": 0.22572882329937574,
+              "curvature_est": 0.3634856803383105,
+              "curvature_p": 2.3213875666172612e-07,
+              "curvature_se": 0.07028540218824553,
+              "error": null,
+              "high_low_ci_high": 0.3775110757459902,
+              "high_low_ci_low": -0.31490274394637463,
+              "high_low_est": 0.03130416589980778,
+              "high_low_se": 0.17663942414141443,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.1499207985662208,
+              "high_low_se": 0.1330599896785666,
+              "interaction_est": 0.0749603992831104,
+              "interaction_se": 0.0665299948392833
+            },
+            "rep": 28,
+            "spline": {
+              "curvature_ci_high": 0.468280692675089,
+              "curvature_ci_low": 0.10321324159033518,
+              "curvature_est": 0.2857469671327121,
+              "curvature_p": 0.002153374891762372,
+              "curvature_se": 0.09313116303922893,
+              "error": null,
+              "high_low_ci_high": 0.43140297070491584,
+              "high_low_ci_low": -0.24656399981942412,
+              "high_low_est": 0.09241948544274585,
+              "high_low_se": 0.1729539357165422,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.20325203957418128,
+              "high_low_se": 0.1592514440754508,
+              "interaction_est": 0.10162601978709064,
+              "interaction_se": 0.0796257220377254
+            },
+            "rep": 29,
+            "spline": {
+              "curvature_ci_high": 0.4562187537204365,
+              "curvature_ci_low": 0.13525902233462292,
+              "curvature_est": 0.29573888802752973,
+              "curvature_p": 0.00030395930635407353,
+              "curvature_se": 0.08187898697597057,
+              "error": null,
+              "high_low_ci_high": 0.495762297620987,
+              "high_low_ci_low": -0.230548221627453,
+              "high_low_est": 0.132607037996767,
+              "high_low_se": 0.18528670026386368,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.27017061808742693,
+              "high_low_se": 0.1770313391340795,
+              "interaction_est": 0.13508530904371346,
+              "interaction_se": 0.08851566956703975
+            },
+            "rep": 30,
+            "spline": {
+              "curvature_ci_high": 0.4889637060462749,
+              "curvature_ci_low": 0.12523274770503032,
+              "curvature_est": 0.30709822687565264,
+              "curvature_p": 0.0009343035499822516,
+              "curvature_se": 0.09279021474809354,
+              "error": null,
+              "high_low_ci_high": 0.5577600710975075,
+              "high_low_ci_low": -0.202195294364023,
+              "high_low_est": 0.17778238836674226,
+              "high_low_se": 0.19386972690398357,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.4465900596681244,
+              "high_low_se": 0.13193227816006556,
+              "interaction_est": 0.2232950298340622,
+              "interaction_se": 0.06596613908003278
+            },
+            "rep": 31,
+            "spline": {
+              "curvature_ci_high": 0.38189291098238265,
+              "curvature_ci_low": 0.10652610018018174,
+              "curvature_est": 0.24420950558128218,
+              "curvature_p": 0.0005082041358090983,
+              "curvature_se": 0.0702479261742195,
+              "error": null,
+              "high_low_ci_high": 1.0096806790951145,
+              "high_low_ci_low": 0.2839306735025475,
+              "high_low_est": 0.646805676298831,
+              "high_low_se": 0.1851437094589707,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.09164597153375363,
+              "high_low_se": 0.13527830589856646,
+              "interaction_est": 0.045822985766876816,
+              "interaction_se": 0.06763915294928323
+            },
+            "rep": 32,
+            "spline": {
+              "curvature_ci_high": 0.3851847724399609,
+              "curvature_ci_low": 0.09634457984103068,
+              "curvature_est": 0.2407646761404958,
+              "curvature_p": 0.0010850869577623268,
+              "curvature_se": 0.07368507652293593,
+              "error": null,
+              "high_low_ci_high": 0.6067964271447597,
+              "high_low_ci_low": -0.08730308739451437,
+              "high_low_est": 0.2597466698751226,
+              "high_low_se": 0.17706945623864853,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.19486672363837534,
+              "high_low_se": 0.13519943764845666,
+              "interaction_est": 0.09743336181918767,
+              "interaction_se": 0.06759971882422833
+            },
+            "rep": 33,
+            "spline": {
+              "curvature_ci_high": 0.35227452362716344,
+              "curvature_ci_low": 0.10117962201358666,
+              "curvature_est": 0.22672707282037505,
+              "curvature_p": 0.00040086529636562673,
+              "curvature_se": 0.06405599883256691,
+              "error": null,
+              "high_low_ci_high": 0.609137405902355,
+              "high_low_ci_low": -0.05771003903481098,
+              "high_low_est": 0.275713683433772,
+              "high_low_se": 0.17011726992423204,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.01793273117642592,
+              "high_low_se": 0.16733102926649457,
+              "interaction_est": 0.00896636558821296,
+              "interaction_se": 0.08366551463324728
+            },
+            "rep": 34,
+            "spline": {
+              "curvature_ci_high": 0.43649369115697245,
+              "curvature_ci_low": 0.1727752816555982,
+              "curvature_est": 0.3046344864062853,
+              "curvature_p": 5.951437418438843e-06,
+              "curvature_se": 0.06727634062894504,
+              "error": null,
+              "high_low_ci_high": 0.5148253257287331,
+              "high_low_ci_low": -0.4801760432086914,
+              "high_low_est": 0.017324641260020847,
+              "high_low_se": 0.25383154384052187,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.2917379996756511,
+              "high_low_se": 0.13559187525593527,
+              "interaction_est": 0.14586899983782556,
+              "interaction_se": 0.06779593762796764
+            },
+            "rep": 35,
+            "spline": {
+              "curvature_ci_high": 0.3881649806368138,
+              "curvature_ci_low": 0.10884026953210349,
+              "curvature_est": 0.24850262508445864,
+              "curvature_p": 0.0004877714018278745,
+              "curvature_se": 0.07125761317115872,
+              "error": null,
+              "high_low_ci_high": 0.6654641113619546,
+              "high_low_ci_low": -0.04124770935685518,
+              "high_low_est": 0.3121082010025497,
+              "high_low_se": 0.18028694040388113,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.04949810485392438,
+              "high_low_se": 0.1304667497950653,
+              "interaction_est": -0.02474905242696219,
+              "interaction_se": 0.06523337489753266
+            },
+            "rep": 36,
+            "spline": {
+              "curvature_ci_high": 0.40644674594210645,
+              "curvature_ci_low": 0.12619873102547047,
+              "curvature_est": 0.26632273848378846,
+              "curvature_p": 0.00019519896863595676,
+              "curvature_se": 0.07149315418580598,
+              "error": null,
+              "high_low_ci_high": 0.25118621630908927,
+              "high_low_ci_low": -0.448425397141576,
+              "high_low_est": -0.09861959041624337,
+              "high_low_se": 0.17847562975776063,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.2443327530805029,
+              "high_low_se": 0.13633019783842001,
+              "interaction_est": 0.12216637654025145,
+              "interaction_se": 0.06816509891921001
+            },
+            "rep": 37,
+            "spline": {
+              "curvature_ci_high": 0.39150370783454924,
+              "curvature_ci_low": 0.09489614606891614,
+              "curvature_est": 0.24319992695173268,
+              "curvature_p": 0.001308543579766397,
+              "curvature_se": 0.07566658465821514,
+              "error": null,
+              "high_low_ci_high": 0.4585125462604146,
+              "high_low_ci_low": -0.21839309132956572,
+              "high_low_est": 0.12005972746542445,
+              "high_low_se": 0.17268318254406667,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.15469267448972096,
+              "high_low_se": 0.13642788982649115,
+              "interaction_est": 0.07734633724486048,
+              "interaction_se": 0.06821394491324557
+            },
+            "rep": 38,
+            "spline": {
+              "curvature_ci_high": 0.39618234227925225,
+              "curvature_ci_low": 0.10520053812198898,
+              "curvature_est": 0.2506914402006206,
+              "curvature_p": 0.0007323818474536115,
+              "curvature_se": 0.07423141604077892,
+              "error": null,
+              "high_low_ci_high": 0.38564131954081077,
+              "high_low_ci_low": -0.4649672818314133,
+              "high_low_est": -0.03966298114530125,
+              "high_low_se": 0.21699597732303955,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.16341131420054716,
+              "high_low_se": 0.13554170596432785,
+              "interaction_est": 0.08170565710027358,
+              "interaction_se": 0.06777085298216393
+            },
+            "rep": 39,
+            "spline": {
+              "curvature_ci_high": 0.41842200376292,
+              "curvature_ci_low": 0.13126340137236586,
+              "curvature_est": 0.2748427025676429,
+              "curvature_p": 0.0001755647520351733,
+              "curvature_se": 0.07325609154660868,
+              "error": null,
+              "high_low_ci_high": 0.21790255987533544,
+              "high_low_ci_low": -0.4762828007330939,
+              "high_low_est": -0.12919012042887926,
+              "high_low_se": 0.17709135614848445,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.3949856101738219,
+              "high_low_se": 0.13661430111014972,
+              "interaction_est": 0.19749280508691094,
+              "interaction_se": 0.06830715055507486
+            },
+            "rep": 40,
+            "spline": {
+              "curvature_ci_high": 0.47639386067535217,
+              "curvature_ci_low": 0.1860778203089568,
+              "curvature_est": 0.3312358404921545,
+              "curvature_p": 7.733264761444758e-06,
+              "curvature_se": 0.07406157521829886,
+              "error": null,
+              "high_low_ci_high": 0.8391156139473492,
+              "high_low_ci_low": 0.15371462766564464,
+              "high_low_est": 0.4964151208064969,
+              "high_low_se": 0.1748504031542119,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0.2,
+              "high_low": 0.19999999999999996
+            }
+          }
+        ],
+        "truth": {
+          "curvature": 0.2,
+          "high_low": 0.19999999999999996
+        }
+      },
+      "null": {
+        "replicates": [
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.267209618308188,
+              "high_low_se": 0.13244529272943767,
+              "interaction_est": -0.133604809154094,
+              "interaction_se": 0.06622264636471883
+            },
+            "rep": 1,
+            "spline": {
+              "curvature_ci_high": 0.2346121036882836,
+              "curvature_ci_low": -0.04087680043222143,
+              "curvature_est": 0.09686765162803108,
+              "curvature_p": 0.1681018843684965,
+              "curvature_se": 0.07027907300119407,
+              "error": null,
+              "high_low_ci_high": 0.20457671327532448,
+              "high_low_ci_low": -0.6327418067782455,
+              "high_low_est": -0.21408254675146052,
+              "high_low_se": 0.21360558815957278,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.19687952374501472,
+              "high_low_se": 0.12593159265999296,
+              "interaction_est": 0.09843976187250736,
+              "interaction_se": 0.06296579632999648
+            },
+            "rep": 2,
+            "spline": {
+              "curvature_ci_high": 0.11042843532514901,
+              "curvature_ci_low": -0.1569407448315096,
+              "curvature_est": -0.023256154753180297,
+              "curvature_p": 0.7331329832096145,
+              "curvature_se": 0.06820767678643004,
+              "error": null,
+              "high_low_ci_high": 0.5445869527215794,
+              "high_low_ci_low": -0.14261147357180942,
+              "high_low_est": 0.20098773957488503,
+              "high_low_se": 0.17530894219483031,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.058675043527027286,
+              "high_low_se": 0.13198859910386673,
+              "interaction_est": 0.029337521763513643,
+              "interaction_se": 0.06599429955193337
+            },
+            "rep": 3,
+            "spline": {
+              "curvature_ci_high": 0.17980838762711857,
+              "curvature_ci_low": -0.11883909597021705,
+              "curvature_est": 0.03048464582845076,
+              "curvature_p": 0.6890612507346887,
+              "curvature_se": 0.07618698244260011,
+              "error": null,
+              "high_low_ci_high": 0.4568064087391732,
+              "high_low_ci_low": -0.2369415388326115,
+              "high_low_est": 0.10993243495328088,
+              "high_low_se": 0.17697976913980923,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.03791737052825697,
+              "high_low_se": 0.1339969682751319,
+              "interaction_est": -0.018958685264128486,
+              "interaction_se": 0.06699848413756596
+            },
+            "rep": 4,
+            "spline": {
+              "curvature_ci_high": 0.19682242718651705,
+              "curvature_ci_low": -0.07821199453516843,
+              "curvature_est": 0.0593052163256743,
+              "curvature_p": 0.3979726250609308,
+              "curvature_se": 0.07016313148338098,
+              "error": null,
+              "high_low_ci_high": 0.34773776322588884,
+              "high_low_ci_low": -0.3240908378695178,
+              "high_low_est": 0.011823462678185515,
+              "high_low_se": 0.17138799637469632,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.2914202710820462,
+              "high_low_se": 0.14084131528539529,
+              "interaction_est": -0.1457101355410231,
+              "interaction_se": 0.07042065764269764
+            },
+            "rep": 5,
+            "spline": {
+              "curvature_ci_high": 0.03417430685741568,
+              "curvature_ci_low": -0.25656268472054483,
+              "curvature_est": -0.11119418893156457,
+              "curvature_p": 0.13382147657543308,
+              "curvature_se": 0.07416896270463692,
+              "error": null,
+              "high_low_ci_high": 0.13534128677201918,
+              "high_low_ci_low": -0.6701163482058388,
+              "high_low_est": -0.2673875307169098,
+              "high_low_se": 0.2054776620085465,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.04631987707559864,
+              "high_low_se": 0.1834213941781893,
+              "interaction_est": -0.02315993853779932,
+              "interaction_se": 0.09171069708909466
+            },
+            "rep": 6,
+            "spline": {
+              "curvature_ci_high": 0.17740946100811558,
+              "curvature_ci_low": -0.18575733831993838,
+              "curvature_est": -0.00417393865591141,
+              "curvature_p": 0.9640654554553323,
+              "curvature_se": 0.09264629398802196,
+              "error": null,
+              "high_low_ci_high": 0.2956316499335363,
+              "high_low_ci_low": -0.456184427898943,
+              "high_low_est": -0.08027638898270334,
+              "high_low_se": 0.19179333986659644,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.09751556654796599,
+              "high_low_se": 0.14516470655215208,
+              "interaction_est": -0.048757783273982995,
+              "interaction_se": 0.07258235327607604
+            },
+            "rep": 7,
+            "spline": {
+              "curvature_ci_high": 0.04953071634287377,
+              "curvature_ci_low": -0.23284032783059577,
+              "curvature_est": -0.09165480574386099,
+              "curvature_p": 0.20324196283252016,
+              "curvature_se": 0.07203475323350995,
+              "error": null,
+              "high_low_ci_high": 0.3845764228494584,
+              "high_low_ci_low": -0.599656163125376,
+              "high_low_est": -0.10753987013795875,
+              "high_low_se": 0.25108435485162944,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.015231757113991558,
+              "high_low_se": 0.1481065121370016,
+              "interaction_est": -0.007615878556995779,
+              "interaction_se": 0.0740532560685008
+            },
+            "rep": 8,
+            "spline": {
+              "curvature_ci_high": 0.2610620519678564,
+              "curvature_ci_low": -0.011470618772013219,
+              "curvature_est": 0.1247957165979216,
+              "curvature_p": 0.07265715841327958,
+              "curvature_se": 0.06952491797549706,
+              "error": null,
+              "high_low_ci_high": 0.29289716093272306,
+              "high_low_ci_low": -0.38073953785299647,
+              "high_low_est": -0.043921188460136706,
+              "high_low_se": 0.17184925426084047,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.19590851860760855,
+              "high_low_se": 0.1383149390661311,
+              "interaction_est": -0.09795425930380428,
+              "interaction_se": 0.06915746953306555
+            },
+            "rep": 9,
+            "spline": {
+              "curvature_ci_high": 0.2791770989001037,
+              "curvature_ci_low": -0.03633239075018174,
+              "curvature_est": 0.12142235407496099,
+              "curvature_p": 0.13140973477044082,
+              "curvature_se": 0.0804885936386121,
+              "error": null,
+              "high_low_ci_high": 0.16959859531473187,
+              "high_low_ci_low": -0.5393201747533137,
+              "high_low_est": -0.18486078971929093,
+              "high_low_se": 0.18084994803179283,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.012522140675251125,
+              "high_low_se": 0.13549856420229767,
+              "interaction_est": 0.006261070337625563,
+              "interaction_se": 0.06774928210114883
+            },
+            "rep": 10,
+            "spline": {
+              "curvature_ci_high": 0.392585862151536,
+              "curvature_ci_low": 0.05524210678279054,
+              "curvature_est": 0.2239139844671633,
+              "curvature_p": 0.009271530870610167,
+              "curvature_se": 0.08605866172993494,
+              "error": null,
+              "high_low_ci_high": 0.224131391036141,
+              "high_low_ci_low": -0.4551491548645529,
+              "high_low_est": -0.11550888191420595,
+              "high_low_se": 0.17328903763312234,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.11974722452603101,
+              "high_low_se": 0.14656492842778787,
+              "interaction_est": 0.059873612263015505,
+              "interaction_se": 0.07328246421389394
+            },
+            "rep": 11,
+            "spline": {
+              "curvature_ci_high": 0.12076226218903109,
+              "curvature_ci_low": -0.14891311619610367,
+              "curvature_est": -0.014075427003536293,
+              "curvature_p": 0.8378873571781744,
+              "curvature_se": 0.06879600347120789,
+              "error": null,
+              "high_low_ci_high": 0.3949321838454844,
+              "high_low_ci_low": -0.28762188238200587,
+              "high_low_est": 0.05365515073173926,
+              "high_low_se": 0.17412413469357302,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.20347165280918142,
+              "high_low_se": 0.13197597137880027,
+              "interaction_est": -0.10173582640459071,
+              "interaction_se": 0.06598798568940013
+            },
+            "rep": 12,
+            "spline": {
+              "curvature_ci_high": 0.1762981178902696,
+              "curvature_ci_low": -0.08754356152674787,
+              "curvature_est": 0.04437727818176086,
+              "curvature_p": 0.5096911442663532,
+              "curvature_se": 0.06730778761381724,
+              "error": null,
+              "high_low_ci_high": 0.0016116730308563532,
+              "high_low_ci_low": -0.6949093774201263,
+              "high_low_est": -0.3466488521946349,
+              "high_low_se": 0.1776872063424405,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.06771579634473414,
+              "high_low_se": 0.1332145950484674,
+              "interaction_est": -0.03385789817236707,
+              "interaction_se": 0.0666072975242337
+            },
+            "rep": 13,
+            "spline": {
+              "curvature_ci_high": 0.15100502378158562,
+              "curvature_ci_low": -0.11697741512864232,
+              "curvature_est": 0.017013804326471645,
+              "curvature_p": 0.8034610945569396,
+              "curvature_se": 0.06836412322062786,
+              "error": null,
+              "high_low_ci_high": 0.2045198043335071,
+              "high_low_ci_low": -0.4690345895541621,
+              "high_low_est": -0.1322573926103275,
+              "high_low_se": 0.17182825772757934,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.08599518032061856,
+              "high_low_se": 0.13203983487883267,
+              "interaction_est": -0.04299759016030928,
+              "interaction_se": 0.06601991743941633
+            },
+            "rep": 14,
+            "spline": {
+              "curvature_ci_high": 0.06931488539949188,
+              "curvature_ci_low": -0.31087729408982956,
+              "curvature_est": -0.12078120434516884,
+              "curvature_p": 0.21302121917333317,
+              "curvature_se": 0.09698958301828871,
+              "error": null,
+              "high_low_ci_high": 0.04477389188458558,
+              "high_low_ci_low": -0.6414490237622992,
+              "high_low_est": -0.2983375659388568,
+              "high_low_se": 0.1750600828654211,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.04690994544124268,
+              "high_low_se": 0.1299692352510957,
+              "interaction_est": 0.02345497272062134,
+              "interaction_se": 0.06498461762554784
+            },
+            "rep": 15,
+            "spline": {
+              "curvature_ci_high": 0.2737235878564897,
+              "curvature_ci_low": -0.10861871821941253,
+              "curvature_est": 0.08255243481853859,
+              "curvature_p": 0.3973514115443355,
+              "curvature_se": 0.097538094777129,
+              "error": null,
+              "high_low_ci_high": 0.6397219734436663,
+              "high_low_ci_low": -0.02328480472957445,
+              "high_low_est": 0.3082185843570459,
+              "high_low_se": 0.16913748999176298,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.0424296369608628,
+              "high_low_se": 0.156464272319591,
+              "interaction_est": 0.0212148184804314,
+              "interaction_se": 0.0782321361597955
+            },
+            "rep": 16,
+            "spline": {
+              "curvature_ci_high": 0.1258110320199738,
+              "curvature_ci_low": -0.14567814649677158,
+              "curvature_est": -0.00993355723839888,
+              "curvature_p": 0.885953093700196,
+              "curvature_se": 0.06925871608849457,
+              "error": null,
+              "high_low_ci_high": 0.6475906871241266,
+              "high_low_ci_low": -0.043506506353183316,
+              "high_low_est": 0.30204209038547164,
+              "high_low_se": 0.17630354393535483,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.10805976304792535,
+              "high_low_se": 0.1319884393557414,
+              "interaction_est": 0.054029881523962674,
+              "interaction_se": 0.0659942196778707
+            },
+            "rep": 17,
+            "spline": {
+              "curvature_ci_high": 0.11833796310202813,
+              "curvature_ci_low": -0.19377023681714803,
+              "curvature_est": -0.037716136857559944,
+              "curvature_p": 0.6357163612065013,
+              "curvature_se": 0.07962090174345583,
+              "error": null,
+              "high_low_ci_high": 0.4503680118544355,
+              "high_low_ci_low": -0.21492016525034002,
+              "high_low_est": 0.11772392330204773,
+              "high_low_se": 0.16971949020903507,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.13202806282706037,
+              "high_low_se": 0.13330555326441174,
+              "interaction_est": 0.06601403141353018,
+              "interaction_se": 0.06665277663220587
+            },
+            "rep": 18,
+            "spline": {
+              "curvature_ci_high": 0.027453487567924165,
+              "curvature_ci_low": -0.2568896097490153,
+              "curvature_est": -0.11471806109054557,
+              "curvature_p": 0.11376542225070896,
+              "curvature_se": 0.07253783725888882,
+              "error": null,
+              "high_low_ci_high": 0.6993023142020931,
+              "high_low_ci_low": -0.23390230057744021,
+              "high_low_est": 0.23270000681232644,
+              "high_low_se": 0.23806677607042123,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.07678261686497143,
+              "high_low_se": 0.12665351562281582,
+              "interaction_est": -0.03839130843248571,
+              "interaction_se": 0.06332675781140791
+            },
+            "rep": 19,
+            "spline": {
+              "curvature_ci_high": 0.13495330042853276,
+              "curvature_ci_low": -0.13731225473507047,
+              "curvature_est": -0.0011794771532688464,
+              "curvature_p": 0.9864513738340586,
+              "curvature_se": 0.06945677499476935,
+              "error": null,
+              "high_low_ci_high": 0.360216795214009,
+              "high_low_ci_low": -0.30693361248467027,
+              "high_low_est": 0.026641591364669384,
+              "high_low_se": 0.1701945577631053,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.043438661102057685,
+              "high_low_se": 0.12780618940544733,
+              "interaction_est": -0.021719330551028843,
+              "interaction_se": 0.06390309470272366
+            },
+            "rep": 20,
+            "spline": {
+              "curvature_ci_high": 0.14395264276909306,
+              "curvature_ci_low": -0.12412662109387565,
+              "curvature_est": 0.009913010837608706,
+              "curvature_p": 0.8847497529272454,
+              "curvature_se": 0.06838882391753517,
+              "error": null,
+              "high_low_ci_high": 0.21398201177378487,
+              "high_low_ci_low": -0.45678743510589703,
+              "high_low_est": -0.12140271166605607,
+              "high_low_se": 0.17111779900800353,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.03191220691119042,
+              "high_low_se": 0.13046178833101238,
+              "interaction_est": -0.01595610345559521,
+              "interaction_se": 0.06523089416550619
+            },
+            "rep": 21,
+            "spline": {
+              "curvature_ci_high": 0.0849583772740207,
+              "curvature_ci_low": -0.20247773028291996,
+              "curvature_est": -0.05875967650444963,
+              "curvature_p": 0.4229355354768112,
+              "curvature_se": 0.07332688498167987,
+              "error": null,
+              "high_low_ci_high": 0.279666401493348,
+              "high_low_ci_low": -0.3861860209966058,
+              "high_low_est": -0.05325980975162894,
+              "high_low_se": 0.16986343300318182,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.018916098857371312,
+              "high_low_se": 0.22398562088542612,
+              "interaction_est": -0.009458049428685656,
+              "interaction_se": 0.11199281044271306
+            },
+            "rep": 22,
+            "spline": {
+              "curvature_ci_high": 0.19090652907053335,
+              "curvature_ci_low": -0.09544217922119615,
+              "curvature_est": 0.047732174924668594,
+              "curvature_p": 0.5134839004336123,
+              "curvature_se": 0.07304948211282315,
+              "error": null,
+              "high_low_ci_high": 0.443058168263786,
+              "high_low_ci_low": -0.5564963936618714,
+              "high_low_est": -0.05671911269904272,
+              "high_low_se": 0.25499309400687115,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.029004745158630767,
+              "high_low_se": 0.13528487300271055,
+              "interaction_est": -0.014502372579315383,
+              "interaction_se": 0.06764243650135528
+            },
+            "rep": 23,
+            "spline": {
+              "curvature_ci_high": 0.1442450299545911,
+              "curvature_ci_low": -0.16406950762331773,
+              "curvature_est": -0.009912238834363327,
+              "curvature_p": 0.8997123056211502,
+              "curvature_se": 0.07865311295546464,
+              "error": null,
+              "high_low_ci_high": 0.3121670163139719,
+              "high_low_ci_low": -0.3827175177920018,
+              "high_low_est": -0.03527525073901494,
+              "high_low_se": 0.17726972001192676,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.20092860138794302,
+              "high_low_se": 0.15211442818874418,
+              "interaction_est": -0.10046430069397151,
+              "interaction_se": 0.07605721409437209
+            },
+            "rep": 24,
+            "spline": {
+              "curvature_ci_high": 0.15548252620850886,
+              "curvature_ci_low": -0.1259736294534766,
+              "curvature_est": 0.014754448377516122,
+              "curvature_p": 0.8371894800196742,
+              "curvature_se": 0.07180135901862564,
+              "error": null,
+              "high_low_ci_high": 0.3066744177282088,
+              "high_low_ci_low": -0.549339141651814,
+              "high_low_est": -0.12133236196180255,
+              "high_low_se": 0.2183748184767737,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.05248990814150245,
+              "high_low_se": 0.19032876567775217,
+              "interaction_est": -0.026244954070751225,
+              "interaction_se": 0.09516438283887609
+            },
+            "rep": 25,
+            "spline": {
+              "curvature_ci_high": 0.17069528623639885,
+              "curvature_ci_low": -0.14214082230572106,
+              "curvature_est": 0.014277231965338881,
+              "curvature_p": 0.8580178935119933,
+              "curvature_se": 0.07980659613072483,
+              "error": null,
+              "high_low_ci_high": 0.3858937112927586,
+              "high_low_ci_low": -0.3947695332581721,
+              "high_low_est": -0.00443791098270674,
+              "high_low_se": 0.1991524461876149,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.04425868251506589,
+              "high_low_se": 0.15825068783137408,
+              "interaction_est": 0.022129341257532947,
+              "interaction_se": 0.07912534391568704
+            },
+            "rep": 26,
+            "spline": {
+              "curvature_ci_high": 0.05342991180698871,
+              "curvature_ci_low": -0.22190844290444411,
+              "curvature_est": -0.0842392655487277,
+              "curvature_p": 0.23041335718401434,
+              "curvature_se": 0.07024066683400469,
+              "error": null,
+              "high_low_ci_high": 0.37388470212417396,
+              "high_low_ci_low": -0.5789978866493999,
+              "high_low_est": -0.10255659226261293,
+              "high_low_se": 0.2430867596347605,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.03709829957354948,
+              "high_low_se": 0.15651701068803597,
+              "interaction_est": -0.01854914978677474,
+              "interaction_se": 0.07825850534401799
+            },
+            "rep": 27,
+            "spline": {
+              "curvature_ci_high": 0.06724421300704628,
+              "curvature_ci_low": -0.22606892680013438,
+              "curvature_est": -0.07941235689654405,
+              "curvature_p": 0.2885575003524157,
+              "curvature_se": 0.07482615545089745,
+              "error": null,
+              "high_low_ci_high": 0.14624132423377087,
+              "high_low_ci_low": -0.5538222025596091,
+              "high_low_est": -0.20379043916291914,
+              "high_low_se": 0.17859091589207612,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.26123202954204955,
+              "high_low_se": 0.12379314336827389,
+              "interaction_est": -0.13061601477102477,
+              "interaction_se": 0.061896571684136946
+            },
+            "rep": 28,
+            "spline": {
+              "curvature_ci_high": 0.17532261416066397,
+              "curvature_ci_low": -0.20351357642779594,
+              "curvature_est": -0.01409548113356597,
+              "curvature_p": 0.8840397692005704,
+              "curvature_se": 0.0966436611262376,
+              "error": null,
+              "high_low_ci_high": -0.012193980418668982,
+              "high_low_ci_low": -0.7116581951588099,
+              "high_low_est": -0.36192608778873947,
+              "high_low_se": 0.17843802735496955,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.27027107176812337,
+              "high_low_se": 0.1660549125635995,
+              "interaction_est": -0.13513553588406169,
+              "interaction_se": 0.08302745628179975
+            },
+            "rep": 29,
+            "spline": {
+              "curvature_ci_high": 0.10892055576489264,
+              "curvature_ci_low": -0.26422587616573706,
+              "curvature_est": -0.0776526602004222,
+              "curvature_p": 0.41464522298794204,
+              "curvature_se": 0.09519216541046853,
+              "error": null,
+              "high_low_ci_high": 0.06140924972132916,
+              "high_low_ci_low": -0.7778525099568887,
+              "high_low_est": -0.3582216301177798,
+              "high_low_se": 0.21410132166243542,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.1808554344444269,
+              "high_low_se": 0.20918499066015542,
+              "interaction_est": 0.09042771722221345,
+              "interaction_se": 0.10459249533007771
+            },
+            "rep": 30,
+            "spline": {
+              "curvature_ci_high": 0.09576285984401245,
+              "curvature_ci_low": -0.18072749978733654,
+              "curvature_est": -0.042482319971662054,
+              "curvature_p": 0.5469804547580877,
+              "curvature_se": 0.07053455104006008,
+              "error": null,
+              "high_low_ci_high": 0.568627256458057,
+              "high_low_ci_low": -0.2185088063404668,
+              "high_low_est": 0.1750592250587951,
+              "high_low_se": 0.20080370567335837,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.04455704224976917,
+              "high_low_se": 0.1731887308465748,
+              "interaction_est": -0.022278521124884584,
+              "interaction_se": 0.0865943654232874
+            },
+            "rep": 31,
+            "spline": {
+              "curvature_ci_high": 0.25149571191005976,
+              "curvature_ci_low": -0.02033023895706887,
+              "curvature_est": 0.11558273647649545,
+              "curvature_p": 0.09555673302760326,
+              "curvature_se": 0.06934462898096815,
+              "error": null,
+              "high_low_ci_high": 0.4129547140657656,
+              "high_low_ci_low": -0.3715554838993737,
+              "high_low_est": 0.020699615083195948,
+              "high_low_se": 0.20013382988686945,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.03357079459648911,
+              "high_low_se": 0.14541372362546914,
+              "interaction_est": 0.016785397298244555,
+              "interaction_se": 0.07270686181273457
+            },
+            "rep": 32,
+            "spline": {
+              "curvature_ci_high": 0.16907443770593564,
+              "curvature_ci_low": -0.1857825161091066,
+              "curvature_est": -0.00835403920158549,
+              "curvature_p": 0.926473204527059,
+              "curvature_se": 0.09052639648687927,
+              "error": null,
+              "high_low_ci_high": 0.5034956643386916,
+              "high_low_ci_low": -0.21563528362967294,
+              "high_low_est": 0.14393019035450938,
+              "high_low_se": 0.18345514332431817,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.05806742092607543,
+              "high_low_se": 0.13252129174021554,
+              "interaction_est": 0.029033710463037717,
+              "interaction_se": 0.06626064587010777
+            },
+            "rep": 33,
+            "spline": {
+              "curvature_ci_high": 0.09894408078721784,
+              "curvature_ci_low": -0.17327479013879427,
+              "curvature_est": -0.03716535467578822,
+              "curvature_p": 0.5925268256431417,
+              "curvature_se": 0.06944486553165632,
+              "error": null,
+              "high_low_ci_high": 0.4616927158716428,
+              "high_low_ci_low": -0.21748162996280623,
+              "high_low_est": 0.12210554295441826,
+              "high_low_se": 0.17326194528168198,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.1435975714316073,
+              "high_low_se": 0.13999183984832944,
+              "interaction_est": 0.07179878571580366,
+              "interaction_se": 0.06999591992416472
+            },
+            "rep": 34,
+            "spline": {
+              "curvature_ci_high": 0.1392845253102774,
+              "curvature_ci_low": -0.21082128876172956,
+              "curvature_est": -0.03576838172572609,
+              "curvature_p": 0.6888048809246365,
+              "curvature_se": 0.08931434877154337,
+              "error": null,
+              "high_low_ci_high": 0.25939775207246235,
+              "high_low_ci_low": -0.41941090814952836,
+              "high_low_est": -0.08000657803853302,
+              "high_low_se": 0.17316865642151721,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.04143782564321185,
+              "high_low_se": 0.203210376959542,
+              "interaction_est": -0.020718912821605925,
+              "interaction_se": 0.101605188479771
+            },
+            "rep": 35,
+            "spline": {
+              "curvature_ci_high": 0.23316642331068788,
+              "curvature_ci_low": -0.09164082597810097,
+              "curvature_est": 0.07076279866629345,
+              "curvature_p": 0.3931055286001741,
+              "curvature_se": 0.0828605146801075,
+              "error": null,
+              "high_low_ci_high": 0.5758940405992645,
+              "high_low_ci_low": -0.3382528015206812,
+              "high_low_est": 0.11882061953929164,
+              "high_low_se": 0.23320501003937466,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": -0.04929158888633134,
+              "high_low_se": 0.1311236420634182,
+              "interaction_est": -0.02464579444316567,
+              "interaction_se": 0.0655618210317091
+            },
+            "rep": 36,
+            "spline": {
+              "curvature_ci_high": 0.240527994807164,
+              "curvature_ci_low": -0.19251599993357385,
+              "curvature_est": 0.02400599743679508,
+              "curvature_p": 0.8279722131565403,
+              "curvature_se": 0.11047243668950288,
+              "error": null,
+              "high_low_ci_high": 0.47861578375160096,
+              "high_low_ci_low": -0.19724379655637123,
+              "high_low_est": 0.14068599359761488,
+              "high_low_se": 0.17241632629328452,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.021344562068456405,
+              "high_low_se": 0.1421360638043123,
+              "interaction_est": 0.010672281034228202,
+              "interaction_se": 0.07106803190215615
+            },
+            "rep": 37,
+            "spline": {
+              "curvature_ci_high": 0.07287246347585374,
+              "curvature_ci_low": -0.2250634186015209,
+              "curvature_est": -0.07609547756283358,
+              "curvature_p": 0.31673762733396593,
+              "curvature_se": 0.0760054481070204,
+              "error": null,
+              "high_low_ci_high": 0.4782968083245059,
+              "high_low_ci_low": -0.266775559607262,
+              "high_low_est": 0.10576062435862192,
+              "high_low_se": 0.19007297409751392,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.06517281371714433,
+              "high_low_se": 0.13352954963444574,
+              "interaction_est": 0.03258640685857216,
+              "interaction_se": 0.06676477481722287
+            },
+            "rep": 38,
+            "spline": {
+              "curvature_ci_high": 0.34703046098069223,
+              "curvature_ci_low": 0.058708093259111,
+              "curvature_est": 0.2028692771199016,
+              "curvature_p": 0.005813160410733875,
+              "curvature_se": 0.07355297591266552,
+              "error": null,
+              "high_low_ci_high": 0.5727120648523785,
+              "high_low_ci_low": -0.15866148329441956,
+              "high_low_est": 0.20702529077897944,
+              "high_low_se": 0.18657831300119268,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.0042654674960700524,
+              "high_low_se": 0.12716768148064503,
+              "interaction_est": 0.0021327337480350262,
+              "interaction_se": 0.06358384074032251
+            },
+            "rep": 39,
+            "spline": {
+              "curvature_ci_high": 0.22744157368374646,
+              "curvature_ci_low": -0.07817501708609159,
+              "curvature_est": 0.07463327829882743,
+              "curvature_p": 0.3384318613263759,
+              "curvature_se": 0.07796484857224721,
+              "error": null,
+              "high_low_ci_high": 0.3042376075570974,
+              "high_low_ci_low": -0.35759771291243336,
+              "high_low_est": -0.02668005267766797,
+              "high_low_se": 0.16883864324967848,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          },
+          {
+            "centered_linear": {
+              "error": null,
+              "high_low_est": 0.0688027915355691,
+              "high_low_se": 0.13176946237402623,
+              "interaction_est": 0.03440139576778455,
+              "interaction_se": 0.06588473118701312
+            },
+            "rep": 40,
+            "spline": {
+              "curvature_ci_high": 0.27624209314163084,
+              "curvature_ci_low": -0.0034625150592794696,
+              "curvature_est": 0.13638978904117569,
+              "curvature_p": 0.05594825191786046,
+              "curvature_se": 0.07135452747644451,
+              "error": null,
+              "high_low_ci_high": 0.4069679826905559,
+              "high_low_ci_low": -0.3517120810672649,
+              "high_low_est": 0.027627950811645503,
+              "high_low_se": 0.19354438885881006,
+              "n_studies": 8
+            },
+            "truth": {
+              "curvature": 0,
+              "high_low": 0
+            }
+          }
+        ],
+        "truth": {
+          "curvature": 0,
+          "high_low": 0
+        }
+      }
+    }
+  },
+  "comparison": {
+    "rows": [
+      {
+        "scenario": "linear",
+        "truth": {
+          "high_low": 0.5,
+          "curvature": 0.0
+        },
+        "n_replicates": 40,
+        "n_valid": 40,
+        "metrics": {
+          "high_low_bias": 0.004666360468659092,
+          "high_low_rmse": 0.15121779895593898,
+          "high_low_coverage": 0.95,
+          "curvature_bias": -0.010227618056407308,
+          "curvature_rmse": 0.06590742438722245,
+          "curvature_coverage": 0.975,
+          "curvature_significant_rate": 0.025,
+          "linear_high_low_rmse": 0.14186807868633608
+        },
+        "checks": {
+          "min_valid_replicates": true,
+          "high_low_bias_bounded": true,
+          "high_low_coverage": true,
+          "curvature_coverage": true,
+          "spline_vs_linear_rmse": true,
+          "curvature_false_positive_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "scenario": "nonlinear",
+        "truth": {
+          "high_low": 0.19999999999999996,
+          "curvature": 0.2
+        },
+        "n_replicates": 40,
+        "n_valid": 40,
+        "metrics": {
+          "high_low_bias": -0.0041343414075681595,
+          "high_low_rmse": 0.20889292986796112,
+          "high_low_coverage": 0.925,
+          "curvature_bias": 0.06569630482539712,
+          "curvature_rmse": 0.08601390573950639,
+          "curvature_coverage": 0.9,
+          "curvature_significant_rate": 0.975,
+          "linear_high_low_rmse": 0.16099969027203068
+        },
+        "checks": {
+          "min_valid_replicates": true,
+          "high_low_bias_bounded": true,
+          "high_low_coverage": true,
+          "curvature_coverage": true,
+          "spline_vs_linear_rmse": true,
+          "curvature_power": true
+        },
+        "pass": true
+      },
+      {
+        "scenario": "null",
+        "truth": {
+          "high_low": 0.0,
+          "curvature": 0.0
+        },
+        "n_replicates": 40,
+        "n_valid": 40,
+        "metrics": {
+          "high_low_bias": -0.022274737714456642,
+          "high_low_rmse": 0.17553926803021375,
+          "high_low_coverage": 0.975,
+          "curvature_bias": 0.011475840634123255,
+          "curvature_rmse": 0.08287454993806248,
+          "curvature_coverage": 0.95,
+          "curvature_significant_rate": 0.05,
+          "linear_high_low_rmse": 0.12473858475455189
+        },
+        "checks": {
+          "min_valid_replicates": true,
+          "high_low_bias_bounded": true,
+          "high_low_coverage": true,
+          "curvature_coverage": true,
+          "spline_vs_linear_rmse": true,
+          "curvature_false_positive_bounded": true
+        },
+        "pass": true
+      }
+    ],
+    "summary": {
+      "rows": 3,
+      "overall_pass_rate": 1.0,
+      "mean_high_low_bias_abs": 0.010358479863561297,
+      "mean_curvature_bias_abs": 0.02913325450530923
+    }
+  }
+}

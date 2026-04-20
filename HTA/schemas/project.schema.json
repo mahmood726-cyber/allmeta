@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hta-standard.org/schemas/v0.1/project.schema.json",
+  "title": "HTA Project Schema",
+  "description": "JSON Schema for HTA Artifact Standard v0.1 project.json files",
+  "type": "object",
+  "required": ["version", "metadata", "model"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "HTA Standard version (semver)"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+          "description": "Unique identifier for the model"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable model name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the model"
+        },
+        "author": {
+          "type": "string",
+          "description": "Model author(s)"
+        },
+        "organization": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "version": {
+          "type": "string",
+          "description": "Model version"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "time_horizon": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time horizon in years"
+        },
+        "cycle_length": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Cycle length in years"
+        },
+        "discount_rate_costs": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Annual discount rate for costs"
+        },
+        "discount_rate_qalys": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Annual discount rate for QALYs"
+        },
+        "half_cycle_correction": {
+          "type": "string",
+          "enum": ["none", "start", "end", "trapezoidal"],
+          "default": "trapezoidal"
+        },
+        "currency": {
+          "type": "string",
+          "default": "GBP"
+        },
+        "perspective": {
+          "type": "string",
+          "description": "Analysis perspective (e.g., healthcare payer)"
+        },
+        "starting_age": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "markov_cohort",
+            "markov_microsimulation",
+            "partitioned_survival",
+            "decision_tree",
+            "budget_impact"
+          ],
+          "description": "Model type"
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameter"
+      }
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/state"
+      }
+    },
+    "transitions": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/transition"
+      }
+    },
+    "strategies": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/strategy"
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/scenario"
+      }
+    }
+  },
+  "$defs": {
+    "parameter": {
+      "type": "object",
+      "required": ["value"],
+      "properties": {
+        "value": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string" }
+          ],
+          "description": "Parameter value (number or expression)"
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable label"
+        },
+        "description": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "distribution": {
+          "$ref": "#/$defs/distribution"
+        },
+        "evidence_id": {
+          "type": "string",
+          "description": "Reference to evidence entry"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["fixed", "normal", "lognormal", "beta", "gamma", "uniform", "triangular"]
+        },
+        "mean": { "type": "number" },
+        "sd": { "type": "number" },
+        "se": { "type": "number" },
+        "alpha": { "type": "number" },
+        "beta": { "type": "number" },
+        "shape": { "type": "number" },
+        "scale": { "type": "number" },
+        "rate": { "type": "number" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "mode": { "type": "number" },
+        "meanlog": { "type": "number" },
+        "sdlog": { "type": "number" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["label"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "State display name"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["transient", "absorbing", "tunnel"],
+          "default": "transient"
+        },
+        "initial_probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cost": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string" }
+          ],
+          "description": "Cost per cycle in this state"
+        },
+        "utility": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string" }
+          ],
+          "description": "Health utility (QALY weight) in this state"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "required": ["from", "to", "probability"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Source state ID"
+        },
+        "to": {
+          "type": "string",
+          "description": "Target state ID"
+        },
+        "probability": {
+          "oneOf": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "string" }
+          ],
+          "description": "Transition probability (0-1 or expression)"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Optional condition expression"
+        }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "required": ["label"],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "is_comparator": {
+          "type": "boolean",
+          "default": false
+        },
+        "parameter_overrides": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "citation": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "quality": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "parameter_overrides": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+# Sample Dataset 5: Edge Case - Zero Cases
+# Teaching Example - Handling zero cases in dose categories
+# Use For: Teaching continuity correction and data cleaning
+#
+# Scenario: Rare disease with some dose categories having zero events
+# This is a COMMON real-world problem!
+#
+# Problem: log(0) is undefined, can't compute variance
+
+study,dose,cases,n
+Study_A,0,45,50000
+Study_A,1,3,48000
+Study_A,2,0,45000
+Study_A,3,1,40000
+Study_B,0,38,42000
+Study_B,1,0,40000
+Study_B,2,2,38000
+Study_B,3,5,35000
+Study_C,0,52,55000
+Study_C,1,4,52000
+Study_C,2,1,48000
+Study_C,3,0,44000
+
+# SOLUTION 1: Continuity Correction (Recommended)
+# ==============================================
+# Add 0.5 to ALL cases in all categories:
+#
+# Corrected data:
+study,dose,cases,n
+Study_A,0,45.5,50000
+Study_A,1,3.5,48000
+Study_A,2,0.5,45000
+Study_A,3,1.5,40000
+Study_B,0,38.5,42000
+Study_B,1,0.5,40000
+Study_B,2,2.5,38000
+Study_B,3,5.5,35000
+Study_C,0,52.5,55000
+Study_C,1,4.5,52000
+Study_C,2,1.5,48000
+Study_C,3,0.5,44000
+#
+# This allows:
+#   - log(cases/n) to be computed
+#   - variance = 1/cases - 1/n to be computed
+#
+# Teaching Points:
+#   1. Add 0.5 (or other small value) to ALL categories
+#   2. Not just the zeros - must be consistent
+#   3. Alternative: exclude dose categories with zero cases
+#   4. Document the correction in your methods section
+
+# SOLUTION 2: Exclude Problem Categories (Alternative)
+# ===================================================
+# Remove entire dose categories with zero cases:
+#
+# Cleaned data:
+study,dose,cases,n
+Study_A,0,45,50000
+Study_A,1,3,48000
+# Study_A,2,0,45000  <- REMOVED
+Study_A,3,1,40000
+Study_B,0,38,42000
+# Study_B,1,0,40000  <- REMOVED
+Study_B,2,2,38000
+Study_B,3,5,35000
+Study_C,0,52,55000
+Study_C,1,4,52000
+Study_C,2,1,48000
+# Study_C,3,0,44000  <- REMOVED
+#
+# Pros: No artificial correction
+# Cons: Loses data, reduces power
+
+# SOLUTION 3: Exact Poisson Methods (Advanced)
+# =============================================
+# Use exact Poisson regression instead of delta method
+# Requires specialized software (not in Dose Response Pro)
+
+# Teaching Exercise:
+# ==================
+# 1. Load original data - should error on log(0)
+# 2. Apply continuity correction - re-run analysis
+# 3. Compare results with and without correction
+# 4. Discuss which approach is more appropriate

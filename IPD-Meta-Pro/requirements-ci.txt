@@ -1,0 +1,2 @@
+# Keep CI pinned to the browser automation version validated locally.
+selenium==4.38.0

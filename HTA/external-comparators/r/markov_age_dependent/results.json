@@ -1,0 +1,15 @@
+{
+  "version": "0.1",
+  "model_id": "markov_age_dependent",
+  "generated_at": "2026-03-01T12:35:45Z",
+  "comparator": "R",
+  "source": "Independent R Markov fixture runner",
+  "r_version": "R version 4.5.2 (2025-10-31 ucrt)",
+  "strategies": {
+    "natural_history": {
+      "total_costs": 17717.347,
+      "total_qalys": 10.0753,
+      "life_years": 11.4472
+    }
+  }
+}

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dose Response Pro v5.0 | Ultra-Fast Web Worker</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0f172a; color: #f1f5f9; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); }
+    .btn-secondary { background: #334155; color: white; border: 1px solid #475569; }
+    .tabs { display: flex; gap: 5px; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; background: #1e293b; border: 1px solid #475569; cursor: pointer; border-radius: 6px; }
+    .tab.active { background: #06b6d4; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .study-card { background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .study-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .dose-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin-bottom: 8px; }
+    input { padding: 8px; background: #334155; border: 1px solid #475569; color: white; border-radius: 4px; width: 100%; }
+    .result-card { background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #475569; }
+    th { background: #334155; }
+    .plot-container { background: #1e293b; border: 1px solid #475569; border-radius: 8px; height: 450px; }
+    .progress-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .progress-box { background: #1e293b; padding: 30px; border-radius: 12px; min-width: 400px; text-align: center; }
+    .progress-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin: 15px 0; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #0891b2); transition: width 0.1s; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #1e293b; padding: 15px 20px; border-radius: 8px; border-left: 4px solid #10b981; animation: slideIn 0.3s; }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dose Response Pro <span style="color:#06b6d4">v5.0</span></h1>
+    <button class="btn btn-primary" onclick="runAnalysis()">Run Analysis</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('data')">Data</div>
+    <div class="tab" onclick="switchTab('results')">Results</div>
+    <div class="tab" onclick="switchTab('plots')">Plots</div>
+  </div>
+
+  <div id="dataPanel" class="panel active">
+    <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+      <button class="btn btn-secondary" onclick="loadDemoData()">Load Demo Data</button>
+      <button class="btn btn-secondary" onclick="importCSV()">Import CSV</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+    <div id="studiesContainer"></div>
+  </div>
+
+  <div id="resultsPanel" class="panel">
+    <div id="resultsContainer"></div>
+  </div>
+
+  <div id="plotsPanel" class="panel">
+    <div id="plotContainer" class="plot-container"></div>
+  </div>
+
+  <div id="progressOverlay" class="progress-overlay">
+    <div class="progress-box">
+      <h3 id="progressText">Running analysis...</h3>
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <p id="progressDetail">Initializing worker...</p>
+    </div>
+  </div>
+
+  <div id="toastContainer"></div>
+
+  <script>
+    // =====================================================
+    // MAIN THREAD - UI Controller
+    // =====================================================
+
+    let studies = [];
+    let currentWorker = null;
+    let currentResults = null;
+
+    // Initialize on load
+    window.onload = function() {
+      showToast('Dose Response Pro v5.0 ready!', 'success');
+    };
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(tab + 'Panel').classList.add('active');
+    }
+
+    function showProgress(text, detail) {
+      document.getElementById('progressOverlay').style.display = 'flex';
+      document.getElementById('progressText').textContent = text;
+      document.getElementById('progressDetail').textContent = detail;
+      document.getElementById('progressFill').style.width = '0%';
+    }
+
+    function updateProgress(percent, detail) {
+      document.getElementById('progressFill').style.width = percent + '%';
+      document.getElementById('progressDetail').textContent = detail;
+    }
+
+    function hideProgress() {
+      document.getElementById('progressFill').style.width = '100%';
+      setTimeout(() => {
+        document.getElementById('progressOverlay').style.display = 'none';
+      }, 200);
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.borderLeftColor = type === 'error' ? '#ef4444' : '#10b981';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // =====================================================
+    // DATA MANAGEMENT
+    // =====================================================
+
+    function loadDemoData() {
+      studies = [
+        { name: 'Study A', points: [{d:0,c:25,n:1000}, {d:10,c:35,n:1000}, {d:20,c:50,n:1000}, {d:30,c:70,n:1000}] },
+        { name: 'Study B', points: [{d:0,c:20,n:800}, {d:15,c:32,n:800}, {d:30,c:55,n:800}] },
+        { name: 'Study C', points: [{d:0,c:30,n:1200}, {d:12,c:42,n:1200}, {d:24,c:58,n:1200}, {d:36,c:85,n:1200}] }
+      ];
+      renderStudies();
+      showToast('Demo data loaded!');
+    }
+
+    function renderStudies() {
+      const container = document.getElementById('studiesContainer');
+      container.innerHTML = studies.map((s, si) => `
+        <div class="study-card">
+          <div class="study-header">
+            <strong>Study ${si + 1}: ${s.name}</strong>
+            <button class="btn btn-secondary" onclick="removeStudy(${si})" style="padding:5px 10px;">×</button>
+          </div>
+          ${s.points.map((p, pi) => `
+            <div class="dose-row">
+              <input type="number" value="${p.d}" placeholder="Dose" onchange="updatePoint(${si},${pi},'d',this.value)">
+              <input type="number" value="${p.c}" placeholder="Cases" onchange="updatePoint(${si},${pi},'c',this.value)">
+              <input type="number" value="${p.n}" placeholder="N" onchange="updatePoint(${si},${pi},'n',this.value)">
+              <button class="btn btn-secondary" onclick="removePoint(${si},${pi})" style="padding:5px 10px;">×</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-secondary" onclick="addPoint(${si})" style="margin-top:10px;padding:5px 15px;">+ Add Point</button>
+        </div>
+      `).join('');
+    }
+
+    function updatePoint(si, pi, field, val) {
+      studies[si].points[pi][field] = parseFloat(val) || 0;
+    }
+
+    function addPoint(si) {
+      const lastDose = studies[si].points[studies[si].points.length - 1]?.d || 0;
+      studies[si].points.push({ d: lastDose + 10, c: 30, n: 1000 });
+      renderStudies();
+    }
+
+    function removePoint(si, pi) {
+      if (studies[si].points.length > 1) {
+        studies[si].points.splice(pi, 1);
+        renderStudies();
+      }
+    }
+
+    function removeStudy(si) {
+      studies.splice(si, 1);
+      renderStudies();
+    }
+
+    function clearAll() {
+      studies = [];
+      renderStudies();
+    }
+
+    function importCSV() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => parseCSV(e.target.result);
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function parseCSV(csv) {
+      const lines = csv.split('\\n').filter(l => l.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+      const studyIdx = headers.indexOf('study');
+      const doseIdx = headers.indexOf('dose');
+      const casesIdx = headers.indexOf('cases');
+      const nIdx = headers.indexOf('n');
+
+      if (doseIdx === -1 || casesIdx === -1) {
+        showToast('CSV needs dose and cases columns', 'error');
+        return;
+      }
+
+      const studyMap = {};
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        const study = studyIdx >= 0 ? cols[studyIdx]?.trim() : `Study ${i}`;
+        const dose = parseFloat(cols[doseIdx]);
+        const cases = parseFloat(cols[casesIdx]);
+        const n = nIdx >= 0 ? parseFloat(cols[nIdx]) : 1000;
+
+        if (!isNaN(dose) && !isNaN(cases)) {
+          if (!studyMap[study]) studyMap[study] = [];
+          studyMap[study].push({ d: dose, c: cases, n: n });
+        }
+      }
+
+      studies = Object.entries(studyMap).map(([name, points]) => ({ name, points }));
+      renderStudies();
+      showToast(`Loaded ${studies.length} studies`);
+    }
+
+    // =====================================================
+    // WEB WORKER - ANALYSIS ENGINE
+    // =====================================================
+
+    function runAnalysis() {
+      if (studies.length < 2) {
+        showToast('Please load at least 2 studies', 'error');
+        return;
+      }
+
+      showProgress('Running GLS Analysis...', 'Starting Web Worker...');
+
+      // Terminate existing worker
+      if (currentWorker) {
+        currentWorker.terminate();
+      }
+
+      // Create worker from blob
+      const workerScript = `
+        self.onmessage = function(e) {
+          const { studies } = e.data;
+
+          try {
+            // Collect all dose-response points
+            const points = [];
+
+            for (const study of studies) {
+              const pts = study.points || [];
+              // Find reference (dose = 0 or min)
+              let ref = pts.find(p => p.d === 0) || pts.reduce((a,b) => a.d < b.d ? a : b, pts[0]);
+
+              for (const p of pts) {
+                if (p.d !== ref.d) {
+                  // Log RR with delta method variance
+                  const logRR = Math.log(p.c/p.n) - Math.log(ref.c/ref.n);
+                  const var_logRR = 1/p.c - 1/p.n + 1/ref.c - 1/ref.n;
+
+                  points.push({
+                    dose: p.d - ref.d,
+                    logRR: logRR,
+                    var: Math.max(var_logRR, 1e-8)
+                  });
+                }
+              }
+            }
+
+            const n = points.length;
+            if (n < 3) {
+              throw new Error('Need at least 3 dose points');
+            }
+
+            // GLS: Solve (X'W*X)^(-1) * X'W*y
+            // Using iterative refinement for stability
+
+            // Build weighted normal equations
+            let XtWX = [0,0,0, 0,0,0, 0,0,0]; // 3x3
+            let XtWy = [0,0,0];
+
+            for (const p of points) {
+              const w = 1 / p.var;
+              const x1 = 1;
+              const x2 = p.dose;
+              const x3 = p.dose * p.dose;
+
+              XtWX[0] += w * x1 * x1;
+              XtWX[1] += w * x1 * x2;
+              XtWX[2] += w * x1 * x3;
+              XtWX[4] += w * x2 * x2;
+              XtWX[5] += w * x2 * x3;
+              XtWX[8] += w * x3 * x3;
+
+              XtWy[0] += w * x1 * p.logRR;
+              XtWy[1] += w * x2 * p.logRR;
+              XtWy[2] += w * x3 * p.logRR;
+            }
+
+            // Symmetric
+            XtWX[3] = XtWX[1];
+            XtWX[6] = XtWX[2];
+            XtWX[7] = XtWX[5];
+
+            // Add ridge for stability
+            XtWX[0] += 1e-6;
+            XtWX[4] += 1e-6;
+            XtWX[8] += 1e-6;
+
+            // Solve 3x3 system using Cramer's rule (more stable than elimination)
+            const det = XtWX[0] * (XtWX[4]*XtWX[8] - XtWX[5]*XtWX[7]) -
+                        XtWX[1] * (XtWX[3]*XtWX[8] - XtWX[5]*XtWX[6]) +
+                        XtWX[2] * (XtWX[3]*XtWX[7] - XtWX[4]*XtWX[6]);
+
+            if (Math.abs(det) < 1e-10) {
+              throw new Error('Singular matrix');
+            }
+
+            // Invert matrix
+            const inv = new Array(9);
+            inv[0] = (XtWX[4]*XtWX[8] - XtWX[5]*XtWX[7]) / det;
+            inv[1] = (XtWX[2]*XtWX[7] - XtWX[1]*XtWX[8]) / det;
+            inv[2] = (XtWX[1]*XtWX[5] - XtWX[2]*XtWX[4]) / det;
+            inv[3] = (XtWX[2]*XtWX[6] - XtWX[0]*XtWX[8]) / det;
+            inv[4] = (XtWX[0]*XtWX[8] - XtWX[2]*XtWX[6]) / det;
+            inv[5] = (XtWX[0]*XtWX[5] - XtWX[1]*XtWX[2]) / det;
+            inv[6] = (XtWX[1]*XtWX[6] - XtWX[0]*XtWX[7]) / det;
+            inv[7] = (XtWX[0]*XtWX[7] - XtWX[1]*XtWX[6]) / det;
+            inv[8] = (XtWX[0]*XtWX[4] - XtWX[1]*XtWX[1]) / det;
+
+            // Beta = inv * XtWy
+            const beta = [
+              inv[0]*XtWy[0] + inv[1]*XtWy[1] + inv[2]*XtWy[2],
+              inv[3]*XtWy[0] + inv[4]*XtWy[1] + inv[5]*XtWy[2],
+              inv[6]*XtWy[0] + inv[7]*XtWy[1] + inv[8]*XtWy[2]
+            ];
+
+            // Standard errors
+            const se = [
+              Math.sqrt(Math.max(inv[0], 0)),
+              Math.sqrt(Math.max(inv[4], 0)),
+              Math.sqrt(Math.max(inv[8], 0))
+            ];
+
+            // Q statistic
+            let Q = 0;
+            for (const p of points) {
+              const pred = beta[0] + beta[1]*p.dose + beta[2]*p.dose*p.dose;
+              Q += p.logRR * p.logRR / p.var;
+            }
+
+            const df = n - 3;
+            const tau2 = Math.max(0, (Q - df) / n);
+            const I2 = Q > df ? ((Q - df) / Q) * 100 : 0;
+
+            // Report progress
+            self.postMessage({ type: 'progress', percent: 50 });
+
+            // Build result
+            const result = {
+              modelType: 'GLS (Quadratic)',
+              nStudies: studies.length,
+              nPoints: n,
+              tau2: tau2,
+              I2: I2,
+              Q: Q,
+              df: df,
+              coefficients: [
+                { name: 'Intercept', estimate: beta[0], se: se[0],
+                  ciLower: beta[0] - 1.96*se[0], ciUpper: beta[0] + 1.96*se[0] },
+                { name: 'Linear', estimate: beta[1], se: se[1],
+                  ciLower: beta[1] - 1.96*se[1], ciUpper: beta[1] + 1.96*se[1] },
+                { name: 'Quadratic', estimate: beta[2], se: se[2],
+                  ciLower: beta[2] - 1.96*se[2], ciUpper: beta[2] + 1.96*se[2] }
+              ],
+              beta: beta
+            };
+
+            // Create predict function on main thread instead
+
+            self.postMessage({ type: 'progress', percent: 100 });
+            self.postMessage({ type: 'complete', result: result });
+
+          } catch (error) {
+            self.postMessage({ type: 'error', message: error.message });
+          }
+        };
+      `;
+
+      const blob = new Blob([workerScript], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
+
+      currentWorker = new Worker(workerUrl);
+
+      currentWorker.onmessage = function(e) {
+        const { type, percent, result, message } = e.data;
+
+        if (type === 'progress') {
+          updateProgress(percent, `Processing: ${percent}%`);
+        } else if (type === 'complete') {
+          updateProgress(100, 'Rendering results...');
+          currentResults = result;
+          displayResults(result);
+          generatePlot(result);
+          setTimeout(hideProgress, 300);
+          showToast('Analysis complete!');
+        } else if (type === 'error') {
+          hideProgress();
+          showToast('Error: ' + message, 'error');
+          console.error('Worker error:', message);
+        }
+      };
+
+      currentWorker.onerror = function(error) {
+        hideProgress();
+        showToast('Worker error: ' + error.message, 'error');
+        console.error('Worker error:', error);
+      };
+
+      // Send data to worker (using setTimeout to allow UI to update)
+      setTimeout(() => {
+        updateProgress(10, 'Sending data to worker...');
+        try {
+          currentWorker.postMessage({ studies: studies });
+        } catch (err) {
+          hideProgress();
+          showToast('Failed to start worker: ' + err.message, 'error');
+        }
+      }, 50);
+    }
+
+    function displayResults(results) {
+      const container = document.getElementById('resultsContainer');
+
+      const coeffsHtml = results.coefficients.map(c => `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.estimate.toFixed(4)}</td>
+          <td>${c.se.toFixed(4)}</td>
+          <td>[${c.ciLower.toFixed(4)}, ${c.ciUpper.toFixed(4)}]</td>
+        </tr>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="result-card">
+          <h3>Model: ${results.modelType}</h3>
+          <p><strong>Studies:</strong> ${results.nStudies} |
+             <strong>Points:</strong> ${results.nPoints} |
+             <strong>τ²:</strong> ${results.tau2.toFixed(6)} |
+             <strong>I²:</strong> ${results.I2.toFixed(1)}% |
+             <strong>Q:</strong> ${results.Q.toFixed(2)} (df=${results.df})</p>
+        </div>
+        <div class="result-card">
+          <h3>Coefficients</h3>
+          <table>
+            <thead><tr><th>Parameter</th><th>Estimate</th><th>SE</th><th>95% CI</th></tr></thead>
+            <tbody>${coeffsHtml}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function generatePlot(results) {
+      const doses = [], rr = [], rrLower = [], rrUpper = [];
+      const beta = results.beta;
+
+      for (let d = 0; d <= 50; d += 2) {
+        const logRR = beta[0] + beta[1]*d + beta[2]*d*d;
+        doses.push(d);
+        rr.push(Math.exp(logRR));
+
+        // Delta method SE
+        const se = Math.sqrt(
+          results.coefficients[0].se ** 2 +
+          (d * results.coefficients[1].se) ** 2 +
+          (d * d * results.coefficients[2].se) ** 2
+        );
+        rrLower.push(Math.exp(logRR - 1.96 * se));
+        rrUpper.push(Math.exp(logRR + 1.96 * se));
+      }
+
+      const trace = { x: doses, y: rr, type: 'scatter', mode: 'lines', name: 'RR', line: { color: '#06b6d4', width: 3 } };
+      const ciUpper = { x: doses, y: rrUpper, type: 'scatter', mode: 'lines', line: { color: 'rgba(6,182,212,0.2)' }, fill: null };
+      const ciLower = { x: doses, y: rrLower, type: 'scatter', mode: 'lines', line: { color: 'rgba(6,182,212,0.2)' }, fill: 'tonexty', fillcolor: 'rgba(6,182,212,0.2)', showlegend: false };
+
+      const layout = {
+        title: { text: 'Dose-Response Curve', font: { color: '#f1f5f9' } },
+        xaxis: { title: 'Dose', gridcolor: '#334155', color: '#94a3b8' },
+        yaxis: { title: 'Relative Risk', gridcolor: '#334155', color: '#94a3b8' },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 60, b: 60 }
+      };
+
+      Plotly.newPlot('plotContainer', [ciUpper, ciLower, trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runAnalysis();
+      }
+    });
+  </script>
+</body>
+</html>

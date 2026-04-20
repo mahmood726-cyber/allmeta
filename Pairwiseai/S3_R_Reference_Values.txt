@@ -1,0 +1,263 @@
+TruthCert-PairwisePro R Reference Values
+Generated: 2026-01-19 18:26:53 
+R Version: R version 4.5.2 (2025-10-31 ucrt) 
+metafor Version: 4.8.0 
+=========================================
+
+=== SECTION 1: DISTRIBUTION FUNCTIONS ===
+
+1.1 Standard Normal (pnorm)
+pnorm(-3.000) = 0.0013498980
+pnorm(-2.000) = 0.0227501319
+pnorm(-1.960) = 0.0249978951
+pnorm(-1.645) = 0.0499849055
+pnorm(-1.000) = 0.1586552539
+pnorm(0.000) = 0.5000000000
+pnorm(1.000) = 0.8413447461
+pnorm(1.645) = 0.9500150945
+pnorm(1.960) = 0.9750021049
+pnorm(2.000) = 0.9772498681
+pnorm(3.000) = 0.9986501020
+
+1.2 Standard Normal Inverse (qnorm)
+qnorm(0.001) = -3.0902323062
+qnorm(0.010) = -2.3263478740
+qnorm(0.025) = -1.9599639845
+qnorm(0.050) = -1.6448536270
+qnorm(0.100) = -1.2815515655
+qnorm(0.500) = 0.0000000000
+qnorm(0.900) = 1.2815515655
+qnorm(0.950) = 1.6448536270
+qnorm(0.975) = 1.9599639845
+qnorm(0.990) = 2.3263478740
+qnorm(0.999) = 3.0902323062
+
+1.3 Student's t Distribution (pt, qt)
+qt(0.975, df=3) = 3.1824463053
+qt(0.025, df=3) = -3.1824463053
+qt(0.975, df=5) = 2.5705818356
+qt(0.025, df=5) = -2.5705818356
+qt(0.975, df=10) = 2.2281388520
+qt(0.025, df=10) = -2.2281388520
+qt(0.975, df=12) = 2.1788128297
+qt(0.025, df=12) = -2.1788128297
+qt(0.975, df=20) = 2.0859634473
+qt(0.025, df=20) = -2.0859634473
+qt(0.975, df=30) = 2.0422724563
+qt(0.025, df=30) = -2.0422724563
+qt(0.975, df=100) = 1.9839715185
+qt(0.025, df=100) = -1.9839715185
+
+1.4 Chi-squared Distribution
+qchisq(0.95, df=1) = 3.8414588207
+qchisq(0.95, df=5) = 11.0704976935
+qchisq(0.95, df=10) = 18.3070380533
+qchisq(0.95, df=12) = 21.0260698175
+
+
+=== SECTION 2: BCG VACCINE DATASET (k=13) ===
+Source: Colditz et al. (1994), JAMA 271:698-702
+Reference dataset from metafor package
+
+2.1 Individual Study Effect Sizes (Log Odds Ratio)
+Study	yi (logOR)	vi (variance)	SE
+1	-0.938694	0.357125	0.597599
+2	-1.666191	0.208132	0.456215
+3	-1.386294	0.433413	0.658341
+4	-1.456444	0.020314	0.142529
+5	-0.218447	0.051952	0.227929
+6	-0.958122	0.009905	0.099525
+7	-1.633776	0.227010	0.476455
+8	0.012021	0.004007	0.063301
+9	-0.471746	0.056977	0.238699
+10	-1.401210	0.075422	0.274630
+11	-0.340850	0.012525	0.111916
+12	0.446635	0.534162	0.730864
+13	-0.017342	0.071635	0.267647
+
+2.2 Random Effects Models
+
+REML Estimator:
+  Pooled log(OR) = -0.745122
+  SE = 0.186044
+  95% CI = [-1.109762, -0.380482]
+  z = -4.005084
+  p = 0.000062
+  tau² = 0.337845
+  tau = 0.581244
+  I² = 92.07%
+  H² = 12.6171
+  Q = 163.1707 (df=12, p=0.000000)
+  OR = 0.4747 [0.3296, 0.6835]
+
+2.3 All Eight Heterogeneity Estimators (tau²)
+  DL: tau² = 0.366357, tau = 0.605275
+  REML: tau² = 0.337845, tau = 0.581244
+  ML: tau² = 0.302523, tau = 0.550021
+  PM: tau² = 0.341247, tau = 0.584164
+  HS: tau² = 0.268260, tau = 0.517938
+  SJ: tau² = 0.368486, tau = 0.607030
+  HE: tau² = 0.349517, tau = 0.591199
+  EB: tau² = 0.341276, tau = 0.584189
+
+2.4 HKSJ Adjustment
+  HKSJ 95% CI = [-1.151998, -0.338246]
+  HKSJ t = -3.990115 (df=12)
+  HKSJ p = 0.001793
+  HKSJ OR CI = [0.3160, 0.7130]
+
+2.5 Prediction Interval
+  Standard PI = [-1.941274, 0.451029]
+  PI (OR scale) = [0.1435, 1.5699]
+
+2.6 Publication Bias Tests
+  Egger's test: z = -1.5067, p = 0.1601
+  Begg's test: tau = 0.0256, p = 0.9524
+  Trim-fill: k0 = 0 (side: right)
+  Trim-fill adjusted: -0.745122 [-1.109762, -0.380482]
+
+2.7 Leave-One-Out Analysis
+Study	Estimate	SE	CI.lb	CI.ub
+1	-0.736713	0.196330	-1.121513	-0.351913
+2	-0.681496	0.186636	-1.047295	-0.315697
+3	-0.715438	0.192370	-1.092477	-0.338399
+4	-0.663378	0.186103	-1.028134	-0.298622
+5	-0.797519	0.198032	-1.185655	-0.409383
+6	-0.725501	0.205272	-1.127826	-0.323176
+7	-0.686197	0.187873	-1.054422	-0.317973
+8	-0.828363	0.185945	-1.192808	-0.463918
+9	-0.774353	0.203216	-1.172650	-0.376056
+10	-0.684075	0.191705	-1.059810	-0.308341
+11	-0.791183	0.202043	-1.187181	-0.395186
+12	-0.793365	0.188294	-1.162414	-0.424315
+13	-0.811238	0.191627	-1.186819	-0.435656
+
+
+=== SECTION 3: SGLT2 INHIBITORS FOR HF (k=5) ===
+Source: Major cardiovascular outcome trials
+
+3.1 Individual Study Effect Sizes
+Study			yi		vi		SE
+DAPA-HF	-0.362374	0.008244	0.090797
+EMPEROR-Reduced	-0.388057	0.008263	0.090902
+DELIVER	-0.243835	0.005651	0.075171
+EMPEROR-Preserved	-0.343631	0.007446	0.086291
+SOLOIST-WHF	-0.433614	0.036420	0.190840
+
+3.2 Random Effects (REML)
+  Pooled log(OR) = -0.330654
+  SE = 0.041485
+  95% CI = [-0.411964, -0.249344]
+  tau² = 0.000000
+  I² = 0.00%
+  Q = 2.1684 (p=0.7048)
+  OR = 0.7185 [0.6623, 0.7793]
+
+3.3 HKSJ Adjustment
+  HKSJ 95% CI = [-0.415460, -0.245848]
+  HKSJ OR CI = [0.6600, 0.7820]
+
+3.4 Prediction Interval
+  PI = [-0.411964, -0.249344]
+  PI (OR scale) = [0.6623, 0.7793]
+
+
+=== SECTION 4: MAGNESIUM FOR MI (k=8) ===
+Source: Teo et al. (1991) BMJ
+
+4.1 Individual Study Effect Sizes
+Study			yi		vi
+Morton 1984	-0.830348	1.555053
+Rasmussen 1986	-1.056053	0.171454
+Smith 1986	-1.278340	0.653089
+Abraham 1987	-0.043485	2.043499
+Feldstedt 1988	0.223144	0.239286
+Shechter 1989	-2.407520	1.149629
+Ceremuzynski 1989	-1.280934	1.425000
+Singh 1990	-0.695748	0.287486
+
+4.2 Random Effects (REML)
+  Pooled log(OR) = -0.777994
+  SE = 0.293214
+  95% CI = [-1.352684, -0.203305]
+  tau² = 0.151063
+  I² = 23.07%
+  OR = 0.4593 [0.2585, 0.8160]
+
+
+=== SECTION 5: CONTINUOUS OUTCOME VALIDATION ===
+Standardized Mean Difference (Hedges' g)
+
+5.1 Hedges' g Calculation Example
+  n1=50, n2=50, m1=15.2, m2=18.5, sd1=5.1, sd2=5.3
+  s_pooled = 5.200961
+  Cohen's d = -0.634498
+  J (correction) = 0.992327
+  Hedges' g = -0.629630
+  Variance = 0.041982
+  SE = 0.204896
+  escalc verification: yi = -0.629628, vi = 0.041982
+
+
+=== SECTION 6: PROPORTION META-ANALYSIS ===
+
+6.1 Freeman-Tukey Double Arcsine Transformation
+Study	Events	N	yi(FT)		vi
+1	15	100	0.402484	0.002488
+2	23	150	0.405502	0.001661
+3	8	80	0.329762	0.003106
+4	31	200	0.407009	0.001247
+5	12	90	0.379614	0.002762
+
+Pooled (FT scale): 0.391942 [0.352664, 0.431220]
+Pooled proportion: 0.1427 [0.1159, 0.1718]
+
+
+=== SECTION 7: CORRELATION META-ANALYSIS ===
+
+7.1 Fisher's z Transformation
+Study	r	n	yi(z)		vi
+1	0.35	80	0.365444	0.012987
+2	0.42	120	0.447692	0.008547
+3	0.28	95	0.287682	0.010870
+4	0.51	150	0.562730	0.006803
+5	0.39	85	0.411800	0.012195
+
+Pooled (z scale): 0.428859 [0.329334, 0.528385]
+Pooled correlation: 0.4044 [0.3179, 0.4841]
+
+
+=== SECTION 8: META-REGRESSION ===
+BCG: Effect of latitude
+
+Intercept: 0.301289 (SE=0.214555, p=0.1602)
+Latitude slope: -0.031539 (SE=0.006274, p=0.0000)
+R² = 85.09%
+Residual tau² = 0.050385
+
+
+=== VALIDATION SUMMARY ===
+
+This file contains R reference values for validating TruthCert-PairwisePro.
+To validate JavaScript implementation:
+1. Run the same analyses in TruthCert-PairwisePro
+2. Compare outputs to values in this file
+3. Acceptable tolerance: relative error < 1e-5 (6 significant figures)
+
+Datasets included:
+  - BCG Vaccine (k=13): Binary, high heterogeneity, classic benchmark
+  - SGLT2i HF (k=5): Binary, contemporary clinical example
+  - Magnesium MI (k=8): Binary, historical controversial dataset
+  - Continuous (SMD): Hedges' g calculation verification
+  - Proportion (k=5): Freeman-Tukey transformation
+  - Correlation (k=5): Fisher's z transformation
+
+Methods validated:
+  - Distribution functions (pnorm, qnorm, pt, qt, pchisq, qchisq)
+  - Effect size calculations (OR, RR, SMD, proportions, correlations)
+  - All 8 tau² estimators (DL, REML, ML, PM, HS, SJ, HE, EB)
+  - HKSJ adjustment
+  - Prediction intervals
+  - Publication bias tests (Egger, Begg, trim-fill)
+  - Leave-one-out sensitivity analysis
+  - Meta-regression

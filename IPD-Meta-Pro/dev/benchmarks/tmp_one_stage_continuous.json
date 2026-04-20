@@ -1,0 +1,1988 @@
+{
+  "generated_at": "2026-03-07T10:42:43Z",
+  "seed": 12345,
+  "one_stage_datasets": [
+    "continuous"
+  ],
+  "one_stage_exploratory_datasets": [],
+  "frailty_datasets": [],
+  "app": {
+    "one_stage": {
+      "continuous": {
+        "app": {
+          "error": null,
+          "i2": 2.8541006044983113,
+          "p_value": 2.5167826933625292e-08,
+          "pooled_effect": 1.9473316413532176,
+          "se": 0.34945006111506544,
+          "tau2": 0.08320854093729572
+        },
+        "model_used": "runOneStageIPD",
+        "n": 380,
+        "n_studies": 10,
+        "outcome_var": "hamd_change",
+        "rows": [
+          {
+            "outcome": 6.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.1,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.4,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.9,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 4.5,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.9,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.5,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.9,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.4,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 12,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.7,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 2.5,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 16,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 15,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 6.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.1,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.8,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.1,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.4,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.1,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.4,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.3,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.4,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.2,
+            "study_id": "DeRubeis2005",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.9,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.6,
+            "study_id": "DeRubeis2005",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.5,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.6,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.9,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.7,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.9,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.9,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.5,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.1,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.2,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.2,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.2,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.2,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.1,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.5,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.6,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.9,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.2,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.7,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.8,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.8,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.7,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.1,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Dimidjian2006",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.2,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 17.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 17.7,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.8,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 17.4,
+            "study_id": "Dimidjian2006",
+            "treatment": 1
+          },
+          {
+            "outcome": 13,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.5,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 6.4,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.9,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.1,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.7,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.2,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 3.9,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.2,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.9,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.6,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.3,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.1,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.1,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.3,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.5,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.9,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.1,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.5,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.8,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.1,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 14,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.9,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.4,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.8,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.5,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.1,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 14,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.4,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 17,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.2,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.7,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.1,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.9,
+            "study_id": "Elkin1989",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.2,
+            "study_id": "Elkin1989",
+            "treatment": 0
+          },
+          {
+            "outcome": 11,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 12,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.8,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 20.4,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.1,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.9,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.1,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.2,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.2,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.6,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.6,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.2,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 3.8,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.7,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 17.8,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.7,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.8,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.4,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.7,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.4,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 18.2,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.5,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 4.5,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.3,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 15,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.7,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.2,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.8,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.9,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.7,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.8,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.9,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.8,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 2,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 16,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.4,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 6.4,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.4,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.6,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 11,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.8,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.7,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 17.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.9,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 6,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 19.3,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.9,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.4,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.8,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.3,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 18.4,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 17.4,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 15,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 18.9,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.9,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.6,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.5,
+            "study_id": "Hollon2014",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.7,
+            "study_id": "Hollon2014",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.6,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.1,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 13,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.2,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.2,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.1,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.9,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.5,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 12,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.8,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.1,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.9,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.5,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.5,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.3,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.9,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.4,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.7,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.1,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.1,
+            "study_id": "Jarrett1999",
+            "treatment": 0
+          },
+          {
+            "outcome": 13,
+            "study_id": "Jarrett1999",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.1,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.9,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.7,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.4,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.2,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.8,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.4,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.5,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.7,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.2,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.1,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.7,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.5,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.7,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 18.5,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 17.4,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 17.5,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.6,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 18,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.7,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.5,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.4,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.6,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 13,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.1,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.2,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 16.8,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.3,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 19,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.4,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.1,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 14,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 13,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 12,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.8,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 14,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.9,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.5,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.1,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.7,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.8,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.5,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.1,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.5,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 15.4,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.5,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.1,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 16.4,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.3,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 14,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 15,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 16.3,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.9,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.7,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.3,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.1,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.1,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.4,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.7,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.4,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.3,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.4,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.6,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.7,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.2,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.2,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 17.5,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.3,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.8,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.9,
+            "study_id": "Keller2000",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.9,
+            "study_id": "Keller2000",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.8,
+            "study_id": "Rush1977",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.9,
+            "study_id": "Rush1977",
+            "treatment": 1
+          },
+          {
+            "outcome": 13,
+            "study_id": "Rush1977",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.8,
+            "study_id": "Rush1977",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.6,
+            "study_id": "Rush1977",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.4,
+            "study_id": "Rush1977",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.2,
+            "study_id": "Blackburn1981",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.7,
+            "study_id": "Blackburn1981",
+            "treatment": 0
+          },
+          {
+            "outcome": 12,
+            "study_id": "Blackburn1981",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.3,
+            "study_id": "Blackburn1981",
+            "treatment": 0
+          },
+          {
+            "outcome": 9,
+            "study_id": "Blackburn1981",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.2,
+            "study_id": "Blackburn1981",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.6,
+            "study_id": "Blackburn1981",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.8,
+            "study_id": "Blackburn1981",
+            "treatment": 0
+          },
+          {
+            "outcome": 18,
+            "study_id": "Blackburn1981",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.2,
+            "study_id": "Blackburn1981",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.3,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.8,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.8,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 12,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.1,
+            "study_id": "Murphy1984",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.6,
+            "study_id": "Murphy1984",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.2,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 11,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.5,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 3.4,
+            "study_id": "Murphy1984",
+            "treatment": 0
+          },
+          {
+            "outcome": 4.3,
+            "study_id": "Murphy1984",
+            "treatment": 0
+          },
+          {
+            "outcome": 16.8,
+            "study_id": "Murphy1984",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.4,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 17.1,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.6,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 5.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.2,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.2,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 6.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 8.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 14,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 3.7,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 7.9,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 9,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 7.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.1,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.2,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 10,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.9,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.3,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.4,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 9.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 11.1,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.7,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.1,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 6.3,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 14.9,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.4,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 8.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.7,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 16.1,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 12.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 11.4,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 14.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 9.4,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 10.3,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.4,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.9,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 10.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 5.9,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.8,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 13.6,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 12.6,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 8,
+            "study_id": "Cuijpers2020",
+            "treatment": 1
+          },
+          {
+            "outcome": 13.1,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          },
+          {
+            "outcome": 15.5,
+            "study_id": "Cuijpers2020",
+            "treatment": 0
+          }
+        ],
+        "is_exploratory": false
+      }
+    },
+    "frailty": {}
+  },
+  "reference": {
+    "one_stage": {
+      "continuous": {
+        "effect": 1.9298077828446665,
+        "se": 0.3630703722591865,
+        "tau2": 0.1595254119090969,
+        "model": "random_slope"
+      }
+    },
+    "frailty": []
+  },
+  "comparison": {
+    "rows": [
+      {
+        "track": "one_stage",
+        "dataset": "continuous",
+        "is_exploratory": false,
+        "app": {
+          "error": null,
+          "i2": 2.8541006044983113,
+          "p_value": 2.5167826933625292e-08,
+          "pooled_effect": 1.9473316413532176,
+          "se": 0.34945006111506544,
+          "tau2": 0.08320854093729572
+        },
+        "r": {
+          "effect": 1.9298077828446665,
+          "se": 0.3630703722591865,
+          "tau2": 0.1595254119090969,
+          "model": "random_slope"
+        },
+        "diff": {
+          "effect_abs": 0.017523858508551093,
+          "se_abs": 0.013620311144121044,
+          "tau2_abs": 0.07631687097180116
+        },
+        "pass": true
+      }
+    ],
+    "summary": {
+      "rows": 1,
+      "overall_pass_rate": 1.0,
+      "one_stage_pass_rate": 1.0,
+      "one_stage_coverage_pass_rate": 1.0,
+      "one_stage_exploratory_pass_rate": null,
+      "frailty_pass_rate": null,
+      "max_abs_diff": {
+        "one_stage_effect": 0.017523858508551093,
+        "frailty_hr": null,
+        "frailty_theta": null
+      },
+      "mean_abs_diff": {
+        "one_stage_effect": 0.017523858508551093,
+        "frailty_hr": null
+      }
+    }
+  }
+}

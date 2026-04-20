@@ -1,0 +1,1260 @@
+{
+  "generated_at": "2026-03-12T10:20:39Z",
+  "app_build_id": "2026-03-07-fixall-1",
+  "seed": 12345,
+  "artifacts": {
+    "two_stage_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_r_benchmark.json",
+    "two_stage_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_r_benchmark.md",
+    "one_stage_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_one_stage_r_benchmark.json",
+    "one_stage_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_one_stage_r_benchmark.md",
+    "gap_methods_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_gap_methods_r_benchmark.json",
+    "gap_methods_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_gap_methods_r_benchmark.md",
+    "extended_survival_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_extended_survival_r_benchmark.json",
+    "extended_survival_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_extended_survival_r_benchmark.md",
+    "advanced_survival_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_advanced_survival_r_benchmark.json",
+    "advanced_survival_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_advanced_survival_r_benchmark.md",
+    "frontier_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_frontier_gap_methods_benchmark.json",
+    "frontier_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_frontier_gap_methods_benchmark.md",
+    "simulation_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_simulation_lab_benchmark.json",
+    "simulation_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_simulation_lab_benchmark.md",
+    "replication_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_publication_replication_gate.json",
+    "replication_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_publication_replication_gate.md",
+    "superiority_json": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_superiority_snapshot.json",
+    "superiority_md": "C:\\HTML apps\\IPD-Meta-Pro\\dev\\benchmarks\\latest_ipd_superiority_snapshot.md"
+  },
+  "summary": {
+    "two_stage_pass_rate": 1.0,
+    "one_stage_pass_rate": 1.0,
+    "one_stage_coverage_pass_rate": 1.0,
+    "one_stage_exploratory_pass_rate": 1.0,
+    "frailty_pass_rate": 1.0,
+    "centered_pass_rate": 1.0,
+    "piecewise_pass_rate": 1.0,
+    "rmst_pass_rate": 1.0,
+    "extended_survival_pass_rate": 1.0,
+    "extended_survival_aft_pass_rate": 1.0,
+    "extended_survival_landmark_pass_rate": 1.0,
+    "advanced_survival_pass_rate": 1.0,
+    "advanced_survival_cure_pass_rate": 1.0,
+    "advanced_survival_competing_pass_rate": 1.0,
+    "km_pass_rate": 1.0,
+    "transport_iow_pass_rate": 1.0,
+    "transport_sensitivity_pass_rate": 1.0,
+    "transport_overlap_pass_rate": 1.0,
+    "federated_pass_rate": 1.0,
+    "simulation_lab_pass_rate": 1.0,
+    "publication_replication_pass_rate": 1.0,
+    "two_stage_rows": 42,
+    "one_stage_rows": 8,
+    "gap_rows": 8,
+    "extended_survival_rows": 16,
+    "advanced_survival_rows": 6,
+    "frontier_rows": 10,
+    "simulation_rows": 3,
+    "replication_rows": 6
+  },
+  "gate": {
+    "pass": true,
+    "loop2_pass": true,
+    "loop3_pass": true,
+    "loop7_pass": true,
+    "with_frontier_gap": true,
+    "with_loop7": true,
+    "min_two_stage_pass_rate": 1.0,
+    "min_one_stage_pass_rate": 1.0,
+    "min_frailty_pass_rate": 1.0,
+    "min_centered_pass_rate": 1.0,
+    "min_piecewise_pass_rate": 1.0,
+    "min_rmst_pass_rate": 1.0,
+    "min_extended_survival_pass_rate": 1.0,
+    "min_advanced_survival_pass_rate": 1.0,
+    "min_km_pass_rate": 1.0,
+    "min_transport_iow_pass_rate": 1.0,
+    "min_federated_pass_rate": 1.0,
+    "min_transport_sensitivity_pass_rate": 1.0,
+    "min_transport_overlap_pass_rate": 1.0,
+    "min_simulation_pass_rate": 1.0,
+    "min_replication_pass_rate": 1.0
+  },
+  "top_gaps": {
+    "two_stage": [
+      {
+        "dataset": "survival",
+        "method": "SJ",
+        "app": {
+          "pooled": -0.39616416078398387,
+          "se": 0.16473939357805734,
+          "tau2": 0.1510211775074757,
+          "i2": 51.43415577238456,
+          "q": 12.647999269235452,
+          "k": 12,
+          "runtime_ms": 12.200000002980232,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": -0.3952668760199903,
+          "se": 0.16430421572993695,
+          "tau2": 0.14955266170221135,
+          "i2": 51.18905470822239,
+          "q": 12.638333075993048
+        },
+        "meta": {
+          "pooled": -0.3952668760199903,
+          "se": 0.16430421572993695,
+          "tau2": 0.14955266170221135,
+          "i2": 0.12963205401708053,
+          "q": 12.638333075992977
+        },
+        "diff_metafor": {
+          "pooled": 0.0008972847639935888,
+          "se": 0.0004351778481203883,
+          "tau2": 0.0014685158052643588,
+          "i2": 0.2451010641621636
+        },
+        "diff_meta": {
+          "pooled": 0.0008972847639935888,
+          "se": 0.0004351778481203883,
+          "tau2": 0.0014685158052643588,
+          "i2": 51.30452371836748
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "survival",
+        "method": "DL",
+        "app": {
+          "pooled": -0.35964222304622717,
+          "se": 0.11775575005971377,
+          "tau2": 0.021363947815478176,
+          "i2": 13.029722995351428,
+          "q": 12.647999269235452,
+          "k": 12,
+          "runtime_ms": 16.099999994039536,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": -0.35920851050930086,
+          "se": 0.11769940895839116,
+          "tau2": 0.021239474617925226,
+          "i2": 12.96320540170854,
+          "q": 12.638333075993048
+        },
+        "meta": {
+          "pooled": -0.3592085105093009,
+          "se": 0.11769940895839118,
+          "tau2": 0.021239474617925226,
+          "i2": 0.12963205401708053,
+          "q": 12.638333075992977
+        },
+        "diff_metafor": {
+          "pooled": 0.00043371253692631173,
+          "se": 5.63411013226045e-05,
+          "tau2": 0.00012447319755294964,
+          "i2": 0.06651759364288701
+        },
+        "diff_meta": {
+          "pooled": 0.0004337125369262562,
+          "se": 5.6341101322590625e-05,
+          "tau2": 0.00012447319755294964,
+          "i2": 12.900090941334348
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "survival",
+        "method": "PM",
+        "app": {
+          "pooled": -0.3565449098109474,
+          "se": 0.11522721692155122,
+          "tau2": 0.01605695987119219,
+          "i2": 10.120600990886947,
+          "q": 12.647999269235452,
+          "k": 12,
+          "runtime_ms": 12.200000002980232,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": -0.3561211910588037,
+          "se": 0.11516699892098868,
+          "tau2": 0.015928683337116084,
+          "i2": 10.047517604631237,
+          "q": 12.638333075993048
+        },
+        "meta": {
+          "pooled": -0.35612119105880363,
+          "se": 0.11516699892098868,
+          "tau2": 0.015928683337116084,
+          "i2": 0.12963205401708053,
+          "q": 12.638333075992977
+        },
+        "diff_metafor": {
+          "pooled": 0.00042371875214369803,
+          "se": 6.02180005625369e-05,
+          "tau2": 0.00012827653407610634,
+          "i2": 0.07308338625571054
+        },
+        "diff_meta": {
+          "pooled": 0.00042371875214375354,
+          "se": 6.02180005625369e-05,
+          "tau2": 0.00012827653407610634,
+          "i2": 9.990968936869868
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "survival",
+        "method": "REML",
+        "app": {
+          "pooled": -0.37196867178834725,
+          "se": 0.12953993646454737,
+          "tau2": 0.04842902436625978,
+          "i2": 25.351759958088525,
+          "q": 12.647999269235452,
+          "k": 12,
+          "runtime_ms": 13.200000002980232,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": -0.3715473546185537,
+          "se": 0.12957466686910646,
+          "tau2": 0.04850925416515732,
+          "i2": 25.382353514667923,
+          "q": 12.638333075993048
+        },
+        "meta": {
+          "pooled": -0.37154735461855354,
+          "se": 0.12957466686910643,
+          "tau2": 0.04850925416515732,
+          "i2": 0.12963205401708053,
+          "q": 12.638333075992977
+        },
+        "diff_metafor": {
+          "pooled": 0.0004213171697935447,
+          "se": 3.4730404559091266e-05,
+          "tau2": 8.02297988975395e-05,
+          "i2": 0.03059355657939733
+        },
+        "diff_meta": {
+          "pooled": 0.00042131716979371125,
+          "se": 3.473040455906351e-05,
+          "tau2": 8.02297988975395e-05,
+          "i2": 25.222127904071446
+        },
+        "pass_metafor": true
+      },
+      {
+        "dataset": "survival",
+        "method": "ML",
+        "app": {
+          "pooled": -0.3657570920386907,
+          "se": 0.1232288454861967,
+          "tau2": 0.03346190468423915,
+          "i2": 19.005844102851697,
+          "q": 12.647999269235452,
+          "k": 12,
+          "runtime_ms": 10.399999991059303,
+          "repeat_diff": {
+            "pooled": 0.0,
+            "se": 0.0,
+            "tau2": 0.0,
+            "i2": 0.0
+          }
+        },
+        "metafor": {
+          "pooled": -0.3653910938501458,
+          "se": 0.1232687968159068,
+          "tau2": 0.033548600299023186,
+          "i2": 19.04510117230519,
+          "q": 12.638333075993048
+        },
+        "meta": {
+          "pooled": -0.3653910938501457,
+          "se": 0.12326879681590677,
+          "tau2": 0.033548600299023186,
+          "i2": 0.12963205401708053,
+          "q": 12.638333075992977
+        },
+        "diff_metafor": {
+          "pooled": 0.00036599818854493593,
+          "se": 3.9951329710102845e-05,
+          "tau2": 8.669561478403393e-05,
+          "i2": 0.03925706945349461
+        },
+        "diff_meta": {
+          "pooled": 0.00036599818854504695,
+          "se": 3.995132971007509e-05,
+          "tau2": 8.669561478403393e-05,
+          "i2": 18.876212048834617
+        },
+        "pass_metafor": true
+      }
+    ],
+    "one_stage_frailty": [
+      {
+        "track": "one_stage",
+        "dataset": "network_antidepressants",
+        "is_exploratory": false,
+        "app": {
+          "error": null,
+          "i2": 6.481649483863564,
+          "p_value": 0.4575171717180375,
+          "pooled_effect": 0.2747556794565418,
+          "se": 0.36982170153059946,
+          "tau2": 0.0476835950227004
+        },
+        "r": {
+          "effect": 0.29268923772747424,
+          "se": 0.38880938390533704,
+          "tau2": 0.1400698501642237,
+          "model": "random_slope"
+        },
+        "diff": {
+          "effect_abs": 0.01793355827093246,
+          "se_abs": 0.01898768237473758,
+          "tau2_abs": 0.09238625514152332
+        },
+        "pass": true
+      },
+      {
+        "track": "one_stage",
+        "dataset": "continuous",
+        "is_exploratory": false,
+        "app": {
+          "error": null,
+          "i2": 2.8541006044983113,
+          "p_value": 2.5167826933625292e-08,
+          "pooled_effect": 1.9473316413532176,
+          "se": 0.34945006111506544,
+          "tau2": 0.08320854093729572
+        },
+        "r": {
+          "effect": 1.9298077828446665,
+          "se": 0.3630703722591865,
+          "tau2": 0.1595254119090969,
+          "model": "random_slope"
+        },
+        "diff": {
+          "effect_abs": 0.017523858508551093,
+          "se_abs": 0.013620311144121044,
+          "tau2_abs": 0.07631687097180116
+        },
+        "pass": true
+      },
+      {
+        "track": "one_stage",
+        "dataset": "covid_treatments",
+        "is_exploratory": true,
+        "app": {
+          "error": null,
+          "i2": 9.833817536336367,
+          "p_value": 0.11268419179432088,
+          "pooled_effect": -0.022937115364939576,
+          "se": 0.01446002679945707,
+          "tau2": 0.00013948195967473462
+        },
+        "r": {
+          "effect": -0.02153631578870869,
+          "se": 0.016273199027124846,
+          "tau2": 0.00032802257465123195,
+          "model": "random_slope"
+        },
+        "diff": {
+          "effect_abs": 0.001400799576230887,
+          "se_abs": 0.0018131722276677753,
+          "tau2_abs": 0.00018854061497649733
+        },
+        "pass": true
+      },
+      {
+        "track": "frailty",
+        "dataset": "survival",
+        "app": {
+          "hr": 0.6687026593538405,
+          "lower": 0.5464547373059065,
+          "se": 0.10300598687443684,
+          "theta": 0,
+          "upper": 0.8182987832285469
+        },
+        "r": {
+          "hr": 0.668223284715477,
+          "se": 0.10300682912840851,
+          "theta": 5e-09
+        },
+        "diff": {
+          "hr_abs": 0.0004793746383635611,
+          "hr_rel": 0.0007173869114238876,
+          "se_abs": 8.422539716779198e-07,
+          "theta_abs": 5e-09
+        },
+        "pass": true
+      },
+      {
+        "track": "one_stage",
+        "dataset": "statin_cvd",
+        "is_exploratory": true,
+        "app": {
+          "error": null,
+          "i2": 60.68561505017875,
+          "p_value": 0.061350343898696647,
+          "pooled_effect": -0.021118438334574354,
+          "se": 0.011287481723503814,
+          "tau2": 0.00044442475870534693
+        },
+        "r": {
+          "effect": -0.021511769814523823,
+          "se": 0.012650014305417748,
+          "tau2": 0.0006278455764494994,
+          "model": "random_slope"
+        },
+        "diff": {
+          "effect_abs": 0.0003933314799494693,
+          "se_abs": 0.0013625325819139333,
+          "tau2_abs": 0.00018342081774415245
+        },
+        "pass": true
+      }
+    ],
+    "gap_methods": [
+      {
+        "track": "rmst",
+        "dataset": "hiv_survival",
+        "app": {
+          "effect": 17.464678852846724,
+          "error": null,
+          "i2": 0,
+          "se": 2.921991149027278,
+          "tau": 141.6,
+          "tau2": 0
+        },
+        "r": {
+          "tau": 141.6,
+          "effect": 17.464678852846795,
+          "se": 2.9219911490272787,
+          "tau2": 0,
+          "i2": 0
+        },
+        "diff": {
+          "effect_abs": 7.105427357601002e-14,
+          "se_abs": 8.881784197001252e-16,
+          "tau_abs": 0.0
+        },
+        "pass": true
+      },
+      {
+        "track": "piecewise",
+        "dataset": "hiv_survival",
+        "app": {
+          "error": null,
+          "i2": 0,
+          "log_hr": -0.688744136763538,
+          "se": 0.05146718209048914,
+          "tau": 170.2,
+          "tau2": 0
+        },
+        "r": {
+          "tau": 170.2,
+          "log_hr": -0.6887441367635528,
+          "se": 0.05146718209048915,
+          "tau2": 0,
+          "i2": 0
+        },
+        "diff": {
+          "loghr_abs": 1.4876988529977098e-14,
+          "se_abs": 1.3877787807814457e-17,
+          "tau_abs": 0.0
+        },
+        "pass": true
+      },
+      {
+        "track": "rmst",
+        "dataset": "survival",
+        "app": {
+          "effect": 1.544955074637693,
+          "error": null,
+          "i2": 0,
+          "se": 1.4168893662471618,
+          "tau": 25.5,
+          "tau2": 0
+        },
+        "r": {
+          "tau": 25.5,
+          "effect": 1.544955074637691,
+          "se": 1.4168893662471618,
+          "tau2": 0,
+          "i2": 0
+        },
+        "diff": {
+          "effect_abs": 1.9984014443252818e-15,
+          "se_abs": 0.0,
+          "tau_abs": 0.0
+        },
+        "pass": true
+      },
+      {
+        "track": "rmst",
+        "dataset": "ovarian_survival",
+        "app": {
+          "effect": 5.658898833477831,
+          "error": null,
+          "i2": 0,
+          "se": 3.304318464404058,
+          "tau": 36.400000000000006,
+          "tau2": 0
+        },
+        "r": {
+          "tau": 36.400000000000006,
+          "effect": 5.65889883347783,
+          "se": 3.3043184644040573,
+          "tau2": 0,
+          "i2": 0
+        },
+        "diff": {
+          "effect_abs": 1.7763568394002505e-15,
+          "se_abs": 8.881784197001252e-16,
+          "tau_abs": 0.0
+        },
+        "pass": true
+      },
+      {
+        "track": "piecewise",
+        "dataset": "ovarian_survival",
+        "app": {
+          "error": null,
+          "i2": 34.050385991374235,
+          "log_hr": -0.5362128178884881,
+          "se": 0.1322736923575233,
+          "tau": 58.779999999999994,
+          "tau2": 0.029148449686135895
+        },
+        "r": {
+          "tau": 58.779999999999994,
+          "log_hr": -0.5362128178884895,
+          "se": 0.1322736923575216,
+          "tau2": 0.02914844968613413,
+          "i2": 34.05038599137288
+        },
+        "diff": {
+          "loghr_abs": 1.4432899320127035e-15,
+          "se_abs": 1.6930901125533637e-15,
+          "tau_abs": 0.0
+        },
+        "pass": true
+      }
+    ],
+    "extended_survival": [
+      {
+        "track": "landmark",
+        "dataset": "survival",
+        "landmark": 24,
+        "app": {
+          "ci_lower": 0.3794198464753255,
+          "ci_upper": 1.176620986825879,
+          "error": null,
+          "hr": 0.6681566838557562,
+          "landmark": 24,
+          "n_at_risk": 257,
+          "se": 0.28871925219839156
+        },
+        "r": {
+          "landmark": 24,
+          "hr": 0.6662968071840848,
+          "se": 0.2887159190156388,
+          "ci_lower": 0.378366167817181,
+          "ci_upper": 1.1733380862905636,
+          "n_at_risk": 257
+        },
+        "diff": {
+          "hr_abs": 0.0018598766716714232,
+          "se_abs": 3.333182752751629e-06
+        },
+        "pass": true
+      },
+      {
+        "track": "landmark",
+        "dataset": "survival",
+        "landmark": 12,
+        "app": {
+          "ci_lower": 0.39877660785442337,
+          "ci_upper": 0.7454029237778945,
+          "error": null,
+          "hr": 0.545205694604264,
+          "landmark": 12,
+          "n_at_risk": 567,
+          "se": 0.15957526104073963
+        },
+        "r": {
+          "landmark": 12,
+          "hr": 0.5444936565566043,
+          "se": 0.15957587980154533,
+          "ci_lower": 0.3982553231521603,
+          "ci_upper": 0.7444303309841978,
+          "n_at_risk": 567
+        },
+        "diff": {
+          "hr_abs": 0.0007120380476597354,
+          "se_abs": 6.187608057039995e-07
+        },
+        "pass": true
+      },
+      {
+        "track": "landmark",
+        "dataset": "survival",
+        "landmark": 6,
+        "app": {
+          "ci_lower": 0.4303365369010117,
+          "ci_upper": 0.709499445920516,
+          "error": null,
+          "hr": 0.5525608875867178,
+          "landmark": 6,
+          "n_at_risk": 800,
+          "se": 0.12755136641785156
+        },
+        "r": {
+          "landmark": 6,
+          "hr": 0.5520917009514412,
+          "se": 0.12755242017607954,
+          "ci_lower": 0.42997024460741795,
+          "ci_upper": 0.7088984646780764,
+          "n_at_risk": 800
+        },
+        "diff": {
+          "hr_abs": 0.0004691866352766194,
+          "se_abs": 1.0537582279812607e-06
+        },
+        "pass": true
+      },
+      {
+        "track": "landmark",
+        "dataset": "ovarian_survival",
+        "landmark": 12,
+        "app": {
+          "ci_lower": 0.5029092267409551,
+          "ci_upper": 0.8426761765087007,
+          "error": null,
+          "hr": 0.6509912628607355,
+          "landmark": 12,
+          "n_at_risk": 287,
+          "se": 0.13167922102793841
+        },
+        "r": {
+          "landmark": 12,
+          "hr": 0.6507594517968699,
+          "se": 0.13167642770668728,
+          "ci_lower": 0.5027328985786396,
+          "ci_upper": 0.8423714964751186,
+          "n_at_risk": 287
+        },
+        "diff": {
+          "hr_abs": 0.00023181106386560568,
+          "se_abs": 2.793321251137737e-06
+        },
+        "pass": true
+      },
+      {
+        "track": "landmark",
+        "dataset": "ovarian_survival",
+        "landmark": 6,
+        "app": {
+          "ci_lower": 0.5509121870850714,
+          "ci_upper": 0.8619965460030412,
+          "error": null,
+          "hr": 0.6891185692014928,
+          "landmark": 6,
+          "n_at_risk": 368,
+          "se": 0.11420511818031161
+        },
+        "r": {
+          "landmark": 6,
+          "hr": 0.688891272162893,
+          "se": 0.11420365167044683,
+          "ci_lower": 0.5507320587423353,
+          "ci_upper": 0.8617097503747121,
+          "n_at_risk": 368
+        },
+        "diff": {
+          "hr_abs": 0.0002272970385998052,
+          "se_abs": 1.4665098647809183e-06
+        },
+        "pass": true
+      }
+    ],
+    "advanced_survival": [
+      {
+        "track": "cure_meta",
+        "dataset": "cure_benefit",
+        "app": {
+          "analyzableStudies": {
+            "cureFraction": 4,
+            "hrUncured": 4
+          },
+          "cureFraction": {
+            "I2": 78.8681504899745,
+            "ci": {
+              "lower": 0.2170099648770807,
+              "upper": 0.339932529754742
+            },
+            "logitEstimate": -0.9733857986078304,
+            "nStudies": 4,
+            "pooled": 0.2742061553666704,
+            "se": 0.15805948445070617,
+            "tau2": 0.07858806793530942
+          },
+          "hrUncured": {
+            "ci": {
+              "lower": 0.8011755883508136,
+              "upper": 1.120532778414045
+            },
+            "logHR": -0.053935438650157784,
+            "pooled": 0.9474932759720485,
+            "se": 0.08558305512273337
+          },
+          "interpretation": "Estimated 27.4% of patients are cured (long-term survivors)",
+          "reference": "Diao G, Zeng D, Ke C (2019). Meta-analysis of cure rate survival data. Statistics in Medicine, 38(26), 5215-5234."
+        },
+        "r": {
+          "cureFraction": {
+            "pooled": 0.2874983663488046,
+            "logitEstimate": -0.9075650270277266,
+            "se": 0.17117624443367555,
+            "ci": {
+              "lower": 0.2239030502007397,
+              "upper": 0.36076029990905945
+            },
+            "tau2": 0.03723696155034555,
+            "I2": 32.39710162462169,
+            "nStudies": 4
+          },
+          "hrUncured": {
+            "pooled": 0.9129177372037076,
+            "logHR": -0.09110950408543961,
+            "se": 0.11523505903008849,
+            "ci": {
+              "lower": 0.7283554681419613,
+              "upper": 1.144247323394432
+            }
+          }
+        },
+        "diff": {
+          "cure_pooled_abs": 0.013292210982134178,
+          "cure_logit_abs": 0.0658207715801038,
+          "cure_se_abs": 0.013116759982969378,
+          "hr_log_abs": 0.037174065435281824,
+          "hr_se_abs": 0.029652003907355118,
+          "hr_pooled_abs": 0.03457553876834085
+        },
+        "pass": true
+      },
+      {
+        "track": "cure_meta",
+        "dataset": "cure_plateau",
+        "app": {
+          "analyzableStudies": {
+            "cureFraction": 4,
+            "hrUncured": 4
+          },
+          "cureFraction": {
+            "I2": 93.06047886261177,
+            "ci": {
+              "lower": 0.15175186148578787,
+              "upper": 0.3628519463603343
+            },
+            "logitEstimate": -1.1419668372826128,
+            "nStudies": 4,
+            "pooled": 0.24195943034486977,
+            "se": 0.2953930170762845,
+            "tau2": 0.3235838028505917
+          },
+          "hrUncured": {
+            "ci": {
+              "lower": 0.6829635701411383,
+              "upper": 0.9415049191195917
+            },
+            "logHR": -0.2207947324855071,
+            "pooled": 0.8018812635717086,
+            "se": 0.08189896727298142
+          },
+          "interpretation": "Estimated 24.2% of patients are cured (long-term survivors)",
+          "reference": "Diao G, Zeng D, Ke C (2019). Meta-analysis of cure rate survival data. Statistics in Medicine, 38(26), 5215-5234."
+        },
+        "r": {
+          "cureFraction": {
+            "pooled": 0.24293207240908912,
+            "logitEstimate": -1.1366711151769817,
+            "se": 0.3127038014947218,
+            "ci": {
+              "lower": 0.14810279130671195,
+              "upper": 0.37196808528968994
+            },
+            "tau2": 0.31496513579346536,
+            "I2": 82.80225058465643,
+            "nStudies": 4
+          },
+          "hrUncured": {
+            "pooled": 0.6892219563315463,
+            "logHR": -0.3721919171289799,
+            "se": 0.10510416515164546,
+            "ci": {
+              "lower": 0.5609114127576572,
+              "upper": 0.8468840075014128
+            }
+          }
+        },
+        "diff": {
+          "cure_pooled_abs": 0.0009726420642193478,
+          "cure_logit_abs": 0.005295722105631118,
+          "cure_se_abs": 0.01731078441843731,
+          "hr_log_abs": 0.15139718464347282,
+          "hr_se_abs": 0.02320519787866404,
+          "hr_pooled_abs": 0.11265930724016238
+        },
+        "pass": true
+      },
+      {
+        "track": "competing_meta",
+        "dataset": "competing_tradeoff",
+        "cause": "cause2",
+        "app": {
+          "I2": 40.14176628791315,
+          "cause": "cause2",
+          "ci": {
+            "lower": 0.8623521911006836,
+            "upper": 1.4578642906039057
+          },
+          "combinedGrayTest": {
+            "df": 8,
+            "method": "Fisher combination of study-level Gray tests",
+            "nStudies": 4,
+            "pValue": 0.13961274358723696,
+            "statistic": 12.268676896716764
+          },
+          "logCSHR": 0.11444051635400683,
+          "nStudies": 4,
+          "pooledCIFDifference": {
+            "I2": 30.014708003681875,
+            "ci": {
+              "lower": -0.03177848530778049,
+              "upper": 0.1003521692562106
+            },
+            "horizon": 11.588451200000002,
+            "nStudies": 4,
+            "pooled": 0.034286841974215054,
+            "se": 0.03370741898823037,
+            "tau2": 0.00136442283350507
+          },
+          "pooledCSHR": 1.1212459432835071,
+          "se": 0.13394737638683635,
+          "tau2": 0.028773382624521476
+        },
+        "r": {
+          "cause": "cause2",
+          "nStudies": 4,
+          "pooledCSHR": 1.1217557529650282,
+          "logCSHR": 0.11489509442334367,
+          "se": 0.1337643105540138,
+          "ci": {
+            "lower": 0.8630538970852549,
+            "upper": 1.4580039248531835
+          },
+          "tau2": 0.02895524733345063,
+          "I2": 40.51209703840758,
+          "pooledCIFDifference": {
+            "pooled": 0.03415061553687559,
+            "se": 0.03367983921188755,
+            "ci": {
+              "lower": -0.03186065632352388,
+              "upper": 0.10016188739727505
+            },
+            "tau2": 0.0012695458730559404,
+            "I2": 27.97019714084494,
+            "nStudies": 4,
+            "horizon": 11.588451200000002
+          },
+          "combinedGrayTest": {
+            "method": "Fisher combination of study-level Gray tests",
+            "statistic": 12.784094690221366,
+            "df": 8,
+            "pValue": 0.11949730192402801,
+            "nStudies": 4
+          }
+        },
+        "diff": {
+          "cshr_abs": 0.000509809681521034,
+          "logcshr_abs": 0.000454578069336839,
+          "se_abs": 0.00018306583282254318,
+          "cif_rd_abs": 0.00013622643733946643,
+          "gray_logp_abs": 0.06756696202096679
+        },
+        "pass": true
+      },
+      {
+        "track": "competing_meta",
+        "dataset": "competing_primary_benefit",
+        "cause": "cause1",
+        "app": {
+          "I2": 0,
+          "cause": "cause1",
+          "ci": {
+            "lower": 0.6303553224413763,
+            "upper": 0.8782165252166487
+          },
+          "combinedGrayTest": {
+            "df": 8,
+            "method": "Fisher combination of study-level Gray tests",
+            "nStudies": 4,
+            "pValue": 0.0047984906350021506,
+            "statistic": 22.064102927697434
+          },
+          "logCSHR": -0.2956668592992145,
+          "nStudies": 4,
+          "pooledCIFDifference": {
+            "I2": 0,
+            "ci": {
+              "lower": -0.1846105823295167,
+              "upper": -0.06637352106563046
+            },
+            "horizon": 11.900486200000001,
+            "nStudies": 4,
+            "pooled": -0.12549205169757358,
+            "se": 0.030163069857711996,
+            "tau2": 0
+          },
+          "pooledCSHR": 0.7440352551635477,
+          "se": 0.08459581736538269,
+          "tau2": 0
+        },
+        "r": {
+          "cause": "cause1",
+          "nStudies": 4,
+          "pooledCSHR": 0.7443066808025465,
+          "logCSHR": -0.29530212370257675,
+          "se": 0.08404260755307771,
+          "ci": {
+            "lower": 0.6312693738137439,
+            "upper": 0.877584844232851
+          },
+          "tau2": 0,
+          "I2": 0,
+          "pooledCIFDifference": {
+            "pooled": -0.1253872073982982,
+            "se": 0.030761073792412174,
+            "ci": {
+              "lower": -0.18567780415720497,
+              "upper": -0.06509661063939143
+            },
+            "tau2": 0,
+            "I2": 0,
+            "nStudies": 4,
+            "horizon": 11.900486200000001
+          },
+          "combinedGrayTest": {
+            "method": "Fisher combination of study-level Gray tests",
+            "statistic": 22.486352414321953,
+            "df": 8,
+            "pValue": 0.00409026589236834,
+            "nStudies": 4
+          }
+        },
+        "diff": {
+          "cshr_abs": 0.0002714256389987346,
+          "logcshr_abs": 0.00036473559663774413,
+          "se_abs": 0.0005532098123049722,
+          "cif_rd_abs": 0.00010484429927537509,
+          "gray_logp_abs": 0.06935311081782825
+        },
+        "pass": true
+      },
+      {
+        "track": "competing_meta",
+        "dataset": "competing_tradeoff",
+        "cause": "cause1",
+        "app": {
+          "I2": 48.259568670380155,
+          "cause": "cause1",
+          "ci": {
+            "lower": 0.6721349080345123,
+            "upper": 1.0836463320962806
+          },
+          "combinedGrayTest": {
+            "df": 8,
+            "method": "Fisher combination of study-level Gray tests",
+            "nStudies": 4,
+            "pValue": 0.056332222806481536,
+            "statistic": 15.147922357710621
+          },
+          "logCSHR": -0.15848230736268953,
+          "nStudies": 4,
+          "pooledCIFDifference": {
+            "I2": 38.801977977967944,
+            "ci": {
+              "lower": -0.12422844982324471,
+              "upper": 0.026273154140051082
+            },
+            "horizon": 11.588451200000002,
+            "nStudies": 4,
+            "pooled": -0.04897764784159681,
+            "se": 0.038393971784455604,
+            "tau2": 0.002287819134871034
+          },
+          "pooledCSHR": 0.8534380632274787,
+          "se": 0.12184606295449767,
+          "tau2": 0.028584435268328396
+        },
+        "r": {
+          "cause": "cause1",
+          "nStudies": 4,
+          "pooledCSHR": 0.8532906488398,
+          "logCSHR": -0.1586550523185845,
+          "se": 0.12186309417804611,
+          "ci": {
+            "lower": 0.6719963782703426,
+            "upper": 1.0834953207211062
+          },
+          "tau2": 0.028957265754465836,
+          "I2": 48.87983866310521,
+          "pooledCIFDifference": {
+            "pooled": -0.04884987890239265,
+            "se": 0.038260078833529554,
+            "ci": {
+              "lower": -0.1238382554617738,
+              "upper": 0.026138497656988495
+            },
+            "tau2": 0.002107791203616551,
+            "I2": 35.99882036499518,
+            "nStudies": 4,
+            "horizon": 11.588451200000002
+          },
+          "combinedGrayTest": {
+            "method": "Fisher combination of study-level Gray tests",
+            "statistic": 15.479291703481566,
+            "df": 8,
+            "pValue": 0.050469162336730725,
+            "nStudies": 4
+          }
+        },
+        "diff": {
+          "cshr_abs": 0.00014741438767873483,
+          "logcshr_abs": 0.00017274495589497674,
+          "se_abs": 1.703122354844433e-05,
+          "cif_rd_abs": 0.00012776893920415922,
+          "gray_logp_abs": 0.047730791768533676
+        },
+        "pass": true
+      }
+    ],
+    "frontier_gap_methods": [
+      {
+        "track": "km_reconstruction",
+        "dataset": "ovarian_survival",
+        "app": {
+          "error": null,
+          "event_flip_rate": 0.02091633466135458,
+          "interaction_p": 0.6527193409827317,
+          "interaction_se": 0.28221889017678453,
+          "n_imputations": 80,
+          "n_subgroups": 2,
+          "subgroup_effects": [
+            {
+              "betweenImputationVar": 0.0008983917502426733,
+              "ci": {
+                "lower": 0.35640140465998665,
+                "upper": 0.9003665106338226
+              },
+              "meanI2": 52.755596539856356,
+              "meanStudiesPerImputation": 5,
+              "meanTau2": 0.14647136046115763,
+              "nImputationsUsed": 80,
+              "nRows": 294,
+              "pooledHR": 0.5664732024541895,
+              "pooledLogHR": -0.5683255033325085,
+              "se": 0.23641870059676232,
+              "subgroup": "III",
+              "withinImputationVar": 0.05498418034474084
+            },
+            {
+              "betweenImputationVar": 0.001077106900267704,
+              "ci": {
+                "lower": 0.4752934038783281,
+                "upper": 0.870368995008137
+              },
+              "meanI2": 0.23855062241665453,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 0.00030853241776854863,
+              "nImputationsUsed": 80,
+              "nRows": 208,
+              "pooledHR": 0.6431801009574044,
+              "pooledLogHR": -0.44133049916218126,
+              "se": 0.15433573078150908,
+              "subgroup": "IV",
+              "withinImputationVar": 0.0227289470593414
+            }
+          ]
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_imputations": true,
+          "has_subgroups": true,
+          "has_positive_ses": true,
+          "has_interaction": true,
+          "event_flip_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_sensitivity",
+        "dataset": "hiv_survival",
+        "app": {
+          "base_se": 0.01635463026857188,
+          "base_tate": -0.17324871544119155,
+          "delta_needed_for_null": 0.17324871544119155,
+          "error": null,
+          "first_null_delta": 0.2,
+          "monotonic": true,
+          "scenario0_tate": -0.17324871544119155,
+          "scenario_count": 9,
+          "zero_delta_matches_base": true
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_base_estimate": true,
+          "has_base_se": true,
+          "min_scenarios": true,
+          "monotonic_response": true,
+          "zero_delta_consistent": true
+        },
+        "pass": true
+      },
+      {
+        "track": "km_reconstruction",
+        "dataset": "hiv_survival",
+        "app": {
+          "error": null,
+          "event_flip_rate": 0.007579412947326096,
+          "interaction_p": 0.5032099496476943,
+          "interaction_se": 0.12161062168912015,
+          "n_imputations": 80,
+          "n_subgroups": 2,
+          "subgroup_effects": [
+            {
+              "betweenImputationVar": 5.3240623472180064e-05,
+              "ci": {
+                "lower": 0.46173580998225533,
+                "upper": 0.5837517718233997
+              },
+              "meanI2": 0.0009291601338754235,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 1.3608984921129404e-07,
+              "nImputationsUsed": 80,
+              "nRows": 3705,
+              "pooledHR": 0.5191715489040729,
+              "pooledLogHR": -0.6555209130442724,
+              "se": 0.05981817988208554,
+              "subgroup": "Male",
+              "withinImputationVar": 0.0035243085131399614
+            },
+            {
+              "betweenImputationVar": 0.00044849434252199814,
+              "ci": {
+                "lower": 0.3887501053280456,
+                "upper": 0.589166081646169
+              },
+              "meanI2": 1.5696737705161716,
+              "meanStudiesPerImputation": 4,
+              "meanTau2": 0.0008045321921484992,
+              "nImputationsUsed": 80,
+              "nRows": 1269,
+              "pooledHR": 0.47857954019751003,
+              "pooledLogHR": -0.7369328536955433,
+              "se": 0.10606607688970449,
+              "subgroup": "Female",
+              "withinImputationVar": 0.010795912144969182
+            }
+          ]
+        },
+        "checks": {
+          "has_no_error": true,
+          "min_imputations": true,
+          "has_subgroups": true,
+          "has_positive_ses": true,
+          "has_interaction": true,
+          "event_flip_bounded": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_iow",
+        "dataset": "ovarian_survival",
+        "app": {
+          "error": null,
+          "ess": 259.670889948764,
+          "max_abs_smd_post": 0.0983026951630216,
+          "max_abs_smd_pre": 0.8025918581584454,
+          "n_target": 102,
+          "n_trial": 402,
+          "overlap_fraction": 0.5059650471822857,
+          "sate": -0.07510979876429869,
+          "sate_se": 0.028874088089851778,
+          "target_definition": "study split: last 1 studies as target",
+          "tate": -0.08866157926031015,
+          "tate_se": 0.03752450337048667,
+          "transport_ratio": 1.1804262655334516,
+          "transport_shift": -0.013551780496011467
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_trial_target_samples": true,
+          "has_sate_tate": true,
+          "has_positive_ses": true,
+          "overlap_in_unit_interval": true,
+          "ess_positive": true,
+          "post_balance_reported": true,
+          "post_balance_reasonable": true
+        },
+        "pass": true
+      },
+      {
+        "track": "transport_sensitivity",
+        "dataset": "ovarian_survival",
+        "app": {
+          "base_se": 0.03752450337048667,
+          "base_tate": -0.08866157926031015,
+          "delta_needed_for_null": 0.08866157926031015,
+          "error": null,
+          "first_null_delta": 0.05,
+          "monotonic": true,
+          "scenario0_tate": -0.08866157926031015,
+          "scenario_count": 9,
+          "zero_delta_matches_base": true
+        },
+        "checks": {
+          "has_no_error": true,
+          "has_base_estimate": true,
+          "has_base_se": true,
+          "min_scenarios": true,
+          "monotonic_response": true,
+          "zero_delta_consistent": true
+        },
+        "pass": true
+      }
+    ]
+  }
+}

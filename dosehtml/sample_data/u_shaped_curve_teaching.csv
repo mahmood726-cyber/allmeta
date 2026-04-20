@@ -1,0 +1,63 @@
+# Sample Dataset 2: U-Shaped Curve (Non-Linear)
+# Teaching Example - Demonstrates J-shaped or U-shaped dose-response
+# Expected Results: β₁ < 0, β₂ > 0 (both significant)
+# Use For: Teaching non-linear dose-response relationships
+#
+# Scenario: Physical activity and mortality risk
+# This dataset demonstrates a J-shaped curve where:
+#   - Moderate activity: LOWEST risk
+#   - No activity: HIGHER risk
+#   - Extreme activity: HIGHER risk
+# This is a classic "too much of a good thing" pattern
+
+study,dose,cases,n
+Study_A,0,85,40000
+Study_A,1,60,45000
+Study_A,2,45,48000
+Study_A,3,50,46000
+Study_A,4,65,44000
+Study_B,0,92,42000
+Study_B,1,65,47000
+Study_B,2,48,50000
+Study_B,3,55,48000
+Study_B,4,70,45000
+Study_C,0,78,38000
+Study_C,1,55,42000
+Study_C,2,42,45000
+Study_C,3,48,43000
+Study_C,4,62,41000
+Study_D,0,88,41000
+Study_D,1,62,46000
+Study_D,2,46,49000
+Study_D,3,52,47000
+Study_D,4,68,44000
+Study_E,0,82,39000
+Study_E,1,58,44000
+Study_E,2,44,47000
+Study_E,3,50,45000
+Study_E,4,66,42000
+
+# EXPECTED ANALYSIS RESULTS:
+# =========================
+# Model: GLS (Quadratic)
+#
+# Coefficients:
+#   β₀ (Intercept):  Approximately -6.0
+#   β₁ (Linear):     NEGATIVE (approximately -0.3 to -0.5, SIGNIFICANT)
+#   β₂ (Quadratic):  POSITIVE (approximately +0.08 to +0.12, SIGNIFICANT)
+#
+# Interpretation:
+#   - Negative β₁: Initial decrease in risk with increasing activity
+#   - Positive β₂: Curve bends upward (U-shape)
+#   - Both significant: Strong evidence of non-linearity
+#   - Minimum risk occurs at: dose* = -β₁ / (2 × β₂)
+#
+# Finding the Minimum Risk Dose:
+#   If β₁ = -0.4 and β₂ = 0.1:
+#   Optimal dose = 0.4 / (2 × 0.1) = 2.0 (moderate activity)
+#
+# Teaching Points:
+#   1. U-shaped curves are common in epidemiology (alcohol, BMI, activity)
+#   2. When β₂ is significant and positive, you have a U-shaped curve
+#   3. The "sweet spot" (minimum risk) is at: -β₁ / (2β₂)
+#   4. Always visualize the curve - numbers alone can be misleading

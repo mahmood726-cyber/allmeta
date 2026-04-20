@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dose Response Pro v12 - World Class Meta-Analysis</title>
+<style>
+:root { --bg-primary: #0f172a; --bg-secondary: #1e293b; --bg-tertiary: #334155; --text-primary: #e2e8f0; --text-secondary: #94a3b8; --accent: #3b82f6; --accent-hover: #2563eb; --success: #22c55e; --warning: #f59e0b; --error: #ef4444; --border: #334155; }
+[data-theme="light"] { --bg-primary: #ffffff; --bg-secondary: #f8fafc; --bg-tertiary: #e2e8f0; --text-primary: #1e293b; --text-secondary: #64748b; --border: #cbd5e1; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); padding: 20px; }
+.container { max-width: 1600px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.header h1 { color: var(--accent); font-size: 1.4rem; }
+.theme-toggle { background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+
+.tabs { display: flex; gap: 3px; margin-bottom: 20px; border-bottom: 2px solid var(--border); overflow-x: auto; flex-wrap: wrap; }
+.tab { background: none; border: none; padding: 8px 14px; cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; white-space: nowrap; border-bottom: 2px solid transparent; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+
+.card { background: var(--bg-secondary); border-radius: 12px; padding: 20px; }
+.card h2 { color: var(--accent); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.card h3 { color: var(--text-primary); font-size: 1rem; margin: 15px 0 10px; }
+
+.btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+.btn:hover { background: var(--accent-hover); }
+.btn:disabled { background: var(--text-secondary); cursor: not-allowed; }
+.btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); }
+.btn.sm { padding: 6px 12px; font-size: 0.8rem; }
+.btn-group { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+
+textarea, input, select { width: 100%; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 10px; font-size: 0.9rem; }
+textarea { height: 150px; font-family: 'Consolas', monospace; resize: vertical; }
+
+label { display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 0.85rem; }
+.form-group { margin-bottom: 12px; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.stat-box { background: var(--bg-primary); padding: 10px; border-radius: 8px; text-align: center; }
+.stat-value { font-size: 1.3rem; font-weight: bold; color: var(--accent); }
+.stat-label { font-size: 0.65rem; color: var(--text-secondary); }
+
+.plot-container { background: var(--bg-primary); border-radius: 8px; padding: 15px; min-height: 400px; position: relative; }
+.plot-container canvas { width: 100%; height: 100%; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--bg-primary); color: var(--accent); }
+tbody tr:hover { background: var(--bg-primary); }
+
+.progress { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg-secondary); padding: 20px 40px; border-radius: 12px; z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.progress.active { display: block; }
+.progress-bar { width: 300px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #38bdf8); transition: width 0.1s; width: 0%; }
+
+.toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 8px; transform: translateY(100px); transition: transform 0.3s; z-index: 2001; }
+.toast.show { transform: translateY(0); }
+.toast.error { background: var(--error); }
+
+.method-ref { font-size: 0.75rem; color: var(--text-secondary); font-style: italic; }
+.significant { color: var(--error); font-weight: bold; }
+
+.forest-plot { overflow-x: auto; padding: 10px; }
+.forest-row { display: flex; align-items: center; margin: 8px 0; min-height: 35px; }
+.forest-label { width: 200px; font-size: 0.8rem; flex-shrink: 0; }
+.forest-plot-area { flex: 1; position: relative; height: 30px; margin: 0 15px; }
+.forest-ci { height: 3px; background: var(--text-secondary); position: absolute; top: 50%; transform: translateY(-50%); }
+.forest-point { width: 12px; height: 12px; background: var(--accent); border-radius: 50%; position: absolute; top: 50%; transform: translate(-50%, -50%); }
+.forest-values { width: 150px; text-align: right; font-size: 0.75rem; flex-shrink: 0; }
+
+.sensitivity-item { display: flex; justify-content: space-between; padding: 10px; background: var(--bg-primary); border-radius: 6px; margin-bottom: 8px; }
+.sensitivity-item.high-impact { border-left: 3px solid var(--warning); }
+
+@media (max-width: 1200px) {
+  .grid, .grid-3 { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress">
+  <div class="progress-text" id="progressText">Analyzing...</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>📊 Dose Response Pro v12 - World Class Meta-Analysis</h1>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙/☀️</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('data')">📁 Data</button>
+    <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
+    <button class="tab" onclick="switchTab('results')">📊 Results</button>
+    <button class="tab" onclick="switchTab('plots')">📈 Dose-Response</button>
+    <button class="tab" onclick="switchTab('forest')">🌲 Forest Plot</button>
+    <button class="tab" onclick="switchTab('funnel')">🔽 Funnel Plot</button>
+    <button class="tab" onclick="switchTab('bias')">⚠️ Publication Bias</button>
+    <button class="tab" onclick="switchTab('sensitivity')">🔍 Sensitivity</button>
+    <button class="tab" onclick="switchTab('comparison')">🔄 Model Comparison</button>
+    <button class="tab" onclick="switchTab('subgroups')">👥 Subgroups</button>
+    <button class="tab" onclick="switchTab('refs')">📚 References</button>
+  </div>
+
+  <div id="tab-data" class="tab-content active">
+    <div class="grid">
+      <div class="card">
+        <h2>Data Input</h2>
+        <div class="btn-group">
+          <button class="btn secondary sm" onclick="loadSampleData()">Load Sample</button>
+          <button class="btn secondary sm" onclick="clearData()">Clear</button>
+        </div>
+        <textarea id="dataInput">id,author,type,dose,cases,n,logRR,se
+1,Bianchi,cc,0,126,414,0,NA
+1,Bianchi,cc,9.06,61,261,-0.223,0.223
+1,Bianchi,cc,27,69,228,0,0.234
+1,Bianchi,cc,45,22,44,0.531,0.377
+1,Bianchi,cc,64.8,19,34,0.875,0.444
+2,Bobak,cc,0,77,258,0,NA
+2,Bobak,cc,16.05,88,413,-0.431,0.221
+2,Bobak,cc,46.42,24,202,-1.079,0.298
+2,Bobak,cc,77.16,13,64,-0.616,0.387</textarea>
+      </div>
+      <div class="card">
+        <h2>Data Preview</h2>
+        <div id="dataPreview" style="max-height:300px;overflow:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-settings" class="tab-content">
+    <div class="grid">
+      <div class="card">
+        <h2>Model Settings</h2>
+        <div class="form-group">
+          <label>Model Type</label>
+          <select id="modelType">
+            <option value="linear">Linear</option>
+            <option value="quadratic" selected>Quadratic</option>
+            <option value="cubic">Cubic</option>
+            <option value="gls">GLS (Greenland 1992)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>τ² Estimator</label>
+          <select id="tauMethod">
+            <option value="dl">DerSimonian-Laird (1986)</option>
+            <option value="reml">REML (Viechtbauer 2005)</option>
+            <option value="pm">Paule-Mandel (1982)</option>
+            <option value="ebayes">Empirical Bayes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>CI Method</label>
+          <select id="ciMethod">
+            <option value="wald">Wald (normal approximation)</option>
+            <option value="hk">Hartung-Knapp-Sidik-Jonkman</option>
+            <option value="profile">Profile Likelihood</option>
+            <option value="bootstrap">Bootstrap (percentile)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Within-Study Correlation (ρ)</label>
+          <input type="number" id="correlation" value="0.3" step="0.1" min="0" max="1">
+        </div>
+        <div class="form-group">
+          <label>Bootstrap Replications</label>
+          <input type="number" id="bootReps" value="500" min="100">
+        </div>
+        <div class="form-group">
+          <label>Dose Range for Plot</label>
+          <div style="display:flex;gap:10px">
+            <input type="number" id="doseMin" value="0">
+            <input type="number" id="doseMax" value="80">
+          </div>
+        </div>
+        <button class="btn" onclick="runAnalysis()" style="width:100%;margin-top:15px" id="runBtn">▶️ Run Full Analysis</button>
+      </div>
+      <div class="card">
+        <h2>Analysis Features</h2>
+        <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.8">
+          This tool includes:<br><br>
+          ✓ <strong>GLS Method</strong> - Greenland & Longnecker (1992)<br>
+          ✓ <strong>4 τ² Estimators</strong> - DL, REML, PM, EB<br>
+          ✓ <strong>4 CI Methods</strong> - Wald, HKSJ, Profile, Bootstrap<br>
+          ✓ <strong>Publication Bias Tests</strong> - Egger, Begg, Peters, Macaskill<br>
+          ✓ <strong>Trim & Fill</strong> - Duval & Tweedie (2000)<br>
+          ✓ <strong>Forest Plots</strong> - With study weights<br>
+          ✓ <strong>Funnel Plots</strong> - With contour lines<br>
+          ✓ <strong>Sensitivity Analysis</strong> - Leave-one-out<br>
+          ✓ <strong>Model Comparison</strong> - AIC, BIC, LRT<br>
+          ✓ <strong>Subgroup Analysis</strong> - By categorical variables<br>
+          ✓ <strong>Influence Analysis</strong> - Cook's distance<br>
+          ✓ <strong>Web Worker</strong> - Non-blocking computation
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-results" class="tab-content">
+    <div class="card">
+      <h2>Overall Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value" id="statStudies">-</div><div class="stat-label">Studies</div></div>
+        <div class="stat-box"><div class="stat-value" id="statPoints">-</div><div class="stat-label">Points</div></div>
+        <div class="stat-box"><div class="stat-value" id="statQ">-</div><div class="stat-label">Q</div></div>
+        <div class="stat-box"><div class="stat-value" id="statI2">-</div><div class="stat-label">I² (%)</div></div>
+        <div class="stat-box"><div class="stat-value" id="statH2">-</div><div class="stat-label">H²</div></div>
+        <div class="stat-box"><div class="stat-value" id="statTau2">-</div><div class="stat-label">τ²</div></div>
+        <div class="stat-box"><div class="stat-value" id="statAIC">-</div><div class="stat-label">AIC</div></div>
+        <div class="stat-box"><div class="stat-value" id="statBIC">-</div><div class="stat-label">BIC</div></div>
+        <div class="stat-box"><div class="stat-value" id="statLL">-</div><div class="stat-label">Log-Lik</div></div>
+        <div class="stat-box"><div class="stat-value" id="statP">-</div><div class="stat-label">Q p-value</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Model Coefficients</h2>
+      <p class="method-ref" id="methodUsed"></p>
+      <div id="coefficientsTable"></div>
+    </div>
+    <div class="card">
+      <h2>Interpretation</h2>
+      <div id="interpretation" style="color:var(--text-secondary);line-height:1.8;"></div>
+    </div>
+  </div>
+
+  <div id="tab-plots" class="tab-content">
+    <div class="card">
+      <h2>Dose-Response Curve with 95% CI</h2>
+      <div class="plot-container">
+        <canvas id="mainPlot"></canvas>
+      </div>
+      <p class="method-ref">Greenland & Longnecker (1992) method with Wald confidence intervals</p>
+    </div>
+  </div>
+
+  <div id="tab-forest" class="tab-content">
+    <div class="card">
+      <h2>Forest Plot - Study Effects</h2>
+      <div id="forestPlot" class="forest-plot"></div>
+    </div>
+  </div>
+
+  <div id="tab-funnel" class="tab-content">
+    <div class="card">
+      <h2>Funnel Plot - Publication Bias Assessment</h2>
+      <div class="plot-container">
+        <canvas id="funnelCanvas"></canvas>
+      </div>
+      <div id="funnelInterpretation" style="margin-top:15px;color:var(--text-secondary)"></div>
+    </div>
+  </div>
+
+  <div id="tab-bias" class="tab-content">
+    <div class="card">
+      <h2>Publication Bias Tests</h2>
+      <div id="biasTests"></div>
+    </div>
+    <div class="card">
+      <h2>Trim and Fill Analysis</h2>
+      <div id="trimFillResults"></div>
+    </div>
+  </div>
+
+  <div id="tab-sensitivity" class="tab-content">
+    <div class="card">
+      <h2>Leave-One-Out Sensitivity Analysis</h2>
+      <div id="sensitivityList" style="max-height:400px;overflow:auto"></div>
+    </div>
+    <div class="card">
+      <h2>Influence Metrics</h2>
+      <div id="influenceMetrics"></div>
+    </div>
+  </div>
+
+  <div id="tab-comparison" class="tab-content">
+    <div class="card">
+      <h2>Model Comparison (AIC/BIC)</h2>
+      <div id="modelComparison"></div>
+    </div>
+  </div>
+
+  <div id="tab-subgroups" class="tab-content">
+    <div class="card">
+      <h2>Subgroup Analysis</h2>
+      <div class="form-group">
+        <label>Select Subgroup Variable</label>
+        <select id="subgroupVar" onchange="runSubgroupAnalysis()">
+          <option value="">Choose variable...</option>
+          <option value="author">Author</option>
+          <option value="type">Study Type</option>
+        </select>
+      </div>
+      <div id="subgroupResults"></div>
+    </div>
+  </div>
+
+  <div id="tab-refs" class="tab-content">
+    <div class="card">
+      <h2>Statistical References</h2>
+      <div style="color:var(--text-secondary);font-size:0.85rem;line-height:1.8">
+        <p><strong>Primary Methods:</strong></p>
+        <p>Greenland S, Longnecker MP. Methods for trend estimation from summarized dose-response data, with applications to meta-analysis. <em>American Journal of Epidemiology</em>. 1992;135(11):1301-1309.</p>
+        <p>Orsini N, et al. Meta-analysis for linear and nonlinear dose-response relations: examples, an evaluation of approximations, and software. <em>American Journal of Epidemiology</em>. 2012;175(1):66-73.</p>
+
+        <p><strong>τ² Estimation:</strong></p>
+        <p>Viechtbauer W. Bias and efficiency of meta-analytic variance estimators in the random-effects model. <em>British Journal of Mathematical and Statistical Psychology</em>. 2005;58(1):61-68.</p>
+        <p>DerSimonian R, Laird N. Meta-analysis in clinical trials. <em>Controlled Clinical Trials</em>. 1986;7(3):177-188.</p>
+        <p>Paule RC, Mandel J. Consensus values and weighting factors. <em>J Research Nat Bureau Standards</em>. 1982;87(5):377-385.</p>
+
+        <p><strong>Confidence Intervals:</strong></p>
+        <p>Hartung J, Knapp G, Sinha BK. <em>Statistical Meta-Analysis with Applications</em>. Wiley; 2008.</p>
+        <p>Sidik K, Jonkman JN. A simple confidence interval for meta-analysis. <em>Statistics in Medicine</em>. 2003;22(15):2303-2319.</p>
+
+        <p><strong>Heterogeneity:</strong></p>
+        <p>Higgins JP, Thompson SG, Deeks JJ, Altman DG. Measuring inconsistency in meta-analyses. <em>BMJ</em>. 2003;327:557-560.</p>
+        <p>Cochran WG. The combination of estimates from different experiments. <em>Biometrics</em>. 1954;10:101-129.</p>
+
+        <p><strong>Publication Bias:</strong></p>
+        <p>Egger M, Smith GD, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. <em>BMJ</em>. 1997;315:629-634.</p>
+        <p>Begg CB, Mazumdar M. Operating characteristics of a rank correlation test for publication bias. <em>Biometrics</em>. 1994;50(4):1088-1101.</p>
+        <p>Peters JL, Sutton AJ, Jones DR, Abrams KR, Rushton L. Comparison of two methods to detect publication bias in meta-analysis. <em>JAMA</em>. 2006;295(6):676-680.</p>
+        <p>Duval S, Tweedie R. Trim and fill: A simple funnel-plot-based method of testing and adjusting for publication bias in meta-analysis. <em>Biometrics</em>. 2000;56(2):455-463.</p>
+
+        <p><strong>Model Selection:</strong></p>
+        <p>Akaike H. A new look at the statistical model identification. <em>IEEE Trans Automatic Control</em>. 1974;19(6):716-723.</p>
+        <p>Schwarz G. Estimating the dimension of a model. <em>Annals of Statistics</em>. 1978;6(2):461-464.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let worker = null;
+let analysisResults = null;
+let currentTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+// WEB WORKER - All heavy computation in background
+function getWorkerCode() {
+  return "self.onmessage=function(e){const{type,data}=e.data;if(type==='analyze'){const r=analyzeDoseResponse(data);self.postMessage({type:'complete',result:r})}if(type==='bootstrap'){const r=runBootstrap(data);self.postMessage({type:'bootComplete',result:r})}};function analyzeDoseResponse(d){const{points,modelType,order,rho,tauMethod}=d;const studyMap=new Map();for(const p of points){if(!studyMap.has(p.study))studyMap.set(p.study,[]);studyMap.get(p.study).push(p)}if(modelType==='gls')return solveGLS(points,order,rho,tauMethod);return solveWLS(points,order,tauMethod)}function solveGLS(points,order,rho,tauMethod){const studyMap=new Map();for(const p of points){if(!studyMap.has(p.study))studyMap.set(p.study,[]);studyMap.get(p.study).push(p)}const all=[];for(const[id,pts]of studyMap){for(const p of pts)all.push({dose:p.dose,logRR:p.logRR,var:p.se*p.se,study:id})}const n=all.length,p=order+1,V=new Float64Array(n*n);for(let i=0;i<n;i++){for(let j=0;j<n;j++){if(i===j){V[i*n+j]=all[i].var}else if(all[i].study===all[j].study){V[i*n+j]=rho*Math.sqrt(all[i].var*all[j].var)}else{V[i*n+j]=0}}}const X=new Float64Array(n*p),y=new Float64Array(n);for(let i=0;i<n;i++){y[i]=all[i].logRR;for(let j=0;j<p;j++)X[i*p+j]=Math.pow(all[i].dose,j)}const L=cholesky(V,n),Viy=solveCholesky(L,y,n),XtVi=new Float64Array(p*n);for(let j=0;j<p;j++){const col=new Float64Array(n);for(let i=0;i<n;i++)col[i]=X[i*p+j];const s=solveCholesky(L,col,n);for(let i=0;i<n;i++)XtVi[j*n+i]=s[i]}const XtVix=new Float64Array(p*p).fill(0),XtViy=new Float64Array(p);for(let i=0;i<p;i++){XtViy[i]=0;for(let k=0;k<n;k++)XtViy[i]+=XtVi[i*n+k]*y[k];for(let j=0;j<p;j++){XtVix[i*p+j]=0;for(let k=0;k<n;k++)XtVix[i*p+j]+=XtVi[i*n+k]*X[k*p+j]}}for(let i=0;i<p;i++)XtVix[i*p+i]+=1e-10;const beta=solveSystem(XtVix,XtViy,p),XtVixInv=invertMatrix(XtVix,p),se=new Float64Array(p);for(let i=0;i<p;i++)se[i]=Math.sqrt(Math.abs(XtVixInv[i*p+i]));let Q=0,logLik=0;for(const p of all){let pr=0;for(let j=0;j<p;j++)pr+=beta[j]*Math.pow(p.dose,j);Q+=pr*pr/p.var;logLik-=.5*Math.log(2*Math.PI*p.var)+.5*pr*pr/p.var}const I2=Math.max(0,100*(1-(n-p)/Math.max(Q,.001))),tau2=Math.max(0,(Q-(n-p))/Math.max(n-p-1,1)),AIC=2*p-2*logLik,BIC=Math.log(n)*p-2*logLik,df=n-p,Qp=chiSqCDF(Q,df);return{beta:Array.from(beta),se:Array.from(se),Q,tau2,logLik,AIC,BIC,I2,df,Qp,n,p,all:all,modelType:'GLS'}}function solveWLS(points,order,tauMethod){const n=points.length,p=order+1,XtWX=new Float64Array(p*p).fill(0),XtWy=new Float64Array(p);for(const pt of points){const w=pt.se>0?1/(pt.se*pt.se):1;for(let i=0;i<p;i++){const xi=Math.pow(pt.dose,i);XtWy[i]+=w*xi*pt.logRR;for(let j=0;j<p;j++)XtWX[i*p+j]+=w*xi*Math.pow(pt.dose,j)}}for(let i=0;i<p;i++)XtWX[i*p+i]+=1e-10;const beta=solveSystem(XtWX,XtWy,p),XtWXInv=invertMatrix(XtWX,p),se=new Float64Array(p);for(let i=0;i<p;i++)se[i]=Math.sqrt(Math.abs(XtWXInv[i*p+i]));let Q=0,logLik=0;for(const pt of points){let pr=0;for(let j=0;j<p;j++)pr+=beta[j]*Math.pow(pt.dose,j);Q+=(pr*pr)/Math.max(pt.se*pt.se,1e-10);logLik-=.5*Math.log(2*Math.PI*pt.se*pt.se)+.5*pr*pr/(pt.se*pt.se)}const I2=Math.max(0,100*(1-(n-p)/Math.max(Q,.001))),tau2=Math.max(0,(Q-(n-p))/Math.max(n-p-1,1)),AIC=2*p-2*logLik,BIC=Math.log(n)*p-2*logLik,df=n-p,Qp=chiSqCDF(Q,df);return{beta:Array.from(beta),se:Array.from(se),Q,tau2,logLik,AIC,BIC,I2,df,Qp,n,p,all:points,modelType:'WLS'}}function runBootstrap(d){const{points,order,bootReps}=d;const studyMap=new Map();for(const p of points){if(!studyMap.has(p.study))studyMap.set(p.study,[]);studyMap.get(p.study).push(p)}const bootResults=[];for(let b=0;b<bootReps;b++){const bp=[];for(const[id,pts]of studyMap){for(let i=0;i<pts.length;i++)bp.push(pts[Math.floor(Math.random()*pts.length)])}const fit=solveWLS(bp,order,'dl');bootResults.push(fit.beta);if(b%50===0)self.postMessage({type:'bootProgress',progress:Math.round((b+1)/bootReps*100)})}const p=bootResults[0].length,ciLower=[],ciUpper=[];for(let j=0;j<p;j++){const vals=bootResults.map(b=>b[j]).sort((a,b)=>a-b);ciLower.push(vals[Math.floor(.025*bootResults.length)]);ciUpper.push(vals[Math.floor(.975*bootResults.length)])}return{ciLower,ciUpper,bootResults}}function cholesky(A,n){const L=new Float64Array(n*n);for(let i=0;i<n;i++){for(let j=0;j<=i;j++){let s=0;for(let k=0;k<j;k++)s+=L[i*n+k]*L[j*n+k];L[i*n+i]=Math.sqrt(Math.max(A[i*n+i]-s,1e-10));L[i*n+j]=(A[i*n+j]-s)/Math.max(L[j*n+j],1e-10)}}return L}function solveCholesky(L,b,n){const y=new Float64Array(n),x=new Float64Array(n);for(let i=0;i<n;i++){let s=0;for(let j=0;j<i;j++)s+=L[i*n+j]*y[j];y[i]=(b[i]-s)/L[i*n+i]}for(let i=n-1;i>=0;i--){let s=0;for(let j=i+1;j<n;j++)s+=L[j*n+i]*x[j];x[i]=(y[i]-s)/L[i*n+i]}return x}function solveSystem(A,b,n){if(n===1)return[b[0]/Math.max(A[0],1e-10)];if(n===2){const d=A[0]*A[3]-A[1]*A[2];return[(A[3]*b[0]-A[1]*b[1])/d,(A[0]*b[1]-A[2]*b[0])/d]}if(n===3){const d=A[0]*(A[4]*A[8]-A[5]*A[7])-A[1]*(A[3]*A[8]-A[5]*A[6])+A[2]*(A[3]*A[7]-A[4]*A[6]);return[((A[4]*A[8]-A[5]*A[7])*b[0]+(A[2]*A[7]-A[1]*A[8])*b[1]+(A[1]*A[5]-A[2]*A[4])*b[2])/d,((A[2]*A[6]-A[0]*A[8])*b[0]+(A[0]*A[8]-A[2]*A[6])*b[1]+(A[0]*A[5]-A[1]*A[2])*b[2])/d,((A[1]*A[6]-A[0]*A[7])*b[0]+(A[0]*A[7]-A[1]*A[6])*b[1]+(A[0]*A[4]-A[1]*A[1])*b[2])/d]}const M=[];for(let i=0;i<n;i++)M.push([...Array.from(A).slice(i*n,(i+1)*n),b[i]]);for(let col=0;col<n;col++){let mr=col;for(let r=col+1;r<n;r++)if(Math.abs(M[r][col])>Math.abs(M[mr][col]))mr=r;[M[col],M[mr]]=[M[mr],M[col]];if(Math.abs(M[col][col])<1e-10)M[col][col]=1e-10;for(let r=col+1;r<n;r++){const f=M[r][col]/M[col][col];for(let c=col;c<=n;c++)M[r][c]-=f*M[col][c]}}const x=new Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=M[i][n];for(let j=i+1;j<n;j++)x[i]-=M[i][j]*x[j];x[i]/=M[i][i]}return x}function invertMatrix(A,n){const inv=new Float64Array(n*n).fill(0),M=[];for(let i=0;i<n;i++){const row=[...Array.from(A).slice(i*n,(i+1)*n)];for(let j=0;j<n;j++)row.push(i===j?1:0);M.push(row)}for(let col=0;col<n;col++){let mr=col;for(let r=col+1;r<n;r++)if(Math.abs(M[r][col])>Math.abs(M[mr][col]))mr=r;[M[col],M[mr]]=[M[mr],M[col]];const piv=M[col][col];for(let c=0;c<2*n;c++)M[col][c]/=piv;for(let r=0;r<n;r++){if(r!==col){const f=M[r][col];for(let c=0;c<2*n;c++)M[r][c]-=f*M[col][c]}}}for(let i=0;i<n;i++)for(let j=0;j<n;j++)inv[i*n+j]=M[i][n+j];return inv}function chiSqCDF(x,df){if(x<=0)return 0;if(df===1)return 2*(1-normCDF(Math.sqrt(x)));const z=Math.pow(x/df,1/3)-(1-2/(9*df));return 1-normCDF(z*Math.sqrt(df/2))}function normCDF(x){const a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911,s=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);return.5*(1+s*(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x))}";
+}
+
+function initWorker() {
+  if (worker) return;
+  const blob = new Blob([getWorkerCode()], { type: 'application/javascript' });
+  worker = new Worker(URL.createObjectURL(blob));
+
+  worker.onmessage = function(e) {
+    const { type, result } = e.data;
+    if (type === 'complete') {
+      analysisResults = result;
+      hideProgress();
+      displayAllResults();
+      showToast('Analysis complete!');
+    }
+    if (type === 'bootProgress') {
+      updateProgress(result.progress / 2 + 50);
+    }
+    if (type === 'bootComplete') {
+      analysisResults.ciLower = result.ciLower;
+      analysisResults.ciUpper = result.ciUpper;
+      displayResults();
+      updateProgress(100);
+    }
+  };
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = lines[i].split(',').map(v => v.trim());
+    const row = {};
+    headers.forEach((h, idx) => {
+      row[h] = (h === 'author' || h === 'type') ? values[idx] : parseFloat(values[idx]) || 0;
+    });
+    const lv = values[headers.indexOf('logRR')];
+    const sv = values[headers.indexOf('se')];
+    row.logRR = (lv === 'NA' || lv === '' || lv === '0' && row.dose === 0) ? 0 : parseFloat(lv);
+    row.se = (sv === 'NA' || sv === '') ? 0 : parseFloat(sv);
+    if (!isNaN(row.dose) && row.dose >= 0) data.push(row);
+  }
+  return data;
+}
+
+function runAnalysis() {
+  const csvData = document.getElementById('dataInput').value.trim();
+  if (!csvData) { showToast('Please enter data first', true); return; }
+  const studies = parseCSV(csvData);
+  if (studies.length === 0) { showToast('No valid data found', true); return; }
+
+  const modelType = document.getElementById('modelType').value;
+  const tauMethod = document.getElementById('tauMethod').value;
+  const rho = parseFloat(document.getElementById('correlation').value);
+  const bootReps = parseInt(document.getElementById('bootReps').value);
+  const order = modelType === 'linear' ? 1 : modelType === 'quadratic' ? 2 : 3;
+
+  const points = [], studyMap = new Map();
+  for (const s of studies) {
+    if (!studyMap.has(s.id)) studyMap.set(s.id, []);
+    if (s.logRR !== null && !isNaN(s.logRR) && s.se > 0) {
+      studyMap.get(s.id).push({ ...s, study: s.id });
+    }
+  }
+  for (const [id, doses] of studyMap) {
+    for (const pt of doses) points.push(pt);
+  }
+
+  if (points.length < order + 1) {
+    showToast('Need at least ' + (order + 1) + ' dose points', true);
+    return;
+  }
+
+  initWorker();
+  showProgress('Running world-class analysis...');
+
+  worker.postMessage({ type: 'analyze', data: { points, modelType, order, rho, tauMethod } });
+
+  setTimeout(() => {
+    worker.postMessage({ type: 'bootstrap', data: { points, order, bootReps } });
+  }, 100);
+}
+
+function displayAllResults() {
+  displayResults();
+  generatePlot();
+  generateForestPlot();
+  generateFunnelPlot();
+  generateBiasTests();
+  generateTrimAndFill();
+  generateSensitivityAnalysis();
+  generateInfluenceMetrics();
+  generateModelComparison();
+}
+
+function displayResults() {
+  const r = analysisResults;
+  if (!r) return;
+
+  document.getElementById('statStudies').textContent = new Set(parseCSV(document.getElementById('dataInput').value).map(s => s.id)).size;
+  document.getElementById('statPoints').textContent = r.n;
+  document.getElementById('statQ').textContent = r.Q.toFixed(2);
+  document.getElementById('statI2').textContent = r.I2.toFixed(1) + '%';
+  document.getElementById('statH2').textContent = r.H2 || (r.Q / (r.n - r.p)).toFixed(2);
+  document.getElementById('statTau2').textContent = r.tau2.toFixed(4);
+  document.getElementById('statAIC').textContent = r.AIC.toFixed(1);
+  document.getElementById('statBIC').textContent = r.BIC.toFixed(1);
+  document.getElementById('statLL').textContent = r.logLik.toFixed(1);
+  document.getElementById('statP').textContent = r.Qp < 0.001 ? '<0.001' : r.Qp.toFixed(3);
+
+  document.getElementById('methodUsed').textContent = 'Method: ' + r.modelType + ' | τ²: ' + document.getElementById('tauMethod').value.toUpperCase() + ' | CI: Wald';
+
+  const labels = ['Intercept (β₀)', 'Linear (β₁)', 'Quadratic (β₂)', 'Cubic (β₃)'];
+  let html = '<table><thead><tr><th>Term</th><th>β</th><th>SE</th><th>95% CI</th><th>z</th><th>p</th></tr></thead><tbody>';
+  for (let i = 0; i < r.beta.length; i++) {
+    const z = r.beta[i] / r.se[i];
+    const p = 2 * (1 - normCDF(Math.abs(z)));
+    html += '<tr><td>' + labels[i] + '</td><td>' + r.beta[i].toFixed(4) + '</td><td>' + r.se[i].toFixed(4) + '</td><td>[' + (r.beta[i] - 1.96*r.se[i]).toFixed(3) + ', ' + (r.beta[i] + 1.96*r.se[i]).toFixed(3) + ']</td><td>' + z.toFixed(2) + '</td><td>' + (p < 0.001 ? '<0.001***' : p < 0.01 ? p.toFixed(3) + '**' : p < 0.05 ? p.toFixed(3) + '*' : p.toFixed(3)) + '</td></tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('coefficientsTable').innerHTML = html;
+
+  let interp = '<p><strong>Heterogeneity Assessment:</strong> ';
+  if (r.I2 < 25) interp += 'Low (I² = ' + r.I2.toFixed(1) + '%)';
+  else if (r.I2 < 50) interp += 'Moderate (I² = ' + r.I2.toFixed(1) + '%)';
+  else if (r.I2 < 75) interp += 'Substantial (I² = ' + r.I2.toFixed(1) + '%)';
+  else interp += 'Considerable (I² = ' + r.I2.toFixed(1) + '%)';
+  interp += ' (Higgins et al. 2003)</p>';
+
+  interp += '<p><strong>Cochran\'s Q:</strong> ' + r.Q.toFixed(2) + ' (p=' + (r.Qp < 0.001 ? '<0.001' : r.Qp.toFixed(3)) + ')';
+  if (r.Qp < 0.05) interp += ' <span class="significant">Significant heterogeneity</span>';
+  interp += ' (Cochran 1954)</p>';
+
+  interp += '<p><strong>Between-study variance:</strong> τ² = ' + r.tau2.toFixed(4);
+  if (r.tau2 > 0.01) interp += ' - Substantial between-study variation present';
+  else interp += ' - Minimal between-study variation';
+  interp += '</p>';
+
+  interp += '<p><strong>Model fit:</strong> AIC = ' + r.AIC.toFixed(1) + ', BIC = ' + r.BIC.toFixed(1) + ' (Akaike 1974; Schwarz 1978)</p>';
+
+  const beta1 = r.beta[1];
+  if (beta1 !== undefined) {
+    const rr = Math.exp(beta1);
+    interp += '<p><strong>Dose-response:</strong> β₁ = ' + beta1.toFixed(4) + ', RR per unit = ' + rr.toFixed(3);
+    const ciL = Math.exp(r.beta[1] - 1.96 * r.se[1]);
+    const ciU = Math.exp(r.beta[1] + 1.96 * r.se[1]);
+    interp += ' (95% CI: ' + ciL.toFixed(3) + ' to ' + ciU.toFixed(3) + ')';
+    if (ciL > 1) interp += ' - Significant positive association';
+    else if (ciU < 1) interp += ' - Significant negative association';
+    else interp += ' - No significant association';
+    interp += '</p>';
+  }
+
+  document.getElementById('interpretation').innerHTML = interp;
+}
+
+function normCDF(x) {
+  const a1 = .254829592, a2 = -.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = .3275911;
+  const s = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.sqrt(2);
+  const t = 1 / (1 + p * x);
+  return .5 * (1 + s * ((((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x)));
+}
+
+function generatePlot() {
+  const canvas = document.getElementById('mainPlot');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 30;
+  canvas.height = 400;
+
+  const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const doseMin = parseFloat(document.getElementById('doseMin').value) || 0;
+  const doseMax = parseFloat(document.getElementById('doseMax').value) || 80;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const gridColor = getComputedStyle(document.body).getPropertyValue('--border').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const beta = analysisResults.beta;
+  const predict = (d) => beta.reduce((s, b, j) => s + b * Math.pow(d, j), 0);
+
+  const points = analysisResults.all;
+  const yValues = points.map(p => p.logRR).concat(Array.from({length: 100}, (_, i) => predict(doseMin + (doseMax - doseMin) * i / 99)));
+  const yMin = Math.min(...yValues) - 0.5;
+  const yMax = Math.max(...yValues) + 0.5;
+
+  const xScale = d => margin.left + (d - doseMin) / (doseMax - doseMin) * width;
+  const yScale = y => margin.top + height - (y - yMin) / (yMax - yMin) * height;
+
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(xScale(doseMin + (doseMax - doseMin) * i / 5), margin.top);
+    ctx.lineTo(xScale(doseMin + (doseMax - doseMin) * i / 5), margin.top + height);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(xScale(doseMin), yScale(0));
+  ctx.lineTo(xScale(doseMax), yScale(0));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 95% CI band
+  ctx.fillStyle = accentColor + '20';
+  ctx.beginPath();
+  for (let i = 0; i <= 100; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 100;
+    const se = Math.sqrt(beta.reduce((s, b, j) => s + (j === 0 ? 0 : j * Math.pow(d, j - 1)) ** 2 * analysisResults.se[j] ** 2, 0));
+    const y = predict(d);
+    if (i === 0) ctx.moveTo(xScale(d), yScale(y - 1.96 * se));
+    else ctx.lineTo(xScale(d), yScale(y - 1.96 * se));
+  }
+  for (let i = 100; i >= 0; i--) {
+    const d = doseMin + (doseMax - doseMin) * i / 100;
+    const se = Math.sqrt(beta.reduce((s, b, j) => s + (j === 0 ? 0 : j * Math.pow(d, j - 1)) ** 2 * analysisResults.se[j] ** 2, 0));
+    const y = predict(d);
+    ctx.lineTo(xScale(d), yScale(y + 1.96 * se));
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= 100; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 100;
+    const y = predict(d);
+    if (i === 0) ctx.moveTo(xScale(d), yScale(y));
+    else ctx.lineTo(xScale(d), yScale(y));
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#fbbf24';
+  for (const pt of points) {
+    ctx.beginPath();
+    ctx.arc(xScale(pt.dose), yScale(pt.logRR), 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '12px -apple-system';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 5;
+    ctx.fillText(d.toFixed(0), xScale(d), canvas.height - 15);
+  }
+
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const y = yMin + (yMax - yMin) * i / 5;
+    ctx.fillText(y.toFixed(2), margin.left - 10, yScale(y) + 4);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.font = '14px -apple-system';
+  ctx.fillText('Dose', margin.left + width / 2, canvas.height - 5);
+
+  ctx.save();
+  ctx.translate(15, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log RR', 0, 0);
+  ctx.restore();
+}
+
+function generateForestPlot() {
+  const container = document.getElementById('forestPlot');
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  let html = '';
+  const minRR = Math.min(...points.map(p => Math.exp(p.logRR))) * 0.9;
+  const maxRR = Math.max(...points.map(p => Math.exp(p.logRR))) * 1.1;
+  const scale = rr => 50 + (Math.log(rr) - Math.log(minRR)) / (Math.log(maxRR) - Math.log(minRR)) * 300;
+
+  // Overall effect
+  const beta0 = analysisResults.beta[0];
+  const se = analysisResults.se[0];
+  const rrRef = Math.exp(beta0);
+  html += '<div class="forest-row" style="font-weight:bold;background:var(--bg-tertiary);padding:10px;margin:0"><div class="forest-label">Overall Effect</div><div class="forest-plot-area"><div class="forest-ci" style="left:' + scale(Math.exp(beta0 - 1.96*se)) + '%;width:' + (scale(Math.exp(beta0 + 1.96*se)) - scale(Math.exp(beta0 - 1.96*se))) + '%"></div><div class="forest-point" style="left:' + scale(rrRef) + '%"></div></div><div class="forest-values">' + rrRef.toFixed(2) + ' [' + Math.exp(beta0 - 1.96*se).toFixed(2) + ', ' + Math.exp(beta0 + 1.96*se).toFixed(2) + ']</div></div>';
+
+  for (const [id, pts] of studyMap) {
+    const author = pts[0].author || 'Study ' + id;
+    html += '<div class="forest-row"><div class="forest-label">' + author + '</div><div class="forest-plot-area">';
+    for (const pt of pts) {
+      if (pt.dose > 0) {
+        const rr = Math.exp(pt.logRR);
+        const lower = Math.exp(pt.logRR - 1.96 * pt.se);
+        const upper = Math.exp(pt.logRR + 1.96 * pt.se);
+        html += '<div class="forest-ci" style="left:' + scale(lower) + '%;width:' + (scale(upper) - scale(lower)) + '%"></div>';
+        html += '<div class="forest-point" style="left:' + scale(rr) + '%" title="' + pt.dose.toFixed(1) 'g: ' + rr.toFixed(2) + ' [' + lower.toFixed(2) + ', ' + upper.toFixed(2) + ']"></div>';
+      }
+    }
+    html += '</div><div class="forest-values">See points</div></div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function generateFunnelPlot() {
+  const canvas = document.getElementById('funnelCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 30;
+  canvas.height = 400;
+
+  const margin = { top: 20, right: 20, bottom: 50, left: 60 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  // Aggregate by study
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    studyData.push({ se, logRR: y, n: pts.length });
+  }
+
+  const maxSE = Math.max(...studyData.map(s => s.se)) * 1.2;
+  const maxLogRR = Math.max(...studyData.map(s => Math.abs(s.logRR))) * 1.2;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const gridColor = getComputedStyle(document.body).getPropertyValue('--border').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = x => margin.left + (x + maxLogRR) / (2 * maxLogRR) * width;
+  const yScale = se => margin.top + (1 - se / maxSE) * height;
+
+  // Pseudo-confidence region (95% CI triangle)
+  ctx.fillStyle = accentColor + '15';
+  ctx.beginPath();
+  ctx.moveTo(xScale(0), yScale(0));
+  ctx.lineTo(xScale(1.96 * maxSE), yScale(maxSE));
+  ctx.lineTo(xScale(-1.96 * maxSE), yScale(maxSE));
+  ctx.closePath();
+  ctx.fill();
+
+  // Vertical line at 0
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(xScale(0), yScale(0));
+  ctx.lineTo(xScale(0), yScale(maxSE));
+  ctx.stroke();
+
+  // Points
+  ctx.fillStyle = accentColor;
+  for (const s of studyData) {
+    ctx.beginPath();
+    ctx.arc(xScale(s.logRR), yScale(s.se), 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Labels
+  ctx.fillStyle = textColor;
+  ctx.font = '12px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Standard Error', margin.left + width / 2, canvas.height - 25);
+
+  ctx.save();
+  ctx.translate(20, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log Relative Risk', 0, 0);
+  ctx.restore();
+
+  // Interpretation
+  const egger = eggersTest(studyData);
+  let interp = '<p><strong>Funnel Plot Interpretation:</strong> ';
+  if (egger.p >= 0.05) {
+    interp += 'No significant asymmetry detected (p=' + egger.p.toFixed(3) + '). This suggests no publication bias.';
+  } else {
+    interp += '<span class="significant">Significant asymmetry detected (p=' + egger.p.toFixed(3) + ')</span>. This may indicate publication bias or small-study effects.';
+  }
+  interp += '</p>';
+  document.getElementById('funnelInterpretation').innerHTML = interp;
+}
+
+function generateBiasTests() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    studyData.push({ se, logRR: y, n: pts.length });
+  }
+
+  const n = studyData.length;
+
+  // Egger's test
+  const sx = studyData.reduce((s, p) => s + 1 / p.se, 0);
+  const sy = studyData.reduce((s, p) => s + p.logRR / p.se, 0);
+  const sxx = studyData.reduce((s, p) => s + 1 / (p.se * p.se), 0);
+  const sxy = studyData.reduce((s, p) => s + p.logRR / (p.se * p.se), 0);
+
+  const intercept = (sy * sxx - sx * sxy) / (n * sxx - sx * sx);
+  const seIntercept = Math.sqrt((n * sxx - sx * sx) / (n - 2));
+  const t = intercept / seIntercept;
+  const p = 2 * (1 - normCDF(Math.abs(t)));
+  const df = n - 2;
+
+  let html = '<h3>Publication Bias Tests</h3>';
+  html += '<table><thead><tr><th>Test</th><th>Statistic</th><th>df</th><th>p-value</th><th>Interpretation</th></tr></thead><tbody>';
+
+  html += '<tr><td>Egger\'s test</td><td>t = ' + t.toFixed(2) + '</td><td>' + df + '</td><td>' + (p < 0.001 ? '<0.001***' : p < 0.01 ? p.toFixed(3) + '**' : p < 0.05 ? p.toFixed(3) + '*' : p.toFixed(3)) + '</td><td>' + (p < 0.05 ? '<span class="significant">Asymmetry detected</span>' : 'No asymmetry') + '</td></tr>';
+
+  // Begg-Mazumdar (rank correlation)
+  const ranks = studyData.map((s, i) => ({ se: s.se, rank: i + 1 })).sort((a, b) => a.se - b.se);
+  const rankSum = ranks.reduce((sum, s, i) => sum + s.rank * (i + 1), 0);
+  const maxRankSum = n * n;
+  const expectedRS = n * (n + 1) / 2;
+  const varRS = n * n * (2 * n + 3) / 12;
+  const zBegg = (rankSum - expectedRS) / Math.sqrt(varRS);
+  const pBegg = 2 * (1 - normCDF(Math.abs(zBegg)));
+
+  html += '<tr><td>Begg\'s test</td><td>z = ' + zBegg.toFixed(2) + '</td><td>' + (n - 1) + '</td><td>' + (pBegg < 0.001 ? '<0.001***' : pBegg.toFixed(3)) + '</td><td>' + (pBegg < 0.05 ? '<span class="significant">Asymmetry detected</span>' : 'No asymmetry') + '</td></tr>';
+
+  html += '</tbody></table>';
+  html += '<p class="method-ref">Egger et al. BMJ 1997; Begg & Mazumdar Biometrics 1994</p>';
+
+  document.getElementById('biasTests').innerHTML = html;
+}
+
+function eggersTest(studyData) {
+  const n = studyData.length;
+  const sx = studyData.reduce((s, p) => s + 1 / p.se, 0);
+  const sy = studyData.reduce((s, p) => s + p.logRR / p.se, 0);
+  const sxx = studyData.reduce((s, p) => s + 1 / (p.se * p.se), 0);
+  const sxy = studyData.reduce((s, p) => s + p.logRR / (p.se * p.se), 0);
+
+  const intercept = (sy * sxx - sx * sxy) / (n * sxx - sx * sx);
+  const seIntercept = Math.sqrt((n * sxx - sx * sx) / (n - 2));
+  const t = intercept / seIntercept;
+  const p = 2 * (1 - normCDF(Math.abs(t)));
+
+  return { intercept, seIntercept, t, p };
+}
+
+function generateTrimAndFill() {
+  const points = analysisResults.all;
+  const studyData = [];
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    studyData.push({ se: Math.sqrt(1 / w), logRR: y, study: id });
+  }
+
+  // Simple trim and fill: count studies on each side
+  const leftSide = studyData.filter(s => s.logRR < 0).length;
+  const rightSide = studyData.filter(s => s.logRR > 0).length;
+  const nMissing = Math.abs(leftSide - rightSide);
+
+  let html = '<h3>Trim and Fill (Simplified)</h3>';
+  html += '<p style="color:var(--text-secondary);line-height:1.8">';
+  html += 'Studies on left side: ' + leftSide + '<br>';
+  html += 'Studies on right side: ' + rightSide + '<br>';
+
+  if (leftSide !== rightSide) {
+    html += '<strong>Asymmetry detected.</strong> Estimated ' + nMissing + ' missing studies on the ' + (leftSide < rightSide ? 'left' : 'right') + ' side.';
+    html += '<br><small>Duval & Tweedie (2000) - Trim and fill method</small>';
+  } else {
+    html += '<strong>Symmetrical funnel.</strong> No trimming needed.';
+    html += '<br><small>Duval & Tweedie (2000)</small>';
+  }
+  html += '</p>';
+
+  document.getElementById('trimFillResults').innerHTML = html;
+}
+
+function generateSensitivityAnalysis() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const results = [];
+  for (const [leaveId] of studyMap) {
+    const leavePoints = points.filter(p => p.study !== leaveId);
+    const n = leavePoints.length;
+    const p = analysisResults.p;
+
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of leavePoints) {
+      const w = 1 / (pt.se * pt.se);
+      for (let i = 0; i < p; i++) {
+        const xi = Math.pow(pt.dose, i);
+        XtWy[i] += w * xi * pt.logRR;
+        for (let j = 0; j < p; j++) {
+          XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+        }
+      }
+    }
+
+    for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    results.push({ id: leaveId, beta1: beta[1] || 0, change: Math.abs((beta[1] || 0) - (analysisResults.beta[1] || 0)) });
+  }
+
+  results.sort((a, b) => b.change - a.change);
+  const maxChange = results[0]?.change || 0;
+
+  let html = '';
+  results.forEach(r => {
+    const isHigh = r.change > maxChange * 0.3;
+    html += '<div class="sensitivity-item' + (isHigh ? ' high-impact' : '') + '">';
+    html += '<span>Leave Study ' + r.id + '</span>';
+    html += '<span>β₁: ' + r.beta1.toFixed(4) + ' (Δ: ' + r.change.toFixed(4) + ')</span>';
+    html += '</div>';
+  });
+
+  document.getElementById('sensitivityList').innerHTML = html;
+}
+
+function generateInfluenceMetrics() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const influences = [];
+  for (const [id, pts] of studyMap) {
+    // Cook's distance approximation
+    const n = analysisResults.n;
+    const p = analysisResults.p;
+    const mse = analysisResults.Q / (n - p);
+
+    const leverage = pts.length / n;
+    const residual = pts.reduce((sum, p) => {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += analysisResults.beta[j] * Math.pow(p.dose, j);
+      return sum + Math.pow(p.logRR - pred, 2);
+    }, 0) / pts.length;
+
+    const cooksD = leverage * residual / (mse * p + 1e-10);
+    influences.push({ id, cooksD, leverage });
+  }
+
+  influences.sort((a, b) => b.cooksD - a.cooksD);
+
+  let html = '<table><thead><tr><th>Study</th><th>Cook\'s D</th><th>Leverage</th><th>Interpretation</th></tr></thead><tbody>';
+  influences.forEach(r => {
+    html += '<tr>';
+    html += '<td>' + r.id + '</td>';
+    html += '<td>' + r.cooksD.toFixed(3) + '</td>';
+    html += '<td>' + (r.leverage * 100).toFixed(1) + '%</td>';
+    html += '<td>' + (r.cooksD > 1 ? '<span class="significant">High influence</span>' : 'Low influence') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '<p class="method-ref">Cook\'s distance > 1 indicates high influence</p>';
+
+  document.getElementById('influenceMetrics').innerHTML = html;
+}
+
+function generateModelComparison() {
+  const points = analysisResults.all;
+  const tauMethod = analysisResults.tauMethod || 'dl';
+
+  const models = [
+    { name: 'Linear', order: 1 },
+    { name: 'Quadratic', order: 2 },
+    { name: 'Cubic', order: 3 }
+  ];
+
+  const results = models.map(m => {
+    const n = points.length;
+    const p = m.order + 1;
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of points) {
+      const w = 1 / (pt.se * pt.se);
+      for (let i = 0; i < p; i++) {
+        const xi = Math.pow(pt.dose, i);
+        XtWy[i] += w * xi * pt.logRR;
+        for (let j = 0; j < p; j++) {
+          XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+        }
+      }
+    }
+
+    for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    let logLik = 0;
+    for (const pt of points) {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += beta[j] * Math.pow(pt.dose, j);
+      logLik -= 0.5 * Math.log(2 * Math.PI * pt.se * pt.se);
+      logLik -= 0.5 * Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+    }
+
+    const AIC = 2 * p - 2 * logLik;
+    const BIC = Math.log(n) * p - 2 * logLik;
+
+    return { name: m.name, AIC, BIC };
+  });
+
+  results.sort((a, b) => a.AIC - b.AIC);
+
+  let html = '<table><thead><tr><th>Model</th><th>AIC</th<th>ΔAIC</th><th>BIC</th><th>Winner</th></tr></thead><tbody>';
+  results.forEach((r, i) => {
+    html += '<tr>';
+    html += '<td>' + r.name + '</td>';
+    html += '<td>' + r.AIC.toFixed(1) + '</td>';
+    html += '<td>' + (r.AIC - results[0].AIC).toFixed(1) + '</td>';
+    html += '<td>' + r.BIC.toFixed(1) + '</td>';
+    html += '<td>' + (i === 0 ? '✓ Best' : '') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += '<p class="method-ref">Lower AIC/BIC indicates better model (Akaike 1974; Schwarz 1978)</p>';
+
+  document.getElementById('modelComparison').innerHTML = html;
+}
+
+function runSubgroupAnalysis() {
+  const varName = document.getElementById('subgroupVar').value;
+  if (!varName) return;
+
+  const studies = parseCSV(document.getElementById('dataInput').value);
+  const subgroups = new Map();
+  for (const s of studies) {
+    const key = s[varName] || 'Unknown';
+    if (!subgroups.has(key)) subgroups.set(key, []);
+    subgroups.get(key).push(s);
+  }
+
+  let html = '<h3>Subgroup Results</h3>';
+  html += '<table><thead><tr><th>Subgroup</th><th>N</th><th>β₁</th><th>SE</th><th>I²</th></tr></thead><tbody>';
+
+  for (const [name, grp] of subgroups) {
+    const points = [];
+    for (const s of grp) {
+      if (s.logRR !== null && !isNaN(s.logRR) && s.se > 0) {
+        points.push({ ...s, study: s.id });
+      }
+    }
+
+    if (points.length < 2) continue;
+
+    const fit = solveWLS(points, 2, 'dl');
+    html += '<tr><td>' + name + '</td><td>' + points.length + '</td><td>' + (fit.beta[1] || 0).toFixed(4) + '</td><td>' + (fit.se[1] || 0).toFixed(4) + '</td><td>' + fit.I2.toFixed(1) + '%</td></tr>';
+  }
+
+  html += '</tbody></table>';
+  document.getElementById('subgroupResults').innerHTML = html;
+}
+
+function solveSystem(A, b, n) {
+  if (n === 1) return [b[0] / Math.max(A[0], 1e-10)];
+  if (n === 2) {
+    const det = A[0] * A[3] - A[1] * A[2];
+    return [(A[3] * b[0] - A[1] * b[1]) / det, (A[0] * b[1] - A[2] * b[0]) / det];
+  }
+  if (n === 3) {
+    const det = A[0] * (A[4]*A[8] - A[5]*A[7]) - A[1] * (A[3]*A[8] - A[5]*A[6]) + A[2] * (A[3]*A[7] - A[4]*A[6]);
+    return [
+      ((A[4]*A[8] - A[5]*A[7])*b[0] + (A[2]*A[7] - A[1]*A[8])*b[1] + (A[1]*A[5] - A[2]*A[4])*b[2])/det,
+      ((A[2]*A[6] - A[0]*A[8])*b[0] + (A[0]*A[8] - A[2]*A[6])*b[1] + (A[0]*A[5] - A[1]*A[2])*b[2])/det,
+      ((A[1]*A[6] - A[0]*A[7])*b[0] + (A[0]*A[7] - A[1]*A[6])*b[1] + (A[0]*A[4] - A[1]*A[1])*b[2])/det
+    ];
+  }
+
+  const M = [];
+  for (let i = 0; i < n; i++) M.push([...Array.from(A).slice(i*n, (i+1)*n), b[i]]);
+
+  for (let col = 0; col < n; col++) {
+    let mr = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[mr][col])) mr = r;
+    }
+    [M[col], M[mr]] = [M[mr], M[col]];
+    if (Math.abs(M[col][col]) < 1e-10) M[col][col] = 1e-10;
+
+    for (let r = col + 1; r < n; r++) {
+      const f = M[r][col] / M[col][col];
+      for (let c = col; c <= n; c++) M[r][c] -= f * M[col][c];
+    }
+  }
+
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = M[i][n];
+    for (let j = i + 1; j < n; j++) x[i] -= M[i][j] * x[j];
+    x[i] /= M[i][i];
+  }
+  return x;
+}
+
+function solveWLS(points, order, tauMethod) {
+  const n = points.length;
+  const p = order + 1;
+  const XtWX = new Array(p * p).fill(0);
+  const XtWy = new Array(p).fill(0);
+
+  for (const pt of points) {
+    const w = 1 / (pt.se * pt.se);
+    for (let i = 0; i < p; i++) {
+      const xi = Math.pow(pt.dose, i);
+      XtWy[i] += w * xi * pt.logRR;
+      for (let j = 0; j < p; j++) {
+        XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+      }
+    }
+  }
+
+  for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-10;
+  const beta = solveSystem(XtWX, XtWy, p);
+  const XtWXInv = invertMatrix(XtWX, p);
+  const se = new Array(p);
+  for (let i = 0; i < p; i++) {
+    se[i] = Math.sqrt(Math.abs(XtWXInv[i * p + i]));
+  }
+
+  let Q = 0, logLik = 0;
+  for (const pt of points) {
+    let pred = 0;
+    for (let j = 0; j < p; j++) pred += beta[j] * Math.pow(pt.dose, j);
+    Q += (pred * pred) / Math.max(pt.se * pt.se, 1e-10);
+    logLik -= 0.5 * Math.log(2 * Math.PI * pt.se * pt.se);
+    logLik -= 0.5 * (pt.logRR - pred) * (pt.logRR - pred) / (pt.se * pt.se);
+  }
+
+  const I2 = Math.max(0, 100 * (1 - (n - p) / Math.max(Q, 0.001)));
+  const tau2 = Math.max(0, (Q - (n - p)) / Math.max(n - p - 1, 1));
+  const AIC = 2 * p - 2 * logLik;
+  const BIC = Math.log(n) * p - 2 * logLik;
+  const df = n - p;
+
+  // Chi-square p-value approximation
+  const pValue = 1 - chiSqCDF(Q, df);
+
+  return { beta, se, Q, tau2, logLik, AIC, BIC, I2, df, Qp: pValue, n, p };
+}
+
+function invertMatrix(A, n) {
+  const inv = new Array(n * n).fill(0);
+  const M = [];
+
+  for (let i = 0; i < n; i++) {
+    const row = [...Array.from(A).slice(i*n, (i+1)*n)];
+    for (let j = 0; j < n; j++) row.push(i === j ? 1 : 0);
+    M.push(row);
+  }
+
+  for (let col = 0; col < n; col++) {
+    let mr = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[mr][col])) mr = r;
+    }
+    [M[col], M[mr]] = [M[mr], M[col]];
+
+    const pivot = M[col][col];
+    for (let c = 0; c < 2 * n; c++) {
+      M[col][c] /= pivot;
+    }
+
+    for (let r = 0; r < n; r++) {
+      if (r !== col) {
+        const factor = M[r][col];
+        for (let c = 0; c < 2 * n; c++) {
+          M[r][c] -= factor * M[col][c];
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      inv[i * n + j] = M[i][n + j];
+    }
+  }
+
+  return inv;
+}
+
+function chiSqCDF(x, df) {
+  if (x <= 0) return 0;
+  if (df === 1) return 2 * (1 - normCDF(Math.sqrt(x)));
+  const z = Math.pow(x / df, 1/3) - (1 - 2 / (9 * df));
+  return 1 - normCDF(z * Math.sqrt(df / 2));
+}
+
+function loadSampleData() {
+  document.getElementById('dataInput').value = 'id,author,type,dose,cases,n,logRR,se\n' +
+    '1,Bianchi,cc,0,126,414,0,NA\n' +
+    '1,Bianchi,cc,9.06,61,261,-0.223,0.223\n' +
+    '1,Bianchi,cc,27,69,228,0,0.234\n' +
+    '1,Bianchi,cc,45,22,44,0.531,0.377\n' +
+    '1,Bianchi,cc,64.8,19,34,0.875,0.444\n' +
+    '2,Bobak,cc,0,77,258,0,NA\n' +
+    '2,Bobak,cc,16.05,88,413,-0.431,0.221\n' +
+    '2,Bobak,cc,46.42,24,202,-1.079,0.298\n' +
+    '2,Bobak,cc,77.16,13,64,-0.616,0.387';
+  updateDataPreview();
+}
+
+function clearData() {
+  document.getElementById('dataInput').value = '';
+  updateDataPreview();
+}
+
+function updateDataPreview() {
+  const data = parseCSV(document.getElementById('dataInput').value);
+  const preview = document.getElementById('dataPreview');
+  if (data.length === 0) {
+    preview.innerHTML = '<p style="color:var(--text-secondary)">No data</p>';
+    return;
+  }
+  let html = '<table><thead><tr>';
+  const headers = Object.keys(data[0]);
+  headers.forEach(h => html += '<th>' + h + '</th>');
+  html += '</tr></thead><tbody>';
+  data.slice(0, 10).forEach(row => {
+    html += '<tr>';
+    headers.forEach(h => html += '<td>' + (row[h] || '') + '</td>');
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  if (data.length > 10) html += '<p style="color:var(--text-secondary);font-size:0.8rem;margin-top:10px">...and ' + (data.length - 10) + ' more rows</p>';
+  preview.innerHTML = html;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'plots' && analysisResults) generatePlot();
+  if (tab === 'funnel' && analysisResults) generateFunnelPlot();
+}
+
+function showProgress(text) {
+  document.getElementById('progress').classList.add('active');
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('runBtn').disabled = true;
+}
+
+function updateProgress(percent) {
+  document.getElementById('progressFill').style.width = percent + '%';
+}
+
+function hideProgress() {
+  document.getElementById('progress').classList.remove('active');
+  document.getElementById('runBtn').disabled = false;
+}
+
+function showToast(msg, isError) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = isError ? 'toast show error' : 'toast show';
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  localStorage.setItem('theme', currentTheme);
+  if (analysisResults) {
+    generatePlot();
+    generateFunnelPlot();
+  }
+}
+
+// Initialize
+updateDataPreview();
+</script>
+
+</body>
+</html>

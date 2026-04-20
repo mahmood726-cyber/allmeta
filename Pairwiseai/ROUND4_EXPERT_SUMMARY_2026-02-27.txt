@@ -1,0 +1,27 @@
+Total rows: 12
+Completed votes: 12
+
+Adoption votes:
+  Adopt now: 10
+  Pilot first: 2
+  Not now: 0
+
+Weighted total score:
+  Mean: 4.76
+  SD: 0.14
+  Min: 4.52
+  Max: 4.93
+
+Domain means (1-5):
+  score_statistical_correctness: 4.50
+  score_estimator_coverage: 4.92
+  score_bias_diagnostics: 4.33
+  score_advanced_methods: 4.67
+  score_reproducibility: 5.00
+  score_usability: 4.08
+  score_reporting_ready: 5.00
+  score_regulatory_hta_ready: 4.58
+
+Critical blocker flags:
+  Yes: 0
+  No/blank: 12

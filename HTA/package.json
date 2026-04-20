@@ -1,0 +1,140 @@
+{
+  "name": "hta-artifact-standard",
+  "version": "1.1.0",
+  "description": "Open-source Health Technology Assessment platform with 49 engines — Markov, NMA, PSA, BIA, MCDA, cure models, competing risks, Cox PH, GRADE automation, regulatory templates, and more",
+  "main": "src/engine/markov.js",
+  "browser": "index.html",
+  "files": [
+    "src/",
+    "index.html",
+    "manifest.json",
+    "service-worker.js",
+    "schemas/",
+    "reference-models/",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mahmood726-cyber/hta-artifact-standard.git"
+  },
+  "homepage": "https://github.com/mahmood726-cyber/hta-artifact-standard",
+  "bugs": {
+    "url": "https://github.com/mahmood726-cyber/hta-artifact-standard/issues"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.js",
+    "build": "node scripts/build.js",
+    "serve": "npx serve .",
+    "review:panel": "node scripts/methodologist_review.js",
+    "validate:reference": "node scripts/reference_validation.js",
+    "validate:determinism": "node scripts/determinism_check.js --runs=12",
+    "bench:ci": "node scripts/performance_benchmark.js --iterations=30 --warmup=4",
+    "coverage:report": "node scripts/coverage_report.js",
+    "external:export:r": "node scripts/run_r_export.js",
+    "external:sync": "node scripts/sync_external_comparators.js",
+    "external:refresh": "npm run external:export:r && npm run external:sync",
+    "test:browser": "npx playwright test",
+    "quality:gate": "npm run lint && npm run test:coverage -- --runInBand && npm run validate:reference && npm run validate:determinism && npm run bench:ci && npm run build"
+  },
+  "keywords": [
+    "hta",
+    "health-technology-assessment",
+    "health-economics",
+    "markov",
+    "meta-analysis",
+    "network-meta-analysis",
+    "cost-effectiveness",
+    "budget-impact",
+    "mcda",
+    "survival-analysis",
+    "cox-regression",
+    "cure-models",
+    "competing-risks",
+    "semi-markov",
+    "psa",
+    "evpi",
+    "evsi",
+    "grade",
+    "nice",
+    "cadth"
+  ],
+  "author": "HTA Artifact Standard Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/jest": "^29.5.12",
+    "eslint": "^8.57.0",
+    "fast-check": "^3.15.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testPathIgnorePatterns": [
+      "/tests/browser/"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 0,
+        "functions": 0,
+        "lines": 0,
+        "statements": 0
+      },
+      "./src/engine/markov.js": {
+        "branches": 55,
+        "functions": 85,
+        "lines": 70,
+        "statements": 70
+      },
+      "./src/parser/expression.js": {
+        "branches": 50,
+        "functions": 60,
+        "lines": 70,
+        "statements": 70
+      },
+      "./src/utils/sanitize.js": {
+        "branches": 30,
+        "functions": 45,
+        "lines": 50,
+        "statements": 50
+      },
+      "./src/utils/kahan.js": {
+        "functions": 80,
+        "lines": 70,
+        "statements": 70
+      },
+      "./src/utils/pcg32.js": {
+        "functions": 60,
+        "lines": 50,
+        "statements": 50
+      },
+      "./src/engine/budgetImpact.js": {
+        "functions": 50,
+        "lines": 40,
+        "statements": 40
+      },
+      "./src/engine/mcda.js": {
+        "functions": 50,
+        "lines": 40,
+        "statements": 40
+      }
+    },
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  }
+}

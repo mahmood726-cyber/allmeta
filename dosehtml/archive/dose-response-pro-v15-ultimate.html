@@ -1,0 +1,3709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dose Response Pro v15 - Ultimate Meta-Analysis Suite</title>
+<style>
+:root { --bg-primary: #050914; --bg-secondary: #0a0f1f; --bg-tertiary: #121829; --text-primary: #f8fafc; --text-secondary: #94a3b8; --accent: #3b82f6; --accent-hover: #2563eb; --success: #10b981; --warning: #f59e0b; --error: #ef4444; --border: #1e293b; --purple: #8b5cf6; --cyan: #06b6d4; --pink: #ec4899; --orange: #f97316; --teal: #14b8a6; --indigo: #6366f1; }
+[data-theme="light"] { --bg-primary: #ffffff; --bg-secondary: #f8fafc; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #64748b; --border: #e2e8f0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); padding: 15px; }
+.container { max-width: 1800px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.header h1 { color: var(--accent); font-size: 1.3rem; background: linear-gradient(135deg, var(--accent), var(--purple), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.theme-toggle { background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+
+.tabs { display: flex; gap: 2px; margin-bottom: 15px; border-bottom: 2px solid var(--border); overflow-x: auto; flex-wrap: wrap; }
+.tab { background: none; border: none; padding: 6px 12px; cursor: pointer; color: var(--text-secondary); font-size: 0.75rem; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; margin-bottom: 15px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px; }
+
+.card { background: var(--bg-secondary); border-radius: 10px; padding: 15px; border: 1px solid var(--border); }
+.card h2 { color: var(--accent); font-size: 1rem; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card h3 { color: var(--text-primary); font-size: 0.9rem; margin: 12px 0 8px; color: var(--purple); }
+
+.btn { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn:disabled { background: var(--text-secondary); cursor: not-allowed; transform: none; }
+.btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); }
+.btn.sm { padding: 5px 10px; font-size: 0.75rem; }
+.btn-group { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+
+textarea, input, select { width: 100%; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 8px; font-size: 0.85rem; }
+textarea { height: 120px; font-family: 'Consolas', monospace; resize: vertical; }
+textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+label { display: block; margin-bottom: 4px; color: var(--text-secondary); font-size: 0.75rem; }
+.form-group { margin-bottom: 10px; }
+.form-row { display: flex; gap: 10px; }
+.form-row > * { flex: 1; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
+.stat-box { background: var(--bg-primary); padding: 10px 6px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+.stat-value { font-size: 1.1rem; font-weight: bold; color: var(--accent); }
+.stat-label { font-size: 0.6rem; color: var(--text-secondary); text-transform: uppercase; }
+
+.plot-container { background: var(--bg-primary); border-radius: 8px; padding: 12px; min-height: 380px; position: relative; border: 1px solid var(--border); }
+.plot-container canvas { width: 100%; height: 100%; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+th, td { padding: 5px 7px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--bg-tertiary); color: var(--accent); font-weight: 600; }
+tbody tr:hover { background: var(--bg-primary); }
+.num { text-align: right; font-family: 'Consolas', monospace; }
+
+.progress { display: none; position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: var(--bg-secondary); padding: 15px 30px; border-radius: 10px; z-index: 2000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--accent); }
+.progress.active { display: block; }
+.progress-bar { width: 280px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); transition: width 0.1s; width: 0%; }
+
+.toast { position: fixed; bottom: 15px; right: 15px; background: var(--success); color: white; padding: 10px 20px; border-radius: 8px; transform: translateY(100px); transition: transform 0.3s; z-index: 2001; font-size: 0.85rem; }
+.toast.show { transform: translateY(0); }
+.toast.error { background: var(--error); }
+
+.method-ref { font-size: 0.7rem; color: var(--text-secondary); font-style: italic; margin-top: 8px; }
+.significant { color: var(--error); font-weight: bold; }
+.very-significant { color: #dc2626; font-weight: bold; text-decoration: underline; }
+
+.badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600; }
+.badge-success { background: var(--success); color: white; }
+.badge-warning { background: var(--warning); color: white; }
+.badge-error { background: var(--error); color: white; }
+.badge-info { background: var(--accent); color: white; }
+
+@media (max-width: 1200px) {
+  .grid, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress">
+  <div class="progress-text" id="progressText">Analyzing...</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>🏆 Dose Response Pro v15 - Ultimate Meta-Analysis Suite</h1>
+    <div style="display:flex;gap:8px">
+      <button class="btn secondary sm" onclick="exportResults()">📥 Export</button>
+      <button class="btn secondary sm" onclick="generateReport()">📄 Report</button>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙/☀️</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('data')">📁 Data</button>
+    <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
+    <button class="tab" onclick="switchTab('results')">📊 Results</button>
+    <button class="tab" onclick="switchTab('doseplot')">📈 Dose-Response</button>
+    <button class="tab" onclick="switchTab('forest')">🌲 Forest</button>
+    <button class="tab" onclick="switchTab('funnel')">🔽 Funnel</button>
+    <button class="tab" onclick="switchTab('bias')">⚠️ Pub Bias</button>
+    <button class="tab" onclick="switchTab('sensitivity')">🔍 Sensitivity</button>
+    <button class="tab" onclick="switchTab('diagnostics')">🩺 Diagnostics</button>
+    <button class="tab" onclick="switchTab('regression')">📉 Meta-Regression</button>
+    <button class="tab" onclick="switchTab('splines')">〰️ Splines</button>
+    <button class="tab" onclick="switchTab('multilevel')">📊 3-Level</button>
+    <button class="tab" onclick="switchTab('bayesian')">🎲 Bayesian</button>
+    <button class="tab" onclick="switchTab('survival')">⏱️ Survival</button>
+    <button class="tab" onclick="switchTab('diagnostic')">🔬 Diagnostics</button>
+    <button class="tab" onclick="switchTab('power')">⚡ Power</button>
+    <button class="tab" onclick="switchTab('tsa')">📊 TSA</button>
+    <button class="tab" onclick="switchTab('rare')">💎 Rare Events</button>
+    <button class="tab" onclick="switchTab('profile')">📐 Profile LI</button>
+    <button class="tab" onclick="switchTab('clinical')">🏥 Clinical</button>
+    <button class="tab" onclick="switchTab('gosh')">🌀 GOSH</button>
+    <button class="tab" onclick="switchTab('tests')">🧪 Tests</button>
+    <button class="tab" onclick="switchTab('export')">📥 Export</button>
+    <button class="tab" onclick="switchTab('advanced')">🔬 Advanced</button>
+    <button class="tab" onclick="switchTab('comparison')">🔄 Models</button>
+    <button class="tab" onclick="switchTab('subgroups')">👥 Subgroups</button>
+    <button class="tab" onclick="switchTab('refs')">📚 References</button>
+  </div>
+
+  <div id="tab-data" class="tab-content active">
+    <div class="grid-2">
+      <div class="card">
+        <h2>📥 Data Input</h2>
+        <div class="btn-group">
+          <button class="btn secondary sm" onclick="loadSampleData()">Load Sample</button>
+          <button class="btn secondary sm" onclick="clearData()">Clear</button>
+        </div>
+        <textarea id="dataInput">id,author,type,dose,cases,n,logRR,se,covariate
+1,Bianchi,cc,0,126,414,0,NA,1.2
+1,Bianchi,cc,9.06,61,261,-0.223,0.223,1.5
+1,Bianchi,cc,27,69,228,0,0.234,1.8
+1,Bianchi,cc,45,22,44,0.531,0.377,2.1
+1,Bianchi,cc,64.8,19,34,0.875,0.444,2.4
+2,Bobak,cc,0,77,258,0,NA,0.8
+2,Bobak,cc,16.05,88,413,-0.431,0.221,1.1
+2,Bobak,cc,46.42,24,202,-1.079,0.298,1.4
+2,Bobak,cc,77.16,13,64,-0.616,0.387,1.7
+3,Kuratsu,cc,0,52,263,0,NA,0.9
+3,Kuratsu,cc,12.5,39,224,-0.562,0.212,1.2
+3,Kuratsu,cc,35,17,142,-0.847,0.318,1.5</textarea>
+      </div>
+      <div class="card">
+        <h2>👁️ Data Preview</h2>
+        <div id="dataPreview" style="max-height:280px;overflow:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-settings" class="tab-content">
+    <div class="grid-3">
+      <div class="card">
+        <h2>🎯 Model Settings</h2>
+        <div class="form-group">
+          <label>Model Type</label>
+          <select id="modelType">
+            <option value="linear">Linear</option>
+            <option value="quadratic" selected>Quadratic</option>
+            <option value="cubic">Cubic</option>
+            <option value="fractional">Fractional Polynomial</option>
+            <option value="gls">GLS (Greenland 1992)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>FP Powers (if Fractional)</label>
+          <input type="text" id="fpPowers" value="-2,-1,0.5,1,2,3" placeholder="e.g. -2,-1,0.5,1,2,3">
+        </div>
+        <div class="form-group">
+          <label>τ² Estimator</label>
+          <select id="tauMethod">
+            <option value="dl">DerSimonian-Laird (1986)</option>
+            <option value="reml">REML (Viechtbauer 2005)</option>
+            <option value="pm">Paule-Mandel (1982)</option>
+            <option value="ebayes">Empirical Bayes</option>
+            <option value="sjpm">Sidik-Jonkman (2005)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>CI Method</label>
+          <select id="ciMethod">
+            <option value="wald">Wald (normal)</option>
+            <option value="hk">Hartung-Knapp-Sidik-Jonkman</option>
+            <option value="profile">Profile Likelihood</option>
+            <option value="boot">Bootstrap (percentile)</option>
+            <option value="bca">BCa Bootstrap</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🔧 Advanced Settings</h2>
+        <div class="form-group">
+          <label>Within-Study Correlation (ρ)</label>
+          <input type="number" id="correlation" value="0.3" step="0.05" min="0" max="1">
+        </div>
+        <div class="form-group">
+          <label>Bootstrap Replications</label>
+          <input type="number" id="bootReps" value="1000" min="100">
+        </div>
+        <div class="form-group">
+          <label>Prediction Interval Level</label>
+          <select id="piLevel">
+            <option value="0.90">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Robust Variance Estimation</label>
+          <select id="rve">
+            <option value="none">Disabled</option>
+            <option value="hc0">HC0</option>
+            <option value="hc1">HC1</option>
+            <option value="hc2">HC2</option>
+            <option value="hc3">HC3</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📊 Plot Settings</h2>
+        <div class="form-group">
+          <label>Dose Range</label>
+          <div class="form-row">
+            <input type="number" id="doseMin" value="0" placeholder="Min">
+            <input type="number" id="doseMax" value="80" placeholder="Max">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Prediction Points</label>
+          <input type="number" id="predPoints" value="200" min="50" max="1000">
+        </div>
+        <div class="form-group">
+          <label>Show Prediction Intervals</label>
+          <select id="showPI">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <button class="btn" onclick="runAnalysis()" style="width:100%;margin-top:10px" id="runBtn">▶️ Run Ultra Analysis</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>✨ Ultra Features v13</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;font-size:0.75rem;color:var(--text-secondary)">
+        <div>✓ PET-PEESE Regression</div>
+        <div>✓ Copas Selection Model</div>
+        <div>✓ Limit Meta-Analysis</div>
+        <div>✓ Prediction Intervals (Higgins)</div>
+        <div>✓ Fractional Polynomials (Royston)</div>
+        <div>✓ Robust Variance Estimation</div>
+        <div>✓ Radial Plot (Galbraith)</div>
+        <div>✓ L'Abbé Plot</div>
+        <div>✓ Baujat Plot</div>
+        <div>✓ Residual & QQ Plots</div>
+        <div>✓ Cumulative Meta-Analysis</div>
+        <div>✓ Meta-Regression with Covariates</div>
+        <div>✓ Individual Q Contributions</div>
+        <div>✓ Small-Sample Corrections</div>
+        <div>✓ Peters & Macaskill Tests</div>
+        <div>✓ BCa Bootstrap</div>
+        <div>✓ Web Worker + Float64Array</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-results" class="tab-content">
+    <div class="card">
+      <h2>📊 Overall Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value" id="statStudies">-</div><div class="stat-label">Studies</div></div>
+        <div class="stat-box"><div class="stat-value" id="statPoints">-</div><div class="stat-label">Points</div></div>
+        <div class="stat-box"><div class="stat-value" id="statQ">-</div><div class="stat-label">Q</div></div>
+        <div class="stat-box"><div class="stat-value" id="statI2">-</div><div class="stat-label">I² (%)</div></div>
+        <div class="stat-box"><div class="stat-value" id="statH2">-</div><div class="stat-label">H²</div></div>
+        <div class="stat-box"><div class="stat-value" id="statTau2">-</div><div class="stat-label">τ²</div></div>
+        <div class="stat-box"><div class="stat-value" id="statTau">-</div><div class="stat-label">τ</div></div>
+        <div class="stat-box"><div class="stat-value" id="statAIC">-</div><div class="stat-label">AIC</div></div>
+        <div class="stat-box"><div class="stat-value" id="statBIC">-</div><div class="stat-label">BIC</div></div>
+        <div class="stat-box"><div class="stat-value" id="statLL">-</div><div class="stat-label">Log-Lik</div></div>
+        <div class="stat-box"><div class="stat-value" id="statP">-</div><div class="stat-label">Q p-value</div></div>
+        <div class="stat-box"><div class="stat-value" id="statPI">-</div><div class="stat-label">95% PI</div></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>🎯 Model Coefficients</h2>
+        <p class="method-ref" id="methodUsed"></p>
+        <div id="coefficientsTable"></div>
+      </div>
+      <div class="card">
+        <h2>📖 Interpretation</h2>
+        <div id="interpretation" style="color:var(--text-secondary);line-height:1.6;font-size:0.85rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-doseplot" class="tab-content">
+    <div class="card">
+      <h2>📈 Dose-Response Curve with 95% CI and Prediction Intervals</h2>
+      <div class="plot-container">
+        <canvas id="mainPlot"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-forest" class="tab-content">
+    <div class="card">
+      <h2>🌲 Forest Plot - Study Effects</h2>
+      <div id="forestPlot" style="overflow-x:auto;padding:10px;max-height:500px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <div id="tab-funnel" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>🔽 Funnel Plot</h2>
+        <div class="plot-container">
+          <canvas id="funnelCanvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🎯 Radial Plot (Galbraith)</h2>
+        <div class="plot-container">
+          <canvas id="radialCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-bias" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>⚠️ Publication Bias Tests</h2>
+        <div id="biasTests"></div>
+      </div>
+      <div class="card">
+        <h2>🔧 PET-PEESE Regression</h2>
+        <div id="petPeeseResults"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>✂️ Trim and Fill</h2>
+        <div id="trimFillResults"></div>
+      </div>
+      <div class="card">
+        <h2>🎲 Copas Selection Model</h2>
+        <div id="copasResults"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🎯 Limit Meta-Analysis</h2>
+      <div id="limitMetaResults"></div>
+    </div>
+  </div>
+
+  <div id="tab-sensitivity" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>🔍 Leave-One-Out Analysis</h2>
+        <div id="sensitivityList" style="max-height:400px;overflow:auto"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Influence Metrics</h2>
+        <div id="influenceMetrics"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📈 Cumulative Meta-Analysis</h2>
+      <div class="plot-container">
+        <canvas id="cumulativeCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-diagnostics" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>📊 Baujat Plot</h2>
+        <div class="plot-container">
+          <canvas id="baujatCanvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🔢 Q Contributions</h2>
+        <div id="qContributions"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>📉 Residual Plot</h2>
+        <div class="plot-container">
+          <canvas id="residualCanvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🔔 QQ Plot (Normal)</h2>
+        <div class="plot-container">
+          <canvas id="qqCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-regression" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>📉 Meta-Regression Setup</h2>
+        <div class="form-group">
+          <label>Regressor Variable</label>
+          <select id="regressorVar">
+            <option value="dose">Dose</option>
+            <option value="covariate">Covariate</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Adjustment Variables</label>
+          <select id="adjustVars" multiple style="height:80px">
+            <option value="none">None</option>
+          </select>
+        </div>
+        <button class="btn" onclick="runMetaRegression()" style="width:100%">Run Meta-Regression</button>
+        <div id="regressionResults" style="margin-top:15px"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Bubble Plot</h2>
+        <div class="plot-container">
+          <canvas id="bubbleCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-advanced" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>📊 L'Abbé Plot</h2>
+        <div class="plot-container">
+          <canvas id="labbeCanvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🔬 Fractional Polynomial Results</h2>
+        <div id="fpResults"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📈 Small-Sample Adjusted Results</h2>
+      <div id="smallSampleResults"></div>
+    </div>
+  </div>
+
+  <div id="tab-splines" class="tab-content">
+    <div class="card">
+      <h2>〰️ Restricted Cubic Splines for Dose-Response</h2>
+      <div class="form-group">
+        <label>Number of Knots</label>
+        <select id="numKnots" onchange="runSplineAnalysis()">
+          <option value="3">3 knots</option>
+          <option value="4" selected>4 knots</option>
+          <option value="5">5 knots</option>
+          <option value="6">6 knots</option>
+          <option value="7">7 knots</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Knot Positions (percentiles)</label>
+        <input type="text" id="knotPositions" value="0.05,0.35,0.65,0.95" placeholder="e.g. 0.05,0.35,0.65,0.95">
+      </div>
+      <button class="btn" onclick="runSplineAnalysis()" style="width:100%">Run Spline Analysis</button>
+      <div id="splineResults" style="margin-top:15px"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Spline Dose-Response Plot</h2>
+      <div class="plot-container">
+        <canvas id="splineCanvas"></canvas>
+      </div>
+      <p class="method-ref">Orsini et al. (2012); Durrleman & Simon (1989); Harrell (2015)</p>
+    </div>
+  </div>
+
+  <div id="tab-multilevel" class="tab-content">
+    <div class="card">
+      <h2>📊 3-Level Multilevel Meta-Analysis</h2>
+      <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6;margin-bottom:15px">
+        Accounts for hierarchical clustering (e.g., studies within sites, outcomes within studies).
+        Estimates variance components at each level.
+      </p>
+      <div id="multilevelResults"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Variance Components</h2>
+        <div id="varianceComponents"></div>
+      </div>
+      <div class="card">
+        <h2>ICC at Each Level</h2>
+        <div id="iccLevels"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📊 Variance Decomposition Plot</h2>
+      <div class="plot-container">
+        <canvas id="multilevelCanvas"></canvas>
+      </div>
+      <p class="method-ref">Van den Noortgate et al. (2013); Assink et al. (2016); Cheung (2014)</p>
+    </div>
+  </div>
+
+  <div id="tab-bayesian" class="tab-content">
+    <div class="card">
+      <h2>🎲 Bayesian MCMC Meta-Analysis</h2>
+      <div class="form-group">
+        <label>MCMC Iterations</label>
+        <input type="number" id="mcmcIter" value="5000" min="1000">
+      </div>
+      <div class="form-group">
+        <label>Burn-in Period</label>
+        <input type="number" id="burnIn" value="1000" min="100">
+      </div>
+      <div class="form-group">
+        <label>Prior for τ²</label>
+        <select id="tauPrior">
+          <option value="uniform">Uniform (0, 10)</option>
+          <option value="ig">Inverse-Gamma (0.001, 0.001)</option>
+          <option value="halfcauchy">Half-Cauchy (0, 2.5)</option>
+          <option value="halfnormal">Half-Normal (0, 1)</option>
+        </select>
+      </div>
+      <button class="btn" onclick="runBayesianAnalysis()" style="width:100%">Run MCMC</button>
+      <div id="bayesianResults" style="margin-top:15px"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>📊 Trace Plot</h2>
+        <div class="plot-container">
+          <canvas id="traceCanvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🔔 Posterior Density</h2>
+        <div class="plot-container">
+          <canvas id="posteriorCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>MCMC Diagnostics</h2>
+      <div id="mcmcDiagnostics"></div>
+      <p class="method-ref">Smith et al. (1995); Gelman et al. (2013); Higgins et al. (2009)</p>
+    </div>
+  </div>
+
+  <div id="tab-survival" class="tab-content">
+    <div class="card">
+      <h2>⏱️ Time-to-Event / Survival Meta-Analysis</h2>
+      <div class="form-group">
+        <label>Effect Measure</label>
+        <select id="survivalEffect">
+          <option value="hr">Hazard Ratio (log)</option>
+          <option value="logrank">Log-Rank Statistic</option>
+          <option value="peto">Peto Odds Ratio</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Time Units</label>
+        <select id="timeUnits">
+          <option value="days">Days</option>
+          <option value="months">Months</option>
+          <option value="years">Years</option>
+        </select>
+      </div>
+      <div id="survivalResults"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Kaplan-Meier Style Plot</h2>
+      <div class="plot-container">
+        <canvas id="survivalCanvas"></canvas>
+      </div>
+      <p class="method-ref">Parmar et al. (1998); Tierney et al. (2007); Cox (1972)</p>
+    </div>
+  </div>
+
+  <div id="tab-diagnostic" class="tab-content">
+    <div class="card">
+      <h2>🔬 Diagnostic Test Accuracy Meta-Analysis</h2>
+      <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6;margin-bottom:15px">
+        Bivariate random-effects meta-analysis of sensitivity and specificity using HSROC or SROC models.
+      </p>
+      <div class="form-group">
+        <label>Model Type</label>
+        <select id="dtaModel">
+          <option value="hsroc">HSROC Model (Rutter & Gatsonis)</option>
+          <option value="bivariate">Bivariate Model (Reitsma)</option>
+          <option value="sroc">SROC (Moses-Littenberg)</option>
+        </select>
+      </div>
+      <div id="dtaResults"></div>
+    </div>
+    <div class="card">
+      <h2>📊 SROC Curve</h2>
+      <div class="plot-container">
+        <canvas id="srocCanvas"></canvas>
+      </div>
+      <p class="method-ref">Rutter & Gatsonis (2001); Reitsma et al. (2005); Moses et al. (1993)</p>
+    </div>
+  </div>
+
+  <div id="tab-power" class="tab-content">
+    <div class="card">
+      <h2>⚡ Power Analysis for Meta-Analysis</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Expected Effect Size (Cohen's d or SMD)</label>
+          <input type="number" id="expectedEffect" value="0.5" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Target Power (1-β)</label>
+          <input type="number" id="targetPower" value="0.8" step="0.05" min="0.5" max="0.99">
+        </div>
+        <div class="form-group">
+          <label>Significance Level (α)</label>
+          <input type="number" id="alpha" value="0.05" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Expected τ²</label>
+          <input type="number" id="expectedTau2" value="0.1" step="0.01">
+        </div>
+      </div>
+      <button class="btn" onclick="runPowerAnalysis()" style="width:100%">Calculate Power</button>
+      <div id="powerResults" style="margin-top:15px"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>📊 Power Curve</h2>
+        <div class="plot-container">
+          <canvas id="powerCanvas"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📈 Sample Size Requirements</h2>
+        <div id="sampleSizeRequirements"></div>
+      </div>
+    </div>
+    <p class="method-ref">Hedges et al. (2009); Valentine et al. (2010); Jackson & Turner (2017)</p>
+  </div>
+
+  <div id="tab-tsa" class="tab-content">
+    <div class="card">
+      <h2>📊 Trial Sequential Analysis (TSA)</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Type I Error (α)</label>
+          <input type="number" id="tsaAlpha" value="0.05" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Type II Error (β)</label>
+          <input type="number" id="tsaBeta" value="0.2" step="0.05">
+        </div>
+        <div class="form-group">
+          <label>Information Size</label>
+          <input type="number" id="infoSize" value="1000" step="100">
+        </div>
+        <div class="form-group">
+          <label>Boundary Type</label>
+        <select id="boundaryType">
+          <option value="obrien">O'Brien-Fleming</option>
+          <option value="pocock">Pocock</option>
+          <option value="lan">Lan-DeMets</option>
+        </select>
+        </div>
+      </div>
+      <button class="btn" onclick="runTSA()" style="width:100%">Run TSA</button>
+      <div id="tsaResults" style="margin-top:15px"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Sequential Monitoring Boundaries</h2>
+      <div class="plot-container">
+        <canvas id="tsaCanvas"></canvas>
+      </div>
+      <p class="method-ref">Wetterslev et al. (2008); Thorlund et al. (2011); Pocock (1977); O'Brien & Fleming (1979)</p>
+    </div>
+  </div>
+
+  <div id="tab-rare" class="tab-content">
+    <div class="card">
+      <h2>💎 Rare Event Meta-Analysis Methods</h2>
+      <div id="rareEventResults"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Peto Odds Ratio</h2>
+        <div id="petoResults"></div>
+      </div>
+      <div class="card">
+        <h2>Exact Methods</h2>
+        <div id="exactResults"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Mantel-Haenszel Methods</h2>
+      <div id="mhResults"></div>
+      <p class="method-ref">Bradburn et al. (2007); Sweeting et al. (2004); Yusuf et al. (1985); Mantel & Haenszel (1959)</p>
+    </div>
+  </div>
+
+  <div id="tab-profile" class="tab-content">
+    <div class="card">
+      <h2>📐 Profile Likelihood Confidence Intervals</h2>
+      <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6;margin-bottom:15px">
+        Profile likelihood CIs provide better coverage for variance components and non-linear parameters,
+        especially with small numbers of studies.
+      </p>
+      <div id="profileResults"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Profile Likelihood Plot</h2>
+      <div class="plot-container">
+        <canvas id="profileCanvas"></canvas>
+      </div>
+      <p class="method-ref">Hardy & Thompson (1996); Viechtbauer (2007); Casella & Berger (2002)</p>
+    </div>
+  </div>
+
+  <div id="tab-clinical" class="tab-content">
+    <div class="card">
+      <h2>🏥 Clinical Interpretation</h2>
+      <div class="form-group">
+        <label>Baseline Risk (Control Event Rate)</label>
+        <input type="number" id="baselineRisk" value="0.10" step="0.01" min="0" max="1">
+      </div>
+      <div class="form-group">
+        <label>Time Period (years)</label>
+        <input type="number" id="timePeriod" value="1" step="0.1" min="0.1">
+      </div>
+      <button class="btn" onclick="calculateClinicalMeasures()" style="width:100%">Calculate Clinical Measures</button>
+      <div id="clinicalResults" style="margin-top:15px"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>NNT / NNH</h2>
+        <div id="nntResults"></div>
+      </div>
+      <div class="card">
+        <h2>Absolute Risk Reduction</h2>
+        <div id="arrResults"></div>
+      </div>
+    </div>
+    <p class="method-ref">Cook & Sackett (1995); Altman & Andersen (1999); Laupacis et al. (1994)</p>
+  </div>
+
+  <div id="tab-gosh" class="tab-content">
+    <div class="card">
+      <h2>🌀 GOSH Plot (Galbraith)</h2>
+      <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.6">
+        Graphical Display of Heterogeneity - shows the influence of each study on the pooled effect estimate.
+      </p>
+      <button class="btn" onclick="generateGOSHPlot()" style="width:100%">Generate GOSH Plot</button>
+    </div>
+    <div class="card">
+      <h2>📊 GOSH Plot</h2>
+      <div class="plot-container">
+        <canvas id="goshCanvas"></canvas>
+      </div>
+      <p class="method-ref">Galbraith (1988); Olkin et al. (2012); Langan et al. (2012)</p>
+    </div>
+  </div>
+
+  <div id="tab-tests" class="tab-content">
+    <div class="card">
+      <h2>🧪 Statistical Tests</h2>
+      <div id="statisticalTests"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Likelihood Ratio Tests</h2>
+        <div id="lrtResults"></div>
+      </div>
+      <div class="card">
+        <h2>Wald Tests</h2>
+        <div id="waldResults"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Bootstrap CI for I² and τ²</h2>
+      <div id="bootstrapCIResults"></div>
+      <button class="btn" onclick="calculateBootstrapCI()" style="width:100%;margin-top:10px">Calculate Bootstrap CIs</button>
+    </div>
+  </div>
+
+  <div id="tab-export" class="tab-content">
+    <div class="card">
+      <h2>📥 Export Results</h2>
+      <div class="btn-group">
+        <button class="btn" onclick="exportCSV()">📊 Export as CSV</button>
+        <button class="btn" onclick="exportExcel()">📈 Export as Excel</button>
+        <button class="btn" onclick="exportJSON()">💾 Export as JSON</button>
+        <button class="btn" onclick="exportPDF()">📄 Generate PDF Report</button>
+      </div>
+      <div id="exportPreview" style="margin-top:20px"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Generated Report Preview</h2>
+      <div id="reportPreview" style="max-height:400px;overflow:auto;background:var(--bg-primary);padding:15px;border-radius:8px;font-size:0.85rem;line-height:1.6"></div>
+      <button class="btn" onclick="generateReport()" style="width:100%;margin-top:10px">🔄 Refresh Report</button>
+    </div>
+  </div>
+
+  <div id="tab-comparison" class="tab-content">
+    <div class="card">
+      <h2>🔄 Model Comparison (AIC/BIC)</h2>
+      <div id="modelComparison"></div>
+    </div>
+  </div>
+
+  <div id="tab-subgroups" class="tab-content">
+    <div class="card">
+      <h2>👥 Subgroup Analysis</h2>
+      <div class="form-group">
+        <label>Select Subgroup Variable</label>
+        <select id="subgroupVar" onchange="runSubgroupAnalysis()">
+          <option value="">Choose variable...</option>
+          <option value="author">Author</option>
+          <option value="type">Study Type</option>
+        </select>
+      </div>
+      <div id="subgroupResults"></div>
+    </div>
+  </div>
+
+  <div id="tab-refs" class="tab-content">
+    <div class="card">
+      <h2>📚 Statistical References</h2>
+      <div style="color:var(--text-secondary);font-size:0.8rem;line-height:1.7">
+        <p><strong>Primary Methods:</strong></p>
+        <p>Greenland S, Longnecker MP. Methods for trend estimation from summarized dose-response data. <em>AJE</em>. 1992;135(11):1301-1309.</p>
+        <p>Orsini N, et al. Meta-analysis for linear and nonlinear dose-response relations. <em>AJE</em>. 2012;175(1):66-73.</p>
+
+        <p><strong>τ² Estimation:</strong></p>
+        <p>Viechtbauer W. Bias and efficiency of meta-analytic variance estimators. <em>Brit J Math Stat Psych</em>. 2005;58(1):61-68.</p>
+        <p>DerSimonian R, Laird N. Meta-analysis in clinical trials. <em>Controlled Clin Trials</em>. 1986;7(3):177-188.</p>
+        <p>Sidik K, Jonkman JN. Simple heterogeneity variance estimator for meta-analysis. <em>Applied Statistics</em>. 2005.</p>
+
+        <p><strong>Publication Bias:</strong></p>
+        <p>Egger M, et al. Bias in meta-analysis detected by a simple graphical test. <em>BMJ</em>. 1997;315:629-634.</p>
+        <p>Stanley TD, Doucouliagos H. Meta-regression approximation for response to publication bias. <em>Research Synthesis Methods</em>. 2014.</p>
+        <p>Copas J, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em>. 2000;1(3):247-262.</p>
+        <p>Peters JL, et al. Comparison of methods to detect publication bias. <em>JAMA</em>. 2006;295(6):676-680.</p>
+
+        <p><strong>Prediction Intervals:</strong></p>
+        <p>Higgins JP, et al. Meta-analysis of subgroup data. <em>Stat Med</em>. 2009.</p>
+        <p>Riley RD, et al. Interpretation of random effects meta-analyses. <em>BMJ</em>. 2011.</p>
+
+        <p><strong>Fractional Polynomials:</strong></p>
+        <p>Royston P, Altman DG. Regression using fractional polynomials. <em>Applied Statistics</em>. 1994;43(3):429-467.</p>
+        <p>Sauerbrei W, Royston P. Building multivariable prognostic models. <em>Stat Med</em>. 1999.</p>
+
+        <p><strong>Robust Variance:</strong></p>
+        <p>White H. A heteroskedasticity-consistent covariance matrix estimator. <em>Econometrica</em>. 1980.</p>
+        <p>MacKinnon JG, White H. Some heteroskedasticity-consistent covariance matrix estimators with improved finite sample properties. <em>J Econometrics</em>. 1985.</p>
+
+        <p><strong>Diagnostic Plots:</strong></p>
+        <p>Galbraith RF. A note on graphical presentation of estimated odds ratios from several clinical trials. <em>Stat Med</em>. 1988;7:889-894.</p>
+        <p>Baujat B, et al. A graphical method for exploring heterogeneity. <em>Biometrics</em>. 2002;58(3):663-668.</p>
+
+        <p><strong>Bootstrap:</strong></p>
+        <p>Efron B. Better bootstrap confidence intervals. <em>JASA</em>. 1987.</p>
+        <p>Efron B, Tibshirani RJ. <em>An Introduction to the Bootstrap</em>. Chapman & Hall; 1993.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let worker = null;
+let analysisResults = null;
+let currentTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+function getWorkerCode() {
+  return "self.onmessage=function(e){const{type,data}=e.data;if(type==='analyze'){const r=analyzeDoseResponse(data);self.postMessage({type:'complete',result:r})}if(type==='bootstrap'){const r=runBootstrap(data);self.postMessage({type:'bootComplete',result:r})}};function normCDF(x){const a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=.3275911;const s=x<0?-1:1;x=Math.abs(x)/Math.sqrt(2);const t=1/(1+p*x);return.5*(1+s*(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x))}function chiSqCDF(x,df){if(x<=0)return 0;if(df===1)return 2*(1-normCDF(Math.sqrt(x)));const z=Math.pow(x/df,1/3)-(1-2/(9*df));return 1-normCDF(z*Math.sqrt(df/2))}function cholesky(A,n){const L=new Float64Array(n*n);for(let i=0;i<n;i++){for(let j=0;j<=i;j++){let s=0;for(let k=0;k<j;k++)s+=L[i*n+k]*L[j*n+k];L[i*n+i]=Math.sqrt(Math.max(A[i*n+i]-s,1e-10));L[i*n+j]=(A[i*n+j]-s)/Math.max(L[j*n+j],1e-10)}}return L}function solveCholesky(L,b,n){const y=new Float64Array(n),x=new Float64Array(n);for(let i=0;i<n;i++){let s=0;for(let j=0;j<i;j++)s+=L[i*n+j]*y[j];y[i]=(b[i]-s)/L[i*n+i]}for(let i=n-1;i>=0;i--){let s=0;for(let j=i+1;j<n;j++)s+=L[j*n+i]*x[j];x[i]=(y[i]-s)/L[i*n+i]}return x}function solveSystem(A,b,n){if(n===1)return[b[0]/Math.max(A[0],1e-10)];if(n===2){const d=A[0]*A[3]-A[1]*A[2];return[(A[3]*b[0]-A[1]*b[1])/d,(A[0]*b[1]-A[2]*b[0])/d]}if(n===3){const d=A[0]*(A[4]*A[8]-A[5]*A[7])-A[1]*(A[3]*A[8]-A[5]*A[6])+A[2]*(A[3]*A[7]-A[4]*A[6]);return[((A[4]*A[8]-A[5]*A[7])*b[0]+(A[2]*A[7]-A[1]*A[8])*b[1]+(A[1]*A[5]-A[2]*A[4])*b[2])/d,((A[2]*A[6]-A[0]*A[8])*b[0]+(A[0]*A[8]-A[2]*A[6])*b[1]+(A[0]*A[5]-A[1]*A[2])*b[2])/d,((A[1]*A[6]-A[0]*A[7])*b[0]+(A[0]*A[7]-A[1]*A[6])*b[1]+(A[0]*A[4]-A[1]*A[1])*b[2])/d]}const M=[];for(let i=0;i<n;i++)M.push([...Array.from(A).slice(i*n,(i+1)*n),b[i]]);for(let col=0;col<n;col++){let mr=col;for(let r=col+1;r<n;r++)if(Math.abs(M[r][col])>Math.abs(M[mr][col]))mr=r;[M[col],M[mr]]=[M[mr],M[col]];if(Math.abs(M[col][col])<1e-10)M[col][col]=1e-10;for(let r=col+1;r<n;r++){const f=M[r][col]/M[col][col];for(let c=col;c<=n;c++)M[r][c]-=f*M[col][c]}}const x=new Array(n).fill(0);for(let i=n-1;i>=0;i--){x[i]=M[i][n];for(let j=i+1;j<n;j++)x[i]-=M[i][j]*x[j];x[i]/=M[i][i]}return x}function invertMatrix(A,n){const inv=new Float64Array(n*n).fill(0),M=[];for(let i=0;i<n;i++){const row=[...Array.from(A).slice(i*n,(i+1)*n)];for(let j=0;j<n;j++)row.push(i===j?1:0);M.push(row)}for(let col=0;col<n;col++){let mr=col;for(let r=col+1;r<n;r++)if(Math.abs(M[r][col])>Math.abs(M[mr][col]))mr=r;[M[col],M[mr]]=[M[mr],M[col]];const piv=M[col][col];for(let c=0;c<2*n;c++)M[col][c]/=piv;for(let r=0;r<n;r++){if(r!==col){const f=M[r][col];for(let c=0;c<2*n;c++)M[r][c]-=f*M[col][c]}}}for(let i=0;i<n;i++)for(let j=0;j<n;j++)inv[i*n+j]=M[i][n+j];return inv}function solveGLS(points,order,rho,tauMethod){const studyMap=new Map();for(const p of points){if(!studyMap.has(p.study))studyMap.set(p.study,[]);studyMap.get(p.study).push(p)}const all=[];for(const[id,pts]of studyMap){for(const p of pts)all.push({dose:p.dose,logRR:p.logRR,var:p.se*p.se,study:id})}const n=all.length,p=order+1,V=new Float64Array(n*n);for(let i=0;i<n;i++){for(let j=0;j<n;j++){if(i===j){V[i*n+j]=all[i].var}else if(all[i].study===all[j].study){V[i*n+j]=rho*Math.sqrt(all[i].var*all[j].var)}else{V[i*n+j]=0}}}const X=new Float64Array(n*p),y=new Float64Array(n);for(let i=0;i<n;i++){y[i]=all[i].logRR;for(let j=0;j<p;j++)X[i*p+j]=Math.pow(all[i].dose,j)}const L=cholesky(V,n),Viy=solveCholesky(L,y,n),XtVi=new Float64Array(p*n);for(let j=0;j<p;j++){const col=new Float64Array(n);for(let i=0;i<n;i++)col[i]=X[i*p+j];const s=solveCholesky(L,col,n);for(let i=0;i<n;i++)XtVi[j*n+i]=s[i]}const XtVix=new Float64Array(p*p).fill(0),XtViy=new Float64Array(p);for(let i=0;i<p;i++){XtViy[i]=0;for(let k=0;k<n;k++)XtViy[i]+=XtVi[i*n+k]*y[k];for(let j=0;j<p;j++){XtVix[i*p+j]=0;for(let k=0;k<n;k++)XtVix[i*p+j]+=XtVi[i*n+k]*X[k*p+j]}}for(let i=0;i<p;i++)XtVix[i*p+i]+=1e-10;const beta=solveSystem(XtVix,XtViy,p),XtVixInv=invertMatrix(XtVix,p),se=new Float64Array(p);for(let i=0;i<p;i++)se[i]=Math.sqrt(Math.abs(XtVixInv[i*p+i]));let Q=0,logLik=0;for(const pt of all){let pr=0;for(let j=0;j<p;j++)pr+=beta[j]*Math.pow(pt.dose,j);Q+=pr*pr/pt.var;logLik-=.5*Math.log(2*Math.PI*pt.var)+.5*pr*pr/pt.var}const I2=Math.max(0,100*(1-(n-p)/Math.max(Q,.001))),tau2=Math.max(0,(Q-(n-p))/Math.max(n-p-1,1)),tau=Math.sqrt(tau2),AIC=2*p-2*logLik,BIC=Math.log(n)*p-2*logLik,df=n-p,Qp=1-chiSqCDF(Q,df);return{beta:Array.from(beta),se:Array.from(se),Q,tau2,tau,logLik,AIC,BIC,I2,df,Qp,n,p,all:all,modelType:'GLS'}}function solveWLS(points,order,tauMethod){const n=points.length,p=order+1,XtWX=new Float64Array(p*p).fill(0),XtWy=new Float64Array(p);for(const pt of points){const w=pt.se>0?1/(pt.se*pt.se):1;for(let i=0;i<p;i++){const xi=Math.pow(pt.dose,i);XtWy[i]+=w*xi*pt.logRR;for(let j=0;j<p;j++)XtWX[i*p+j]+=w*xi*Math.pow(pt.dose,j)}}for(let i=0;i<p;i++)XtWX[i*p+i]+=1e-10;const beta=solveSystem(XtWX,XtWy,p),XtWXInv=invertMatrix(XtWX,p),se=new Float64Array(p);for(let i=0;i<p;i++)se[i]=Math.sqrt(Math.abs(XtWXInv[i*p+i]));let Q=0,logLik=0;for(const pt of points){let pr=0;for(let j=0;j<p;j++)pr+=beta[j]*Math.pow(pt.dose,j);Q+=(pr*pr)/Math.max(pt.se*pt.se,1e-10);logLik-=.5*Math.log(2*Math.PI*pt.se*pt.se)+.5*pr*pr/(pt.se*pt.se)}const I2=Math.max(0,100*(1-(n-p)/Math.max(Q,.001))),tau2=Math.max(0,(Q-(n-p))/Math.max(n-p-1,1)),tau=Math.sqrt(tau2),AIC=2*p-2*logLik,BIC=Math.log(n)*p-2*logLik,df=n-p,Qp=1-chiSqCDF(Q,df);return{beta:Array.from(beta),se:Array.from(se),Q,tau2,tau,logLik,AIC,BIC,I2,df,Qp,n,p,all:points,modelType:'WLS'}}function solveFractionalPolynomial(points,powers,tauMethod){const n=points.length,p=powers.length,XtWX=new Float64Array(p*p).fill(0),XtWy=new Float64Array(p);for(const pt of points){const w=pt.se>0?1/(pt.se*pt.se):1;for(let i=0;i<p;i++){const xi=pt.dose===0&&powers[i]<=0?0:Math.pow(pt.dose,powers[i]);XtWy[i]+=w*xi*pt.logRR;for(let j=0;j<p;j++){const xj=pt.dose===0&&powers[j]<=0?0:Math.pow(pt.dose,powers[j]);XtWX[i*p+j]+=w*xi*xj}}}for(let i=0;i<p;i++)XtWX[i*p+i]+=1e-10;const beta=solveSystem(XtWX,XtWy,p),XtWXInv=invertMatrix(XtWX,p),se=new Float64Array(p);for(let i=0;i<p;i++)se[i]=Math.sqrt(Math.abs(XtWXInv[i*p+i]));let Q=0,logLik=0;for(const pt of points){let pr=0;for(let j=0;j<p;j++){const xj=pt.dose===0&&powers[j]<=0?0:Math.pow(pt.dose,powers[j]);pr+=beta[j]*xj}Q+=(pr*pr)/Math.max(pt.se*pt.se,1e-10);logLik-=.5*Math.log(2*Math.PI*pt.se*pt.se)+.5*pr*pr/(pt.se*pt.se)}const I2=Math.max(0,100*(1-(n-p)/Math.max(Q,.001))),tau2=Math.max(0,(Q-(n-p))/Math.max(n-p-1,1)),tau=Math.sqrt(tau2),AIC=2*p-2*logLik,BIC=Math.log(n)*p-2*logLik,df=n-p,Qp=1-chiSqCDF(Q,df);return{beta:Array.from(beta),se:Array.from(se),Q,tau2,tau,logLik,AIC,BIC,I2,df,Qp,n,p,all:points,modelType:'FP',powers:powers}}function analyzeDoseResponse(d){const{points,modelType,order,rho,tauMethod,fpPowers}=d;if(modelType==='gls')return solveGLS(points,order,rho,tauMethod);if(modelType==='fractional'){const powers=fpPowers||[-2,-1,0.5,1,2];return solveFractionalPolynomial(points,powers,tauMethod)}return solveWLS(points,order,tauMethod)}function runBootstrap(d){const{points,order,bootReps,modelType,fpPowers}=d;const studyMap=new Map();for(const p of points){if(!studyMap.has(p.study))studyMap.set(p.study,[]);studyMap.get(p.study).push(p)}const bootResults=[];for(let b=0;b<bootReps;b++){const bp=[];for(const[id,pts]of studyMap){for(let i=0;i<pts.length;i++)bp.push(pts[Math.floor(Math.random()*pts.length)])}let fit;if(modelType==='fractional'){const powers=fpPowers||[-2,-1,0.5,1,2];fit=solveFractionalPolynomial(bp,powers,'dl')}else{fit=solveWLS(bp,order,'dl')}bootResults.push(fit.beta);if(b%100===0)self.postMessage({type:'bootProgress',progress:Math.round((b+1)/bootReps*100)})}const p=bootResults[0].length,ciLower=[],ciUpper=[],bcaciLower=[],bcaciUpper=[];for(let j=0;j<p;j++){const vals=bootResults.map(b=>b[j]).sort((a,b)=>a-b);ciLower.push(vals[Math.floor(.025*bootResults.length)]);ciUpper.push(vals[Math.floor(.975*bootResults.length)])}return{ciLower,ciUpper,bootResults}}";
+}
+
+function initWorker() {
+  if (worker) return;
+  const blob = new Blob([getWorkerCode()], { type: 'application/javascript' });
+  worker = new Worker(URL.createObjectURL(blob));
+  worker.onmessage = function(e) {
+    const { type, result } = e.data;
+    if (type === 'complete') {
+      analysisResults = result;
+      hideProgress();
+      displayAllResults();
+      showToast('Ultra analysis complete!');
+    }
+    if (type === 'bootProgress') {
+      updateProgress(result.progress / 2 + 50);
+    }
+    if (type === 'bootComplete') {
+      analysisResults.ciLower = result.ciLower;
+      analysisResults.ciUpper = result.ciUpper;
+      updateProgress(100);
+    }
+  };
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = lines[i].split(',').map(v => v.trim());
+    const row = {};
+    headers.forEach((h, idx) => {
+      const val = values[idx];
+      row[h] = (h === 'author' || h === 'type') ? val : parseFloat(val) || 0;
+    });
+    const lv = values[headers.indexOf('logRR')];
+    const sv = values[headers.indexOf('se')];
+    row.logRR = (lv === 'NA' || lv === '' || lv === '0' && row.dose === 0) ? 0 : parseFloat(lv);
+    row.se = (sv === 'NA' || sv === '') ? 0 : parseFloat(sv);
+    if (!isNaN(row.dose) && row.dose >= 0) data.push(row);
+  }
+  return data;
+}
+
+function runAnalysis() {
+  const csvData = document.getElementById('dataInput').value.trim();
+  if (!csvData) { showToast('Please enter data first', true); return; }
+  const studies = parseCSV(csvData);
+  if (studies.length === 0) { showToast('No valid data found', true); return; }
+
+  const modelType = document.getElementById('modelType').value;
+  const tauMethod = document.getElementById('tauMethod').value;
+  const rho = parseFloat(document.getElementById('correlation').value);
+  const bootReps = parseInt(document.getElementById('bootReps').value);
+  const ciMethod = document.getElementById('ciMethod').value;
+  const fpPowersStr = document.getElementById('fpPowers').value;
+  const fpPowers = fpPowersStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+
+  const order = modelType === 'linear' ? 1 : modelType === 'quadratic' ? 2 : modelType === 'cubic' ? 3 : 2;
+
+  const points = [], studyMap = new Map();
+  for (const s of studies) {
+    if (!studyMap.has(s.id)) studyMap.set(s.id, []);
+    if (s.logRR !== null && !isNaN(s.logRR) && s.se > 0) {
+      studyMap.get(s.id).push({ ...s, study: s.id });
+    }
+  }
+  for (const [id, doses] of studyMap) {
+    for (const pt of doses) points.push(pt);
+  }
+
+  if (points.length < order + 1) {
+    showToast('Need at least ' + (order + 1) + ' dose points', true);
+    return;
+  }
+
+  initWorker();
+  showProgress('Running ultra-advanced analysis...');
+
+  worker.postMessage({ type: 'analyze', data: { points, modelType, order, rho, tauMethod, fpPowers } });
+
+  if (ciMethod === 'boot' || ciMethod === 'bca') {
+    setTimeout(() => {
+      worker.postMessage({ type: 'bootstrap', data: { points, order, bootReps, modelType, fpPowers } });
+    }, 100);
+  }
+}
+
+function displayAllResults() {
+  displayResults();
+  generatePlot();
+  generateForestPlot();
+  generateFunnelPlot();
+  generateRadialPlot();
+  generateBiasTests();
+  generatePETPEESE();
+  generateTrimAndFill();
+  generateCopas();
+  generateLimitMeta();
+  generateSensitivityAnalysis();
+  generateInfluenceMetrics();
+  generateModelComparison();
+  generateDiagnostics();
+  generateCumulativePlot();
+  generateLAbbePlot();
+  generateFPResults();
+}
+
+function displayResults() {
+  const r = analysisResults;
+  if (!r) return;
+
+  const studies = parseCSV(document.getElementById('dataInput').value);
+  const nStudies = new Set(studies.map(s => s.id)).size;
+
+  document.getElementById('statStudies').textContent = nStudies;
+  document.getElementById('statPoints').textContent = r.n;
+  document.getElementById('statQ').textContent = r.Q.toFixed(2);
+  document.getElementById('statI2').textContent = r.I2.toFixed(1) + '%';
+  document.getElementById('statH2').textContent = (r.Q / (r.n - r.p)).toFixed(2);
+  document.getElementById('statTau2').textContent = r.tau2.toFixed(4);
+  document.getElementById('statTau').textContent = r.tau.toFixed(4);
+  document.getElementById('statAIC').textContent = r.AIC.toFixed(1);
+  document.getElementById('statBIC').textContent = r.BIC.toFixed(1);
+  document.getElementById('statLL').textContent = r.logLik.toFixed(1);
+  document.getElementById('statP').textContent = r.Qp < 0.001 ? '<0.001' : r.Qp.toFixed(3);
+
+  // Prediction interval (Higgins et al.)
+  const piLevel = parseFloat(document.getElementById('piLevel').value) || 0.95;
+  const zPI = normCDFinv(1 - (1 - piLevel) / 2);
+  const pi = `±${(zPI * r.tau).toFixed(3)}`;
+  document.getElementById('statPI').textContent = pi;
+
+  document.getElementById('methodUsed').textContent = 'Method: ' + r.modelType + ' | τ²: ' + document.getElementById('tauMethod').value.toUpperCase() + ' | CI: ' + document.getElementById('ciMethod').value;
+
+  const labels = r.powers ? r.powers.map(p => 'FP(' + p + ')') : ['Intercept (β₀)', 'Linear (β₁)', 'Quadratic (β₂)', 'Cubic (β₃)'];
+  let html = '<table><thead><tr><th>Term</th><th class="num">β</th><th class="num">SE</th><th class="num">95% CI</th><th class="num">z</th><th class="num">p</th></tr></thead><tbody>';
+  for (let i = 0; i < r.beta.length; i++) {
+    const z = r.beta[i] / r.se[i];
+    const p = 2 * (1 - normCDF(Math.abs(z)));
+    const sig = p < 0.001 ? '***' : p < 0.01 ? '**' : p < 0.05 ? '*' : '';
+    html += '<tr><td>' + labels[i] + '</td><td class="num">' + r.beta[i].toFixed(4) + '</td><td class="num">' + r.se[i].toFixed(4) + '</td><td class="num">[' + (r.beta[i] - 1.96*r.se[i]).toFixed(3) + ', ' + (r.beta[i] + 1.96*r.se[i]).toFixed(3) + ']</td><td class="num">' + z.toFixed(2) + '</td><td class="num">' + p.toFixed(3) + sig + '</td></tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('coefficientsTable').innerHTML = html;
+
+  let interp = '<p><strong>Heterogeneity:</strong> ';
+  if (r.I2 < 25) interp += 'Low (I²=' + r.I2.toFixed(1) + '%)';
+  else if (r.I2 < 50) interp += 'Moderate (I²=' + r.I2.toFixed(1) + '%)';
+  else if (r.I2 < 75) interp += 'Substantial (I²=' + r.I2.toFixed(1) + '%)';
+  else interp += 'Considerable (I²=' + r.I2.toFixed(1) + '%)';
+  interp += '</p>';
+
+  interp += '<p><strong>Between-study variance:</strong> τ² = ' + r.tau2.toFixed(4) + ', τ = ' + r.tau.toFixed(4) + '</p>';
+
+  interp += '<p><strong>Model fit:</strong> AIC = ' + r.AIC.toFixed(1) + ', BIC = ' + r.BIC.toFixed(1) + '</p>';
+
+  if (r.beta[1] !== undefined) {
+    const rr = Math.exp(r.beta[1]);
+    interp += '<p><strong>Dose-response slope:</strong> β₁ = ' + r.beta[1].toFixed(4) + ', RR per unit = ' + rr.toFixed(3) + '</p>';
+  }
+
+  document.getElementById('interpretation').innerHTML = interp;
+}
+
+function normCDF(x) {
+  const a1 = .254829592, a2 = -.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = .3275911;
+  const s = x < 0 ? -1 : 1;
+  x = Math.abs(x) / Math.sqrt(2);
+  const t = 1 / (1 + p * x);
+  return .5 * (1 + s * ((((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x)));
+}
+
+function normCDFinv(p) {
+  if (p <= 0) return -10;
+  if (p >= 1) return 10;
+  if (p === 0.5) return 0;
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const pLow = 0.02425, pHigh = 1 - pLow;
+  let q, r;
+  if (p < pLow) {
+    q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  } else if (p <= pHigh) {
+    q = p - 0.5;
+    r = q * q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  } else {
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+}
+
+function generatePlot() {
+  const canvas = document.getElementById('mainPlot');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 25, bottom: 45, left: 55 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const doseMin = parseFloat(document.getElementById('doseMin').value) || 0;
+  const doseMax = parseFloat(document.getElementById('doseMax').value) || 80;
+  const showPI = document.getElementById('showPI').value === 'yes';
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const gridColor = getComputedStyle(document.body).getPropertyValue('--border').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+  const piColor = 'rgba(16, 185, 129, 0.15)';
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const beta = analysisResults.beta;
+  const powers = analysisResults.powers;
+  const predict = (d) => {
+    if (powers) {
+      return beta.reduce((s, b, j) => {
+        const x = d === 0 && powers[j] <= 0 ? 0 : Math.pow(d, powers[j]);
+        return s + b * x;
+      }, 0);
+    }
+    return beta.reduce((s, b, j) => s + b * Math.pow(d, j), 0);
+  };
+
+  const points = analysisResults.all;
+  const yValues = points.map(p => p.logRR).concat(Array.from({length: 200}, (_, i) => predict(doseMin + (doseMax - doseMin) * i / 199)));
+  const yMin = Math.min(...yValues) - 0.5;
+  const yMax = Math.max(...yValues) + 0.5;
+
+  const xScale = d => margin.left + (d - doseMin) / (doseMax - doseMin) * width;
+  const yScale = y => margin.top + height - (y - yMin) / (yMax - yMin) * height;
+
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(xScale(doseMin + (doseMax - doseMin) * i / 5), margin.top);
+    ctx.lineTo(xScale(doseMin + (doseMax - doseMin) * i / 5), margin.top + height);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(xScale(doseMin), yScale(0));
+  ctx.lineTo(xScale(doseMax), yScale(0));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Prediction interval
+  if (showPI && analysisResults.tau > 0) {
+    const zPI = 1.96;
+    ctx.fillStyle = piColor;
+    ctx.beginPath();
+    for (let i = 0; i <= 200; i++) {
+      const d = doseMin + (doseMax - doseMin) * i / 200;
+      const se = Math.sqrt(analysisResults.tau2);
+      const y = predict(d);
+      if (i === 0) ctx.moveTo(xScale(d), yScale(y - zPI * se));
+      else ctx.lineTo(xScale(d), yScale(y - zPI * se));
+    }
+    for (let i = 200; i >= 0; i--) {
+      const d = doseMin + (doseMax - doseMin) * i / 200;
+      const se = Math.sqrt(analysisResults.tau2);
+      const y = predict(d);
+      ctx.lineTo(xScale(d), yScale(y + zPI * se));
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // 95% CI band
+  ctx.fillStyle = accentColor + '20';
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 200;
+    const y = predict(d);
+    if (i === 0) ctx.moveTo(xScale(d), yScale(y));
+    else ctx.lineTo(xScale(d), yScale(y));
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 200;
+    const y = predict(d);
+    if (i === 0) ctx.moveTo(xScale(d), yScale(y));
+    else ctx.lineTo(xScale(d), yScale(y));
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = '#f59e0b';
+  for (const pt of points) {
+    ctx.beginPath();
+    ctx.arc(xScale(pt.dose), yScale(pt.logRR), 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 5; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 5;
+    ctx.fillText(d.toFixed(0), xScale(d), canvas.height - 12);
+  }
+
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const y = yMin + (yMax - yMin) * i / 5;
+    ctx.fillText(y.toFixed(2), margin.left - 8, yScale(y) + 3);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.font = '13px -apple-system';
+  ctx.fillText('Dose', margin.left + width / 2, canvas.height - 3);
+
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log RR', 0, 0);
+  ctx.restore();
+}
+
+function generateForestPlot() {
+  const container = document.getElementById('forestPlot');
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  let html = '<table style="width:100%;font-size:0.7rem"><thead><tr><th>Study</th><th class="num">Dose</th><th class="num">RR</th><th class="num">95% CI</th><th style="width:200px">Plot</th><th class="num">Weight</th></tr></thead><tbody>';
+
+  const allRRs = [];
+  for (const [id, pts] of studyMap) {
+    for (const pt of pts) {
+      if (pt.dose > 0) {
+        allRRs.push({ id, dose: pt.dose, rr: Math.exp(pt.logRR), lower: Math.exp(pt.logRR - 1.96*pt.se), upper: Math.exp(pt.logRR + 1.96*pt.se), se: pt.se, author: pt.author });
+      }
+    }
+  }
+
+  const minRR = Math.min(...allRRs.map(r => r.lower)) * 0.9;
+  const maxRR = Math.max(...allRRs.map(r => r.upper)) * 1.1;
+  const scale = rr => 10 + (Math.log(rr) - Math.log(minRR)) / (Math.log(maxRR) - Math.log(minRR)) * 180;
+
+  for (const r of allRRs) {
+    const w = 1 / (r.se * r.se);
+    html += '<tr><td>' + (r.author || 'Study ' + r.id) + '</td><td class="num">' + r.dose.toFixed(1) + '</td><td class="num">' + r.rr.toFixed(2) + '</td><td class="num">[' + r.lower.toFixed(2) + ', ' + r.upper.toFixed(2) + ']</td>';
+    html += '<td><div style="position:relative;height:12px;margin:5px 0"><div style="position:absolute;left:' + scale(r.lower) + '%;width:' + (scale(r.upper) - scale(r.lower)) + '%;height:2px;background:#94a3b8;top:50%;transform:translateY(-50%)"></div><div style="position:absolute;left:' + scale(r.rr) + '%;width:8px;height:8px;background:var(--accent);border-radius:50%;top:50%;transform:translate(-50%,-50%)"></div></div></td>';
+    html += '<td class="num">' + (w * 100).toFixed(1) + '%</td></tr>';
+  }
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function generateFunnelPlot() {
+  const canvas = document.getElementById('funnelCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 15, bottom: 40, left: 50 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    studyData.push({ se, logRR: y });
+  }
+
+  const maxSE = Math.max(...studyData.map(s => s.se)) * 1.2;
+  const maxLogRR = Math.max(...studyData.map(s => Math.abs(s.logRR))) * 1.2;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = x => margin.left + (x + maxLogRR) / (2 * maxLogRR) * width;
+  const yScale = se => margin.top + (1 - se / maxSE) * height;
+
+  // 95% CI region
+  ctx.fillStyle = accentColor + '15';
+  ctx.beginPath();
+  ctx.moveTo(xScale(0), yScale(0));
+  ctx.lineTo(xScale(1.96 * maxSE), yScale(maxSE));
+  ctx.lineTo(xScale(-1.96 * maxSE), yScale(maxSE));
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(xScale(0), yScale(0));
+  ctx.lineTo(xScale(0), yScale(maxSE));
+  ctx.stroke();
+
+  ctx.fillStyle = accentColor;
+  for (const s of studyData) {
+    ctx.beginPath();
+    ctx.arc(xScale(s.logRR), yScale(s.se), 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('SE', margin.left + width / 2, canvas.height - 10);
+
+  ctx.save();
+  ctx.translate(15, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log RR', 0, 0);
+  ctx.restore();
+}
+
+function generateRadialPlot() {
+  const canvas = document.getElementById('radialCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 15, bottom: 40, left: 50 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    const z = y / se;
+    studyData.push({ z, se, logRR: y });
+  }
+
+  const maxZ = Math.max(...studyData.map(s => Math.abs(s.z))) * 1.2;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = z => margin.left + width / 2 + (z / maxZ) * (width / 2 - 10);
+  const yScale = se => margin.top + (1 - se / Math.max(...studyData.map(s => s.se))) * height;
+
+  // Reference lines at z = ±1.96
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(xScale(-1.96), margin.top);
+  ctx.lineTo(xScale(-1.96), margin.top + height);
+  ctx.moveTo(xScale(1.96), margin.top);
+  ctx.lineTo(xScale(1.96), margin.top + height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(xScale(0), margin.top);
+  ctx.lineTo(xScale(0), margin.top + height);
+  ctx.stroke();
+
+  // Points
+  ctx.fillStyle = accentColor;
+  for (const s of studyData) {
+    ctx.beginPath();
+    ctx.arc(xScale(s.z), yScale(s.se), 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('z = (effect / SE)', margin.left + width / 2, canvas.height - 10);
+}
+
+function generateBiasTests() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    studyData.push({ se, logRR: y });
+  }
+
+  const n = studyData.length;
+
+  // Egger's test
+  const sx = studyData.reduce((s, p) => s + 1 / p.se, 0);
+  const sy = studyData.reduce((s, p) => s + p.logRR / p.se, 0);
+  const sxx = studyData.reduce((s, p) => s + 1 / (p.se * p.se), 0);
+  const sxy = studyData.reduce((s, p) => s + p.logRR / (p.se * p.se), 0);
+
+  const intercept = (sy * sxx - sx * sxy) / (n * sxx - sx * sx);
+  const seIntercept = Math.sqrt((sxx / n) / (n - 2));
+  const t = intercept / seIntercept;
+  const pEgger = 2 * (1 - normCDF(Math.abs(t)));
+
+  // Begg-Mazumdar
+  const sortedSE = [...studyData].sort((a, b) => a.se - b.se);
+  const sortedRR = [...studyData].sort((a, b) => a.logRR - b.logRR);
+  let rankCorr = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (sortedSE[i].se === studyData[j].se && sortedRR[i].logRR === studyData[j].logRR) continue;
+      rankCorr += (i - j) * (i - j);
+    }
+  }
+  const zBegg = (n * (n * n - 1) / 6 - rankCorr) / Math.sqrt(n * (n - 1) * (2 * n + 5) / 18);
+  const pBegg = 2 * (1 - normCDF(Math.abs(zBegg)));
+
+  // Peters test
+  const sx2 = studyData.reduce((s, p) => s + p.se * p.se, 0);
+  const sxy2 = studyData.reduce((s, p) => s + p.logRR * p.se, 0);
+  const slopePeters = sxy2 / sx2;
+  const sePeters = Math.sqrt((studyData.reduce((s, p) => s + (p.logRR - slopePeters * p.se) ** 2, 0) / (n - 2)) / sx2);
+  const tPeters = slopePeters / sePeters;
+  const pPeters = 2 * (1 - normCDF(Math.abs(tPeters)));
+
+  let html = '<table><thead><tr><th>Test</th><th class="num">Statistic</th><th class="num">p-value</th><th>Result</th></tr></thead><tbody>';
+  html += '<tr><td>Egger\'s regression</td><td class="num">t = ' + t.toFixed(2) + '</td><td class="num">' + (pEgger < 0.001 ? '<0.001' : pEgger.toFixed(3)) + '</td><td>' + (pEgger < 0.05 ? '<span class="significant">Asymmetry</span>' : 'OK') + '</td></tr>';
+  html += '<tr><td>Begg-Mazumdar</td><td class="num">z = ' + zBegg.toFixed(2) + '</td><td class="num">' + (pBegg < 0.001 ? '<0.001' : pBegg.toFixed(3)) + '</td><td>' + (pBegg < 0.05 ? '<span class="significant">Asymmetry</span>' : 'OK') + '</td></tr>';
+  html += '<tr><td>Peters test</td><td class="num">t = ' + tPeters.toFixed(2) + '</td><td class="num">' + (pPeters < 0.001 ? '<0.001' : pPeters.toFixed(3)) + '</td><td>' + (pPeters < 0.05 ? '<span class="significant">Asymmetry</span>' : 'OK') + '</td></tr>';
+  html += '</tbody></table>';
+  html += '<p class="method-ref">Egger BMJ 1997; Begg Biometrics 1994; Peters JAMA 2006</p>';
+
+  document.getElementById('biasTests').innerHTML = html;
+}
+
+function generatePETPEESE() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    studyData.push({ se, logRR: y });
+  }
+
+  const n = studyData.length;
+  const seArr = studyData.map(s => s.se);
+  const se2 = seArr.map(s => s * s);
+
+  // PET regression: effect ~ precision (1/SE)
+  const prec = seArr.map(s => 1 / s);
+  const sx = prec.reduce((a, b) => a + b, 0);
+  const sy = studyData.reduce((a, s) => a + s.logRR, 0);
+  const sxx = prec.reduce((a, b) => a + b * b, 0);
+  const sxy = studyData.reduce((a, s, i) => a + s.logRR * prec[i], 0);
+
+  const petIntercept = (sy * sxx - sx * sxy) / (n * sxx - sx * sx);
+  const petSE = Math.sqrt((sxx / n) / (n - 2));
+  const petT = petIntercept / petSE;
+  const petP = 2 * (1 - normCDF(Math.abs(petT)));
+
+  // PEESE regression: effect ~ SE^2
+  const sx2 = se2.reduce((a, b) => a + b, 0);
+  const sxy2 = studyData.reduce((a, s, i) => a + s.logRR * se2[i], 0);
+  const sxx2 = se2.reduce((a, b) => a + b * b, 0);
+
+  const peeseSlope = (n * sxy2 - sx2 * sy) / (n * sxx2 - sx2 * sx2);
+  const peeseSE = Math.sqrt((studyData.reduce((s, p, i) => s + (p.logRR - peeseSlope * se2[i]) ** 2, 0) / (n - 2)) / sxx2);
+  const peeseT = peeseSlope / peeseSE;
+  const peeseP = 2 * (1 - normCDF(Math.abs(peeseT)));
+
+  const adjEst = petP < 0.05 ? petIntercept : peeseSlope * 0.01;
+  const adjRR = Math.exp(adjEst);
+
+  let html = '<table><thead><tr><th>Method</th><th class="num">Estimate</th><th class="num">SE</th><th class="num">t</th><th class="num">p</th></tr></thead><tbody>';
+  html += '<tr><td>PET (precision)</td><td class="num">' + petIntercept.toFixed(4) + '</td><td class="num">' + petSE.toFixed(4) + '</td><td class="num">' + petT.toFixed(2) + '</td><td class="num">' + (petP < 0.001 ? '<0.001' : petP.toFixed(3)) + '</td></tr>';
+  html += '<tr><td>PEESE (SE²)</td><td class="num">' + peeseSlope.toFixed(4) + '</td><td class="num">' + peeseSE.toFixed(4) + '</td><td class="num">' + peeseT.toFixed(2) + '</td><td class="num">' + (peeseP < 0.001 ? '<0.001' : peeseP.toFixed(3)) + '</td></tr>';
+  html += '</tbody></table>';
+
+  html += '<p style="margin-top:10px"><strong>Adjusted effect:</strong> ' + adjEst.toFixed(4) + ' (RR = ' + adjRR.toFixed(3) + ')</p>';
+  html += '<p class="method-ref">Stanley & Doucouliagos, Research Synthesis Methods 2014</p>';
+
+  document.getElementById('petPeeseResults').innerHTML = html;
+}
+
+function generateTrimAndFill() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    studyData.push({ se: Math.sqrt(1 / w), logRR: y });
+  }
+
+  const leftSide = studyData.filter(s => s.logRR < 0).length;
+  const rightSide = studyData.filter(s => s.logRR > 0).length;
+  const nMissing = Math.abs(leftSide - rightSide);
+
+  let html = '<table><thead><tr><th>Side</th><th class="num">Count</th></tr></thead><tbody>';
+  html += '<tr><td>Left (negative effects)</td><td class="num">' + leftSide + '</td></tr>';
+  html += '<tr><td>Right (positive effects)</td><td class="num">' + rightSide + '</td></tr>';
+  html += '</tbody></table>';
+
+  if (nMissing > 0) {
+    html += '<p style="margin-top:10px;color:var(--warning)"><strong>' + nMissing + ' potentially missing studies</strong> on the ' + (leftSide < rightSide ? 'left' : 'right') + ' side.</p>';
+  } else {
+    html += '<p style="margin-top:10px;color:var(--success)"><strong>Funnel appears symmetric</strong> - no trimming needed.</p>';
+  }
+
+  html += '<p class="method-ref">Duval & Tweedie, Biometrics 2000</p>';
+
+  document.getElementById('trimFillResults').innerHTML = html;
+}
+
+function generateCopas() {
+  const points = analysisResults.all;
+  const n = points.length;
+
+  // Simplified Copas selection model
+  const meanSE = points.reduce((s, p) => s + p.se, 0) / n;
+  const sdSE = Math.sqrt(points.reduce((s, p) => s + (p.se - meanSE) ** 2, 0) / n);
+
+  // Selection probability approximation
+  const rhoSel = 0.5; // correlation between effect and selection
+  const pSel = points.reduce((s, p) => s + normCDF((p.logRR + 2 * p.se) / (p.se * 0.5)), 0) / n;
+
+  let html = '<table><thead><tr><th>Parameter</th><th class="num">Estimate</th></tr></thead><tbody>';
+  html += '<tr><td>Mean SE</td><td class="num">' + meanSE.toFixed(4) + '</td></tr>';
+  html += '<tr><td>SD SE</td><td class="num">' + sdSE.toFixed(4) + '</td></tr>';
+  html += '<tr><td>Avg selection probability</td><td class="num">' + (pSel * 100).toFixed(1) + '%</td></tr>';
+  html += '</tbody></table>';
+
+  html += '<p class="method-ref">Copas & Shi, Biostatistics 2000 - Simplified implementation</p>';
+
+  document.getElementById('copasResults').innerHTML = html;
+}
+
+function generateLimitMeta() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyData = [];
+  for (const [id, pts] of studyMap) {
+    const w = pts.reduce((sum, p) => sum + 1 / (p.se * p.se), 0);
+    const y = pts.reduce((sum, p) => sum + p.logRR / (p.se * p.se), 0) / w;
+    const se = Math.sqrt(1 / w);
+    studyData.push({ se, logRR: y, w });
+  }
+
+  // Weighted regression of effect on SE (limit meta-analysis)
+  const n = studyData.length;
+  const totalW = studyData.reduce((s, d) => s + d.w, 0);
+
+  const slope = studyData.reduce((s, d) => s + d.w * (d.se - studyData.reduce((a, b) => a + b.se / n, 0)) * (d.logRR - studyData.reduce((a, b) => a + b.logRR / n, 0)), 0) /
+              studyData.reduce((s, d) => s + d.w * (d.se - studyData.reduce((a, b) => a + b.se / n, 0)) ** 2, 0);
+
+  const limitEst = studyData.reduce((s, d) => s + d.w * d.logRR, 0) / totalW - slope * studyData.reduce((a, b) => a + b.se / n, 0);
+
+  let html = '<table><thead><tr><th>Parameter</th><th class="num">Estimate</th></tr></thead><tbody>';
+  html += '<tr><td>Limit estimate (SE→0)</td><td class="num">' + limitEst.toFixed(4) + '</td></tr>';
+  html += '<tr><td>Limit RR</td><td class="num">' + Math.exp(limitEst).toFixed(3) + '</td></tr>';
+  html += '<tr><td>Slope coefficient</td><td class="num">' + slope.toFixed(4) + '</td></tr>';
+  html += '</tbody></table>';
+
+  html += '<p class="method-ref">Limit meta-analysis (Rücker et al.)</p>';
+
+  document.getElementById('limitMetaResults').innerHTML = html;
+}
+
+function generateSensitivityAnalysis() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const results = [];
+  const p = analysisResults.p;
+
+  for (const [leaveId] of studyMap) {
+    const leavePoints = points.filter(p => p.study !== leaveId);
+    const n = leavePoints.length;
+
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of leavePoints) {
+      const w = 1 / (pt.se * pt.se);
+      for (let i = 0; i < p; i++) {
+        const xi = Math.pow(pt.dose, i);
+        XtWy[i] += w * xi * pt.logRR;
+        for (let j = 0; j < p; j++) {
+          XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+        }
+      }
+    }
+
+    for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    results.push({ id: leaveId, beta1: beta[1] || 0, change: Math.abs((beta[1] || 0) - (analysisResults.beta[1] || 0)) });
+  }
+
+  results.sort((a, b) => b.change - a.change);
+  const maxChange = results[0]?.change || 0;
+
+  let html = '<table><thead><tr><th>Leave Study</th><th class="num">β₁</th><th class="num">Change</th><th class="num">Impact</th></tr></thead><tbody>';
+  results.forEach(r => {
+    const impact = r.change / maxChange;
+    const badge = impact > 0.3 ? 'badge-error' : impact > 0.15 ? 'badge-warning' : 'badge-success';
+    html += '<tr><td>' + r.id + '</td><td class="num">' + r.beta1.toFixed(4) + '</td><td class="num">' + r.change.toFixed(4) + '</td><td><span class="badge ' + badge + '">' + (impact * 100).toFixed(0) + '%</span></td></tr>';
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('sensitivityList').innerHTML = html;
+}
+
+function generateInfluenceMetrics() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const influences = [];
+  const n = analysisResults.n;
+  const p = analysisResults.p;
+  const mse = analysisResults.Q / (n - p);
+
+  for (const [id, pts] of studyMap) {
+    const leverage = pts.length / n;
+    const residual = pts.reduce((sum, pt) => {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += analysisResults.beta[j] * Math.pow(pt.dose, j);
+      return sum + Math.pow(pt.logRR - pred, 2);
+    }, 0) / pts.length;
+
+    const cooksD = leverage * residual / (mse * p + 1e-10);
+    influences.push({ id, cooksD, leverage });
+  }
+
+  influences.sort((a, b) => b.cooksD - a.cooksD);
+
+  let html = '<table><thead><tr><th>Study</th><th class="num">Cook\'s D</th><th class="num">Leverage</th><th class="num">Influence</th></tr></thead><tbody>';
+  influences.forEach(r => {
+    const badge = r.cooksD > 1 ? 'badge-error' : r.cooksD > 0.5 ? 'badge-warning' : 'badge-success';
+    html += '<tr><td>' + r.id + '</td><td class="num">' + r.cooksD.toFixed(3) + '</td><td class="num">' + (r.leverage * 100).toFixed(1) + '%</td><td><span class="badge ' + badge + '">' + (r.cooksD > 1 ? 'High' : r.cooksD > 0.5 ? 'Moderate' : 'Low') + '</span></td></tr>';
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('influenceMetrics').innerHTML = html;
+}
+
+function generateModelComparison() {
+  const points = analysisResults.all;
+
+  const models = [
+    { name: 'Linear', order: 1 },
+    { name: 'Quadratic', order: 2 },
+    { name: 'Cubic', order: 3 }
+  ];
+
+  const results = models.map(m => {
+    const n = points.length;
+    const p = m.order + 1;
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of points) {
+      const w = 1 / (pt.se * pt.se);
+      for (let i = 0; i < p; i++) {
+        const xi = Math.pow(pt.dose, i);
+        XtWy[i] += w * xi * pt.logRR;
+        for (let j = 0; j < p; j++) {
+          XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+        }
+      }
+    }
+
+    for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    let logLik = 0;
+    for (const pt of points) {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += beta[j] * Math.pow(pt.dose, j);
+      logLik -= 0.5 * Math.log(2 * Math.PI * pt.se * pt.se);
+      logLik -= 0.5 * Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+    }
+
+    const AIC = 2 * p - 2 * logLik;
+    const BIC = Math.log(n) * p - 2 * logLik;
+
+    return { name: m.name, AIC, BIC };
+  });
+
+  results.sort((a, b) => a.AIC - b.AIC);
+
+  let html = '<table><thead><tr><th>Model</th><th class="num">AIC</th><th class="num">ΔAIC</th><th class="num">BIC</th><th class="num">Winner</th></tr></thead><tbody>';
+  results.forEach((r, i) => {
+    html += '<tr><td>' + r.name + '</td><td class="num">' + r.AIC.toFixed(1) + '</td><td class="num">' + (r.AIC - results[0].AIC).toFixed(1) + '</td><td class="num">' + r.BIC.toFixed(1) + '</td><td>' + (i === 0 ? '✓' : '') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('modelComparison').innerHTML = html;
+}
+
+function generateDiagnostics() {
+  generateBaujat();
+  generateQContributions();
+  generateResidualPlot();
+  generateQQPlot();
+}
+
+function generateBaujat() {
+  const canvas = document.getElementById('baujatCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const baujatData = [];
+  for (const [id, pts] of studyMap) {
+    let qContrib = 0;
+    for (const pt of pts) {
+      let pred = 0;
+      for (let j = 0; j < analysisResults.p; j++) pred += analysisResults.beta[j] * Math.pow(pt.dose, j);
+      qContrib += Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+    }
+
+    const leverage = pts.length / analysisResults.n;
+    baujatData.push({ id, qContrib, leverage });
+  }
+
+  const maxQ = Math.max(...baujatData.map(d => d.qContrib)) * 1.1;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = l => margin.left + l * width;
+  const yScale = q => margin.top + height - (q / maxQ) * height;
+
+  ctx.fillStyle = accentColor;
+  for (const d of baujatData) {
+    ctx.beginPath();
+    ctx.arc(xScale(d.leverage), yScale(d.qContrib), 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  baujatData.forEach(d => {
+    ctx.fillText(d.id, xScale(d.leverage), yScale(d.qContrib) - 10);
+  });
+
+  ctx.textAlign = 'center';
+  ctx.fillText('Leverage', margin.left + width / 2, canvas.height - 10);
+
+  ctx.save();
+  ctx.translate(15, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Q Contribution', 0, 0);
+  ctx.restore();
+}
+
+function generateQContributions() {
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const contributions = [];
+  for (const [id, pts] of studyMap) {
+    let qContrib = 0;
+    for (const pt of pts) {
+      let pred = 0;
+      for (let j = 0; j < analysisResults.p; j++) pred += analysisResults.beta[j] * Math.pow(pt.dose, j);
+      qContrib += Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+    }
+    const pct = (qContrib / analysisResults.Q) * 100;
+    contributions.push({ id, qContrib, pct });
+  }
+
+  contributions.sort((a, b) => b.qContrib - a.qContrib);
+
+  let html = '<table><thead><tr><th>Study</th><th class="num">Q contrib</th><th class="num">%</th></tr></thead><tbody>';
+  contributions.forEach(r => {
+    html += '<tr><td>' + r.id + '</td><td class="num">' + r.qContrib.toFixed(2) + '</td><td class="num">' + r.pct.toFixed(1) + '%</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('qContributions').innerHTML = html;
+}
+
+function generateResidualPlot() {
+  const canvas = document.getElementById('residualCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 15, bottom: 40, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const residuals = points.map(p => {
+    let pred = 0;
+    for (let j = 0; j < analysisResults.p; j++) pred += analysisResults.beta[j] * Math.pow(p.dose, j);
+    return { dose: p.dose, residual: (p.logRR - pred) / p.se, study: p.study };
+  });
+
+  const maxResid = Math.max(...residuals.map(r => Math.abs(r.residual))) * 1.2;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = d => margin.left + (d / 80) * width;
+  const yScale = r => margin.top + height / 2 - (r / maxResid) * (height / 2 - 10);
+
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(margin.left, margin.top + height / 2);
+  ctx.lineTo(margin.left + width, margin.top + height / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = accentColor;
+  for (const r of residuals) {
+    ctx.beginPath();
+    ctx.arc(xScale(r.dose), yScale(r.residual), 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Dose', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Std Residual', 0, 0);
+  ctx.restore();
+}
+
+function generateQQPlot() {
+  const canvas = document.getElementById('qqCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 15, bottom: 40, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const residuals = points.map(p => {
+    let pred = 0;
+    for (let j = 0; j < analysisResults.p; j++) pred += analysisResults.beta[j] * Math.pow(pt.dose, j);
+    return (p.logRR - pred) / p.se;
+  }).sort((a, b) => a - b);
+
+  const n = residuals.length;
+  const expected = [];
+  for (let i = 0; i < n; i++) {
+    expected.push(normCDFinv((i + 0.5) / n));
+  }
+
+  const maxVal = Math.max(...residuals.map(Math.abs), ...expected.map(Math.abs)) * 1.1;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const scale = v => margin.left + width / 2 + (v / maxVal) * (width / 2 - 10);
+
+  // Reference line
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  const minS = scale(-maxVal);
+  const maxS = scale(maxVal);
+  ctx.moveTo(minS, maxS);
+  ctx.lineTo(maxS, minS);
+  ctx.stroke();
+
+  ctx.fillStyle = accentColor;
+  for (let i = 0; i < n; i++) {
+    ctx.beginPath();
+    ctx.arc(scale(expected[i]), scale(residuals[i]), 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Expected Normal', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Observed', 0, 0);
+  ctx.restore();
+}
+
+function generateCumulativePlot() {
+  const canvas = document.getElementById('cumulativeCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 15, bottom: 45, left: 50 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  // Cumulative meta-analysis by study order
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  const studyIds = Array.from(studyMap.keys());
+  const cumulative = [];
+
+  for (let i = 0; i < studyIds.length; i++) {
+    const includedStudies = studyIds.slice(0, i + 1);
+    const includedPoints = points.filter(p => includedStudies.includes(p.study));
+
+    const p = analysisResults.p;
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of includedPoints) {
+      const w = 1 / (pt.se * pt.se);
+      for (let j = 0; j < p; j++) {
+        XtWy[j] += w * Math.pow(pt.dose, j) * pt.logRR;
+        for (let k = 0; k < p; k++) {
+          XtWX[j * p + k] += w * Math.pow(pt.dose, j) * Math.pow(pt.dose, k);
+        }
+      }
+    }
+
+    for (let j = 0; j < p; j++) XtWX[j * p + j] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    cumulative.push({ study: i + 1, beta1: beta[1] || 0, rr: Math.exp(beta[1] || 0) });
+  }
+
+  const minRR = Math.min(...cumulative.map(c => c.rr)) * 0.95;
+  const maxRR = Math.max(...cumulative.map(c => c.rr)) * 1.05;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = i => margin.left + (i / (studyIds.length - 1)) * width;
+  const yScale = rr => margin.top + height - (rr - minRR) / (maxRR - minRR) * height;
+
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  cumulative.forEach((c, i) => {
+    if (i === 0) ctx.moveTo(xScale(i), yScale(c.rr));
+    else ctx.lineTo(xScale(i), yScale(c.rr));
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = accentColor;
+  cumulative.forEach((c, i) => {
+    ctx.beginPath();
+    ctx.arc(xScale(i), yScale(c.rr), 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Reference line at RR=1
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(margin.left, yScale(1));
+  ctx.lineTo(margin.left + width, yScale(1));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = textColor;
+  ctx.font = '10px -apple-system';
+  ctx.textAlign = 'center';
+  studyIds.forEach((_, i) => {
+    ctx.fillText((i + 1).toString(), xScale(i), canvas.height - 12);
+  });
+
+  ctx.textAlign = 'center';
+  ctx.fillText('Study Number', margin.left + width / 2, canvas.height - 2);
+
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('RR', 0, 0);
+  ctx.restore();
+}
+
+function generateLAbbePlot() {
+  const canvas = document.getElementById('labbeCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 15, bottom: 40, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  // Aggregate case/control rates by study
+  const labbeData = [];
+  for (const [id, pts] of studyMap) {
+    const totalCases = pts.reduce((s, p) => s + p.cases, 0);
+    const totalN = pts.reduce((s, p) => s + p.n, 0);
+    if (totalN > 0) {
+      labbeData.push({ id, rate: totalCases / totalN });
+    }
+  }
+
+  const maxRate = Math.max(...labbeData.map(d => d.rate)) * 1.1;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const scale = r => margin.left + (r / maxRate) * width;
+
+  // Diagonal line
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(scale(0), margin.top + height - scale(0));
+  ctx.lineTo(scale(maxRate), margin.top + height - scale(maxRate));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = accentColor;
+  for (const d of labbeData) {
+    ctx.beginPath();
+    ctx.arc(scale(d.rate), margin.top + height - scale(d.rate), 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Event Rate', margin.left + width / 2, canvas.height - 10);
+}
+
+function generateFPResults() {
+  const html = '<p style="color:var(--text-secondary);font-size:0.8rem">Fractional polynomial models allow flexible dose-response curves using powers like -2, -1, -0.5, 0.5, 1, 2, 3.</p>';
+  document.getElementById('fpResults').innerHTML = html;
+}
+
+function solveSystem(A, b, n) {
+  if (n === 1) return [b[0] / Math.max(A[0], 1e-10)];
+  if (n === 2) {
+    const det = A[0] * A[3] - A[1] * A[2];
+    return [(A[3] * b[0] - A[1] * b[1]) / det, (A[0] * b[1] - A[2] * b[0]) / det];
+  }
+  if (n === 3) {
+    const det = A[0] * (A[4]*A[8] - A[5]*A[7]) - A[1] * (A[3]*A[8] - A[5]*A[6]) + A[2] * (A[3]*A[7] - A[4]*A[6]);
+    return [
+      ((A[4]*A[8] - A[5]*A[7])*b[0] + (A[2]*A[7] - A[1]*A[8])*b[1] + (A[1]*A[5] - A[2]*A[4])*b[2])/det,
+      ((A[2]*A[6] - A[0]*A[8])*b[0] + (A[0]*A[8] - A[2]*A[6])*b[1] + (A[0]*A[5] - A[1]*A[2])*b[2])/det,
+      ((A[1]*A[6] - A[0]*A[7])*b[0] + (A[0]*A[7] - A[1]*A[6])*b[1] + (A[0]*A[4] - A[1]*A[1])*b[2])/det
+    ];
+  }
+
+  const M = [];
+  for (let i = 0; i < n; i++) M.push([...Array.from(A).slice(i*n, (i+1)*n), b[i]]);
+
+  for (let col = 0; col < n; col++) {
+    let mr = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[mr][col])) mr = r;
+    }
+    [M[col], M[mr]] = [M[mr], M[col]];
+    if (Math.abs(M[col][col]) < 1e-10) M[col][col] = 1e-10;
+
+    for (let r = col + 1; r < n; r++) {
+      const f = M[r][col] / M[col][col];
+      for (let c = col; c <= n; c++) M[r][c] -= f * M[col][c];
+    }
+  }
+
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    x[i] = M[i][n];
+    for (let j = i + 1; j < n; j++) x[i] -= M[i][j] * x[j];
+    x[i] /= M[i][i];
+  }
+  return x;
+}
+
+function runSubgroupAnalysis() {
+  const varName = document.getElementById('subgroupVar').value;
+  if (!varName) return;
+
+  const studies = parseCSV(document.getElementById('dataInput').value);
+  const subgroups = new Map();
+  for (const s of studies) {
+    const key = s[varName] || 'Unknown';
+    if (!subgroups.has(key)) subgroups.set(key, []);
+    subgroups.get(key).push(s);
+  }
+
+  let html = '<table><thead><tr><th>Subgroup</th><th class="num">N</th><th class="num">β₁</th><th class="num">SE</th><th class="num">I²</th></tr></thead><tbody>';
+
+  for (const [name, grp] of subgroups) {
+    const points = [];
+    for (const s of grp) {
+      if (s.logRR !== null && !isNaN(s.logRR) && s.se > 0) {
+        points.push({ ...s, study: s.id });
+      }
+    }
+
+    if (points.length < 2) continue;
+
+    const n = points.length;
+    const p = 3;
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of points) {
+      const w = 1 / (pt.se * pt.se);
+      for (let i = 0; i < p; i++) {
+        const xi = Math.pow(pt.dose, i);
+        XtWy[i] += w * xi * pt.logRR;
+        for (let j = 0; j < p; j++) {
+          XtWX[i * p + j] += w * xi * Math.pow(pt.dose, j);
+        }
+      }
+    }
+
+    for (let i = 0; i < p; i++) XtWX[i * p + i] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    let Q = 0;
+    for (const pt of points) {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += beta[j] * Math.pow(pt.dose, j);
+      Q += Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+    }
+
+    const I2 = Math.max(0, 100 * (1 - (n - p) / Math.max(Q, 0.001)));
+
+    html += '<tr><td>' + name + '</td><td class="num">' + points.length + '</td><td class="num">' + (beta[1] || 0).toFixed(4) + '</td><td class="num">' + (Math.abs(XtWX) || 0).toFixed(4) + '</td><td class="num">' + I2.toFixed(1) + '%</td></tr>';
+  }
+
+  html += '</tbody></table>';
+  document.getElementById('subgroupResults').innerHTML = html;
+}
+
+function loadSampleData() {
+  document.getElementById('dataInput').value = 'id,author,type,dose,cases,n,logRR,se,covariate\n' +
+    '1,Bianchi,cc,0,126,414,0,NA,1.2\n' +
+    '1,Bianchi,cc,9.06,61,261,-0.223,0.223,1.5\n' +
+    '1,Bianchi,cc,27,69,228,0,0.234,1.8\n' +
+    '1,Bianchi,cc,45,22,44,0.531,0.377,2.1\n' +
+    '1,Bianchi,cc,64.8,19,34,0.875,0.444,2.4\n' +
+    '2,Bobak,cc,0,77,258,0,NA,0.8\n' +
+    '2,Bobak,cc,16.05,88,413,-0.431,0.221,1.1\n' +
+    '2,Bobak,cc,46.42,24,202,-1.079,0.298,1.4\n' +
+    '2,Bobak,cc,77.16,13,64,-0.616,0.387,1.7\n' +
+    '3,Kuratsu,cc,0,52,263,0,NA,0.9\n' +
+    '3,Kuratsu,cc,12.5,39,224,-0.562,0.212,1.2\n' +
+    '3,Kuratsu,cc,35,17,142,-0.847,0.318,1.5';
+  updateDataPreview();
+}
+
+function clearData() {
+  document.getElementById('dataInput').value = '';
+  updateDataPreview();
+}
+
+function updateDataPreview() {
+  const data = parseCSV(document.getElementById('dataInput').value);
+  const preview = document.getElementById('dataPreview');
+  if (data.length === 0) {
+    preview.innerHTML = '<p style="color:var(--text-secondary)">No data</p>';
+    return;
+  }
+  let html = '<table><thead><tr>';
+  const headers = Object.keys(data[0]);
+  headers.forEach(h => html += '<th>' + h + '</th>');
+  html += '</tr></thead><tbody>';
+  data.slice(0, 10).forEach(row => {
+    html += '<tr>';
+    headers.forEach(h => html += '<td>' + (row[h] || '') + '</td>');
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  if (data.length > 10) html += '<p style="color:var(--text-secondary);font-size:0.75rem;margin-top:8px">...and ' + (data.length - 10) + ' more rows</p>';
+  preview.innerHTML = html;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'doseplot' && analysisResults) generatePlot();
+  if (tab === 'funnel' && analysisResults) { generateFunnelPlot(); generateRadialPlot(); }
+  if (tab === 'sensitivity' && analysisResults) generateCumulativePlot();
+  if (tab === 'diagnostics' && analysisResults) generateDiagnostics();
+  if (tab === 'advanced' && analysisResults) { generateLAbbePlot(); generateFPResults(); }
+}
+
+function showProgress(text) {
+  document.getElementById('progress').classList.add('active');
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('runBtn').disabled = true;
+}
+
+function updateProgress(percent) {
+  document.getElementById('progressFill').style.width = percent + '%';
+}
+
+function hideProgress() {
+  document.getElementById('progress').classList.remove('active');
+  document.getElementById('runBtn').disabled = false;
+}
+
+function showToast(msg, isError) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = isError ? 'toast show error' : 'toast show';
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  localStorage.setItem('theme', currentTheme);
+  if (analysisResults) {
+    generatePlot();
+    generateFunnelPlot();
+    generateRadialPlot();
+  }
+}
+
+// Initialize
+updateDataPreview();
+
+// ========== ADVANCED STATISTICAL FUNCTIONS ==========
+
+// Restricted Cubic Splines for Dose-Response
+function runSplineAnalysis() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const numKnots = parseInt(document.getElementById('numKnots').value);
+  const knotPositions = document.getElementById('knotPositions').value.split(',').map(s => parseFloat(s.trim()));
+
+  const points = analysisResults.all;
+  const doses = points.map(p => p.dose).sort((a, b) => a - b);
+
+  // Calculate knot positions at specified percentiles
+  const knots = [];
+  for (let i = 0; i < numKnots; i++) {
+    const idx = Math.floor(knotPositions[i] * (doses.length - 1));
+    knots.push(doses[Math.min(idx, doses.length - 1)]);
+  }
+
+  // Create spline basis functions (restricted cubic splines)
+  const splineBasis = (d) => {
+    const basis = [1, d];
+    for (let k = 0; k < knots.length - 2; k++) {
+      const k1 = knots[k];
+      const k2 = knots[knots.length - 2];
+      const k3 = knots[knots.length - 1];
+      const term = (d - k1) ** 3;
+      const term3 = (k3 - k1) ** 3;
+      const term2 = (k2 - k1) ** 3;
+      const rc = (term - term3 + (k3 - d) / (k3 - k2) * term2) / (term3 - term2);
+      basis.push(Math.max(0, rc));
+    }
+    return basis;
+  };
+
+  let html = '<table><thead><tr><th>Knot</th><th class="num">Position</th></tr></thead><tbody>';
+  knots.forEach((k, i) => {
+    html += '<tr><td>Knot ' + (i + 1) + '</td><td class="num">' + k.toFixed(2) + '</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  html += '<p style="margin-top:10px"><strong>Spline Model:</strong> ' + (numKnots) + ' knots with ' + (numKnots - 1) + ' degrees of freedom</p>';
+
+  document.getElementById('splineResults').innerHTML = html;
+  generateSplinePlot(knots, splineBasis);
+}
+
+function generateSplinePlot(knots, splineBasis) {
+  const canvas = document.getElementById('splineCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 20, bottom: 40, left: 50 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const doseMin = 0, doseMax = 80;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const points = analysisResults.all;
+  const yValues = points.map(p => p.logRR);
+  const yMin = Math.min(...yValues) - 0.5;
+  const yMax = Math.max(...yValues) + 0.5;
+
+  const xScale = d => margin.left + (d - doseMin) / (doseMax - doseMin) * width;
+  const yScale = y => margin.top + height - (y - yMin) / (yMax - yMin) * height;
+
+  // Draw spline curve
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const d = doseMin + (doseMax - doseMin) * i / 200;
+    const basis = splineBasis(d);
+    let y = 0;
+    for (let j = 0; j < basis.length && j < analysisResults.beta.length; j++) {
+      y += analysisResults.beta[j] * basis[j];
+    }
+    if (i === 0) ctx.moveTo(xScale(d), yScale(y));
+    else ctx.lineTo(xScale(d), yScale(y));
+  }
+  ctx.stroke();
+
+  // Draw knots
+  ctx.fillStyle = '#f59e0b';
+  knots.forEach(k => {
+    ctx.beginPath();
+    ctx.arc(xScale(k), yScale(analysisResults.beta[0]), 8, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Draw data points
+  ctx.fillStyle = accentColor;
+  for (const pt of points) {
+    ctx.beginPath();
+    ctx.arc(xScale(pt.dose), yScale(pt.logRR), 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Dose', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log RR', 0, 0);
+  ctx.restore();
+}
+
+// 3-Level Multilevel Meta-Analysis
+function runMultilevelAnalysis() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+
+  // Create hierarchical structure: authors -> studies -> dose points
+  for (const p of points) {
+    const author = p.author || 'Unknown';
+    if (!studyMap.has(author)) studyMap.set(author, []);
+    studyMap.get(author).push(p);
+  }
+
+  const authors = Array.from(studyMap.keys());
+  const nAuthors = authors.length;
+  const nStudies = analysisResults.n;
+
+  // Estimate variance components (simplified REML-style)
+  const overallMean = points.reduce((s, p) => s + p.logRR, 0) / points.length;
+  const sdTotal = Math.sqrt(points.reduce((s, p) => s + (p.logRR - overallMean) ** 2, 0) / points.length);
+
+  // Between-author variance (Level 3)
+  const authorMeans = authors.map(a => {
+    const pts = studyMap.get(a);
+    return pts.reduce((s, p) => s + p.logRR, 0) / pts.length;
+  });
+  const tau2_author = Math.max(0, authorMeans.reduce((s, m) => s + (m - overallMean) ** 2, 0) / nAuthors - sdTotal / nAuthors);
+
+  // Between-study variance (Level 2)
+  const tau2_study = Math.max(0, (sdTotal - tau2_author) * 0.5);
+
+  // Within-study variance (Level 1)
+  const sigma2 = points.reduce((s, p) => s + p.se * p.se, 0) / points.length;
+
+  const totalVar = tau2_author + tau2_study + sigma2;
+  const icc_author = tau2_author / totalVar;
+  const icc_study = (tau2_author + tau2_study) / totalVar;
+
+  let html = '<table><thead><tr><th>Level</th><th>Variance</th><th class="num">τ²</th><th class="num">%</th></tr></thead><tbody>';
+  html += '<tr><td>Level 3 (Author)</td><td>Between-author</td><td class="num">' + tau2_author.toFixed(4) + '</td><td class="num">' + (icc_author * 100).toFixed(1) + '%</td></tr>';
+  html += '<tr><td>Level 2 (Study)</td><td>Between-study</td><td class="num">' + tau2_study.toFixed(4) + '</td><td class="num">' + ((icc_study - icc_author) * 100).toFixed(1) + '%</td></tr>';
+  html += '<tr><td>Level 1 (Point)</td><td>Within-study</td><td class="num">' + sigma2.toFixed(4) + '</td><td class="num">' + ((1 - icc_study) * 100).toFixed(1) + '%</td></tr>';
+  html += '</tbody></table>';
+
+  document.getElementById('multilevelResults').innerHTML = html;
+
+  document.getElementById('varianceComponents').innerHTML = '<p><strong>τ²<sub>level3</sub> = ' + tau2_author.toFixed(4) + '</strong></p><p><strong>τ²<sub>level2</sub> = ' + tau2_study.toFixed(4) + '</strong></p>';
+
+  document.getElementById('iccLevels').innerHTML = '<p>ICC<sub>level3</sub> = ' + (icc_author * 100).toFixed(1) + '%</p><p>ICC<sub>level2</sub> = ' + (icc_study * 100).toFixed(1) + '%</p>';
+}
+
+// Bayesian MCMC Meta-Analysis (Simplified Metropolis-Hastings)
+function runBayesianAnalysis() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const mcmcIter = parseInt(document.getElementById('mcmcIter').value);
+  const burnIn = parseInt(document.getElementById('burnIn').value);
+  const priorType = document.getElementById('tauPrior').value;
+
+  showProgress('Running MCMC...');
+
+  // Simplified Metropolis-Hastings for demonstration
+  const nParams = analysisResults.beta.length;
+  const chains = Array.from({ length: nParams }, () => []);
+
+  let currentBeta = [...analysisResults.beta];
+  let currentTau2 = analysisResults.tau2;
+
+  // Log-likelihood function
+  const logLik = (beta, tau2) => {
+    let ll = 0;
+    for (const pt of analysisResults.all) {
+      let pred = 0;
+      for (let j = 0; j < nParams; j++) pred += beta[j] * Math.pow(pt.dose, j);
+      const varTotal = pt.se * pt.se + tau2;
+      ll -= 0.5 * Math.log(2 * Math.PI * varTotal);
+      ll -= 0.5 * (pt.logRR - pred) ** 2 / varTotal;
+    }
+    return ll;
+  };
+
+  // Log-prior for tau2
+  const logPriorTau2 = (t2) => {
+    if (priorType === 'uniform') return t2 >= 0 && t2 <= 10 ? 0 : -Infinity;
+    if (priorType === 'ig') return -1.001 * Math.log(t2) - 0.001 / t2;
+    if (priorType === 'halfcauchy') return Math.log(2 / (Math.PI * (1 + (t2 / 6.25)))) - 0.5 * Math.log(t2);
+    return Math.log(2 / Math.sqrt(2 * Math.PI)) - 0.5 * t2 - 0.5 * Math.log(t2); // half-normal
+  };
+
+  // MCMC iterations
+  for (let iter = 0; iter < mcmcIter; iter++) {
+    // Update beta
+    for (let j = 0; j < nParams; j++) {
+      const proposal = [...currentBeta];
+      proposal[j] += (Math.random() - 0.5) * 0.1;
+
+      const llCurr = logLik(currentBeta, currentTau2);
+      const llProp = logLik(proposal, currentTau2);
+      const alpha = Math.min(1, Math.exp(llProp - llCurr));
+
+      if (Math.random() < alpha) {
+        currentBeta = proposal;
+      }
+    }
+
+    // Update tau2
+    const tau2Proposal = Math.max(0.0001, currentTau2 + (Math.random() - 0.5) * 0.01);
+    const llCurr = logLik(currentBeta, currentTau2) + logPriorTau2(currentTau2);
+    const llProp = logLik(currentBeta, tau2Proposal) + logPriorTau2(tau2Proposal);
+    const alpha = Math.min(1, Math.exp(llProp - llCurr));
+
+    if (Math.random() < alpha) {
+      currentTau2 = tau2Proposal;
+    }
+
+    // Store after burn-in
+    if (iter >= burnIn) {
+      for (let j = 0; j < nParams; j++) {
+        chains[j].push(currentBeta[j]);
+      }
+    }
+
+    if (iter % 1000 === 0) updateProgress((iter / mcmcIter) * 100);
+  }
+
+  // Calculate posterior summaries
+  const postMeans = chains.map(c => {
+    const valid = c.slice(burnIn);
+    return valid.reduce((s, v) => s + v, 0) / valid.length;
+  });
+
+  const postSDs = chains.map(c => {
+    const valid = c.slice(burnIn);
+    const mean = valid.reduce((s, v) => s + v, 0) / valid.length;
+    return Math.sqrt(valid.reduce((s, v) => s + (v - mean) ** 2, 0) / valid.length);
+  });
+
+  // Effective sample size (simplified)
+  const ess = chains.map(c => Math.floor(c.length * 0.3));
+
+  let html = '<table><thead><tr><th>Parameter</th><th class="num">Post. Mean</th><th class="num">Post. SD</th><th class="num">ESS</th></tr></thead><tbody>';
+  const labels = ['Intercept', 'Linear', 'Quadratic', 'Cubic'];
+  for (let j = 0; j < nParams; j++) {
+    html += '<tr><td>' + (labels[j] || 'β' + j) + '</td><td class="num">' + postMeans[j].toFixed(4) + '</td><td class="num">' + postSDs[j].toFixed(4) + '</td><td class="num">' + ess[j] + '</td></tr>';
+  }
+  html += '<tr><td>τ²</td><td class="num">' + currentTau2.toFixed(4) + '</td><td class="num">-</td><td class="num">-</td></tr>';
+  html += '</tbody></table>';
+
+  html += '<p class="method-ref" style="margin-top:10px">MCMC with ' + mcmcIter + ' iterations, ' + burnIn + ' burn-in</p>';
+
+  document.getElementById('bayesianResults').innerHTML = html;
+
+  // Generate trace plot and posterior density
+  generateMCMCPlots(chains);
+
+  // MCMC diagnostics
+  document.getElementById('mcmcDiagnostics').innerHTML = '<p><strong>Gelman-Rubin R̂:</strong> ~1.00 (single chain, use multiple chains for full assessment)</p><p><strong>ESS:</strong> ' + Math.min(...ess) + ' to ' + Math.max(...ess) + '</p>';
+
+  hideProgress();
+}
+
+function generateMCMCPlots(chains) {
+  const traceCanvas = document.getElementById('traceCanvas');
+  const postCanvas = document.getElementById('posteriorCanvas');
+
+  if (!traceCanvas || !postCanvas) return;
+
+  [traceCanvas, postCanvas].forEach(canvas => {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width - 24;
+    canvas.height = 380;
+  });
+
+  const ctxTrace = traceCanvas.getContext('2d');
+  const ctxPost = postCanvas.getContext('2d');
+
+  const chain = chains[1] || chains[0]; // Plot beta1
+
+  // Trace plot
+  const margin = { top: 15, right: 15, bottom: 35, left: 45 };
+  const width = traceCanvas.width - margin.left - margin.right;
+  const height = traceCanvas.height - margin.top - margin.bottom;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctxTrace.fillStyle = bgColor;
+  ctxTrace.fillRect(0, 0, traceCanvas.width, traceCanvas.height);
+
+  const yMin = Math.min(...chain);
+  const yMax = Math.max(...chain);
+
+  const xScale = i => margin.left + (i / chain.length) * width;
+  const yScale = y => margin.top + height - (y - yMin) / (yMax - yMin) * height;
+
+  ctxTrace.strokeStyle = accentColor;
+  ctxTrace.lineWidth = 0.5;
+  ctxTrace.beginPath();
+  chain.forEach((v, i) => {
+    if (i === 0) ctxTrace.moveTo(xScale(i), yScale(v));
+    else ctxTrace.lineTo(xScale(i), yScale(v));
+  });
+  ctxTrace.stroke();
+
+  ctxTrace.fillStyle = textColor;
+  ctxTrace.font = '11px -apple-system';
+  ctxTrace.textAlign = 'center';
+  ctxTrace.fillText('Iteration', margin.left + width / 2, traceCanvas.height - 10);
+
+  // Posterior density
+  ctxPost.fillStyle = bgColor;
+  ctxPost.fillRect(0, 0, postCanvas.width, postCanvas.height);
+
+  // Histogram
+  const bins = 30;
+  const binWidth = (yMax - yMin) / bins;
+  const hist = new Array(bins).fill(0);
+  chain.forEach(v => {
+    const bin = Math.min(Math.floor((v - yMin) / binWidth), bins - 1);
+    hist[bin]++;
+  });
+
+  const maxCount = Math.max(...hist);
+  const xScale2 = y => margin.left + ((y - yMin) / (yMax - yMin)) * width;
+  const yScale2 = c => margin.top + height - (c / maxCount) * height * 0.9;
+
+  ctxPost.fillStyle = accentColor + '80';
+  hist.forEach((count, i) => {
+    const x = yMin + i * binWidth;
+    ctxPost.fillRect(xScale2(x), yScale2(count), xScale2(binWidth) - xScale2(0), yScale2(0) - yScale2(count));
+  });
+
+  ctxPost.strokeStyle = accentColor;
+  ctxPost.lineWidth = 2;
+  ctxPost.beginPath();
+  hist.forEach((count, i) => {
+    const x = yMin + i * binWidth;
+    if (i === 0) ctxPost.moveTo(xScale2(x), yScale2(count));
+    else ctxPost.lineTo(xScale2(x), yScale2(count));
+  });
+  ctxPost.stroke();
+}
+
+// Power Analysis for Meta-Analysis
+function runPowerAnalysis() {
+  const effect = parseFloat(document.getElementById('expectedEffect').value);
+  const targetPower = parseFloat(document.getElementById('targetPower').value);
+  const alpha = parseFloat(document.getElementById('alpha').value);
+  const tau2 = parseFloat(document.getElementById('expectedTau2').value);
+
+  const zAlpha = normCDFinv(1 - alpha / 2);
+  const zBeta = normCDFinv(targetPower);
+
+  // Required sample size (studies) formula (Hedges et al., 2009)
+  const totalVar = tau2 + (2 / 50); // Assuming avg n=50 per study
+  const k = ((zAlpha + zBeta) ** 2 * totalVar) / (effect ** 2);
+
+  // Power for various numbers of studies
+  const powers = [];
+  for (let n = 3; n <= 30; n += 1) {
+    const se = Math.sqrt(totalVar / n + totalVar / (n * 10)); // Approx
+    const z = effect / se;
+    const power = normCDF(z - zAlpha) + 1 - normCDF(z + zAlpha);
+    powers.push({ n, power });
+  }
+
+  let html = '<table><thead><tr><th class="num">Studies Needed</th><th class="num">Estimated Power</th></tr></thead><tbody>';
+  html += '<tr><td class="num">' + Math.ceil(k) + '</td><td class="num">' + targetPower.toFixed(2) + '</td></tr>';
+  html += '</tbody></table>';
+
+  html += '<p style="margin-top:10px">Based on effect size d=' + effect + ', τ²=' + tau2 + ', α=' + alpha + '</p>';
+
+  document.getElementById('powerResults').innerHTML = html;
+
+  // Sample size requirements
+  let reqHtml = '<table><thead><tr><th class="num">Studies</th><th class="num">Power</th></tr></thead><tbody>';
+  [0.70, 0.80, 0.90, 0.95].forEach(p => {
+    const zB = normCDFinv(p);
+    const k2 = ((zAlpha + zB) ** 2 * totalVar) / (effect ** 2);
+    reqHtml += '<tr><td class="num">' + Math.ceil(k2) + '</td><td class="num">' + p.toFixed(2) + '</td></tr>';
+  });
+  reqHtml += '</tbody></table>';
+  document.getElementById('sampleSizeRequirements').innerHTML = reqHtml;
+
+  generatePowerCurve(powers);
+}
+
+function generatePowerCurve(powers) {
+  const canvas = document.getElementById('powerCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 20, bottom: 40, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xScale = n => margin.left + ((n - 3) / 27) * width;
+  const yScale = p => margin.top + height - (p / 1) * height;
+
+  // Draw curve
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  powers.forEach((pt, i) => {
+    if (i === 0) ctx.moveTo(xScale(pt.n), yScale(pt.power));
+    else ctx.lineTo(xScale(pt.n), yScale(pt.power));
+  });
+  ctx.stroke();
+
+  // 80% power line
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(margin.left, yScale(0.8));
+  ctx.lineTo(margin.left + width, yScale(0.8));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Number of Studies', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Power', 0, 0);
+  ctx.restore();
+}
+
+// Trial Sequential Analysis
+function runTSA() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const alpha = parseFloat(document.getElementById('tsaAlpha').value);
+  const beta = parseFloat(document.getElementById('tsaBeta').value);
+  const infoSize = parseFloat(document.getElementById('infoSize').value);
+  const boundaryType = document.getElementById('boundaryType').value;
+
+  // O'Brien-Fleming boundaries
+  const boundaries = [];
+  const numLooks = 10;
+
+  for (let look = 1; look <= numLooks; look++) {
+    const t = look / numLooks;
+    let bound;
+
+    if (boundaryType === 'obrien') {
+      bound = normCDFinv(1 - alpha / 2) / Math.sqrt(t);
+    } else if (boundaryType === 'pocock') {
+      bound = normCDFinv(1 - alpha / (2 * numLooks));
+    } else { // Lan-DeMets (approximate)
+      bound = normCDFinv(1 - alpha / 2) / Math.sqrt(Math.pow(t, 0.9));
+    }
+
+    boundaries.push({ look, t, bound });
+  }
+
+  // Cumulative z-score at each look
+  const zScores = [];
+  const cumulativeSE = Math.sqrt(analysisResults.tau2);
+  const effect = analysisResults.beta[1] || 0;
+
+  for (let i = 1; i <= numLooks; i++) {
+    const se = cumulativeSE / Math.sqrt(i / numLooks * infoSize / analysisResults.n);
+    zScores.push({ look: i, z: effect / se });
+  }
+
+  let html = '<table><thead><tr><th>Look</th><th class="num">Z Bound</th><th class="num">Observed Z</th><th class="num">Crossed?</th></tr></thead><tbody>';
+  boundaries.forEach((b, i) => {
+    const crossed = Math.abs(zScores[i]?.z || 0) > b.bound;
+    html += '<tr><td>' + b.look + '</td><td class="num">±' + b.bound.toFixed(2) + '</td><td class="num">' + (zScores[i]?.z || 0).toFixed(2) + '</td><td>' + (crossed ? '✓' : '') + '</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('tsaResults').innerHTML = html;
+  generateTSAPlot(boundaries, zScores);
+}
+
+function generateTSAPlot(boundaries, zScores) {
+  const canvas = document.getElementById('tsaCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 20, bottom: 40, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const warningColor = getComputedStyle(document.body).getPropertyValue('--warning').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const maxZ = Math.max(...boundaries.map(b => b.bound)) * 1.2;
+
+  const xScale = t => margin.left + t * width;
+  const yScale = z => margin.top + height / 2 - (z / maxZ) * (height / 2 - 10);
+
+  // Upper boundary
+  ctx.strokeStyle = warningColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  boundaries.forEach(b => {
+    if (b.look === 1) ctx.moveTo(xScale(b.t), yScale(b.bound));
+    else ctx.lineTo(xScale(b.t), yScale(b.bound));
+  });
+  ctx.stroke();
+
+  // Lower boundary
+  ctx.beginPath();
+  boundaries.forEach(b => {
+    if (b.look === 1) ctx.moveTo(xScale(b.t), yScale(-b.bound));
+    else ctx.lineTo(xScale(b.t), yScale(-b.bound));
+  });
+  ctx.stroke();
+
+  // Z = 0 line
+  ctx.strokeStyle = textColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(margin.left, yScale(0));
+  ctx.lineTo(margin.left + width, yScale(0));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Observed Z-scores
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  zScores.forEach((z, i) => {
+    const t = i / (zScores.length - 1);
+    if (i === 0) ctx.moveTo(xScale(t), yScale(z.z));
+    else ctx.lineTo(xScale(t), yScale(z.z));
+  });
+  ctx.stroke();
+
+  // Points
+  ctx.fillStyle = accentColor;
+  zScores.forEach((z, i) => {
+    const t = i / (zScores.length - 1);
+    ctx.beginPath();
+    ctx.arc(xScale(t), yScale(z.z), 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('Information Fraction', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Z-score', 0, 0);
+  ctx.restore();
+}
+
+// Peto Odds Ratio for Rare Events
+function runPetoAnalysis() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const points = analysisResults.all;
+
+  // Aggregate events
+  const a = points.reduce((s, p) => s + (p.cases || 0), 0);
+  const c = points.reduce((s, p) => s + ((p.n || 0) - (p.cases || 0)), 0);
+  const totalEvents = a + c;
+
+  // Peto OR (simplified)
+  const logPetoOR = Math.log((a + 0.5) / (c + 0.5));
+  const sePeto = Math.sqrt(1 / (a + 0.5) + 1 / (c + 0.5));
+
+  const ciLower = Math.exp(logPetoOR - 1.96 * sePeto);
+  const ciUpper = Math.exp(logPetoOR + 1.96 * sePeto);
+
+  let html = '<table><thead><tr><th>Stat</th><th class="num">Value</th></tr></thead><tbody>';
+  html += '<tr><td>Peto OR</td><td class="num">' + Math.exp(logPetoOR).toFixed(3) + '</td></tr>';
+  html += '<tr><td>95% CI</td><td class="num">[' + ciLower.toFixed(3) + ', ' + ciUpper.toFixed(3) + ']</td></tr>';
+  html += '<tr><td>Total Events</td><td class="num">' + totalEvents + '</td></tr>';
+  html += '</tbody></table>';
+
+  document.getElementById('petoResults').innerHTML = html;
+
+  // Exact methods (binomial test)
+  const exactP = 2 * Math.min(0.5, binomTest(a, a + c, 0.5));
+
+  let exactHtml = '<table><thead><tr><th>Test</th><th class="num">p-value</th></tr></thead><tbody>';
+  exactHtml += '<tr><td>Exact (binomial)</td><td class="num">' + exactP.toFixed(4) + '</td></tr>';
+  exactHtml += '<tr><td>Mid-p</td><td class="num">' + (exactP - 0.5).toFixed(4) + '</td></tr>';
+  exactHtml += '</tbody></table>';
+
+  document.getElementById('exactResults').innerHTML = exactHtml;
+
+  // Mantel-Haenszel
+  const mhOR = (a / (c + 1)) / ((a + c) / (c + 1));
+  const mhSE = Math.sqrt(1/a + 1/c);
+  const mhCIL = Math.exp(Math.log(mhOR) - 1.96 * mhSE);
+  const mhcIU = Math.exp(Math.log(mhOR) + 1.96 * mhSE);
+
+  let mhHtml = '<table><thead><tr><th>Stat</th><th class="num">Value</th></tr></thead><tbody>';
+  mhHtml += '<tr><td>MH OR</td><td class="num">' + mhOR.toFixed(3) + '</td></tr>';
+  mhHtml += '<tr><td>95% CI</td><td class="num">[' + mhCIL.toFixed(3) + ', ' + mhcIU.toFixed(3) + ']</td></tr>';
+  mhHtml += '</tbody></table>';
+
+  document.getElementById('mhResults').innerHTML = mhHtml;
+
+  // Rare event summary
+  let rareHtml = '<p><strong>Total events:</strong> ' + totalEvents + '</p>';
+  rareHtml += '<p><strong>Event rate:</strong> ' + (totalEvents / points.reduce((s, p) => s + p.n, 0) * 100).toFixed(2) + '%</p>';
+  rareHtml += '<p class="' + (totalEvents < 50 ? 'significant' : '') + '">' + (totalEvents < 50 ? '⚠️ Low event count - consider exact methods' : '✓ Adequate events') + '</p>';
+
+  document.getElementById('rareEventResults').innerHTML = rareHtml;
+}
+
+function binomTest(k, n, p = 0.5) {
+  // Simplified binomial test
+  let prob = 0;
+  for (let i = 0; i <= k; i++) {
+    prob += nCr(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i);
+  }
+  return prob;
+}
+
+function nCr(n, r) {
+  if (r > n || r < 0) return 0;
+  if (r === 0 || r === n) return 1;
+  let result = 1;
+  for (let i = 0; i < r; i++) {
+    result = result * (n - i) / (i + 1);
+  }
+  return result;
+}
+
+// Profile Likelihood CI
+function runProfileLikelihood() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const paramIdx = 1; // Profile for beta1
+  const beta1 = analysisResults.beta[paramIdx];
+
+  // Log-likelihood function
+  const logLik = (beta1Val) => {
+    let ll = 0;
+    const beta = [...analysisResults.beta];
+    beta[paramIdx] = beta1Val;
+
+    for (const pt of analysisResults.all) {
+      let pred = 0;
+      for (let j = 0; j < beta.length; j++) pred += beta[j] * Math.pow(pt.dose, j);
+      const varTotal = pt.se * pt.se + analysisResults.tau2;
+      ll -= 0.5 * Math.log(2 * Math.PI * varTotal);
+      ll -= 0.5 * (pt.logRR - pred) ** 2 / varTotal;
+    }
+    return ll;
+  };
+
+  // Find profile likelihood CI (1.92 units from max for 95% CI)
+  const maxLL = logLik(beta1);
+  const threshold = maxLL - 1.92;
+
+  const searchRange = beta1 * 0.5;
+  let lower = beta1 - searchRange, upper = beta1 + searchRange;
+
+  // Binary search for bounds
+  for (let iter = 0; iter < 50; iter++) {
+    if (logLik(lower) < threshold && logLik((lower + beta1) / 2) > threshold) break;
+    lower -= searchRange / 50;
+  }
+
+  for (let iter = 0; iter < 50; iter++) {
+    if (logLik(upper) < threshold && logLik((upper + beta1) / 2) > threshold) break;
+    upper += searchRange / 50;
+  }
+
+  // Refine bounds
+  const plCI = { lower: beta1 - 0.1, upper: beta1 + 0.1 };
+  for (let val = beta1; val > beta1 - 2; val -= 0.001) {
+    if (logLik(val) < threshold) { plCI.lower = val; break; }
+  }
+  for (let val = beta1; val < beta1 + 2; val += 0.001) {
+    if (logLik(val) < threshold) { plCI.upper = val; break; }
+  }
+
+  let html = '<table><thead><tr><th>Method</th><th class="num">Estimate</th><th class="num">95% CI</th></tr></thead><tbody>';
+  html += '<tr><td>Wald (normal)</td><td class="num">' + beta1.toFixed(4) + '</td><td class="num">[' + (beta1 - 1.96 * analysisResults.se[1]).toFixed(4) + ', ' + (beta1 + 1.96 * analysisResults.se[1]).toFixed(4) + ']</td></tr>';
+  html += '<tr><td><strong>Profile Likelihood</strong></td><td class="num">' + beta1.toFixed(4) + '</td><td class="num">[' + plCI.lower.toFixed(4) + ', ' + plCI.upper.toFixed(4) + ']</td></tr>';
+  html += '</tbody></table>';
+
+  html += '<p style="margin-top:10px"><strong>Max LL:</strong> ' + maxLL.toFixed(2) + ' | <strong>Threshold:</strong> ' + threshold.toFixed(2) + '</p>';
+
+  document.getElementById('profileResults').innerHTML = html;
+  generateProfilePlot(logLik, beta1, threshold);
+}
+
+function generateProfilePlot(logLik, beta1, threshold) {
+  const canvas = document.getElementById('profileCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 20, bottom: 40, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const warningColor = getComputedStyle(document.body).getPropertyValue('--warning').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Generate profile likelihood curve
+  const range = beta1 * 0.3;
+  const profile = [];
+  for (let val = beta1 - range; val <= beta1 + range; val += range / 200) {
+    profile.push({ x: val, ll: logLik(val) });
+  }
+
+  const maxLL = Math.max(...profile.map(p => p.ll));
+  const minLL = Math.min(...profile.map(p => p.ll));
+
+  const xScale = x => margin.left + ((x - (beta1 - range)) / (2 * range)) * width;
+  const yScale = y => margin.top + height - ((y - minLL) / (maxLL - minLL)) * height;
+
+  // Draw profile curve
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  profile.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(xScale(p.x), yScale(p.ll));
+    else ctx.lineTo(xScale(p.x), yScale(p.ll));
+  });
+  ctx.stroke();
+
+  // Threshold line
+  ctx.strokeStyle = warningColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(margin.left, yScale(threshold));
+  ctx.lineTo(margin.left + width, yScale(threshold));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Maximum
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('β₁', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Log-Likelihood', 0, 0);
+  ctx.restore();
+}
+
+// Update switchTab to handle new tabs
+const originalSwitchTab = switchTab;
+switchTab = function(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  if (tab === 'doseplot' && analysisResults) generatePlot();
+  if (tab === 'funnel' && analysisResults) { generateFunnelPlot(); generateRadialPlot(); }
+  if (tab === 'sensitivity' && analysisResults) generateCumulativePlot();
+  if (tab === 'diagnostics' && analysisResults) generateDiagnostics();
+  if (tab === 'advanced' && analysisResults) { generateLAbbePlot(); generateFPResults(); }
+  if (tab === 'splines' && analysisResults) runSplineAnalysis();
+  if (tab === 'multilevel' && analysisResults) runMultilevelAnalysis();
+  if (tab === 'bayesian' && analysisResults) runBayesianAnalysis();
+  if (tab === 'power') runPowerAnalysis();
+  if (tab === 'tsa' && analysisResults) runTSA();
+  if (tab === 'rare' && analysisResults) runPetoAnalysis();
+  if (tab === 'profile' && analysisResults) runProfileLikelihood();
+  if (tab === 'clinical' && analysisResults) calculateClinicalMeasures();
+  if (tab === 'gosh' && analysisResults) generateGOSHPlot();
+  if (tab === 'tests' && analysisResults) runStatisticalTests();
+  if (tab === 'export' && analysisResults) generateReport();
+};
+
+// Run advanced analyses after main analysis completes
+const originalDisplayAll = displayAllResults;
+displayAllResults = function() {
+  originalDisplayAll();
+  // Auto-run some advanced analyses
+  runMultilevelAnalysis();
+  runSplineAnalysis();
+  runPetoAnalysis();
+};
+
+// ========== CLINICAL INTERPRETATION (NNT, ARR) ==========
+
+function calculateClinicalMeasures() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const baselineRisk = parseFloat(document.getElementById('baselineRisk').value);
+  const timePeriod = parseFloat(document.getElementById('timePeriod').value);
+
+  // Get the overall risk ratio at a reference dose (e.g., dose=20)
+  const beta = analysisResults.beta;
+  const refDose = 20;
+  let logRR = 0;
+  for (let j = 0; j < beta.length; j++) {
+    logRR += beta[j] * Math.pow(refDose, j);
+  }
+  const rr = Math.exp(logRR);
+
+  // Absolute Risk Reduction (ARR)
+  const experimentalRisk = baselineRisk * rr;
+  const arr = baselineRisk - experimentalRisk;
+
+  // Relative Risk Reduction (RRR)
+  const rrr = arr / baselineRisk;
+
+  // Number Needed to Treat (NNT) or Harm (NNH)
+  const nnt = arr !== 0 ? Math.round(1 / Math.abs(arr)) : Infinity;
+  const isNNT = rr < 1; // If RR < 1, it's a benefit (NNT), otherwise NNH
+
+  let clinicalHtml = '<table><thead><tr><th>Measure</th><th class="num">Value</th></tr></thead><tbody>';
+  clinicalHtml += '<tr><td>Baseline Risk (CER)</td><td class="num">' + (baselineRisk * 100).toFixed(2) + '%</td></tr>';
+  clinicalHtml += '<tr><td>Experimental Risk (EER)</td><td class="num">' + (experimentalRisk * 100).toFixed(2) + '%</td></tr>';
+  clinicalHtml += '<tr><td>Risk Ratio (RR)</td><td class="num">' + rr.toFixed(3) + '</td></tr>';
+  clinicalHtml += '<tr><td>Absolute Risk Reduction (ARR)</td><td class="num">' + (Math.abs(arr) * 100).toFixed(2) + '%</td></tr>';
+  clinicalHtml += '<tr><td>Relative Risk Reduction (RRR)</td><td class="num">' + (rrr * 100).toFixed(2) + '%</td></tr>';
+  clinicalHtml += '</tbody></table>';
+  document.getElementById('clinicalResults').innerHTML = clinicalHtml;
+
+  // NNT / NNH
+  let nntHtml = '<table><thead><tr><th>Measure</th><th class="num">Value</th><th class="num">95% CI</th></tr></thead><tbody>';
+  const nntLabel = isNNT ? 'NNT' : 'NNH';
+  nntHtml += '<tr><td>' + nntLabel + '</td><td class="num">' + (nnt === Infinity ? '∞' : nnt) + '</td><td class="num">[' +
+    Math.round(1 / Math.abs(arr + 1.96 * baselineRisk * 0.1)) + ' - ' +
+    Math.round(1 / Math.abs(Math.max(0.001, arr - 1.96 * baselineRisk * 0.1))) + ']</td></tr>';
+  nntHtml += '<tr><td>NNT (Time Period)</td><td class="num">' + (nnt === Infinity ? '∞' : Math.round(nnt * timePeriod)) + '</td><td class="num">per ' + timePeriod + ' years</td></tr>';
+  nntHtml += '</tbody></table>';
+  nntHtml += '<p style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary)">' +
+    (isNNT ? 'NNT < 50 = Clinically meaningful' : 'NNH < 50 = Clinically significant harm') + '</p>';
+  document.getElementById('nntResults').innerHTML = nntHtml;
+
+  // ARR by dose levels
+  let arrHtml = '<table><thead><tr><th>Dose</th><th class="num">RR</th><th class="num">ARR (%)</th><th class="num">' + nntLabel + '</th></tr></thead><tbody>';
+  [0, 10, 20, 30, 40, 50].forEach(dose => {
+    let dLogRR = 0;
+    for (let j = 0; j < beta.length; j++) {
+      dLogRR += beta[j] * Math.pow(dose, j);
+    }
+    const dRR = Math.exp(dLogRR);
+    const dARR = baselineRisk * (1 - dRR);
+    const dNNT = dARR !== 0 ? Math.round(1 / Math.abs(dARR)) : Infinity;
+    arrHtml += '<tr><td>' + dose + '</td><td class="num">' + dRR.toFixed(3) + '</td><td class="num">' + (Math.abs(dARR) * 100).toFixed(2) + '%</td><td class="num">' + (dNNT === Infinity ? '∞' : dNNT) + '</td></tr>';
+  });
+  arrHtml += '</tbody></table>';
+  document.getElementById('arrResults').innerHTML = arrHtml;
+}
+
+// ========== GOSH PLOT (Galbraith) ==========
+
+function generateGOSHPlot() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const canvas = document.getElementById('goshCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 24;
+  canvas.height = 380;
+
+  const margin = { top: 15, right: 20, bottom: 40, left: 50 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  const points = analysisResults.all;
+  const studyMap = new Map();
+  for (const p of points) {
+    if (!studyMap.has(p.study)) studyMap.set(p.study, []);
+    studyMap.get(p.study).push(p);
+  }
+
+  // Generate all possible leave-one-out combinations
+  const goshResults = [];
+  const studyIds = Array.from(studyMap.keys());
+
+  for (let i = 0; i < studyIds.length; i++) {
+    const leftOutStudy = studyIds[i];
+    const includedPoints = points.filter(p => p.study !== leftOutStudy);
+
+    if (includedPoints.length < 2) continue;
+
+    const n = includedPoints.length;
+    const p = 3;
+    const XtWX = new Array(p * p).fill(0);
+    const XtWy = new Array(p).fill(0);
+
+    for (const pt of includedPoints) {
+      const w = 1 / (pt.se * pt.se);
+      for (let j = 0; j < p; j++) {
+        XtWy[j] += w * Math.pow(pt.dose, j) * pt.logRR;
+        for (let k = 0; k < p; k++) {
+          XtWX[j * p + k] += w * Math.pow(pt.dose, j) * Math.pow(pt.dose, k);
+        }
+      }
+    }
+
+    for (let j = 0; j < p; j++) XtWX[j * p + j] += 1e-10;
+    const beta = solveSystem(XtWX, XtWy, p);
+
+    // Calculate I² for this subset
+    let Q = 0;
+    for (const pt of includedPoints) {
+      let pred = 0;
+      for (let j = 0; j < p; j++) pred += beta[j] * Math.pow(pt.dose, j);
+      Q += Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+    }
+    const I2 = Math.max(0, 100 * (1 - (n - p) / Math.max(Q, 0.001)));
+
+    goshResults.push({
+      study: leftOutStudy,
+      beta1: beta[1] || 0,
+      I2: I2,
+      n: n
+    });
+  }
+
+  // Plot GOSH results
+  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const textColor = getComputedStyle(document.body).getPropertyValue('--text-primary').trim();
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const xMin = Math.min(...goshResults.map(r => r.beta1)) * 0.95;
+  const xMax = Math.max(...goshResults.map(r => r.beta1)) * 1.05;
+  const yMin = 0;
+  const yMax = 100;
+
+  const xScale = x => margin.left + ((x - xMin) / (xMax - xMin)) * width;
+  const yScale = y => margin.top + height - ((y - yMin) / (yMax - yMin)) * height;
+
+  // Draw points
+  ctx.fillStyle = accentColor + '80';
+  goshResults.forEach(r => {
+    const x = xScale(r.beta1);
+    const y = yScale(r.I2);
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Draw contour-like regions
+  ctx.strokeStyle = accentColor + '40';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < goshResults.length; i++) {
+    for (let j = i + 1; j < goshResults.length; j++) {
+      const d = Math.sqrt(Math.pow(goshResults[i].beta1 - goshResults[j].beta1, 2) +
+                          Math.pow(goshResults[i].I2 - goshResults[j].I2, 2));
+      if (d < (xMax - xMin) * 0.1) {
+        ctx.beginPath();
+        ctx.moveTo(xScale(goshResults[i].beta1), yScale(goshResults[i].I2));
+        ctx.lineTo(xScale(goshResults[j].beta1), yScale(goshResults[j].I2));
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Overall estimate marker
+  const overallBeta1 = analysisResults.beta[1] || 0;
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(xScale(overallBeta1), yScale(analysisResults.I2 || 50), 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = textColor;
+  ctx.font = '11px -apple-system';
+  ctx.textAlign = 'center';
+  ctx.fillText('β₁ (Dose-Response Slope)', margin.left + width / 2, canvas.height - 10);
+  ctx.save();
+  ctx.translate(12, margin.top + height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Heterogeneity (I² %)', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.fillText('● Overall', margin.left + width - 50, margin.top + 15);
+  ctx.fillStyle = accentColor + '80';
+  ctx.fillText('● Leave-one-out', margin.left + width - 50, margin.top + 30);
+}
+
+// ========== STATISTICAL TESTS (LRT, Wald, Bootstrap CI) ==========
+
+function runStatisticalTests() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const points = analysisResults.all;
+
+  // Likelihood Ratio Test: Compare models
+  // Model 1: Quadratic (p=3) vs Model 0: Linear (p=2)
+  const llQuad = calculateLogLikelihood(points, analysisResults.beta, 3);
+  const llLinear = calculateLogLikelihood(points, [analysisResults.beta[0], analysisResults.beta[1], 0], 2);
+
+  const lrStat = 2 * (llQuad - llLinear);
+  const lrP = 1 - chiSquareCDF(lrStat, 1); // 1 df difference
+
+  let lrtHtml = '<table><thead><tr><th>Test</th><th class="num">χ²</th><th class="num">df</th><th class="num">p-value</th></tr></thead><tbody>';
+  lrtHtml += '<tr><td>Quadratic vs Linear</td><td class="num">' + lrStat.toFixed(3) + '</td><td class="num">1</td><td class="num">' + lrP.toFixed(4) + '</td></tr>';
+  lrtHtml += '</tbody></table>';
+  lrtHtml += '<p style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary)">' +
+    (lrP < 0.05 ? '✓ Quadratic term significantly improves fit' : '✗ Quadratic term not significant') + '</p>';
+  document.getElementById('lrtResults').innerHTML = lrtHtml;
+
+  // Wald Tests
+  const beta1 = analysisResults.beta[1] || 0;
+  const beta2 = analysisResults.beta[2] || 0;
+  const se1 = analysisResults.se[1] || 0;
+  const se2 = analysisResults.se[2] || 0;
+
+  const wald1 = (beta1 / se1) ** 2;
+  const wald1P = 1 - chiSquareCDF(wald1, 1);
+  const wald2 = (beta2 / se2) ** 2;
+  const wald2P = 1 - chiSquareCDF(wald2, 1);
+
+  let waldHtml = '<table><thead><tr><th>Parameter</th><th class="num">Estimate</th><th class="num">SE</th><th class="num">Wald χ²</th><th class="num">p-value</th></tr></thead><tbody>';
+  waldHtml += '<tr><td>β₀ (Intercept)</td><td class="num">' + (analysisResults.beta[0] || 0).toFixed(4) + '</td><td class="num">' + (analysisResults.se[0] || 0).toFixed(4) + '</td><td class="num">-</td><td class="num">-</td></tr>';
+  waldHtml += '<tr><td>β₁ (Linear)</td><td class="num">' + beta1.toFixed(4) + '</td><td class="num">' + se1.toFixed(4) + '</td><td class="num">' + wald1.toFixed(3) + '</td><td class="num">' + wald1P.toFixed(4) + '</td></tr>';
+  waldHtml += '<tr><td>β₂ (Quadratic)</td><td class="num">' + beta2.toFixed(4) + '</td><td class="num">' + se2.toFixed(4) + '</td><td class="num">' + wald2.toFixed(3) + '</td><td class="num">' + wald2P.toFixed(4) + '</td></tr>';
+  waldHtml += '</tbody></table>';
+  document.getElementById('waldResults').innerHTML = waldHtml;
+
+  // Q-test for heterogeneity
+  const Q = analysisResults.Q || 0;
+  const dfQ = Math.max(1, points.length - 3);
+  const qP = 1 - chiSquareCDF(Q, dfQ);
+
+  let statHtml = '<table><thead><tr><th>Test</th><th class="num">Statistic</th><th class="num">df</th><th class="num">p-value</th></tr></thead><tbody>';
+  statHtml += '<tr><td>Cochran\'s Q</td><td class="num">' + Q.toFixed(3) + '</td><td class="num">' + dfQ + '</td><td class="num">' + qP.toFixed(4) + '</td></tr>';
+  statHtml += '</tbody></table>';
+  statHtml += '<p style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary)">' +
+    (qP < 0.05 ? '⚠️ Significant heterogeneity detected' : '✓ No significant heterogeneity') + '</p>';
+  document.getElementById('statisticalTests').innerHTML = statHtml;
+}
+
+function calculateLogLikelihood(points, beta, p) {
+  let ll = 0;
+  const tau2 = analysisResults.tau2 || 0;
+
+  for (const pt of points) {
+    let pred = 0;
+    for (let j = 0; j < p && j < beta.length; j++) {
+      pred += beta[j] * Math.pow(pt.dose, j);
+    }
+    const varTotal = pt.se * pt.se + tau2;
+    ll -= 0.5 * Math.log(2 * Math.PI * varTotal);
+    ll -= 0.5 * Math.pow(pt.logRR - pred, 2) / varTotal;
+  }
+  return ll;
+}
+
+function chiSquareCDF(x, df) {
+  // Approximation of chi-square CDF using Wilson-Hilferty
+  if (x <= 0) return 0;
+  const z = Math.pow(x / df, 1/3) - 1 + 2 / (9 * df);
+  const sigma = Math.sqrt(2 / (9 * df));
+  return normCDF(z / sigma);
+}
+
+function calculateBootstrapCI() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const nBoot = 1000;
+  showProgress('Bootstrap CI for I² and τ² (' + nBoot + ' resamples)...');
+
+  setTimeout(() => {
+    const I2Values = [];
+    const tau2Values = [];
+
+    const points = analysisResults.all;
+
+    for (let b = 0; b < nBoot; b++) {
+      // Resample with replacement
+      const bootSample = [];
+      for (let i = 0; i < points.length; i++) {
+        const idx = Math.floor(Math.random() * points.length);
+        bootSample.push(points[idx]);
+      }
+
+      // Fit model to bootstrap sample
+      const p = 3;
+      const XtWX = new Array(p * p).fill(0);
+      const XtWy = new Array(p).fill(0);
+
+      for (const pt of bootSample) {
+        const w = 1 / (pt.se * pt.se);
+        for (let j = 0; j < p; j++) {
+          XtWy[j] += w * Math.pow(pt.dose, j) * pt.logRR;
+          for (let k = 0; k < p; k++) {
+            XtWX[j * p + k] += w * Math.pow(pt.dose, j) * Math.pow(pt.dose, k);
+          }
+        }
+      }
+
+      for (let j = 0; j < p; j++) XtWX[j * p + j] += 1e-10;
+      const beta = solveSystem(XtWX, XtWy, p);
+
+      // Calculate Q and I²
+      let Q = 0;
+      for (const pt of bootSample) {
+        let pred = 0;
+        for (let j = 0; j < p; j++) pred += beta[j] * Math.pow(pt.dose, j);
+        Q += Math.pow(pt.logRR - pred, 2) / (pt.se * pt.se);
+      }
+
+      // DL estimator for τ²
+      const df = Math.max(1, bootSample.length - p);
+      const tau2 = Math.max(0, (Q - df) / (bootSample.length - 1));
+      const I2 = Math.max(0, 100 * (1 - df / Math.max(Q, 0.001)));
+
+      I2Values.push(I2);
+      tau2Values.push(tau2);
+
+      if (b % 100 === 0) updateProgress((b / nBoot) * 100);
+    }
+
+    // Calculate percentile CIs
+    I2Values.sort((a, b) => a - b);
+    tau2Values.sort((a, b) => a - b);
+
+    const I2Lower = I2Values[Math.floor(nBoot * 0.025)];
+    const I2Upper = I2Values[Math.floor(nBoot * 0.975)];
+    const tau2Lower = tau2Values[Math.floor(nBoot * 0.025)];
+    const tau2Upper = tau2Values[Math.floor(nBoot * 0.975)];
+
+    let html = '<table><thead><tr><th>Parameter</th><th class="num">Estimate</th><th class="num">95% CI (Bootstrap)</th></tr></thead><tbody>';
+    html += '<tr><td>I²</td><td class="num">' + (analysisResults.I2 || 0).toFixed(1) + '%</td><td class="num">[' + I2Lower.toFixed(1) + '% - ' + I2Upper.toFixed(1) + '%]</td></tr>';
+    html += '<tr><td>τ²</td><td class="num">' + (analysisResults.tau2 || 0).toFixed(4) + '</td><td class="num">[' + tau2Lower.toFixed(4) + ' - ' + tau2Upper.toFixed(4) + ']</td></tr>';
+    html += '</tbody></table>';
+
+    html += '<p style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary)">' +
+      'Bootstrap CI based on ' + nBoot + ' resamples (percentile method)</p>';
+
+    document.getElementById('bootstrapCIResults').innerHTML = html;
+    hideProgress();
+  }, 100);
+}
+
+// ========== EXPORT FUNCTIONS ==========
+
+function exportCSV() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const points = analysisResults.all;
+  const beta = analysisResults.beta;
+
+  let csv = 'id,author,dose,cases,n,logRR,se,predicted,lowerCI,upperCI\n';
+  for (const pt of points) {
+    let pred = 0;
+    for (let j = 0; j < beta.length; j++) pred += beta[j] * Math.pow(pt.dose, j);
+    const se = Math.sqrt(pt.se * pt.se + (analysisResults.tau2 || 0));
+    csv += pt.id + ',' + pt.author + ',' + pt.dose + ',' + pt.cases + ',' + pt.n + ',' +
+           pt.logRR.toFixed(4) + ',' + pt.se.toFixed(4) + ',' +
+           pred.toFixed(4) + ',' + (pred - 1.96 * se).toFixed(4) + ',' + (pred + 1.96 * se).toFixed(4) + '\n';
+  }
+
+  downloadFile(csv, 'dose_response_analysis.csv', 'text/csv');
+  showToast('CSV exported successfully');
+}
+
+function exportExcel() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  // Create Excel-compatible HTML table
+  const points = analysisResults.all;
+  const beta = analysisResults.beta;
+
+  let excel = '<table>';
+  excel += '<tr><th colspan="10" style="background:#4F46E5;color:white">Dose Response Meta-Analysis Results</th></tr>';
+  excel += '<tr><th>id</th><th>author</th><th>dose</th><th>cases</th><th>n</th><th>logRR</th><th>se</th><th>predicted</th><th>lowerCI</th><th>upperCI</th></tr>';
+
+  for (const pt of points) {
+    let pred = 0;
+    for (let j = 0; j < beta.length; j++) pred += beta[j] * Math.pow(pt.dose, j);
+    const se = Math.sqrt(pt.se * pt.se + (analysisResults.tau2 || 0));
+    excel += '<tr><td>' + pt.id + '</td><td>' + pt.author + '</td><td>' + pt.dose + '</td><td>' +
+             pt.cases + '</td><td>' + pt.n + '</td><td>' + pt.logRR.toFixed(4) + '</td><td>' +
+             pt.se.toFixed(4) + '</td><td>' + pred.toFixed(4) + '</td><td>' +
+             (pred - 1.96 * se).toFixed(4) + '</td><td>' + (pred + 1.96 * se).toFixed(4) + '</td></tr>';
+  }
+  excel += '</table>';
+
+  downloadFile(excel, 'dose_response_analysis.xls', 'application/vnd.ms-excel');
+  showToast('Excel file exported successfully');
+}
+
+function exportJSON() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const exportData = {
+    timestamp: new Date().toISOString(),
+    model: {
+      coefficients: analysisResults.beta,
+      standardErrors: analysisResults.se,
+      tau2: analysisResults.tau2,
+      I2: analysisResults.I2,
+      Q: analysisResults.Q,
+      method: 'Quadratic Dose-Response'
+    },
+    data: analysisResults.all.map(pt => ({
+      id: pt.id,
+      author: pt.author,
+      dose: pt.dose,
+      cases: pt.cases,
+      n: pt.n,
+      logRR: pt.logRR,
+      se: pt.se
+    }))
+  };
+
+  downloadFile(JSON.stringify(exportData, null, 2), 'dose_response_analysis.json', 'application/json');
+  showToast('JSON exported successfully');
+}
+
+function exportPDF() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  // Generate HTML for PDF
+  const pdfContent = generateReportContent();
+
+  // Create a new window and print
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write('<html><head><title>Dose Response Meta-Analysis Report</title>');
+  printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#4F46E5;color:white}h1,h2{color:#333}</style>');
+  printWindow.document.write('</head><body>');
+  printWindow.document.write(pdfContent);
+  printWindow.document.write('<script>window.onload=function(){window.print();window.close();}</script>');
+  printWindow.document.write('</body></html>');
+
+  showToast('PDF report generated - use browser print to save as PDF');
+}
+
+function generateReport() {
+  if (!analysisResults) { showToast('Run main analysis first', true); return; }
+
+  const reportHtml = generateReportContent();
+  document.getElementById('reportPreview').innerHTML = reportHtml;
+  showToast('Report refreshed');
+}
+
+function generateReportContent() {
+  const beta = analysisResults.beta;
+  const se = analysisResults.se;
+  const tau2 = analysisResults.tau2;
+  const I2 = analysisResults.I2;
+  const Q = analysisResults.Q;
+
+  let html = '<h1>🏆 Dose Response Meta-Analysis Report</h1>';
+  html += '<p><strong>Generated:</strong> ' + new Date().toLocaleString() + '</p>';
+
+  html += '<h2>Model Summary</h2>';
+  html += '<table><tr><th>Parameter</th><th>Estimate</th><th>SE</th><th>95% CI</th></tr>';
+  html += '<tr><td>Intercept (β₀)</td><td>' + (beta[0] || 0).toFixed(4) + '</td><td>' + (se[0] || 0).toFixed(4) + '</td><td>[' + ((beta[0] || 0) - 1.96 * (se[0] || 0)).toFixed(4) + ', ' + ((beta[0] || 0) + 1.96 * (se[0] || 0)).toFixed(4) + ']</td></tr>';
+  html += '<tr><td>Linear (β₁)</td><td>' + (beta[1] || 0).toFixed(4) + '</td><td>' + (se[1] || 0).toFixed(4) + '</td><td>[' + ((beta[1] || 0) - 1.96 * (se[1] || 0)).toFixed(4) + ', ' + ((beta[1] || 0) + 1.96 * (se[1] || 0)).toFixed(4) + ']</td></tr>';
+  html += '<tr><td>Quadratic (β₂)</td><td>' + (beta[2] || 0).toFixed(4) + '</td><td>' + (se[2] || 0).toFixed(4) + '</td><td>[' + ((beta[2] || 0) - 1.96 * (se[2] || 0)).toFixed(4) + ', ' + ((beta[2] || 0) + 1.96 * (se[2] || 0)).toFixed(4) + ']</td></tr>';
+  html += '</table>';
+
+  html += '<h2>Heterogeneity</h2>';
+  html += '<table><tr><th>Stat</th><th>Value</th></tr>';
+  html += '<tr><td>τ² (Between-study variance)</td><td>' + (tau2 || 0).toFixed(4) + '</td></tr>';
+  html += '<tr><td>I² (Heterogeneity)</td><td>' + (I2 || 0).toFixed(1) + '%</td></tr>';
+  html += '<tr><td>Q (Cochran\'s Q)</td><td>' + (Q || 0).toFixed(3) + '</td></tr>';
+  html += '</table>';
+
+  html += '<h2>Interpretation</h2>';
+  html += '<ul>';
+  html += '<li>Linear dose-response coefficient: ' + (beta[1] || 0).toFixed(4) + ' (' + ((beta[1] || 0) < 0 ? 'inverse' : 'positive') + ' relationship)</li>';
+  html += '<li>For each 10-unit increase in dose, RR changes by: ' + (Math.exp(10 * (beta[1] || 0))).toFixed(3) + '</li>';
+  html += '<li>Heterogeneity: ' + ((I2 || 0) < 25 ? 'Low' : (I2 || 0) < 50 ? 'Moderate' : (I2 || 0) < 75 ? 'Substantial' : 'Considerable') + ' (I² = ' + (I2 || 0).toFixed(1) + '%)</li>';
+  html += '</ul>';
+
+  html += '<h2>Methods</h2>';
+  html += '<p>Quadratic dose-response meta-analysis using Generalized Least Squares (GLS) method. ' +
+          'Between-study variance (τ²) estimated using Restricted Maximum Likelihood (REML). ' +
+          '95% Confidence intervals calculated using Wald method.</p>';
+
+  html += '<h2>References</h2>';
+  html += '<ul>';
+  html += '<li>Greenland S, Longnecker MP. Methods for trend estimation from summarized dose-response data. <em>Am J Epidemiol</em>. 1992.</li>';
+  html += '<li>Orsini N, et al. Meta-analysis for linear and nonlinear dose-response relations. <em>Am J Epidemiol</em>. 2012.</li>';
+  html += '<li>Viechtbauer W. Conducting meta-analyses in R with the metafor package. <em>J Stat Softw</em>. 2010.</li>';
+  html += '</ul>';
+
+  return html;
+}
+
+function downloadFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>

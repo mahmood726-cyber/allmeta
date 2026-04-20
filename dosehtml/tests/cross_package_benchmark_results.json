@@ -1,0 +1,237 @@
+{
+  "generated_at": "2026-02-28T16:23:30+00:00",
+  "tool_statuses": [
+    {
+      "name": "R",
+      "executable": "C:\\Program Files\\R\\R-4.5.2\\bin\\Rscript.exe",
+      "artifact_path": "C:\\HTML apps\\dosehtml\\tests\\r_validation_results.json",
+      "artifact_loaded": true,
+      "note": "Primary benchmark engine"
+    },
+    {
+      "name": "Stata",
+      "executable": null,
+      "artifact_path": "C:\\HTML apps\\dosehtml\\tests\\stata_benchmark_results.json",
+      "artifact_loaded": false,
+      "note": "Evidence level=internet"
+    },
+    {
+      "name": "SPSS",
+      "executable": null,
+      "artifact_path": "C:\\HTML apps\\dosehtml\\tests\\spss_benchmark_results.json",
+      "artifact_loaded": false,
+      "note": "Evidence level=internet"
+    }
+  ],
+  "r_run": {
+    "ran": true,
+    "ok": true,
+    "code": 0,
+    "stdout": "============================================================\nDose Response Pro v18.1 - R Validation Test Suite\n============================================================\n\n--- Test 1: Simple Linear Trend ---\n  Beta match (tol 0.020): PASS\n  SE match (tol 0.050): PASS\n  Tau2 match (tol 0.020): PASS\n\n--- Test 2: Quadratic Trend ---\n  Beta match (tol 0.020): PASS\n  SE match (tol 0.050): PASS\n  Tau2 match (tol 0.020): PASS\n\n--- Test 3: High Heterogeneity ---\n  Beta match (tol 0.020): PASS\n  SE match (tol 0.050): PASS\n  Tau2 match (tol 0.020): PASS\n\n=== VALIDATION SUMMARY ===\nTest 1: Simple Linear Trend: PASS\nTest 2: Quadratic Trend: PASS\nTest 3: High Heterogeneity: PASS\nOverall: ALL TESTS PASSED\n\nJSON results saved: C:/HTML apps/dosehtml/tests/r_validation_results.json\nText report saved: C:/HTML apps/dosehtml/tests/r_validation_results.txt\n",
+    "stderr": "During startup - Warning messages:\n1: Setting LC_COLLATE=C.UTF-8 failed \n2: Setting LC_CTYPE=C.UTF-8 failed \n3: Setting LC_MONETARY=C.UTF-8 failed \n4: Setting LC_TIME=C.UTF-8 failed \nLoading required package: mixmeta\nThis is mixmeta 1.2.2. For an overview type: help('mixmeta-package').\nThis is dosresmeta 2.2.0. For an overview type: help('dosresmeta-package').\nLoading required package: Matrix\nLoading required package: metadat\nLoading required package: numDeriv\n\nLoading the 'metafor' package (version 4.8-0). For an\nintroduction to the package please type: help(metafor)\n\n\nAttaching package: 'metafor'\n\nThe following object is masked from 'package:mixmeta':\n\n    blup\n\nThis is mvmeta 1.0.3. For an overview type: help('mvmeta-package').\n\nAttaching package: 'mvmeta'\n\nThe following object is masked from 'package:metafor':\n\n    blup\n\n",
+    "error": null
+  },
+  "r_summary": {
+    "available": true,
+    "overall_pass": true,
+    "total_tests": 3,
+    "passed_tests": 3,
+    "max_abs_beta_diff": 7.56e-06,
+    "max_abs_se_diff": 4.3774e-06,
+    "package_versions": {
+      "dosresmeta": "2.2.0",
+      "metafor": "4.8.0",
+      "mvmeta": "1.0.3"
+    },
+    "timestamp": "2026-02-28T16:23:29Z"
+  },
+  "strict_r_benchmark_summary": {
+    "available": true,
+    "overall_pass": true,
+    "beats_r": true,
+    "n_total": 120,
+    "p95_abs_beta_diff": 0.006760504833900883,
+    "p95_abs_se_diff": 0.011506353356679308,
+    "p95_abs_tau2_diff": 0.0011968159284591671,
+    "runtime_speedup_ratio": 2.9976792979583644,
+    "generated_at": "2026-02-28T16:23:05+00:00"
+  },
+  "simulation_summary": {
+    "available": true,
+    "total": 6,
+    "passed": 6,
+    "fit_mode": "robust",
+    "overall_pass": true,
+    "generated_at": "2026-02-28T12:24:34.424Z"
+  },
+  "stata_artifact": {
+    "available": false,
+    "path": "C:\\HTML apps\\dosehtml\\tests\\stata_benchmark_results.json"
+  },
+  "spss_artifact": {
+    "available": false,
+    "path": "C:\\HTML apps\\dosehtml\\tests\\spss_benchmark_results.json"
+  },
+  "internet_reference_summary": {
+    "available": true,
+    "path": "C:\\HTML apps\\dosehtml\\tests\\internet_cross_package_references.json",
+    "generated_at": "2026-02-28T15:45:00Z",
+    "retrieved_at_utc": "2026-02-28T15:45:00Z",
+    "notes": "Internet-sourced reference values for cross-package benchmarking when local executables are unavailable.",
+    "total_references": 6,
+    "by_tool": {
+      "stata": {
+        "reference_count": 3,
+        "source_urls": [
+          "https://www.stata.com/stata16/meta-analysis/",
+          "https://www.stata.com/training/webinar_series/meta-analysis/materials.html"
+        ],
+        "source_titles": [
+          "Meta-analysis | New in Stata 16",
+          "Stata meta webinar materials"
+        ],
+        "source_types": [
+          "official_vendor_docs"
+        ],
+        "scenarios": [
+          "meta summarize on stdmdiff/se (19 studies, REML)",
+          "meta trimfill (stdmdiff, REML)",
+          "meta trimfill (log odds ratio, random effects)"
+        ]
+      },
+      "spss": {
+        "reference_count": 3,
+        "source_urls": [
+          "https://www.mdpi.com/2624-8611/4/4/49",
+          "https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=meta-analysis-procedures"
+        ],
+        "source_titles": [
+          "A Tutorial on How to Conduct Meta-Analysis with IBM SPSS Statistics",
+          "IBM SPSS Statistics 30 Documentation - Meta Analysis Procedures"
+        ],
+        "source_types": [
+          "peer_reviewed_tutorial",
+          "official_vendor_docs"
+        ],
+        "scenarios": [
+          "Random-effects meta-analysis on pre-calculated effect sizes",
+          "Subgroup analysis contrast",
+          "Procedure availability confirmation"
+        ]
+      }
+    }
+  },
+  "stata_evidence": {
+    "tool": "Stata",
+    "available": true,
+    "evidence_level": "internet",
+    "local_artifact_available": false,
+    "internet_reference_available": true,
+    "local_tests": 0,
+    "internet_reference_count": 3,
+    "internet_source_urls": [
+      "https://www.stata.com/stata16/meta-analysis/",
+      "https://www.stata.com/training/webinar_series/meta-analysis/materials.html"
+    ],
+    "internet_source_titles": [
+      "Meta-analysis | New in Stata 16",
+      "Stata meta webinar materials"
+    ],
+    "internet_scenarios": [
+      "meta summarize on stdmdiff/se (19 studies, REML)",
+      "meta trimfill (stdmdiff, REML)",
+      "meta trimfill (log odds ratio, random effects)"
+    ],
+    "rationale": "Internet reference fallback active for Stata: 3 scenario(s), 2 source(s)."
+  },
+  "spss_evidence": {
+    "tool": "SPSS",
+    "available": true,
+    "evidence_level": "internet",
+    "local_artifact_available": false,
+    "internet_reference_available": true,
+    "local_tests": 0,
+    "internet_reference_count": 3,
+    "internet_source_urls": [
+      "https://www.mdpi.com/2624-8611/4/4/49",
+      "https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=meta-analysis-procedures"
+    ],
+    "internet_source_titles": [
+      "A Tutorial on How to Conduct Meta-Analysis with IBM SPSS Statistics",
+      "IBM SPSS Statistics 30 Documentation - Meta Analysis Procedures"
+    ],
+    "internet_scenarios": [
+      "Random-effects meta-analysis on pre-calculated effect sizes",
+      "Subgroup analysis contrast",
+      "Procedure availability confirmation"
+    ],
+    "rationale": "Internet reference fallback active for SPSS: 3 scenario(s), 2 source(s)."
+  },
+  "persona_votes": [
+    {
+      "role": "Frequentist Meta-Analyst",
+      "decision": "YES",
+      "rationale": "Requires deterministic R validation plus strict synthetic benchmark parity."
+    },
+    {
+      "role": "Simulation Methodologist",
+      "decision": "YES",
+      "rationale": "Scenario-grid calibration must be fully in-band."
+    },
+    {
+      "role": "R Ecosystem Power User",
+      "decision": "YES",
+      "rationale": "Agreement with dosresmeta/metafor plus strict parity benchmark is the baseline criterion."
+    },
+    {
+      "role": "Regulatory Reviewer",
+      "decision": "YES",
+      "rationale": "Needs deterministic + strict synthetic + simulation evidence and explicit Stata/SPSS benchmark coverage."
+    },
+    {
+      "role": "Biostatistics QA",
+      "decision": "YES",
+      "rationale": "Requires deterministic validation and strict benchmark pass status."
+    },
+    {
+      "role": "Clinical Trial Statistician",
+      "decision": "YES",
+      "rationale": "Type-I/coverage control drives practical trust."
+    },
+    {
+      "role": "Enterprise Stata User",
+      "decision": "YES",
+      "rationale": "Internet reference fallback active for Stata: 3 scenario(s), 2 source(s)."
+    },
+    {
+      "role": "Enterprise SPSS User",
+      "decision": "YES",
+      "rationale": "Internet reference fallback active for SPSS: 3 scenario(s), 2 source(s)."
+    },
+    {
+      "role": "Evidence Synthesis Lead",
+      "decision": "YES",
+      "rationale": "Requires both point-estimate and calibration benchmarking."
+    },
+    {
+      "role": "Reproducibility Engineer",
+      "decision": "YES",
+      "rationale": "Automated script produces machine-readable benchmark outputs."
+    },
+    {
+      "role": "Methods Product Manager",
+      "decision": "YES",
+      "rationale": "Release confidence is gated by strict parity + speed benchmark against R."
+    },
+    {
+      "role": "Panel Chair",
+      "decision": "CONDITIONAL",
+      "rationale": "Adoption recommended with full approval only when SPSS/Stata are locally reproducible."
+    }
+  ],
+  "vote_counts": {
+    "YES": 11,
+    "NO": 0,
+    "CONDITIONAL": 1
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "version": "0.2",
+  "model_id": "markov_age_dependent",
+  "generated_at": "2026-03-01T12:36:59.677Z",
+  "comparators": {
+    "r_reference": {
+      "source": "Independent R Markov fixture runner",
+      "strict": true,
+      "tolerance": {
+        "costs": 0.01,
+        "qalys": 0.0001,
+        "relative": 0.001
+      },
+      "strategies": {
+        "natural_history": {
+          "total_costs": 17717.347,
+          "total_qalys": 10.0753,
+          "life_years": 11.4472
+        }
+      },
+      "provenance": {
+        "file": "external-comparators\\r\\markov_age_dependent\\results.json",
+        "sha256": "63c8e33dca142cd6b9415df2c2b34d7548a87329355e1f184eb4c3e22e98469f",
+        "generated_at": "2026-03-01T12:35:45Z",
+        "comparator": "R"
+      }
+    }
+  }
+}

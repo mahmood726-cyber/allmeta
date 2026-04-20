@@ -1,0 +1,15 @@
+{
+  "tool": "stata",
+  "version": "18",
+  "generated_at": "2026-02-28T00:00:00Z",
+  "tests": [
+    {
+      "name": "Test 1: Simple Linear Trend",
+      "linear_beta": 0.0,
+      "quadratic_beta": 0.0,
+      "linear_se": 0.0,
+      "quadratic_se": 0.0,
+      "tau2": 0.0
+    }
+  ]
+}

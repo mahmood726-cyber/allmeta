@@ -1,0 +1,175 @@
+{
+  "timestamp": "2026-02-28T16:23:29Z",
+  "r_version": "R version 4.5.2 (2025-10-31 ucrt)",
+  "package_versions": {
+    "dosresmeta": "2.2.0",
+    "metafor": "4.8.0",
+    "mvmeta": "1.0.3"
+  },
+  "overall_pass": true,
+  "summary": {
+    "total_tests": 3,
+    "passed_tests": 3,
+    "failed_tests": 0
+  },
+  "tolerances": {
+    "beta": 0.02,
+    "se": 0.05,
+    "tau2": 0.02
+  },
+  "tests": [
+    {
+      "name": "Test 1: Simple Linear Trend",
+      "pass": true,
+      "fit_ok": true,
+      "beta_match": true,
+      "se_match": true,
+      "tau2_match": true,
+      "n_studies": 3,
+      "n_rows": 11,
+      "tolerance": {
+        "beta": 0.02,
+        "se": 0.05,
+        "tau2": 0.02
+      },
+      "tau2": {
+        "our": 0,
+        "r": 6.351e-09,
+        "diff": -6.351e-09,
+        "abs_diff": 6.351e-09
+      },
+      "comparison": [
+        {
+          "parameter": "linear",
+          "our_beta": 0.212,
+          "r_beta": 0.212,
+          "beta_diff": 2.1199e-06,
+          "abs_beta_diff": 2.1199e-06,
+          "our_se": 0.1295,
+          "r_se": 0.1295,
+          "se_diff": -4.3774e-06,
+          "abs_se_diff": 4.3774e-06
+        },
+        {
+          "parameter": "quadratic",
+          "our_beta": -0.0138,
+          "r_beta": -0.0138,
+          "beta_diff": -5.151e-07,
+          "abs_beta_diff": 5.151e-07,
+          "our_se": 0.042,
+          "r_se": 0.042,
+          "se_diff": -3.3708e-06,
+          "abs_se_diff": 3.3708e-06
+        }
+      ],
+      "cli_metadata": {
+        "model": "quadratic",
+        "n_studies": 3,
+        "estimation_mode": "relative_no_intercept"
+      },
+      "message": "PASS requires joint agreement on beta, SE, and tau2."
+    },
+    {
+      "name": "Test 2: Quadratic Trend",
+      "pass": true,
+      "fit_ok": true,
+      "beta_match": true,
+      "se_match": true,
+      "tau2_match": true,
+      "n_studies": 4,
+      "n_rows": 20,
+      "tolerance": {
+        "beta": 0.02,
+        "se": 0.05,
+        "tau2": 0.02
+      },
+      "tau2": {
+        "our": 0,
+        "r": 6.6509e-09,
+        "diff": -6.6509e-09,
+        "abs_diff": 6.6509e-09
+      },
+      "comparison": [
+        {
+          "parameter": "linear",
+          "our_beta": 0.2345,
+          "r_beta": 0.2345,
+          "beta_diff": 1.7702e-06,
+          "abs_beta_diff": 1.7702e-06,
+          "our_se": 0.0963,
+          "r_se": 0.0963,
+          "se_diff": -3.4698e-06,
+          "abs_se_diff": 3.4698e-06
+        },
+        {
+          "parameter": "quadratic",
+          "our_beta": -0.0178,
+          "r_beta": -0.0178,
+          "beta_diff": -3.8751e-07,
+          "abs_beta_diff": 3.8751e-07,
+          "our_se": 0.0219,
+          "r_se": 0.0219,
+          "se_diff": -1.9025e-06,
+          "abs_se_diff": 1.9025e-06
+        }
+      ],
+      "cli_metadata": {
+        "model": "quadratic",
+        "n_studies": 4,
+        "estimation_mode": "relative_no_intercept"
+      },
+      "message": "PASS requires joint agreement on beta, SE, and tau2."
+    },
+    {
+      "name": "Test 3: High Heterogeneity",
+      "pass": true,
+      "fit_ok": true,
+      "beta_match": true,
+      "se_match": true,
+      "tau2_match": true,
+      "n_studies": 5,
+      "n_rows": 15,
+      "tolerance": {
+        "beta": 0.02,
+        "se": 0.05,
+        "tau2": 0.02
+      },
+      "tau2": {
+        "our": 0,
+        "r": 6.1144e-09,
+        "diff": -6.1144e-09,
+        "abs_diff": 6.1144e-09
+      },
+      "comparison": [
+        {
+          "parameter": "linear",
+          "our_beta": 0.5654,
+          "r_beta": 0.5654,
+          "beta_diff": -7.56e-06,
+          "abs_beta_diff": 7.56e-06,
+          "our_se": 0.2098,
+          "r_se": 0.2098,
+          "se_diff": -0,
+          "abs_se_diff": 0
+        },
+        {
+          "parameter": "quadratic",
+          "our_beta": -0.0594,
+          "r_beta": -0.0594,
+          "beta_diff": 3.7503e-06,
+          "abs_beta_diff": 3.7503e-06,
+          "our_se": 0.0939,
+          "r_se": 0.0939,
+          "se_diff": -0,
+          "abs_se_diff": 0
+        }
+      ],
+      "cli_metadata": {
+        "model": "quadratic",
+        "n_studies": 5,
+        "estimation_mode": "relative_no_intercept"
+      },
+      "message": "PASS requires joint agreement on beta, SE, and tau2."
+    }
+  ]
+}

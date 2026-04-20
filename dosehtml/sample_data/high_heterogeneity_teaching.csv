@@ -1,0 +1,67 @@
+# Sample Dataset 3: High Heterogeneity
+# Teaching Example - Demonstrates inconsistent results across studies
+# Expected Results: High I² (> 50%), Significant Q statistic
+# Use For: Teaching heterogeneity and sensitivity analysis
+#
+# Scenario: Coffee consumption and heart disease (controversial topic)
+# This dataset shows INCONSISTENT results:
+#   - Some studies: Harmful effect
+#   - Some studies: Protective effect
+#   - Some studies: No effect
+# This is EXCELLENT for teaching sensitivity analysis
+
+study,dose,cases,n,study_type,region
+Study_A,0,40,45000,cohort,Europe
+Study_A,1,45,43000,cohort,Europe
+Study_A,2,52,40000,cohort,Europe
+Study_A,3,48,38000,cohort,Europe
+Study_B,0,35,40000,cohort,North America
+Study_B,1,30,38000,cohort,North America
+Study_B,2,28,35000,cohort,North America
+Study_B,3,32,32000,cohort,North America
+Study_C,0,50,42000,cohort,Asia
+Study_C,1,48,40000,cohort,Asia
+Study_C,2,55,37000,cohort,Asia
+Study_C,3,65,34000,cohort,Asia
+Study_D,0,38,44000,case-control,Europe
+Study_D,1,50,41000,case-control,Europe
+Study_D,2,65,38000,case-control,Europe
+Study_D,3,78,35000,case-control,Europe
+Study_E,0,42,41000,cohort,North America
+Study_E,1,38,39000,cohort,North America
+Study_E,2,35,36000,cohort,North America
+Study_E,3,40,33000,cohort,North America
+Study_F,0,48,43000,case-control,Asia
+Study_F,1,55,40000,case-control,Asia
+Study_F,2,68,37000,case-control,Asia
+Study_F,3,85,34000,case-control,Asia
+
+# EXPECTED ANALYSIS RESULTS:
+# =========================
+# Model: GLS (Quadratic)
+#
+# Coefficients:
+#   β₀ (Intercept):  Variable (depends on weighting)
+#   β₁ (Linear):     May not be significant due to inconsistency
+#   β₂ (Quadratic):  May not be significant
+#
+# Heterogeneity:
+#   - I²: HIGH (> 50%, possibly > 75%)
+#   - Q: Significant (p < 0.05)
+#   - Tau²: Large (> 0.05)
+#
+# Teaching Points:
+#   1. High I² means studies disagree - investigate why!
+#   2. Possible explanations:
+#      - Different study designs (cohort vs case-control)
+#      - Different populations (Europe vs Asia vs North America)
+#      - Publication bias
+#      - Methodological differences
+#   3. ALWAYS run sensitivity analysis with high I²
+#   4. Consider subgroup analysis by study_type or region
+#
+# Subgroup Analysis Exercise:
+#   Try running subgroup analysis by:
+#   1. study_type (cohort vs case-control)
+#   2. region (Europe vs North America vs Asia)
+#   Look for between-subgroup p-value < 0.05

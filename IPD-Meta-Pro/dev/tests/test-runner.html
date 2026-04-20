@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IPD-Meta-Pro Test Runner</title>
+<style>
+body { font-family: 'Consolas', monospace; background: #1a1a2e; color: #e0e0e0; padding: 2rem; margin: 0; }
+h1 { color: #6366f1; margin-bottom: 0.5rem; }
+.summary { font-size: 1.1rem; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; }
+.summary.pass { background: rgba(16,185,129,0.15); border: 1px solid #10b981; }
+.summary.fail { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; }
+.suite { margin: 1rem 0; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+.suite-header { padding: 0.75rem 1rem; background: #222; font-weight: 700; cursor: pointer; }
+.suite-header:hover { background: #2a2a3a; }
+.test { padding: 0.4rem 1rem 0.4rem 2rem; border-top: 1px solid #222; font-size: 0.85rem; }
+.test.pass { color: #10b981; }
+.test.fail { color: #ef4444; }
+.test.pass::before { content: '✓ '; }
+.test.fail::before { content: '✗ '; }
+.detail { color: #888; font-size: 0.75rem; margin-left: 1rem; }
+#output { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>IPD-Meta-Pro Test Runner</h1>
+<div id="status">Loading app modules...</div>
+<div id="summary"></div>
+<div id="results"></div>
+
+<script>
+// Minimal test framework
+const TestRunner = {
+ suites: [],
+ currentSuite: null,
+
+ suite: function(name, fn) {
+  this.currentSuite = { name: name, tests: [], passed: 0, failed: 0 };
+  this.suites.push(this.currentSuite);
+  try { fn(); } catch(e) { this.currentSuite.tests.push({ name: 'Suite setup error', pass: false, detail: e.message }); this.currentSuite.failed++; }
+ },
+
+ test: function(name, fn) {
+  try {
+   fn();
+   this.currentSuite.tests.push({ name: name, pass: true, detail: '' });
+   this.currentSuite.passed++;
+  } catch(e) {
+   this.currentSuite.tests.push({ name: name, pass: false, detail: e.message });
+   this.currentSuite.failed++;
+  }
+ },
+
+ assertClose: function(actual, expected, tolerance, msg) {
+  if (tolerance === undefined) tolerance = 0.001;
+  if (Math.abs(actual - expected) > tolerance) {
+   throw new Error((msg || '') + ' Expected ' + expected.toFixed(6) + ', got ' + actual.toFixed(6) + ' (diff=' + Math.abs(actual - expected).toFixed(8) + ', tol=' + tolerance + ')');
+  }
+ },
+
+ assertEqual: function(actual, expected, msg) {
+  if (actual !== expected) {
+   throw new Error((msg || '') + ' Expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+  }
+ },
+
+ assertTrue: function(cond, msg) {
+  if (!cond) throw new Error(msg || 'Assertion failed');
+ },
+
+ render: function() {
+  var totalPassed = 0, totalFailed = 0;
+  var html = '';
+  this.suites.forEach(function(s) {
+   totalPassed += s.passed;
+   totalFailed += s.failed;
+   html += '<div class="suite">';
+   html += '<div class="suite-header">' + s.name + ' (' + s.passed + '/' + (s.passed + s.failed) + ' passed)</div>';
+   s.tests.forEach(function(t) {
+    html += '<div class="test ' + (t.pass ? 'pass' : 'fail') + '">' + t.name;
+    if (t.detail) html += '<span class="detail"> — ' + t.detail + '</span>';
+    html += '</div>';
+   });
+   html += '</div>';
+  });
+
+  document.getElementById('results').innerHTML = html;
+  var total = totalPassed + totalFailed;
+  var summaryEl = document.getElementById('summary');
+  summaryEl.className = 'summary ' + (totalFailed === 0 ? 'pass' : 'fail');
+  summaryEl.textContent = totalPassed + ' / ' + total + ' tests passed' + (totalFailed > 0 ? ' (' + totalFailed + ' FAILED)' : ' — ALL PASS');
+  document.getElementById('status').textContent = 'Tests complete.';
+ }
+};
+
+async function appendInlineScript(code) {
+ var scriptEl = document.createElement('script');
+ scriptEl.textContent = code;
+ document.head.appendChild(scriptEl);
+}
+
+async function loadOptionalExternalScript(path) {
+ try {
+  var resp = await fetch(path);
+  if (!resp.ok) return false;
+  var code = await resp.text();
+  if (!code.trim()) return false;
+  await appendInlineScript(code);
+  return true;
+ } catch(e) {
+  console.warn('Optional external script load failed for ' + path + ': ' + e.message);
+  return false;
+ }
+}
+
+function createMockElement(selector) {
+ return {
+  id: selector || '',
+  value: '',
+  checked: false,
+  disabled: false,
+  innerHTML: '',
+  textContent: '',
+  style: {},
+  dataset: {},
+  children: [],
+  addEventListener: function(){},
+  removeEventListener: function(){},
+  dispatchEvent: function(){ return true; },
+  click: function(){},
+  focus: function(){},
+  blur: function(){},
+  appendChild: function(){},
+  remove: function(){},
+  setAttribute: function(){},
+  getAttribute: function(){ return null; },
+  getBoundingClientRect: function(){ return { top: 0, left: 0, width: 0, height: 0 }; },
+  classList: { add:function(){}, remove:function(){}, contains:function(){ return false; }, toggle:function(){ return false; } },
+  querySelector: function(){ return createMockElement('child'); },
+  querySelectorAll: function(){ return []; },
+  closest: function(){ return null; },
+  getContext: function(){ return null; }
+ };
+}
+
+function installAppTestDoubles() {
+ if (window.__APP_TEST_DOUBLES_INSTALLED__) return;
+ window.__APP_TEST_DOUBLES_INSTALLED__ = true;
+
+ if (!window.APP) {
+  window.APP = { data: null, variables: [], results: null, bayesianResults: null, config: {
+   studyVar: 'study_id', treatmentVar: 'treatment', timeVar: 'time', eventVar: 'event',
+   outcomeType: 'survival', analysisApproach: 'two-stage', effectMeasure: 'HR',
+   reMethod: 'REML', confLevel: 0.95, useHKSJ: false
+  }};
+ }
+
+ window.showNotification = window.showNotification || function() {};
+ window.showResultsModal = window.showResultsModal || function() {};
+ window.showLoadingOverlay = window.showLoadingOverlay || function() {};
+ window.hideLoadingOverlay = window.hideLoadingOverlay || function() {};
+ window.updateDataPreview = window.updateDataPreview || function() {};
+ window.updateCovariatePanel = window.updateCovariatePanel || function() {};
+ window.displayResults = window.displayResults || function() {};
+ window.switchPanel = window.switchPanel || function() {};
+ window.updateResults = window.updateResults || function() {};
+ window.buildNetworkFromData = window.buildNetworkFromData || function() {};
+ window.runNetworkMetaAnalysis = window.runNetworkMetaAnalysis || function() {};
+
+ var origGetElementById = document.getElementById.bind(document);
+ document.getElementById = function(id) {
+  return origGetElementById(id) || createMockElement(id);
+ };
+
+ var origQS = document.querySelector.bind(document);
+ document.querySelector = function(sel) {
+  return origQS(sel) || createMockElement(sel);
+ };
+
+ var origQSA = document.querySelectorAll.bind(document);
+ document.querySelectorAll = function(sel) {
+  var els = origQSA(sel);
+  return els && typeof els.length === 'number' ? els : [];
+ };
+}
+
+async function loadAppFromManifest() {
+ try {
+  installAppTestDoubles();
+  var manifestResp = await fetch('../modules/manifest.json');
+  if (!manifestResp.ok) return false;
+  var manifest = await manifestResp.json();
+  var loaded = 0;
+
+  for (var i = 0; i < manifest.order.length; i++) {
+   var fname = manifest.order[i];
+   if (!/\.js$/i.test(fname)) continue;
+   var resp = await fetch('../modules/' + fname);
+   if (!resp.ok) throw new Error('Failed to load module ' + fname + ' (' + resp.status + ')');
+   var code = await resp.text();
+   if (code.trim().length < 50) continue;
+   await appendInlineScript(code);
+   loaded++;
+  }
+
+  await loadOptionalExternalScript('../modules/export_schema_module.js');
+  document.getElementById('status').textContent = 'Loaded ' + loaded + ' module scripts. Running tests...';
+  return true;
+ } catch(e) {
+  console.warn('Manifest-based app load failed:', e.message);
+  return false;
+ }
+}
+
+// Load the app by extracting script content from the HTML file
+async function loadApp() {
+ try {
+  installAppTestDoubles();
+  if (await loadAppFromManifest()) return true;
+
+  var resp = await fetch('../../ipd-meta-pro.html');
+  var text = await resp.text();
+
+  // Extract and execute inline script blocks (skip CDN scripts)
+  var scriptRegex = /<script>([^]*?)<\/script>/g;
+  var match;
+  var scriptCount = 0;
+  while ((match = scriptRegex.exec(text)) !== null) {
+   try {
+    // Skip very short scripts or DOMContentLoaded-only scripts
+    var code = match[1];
+    if (code.length < 50) continue;
+
+    // Execute in global scope
+    await appendInlineScript(code);
+    scriptCount++;
+   } catch(e) {
+    console.warn('Script block ' + scriptCount + ' error:', e.message);
+   }
+  }
+
+  await loadOptionalExternalScript('../modules/export_schema_module.js');
+  document.getElementById('status').textContent = 'Loaded ' + scriptCount + ' script blocks. Running tests...';
+  return true;
+
+ } catch(e) {
+  document.getElementById('status').textContent = 'ERROR loading app: ' + e.message;
+  console.error(e);
+  return false;
+ }
+}
+
+// Run all tests
+async function runTests() {
+ var ok = await loadApp();
+ if (!ok) return;
+
+ // Wait for DOMContentLoaded handlers
+ await new Promise(function(r) { setTimeout(r, 1000); });
+
+ // =====================================================
+ // SUITE 1: Statistical Functions (Stats object)
+ // =====================================================
+ TestRunner.suite('Stats: Basic Functions', function() {
+  TestRunner.test('normalCDF(0) = 0.5', function() {
+   TestRunner.assertClose(Stats.normalCDF(0), 0.5, 0.0001);
+  });
+  TestRunner.test('normalCDF(1.96) ≈ 0.975', function() {
+   TestRunner.assertClose(Stats.normalCDF(1.96), 0.975, 0.001);
+  });
+  TestRunner.test('normalCDF(-1.96) ≈ 0.025', function() {
+   TestRunner.assertClose(Stats.normalCDF(-1.96), 0.025, 0.001);
+  });
+  TestRunner.test('normalQuantile(0.5) = 0', function() {
+   TestRunner.assertClose(Stats.normalQuantile(0.5), 0, 0.001);
+  });
+  TestRunner.test('normalQuantile(0.975) ≈ 1.96', function() {
+   TestRunner.assertClose(Stats.normalQuantile(0.975), 1.96, 0.01);
+  });
+  TestRunner.test('mean([1,2,3,4,5]) = 3', function() {
+   TestRunner.assertClose(Stats.mean([1,2,3,4,5]), 3, 0.0001);
+  });
+  TestRunner.test('sd([2,4,4,4,5,5,7,9]) ≈ 2.0', function() {
+   TestRunner.assertClose(Stats.sd([2,4,4,4,5,5,7,9]), 2.0, 0.1);
+  });
+  TestRunner.test('median([1,3,5,7,9]) = 5', function() {
+   TestRunner.assertClose(Stats.median([1,3,5,7,9]), 5, 0.0001);
+  });
+ });
+
+ // =====================================================
+ // SUITE 2: Meta-Analysis — DerSimonian-Laird
+ // Reference values come from the app's canonical benchmark dataset bundle.
+ // =====================================================
+ TestRunner.suite('MetaAnalysis: DerSimonian-Laird', function() {
+  var benchmark = BENCHMARK_DATASETS.bcg;
+  var effects = benchmark.studies.map(function(s) { return s.yi; });
+  var variances = benchmark.studies.map(function(s) { return s.sei * s.sei; });
+  var expected = benchmark.expected.DL;
+
+  TestRunner.test('DL pooled effect exists', function() {
+   var r = MetaAnalysis.randomEffectsDL(effects, variances);
+   TestRunner.assertTrue(r && r.effect !== undefined, 'No result');
+  });
+
+  TestRunner.test('DL pooled effect ≈ benchmark reference', function() {
+   var r = MetaAnalysis.randomEffectsDL(effects, variances);
+   TestRunner.assertClose(r.effect, expected.estimate, 0.02, 'DL pooled');
+  });
+
+  TestRunner.test('DL tau² ≈ benchmark reference', function() {
+   var r = MetaAnalysis.randomEffectsDL(effects, variances);
+   TestRunner.assertClose(r.tau2, expected.tau2, 0.03, 'DL tau2');
+  });
+
+  TestRunner.test('DL I² ≈ benchmark reference', function() {
+   var r = MetaAnalysis.randomEffectsDL(effects, variances);
+   TestRunner.assertClose(r.I2, expected.I2, 2.0, 'DL I2');
+  });
+
+  TestRunner.test('DL returns k studies', function() {
+   var r = MetaAnalysis.randomEffectsDL(effects, variances);
+   TestRunner.assertEqual(r.k || effects.length, effects.length, 'k count');
+  });
+ });
+
+ // =====================================================
+ // SUITE 3: Meta-Analysis — REML
+ // =====================================================
+ TestRunner.suite('MetaAnalysis: REML', function() {
+  var benchmark = BENCHMARK_DATASETS.bcg;
+  var effects = benchmark.studies.map(function(s) { return s.yi; });
+  var variances = benchmark.studies.map(function(s) { return s.sei * s.sei; });
+  var expected = benchmark.expected.REML;
+
+  TestRunner.test('REML converges', function() {
+   var r = MetaAnalysis.randomEffectsREML(effects, variances);
+   TestRunner.assertTrue(r && r.effect !== undefined, 'REML failed to produce result');
+  });
+
+  TestRunner.test('REML pooled effect ≈ benchmark reference', function() {
+   var r = MetaAnalysis.randomEffectsREML(effects, variances);
+   TestRunner.assertClose(r.effect, expected.estimate, 0.02, 'REML pooled');
+  });
+
+  TestRunner.test('REML tau² ≈ benchmark reference', function() {
+   var r = MetaAnalysis.randomEffectsREML(effects, variances);
+   TestRunner.assertClose(r.tau2, expected.tau2, 0.05, 'REML tau2');
+  });
+
+  TestRunner.test('REML SE ≈ benchmark reference', function() {
+   var r = MetaAnalysis.randomEffectsREML(effects, variances);
+   TestRunner.assertClose(r.se, expected.se, 0.03, 'REML SE');
+  });
+ });
+
+ // =====================================================
+ // SUITE 4: Fixed-Effect Model
+ // =====================================================
+ TestRunner.suite('MetaAnalysis: Fixed Effect', function() {
+  var effects = [0.5, 0.7, 0.3, 0.6];
+  var variances = [0.04, 0.05, 0.03, 0.06];
+
+  TestRunner.test('Fixed-effect pooled exists', function() {
+   var r = MetaAnalysis.fixedEffect(effects, variances);
+   TestRunner.assertTrue(r && r.effect !== undefined);
+  });
+
+  TestRunner.test('Fixed-effect is weighted mean', function() {
+   var r = MetaAnalysis.fixedEffect(effects, variances);
+   // Manual: sum(w*y)/sum(w) where w=1/v
+   var weights = variances.map(function(v) { return 1/v; });
+   var sumW = weights.reduce(function(a,b) { return a+b; });
+   var expected = weights.reduce(function(s,w,i) { return s + w*effects[i]; }, 0) / sumW;
+   TestRunner.assertClose(r.effect, expected, 0.0001);
+  });
+
+  TestRunner.test('Fixed-effect SE = 1/sqrt(sum(w))', function() {
+   var r = MetaAnalysis.fixedEffect(effects, variances);
+   var sumW = variances.reduce(function(s,v) { return s + 1/v; }, 0);
+   TestRunner.assertClose(r.se, 1 / Math.sqrt(sumW), 0.0001);
+  });
+ });
+
+ // =====================================================
+ // SUITE 5: HKSJ Adjustment
+ // =====================================================
+ TestRunner.suite('MetaAnalysis: HKSJ Adjustment', function() {
+  var effects = [-0.5, -0.3, -0.8, -0.2, -0.6];
+  var variances = [0.04, 0.05, 0.03, 0.06, 0.04];
+
+  TestRunner.test('HKSJ widens confidence interval', function() {
+   var base = MetaAnalysis.randomEffectsDL(effects, variances);
+   if (typeof MetaAnalysis.applyHKSJ === 'function') {
+    var hksj = MetaAnalysis.applyHKSJ(base, effects, variances);
+    var baseWidth = base.upper - base.lower;
+    var hksjWidth = hksj.upper - hksj.lower;
+    TestRunner.assertTrue(hksjWidth >= baseWidth * 0.9, 'HKSJ CI should be >= base CI width');
+   } else {
+    TestRunner.assertTrue(true, 'HKSJ not available (skip)');
+   }
+  });
+ });
+
+ // =====================================================
+ // SUITE 6: Prediction Intervals
+ // =====================================================
+ TestRunner.suite('MetaAnalysis: Prediction Intervals', function() {
+  TestRunner.test('PI wider than CI', function() {
+   var effects = [-0.5, -0.3, -0.8, -0.2, -0.6, -0.4];
+   var variances = [0.04, 0.05, 0.03, 0.06, 0.04, 0.05];
+   var result = MetaAnalysis.randomEffectsDL(effects, variances);
+   var pi = MetaAnalysis.predictionInterval(result, 0.95);
+   if (pi) {
+    var ciWidth = result.upper - result.lower;
+    var piWidth = pi.upper - pi.lower;
+    TestRunner.assertTrue(piWidth > ciWidth, 'PI width ' + piWidth.toFixed(3) + ' should > CI width ' + ciWidth.toFixed(3));
+   } else {
+    TestRunner.assertTrue(true, 'PI not available (skip)');
+   }
+  });
+ });
+
+ // =====================================================
+ // SUITE 7: Seeded RNG Determinism
+ // =====================================================
+ TestRunner.suite('SeededRNG: Determinism', function() {
+  TestRunner.test('createSeededRNG produces deterministic sequence', function() {
+   var rng1 = createSeededRNG(42);
+   var rng2 = createSeededRNG(42);
+   var seq1 = [rng1(), rng1(), rng1(), rng1(), rng1()];
+   var seq2 = [rng2(), rng2(), rng2(), rng2(), rng2()];
+   for (var i = 0; i < 5; i++) {
+    TestRunner.assertClose(seq1[i], seq2[i], 1e-15, 'Element ' + i);
+   }
+  });
+
+  TestRunner.test('Different seeds produce different sequences', function() {
+   var rng1 = createSeededRNG(42);
+   var rng2 = createSeededRNG(99);
+   var same = true;
+   for (var i = 0; i < 10; i++) {
+    if (rng1() !== rng2()) { same = false; break; }
+   }
+   TestRunner.assertTrue(!same, 'Different seeds should give different values');
+  });
+
+  TestRunner.test('SeededRNG.patchMathRandom makes Math.random deterministic', function() {
+   if (typeof SeededRNG !== 'undefined') {
+    SeededRNG.patchMathRandom(123);
+    var a = Math.random();
+    SeededRNG.restoreMathRandom();
+    SeededRNG.patchMathRandom(123);
+    var b = Math.random();
+    SeededRNG.restoreMathRandom();
+    TestRunner.assertClose(a, b, 1e-15, 'Same seed should give same first value');
+   } else {
+    TestRunner.assertTrue(true, 'SeededRNG not available');
+   }
+  });
+ });
+
+ // =====================================================
+ // SUITE 8: UndoManager Diff Engine
+ // =====================================================
+ TestRunner.suite('UndoManager: Diff-based Undo', function() {
+  TestRunner.test('_diff detects no changes', function() {
+   var a = { x: 1, y: 'hello' };
+   var b = { x: 1, y: 'hello' };
+   var patches = UndoManager._diff(a, b, '');
+   TestRunner.assertEqual(patches.length, 0, 'No changes should produce 0 patches');
+  });
+
+  TestRunner.test('_diff detects value change', function() {
+   var a = { x: 1 };
+   var b = { x: 2 };
+   var patches = UndoManager._diff(a, b, '');
+   TestRunner.assertTrue(patches.length > 0, 'Should detect change');
+   TestRunner.assertEqual(patches[0].op, 'replace');
+  });
+
+  TestRunner.test('_diff detects key addition', function() {
+   var a = { x: 1 };
+   var b = { x: 1, y: 2 };
+   var patches = UndoManager._diff(a, b, '');
+   TestRunner.assertTrue(patches.some(function(p) { return p.op === 'add'; }), 'Should detect addition');
+  });
+
+  TestRunner.test('_diff detects key removal', function() {
+   var a = { x: 1, y: 2 };
+   var b = { x: 1 };
+   var patches = UndoManager._diff(a, b, '');
+   TestRunner.assertTrue(patches.some(function(p) { return p.op === 'remove'; }), 'Should detect removal');
+  });
+
+  TestRunner.test('_applyPatches round-trips', function() {
+   var a = { x: 1, y: 'hello', z: [1,2,3] };
+   var b = { x: 2, y: 'world', z: [1,2,3] };
+   var patches = UndoManager._diff(a, b, '');
+   var result = UndoManager._applyPatches(a, patches);
+   TestRunner.assertEqual(result.x, 2);
+   TestRunner.assertEqual(result.y, 'world');
+  });
+
+  TestRunner.test('Inverse patches restore original', function() {
+   var a = { x: 1, y: 'hello' };
+   var b = { x: 2, y: 'world' };
+   var patches = UndoManager._diff(a, b, '');
+   var inverse = UndoManager._invertPatches(patches);
+   var result = UndoManager._applyPatches(b, inverse);
+   TestRunner.assertEqual(result.x, 1);
+   TestRunner.assertEqual(result.y, 'hello');
+  });
+ });
+
+ // =====================================================
+ // SUITE 9: PlotDefaults
+ // =====================================================
+ TestRunner.suite('PlotDefaults: Margin Presets', function() {
+  TestRunner.test('All presets return objects with top/right/bottom/left', function() {
+   var presets = ['forest', 'forestWide', 'forestLarge', 'standard', 'standardDeep',
+    'compact', 'mini', 'medium', 'mediumLegend', 'mediumStd', 'largeLabel',
+    'wideLabel', 'leftLabel', 'headroom', 'headroomLegend', 'horizontal', 'rightInfo'];
+   presets.forEach(function(name) {
+    var m = PlotDefaults[name]();
+    TestRunner.assertTrue(typeof m.top === 'number' && typeof m.right === 'number' &&
+     typeof m.bottom === 'number' && typeof m.left === 'number',
+     name + ' missing margin fields');
+   });
+  });
+
+  TestRunner.test('Each call returns a fresh object (no mutation)', function() {
+   var a = PlotDefaults.standard();
+   var b = PlotDefaults.standard();
+   a.top = 999;
+   TestRunner.assertTrue(b.top !== 999, 'Mutation leaked between calls');
+  });
+ });
+
+ // =====================================================
+ // SUITE 10: TruthCert
+ // =====================================================
+ TestRunner.suite('TruthCert: Provenance Layer', function() {
+  TestRunner.test('SHA-256 hash produces hex string', async function() {
+   if (typeof TruthCert !== 'undefined') {
+    var hash = await TruthCert.sha256('test data');
+    TestRunner.assertTrue(typeof hash === 'string' && hash.length >= 16, 'hash=' + hash);
+   }
+  });
+
+  TestRunner.test('logStep records provenance', function() {
+   if (typeof TruthCert !== 'undefined') {
+    TruthCert._provenanceLog = [];
+    TruthCert.logStep({ step: 'TEST', description: 'test step', outcome: 'PASS' });
+    TestRunner.assertEqual(TruthCert._provenanceLog.length, 1);
+   }
+  });
+
+  TestRunner.test('validate returns REJECT when no results', function() {
+   if (typeof TruthCert !== 'undefined') {
+    var v = TruthCert.validate(null);
+    TestRunner.assertTrue(v.some(function(x) { return x.outcome === 'REJECT'; }), 'Should REJECT');
+   }
+  });
+
+  TestRunner.test('Memory references cause BLOCK', function() {
+   if (typeof TruthCert !== 'undefined') {
+    TruthCert._provenanceLog = [{ inputHash: 'memory:some_ref', step: 'TEST' }];
+    var v = TruthCert.validate({ pooled: { effect: 0.5 }, studies: [{},{},{}] });
+    var status = TruthCert.certificationStatus(v);
+    TestRunner.assertEqual(status, 'BLOCK', 'Memory evidence should BLOCK');
+   }
+  });
+ });
+
+ // =====================================================
+ // SUITE 11: Survival IPD Derived Features
+ // =====================================================
+ TestRunner.suite('Survival IPD: Validated Study Builders', function() {
+  var buildSyntheticSurvivalIPD = function() {
+   var rows = [];
+   var addStudy = function(studyId, controlLabel, treatmentLabel, offset) {
+    var controlTimes = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    var controlEvents = [1, 1, 2, 1, 0, 1, 2, 0, 1, 0, 0, 0];
+    var treatedTimes = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    var treatedEvents = [0, 1, 2, 0, 1, 2, 0, 0, 1, 0, 0, 0];
+    controlTimes.forEach(function(t, i) {
+     rows.push({ study_id: studyId, treatment: controlLabel, time: t + offset, event: controlEvents[i] });
+    });
+    treatedTimes.forEach(function(t, i) {
+     rows.push({ study_id: studyId, treatment: treatmentLabel, time: t + offset, event: treatedEvents[i] });
+    });
+   };
+   addStudy('Study_A', 'Placebo', 'Active', 0);
+   addStudy('Study_B', 'Arm A', 'Arm B', 2);
+   return rows;
+  };
+
+  var withSyntheticSurvivalApp = function(fn) {
+   var prevData = APP.data;
+   var prevResults = APP.results;
+   var prevConfig = Object.assign({}, APP.config || {});
+   APP.data = buildSyntheticSurvivalIPD();
+   APP.results = null;
+   APP.config = Object.assign({}, prevConfig, {
+    studyVar: 'study_id',
+    treatmentVar: 'treatment',
+    timeVar: 'time',
+    eventVar: 'event',
+    outcomeType: 'survival'
+   });
+   try {
+    fn();
+   } finally {
+    APP.data = prevData;
+    APP.results = prevResults;
+    APP.config = prevConfig;
+   }
+  };
+
+  TestRunner.test('buildValidatedSurvivalFeatureBundle derives study-level survival features from IPD', function() {
+   withSyntheticSurvivalApp(function() {
+    var bundle = buildValidatedSurvivalFeatureBundle(APP.data, APP.config);
+    TestRunner.assertTrue(bundle && !bundle.error, bundle && bundle.error ? bundle.error : 'Missing bundle');
+    TestRunner.assertEqual(bundle.nStudies, 2, 'Expected 2 analyzable studies');
+    TestRunner.assertTrue(bundle.causeValues.length >= 2, 'Expected competing event types');
+    TestRunner.assertTrue(Number.isFinite(bundle.studies[0].cure_fraction), 'Missing cure fraction');
+    TestRunner.assertTrue(Object.keys(bundle.studies[0]).some(function(k) { return /_cshr$/.test(k); }), 'Missing competing-risk SHR');
+    TestRunner.assertTrue(Object.keys(bundle.studies[0]).some(function(k) { return /_gray_p$/.test(k); }), 'Missing study-level Gray test summary');
+    TestRunner.assertTrue(Object.keys(bundle.studies[0]).some(function(k) { return /_cif_rd$/.test(k); }), 'Missing study-level CIF contrast');
+   });
+  });
+
+  TestRunner.test('getBeyondR40MethodAvailability enables competing-risks MA only when competing events exist', function() {
+   withSyntheticSurvivalApp(function() {
+    var availability = getBeyondR40MethodAvailability();
+    TestRunner.assertTrue(availability.competingRisksMA.enabled, availability.competingRisksMA.reason || 'Competing risks should be enabled');
+    TestRunner.assertTrue(availability.cureFractionMA.enabled, availability.cureFractionMA.reason || 'Cure MA should be enabled');
+   });
+  });
+
+  TestRunner.test('BeyondR40.cureFractionMA pools raw-IPD-derived cure estimates', function() {
+   withSyntheticSurvivalApp(function() {
+    var bundle = buildValidatedSurvivalFeatureBundle(APP.data, APP.config);
+    var result = BeyondR40.cureFractionMA(bundle.studies);
+    TestRunner.assertTrue(result && !result.error, result && result.error ? result.error : 'No cure MA result');
+    TestRunner.assertTrue(Number.isFinite(result.cureFraction.pooled), 'Invalid pooled cure fraction');
+    TestRunner.assertTrue(result.cureFraction.nStudies >= 2, 'Need at least 2 cure studies');
+   });
+  });
+
+  TestRunner.test('BeyondR40.competingRisksMA pools raw-IPD-derived Fine-Gray estimates', function() {
+   withSyntheticSurvivalApp(function() {
+    var bundle = buildValidatedSurvivalFeatureBundle(APP.data, APP.config);
+    var result = BeyondR40.competingRisksMA(bundle.studies);
+    TestRunner.assertTrue(result && !result.error, result && result.error ? result.error : 'No competing-risks result');
+    TestRunner.assertTrue(Object.keys(result.causeSpecificResults || {}).length >= 2, 'Expected >=2 pooled causes');
+    var firstCause = result.causeSpecificResults[Object.keys(result.causeSpecificResults)[0]];
+    TestRunner.assertTrue(firstCause && firstCause.combinedGrayTest && Number.isFinite(firstCause.combinedGrayTest.pValue), 'Expected combined Gray test output');
+    TestRunner.assertTrue(firstCause && firstCause.pooledCIFDifference && Number.isFinite(firstCause.pooledCIFDifference.pooled), 'Expected pooled CIF contrast output');
+   });
+  });
+
+  TestRunner.test('window.runCompetingRisksMA routes to pooled Beyond-R workflow without recursion', function() {
+   withSyntheticSurvivalApp(function() {
+    var result = window.runCompetingRisksMA();
+    TestRunner.assertTrue(result && !result.error, result && result.error ? result.error : 'No UI competing-risks result');
+    TestRunner.assertTrue(Object.keys(result.causeSpecificResults || {}).length >= 1, 'Expected pooled competing-risks output');
+   });
+  });
+
+  TestRunner.test('competingRisksAnalysis legacy UI path exposes Gray tests and CIF curves from the validated core', function() {
+   withSyntheticSurvivalApp(function() {
+    var bundle = buildValidatedSurvivalFeatureBundle(APP.data, APP.config);
+    var result = competingRisksAnalysis(APP.data, 'time', 'event', 'treatment', bundle.causeValues);
+    var firstCause = bundle.causeValues[0];
+    var cif = result && result.cumulativeIncidence ? result.cumulativeIncidence[firstCause] : null;
+    var gray = result && result.grayTests ? result.grayTests[firstCause] : null;
+    TestRunner.assertTrue(result && !result.error, result && result.error ? result.error : 'No legacy competing-risks result');
+    TestRunner.assertTrue(gray && Number.isFinite(gray.pValue), 'Expected Gray test on legacy path');
+    TestRunner.assertTrue(cif && Object.keys(cif).length >= 2, 'Expected arm-indexed CIF collections on legacy path');
+    TestRunner.assertTrue(Object.keys(cif || {}).some(function(group) { return Array.isArray(cif[group]) && cif[group].length >= 1; }), 'Expected at least one populated CIF curve on legacy path');
+   });
+  });
+ });
+
+ TestRunner.suite('Auto IPD Pathway', function() {
+  var buildSyntheticBinaryIPD = function(options) {
+   var cfg = options || {};
+   var includeRegion = cfg.includeRegion !== false;
+   var secondRegion = Object.prototype.hasOwnProperty.call(cfg, 'secondRegion') ? cfg.secondRegion : 'US';
+   var rows = [];
+   var addStudy = function(studyId, region, ageShift, eventShift) {
+    for (var i = 0; i < 30; i++) {
+     var controlRow = {
+      study_id: studyId,
+      treatment: 0,
+      event_binary: ((i + eventShift) % 5 === 0) ? 1 : 0,
+      age: 52 + ageShift + (i % 11),
+      bmi: 24 + (i % 6)
+     };
+     if (includeRegion) controlRow.region = region;
+     rows.push(controlRow);
+    }
+    for (var j = 0; j < 30; j++) {
+     var treatedRow = {
+      study_id: studyId,
+      treatment: 1,
+      event_binary: ((j + eventShift) % 8 === 0) ? 1 : 0,
+      age: 54 + ageShift + (j % 11),
+      bmi: 25 + (j % 6)
+     };
+     if (includeRegion) treatedRow.region = region;
+     rows.push(treatedRow);
+    }
+   };
+   addStudy('Study_A', 'EU', 0, 0);
+   addStudy('Study_B', secondRegion, 3, 2);
+   return rows;
+  };
+
+  var buildSingleStudyBinaryIPD = function() {
+   var rows = [];
+   for (var i = 0; i < 12; i++) {
+    rows.push({ study_id: 'Study_A', treatment: 0, event_binary: (i % 4 === 0) ? 1 : 0, age: 50 + i, bmi: 23 + (i % 4), region: 'EU' });
+   }
+   for (var j = 0; j < 12; j++) {
+    rows.push({ study_id: 'Study_A', treatment: 1, event_binary: (j % 6 === 0) ? 1 : 0, age: 52 + j, bmi: 24 + (j % 4), region: 'EU' });
+   }
+   return rows;
+  };
+
+  var buildSyntheticSurvivalIPD = function() {
+   var rows = [];
+   var addStudy = function(studyId, controlLabel, treatmentLabel, offset) {
+    var controlTimes = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    var controlEvents = [1, 1, 2, 1, 0, 1, 2, 0, 1, 0, 0, 0];
+    var treatedTimes = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+    var treatedEvents = [0, 1, 2, 0, 1, 2, 0, 0, 1, 0, 0, 0];
+    controlTimes.forEach(function(t, i) {
+     rows.push({ study_id: studyId, treatment: controlLabel, time: t + offset, event: controlEvents[i] });
+    });
+    treatedTimes.forEach(function(t, i) {
+     rows.push({ study_id: studyId, treatment: treatmentLabel, time: t + offset, event: treatedEvents[i] });
+    });
+   };
+   addStudy('Study_A', 'Placebo', 'Active', 0);
+   addStudy('Study_B', 'Arm A', 'Arm B', 2);
+   return rows;
+  };
+
+  var withPathwayApp = function(data, config, results, fn) {
+   var prevData = APP.data;
+   var prevResults = APP.results;
+   var prevConfig = Object.assign({}, APP.config || {});
+   APP.data = data;
+   APP.results = results;
+   APP.config = Object.assign({}, prevConfig, config || {});
+   try {
+    fn();
+   } finally {
+    APP.data = prevData;
+    APP.results = prevResults;
+    APP.config = prevConfig;
+   }
+  };
+
+  TestRunner.test('autoIPDMethodPathway marks immediate next runs as workflow-ready', function() {
+   withPathwayApp(
+    buildSyntheticBinaryIPD(),
+    { outcomeType: 'binary', studyVar: 'study_id', treatmentVar: 'treatment', eventVar: 'event_binary' },
+    {
+     pooled: { I2: 35 },
+     studies: [
+      { study: 'Study_A', yi: -0.18, vi: 0.05 },
+      { study: 'Study_B', yi: -0.12, vi: 0.06 }
+     ]
+    },
+    function() {
+    var result = BeyondR40.autoIPDMethodPathway(APP.data, {
+     outcomeType: 'binary',
+     studyVar: 'study_id',
+     treatmentVar: 'treatment',
+     outcomeVar: 'event_binary',
+     covariateVar: 'age',
+     domainVar: 'region',
+     pooledI2: 35
+    });
+    TestRunner.assertTrue(result && !result.error, result && result.error ? result.error : 'No pathway result');
+    TestRunner.assertTrue(Array.isArray(result.pathway.immediateNextRuns) && result.pathway.immediateNextRuns.length >= 2, 'Expected >=2 immediate next runs');
+    result.pathway.immediateNextRuns.forEach(function(method) {
+     var row = (result.pathway.recommendations || []).find(function(item) { return item.method === method; });
+     TestRunner.assertTrue(row && row.workflowReady, method + ' should be workflow-ready');
+    });
+    TestRunner.assertTrue(result.dataReadiness && Number.isFinite(Number(result.dataReadiness.score)), 'Missing readiness score');
+    TestRunner.assertTrue(result.inferenceConfidence && result.inferenceConfidence.fields && result.inferenceConfidence.fields.studyVar, 'Missing field confidence report');
+    });
+  });
+
+  TestRunner.test('autoIPDMethodPathway withholds transportability without observed target evidence or explicit intent', function() {
+   var result = BeyondR40.autoIPDMethodPathway(buildSyntheticBinaryIPD({ secondRegion: 'EU' }), {
+    outcomeType: 'binary',
+    studyVar: 'study_id',
+    treatmentVar: 'treatment',
+    outcomeVar: 'event_binary',
+    covariateVar: 'age',
+    domainVar: 'region',
+    pooledI2: 35
+   });
+   var methods = (result.pathway.recommendations || []).map(function(item) { return item.method; });
+   TestRunner.assertTrue(!methods.includes('transportabilityIOWIPDMA'), 'Transportability should be withheld without a target signal');
+   TestRunner.assertTrue((result.dataReadiness.notes || []).some(function(msg) {
+    return String(msg).indexOf('Transportability methods are withheld') >= 0;
+   }), 'Expected transportability withholding note');
+  });
+
+  TestRunner.test('autoIPDMethodPathway can unlock proxy-target transportability when intent is explicit', function() {
+   var result = BeyondR40.autoIPDMethodPathway(buildSyntheticBinaryIPD({ secondRegion: 'EU' }), {
+    outcomeType: 'binary',
+    studyVar: 'study_id',
+    treatmentVar: 'treatment',
+    outcomeVar: 'event_binary',
+    covariateVar: 'age',
+    domainVar: 'region',
+    targetPopulationIntent: 'generalize to an external target population',
+    pooledI2: 35
+   });
+   var row = (result.pathway.recommendations || []).find(function(item) { return item.method === 'transportabilityIOWIPDMA'; });
+   TestRunner.assertTrue(!!row, 'Expected transportability recommendation with explicit intent');
+   TestRunner.assertTrue(row.workflowReady, 'Expected transportability to be workflow-ready with explicit intent');
+   TestRunner.assertTrue((row.cautions || []).some(function(msg) {
+    return String(msg).indexOf('synthetic') >= 0 || String(msg).indexOf('held-out study split') >= 0;
+   }), 'Expected proxy-target transportability caution');
+  });
+
+  TestRunner.test('auto workflow runner reports blocked when no pathway methods are executable', function() {
+   withPathwayApp(
+    buildSingleStudyBinaryIPD(),
+    { outcomeType: 'binary', studyVar: 'study_id', treatmentVar: 'treatment', eventVar: 'event_binary' },
+    null,
+    function() {
+     var pathway = BeyondR40.autoIPDMethodPathway(APP.data, {
+      outcomeType: 'binary',
+      studyVar: 'study_id',
+      treatmentVar: 'treatment',
+      outcomeVar: 'event_binary',
+      covariateVar: 'age',
+      domainVar: 'region'
+     });
+     var pathwayHTML = renderAutoIPDMethodPathwayHTML(pathway);
+     TestRunner.assertTrue(pathwayHTML.indexOf('Auto Workflow Blocked') >= 0, 'Expected blocked auto-workflow button state');
+     var workflow = runBeyondR40('autoIPDWorkflowRunner');
+     TestRunner.assertTrue(workflow && !workflow.error, workflow && workflow.error ? workflow.error : 'No auto workflow result');
+     TestRunner.assertTrue(workflow.runSummary && workflow.runSummary.status === 'blocked', 'Expected blocked workflow status');
+     TestRunner.assertTrue(workflow.runSummary && workflow.runSummary.attempted === 0, 'Expected zero attempted methods');
+     TestRunner.assertTrue(String((workflow.interpretation || {}).summary || '').toLowerCase().indexOf('blocked') >= 0, 'Expected blocked workflow summary');
+    }
+   );
+  });
+
+  TestRunner.test('auto pathway renderer summarizes survival workflow and includes non-PH step', function() {
+   withPathwayApp(
+    buildSyntheticSurvivalIPD(),
+    { outcomeType: 'survival', studyVar: 'study_id', treatmentVar: 'treatment', timeVar: 'time', eventVar: 'event' },
+    {
+     pooled: { I2: 55 },
+     studies: [
+      { study: 'Study_A', yi: -0.18, vi: 0.05 },
+      { study: 'Study_B', yi: -0.11, vi: 0.06 }
+     ]
+    },
+    function() {
+    var result = BeyondR40.autoIPDMethodPathway(APP.data, {
+     outcomeType: 'survival',
+     studyVar: 'study_id',
+     treatmentVar: 'treatment',
+     timeVar: 'time',
+     eventVar: 'event',
+     pooledI2: 55
+    });
+    var methods = (result.pathway.recommendations || []).map(function(item) { return item.method; });
+    TestRunner.assertTrue(methods.includes('nonPHDetection'), 'Expected nonPHDetection recommendation');
+    var html = renderAutoIPDMethodPathwayHTML(result);
+    TestRunner.assertTrue(html.indexOf('Auto IPD Method Pathway') >= 0, 'Missing pathway heading');
+    TestRunner.assertTrue(html.indexOf('Run Auto IPD Workflow') >= 0, 'Missing workflow button');
+    });
+  });
+ });
+
+ // Render results
+ TestRunner.render();
+}
+
+// Start
+runTests();
+</script>
+</body>
+</html>

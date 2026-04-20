@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-02-28T15:45:00Z",
+  "retrieved_at_utc": "2026-02-28T15:45:00Z",
+  "notes": "Internet-sourced reference values for cross-package benchmarking when local executables are unavailable.",
+  "references": [
+    {
+      "tool": "Stata",
+      "source_type": "official_vendor_docs",
+      "source_title": "Meta-analysis | New in Stata 16",
+      "source_url": "https://www.stata.com/stata16/meta-analysis/",
+      "scenario": "meta summarize on stdmdiff/se (19 studies, REML)",
+      "metrics": {
+        "n_studies": 19,
+        "tau2": 0.0188,
+        "i2_percent": 41.84,
+        "h2": 1.72
+      }
+    },
+    {
+      "tool": "Stata",
+      "source_type": "official_vendor_docs",
+      "source_title": "Meta-analysis | New in Stata 16",
+      "source_url": "https://www.stata.com/stata16/meta-analysis/",
+      "scenario": "meta trimfill (stdmdiff, REML)",
+      "metrics": {
+        "observed_studies": 19,
+        "imputed_studies": 3,
+        "observed_effect": 0.084,
+        "observed_ci_lower": -0.018,
+        "observed_ci_upper": 0.185,
+        "observed_plus_imputed_effect": 0.028,
+        "observed_plus_imputed_ci_lower": -0.117,
+        "observed_plus_imputed_ci_upper": 0.173
+      }
+    },
+    {
+      "tool": "Stata",
+      "source_type": "official_vendor_docs",
+      "source_title": "Stata meta webinar materials",
+      "source_url": "https://www.stata.com/training/webinar_series/meta-analysis/materials.html",
+      "scenario": "meta trimfill (log odds ratio, random effects)",
+      "metrics": {
+        "observed_studies": 37,
+        "imputed_studies": 10,
+        "observed_effect": 1.322,
+        "observed_ci_lower": 1.031,
+        "observed_ci_upper": 1.613,
+        "observed_plus_imputed_effect": 1.035,
+        "observed_plus_imputed_ci_lower": 0.726,
+        "observed_plus_imputed_ci_upper": 1.343
+      }
+    },
+    {
+      "tool": "SPSS",
+      "source_type": "peer_reviewed_tutorial",
+      "source_title": "A Tutorial on How to Conduct Meta-Analysis with IBM SPSS Statistics",
+      "source_url": "https://www.mdpi.com/2624-8611/4/4/49",
+      "scenario": "Random-effects meta-analysis on pre-calculated effect sizes",
+      "metrics": {
+        "mean_effect_z": 0.519,
+        "ci_lower": 0.436,
+        "ci_upper": 0.602,
+        "p_value_text": "<0.001",
+        "mean_effect_r": 0.477
+      }
+    },
+    {
+      "tool": "SPSS",
+      "source_type": "peer_reviewed_tutorial",
+      "source_title": "A Tutorial on How to Conduct Meta-Analysis with IBM SPSS Statistics",
+      "source_url": "https://www.mdpi.com/2624-8611/4/4/49",
+      "scenario": "Subgroup analysis contrast",
+      "metrics": {
+        "q_df": 1,
+        "q_value": 5.564,
+        "p_value": 0.018
+      }
+    },
+    {
+      "tool": "SPSS",
+      "source_type": "official_vendor_docs",
+      "source_title": "IBM SPSS Statistics 30 Documentation - Meta Analysis Procedures",
+      "source_url": "https://www.ibm.com/docs/en/spss-statistics/30.0.0?topic=meta-analysis-procedures",
+      "scenario": "Procedure availability confirmation",
+      "metrics": {
+        "procedures_listed": [
+          "Univariate Analysis",
+          "Bivariate Analysis",
+          "Three-Level Analysis",
+          "Meta Regression",
+          "Network Meta Analysis",
+          "Pairwise Contrast",
+          "Publication Bias Analysis",
+          "Diagnostic Test Accuracy"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hta-standard.org/schemas/v0.1/results.schema.json",
+  "title": "HTA Results Schema",
+  "description": "JSON Schema for HTA Artifact Standard v0.1 results.json files",
+  "type": "object",
+  "required": ["version", "run_id", "timestamp"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "HTA Standard version"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this run"
+    },
+    "model_id": {
+      "type": "string",
+      "description": "Reference to model ID"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "engine_version": {
+      "type": "string",
+      "description": "Version of the engine that produced these results"
+    },
+    "computation_time_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "seed": {
+      "type": "integer",
+      "description": "Random seed used for PSA"
+    },
+    "deterministic": {
+      "type": "object",
+      "description": "Base case (deterministic) results",
+      "properties": {
+        "strategies": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/strategy_result"
+          }
+        },
+        "incremental": {
+          "$ref": "#/$defs/incremental_analysis"
+        },
+        "trace": {
+          "$ref": "#/$defs/trace"
+        }
+      }
+    },
+    "psa": {
+      "type": "object",
+      "description": "Probabilistic sensitivity analysis results",
+      "properties": {
+        "iterations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "summary": {
+          "$ref": "#/$defs/psa_summary"
+        },
+        "ceac": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "wtp": { "type": "number" },
+              "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "scatter": {
+          "type": "object",
+          "properties": {
+            "incremental_costs": {
+              "type": "array",
+              "items": { "type": "number" }
+            },
+            "incremental_qalys": {
+              "type": "array",
+              "items": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "passed": { "type": "boolean" },
+        "errors": { "type": "array" },
+        "warnings": { "type": "array" }
+      }
+    },
+    "signature": {
+      "$ref": "#/$defs/signature"
+    }
+  },
+  "$defs": {
+    "strategy_result": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "total_costs": { "type": "number" },
+        "total_qalys": { "type": "number" },
+        "life_years": { "type": "number" }
+      }
+    },
+    "incremental_analysis": {
+      "type": "object",
+      "properties": {
+        "comparator": {
+          "type": "string",
+          "description": "ID of comparator strategy"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "strategy": { "type": "string" },
+              "label": { "type": "string" },
+              "incremental_costs": { "type": "number" },
+              "incremental_qalys": { "type": "number" },
+              "icer": {
+                "oneOf": [
+                  { "type": "number" },
+                  { "type": "string" },
+                  { "type": "null" }
+                ]
+              },
+              "nmb": { "type": "number" },
+              "dominance": {
+                "type": "string",
+                "enum": ["none", "dominated", "extended_dominated", "dominant"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "description": "State occupancy trace over time",
+      "properties": {
+        "cycles": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "states": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "number" }
+          }
+        }
+      }
+    },
+    "psa_summary": {
+      "type": "object",
+      "properties": {
+        "mean_incremental_costs": { "type": "number" },
+        "mean_incremental_qalys": { "type": "number" },
+        "sd_incremental_costs": { "type": "number" },
+        "sd_incremental_qalys": { "type": "number" },
+        "mean_icer": { "type": ["number", "null"] },
+        "median_icer": { "type": ["number", "null"] },
+        "sd_icer": { "type": ["number", "null"] },
+        "ci_lower_costs": { "type": "number" },
+        "ci_upper_costs": { "type": "number" },
+        "ci_lower_qalys": { "type": "number" },
+        "ci_upper_qalys": { "type": "number" },
+        "ci_lower_icer": { "type": ["number", "null"] },
+        "ci_upper_icer": { "type": ["number", "null"] },
+        "prob_ce_20k": { "type": "number", "minimum": 0, "maximum": 1 },
+        "prob_ce_30k": { "type": "number", "minimum": 0, "maximum": 1 },
+        "prob_ce_50k": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "description": "Cryptographic signature for reproducibility verification",
+      "properties": {
+        "inputs_hash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "description": "SHA-256 hash of inputs"
+        },
+        "outputs_hash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "description": "SHA-256 hash of outputs"
+        },
+        "engine_hash": {
+          "type": "string",
+          "description": "Hash of engine implementation"
+        }
+      }
+    }
+  }
+}

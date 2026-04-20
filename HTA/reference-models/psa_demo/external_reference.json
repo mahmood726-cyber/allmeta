@@ -1,0 +1,34 @@
+{
+  "version": "0.2",
+  "model_id": "psa_demo",
+  "generated_at": "2026-03-01T12:36:59.684Z",
+  "comparators": {
+    "r_reference": {
+      "source": "Independent R Markov fixture runner",
+      "strict": true,
+      "tolerance": {
+        "costs": 0.01,
+        "qalys": 0.0001,
+        "relative": 0.001
+      },
+      "strategies": {
+        "intervention": {
+          "total_costs": 31406.3095,
+          "total_qalys": 4.6945,
+          "life_years": 6.2562
+        },
+        "comparator": {
+          "total_costs": 30787.9,
+          "total_qalys": 4.084,
+          "life_years": 5.8604
+        }
+      },
+      "provenance": {
+        "file": "external-comparators\\r\\psa_demo\\results.json",
+        "sha256": "31d94e37e1c9df88eb69b9b2c7236131416561765583317849f9f3f6c3a12a34",
+        "generated_at": "2026-03-01T12:35:45Z",
+        "comparator": "R"
+      }
+    }
+  }
+}
