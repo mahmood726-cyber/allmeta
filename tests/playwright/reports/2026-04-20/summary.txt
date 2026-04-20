@@ -1,9 +1,9 @@
-fail-console-error     HTA Pro
 fail-console-error     Pairwise AI
 fail-plot-missing      Dose Response Pro
 fail-plot-missing      Evidence Board
 fail-plot-missing      Focus Studio
 fail-plot-missing      GRADE SoF Builder
+fail-plot-missing      HTA Pro
 fail-plot-missing      IPD Meta-Pro
 fail-plot-missing      Kanban Lab
 fail-plot-missing      Living Meta
