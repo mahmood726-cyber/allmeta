@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Extract effect estimates from RCT PDFs and text via a locally-running rct-extractor-v2 API, with an optional local-LLM verifier.">
+  <meta name="color-scheme" content="light dark">
+  <title>RCT Extractor</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --ok:#0d7a27; --ok-soft:#dff3e0;
+            --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --ok:#5bc47b; --ok-soft:#1e3a27;
+              --err:#ef7373; --err-soft:#3a1e1e; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    .status-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.82rem; }
+    .status-pill { padding: 0.2rem 0.65rem; border-radius: 999px; font-weight: 600; background: var(--border); color: var(--muted); }
+    .status-pill.ok { background: var(--ok-soft); color: var(--ok); }
+    .status-pill.err { background: var(--err-soft); color: var(--err); }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    textarea, input, select { width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; font-size: 0.85rem; }
+    textarea { min-height: 8rem; font-family: "SF Mono", Consolas, monospace; font-size: 0.82rem; }
+    input[type="file"] { border: none; padding: 0.2rem 0; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.86rem; cursor: pointer; }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: var(--panel); color: var(--accent); border: 1px solid var(--accent);
+                       padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+    .divider { margin: 0.8rem 0; border-top: 1px dashed var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .src-text { font-size: 0.76rem; color: var(--muted); font-family: "SF Mono", Consolas, monospace; max-height: 5rem; overflow: auto; padding: 0.35rem 0.55rem; background: var(--input-bg); border-radius: 4px; margin-top: 0.3rem; }
+    .consensus.agree { background: var(--ok-soft); }
+    .consensus.disagree { background: var(--err-soft); }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>RCT Extractor</h1>
+    <p>Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications using your locally-running <code>rct-extractor-v2</code> API. Optional: run a local LLM alongside as a cross-check. Consensus and disagreements are highlighted.</p>
+    <div class="status-row">
+      <span class="status-pill" id="api-status">checking rct-extractor…</span>
+      <span class="status-pill" id="llm-status">checking local LLM…</span>
+    </div>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Input</h2>
+      <label>
+        <span class="lbl">API endpoint</span>
+        <input id="api-url" type="text" value="http://127.0.0.1:8000">
+        <span class="hint">Your rct-extractor-v2 FastAPI server. Start with <code>uvicorn src.api.main:app --port 8000</code>.</span>
+      </label>
+      <div class="divider"></div>
+      <label>
+        <span class="lbl">Paste results text</span>
+        <textarea id="text" placeholder="Paste the results paragraph, abstract, or full text of a trial.">The primary endpoint of cardiovascular death or heart failure hospitalization occurred in 386 of 2373 patients (16.3%) in the empagliflozin group and in 451 of 2371 patients (19.0%) in the placebo group (hazard ratio 0.75; 95% confidence interval 0.65 to 0.86; P<0.001).</textarea>
+      </label>
+      <label>
+        <span class="lbl">Or upload PDF</span>
+        <input id="pdf" type="file" accept="application/pdf">
+        <span class="hint">PDFs with extractable text work in the browser; scanned PDFs need the desktop <code>rct-extractor</code> with OCR.</span>
+      </label>
+      <div style="display:flex; gap:0.5rem; margin-top:0.6rem">
+        <button type="button" id="btn-run" class="primary">Extract</button>
+        <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.82rem; margin:0">
+          <input id="use-llm" type="checkbox"> Also run local LLM (consensus)
+        </label>
+      </div>
+      <div class="note" id="hint-note">
+        <strong>First time?</strong> In a terminal: <code>cd C:\Projects\rct-extractor-v2 && pip install fastapi uvicorn python-multipart && uvicorn src.api.main:app --port 8000</code>. Then come back and click Extract.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Extractions</h2>
+      <table id="res-table">
+        <thead><tr><th>Source</th><th>Type</th><th>Estimate</th><th>95% CI</th><th>p</th><th>Conf</th><th></th></tr></thead>
+        <tbody id="res-body"><tr><td colspan="7" style="color:var(--muted)">No extractions yet.</td></tr></tbody>
+      </table>
+      <div id="send-actions" style="display:none; gap:0.5rem; margin-bottom:0.8rem">
+        <button type="button" id="btn-send-workbench" class="secondary">Send to MA Workbench bus</button>
+        <button type="button" id="btn-send-forest" class="secondary">Send to Forest Plot</button>
+        <button type="button" id="btn-export-csv" class="secondary">Export CSV</button>
+      </div>
+      <h2 style="margin-top:0.8rem">Consensus vs local LLM</h2>
+      <div id="consensus-wrap">
+        <p style="color:var(--muted); font-size:0.84rem; margin:0">Enable "local LLM consensus" above to compare the regex extractor against a local model. Disagreements are highlighted red.</p>
+      </div>
+      <h2 style="margin-top:0.8rem">Source provenance</h2>
+      <svg id="plot" viewBox="0 0 600 120" role="img" aria-label="Bar chart of extractions by confidence"></svg>
+    </section>
+  </main>
+  <footer>
+    The rct-extractor-v2 API is Python/FastAPI — uses 180+ regex patterns with 97.7% sensitivity on the CT.gov external-validation set. Optional LLM consensus layer uses Ollama via <code>../shared/localllm.js</code>. Results bus (<code>ma-studies-v1</code> in localStorage) feeds MA Workbench and Forest Plot Viewer.
+  </footer>
+
+  <script src="../shared/localllm.js"></script>
+  <!-- PDF.js for browser-side text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs" type="module"></script>
+  <script type="module">
+    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs";
+
+    const apiUrlEl = document.getElementById("api-url");
+    const textEl = document.getElementById("text");
+    const pdfEl = document.getElementById("pdf");
+    const btnRun = document.getElementById("btn-run");
+    const useLLM = document.getElementById("use-llm");
+    const apiStatus = document.getElementById("api-status");
+    const llmStatus = document.getElementById("llm-status");
+    const resBody = document.getElementById("res-body");
+    const sendActions = document.getElementById("send-actions");
+    const consensusWrap = document.getElementById("consensus-wrap");
+
+    let LAST_EXTRACTIONS = [];
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    async function probeAPI() {
+      apiStatus.textContent = "checking rct-extractor…";
+      apiStatus.className = "status-pill";
+      try {
+        const r = await fetch(apiUrlEl.value.replace(/\/$/, "") + "/health");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const j = await r.json();
+        apiStatus.textContent = `rct-extractor v${j.version || "?"}`;
+        apiStatus.className = "status-pill ok";
+      } catch (e) {
+        apiStatus.textContent = "rct-extractor not reachable";
+        apiStatus.className = "status-pill err";
+      }
+    }
+
+    async function probeLLM() {
+      llmStatus.textContent = "checking local LLM…";
+      llmStatus.className = "status-pill";
+      const res = await window.LocalLLM.detect();
+      if (res.available) {
+        llmStatus.textContent = `Ollama · ${res.models.length} model${res.models.length === 1 ? "" : "s"}`;
+        llmStatus.className = "status-pill ok";
+        llmStatus.dataset.default = res.default || "";
+      } else {
+        llmStatus.textContent = "Ollama not detected";
+        llmStatus.className = "status-pill err";
+      }
+    }
+
+    async function extractFromPDF(file) {
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let out = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        out += content.items.map(it => it.str).join(" ") + "\n\n";
+      }
+      return out;
+    }
+
+    async function callExtractor(text) {
+      const r = await fetch(apiUrlEl.value.replace(/\/$/, "") + "/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, include_raw: true }),
+      });
+      if (!r.ok) throw new Error("Extractor HTTP " + r.status);
+      return r.json();
+    }
+
+    async function callLLM(text) {
+      if (!useLLM.checked) return null;
+      const model = llmStatus.dataset.default || "llama3.1:8b";
+      return window.LocalLLM.extractJSON({
+        model,
+        task: "Extract every effect estimate reported in this RCT passage.",
+        input: text,
+        schemaHint: `{
+  "extractions": [
+    { "type":"HR|OR|RR|RD|SMD|MD|IRR", "estimate":0, "ci_lower":0, "ci_upper":0, "p_value":0, "source":"verbatim" }
+  ]
+}`,
+      });
+    }
+
+    function renderRegexRows(ext) {
+      resBody.innerHTML = "";
+      if (!ext || ext.length === 0) {
+        resBody.innerHTML = `<tr><td colspan="7" style="color:var(--muted)">No effects detected.</td></tr>`;
+        sendActions.style.display = "none";
+        return;
+      }
+      const rows = ext.map((e, i) => {
+        const ci = e.ci ? `[${e.ci.lower ?? "?"}, ${e.ci.upper ?? "?"}]` : "—";
+        const src = e.source_text ? `<div class="src-text">${esc(e.source_text).slice(0, 240)}</div>` : "";
+        return `<tr>
+          <td><code>regex</code></td>
+          <td><code>${esc(e.effect_type || "?")}</code></td>
+          <td>${esc(e.point_estimate ?? "—")}${e.standard_error != null ? ` <span style="color:var(--muted); font-size:0.76rem">(SE ${esc(e.standard_error)})</span>` : ""}</td>
+          <td>${esc(ci)}</td>
+          <td>${e.p_value != null ? esc(e.p_value) : "—"}</td>
+          <td>${e.confidence != null ? (e.confidence * 100).toFixed(0) + "%" : "—"}${e.automation_tier ? ` <span style="color:var(--muted); font-size:0.72rem">${esc(e.automation_tier)}</span>` : ""}</td>
+          <td>${src}</td>
+        </tr>`;
+      });
+      resBody.innerHTML = rows.join("");
+      sendActions.style.display = "flex";
+    }
+
+    function renderConsensus(regexExt, llmExt) {
+      if (!llmExt) {
+        consensusWrap.innerHTML = `<p style="color:var(--muted); font-size:0.84rem; margin:0">Enable "local LLM consensus" to run a cross-check.</p>`;
+        return;
+      }
+      const llmItems = (llmExt.extractions || []).map(e => ({
+        type: (e.type || "").toUpperCase(),
+        estimate: Number(e.estimate),
+        lo: Number(e.ci_lower), hi: Number(e.ci_upper), p: e.p_value,
+      }));
+      // Naive consensus: for each regex row, find the LLM row with the same type + closest estimate
+      const rows = regexExt.map(r => {
+        const rx = { type: r.effect_type, est: r.point_estimate, lo: r.ci?.lower, hi: r.ci?.upper };
+        const matches = llmItems.filter(l => l.type === rx.type).sort((a, b) => Math.abs(a.estimate - rx.est) - Math.abs(b.estimate - rx.est));
+        const m = matches[0];
+        const agree = m && Math.abs(m.estimate - rx.est) / Math.max(Math.abs(rx.est), 0.01) < 0.05;
+        return { rx, llm: m, agree };
+      });
+      consensusWrap.innerHTML = `<table>
+        <thead><tr><th>Type</th><th>Regex</th><th>LLM</th><th>Agreement</th></tr></thead>
+        <tbody>${rows.map(r => `<tr class="consensus ${r.agree ? "agree" : "disagree"}">
+          <td><code>${esc(r.rx.type)}</code></td>
+          <td>${esc(r.rx.est)} [${esc(r.rx.lo)}, ${esc(r.rx.hi)}]</td>
+          <td>${r.llm ? `${esc(r.llm.estimate)} [${esc(r.llm.lo)}, ${esc(r.llm.hi)}]` : "no match"}</td>
+          <td>${r.agree ? "✓ within 5%" : (r.llm ? "✗ disagreement" : "—")}</td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+    }
+
+    function drawConfidenceBar(extractions) {
+      const svg = document.getElementById("plot");
+      svg.innerHTML = "";
+      if (!extractions.length) return;
+      const W = 600, H = 120, padL = 120, padR = 30, padT = 15, padB = 25;
+      const rowH = (H - padT - padB) / extractions.length;
+      extractions.forEach((e, i) => {
+        const y = padT + i * rowH + 2;
+        const c = (e.confidence ?? 0);
+        const w = c * (W - padL - padR);
+        const color = c >= 0.8 ? "var(--ok)" : c >= 0.5 ? "var(--warn)" : "var(--err)";
+        svg.innerHTML += `<text x="${padL - 8}" y="${y + rowH / 2 + 3}" text-anchor="end" font-size="11" fill="currentColor">${esc(e.effect_type || "?")} ${esc(e.point_estimate ?? "")}</text>`;
+        svg.innerHTML += `<rect x="${padL}" y="${y}" width="${w}" height="${rowH - 4}" fill="${color}" opacity="0.85"/>`;
+        svg.innerHTML += `<text x="${padL + w + 6}" y="${y + rowH / 2 + 3}" font-size="10" fill="currentColor">${(c * 100).toFixed(0)}%</text>`;
+      });
+      svg.innerHTML += `<text x="${padL + (W - padL - padR) / 2}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Extractor confidence</text>`;
+    }
+
+    async function run() {
+      btnRun.disabled = true;
+      btnRun.textContent = "Extracting…";
+      try {
+        let text = textEl.value.trim();
+        if (pdfEl.files[0]) {
+          text = await extractFromPDF(pdfEl.files[0]);
+          textEl.value = text.slice(0, 2000) + (text.length > 2000 ? "\n\n… (truncated in preview; full text sent to extractor)" : "");
+        }
+        if (!text) { resBody.innerHTML = `<tr><td colspan="7">Need some text.</td></tr>`; return; }
+
+        const [apiRes, llmRes] = await Promise.all([
+          callExtractor(text).catch(e => ({ error: e.message, extractions: [] })),
+          callLLM(text).catch(e => ({ error: e.message })),
+        ]);
+
+        const ext = apiRes.extractions || [];
+        LAST_EXTRACTIONS = ext;
+        renderRegexRows(ext);
+        renderConsensus(ext, llmRes && !llmRes.error ? llmRes : null);
+        drawConfidenceBar(ext);
+
+        if (apiRes.error) {
+          resBody.innerHTML = `<tr><td colspan="7" style="color:var(--err)">Extractor error: ${esc(apiRes.error)}</td></tr>`;
+        }
+      } catch (err) {
+        resBody.innerHTML = `<tr><td colspan="7" style="color:var(--err)">Error: ${esc(err.message)}</td></tr>`;
+      } finally {
+        btnRun.disabled = false;
+        btnRun.textContent = "Extract";
+      }
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    apiUrlEl.addEventListener("change", probeAPI);
+
+    // Send to MA Workbench bus — one row per extraction, normalised onto the shared schema
+    document.getElementById("btn-send-workbench").addEventListener("click", () => {
+      const rows = LAST_EXTRACTIONS.map(e => ({
+        study: "imported",
+        te: e.effect_type && /HR|OR|RR|IRR/.test(e.effect_type) && e.point_estimate ? Math.log(e.point_estimate) : e.point_estimate,
+        se: e.standard_error ?? (e.ci && e.ci.lower && e.ci.upper ? (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * 1.96) : null),
+        scale: e.effect_type,
+        p: e.p_value,
+      })).filter(r => Number.isFinite(r.te) && Number.isFinite(r.se));
+      const existing = JSON.parse(localStorage.getItem("ma-studies-v1") || "[]");
+      localStorage.setItem("ma-studies-v1", JSON.stringify(existing.concat(rows)));
+      alert(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`);
+    });
+    document.getElementById("btn-send-forest").addEventListener("click", () => {
+      const lines = LAST_EXTRACTIONS.map((e, i) => {
+        const logScale = e.effect_type && /HR|OR|RR|IRR/.test(e.effect_type);
+        const te = logScale ? Math.log(e.point_estimate) : e.point_estimate;
+        const se = e.standard_error ?? (e.ci && e.ci.lower && e.ci.upper ? (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * 1.96) : null);
+        return se ? `Study ${i + 1}, ${te.toFixed(3)}, ${se.toFixed(3)}` : null;
+      }).filter(Boolean).join("\n");
+      // Use forest-plot localStorage convention if available; otherwise copy to clipboard.
+      localStorage.setItem("forest-plot-v1", lines);
+      navigator.clipboard.writeText(lines).then(() => alert(`${LAST_EXTRACTIONS.length} rows saved to forest-plot-v1 and clipboard.`));
+    });
+    document.getElementById("btn-export-csv").addEventListener("click", () => {
+      const head = "type,estimate,ci_lower,ci_upper,p_value,standard_error,confidence,source_text\n";
+      const q = s => { if (s == null) return ""; const x = String(s); return /[,"\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
+      const body = LAST_EXTRACTIONS.map(e => [
+        e.effect_type, e.point_estimate,
+        e.ci?.lower, e.ci?.upper,
+        e.p_value, e.standard_error, e.confidence,
+        e.source_text
+      ].map(q).join(",")).join("\n");
+      const blob = new Blob([head + body], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "rct_extractions.csv";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    });
+
+    probeAPI();
+    probeLLM();
+  </script>
+</body>
+</html>

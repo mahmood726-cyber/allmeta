@@ -1,5 +1,16 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "RCT Extractor",
+    folder: "C:\\HTML apps\\rct-extractor",
+    path: "./rct-extractor/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "Screening & Extraction",
+    summary: "Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications via a locally-running rct-extractor-v2 FastAPI server (180+ regex patterns, 97.7% sensitivity). Optional local-LLM consensus layer, PDF upload with browser-side text extraction, one-click hand-off to MA Workbench / Forest Plot Viewer.",
+    note: "Requires a one-time Python install; see the in-app hint.",
+    tags: ["extraction", "pdf", "rct", "regex", "fastapi"]
+  },
+  {
     name: "Local AI setup",
     folder: "C:\\HTML apps\\local-ai",
     path: "./local-ai/index.html",

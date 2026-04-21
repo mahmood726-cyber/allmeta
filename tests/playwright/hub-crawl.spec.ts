@@ -30,13 +30,20 @@ const BENIGN_ERROR_PATTERNS: RegExp[] = [
   /frame-ancestors.*ignored.*<meta>/i,           // CSP delivered via meta tag (harmless)
   /favicon\.ico.*404/i,                           // missing favicon
   /deprecated|deprecation/i,
+  /ERR_CONNECTION_REFUSED/i,                      // local-service probes (Ollama :11434, rct-extractor :8000)
+  /Failed to fetch/i,                             // same family, browser-reported
 ];
 
 // Apps with known source defects that we ship anyway. Tests still record status
 // rows but won't throw. Remove an entry here when the underlying source repo is fixed.
 const KNOWN_SHIP_ANYWAY: Set<string> = new Set([
   "pairwise-ai",   // Main screen.html references ./Main screen_files/ which doesn't exist in source
+  "rct-extractor", // probes http://127.0.0.1:8000 on load — connection refused when the Python server isn't running
 ]);
+
+// Also filter localhost probe connection errors as benign — we expect them when optional
+// local services (Ollama on :11434, rct-extractor on :8000) aren't started.
+const BENIGN_LOCALHOST = /Failed to load resource.*ERR_CONNECTION_REFUSED|Fetch API.*Failed to fetch/;
 
 function filterBenign(errors: string[]): string[] {
   return errors.filter(e => !BENIGN_ERROR_PATTERNS.some(re => re.test(e)));
