@@ -68,7 +68,7 @@
   <header>
     <h1>RCT Extractor</h1>
     <p>Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications using your locally-running <code>rct-extractor-v2</code> API. Optional: run a local LLM alongside as a cross-check. Consensus and disagreements are highlighted.</p>
-    <div class="status-row">
+    <div class="status-row" role="status" aria-live="polite" aria-atomic="true">
       <span class="status-pill" id="api-status">checking rct-extractor…</span>
       <span class="status-pill" id="llm-status">checking local LLM…</span>
     </div>
@@ -143,7 +143,9 @@
     const sendActions = document.getElementById("send-actions");
     const consensusWrap = document.getElementById("consensus-wrap");
 
-    let LAST_EXTRACTIONS = [];
+    // Exposed on window so e2e tests can inject fixtures without waiting for a real extraction.
+    window.LAST_EXTRACTIONS = window.LAST_EXTRACTIONS || [];
+    let LAST_EXTRACTIONS = window.LAST_EXTRACTIONS;
 
     function esc(s) {
       return String(s == null ? "" : s)
@@ -151,18 +153,45 @@
         .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
+    // Loopback-only guard. Rejects any URL whose host isn't 127.0.0.1 / ::1 / localhost,
+    // and any protocol other than http:. This closes the data-exfiltration path where
+    // the api-url field could be pointed at an external host.
+    const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+    function validLoopback(raw) {
+      try {
+        const u = new URL(raw);
+        if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+        if (!LOOPBACK_HOSTS.has(u.hostname)) return null;
+        return u.origin;
+      } catch (_) { return null; }
+    }
+
+    let PROBE_ABORT = null;
     async function probeAPI() {
       apiStatus.textContent = "checking rct-extractor…";
       apiStatus.className = "status-pill";
+      const origin = validLoopback(apiUrlEl.value);
+      if (!origin) {
+        apiStatus.textContent = "only loopback URLs allowed (127.0.0.1 / localhost)";
+        apiStatus.className = "status-pill err";
+        return;
+      }
+      if (PROBE_ABORT) PROBE_ABORT.abort();
+      PROBE_ABORT = new AbortController();
+      const timeoutId = setTimeout(() => PROBE_ABORT && PROBE_ABORT.abort(), 10_000);
       try {
-        const r = await fetch(apiUrlEl.value.replace(/\/$/, "") + "/health");
+        const r = await fetch(origin + "/health", { signal: PROBE_ABORT.signal });
         if (!r.ok) throw new Error("HTTP " + r.status);
         const j = await r.json();
         apiStatus.textContent = `rct-extractor v${j.version || "?"}`;
         apiStatus.className = "status-pill ok";
       } catch (e) {
-        apiStatus.textContent = "rct-extractor not reachable";
-        apiStatus.className = "status-pill err";
+        if (e.name !== "AbortError") {
+          apiStatus.textContent = "rct-extractor not reachable";
+          apiStatus.className = "status-pill err";
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -192,11 +221,14 @@
       return out;
     }
 
-    async function callExtractor(text) {
-      const r = await fetch(apiUrlEl.value.replace(/\/$/, "") + "/extract", {
+    async function callExtractor(text, signal) {
+      const origin = validLoopback(apiUrlEl.value);
+      if (!origin) throw new Error("API URL must be a loopback address (127.0.0.1 / localhost).");
+      const r = await fetch(origin + "/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, include_raw: true }),
+        signal,
       });
       if (!r.ok) throw new Error("Extractor HTTP " + r.status);
       return r.json();
@@ -306,6 +338,7 @@
 
         const ext = apiRes.extractions || [];
         LAST_EXTRACTIONS = ext;
+        window.LAST_EXTRACTIONS = ext;
         renderRegexRows(ext);
         renderConsensus(ext, llmRes && !llmRes.error ? llmRes : null);
         drawConfidenceBar(ext);
@@ -324,34 +357,83 @@
     document.getElementById("btn-run").addEventListener("click", run);
     apiUrlEl.addEventListener("change", probeAPI);
 
-    // Send to MA Workbench bus — one row per extraction, normalised onto the shared schema
-    document.getElementById("btn-send-workbench").addEventListener("click", () => {
-      const rows = LAST_EXTRACTIONS.map(e => ({
-        study: "imported",
-        te: e.effect_type && /HR|OR|RR|IRR/.test(e.effect_type) && e.point_estimate ? Math.log(e.point_estimate) : e.point_estimate,
-        se: e.standard_error ?? (e.ci && e.ci.lower && e.ci.upper ? (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * 1.96) : null),
-        scale: e.effect_type,
+    // Scale-aware bus push. Ratio types (HR, OR, RR, IRR) go on the log scale; linear types
+    // (MD, SMD, RD) stay on the raw scale. Each row carries its scale + source metadata so
+    // downstream consumers can refuse to pool incompatible scales.
+    const RATIO_TYPES = new Set(["HR", "OR", "RR", "IRR"]);
+    const LINEAR_TYPES = new Set(["MD", "SMD", "RD"]);
+
+    function toBusRow(e, i) {
+      const type = (e.effect_type || "").toUpperCase();
+      const isRatio = RATIO_TYPES.has(type);
+      const isLinear = LINEAR_TYPES.has(type);
+      if (!isRatio && !isLinear) return null; // unknown scale — skip
+      let te, se;
+      if (isRatio) {
+        if (!(e.point_estimate > 0)) return null;
+        te = Math.log(e.point_estimate);
+        if (e.standard_error != null && Number.isFinite(e.standard_error)) {
+          se = e.standard_error;
+        } else if (e.ci && e.ci.lower > 0 && e.ci.upper > 0) {
+          se = (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * 1.96);
+        } else {
+          se = NaN;
+        }
+      } else {
+        te = e.point_estimate;
+        if (e.standard_error != null && Number.isFinite(e.standard_error)) {
+          se = e.standard_error;
+        } else if (e.ci && Number.isFinite(e.ci.lower) && Number.isFinite(e.ci.upper)) {
+          se = (e.ci.upper - e.ci.lower) / (2 * 1.96);
+        } else {
+          se = NaN;
+        }
+      }
+      return {
+        study: `rct-extractor-${Date.now()}-${i}`,
+        te, se,
+        scale: type,
+        scale_family: isRatio ? "ratio" : "linear",
         p: e.p_value,
-      })).filter(r => Number.isFinite(r.te) && Number.isFinite(r.se));
-      const existing = JSON.parse(localStorage.getItem("ma-studies-v1") || "[]");
+        source: "rct-extractor",
+        imported_at: new Date().toISOString(),
+        source_text: (e.source_text || "").slice(0, 500),
+        confidence: e.confidence,
+      };
+    }
+
+    document.getElementById("btn-send-workbench").addEventListener("click", () => {
+      const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
+      // Guard: refuse to push if scale families are mixed — forces user to choose.
+      const families = new Set(rows.map(r => r.scale_family));
+      if (families.size > 1) {
+        alert(`Mixed scale families detected (ratio + linear). Pooling these together is not meaningful — select only one type before pushing.`);
+        return;
+      }
+      // Atomic read-modify-write: validate existing bus content first.
+      let existing = [];
+      try {
+        const raw = JSON.parse(localStorage.getItem("ma-studies-v1") || "[]");
+        if (Array.isArray(raw)) existing = raw.filter(x => x && typeof x === "object" && !Array.isArray(x));
+      } catch (_) { existing = []; }
       localStorage.setItem("ma-studies-v1", JSON.stringify(existing.concat(rows)));
       alert(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`);
     });
     document.getElementById("btn-send-forest").addEventListener("click", () => {
-      const lines = LAST_EXTRACTIONS.map((e, i) => {
-        const logScale = e.effect_type && /HR|OR|RR|IRR/.test(e.effect_type);
-        const te = logScale ? Math.log(e.point_estimate) : e.point_estimate;
-        const se = e.standard_error ?? (e.ci && e.ci.lower && e.ci.upper ? (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * 1.96) : null);
-        return se ? `Study ${i + 1}, ${te.toFixed(3)}, ${se.toFixed(3)}` : null;
-      }).filter(Boolean).join("\n");
-      // Use forest-plot localStorage convention if available; otherwise copy to clipboard.
+      const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
+      const families = new Set(rows.map(r => r.scale_family));
+      if (families.size > 1) {
+        alert(`Mixed scale families — a single forest plot must use one scale. Filter rows first.`);
+        return;
+      }
+      const lines = rows.map((r, i) => `Study ${i + 1}, ${r.te.toFixed(3)}, ${r.se.toFixed(3)}`).join("\n");
       localStorage.setItem("forest-plot-v1", lines);
-      navigator.clipboard.writeText(lines).then(() => alert(`${LAST_EXTRACTIONS.length} rows saved to forest-plot-v1 and clipboard.`));
+      navigator.clipboard.writeText(lines).then(() => alert(`${rows.length} rows saved to forest-plot-v1 and clipboard.`));
     });
     document.getElementById("btn-export-csv").addEventListener("click", () => {
       const head = "type,estimate,ci_lower,ci_upper,p_value,standard_error,confidence,source_text\n";
       const q = s => { if (s == null) return ""; const x = String(s); return /[,"\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
-      const body = LAST_EXTRACTIONS.map(e => [
+      const body = (window.LAST_EXTRACTIONS || []).map(e => [
         e.effect_type, e.point_estimate,
         e.ci?.lower, e.ci?.upper,
         e.p_value, e.standard_error, e.confidence,

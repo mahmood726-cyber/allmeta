@@ -15,45 +15,63 @@
 
   const LocalLLM = {
     base: DEFAULT_BASE,
-    _cachedModels: null,
+    _detectPromise: null,   // coalesced detect() across concurrent callers
+    DEFAULT_TIMEOUT_MS: 180_000,
+    escapeHtml,             // exposed so consumers can avoid duplicate defs
 
-    async detect() {
-      try {
-        const r = await fetch(`${this.base}/api/tags`, { method: "GET" });
-        if (!r.ok) return { available: false, error: `HTTP ${r.status}` };
-        const j = await r.json();
-        const names = (j.models || []).map(m => m.name);
-        this._cachedModels = names;
-        // Try to pick a reasonable default
-        let def = null;
-        for (const p of PREFERRED_MODELS) {
-          if (names.includes(p)) { def = p; break; }
+    async detect(opts) {
+      // Coalesce concurrent detect calls. opts.force bypasses the cache.
+      if (this._detectPromise && !(opts && opts.force)) return this._detectPromise;
+      const p = (async () => {
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 4_000);
+        try {
+          const r = await fetch(`${this.base}/api/tags`, { method: "GET", signal: ctl.signal });
+          if (!r.ok) return { available: false, error: `HTTP ${r.status}` };
+          const j = await r.json();
+          const names = (j.models || []).map(m => typeof m.name === "string" ? m.name : null).filter(Boolean);
+          let def = null;
+          for (const pref of PREFERRED_MODELS) { if (names.includes(pref)) { def = pref; break; } }
+          if (!def && names.length) def = names[0];
+          return { available: true, models: names, default: def, raw: j };
+        } catch (e) {
+          return { available: false, error: e.message };
+        } finally {
+          clearTimeout(t);
         }
-        if (!def && names.length) def = names[0];
-        return { available: true, models: names, default: def };
-      } catch (e) {
-        return { available: false, error: e.message };
-      }
+      })();
+      this._detectPromise = p;
+      // Clear the cache after a short window so the status pill can refresh on demand
+      setTimeout(() => { if (this._detectPromise === p) this._detectPromise = null; }, 2_000);
+      return p;
     },
 
-    async generate({ model, prompt, system, format }) {
+    async generate({ model, prompt, system, format, signal, timeoutMs }) {
       const body = { model, prompt, stream: false };
       if (system) body.system = system;
       if (format) body.format = format; // "json" for structured
-      const r = await fetch(`${this.base}/api/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) {
-        const t = await r.text();
-        throw new Error(`Ollama HTTP ${r.status}: ${t.slice(0, 200)}`);
+      const ctl = signal ? null : new AbortController();
+      const effectiveSignal = signal || ctl.signal;
+      const t = ctl ? setTimeout(() => ctl.abort(), timeoutMs || this.DEFAULT_TIMEOUT_MS) : null;
+      try {
+        const r = await fetch(`${this.base}/api/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: effectiveSignal,
+        });
+        if (!r.ok) {
+          const t2 = await r.text();
+          throw new Error(`Ollama HTTP ${r.status}: ${t2.slice(0, 200)}`);
+        }
+        const j = await r.json();
+        return j.response || "";
+      } finally {
+        if (t) clearTimeout(t);
       }
-      const j = await r.json();
-      return j.response || "";
     },
 
-    async extractJSON({ model, task, input, schemaHint }) {
+    async extractJSON({ model, task, input, schemaHint, signal, timeoutMs }) {
       const system = `You are a careful biomedical research assistant. Extract structured data exactly as requested. Output ONLY valid JSON — no prose, no code fences, no commentary.`;
       const prompt = `Task: ${task}
 
@@ -64,7 +82,7 @@ Input text:
 ${input}
 
 Respond with JSON only.`;
-      const text = await this.generate({ model, prompt, system, format: "json" });
+      const text = await this.generate({ model, prompt, system, format: "json", signal, timeoutMs });
       // Ollama with format=json returns strictly JSON but guard with try/catch
       try { return JSON.parse(text); }
       catch (_) {
@@ -95,7 +113,7 @@ Respond with JSON only.`;
       wrap.innerHTML = `
         <summary style="cursor:pointer; padding:0.6rem 0.9rem; font-weight:600; display:flex; align-items:center; gap:0.4rem">
           <span>🤖 ${escapeHtml(opts.title || "Local AI helper")}</span>
-          <span class="localllm-status" style="font-size:0.72rem; padding:0.1rem 0.45rem; border-radius:999px; background:#e0e0e0; color:#444">checking…</span>
+          <span class="localllm-status" role="status" aria-live="polite" aria-atomic="true" style="font-size:0.72rem; padding:0.1rem 0.45rem; border-radius:999px; background:var(--accent-soft, #e0e0e0); color:var(--muted, #444)">checking…</span>
         </summary>
         <div class="localllm-body" style="padding:0 0.9rem 0.9rem">
           <div class="localllm-setup" style="display:none; background:#fff4d5; border-left:3px solid #b05a1c; padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-bottom:0.6rem">
@@ -111,7 +129,7 @@ Respond with JSON only.`;
             <textarea class="localllm-input" style="width:100%; min-height:5rem; padding:0.4rem 0.55rem; border:1px solid var(--border, #ccc); background:var(--input-bg, #fff); color:inherit; border-radius:5px; font:inherit; font-size:0.82rem" placeholder="${escapeHtml(opts.placeholder || "Paste the text to extract from…")}">${escapeHtml(opts.defaultInput || "")}</textarea>
           </label>
           <button type="button" class="localllm-run" style="padding:0.4rem 0.9rem; background:var(--accent, #2c5e8a); color:#fff; border:none; border-radius:5px; font-weight:600; font-size:0.85rem; cursor:pointer">Extract</button>
-          <pre class="localllm-out" style="margin:0.6rem 0 0; padding:0.6rem 0.8rem; background:var(--input-bg, #f5f5f5); border:1px solid var(--border, #ccc); border-radius:5px; font:0.8rem 'SF Mono', Consolas, monospace; white-space:pre-wrap; max-height:15rem; overflow:auto"></pre>
+          <pre class="localllm-out" role="status" aria-live="polite" aria-atomic="true" style="margin:0.6rem 0 0; padding:0.6rem 0.8rem; background:var(--input-bg, #f5f5f5); border:1px solid var(--border, #ccc); border-radius:5px; font:0.8rem 'SF Mono', Consolas, monospace; white-space:pre-wrap; max-height:15rem; overflow:auto"></pre>
         </div>`;
       host.appendChild(wrap);
 
@@ -139,23 +157,44 @@ Respond with JSON only.`;
         }
       });
 
+      // Cancellation: replace the "Extract" button with a "Cancel" button while running.
+      let activeAbort = null;
+      const self = this;
       runBtn.addEventListener("click", async () => {
+        if (activeAbort) {
+          activeAbort.abort();
+          return;
+        }
         const model = modelSel.value;
         const input = inputEl.value.trim();
         if (!input) { outEl.textContent = "Paste some text first."; return; }
         if (!model) { outEl.textContent = "Pick a model first."; return; }
-        runBtn.disabled = true;
-        runBtn.textContent = "Thinking…";
-        outEl.textContent = "Sending to local model…";
+        activeAbort = new AbortController();
+        runBtn.textContent = "Cancel";
+        runBtn.style.background = "var(--warn, #b05a1c)";
+        const started = Date.now();
+        outEl.textContent = "Sending to local model… (click Cancel to abort)";
+        const tickEl = document.createElement("span");
+        tickEl.style.cssText = "font-size:0.75rem; color:var(--muted, #666); margin-left:0.5rem";
+        runBtn.after(tickEl);
+        const tick = setInterval(() => {
+          tickEl.textContent = `${((Date.now() - started) / 1000).toFixed(0)}s`;
+        }, 500);
         try {
-          const result = await this.extractJSON({ model, task: opts.task, input, schemaHint: opts.schemaHint });
+          const result = await self.extractJSON({
+            model, task: opts.task, input, schemaHint: opts.schemaHint,
+            signal: activeAbort.signal,
+          });
           outEl.textContent = JSON.stringify(result, null, 2);
           if (typeof opts.onResult === "function") opts.onResult(result);
         } catch (err) {
-          outEl.textContent = "Error: " + err.message;
+          outEl.textContent = err.name === "AbortError" ? "Cancelled." : "Error: " + err.message;
         } finally {
-          runBtn.disabled = false;
+          clearInterval(tick);
+          tickEl.remove();
+          activeAbort = null;
           runBtn.textContent = "Extract";
+          runBtn.style.background = "";
         }
       });
 
