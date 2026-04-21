@@ -77,7 +77,7 @@
     </section>
   </main>
   <footer>
-    Model: bivariate random-effects on logit-Se, logit-FPR, correlation ρ. Pooled via method-of-moments starting values, then 1-step IGLS refinement. 0.5 continuity correction when any cell is zero. HSROC curve plotted as the locus of (FPR, Se) pairs consistent with the mean linear predictor across a grid of thresholds.
+    Model: bivariate random-effects on logit-Se, logit-FPR, correlation ρ. Implemented as alternating univariate DerSimonian-Laird pools on each margin plus an empirical residual correlation — this is a Harbord-Whiting-style approximation and is NOT iterated to convergence. For rigorous Reitsma/HSROC estimates use <code>mada::reitsma</code> (also available via WebR Studio). 0.5 continuity correction when any cell is zero. HSROC curve plotted as the locus of (FPR, Se) pairs consistent with the mean linear predictor.
   </footer>
   <script>
     function parse(text) {

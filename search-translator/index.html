@@ -199,7 +199,8 @@ AND
     }
 
     function countTokens(s) {
-      // Count non-whitespace tokens (words, operators, quoted phrases as single tokens)
+      // Guard against pathological input that could stall the regex engine on unterminated quotes.
+      if (typeof s !== "string" || s.length > 50000) return 0;
       const quotedCount = (s.match(/'[^']+'|"[^"]+"/g) || []).length;
       const stripped = s.replace(/'[^']+'|"[^"]+"/g, " ");
       const words = (stripped.match(/[A-Za-z0-9/_-]+/g) || []).length;

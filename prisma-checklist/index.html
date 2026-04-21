@@ -59,7 +59,7 @@
 <body>
   <header>
     <h1>PRISMA 2020 Checklist</h1>
-    <p>All 27 items of the PRISMA 2020 reporting checklist (Page et al. 2021). Mark each as Yes / Partial / No / NA and record where it lives in your manuscript. Save progress as JSON.</p>
+    <p>The PRISMA 2020 reporting checklist (Page et al. 2021): 27 numbered items, several with lettered sub-items (10a/b, 13a-f, 16a/b, 20a-d, 23a-d, 24a-c). Mark each as Yes / Partial / No / NA and record where it lives in your manuscript. Save progress as JSON.</p>
   </header>
   <main>
     <section class="panel">
@@ -162,10 +162,13 @@
           const st = STATE[num] || { status: "", note: "" };
           const row = document.createElement("div");
           row.className = "item";
+          const statusId = `status-${num}`;
+          const locId = `loc-${num}`;
           row.innerHTML = `
             <div class="num">${num}</div>
             <div class="status">
-              <select data-num="${num}" data-field="status">
+              <label for="${statusId}" class="visually-hidden" style="position:absolute;left:-10000px">PRISMA ${num} ${title} status</label>
+              <select id="${statusId}" data-num="${num}" data-field="status" aria-label="Item ${num} (${title}) status">
                 <option value=""${!st.status ? " selected" : ""}>—</option>
                 <option value="yes"${st.status === "yes" ? " selected" : ""}>Yes</option>
                 <option value="partial"${st.status === "partial" ? " selected" : ""}>Partial</option>
@@ -175,7 +178,8 @@
             </div>
             <div class="text">
               <strong>${title}.</strong> ${desc}
-              <textarea data-num="${num}" data-field="note" placeholder="Where in the manuscript? (page, section, paragraph)">${st.note || ""}</textarea>
+              <label for="${locId}" class="visually-hidden" style="position:absolute;left:-10000px">Location for ${title}</label>
+              <textarea id="${locId}" data-num="${num}" data-field="location" placeholder="Location (page / section / paragraph)" aria-label="Location for item ${num} (${title})">${st.location || st.note || ""}</textarea>
             </div>`;
           host.appendChild(row);
         }
@@ -272,7 +276,25 @@
     document.getElementById("file").addEventListener("change", e => {
       const f = e.target.files[0]; if (!f) return;
       const reader = new FileReader();
-      reader.onload = () => { Object.assign(STATE, JSON.parse(reader.result)); render(); };
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          // Whitelist allowed item keys to prevent prototype pollution via __proto__/constructor.
+          const allowedKeys = new Set(ITEMS.flatMap(([, items]) => items.map(([n]) => n)));
+          for (const k of Object.keys(parsed)) {
+            if (allowedKeys.has(k)) {
+              const v = parsed[k] || {};
+              STATE[k] = {
+                status: typeof v.status === "string" ? v.status : "",
+                location: typeof v.location === "string" ? v.location : (typeof v.note === "string" ? v.note : ""),
+              };
+            }
+          }
+          render();
+        } catch (err) {
+          alert("Invalid JSON: " + err.message);
+        }
+      };
       reader.readAsText(f);
     });
     document.getElementById("btn-clear").addEventListener("click", () => { for (const k in STATE) delete STATE[k]; render(); });

@@ -138,8 +138,9 @@
     async function run() {
       const rows = parse(document.getElementById("src").value);
       const minK = parseInt(document.getElementById("min-k").value, 10) || 4;
-      if (rows.length < 3) { alert("Need at least 3 studies."); return; }
-      if (rows.length > 18) { alert("GOSH all-subset enumeration is capped at k=18 (2^18 = 262,144 subsets). Your input has " + rows.length + " studies."); return; }
+      const msg = document.getElementById("m-n");
+      if (rows.length < 3) { msg.textContent = "Need at least 3 studies."; return; }
+      if (rows.length > 18) { msg.textContent = `Cap: k ≤ 18 studies (your input has ${rows.length}).`; return; }
       const k = rows.length;
       const total = 1 << k;
       const results = [];
@@ -206,7 +207,8 @@
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
-    run();
+    // Defer initial auto-run so the page settles into "networkidle" first
+    setTimeout(run, 50);
   </script>
 </body>
 </html>

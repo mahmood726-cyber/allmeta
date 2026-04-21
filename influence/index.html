@@ -92,13 +92,18 @@
     }
 
     function pool(rows) {
+      if (!rows || rows.length === 0) return { mu: NaN, seMu: NaN, tau2: 0, Q: 0, df: 0, wRE: [], swRE: 0 };
+      if (rows.length === 1) {
+        const r = rows[0];
+        return { mu: r.te, seMu: r.se, tau2: 0, Q: 0, df: 0, wRE: [1 / (r.se * r.se)], swRE: 1 / (r.se * r.se) };
+      }
       const w = rows.map(r => 1 / (r.se * r.se));
       const sw = w.reduce((a, b) => a + b, 0);
       const muFE = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
       const Q = rows.reduce((acc, r, i) => acc + w[i] * (r.te - muFE) ** 2, 0);
-      const df = Math.max(1, rows.length - 1);
+      const df = rows.length - 1;
       const sW2 = w.reduce((a, b) => a + b * b, 0);
-      const tau2 = Math.max(0, (Q - df) / (sw - sW2 / sw));
+      const tau2 = df > 0 ? Math.max(0, (Q - df) / (sw - sW2 / sw)) : 0;
       const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
       const swRE = wRE.reduce((a, b) => a + b, 0);
       const mu = rows.reduce((acc, r, i) => acc + wRE[i] * r.te, 0) / swRE;

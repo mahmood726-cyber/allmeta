@@ -228,8 +228,9 @@
         if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
           const rr = est / (1 - p0 + p0 * est);
           // SE(logRR) via delta method from SE(logOR):
-          //   d(ln RR)/d(ln OR) = 1 - p0 * RR
-          const seLogRR = Math.abs(1 - p0 * rr) * se;
+          //   d(ln RR)/d(ln OR) = (1 - p0) / (1 - p0*RR)
+          const denom = 1 - p0 * rr;
+          const seLogRR = denom > 0 ? ((1 - p0) / denom) * se : se;
           push("RR", rr, seLogRR, "via OR→RR given p₀; log-scale SE");
           const p1 = est * p0 / (1 - p0 + est * p0);
           push("RD", p1 - p0, NaN, "point only; SE(RD) needs the 2×2 table");

@@ -95,7 +95,7 @@ A, B, -0.32, 0.08</textarea>
       <svg id="sucra-plot" viewBox="0 0 600 260" role="img" aria-label="SUCRA bar chart"></svg>
       <h2>Network diagram</h2>
       <svg id="network" viewBox="0 0 600 340" role="img" aria-label="Network of comparisons"></svg>
-      <div class="note"><strong>Caveat:</strong> this is a consistency-only frequentist model with a Bayesian-style posterior approximation. It does not formally test loop inconsistency (use node-splitting or design-by-treatment in dedicated NMA software). Heterogeneity is captured via a pooled τ² across all contrasts.</div>
+      <div class="note" id="fit-note"><span id="fit-summary"></span> <strong>Caveat:</strong> this is a consistency-only frequentist model with a Bayesian-style posterior approximation. It does not formally test loop inconsistency (use node-splitting or design-by-treatment in dedicated NMA software). Heterogeneity is captured via a pooled τ² across all contrasts; the DL estimator here is a univariate approximation to the NMA-specific version in <code>netmeta</code>.</div>
     </section>
   </main>
   <footer>
@@ -211,10 +211,12 @@ A, B, -0.32, 0.08</textarea>
       // Residuals → Q
       const res = y.map((yi, i) => yi - X[i].reduce((s, x, j) => s + x * beta[j], 0));
       const Q = res.reduce((s, r, i) => s + w[i] * r * r, 0);
-      const df = Math.max(1, n - nBasic);
+      const df = Math.max(0, n - nBasic);
       const sumW = w.reduce((a, b) => a + b, 0);
       const sumW2 = w.reduce((a, b) => a + b * b, 0);
-      const tau2 = Math.max(0, (Q - df) / (sumW - sumW2 / sumW));
+      // DL τ² is a univariate approximation; NMA-specific trace-based correction is in
+      // netmeta's rma.mv. We flag this in the footer note.
+      const tau2 = df > 0 ? Math.max(0, (Q - df) / (sumW - sumW2 / sumW)) : 0;
       // Refit with random-effects weights
       const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
       const res2 = fit(wRE);
@@ -296,8 +298,8 @@ A, B, -0.32, 0.08</textarea>
       drawSucraBars(ranked);
       drawNetwork(rows, fit.trts);
 
-      const body_note = document.querySelector(".note");
-      body_note.innerHTML = `<strong>Fit:</strong> τ² = ${fmt(fit.tau2, 4)}, I² ≈ ${fit.I2.toFixed(1)}%. ${body_note.innerHTML.split('</strong>').slice(1).join('</strong>')}`;
+      const summaryEl = document.getElementById("fit-summary");
+      if (summaryEl) summaryEl.innerHTML = `<strong>Fit:</strong> τ² = ${fmt(fit.tau2, 4)}, I² ≈ ${fit.I2.toFixed(1)}%.`;
     }
 
     function drawSucraBars(ranked) {

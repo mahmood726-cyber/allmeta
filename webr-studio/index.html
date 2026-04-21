@@ -63,7 +63,7 @@
 </head>
 <body>
   <header>
-    <h1>WebR Studio <span id="status" class="status-badge loading">booting</span></h1>
+    <h1>WebR Studio <span id="status" class="status-badge loading" role="status" aria-live="polite" aria-atomic="true">booting</span></h1>
     <p>Real R, in your browser, via <a href="https://docs.r-wasm.org/webr/" style="color:var(--accent)">WebR</a>. Runs <code>metafor</code>, <code>meta</code>, <code>netmeta</code>, <code>metasens</code>, <code>bayesmeta</code>, and <code>mada</code> as genuine R packages — same output you'd get on your desktop.</p>
     <div class="packages" id="packages"></div>
   </header>
@@ -104,7 +104,7 @@
         <span class="hint" id="data-hint">—</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%" disabled>Run in R</button>
-      <div class="kbd-hint">Tip: edit the R code below to customise the call. <code>Ctrl+Enter</code> runs.</div>
+      <div class="kbd-hint">Tip: edit the R code below to customise the call. <code>Ctrl+Enter</code> runs · <code>Esc</code> returns focus to the Run button.</div>
       <h2 style="margin-top:1rem">R code</h2>
       <textarea id="r-code" style="min-height:12rem" spellcheck="false"></textarea>
       <div class="note" id="first-load-note" style="display:none"><strong>First run:</strong> WebR downloads ~30 MB and installs R packages on demand. Subsequent runs are instant (cached by the browser).</div>
@@ -479,7 +479,9 @@ print(summary(res))`,
       try {
         firstLoadNote.style.display = "block";
         outEl.textContent = "Fetching WebR runtime…";
-        const { WebR } = await import("https://webr.r-wasm.org/latest/webr.mjs");
+        // Pin to a known WebR release to avoid silent behaviour changes and reduce supply-chain surface.
+        const WEBR_VERSION = "v0.5.4";
+        const { WebR } = await import(`https://webr.r-wasm.org/${WEBR_VERSION}/webr.mjs`);
         webR = new WebR({ interactive: false });
         await webR.init();
         outEl.textContent = "WebR ready. Click 'Run in R' to install packages and run the selected template.";
@@ -520,13 +522,12 @@ print(summary(res))`,
       plotWrap.style.display = "none";
       plotHost.innerHTML = "";
 
+      let shelter = null;
       try {
         await ensurePackages(["metafor", ...(tpl.packages || [])]);
         statusEl.textContent = "running"; statusEl.className = "status-badge loading";
-        // Capture stdout
-        const shelter = await new webR.Shelter();
+        shelter = await new webR.Shelter();
         await webR.evalR(dfCode);
-        // Optional plot capture: open SVG device, run plot code, close, read file
         const wantsPlot = /plot\s*\(|hist\s*\(|forest\s*\(|funnel\s*\(|baujat\s*\(|netgraph\s*\(|netheat\s*\(/.test(userCode);
         if (wantsPlot) {
           await webR.evalR(`svg("/tmp/plot.svg", width = 8, height = 6)`);
@@ -536,20 +537,41 @@ print(summary(res))`,
           try {
             await webR.evalR(`dev.off()`);
             const fs = await webR.FS.readFile("/tmp/plot.svg");
-            const svg = new TextDecoder().decode(fs);
-            plotHost.innerHTML = svg;
+            const svgRaw = new TextDecoder().decode(fs);
+            // Sanitise SVG: strip <script>, on* attributes, and foreignObject.
+            // Parse and walk the tree with DOMParser rather than regex to avoid
+            // attacker-crafted R code writing malicious event handlers.
+            const parsed = new DOMParser().parseFromString(svgRaw, "image/svg+xml");
+            const kill = parsed.querySelectorAll("script, foreignObject");
+            kill.forEach(n => n.remove());
+            parsed.querySelectorAll("*").forEach(el => {
+              for (const attr of [...el.attributes]) {
+                if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
+                if (attr.name === "href" || attr.name === "xlink:href") {
+                  if (/^\s*javascript:/i.test(attr.value)) el.removeAttribute(attr.name);
+                }
+              }
+            });
+            plotHost.innerHTML = "";
+            plotHost.appendChild(parsed.documentElement);
             plotWrap.style.display = "block";
           } catch (_) { /* no plot produced */ }
         }
         const out = res.output.filter(x => x.type === "stdout" || x.type === "stderr")
                              .map(x => x.data).join("\n");
         outEl.textContent = out || "(no textual output)";
-        await shelter.purge();
         statusEl.textContent = "ready"; statusEl.className = "status-badge ready";
       } catch (err) {
         outEl.textContent = "R error:\n" + String(err);
         statusEl.textContent = "ready"; statusEl.className = "status-badge ready";
+      } finally {
+        if (shelter) { try { await shelter.purge(); } catch (_) {} }
       }
+    });
+
+    // Escape out of the R editor back to the Run button for keyboard users
+    document.getElementById("r-code").addEventListener("keydown", e => {
+      if (e.key === "Escape") { e.preventDefault(); btnRun.focus(); }
     });
 
     boot();

@@ -212,7 +212,8 @@
         const allAns = d.questions.every(q => a[q.id] !== null);
         const suggested = allAns ? d.suggestRoB(a) : "unclear";
         const rob = manualRob || suggested;
-        const app = d.applicability ? (manualApp || "unclear") : null;
+        // "" (not rated) is distinct from "unclear" (reviewer considered and was uncertain).
+        const app = d.applicability ? (manualApp || "") : null;
         results[d.id] = { rob, app };
         // update badges
         const robBadge = document.querySelector(`#dom-${d.id} [data-kind="rob"]`);
@@ -237,7 +238,7 @@
         tbody.innerHTML += `<tr>
           <td>${d.name}</td>
           <td><span class="chip ${rob}">${rob}</span></td>
-          <td>${app ? `<span class="chip ${app}">${app}</span>` : "—"}</td>
+          <td>${app === null ? `<span style="color:var(--muted); font-size:0.78rem">N/A (not assessed for D4)</span>` : (app ? `<span class="chip ${app}">${app}</span>` : `<span style="color:var(--muted); font-size:0.78rem">Not rated</span>`)}</td>
         </tr>`;
       }
     }
