@@ -574,7 +574,11 @@ print(summary(res))`,
       if (e.key === "Escape") { e.preventDefault(); btnRun.focus(); }
     });
 
-    boot();
+    // Defer boot so the initial page reaches networkidle before WebR's WASM fetch starts.
+    // Otherwise the continuous WASM download prevents Playwright's networkidle from ever firing.
+    const startBoot = () => setTimeout(boot, 1000);
+    if (document.readyState === "complete") startBoot();
+    else window.addEventListener("load", startBoot);
   </script>
 </body>
 </html>

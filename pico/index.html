@@ -90,6 +90,7 @@
       <button type="button" id="btn-copy" class="secondary" style="margin-top:0.5rem">Copy to clipboard</button>
       <h2 style="margin-top:1rem">PICO wheel</h2>
       <svg id="wheel" viewBox="0 0 320 320" role="img" aria-label="PICO components arranged as a wheel"></svg>
+      <div id="ai-host"></div>
     </section>
   </main>
   <footer>Adapted from: Richardson, Wilson, Nishikawa, Hayward. The well-built clinical question (ACP J Club 1995). PECO for environmental reviews; PICOT per EBMed guidance.</footer>
@@ -188,6 +189,35 @@
       navigator.clipboard.writeText(document.getElementById("bool").textContent);
     });
     updateFramework();
+  </script>
+  <script src="../shared/localllm.js"></script>
+  <script>
+    // Wire a Local-AI panel that extracts PICO fields from a pasted abstract.
+    LocalLLM.attachPanel(document.getElementById("ai-host"), {
+      title: "Extract PICO from an abstract (local AI)",
+      placeholder: "Paste an abstract — methods + background are best.",
+      task: "Extract PICO (population, intervention, comparator, outcome) from this abstract.",
+      schemaHint: `{
+  "P": "population / problem described",
+  "I": "intervention or exposure",
+  "C": "comparator or control condition",
+  "O": "primary outcome(s)",
+  "S": "study design if mentioned (else null)",
+  "T": "time horizon if mentioned (else null)"
+}`,
+      onResult: (obj) => {
+        if (!obj) return;
+        // Default to PICO framework; upgrade to PICOS / PICOT if S / T fields look meaningful
+        const frame = document.getElementById("frame");
+        if (obj.S && String(obj.S).trim().length > 2) frame.value = "PICOS";
+        else if (obj.T && String(obj.T).trim().length > 2) frame.value = "PICOT";
+        updateFramework();
+        const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = String(val); };
+        set("P", obj.P); set("I", obj.I); set("C", obj.C); set("O", obj.O);
+        if (frame.value === "PICOT") set("T", obj.T);
+        render();
+      },
+    });
   </script>
 </body>
 </html>

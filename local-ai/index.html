@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Set up a local LLM via Ollama so allmeta apps can call it for PICO extraction, effect-size parsing, and structured text mining — without sending data to any cloud.">
+  <meta name="color-scheme" content="light dark">
+  <title>Local AI setup</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --ok:#0d7a27; --ok-soft:#dff3e0;
+            --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --ok:#5bc47b; --ok-soft:#1e3a27;
+              --err:#ef7373; --err-soft:#3a1e1e; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.6; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.7rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); max-width: 56rem; margin: 0 auto; }
+    section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.3rem 1.5rem; margin-bottom: 1.5rem; }
+    section h2 { margin: 0 0 0.75rem; font-size: 1.05rem; font-weight: 700; }
+    section h3 { margin: 1rem 0 0.35rem; font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+    pre { margin: 0.5rem 0; padding: 0.7rem 0.9rem; background: var(--input-bg); border: 1px solid var(--border);
+          border-radius: 6px; font: 0.84rem/1.5 "SF Mono", Consolas, monospace; overflow: auto; white-space: pre-wrap; }
+    code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+    .status-card { display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); margin-bottom: 1rem; }
+    .status-card .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); }
+    .status-card.ok .dot { background: var(--ok); }
+    .status-card.err .dot { background: var(--err); }
+    .status-card .lbl { font-weight: 600; }
+    .status-card .sub { font-size: 0.82rem; color: var(--muted); }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.9rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.5rem 0; }
+    th, td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; background: var(--accent); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Local AI setup</h1>
+    <p>Run an LLM on your own machine via <a href="https://ollama.com" style="color:var(--accent)">Ollama</a>, then allmeta apps can call it for structured extraction (PICO elements, effect sizes, 2×2 tables from abstracts, GRADE justifications). Everything stays on your device — the model runs locally; the browser just speaks HTTP to <code>127.0.0.1:11434</code>.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Live status from this page</h2>
+      <div id="status-card" class="status-card">
+        <span class="dot"></span>
+        <div>
+          <div class="lbl" id="status-lbl">Checking for Ollama at 127.0.0.1:11434…</div>
+          <div class="sub" id="status-sub">This page tries <code>GET /api/tags</code> once after load.</div>
+        </div>
+        <button type="button" class="primary" id="retry">Re-check</button>
+      </div>
+      <div id="models-wrap" style="display:none">
+        <h3>Models installed</h3>
+        <table>
+          <thead><tr><th>Name</th><th>Size</th><th>Modified</th></tr></thead>
+          <tbody id="models-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Three-step install</h2>
+
+      <h3>1 — Install Ollama</h3>
+      <ul>
+        <li><strong>macOS / Windows:</strong> download the desktop installer from <a href="https://ollama.com/download">ollama.com/download</a>.</li>
+        <li><strong>Linux:</strong> <code>curl -fsSL https://ollama.com/install.sh | sh</code></li>
+      </ul>
+
+      <h3>2 — Pull a model</h3>
+      <p>Open a terminal after Ollama is running:</p>
+      <pre>ollama pull llama3.1:8b       # ~4.7 GB, balanced speed + quality
+# or
+ollama pull qwen2.5-coder:7b  # ~4.7 GB, strong at structured output
+# or
+ollama pull gpt-oss:20b       # ~13 GB, best reasoning if you have the RAM</pre>
+      <p>Smaller options if you are RAM-limited: <code>llama3.2:3b</code>, <code>gemma2:2b</code>.</p>
+
+      <h3>3 — Allow this origin (CORS)</h3>
+      <p>By default, Ollama rejects browser requests from other origins. Set <code>OLLAMA_ORIGINS</code> to the exact origin of this page, then restart Ollama.</p>
+      <p>This page is served from: <code id="this-origin"></code></p>
+      <pre id="export-cmd">export OLLAMA_ORIGINS='…'</pre>
+      <p><strong>Windows (PowerShell):</strong></p>
+      <pre id="export-cmd-pwsh">$env:OLLAMA_ORIGINS = "…"</pre>
+      <p>Then quit Ollama from the system tray and relaunch it. Click <strong>Re-check</strong> above.</p>
+    </section>
+
+    <section>
+      <h2>Which apps use it?</h2>
+      <table>
+        <thead><tr><th>App</th><th>What the AI helps with</th></tr></thead>
+        <tbody>
+          <tr><td><a href="../pico/">PICO Formulator</a></td><td>Paste an abstract → fill P/I/C/O fields automatically. <span class="pill">wired</span></td></tr>
+          <tr><td><a href="../effect-size-converter/">Effect-Size Converter</a></td><td>Paste a results paragraph → extract the primary effect + SE. <span class="pill">wired</span></td></tr>
+        </tbody>
+      </table>
+      <p>Adding it to another app is a one-liner — each app includes <code>../shared/localllm.js</code> and calls <code>LocalLLM.attachPanel()</code>.</p>
+    </section>
+
+    <section>
+      <h2>Privacy model</h2>
+      <ul>
+        <li>Ollama runs on your computer. The model weights live on your disk; inference happens on your CPU or GPU.</li>
+        <li>This page's JavaScript calls <code>http://127.0.0.1:11434/api/generate</code>. That request is loopback — it never reaches your router, let alone the internet.</li>
+        <li>No telemetry in allmeta. The only external request the hub makes is the initial load (HTML/CSS/JS from GitHub Pages). Browser DevTools → Network tab will confirm.</li>
+        <li>The <code>OLLAMA_ORIGINS</code> setting is the gate — only the origins you list can call your Ollama instance.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Troubleshooting</h2>
+      <h3>"not detected" even after install</h3>
+      <ul>
+        <li>Is Ollama actually running? <code>curl http://localhost:11434/api/tags</code> from a terminal should return JSON.</li>
+        <li>Is <code>OLLAMA_ORIGINS</code> set? Without it, browsers block the request. Check: <code>echo $OLLAMA_ORIGINS</code> (Mac/Linux) or <code>echo %OLLAMA_ORIGINS%</code> (Win).</li>
+        <li>Did you restart Ollama after setting the variable? It only reads env vars at startup.</li>
+      </ul>
+      <h3>"Model returned non-JSON"</h3>
+      <p>Some small models ignore the <code>format: "json"</code> hint. Switch to <code>llama3.1:8b</code> or <code>qwen2.5-coder:7b</code> — both respect JSON mode reliably.</p>
+      <h3>Very slow</h3>
+      <p>CPU-only inference for 8B models is ~10 tokens/sec; expect 20–40s for a PICO extraction. If you have a GPU, Ollama uses it automatically on macOS (Metal) and on NVIDIA (CUDA).</p>
+    </section>
+  </main>
+  <footer>
+    This page does not install or download anything itself. It is a static reference plus a live connectivity check against <code>127.0.0.1:11434</code>.
+  </footer>
+
+  <script src="../shared/localllm.js"></script>
+  <script>
+    const origin = window.location.origin;
+    document.getElementById("this-origin").textContent = origin;
+    document.getElementById("export-cmd").textContent = `export OLLAMA_ORIGINS='${origin}'`;
+    document.getElementById("export-cmd-pwsh").textContent = `$env:OLLAMA_ORIGINS = "${origin}"`;
+
+    async function check() {
+      const card = document.getElementById("status-card");
+      const lbl = document.getElementById("status-lbl");
+      const sub = document.getElementById("status-sub");
+      const wrap = document.getElementById("models-wrap");
+      const body = document.getElementById("models-body");
+      card.className = "status-card";
+      lbl.textContent = "Checking…";
+      sub.textContent = "Trying GET /api/tags";
+      wrap.style.display = "none";
+      const res = await LocalLLM.detect();
+      if (res.available) {
+        card.classList.add("ok");
+        lbl.textContent = `Ollama detected · ${res.models.length} model${res.models.length === 1 ? "" : "s"} available`;
+        sub.textContent = res.default ? `Default model for allmeta apps: ${res.default}` : "";
+        // Fetch details
+        try {
+          const r = await fetch("http://127.0.0.1:11434/api/tags");
+          const j = await r.json();
+          body.innerHTML = (j.models || []).map(m => `<tr><td><code>${escapeHtml(m.name)}</code></td><td>${(m.size / 1024 / 1024 / 1024).toFixed(1)} GB</td><td>${escapeHtml(m.modified_at || "")}</td></tr>`).join("");
+          wrap.style.display = "block";
+        } catch (_) { /* already reported above */ }
+      } else {
+        card.classList.add("err");
+        lbl.textContent = "Not detected";
+        sub.textContent = res.error || "Ollama is not running, or OLLAMA_ORIGINS is not set to this page's origin.";
+      }
+    }
+    function escapeHtml(s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    document.getElementById("retry").addEventListener("click", check);
+    check();
+  </script>
+</body>
+</html>

@@ -1,5 +1,16 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "Local AI setup",
+    folder: "C:\\HTML apps\\local-ai",
+    path: "./local-ai/index.html",
+    collection: "existing",
+    mode: "file",
+    category: "R / WASM",
+    summary: "One-page guide to running a local LLM via Ollama so allmeta apps can do structured extraction (PICO from abstracts, effect sizes from results paragraphs) — without sending any data off your device. Live connectivity check included.",
+    note: "Complements WebR Studio. PICO Formulator and Effect-Size Converter already wire into it.",
+    tags: ["ollama", "local-ai", "llm", "extraction", "privacy"]
+  },
+  {
     name: "WebR Studio",
     folder: "C:\\HTML apps\\webr-studio",
     path: "./webr-studio/index.html",

@@ -180,6 +180,7 @@
         </svg>
         <p class="note">All conversions are mapped to the SMD scale for visual comparison (binary ratios converted via Cox's constant √3/π ≈ 0.5513). The plot area is always rendered so automated checks can confirm the canvas is live; the dot + whisker show each scale's estimate with its 95% CI after conversion.</p>
       </div>
+      <div id="ai-host"></div>
     </section>
   </main>
   <footer>
@@ -461,6 +462,42 @@
 
     // initial render
     runConvert();
+  </script>
+  <script src="../shared/localllm.js"></script>
+  <script>
+    LocalLLM.attachPanel(document.getElementById("ai-host"), {
+      title: "Extract an effect size from a results paragraph (local AI)",
+      placeholder: "Paste a results paragraph or methods excerpt containing the primary effect estimate.",
+      task: "Extract the primary effect estimate, its standard error, and 95% CI from this biomedical results passage.",
+      schemaHint: `{
+  "type": "one of: OR, RR, RD, SMD, MD, HR",
+  "estimate": 0.75,
+  "se": 0.12,
+  "ci_lower": 0.59,
+  "ci_upper": 0.95,
+  "ci_scale": "log or raw (log for ratios like OR/RR/HR)",
+  "notes": "short caveat (e.g. rare events, subgroup-only)"
+}`,
+      onResult: (r) => {
+        if (!r) return;
+        const set = (id, v) => { const el = document.getElementById(id); if (el && (v !== null && v !== undefined && v !== "")) el.value = String(v); };
+        // Map extracted type to the input-type dropdown
+        const T = (r.type || "").toUpperCase();
+        if (["OR", "RR", "RD", "SMD", "MD", "HR"].includes(T)) set("in-type", T);
+        set("in-est", r.estimate);
+        // If SE wasn't provided but CI bounds are, derive it
+        if (r.se != null) set("in-se", r.se);
+        else if (r.ci_lower != null && r.ci_upper != null) {
+          set("der-lo", r.ci_lower);
+          set("der-hi", r.ci_upper);
+          const sel = document.getElementById("der-scale");
+          if (sel && r.ci_scale) sel.value = /log/i.test(String(r.ci_scale)) ? "log" : "raw";
+          // Click the derive button
+          document.getElementById("btn-derive").click();
+        }
+        runConvert();
+      },
+    });
   </script>
 </body>
 </html>
