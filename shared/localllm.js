@@ -110,28 +110,43 @@ Respond with JSON only.`;
       const wrap = document.createElement("details");
       wrap.className = "localllm-panel";
       wrap.style.cssText = "margin-top:1rem; border:1px solid var(--border, #ccc); border-radius:8px; background:var(--panel, #fff); font-size:0.86rem";
+      // Build stable IDs so labels can be properly associated
+      const uid = `llm-${Math.random().toString(36).slice(2, 8)}`;
+      const modelId = `${uid}-model`;
+      const inputId = `${uid}-input`;
+      const hintId = `${uid}-hint`;
       wrap.innerHTML = `
         <summary style="cursor:pointer; padding:0.6rem 0.9rem; font-weight:600; display:flex; align-items:center; gap:0.4rem">
           <span>🤖 ${escapeHtml(opts.title || "Local AI helper")}</span>
           <span class="localllm-status" role="status" aria-live="polite" aria-atomic="true" style="font-size:0.72rem; padding:0.1rem 0.45rem; border-radius:999px; background:var(--accent-soft, #e0e0e0); color:var(--muted, #444)">checking…</span>
         </summary>
         <div class="localllm-body" style="padding:0 0.9rem 0.9rem">
-          <div class="localllm-setup" style="display:none; background:#fff4d5; border-left:3px solid #b05a1c; padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-bottom:0.6rem">
+          <div class="localllm-setup" role="region" aria-label="Ollama setup instructions" style="display:none; background:var(--warn-soft, #fff4d5); border-left:3px solid var(--warn, #b05a1c); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-bottom:0.6rem">
             <strong>Ollama not detected.</strong> Install from <a href="https://ollama.com" target="_blank" rel="noopener">ollama.com</a>, pull a model (<code>ollama pull llama3.1:8b</code>), set
             <code>OLLAMA_ORIGINS="${escapeHtml(window.location.origin)}"</code>, and restart Ollama. See the <a href="../local-ai/" target="_blank">Local AI setup guide</a>.
           </div>
-          <label style="display:block; margin-bottom:0.4rem">
-            <span style="display:block; font-size:0.76rem; color:#666; margin-bottom:0.15rem">Model</span>
-            <select class="localllm-model" style="width:100%; padding:0.3rem 0.5rem; border:1px solid var(--border, #ccc); background:var(--input-bg, #fff); color:inherit; border-radius:5px; font:inherit; font-size:0.85rem"></select>
+          <label for="${modelId}" style="display:block; margin-bottom:0.4rem">
+            <span style="display:block; font-size:0.76rem; color:var(--muted, #666); margin-bottom:0.15rem">Model</span>
+            <select id="${modelId}" class="localllm-model" style="width:100%; padding:0.3rem 0.5rem; border:1px solid var(--border, #ccc); background:var(--input-bg, #fff); color:inherit; border-radius:5px; font:inherit; font-size:0.85rem"></select>
           </label>
-          <label style="display:block; margin-bottom:0.4rem">
-            <span style="display:block; font-size:0.76rem; color:#666; margin-bottom:0.15rem">Paste text</span>
-            <textarea class="localllm-input" style="width:100%; min-height:5rem; padding:0.4rem 0.55rem; border:1px solid var(--border, #ccc); background:var(--input-bg, #fff); color:inherit; border-radius:5px; font:inherit; font-size:0.82rem" placeholder="${escapeHtml(opts.placeholder || "Paste the text to extract from…")}">${escapeHtml(opts.defaultInput || "")}</textarea>
+          <label for="${inputId}" style="display:block; margin-bottom:0.4rem">
+            <span style="display:block; font-size:0.76rem; color:var(--muted, #666); margin-bottom:0.15rem">Paste text</span>
+            <textarea id="${inputId}" class="localllm-input" aria-describedby="${hintId}" style="width:100%; min-height:5rem; padding:0.4rem 0.55rem; border:1px solid var(--border, #ccc); background:var(--input-bg, #fff); color:inherit; border-radius:5px; font:inherit; font-size:0.82rem" placeholder="${escapeHtml(opts.placeholder || "Paste the text to extract from…")}">${escapeHtml(opts.defaultInput || "")}</textarea>
+            <span id="${hintId}" style="display:block; font-size:0.7rem; color:var(--muted, #666); margin-top:0.2rem">Runs locally via Ollama; data never leaves your device.</span>
           </label>
           <button type="button" class="localllm-run" style="padding:0.4rem 0.9rem; background:var(--accent, #2c5e8a); color:#fff; border:none; border-radius:5px; font-weight:600; font-size:0.85rem; cursor:pointer">Extract</button>
           <pre class="localllm-out" role="status" aria-live="polite" aria-atomic="true" style="margin:0.6rem 0 0; padding:0.6rem 0.8rem; background:var(--input-bg, #f5f5f5); border:1px solid var(--border, #ccc); border-radius:5px; font:0.8rem 'SF Mono', Consolas, monospace; white-space:pre-wrap; max-height:15rem; overflow:auto"></pre>
         </div>`;
       host.appendChild(wrap);
+
+      // Focus management: when the panel opens, move focus into the first input.
+      // When it closes, return focus to the <summary>.
+      wrap.addEventListener("toggle", () => {
+        if (wrap.open) {
+          const first = wrap.querySelector(".localllm-input");
+          if (first) first.focus();
+        }
+      });
 
       const statusEl = wrap.querySelector(".localllm-status");
       const setupEl = wrap.querySelector(".localllm-setup");

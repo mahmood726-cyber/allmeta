@@ -62,9 +62,17 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
+    .skip-link:focus { left: 8px; }
+    /* Ensure the Also-run-local-LLM checkbox has a WCAG 2.5.5 touch target */
+    .use-llm-label { min-height: 44px; display: flex; align-items: center; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>RCT Extractor</h1>
     <p>Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications using your locally-running <code>rct-extractor-v2</code> API. Optional: run a local LLM alongside as a cross-check. Consensus and disagreements are highlighted.</p>
@@ -73,7 +81,7 @@
       <span class="status-pill" id="llm-status">checking local LLM…</span>
     </div>
   </header>
-  <main>
+  <main id="main-content">
     <section class="panel">
       <h2>Input</h2>
       <label>
@@ -86,15 +94,15 @@
         <span class="lbl">Paste results text</span>
         <textarea id="text" placeholder="Paste the results paragraph, abstract, or full text of a trial.">The primary endpoint of cardiovascular death or heart failure hospitalization occurred in 386 of 2373 patients (16.3%) in the empagliflozin group and in 451 of 2371 patients (19.0%) in the placebo group (hazard ratio 0.75; 95% confidence interval 0.65 to 0.86; P<0.001).</textarea>
       </label>
-      <label>
+      <label for="pdf">
         <span class="lbl">Or upload PDF</span>
-        <input id="pdf" type="file" accept="application/pdf">
-        <span class="hint">PDFs with extractable text work in the browser; scanned PDFs need the desktop <code>rct-extractor</code> with OCR.</span>
+        <input id="pdf" type="file" accept="application/pdf" aria-describedby="pdf-hint">
+        <span id="pdf-hint" class="hint">PDFs with extractable text work in the browser; scanned PDFs need the desktop <code>rct-extractor</code> with OCR.</span>
       </label>
-      <div style="display:flex; gap:0.5rem; margin-top:0.6rem">
+      <div style="display:flex; gap:0.5rem; margin-top:0.6rem; flex-wrap:wrap">
         <button type="button" id="btn-run" class="primary">Extract</button>
-        <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.82rem; margin:0">
-          <input id="use-llm" type="checkbox"> Also run local LLM (consensus)
+        <label class="use-llm-label" style="gap:0.35rem; font-size:0.82rem; margin:0">
+          <input id="use-llm" type="checkbox" style="min-width:18px; min-height:18px"> Also run local LLM (consensus)
         </label>
       </div>
       <div class="note" id="hint-note">
@@ -209,14 +217,22 @@
       }
     }
 
+    // Cap on pages extracted in the browser. Most RCT papers fit easily; scanning
+    // 200 pages on the main thread chokes the UI. Trials with supplements beyond
+    // 40 pages should use the desktop rct-extractor CLI which handles OCR + chunking.
+    const MAX_PDF_PAGES = 40;
     async function extractFromPDF(file) {
       const buf = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      const limit = Math.min(pdf.numPages, MAX_PDF_PAGES);
       let out = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
+      for (let i = 1; i <= limit; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         out += content.items.map(it => it.str).join(" ") + "\n\n";
+      }
+      if (pdf.numPages > limit) {
+        out += `\n\n[note: truncated at ${limit} of ${pdf.numPages} pages. Re-run on the desktop rct-extractor CLI for full-document extraction.]`;
       }
       return out;
     }
@@ -243,7 +259,14 @@
         input: text,
         schemaHint: `{
   "extractions": [
-    { "type":"HR|OR|RR|RD|SMD|MD|IRR", "estimate":0, "ci_lower":0, "ci_upper":0, "p_value":0, "source":"verbatim" }
+    {
+      "type": "HR|OR|RR|RD|SMD|MD|IRR",
+      "estimate": 0,
+      "se": 0,                   // report the paper's SE directly when given; else null
+      "ci_lower": 0, "ci_upper": 0, "ci_level": 0.95,
+      "p_value": 0,
+      "source": "verbatim snippet from the paper"
+    }
   ]
 }`,
       });
@@ -283,12 +306,25 @@
         estimate: Number(e.estimate),
         lo: Number(e.ci_lower), hi: Number(e.ci_upper), p: e.p_value,
       }));
-      // Naive consensus: for each regex row, find the LLM row with the same type + closest estimate
+      // Scale-aware agreement: ratio types → compare on the log scale; linear types → absolute.
+      // Both use a 5% tolerance in their natural-comparison space.
+      const ratioSet = new Set(["HR", "OR", "RR", "IRR"]);
       const rows = regexExt.map(r => {
         const rx = { type: r.effect_type, est: r.point_estimate, lo: r.ci?.lower, hi: r.ci?.upper };
-        const matches = llmItems.filter(l => l.type === rx.type).sort((a, b) => Math.abs(a.estimate - rx.est) - Math.abs(b.estimate - rx.est));
+        const matches = llmItems.filter(l => l.type === rx.type)
+          .sort((a, b) => Math.abs(a.estimate - rx.est) - Math.abs(b.estimate - rx.est));
         const m = matches[0];
-        const agree = m && Math.abs(m.estimate - rx.est) / Math.max(Math.abs(rx.est), 0.01) < 0.05;
+        let agree = false;
+        if (m && Number.isFinite(m.estimate) && Number.isFinite(rx.est)) {
+          if (ratioSet.has(rx.type) && rx.est > 0 && m.estimate > 0) {
+            // Log-scale relative difference: |ln(a) - ln(b)| < 0.05 ≈ 5% on ratio scale.
+            agree = Math.abs(Math.log(m.estimate) - Math.log(rx.est)) < 0.05;
+          } else {
+            // Linear types (MD, SMD, RD): absolute diff relative to the larger magnitude.
+            const denom = Math.max(Math.abs(rx.est), Math.abs(m.estimate), 0.01);
+            agree = Math.abs(m.estimate - rx.est) / denom < 0.05;
+          }
+        }
         return { rx, llm: m, agree };
       });
       consensusWrap.innerHTML = `<table>

@@ -43,14 +43,20 @@
                        padding: 0.45rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
     svg { width: 100%; height: auto; display: block; margin-top: 0.5rem; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
+    .skip-link:focus { left: 8px; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>PICO Formulator</h1>
     <p>Frame a review question as PICO, PECO, PICOS, or PICOT. Generates a one-sentence question and a boolean-search skeleton, ready to paste into PubMed or the Search Translator.</p>
   </header>
-  <main>
+  <main id="main-content">
     <section class="panel">
       <h2>Question framework</h2>
       <label>
@@ -207,14 +213,24 @@
 }`,
       onResult: (obj) => {
         if (!obj) return;
-        // Default to PICO framework; upgrade to PICOS / PICOT if S / T fields look meaningful
+        // PICOT (time) takes precedence over PICOS (study design) when both present,
+        // because time horizon is a hard eligibility filter while study design is
+        // usually captured separately in the eligibility criteria.
+        const meaningful = v => v && String(v).trim().toLowerCase() !== "null" && String(v).trim().length > 2;
         const frame = document.getElementById("frame");
-        if (obj.S && String(obj.S).trim().length > 2) frame.value = "PICOS";
-        else if (obj.T && String(obj.T).trim().length > 2) frame.value = "PICOT";
+        if (meaningful(obj.T)) frame.value = "PICOT";
+        else if (meaningful(obj.S)) frame.value = "PICOS";
         updateFramework();
         const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = String(val); };
         set("P", obj.P); set("I", obj.I); set("C", obj.C); set("O", obj.O);
         if (frame.value === "PICOT") set("T", obj.T);
+        if (frame.value === "PICOS") {
+          const sEl = document.getElementById("S");
+          if (sEl && obj.S) {
+            const opt = Array.from(sEl.options).find(o => String(obj.S).toLowerCase().includes(o.value));
+            if (opt) sEl.value = opt.value;
+          }
+        }
         render();
       },
     });

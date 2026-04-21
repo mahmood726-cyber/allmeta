@@ -19,6 +19,7 @@
         --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
         --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
         --ok:#5bc47b; --ok-soft:#1e3a27;
+        --err:#ef7373; --err-soft:#3a1e1e;
       }
     }
     * { box-sizing: border-box; }
@@ -60,14 +61,20 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
+    .skip-link:focus { left: 8px; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Effect-Size Converter</h1>
     <p>Convert between OR, RR, RD, SMD, MD, and HR. Derive standard errors from t-statistic, F-statistic, p-value, or confidence interval. Everything runs in your browser.</p>
   </header>
-  <main>
+  <main id="main-content">
     <section class="panel" aria-label="Inputs">
       <h2>Input</h2>
       <fieldset>
@@ -81,6 +88,7 @@
             <option value="SMD">Standardised mean difference (SMD)</option>
             <option value="MD">Mean difference (MD)</option>
             <option value="HR">Hazard ratio (HR)</option>
+            <option value="IRR">Incidence rate ratio (IRR)</option>
           </select>
         </label>
         <div class="grid-2">
@@ -263,10 +271,18 @@
           }
         }
       } else if (type === "SMD") {
-        push("SMD", est, se);
+        push("SMD (Cohen's d)", est, se);
         push("OR (Cox)", Math.exp(est / COX), se / COX, "inverse Cox's constant; log-scale SE");
         if (Number.isFinite(pooledSd) && pooledSd > 0) {
           push("MD", est * pooledSd, se * pooledSd, "multiply by pooled SD");
+        }
+        // Hedges' g: only informative when df is known (i.e. user entered n1 + n2)
+        const n1 = parseFloat(document.getElementById("der-n1").value);
+        const n2 = parseFloat(document.getElementById("der-n2").value);
+        if (Number.isFinite(n1) && Number.isFinite(n2) && n1 > 1 && n2 > 1) {
+          const df = n1 + n2 - 2;
+          const J = hedgesJ(df);
+          push("SMD (Hedges' g)", est * J, se * J, `small-sample correction J(df=${df}) = ${J.toFixed(4)}`);
         }
       } else if (type === "MD") {
         push("MD", est, se);
@@ -277,8 +293,13 @@
         const logHR = Math.log(est);
         push("HR",     est, se, "log-scale SE");
         push("ln(HR)", logHR, se);
-        push("OR (approx)", est, se, "valid only when events are rare and follow-up balanced");
+        push("OR (approx)", est, se, "valid only when events are rare and follow-up balanced — do not use for common events");
         push("SMD (Cox-ish)", logHR * COX, se * COX, "HR→OR→SMD, same caveat");
+      } else if (type === "IRR") {
+        const logIRR = Math.log(est);
+        push("IRR",     est, se, "log-scale SE");
+        push("ln(IRR)", logIRR, se);
+        push("SMD (Cox-ish, via IRR→OR approx)", logIRR * COX, se * COX, "only valid for low event rates; interpret with caution");
       }
       return rows;
     }
@@ -480,20 +501,33 @@
 }`,
       onResult: (r) => {
         if (!r) return;
-        const set = (id, v) => { const el = document.getElementById(id); if (el && (v !== null && v !== undefined && v !== "")) el.value = String(v); };
-        // Map extracted type to the input-type dropdown
+        // Clamp / sanitise LLM-supplied numerics to biomedical-plausible ranges.
+        const clampNum = (v, max = 1e6) => {
+          const n = typeof v === "number" ? v : parseFloat(v);
+          if (!Number.isFinite(n) || Math.abs(n) > max) return null;
+          return n;
+        };
+        const set = (id, v) => {
+          const el = document.getElementById(id);
+          if (el && v != null && v !== "") el.value = String(v);
+        };
         const T = (r.type || "").toUpperCase();
-        if (["OR", "RR", "RD", "SMD", "MD", "HR"].includes(T)) set("in-type", T);
-        set("in-est", r.estimate);
-        // If SE wasn't provided but CI bounds are, derive it
-        if (r.se != null) set("in-se", r.se);
-        else if (r.ci_lower != null && r.ci_upper != null) {
-          set("der-lo", r.ci_lower);
-          set("der-hi", r.ci_upper);
-          const sel = document.getElementById("der-scale");
-          if (sel && r.ci_scale) sel.value = /log/i.test(String(r.ci_scale)) ? "log" : "raw";
-          // Click the derive button
-          document.getElementById("btn-derive").click();
+        if (["OR", "RR", "RD", "SMD", "MD", "HR", "IRR"].includes(T)) set("in-type", T);
+        const est = clampNum(r.estimate);
+        if (est != null) set("in-est", est);
+        const se = clampNum(r.se);
+        if (se != null && se > 0) {
+          set("in-se", se);
+        } else {
+          const lo = clampNum(r.ci_lower);
+          const hi = clampNum(r.ci_upper);
+          if (lo != null && hi != null && lo < hi) {
+            set("der-lo", lo);
+            set("der-hi", hi);
+            const sel = document.getElementById("der-scale");
+            if (sel && r.ci_scale) sel.value = /log/i.test(String(r.ci_scale)) ? "log" : "raw";
+            document.getElementById("btn-derive").click();
+          }
         }
         runConvert();
       },

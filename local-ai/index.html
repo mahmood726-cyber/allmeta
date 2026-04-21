@@ -44,20 +44,25 @@
     table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.5rem 0; }
     th, td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); text-align: left; }
     th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-    .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; background: var(--accent); }
-    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; text-align: center; }
+    .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: white; background: var(--accent); }    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; text-align: center; }
+    .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
+    .skip-link:focus { left: 8px; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Local AI setup</h1>
     <p>Run an LLM on your own machine via <a href="https://ollama.com" style="color:var(--accent)">Ollama</a>, then allmeta apps can call it for structured extraction (PICO elements, effect sizes, 2×2 tables from abstracts, GRADE justifications). Everything stays on your device — the model runs locally; the browser just speaks HTTP to <code>127.0.0.1:11434</code>.</p>
   </header>
-  <main>
+  <main id="main-content">
     <section>
       <h2>Live status from this page</h2>
-      <div id="status-card" class="status-card">
-        <span class="dot"></span>
+      <div id="status-card" class="status-card" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
         <div>
           <div class="lbl" id="status-lbl">Checking for Ollama at 127.0.0.1:11434…</div>
           <div class="sub" id="status-sub">This page tries <code>GET /api/tags</code> once after load.</div>
@@ -162,13 +167,14 @@ ollama pull gpt-oss:20b       # ~13 GB, best reasoning if you have the RAM</pre>
         card.classList.add("ok");
         lbl.textContent = `Ollama detected · ${res.models.length} model${res.models.length === 1 ? "" : "s"} available`;
         sub.textContent = res.default ? `Default model for allmeta apps: ${res.default}` : "";
-        // Fetch details
-        try {
-          const r = await fetch("http://127.0.0.1:11434/api/tags");
-          const j = await r.json();
-          body.innerHTML = (j.models || []).map(m => `<tr><td><code>${escapeHtml(m.name)}</code></td><td>${(m.size / 1024 / 1024 / 1024).toFixed(1)} GB</td><td>${escapeHtml(m.modified_at || "")}</td></tr>`).join("");
-          wrap.style.display = "block";
-        } catch (_) { /* already reported above */ }
+        // Reuse the detect() response (res.raw) — no second network round-trip.
+        const models = res.raw && Array.isArray(res.raw.models) ? res.raw.models : [];
+        const fmt = (s) => typeof s === "string" ? escapeHtml(s.slice(0, 64)) : "";
+        body.innerHTML = models.map(m => {
+          const sizeGB = Number.isFinite(m.size) ? (m.size / 1024 / 1024 / 1024).toFixed(1) : "—";
+          return `<tr><td><code>${fmt(m.name)}</code></td><td>${sizeGB} GB</td><td>${fmt(m.modified_at)}</td></tr>`;
+        }).join("");
+        wrap.style.display = "block";
       } else {
         card.classList.add("err");
         lbl.textContent = "Not detected";
