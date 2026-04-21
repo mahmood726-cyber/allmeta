@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <meta name="description" content="Convert between effect sizes (OR, RR, RD, SMD, MD, HR) and derive standard errors from t, F, p, or CI. Browser-only, no backend.">
   <meta name="color-scheme" content="light dark">
   <title>Effect-Size Converter</title>
@@ -13,6 +13,7 @@
       --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
       --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
       --ok:#0d7a27; --ok-soft:#dff3e0;
+      --err:#912121; --err-soft:#fbd2d2;
     }
     @media (prefers-color-scheme:dark) {
       :root {
@@ -66,6 +67,7 @@
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
     .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
     .skip-link:focus { left: 8px; }
+    .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
       outline: 2px solid var(--accent); outline-offset: 2px;
     }
@@ -174,7 +176,7 @@
 
     <section class="panel results" aria-label="Results">
       <h2>Conversions</h2>
-      <div id="warn-slot"></div>
+      <div id="warn-slot" role="status" aria-live="polite" aria-atomic="true"></div>
       <table>
         <thead>
           <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th></tr>
@@ -257,10 +259,20 @@
           const or = est * (1 - p0) / (1 - est * p0);
           // SE(logOR) via delta from SE(logRR):
           //   d(ln OR)/d(ln RR) = 1 / (1 - p0 * RR)
-          const seLogOR = se / Math.abs(1 - p0 * est);
-          push("OR", or, seLogOR, "via RR→OR given p₀; log-scale SE");
-          push("RD", (est - 1) * p0, NaN, "point only");
-          push("SMD (Cox via OR)", Math.log(or) * COX, seLogOR * COX, "Cox's constant");
+          // Singular as p0·RR → 1 (risk ceiling, p1 → 1). Guard with a ceiling.
+          const denom = 1 - p0 * est;
+          if (Math.abs(denom) < 0.001) {
+            push("OR", or, NaN,
+              "RR·p₀ ≈ 1 — OR SE undefined at risk ceiling (implied p₁ ≈ 1); point-only");
+            push("RD", (est - 1) * p0, NaN, "point only");
+            push("SMD (Cox via OR)", Math.log(or) * COX, NaN,
+              "Cox's constant; SE undefined at risk ceiling");
+          } else {
+            const seLogOR = se / Math.abs(denom);
+            push("OR", or, seLogOR, "via RR→OR given p₀; log-scale SE");
+            push("RD", (est - 1) * p0, NaN, "point only");
+            push("SMD (Cox via OR)", Math.log(or) * COX, seLogOR * COX, "Cox's constant");
+          }
         }
       } else if (type === "RD") {
         push("RD", est, se);
@@ -296,13 +308,31 @@
         const logHR = Math.log(est);
         push("HR",     est, se, "log-scale SE");
         push("ln(HR)", logHR, se);
-        push("OR (approx)", est, se, "valid only when events are rare and follow-up balanced — do not use for common events");
-        push("SMD (Cox-ish)", logHR * COX, se * COX, "HR→OR→SMD, same caveat");
+        // HR -> OR rare-events approximation: OR ~ HR when event rate is low. Compute the
+        // implied bias at user-supplied p0 if given; only warn loudly when |bias|/OR > 10%.
+        let hrCaveat = "HR -> OR approximation assumes low event rate and balanced follow-up";
+        if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
+          // Under rare-events the OR that would EXACTLY match the HR point follows
+          // OR = HR * (1-p0) / (1 - HR*p0). Fractional bias at the user's p0:
+          const exactOR = est * (1 - p0) / (1 - est * p0);
+          const biasFrac = Math.abs(exactOR - est) / Math.max(exactOR, 1e-9);
+          if (biasFrac > 0.10) {
+            hrCaveat = `event rate p0 = ${p0.toFixed(2)} implies |bias| = ${(biasFrac * 100).toFixed(0)}% between HR and exact OR — DO NOT use the OR (approx) row; compute OR from the 2x2 table instead`;
+          } else {
+            hrCaveat = `at p0 = ${p0.toFixed(2)} the HR-as-OR approximation has |bias| = ${(biasFrac * 100).toFixed(0)}% (<10%); acceptable for rare events + balanced follow-up`;
+          }
+        }
+        push("OR (approx)", est, se, hrCaveat);
+        push("SMD (Cox-ish)", logHR * COX, se * COX, "valid only for rare events (<10% per arm) and balanced follow-up; uses HR->OR->SMD chain");
       } else if (type === "IRR") {
         const logIRR = Math.log(est);
         push("IRR",     est, se, "log-scale SE");
         push("ln(IRR)", logIRR, se);
-        push("SMD (Cox-ish, via IRR→OR approx)", logIRR * COX, se * COX, "only valid for low event rates; interpret with caution");
+        // IRR -> OR -> SMD is a double-approximation. Only meaningful under rare events
+        // AND approximately equal follow-up time per arm. The note makes both conditions
+        // explicit so the user doesn't silently use the SMD row outside its domain.
+        push("SMD (Cox-ish, via IRR->OR approx)", logIRR * COX, se * COX,
+          "valid ONLY if event rate < 10% per arm AND follow-up time is approximately equal between arms -- double approximation (IRR -> OR -> SMD)");
       }
       return rows;
     }
@@ -310,8 +340,11 @@
     function withCI(row) {
       const out = { ...row };
       if (Number.isFinite(row.se)) {
-        const isRatio = /^OR|^RR|^HR/.test(row.scale);
-        if (isRatio && /^(OR|RR|HR)\b/.test(row.scale)) {
+        // Tight word-boundary regex: matches "OR", "OR (approx)", "RR (implied)", "HR" —
+        // but NOT "ORA", "HRZ", or arbitrary prefixes. Also requires row.point > 0 for
+        // log-space back-transform (otherwise Math.log yields NaN silently).
+        const isRatio = /^(OR|RR|HR|IRR)(\b|\s|$)/.test(row.scale) && row.point > 0;
+        if (isRatio) {
           const lnPt = Math.log(row.point);
           out.lo = Math.exp(lnPt - Z95 * row.se);
           out.hi = Math.exp(lnPt + Z95 * row.se);
@@ -336,7 +369,9 @@
       const scale = document.getElementById("der-scale").value;
 
       // Priority: explicit CI > t + n + n > F + n + n > p + |point|
-      if (Number.isFinite(lo) && Number.isFinite(hi)) {
+      // lo == hi yields SE=0 which collapses downstream CIs — reject here so any
+      // caller (not just btn-derive's handler) gets NaN + a chance to warn.
+      if (Number.isFinite(lo) && Number.isFinite(hi) && lo < hi) {
         if (scale === "log") {
           if (lo > 0 && hi > 0) return (Math.log(hi) - Math.log(lo)) / (2 * Z95);
         } else {
@@ -413,6 +448,11 @@
       const views = rows.map(r => ({ scale: r.scale, ...(toSmdView(r) || {}) }))
                         .filter(v => Number.isFinite(v.pt));
       const svg = document.getElementById("forest-plot");
+      // Responsive padding: at narrow viewports the 160px left pad leaves only
+      // ~140px for the plot area, crushing labels to ~6px. Collapse to 80px pad
+      // and truncate long scale labels below a breakpoint.
+      const viewportW = Math.max(320, Math.min(600, window.innerWidth || 600));
+      const narrow = viewportW < 500;
       const W = 600, H = Math.max(200, 60 + views.length * 28);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       const bg = document.getElementById("forest-bg");
@@ -425,7 +465,8 @@
       const xs = views.flatMap(v => [v.pt, v.lo, v.hi].filter(Number.isFinite));
       const maxAbs = Math.max(1, ...xs.map(Math.abs));
       const xPad = maxAbs * 1.15;
-      const leftPad = 160, rightPad = 30;
+      const leftPad = narrow ? 90 : 160, rightPad = 30;
+      const truncLabel = s => narrow && s && s.length > 14 ? s.slice(0, 12) + "…" : s;
       const plotW = W - leftPad - rightPad;
       const X = x => leftPad + (x + xPad) / (2 * xPad) * plotW;
       const y0 = 30;
@@ -450,7 +491,7 @@
       views.forEach((v, i) => {
         const y = y0 + i * rowH;
         // label
-        lblParts.push(`<text x="${leftPad - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor">${v.scale}</text>`);
+        lblParts.push(`<text x="${leftPad - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor">${truncLabel(v.scale)}</text>`);
         // whisker
         if (Number.isFinite(v.lo) && Number.isFinite(v.hi)) {
           ptsParts.push(`<line x1="${X(v.lo)}" y1="${y}" x2="${X(v.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>`);
@@ -522,6 +563,11 @@
   </script>
   <script src="../shared/localllm.js"></script>
   <script>
+    // Surface any init-time error as a visible banner rather than a silently-dead page.
+    // The previous script block relies on `runConvert` and other globals being parsed
+    // successfully; a syntax error or missing identifier would otherwise give the user
+    // a page with non-functioning buttons and no visible indicator.
+    try {
     LocalLLM.attachPanel(document.getElementById("ai-host"), {
       title: "Extract an effect size from a results paragraph (local AI)",
       placeholder: "Paste a results paragraph or methods excerpt containing the primary effect estimate.",
@@ -568,6 +614,14 @@
         runConvert();
       },
     });
+    } catch (initErr) {
+      const banner = document.createElement("div");
+      banner.setAttribute("role", "alert");
+      banner.style.cssText = "padding:0.75rem 1rem;margin:0.5rem clamp(1rem,3vw,3rem);border:1px solid var(--err,#912121);background:var(--err-soft,#fbd2d2);color:var(--err,#912121);font:inherit;border-radius:6px";
+      banner.textContent = "Converter failed to initialize: " + (initErr && initErr.message ? initErr.message : String(initErr));
+      document.body.prepend(banner);
+      console.error("[effect-size-converter init]", initErr);
+    }
   </script>
 </body>
 </html>

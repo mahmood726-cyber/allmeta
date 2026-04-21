@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 """Replace O(n^2) svg.innerHTML += accumulation with O(n) array.join().
 
+**STATUS: project-specific, regex-based.** Do not reuse without reading
+`rewrite_function_body` and adding test fixtures for your codebase's patterns.
+This tool has miscompiled twice in production use (chained `=`, chained `+=`
+before the guards were added). Unit tests live at
+`scripts/tests/test_svg_codemod.py` — always run them before `--write`.
+
 Only transforms function bodies that match the safe pattern:
 
     function NAME(...) {
@@ -17,13 +23,16 @@ Requirements for a function to be eligible:
   * All subsequent references to VAR.innerHTML must be `+=` within that function
   * No early `return` statements between reset and the last push
   * No nested function declarations that also touch VAR.innerHTML
+  * No chained `a.innerHTML = b.innerHTML = "..."`
+  * No chained `a.innerHTML += L += "..."` where L is a separate accumulator
 
 When all conditions hold, rewrite:
-    reset      -> `const __<var>Parts = [<X>];`
+    reset      -> `const __<var>Parts = [<X>];` (or `[]` if the reset was empty)
     each +=    -> `__<var>Parts.push(<Y>);`
     then append `VAR.innerHTML = __<var>Parts.join("");` just before the closing brace.
 
-Dry-run by default: `--write` applies changes.
+Dry-run by default: `--write` applies changes. `--path` must resolve to a file
+inside ROOT; absolute paths outside ROOT are rejected.
 """
 from __future__ import annotations
 
@@ -48,6 +57,38 @@ def find_script_blocks(text: str) -> list[tuple[int, int, str]]:
     for m in SCRIPT_RE.finditer(text):
         out.append((m.start(1), m.end(1), m.group(1)))
     return out
+
+
+def _has_top_level_comma(expr: str) -> bool:
+    """True if `expr` contains a comma outside of any nested brackets/strings.
+
+    Guards against `x.innerHTML += a, b;` collapsing into `push(a, b)`
+    (two array elements instead of a comma-expression).
+    """
+    depth = 0
+    i = 0
+    in_str = None
+    escape = False
+    while i < len(expr):
+        c = expr[i]
+        if in_str in ('"', "'", "`"):
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == in_str:
+                in_str = None
+        else:
+            if c in ('"', "'", "`"):
+                in_str = c
+            elif c in "([{":
+                depth += 1
+            elif c in ")]}":
+                depth -= 1
+            elif c == "," and depth == 0:
+                return True
+        i += 1
+    return False
 
 
 def find_balanced_close(s: str, open_idx: int) -> int | None:
@@ -160,8 +201,19 @@ def rewrite_function_body(body: str) -> str | None:
             continue
         rhs_text = body[rhs_start:rhs_end].rstrip().rstrip(";")
 
+        # SAFETY: bail if the RHS has a top-level comma (comma-expression), since
+        # `__xParts = [a, b]` would create a 2-element array instead of evaluating
+        # the comma expression. Rare, but a correctness trap.
+        if _has_top_level_comma(rhs_text):
+            continue
+
         parts_name = f"__{var}Parts"
-        new_assign = f"const {parts_name} = [{rhs_text}];"
+        # Empty reset → empty array (not `[""]` with a dead element).
+        stripped_rhs = rhs_text.strip()
+        if stripped_rhs in ('""', "''", "``"):
+            new_assign = f"const {parts_name} = [];"
+        else:
+            new_assign = f"const {parts_name} = [{rhs_text}];"
 
         per_var_repls: list[tuple[int, int, str]] = []
         per_var_repls.append((
@@ -187,8 +239,33 @@ def rewrite_function_body(body: str) -> str | None:
             continue
 
         # Don't overlap with a replacement we already accepted for another var.
+        # If ranges literally overlap (e.g. nested template-literal references two vars),
+        # reject BOTH vars — a half-converted function body is worse than a skipped one.
         overlap = any(not (e <= s0 or s >= e0) for (s0, e0, _) in all_repls for (s, e, _) in per_var_repls)
         if overlap:
+            # Find which previously-accepted var conflicts and drop its replacements too.
+            conflicting_parts = {
+                name for (s0, e0, _), name_list in
+                [((s0, e0, t), rewritten_vars[i][0]) for i, (s0, e0, t) in enumerate(all_repls)]
+                if any(not (e <= s0 or s >= e0) for (s, e, _) in per_var_repls)
+            }
+            sys.stderr.write(
+                f"[svg-codemod] SKIP: overlapping replacement ranges for var '{var}' "
+                f"(conflicts with {sorted(conflicting_parts) or 'prior replacements'}) — "
+                f"rejecting both to avoid mixed-state output.\n"
+            )
+            # Drop the conflicting previously-accepted var
+            survivors_repls = []
+            survivors_vars = []
+            for i, (vr, pn) in enumerate(rewritten_vars):
+                # Re-test whether THIS var's repls overlap with per_var_repls
+                vr_repls = [r for r in all_repls if r[2].startswith(f"const {pn}") or r[2].startswith(f"{pn}.push")]
+                conflict = any(not (e <= s0 or s >= e0) for (s0, e0, _) in vr_repls for (s, e, _) in per_var_repls)
+                if not conflict:
+                    survivors_repls.extend(vr_repls)
+                    survivors_vars.append((vr, pn))
+            all_repls = survivors_repls
+            rewritten_vars = survivors_vars
             continue
 
         all_repls.extend(per_var_repls)
@@ -312,7 +389,15 @@ def main():
     args = ap.parse_args()
 
     if args.path:
-        files = [Path(args.path)]
+        p = Path(args.path).resolve()
+        try:
+            p.relative_to(ROOT)
+        except ValueError:
+            sys.stderr.write(
+                f"[svg-codemod] refusing to run on path outside ROOT ({ROOT}): {p}\n"
+            )
+            return 1
+        files = [p]
     else:
         files = pick_files()
     print(f"[svg-codemod] scanning {len(files)} files (write={args.write})")

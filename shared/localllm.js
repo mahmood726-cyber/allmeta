@@ -20,8 +20,19 @@
     escapeHtml,             // exposed so consumers can avoid duplicate defs
 
     async detect(opts) {
-      // Coalesce concurrent detect calls. opts.force bypasses the cache.
-      if (this._detectPromise && !(opts && opts.force)) return this._detectPromise;
+      // force:true always starts a fresh probe — clear any in-flight or resolved cache first.
+      if (opts && opts.force) {
+        this._detectPromise = null;
+        this._detectResult = null;
+      }
+      // Coalesce concurrent in-flight probes.
+      if (this._detectPromise) return this._detectPromise;
+      // Serve a cached *resolved* result for up to RESULT_TTL_MS so the status pill
+      // can refresh without hammering /api/tags.
+      const RESULT_TTL_MS = 2_000;
+      if (this._detectResult && (Date.now() - this._detectResult.at) < RESULT_TTL_MS) {
+        return this._detectResult.value;
+      }
       const p = (async () => {
         const ctl = new AbortController();
         const t = setTimeout(() => ctl.abort(), 4_000);
@@ -31,11 +42,12 @@
           const j = await r.json();
           // Bound string fields defensively: a rogue/stale Ollama build could return
           // arbitrarily long name/modified_at payloads that would poison the UI.
+          // Array.from(...).slice() is codepoint-safe (won't split a UTF-16 surrogate).
           const rawModels = Array.isArray(j.models) ? j.models : [];
           const sanitized = rawModels.slice(0, 200).map(m => {
             if (!m || typeof m !== "object") return null;
-            const name = typeof m.name === "string" ? m.name.slice(0, 200) : null;
-            const modified_at = typeof m.modified_at === "string" ? m.modified_at.slice(0, 64) : null;
+            const name = typeof m.name === "string" ? Array.from(m.name).slice(0, 200).join("") : null;
+            const modified_at = typeof m.modified_at === "string" ? Array.from(m.modified_at).slice(0, 64).join("") : null;
             const size = Number.isFinite(m.size) ? m.size : null;
             return name ? { name, modified_at, size } : null;
           }).filter(Boolean);
@@ -51,8 +63,14 @@
         }
       })();
       this._detectPromise = p;
-      // Clear the cache after a short window so the status pill can refresh on demand
-      setTimeout(() => { if (this._detectPromise === p) this._detectPromise = null; }, 2_000);
+      // Clear the inflight marker exactly when the promise resolves (not on a fixed timer
+      // that can race the 4s fetch abort). Cache the resolved value in _detectResult for
+      // the TTL window.
+      p.then(value => {
+        this._detectResult = { value, at: Date.now() };
+      }).finally(() => {
+        if (this._detectPromise === p) this._detectPromise = null;
+      });
       return p;
     },
 

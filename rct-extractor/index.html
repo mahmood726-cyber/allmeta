@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <meta name="description" content="Extract effect estimates from RCT PDFs and text via a locally-running rct-extractor-v2 API, with an optional local-LLM verifier.">
   <meta name="color-scheme" content="light dark">
   <title>RCT Extractor</title>
@@ -65,6 +65,8 @@
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
     .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
     .skip-link:focus { left: 8px; }
+    /* WCAG-safe visually-hidden utility for screen-reader-only text (captions, descriptions). */
+    .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     /* Ensure the Also-run-local-LLM checkbox has a WCAG 2.5.5 touch target */
     .use-llm-label { min-height: 44px; display: flex; align-items: center; }
     button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
@@ -122,12 +124,13 @@
         <button type="button" id="btn-send-forest" class="secondary">Send to Forest Plot</button>
         <button type="button" id="btn-export-csv" class="secondary">Export CSV</button>
       </div>
-      <h2 style="margin-top:0.8rem">Consensus vs local LLM</h2>
-      <div id="consensus-wrap">
+      <h2 style="margin-top:0.8rem" id="consensus-heading">Consensus vs local LLM</h2>
+      <div id="consensus-wrap" role="region" aria-labelledby="consensus-heading" aria-live="polite">
         <p style="color:var(--muted); font-size:0.84rem; margin:0">Enable "local LLM consensus" above to compare the regex extractor against a local model. Disagreements are highlighted red.</p>
       </div>
-      <h2 style="margin-top:0.8rem">Source provenance</h2>
-      <svg id="plot" viewBox="0 0 600 120" role="img" aria-label="Bar chart of extractions by confidence"></svg>
+      <h2 style="margin-top:0.8rem" id="plot-heading">Source provenance</h2>
+      <svg id="plot" viewBox="0 0 600 120" role="img" aria-labelledby="plot-heading" aria-describedby="plot-desc"></svg>
+      <p id="plot-desc" class="sr-only">Horizontal bar chart: one row per extraction. Each bar's length and color encode the regex extractor's confidence (green ≥ 0.8, amber ≥ 0.5, red otherwise). A per-row title on hover gives the precise confidence and tier.</p>
     </section>
   </main>
   <footer>
@@ -257,14 +260,22 @@
         model,
         task: "Extract every effect estimate reported in this RCT passage.",
         input: text,
+        // Schema includes 2x2 counts so downstream tools (MA Workbench) can cross-check
+        // the SE via Woolf/score, apply zero-cell corrections, and recompute RR<->OR.
+        // `follow_up_months` is requested for HR/IRR interpretability.
         schemaHint: `{
   "extractions": [
     {
       "type": "HR|OR|RR|RD|SMD|MD|IRR",
       "estimate": 0,
-      "se": 0,                   // report the paper's SE directly when given; else null
+      "se": 0,                          // paper's SE directly; else null
       "ci_lower": 0, "ci_upper": 0, "ci_level": 0.95,
       "p_value": 0,
+      "events_treatment": null,         // events in treatment arm (binary outcomes)
+      "events_control": null,           // events in control arm
+      "n_treatment": null,              // n analysed in treatment arm
+      "n_control": null,                // n analysed in control arm
+      "follow_up_months": null,         // median follow-up (for HR / IRR)
       "source": "verbatim snippet from the paper"
     }
   ]
@@ -281,7 +292,9 @@
       }
       const rows = ext.map((e, i) => {
         const ci = e.ci ? `[${e.ci.lower ?? "?"}, ${e.ci.upper ?? "?"}]` : "—";
-        const src = e.source_text ? `<div class="src-text">${esc(e.source_text).slice(0, 240)}</div>` : "";
+        // Slice first, then escape — slicing an escape-encoded string can truncate mid-entity
+        // (`&amp;` -> `&am`) which renders as literal text. Raw text has no such hazard.
+        const src = e.source_text ? `<div class="src-text">${esc(String(e.source_text).slice(0, 240))}</div>` : "";
         return `<tr>
           <td><code>regex</code></td>
           <td><code>${esc(e.effect_type || "?")}</code></td>
@@ -307,9 +320,11 @@
         lo: Number(e.ci_lower), hi: Number(e.ci_upper), p: e.p_value,
       }));
       // Scale-aware agreement: ratio types → compare on the log scale; linear types → absolute.
-      // Both use a 5% tolerance in their natural-comparison space.
+      // Ratio threshold tightened to 3% log-scale (Cochrane-typical RCT reporting precision).
       const ratioSet = new Set(["HR", "OR", "RR", "IRR"]);
-      const NEAR_ZERO = 1e-6;  // both effectively zero → treat as agree (trivial magnitude)
+      const RATIO_TOL = 0.03;  // |ln(a) - ln(b)| < 0.03 ≈ 3% on ratio scale
+      const LINEAR_TOL = 0.05; // 5% on linear scale, with denom floor
+      const NEAR_ZERO = 1e-6;  // numeric noise below measurement precision
       const rows = regexExt.map(r => {
         const rx = { type: r.effect_type, est: r.point_estimate, lo: r.ci?.lower, hi: r.ci?.upper };
         const matches = llmItems.filter(l => l.type === rx.type)
@@ -317,30 +332,48 @@
         const m = matches[0];
         let agree = false;
         if (m && Number.isFinite(m.estimate) && Number.isFinite(rx.est)) {
-          // Both near zero → numeric noise below measurement precision, call it agree.
-          if (Math.abs(rx.est) < NEAR_ZERO && Math.abs(m.estimate) < NEAR_ZERO) {
-            agree = true;
-          } else if (ratioSet.has(rx.type) && rx.est > 0 && m.estimate > 0) {
-            // Log-scale relative difference: |ln(a) - ln(b)| < 0.05 ≈ 5% on ratio scale.
-            agree = Math.abs(Math.log(m.estimate) - Math.log(rx.est)) < 0.05;
+          if (ratioSet.has(rx.type) && rx.est > 0 && m.estimate > 0) {
+            // For ratios the true null is 1 (ln=0). "Near null" = |ln(est)| < NEAR_ZERO.
+            // A ratio of 1e-7 is NOT near-null — it's near-total effect — so magnitude-based
+            // NEAR_ZERO would be catastrophically wrong for HR/OR/RR/IRR.
+            if (Math.abs(Math.log(rx.est)) < NEAR_ZERO && Math.abs(Math.log(m.estimate)) < NEAR_ZERO) {
+              agree = true;
+            } else {
+              agree = Math.abs(Math.log(m.estimate) - Math.log(rx.est)) < RATIO_TOL;
+            }
           } else {
-            // Linear types (MD, SMD, RD): relative diff, with an absolute floor of 0.01
-            // for the denominator so effects near zero don't trigger spurious disagreement
-            // from tiny numeric noise.
-            const denom = Math.max(Math.abs(rx.est), Math.abs(m.estimate), 0.01);
-            agree = Math.abs(m.estimate - rx.est) / denom < 0.05;
+            // Linear types (MD, SMD, RD): true null is 0. Magnitude-based NEAR_ZERO is OK here.
+            if (Math.abs(rx.est) < NEAR_ZERO && Math.abs(m.estimate) < NEAR_ZERO) {
+              agree = true;
+            } else {
+              // Relative diff, with an absolute floor of 0.01 for the denominator so effects
+              // near zero don't trigger spurious disagreement from tiny numeric noise.
+              const denom = Math.max(Math.abs(rx.est), Math.abs(m.estimate), 0.01);
+              agree = Math.abs(m.estimate - rx.est) / denom < LINEAR_TOL;
+            }
           }
         }
         return { rx, llm: m, agree };
       });
+      // Per-row try/catch so one bad getter doesn't nuke the whole table.
+      const rowHTML = rows.map(r => {
+        try {
+          const tol = ratioSet.has(r.rx.type) ? "3%" : "5%";
+          const agreeText = r.agree ? `✓ within ${tol}` : (r.llm ? "✗ disagreement" : "—");
+          return `<tr class="consensus ${r.agree ? "agree" : "disagree"}">
+            <td><code>${esc(r.rx.type)}</code></td>
+            <td>${esc(r.rx.est)} [${esc(r.rx.lo)}, ${esc(r.rx.hi)}]</td>
+            <td>${r.llm ? `${esc(r.llm.estimate)} [${esc(r.llm.lo)}, ${esc(r.llm.hi)}]` : "no match"}</td>
+            <td>${agreeText}</td>
+          </tr>`;
+        } catch (e) {
+          return `<tr class="consensus disagree"><td colspan="4">row error: ${esc(e.message)}</td></tr>`;
+        }
+      }).join("");
       consensusWrap.innerHTML = `<table>
+        <caption class="sr-only">Regex extractor vs local LLM: agreement on each effect estimate.</caption>
         <thead><tr><th>Type</th><th>Regex</th><th>LLM</th><th>Agreement</th></tr></thead>
-        <tbody>${rows.map(r => `<tr class="consensus ${r.agree ? "agree" : "disagree"}">
-          <td><code>${esc(r.rx.type)}</code></td>
-          <td>${esc(r.rx.est)} [${esc(r.rx.lo)}, ${esc(r.rx.hi)}]</td>
-          <td>${r.llm ? `${esc(r.llm.estimate)} [${esc(r.llm.lo)}, ${esc(r.llm.hi)}]` : "no match"}</td>
-          <td>${r.agree ? "✓ within 5%" : (r.llm ? "✗ disagreement" : "—")}</td>
-        </tr>`).join("")}</tbody>
+        <tbody>${rowHTML}</tbody>
       </table>`;
     }
 
@@ -350,17 +383,25 @@
       const W = 600, H = 120, padL = 120, padR = 30, padT = 15, padB = 25;
       const rowH = (H - padT - padB) / extractions.length;
       const parts = [];
+      const tierLabel = c => c >= 0.8 ? "high" : c >= 0.5 ? "med" : "low";
       extractions.forEach((e, i) => {
         const y = padT + i * rowH + 2;
         const c = (e.confidence ?? 0);
         const w = c * (W - padL - padR);
         const color = c >= 0.8 ? "var(--ok)" : c >= 0.5 ? "var(--warn)" : "var(--err)";
+        const tier = tierLabel(c);
+        const rowDesc = `${e.effect_type || "?"} ${e.point_estimate ?? ""}: confidence ${(c * 100).toFixed(0)}% (${tier})`;
         parts.push(`<text x="${padL - 8}" y="${y + rowH / 2 + 3}" text-anchor="end" font-size="11" fill="currentColor">${esc(e.effect_type || "?")} ${esc(e.point_estimate ?? "")}</text>`);
-        parts.push(`<rect x="${padL}" y="${y}" width="${w}" height="${rowH - 4}" fill="${color}" opacity="0.85"/>`);
-        parts.push(`<text x="${padL + w + 6}" y="${y + rowH / 2 + 3}" font-size="10" fill="currentColor">${(c * 100).toFixed(0)}%</text>`);
+        // <title> child is announced by screen readers and shown as tooltip — encodes tier in text too (WCAG 1.4.1).
+        parts.push(`<rect x="${padL}" y="${y}" width="${w}" height="${rowH - 4}" fill="${color}" opacity="0.85"><title>${esc(rowDesc)}</title></rect>`);
+        parts.push(`<text x="${padL + w + 6}" y="${y + rowH / 2 + 3}" font-size="10" fill="currentColor">${(c * 100).toFixed(0)}% (${esc(tier)})</text>`);
       });
       parts.push(`<text x="${padL + (W - padL - padR) / 2}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Extractor confidence</text>`);
       svg.innerHTML = parts.join("");
+      // Keep the plot's aria-label synced with content so screen readers get a live summary.
+      const tierCounts = { high: 0, med: 0, low: 0 };
+      extractions.forEach(e => { tierCounts[tierLabel(e.confidence ?? 0)]++; });
+      svg.setAttribute("aria-label", `${extractions.length} extraction${extractions.length === 1 ? "" : "s"}: ${tierCounts.high} high, ${tierCounts.med} med, ${tierCounts.low} low confidence.`);
     }
 
     async function run() {
@@ -437,6 +478,9 @@
         te, se,
         scale: type,
         scale_family: isRatio ? "ratio" : "linear",
+        // Explicit pool_scale contract: consumers know which scale to pool on without
+        // re-deriving it from scale_family/scale.
+        pool_scale: isRatio ? "log" : "identity",
         p: e.p_value,
         source: "rct-extractor",
         imported_at: new Date().toISOString(),
@@ -445,14 +489,28 @@
       };
     }
 
-    document.getElementById("btn-send-workbench").addEventListener("click", () => {
-      const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
-      // Guard: refuse to push if scale families are mixed — forces user to choose.
+    // Shared guard for bus+forest push: refuses mixed scale families, AND refuses mixed
+    // scales within the ratio family (HR, OR, RR, IRR answer different clinical questions
+    // per Cochrane Handbook §10.4 and must not be pooled together without explicit
+    // conversion).
+    function validatePushRows(rows, context) {
       const families = new Set(rows.map(r => r.scale_family));
       if (families.size > 1) {
-        alert(`Mixed scale families detected (ratio + linear). Pooling these together is not meaningful — select only one type before pushing.`);
-        return;
+        alert(`Mixed scale families detected (ratio + linear). Pooling these together is not meaningful — select only one type before ${context}.`);
+        return false;
       }
+      const scales = new Set(rows.map(r => r.scale));
+      if (scales.size > 1 && rows[0] && rows[0].scale_family === "ratio") {
+        const list = Array.from(scales).sort().join(", ");
+        alert(`Mixed ratio scales detected (${list}). Per Cochrane §10.4, HR, OR, RR, and IRR answer different clinical questions and should not be pooled together without explicit conversion. Filter to a single scale before ${context}.`);
+        return false;
+      }
+      return true;
+    }
+
+    document.getElementById("btn-send-workbench").addEventListener("click", () => {
+      const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
+      if (!validatePushRows(rows, "pushing")) return;
       // Atomic read-modify-write: validate existing bus content first.
       let existing = [];
       try {
@@ -464,11 +522,7 @@
     });
     document.getElementById("btn-send-forest").addEventListener("click", () => {
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
-      const families = new Set(rows.map(r => r.scale_family));
-      if (families.size > 1) {
-        alert(`Mixed scale families — a single forest plot must use one scale. Filter rows first.`);
-        return;
-      }
+      if (!validatePushRows(rows, "sending to the forest plot")) return;
       const lines = rows.map((r, i) => `Study ${i + 1}, ${r.te.toFixed(3)}, ${r.se.toFixed(3)}`).join("\n");
       localStorage.setItem("forest-plot-v1", lines);
       navigator.clipboard.writeText(lines).then(() => alert(`${rows.length} rows saved to forest-plot-v1 and clipboard.`));
