@@ -91,7 +91,8 @@ for (const app of INTERNAL_APPS) {
         .first();
       if (await button.count() > 0) {
         await button.click({ timeout: 2_000 }).catch(() => {});
-        await page.waitForTimeout(3_000);
+        // Short-circuit as soon as a plot surface appears; fall through after ≤3s otherwise.
+        await page.waitForSelector(PLOT_SELECTOR, { timeout: 3_000 }).catch(() => {});
         clicked = true;
         plotCount = await countPlots(page);
       }

@@ -288,7 +288,10 @@
         '  <option value="low"' + (o.certainty==="low"?' selected':'') + '>Low</option>',
         '  <option value="verylow"' + (o.certainty==="verylow"?' selected':'') + '>Very low</option>',
         '</select></label>',
-        '<label><span class="lbl">Comments</span><textarea data-field="comments" rows="2" placeholder="Reasons for down/up-grading, caveats">' + escapeHtml(o.comments) + '</textarea></label>'
+        '<label><span class="lbl">Comments</span><textarea data-field="comments" rows="2" placeholder="Reasons for down/up-grading, caveats">' + escapeHtml(o.comments) + '</textarea></label>',
+        (o.effectType === "OR" || o.effectType === "HR")
+          ? `<div style="background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.5rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.6rem"><strong>${o.effectType} caveat:</strong> corresponding risks must be derived by applying the ${o.effectType} to the assumed risk, not by treating the ${o.effectType} as a risk ratio. ${o.effectType === "OR" ? "ORs approximate RRs only for rare events (baseline risk &lt; 10%)." : "HRs assume proportional hazards and summarise rates over follow-up — they are not direct risk ratios."} Cochrane Handbook §15.4.1.</div>`
+          : ""
       ].join("\n");
       return div;
     }
