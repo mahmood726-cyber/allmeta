@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="All-subset meta-regression: scatter the moderator coefficient and R² across all non-trivial subsets.">
   <meta name="color-scheme" content="light dark">
   <title>GOSH Meta-Regression</title>
@@ -181,29 +182,31 @@
       const svg = document.getElementById("plot");
       const W = 600, H = 360, padL = 60, padR = 20, padT = 20, padB = 50;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const bs = pts.map(p => p.b1);
       const xMin = Math.min(0, ...bs), xMax = Math.max(0, ...bs);
       const xPad = (xMax - xMin) * 0.1 || 0.01;
       const X = v => padL + (v - (xMin - xPad)) / ((xMax + xPad) - (xMin - xPad)) * plotW;
       const Y = v => padT + (1 - v / 100) * plotH;
-      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __svgParts.push(`<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
       // points
       const alpha = Math.max(0.03, Math.min(0.4, 8 / Math.sqrt(pts.length)));
       for (const p of pts) {
-        svg.innerHTML += `<circle cx="${X(p.b1)}" cy="${Y(p.I2)}" r="2" fill="var(--accent)" fill-opacity="${alpha}"/>`;
+        __svgParts.push(`<circle cx="${X(p.b1)}" cy="${Y(p.I2)}" r="2" fill="var(--accent)" fill-opacity="${alpha}"/>`);
       }
       for (const yTick of [0, 25, 50, 75, 100]) {
-        svg.innerHTML += `<text x="${padL - 8}" y="${Y(yTick) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${yTick}%</text>`;
+        __svgParts.push(`<text x="${padL - 8}" y="${Y(yTick) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${yTick}%</text>`);
       }
       const xTicks = [xMin, (xMin + xMax) / 2, xMax];
       for (const t of xTicks) {
-        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(3)}</text>`;
+        __svgParts.push(`<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(3)}</text>`);
       }
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">β (moderator coefficient)</text>`;
-      svg.innerHTML += `<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ${padT + plotH / 2})">Residual I²</text>`;
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">β (moderator coefficient)</text>`);
+      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ${padT + plotH / 2})">Residual I²</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

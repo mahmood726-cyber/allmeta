@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:">
   <meta name="description" content="PICO(T)/PECO/PICOS question builder for systematic reviews, with a boolean-search skeleton export.">
   <meta name="color-scheme" content="light dark">
   <title>PICO Formulator</title>
@@ -163,7 +164,7 @@
                    : frame === "PICOT" ? ["P", "I", "C", "O", "T"]
                    : ["P", "I", "C", "O"];
       const svg = document.getElementById("wheel");
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const cx = 160, cy = 160, rOuter = 130, rInner = 50;
       const n = slices.length;
       for (let i = 0; i < n; i++) {
@@ -178,15 +179,17 @@
         const x2i = cx + rInner * Math.cos(a1);
         const y2i = cy + rInner * Math.sin(a1);
         const d = `M${x1o},${y1o} A${rOuter},${rOuter} 0 0 1 ${x2o},${y2o} L${x1i},${y1i} A${rInner},${rInner} 0 0 0 ${x2i},${y2i} Z`;
-        svg.innerHTML += `<path d="${d}" fill="${COLORS[slices[i]]}" opacity="0.25" stroke="${COLORS[slices[i]]}" stroke-width="1"/>`;
+        __svgParts.push(`<path d="${d}" fill="${COLORS[slices[i]]}" opacity="0.25" stroke="${COLORS[slices[i]]}" stroke-width="1"/>`);
         // label
         const am = (a1 + a2) / 2;
         const rL = (rInner + rOuter) / 2;
         const lx = cx + rL * Math.cos(am);
         const ly = cy + rL * Math.sin(am);
-        svg.innerHTML += `<text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="16" fill="currentColor" font-weight="700">${slices[i]}</text>`;
+        __svgParts.push(`<text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="16" fill="currentColor" font-weight="700">${slices[i]}</text>`);
       }
-      svg.innerHTML += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="14" fill="currentColor" font-weight="600">${frame}</text>`;
+      __svgParts.push(`<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="14" fill="currentColor" font-weight="600">${frame}</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("frame").addEventListener("change", updateFramework);

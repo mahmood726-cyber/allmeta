@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Component network meta-analysis under an additive model (Welton 2009): decompose complex interventions into per-component effects.">
   <meta name="color-scheme" content="light dark">
   <title>Component NMA</title>
@@ -220,7 +221,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       const svg = document.getElementById("forest");
       const W = 600, H = Math.max(220, 40 + items.length * 26 + 30);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const padL = 220, padR = 30;
       const plotW = W - padL - padR;
       const allLo = items.map(r => r.lo), allHi = items.map(r => r.hi);
@@ -229,19 +230,21 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       const X = x => padL + (x - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
       const y0 = 30;
       // zero line
-      svg.innerHTML += `<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + items.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + items.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
       items.forEach((r, i) => {
         const y = y0 + i * 26;
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor" ${r.kind === "component" ? 'font-weight="600"' : ""}>${r.kind === "component" ? "[C] " : ""}${r.name}</text>`;
-        svg.innerHTML += `<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor" ${r.kind === "component" ? 'font-weight="600"' : ""}>${r.kind === "component" ? "[C] " : ""}${r.name}</text>`);
+        __svgParts.push(`<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>`);
         const c = r.kind === "component" ? "var(--accent)" : "var(--warn)";
-        svg.innerHTML += `<rect x="${X(r.e) - 4}" y="${y - 4}" width="8" height="8" fill="${c}"/>`;
+        __svgParts.push(`<rect x="${X(r.e) - 4}" y="${y - 4}" width="8" height="8" fill="${c}"/>`);
       });
       // axis
-      svg.innerHTML += `<line x1="${padL}" y1="${y0 + items.length * 26}" x2="${padL + plotW}" y2="${y0 + items.length * 26}" stroke="currentColor" opacity="0.5"/>`;
+      __svgParts.push(`<line x1="${padL}" y1="${y0 + items.length * 26}" x2="${padL + plotW}" y2="${y0 + items.length * 26}" stroke="currentColor" opacity="0.5"/>`);
       for (const t of [lo, 0, hi]) {
-        svg.innerHTML += `<text x="${X(t)}" y="${y0 + items.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`;
+        __svgParts.push(`<text x="${X(t)}" y="${y0 + items.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`);
       }
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

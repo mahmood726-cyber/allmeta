@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="PET, PEESE, and Duval-Tweedie trim-and-fill publication-bias adjustments for meta-analysis.">
   <meta name="color-scheme" content="light dark">
   <title>PET-PEESE + Trim-and-Fill</title>
@@ -248,12 +249,14 @@
         { name: `Trim-and-fill (k₀=${tf.k0})`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
       ];
       const body = document.getElementById("res-body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       for (const r of resRows) {
-        body.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmt(r.p)}</td></tr>`;
+        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmt(r.p)}</td></tr>`);
       }
       warnSlot.innerHTML += `<div class="note"><strong>Conditional estimator:</strong> ${conditional}.</div>`;
       drawFunnel(rows, pet, peese, tf);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function drawFunnel(rows, pet, peese, tf) {

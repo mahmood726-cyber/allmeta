@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Bivariate random-effects DTA meta-analysis (Reitsma-style) with HSROC curve and summary operating point.">
   <meta name="color-scheme" content="light dark">
   <title>HSROC / Bivariate DTA</title>
@@ -173,9 +174,9 @@
 
       // Per-study table
       const body = document.getElementById("res-body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       for (const s of studies) {
-        body.innerHTML += `<tr><td>${s.label}</td><td>${fmtPct(s.se)}</td><td>${fmtPct(s.sp)}</td><td>${fmt(s.logitSe)}</td><td>${fmt(s.logitFPR)}</td></tr>`;
+        __bodyParts.push(`<tr><td>${s.label}</td><td>${fmtPct(s.se)}</td><td>${fmtPct(s.sp)}</td><td>${fmt(s.logitSe)}</td><td>${fmt(s.logitFPR)}</td></tr>`);
       }
 
       // Summary
@@ -195,6 +196,8 @@
         </table>`;
 
       drawSROC(studies, p);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function drawSROC(studies, p) {
@@ -202,31 +205,31 @@
       const W = 600, H = 500;
       const padL = 60, padR = 20, padT = 20, padB = 50;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const X = x => padL + x * plotW;  // 1-Sp (FPR) on x
       const Y = y => padT + (1 - y) * plotH;  // Se on y
 
       // Grid
       for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
-        svg.innerHTML += `<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${padT + plotH}" stroke="currentColor" opacity="0.07"/>`;
-        svg.innerHTML += `<line x1="${padL}" y1="${Y(t)}" x2="${padL + plotW}" y2="${Y(t)}" stroke="currentColor" opacity="0.07"/>`;
-        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`;
-        svg.innerHTML += `<text x="${padL - 10}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`;
+        __svgParts.push(`<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${padT + plotH}" stroke="currentColor" opacity="0.07"/>`);
+        __svgParts.push(`<line x1="${padL}" y1="${Y(t)}" x2="${padL + plotW}" y2="${Y(t)}" stroke="currentColor" opacity="0.07"/>`);
+        __svgParts.push(`<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`);
+        __svgParts.push(`<text x="${padL - 10}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`);
       }
       // Axes
-      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">1 − Specificity (FPR)</text>`;
-      svg.innerHTML += `<text x="20" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 20 ${padT + plotH / 2})">Sensitivity</text>`;
+      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">1 − Specificity (FPR)</text>`);
+      __svgParts.push(`<text x="20" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 20 ${padT + plotH / 2})">Sensitivity</text>`);
       // Diagonal reference
-      svg.innerHTML += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="currentColor" opacity="0.25" stroke-dasharray="3 3"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="currentColor" opacity="0.25" stroke-dasharray="3 3"/>`);
 
       // Study points sized by total n
       const totalNs = studies.map(s => s.TP + s.FP + s.FN + s.TN);
       const maxN = Math.max(...totalNs);
       studies.forEach((s, i) => {
         const r = 3 + (totalNs[i] / maxN) * 7;
-        svg.innerHTML += `<circle cx="${X(s.fpr)}" cy="${Y(s.se)}" r="${r}" fill="var(--accent)" opacity="0.8"/>`;
+        __svgParts.push(`<circle cx="${X(s.fpr)}" cy="${Y(s.se)}" r="${r}" fill="var(--accent)" opacity="0.8"/>`);
       });
 
       // HSROC curve: generate as locus of (FPR, Se) with theta shifting,
@@ -244,7 +247,7 @@
           pts.push([fpr, se]);
         }
         const path = pts.map((pt, i) => `${i === 0 ? "M" : "L"}${X(pt[0])},${Y(pt[1])}`).join(" ");
-        svg.innerHTML += `<path d="${path}" fill="none" stroke="var(--warn)" stroke-width="2"/>`;
+        __svgParts.push(`<path d="${path}" fill="none" stroke="var(--warn)" stroke-width="2"/>`);
       }
 
       // Summary operating point with 95% CI (as rectangle)
@@ -254,13 +257,15 @@
       const seHi = invLogit(p.muSe + 1.96 * p.seMuSe);
       const fprLo = invLogit(p.muFPR - 1.96 * p.seMuFPR);
       const fprHi = invLogit(p.muFPR + 1.96 * p.seMuFPR);
-      svg.innerHTML += `<rect x="${X(fprLo)}" y="${Y(seHi)}" width="${X(fprHi) - X(fprLo)}" height="${Y(seLo) - Y(seHi)}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`;
-      svg.innerHTML += `<circle cx="${X(sumFPR)}" cy="${Y(sumSe)}" r="7" fill="var(--warn)" stroke="white" stroke-width="2"/>`;
+      __svgParts.push(`<rect x="${X(fprLo)}" y="${Y(seHi)}" width="${X(fprHi) - X(fprLo)}" height="${Y(seLo) - Y(seHi)}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`);
+      __svgParts.push(`<circle cx="${X(sumFPR)}" cy="${Y(sumSe)}" r="7" fill="var(--warn)" stroke="white" stroke-width="2"/>`);
 
       // Legend
-      svg.innerHTML += `<circle cx="${padL + 15}" cy="${padT + 15}" r="5" fill="var(--accent)" opacity="0.8"/><text x="${padL + 28}" y="${padT + 19}" font-size="11" fill="currentColor">study</text>`;
-      svg.innerHTML += `<circle cx="${padL + 85}" cy="${padT + 15}" r="6" fill="var(--warn)" stroke="white" stroke-width="2"/><text x="${padL + 98}" y="${padT + 19}" font-size="11" fill="currentColor">summary point</text>`;
-      svg.innerHTML += `<line x1="${padL + 200}" y1="${padT + 15}" x2="${padL + 220}" y2="${padT + 15}" stroke="var(--warn)" stroke-width="2"/><text x="${padL + 226}" y="${padT + 19}" font-size="11" fill="currentColor">HSROC</text>`;
+      __svgParts.push(`<circle cx="${padL + 15}" cy="${padT + 15}" r="5" fill="var(--accent)" opacity="0.8"/><text x="${padL + 28}" y="${padT + 19}" font-size="11" fill="currentColor">study</text>`);
+      __svgParts.push(`<circle cx="${padL + 85}" cy="${padT + 15}" r="6" fill="var(--warn)" stroke="white" stroke-width="2"/><text x="${padL + 98}" y="${padT + 19}" font-size="11" fill="currentColor">summary point</text>`);
+      __svgParts.push(`<line x1="${padL + 200}" y1="${padT + 15}" x2="${padL + 220}" y2="${padT + 15}" stroke="var(--warn)" stroke-width="2"/><text x="${padL + 226}" y="${padT + 19}" font-size="11" fill="currentColor">HSROC</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

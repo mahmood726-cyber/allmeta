@@ -10,6 +10,16 @@ if (!existsSync(artifactsDir)) mkdirSync(artifactsDir, { recursive: true });
 const EXTRACTOR_URL = "http://127.0.0.1:8000";
 const OLLAMA_URL = "http://127.0.0.1:11434";
 
+interface OllamaTagModel {
+  name: string;
+  modified_at?: string;
+  size?: number;
+  digest?: string;
+}
+interface OllamaTagsResponse {
+  models?: OllamaTagModel[];
+}
+
 let extractorUp = false;
 let ollamaUp = false;
 let ollamaModels: string[] = [];
@@ -23,8 +33,10 @@ test.beforeAll(async () => {
     const r = await fetch(`${OLLAMA_URL}/api/tags`);
     if (r.ok) {
       ollamaUp = true;
-      const j = await r.json();
-      ollamaModels = (j.models || []).map((m: any) => m.name);
+      const j = (await r.json()) as OllamaTagsResponse;
+      ollamaModels = (j.models ?? [])
+        .map(m => (typeof m?.name === "string" ? m.name : null))
+        .filter((n): n is string => n !== null);
     }
   } catch { ollamaUp = false; }
   console.log(`[e2e-local] extractor=${extractorUp} ollama=${ollamaUp} models=${ollamaModels.length}`);

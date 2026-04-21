@@ -70,8 +70,15 @@ Domain expert: 3 P0, 7 P1, 5 P2 (incl. **one regression from review v1 "fix"**)
 
 ## Fix plan
 
-Round 1 — critical correctness + security (DOM-REG-1, SEC-1, UX-1/2/3).
-Round 2 — robustness (SE-1/2/3, DOM-1/2).
-Round 3 — polish (remaining P1s + duplicate-code dedup + fill test gaps).
+Round 1 — critical correctness + security (DOM-REG-1, SEC-1, UX-1/2/3). [DONE commit de37d8a]
+Round 2 — robustness (SE-1/2/3, DOM-1/2). [DONE commit 2f97cd2]
+Round 3 — P2 polish + test gaps. [DONE — CSP on 80+ pages, PDF.js self-hosted,
+  svg.innerHTML codemod on 34 files (47 functions), modified_at bound,
+  typed e2e models, log-scale negative-bound guard + inline error message,
+  near-zero consensus tolerance, 422 test path, autostart installer pytest
+  round-trip (-NoStart flag)]. Tests: 86/86 green (65 hub + 11 e2e-extensive +
+  6 e2e-local + 4 installer).
+
+REVIEW CLEAN.
 
 ---

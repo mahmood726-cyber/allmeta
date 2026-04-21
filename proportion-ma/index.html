@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Meta-analysis of proportions — raw, logit, and Freeman-Tukey double-arcsine pooling with forest plot.">
   <meta name="color-scheme" content="light dark">
   <title>Proportion MA</title>
@@ -303,16 +304,18 @@
 
     function render(rows, pooled) {
       const body = document.getElementById("res-body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       for (const r of rows) {
-        body.innerHTML += `<tr><td>${r.label}</td><td>${r.x}/${r.n}</td><td>${fmtPct(r.p)}</td><td>${fmtPct(r.lo)} – ${fmtPct(r.hi)}</td><td>${r.rel.toFixed(1)}%</td></tr>`;
+        __bodyParts.push(`<tr><td>${r.label}</td><td>${r.x}/${r.n}</td><td>${fmtPct(r.p)}</td><td>${fmtPct(r.lo)} – ${fmtPct(r.hi)}</td><td>${r.rel.toFixed(1)}%</td></tr>`);
       }
-      body.innerHTML += `<tr class="pooled-row"><td><strong>Pooled</strong></td><td>—</td><td><strong>${fmtPct(pooled.poolP)}</strong></td><td><strong>${fmtPct(pooled.poolLo)} – ${fmtPct(pooled.poolHi)}</strong></td><td>100%</td></tr>`;
+      __bodyParts.push(`<tr class="pooled-row"><td><strong>Pooled</strong></td><td>—</td><td><strong>${fmtPct(pooled.poolP)}</strong></td><td><strong>${fmtPct(pooled.poolLo)} – ${fmtPct(pooled.poolHi)}</strong></td><td>100%</td></tr>`);
 
       const het = document.getElementById("het");
       het.innerHTML = `τ² = <code>${fmt(pooled.het.tau2, 4)}</code> · Q = <code>${fmt(pooled.het.Q, 2)}</code> (df=${pooled.het.df}) · I² = <code>${pooled.het.i2.toFixed(1)}%</code>`;
 
       drawForest(rows, pooled);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function drawForest(rows, pooled) {
@@ -322,28 +325,30 @@
       const plotW = W - padL - padR;
       const plotH = H - padT - padB;
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const X = p => padL + p * plotW;
       // axis
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH - 22}" x2="${padL + plotW}" y2="${padT + plotH - 22}" stroke="currentColor" opacity="0.5"/>`;
+      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH - 22}" x2="${padL + plotW}" y2="${padT + plotH - 22}" stroke="currentColor" opacity="0.5"/>`);
       for (let t = 0; t <= 1.0001; t += 0.2) {
-        svg.innerHTML += `<line x1="${X(t)}" y1="${padT + plotH - 18}" x2="${X(t)}" y2="${padT + plotH - 26}" stroke="currentColor" opacity="0.5"/>`;
-        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`;
+        __svgParts.push(`<line x1="${X(t)}" y1="${padT + plotH - 18}" x2="${X(t)}" y2="${padT + plotH - 26}" stroke="currentColor" opacity="0.5"/>`);
+        __svgParts.push(`<text x="${X(t)}" y="${padT + plotH - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`);
       }
       rows.forEach((r, i) => {
         const y = padT + i * 26 + 10;
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label}</text>`;
-        svg.innerHTML += `<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label}</text>`);
+        __svgParts.push(`<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`);
         const sz = 3 + Math.min(r.rel / 4, 7);
-        svg.innerHTML += `<rect x="${X(r.p) - sz}" y="${y - sz}" width="${sz * 2}" height="${sz * 2}" fill="var(--accent)"/>`;
+        __svgParts.push(`<rect x="${X(r.p) - sz}" y="${y - sz}" width="${sz * 2}" height="${sz * 2}" fill="var(--accent)"/>`);
       });
       // pooled diamond
       const py = padT + rows.length * 26 + 18;
       const px = X(pooled.poolP);
       const pl = X(pooled.poolLo);
       const ph = X(pooled.poolHi);
-      svg.innerHTML += `<text x="${padL - 10}" y="${py + 4}" text-anchor="end" font-size="11" fill="currentColor" font-weight="600">Pooled</text>`;
-      svg.innerHTML += `<polygon points="${pl},${py} ${px},${py - 8} ${ph},${py} ${px},${py + 8}" fill="var(--warn)" opacity="0.9"/>`;
+      __svgParts.push(`<text x="${padL - 10}" y="${py + 4}" text-anchor="end" font-size="11" fill="currentColor" font-weight="600">Pooled</text>`);
+      __svgParts.push(`<polygon points="${pl},${py} ${px},${py - 8} ${ph},${py} ${px},${py + 8}" fill="var(--warn)" opacity="0.9"/>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

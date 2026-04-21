@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Node-splitting and loop-based inconsistency tests for network meta-analysis.">
   <meta name="color-scheme" content="light dark">
   <title>NMA Inconsistency</title>
@@ -271,51 +272,55 @@ A, D, -0.48, 0.14</textarea>
       if (rows.length < 3) return;
       const ns = nodeSplit(rows);
       const body = document.getElementById("ns-body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       for (const r of ns) {
         const flag = r.p < 0.05 ? "incon" : "cons";
         const label = r.p < 0.05 ? "inconsistent" : "consistent";
-        body.innerHTML += `<tr><td><code>${r.comparison}</code></td>
+        __bodyParts.push(`<tr><td><code>${r.comparison}</code></td>
           <td>${fmt(r.direct.mean)} (${fmt(r.direct.se)})</td>
           <td>${fmt(r.indirect.mean)} (${fmt(r.indirect.se)})</td>
           <td>${fmt(r.diff)} (${fmt(r.seDiff)})</td>
           <td>${fmt(r.z, 2)}</td>
           <td>${fmt(r.p, 3)}</td>
-          <td><span class="chip ${flag}">${label}</span></td></tr>`;
+          <td><span class="chip ${flag}">${label}</span></td></tr>`);
       }
       const g = dbt(rows);
       document.getElementById("dbt").innerHTML = `
         <p>Design-by-treatment Q = <code>${fmt(g.Q, 2)}</code>, df = <code>${g.df}</code>, p = <code>${fmt(g.p, 3)}</code>.
         <span class="chip ${g.p < 0.05 ? 'incon' : 'cons'}">${g.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency"}</span></p>`;
       drawNS(ns);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function drawNS(ns) {
       const svg = document.getElementById("ns-plot");
       const W = 600, H = Math.max(200, 40 + ns.length * 30 + 20);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const padL = 120, padR = 30;
       const plotW = W - padL - padR;
       const allMeans = ns.flatMap(r => [r.direct.mean, r.indirect.mean]);
       const lo = Math.min(0, ...allMeans) - 0.3, hi = Math.max(0, ...allMeans) + 0.3;
       const X = v => padL + (v - lo) / (hi - lo) * plotW;
-      svg.innerHTML += `<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + ns.length * 30}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + ns.length * 30}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"/>`);
       ns.forEach((r, i) => {
         const y = 30 + i * 30;
-        svg.innerHTML += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`;
+        __svgParts.push(`<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`);
         // direct
         const dLo = r.direct.mean - 1.96 * r.direct.se, dHi = r.direct.mean + 1.96 * r.direct.se;
-        svg.innerHTML += `<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"/>`;
-        svg.innerHTML += `<rect x="${X(r.direct.mean) - 3.5}" y="${y - 9.5}" width="7" height="7" fill="var(--accent)"/>`;
+        __svgParts.push(`<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"/>`);
+        __svgParts.push(`<rect x="${X(r.direct.mean) - 3.5}" y="${y - 9.5}" width="7" height="7" fill="var(--accent)"/>`);
         // indirect
         const iLo = r.indirect.mean - 1.96 * r.indirect.se, iHi = r.indirect.mean + 1.96 * r.indirect.se;
-        svg.innerHTML += `<line x1="${X(iLo)}" y1="${y + 6}" x2="${X(iHi)}" y2="${y + 6}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="3 2"/>`;
-        svg.innerHTML += `<rect x="${X(r.indirect.mean) - 3.5}" y="${y + 2.5}" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/>`;
+        __svgParts.push(`<line x1="${X(iLo)}" y1="${y + 6}" x2="${X(iHi)}" y2="${y + 6}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="3 2"/>`);
+        __svgParts.push(`<rect x="${X(r.indirect.mean) - 3.5}" y="${y + 2.5}" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/>`);
       });
       // legend
-      svg.innerHTML += `<rect x="${padL}" y="10" width="7" height="7" fill="var(--accent)"/><text x="${padL + 12}" y="17" font-size="10" fill="currentColor">direct</text>`;
-      svg.innerHTML += `<rect x="${padL + 70}" y="10" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/><text x="${padL + 82}" y="17" font-size="10" fill="currentColor">indirect</text>`;
+      __svgParts.push(`<rect x="${padL}" y="10" width="7" height="7" fill="var(--accent)"/><text x="${padL + 12}" y="17" font-size="10" fill="currentColor">direct</text>`);
+      __svgParts.push(`<rect x="${padL + 70}" y="10" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/><text x="${padL + 82}" y="17" font-size="10" fill="currentColor">indirect</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

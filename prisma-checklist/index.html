@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Interactive PRISMA 2020 checklist (27 items) with progress donut and JSON export.">
   <meta name="color-scheme" content="light dark">
   <title>PRISMA 2020 Checklist</title>
@@ -230,7 +231,7 @@
         { v: c.partial, color: "var(--partial)" },
         { v: c.no + c.todo, color: "var(--todo)" },
       ];
-      svg.innerHTML = "";
+      const __svgParts = [""];
       let acc = 0;
       for (const s of slices) {
         if (s.v === 0) continue;
@@ -239,21 +240,23 @@
         const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
         const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
         const large = (a2 - a1) > Math.PI ? 1 : 0;
-        svg.innerHTML += `<path d="M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}" fill="none" stroke="${s.color}" stroke-width="${w}" opacity="0.9"/>`;
+        __svgParts.push(`<path d="M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}" fill="none" stroke="${s.color}" stroke-width="${w}" opacity="0.9"/>`);
         acc += s.v;
       }
       // centre circle for donut look
-      svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r - w/2 - 2}" fill="var(--panel)"/>`;
+      __svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${r - w/2 - 2}" fill="var(--panel)"/>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     function drawSections() {
       const host = document.getElementById("section-progress");
-      host.innerHTML = "";
+      const __hostParts = [""];
       for (const [sec, items] of ITEMS) {
         const total = items.length;
         const done = items.reduce((a, [n]) => a + ((STATE[n]?.status === "yes") ? 1 : 0), 0);
         const frac = Math.round(100 * done / total);
-        host.innerHTML += `
+        __hostParts.push(`
           <div style="margin-bottom:0.6rem">
             <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-bottom:0.2rem">
               <span>${sec}</span><span>${done}/${total}</span>
@@ -261,8 +264,10 @@
             <div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden">
               <div style="width:${frac}%; height:100%; background:var(--accent)"></div>
             </div>
-          </div>`;
+          </div>`);
       }
+      host.innerHTML = __hostParts.join("");
+
     }
 
     document.getElementById("btn-save").addEventListener("click", () => {

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:">
   <meta name="description" content="Extract effect estimates from RCT PDFs and text via a locally-running rct-extractor-v2 API, with an optional local-LLM verifier.">
   <meta name="color-scheme" content="light dark">
   <title>RCT Extractor</title>
@@ -134,11 +135,10 @@
   </footer>
 
   <script src="../shared/localllm.js"></script>
-  <!-- PDF.js for browser-side text extraction -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs" type="module"></script>
+  <!-- PDF.js for browser-side text extraction (self-hosted for SRI / offline / strict CSP) -->
   <script type="module">
-    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs";
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs";
+    import * as pdfjsLib from "./vendor/pdf.min.mjs";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.min.mjs";
 
     const apiUrlEl = document.getElementById("api-url");
     const textEl = document.getElementById("text");
@@ -309,6 +309,7 @@
       // Scale-aware agreement: ratio types → compare on the log scale; linear types → absolute.
       // Both use a 5% tolerance in their natural-comparison space.
       const ratioSet = new Set(["HR", "OR", "RR", "IRR"]);
+      const NEAR_ZERO = 1e-6;  // both effectively zero → treat as agree (trivial magnitude)
       const rows = regexExt.map(r => {
         const rx = { type: r.effect_type, est: r.point_estimate, lo: r.ci?.lower, hi: r.ci?.upper };
         const matches = llmItems.filter(l => l.type === rx.type)
@@ -316,11 +317,16 @@
         const m = matches[0];
         let agree = false;
         if (m && Number.isFinite(m.estimate) && Number.isFinite(rx.est)) {
-          if (ratioSet.has(rx.type) && rx.est > 0 && m.estimate > 0) {
+          // Both near zero → numeric noise below measurement precision, call it agree.
+          if (Math.abs(rx.est) < NEAR_ZERO && Math.abs(m.estimate) < NEAR_ZERO) {
+            agree = true;
+          } else if (ratioSet.has(rx.type) && rx.est > 0 && m.estimate > 0) {
             // Log-scale relative difference: |ln(a) - ln(b)| < 0.05 ≈ 5% on ratio scale.
             agree = Math.abs(Math.log(m.estimate) - Math.log(rx.est)) < 0.05;
           } else {
-            // Linear types (MD, SMD, RD): absolute diff relative to the larger magnitude.
+            // Linear types (MD, SMD, RD): relative diff, with an absolute floor of 0.01
+            // for the denominator so effects near zero don't trigger spurious disagreement
+            // from tiny numeric noise.
             const denom = Math.max(Math.abs(rx.est), Math.abs(m.estimate), 0.01);
             agree = Math.abs(m.estimate - rx.est) / denom < 0.05;
           }
@@ -340,20 +346,21 @@
 
     function drawConfidenceBar(extractions) {
       const svg = document.getElementById("plot");
-      svg.innerHTML = "";
-      if (!extractions.length) return;
+      if (!extractions.length) { svg.innerHTML = ""; return; }
       const W = 600, H = 120, padL = 120, padR = 30, padT = 15, padB = 25;
       const rowH = (H - padT - padB) / extractions.length;
+      const parts = [];
       extractions.forEach((e, i) => {
         const y = padT + i * rowH + 2;
         const c = (e.confidence ?? 0);
         const w = c * (W - padL - padR);
         const color = c >= 0.8 ? "var(--ok)" : c >= 0.5 ? "var(--warn)" : "var(--err)";
-        svg.innerHTML += `<text x="${padL - 8}" y="${y + rowH / 2 + 3}" text-anchor="end" font-size="11" fill="currentColor">${esc(e.effect_type || "?")} ${esc(e.point_estimate ?? "")}</text>`;
-        svg.innerHTML += `<rect x="${padL}" y="${y}" width="${w}" height="${rowH - 4}" fill="${color}" opacity="0.85"/>`;
-        svg.innerHTML += `<text x="${padL + w + 6}" y="${y + rowH / 2 + 3}" font-size="10" fill="currentColor">${(c * 100).toFixed(0)}%</text>`;
+        parts.push(`<text x="${padL - 8}" y="${y + rowH / 2 + 3}" text-anchor="end" font-size="11" fill="currentColor">${esc(e.effect_type || "?")} ${esc(e.point_estimate ?? "")}</text>`);
+        parts.push(`<rect x="${padL}" y="${y}" width="${w}" height="${rowH - 4}" fill="${color}" opacity="0.85"/>`);
+        parts.push(`<text x="${padL + w + 6}" y="${y + rowH / 2 + 3}" font-size="10" fill="currentColor">${(c * 100).toFixed(0)}%</text>`);
       });
-      svg.innerHTML += `<text x="${padL + (W - padL - padR) / 2}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Extractor confidence</text>`;
+      parts.push(`<text x="${padL + (W - padL - padR) / 2}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Extractor confidence</text>`);
+      svg.innerHTML = parts.join("");
     }
 
     async function run() {

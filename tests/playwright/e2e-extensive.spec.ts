@@ -15,6 +15,27 @@ const fixturesDir = resolve(__dirname, "fixtures");
 const EXTRACTOR_URL = "http://127.0.0.1:8000";
 const OLLAMA_URL = "http://127.0.0.1:11434";
 
+interface OllamaTagModel { name: string; modified_at?: string; size?: number; digest?: string }
+interface OllamaTagsResponse { models?: OllamaTagModel[] }
+
+interface Extraction {
+  effect_type: string;
+  point_estimate: number;
+  ci: { lower: number; upper: number };
+  confidence: number;
+  source_text: string;
+}
+interface BusRow {
+  source: string;
+  study: string;
+  imported_at: string;
+  scale_family: "ratio" | "linear";
+  scale: string;
+  te: number;
+  se: number;
+}
+interface ExtractorWindow extends Window { LAST_EXTRACTIONS?: Extraction[] }
+
 let extractorUp = false;
 let ollamaUp = false;
 let ollamaModels: string[] = [];
@@ -25,8 +46,10 @@ test.beforeAll(async () => {
     const r = await fetch(`${OLLAMA_URL}/api/tags`);
     if (r.ok) {
       ollamaUp = true;
-      const j = await r.json();
-      ollamaModels = (j.models || []).map((m: any) => m.name).filter((n: any) => typeof n === "string");
+      const j = (await r.json()) as OllamaTagsResponse;
+      ollamaModels = (j.models ?? [])
+        .map(m => (typeof m?.name === "string" ? m.name : null))
+        .filter((n): n is string => n !== null);
     }
   } catch {}
 });
@@ -73,6 +96,28 @@ test("RCT Extractor — extractor 5xx surfaces an error", async ({ page }) => {
   }, { timeout: 10_000 });
 });
 
+test("RCT Extractor — extractor 422 validation error surfaces detail", async ({ page }) => {
+  test.skip(!extractorUp, "extractor not running");
+  // 422 = FastAPI's default validation error shape: {"detail":[{loc,msg,type},...]}
+  await page.route("**/extract", (route: Route) => {
+    route.fulfill({
+      status: 422,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: [{ loc: ["body", "text"], msg: "field required", type: "value_error.missing" }] }),
+    });
+  });
+  await page.goto("/rct-extractor/");
+  await expect(page.locator("#api-status")).toHaveClass(/ok/, { timeout: 5_000 });
+  await page.locator("#btn-run").click();
+  await page.waitForFunction(() => {
+    const b = document.getElementById("res-body");
+    return b && /HTTP 422|422|Error/i.test(b.textContent || "");
+  }, { timeout: 10_000 });
+  const body = await page.locator("#res-body").textContent();
+  // Must include the status code so the user can diagnose — not silently succeed
+  expect(body).toMatch(/422|Error/i);
+});
+
 test("RCT Extractor — PDF upload and extract", async ({ page }) => {
   test.skip(!extractorUp, "extractor not running");
   await page.goto("/rct-extractor/");
@@ -99,17 +144,17 @@ test("RCT Extractor — Send to MA Workbench pushes a ratio-only extraction", as
   // array. This isolates the bus-push logic from the extractor's false-positive behaviour
   // which is tracked separately in the source repo.
   await page.evaluate(() => {
-    (window as any).LAST_EXTRACTIONS = [
+    (window as unknown as ExtractorWindow).LAST_EXTRACTIONS = [
       { effect_type: "HR", point_estimate: 0.62, ci: { lower: 0.50, upper: 0.77 }, confidence: 0.99, source_text: "hazard ratio 0.62; 95% CI 0.50 to 0.77" },
     ];
     document.getElementById("send-actions")!.style.display = "flex";
   });
   await page.locator("#btn-send-workbench").click();
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("ma-studies-v1") || "null"));
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("ma-studies-v1") || "null") as BusRow[] | null);
   console.log(`  bus contents: ${JSON.stringify(stored)?.slice(0, 250)}`);
   expect(Array.isArray(stored)).toBe(true);
-  expect(stored.length).toBe(1);
-  const r = (stored as any[])[0];
+  expect(stored!.length).toBe(1);
+  const r = stored![0];
   expect(r.source).toBe("rct-extractor");
   expect(r.study).toMatch(/^rct-extractor-/);
   expect(r.imported_at).toMatch(/T/);
@@ -133,7 +178,7 @@ test("RCT Extractor — scale-family guard rejects mixed ratio+linear push", asy
   });
   await page.goto("/rct-extractor/");
   await page.evaluate(() => {
-    (window as any).LAST_EXTRACTIONS = [
+    (window as unknown as ExtractorWindow).LAST_EXTRACTIONS = [
       { effect_type: "HR", point_estimate: 0.75, ci: { lower: 0.65, upper: 0.86 }, confidence: 0.99, source_text: "ratio" },
       { effect_type: "MD", point_estimate: 1.2, ci: { lower: 0.3, upper: 2.1 }, confidence: 0.9, source_text: "linear" },
     ];
@@ -228,7 +273,7 @@ test("RCT Extractor — two sequential bus pushes append across tabs", async ({ 
   // Inject a clean single-extraction state in each tab
   for (const p of [a, b]) {
     await p.evaluate((label) => {
-      (window as any).LAST_EXTRACTIONS = [
+      (window as unknown as ExtractorWindow).LAST_EXTRACTIONS = [
         { effect_type: "HR", point_estimate: 0.75, ci: { lower: 0.65, upper: 0.86 }, confidence: 0.99, source_text: label },
       ];
       document.getElementById("send-actions")!.style.display = "flex";

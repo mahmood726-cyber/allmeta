@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Deduplicate systematic review citations by DOI, normalized title similarity (trigram Jaccard), first-author surname, and year. Browser-only.">
   <meta name="color-scheme" content="light dark">
   <title>Citation Dedup</title>
@@ -338,24 +339,27 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textare
       const maxCount = Math.max(1, ...counts);
       const bars = document.getElementById("hist-bars");
       const ax = document.getElementById("hist-axis");
-      bars.innerHTML = ""; ax.innerHTML = "";
+      const __barsParts = [""]; const __axParts = [""];
 
       const barW = plotW / counts.length;
       counts.forEach((c, i) => {
         const x = padL + i * barW;
         const h = (c / maxCount) * plotH;
         const y = padT + plotH - h;
-        bars.innerHTML += `<rect x="${x + 1}" y="${y}" width="${barW - 2}" height="${h}" fill="var(--accent)" opacity="0.85"/>`;
-        bars.innerHTML += `<text x="${x + barW / 2}" y="${padT + plotH + 14}" text-anchor="middle" font-size="11" fill="currentColor">${i + 1}</text>`;
+        __barsParts.push(`<rect x="${x + 1}" y="${y}" width="${barW - 2}" height="${h}" fill="var(--accent)" opacity="0.85"/>`);
+        __barsParts.push(`<text x="${x + barW / 2}" y="${padT + plotH + 14}" text-anchor="middle" font-size="11" fill="currentColor">${i + 1}</text>`);
         if (c > 0) {
-          bars.innerHTML += `<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" font-size="11" fill="currentColor">${c}</text>`;
+          __barsParts.push(`<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" font-size="11" fill="currentColor">${c}</text>`);
         }
       });
       // axes
-      ax.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      ax.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      ax.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Cluster size</text>`;
-      ax.innerHTML += `<text x="15" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 15 ${padT + plotH / 2})">Clusters</text>`;
+      __axParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __axParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __axParts.push(`<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Cluster size</text>`);
+      __axParts.push(`<text x="15" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 15 ${padT + plotH / 2})">Clusters</text>`);
+      bars.innerHTML = __barsParts.join("");
+      ax.innerHTML = __axParts.join("");
+
     }
 
     // --- exports ---

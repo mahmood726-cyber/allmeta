@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Fit NMA under consistency and full design-inconsistency models; compare via likelihood-ratio test (Higgins 2012).">
   <meta name="color-scheme" content="light dark">
   <title>NMA Global Inconsistency</title>
@@ -199,9 +200,9 @@ C, D, -0.35, 0.14, CD</textarea>
       const p = dDf > 0 ? 1 - pchi(dQ, dDf) : NaN;
 
       const body = document.getElementById("cmp-body");
-      body.innerHTML = "";
-      body.innerHTML += `<tr><td><code>Consistency</code></td><td>${fmt(cons.Q, 2)}</td><td>${cons.df}</td><td>${fmt(cons.tau2, 4)}</td><td>${cons.I2.toFixed(1)}%</td></tr>`;
-      body.innerHTML += `<tr><td><code>Design (full)</code></td><td>${fmt(full.Q, 2)}</td><td>${full.df}</td><td>${fmt(full.tau2, 4)}</td><td>${full.I2.toFixed(1)}%</td></tr>`;
+      const __bodyParts = [""];
+      __bodyParts.push(`<tr><td><code>Consistency</code></td><td>${fmt(cons.Q, 2)}</td><td>${cons.df}</td><td>${fmt(cons.tau2, 4)}</td><td>${cons.I2.toFixed(1)}%</td></tr>`);
+      __bodyParts.push(`<tr><td><code>Design (full)</code></td><td>${fmt(full.Q, 2)}</td><td>${full.df}</td><td>${fmt(full.tau2, 4)}</td><td>${full.I2.toFixed(1)}%</td></tr>`);
 
       const lr = document.getElementById("lr-result");
       const flag = p < 0.05 ? "incon" : "cons";
@@ -210,7 +211,7 @@ C, D, -0.35, 0.14, CD</textarea>
 
       // Per-design residuals under consistency model
       const perBody = document.getElementById("per-body");
-      perBody.innerHTML = "";
+      const __perBodyParts = [""];
       const designs = [...new Set(rows.map(r => r.design))];
       const residuals = [];
       for (const d of designs) {
@@ -221,28 +222,33 @@ C, D, -0.35, 0.14, CD</textarea>
         const meanPred = predArr.reduce((a, b) => a + b, 0) / predArr.length;
         const res = meanObs - meanPred;
         residuals.push({ design: d, obs: meanObs, pred: meanPred, res });
-        perBody.innerHTML += `<tr><td><code>${d}</code></td><td>${fmt(meanObs)}</td><td>${fmt(meanPred)}</td><td>${fmt(res)}</td></tr>`;
+        __perBodyParts.push(`<tr><td><code>${d}</code></td><td>${fmt(meanObs)}</td><td>${fmt(meanPred)}</td><td>${fmt(res)}</td></tr>`);
       }
       drawResiduals(residuals);
+      body.innerHTML = __bodyParts.join("");
+      perBody.innerHTML = __perBodyParts.join("");
+
     }
 
     function drawResiduals(residuals) {
       const svg = document.getElementById("plot");
       const W = 600, H = 260, padL = 80, padR = 20, padT = 20, padB = 50;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const res = residuals.map(r => r.res);
       const maxAbs = Math.max(0.1, ...res.map(Math.abs));
       const X = v => padL + (v + maxAbs) / (2 * maxAbs) * plotW;
-      svg.innerHTML += `<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
       residuals.forEach((r, i) => {
         const y = padT + 10 + i * ((plotH - 20) / Math.max(residuals.length - 1, 1));
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.design}</text>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.design}</text>`);
         const col = Math.abs(r.res) > 0.3 ? "var(--incon)" : "var(--cons)";
-        svg.innerHTML += `<line x1="${X(0)}" y1="${y}" x2="${X(r.res)}" y2="${y}" stroke="${col}" stroke-width="3"/>`;
-        svg.innerHTML += `<circle cx="${X(r.res)}" cy="${y}" r="4" fill="${col}"/>`;
+        __svgParts.push(`<line x1="${X(0)}" y1="${y}" x2="${X(r.res)}" y2="${y}" stroke="${col}" stroke-width="3"/>`);
+        __svgParts.push(`<circle cx="${X(r.res)}" cy="${y}" r="4" fill="${col}"/>`);
       });
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Residual (observed − consistency prediction)</text>`;
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Residual (observed − consistency prediction)</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

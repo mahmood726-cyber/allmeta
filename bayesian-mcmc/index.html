@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Bayesian random-effects meta-analysis with a real Gibbs sampler on the normal-normal model, posterior distribution for mean and tau, and predictive intervals.">
   <meta name="color-scheme" content="light dark">
   <title>Bayesian MA — MCMC</title>
@@ -276,7 +277,7 @@
       const svg = document.getElementById(svgId);
       const W = 600, H = 200, padL = 40, padR = 20, padT = 20, padB = 30;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      svg.innerHTML = "";
+      const __svgParts = [""];
       // KDE via histogram with 50 bins — avoid Math.min(...samples) call-stack overflow
       // on large chains by using a reduce.
       let xMin = Infinity, xMax = -Infinity;
@@ -298,19 +299,21 @@
         path += ` L${X(x)},${Y(counts[i])}`;
       }
       path += ` L${padL + plotW},${padT + plotH} Z`;
-      svg.innerHTML += `<path d="${path}" fill="var(--accent)" fill-opacity="0.35" stroke="var(--accent)"/>`;
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      __svgParts.push(`<path d="${path}" fill="var(--accent)" fill-opacity="0.35" stroke="var(--accent)"/>`);
+      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
       for (const t of [xMin, (xMin + xMax) / 2, xMax]) {
-        svg.innerHTML += `<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`;
+        __svgParts.push(`<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`);
       }
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">${label}</text>`;
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">${label}</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     function drawTrace(chains) {
       const svg = document.getElementById("trace");
       const W = 600, H = 180, padL = 40, padR = 20, padT = 20, padB = 30;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const all = chains.flat();
       let yMin = Infinity, yMax = -Infinity;
       for (const v of all) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }
@@ -322,10 +325,12 @@
           const y = padT + (1 - (chain[i] - yMin) / (yMax - yMin)) * plotH;
           path += (i === 0 ? "M" : "L") + (padL + px) + "," + y + " ";
         }
-        svg.innerHTML += `<path d="${path}" fill="none" stroke="${colors[ci % colors.length]}" opacity="0.7" stroke-width="1"/>`;
+        __svgParts.push(`<path d="${path}" fill="none" stroke="${colors[ci % colors.length]}" opacity="0.7" stroke-width="1"/>`);
       });
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Iteration</text>`;
+      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Iteration</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

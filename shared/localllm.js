@@ -29,11 +29,21 @@
           const r = await fetch(`${this.base}/api/tags`, { method: "GET", signal: ctl.signal });
           if (!r.ok) return { available: false, error: `HTTP ${r.status}` };
           const j = await r.json();
-          const names = (j.models || []).map(m => typeof m.name === "string" ? m.name : null).filter(Boolean);
+          // Bound string fields defensively: a rogue/stale Ollama build could return
+          // arbitrarily long name/modified_at payloads that would poison the UI.
+          const rawModels = Array.isArray(j.models) ? j.models : [];
+          const sanitized = rawModels.slice(0, 200).map(m => {
+            if (!m || typeof m !== "object") return null;
+            const name = typeof m.name === "string" ? m.name.slice(0, 200) : null;
+            const modified_at = typeof m.modified_at === "string" ? m.modified_at.slice(0, 64) : null;
+            const size = Number.isFinite(m.size) ? m.size : null;
+            return name ? { name, modified_at, size } : null;
+          }).filter(Boolean);
+          const names = sanitized.map(m => m.name);
           let def = null;
           for (const pref of PREFERRED_MODELS) { if (names.includes(pref)) { def = pref; break; } }
           if (!def && names.length) def = names[0];
-          return { available: true, models: names, default: def, raw: j };
+          return { available: true, models: names, default: def, raw: { models: sanitized } };
         } catch (e) {
           return { available: false, error: e.message };
         } finally {

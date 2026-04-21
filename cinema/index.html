@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="CINeMA: Confidence In Network Meta-Analysis. Rate six domains per comparison to arrive at High / Moderate / Low / Very low confidence.">
   <meta name="color-scheme" content="light dark">
   <title>CINeMA</title>
@@ -211,7 +212,7 @@
       const cellH = 26;
       const H = padT + ROWS.length * cellH + 30;
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
 
       const levelColor = { none: "var(--none)", some: "var(--some)", major: "var(--major)", unclear: "var(--unclear)" };
       const confColor = { high: "var(--high)", mod: "var(--mod)", low: "var(--low)", vlow: "var(--vlow)" };
@@ -219,24 +220,26 @@
       // headers
       DOMAINS.forEach((d, i) => {
         const x = padL + i * cellW + cellW / 2;
-        svg.innerHTML += `<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" transform="rotate(-20 ${x} ${padT - 6})">${DOMAIN_LABELS[d]}</text>`;
+        __svgParts.push(`<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" transform="rotate(-20 ${x} ${padT - 6})">${DOMAIN_LABELS[d]}</text>`);
       });
       const xConf = padL + DOMAINS.length * cellW + cellW / 2;
-      svg.innerHTML += `<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`;
+      __svgParts.push(`<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`);
 
       ROWS.forEach((r, i) => {
         const y = padT + i * cellH;
-        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc(r.comparison)}</text>`;
+        __svgParts.push(`<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc(r.comparison)}</text>`);
         DOMAINS.forEach((d, j) => {
           const x = padL + j * cellW;
-          svg.innerHTML += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${levelColor[r[d]] || "var(--border)"}" opacity="0.85"/>`;
+          __svgParts.push(`<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${levelColor[r[d]] || "var(--border)"}" opacity="0.85"/>`);
         });
         const score = downgradeScore(r);
         const [cls, label] = confidenceFrom(score);
         const xc = padL + DOMAINS.length * cellW;
-        svg.innerHTML += `<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${confColor[cls]}" opacity="0.85"/>`;
-        svg.innerHTML += `<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`;
+        __svgParts.push(`<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${confColor[cls]}" opacity="0.85"/>`);
+        __svgParts.push(`<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`);
       });
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     renderTable();

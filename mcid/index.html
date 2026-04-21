@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Minimum clinically important difference (MCID) estimation — distribution-based and anchor-based — plus non-inferiority margin derivation.">
   <meta name="color-scheme" content="light dark">
   <title>MCID + Non-inferiority margin</title>
@@ -125,33 +126,37 @@
       }
 
       const tbody = document.getElementById("tbody");
-      tbody.innerHTML = "";
+      const __tbodyParts = [""];
       for (const r of rows) {
-        tbody.innerHTML += `<tr><td><code>${r.m}</code></td><td>${r.v.toFixed(2)}</td><td>${r.rat}</td></tr>`;
+        __tbodyParts.push(`<tr><td><code>${r.m}</code></td><td>${r.v.toFixed(2)}</td><td>${r.rat}</td></tr>`);
       }
       drawScale(rows);
+      tbody.innerHTML = __tbodyParts.join("");
+
     }
 
     function drawScale(rows) {
       const svg = document.getElementById("plot");
       const W = 600, H = Math.max(180, 30 + rows.length * 26 + 30);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const padL = 240, padR = 30;
       const plotW = W - padL - padR;
       const vals = rows.map(r => r.v);
       const maxV = Math.max(1, ...vals.map(Math.abs));
       const X = v => padL + ((v + maxV) / (2 * maxV)) * plotW;
       // axis
-      svg.innerHTML += `<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + rows.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
-      svg.innerHTML += `<line x1="${padL}" y1="${10 + rows.length * 26}" x2="${padL + plotW}" y2="${10 + rows.length * 26}" stroke="currentColor" opacity="0.5"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + rows.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
+      __svgParts.push(`<line x1="${padL}" y1="${10 + rows.length * 26}" x2="${padL + plotW}" y2="${10 + rows.length * 26}" stroke="currentColor" opacity="0.5"/>`);
       rows.forEach((r, i) => {
         const y = 20 + i * 26;
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.m}</text>`;
-        svg.innerHTML += `<rect x="${X(Math.min(0, r.v))}" y="${y - 5}" width="${Math.abs(X(r.v) - X(0))}" height="10" fill="var(--accent)" opacity="0.8"/>`;
-        svg.innerHTML += `<text x="${X(r.v) + (r.v >= 0 ? 6 : -6)}" y="${y + 4}" text-anchor="${r.v >= 0 ? 'start' : 'end'}" font-size="11" fill="currentColor">${r.v.toFixed(2)}</text>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.m}</text>`);
+        __svgParts.push(`<rect x="${X(Math.min(0, r.v))}" y="${y - 5}" width="${Math.abs(X(r.v) - X(0))}" height="10" fill="var(--accent)" opacity="0.8"/>`);
+        __svgParts.push(`<text x="${X(r.v) + (r.v >= 0 ? 6 : -6)}" y="${y + 4}" text-anchor="${r.v >= 0 ? 'start' : 'end'}" font-size="11" fill="currentColor">${r.v.toFixed(2)}</text>`);
       });
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${10 + rows.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Units of the outcome scale</text>`;
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${10 + rows.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Units of the outcome scale</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

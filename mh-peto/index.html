@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Mantel-Haenszel and Peto one-step pooling of 2×2 tables for rare events. No continuity correction needed.">
   <meta name="color-scheme" content="light dark">
   <title>MH / Peto pooling</title>
@@ -216,28 +217,31 @@
       }
 
       const body = document.getElementById("pooled-body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       for (const p of pooled) {
         if (!p) continue;
         const z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
         const pval = 2 * (1 - pnorm(Math.abs(z)));
-        body.innerHTML += `<tr><td><code>${p.name}</code></td><td>${fmt(p.est)}</td><td>[${fmt(p.lo)}, ${fmt(p.hi)}]</td><td>${fmt(z, 2)}</td><td>${fmt(pval, 3)}</td></tr>`;
+        __bodyParts.push(`<tr><td><code>${p.name}</code></td><td>${fmt(p.est)}</td><td>[${fmt(p.lo)}, ${fmt(p.hi)}]</td><td>${fmt(z, 2)}</td><td>${fmt(pval, 3)}</td></tr>`);
       }
 
       const studies = perStudy(rows, measure);
       const perBody = document.getElementById("per-body");
-      perBody.innerHTML = "";
+      const __perBodyParts = [""];
       for (const s of studies) {
-        perBody.innerHTML += `<tr><td>${s.label}</td><td>${s.e1}/${s.n1}</td><td>${s.e2}/${s.n2}</td><td>${fmt(s.est)}</td><td>[${fmt(s.lo)}, ${fmt(s.hi)}]</td></tr>`;
+        __perBodyParts.push(`<tr><td>${s.label}</td><td>${s.e1}/${s.n1}</td><td>${s.e2}/${s.n2}</td><td>${fmt(s.est)}</td><td>[${fmt(s.lo)}, ${fmt(s.hi)}]</td></tr>`);
       }
       drawForest(studies, pooled, measure);
+      body.innerHTML = __bodyParts.join("");
+      perBody.innerHTML = __perBodyParts.join("");
+
     }
 
     function drawForest(studies, pooled, measure) {
       const svg = document.getElementById("forest");
       const W = 600, H = Math.max(200, 40 + (studies.length + pooled.length + 1) * 26);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const padL = 130, padR = 30;
       const plotW = W - padL - padR;
       const all = [...studies, ...pooled.filter(Boolean)];
@@ -250,20 +254,22 @@
       const pad = (hi - lo) * 0.1 || 0.3;
       const X = v => padL + (mapFn(v) - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
       const null_ = logScale ? 1 : 0;
-      svg.innerHTML += `<line x1="${X(null_)}" y1="10" x2="${X(null_)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      __svgParts.push(`<line x1="${X(null_)}" y1="10" x2="${X(null_)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
       let y = 25;
       studies.forEach(s => {
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${s.label}</text>`;
-        svg.innerHTML += `<line x1="${X(s.lo)}" y1="${y}" x2="${X(s.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`;
-        svg.innerHTML += `<rect x="${X(s.est) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${s.label}</text>`);
+        __svgParts.push(`<line x1="${X(s.lo)}" y1="${y}" x2="${X(s.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`);
+        __svgParts.push(`<rect x="${X(s.est) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
         y += 22;
       });
       y += 6;
       pooled.filter(Boolean).forEach(p => {
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">${p.name}</text>`;
-        svg.innerHTML += `<polygon points="${X(p.lo)},${y} ${X(p.est)},${y - 7} ${X(p.hi)},${y} ${X(p.est)},${y + 7}" fill="var(--warn)" opacity="0.9"/>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">${p.name}</text>`);
+        __svgParts.push(`<polygon points="${X(p.lo)},${y} ${X(p.est)},${y - 7} ${X(p.hi)},${y} ${X(p.est)},${y + 7}" fill="var(--warn)" opacity="0.9"/>`);
         y += 24;
       });
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

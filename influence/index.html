@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Influence diagnostics: Cook's distance, hat values, studentized residuals, leave-one-out pooled estimate, per study.">
   <meta name="color-scheme" content="light dark">
   <title>Influence Diagnostics</title>
@@ -141,11 +142,11 @@
       });
 
       const body = document.getElementById("body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       const hatThreshold = 3 / k;
       for (const d of diag) {
         const flag = d.cooksD > 1 || d.hat > hatThreshold || Math.abs(d.resid) > 2 ? "flag" : "";
-        body.innerHTML += `<tr class="${flag}">
+        __bodyParts.push(`<tr class="${flag}">
           <td>${d.label}</td>
           <td>${fmt(d.te)}</td>
           <td>${fmt(d.resid, 2)}</td>
@@ -154,18 +155,20 @@
           <td>${fmt(d.dffits, 3)}</td>
           <td>${fmt(d.covRatio, 3)}</td>
           <td>${fmt(d.loo_mu)} (${fmt(d.loo_seMu)})</td>
-        </tr>`;
+        </tr>`);
       }
-      body.innerHTML += `<tr style="background:var(--accent-soft); font-weight:700"><td colspan="7">Full-sample pooled</td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td></tr>`;
+      __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:700"><td colspan="7">Full-sample pooled</td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td></tr>`);
       drawLOO(diag, full);
       drawInfluence(diag);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function drawLOO(diag, full) {
       const svg = document.getElementById("loo-plot");
       const W = 600, H = Math.max(300, 40 + diag.length * 26 + 40);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const padL = 130, padR = 30;
       const plotW = W - padL - padR;
       const mus = diag.map(d => d.loo_mu);
@@ -177,16 +180,18 @@
       const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
 
       // Full pool reference
-      svg.innerHTML += `<line x1="${X(full.mu)}" y1="20" x2="${X(full.mu)}" y2="${H - 30}" stroke="var(--warn)" stroke-dasharray="4 2" opacity="0.6"/>`;
-      svg.innerHTML += `<text x="${X(full.mu) + 4}" y="16" font-size="10" fill="var(--warn)" opacity="0.8">full-sample mean</text>`;
+      __svgParts.push(`<line x1="${X(full.mu)}" y1="20" x2="${X(full.mu)}" y2="${H - 30}" stroke="var(--warn)" stroke-dasharray="4 2" opacity="0.6"/>`);
+      __svgParts.push(`<text x="${X(full.mu) + 4}" y="16" font-size="10" fill="var(--warn)" opacity="0.8">full-sample mean</text>`);
 
       diag.forEach((d, i) => {
         const y = 35 + i * 26;
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${d.label}</text>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${d.label}</text>`);
         const l = d.loo_mu - 1.96 * d.loo_seMu, h = d.loo_mu + 1.96 * d.loo_seMu;
-        svg.innerHTML += `<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`;
-        svg.innerHTML += `<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`;
+        __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`);
+        __svgParts.push(`<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
       });
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     function drawInfluence(diag) {
@@ -199,19 +204,21 @@
       const yMax = Math.max(1.2, ...cookD);
       const X = v => padL + v / xMax * plotW;
       const Y = v => padT + (1 - v / yMax) * plotH;
-      svg.innerHTML = "";
-      svg.innerHTML += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
+      const __svgParts = [""];
+      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
       // Thresholds
-      svg.innerHTML += `<line x1="${X(3 / diag.length)}" y1="${padT}" x2="${X(3 / diag.length)}" y2="${padT + plotH}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`;
-      svg.innerHTML += `<line x1="${padL}" y1="${Y(1)}" x2="${padL + plotW}" y2="${Y(1)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`;
+      __svgParts.push(`<line x1="${X(3 / diag.length)}" y1="${padT}" x2="${X(3 / diag.length)}" y2="${padT + plotH}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
+      __svgParts.push(`<line x1="${padL}" y1="${Y(1)}" x2="${padL + plotW}" y2="${Y(1)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
       for (const d of diag) {
         const flag = d.cooksD > 1 || d.hat > 3 / diag.length || Math.abs(d.resid) > 2;
-        svg.innerHTML += `<circle cx="${X(d.hat)}" cy="${Y(d.cooksD)}" r="5" fill="${flag ? 'var(--flag)' : 'var(--accent)'}" opacity="0.85"/>`;
-        svg.innerHTML += `<text x="${X(d.hat) + 7}" y="${Y(d.cooksD) + 4}" font-size="10" fill="currentColor">${d.label}</text>`;
+        __svgParts.push(`<circle cx="${X(d.hat)}" cy="${Y(d.cooksD)}" r="5" fill="${flag ? 'var(--flag)' : 'var(--accent)'}" opacity="0.85"/>`);
+        __svgParts.push(`<text x="${X(d.hat) + 7}" y="${Y(d.cooksD) + 4}" font-size="10" fill="currentColor">${d.label}</text>`);
       }
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Hat value</text>`;
-      svg.innerHTML += `<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">Cook's D</text>`;
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Hat value</text>`);
+      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">Cook's D</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

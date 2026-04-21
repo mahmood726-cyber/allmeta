@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="GRADE-CERQual: Confidence in Evidence from Reviews of Qualitative research. Rate four components per review finding.">
   <meta name="color-scheme" content="light dark">
   <title>GRADE-CERQual</title>
@@ -196,7 +197,7 @@
       const cellH = 28;
       const H = padT + ROWS.length * cellH + 30;
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
 
       const colors = { none: "var(--none)", minor: "var(--minor)", mod: "var(--mod)", ser: "var(--ser)" };
       const cColors = { high: "var(--high)", modc: "var(--modc)", low: "var(--low)", vlow: "var(--vlow)" };
@@ -204,23 +205,25 @@
 
       COMPONENTS.forEach((c, i) => {
         const x = padL + i * cellW + cellW / 2;
-        svg.innerHTML += `<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor">${labels[c]}</text>`;
+        __svgParts.push(`<text x="${x}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor">${labels[c]}</text>`);
       });
       const xConf = padL + COMPONENTS.length * cellW + cellW / 2;
-      svg.innerHTML += `<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`;
+      __svgParts.push(`<text x="${xConf}" y="${padT - 6}" text-anchor="middle" font-size="10" fill="currentColor" font-weight="600">Confidence</text>`);
 
       ROWS.forEach((r, i) => {
         const y = padT + i * cellH;
-        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc((r.finding || "").slice(0, 40))}</text>`;
+        __svgParts.push(`<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc((r.finding || "").slice(0, 40))}</text>`);
         COMPONENTS.forEach((c, j) => {
           const x = padL + j * cellW;
-          svg.innerHTML += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${colors[r[c]] || "var(--border)"}" opacity="0.85"/>`;
+          __svgParts.push(`<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${colors[r[c]] || "var(--border)"}" opacity="0.85"/>`);
         });
         const [cls, label] = conf(r);
         const xc = padL + COMPONENTS.length * cellW;
-        svg.innerHTML += `<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${cColors[cls]}" opacity="0.9"/>`;
-        svg.innerHTML += `<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`;
+        __svgParts.push(`<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${cColors[cls]}" opacity="0.9"/>`);
+        __svgParts.push(`<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`);
       });
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     render();

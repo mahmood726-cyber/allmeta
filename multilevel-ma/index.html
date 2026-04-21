@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Three-level random-effects meta-analysis for dependent effect sizes nested within studies (metafor::rma.mv approximation).">
   <meta name="color-scheme" content="light dark">
   <title>Multi-level MA</title>
@@ -210,12 +211,14 @@
       // per-row table + forest
       const totalW = f.weights.reduce((a, b) => a + b, 0);
       const body = document.getElementById("body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       rows.forEach((r, i) => {
-        body.innerHTML += `<tr><td>${r.study}</td><td>${r.label}</td><td>${fmt(r.te)}</td><td>${fmt(r.se)}</td><td>${(100 * f.weights[i] / totalW).toFixed(1)}%</td></tr>`;
+        __bodyParts.push(`<tr><td>${r.study}</td><td>${r.label}</td><td>${fmt(r.te)}</td><td>${fmt(r.se)}</td><td>${(100 * f.weights[i] / totalW).toFixed(1)}%</td></tr>`);
       });
-      body.innerHTML += `<tr class="pooled-row"><td colspan="2"><strong>Pooled</strong></td><td colspan="2"><strong>${fmt(f.mu)} [${fmt(f.mu - 1.96 * f.seMu)}, ${fmt(f.mu + 1.96 * f.seMu)}]</strong></td><td>100%</td></tr>`;
+      __bodyParts.push(`<tr class="pooled-row"><td colspan="2"><strong>Pooled</strong></td><td colspan="2"><strong>${fmt(f.mu)} [${fmt(f.mu - 1.96 * f.seMu)}, ${fmt(f.mu + 1.96 * f.seMu)}]</strong></td><td>100%</td></tr>`);
       drawForest(rows, f);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function drawForest(rows, f) {
@@ -226,7 +229,7 @@
       const H = Math.max(300, 40 + n * rowH + 30);
       const W = 600;
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const padL = 180, padR = 30;
       const plotW = W - padL - padR;
       const allLo = rows.map(r => r.te - 1.96 * r.se), allHi = rows.map(r => r.te + 1.96 * r.se);
@@ -234,26 +237,28 @@
       const pad = (hi - lo) * 0.1 || 0.3;
       const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
 
-      svg.innerHTML += `<line x1="${X(0)}" y1="15" x2="${X(0)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="15" x2="${X(0)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
 
       let y = 30;
       for (const s of studies) {
-        svg.innerHTML += `<text x="10" y="${y + 4}" font-size="12" fill="currentColor" font-weight="700">Study ${s}</text>`;
+        __svgParts.push(`<text x="10" y="${y + 4}" font-size="12" fill="currentColor" font-weight="700">Study ${s}</text>`);
         y += rowH;
         const grp = rows.filter(r => r.study === s);
         for (const r of grp) {
-          svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label || ""}</text>`;
+          __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label || ""}</text>`);
           const l = r.te - 1.96 * r.se, h = r.te + 1.96 * r.se;
-          svg.innerHTML += `<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`;
-          svg.innerHTML += `<rect x="${X(r.te) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`;
+          __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`);
+          __svgParts.push(`<rect x="${X(r.te) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
           y += rowH;
         }
       }
       // pooled diamond
       y += 6;
       const px = X(f.mu), pl = X(f.mu - 1.96 * f.seMu), ph = X(f.mu + 1.96 * f.seMu);
-      svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">Pooled</text>`;
-      svg.innerHTML += `<polygon points="${pl},${y} ${px},${y - 8} ${ph},${y} ${px},${y + 8}" fill="var(--warn)" opacity="0.9"/>`;
+      __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">Pooled</text>`);
+      __svgParts.push(`<polygon points="${pl},${y} ${px},${y - 8} ${ph},${y} ${px},${y + 8}" fill="var(--warn)" opacity="0.9"/>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

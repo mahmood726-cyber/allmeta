@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="p-curve (Simonsohn 2014) and p-uniform (van Assen 2015) for publication-bias-robust effect-size estimation from p-values alone.">
   <meta name="color-scheme" content="light dark">
   <title>p-curve + p-uniform</title>
@@ -166,13 +167,13 @@
       }
 
       const testsBody = document.getElementById("tests-body");
-      testsBody.innerHTML = "";
+      const __testsBodyParts = [""];
       const flagSkew = p_skew < 0.05 ? "ok" : "bad";
       const labelSkew = p_skew < 0.05 ? "evidential value" : "no evidential value";
-      testsBody.innerHTML += `<tr><td><code>Right-skew (full p-curve)</code></td><td>χ² = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`;
+      __testsBodyParts.push(`<tr><td><code>Right-skew (full p-curve)</code></td><td>χ² = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`);
       const flagFlat = p_flat < 0.05 ? "ok" : "bad";
       const labelFlat = p_flat < 0.05 ? "non-flat" : "flat (consistent with null + p-hacking)";
-      testsBody.innerHTML += `<tr><td><code>Flatness (vs uniform)</code></td><td>z = ${fmt(z_flat, 2)}</td><td>${fmt(p_flat, 3)}</td><td><span class="chip ${flagFlat}">${labelFlat}</span></td></tr>`;
+      __testsBodyParts.push(`<tr><td><code>Flatness (vs uniform)</code></td><td>z = ${fmt(z_flat, 2)}</td><td>${fmt(p_flat, 3)}</td><td><span class="chip ${flagFlat}">${labelFlat}</span></td></tr>`);
 
       const puBody = document.getElementById("pu-body");
       puBody.innerHTML = `
@@ -181,6 +182,8 @@
         <tr><td>Equivalent Cohen's d (approx, large-n)</td><td>${fmt(delta / Math.sqrt(1), 3)}</td></tr>`;
 
       drawCurve(raw);
+      testsBody.innerHTML = __testsBodyParts.join("");
+
     }
 
     function pchi(x, k) {
@@ -194,7 +197,7 @@
       const svg = document.getElementById("plot");
       const W = 600, H = 240, padL = 50, padR = 20, padT = 20, padB = 40;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      svg.innerHTML = "";
+      const __svgParts = [""];
       // Bins: 0-.01, .01-.02, .02-.03, .03-.04, .04-.05
       const bins = [0, 0.01, 0.02, 0.03, 0.04, 0.05];
       const counts = Array(bins.length - 1).fill(0);
@@ -214,25 +217,27 @@
       const Y = v => padT + (1 - v / maxY) * plotH;
 
       // Null line (flat at 20)
-      svg.innerHTML += `<line x1="${padL}" y1="${Y(20)}" x2="${padL + plotW}" y2="${Y(20)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity="0.6"/>`;
-      svg.innerHTML += `<text x="${padL + plotW - 8}" y="${Y(20) - 5}" text-anchor="end" font-size="10" fill="var(--muted)">null (uniform)</text>`;
+      __svgParts.push(`<line x1="${padL}" y1="${Y(20)}" x2="${padL + plotW}" y2="${Y(20)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity="0.6"/>`);
+      __svgParts.push(`<text x="${padL + plotW - 8}" y="${Y(20) - 5}" text-anchor="end" font-size="10" fill="var(--muted)">null (uniform)</text>`);
 
       // Expected 33% line
       const e33path = expected33.map((v, i) => (i === 0 ? "M" : "L") + X(i) + "," + Y(v)).join(" ");
-      svg.innerHTML += `<path d="${e33path}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`;
-      svg.innerHTML += `<text x="${X(0) + 14}" y="${Y(expected33[0]) - 4}" font-size="10" fill="var(--warn)">33% power</text>`;
+      __svgParts.push(`<path d="${e33path}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`);
+      __svgParts.push(`<text x="${X(0) + 14}" y="${Y(expected33[0]) - 4}" font-size="10" fill="var(--warn)">33% power</text>`);
 
       // Observed bars
       for (let i = 0; i < counts.length; i++) {
         const bw = plotW / counts.length;
         const x = padL + i * bw;
         const h = (obs[i] / maxY) * plotH;
-        svg.innerHTML += `<rect x="${x + 4}" y="${padT + plotH - h}" width="${bw - 8}" height="${h}" fill="var(--accent)" opacity="0.85"/>`;
-        svg.innerHTML += `<text x="${X(i)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor">${(bins[i] * 100).toFixed(0)}–${(bins[i + 1] * 100).toFixed(0)}</text>`;
-        if (obs[i] > 0) svg.innerHTML += `<text x="${X(i)}" y="${padT + plotH - h - 5}" text-anchor="middle" font-size="10" fill="currentColor">${obs[i].toFixed(0)}%</text>`;
+        __svgParts.push(`<rect x="${x + 4}" y="${padT + plotH - h}" width="${bw - 8}" height="${h}" fill="var(--accent)" opacity="0.85"/>`);
+        __svgParts.push(`<text x="${X(i)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor">${(bins[i] * 100).toFixed(0)}–${(bins[i + 1] * 100).toFixed(0)}</text>`);
+        if (obs[i] > 0) __svgParts.push(`<text x="${X(i)}" y="${padT + plotH - h - 5}" text-anchor="middle" font-size="10" fill="currentColor">${obs[i].toFixed(0)}%</text>`);
       }
-      svg.innerHTML += `<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">p-value bin (%)</text>`;
-      svg.innerHTML += `<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">% of studies</text>`;
+      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">p-value bin (%)</text>`);
+      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">% of studies</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

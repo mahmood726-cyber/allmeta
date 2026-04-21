@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="Bucher method for indirect comparison: combine two direct estimates sharing a common comparator to estimate the unobserved comparison.">
   <meta name="color-scheme" content="light dark">
   <title>Bucher Indirect Comparison</title>
@@ -112,19 +113,21 @@
         { name: "A vs B (indirect, Bucher)", est: dAB, se: seAB },
       ];
       const body = document.getElementById("body");
-      body.innerHTML = "";
+      const __bodyParts = [""];
       for (const r of rows) {
         const lo = r.est - 1.96 * r.se, hi = r.est + 1.96 * r.se;
         const disp = scale === "log" ? { est: Math.exp(r.est), lo: Math.exp(lo), hi: Math.exp(hi) } : { est: r.est, lo, hi };
         const pShow = r.name.startsWith("A vs B") ? fmt(p, 3) : "";
-        body.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(disp.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(disp.lo)}, ${fmt(disp.hi)}]</td><td>${pShow}</td></tr>`;
+        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(disp.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(disp.lo)}, ${fmt(disp.hi)}]</td><td>${pShow}</td></tr>`);
       }
       draw(rows, scale);
+      body.innerHTML = __bodyParts.join("");
+
     }
 
     function draw(rows, scale) {
       const svg = document.getElementById("plot");
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const W = 600, H = 180;
       const padL = 220, padR = 30;
       const plotW = W - padL - padR;
@@ -133,17 +136,19 @@
       const lo = Math.min(0, ...allLo), hi = Math.max(0, ...allHi);
       const pad = (hi - lo) * 0.1 || 0.3;
       const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
-      svg.innerHTML += `<line x1="${X(0)}" y1="10" x2="${X(0)}" y2="${H - 20}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`;
+      __svgParts.push(`<line x1="${X(0)}" y1="10" x2="${X(0)}" y2="${H - 20}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
       rows.forEach((r, i) => {
         const y = 30 + i * 40;
-        svg.innerHTML += `<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.name}</text>`;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.name}</text>`);
         const l = r.est - 1.96 * r.se, h = r.est + 1.96 * r.se;
-        svg.innerHTML += `<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>`;
+        __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>`);
         const isIndirect = r.name.includes("indirect");
         const c = isIndirect ? "var(--warn)" : "var(--accent)";
-        svg.innerHTML += `<rect x="${X(r.est) - 5}" y="${y - 5}" width="10" height="10" fill="${c}"/>`;
+        __svgParts.push(`<rect x="${X(r.est) - 5}" y="${y - 5}" width="10" height="10" fill="${c}"/>`);
       });
-      svg.innerHTML += `<text x="${X(0)}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${scale === "log" ? "log scale (0 = no effect)" : "0 = no effect"}</text>`;
+      __svgParts.push(`<text x="${X(0)}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${scale === "log" ? "log scale (0 = no effect)" : "0 = no effect"}</text>`);
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

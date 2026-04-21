@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:">
   <meta name="description" content="QUADAS-2: Quality Assessment of Diagnostic Accuracy Studies — 4 domains × risk-of-bias and applicability concerns.">
   <meta name="color-scheme" content="light dark">
   <title>QUADAS-2</title>
@@ -231,21 +232,23 @@
 
     function renderSummary(r) {
       const tbody = document.querySelector("#summary-tbl tbody");
-      tbody.innerHTML = "";
+      const __tbodyParts = [""];
       for (const d of DOMAINS) {
         const rob = r[d.id].rob;
         const app = r[d.id].app;
-        tbody.innerHTML += `<tr>
+        __tbodyParts.push(`<tr>
           <td>${d.name}</td>
           <td><span class="chip ${rob}">${rob}</span></td>
           <td>${app === null ? `<span style="color:var(--muted); font-size:0.78rem">N/A (not assessed for D4)</span>` : (app ? `<span class="chip ${app}">${app}</span>` : `<span style="color:var(--muted); font-size:0.78rem">Not rated</span>`)}</td>
-        </tr>`;
+        </tr>`);
       }
+      tbody.innerHTML = __tbodyParts.join("");
+
     }
 
     function drawTraffic(r) {
       const svg = document.getElementById("traffic");
-      svg.innerHTML = "";
+      const __svgParts = [""];
       const W = 600, padL = 140, padT = 30;
       const cols = DOMAINS.length * 2;
       const cellW = (W - padL - 30) / cols;
@@ -254,32 +257,34 @@
       DOMAINS.forEach((d, i) => {
         const xRob = padL + (2 * i) * cellW + cellW / 2;
         const xApp = padL + (2 * i + 1) * cellW + cellW / 2;
-        svg.innerHTML += `<text x="${xRob}" y="${padT - 2}" text-anchor="middle" font-size="10" fill="currentColor">${d.id}/RoB</text>`;
+        __svgParts.push(`<text x="${xRob}" y="${padT - 2}" text-anchor="middle" font-size="10" fill="currentColor">${d.id}/RoB</text>`);
         if (d.applicability) {
-          svg.innerHTML += `<text x="${xApp}" y="${padT - 2}" text-anchor="middle" font-size="10" fill="currentColor">${d.id}/App</text>`;
+          __svgParts.push(`<text x="${xApp}" y="${padT - 2}" text-anchor="middle" font-size="10" fill="currentColor">${d.id}/App</text>`);
         }
       });
-      svg.innerHTML += `<text x="${padL - 10}" y="${padT + 40}" text-anchor="end" font-size="12" fill="currentColor">Study 1</text>`;
+      __svgParts.push(`<text x="${padL - 10}" y="${padT + 40}" text-anchor="end" font-size="12" fill="currentColor">Study 1</text>`);
       DOMAINS.forEach((d, i) => {
         const xRob = padL + (2 * i) * cellW + cellW / 2;
         const cy = padT + 40;
         const robVal = r[d.id].rob;
-        svg.innerHTML += `<circle cx="${xRob}" cy="${cy}" r="15" fill="${colors[robVal]}" opacity="0.85"/>`;
+        __svgParts.push(`<circle cx="${xRob}" cy="${cy}" r="15" fill="${colors[robVal]}" opacity="0.85"/>`);
         const sym = { low: "+", high: "×", unclear: "?" }[robVal];
-        svg.innerHTML += `<text x="${xRob}" y="${cy + 5}" text-anchor="middle" font-size="15" fill="white" font-weight="700">${sym}</text>`;
+        __svgParts.push(`<text x="${xRob}" y="${cy + 5}" text-anchor="middle" font-size="15" fill="white" font-weight="700">${sym}</text>`);
         if (d.applicability && r[d.id].app) {
           const xApp = padL + (2 * i + 1) * cellW + cellW / 2;
           const appVal = r[d.id].app;
-          svg.innerHTML += `<circle cx="${xApp}" cy="${cy}" r="15" fill="${colors[appVal]}" opacity="0.85"/>`;
-          svg.innerHTML += `<text x="${xApp}" y="${cy + 5}" text-anchor="middle" font-size="15" fill="white" font-weight="700">${{ low: "+", high: "×", unclear: "?" }[appVal]}</text>`;
+          __svgParts.push(`<circle cx="${xApp}" cy="${cy}" r="15" fill="${colors[appVal]}" opacity="0.85"/>`);
+          __svgParts.push(`<text x="${xApp}" y="${cy + 5}" text-anchor="middle" font-size="15" fill="white" font-weight="700">${{ low: "+", high: "×", unclear: "?" }[appVal]}</text>`);
         }
       });
       let lx = padL; const ly = padT + 110;
       for (const [k, l] of [["low", "Low"], ["high", "High"], ["unclear", "Unclear"]]) {
-        svg.innerHTML += `<circle cx="${lx + 8}" cy="${ly}" r="7" fill="${colors[k]}" opacity="0.85"/>`;
-        svg.innerHTML += `<text x="${lx + 22}" y="${ly + 4}" font-size="11" fill="currentColor">${l}</text>`;
+        __svgParts.push(`<circle cx="${lx + 8}" cy="${ly}" r="7" fill="${colors[k]}" opacity="0.85"/>`);
+        __svgParts.push(`<text x="${lx + 22}" y="${ly + 4}" font-size="11" fill="currentColor">${l}</text>`);
         lx += 90;
       }
+      svg.innerHTML = __svgParts.join("");
+
     }
 
     document.getElementById("btn-eval").addEventListener("click", evaluate);
