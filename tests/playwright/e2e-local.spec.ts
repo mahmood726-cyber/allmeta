@@ -72,6 +72,7 @@ test("RCT Extractor — regex extraction from default demo text", async ({ page 
 test("RCT Extractor — Ollama consensus path (if a model is installed)", async ({ page }) => {
   test.skip(!extractorUp || !ollamaUp, "need both services");
   test.skip(ollamaModels.length === 0, "no Ollama models installed — run `ollama pull llama3.2:3b` first");
+  test.setTimeout(240_000);  // CPU inference on a 3B model can take ~90-180s per call
   await page.goto("/rct-extractor/");
   await expect(page.locator("#api-status")).toHaveClass(/ok/, { timeout: 10_000 });
   await expect(page.locator("#llm-status")).toHaveClass(/ok/, { timeout: 10_000 });
@@ -120,6 +121,7 @@ test("Effect-Size Converter — LocalLLM panel renders", async ({ page }) => {
 
 test("PICO Formulator — round-trip extraction (if model available)", async ({ page }) => {
   test.skip(!ollamaUp || ollamaModels.length === 0, "need an Ollama model — run `ollama pull llama3.2:3b`");
+  test.setTimeout(240_000);
   await page.goto("/pico/");
   await page.waitForSelector(".localllm-panel");
   // Open the panel
