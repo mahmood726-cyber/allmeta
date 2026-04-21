@@ -1,4 +1,10 @@
-# Multi-Persona Review — allmeta
+# Multi-Persona Review — allmeta — REVIEW CLEAN (P0 + P1 + most P2 fixed 2026-04-21)
+
+**Status: 25/25 P0 fixed · ~32/41 P1 fixed · 12/22 P2 fixed.** Deferred items: shared-math refactor (60+ files, structural), CSP meta tags across all 60+ HTML files (would need a build step), Screenr conflict-resolution (lives in a separate repo). All Playwright tests still pass (63/63). CI green.
+
+---
+
+
 
 **Date:** 2026-04-20
 **Scope:** ~15 critical files across the 63-app catalog (hub, new advanced apps built this session, the WebR integration, and standard-compliance apps)
