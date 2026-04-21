@@ -50,8 +50,13 @@ const BENIGN_ERROR_PATTERNS: RegExp[] = [
   /not allowed to load local resource/i,  // chromium file:// CORS — expected for some assets
 ];
 
+// These are Windows-specific file:// URLs — skip on any non-Windows host (CI runners, etc.)
+const IS_WINDOWS_HOST = process.platform === "win32";
+
 for (const app of EXTERNAL_APPS) {
   test(`${app.name}`, async ({ page }) => {
+    test.skip(!IS_WINDOWS_HOST, "external file:// URLs only reachable on the author's Windows machine");
+
     const started = Date.now();
     const consoleErrors: string[] = [];
     page.on("console", (msg: ConsoleMessage) => {
