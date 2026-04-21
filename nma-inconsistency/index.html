@@ -209,15 +209,53 @@ A, D, -0.48, 0.14</textarea>
     }
 
     function dbt(rows) {
-      // Global inconsistency test: fit consistency model, fit inconsistency model (per-design contrasts),
-      // compare residual Q. Simplified: contribution = sum of squared standardized residuals.
+      // Design-by-treatment inconsistency test (Higgins 2012): compare the consistency model
+      // (basic-parameter contrasts only) against a full-design model that gives each design
+      // its own contrast parameter. Q_cons − Q_full ~ χ² on df_cons − df_full.
       try {
-        const fit = fitNMA(rows);
-        const Q = fit.Q;
-        const df = fit.df;
-        return { Q, df, p: df > 0 ? 1 - chiSqCDF(Q, df) : NaN };
+        const cons = fitNMA(rows);
+        // Tag each row with a design label (sorted pair of treatments) for the inconsistency fit.
+        const tagged = rows.map(r => ({ ...r, __design: [r.A, r.B].sort().join("|") }));
+        const designs = [...new Set(tagged.map(r => r.__design))];
+        // If there are no more designs than basic parameters, the inconsistency model is not
+        // identifiable — report Q_cons but label the comparison as inestimable.
+        if (designs.length <= cons.nBasic) {
+          return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model unidentifiable (designs ≤ basic parameters)" };
+        }
+        // Full-design fit: per-design intercept (dummy columns). Use FE weights (no shared τ²).
+        const n = tagged.length;
+        const nCols = designs.length;
+        const X = Array.from({ length: n }, () => Array(nCols).fill(0));
+        tagged.forEach((r, i) => { X[i][designs.indexOf(r.__design)] = 1; });
+        // Signs: flip if treatment order within design is reversed (A-B vs B-A)
+        tagged.forEach((r, i) => {
+          const [a, b] = [r.A, r.B].sort();
+          if (r.A !== a) X[i][designs.indexOf(r.__design)] = -1;
+        });
+        const y = tagged.map(r => r.te);
+        const w = tagged.map(r => 1 / (r.se * r.se));
+        const Xt = X[0].map((_, j) => X.map(row => row[j]));
+        const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
+        // XtWX
+        const k = Xt.length;
+        const XtWX = Array.from({ length: k }, () => Array(k).fill(0));
+        for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) for (let p = 0; p < n; p++) XtWX[i][j] += XtW[i][p] * X[p][j];
+        let inv;
+        try { inv = invert(XtWX); } catch (_) { return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model singular" }; }
+        if (!inv) return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model singular" };
+        const XtWy = XtW.map(row => row.reduce((s, v, p) => s + v * y[p], 0));
+        const beta = inv.map(row => row.reduce((s, v, i) => s + v * XtWy[i], 0));
+        const fit_ = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
+        const Qfull = y.reduce((s, yi, i) => s + w[i] * (yi - fit_[i]) ** 2, 0);
+        const dfFull = Math.max(0, n - nCols);
+        const dQ = Math.max(0, cons.Q - Qfull);
+        const dDf = Math.max(0, cons.df - dfFull);
+        const p = dDf > 0 ? 1 - chiSqCDF(dQ, dDf) : NaN;
+        return { Q: dQ, df: dDf, p };
       } catch (e) { return { Q: NaN, df: NaN, p: NaN }; }
     }
+
+    // (invert defined above in math utils; reusing it.)
 
     function chiSqCDF(x, k) {
       // Incomplete gamma via Lanczos-Wilson-Hilferty approximation for moderate k

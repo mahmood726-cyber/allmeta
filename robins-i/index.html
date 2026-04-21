@@ -100,15 +100,21 @@
       {
         id: "D1", name: "D1: Confounding",
         questions: [
-          { id: "1.1", prompt: "Are there confounding domains important for this exposure-outcome relationship?" },
+          { id: "1.1", prompt: "Are there confounding domains important for this intervention-outcome relationship?" },
           { id: "1.2", prompt: "Was the analysis based on splitting participants' follow-up according to intervention received?" },
           { id: "1.3", prompt: "Were the intervention discontinuations or switches unlikely to be related to prognosis?" },
           { id: "1.4", prompt: "Did the authors use an appropriate analysis method that controlled for all the important confounding domains?" },
+          { id: "1.5", prompt: "Were all important confounding domains measured validly and reliably?" },
+          { id: "1.6", prompt: "Is there evidence that important confounders were NOT measured at all?" },
         ],
         judge: a => {
-          if (yy(a["1.4"])) return "low";
+          // Critical: important confounders unmeasured with no adjustment possible
+          if (yy(a["1.6"])) return "crit";
+          // Low: all confounders measured AND adjustment used AND no PH concerns
+          if (yy(a["1.4"]) && yy(a["1.5"]) && nn(a["1.6"])) return "low";
+          // Serious: no adjustment OR confounders inadequately measured
           if (nn(a["1.4"])) return "ser";
-          if (yy(a["1.1"]) && !yy(a["1.4"])) return "mod";
+          if (nn(a["1.5"])) return "ser";
           return "mod";
         },
       },
@@ -118,9 +124,11 @@
           { id: "2.1", prompt: "Was selection into the study related to the intervention and the outcome?" },
           { id: "2.2", prompt: "Do start of follow-up and start of intervention coincide for most participants?" },
           { id: "2.3", prompt: "Were adjustment techniques used that are likely to correct for the presence of selection biases?" },
+          { id: "2.4", prompt: "Is there clear evidence of severe, uncorrectable selection into the study (e.g. outcome-dependent sampling)?" },
         ],
         judge: a => {
-          if (!yy(a["2.1"]) && yy(a["2.2"])) return "low";
+          if (yy(a["2.4"])) return "crit";
+          if (nn(a["2.1"]) && yy(a["2.2"])) return "low";
           if (yy(a["2.1"]) && yy(a["2.3"])) return "mod";
           if (yy(a["2.1"]) && nn(a["2.3"])) return "ser";
           if (nn(a["2.2"])) return "mod";
@@ -175,8 +183,10 @@
           { id: "6.2", prompt: "Were outcome assessors aware of the intervention received by study participants?" },
           { id: "6.3", prompt: "Were the methods of outcome assessment comparable across intervention groups?" },
           { id: "6.4", prompt: "Were any systematic errors in measurement of the outcome unrelated to intervention received?" },
+          { id: "6.5", prompt: "Is there evidence of strong systematic differential measurement (e.g. one arm unblinded with subjective outcome)?" },
         ],
         judge: a => {
+          if (yy(a["6.5"])) return "crit";
           if (nn(a["6.1"]) && nn(a["6.2"]) && yy(a["6.3"])) return "low";
           if (yy(a["6.1"]) && yy(a["6.2"])) return "ser";
           return "mod";
@@ -188,8 +198,10 @@
           { id: "7.1", prompt: "Is the reported effect estimate likely to be selected from multiple outcome measurements within the outcome domain?" },
           { id: "7.2", prompt: "Is the reported effect estimate likely to be selected from multiple analyses?" },
           { id: "7.3", prompt: "Is the reported effect estimate likely to be selected from different subgroups?" },
+          { id: "7.4", prompt: "Is there clear evidence of selective reporting driven by the direction or significance of the result?" },
         ],
         judge: a => {
+          if (yy(a["7.4"])) return "crit";
           if (nn(a["7.1"]) && nn(a["7.2"]) && nn(a["7.3"])) return "low";
           if (yy(a["7.1"]) || yy(a["7.2"]) || yy(a["7.3"])) return "ser";
           return "mod";

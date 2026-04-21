@@ -50,10 +50,15 @@
     .q .prompt { display: block; margin-bottom: 0.2rem; }
     .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
-                     border-radius: 5px; cursor: pointer; background: var(--input-bg); }
-    .q .opts input { display: none; }
+                     border-radius: 5px; cursor: pointer; background: var(--input-bg); min-height: 28px; display: inline-flex; align-items: center; }
+    /* Visually hide radios while keeping them in the tab order */
+    .q .opts input { position: absolute; opacity: 0; pointer-events: none; }
     .q .opts input:checked + span { color: var(--accent); font-weight: 600; }
     .q .opts label:hover { border-color: var(--accent); }
+    .q .opts input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+    /* Darker amber for WCAG AA */
+    :root { --some: #7a6300; }
+    @media (prefers-color-scheme: dark) { :root { --some: #e5c060; } }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
                      border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
     svg { width: 100%; height: auto; display: block; }
@@ -80,7 +85,7 @@
     </section>
     <section class="panel">
       <h2>Judgement</h2>
-      <div class="summary-grid" id="summary"></div>
+      <div class="summary-grid" id="summary" aria-live="polite" aria-atomic="true"></div>
       <h2 style="margin-top:1rem">Traffic light</h2>
       <svg id="traffic" viewBox="0 0 600 240" role="img" aria-label="Traffic-light plot of RoB 2 domain judgments"></svg>
     </section>
@@ -127,9 +132,12 @@
           const nn = v => v === N || v === PN;
           const aware = yy(a["2.1"]) || yy(a["2.2"]);
           const deviationsAffected = yy(a["2.3"]) && yy(a["2.4"]);
+          // High whenever ITT/appropriate analysis was NOT used, or deviations that arose
+          // AND affected the outcome are present (Sterne 2019 decision tree).
+          if (nn(a["2.5"])) return "high";
+          if (deviationsAffected) return "high";
           if (!aware && yy(a["2.5"])) return "low";
           if (aware && !deviationsAffected && yy(a["2.5"])) return "low";
-          if (deviationsAffected || nn(a["2.5"])) return "high";
           return "some";
         },
       },
@@ -195,9 +203,9 @@
       if (values.some(v => v === "ni")) return "ni";
       if (values.every(v => v === "low")) return "low";
       if (values.some(v => v === "high")) return "high";
-      // Multiple "some concerns" → high, per RoB 2 guidance
-      const someCount = values.filter(v => v === "some").length;
-      if (someCount >= 2) return "high";
+      // Any "Some concerns" → Some concerns overall. Sterne 2019 notes that
+      // multiple some-concerns domains *may* warrant an upgrade to High, but this
+      // is left to reviewer judgment — not a deterministic rule.
       return "some";
     }
 
@@ -218,7 +226,7 @@
           row.innerHTML = `<span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
                            <span class="opts">
                              ${[Y, PY, PN, N, NI].map(v =>
-                               `<label><input type="radio" name="${d.id}-${q.id}" value="${v}"><span>${v}</span></label>`).join("")}
+                               `<label><input type="radio" name="${d.id}-${q.id}" value="${v}" aria-label="${q.id} ${ {Y:"Yes",PY:"Probably yes",PN:"Probably no",N:"No",NI:"No information"}[v] }"><span>${v}</span></label>`).join("")}
                            </span>`;
           body.appendChild(row);
         }

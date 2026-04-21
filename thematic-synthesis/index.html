@@ -98,12 +98,19 @@
     ];
     let DATA = [];
 
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
     function render() {
       const tbody = document.getElementById("tbl");
-      tbody.innerHTML = "";
-      DATA.forEach((r, i) => {
-        tbody.innerHTML += `<tr><td>${r.study}</td><td>${r.code}</td><td>${r.theme}</td><td><button class="secondary" data-del="${i}">×</button></td></tr>`;
-      });
+      const rows = DATA.map((r, i) =>
+        `<tr><td>${esc(r.study)}</td><td>${esc(r.code)}</td><td>${esc(r.theme)}</td>` +
+        `<td><button class="secondary" data-del="${i}" aria-label="Remove entry ${i + 1}">×</button></td></tr>`
+      );
+      tbody.innerHTML = rows.join("");
       drawTree();
     }
 
@@ -183,12 +190,12 @@
         // connect root to theme
         svg.innerHTML += `<path d="M${rootX + 150},${padT + totalCodes * 16} C${rootX + 180},${padT + totalCodes * 16} ${themeX - 20},${themeY} ${themeX},${themeY}" fill="none" stroke="currentColor" opacity="0.35"/>`;
         svg.innerHTML += `<rect x="${themeX}" y="${themeY - 14}" width="230" height="28" rx="5" fill="none" stroke="var(--theme)"/>`;
-        svg.innerHTML += `<text x="${themeX + 115}" y="${themeY + 4}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--theme)">${theme}</text>`;
+        svg.innerHTML += `<text x="${themeX + 115}" y="${themeY + 4}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--theme)">${esc(theme)}</text>`;
         codes.forEach(([code, count], ci) => {
           const codeY = yCursor + ci * 32;
           svg.innerHTML += `<path d="M${themeX + 230},${themeY} C${themeX + 250},${themeY} ${codeX - 20},${codeY} ${codeX},${codeY}" fill="none" stroke="currentColor" opacity="0.25"/>`;
           svg.innerHTML += `<rect x="${codeX}" y="${codeY - 12}" width="240" height="24" rx="4" fill="var(--accent-soft)" opacity="0.5"/>`;
-          svg.innerHTML += `<text x="${codeX + 8}" y="${codeY + 4}" font-size="11" fill="var(--ink)">${code}</text>`;
+          svg.innerHTML += `<text x="${codeX + 8}" y="${codeY + 4}" font-size="11" fill="var(--ink)">${esc(code)}</text>`;
           svg.innerHTML += `<text x="${codeX + 232}" y="${codeY + 4}" text-anchor="end" font-size="10" fill="var(--muted)">×${count}</text>`;
         });
         yCursor += Math.max(codes.length * 32, 40);

@@ -60,7 +60,7 @@
       <fieldset>
         <legend>Distribution-based</legend>
         <label><span class="lbl">Baseline SD</span><input id="d-sd" type="number" step="any" value="12"></label>
-        <label><span class="lbl">SEM (standard error of measurement)</span><input id="d-sem" type="number" step="any" value="5"><span class="hint">Used for 1·SEM and 1.96·SEM rules.</span></label>
+        <label><span class="lbl">SEM — standard error of <em>measurement</em> = SD × √(1 − ICC)</span><input id="d-sem" type="number" step="any" value="5"><span class="hint">Not the standard error of the <em>mean</em>. Used for 1·SEM and 1.96·SEM rules.</span></label>
       </fieldset>
       <fieldset>
         <legend>Anchor-based (change by global-rating category)</legend>
@@ -119,7 +119,9 @@
         rows.push({ m: "Anchor (Juniper)", v: somewhat - none, rat: "Mean change for 'somewhat improved' − 'no change'." });
       }
       if (Number.isFinite(hist) && Number.isFinite(frac)) {
-        rows.push({ m: `NI margin (${(frac * 100).toFixed(0)}% of active effect)`, v: (1 - frac) * hist, rat: "Worst acceptable loss vs active comparator." });
+        // M2 = fraction of the active comparator's effect that must be preserved
+        // (ICH E10 / FDA NI guidance). A 50% preservation ⇒ margin = 0.5 × hist.
+        rows.push({ m: `NI margin (preserve ${(frac * 100).toFixed(0)}% of active effect)`, v: frac * hist, rat: "Effect the new treatment must retain relative to the active comparator's effect vs placebo." });
       }
 
       const tbody = document.getElementById("tbody");

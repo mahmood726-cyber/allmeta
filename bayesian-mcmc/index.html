@@ -137,16 +137,19 @@
         const mu_post_var = 1 / (k / (tau ** 2) + 1 / (muPriorSD ** 2));
         const mu_post_mean = mu_post_var * (theta.reduce((a, b) => a + b, 0) / (tau ** 2) + muPriorMean / (muPriorSD ** 2));
         mu = rnorm(mu_post_mean, Math.sqrt(mu_post_var));
-        // Sample τ via Metropolis (half-normal prior)
-        const tauProp = Math.abs(tau + rnorm(0, tauStep));
+        // Sample τ via Metropolis with a log-scale random walk: τ' = τ·exp(ε), ε ~ N(0, step).
+        // This proposal is asymmetric; Jacobian log(τ'/τ) is added to the acceptance ratio.
+        const eps = rnorm(0, tauStep);
+        const tauProp = tau * Math.exp(eps);
+        const logJac = Math.log(tauProp / tau);  // equal to eps, kept explicit
         const logPost = (t) => {
           if (t <= 0) return -Infinity;
           let lp = 0;
           for (const th of theta) lp += -0.5 * ((th - mu) / t) ** 2 - Math.log(t);
-          lp += -0.5 * (t / tauPrior) ** 2;  // half-normal prior
+          lp += -0.5 * (t / tauPrior) ** 2;  // half-normal prior (up to constant)
           return lp;
         };
-        const logRatio = logPost(tauProp) - logPost(tau);
+        const logRatio = logPost(tauProp) - logPost(tau) + logJac;
         if (Math.log(runif()) < logRatio) { tau = tauProp; accepted++; }
         if (it < 500) {
           // adapt step
@@ -166,11 +169,16 @@
       const sorted = [...vec].sort((a, b) => a - b);
       const mean = vec.reduce((a, b) => a + b, 0) / vec.length;
       const sd = Math.sqrt(vec.reduce((a, v) => a + (v - mean) ** 2, 0) / (vec.length - 1));
-      const q = p => sorted[Math.max(0, Math.min(sorted.length - 1, Math.floor(p * sorted.length)))];
+      // Linear interpolation between adjacent order statistics.
+      const q = p => {
+        const idx = p * (sorted.length - 1);
+        const lo = Math.floor(idx), hi = Math.min(sorted.length - 1, lo + 1);
+        return sorted[lo] + (idx - lo) * (sorted[hi] - sorted[lo]);
+      };
       return { mean, sd, lo: q(0.025), hi: q(0.975), median: q(0.5) };
     }
 
-    // Gelman-Rubin R-hat with split chains
+    // Gelman-Rubin R-hat with split chains. Gelman-Vehtari (2013) finite-chain corrected.
     function rhat(chains) {
       const m = chains.length * 2;  // split chains
       const split = chains.flatMap(c => [c.slice(0, c.length / 2), c.slice(c.length / 2)]);
@@ -182,23 +190,28 @@
         const mn = means[i];
         return a + c.reduce((s, v) => s + (v - mn) ** 2, 0) / (c.length - 1);
       }, 0) / m;
-      const varHat = ((n - 1) * W / n + B / n);
+      // Finite-chain correction: add (1 + 1/m)·B/n rather than B/n
+      const varHat = ((n - 1) * W / n + (1 + 1 / m) * B / n);
       return Math.sqrt(varHat / W);
     }
 
-    // ESS via autocorrelation (truncated at lag where autocorr <= 0.05)
+    // ESS via Geyer initial-monotone-sequence estimator: pair consecutive lags and stop
+    // at the first non-positive pair (standard in coda and Stan).
     function ess(chain) {
       const n = chain.length;
       const mean = chain.reduce((a, b) => a + b, 0) / n;
       const var0 = chain.reduce((a, v) => a + (v - mean) ** 2, 0) / n;
       if (var0 === 0) return n;
-      let sumRho = 0;
-      for (let lag = 1; lag < Math.min(n / 4, 200); lag++) {
+      function rho(lag) {
         let s = 0;
         for (let t = 0; t < n - lag; t++) s += (chain[t] - mean) * (chain[t + lag] - mean);
-        const rho = s / ((n - lag) * var0);
-        if (rho < 0.05) break;
-        sumRho += rho;
+        return s / (n * var0);   // same denominator as var0 (both divide by n)
+      }
+      let sumRho = 0;
+      for (let lag = 1; lag + 1 < Math.min(n / 2, 400); lag += 2) {
+        const pair = rho(lag) + rho(lag + 1);
+        if (pair <= 0) break;
+        sumRho += pair;
       }
       return n / (1 + 2 * sumRho);
     }
@@ -214,41 +227,49 @@
       if (rows.length < 3) return;
 
       const status = document.getElementById("status");
+      const btnRun = document.getElementById("btn-run");
+      const resultsPanel = btnRun.closest(".panel").nextElementSibling;
+      btnRun.disabled = true;
+      if (resultsPanel) resultsPanel.setAttribute("aria-busy", "true");
       status.textContent = "Sampling…";
       await new Promise(r => setTimeout(r, 30));
 
-      const chains = [];
-      for (let c = 0; c < chainsN; c++) {
-        status.textContent = `Chain ${c + 1} / ${chainsN}…`;
-        await new Promise(r => setTimeout(r, 10));
-        chains.push(gibbs(rows, iter, burn, tauPrior));
+      try {
+        const chains = [];
+        for (let c = 0; c < chainsN; c++) {
+          status.textContent = `Chain ${c + 1} / ${chainsN}…`;
+          await new Promise(r => setTimeout(r, 10));
+          chains.push(gibbs(rows, iter, burn, tauPrior));
+        }
+
+        const muAll = chains.flatMap(c => c.mu);
+        const tauAll = chains.flatMap(c => c.tau);
+
+        const sMu = summary(muAll);
+        const sTau = summary(tauAll);
+        const rMu = chainsN > 1 ? rhat(chains.map(c => c.mu)) : NaN;
+        const rTau = chainsN > 1 ? rhat(chains.map(c => c.tau)) : NaN;
+        const essMu = ess(muAll);
+        const essTau = ess(tauAll);
+        const predSamples = muAll.map((m, i) => m + rnorm(0, tauAll[i]));
+        const sPred = summary(predSamples);
+
+        const html = [
+          `<tr><td><code>μ</code></td><td>${fmt(sMu.mean)}</td><td>${fmt(sMu.sd)}</td><td>[${fmt(sMu.lo)}, ${fmt(sMu.hi)}]</td><td>${fmt(rMu, 3)}</td><td>${Math.round(essMu)}</td></tr>`,
+          `<tr><td><code>τ</code></td><td>${fmt(sTau.mean)}</td><td>${fmt(sTau.sd)}</td><td>[${fmt(sTau.lo)}, ${fmt(sTau.hi)}]</td><td>${fmt(rTau, 3)}</td><td>${Math.round(essTau)}</td></tr>`,
+          `<tr><td><code>predictive</code></td><td>${fmt(sPred.mean)}</td><td>${fmt(sPred.sd)}</td><td>[${fmt(sPred.lo)}, ${fmt(sPred.hi)}]</td><td>—</td><td>—</td></tr>`,
+        ].join("");
+        document.getElementById("body").innerHTML = html;
+
+        drawDensity("mu-density", muAll, "μ posterior");
+        drawDensity("tau-density", tauAll, "τ posterior");
+        drawTrace(chains.map(c => c.mu));
+
+        status.textContent = `Done. ${chainsN} chain(s) × ${iter} iter. Acceptance ≈ ${(chains[0].acceptance * 100).toFixed(0)}%.`;
+      } finally {
+        btnRun.disabled = false;
+        if (resultsPanel) resultsPanel.removeAttribute("aria-busy");
       }
-
-      // Combine
-      const muAll = chains.flatMap(c => c.mu);
-      const tauAll = chains.flatMap(c => c.tau);
-
-      const sMu = summary(muAll);
-      const sTau = summary(tauAll);
-      const rMu = chainsN > 1 ? rhat(chains.map(c => c.mu)) : NaN;
-      const rTau = chainsN > 1 ? rhat(chains.map(c => c.tau)) : NaN;
-      const essMu = ess(muAll);
-      const essTau = ess(tauAll);
-
-      const body = document.getElementById("body");
-      body.innerHTML = "";
-      body.innerHTML += `<tr><td><code>μ</code></td><td>${fmt(sMu.mean)}</td><td>${fmt(sMu.sd)}</td><td>[${fmt(sMu.lo)}, ${fmt(sMu.hi)}]</td><td>${fmt(rMu, 3)}</td><td>${Math.round(essMu)}</td></tr>`;
-      body.innerHTML += `<tr><td><code>τ</code></td><td>${fmt(sTau.mean)}</td><td>${fmt(sTau.sd)}</td><td>[${fmt(sTau.lo)}, ${fmt(sTau.hi)}]</td><td>${fmt(rTau, 3)}</td><td>${Math.round(essTau)}</td></tr>`;
-      // Predictive interval
-      const predSamples = muAll.map((m, i) => m + rnorm(0, tauAll[i]));
-      const sPred = summary(predSamples);
-      body.innerHTML += `<tr><td><code>predictive</code></td><td>${fmt(sPred.mean)}</td><td>${fmt(sPred.sd)}</td><td>[${fmt(sPred.lo)}, ${fmt(sPred.hi)}]</td><td>—</td><td>—</td></tr>`;
-
-      drawDensity("mu-density", muAll, "μ posterior");
-      drawDensity("tau-density", tauAll, "τ posterior");
-      drawTrace(chains.map(c => c.mu));
-
-      status.textContent = `Done. ${chainsN} chain(s) × ${iter} iter. Acceptance ≈ ${(chains[0].acceptance * 100).toFixed(0)}%.`;
     }
 
     function drawDensity(svgId, samples, label) {
@@ -256,8 +277,10 @@
       const W = 600, H = 200, padL = 40, padR = 20, padT = 20, padB = 30;
       const plotW = W - padL - padR, plotH = H - padT - padB;
       svg.innerHTML = "";
-      // KDE via histogram with 50 bins
-      const xMin = Math.min(...samples), xMax = Math.max(...samples);
+      // KDE via histogram with 50 bins — avoid Math.min(...samples) call-stack overflow
+      // on large chains by using a reduce.
+      let xMin = Infinity, xMax = -Infinity;
+      for (const v of samples) { if (v < xMin) xMin = v; if (v > xMax) xMax = v; }
       const nBins = 50;
       const binW = (xMax - xMin) / nBins;
       const counts = Array(nBins).fill(0);
@@ -289,7 +312,8 @@
       const plotW = W - padL - padR, plotH = H - padT - padB;
       svg.innerHTML = "";
       const all = chains.flat();
-      const yMin = Math.min(...all), yMax = Math.max(...all);
+      let yMin = Infinity, yMax = -Infinity;
+      for (const v of all) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }
       const colors = ["var(--accent)", "var(--warn)", "#912121", "#0d7a27"];
       chains.forEach((chain, ci) => {
         const step = Math.max(1, Math.floor(chain.length / plotW));

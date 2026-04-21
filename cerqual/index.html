@@ -99,16 +99,22 @@
     </section>
   </main>
   <footer>
-    Rating rule: each concern contributes 0 (No or very minor), 1 (Minor), 2 (Moderate), or 3 (Serious) downgrade points. Total 0 → High; 1-2 → Moderate; 3-5 → Low; ≥6 → Very low. Reviewers may adjust the final confidence by explicit judgment, especially when adequacy is driven by a single rich study.
+    Default rating uses <strong>worst-component anchoring</strong> — no numeric thresholds. All "No" or "Very minor" → High; Moderate in any component → Moderate; Serious in any → Low (or Very low if serious in ≥2 components). This reproduces the qualitative reasoning in Lewin 2018; reviewers should justify any manual override narratively.
   </footer>
   <script>
     const LEVELS = [
-      ["none", "No / very minor", 0],
-      ["minor", "Minor", 1],
-      ["mod", "Moderate", 2],
-      ["ser", "Serious", 3],
+      ["none", "No concerns", 0],
+      ["minor", "Very minor concerns", 0],   // Lewin 2018 groups these with "no concerns"
+      ["mod", "Moderate concerns", 1],
+      ["ser", "Serious concerns", 1],        // weights retained for worst-domain logic only
     ];
     const COMPONENTS = ["method", "coherence", "adequacy", "relevance"];
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
     const DEFAULT_ROWS = [
       { finding: "Women fear stigma when seeking HIV care", method: "minor", coherence: "none", adequacy: "minor", relevance: "none" },
       { finding: "Transport cost is a major access barrier", method: "mod", coherence: "minor", adequacy: "mod", relevance: "none" },
@@ -117,33 +123,45 @@
     ];
     let ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
 
-    function downgrade(r) {
-      return COMPONENTS.reduce((s, c) => {
-        const l = LEVELS.find(L => L[0] === r[c]);
-        return s + (l ? l[2] : 0);
-      }, 0);
+    // CERQual (Lewin 2018) uses holistic worst-domain reasoning rather than a numeric sum.
+    // We derive a conservative default from the WORST component rating and offer manual override.
+    // Reviewers should always justify the final confidence narratively.
+    function worstLevel(r) {
+      const order = ["none", "minor", "mod", "ser"];
+      let worst = 0;
+      for (const c of COMPONENTS) {
+        const idx = order.indexOf(r[c] || "none");
+        if (idx > worst) worst = idx;
+      }
+      return order[worst];
     }
-    function conf(score) {
-      if (score === 0) return ["high", "High"];
-      if (score <= 2) return ["modc", "Moderate"];
-      if (score <= 5) return ["low", "Low"];
-      return ["vlow", "Very low"];
+    function conf(r) {
+      const w = worstLevel(r);
+      // Start one step below High per worst component; serious → Very low
+      if (w === "none") return ["high", "High"];
+      if (w === "minor") return ["high", "High"];
+      if (w === "mod") return ["modc", "Moderate"];
+      if (w === "ser") {
+        // Count serious components — 2+ serious typically → Very low
+        const nSer = COMPONENTS.filter(c => r[c] === "ser").length;
+        return nSer >= 2 ? ["vlow", "Very low"] : ["low", "Low"];
+      }
+      return ["modc", "Moderate"];
     }
 
     function render() {
       const tb = document.getElementById("body");
       tb.innerHTML = "";
       ROWS.forEach((r, i) => {
-        const score = downgrade(r);
-        const [cls, label] = conf(score);
+        const [cls, label] = conf(r);
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><input type="text" data-i="${i}" data-k="finding" value="${(r.finding || "").replace(/"/g, "&quot;")}"></td>
-          ${COMPONENTS.map(c => `<td><select data-i="${i}" data-k="${c}">
+          <td><input type="text" data-i="${i}" data-k="finding" value="${esc(r.finding || "")}" aria-label="Finding ${i + 1} description"></td>
+          ${COMPONENTS.map(c => `<td><select data-i="${i}" data-k="${c}" aria-label="${c} concern for finding ${i + 1}">
             ${LEVELS.map(l => `<option value="${l[0]}"${r[c] === l[0] ? " selected" : ""}>${l[1]}</option>`).join("")}
           </select></td>`).join("")}
           <td><span class="chip ${cls}">${label}</span></td>
-          <td><button class="secondary" data-del="${i}">×</button></td>`;
+          <td><button class="secondary" data-del="${i}" aria-label="Remove finding ${i + 1}">×</button></td>`;
         tb.appendChild(tr);
       });
       drawHeat();
@@ -193,13 +211,12 @@
 
       ROWS.forEach((r, i) => {
         const y = padT + i * cellH;
-        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${(r.finding || "").slice(0, 40)}</text>`;
+        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc((r.finding || "").slice(0, 40))}</text>`;
         COMPONENTS.forEach((c, j) => {
           const x = padL + j * cellW;
           svg.innerHTML += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${colors[r[c]] || "var(--border)"}" opacity="0.85"/>`;
         });
-        const score = downgrade(r);
-        const [cls, label] = conf(score);
+        const [cls, label] = conf(r);
         const xc = padL + COMPONENTS.length * cellW;
         svg.innerHTML += `<rect x="${xc + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${cColors[cls]}" opacity="0.9"/>`;
         svg.innerHTML += `<text x="${xc + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" font-size="11" fill="white" font-weight="600">${label}</text>`;

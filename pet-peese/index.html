@@ -233,8 +233,12 @@
       const { pet, peese } = petPeese(rows);
       const petZ = pet.b0 / pet.seB0;
       const peeseZ = peese.b0 / peese.seB0;
-      const petSlopeZ = pet.b1 / pet.seB1;
-      const conditional = pFromZ(petSlopeZ) < alpha ? "PEESE (slope p < " + alpha + ")" : "PET (slope p ≥ " + alpha + ")";
+      // Stanley-Doucouliagos conditional procedure: test the PET *intercept* (b0) against H0: no true effect.
+      // If PET rejects null (evidence of a true effect after bias correction), switch to PEESE for the estimate.
+      const petIntP = pFromZ(petZ);
+      const conditional = petIntP < alpha
+        ? `PEESE (PET intercept p < ${alpha})`
+        : `PET (PET intercept p ≥ ${alpha})`;
       const tf = trimAndFill(rows, tfEst);
 
       const resRows = [

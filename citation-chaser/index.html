@@ -86,7 +86,8 @@
         <input id="max-cites" type="number" step="1" min="10" max="200" value="50">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Chase citations</button>
-      <div class="status" id="status"></div>
+      <button type="button" id="btn-cancel" class="secondary" style="width:100%; margin-top:0.4rem; display:none">Cancel</button>
+      <div class="status" id="status" role="status" aria-live="polite" aria-atomic="true"></div>
     </section>
     <section class="panel">
       <h2>Found works</h2>
@@ -183,52 +184,86 @@
       return (data.results || []).slice(0, max).map(normalize);
     }
 
+    let ABORT = null;
+
     async function run() {
       if (RUNNING) return;
       RUNNING = true;
+      ABORT = new AbortController();
+      const btnRun = document.getElementById("btn-run");
+      const btnCancel = document.getElementById("btn-cancel");
+      btnRun.disabled = true;
+      btnCancel.style.display = "block";
       DEDUP.clear();
-      const seeds = parseSeedInput(document.getElementById("seeds").value);
-      if (seeds.length === 0) { status("No valid DOIs/OpenAlex IDs found in input.", "error"); RUNNING = false; return; }
-      const direction = document.getElementById("direction").value;
-      const maxCites = parseInt(document.getElementById("max-cites").value, 10) || 50;
-      let refCount = 0, citeCount = 0;
+      try {
+        const seeds = parseSeedInput(document.getElementById("seeds").value);
+        if (seeds.length === 0) { status("No valid DOIs/OpenAlex IDs found in input.", "error"); return; }
+        const direction = document.getElementById("direction").value;
+        const maxCites = parseInt(document.getElementById("max-cites").value, 10) || 50;
+        let refCount = 0, citeCount = 0;
 
-      status(`Resolving ${seeds.length} seed(s)...`);
-      const seedWorks = [];
-      for (const s of seeds) {
-        try {
-          const w = await resolveSeed(s);
-          seedWorks.push(w);
-          const n = normalize(w);
-          DEDUP.set(n.id, { work: n, source: "seed" });
-        } catch (e) { status(`Seed error: ${e.message}`, "error"); }
-      }
-      render();
-
-      for (const sw of seedWorks) {
-        const sid = shortId(sw.id);
-        if (direction === "refs" || direction === "both") {
-          status(`Fetching references for ${sid}...`);
+        status(`Resolving ${seeds.length} seed(s)...`);
+        const seedWorks = [];
+        for (const s of seeds) {
+          if (ABORT.signal.aborted) return;
           try {
-            const refs = await fetchBackwards(sw);
-            for (const r of refs) {
-              if (!DEDUP.has(r.id)) { DEDUP.set(r.id, { work: r, source: "references" }); refCount++; }
-            }
-          } catch (e) { status(`Ref error: ${e.message}`, "error"); }
-        }
-        if (direction === "cites" || direction === "both") {
-          status(`Fetching cited-by for ${sid}...`);
-          try {
-            const cites = await fetchForwards(sid, maxCites);
-            for (const c of cites) {
-              if (!DEDUP.has(c.id)) { DEDUP.set(c.id, { work: c, source: "cited-by" }); citeCount++; }
-            }
-          } catch (e) { status(`Cite error: ${e.message}`, "error"); }
+            const w = await resolveSeed(s);
+            seedWorks.push(w);
+            const n = normalize(w);
+            DEDUP.set(n.id, { work: n, source: "seed" });
+          } catch (e) { status(`Seed error: ${e.message}`, "error"); }
         }
         render();
+
+        for (const sw of seedWorks) {
+          if (ABORT.signal.aborted) return;
+          const sid = shortId(sw.id);
+          if (direction === "refs" || direction === "both") {
+            status(`Fetching references for ${sid}...`);
+            try {
+              const refs = await fetchBackwards(sw);
+              for (const r of refs) {
+                if (!DEDUP.has(r.id)) { DEDUP.set(r.id, { work: r, source: "references" }); refCount++; }
+              }
+            } catch (e) { status(`Ref error: ${e.message}`, "error"); }
+          }
+          if (ABORT.signal.aborted) return;
+          if (direction === "cites" || direction === "both") {
+            status(`Fetching cited-by for ${sid}...`);
+            try {
+              const cites = await fetchForwards(sid, maxCites);
+              for (const c of cites) {
+                if (!DEDUP.has(c.id)) { DEDUP.set(c.id, { work: c, source: "cited-by" }); citeCount++; }
+              }
+            } catch (e) { status(`Cite error: ${e.message}`, "error"); }
+          }
+          render();
+        }
+        status(ABORT.signal.aborted
+          ? `Cancelled. ${DEDUP.size} unique works collected so far.`
+          : `Done. ${DEDUP.size} unique works, ${refCount} refs, ${citeCount} cited-by.`, "active");
+      } catch (err) {
+        status(`Unexpected error: ${err.message}`, "error");
+      } finally {
+        RUNNING = false;
+        btnRun.disabled = false;
+        btnCancel.style.display = "none";
       }
-      status(`Done. ${DEDUP.size} unique works, ${refCount} refs, ${citeCount} cited-by.`, "active");
-      RUNNING = false;
+    }
+
+    document.getElementById("btn-cancel").addEventListener("click", () => {
+      if (ABORT) ABORT.abort();
+    });
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function safeDoi(doi) {
+      // DOIs follow 10.\d+/... — reject anything else to prevent javascript: URIs via crafted metadata
+      return /^10\.\d+\/[^\s"<>]+$/.test(doi) ? doi : "";
     }
 
     function render() {
@@ -239,10 +274,13 @@
       document.getElementById("m-cite").textContent = works.filter(w => w.source === "cited-by").length;
       const tb = document.getElementById("results");
       tb.innerHTML = "";
+      const rows = [];
       for (const w of works.slice(0, 200)) {
-        const doiLink = w.doi ? `<a href="https://doi.org/${w.doi}" target="_blank" rel="noopener">${w.doi}</a>` : "";
-        tb.innerHTML += `<tr><td>${w.year || "—"}</td><td><strong>${w.title}</strong><br><span style="font-size:0.78rem; color:var(--muted)">${w.authors}</span><br>${doiLink}</td><td>${w.cited_by_count}</td><td>${w.source}</td></tr>`;
+        const doi = safeDoi(w.doi);
+        const doiLink = doi ? `<a href="https://doi.org/${encodeURIComponent(doi)}" target="_blank" rel="noopener noreferrer">${escapeHtml(doi)}</a>` : "";
+        rows.push(`<tr><td>${escapeHtml(w.year || "—")}</td><td><strong>${escapeHtml(w.title)}</strong><br><span style="font-size:0.78rem; color:var(--muted)">${escapeHtml(w.authors)}</span><br>${doiLink}</td><td>${escapeHtml(w.cited_by_count)}</td><td>${escapeHtml(w.source)}</td></tr>`);
       }
+      tb.innerHTML = rows.join("");
       drawYears(works);
     }
 

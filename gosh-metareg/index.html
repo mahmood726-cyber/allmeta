@@ -135,23 +135,36 @@
       return { b1, I2, tau2, k: rows.length };
     }
 
-    function run() {
+    async function run() {
       const rows = parse(document.getElementById("src").value);
       const minK = parseInt(document.getElementById("min-k").value, 10) || 4;
-      if (rows.length < 3 || rows.length > 18) return;
+      if (rows.length < 3) { alert("Need at least 3 studies."); return; }
+      if (rows.length > 18) { alert("GOSH all-subset enumeration is capped at k=18 (2^18 = 262,144 subsets). Your input has " + rows.length + " studies."); return; }
       const k = rows.length;
       const total = 1 << k;
       const results = [];
+      const btn = document.getElementById("btn-run");
+      btn.disabled = true;
+      const mn = document.getElementById("m-n");
+      const CHUNK = 4096;
       for (let m = 0; m < total; m++) {
         const subset = [];
         for (let i = 0; i < k; i++) if (m & (1 << i)) subset.push(rows[i]);
         if (subset.length < Math.max(minK, 3)) continue;
         const r = wls(subset);
         if (r) results.push(r);
+        // Yield to the event loop periodically so the tab stays responsive at k=18
+        if ((m & (CHUNK - 1)) === 0) {
+          mn.textContent = `${results.length.toLocaleString()} (scanning… ${Math.round(100 * m / total)}%)`;
+          await new Promise(r => setTimeout(r, 0));
+        }
       }
-      document.getElementById("m-n").textContent = results.length.toLocaleString();
+      mn.textContent = results.length.toLocaleString();
       const bs = results.map(r => r.b1).sort((a, b) => a - b);
-      const median = bs[Math.floor(bs.length / 2)];
+      // Correct median for even-length arrays
+      const median = bs.length
+        ? (bs.length % 2 === 0 ? (bs[bs.length / 2 - 1] + bs[bs.length / 2]) / 2 : bs[Math.floor(bs.length / 2)])
+        : NaN;
       const mean = bs.reduce((a, b) => a + b, 0) / bs.length;
       const sd = Math.sqrt(bs.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, bs.length - 1));
       const pos = bs.filter(b => b > 0).length / bs.length;
@@ -160,6 +173,7 @@
       document.getElementById("m-sd").textContent = fmt(sd);
       document.getElementById("m-sign").textContent = signCons ? "yes" : `no (${(pos * 100).toFixed(0)}% positive)`;
       draw(results);
+      btn.disabled = false;
     }
 
     function draw(pts) {

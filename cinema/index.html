@@ -117,8 +117,16 @@
       ["none", "No concerns", 0],
       ["some", "Some concerns", 1],
       ["major", "Major concerns", 2],
-      ["unclear", "Unclear", 1],
+      // Unclear is weighted 0 per Nikolakopoulou 2020 — it should prompt the reviewer
+      // to resolve missing information rather than automatically downgrade confidence.
+      ["unclear", "Unclear", 0],
     ];
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
 
     const DEFAULT_ROWS = [
       { comparison: "A vs B", within: "none", reporting: "none", indirect: "none", imprecision: "none", hetero: "some", incoherence: "none" },
@@ -152,14 +160,14 @@
         const [cls, label] = confidenceFrom(score);
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><input type="text" data-idx="${idx}" data-key="comparison" value="${r.comparison}"></td>
+          <td><input type="text" data-idx="${idx}" data-key="comparison" value="${esc(r.comparison)}" aria-label="Comparison ${idx + 1} label"></td>
           ${DOMAINS.map(d => `<td>
-            <select data-idx="${idx}" data-key="${d}">
+            <select data-idx="${idx}" data-key="${d}" aria-label="${DOMAIN_LABELS[d]} for comparison ${idx + 1}">
               ${LEVELS.map(l => `<option value="${l[0]}"${r[d] === l[0] ? " selected" : ""}>${l[1]}</option>`).join("")}
             </select>
           </td>`).join("")}
           <td><span class="chip ${cls}">${label}</span></td>
-          <td><button type="button" class="secondary" data-del="${idx}">×</button></td>`;
+          <td><button type="button" class="secondary" data-del="${idx}" aria-label="Remove comparison ${idx + 1}">×</button></td>`;
         tb.appendChild(tr);
       });
       drawHeat();
@@ -218,7 +226,7 @@
 
       ROWS.forEach((r, i) => {
         const y = padT + i * cellH;
-        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`;
+        svg.innerHTML += `<text x="${padL - 8}" y="${y + cellH / 2 + 4}" text-anchor="end" font-size="11" fill="currentColor">${esc(r.comparison)}</text>`;
         DOMAINS.forEach((d, j) => {
           const x = padL + j * cellW;
           svg.innerHTML += `<rect x="${x + 1}" y="${y + 1}" width="${cellW - 2}" height="${cellH - 2}" fill="${levelColor[r[d]] || "var(--border)"}" opacity="0.85"/>`;

@@ -13,6 +13,24 @@
   };
 
   let activeFilter = "All";
+  let filterButtons = [];
+
+  // Safe scheme prefixes for launch links. Rejects javascript:, data:, file: (etc.)
+  const SAFE_SCHEMES = /^(https?:|\.|\/|#)/i;
+
+  function safeHref(path) {
+    if (typeof path !== "string" || !path) return "#";
+    if (!SAFE_SCHEMES.test(path) && !/^\.\.?\//.test(path)) return "#";
+    try {
+      const u = new URL(path, window.location.href);
+      if (u.protocol === "http:" || u.protocol === "https:" || u.protocol === "file:") {
+        return u.toString();
+      }
+      return "#";
+    } catch (_) {
+      return "#";
+    }
+  }
 
   function getFilters() {
     const categoryFilters = Array.from(new Set(projects.map((project) => project.category))).sort();
@@ -29,51 +47,46 @@
 
   function createFilterButtons() {
     filterBar.innerHTML = "";
+    filterButtons = [];
     getFilters().forEach((label) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `filter-chip${label === activeFilter ? " is-active" : ""}`;
+      const isActive = label === activeFilter;
+      button.className = `filter-chip${isActive ? " is-active" : ""}`;
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
       button.textContent = label;
       button.addEventListener("click", function () {
         activeFilter = label;
-        createFilterButtons();
+        filterButtons.forEach((b) => {
+          const on = b.textContent === activeFilter;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
         render();
       });
       filterBar.appendChild(button);
+      filterButtons.push(button);
     });
   }
 
   function matchesFilter(project) {
-    if (activeFilter === "All") {
-      return true;
-    }
-
+    if (activeFilter === "All") return true;
     if (activeFilter === "Existing" || activeFilter === "New") {
       return project.collection === activeFilter.toLowerCase();
     }
-
     return project.category === activeFilter;
   }
 
   function matchesSearch(project, query) {
-    if (!query) {
-      return true;
-    }
-
+    if (!query) return true;
     const haystack = [
       project.name,
-      project.folder,
       project.summary,
       project.note,
       project.category,
       (project.tags || []).join(" ")
     ].join(" ").toLowerCase();
-
     return haystack.includes(query);
-  }
-
-  function resolveHref(path) {
-    return new URL(path, window.location.href).toString();
   }
 
   function makeTag(text) {
@@ -83,55 +96,62 @@
     return span;
   }
 
+  // DOM builder — never use innerHTML with user-controlled content. Projects.js is
+  // developer-controlled but we treat it defensively per the P0-Sec5 review finding.
   function renderCard(project) {
     const article = document.createElement("article");
     article.className = "project-card";
 
-    const statusClass = project.collection === "new"
-      ? "pill pill-new"
-      : project.mode === "server"
-        ? "pill pill-server"
-        : "pill pill-ready";
+    const head = document.createElement("div"); head.className = "project-head";
+    const headText = document.createElement("div");
+    const h3 = document.createElement("h3"); h3.textContent = project.name || "";
+    headText.appendChild(h3);
+    head.appendChild(headText);
 
-    const statusLabel = project.collection === "new"
-      ? "New App"
-      : project.mode === "server"
-        ? "Needs HTTP"
-        : "Launchable";
+    const isNew = project.collection === "new";
+    const isServer = project.mode === "server";
+    const pill = document.createElement("span");
+    pill.className = "pill " + (isNew ? "pill-new" : isServer ? "pill-server" : "pill-ready");
+    pill.textContent = isNew ? "New App" : isServer ? "Needs HTTP" : "Launchable";
+    head.appendChild(pill);
+    article.appendChild(head);
 
-    article.innerHTML = `
-      <div class="project-head">
-        <div>
-          <h3>${project.name}</h3>
-          <div class="project-folder">${project.folder}</div>
-        </div>
-        <span class="${statusClass}">${statusLabel}</span>
-      </div>
-      <p class="project-summary">${project.summary}</p>
-      <div class="meta-row"></div>
-      <div class="project-note">${project.note}</div>
-      <div class="project-actions"></div>
-    `;
+    const summary = document.createElement("p");
+    summary.className = "project-summary";
+    summary.textContent = project.summary || "";
+    article.appendChild(summary);
 
-    const tagRow = article.querySelector(".meta-row");
+    const tagRow = document.createElement("div");
+    tagRow.className = "meta-row";
     [project.category].concat(project.tags || []).slice(0, 4).forEach((tag) => {
-      tagRow.appendChild(makeTag(tag));
+      if (tag) tagRow.appendChild(makeTag(tag));
     });
+    article.appendChild(tagRow);
 
-    const actions = article.querySelector(".project-actions");
-    const launch = document.createElement(project.mode === "server" ? "span" : "a");
-    launch.className = `project-link project-link-primary${project.mode === "server" ? " project-link-disabled" : ""}`;
-    launch.textContent = project.mode === "server" ? "Use Local Server" : "Open App";
-    if (project.mode !== "server") {
-      launch.href = resolveHref(project.path);
+    if (project.note) {
+      const note = document.createElement("div");
+      note.className = "project-note";
+      note.textContent = project.note;
+      article.appendChild(note);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "project-actions";
+    const href = safeHref(project.path);
+    const canLaunch = !isServer && href !== "#";
+    const launch = document.createElement(canLaunch ? "a" : "span");
+    launch.className = "project-link project-link-primary" + (canLaunch ? "" : " project-link-disabled");
+    launch.textContent = canLaunch ? "Open App" : (isServer ? "Use Local Server" : "Unavailable");
+    if (canLaunch) {
+      launch.href = href;
+      // Open external (URL-mode) cards in a new tab
+      if (project.mode === "url") {
+        launch.target = "_blank";
+        launch.rel = "noopener noreferrer";
+      }
     }
     actions.appendChild(launch);
-
-    const copyLink = document.createElement("a");
-    copyLink.className = "project-link project-link-secondary";
-    copyLink.textContent = "Open Folder Target";
-    copyLink.href = resolveHref(project.path);
-    actions.appendChild(copyLink);
+    article.appendChild(actions);
 
     return article;
   }
@@ -148,7 +168,9 @@
       empty.textContent = "No projects match the current search and filter.";
       grid.appendChild(empty);
     } else {
-      visible.forEach((project) => grid.appendChild(renderCard(project)));
+      const frag = document.createDocumentFragment();
+      visible.forEach((project) => frag.appendChild(renderCard(project)));
+      grid.appendChild(frag);
     }
 
     resultsSummary.textContent = `${visible.length} project${visible.length === 1 ? "" : "s"} shown`;

@@ -142,9 +142,12 @@
         if (v === "N") {
           if (CRITICAL.has(num)) critical++;
           else nonc++;
-        } else if (v === "PY" && !CRITICAL.has(num)) {
-          // Partial Yes on non-critical counts as non-critical weakness
-          nonc++;
+        } else if (v === "PY") {
+          // Partial Yes counts as a weakness on both critical and non-critical items.
+          // Per Shea 2017, a PY on a critical item is treated as a critical flaw for
+          // the purpose of the overall confidence rating.
+          if (CRITICAL.has(num)) critical++;
+          else nonc++;
         }
       }
       document.getElementById("c-critical").textContent = critical;

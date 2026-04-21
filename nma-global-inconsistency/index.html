@@ -132,22 +132,25 @@ C, D, -0.35, 0.14, CD</textarea>
       const designs = [...new Set(rows.map(r => r.design))].sort();
       const designIdx = Object.fromEntries(designs.map((d, i) => [d, i]));
 
-      const cols = designExpansion ? nBasic + Math.max(0, designs.length - nBasic) : nBasic;
+      // Full design model: one parameter per design (designs.length columns). The LR
+      // test for inconsistency needs designs.length > nBasic to be identifiable.
+      const cols = designExpansion ? designs.length : nBasic;
       const X = zeros(rows.length, cols);
       const y = rows.map(r => r.te);
       const w = rows.map(r => 1 / (r.se * r.se));
 
-      rows.forEach((r, i) => {
-        const iA = idx[r.A], iB = idx[r.B];
-        if (iA > 0) X[i][iA - 1] = 1;
-        if (iB > 0) X[i][iB - 1] = -1;
-      });
-      if (designExpansion) {
-        // Add design-specific deviation columns (one per design beyond the first n_basic designs)
-        const extra = designs.slice(nBasic);
+      if (!designExpansion) {
         rows.forEach((r, i) => {
-          const e = extra.indexOf(r.design);
-          if (e >= 0) X[i][nBasic + e] = 1;
+          const iA = idx[r.A], iB = idx[r.B];
+          if (iA > 0) X[i][iA - 1] = 1;
+          if (iB > 0) X[i][iB - 1] = -1;
+        });
+      } else {
+        // Each design gets its own effect. Sign = +1 if (A,B) matches canonical order, −1 otherwise.
+        rows.forEach((r, i) => {
+          const [a, b] = [r.A, r.B].sort();
+          const sign = r.A === a ? 1 : -1;
+          X[i][designIdx[r.design]] = sign;
         });
       }
       const Xt = transpose(X);

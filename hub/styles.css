@@ -226,7 +226,7 @@ code {
 }
 
 .filter-chip {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -237,9 +237,56 @@ code {
 }
 
 .filter-chip.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
   color: #fff;
+}
+
+/* Shared focus-visible ring across interactive elements */
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* Skip-navigation link: visible only when focused */
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: -10000px;
+  padding: 8px 16px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 8px;
+  z-index: 1000;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 8px;
+}
+
+/* Dark-mode support — mirrors the palette used by inner apps. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141618;
+    --bg-soft: rgba(28, 31, 35, 0.75);
+    --surface: rgba(28, 31, 35, 0.88);
+    --surface-strong: #1c1f23;
+    --ink: #e7e4dc;
+    --muted: #98a0ae;
+    --border: rgba(231, 228, 220, 0.14);
+    --accent: #e07c5a;
+    --accent-strong: #f08d6a;
+    --accent-cool: #6eb8b9;
+  }
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(224, 124, 90, 0.14), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(110, 184, 185, 0.12), transparent 30%),
+      linear-gradient(180deg, #141618 0%, #1a1d21 100%);
+  }
+  .filter-chip { background: rgba(231, 228, 220, 0.06); }
 }
 
 .featured-panel {

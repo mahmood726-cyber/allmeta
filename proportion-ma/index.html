@@ -183,18 +183,33 @@
     }
 
     function ftBack(y, n) {
-      // Barendregt & Doi (2013) back-transform using the harmonic mean of n
-      return 0.5 * (1 - Math.sign(Math.cos(2 * y)) * Math.sqrt(1 - Math.pow(Math.sin(2 * y) + (Math.sin(2 * y) - 1 / Math.sin(2 * y)) / n, 2)));
+      // Barendregt-Doi (2013) double-arcsine back-transform using the harmonic mean of n.
+      // Guarded against sin(2y) ≈ 0 which would otherwise divide by zero.
+      const s = Math.sin(2 * y);
+      if (Math.abs(s) < 1e-8 || !Number.isFinite(n) || n <= 0) return Math.sin(y) ** 2;
+      const inner = s + (s - 1 / s) / n;
+      const rad = 1 - inner * inner;
+      if (rad < 0 || !Number.isFinite(rad)) return Math.sin(y) ** 2;
+      return 0.5 * (1 - Math.sign(Math.cos(2 * y)) * Math.sqrt(rad));
     }
 
     function ftBackSimple(y) {
-      // Simple back: p = sin(y)^2
+      // Simple back: p = sin(y)^2 — fallback / coarse approximation
       return Math.sin(y) ** 2;
     }
 
+    function harmonicMean(ns) {
+      const v = ns.filter(n => n > 0);
+      if (!v.length) return NaN;
+      return v.length / v.reduce((a, b) => a + 1 / b, 0);
+    }
+
     function logitTransform(x, n) {
+      // Standard Cochrane 0.5 continuity correction for zero / full-count cells.
+      // Apply the same +0.5 to both numerator and denominator complement symmetrically,
+      // leaving the denominator unchanged: cx = x ± 0.5 or cx = n ∓ 0.5 at extremes.
       const cx = x === 0 ? 0.5 : (x === n ? n - 0.5 : x);
-      const cn = x === 0 || x === n ? n + 1 : n;
+      const cn = n;  // keep denominator; the 0.5 offset in cx suffices to bound logit.
       const p = cx / cn;
       return { y: Math.log(p / (1 - p)), v: 1 / cx + 1 / (cn - cx) };
     }
@@ -269,10 +284,11 @@
       const hi = pooled.mu_re + 1.96 * pooled.seRE;
       let poolP, poolLo, poolHi;
       if (trans === "ft") {
-        // Use simple sin²(y) back-transform for robustness (harmonic-mean-n correction can be unstable)
-        poolP = ftBackSimple(pooled.mu_re);
-        poolLo = ftBackSimple(lo);
-        poolHi = ftBackSimple(hi);
+        // Barendregt-Doi (2013) back-transform with harmonic mean of n (guarded fallback).
+        const nH = harmonicMean(rows.map(r => r.n));
+        poolP = ftBack(pooled.mu_re, nH);
+        poolLo = ftBack(lo, nH);
+        poolHi = ftBack(hi, nH);
       } else if (trans === "logit") {
         poolP = logitBack(pooled.mu_re);
         poolLo = logitBack(lo);
