@@ -1,5 +1,5 @@
 # sentinel:skip-file — hardcoded paths are fixture/registry/audit-narrative data for this repo's research workflow, not portable application configuration. Same pattern as push_all_repos.py and E156 workbook files.
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Focused smoke E2E checks for the primary IPD Meta-Analysis Pro user flows."""
 
 from __future__ import annotations

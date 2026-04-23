@@ -5,7 +5,7 @@ raise SystemExit(
     "Edit the relevant module and run `python dev/build.py build` instead of mutating ipd-meta-pro.html directly."
 )
 
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Add Even More Unique Methods: P-curve, E-value, IPD Imputation, and More"""
 
 # Read the current file

@@ -5,7 +5,7 @@ raise SystemExit(
     "Edit the relevant module and run `python dev/build.py build` instead of mutating ipd-meta-pro.html directly."
 )
 
-﻿import re
+import re
 
 with open(str((__import__('pathlib').Path(__file__).resolve().parents[2] / 'ipd-meta-pro.html')), 'r', encoding='utf-8') as f:
     content = f.read()

@@ -5,7 +5,7 @@ raise SystemExit(
     "Edit the relevant module and run `python dev/build.py build` instead of mutating ipd-meta-pro.html directly."
 )
 
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Add TMLE, Cross-Validation, and More Advanced Features to IPD Meta-Analysis Pro"""
 
 # Read the current file
