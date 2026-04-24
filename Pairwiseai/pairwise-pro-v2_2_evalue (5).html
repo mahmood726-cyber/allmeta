@@ -2586,13 +2586,54 @@
       
       // Bind demo loader button
       document.getElementById('loadDemoBtn').addEventListener('click', () => {
-        const demoKeys = Object.keys(DEMO_DATASETS);
-        const choice = prompt(`Available demos:\n${demoKeys.map((k, i) => `${i + 1}. ${DEMO_DATASETS[k].name}`).join('\n')}\n\nEnter number:`);
-        
-        const index = parseInt(choice) - 1;
-        if (index >= 0 && index < demoKeys.length) {
-          loadDemoDataset(demoKeys[index]);
-        }
+        (() => {
+  const keys = Object.keys(DEMO_DATASETS);
+  const existing = document.getElementById("demoPickerModal");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "demoPickerModal";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "Load demo dataset");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;";
+  const panel = document.createElement("div");
+  panel.style.cssText = "background:var(--bg-surface,#fff);color:var(--text-primary,#1a1a1a);border-radius:8px;padding:1.25rem;max-width:520px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,0.25);font-family:system-ui,sans-serif;";
+  const title = document.createElement("h2");
+  title.textContent = "Load Demo Dataset";
+  title.style.cssText = "margin:0 0 0.5rem;font-size:1.1rem;";
+  const hint = document.createElement("p");
+  hint.textContent = "Select a demo to populate the Study Data Entry table.";
+  hint.style.cssText = "margin:0 0 0.85rem;font-size:0.85rem;opacity:0.75;";
+  const list = document.createElement("div");
+  list.style.cssText = "display:flex;flex-direction:column;gap:0.4rem;";
+  const close = () => { overlay.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (ev) => { if (ev.key === "Escape") close(); };
+  keys.forEach((k, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = (i + 1) + ". " + DEMO_DATASETS[k].name;
+    btn.style.cssText = "text-align:left;padding:0.6rem 0.85rem;border:1px solid #e5e0d6;background:transparent;color:inherit;border-radius:4px;cursor:pointer;font-family:inherit;font-size:0.9rem;";
+    btn.addEventListener("mouseenter", () => { btn.style.background = "rgba(122,90,16,0.08)"; });
+    btn.addEventListener("mouseleave", () => { btn.style.background = "transparent"; });
+    btn.addEventListener("click", () => { close(); loadDemoDataset(k); });
+    list.appendChild(btn);
+  });
+  const footer = document.createElement("div");
+  footer.style.cssText = "margin-top:1rem;text-align:right;";
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.style.cssText = "padding:0.5rem 1rem;border:1px solid currentColor;background:transparent;color:inherit;border-radius:4px;cursor:pointer;font-family:inherit;";
+  cancelBtn.addEventListener("click", close);
+  footer.appendChild(cancelBtn);
+  panel.append(title, hint, list, footer);
+  overlay.appendChild(panel);
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+  const firstBtn = list.querySelector("button");
+  if (firstBtn) firstBtn.focus();
+})()
       });
       
       // Keyboard shortcuts
