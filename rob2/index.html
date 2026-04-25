@@ -47,8 +47,9 @@
     summary .verdict.high { background: var(--high-soft); color: var(--high); }
     summary .verdict.ni { background: var(--ni-soft); color: var(--ni); }
     .domain-body { padding: 0 1rem 0.8rem; }
-    .q { margin: 0.5rem 0; font-size: 0.87rem; }
-    .q .prompt { display: block; margin-bottom: 0.2rem; }
+    /* fieldset wrapping per WCAG 1.3.1 — strip default UA border / padding */
+    .q { margin: 0.5rem 0; font-size: 0.87rem; border: 0; padding: 0; min-width: 0; }
+    .q .prompt { display: block; margin-bottom: 0.2rem; padding: 0; }
     .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
                      border-radius: 5px; cursor: pointer; background: var(--input-bg); min-height: 28px; display: inline-flex; align-items: center; }
@@ -223,13 +224,17 @@
         const body = document.createElement("div");
         body.className = "domain-body";
         for (const q of d.questions) {
-          const row = document.createElement("div");
+          // WCAG 1.3.1 / 4.1.2: each question is a radiogroup; the prompt is its legend.
+          // Was `<div class="q">` with a sibling prompt span — screen readers heard "Y, radio
+          // button, 1 of 5" without ever announcing the question. Now the legend is
+          // programmatically associated with the radio group.
+          const row = document.createElement("fieldset");
           row.className = "q";
-          row.innerHTML = `<span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
-                           <span class="opts">
+          row.innerHTML = `<legend class="prompt"><strong>${q.id}</strong> — ${q.prompt}</legend>
+                           <div class="opts" role="radiogroup" aria-label="${q.id} response">
                              ${[Y, PY, PN, N, NI].map(v =>
-                               `<label><input type="radio" name="${d.id}-${q.id}" value="${v}" aria-label="${q.id} ${ {Y:"Yes",PY:"Probably yes",PN:"Probably no",N:"No",NI:"No information"}[v] }"><span>${v}</span></label>`).join("")}
-                           </span>`;
+                               `<label><input type="radio" name="${d.id}-${q.id}" value="${v}" aria-label="${ {Y:"Yes",PY:"Probably yes",PN:"Probably no",N:"No",NI:"No information"}[v] }"><span>${v}</span></label>`).join("")}
+                           </div>`;
           body.appendChild(row);
         }
         det.appendChild(body);

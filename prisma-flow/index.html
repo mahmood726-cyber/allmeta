@@ -417,9 +417,25 @@
       const boxH = 56;
       const idTotal = s.db + s.reg;
 
+      // Build accessible name + description for the PRISMA flow diagram.
+      // WCAG 1.1.1 — non-text content must have a text alternative.
+      const titleA11y = "PRISMA 2020 flow diagram" + (s.title ? ": " + s.title : "");
+      const idTotalA11y = (s.db || 0) + (s.reg || 0);
+      const descA11y = "Identification: " + idTotalA11y + " records (" + (s.db || 0) +
+                       " from databases, " + (s.reg || 0) + " from registers). " +
+                       "Records screened: " + (s.screened || 0) + ", " +
+                       "excluded: " + (s.screenedExcl || 0) + ". " +
+                       "Reports sought for retrieval: " + (s.sought || 0) + ", " +
+                       "not retrieved: " + (s.notRetrieved || 0) + ". " +
+                       "Reports assessed for eligibility: " + (s.assessed || 0) + ", " +
+                       "excluded with reasons: " + (s.assessedExcl || 0) + ". " +
+                       "Studies included in review: " + (s.included || 0) + ".";
+
       const parts = [];
       parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-      parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\">");
+      parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\" role=\"img\" aria-labelledby=\"prTitle prDesc\">");
+      parts.push("<title id=\"prTitle\">" + escapeXml(titleA11y) + "</title>");
+      parts.push("<desc id=\"prDesc\">" + escapeXml(descA11y) + "</desc>");
       parts.push("<defs><marker id=\"arrowhead\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto-start-reverse\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#222\"/></marker></defs>");
       parts.push("<rect x=\"0\" y=\"0\" width=\"" + W + "\" height=\"" + H + "\" fill=\"#ffffff\"/>");
 

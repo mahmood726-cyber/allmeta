@@ -140,7 +140,7 @@ Study C, 0.05, 0.18"></textarea>
     </section>
   </main>
 
-  <p class="footer-note">Pooling: fixed-effect (inverse-variance) and random-effects (Paule-Mandel τ²). Generated client-side; no data leaves the browser.</p>
+  <p class="footer-note">Pooling: fixed-effect (inverse-variance) and random-effects (Paule-Mandel τ² + Hartung-Knapp-Sidik-Jonkman SE correction with floor q* ≥ 1, per Cochrane Handbook §10.10.4). The dashed band is the 95% prediction interval (μ ± t<sub>k−2</sub> × √(SE<sub>HKSJ</sub><sup>2</sup> + τ<sup>2</sup>); IntHout 2016, Higgins 2009; undefined for k&lt;3). Computed client-side; no data leaves the browser.</p>
 
   <script>
   (function () {
@@ -203,12 +203,34 @@ Study C, 0.05, 0.18"></textarea>
       return { studies: studies, warnings: warnings };
     }
 
+    // Two-sided 95% t-quantile for df 1..30 (4 d.p., enough for forest-plot CI).
+    // For df >= 30 use the Cornish-Fisher / Wallace 1959 approximation, which is
+    // accurate to <0.001 of the table value past df=30 and converges to 1.96.
+    const T975_TABLE = {
+      1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571,
+      6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
+      11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131,
+      16: 2.120, 17: 2.110, 18: 2.101, 19: 2.093, 20: 2.086,
+      21: 2.080, 22: 2.074, 23: 2.069, 24: 2.064, 25: 2.060,
+      26: 2.056, 27: 2.052, 28: 2.048, 29: 2.045, 30: 2.042
+    };
+    function tQuantile975(df) {
+      if (!isFinite(df) || df <= 0) return NaN;
+      const dfInt = Math.round(df);
+      if (T975_TABLE.hasOwnProperty(dfInt)) return T975_TABLE[dfInt];
+      // Cornish-Fisher approximation (Wallace 1959); converges to 1.96 as df→∞.
+      const z = 1.959963984540054;
+      const z2 = z * z;
+      return z * (1 + (z2 + 1) / (4 * df) + (5 * z2 * z2 + 16 * z2 + 3) / (96 * df * df));
+    }
+
     function poolFE(studies) {
       if (!studies.length) return null;
       let sw = 0, swy = 0;
       for (const s of studies) { sw += 1 / s.v; swy += s.est / s.v; }
       const mu = swy / sw;
       const se = Math.sqrt(1 / sw);
+      // FE CI uses normal — large k by definition.
       return { mu: mu, se: se, lo: mu - 1.96 * se, hi: mu + 1.96 * se };
     }
 
@@ -221,34 +243,87 @@ Study C, 0.05, 0.18"></textarea>
       return { Q: Q, mu: mu, sw: sw };
     }
 
+    // Random-effects pool with Paule-Mandel τ² + Hartung-Knapp-Sidik-Jonkman
+    // (HKSJ) variance correction and a prediction interval.
+    //
+    // HKSJ rationale (Cochrane Handbook §10.10.4): with small k the standard
+    // Wald CI under-covers; HKSJ rescales SE by sqrt(q*) where q* = max(1, Q*/(k-1))
+    // and Q* is the residual heterogeneity statistic at the fitted τ². The
+    // floor at 1 (per advanced-stats.md) prevents HKSJ from NARROWING the CI
+    // when Q < k-1.
+    //
+    // PI rationale (IntHout 2016, Higgins et al. 2009): the prediction interval
+    // tells the reader where the *next* study's true effect is likely to fall —
+    // the most-asked clinical question. We use t_{k-2} not t_{k-1} per the
+    // current Cochrane Handbook guidance. Undefined for k<3.
     function poolRE_PM(studies) {
       const k = studies.length;
       if (k < 2) return null;
       const target = k - 1;
       const res0 = computeQ(studies, 0);
+      const tCrit = tQuantile975(k - 1);
+
+      let tau2;
+      let fin;
       if (res0.Q <= target) {
-        return { tau2: 0, mu: res0.mu, se: Math.sqrt(1/res0.sw),
-                 lo: res0.mu - 1.96*Math.sqrt(1/res0.sw),
-                 hi: res0.mu + 1.96*Math.sqrt(1/res0.sw),
-                 I2: 0, Q: res0.Q };
+        tau2 = 0;
+        fin = res0;
+      } else {
+        let lo = 0, hi = 100;
+        let qHi = computeQ(studies, hi).Q;
+        let guard = 0;
+        while (qHi > target && hi < 1e9 && guard < 60) {
+          hi *= 2;
+          qHi = computeQ(studies, hi).Q;
+          guard++;
+        }
+        for (let i = 0; i < 100; i++) {
+          const mid = (lo + hi) / 2;
+          const q = computeQ(studies, mid).Q;
+          if (q > target) lo = mid; else hi = mid;
+          if (hi - lo < 1e-9) break;
+        }
+        tau2 = (lo + hi) / 2;
+        fin = computeQ(studies, tau2);
       }
-      let lo = 0, hi = 100;
-      let qHi = computeQ(studies, hi).Q;
-      let guard = 0;
-      while (qHi > target && hi < 1e9 && guard < 60) { hi *= 2; qHi = computeQ(studies, hi).Q; guard++; }
-      for (let i = 0; i < 100; i++) {
-        const mid = (lo + hi) / 2;
-        const q = computeQ(studies, mid).Q;
-        if (q > target) lo = mid; else hi = mid;
-        if (hi - lo < 1e-9) break;
+
+      const seBase = Math.sqrt(1 / fin.sw);
+
+      // HKSJ correction (advanced-stats.md HKSJ floor: q* ≥ 1).
+      let qStar = 0;
+      for (const s of studies) {
+        const w = 1 / (s.v + tau2);
+        qStar += w * (s.est - fin.mu) * (s.est - fin.mu);
       }
-      const tau2 = (lo + hi) / 2;
-      const fin = computeQ(studies, tau2);
-      const se = Math.sqrt(1 / fin.sw);
-      const I2 = Math.max(0, 100 * (res0.Q - target) / res0.Q);
-      return { tau2: tau2, mu: fin.mu, se: se,
-               lo: fin.mu - 1.96 * se, hi: fin.mu + 1.96 * se,
-               I2: I2, Q: res0.Q };
+      qStar = qStar / (k - 1);
+      const qFloored = Math.max(1, qStar);
+      const seHKSJ = seBase * Math.sqrt(qFloored);
+
+      // Prediction interval: μ ± t_{k-2} · sqrt(seHKSJ² + τ²). Undefined for k<3.
+      let piLo = NaN, piHi = NaN;
+      if (k >= 3) {
+        const tPI = tQuantile975(k - 2);
+        const sePI = Math.sqrt(seHKSJ * seHKSJ + tau2);
+        piLo = fin.mu - tPI * sePI;
+        piHi = fin.mu + tPI * sePI;
+      }
+
+      const I2 = Math.max(0, 100 * (res0.Q - target) / Math.max(res0.Q, 1e-12));
+
+      return {
+        tau2: tau2,
+        mu: fin.mu,
+        se: seHKSJ,                 // headline CI uses HKSJ-corrected SE
+        seBase: seBase,             // pre-HKSJ, kept for diagnostics
+        qStar: qStar, qFloored: qFloored,
+        lo: fin.mu - tCrit * seHKSJ,
+        hi: fin.mu + tCrit * seHKSJ,
+        piLo: piLo, piHi: piHi,
+        I2: I2,
+        Q: res0.Q,
+        k: k,
+        tCrit: tCrit
+      };
     }
 
     function escapeXml(s) {
@@ -289,11 +364,13 @@ Study C, 0.05, 0.18"></textarea>
     }
 
     function buildSvg(state, studies, fe, re) {
-      const LEFT = 240, RIGHT = 180, TOP = 80, BOTTOM = 100;
+      const LEFT = 240, RIGHT = 180, TOP = 80, BOTTOM = 110;
       const rowH = 22;
       const k = studies.length;
       const hasPooled = !!fe;
-      const bodyH = k * rowH + (hasPooled ? 40 : 0);
+      const reHasPI = !!(re && isFinite(re.piLo) && isFinite(re.piHi));
+      // Pooled block: FE diamond + RE diamond + (PI band if k>=3)
+      const bodyH = k * rowH + (hasPooled ? (reHasPI ? 56 : 40) : 0);
       const PLOT_W = 360;
       const W = LEFT + PLOT_W + RIGHT;
       const H = TOP + bodyH + BOTTOM;
@@ -320,9 +397,32 @@ Study C, 0.05, 0.18"></textarea>
 
       function x(v) { return LEFT + (v - lo) / (hi - lo) * PLOT_W; }
 
+      // Build accessible name + description from the actual analysis state.
+      // WCAG 1.1.1 — non-text content must have a text alternative.
+      const titleStr = (state.title || "Pooled effect");
+      let titleA11y = "Forest plot of " + k + " studies of " + titleStr;
+      let descA11y = "";
+      if (re && isFinite(re.mu)) {
+        descA11y = "Random-effects pooled estimate " + re.mu.toFixed(2) +
+                   " (95% Hartung-Knapp CI " + re.lo.toFixed(2) + " to " + re.hi.toFixed(2) + ").";
+        if (isFinite(re.piLo) && isFinite(re.piHi)) {
+          descA11y += " 95% prediction interval " + re.piLo.toFixed(2) + " to " + re.piHi.toFixed(2) + ".";
+        }
+        if (typeof re.I2 === "number" && isFinite(re.I2)) {
+          descA11y += " I-squared = " + Math.round(re.I2) + " percent.";
+        }
+      } else if (fe && isFinite(fe.mu)) {
+        descA11y = "Fixed-effect pooled estimate " + fe.mu.toFixed(2) +
+                   " (95% CI " + fe.lo.toFixed(2) + " to " + fe.hi.toFixed(2) + ").";
+      } else {
+        descA11y = "Per-study confidence intervals shown without a pooled summary.";
+      }
+
       const p = [];
       p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\">");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + W + " " + H + "\" width=\"" + W + "\" height=\"" + H + "\" font-family=\"system-ui, sans-serif\" role=\"img\" aria-labelledby=\"fpTitle fpDesc\">");
+      p.push("<title id=\"fpTitle\">" + escapeXml(titleA11y) + "</title>");
+      p.push("<desc id=\"fpDesc\">" + escapeXml(descA11y) + "</desc>");
       p.push("<rect x=\"0\" y=\"0\" width=\"" + W + "\" height=\"" + H + "\" fill=\"#fff\"/>");
 
       if (state.title) {
@@ -374,7 +474,23 @@ Study C, 0.05, 0.18"></textarea>
           p.push("<text x=\"" + (LEFT + PLOT_W + 10) + "\" y=\"" + (y + 4) + "\" font-size=\"11\" font-weight=\"600\" font-variant-numeric=\"tabular-nums\" fill=\"#15181d\">" + escapeXml(t) + "</text>");
         }
         diamond(fe.mu, fe.lo, fe.hi, diamondY, "#b05a1c", "FE (IV)");
-        if (re) diamond(re.mu, re.lo, re.hi, diamondY + 18, "#2c5e8a", "RE (PM)");
+        if (re) {
+          diamond(re.mu, re.lo, re.hi, diamondY + 18, "#2c5e8a", "RE (HKSJ)");
+          // Prediction interval — dashed line with end-caps below the RE diamond.
+          // Cochrane Handbook v6.5: PI uses t_{k-2}; undefined for k<3.
+          if (isFinite(re.piLo) && isFinite(re.piHi)) {
+            const piY = diamondY + 32;
+            const xLo = x(re.piLo), xHi = x(re.piHi);
+            p.push("<line x1=\"" + xLo + "\" y1=\"" + piY + "\" x2=\"" + xHi + "\" y2=\"" + piY +
+                   "\" stroke=\"#2c5e8a\" stroke-width=\"1.5\" stroke-dasharray=\"4 3\"/>");
+            // End-caps (vertical ticks)
+            p.push("<line x1=\"" + xLo + "\" y1=\"" + (piY - 4) + "\" x2=\"" + xLo + "\" y2=\"" + (piY + 4) + "\" stroke=\"#2c5e8a\" stroke-width=\"1.5\"/>");
+            p.push("<line x1=\"" + xHi + "\" y1=\"" + (piY - 4) + "\" x2=\"" + xHi + "\" y2=\"" + (piY + 4) + "\" stroke=\"#2c5e8a\" stroke-width=\"1.5\"/>");
+            p.push("<text x=\"" + (LEFT - 8) + "\" y=\"" + (piY + 4) + "\" text-anchor=\"end\" font-size=\"11\" font-style=\"italic\" fill=\"#2c5e8a\">95% PI</text>");
+            const piT = "[" + fmt(re.piLo) + ", " + fmt(re.piHi) + "]";
+            p.push("<text x=\"" + (LEFT + PLOT_W + 10) + "\" y=\"" + (piY + 4) + "\" font-size=\"10\" font-style=\"italic\" font-variant-numeric=\"tabular-nums\" fill=\"#2c5e8a\">" + escapeXml(piT) + "</text>");
+          }
+        }
       }
 
       // X-axis
@@ -409,7 +525,12 @@ Study C, 0.05, 0.18"></textarea>
       parts.push(statCard("k", String(k)));
       if (fe) parts.push(statCard("FE pooled", fmt(fe.mu) + " [" + fmt(fe.lo) + ", " + fmt(fe.hi) + "]"));
       if (re) {
-        parts.push(statCard("RE (PM)", fmt(re.mu) + " [" + fmt(re.lo) + ", " + fmt(re.hi) + "]"));
+        parts.push(statCard("RE (HKSJ)", fmt(re.mu) + " [" + fmt(re.lo) + ", " + fmt(re.hi) + "]"));
+        if (isFinite(re.piLo) && isFinite(re.piHi)) {
+          parts.push(statCard("95% PI", "[" + fmt(re.piLo) + ", " + fmt(re.piHi) + "]"));
+        } else {
+          parts.push(statCard("95% PI", "n/a (k<3)"));
+        }
         parts.push(statCard("I\u00b2", fmt(re.I2, 1) + "%"));
         parts.push(statCard("\u03c4\u00b2", fmt(re.tau2, 4)));
       }
