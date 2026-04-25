@@ -2,7 +2,17 @@
 
 # Multi-Persona Review v4 — hub experience + course integration
 
-**Status:** Top-10 ship-this-week items FIXED across 3 commits (`018c52f`, `8f0c0e9`, `59c3c1f`) on 2026-04-25. All 10 P0/P1 items from the recommended path are now live on `main`. Remaining P1/P2 items (sub-categorise the 36-deep Evidence Synthesis bucket, broader alert/confirm migration in IPD-Meta-Pro/nma-pro-v2, missing methods coverage like RoBMA/RVE/Reitsma) are **deferred** for a future review cycle.
+**Status:** Top-10 ship-this-week items FIXED across 3 commits (`018c52f`, `8f0c0e9`, `59c3c1f`, `723437a`) on 2026-04-25. All 10 P0/P1 items from the recommended path are now live on `main`.
+
+**Deferred items D1–D6 ALSO COMPLETE** as of 2026-04-22 across commits `97f781f` (D1), `c5706f6` (D2), `3e401ba` (D3), `ff7758d` (D4), `78a4c90` (D5), `3c51945` (D6):
+- **D1 ✓** Subcategorise the 34-deep Evidence Synthesis bucket — second-level filter strip with URL `?sub=` deep-linking
+- **D2 ✓** Cochrane Handbook v6.5 citations on pet-peese / gosh / gosh-metareg footers
+- **D3 ✓** PRISMA-NMA Checklist (Hutton 2015) — new `prisma-nma/` tool with 32 items + 5 NMA extensions, Markdown export
+- **D4 ✓** GRADE 5-domain wizard upgrade — RCT/observational start, 5 downgrade domains, 3 upgrade considerations, structured rationale
+- **D5 ✓** `shared/glossary.js` widget — ~70 evidence-synthesis terms, popover tooltips, wired into 5 anchor tools (forest-plot, grade-sof, prisma-nma, pet-peese, gosh)
+- **D6 ✓** `workflow/rapid-review/` (Garritty 2021) + `workflow/prognostic-review/` (PROGRESS framework) companion pages, all 5 paths cross-linked
+
+Remaining low-priority items (broader alert/confirm migration in IPD-Meta-Pro/nma-pro-v2, missing methods coverage like RoBMA/RVE/Reitsma) deferred for a future review cycle.
 
 **Date:** 2026-04-25
 **Scope:** the **whole hub experience** — landing page, inner-app navigation, pedagogy/course cross-link, methodological coverage, accessibility, deployment. Different surface than v3 (which was per-app code polish in `effect-size-converter` + `rct-extractor`).
