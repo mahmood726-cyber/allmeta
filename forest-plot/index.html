@@ -718,5 +718,17 @@ Study C, 0.05, 0.18"></textarea>
     render();
   })();
   </script>
+  <script src="../shared/glossary.js" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.Glossary) {
+        // Tag jargon only inside narrative regions (header copy + footer note); the
+        // input panel and SVG are skipped so we never wrap form controls.
+        document.querySelectorAll("header, .footer-note").forEach((el) => {
+          window.Glossary.scan(el, { firstOnly: false });
+        });
+      }
+    });
+  </script>
 </body>
 </html>

@@ -204,5 +204,15 @@
     document.getElementById("btn-run").addEventListener("click", run);
     run();
   </script>
+  <script src="../shared/glossary.js" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.Glossary) {
+        document.querySelectorAll("header, footer").forEach((el) => {
+          window.Glossary.scan(el, { firstOnly: false });
+        });
+      }
+    });
+  </script>
 </body>
 </html>

@@ -746,5 +746,15 @@
     render();
   })();
   </script>
+  <script src="../shared/glossary.js" defer></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.Glossary) {
+        document.querySelectorAll("header, .footer-note").forEach((el) => {
+          window.Glossary.scan(el, { firstOnly: false });
+        });
+      }
+    });
+  </script>
 </body>
 </html>
