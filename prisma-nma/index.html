@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:">
+  <meta name="description" content="PRISMA-NMA reporting checklist (Hutton 2015): 27 PRISMA items + 5 NMA-specific extensions, fillable, exports to Markdown.">
+  <meta name="color-scheme" content="light dark">
+  <title>PRISMA-NMA Checklist</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --panel: #ffffff;
+      --ink: #15181d;
+      --muted: #5c6470;
+      --accent: #2c5e8a;
+      --accent-soft: #e8f0f7;
+      --accent-cool: #5a8aa8;
+      --nma: #7d4f9c;
+      --nma-soft: #efe5f4;
+      --border: #d9d5cc;
+      --input-bg: #fbfaf6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141618;
+        --panel: #1c1f23;
+        --ink: #e7e4dc;
+        --muted: #98a0ae;
+        --accent: #6aa6d4;
+        --accent-soft: #223044;
+        --accent-cool: #6e94b0;
+        --nma: #b88adb;
+        --nma-soft: #2c1e3a;
+        --border: #2f343a;
+        --input-bg: #23272c;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    header {
+      padding: 2rem clamp(1rem, 3vw, 3rem) 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 70ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); max-width: 70rem; margin: 0 auto; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+    .toolbar .meta { color: var(--muted); font-size: 0.85rem; margin-left: auto; }
+    button {
+      font: inherit;
+      padding: 0.5rem 0.95rem;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button:hover { filter: brightness(1.05); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .section h2 {
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .item {
+      border-top: 1px solid var(--border);
+      padding: 0.85rem 0;
+    }
+    .item:first-of-type { border-top: 0; padding-top: 0; }
+    .item-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .item-num {
+      font-weight: 600;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      min-width: 2.5rem;
+    }
+    .item.nma .item-num { color: var(--nma); }
+    .item-title { font-weight: 600; }
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 3px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .item.nma .badge { background: var(--nma-soft); color: var(--nma); }
+    .item-prompt {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 0.25rem 0 0.4rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 4rem;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--ink);
+      border-radius: 6px;
+      font: inherit;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      resize: vertical;
+    }
+    textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+    .progress-bar {
+      height: 4px;
+      background: var(--accent-soft);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateY(0.5rem);
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    footer {
+      padding: 1rem clamp(1rem, 3vw, 3rem) 2rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      max-width: 70rem;
+      margin: 0 auto;
+    }
+    nav.crumbs { padding: 0.5rem clamp(1rem, 3vw, 3rem); font-size: 0.85rem; color: var(--muted); }
+    nav.crumbs a { color: var(--accent); text-decoration: none; }
+    nav.crumbs a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <nav class="crumbs"><a href="../">← allmeta</a> · PRISMA-NMA Checklist</nav>
+  <header>
+    <h1>PRISMA-NMA Checklist</h1>
+    <p>Reporting checklist for systematic reviews with network meta-analysis. Combines the core PRISMA 2020 items with the five NMA-specific extension items from Hutton et al. (2015). Fill each box; export the completed checklist as Markdown for inclusion as supplementary material.</p>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <button id="exportMd" class="primary" type="button">Export Markdown</button>
+      <button id="copyMd" type="button">Copy to clipboard</button>
+      <button id="clearAll" type="button">Clear all</button>
+      <span class="meta"><span id="filledCount">0</span> / <span id="totalCount">0</span> items filled</span>
+    </div>
+
+    <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div id="checklist"></div>
+  </main>
+
+  <footer>
+    Hutton B, Salanti G, Caldwell DM, et al. The PRISMA Extension Statement for Reporting of Systematic Reviews Incorporating Network Meta-analyses of Health Care Interventions: Checklist and Explanations. <em>Ann Intern Med</em> 2015;162(11):777-784. Base items follow Page MJ et al. <em>BMJ</em> 2021;372:n71 (PRISMA 2020). NMA-specific items are highlighted with a purple badge. Stored client-side in <code>localStorage</code>; no data leaves the browser.
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    // PRISMA 2020 base items (subset most relevant to NMA reporting) + Hutton 2015 NMA extensions.
+    // Section labels follow PRISMA 2020 ordering. NMA-specific items carry isNma:true.
+    const ITEMS = [
+      { section: "Title", items: [
+        { num: "1",   title: "Title", prompt: "Identify the report as a systematic review incorporating a network meta-analysis (or related form of meta-analysis)." , isNma: true }
+      ]},
+      { section: "Abstract", items: [
+        { num: "2",   title: "Structured summary", prompt: "Provide a structured summary including, as applicable, background, objectives, data sources, study eligibility criteria, participants, interventions, study appraisal, synthesis methods, results, limitations, conclusions and implications, systematic review registration. List the interventions/comparisons included." }
+      ]},
+      { section: "Introduction", items: [
+        { num: "3",   title: "Rationale", prompt: "Describe the rationale for the review in the context of what is already known, including mention of why a NMA has been conducted." , isNma: true },
+        { num: "4",   title: "Objectives", prompt: "Provide an explicit statement of the question(s) the review addresses with reference to participants, interventions, comparisons, outcomes and study design (PICOS)." }
+      ]},
+      { section: "Methods", items: [
+        { num: "5",   title: "Protocol and registration", prompt: "Indicate whether a review protocol exists, where it can be accessed (URL/DOI), and the registration number." },
+        { num: "6",   title: "Eligibility criteria", prompt: "Specify study characteristics (e.g., PICOS, length of follow-up) and report characteristics used as criteria for eligibility, giving rationale. Clearly describe eligible treatments, including how to handle classes of treatments and combination therapy." , isNma: true },
+        { num: "7",   title: "Information sources", prompt: "Describe all information sources (e.g., databases with dates of coverage, registers, grey literature, contact with study authors) and date last searched." },
+        { num: "8",   title: "Search strategy", prompt: "Present full electronic search strategy for at least one database, including any limits used, such that it could be repeated." },
+        { num: "9",   title: "Study selection", prompt: "State the process for selecting studies (i.e., screening, eligibility, included in network meta-analysis, and, if applicable, included in the meta-analysis)." , isNma: true },
+        { num: "10",  title: "Data collection process", prompt: "Describe the method of data extraction from reports (e.g., piloted forms, independently, in duplicate) and any processes for obtaining and confirming data from investigators." },
+        { num: "11",  title: "Data items", prompt: "List and define all variables for which data were sought (e.g., PICOS, funding sources) and any assumptions and simplifications made." },
+        { num: "S1",  title: "Geometry of the network (NMA)", prompt: "Describe methods used to explore the geometry of the treatment network under study and potential biases related to it. This should include how the evidence base has been graphically summarized for presentation, and what characteristics were compiled and used to describe the evidence base to readers." , isNma: true },
+        { num: "12",  title: "Risk of bias in individual studies", prompt: "Describe methods used for assessing risk of bias in individual studies (including specification of whether this was done at the study or outcome level, or both); state how this information is to be used in any data synthesis." },
+        { num: "13",  title: "Summary measures", prompt: "State the principal summary measures (e.g., risk ratio, difference in means). Also describe the use of additional summary measures assessed, such as treatment rankings and surface under the cumulative ranking curve (SUCRA) values, as well as modified approaches used to present summary findings from meta-analyses." , isNma: true },
+        { num: "14",  title: "Planned methods of analysis", prompt: "Describe the methods of handling data and combining results of studies for each network meta-analysis. This should include, but not be limited to: (a) Handling of multi-arm trials; (b) Selection of variance structure; (c) Selection of prior distributions if a Bayesian approach is used; (d) Assessment of model fit." , isNma: true },
+        { num: "S2",  title: "Assumptions about the transitivity (NMA)", prompt: "Describe the assessment of assumptions in the underlying network meta-analysis (transitivity / similarity assumption — that effect modifiers are balanced across direct comparisons in the network)." , isNma: true },
+        { num: "15",  title: "Risk of bias across studies", prompt: "Specify any assessment of risk of bias that may affect the cumulative evidence (e.g., publication bias, selective reporting within studies)." },
+        { num: "S3",  title: "Inconsistency assessment (NMA)", prompt: "Describe statistical methods used to evaluate inconsistency between direct and indirect evidence in the treatment network(s) studied (e.g., design-by-treatment interaction, node-splitting, loop-specific approaches). Describe efforts taken to address its presence should it occur." , isNma: true },
+        { num: "16",  title: "Additional analyses", prompt: "Describe methods of additional analyses (e.g., sensitivity, subgroup, meta-regression analyses), if done, indicating which were pre-specified. This may include, but not be limited to, the methods described above." }
+      ]},
+      { section: "Results", items: [
+        { num: "17",  title: "Study selection", prompt: "Give numbers of studies screened, assessed for eligibility, and included in the review (and in each network meta-analysis, if applicable), with reasons for exclusions at each stage, ideally with a flow diagram." , isNma: true },
+        { num: "18",  title: "Presentation of network structure", prompt: "Provide a network graph of the included studies to enable visualization of the geometry of the treatment network." , isNma: true },
+        { num: "19",  title: "Summary of network geometry", prompt: "Provide a brief overview of characteristics of the treatment network. This may include commentary on the abundance of trials and randomized patients for the different interventions and pairwise comparisons in the network, the geometric features of the network (e.g., diameter), and potential biases related to the network." , isNma: true },
+        { num: "20",  title: "Study characteristics", prompt: "For each study, present characteristics for which data were extracted (e.g., study size, PICOS, follow-up period) and provide the citations." },
+        { num: "21",  title: "Risk of bias within studies", prompt: "Present data on risk of bias of each study and, if available, any outcome-level assessment." },
+        { num: "22",  title: "Results of individual studies", prompt: "For all outcomes considered (benefits or harms), present, for each study: (1) simple summary data for each intervention group, and (2) effect estimates and confidence/credible intervals. Forest plots may be considered." },
+        { num: "23",  title: "Synthesis of results (NMA)", prompt: "Present results of each network meta-analysis conducted, including summary effect size estimates (with credible/confidence intervals). Treatment rankings (e.g., SUCRA) may be considered. If meta-regression or network meta-regression has been conducted, present the summary effect estimates with credible/confidence intervals from such analyses, separating these by ‘type’ of treatment comparison." , isNma: true },
+        { num: "S4",  title: "Exploration for inconsistency (NMA)", prompt: "Describe results from the assessment of inconsistency between direct and indirect evidence." , isNma: true },
+        { num: "24",  title: "Risk of bias across studies", prompt: "Present results of any assessment of risk of bias across studies for the evidence base under consideration." },
+        { num: "S5",  title: "Confidence in the evidence (NMA-CINeMA / GRADE)", prompt: "Provide an assessment of confidence in the cumulative evidence supporting each treatment comparison, ideally using a structured approach such as CINeMA, GRADE or a comparable framework." , isNma: true },
+        { num: "25",  title: "Results of additional analyses", prompt: "Give results of additional analyses, if done (e.g., sensitivity, subgroup analyses, meta-regression, alternative network geometries studied, alternative choice of prior distributions for Bayesian analyses, etc.)." }
+      ]},
+      { section: "Discussion", items: [
+        { num: "26",  title: "Summary of evidence", prompt: "Summarize the main findings, including the strength of evidence for each main outcome; consider their relevance to key groups (e.g., health care providers, users, and policy makers)." },
+        { num: "27",  title: "Limitations", prompt: "Discuss limitations at study and outcome level (e.g., risk of bias), and at review level (e.g., incomplete retrieval of identified research, reporting bias)." },
+        { num: "28",  title: "Conclusions", prompt: "Provide a general interpretation of the results in the context of other evidence and implications for future research." }
+      ]},
+      { section: "Funding", items: [
+        { num: "29",  title: "Funding", prompt: "Describe sources of funding for the systematic review and other support (e.g., supply of data); role of funders for the systematic review. This should also include information regarding whether funding has been received from manufacturers of treatments in the network and/or whether some of the authors are content experts with professional conflicts of interest that could affect use of treatments in the network." , isNma: true }
+      ]}
+    ];
+
+    const STORAGE_KEY = "allmeta:prisma-nma:v1";
+
+    const checklistEl = document.getElementById("checklist");
+    const filledCountEl = document.getElementById("filledCount");
+    const totalCountEl = document.getElementById("totalCount");
+    const progressFill = document.getElementById("progressFill");
+    const toastEl = document.getElementById("toast");
+
+    let totalItems = 0;
+    ITEMS.forEach(s => totalItems += s.items.length);
+    totalCountEl.textContent = String(totalItems);
+
+    const saved = (() => {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch { return {}; }
+    })();
+
+    function persist() {
+      const out = {};
+      document.querySelectorAll("textarea[data-num]").forEach(t => {
+        if (t.value.trim()) out[t.dataset.num] = t.value;
+      });
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); }
+      catch { /* quota exceeded — nothing we can do client-side */ }
+      updateProgress();
+    }
+
+    function updateProgress() {
+      let filled = 0;
+      document.querySelectorAll("textarea[data-num]").forEach(t => {
+        if (t.value.trim()) filled++;
+      });
+      filledCountEl.textContent = String(filled);
+      progressFill.style.width = `${(filled / totalItems) * 100}%`;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function render() {
+      const frag = document.createDocumentFragment();
+      ITEMS.forEach(section => {
+        const sec = document.createElement("section");
+        sec.className = "section";
+        const h = document.createElement("h2");
+        h.textContent = section.section;
+        sec.appendChild(h);
+        section.items.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "item" + (item.isNma ? " nma" : "");
+          const head = document.createElement("div");
+          head.className = "item-head";
+          const num = document.createElement("span");
+          num.className = "item-num";
+          num.textContent = item.num;
+          const title = document.createElement("span");
+          title.className = "item-title";
+          title.textContent = item.title;
+          head.appendChild(num);
+          head.appendChild(title);
+          if (item.isNma) {
+            const badge = document.createElement("span");
+            badge.className = "badge";
+            badge.textContent = "NMA";
+            head.appendChild(badge);
+          }
+          const prompt = document.createElement("p");
+          prompt.className = "item-prompt";
+          prompt.textContent = item.prompt;
+          const ta = document.createElement("textarea");
+          ta.dataset.num = item.num;
+          ta.setAttribute("aria-label", `Item ${item.num}: ${item.title}`);
+          if (saved[item.num]) ta.value = saved[item.num];
+          ta.addEventListener("input", persist);
+          div.appendChild(head);
+          div.appendChild(prompt);
+          div.appendChild(ta);
+          sec.appendChild(div);
+        });
+        frag.appendChild(sec);
+      });
+      checklistEl.appendChild(frag);
+      updateProgress();
+    }
+
+    function buildMarkdown() {
+      const lines = ["# PRISMA-NMA Checklist", "", "_Generated with allmeta — Hutton 2015 / PRISMA 2020._", ""];
+      ITEMS.forEach(section => {
+        lines.push(`## ${section.section}`, "");
+        section.items.forEach(item => {
+          const tag = item.isNma ? " (NMA)" : "";
+          lines.push(`### ${item.num}. ${item.title}${tag}`, "");
+          lines.push(`> ${item.prompt}`, "");
+          const val = (saved[item.num] || "").trim();
+          lines.push(val ? val : "_Not yet completed._", "");
+        });
+      });
+      return lines.join("\n");
+    }
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      setTimeout(() => toastEl.classList.remove("show"), 1800);
+    }
+
+    document.getElementById("exportMd").addEventListener("click", () => {
+      Object.keys(saved).forEach(k => delete saved[k]);
+      document.querySelectorAll("textarea[data-num]").forEach(t => {
+        if (t.value.trim()) saved[t.dataset.num] = t.value;
+      });
+      const md = buildMarkdown();
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "prisma-nma-checklist.md";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("Downloaded prisma-nma-checklist.md");
+    });
+
+    document.getElementById("copyMd").addEventListener("click", async () => {
+      Object.keys(saved).forEach(k => delete saved[k]);
+      document.querySelectorAll("textarea[data-num]").forEach(t => {
+        if (t.value.trim()) saved[t.dataset.num] = t.value;
+      });
+      const md = buildMarkdown();
+      try {
+        await navigator.clipboard.writeText(md);
+        showToast("Copied to clipboard");
+      } catch {
+        showToast("Clipboard blocked — use Export instead");
+      }
+    });
+
+    document.getElementById("clearAll").addEventListener("click", () => {
+      if (!confirm("Clear all responses? This cannot be undone.")) return;
+      document.querySelectorAll("textarea[data-num]").forEach(t => { t.value = ""; });
+      Object.keys(saved).forEach(k => delete saved[k]);
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      updateProgress();
+      showToast("Cleared");
+    });
+
+    render();
+  </script>
+</body>
+</html>
