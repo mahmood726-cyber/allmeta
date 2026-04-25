@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta name="description" content="Diagnostic test accuracy meta-analysis workflow on allmeta — QUADAS-2 RoB, threshold-effect, bivariate / HSROC, certainty.">
+  <title>Diagnostic test accuracy workflow — allmeta</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow</a>
+  <a class="hub-back" href="../../" aria-label="Back to allmeta hub">← allmeta</a>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Workflow · PRISMA-DTA</p>
+      <h1>Diagnostic test accuracy</h1>
+      <p class="lede">DTA reviews are not pairwise reviews with sensitivity and specificity glued on. The threshold effect, joint Se-Sp distribution, and bivariate model are mandatory — Cochrane DTA Handbook is explicit. This is the path.</p>
+    </header>
+
+    <nav class="workflow-nav" aria-label="Workflow paths">
+      <a href="../systematic-review/">Systematic review</a>
+      <a href="../network-meta-analysis/">Network meta-analysis</a>
+      <a href="./" class="current">Diagnostic test accuracy</a>
+    </nav>
+
+    <main id="main">
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div class="step-body">
+            <h2>Frame the question (PIRD, not PICO)</h2>
+            <p>For DTA, use Population–Index test–Reference standard–Diagnosis. Define: who is the population (screening, triage, or confirmation?), what is the index test, what is the reference standard, what condition.</p>
+            <p class="rationale">Mixing populations across phases of diagnosis is the most common DTA failure mode.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../pico/index.html">PICO / PIRD Formulator →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/dta-course-when-the-test-lies-v4.html" target="_blank" rel="noopener">Learn the theory: DTA Course (When the test lies)</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">2</span>
+          <div class="step-body">
+            <h2>Search &amp; screen</h2>
+            <p>DTA-specific filters (Cochrane DTA Handbook §6) — broader than RCT filters because DTA papers report poorly. Then screen with PIRD eligibility.</p>
+            <p class="rationale">Standard PRISMA approach with DTA-tuned search; filters are looser to compensate for inconsistent indexing.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../search-translator/index.html">Search Translator →</a>
+              <a class="tool-link" href="../../prisma-screen/index.html">PRISMA Screening →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">3</span>
+          <div class="step-body">
+            <h2>Risk of bias &amp; applicability — QUADAS-2</h2>
+            <p>QUADAS-2 has 4 domains × 2 judgements (RoB and applicability). Get the patient selection and reference standard domains right or the rest is moot.</p>
+            <p class="rationale">QUADAS-2 is the only validated DTA RoB tool. RoB 2 does not apply.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../quadas-2/index.html">QUADAS-2 →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">4</span>
+          <div class="step-body">
+            <h2>Threshold-effect check</h2>
+            <p>Spearman correlation of logit(Se) and logit(1−Sp) across studies. r > 0.6 is a threshold effect — pooling Se and Sp separately becomes meaningless and the SROC curve is the right summary.</p>
+            <p class="rationale">If you skip this and pool Se/Sp anyway, your readers (and reviewers) catch you. Per advanced-stats.md.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../dta-sroc/index.html">DTA SROC →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">5</span>
+          <div class="step-body">
+            <h2>Fit the bivariate / HSROC model</h2>
+            <p>Bivariate (Reitsma) or HSROC. Bivariate convergence often fails for k&lt;5 — constrain ρ to [−0.95, 0.95] or fix ρ=0.</p>
+            <p class="rationale">A pooled (Se, Sp, AUC) point with confidence and prediction ellipses is the headline output. Skip the model and you have ≤ 1990s methodology.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../hsroc/index.html">HSROC →</a>
+              <a class="tool-link secondary" href="../../dta-sroc/index.html">DTA SROC →</a>
+              <a class="tool-link secondary" href="../../webr-studio/index.html">WebR (mada) →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">6</span>
+          <div class="step-body">
+            <h2>Certainty &amp; report (PRISMA-DTA)</h2>
+            <p>GRADE for DTA has different domains (study limitations, indirectness, inconsistency, imprecision, publication bias) operationalised differently than for interventions. Use CINeMA's DTA mode where applicable.</p>
+            <p class="rationale">Reviewers will check whether certainty was rated for sensitivity, specificity, and clinical consequences (true positives / false negatives) separately.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../grade-sof/index.html">GRADE SoF →</a>
+              <a class="tool-link secondary" href="../../cinema/index.html">CINeMA →</a>
+              <a class="tool-link secondary" href="../../prisma-flow/index.html">PRISMA flow →</a>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <p class="foot">
+        New to DTA? The <a href="https://mahmood726-cyber.github.io/synthesis-courses/dta-course-when-the-test-lies-v4.html" target="_blank" rel="noopener">DTA Course (When the test lies)</a> is the deepest free resource on the topic.
+        For RCT reviews, see <a href="../systematic-review/">systematic review</a>; for treatment networks, see <a href="../network-meta-analysis/">NMA</a>.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

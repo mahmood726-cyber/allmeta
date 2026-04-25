@@ -299,6 +299,61 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   margin-top: 18px;
 }
 
+/* Featured strip ("Start here") — six anchor tools above the grid. */
+.featured-strip { margin: 24px 0 12px; }
+.featured-strip-heading {
+  font-size: 1.4rem; margin-bottom: 6px;
+}
+.featured-strip-sub {
+  color: var(--muted); font-family: system-ui, sans-serif;
+  font-size: 0.9rem; margin-bottom: 14px;
+}
+.featured-strip-row {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.featured-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 16px;
+  background: rgba(179, 80, 43, 0.08);
+  border: 1px solid rgba(179, 80, 43, 0.18);
+  border-radius: 12px;
+  text-decoration: none; color: var(--ink);
+  font-family: system-ui, sans-serif;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.featured-card:hover, .featured-card:focus {
+  background: rgba(179, 80, 43, 0.14);
+  border-color: rgba(179, 80, 43, 0.35);
+  transform: translateY(-1px);
+}
+.featured-card-name { font-size: 0.95rem; font-weight: 600; }
+.featured-card-cat { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+@media (prefers-color-scheme: dark) {
+  .featured-card { background: rgba(224, 124, 90, 0.10); border-color: rgba(224, 124, 90, 0.20); }
+  .featured-card:hover, .featured-card:focus { background: rgba(224, 124, 90, 0.16); border-color: rgba(224, 124, 90, 0.40); }
+}
+
+/* Filter chip count "(n)" — quieter than the label */
+.filter-chip-count { opacity: 0.55; font-weight: 500; margin-left: 2px; }
+
+/* Course cross-link in card actions — secondary action, dashed underline */
+.project-link-course {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: 10px;
+  background: transparent; color: var(--accent-cool);
+  border: none; padding: 8px 0;
+  font-size: 0.85rem; font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+}
+.project-link-course:hover, .project-link-course:focus {
+  color: var(--accent-strong);
+}
+
+/* Featured-card highlight in the main catalogue grid (subtle gold hairline) */
+.project-card-featured { border-color: rgba(212, 175, 55, 0.55); }
+
 .panel-card {
   border-radius: var(--radius-lg);
   padding: 24px;

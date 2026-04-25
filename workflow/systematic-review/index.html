@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta name="description" content="Systematic review workflow on allmeta — six tools in PRISMA order: PICO, search, dedupe, screen, RoB, synthesis.">
+  <title>Systematic review workflow — allmeta</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow</a>
+  <a class="hub-back" href="../../" aria-label="Back to allmeta hub">← allmeta</a>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Workflow · PRISMA 2020</p>
+      <h1>Systematic review</h1>
+      <p class="lede">A start-to-finish path through the allmeta tools that mirror the PRISMA 2020 process — from question to synthesis. Each step is a tool you can open in a new tab; the sequence is what a Cochrane-grade review would follow.</p>
+    </header>
+
+    <nav class="workflow-nav" aria-label="Workflow paths">
+      <a href="./" class="current">Systematic review</a>
+      <a href="../network-meta-analysis/">Network meta-analysis</a>
+      <a href="../diagnostic-test-accuracy/">Diagnostic test accuracy</a>
+    </nav>
+
+    <main id="main">
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div class="step-body">
+            <h2>Frame the question</h2>
+            <p>Translate a clinical question into PICO components. Crisp PICO is what makes the search tractable and the inclusion criteria reproducible.</p>
+            <p class="rationale">Why first: the search string, eligibility, and outcome list all derive from PICO. Get this right or rerun everything.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../pico/index.html">PICO Formulator →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html#pico" target="_blank" rel="noopener">Learn the theory: PICO module</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">2</span>
+          <div class="step-body">
+            <h2>Search every database</h2>
+            <p>Translate one database's syntax (PubMed) into Embase, Cochrane CENTRAL, Web of Science. Then forward/backward citation-chase the seminal papers.</p>
+            <p class="rationale">PRISMA item 7. Reviewers will check whether you searched ≥3 databases plus citation chasing.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../search-translator/index.html">Search Translator →</a>
+              <a class="tool-link secondary" href="../../citation-chaser/index.html">Citation Chaser →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-topic-selection-course.html" target="_blank" rel="noopener">Learn the theory: search strategy</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">3</span>
+          <div class="step-body">
+            <h2>Deduplicate &amp; screen</h2>
+            <p>Run an automated dedupe pass (DOI / title / author overlap), then screen titles &amp; abstracts. Two reviewers independently in a real review; one is acceptable for rapid reviews.</p>
+            <p class="rationale">PRISMA items 8–9. Record screening decisions for the flow diagram.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../citation-dedup/index.html">Citation Dedup →</a>
+              <a class="tool-link" href="../../prisma-screen/index.html">PRISMA Screening →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html" target="_blank" rel="noopener">Learn the theory: rapid screening</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">4</span>
+          <div class="step-body">
+            <h2>Assess risk of bias</h2>
+            <p>Use RoB 2 for randomised trials, ROBINS-I for non-randomised, ROBINS-E for exposures. Render a traffic-light summary for the manuscript.</p>
+            <p class="rationale">PRISMA item 11. The single most-scrutinised step at peer review.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../rob2/index.html">RoB 2 →</a>
+              <a class="tool-link secondary" href="../../robins-i/index.html">ROBINS-I →</a>
+              <a class="tool-link secondary" href="../../robins-e/index.html">ROBINS-E →</a>
+              <a class="tool-link secondary" href="../../rob-traffic-light/index.html">Traffic-light plot →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html" target="_blank" rel="noopener">Learn the theory: RoB Mastery course (45 min)</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">5</span>
+          <div class="step-body">
+            <h2>Synthesise quantitatively</h2>
+            <p>Pairwise meta-analysis with Hartung-Knapp + prediction interval. Sensitivity analyses (cumulative, leave-one-out, subgroup, bias). Use Bayesian or multilevel where the data warrant it.</p>
+            <p class="rationale">PRISMA items 13–15. The point estimate is rarely the headline; the prediction interval and sensitivity analyses are what reviewers cite.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../forest-plot/index.html">Forest Plot →</a>
+              <a class="tool-link secondary" href="../../heterogeneity/index.html">Heterogeneity →</a>
+              <a class="tool-link secondary" href="../../meta-regression/index.html">Meta-regression →</a>
+              <a class="tool-link secondary" href="../../pubbias-tests/index.html">Pub-bias tests →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html" target="_blank" rel="noopener">Learn the theory: MA Methods course</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">6</span>
+          <div class="step-body">
+            <h2>Grade the certainty &amp; report</h2>
+            <p>Build a GRADE Summary of Findings table (5 domains, with upgrade/downgrade reasoning). Render the PRISMA 2020 flow diagram. Run the PRISMA-2020 checklist before submission.</p>
+            <p class="rationale">PRISMA items 22–25, GRADE Working Group guidance. The SoF table is what the reader actually remembers.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../grade-sof/index.html">GRADE SoF →</a>
+              <a class="tool-link" href="../../prisma-flow/index.html">PRISMA Flow →</a>
+              <a class="tool-link secondary" href="../../prisma-checklist/index.html">PRISMA Checklist →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html" target="_blank" rel="noopener">Learn the theory: GRADE Certainty course</a>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <p class="foot">
+        Want a deeper foundation before starting? Take the <a href="https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html" target="_blank" rel="noopener">Evidence Synthesis Foundations course</a> or browse the full <a href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">26-course collection</a>.
+        Doing a network or DTA review instead? See <a href="../network-meta-analysis/">network meta-analysis</a> or <a href="../diagnostic-test-accuracy/">diagnostic test accuracy</a>.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta name="description" content="Network meta-analysis workflow on allmeta — geometry, transitivity, pooling, inconsistency, ranking, certainty.">
+  <title>Network meta-analysis workflow — allmeta</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow</a>
+  <a class="hub-back" href="../../" aria-label="Back to allmeta hub">← allmeta</a>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Workflow · PRISMA-NMA</p>
+      <h1>Network meta-analysis</h1>
+      <p class="lede">From a connected network of trials to a defensible ranking. The order matters: check transitivity and inconsistency <em>before</em> reporting a SUCRA. Skip those checks and your ranking is fiction.</p>
+    </header>
+
+    <nav class="workflow-nav" aria-label="Workflow paths">
+      <a href="../systematic-review/">Systematic review</a>
+      <a href="./" class="current">Network meta-analysis</a>
+      <a href="../diagnostic-test-accuracy/">Diagnostic test accuracy</a>
+    </nav>
+
+    <main id="main">
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div class="step-body">
+            <h2>Frame &amp; search (as for any systematic review)</h2>
+            <p>The PICO must be specific about treatments and outcomes. Comparators must form a connected network — at least one trial per loop closure.</p>
+            <p class="rationale">If the network has disconnected components, NMA is impossible — fall back to pairwise.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../pico/index.html">PICO Formulator →</a>
+              <a class="tool-link secondary" href="../../search-translator/index.html">Search Translator →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">2</span>
+          <div class="step-body">
+            <h2>Risk of bias &amp; transitivity</h2>
+            <p>RoB 2 per study. Then assess <strong>transitivity</strong>: are effect modifiers (age, baseline severity, follow-up) similar across comparisons? If not, indirect comparison is invalid.</p>
+            <p class="rationale">Transitivity is the central NMA assumption. A non-transitive network produces precise but biased pooled effects.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../rob2/index.html">RoB 2 →</a>
+              <a class="tool-link secondary" href="../../rob-traffic-light/index.html">Traffic-light plot →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html" target="_blank" rel="noopener">Learn the theory: Advanced MA course (NMA module)</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">3</span>
+          <div class="step-body">
+            <h2>Pairwise checks first (Bucher)</h2>
+            <p>For each closed loop, run a Bucher indirect comparison and check it agrees with the direct estimate. Big disagreements signal inconsistency before you ever fit the network model.</p>
+            <p class="rationale">Cheap diagnostic. Catches problems that the global model averages out.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../bucher/index.html">Bucher Indirect →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">4</span>
+          <div class="step-body">
+            <h2>Fit the network &amp; visualise</h2>
+            <p>Frequentist (graph-theoretic, contrast-level random effects) or Bayesian. Either way, draw the network with edge widths proportional to the number of trials per comparison.</p>
+            <p class="rationale">A pretty SUCRA hides a lot. The network plot is the first thing a methodological reviewer looks at.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../nma/index.html">NMA →</a>
+              <a class="tool-link secondary" href="../../bayesian-nma/index.html">Bayesian NMA →</a>
+              <a class="tool-link secondary" href="../../component-nma/index.html">Component NMA →</a>
+              <a class="tool-link secondary" href="../../webr-studio/index.html">WebR (netmeta) →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">5</span>
+          <div class="step-body">
+            <h2>Test inconsistency — globally and locally</h2>
+            <p>Design-by-treatment interaction test for global inconsistency. Node-splitting for each loop. If either is significant, the ranking is suspect — investigate which design or comparison is the source.</p>
+            <p class="rationale">Per Cochrane Handbook §11.4: "Always test consistency before interpreting." Skip this and your ranking can't be defended.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../nma-global-inconsistency/index.html">Global inconsistency →</a>
+              <a class="tool-link" href="../../nma-inconsistency/index.html">Node-splitting →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">6</span>
+          <div class="step-body">
+            <h2>Certainty &amp; report (CINeMA + PRISMA-NMA)</h2>
+            <p>Use CINeMA to grade certainty across the 6 NMA-specific domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence). Report SUCRA <em>only</em> alongside the certainty rating.</p>
+            <p class="rationale">A treatment can rank #1 with very low certainty — readers must see both. The SUCRA-without-certainty figure has been a recurring red-flag in NMA peer review.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../cinema/index.html">CINeMA →</a>
+              <a class="tool-link secondary" href="../../grade-sof/index.html">GRADE SoF →</a>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <p class="foot">
+        New to NMA? Start with the <a href="https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html" target="_blank" rel="noopener">Advanced Meta-Analysis course (NMA module)</a>.
+        For pairwise reviews, see <a href="../systematic-review/">systematic review</a>; for diagnostic accuracy, see <a href="../diagnostic-test-accuracy/">DTA</a>.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

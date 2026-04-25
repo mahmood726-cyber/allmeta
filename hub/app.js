@@ -4,6 +4,7 @@
   const grid = document.getElementById("project-grid");
   const filterBar = document.getElementById("filter-bar");
   const resultsSummary = document.getElementById("results-summary");
+  const featuredStrip = document.getElementById("featured-strip");
 
   const counts = {
     launchable: document.getElementById("launchable-count"),
@@ -37,6 +38,14 @@
     return ["All", "Existing", "New"].concat(categoryFilters);
   }
 
+  function countForFilter(label) {
+    if (label === "All") return projects.length;
+    if (label === "Existing" || label === "New") {
+      return projects.filter((p) => p.collection === label.toLowerCase()).length;
+    }
+    return projects.filter((p) => p.category === label).length;
+  }
+
   function updateMetrics() {
     const categories = new Set(projects.map((project) => project.category));
     counts.launchable.textContent = String(projects.filter((project) => project.mode === "file").length);
@@ -54,14 +63,23 @@
       const isActive = label === activeFilter;
       button.className = `filter-chip${isActive ? " is-active" : ""}`;
       button.setAttribute("aria-pressed", isActive ? "true" : "false");
-      button.textContent = label;
+      button.dataset.filter = label;
+      const labelSpan = document.createElement("span"); labelSpan.textContent = label;
+      const count = document.createElement("span");
+      count.className = "filter-chip-count";
+      count.textContent = " (" + countForFilter(label) + ")";
+      count.setAttribute("aria-hidden", "true"); // SR reads from labelSpan + aria-pressed
+      button.appendChild(labelSpan);
+      button.appendChild(count);
+      button.setAttribute("aria-label", label + ", " + countForFilter(label) + " tools");
       button.addEventListener("click", function () {
         activeFilter = label;
         filterButtons.forEach((b) => {
-          const on = b.textContent === activeFilter;
+          const on = b.dataset.filter === activeFilter;
           b.classList.toggle("is-active", on);
           b.setAttribute("aria-pressed", on ? "true" : "false");
         });
+        syncUrl();
         render();
       });
       filterBar.appendChild(button);
@@ -84,7 +102,8 @@
       project.summary,
       project.note,
       project.category,
-      (project.tags || []).join(" ")
+      (project.tags || []).join(" "),
+      (project.keywords || []).join(" ")
     ].join(" ").toLowerCase();
     return haystack.includes(query);
   }
@@ -101,6 +120,7 @@
   function renderCard(project) {
     const article = document.createElement("article");
     article.className = "project-card";
+    if (project.featured) article.classList.add("project-card-featured");
 
     const head = document.createElement("div"); head.className = "project-head";
     const headText = document.createElement("div");
@@ -153,9 +173,64 @@
       }
     }
     actions.appendChild(launch);
+
+    // Course cross-link — opens in new tab. Only rendered when project.course is set.
+    if (typeof project.course === "string" && project.course) {
+      const courseLink = document.createElement("a");
+      courseLink.className = "project-link project-link-course";
+      courseLink.href = project.course;
+      courseLink.target = "_blank";
+      courseLink.rel = "noopener noreferrer";
+      courseLink.textContent = "Learn the theory →";
+      courseLink.setAttribute("aria-label", "Companion course for " + project.name + " (opens in new tab)");
+      actions.appendChild(courseLink);
+    }
+
     article.appendChild(actions);
 
     return article;
+  }
+
+  function renderFeaturedStrip() {
+    if (!featuredStrip) return;
+    const featured = projects.filter((p) => p.featured && p.mode !== "server");
+    if (!featured.length) {
+      featuredStrip.hidden = true;
+      featuredStrip.innerHTML = "";
+      return;
+    }
+    featuredStrip.hidden = false;
+    featuredStrip.innerHTML = "";
+
+    const heading = document.createElement("h2");
+    heading.className = "featured-strip-heading";
+    heading.textContent = "Start here";
+    featuredStrip.appendChild(heading);
+
+    const sub = document.createElement("p");
+    sub.className = "featured-strip-sub";
+    sub.textContent = "The most-used tools — direct entry points for the common workflows.";
+    featuredStrip.appendChild(sub);
+
+    const row = document.createElement("div");
+    row.className = "featured-strip-row";
+    featured.forEach((p) => {
+      const href = safeHref(p.path);
+      const card = document.createElement("a");
+      card.className = "featured-card";
+      card.href = href;
+      card.setAttribute("aria-label", "Open " + p.name);
+      const cardName = document.createElement("strong");
+      cardName.className = "featured-card-name";
+      cardName.textContent = p.name;
+      card.appendChild(cardName);
+      const cardCat = document.createElement("span");
+      cardCat.className = "featured-card-cat";
+      cardCat.textContent = p.category;
+      card.appendChild(cardCat);
+      row.appendChild(card);
+    });
+    featuredStrip.appendChild(row);
   }
 
   function render() {
@@ -167,7 +242,7 @@
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "empty-state";
-      empty.textContent = "No projects match the current search and filter.";
+      empty.textContent = "No projects match the current search and filter. Try clearing one of them, or browse a workflow.";
       grid.appendChild(empty);
     } else {
       const frag = document.createDocumentFragment();
@@ -176,11 +251,51 @@
     }
 
     resultsSummary.textContent = `${visible.length} project${visible.length === 1 ? "" : "s"} shown`;
+    // Hide featured strip when actively filtering / searching — it's a "browse" affordance.
+    if (featuredStrip) {
+      const filtering = activeFilter !== "All" || !!query;
+      featuredStrip.style.display = filtering ? "none" : "";
+    }
   }
 
+  // URL-state sync. ?q=foo&cat=Pairwise%20MA round-trips on share/refresh.
+  function readUrlState() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q") || "";
+      const cat = params.get("cat") || "All";
+      if (q && searchInput) searchInput.value = q;
+      const valid = new Set(getFilters());
+      activeFilter = valid.has(cat) ? cat : "All";
+    } catch (_) { /* malformed URL — ignore */ }
+  }
+  function syncUrl() {
+    try {
+      const params = new URLSearchParams();
+      const q = (searchInput.value || "").trim();
+      if (q) params.set("q", q);
+      if (activeFilter && activeFilter !== "All") params.set("cat", activeFilter);
+      const qs = params.toString();
+      const newUrl = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
+      window.history.replaceState(null, "", newUrl);
+    } catch (_) { /* history API not available — ignore */ }
+  }
+
+  // Debounce search to avoid 71-card rebuilds on every keystroke (V4-P1-27).
+  let searchTimer = null;
+  function onSearchInput() {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () {
+      syncUrl();
+      render();
+    }, 120);
+  }
+
+  readUrlState();
   updateMetrics();
   createFilterButtons();
+  renderFeaturedStrip();
   render();
 
-  searchInput.addEventListener("input", render);
+  searchInput.addEventListener("input", onSearchInput);
 })();

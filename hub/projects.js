@@ -1,6 +1,8 @@
 window.HTML_APPS_PROJECTS = [
   {
     name: "RCT Extractor",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/ai-meta-analysis-course.html",
     folder: "C:\\HTML apps\\rct-extractor",
     path: "./rct-extractor/index.html",
     collection: "existing",
@@ -12,6 +14,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Local AI setup",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/ai-meta-analysis-course.html",
     folder: "C:\\HTML apps\\local-ai",
     path: "./local-ai/index.html",
     collection: "existing",
@@ -23,6 +26,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "WebR Studio",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/becoming-methodologist.html",
     folder: "C:\\HTML apps\\webr-studio",
     path: "./webr-studio/index.html",
     collection: "existing",
@@ -45,6 +49,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "NMA Global Inconsistency",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\nma-global-inconsistency",
     path: "./nma-global-inconsistency/index.html",
     collection: "existing",
@@ -56,6 +61,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "p-curve / p-uniform",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\p-curve",
     path: "./p-curve/index.html",
     collection: "existing",
@@ -67,6 +73,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Limit meta-analysis",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\limit-ma",
     path: "./limit-ma/index.html",
     collection: "existing",
@@ -78,6 +85,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GOSH Meta-Regression",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\gosh-metareg",
     path: "./gosh-metareg/index.html",
     collection: "existing",
@@ -89,6 +97,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PowerMA / RIS",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/cast-when-certainty-kills.html",
     folder: "C:\\HTML apps\\powerma",
     path: "./powerma/index.html",
     collection: "existing",
@@ -100,6 +109,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GRADE-CERQual",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html",
     folder: "C:\\HTML apps\\cerqual",
     path: "./cerqual/index.html",
     collection: "existing",
@@ -111,6 +121,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "ROBINS-E",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "C:\\HTML apps\\robins-e",
     path: "./robins-e/index.html",
     collection: "existing",
@@ -122,6 +133,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Citation Chaser",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-topic-selection-course.html",
     folder: "C:\\HTML apps\\citation-chaser",
     path: "./citation-chaser/index.html",
     collection: "existing",
@@ -133,6 +145,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "NMA Inconsistency",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\nma-inconsistency",
     path: "./nma-inconsistency/index.html",
     collection: "existing",
@@ -144,6 +157,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Bucher Indirect",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bucher",
     path: "./bucher/index.html",
     collection: "existing",
@@ -155,6 +169,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Multi-level MA",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\multilevel-ma",
     path: "./multilevel-ma/index.html",
     collection: "existing",
@@ -166,6 +181,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Pub-bias Tests",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\pubbias-tests",
     path: "./pubbias-tests/index.html",
     collection: "existing",
@@ -177,6 +193,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Copas selection",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\copas",
     path: "./copas/index.html",
     collection: "existing",
@@ -188,6 +205,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Influence Diagnostics",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\influence",
     path: "./influence/index.html",
     collection: "existing",
@@ -199,6 +217,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Bayesian MA — MCMC",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-mcmc",
     path: "./bayesian-mcmc/index.html",
     collection: "existing",
@@ -210,6 +229,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "MH / Peto pooling",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\mh-peto",
     path: "./mh-peto/index.html",
     collection: "existing",
@@ -221,6 +241,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Thematic Synthesis",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/qualitative-evidence-synthesis-course.html",
     folder: "C:\\HTML apps\\thematic-synthesis",
     path: "./thematic-synthesis/index.html",
     collection: "existing",
@@ -232,6 +253,8 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Network MA (SUCRA)",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-nma",
     path: "./bayesian-nma/index.html",
     collection: "existing",
@@ -243,6 +266,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Component NMA",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\component-nma",
     path: "./component-nma/index.html",
     collection: "existing",
@@ -254,6 +278,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "MCID & NI margin",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/hta-oman-course.html",
     folder: "C:\\HTML apps\\mcid",
     path: "./mcid/index.html",
     collection: "existing",
@@ -265,6 +290,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "ROBINS-I",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "C:\\HTML apps\\robins-i",
     path: "./robins-i/index.html",
     collection: "existing",
@@ -276,6 +302,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "QUADAS-2",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "C:\\HTML apps\\quadas-2",
     path: "./quadas-2/index.html",
     collection: "existing",
@@ -287,6 +314,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "AMSTAR-2",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/umbrella-reviews-course.html",
     folder: "C:\\HTML apps\\amstar-2",
     path: "./amstar-2/index.html",
     collection: "existing",
@@ -298,6 +326,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "CINeMA (NMA confidence)",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html",
     folder: "C:\\HTML apps\\cinema",
     path: "./cinema/index.html",
     collection: "existing",
@@ -309,6 +338,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "HSROC / Bivariate DTA",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/dta-course-when-the-test-lies-v4.html",
     folder: "C:\\HTML apps\\hsroc",
     path: "./hsroc/index.html",
     collection: "existing",
@@ -320,6 +350,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GOSH Plot",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\gosh",
     path: "./gosh/index.html",
     collection: "existing",
@@ -331,6 +362,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PICO Formulator",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-topic-selection-course.html",
     folder: "C:\\HTML apps\\pico",
     path: "./pico/index.html",
     collection: "existing",
@@ -342,6 +374,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PRISMA 2020 Checklist",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-writing-course.html",
     folder: "C:\\HTML apps\\prisma-checklist",
     path: "./prisma-checklist/index.html",
     collection: "existing",
@@ -353,6 +386,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Search Strategy Translator",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-topic-selection-course.html",
     folder: "C:\\HTML apps\\search-translator",
     path: "./search-translator/index.html",
     collection: "existing",
@@ -364,6 +398,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Median → Mean/SD",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\median-to-mean",
     path: "./median-to-mean/index.html",
     collection: "existing",
@@ -375,6 +410,8 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "RoB 2",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "C:\\HTML apps\\rob2",
     path: "./rob2/index.html",
     collection: "existing",
@@ -386,6 +423,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PET-PEESE + Trim-and-Fill",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\pet-peese",
     path: "./pet-peese/index.html",
     collection: "existing",
@@ -397,6 +435,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Proportion MA",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\proportion-ma",
     path: "./proportion-ma/index.html",
     collection: "existing",
@@ -408,6 +447,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "K-M IPD Reconstructor",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/ipd-meta-analysis-course.html",
     folder: "C:\\HTML apps\\km-reconstructor",
     path: "./km-reconstructor/index.html",
     collection: "existing",
@@ -419,6 +459,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Citation Dedup",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html",
     folder: "C:\\HTML apps\\citation-dedup",
     path: "./citation-dedup/index.html",
     collection: "existing",
@@ -430,6 +471,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Effect-Size Converter",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\effect-size-converter",
     path: "./effect-size-converter/index.html",
     collection: "existing",
@@ -452,6 +494,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Dose Response Pro",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/hta-oman-course.html",
     folder: "C:\\HTML apps\\dosehtml",
     path: "./dosehtml/dose-response-pro.html",
     collection: "existing",
@@ -463,6 +506,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "TruthCert Pairwise Pro",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/truthcert-course.html",
     folder: "C:\\HTML apps\\Truthcert1",
     path: "./Truthcert1/index.html",
     collection: "existing",
@@ -529,6 +573,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Focus Studio",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html",
     folder: "C:\\HTML apps\\focus-studio",
     path: "./focus-studio/index.html",
     collection: "new",
@@ -562,6 +607,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "HTA Pro",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/hta-oman-course.html",
     folder: "C:\\HTML apps\\HTA",
     path: "./HTA/index.html",
     collection: "existing",
@@ -573,6 +619,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "IPD Meta-Pro",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/ipd-meta-analysis-course.html",
     folder: "C:\\HTML apps\\IPD-Meta-Pro",
     path: "./IPD-Meta-Pro/ipd-meta-pro.html",
     collection: "existing",
@@ -584,17 +631,19 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Pairwise AI",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\Pairwiseai",
-    path: "./Pairwiseai/Main screen.html",
+    path: "./Pairwiseai/main-screen.html",
     collection: "existing",
     mode: "file",
     category: "Evidence Synthesis",
     summary: "Pairwise meta-analysis AI variant with a dedicated main-screen entry, expert-review tracker, and external validation plan.",
-    note: "Companion to TruthCert Pairwise Pro — no dedicated index.html, entry is 'Main screen.html'.",
+    note: "Companion to TruthCert Pairwise Pro — no dedicated index.html, entry is 'main-screen.html'.",
     tags: ["pairwise", "ai", "meta-analysis"]
   },
   {
     name: "Living Meta",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/living-reviews-course.html",
     folder: "C:\\HTML apps\\living-meta",
     path: "./living-meta/living-meta-complete.html",
     collection: "existing",
@@ -606,6 +655,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "NMA Pro v8",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\nma-pro-v2",
     path: "./nma-pro-v2/nma-pro-v8.0.html",
     collection: "existing",
@@ -617,6 +667,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "NMA Dose-Response",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\nma-dose-response-app",
     path: "./nma-dose-response-app/index.html",
     collection: "existing",
@@ -628,6 +679,8 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PRISMA Flow",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-writing-course.html",
     folder: "C:\\HTML apps\\prisma-flow",
     path: "./prisma-flow/index.html",
     collection: "new",
@@ -639,6 +692,8 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Forest Plot Viewer",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html",
     folder: "C:\\HTML apps\\forest-plot",
     path: "./forest-plot/index.html",
     collection: "new",
@@ -650,6 +705,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Funnel Plot Explorer",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\funnel-plot",
     path: "./funnel-plot/index.html",
     collection: "new",
@@ -661,6 +717,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "RoB Traffic Light",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "C:\\HTML apps\\rob-traffic-light",
     path: "./rob-traffic-light/index.html",
     collection: "new",
@@ -672,6 +729,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Heterogeneity Explorer",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html",
     folder: "C:\\HTML apps\\heterogeneity",
     path: "./heterogeneity/index.html",
     collection: "new",
@@ -683,6 +741,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "TSA Calculator",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/cast-when-certainty-kills.html",
     folder: "C:\\HTML apps\\tsa",
     path: "./tsa/index.html",
     collection: "new",
@@ -694,6 +753,8 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GRADE SoF Builder",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html",
     folder: "C:\\HTML apps\\grade-sof",
     path: "./grade-sof/index.html",
     collection: "new",
@@ -705,6 +766,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "DTA SROC Explorer",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/dta-course-when-the-test-lies-v4.html",
     folder: "C:\\HTML apps\\dta-sroc",
     path: "./dta-sroc/index.html",
     collection: "new",
@@ -716,6 +778,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "MA Workbench",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html",
     folder: "C:\\HTML apps\\workbench",
     path: "./workbench/index.html",
     collection: "new",
@@ -727,6 +790,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Meta-Regression",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\meta-regression",
     path: "./meta-regression/index.html",
     collection: "new",
@@ -738,6 +802,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Cumulative + Subgroup",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\cumulative-subgroup",
     path: "./cumulative-subgroup/index.html",
     collection: "new",
@@ -749,6 +814,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "WebR Validator",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/becoming-methodologist.html",
     folder: "C:\\HTML apps\\webr-validator",
     path: "./webr-validator/index.html",
     collection: "new",
@@ -760,6 +826,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Bayesian MA",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-ma",
     path: "./bayesian-ma/index.html",
     collection: "new",
@@ -771,6 +838,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PRISMA Screening",
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html",
     folder: "C:\\HTML apps\\prisma-screen",
     path: "./prisma-screen/index.html",
     collection: "new",
