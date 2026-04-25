@@ -2,6 +2,8 @@
 
 # Multi-Persona Review v4 — hub experience + course integration
 
+**Status:** Top-10 ship-this-week items FIXED across 3 commits (`018c52f`, `8f0c0e9`, `59c3c1f`) on 2026-04-25. All 10 P0/P1 items from the recommended path are now live on `main`. Remaining P1/P2 items (sub-categorise the 36-deep Evidence Synthesis bucket, broader alert/confirm migration in IPD-Meta-Pro/nma-pro-v2, missing methods coverage like RoBMA/RVE/Reitsma) are **deferred** for a future review cycle.
+
 **Date:** 2026-04-25
 **Scope:** the **whole hub experience** — landing page, inner-app navigation, pedagogy/course cross-link, methodological coverage, accessibility, deployment. Different surface than v3 (which was per-app code polish in `effect-size-converter` + `rct-extractor`).
 
