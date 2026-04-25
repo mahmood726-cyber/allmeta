@@ -70,3 +70,15 @@ def test_script_close_not_in_string():
     text = INDEX.read_text(encoding="utf-8")
     m = re.search(r"<script>\s*(.*?)\s*</script>", text, re.DOTALL)
     assert m and "</script>" not in m.group(1)
+def test_grade_wizard_present():
+    """5-domain GRADE wizard must expose the five canonical domains."""
+    text = INDEX.read_text(encoding="utf-8")
+    for tok in ("Risk of bias", "Inconsistency", "Indirectness", "Imprecision", "Publication bias"):
+        assert tok in text, f"Missing GRADE domain: {tok}"
+    assert "function gradeCompute" in text
+    assert "renderWizardPanel" in text
+def test_grade_wizard_upgrade_options():
+    """Observational-study upgrades must include large-effect, dose-response, residual-confounding."""
+    text = INDEX.read_text(encoding="utf-8")
+    for tok in ("Large effect", "Very large effect", "Dose-response", "residual confounding"):
+        assert tok in text, f"Missing GRADE upgrade option: {tok}"
