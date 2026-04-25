@@ -23,6 +23,16 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -316,7 +326,7 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   display: flex; flex-direction: column; gap: 6px;
   padding: 14px 16px;
   background: rgba(179, 80, 43, 0.08);
-  border: 1px solid rgba(179, 80, 43, 0.18);
+  border: 1px solid rgba(179, 80, 43, 0.42);
   border-radius: 12px;
   text-decoration: none; color: var(--ink);
   font-family: system-ui, sans-serif;
@@ -345,8 +355,8 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
 .filter-chip-sub {
   font-size: 0.78rem;
   padding: 4px 10px;
-  background: rgba(29, 111, 112, 0.08);
-  border-color: rgba(29, 111, 112, 0.25);
+  background: rgba(29, 111, 112, 0.10);
+  border-color: rgba(29, 111, 112, 0.48);
   color: var(--ink);
 }
 .filter-chip-sub.is-active {

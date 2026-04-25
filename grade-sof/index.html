@@ -434,7 +434,7 @@
         '      <label><input type="checkbox" data-grade="conf" data-idx="' + idx + '"' + (g.conf ? " checked" : "") + '> Plausible residual confounding (+1)</label>',
         '    </div>',
         '  </fieldset>',
-        '  <div class="preview" id="wizard-preview-' + idx + '">',
+        '  <div class="preview" id="wizard-preview-' + idx + '" aria-live="polite" aria-atomic="true">',
         '    <strong>Computed:</strong> <span class="grade-pill ' + (CERT_CLASS[computed.level] || "grade-moderate") + ' pill">' + escapeHtml(computed.label) + '</span>',
         '    <div style="font-size:0.8rem; color:var(--muted); margin-top:0.25rem;">' + escapeHtml(computed.rationale) + '</div>',
         '  </div>',
@@ -521,17 +521,21 @@
           if (!o) return;
           const c = gradeCompute(o.grade);
           o.certainty = c.level;
-          // Append rationale to comments (avoid duplicating prior wizard rationale).
           const existing = (o.comments || "").replace(/\s*\[GRADE wizard:[\s\S]*?\]\s*$/u, "").trim();
           o.comments = (existing ? existing + " " : "") + "[GRADE wizard: " + c.rationale + "]";
-          renderForm();
+          // P1-02: surgical update rather than renderForm() — keeps focus,
+          // scroll position, and IME state across other rows. Update only the
+          // affected row's certainty <select> and comments <textarea>.
+          const row = outcomesWrap.children[idx];
+          if (row) {
+            const certSel = row.querySelector('[data-field="certainty"]');
+            if (certSel) certSel.value = o.certainty;
+            const commentsEl = row.querySelector('[data-field="comments"]');
+            if (commentsEl) commentsEl.value = o.comments;
+          }
+          refreshWizardPreview(idx);
           renderPreview();
           persist();
-          // Re-open this wizard panel for continued editing.
-          const panel = document.getElementById("wizard-" + idx);
-          const btn = outcomesWrap.querySelector("[data-action='wizard-toggle'][data-idx='" + idx + "']");
-          if (panel) panel.dataset.open = "true";
-          if (btn) btn.setAttribute("aria-expanded", "true");
         });
       });
       outcomesWrap.querySelectorAll("[data-action='wizard-close']").forEach((b) => {

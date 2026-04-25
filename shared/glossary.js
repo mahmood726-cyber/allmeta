@@ -32,7 +32,7 @@
     "random-effects": "Pooling model assuming each study has its own true effect drawn from a distribution N(μ, τ²).",
     "inverse-variance": "Each study contributes weight 1/SE² (or 1/(SE²+τ²) under random effects).",
     "Mantel-Haenszel": "Pooling method for binary outcomes that performs better than IV when events are sparse; computed on the natural log scale.",
-    "Peto OR": "Approximate odds-ratio pooling for very rare events; only valid when events are <1% and arms are balanced.",
+    "Peto OR": "Approximate odds-ratio pooling for rare events; valid when events <1-5%, the true effect is not extreme (OR not far from 1), and arm sizes are not grossly unequal. Cochrane Handbook §10.4.1.1; Bradburn 2007.",
     // Heterogeneity
     "I-squared": "Proportion of total variance attributable to between-study heterogeneity. ≥75% = considerable; ≥50% = substantial. Not the magnitude of heterogeneity (τ²).",
     "I²": "See I-squared. Does NOT indicate the size of heterogeneity — report τ² alongside.",
@@ -88,7 +88,7 @@
     "Hedges g": "Bias-corrected SMD; multiply Cohen's d by 1 - 3/(4(N₁+N₂)-9).",
     "Fisher z": "Variance-stabilising transform for correlations: z = atanh(r), Var(z) = 1/(n-3).",
     // Sensitivity / advanced
-    "fragility index": "Minimum number of event re-classifications (in the experimental arm only) that flips a significant trial to non-significant.",
+    "fragility index": "Minimum number of event re-classifications, in one arm only (typically the arm with fewer events, not always the experimental arm), that flips a significant trial to non-significant. Walsh 2014.",
     "TSA": "Trial Sequential Analysis — sequential monitoring boundaries for cumulative meta-analyses (O'Brien-Fleming).",
     "Copas selection": "Sensitivity model for selective publication. Needs k≥15.",
     "leave-one-out": "Sensitivity analysis recomputing the pooled estimate after omitting each study in turn.",
@@ -176,6 +176,7 @@
     if (!popoverEl) return;
     popoverEl.remove();
     popoverEl = null;
+    if (popoverFor) popoverFor.removeAttribute("aria-describedby");
     popoverFor = null;
     document.removeEventListener("keydown", handleEscape, true);
     document.removeEventListener("click", handleOutsideClick, true);
@@ -183,8 +184,10 @@
 
   function handleEscape(e) {
     if (e.key === "Escape") {
+      // P1-07: capture the trigger BEFORE closePopover() nulls it.
+      const target = popoverFor;
       closePopover();
-      if (popoverFor) popoverFor.focus();
+      if (target) target.focus();
     }
   }
 
@@ -200,18 +203,26 @@
     ensureStyles();
     popoverEl = document.createElement("div");
     popoverEl.className = "gloss-popover";
-    popoverEl.setAttribute("role", "tooltip");
+    // role="dialog" + aria-modal="false" is correct for a click-dismissible
+    // interactive panel (role="tooltip" is reserved for hover/focus-only,
+    // non-interactive descriptions). P1-07.
+    popoverEl.setAttribute("role", "dialog");
+    popoverEl.setAttribute("aria-modal", "false");
+    popoverEl.tabIndex = -1;
     const id = "gloss-pop-" + Math.random().toString(36).slice(2, 8);
+    const headId = id + "-h";
     popoverEl.id = id;
+    popoverEl.setAttribute("aria-labelledby", headId);
     popoverEl.innerHTML =
-      '<button class="gloss-close" aria-label="Close" type="button">×</button>' +
-      '<div class="gloss-head"></div>' +
+      '<button class="gloss-close" aria-label="Close definition" type="button">×</button>' +
+      '<div class="gloss-head" id="' + headId + '"></div>' +
       '<div class="gloss-body"></div>';
     popoverEl.querySelector(".gloss-head").textContent = term;
     popoverEl.querySelector(".gloss-body").textContent = def;
     popoverEl.querySelector(".gloss-close").addEventListener("click", () => {
+      const target = btn;
       closePopover();
-      btn.focus();
+      if (target) target.focus();
     });
     document.body.appendChild(popoverEl);
     const r = btn.getBoundingClientRect();
@@ -223,6 +234,9 @@
     popoverFor = btn;
     document.addEventListener("keydown", handleEscape, true);
     document.addEventListener("click", handleOutsideClick, true);
+    // Move focus into the popover so keyboard users can close via the close
+    // button or Escape and screen readers announce the dialog content.
+    popoverEl.focus({ preventScroll: true });
   }
 
   function lookupTerm(text) {
@@ -284,15 +298,15 @@
   }
 
   // Build a regex that matches any whole-word term occurrence.
-  // Escape regex metachars and require word boundaries (or hyphen edges).
+  // Escape regex metachars; boundaries reject letters, digits, hyphens, and
+  // Latin Extended (so "post-RMST" no longer tags "RMST", "naïve" doesn't
+  // tag "naive" partials, etc.). P1-04.
   function buildScanRegex(keys) {
-    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // Sort longer first so multi-word matches win over substrings.
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\\-]/g, "\\$&");
     const sorted = keys.slice().sort((a, b) => b.length - a.length);
     const parts = sorted.map(esc).join("|");
-    // Negative lookbehind/lookahead approximates word boundary tolerant of
-    // hyphens and unicode (PRISMA-NMA, τ² etc).
-    return new RegExp("(?<![A-Za-z0-9])(" + parts + ")(?![A-Za-z0-9])", "g");
+    const BOUND = "[A-Za-z0-9\\-\\u00C0-\\u024F]";
+    return new RegExp("(?<!" + BOUND + ")(" + parts + ")(?!" + BOUND + ")", "g");
   }
 
   function scan(root, opts) {
@@ -300,6 +314,9 @@
     opts = opts || {};
     const firstOnly = opts.firstOnly !== false; // default true
     root = root || document.body;
+    // P1-03: idempotency — never scan the same root twice.
+    if (root.dataset && root.dataset.glossScanned === "true") return;
+    if (root.dataset) root.dataset.glossScanned = "true";
     const seen = new Set();
     const re = buildScanRegex(Object.keys(TERMS));
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {

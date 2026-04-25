@@ -79,10 +79,13 @@
       border-radius: 10px;
       padding: 1rem 1.25rem;
       margin-bottom: 1rem;
+      min-width: 0; /* fieldset default width:min-content fix */
     }
-    .section h2 {
+    .section legend {
+      padding: 0 0.4rem;
       margin: 0 0 0.5rem;
       font-size: 0.85rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--muted);
@@ -188,16 +191,16 @@
       <button id="exportMd" class="primary" type="button">Export Markdown</button>
       <button id="copyMd" type="button">Copy to clipboard</button>
       <button id="clearAll" type="button">Clear all</button>
-      <span class="meta"><span id="filledCount">0</span> / <span id="totalCount">0</span> items filled</span>
+      <span class="meta" aria-live="polite"><span id="filledCount">0</span> / <span id="totalCount">0</span> items filled</span>
     </div>
 
-    <div class="progress-bar" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-bar" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Checklist completion"><div class="progress-fill" id="progressFill"></div></div>
 
     <div id="checklist"></div>
   </main>
 
   <footer>
-    Hutton B, Salanti G, Caldwell DM, et al. The PRISMA Extension Statement for Reporting of Systematic Reviews Incorporating Network Meta-analyses of Health Care Interventions: Checklist and Explanations. <em>Ann Intern Med</em> 2015;162(11):777-784. Base items follow Page MJ et al. <em>BMJ</em> 2021;372:n71 (PRISMA 2020). NMA-specific items are highlighted with a purple badge. Stored client-side in <code>localStorage</code>; no data leaves the browser.
+    Hutton B, Salanti G, Caldwell DM, et al. The PRISMA Extension Statement for Reporting of Systematic Reviews Incorporating Network Meta-analyses of Health Care Interventions: Checklist and Explanations. <em>Ann Intern Med</em> 2015;162(11):777-784. Hutton 2015 is built on the PRISMA 2009 base; this generator presents items in PRISMA 2020 ordering (Page MJ et al. <em>BMJ</em> 2021;372:n71) so the wording reflects current reporting conventions. Item S5 (confidence in the evidence) reflects a post-Hutton extension — the CINeMA framework was introduced by Nikolakopoulou A et al. <em>PLoS Med</em> 2020;17(4):e1003082; GRADE-for-NMA guidance is also accepted in the same role. NMA-specific items carry a purple badge. Stored client-side in <code>localStorage</code>; no data leaves the browser.
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -245,7 +248,7 @@
         { num: "23",  title: "Synthesis of results (NMA)", prompt: "Present results of each network meta-analysis conducted, including summary effect size estimates (with credible/confidence intervals). Treatment rankings (e.g., SUCRA) may be considered. If meta-regression or network meta-regression has been conducted, present the summary effect estimates with credible/confidence intervals from such analyses, separating these by ‘type’ of treatment comparison." , isNma: true },
         { num: "S4",  title: "Exploration for inconsistency (NMA)", prompt: "Describe results from the assessment of inconsistency between direct and indirect evidence." , isNma: true },
         { num: "24",  title: "Risk of bias across studies", prompt: "Present results of any assessment of risk of bias across studies for the evidence base under consideration." },
-        { num: "S5",  title: "Confidence in the evidence (NMA-CINeMA / GRADE)", prompt: "Provide an assessment of confidence in the cumulative evidence supporting each treatment comparison, ideally using a structured approach such as CINeMA, GRADE or a comparable framework." , isNma: true },
+        { num: "S5",  title: "Confidence in the evidence (CINeMA / GRADE — post-Hutton 2015)", prompt: "Provide an assessment of confidence in the cumulative evidence supporting each treatment comparison, ideally using a structured approach. The Hutton 2015 NMA extension predates CINeMA (Nikolakopoulou 2020 PLoS Med 17:e1003082); modern reviews typically use CINeMA or GRADE-for-NMA in this role." , isNma: true },
         { num: "25",  title: "Results of additional analyses", prompt: "Give results of additional analyses, if done (e.g., sensitivity, subgroup analyses, meta-regression, alternative network geometries studied, alternative choice of prior distributions for Bayesian analyses, etc.)." }
       ]},
       { section: "Discussion", items: [
@@ -275,14 +278,20 @@
       catch { return {}; }
     })();
 
+    // Debounced persist (P1-15) — typing into 33 textareas should not pay
+    // for a full DOM walk + JSON.stringify per keystroke.
+    let persistTimer = null;
     function persist() {
-      const out = {};
-      document.querySelectorAll("textarea[data-num]").forEach(t => {
-        if (t.value.trim()) out[t.dataset.num] = t.value;
-      });
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); }
-      catch { /* quota exceeded — nothing we can do client-side */ }
-      updateProgress();
+      updateProgress(); // counter UI updates without delay
+      if (persistTimer) clearTimeout(persistTimer);
+      persistTimer = setTimeout(() => {
+        const out = {};
+        document.querySelectorAll("textarea[data-num]").forEach(t => {
+          if (t.value.trim()) out[t.dataset.num] = t.value;
+        });
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); }
+        catch { /* quota exceeded — nothing we can do client-side */ }
+      }, 250);
     }
 
     function updateProgress() {
@@ -290,8 +299,11 @@
       document.querySelectorAll("textarea[data-num]").forEach(t => {
         if (t.value.trim()) filled++;
       });
+      const pct = (filled / totalItems) * 100;
       filledCountEl.textContent = String(filled);
-      progressFill.style.width = `${(filled / totalItems) * 100}%`;
+      progressFill.style.width = `${pct}%`;
+      const bar = document.getElementById("progressBar");
+      if (bar) bar.setAttribute("aria-valuenow", String(Math.round(pct)));
     }
 
     function escapeHtml(s) {
@@ -301,9 +313,11 @@
     function render() {
       const frag = document.createDocumentFragment();
       ITEMS.forEach(section => {
-        const sec = document.createElement("section");
+        // <fieldset><legend> instead of <section><h2> so SR users get
+        // section context ("Methods, group, Item 5: …") on each textarea.
+        const sec = document.createElement("fieldset");
         sec.className = "section";
-        const h = document.createElement("h2");
+        const h = document.createElement("legend");
         h.textContent = section.section;
         sec.appendChild(h);
         section.items.forEach(item => {

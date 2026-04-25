@@ -111,14 +111,19 @@
   function renderSubcategoryBar() {
     let bar = document.getElementById("subcategory-bar");
     if (!bar) {
-      bar = document.createElement("div");
+      bar = document.createElement("nav");
       bar.id = "subcategory-bar";
       bar.className = "filters subfilters";
-      bar.setAttribute("role", "group");
-      bar.setAttribute("aria-label", "Subcategory");
+      bar.setAttribute("aria-label", "Subcategory filter");
+      bar.setAttribute("aria-live", "polite");
+      bar.setAttribute("aria-relevant", "additions removals");
+    }
+    // Always re-position next to filterBar so re-runs of createFilterButtons
+    // can't leave the bar orphaned (P1-01 idempotency).
+    if (bar.previousElementSibling !== filterBar) {
       filterBar.parentNode.insertBefore(bar, filterBar.nextSibling);
     }
-    bar.innerHTML = "";
+    bar.replaceChildren();
     subcategoryButtons = [];
     const subs = getSubcategories(activeFilter);
     if (!subs.length) {
