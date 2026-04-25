@@ -144,6 +144,8 @@
     launch.textContent = canLaunch ? "Open App" : (isServer ? "Use Local Server" : "Unavailable");
     if (canLaunch) {
       launch.href = href;
+      // WCAG 2.4.4 — link purpose disambiguated for screen readers
+      launch.setAttribute("aria-label", "Open " + project.name);
       // Open external (URL-mode) cards in a new tab
       if (project.mode === "url") {
         launch.target = "_blank";

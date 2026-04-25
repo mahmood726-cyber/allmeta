@@ -288,6 +288,8 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
       linear-gradient(180deg, #141618 0%, #1a1d21 100%);
   }
   .filter-chip { background: rgba(231, 228, 220, 0.06); }
+  /* WCAG 1.4.3 — light-mode pill colour (#2f52a0 on #1c1f23 = 1.7:1) fails on dark surfaces */
+  .pill-new { background: rgba(138, 166, 224, 0.18); color: #b0c4ec; }
 }
 
 .featured-panel {

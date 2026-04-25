@@ -25,6 +25,15 @@ jobs:
           rsync -a --exclude='tests/' --exclude='.github/' --exclude='docs/' \
                    --exclude='scripts/' --exclude='node_modules/' \
                    --exclude='.pages-exclude' --exclude='*.md' \
+                   --exclude='*/_archive/' --exclude='*/_archive' \
+                   --exclude='*/archive/' --exclude='*/archive' \
+                   --exclude='*/backup_*' --exclude='*.backup-*' \
+                   --exclude='*/dev/' --exclude='*/dev' \
+                   --exclude='STUCK_FAILURES.*' --exclude='sentinel-findings.*' \
+                   --exclude='review-findings*.md' --exclude='review-findings*.jsonl' \
+                   --exclude='*/Submission/' --exclude='*/e156-submission/' \
+                   --exclude='*/__pycache__/' --exclude='*.pyc' \
+                   --exclude='.pytest_cache/' --exclude='.serena/' \
                    --include='README.md' \
                    ./ _site/
           touch _site/.nojekyll
