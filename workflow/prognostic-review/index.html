@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta name="description" content="Prognostic review workflow on allmeta — PROGRESS framework + QUIPS / PROBAST / CHARMS through synthesis with the right tools at each step.">
+  <title>Prognostic review workflow — allmeta</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow</a>
+  <a class="hub-back" href="../../" aria-label="Back to allmeta hub">← allmeta</a>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Workflow · PROGRESS framework</p>
+      <h1>Prognostic review</h1>
+      <p class="lede">Systematic reviews of prognostic factors, prediction models, and treatment-effect modifiers. The methods diverge from intervention reviews at almost every step — the question (PICOTS), the appraisal (QUIPS / PROBAST / CHARMS), and the synthesis (calibration, discrimination, RMST). Defaults below follow the PROGRESS framework (Hemingway 2013; Riley 2019).</p>
+    </header>
+
+    <nav class="workflow-nav" aria-label="Workflow paths">
+      <a href="../systematic-review/">Systematic review</a>
+      <a href="../rapid-review/">Rapid review</a>
+      <a href="./" class="current">Prognostic review</a>
+      <a href="../network-meta-analysis/">Network meta-analysis</a>
+      <a href="../diagnostic-test-accuracy/">Diagnostic test accuracy</a>
+    </nav>
+
+    <main id="main">
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div class="step-body">
+            <h2>Decide the prognostic question type</h2>
+            <p>Four PROGRESS types: (1) overall prognosis, (2) prognostic factor, (3) prognostic-model development/validation, (4) predictors of treatment response. Each demands a different appraisal tool and synthesis. Frame the question as PICOTS — Population, Index, Comparator, Outcomes, Timing, Setting.</p>
+            <p class="rationale">Hemingway H, et al. <em>BMJ</em> 2013;346:e5595. PICOTS replaces PICO because timing of outcomes drives both eligibility and effect estimation.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../pico/index.html">PICO Formulator (adapt to PICOTS) →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/prognostic-reviews-course.html" target="_blank" rel="noopener">Learn the theory: Prognostic Reviews course</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">2</span>
+          <div class="step-body">
+            <h2>Search with prognostic-specific filters</h2>
+            <p>Use validated prognostic search filters (Geersing 2012 for prediction models; Wong 2003 for prognostic factors). Index terms: cohort, follow-up, predictor, calibration, c-statistic, discrimination.</p>
+            <p class="rationale">Generic intervention filters miss most of the prognostic literature; published filters double precision/recall.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../search-translator/index.html">Search Translator →</a>
+              <a class="tool-link secondary" href="../../citation-chaser/index.html">Citation Chaser →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">3</span>
+          <div class="step-body">
+            <h2>Screen &amp; extract with CHARMS</h2>
+            <p>Use the CHARMS checklist (Moons 2014) for prediction-model studies — 11 domains covering source of data, participants, predictors, outcomes, sample size, missing data, and model performance. For prognostic-factor reviews, extract effect estimates (HR, OR, RR) with CI, adjustment set, and follow-up time.</p>
+            <p class="rationale">Moons KGM, et al. <em>PLoS Med</em> 2014;11:e1001744. Extraction must capture the adjustment set — confounding control IS the prognostic-factor signal.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../citation-dedup/index.html">Citation Dedup →</a>
+              <a class="tool-link" href="../../prisma-screen/index.html">PRISMA Screening →</a>
+              <a class="tool-link secondary" href="../../rct-extractor/index.html">Data Extractor (AI assist) →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">4</span>
+          <div class="step-body">
+            <h2>Risk of bias — QUIPS or PROBAST</h2>
+            <p>QUIPS (Hayden 2013) for prognostic factor studies — 6 domains: study participation, attrition, prognostic factor measurement, outcome measurement, study confounding, statistical analysis &amp; reporting. PROBAST (Wolff 2019) for prediction-model studies — 4 domains × 20 signalling questions.</p>
+            <p class="rationale">Choose by question type, not by study design. Generic RoB tools (RoB 2, ROBINS-I) miss prognostic-specific concerns like outcome-defining variable measurement.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../robins-i/index.html">ROBINS-I (general non-randomised) →</a>
+              <a class="tool-link secondary" href="../../rob-traffic-light/index.html">RoB Traffic Light →</a>
+            </div>
+            <p class="rationale" style="margin-top:0.4rem;font-size:0.82rem;">QUIPS / PROBAST tools are not yet bundled in allmeta — track via the appraisal templates above and tag in the comments.</p>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">5</span>
+          <div class="step-body">
+            <h2>Synthesise the right summary measure</h2>
+            <p>Prognostic-factor reviews pool adjusted HRs/ORs across studies — random-effects on the log scale, REML τ² with HKSJ correction. Prediction-model reviews pool calibration (O/E ratio, calibration slope) and discrimination (c-statistic) — Riley 2017 / Debray 2019. State whether you pooled adjusted vs unadjusted estimates separately.</p>
+            <p class="rationale">Mixing adjusted and unadjusted estimates in a single pool is the most common methodological error in prognostic-factor reviews. Stratify by adjustment, then narrative.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../forest-plot/index.html">Forest Plot Viewer →</a>
+              <a class="tool-link" href="../../het-explorer/index.html">Heterogeneity Explorer →</a>
+              <a class="tool-link" href="../../km-ipd/index.html">K-M IPD Reconstructor →</a>
+              <a class="tool-link secondary" href="../../meta-regression/index.html">Meta-Regression →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">6</span>
+          <div class="step-body">
+            <h2>Grade certainty &amp; report</h2>
+            <p>GRADE for prognosis differs (Foroutan 2020): start at high certainty for phase-1/2 prognostic studies and apply 5-domain reasoning. Render PRISMA-2020 flow. Report adjusted vs unadjusted estimates separately and state the timing of the prognostic-factor measurement.</p>
+            <p class="rationale">Foroutan F, et al. <em>J Clin Epidemiol</em> 2020;121:62-70. GRADE for prognosis is its own framework — do not import the intervention version uncritically.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../grade-sof/index.html">GRADE SoF →</a>
+              <a class="tool-link" href="../../prisma-flow/index.html">PRISMA Flow →</a>
+              <a class="tool-link secondary" href="../../prisma-checklist/index.html">PRISMA Checklist →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html" target="_blank" rel="noopener">Learn the theory: GRADE Certainty course</a>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <p class="foot">
+        Defaults follow the PROGRESS framework (Hemingway 2013, Riley 2013, Riley 2019, Foroutan 2020). For prognostic prediction-model reviews, also consult the TRIPOD-Cluster reporting guideline (Debray 2023). Need a full systematic review instead? See <a href="../systematic-review/">systematic review</a>. Need it fast? See <a href="../rapid-review/">rapid review</a>. Full <a href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">26-course collection</a>.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

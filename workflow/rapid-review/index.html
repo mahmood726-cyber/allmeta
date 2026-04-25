@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta name="description" content="Rapid review workflow on allmeta — Cochrane Rapid Reviews Methods Group steps with the tools that take you through them.">
+  <title>Rapid review workflow — allmeta</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow</a>
+  <a class="hub-back" href="../../" aria-label="Back to allmeta hub">← allmeta</a>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Workflow · Cochrane Rapid Reviews</p>
+      <h1>Rapid review</h1>
+      <p class="lede">A streamlined evidence synthesis for decisions on a deadline. Rapid reviews are explicit, transparent, and reproducible — they trade comprehensiveness for speed by limiting the search, using single-reviewer screening with a verification subset, and standardising the synthesis. Defaults below follow the Cochrane Rapid Reviews Methods Group recommendations (Garritty et al. 2021).</p>
+    </header>
+
+    <nav class="workflow-nav" aria-label="Workflow paths">
+      <a href="../systematic-review/">Systematic review</a>
+      <a href="./" class="current">Rapid review</a>
+      <a href="../prognostic-review/">Prognostic review</a>
+      <a href="../network-meta-analysis/">Network meta-analysis</a>
+      <a href="../diagnostic-test-accuracy/">Diagnostic test accuracy</a>
+    </nav>
+
+    <main id="main">
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num" aria-hidden="true">1</span>
+          <div class="step-body">
+            <h2>Refine the question with the requester</h2>
+            <p>Rapid reviews start with a tight, decision-focused question. Negotiate which PICO elements are essential and which can be relaxed (e.g. broaden the population, narrow the comparator). Document scope decisions and the deadline up front.</p>
+            <p class="rationale">Garritty 2021 Recommendation 1. The single biggest determinant of feasibility is question scope.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../pico/index.html">PICO Formulator →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/rapid-reviews-course.html" target="_blank" rel="noopener">Learn the theory: Rapid Reviews course</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">2</span>
+          <div class="step-body">
+            <h2>Limit the search — but document it</h2>
+            <p>Search MEDLINE/Embase plus one specialised register. Apply date and language restrictions where defensible. Skip grey literature unless the topic demands it. Record every limit.</p>
+            <p class="rationale">Garritty 2021 Recommendations 4–6. Two databases + one register is the rapid-review floor; document every restriction so reviewers can judge bias.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../search-translator/index.html">Search Translator →</a>
+              <a class="tool-link secondary" href="../../citation-chaser/index.html">Citation Chaser →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-topic-selection-course.html" target="_blank" rel="noopener">Learn the theory: search strategy</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">3</span>
+          <div class="step-body">
+            <h2>Single-reviewer screening with verification</h2>
+            <p>One reviewer screens titles/abstracts; a second verifies a 20% random sample. At full-text screen, two reviewers in parallel — disagreement adjudication is fast because the set is small.</p>
+            <p class="rationale">Garritty 2021 Recommendation 7. Dual screening of full text remains required even when title/abstract is single-reviewer.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../citation-dedup/index.html">Citation Dedup →</a>
+              <a class="tool-link" href="../../prisma-screen/index.html">PRISMA Screening →</a>
+              <a class="tool-link secondary" href="../../rct-extractor/index.html">RCT Extractor (AI assist) →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">4</span>
+          <div class="step-body">
+            <h2>Streamlined data extraction &amp; risk of bias</h2>
+            <p>Single extractor with a second verifier on key outcomes (effect estimate, denominator, definition). Use the appropriate RoB instrument — RoB 2 for RCTs, ROBINS-I for non-randomised — but only on the primary outcome unless time permits more.</p>
+            <p class="rationale">Garritty 2021 Recommendations 9–10. Verification of the effect-estimate row is non-negotiable; the rest is risk-tolerated.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../rob2/index.html">RoB 2 →</a>
+              <a class="tool-link" href="../../robins-i/index.html">ROBINS-I →</a>
+              <a class="tool-link secondary" href="../../rob-traffic-light/index.html">RoB Traffic Light →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">5</span>
+          <div class="step-body">
+            <h2>Synthesise pragmatically</h2>
+            <p>If the studies are clinically homogeneous, run a meta-analysis (REML τ² + HKSJ for k&lt;10). Otherwise, narrative synthesis with vote-counting by direction of effect — clearly labelled as such.</p>
+            <p class="rationale">Heterogeneity discovery is fast and cheap; pooling decisions follow once you can see the spread.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../forest-plot/index.html">Forest Plot Viewer →</a>
+              <a class="tool-link" href="../../het-explorer/index.html">Heterogeneity Explorer →</a>
+              <a class="tool-link secondary" href="../../meta-regression/index.html">Meta-Regression →</a>
+            </div>
+          </div>
+        </li>
+
+        <li class="step">
+          <span class="step-num" aria-hidden="true">6</span>
+          <div class="step-body">
+            <h2>GRADE the certainty &amp; report transparently</h2>
+            <p>GRADE the primary outcomes only, but use the full 5-domain reasoning. Render PRISMA-2020 flow. State explicitly which streamlining choices were made — that's what makes a rapid review reproducible.</p>
+            <p class="rationale">Garritty 2021 Recommendation 12: report exactly what was abbreviated. The methods section IS the credibility story.</p>
+            <div class="tool-links">
+              <a class="tool-link" href="../../grade-sof/index.html">GRADE SoF →</a>
+              <a class="tool-link" href="../../prisma-flow/index.html">PRISMA Flow →</a>
+              <a class="tool-link secondary" href="../../prisma-checklist/index.html">PRISMA Checklist →</a>
+              <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html" target="_blank" rel="noopener">Learn the theory: GRADE Certainty course</a>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <p class="foot">
+        Defaults follow Garritty C, et al. <em>J Clin Epidemiol</em> 2021;130:13-22 (Cochrane Rapid Reviews Methods Group). Need a full systematic review instead? See <a href="../systematic-review/">systematic review</a>. Need a prognostic-factor review? See <a href="../prognostic-review/">prognostic review</a>. Browse the full <a href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">26-course collection</a>.
+      </p>
+    </main>
+  </div>
+</body>
+</html>
