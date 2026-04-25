@@ -14,7 +14,9 @@
   };
 
   let activeFilter = "All";
+  let activeSubcategory = "All";
   let filterButtons = [];
+  let subcategoryButtons = [];
 
   // Safe scheme prefixes for launch links. Rejects javascript:, data:, file: (etc.)
   const SAFE_SCHEMES = /^(https?:|\.|\/|#)/i;
@@ -38,12 +40,28 @@
     return ["All", "Existing", "New"].concat(categoryFilters);
   }
 
+  // Subcategory chips appear when a top-level category that has subcategorised
+  // entries is selected. Currently only "Evidence Synthesis" uses subcategories.
+  function getSubcategories(category) {
+    if (!category || category === "All" || category === "Existing" || category === "New") return [];
+    const subs = projects
+      .filter((p) => p.category === category && typeof p.subcategory === "string" && p.subcategory)
+      .map((p) => p.subcategory);
+    if (!subs.length) return [];
+    return ["All"].concat(Array.from(new Set(subs)).sort());
+  }
+
   function countForFilter(label) {
     if (label === "All") return projects.length;
     if (label === "Existing" || label === "New") {
       return projects.filter((p) => p.collection === label.toLowerCase()).length;
     }
     return projects.filter((p) => p.category === label).length;
+  }
+
+  function countForSubcategory(category, sub) {
+    if (sub === "All") return projects.filter((p) => p.category === category).length;
+    return projects.filter((p) => p.category === category && p.subcategory === sub).length;
   }
 
   function updateMetrics() {
@@ -74,16 +92,67 @@
       button.setAttribute("aria-label", label + ", " + countForFilter(label) + " tools");
       button.addEventListener("click", function () {
         activeFilter = label;
+        activeSubcategory = "All"; // top-level change resets subcategory
         filterButtons.forEach((b) => {
           const on = b.dataset.filter === activeFilter;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        renderSubcategoryBar();
+        syncUrl();
+        render();
+      });
+      filterBar.appendChild(button);
+      filterButtons.push(button);
+    });
+    renderSubcategoryBar();
+  }
+
+  function renderSubcategoryBar() {
+    let bar = document.getElementById("subcategory-bar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "subcategory-bar";
+      bar.className = "filters subfilters";
+      bar.setAttribute("role", "group");
+      bar.setAttribute("aria-label", "Subcategory");
+      filterBar.parentNode.insertBefore(bar, filterBar.nextSibling);
+    }
+    bar.innerHTML = "";
+    subcategoryButtons = [];
+    const subs = getSubcategories(activeFilter);
+    if (!subs.length) {
+      bar.hidden = true;
+      return;
+    }
+    bar.hidden = false;
+    subs.forEach((sub) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const isActive = sub === activeSubcategory;
+      btn.className = `filter-chip filter-chip-sub${isActive ? " is-active" : ""}`;
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      btn.dataset.sub = sub;
+      const labelSpan = document.createElement("span"); labelSpan.textContent = sub;
+      const count = document.createElement("span");
+      count.className = "filter-chip-count";
+      count.textContent = " (" + countForSubcategory(activeFilter, sub) + ")";
+      count.setAttribute("aria-hidden", "true");
+      btn.appendChild(labelSpan);
+      btn.appendChild(count);
+      btn.setAttribute("aria-label", sub + ", " + countForSubcategory(activeFilter, sub) + " tools");
+      btn.addEventListener("click", function () {
+        activeSubcategory = sub;
+        subcategoryButtons.forEach((b) => {
+          const on = b.dataset.sub === activeSubcategory;
           b.classList.toggle("is-active", on);
           b.setAttribute("aria-pressed", on ? "true" : "false");
         });
         syncUrl();
         render();
       });
-      filterBar.appendChild(button);
-      filterButtons.push(button);
+      bar.appendChild(btn);
+      subcategoryButtons.push(btn);
     });
   }
 
@@ -92,7 +161,11 @@
     if (activeFilter === "Existing" || activeFilter === "New") {
       return project.collection === activeFilter.toLowerCase();
     }
-    return project.category === activeFilter;
+    if (project.category !== activeFilter) return false;
+    if (activeSubcategory && activeSubcategory !== "All") {
+      return project.subcategory === activeSubcategory;
+    }
+    return true;
   }
 
   function matchesSearch(project, query) {
@@ -258,15 +331,18 @@
     }
   }
 
-  // URL-state sync. ?q=foo&cat=Pairwise%20MA round-trips on share/refresh.
+  // URL-state sync. ?q=foo&cat=Pairwise%20MA&sub=Pooling round-trips on share/refresh.
   function readUrlState() {
     try {
       const params = new URLSearchParams(window.location.search);
       const q = params.get("q") || "";
       const cat = params.get("cat") || "All";
+      const sub = params.get("sub") || "All";
       if (q && searchInput) searchInput.value = q;
       const valid = new Set(getFilters());
       activeFilter = valid.has(cat) ? cat : "All";
+      const validSubs = new Set(getSubcategories(activeFilter));
+      activeSubcategory = validSubs.has(sub) ? sub : "All";
     } catch (_) { /* malformed URL — ignore */ }
   }
   function syncUrl() {
@@ -275,6 +351,7 @@
       const q = (searchInput.value || "").trim();
       if (q) params.set("q", q);
       if (activeFilter && activeFilter !== "All") params.set("cat", activeFilter);
+      if (activeSubcategory && activeSubcategory !== "All") params.set("sub", activeSubcategory);
       const qs = params.toString();
       const newUrl = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
       window.history.replaceState(null, "", newUrl);

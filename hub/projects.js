@@ -61,6 +61,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "p-curve / p-uniform",
+    subcategory: "Publication bias",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\p-curve",
     path: "./p-curve/index.html",
@@ -73,6 +74,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Limit meta-analysis",
+    subcategory: "Publication bias",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\limit-ma",
     path: "./limit-ma/index.html",
@@ -85,6 +87,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GOSH Meta-Regression",
+    subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\gosh-metareg",
     path: "./gosh-metareg/index.html",
@@ -169,6 +172,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Multi-level MA",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\multilevel-ma",
     path: "./multilevel-ma/index.html",
@@ -181,6 +185,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Pub-bias Tests",
+    subcategory: "Publication bias",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\pubbias-tests",
     path: "./pubbias-tests/index.html",
@@ -193,6 +198,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Copas selection",
+    subcategory: "Publication bias",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\copas",
     path: "./copas/index.html",
@@ -205,6 +211,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Influence Diagnostics",
+    subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\influence",
     path: "./influence/index.html",
@@ -217,6 +224,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Bayesian MA — MCMC",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-mcmc",
     path: "./bayesian-mcmc/index.html",
@@ -229,6 +237,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "MH / Peto pooling",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\mh-peto",
     path: "./mh-peto/index.html",
@@ -350,6 +359,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GOSH Plot",
+    subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\gosh",
     path: "./gosh/index.html",
@@ -398,6 +408,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Median → Mean/SD",
+    subcategory: "Effect-size tools",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\median-to-mean",
     path: "./median-to-mean/index.html",
@@ -423,6 +434,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PET-PEESE + Trim-and-Fill",
+    subcategory: "Publication bias",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\pet-peese",
     path: "./pet-peese/index.html",
@@ -435,6 +447,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Proportion MA",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\proportion-ma",
     path: "./proportion-ma/index.html",
@@ -447,6 +460,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "K-M IPD Reconstructor",
+    subcategory: "Effect-size tools",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/ipd-meta-analysis-course.html",
     folder: "C:\\HTML apps\\km-reconstructor",
     path: "./km-reconstructor/index.html",
@@ -471,6 +485,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Effect-Size Converter",
+    subcategory: "Effect-size tools",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\effect-size-converter",
     path: "./effect-size-converter/index.html",
@@ -494,6 +509,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Dose Response Pro",
+    subcategory: "Effect-size tools",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/hta-oman-course.html",
     folder: "C:\\HTML apps\\dosehtml",
     path: "./dosehtml/dose-response-pro.html",
@@ -506,6 +522,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "TruthCert Pairwise Pro",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/truthcert-course.html",
     folder: "C:\\HTML apps\\Truthcert1",
     path: "./Truthcert1/index.html",
@@ -529,6 +546,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Al-Mizan",
+    subcategory: "Effect-size tools",
     folder: "C:\\AlMizan",
     path: "https://mahmood726-cyber.github.io/al-mizan/",
     collection: "existing",
@@ -619,6 +637,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "IPD Meta-Pro",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/ipd-meta-analysis-course.html",
     folder: "C:\\HTML apps\\IPD-Meta-Pro",
     path: "./IPD-Meta-Pro/ipd-meta-pro.html",
@@ -631,6 +650,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Pairwise AI",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\Pairwiseai",
     path: "./Pairwiseai/main-screen.html",
@@ -679,6 +699,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PRISMA Flow",
+    subcategory: "Reporting",
     featured: true,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-writing-course.html",
     folder: "C:\\HTML apps\\prisma-flow",
@@ -692,6 +713,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Forest Plot Viewer",
+    subcategory: "Pooling",
     featured: true,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html",
     folder: "C:\\HTML apps\\forest-plot",
@@ -705,6 +727,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Funnel Plot Explorer",
+    subcategory: "Publication bias",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html",
     folder: "C:\\HTML apps\\funnel-plot",
     path: "./funnel-plot/index.html",
@@ -717,6 +740,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "RoB Traffic Light",
+    subcategory: "Reporting",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "C:\\HTML apps\\rob-traffic-light",
     path: "./rob-traffic-light/index.html",
@@ -729,6 +753,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Heterogeneity Explorer",
+    subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html",
     folder: "C:\\HTML apps\\heterogeneity",
     path: "./heterogeneity/index.html",
@@ -741,6 +766,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "TSA Calculator",
+    subcategory: "Sensitivity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/cast-when-certainty-kills.html",
     folder: "C:\\HTML apps\\tsa",
     path: "./tsa/index.html",
@@ -753,6 +779,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "GRADE SoF Builder",
+    subcategory: "Reporting",
     featured: true,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html",
     folder: "C:\\HTML apps\\grade-sof",
@@ -766,6 +793,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "DTA SROC Explorer",
+    subcategory: "Reporting",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/dta-course-when-the-test-lies-v4.html",
     folder: "C:\\HTML apps\\dta-sroc",
     path: "./dta-sroc/index.html",
@@ -778,6 +806,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "MA Workbench",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html",
     folder: "C:\\HTML apps\\workbench",
     path: "./workbench/index.html",
@@ -790,6 +819,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Meta-Regression",
+    subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\meta-regression",
     path: "./meta-regression/index.html",
@@ -802,6 +832,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Cumulative + Subgroup",
+    subcategory: "Sensitivity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
     folder: "C:\\HTML apps\\cumulative-subgroup",
     path: "./cumulative-subgroup/index.html",
@@ -814,6 +845,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "WebR Validator",
+    subcategory: "Sensitivity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/becoming-methodologist.html",
     folder: "C:\\HTML apps\\webr-validator",
     path: "./webr-validator/index.html",
@@ -826,6 +858,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "Bayesian MA",
+    subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-ma",
     path: "./bayesian-ma/index.html",
@@ -838,6 +871,7 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "PRISMA Screening",
+    subcategory: "Reporting",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html",
     folder: "C:\\HTML apps\\prisma-screen",
     path: "./prisma-screen/index.html",
