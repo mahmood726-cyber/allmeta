@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <!-- saved from url=(0060)file:///C:/Truthcert1/TruthCert-PairwisePro-v1.0-bundle.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+  <!-- S1: strict CSP — vendored libraries loaded from Main screen_files/ only.
+       External CDN fallbacks (document.write below) are now BLOCKED, which is
+       the intended hardening. Google Fonts CSS is also blocked; the page uses
+       the system-font fallback in the stylesheet. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TruthCert-PairwisePro v1.0 | Evidence Synthesis &amp; HTA Platform</title>
   <meta name="description" content="Comprehensive meta-analysis with TruthCert verdict system and S14-HTA+ economic evaluation">

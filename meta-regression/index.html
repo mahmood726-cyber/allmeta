@@ -187,6 +187,30 @@
       return { b0, b1, rss, sw, swx, swxx, det };
     }
 
+    // PM τ² for the intercept-only (null) model. Used to compute R² (V6-03).
+    function fitPMNull(studies) {
+      const k = studies.length;
+      if (k < 2) return 0;
+      const targetN = k - 1;
+      const Q0 = (function () {
+        let sw=0, swy=0;
+        for (const s of studies) { sw += 1/s.v; swy += s.est/s.v; }
+        const muFE = swy/sw;
+        let q = 0;
+        for (const s of studies) q += (s.est - muFE)*(s.est - muFE)/s.v;
+        return q;
+      })();
+      if (Q0 <= targetN) return 0;
+      let lo = 0, hi = 100, guard = 0;
+      const Qat = (t) => { let sw=0, swy=0; for (const s of studies) { const w=1/(s.v+t); sw+=w; swy+=w*s.est; } const mu=swy/sw; let q=0; for (const s of studies) { const w=1/(s.v+t); q+=w*(s.est-mu)*(s.est-mu); } return q; };
+      while (guard < 60 && hi < 1e9 && Qat(hi) > targetN) { hi *= 2; guard++; }
+      for (let i = 0; i < 80; i++) {
+        const mid = 0.5*(lo+hi);
+        if (Qat(mid) > targetN) lo = mid; else hi = mid;
+      }
+      return 0.5*(lo+hi);
+    }
+
     // τ² via Paule-Mandel: find τ² s.t. weighted RSS = k-2.
     function fitPM(studies) {
       const k = studies.length;
@@ -225,6 +249,36 @@
         q, df
       };
     }
+
+    // --- chi-square CDF via regularized lower incomplete gamma (Num Recipes) ---
+    function gammaP(a, x) {
+      if (x < 0 || a <= 0) return 0;
+      if (x === 0) return 0;
+      if (x < a + 1) {
+        // Series expansion.
+        let term = 1 / a, sum = term;
+        for (let n = 1; n < 200; n++) {
+          term *= x / (a + n);
+          sum += term;
+          if (Math.abs(term) < Math.abs(sum) * 1e-12) break;
+        }
+        return sum * Math.exp(-x + a * Math.log(x) - lnGamma(a));
+      }
+      // Continued fraction.
+      let b = x + 1 - a, c = 1e30, d = 1 / b, h = d;
+      for (let i = 1; i < 200; i++) {
+        const an = -i * (i - a);
+        b += 2;
+        d = an * d + b; if (Math.abs(d) < 1e-30) d = 1e-30;
+        c = b + an / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+        d = 1 / d;
+        const delta = d * c;
+        h *= delta;
+        if (Math.abs(delta - 1) < 1e-12) break;
+      }
+      return 1 - h * Math.exp(-x + a * Math.log(x) - lnGamma(a));
+    }
+    function chiSqCDF(x, df) { return gammaP(df / 2, x / 2); }
 
     // --- t-CDF via incomplete beta ---
     function lnGamma(x) {
@@ -398,6 +452,24 @@
         parts.push(statCard("β₁ test", "t(" + hk.df + ") = " + fmt(tB1,2) + ", p = " + fmt(pB1,3)));
         parts.push(statCard("τ² (PM)", fmt(fitted.tau2, 4)));
         parts.push(statCard("HKSJ q", fmt(hk.q, 3) + (hk.q === 1 ? " (floored)" : "")));
+        // V6-03: R² = proportion of between-study τ² explained by the moderator.
+        // Q_E (residual heterogeneity) tests whether residual heterogeneity remains.
+        const tau2Null = fitPMNull(parsed.studies);
+        const r2 = tau2Null > 0 ? Math.max(0, 1 - fitted.tau2 / tau2Null) : 0;
+        parts.push(statCard("R² (τ² explained)", fmt(100 * r2, 1) + "%"));
+        // Residual heterogeneity test: Q_E = sum w_i * r_i² with w from null
+        // model (Cochrane Handbook §10.11.4 follow-up). df = k-2.
+        if (parsed.studies.length >= 3) {
+          let qE = 0;
+          for (const s of parsed.studies) {
+            const w = 1 / s.v;
+            const r = s.est - f.b0 - f.b1 * s.x;
+            qE += w * r * r;
+          }
+          const dfE = parsed.studies.length - 2;
+          const pQE = 1 - chiSqCDF(qE, dfE);
+          parts.push(statCard("Q_E (residual)", fmt(qE, 2) + " (df " + dfE + "), p = " + fmt(pQE, 3)));
+        }
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
 

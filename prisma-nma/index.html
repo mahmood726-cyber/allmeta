@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:">
-  <meta name="description" content="PRISMA-NMA reporting checklist (Hutton 2015): 27 PRISMA items + 5 NMA-specific extensions, fillable, exports to Markdown.">
+  <meta name="description" content="PRISMA-NMA reporting checklist — Hutton 2015 NMA extension over the PRISMA 2009 base (27 base items + 5 NMA-specific S1-S5), fillable, exports to Markdown.">
   <meta name="color-scheme" content="light dark">
   <title>PRISMA-NMA Checklist</title>
   <style>
@@ -183,7 +183,7 @@
   <nav class="crumbs"><a href="../">← allmeta</a> · PRISMA-NMA Checklist</nav>
   <header>
     <h1>PRISMA-NMA Checklist</h1>
-    <p>Reporting checklist for systematic reviews with network meta-analysis. Combines the core PRISMA 2020 items with the five NMA-specific extension items from Hutton et al. (2015). Fill each box; export the completed checklist as Markdown for inclusion as supplementary material.</p>
+    <p>Reporting checklist for systematic reviews with network meta-analysis. Implements the Hutton et al. (2015) PRISMA-NMA extension over the PRISMA 2009 base (the original combination as published). Items are presented in PRISMA 2020 ordering for ease of cross-reference, but the wording follows Hutton 2015 verbatim — there is no official PRISMA-NMA over PRISMA 2020 yet. For the PRISMA 2020 statement itself, see the separate <a href="../prisma-checklist/index.html">PRISMA 2020 Checklist</a> tool. Fill each box; export the completed checklist as Markdown for supplementary material.</p>
   </header>
 
   <main>
@@ -208,8 +208,9 @@
   <script>
     "use strict";
 
-    // PRISMA 2020 base items (subset most relevant to NMA reporting) + Hutton 2015 NMA extensions.
-    // Section labels follow PRISMA 2020 ordering. NMA-specific items carry isNma:true.
+    // PRISMA-NMA = Hutton 2015 NMA extension over PRISMA 2009 (the original combination).
+    // Item numbering and wording follow Hutton 2015; section ordering follows PRISMA 2020
+    // for ease of cross-reference. NMA-specific items (S1-S5) carry isNma:true.
     const ITEMS = [
       { section: "Title", items: [
         { num: "1",   title: "Title", prompt: "Identify the report as a systematic review incorporating a network meta-analysis (or related form of meta-analysis)." , isNma: true }
@@ -359,7 +360,7 @@
     }
 
     function buildMarkdown() {
-      const lines = ["# PRISMA-NMA Checklist", "", "_Generated with allmeta — Hutton 2015 / PRISMA 2020._", ""];
+      const lines = ["# PRISMA-NMA Checklist", "", "_Generated with allmeta — Hutton 2015 NMA extension over PRISMA 2009 (presented in PRISMA 2020 ordering)._", ""];
       ITEMS.forEach(section => {
         lines.push(`## ${section.section}`, "");
         section.items.forEach(item => {

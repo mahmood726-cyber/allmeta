@@ -371,7 +371,10 @@
       if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0) {
         const post = posterior(parsed.studies, mu0, tau0, t.tau2);
         parts.push(statCard("Posterior mean", fmt(post.mu, 3)));
-        parts.push(statCard("95% CrI", "[" + fmt(post.lo, 3) + ", " + fmt(post.hi, 3) + "]"));
+        parts.push(statCard("95% CrI (τ²-conditional)", "[" + fmt(post.lo, 3) + ", " + fmt(post.hi, 3) + "]"));
+        if (parsed.studies.length < 10 && t.tau2 > 0) {
+          parts.push(statCard("⚠ caveat", "Plug-in τ² is treated as known; CrI may be 5-30% narrower than fully Bayesian for k<10. See footer."));
+        }
         const threshold = parseFloat(state.threshold);
         if (isFinite(threshold)) {
           const pLess = normCDF((threshold - post.mu) / post.sd);

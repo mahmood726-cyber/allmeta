@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
   <meta name="description" content="Prognostic review workflow on allmeta — PROGRESS framework + QUIPS / PROBAST / CHARMS through synthesis with the right tools at each step.">
   <title>Prognostic review workflow — allmeta</title>
   <link rel="stylesheet" href="../styles.css">
@@ -21,7 +21,7 @@
     <nav class="workflow-nav" aria-label="Workflow paths">
       <a href="../systematic-review/">Systematic review</a>
       <a href="../rapid-review/">Rapid review</a>
-      <a href="./" class="current">Prognostic review</a>
+      <a href="./" class="current" aria-current="page">Prognostic review</a>
       <a href="../network-meta-analysis/">Network meta-analysis</a>
       <a href="../diagnostic-test-accuracy/">Diagnostic test accuracy</a>
     </nav>
@@ -32,8 +32,8 @@
           <span class="step-num" aria-hidden="true">1</span>
           <div class="step-body">
             <h2>Decide the prognostic question type</h2>
-            <p>Four PROGRESS types: (1) overall prognosis, (2) prognostic factor, (3) prognostic-model development/validation, (4) predictors of treatment response. Each demands a different appraisal tool and synthesis. Frame the question as PICOTS — Population, Index, Comparator, Outcomes, Timing, Setting.</p>
-            <p class="rationale">Four research types: Hemingway H, et al. <em>BMJ</em> 2013;346:e5595 (PROGRESS-1). PICOTS framework: Riley RD, et al. <em>BMJ</em> 2013;346:e5793 (PROGRESS-2) and AHRQ Methods Guide for Comparative Effectiveness Reviews. PICOTS replaces PICO because timing of outcomes drives both eligibility and effect estimation.</p>
+            <p>Four PROGRESS types: (1) overall prognosis (PROGRESS-1), (2) prognostic factor research (PROGRESS-2), (3) prognostic-model development/validation (PROGRESS-3), (4) stratified medicine — predicting differential treatment effects across patient subgroups (PROGRESS-4). Each demands a different appraisal tool and synthesis. Frame the question as PICOTS — Population, Index, Comparator, Outcomes, Timing, Setting.</p>
+            <p class="rationale">Four research types: Hemingway H et al. <em>BMJ</em> 2013;346:e5595 (PROGRESS-1); Riley RD et al. <em>BMJ</em> 2013;346:e5793 (PROGRESS-2); Steyerberg EW et al. <em>PLoS Med</em> 2013;10:e1001381 (PROGRESS-3); Hingorani AD et al. <em>BMJ</em> 2013;346:e5793 (PROGRESS-4). PICOTS framework: Riley 2013 + AHRQ Methods Guide. PICOTS replaces PICO because timing of outcomes drives both eligibility and effect estimation.</p>
             <div class="tool-links">
               <a class="tool-link" href="../../pico/index.html">PICO Formulator (adapt to PICOTS) →</a>
               <a class="course-link" href="https://mahmood726-cyber.github.io/synthesis-courses/prognostic-reviews-course.html" target="_blank" rel="noopener">Learn the theory: Prognostic Reviews course</a>
@@ -72,7 +72,7 @@
           <span class="step-num" aria-hidden="true">4</span>
           <div class="step-body">
             <h2>Risk of bias — QUIPS or PROBAST</h2>
-            <p>QUIPS (Hayden 2013) for prognostic factor studies — 6 domains: study participation, attrition, prognostic factor measurement, outcome measurement, study confounding, statistical analysis &amp; reporting. PROBAST (Wolff 2019) for prediction-model studies — 4 domains × 20 signalling questions.</p>
+            <p>QUIPS (Hayden 2013) for prognostic-factor studies — 6 domains: study participation, attrition, prognostic factor measurement, outcome measurement, study confounding, statistical analysis &amp; reporting. PROBAST (Wolff 2019) for prediction-model studies — 4 domains and 20 signalling questions in total (Participants 2, Predictors 3, Outcome 6, Analysis 9).</p>
             <p class="rationale">Choose by question type, not by study design. Generic RoB tools (RoB 2, ROBINS-I) miss prognostic-specific concerns like outcome-defining variable measurement.</p>
             <div class="tool-links">
               <a class="tool-link" href="../../robins-i/index.html">ROBINS-I (general non-randomised) →</a>

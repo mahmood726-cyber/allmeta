@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
   <meta name="description" content="Network meta-analysis workflow on allmeta — geometry, transitivity, pooling, inconsistency, ranking, certainty.">
   <title>Network meta-analysis workflow — allmeta</title>
   <link rel="stylesheet" href="../styles.css">
@@ -22,7 +22,7 @@
       <a href="../systematic-review/">Systematic review</a>
       <a href="../rapid-review/">Rapid review</a>
       <a href="../prognostic-review/">Prognostic review</a>
-      <a href="./" class="current">Network meta-analysis</a>
+      <a href="./" class="current" aria-current="page">Network meta-analysis</a>
       <a href="../diagnostic-test-accuracy/">Diagnostic test accuracy</a>
     </nav>
 
@@ -46,7 +46,7 @@
           <div class="step-body">
             <h2>Risk of bias &amp; transitivity</h2>
             <p>RoB 2 per study. Then assess <strong>transitivity</strong>: are effect modifiers (age, baseline severity, follow-up) similar across comparisons? If not, indirect comparison is invalid.</p>
-            <p class="rationale">Transitivity is the central NMA assumption. A non-transitive network produces precise but biased pooled effects.</p>
+            <p class="rationale">Salanti G. <em>Stat Methods Med Res</em> 2008;17:279 and <em>J Clin Epidemiol</em> 2014;67:582 — transitivity is the central NMA assumption. A non-transitive network produces precise but biased pooled effects.</p>
             <div class="tool-links">
               <a class="tool-link" href="../../rob2/index.html">RoB 2 →</a>
               <a class="tool-link secondary" href="../../rob-traffic-light/index.html">Traffic-light plot →</a>
@@ -100,7 +100,7 @@
           <div class="step-body">
             <h2>Certainty &amp; report (CINeMA + PRISMA-NMA)</h2>
             <p>Use CINeMA to grade certainty across the 6 NMA-specific domains (within-study bias, reporting, indirectness, imprecision, heterogeneity, incoherence). Report SUCRA <em>only</em> alongside the certainty rating.</p>
-            <p class="rationale">A treatment can rank #1 with very low certainty — readers must see both. The SUCRA-without-certainty figure has been a recurring red-flag in NMA peer review.</p>
+            <p class="rationale">Nikolakopoulou A et al. <em>PLoS Med</em> 2020;17:e1003082 (CINeMA framework). A treatment can rank #1 with very low certainty — readers must see both. The SUCRA-without-certainty figure has been a recurring red-flag in NMA peer review.</p>
             <div class="tool-links">
               <a class="tool-link" href="../../cinema/index.html">CINeMA →</a>
               <a class="tool-link secondary" href="../../grade-sof/index.html">GRADE SoF →</a>

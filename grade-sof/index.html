@@ -58,7 +58,7 @@
     button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     .outcome-row { border:1px solid var(--border); border-radius:8px; padding:0.75rem; margin-bottom:0.75rem; background:var(--input-bg); }
     .outcome-row .row-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
-    .outcome-row .row-head strong { font-size:0.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+    .outcome-row .row-head strong, .outcome-row .row-head .row-head-title { font-size:0.82rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin:0; }
     .preview-wrap { position:sticky; top:1rem; }
     .sof-wrap { overflow-x:auto; background:#fff; padding:1.25rem; border-radius:6px; border:1px solid var(--border); }
     .sof-title { margin:0 0 0.75rem; font-size:1rem; font-weight:700; color:#15181d; }
@@ -86,9 +86,14 @@
     .grade-wizard h4 { margin:0 0 0.5rem; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
     .grade-wizard fieldset { border:0; padding:0; margin:0 0 0.5rem; min-width:0; }
     .grade-wizard legend { font-size:0.82rem; font-weight:600; padding:0; margin-bottom:0.2rem; }
-    .grade-wizard .opts { display:flex; flex-wrap:wrap; gap:0.25rem 0.7rem; font-size:0.82rem; }
-    .grade-wizard .opts label { display:inline-flex; align-items:center; gap:0.25rem; cursor:pointer; }
-    .grade-wizard .opts input[type="radio"], .grade-wizard .opts input[type="checkbox"] { margin:0; }
+    .grade-wizard .opts { display:flex; flex-wrap:wrap; gap:0.35rem 0.7rem; font-size:0.82rem; }
+    /* AV6-10: minimum 24×24 touch target per WCAG 2.5.8. */
+    .grade-wizard .opts label { display:inline-flex; align-items:center; gap:0.3rem; cursor:pointer; min-height:24px; padding:0.2rem 0.4rem; }
+    .grade-wizard .opts input[type="radio"], .grade-wizard .opts input[type="checkbox"] { margin:0; min-width:16px; min-height:16px; }
+    @media (max-width: 600px) {
+      .grade-wizard .opts { flex-direction: column; gap:0.4rem; }
+      .grade-wizard .opts label { min-height:32px; }
+    }
     .grade-wizard .design-row { display:flex; flex-wrap:wrap; gap:0.7rem; padding-bottom:0.5rem; margin-bottom:0.5rem; border-bottom:1px solid var(--border); }
     .grade-wizard .upgrade-row { padding-top:0.5rem; margin-top:0.4rem; border-top:1px solid var(--border); opacity:0.55; }
     .grade-wizard .upgrade-row[data-enabled="true"] { opacity:1; }
@@ -317,7 +322,7 @@
       div.className = "outcome-row";
       div.innerHTML = [
         '<div class="row-head">',
-        '  <strong>Outcome ' + (idx+1) + '</strong>',
+        '  <h3 class="row-head-title" style="margin:0; font-size:0.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Outcome ' + (idx+1) + '</h3>',
         '  <button type="button" class="danger" data-action="remove" data-idx="' + idx + '">Remove</button>',
         '</div>',
         '<label><span class="lbl">Outcome name</span><input type="text" data-field="outcome" value="' + escapeHtml(o.outcome) + '"></label>',
@@ -422,7 +427,7 @@
         '      ' + radio("pub", 2, g.pub, "Very strongly suspected (−2)"),
         '    </div>',
         '  </fieldset>',
-        '  <fieldset class="upgrade-row" data-enabled="' + (upgradeEnabled ? "true" : "false") + '">',
+        '  <fieldset class="upgrade-row" data-enabled="' + (upgradeEnabled ? "true" : "false") + '"' + (upgradeEnabled ? "" : " disabled aria-disabled=\"true\"") + '>',
         '    <legend>Upgrade considerations (observational only, no downgrades)</legend>',
         '    <div class="opts" role="radiogroup" aria-label="Magnitude of effect">',
         '      ' + radio("large", 0, g.large, "No upgrade"),
@@ -452,7 +457,17 @@
       const g = o.grade;
       const upgradeEnabled = g.design === "obs" && (g.rob|0)+(g.inc|0)+(g.ind|0)+(g.imp|0)+(g.pub|0) === 0;
       const upRow = document.querySelector('#wizard-' + idx + ' .upgrade-row');
-      if (upRow) upRow.dataset.enabled = upgradeEnabled ? "true" : "false";
+      if (upRow) {
+        upRow.dataset.enabled = upgradeEnabled ? "true" : "false";
+        // Programmatically disable to match the visual de-emphasis (AV6-04).
+        if (upgradeEnabled) {
+          upRow.removeAttribute("disabled");
+          upRow.removeAttribute("aria-disabled");
+        } else {
+          upRow.setAttribute("disabled", "");
+          upRow.setAttribute("aria-disabled", "true");
+        }
+      }
       const previewEl = document.getElementById("wizard-preview-" + idx);
       if (!previewEl) return;
       const c = gradeCompute(g);

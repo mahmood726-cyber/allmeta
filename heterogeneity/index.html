@@ -234,7 +234,34 @@
       const df = k - 1;
       const I2 = df > 0 ? Math.max(0, 100*(Q0 - df)/Q0) : 0;
       const pQ = df > 0 ? 1 - chiSqCDF(Q0, df) : NaN;
-      return { k, mu, se, ciLo: mu-1.96*se, ciHi: mu+1.96*se, Q:Q0, df, pQ, I2, tau2 };
+      // V6-04: HKSJ small-sample correction (Hartung-Knapp-Sidik-Jonkman) on
+      // the RE pooled estimate. q-statistic with floor at 1 to avoid CI
+      // narrowing when Q < df (per Cochrane Handbook §10.10.4 + advanced-stats.md).
+      let seHKSJ = se;
+      let tCrit = 1.96; // z for k>=30
+      if (df > 0) {
+        const wRE = studies.map(s => 1 / (s.v + tau2));
+        const wSum = wRE.reduce((a,b)=>a+b,0);
+        const muRE = studies.reduce((a,s,i)=>a+wRE[i]*s.te,0)/wSum;
+        const qStar = studies.reduce((a,s,i)=>a+wRE[i]*Math.pow(s.te-muRE,2),0)/df;
+        const qFloored = Math.max(1, qStar);
+        seHKSJ = Math.sqrt(qFloored / wSum);
+        tCrit = tQuantile975(df);
+      }
+      return {
+        k, mu, se, ciLo: mu-1.96*se, ciHi: mu+1.96*se,
+        seHKSJ, ciLoHKSJ: mu - tCrit*seHKSJ, ciHiHKSJ: mu + tCrit*seHKSJ, tCrit,
+        Q:Q0, df, pQ, I2, tau2
+      };
+    }
+    // t-quantile at 0.975 — table for df 1..30, asymptotic z otherwise.
+    function tQuantile975(df) {
+      const T = [12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
+      if (df < 1) return 1.96;
+      if (df <= 30) return T[df-1];
+      // Wallace 1959 approximation beyond df=30.
+      const z = 1.96;
+      return z * Math.sqrt((df - 0.5) / (df - 2)) || 1.96;
     }
 
     // ---- Numerical support ----
@@ -429,7 +456,8 @@
       parts.push(statCard("τ² (PM)", fmt(tauEstimates.pm, 4)));
       parts.push(statCard("τ² (REML)", fmt(tauEstimates.reml, 4)));
       parts.push(statCard("τ² (DL)", tauEstimates.dl == null ? "k<10 (skipped)" : fmt(tauEstimates.dl, 4)));
-      parts.push(statCard("RE pooled", fmt(sum.mu, 3) + " [" + fmt(sum.ciLo, 3) + ", " + fmt(sum.ciHi, 3) + "]"));
+      parts.push(statCard("RE pooled (z)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLo, 3) + ", " + fmt(sum.ciHi, 3) + "]"));
+      parts.push(statCard("RE pooled (HKSJ + t)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLoHKSJ, 3) + ", " + fmt(sum.ciHiHKSJ, 3) + "]"));
       if (piLo != null) {
         parts.push(statCard("95% PI", "[" + fmt(piLo, 3) + ", " + fmt(piHi, 3) + "]"));
       } else {

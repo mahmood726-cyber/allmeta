@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
   <meta name="description" content="Diagnostic test accuracy meta-analysis workflow on allmeta — QUADAS-2 RoB, threshold-effect, bivariate / HSROC, certainty.">
   <title>Diagnostic test accuracy workflow — allmeta</title>
   <link rel="stylesheet" href="../styles.css">
@@ -23,7 +23,7 @@
       <a href="../rapid-review/">Rapid review</a>
       <a href="../prognostic-review/">Prognostic review</a>
       <a href="../network-meta-analysis/">Network meta-analysis</a>
-      <a href="./" class="current">Diagnostic test accuracy</a>
+      <a href="./" class="current" aria-current="page">Diagnostic test accuracy</a>
     </nav>
 
     <main id="main">
@@ -59,7 +59,7 @@
           <div class="step-body">
             <h2>Risk of bias &amp; applicability — QUADAS-2</h2>
             <p>QUADAS-2 has 4 domains × 2 judgements (RoB and applicability). Get the patient selection and reference standard domains right or the rest is moot.</p>
-            <p class="rationale">QUADAS-2 is the only validated DTA RoB tool. RoB 2 does not apply.</p>
+            <p class="rationale">Whiting PF et al. <em>Ann Intern Med</em> 2011;155:529 (QUADAS-2 — the only validated DTA RoB tool; RoB 2 does not apply).</p>
             <div class="tool-links">
               <a class="tool-link" href="../../quadas-2/index.html">QUADAS-2 →</a>
             </div>
@@ -82,8 +82,8 @@
           <span class="step-num" aria-hidden="true">5</span>
           <div class="step-body">
             <h2>Fit the bivariate / HSROC model</h2>
-            <p>Bivariate (Reitsma) or HSROC. Bivariate convergence often fails for k&lt;5 — constrain ρ to [−0.95, 0.95] or fix ρ=0.</p>
-            <p class="rationale">A pooled (Se, Sp, AUC) point with confidence and prediction ellipses is the headline output. Skip the model and you have ≤ 1990s methodology.</p>
+            <p>Bivariate (Reitsma 2005) or HSROC (Rutter &amp; Gatsonis 2001). Bivariate convergence often fails for k&lt;5 — constrain ρ to [−0.95, 0.95] or fix ρ=0.</p>
+            <p class="rationale">Reitsma JB et al. <em>J Clin Epidemiol</em> 2005;58:982 (bivariate); Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865 (HSROC). A pooled (Se, Sp, AUC) point with confidence and prediction ellipses is the headline output.</p>
             <div class="tool-links">
               <a class="tool-link" href="../../hsroc/index.html">HSROC →</a>
               <a class="tool-link secondary" href="../../dta-sroc/index.html">DTA SROC →</a>
@@ -96,11 +96,10 @@
           <span class="step-num" aria-hidden="true">6</span>
           <div class="step-body">
             <h2>Certainty &amp; report (PRISMA-DTA)</h2>
-            <p>GRADE for DTA has different domains (study limitations, indirectness, inconsistency, imprecision, publication bias) operationalised differently than for interventions. Use CINeMA's DTA mode where applicable.</p>
-            <p class="rationale">Reviewers will check whether certainty was rated for sensitivity, specificity, and clinical consequences (true positives / false negatives) separately.</p>
+            <p>Use the GRADE-DTA framework (Schünemann 2008; 2020 update) — rate certainty separately for sensitivity, specificity, and downstream patient-important outcomes (true positives, false negatives). CINeMA is for network meta-analysis, not DTA.</p>
+            <p class="rationale">Schünemann HJ, et al. <em>BMJ</em> 2008;336:1106 (original GRADE-DTA); Schünemann 2020 <em>J Clin Epidemiol</em> updates. Reviewers will check that certainty was rated for sensitivity, specificity, and clinical consequences separately.</p>
             <div class="tool-links">
               <a class="tool-link" href="../../grade-sof/index.html">GRADE SoF →</a>
-              <a class="tool-link secondary" href="../../cinema/index.html">CINeMA →</a>
               <a class="tool-link secondary" href="../../prisma-flow/index.html">PRISMA flow →</a>
             </div>
           </div>

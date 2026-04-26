@@ -116,7 +116,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Moses SROC: weighted OLS of D = logit(Se) − logit(1−Sp) on S = logit(Se) + logit(1−Sp) (Moses et&nbsp;al., Stat Med 1993). Bivariate / HSROC require iterative ML — out of scope for this app.</p>
+  <p class="footer-note">Moses SROC: unweighted OLS of D = logit(Se) − logit(1−Sp) on S = logit(Se) + logit(1−Sp) (Moses et&nbsp;al., <em>Stat Med</em> 1993). The unweighted variant is the more conservative form and is what metafor::reitsma falls back to when bivariate convergence fails. Bivariate (Reitsma 2005) / HSROC (Rutter & Gatsonis 2001) require iterative ML — out of scope for this app.</p>
 
   <script>
   (function () {

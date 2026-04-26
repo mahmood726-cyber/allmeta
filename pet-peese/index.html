@@ -164,28 +164,42 @@
 
     // --- trim-and-fill (Duval-Tweedie L₀) ---
     // Iterative algorithm: center studies around mean, count asymmetry, trim, refit.
+    // Bidirectional: detects whether asymmetry runs right or left from the FE
+    // pooled estimate via the sign of (Tn - n(n+1)/4) and trims the appropriate
+    // tail. Right-asymmetry (small studies pulling estimate UP) and
+    // left-asymmetry (small studies pulling estimate DOWN — common for harms
+    // outcomes) are both handled. (V6-01 fix.)
     function trimAndFill(rows, est = "L0") {
       let mu = fePool(rows).mean;
-      const N = rows.length;
       let k0 = 0;
+      // Determine asymmetry direction once on the unmodified data: the sign of
+      // (Tn - n(n+1)/4) indicates which tail is heavier (positive → right tail
+      // heavier → trim right; negative → left tail heavier → trim left).
+      let direction = 1;
+      {
+        const initial = rows.map(r => ({ ...r, r: r.te - mu }))
+          .sort((a, b) => Math.abs(a.r) - Math.abs(b.r))
+          .map((rr, i) => ({ ...rr, rank: i + 1 }));
+        const Tn0 = initial.filter(rr => rr.r > 0).reduce((s, rr) => s + rr.rank, 0);
+        const n0 = initial.length;
+        const expected = n0 * (n0 + 1) / 4;
+        direction = (Tn0 - expected) >= 0 ? 1 : -1;
+      }
       for (let iter = 0; iter < 30; iter++) {
-        // rank residuals |TE - mu|, keep signs
         const residuals = rows.map(r => ({ ...r, r: r.te - mu }));
         residuals.sort((a, b) => Math.abs(a.r) - Math.abs(b.r));
-        residuals.forEach((rr, i) => rr.rank = i + 1);  // 1..n
-        // signed rank sum for positive residuals
-        const Tn = residuals.filter(rr => rr.r > 0).reduce((s, rr) => s + rr.rank, 0);
-        // signs of residuals, ordered by |r|
-        const signs = residuals.map(rr => rr.r >= 0 ? 1 : -1);
+        residuals.forEach((rr, i) => rr.rank = i + 1);
+        // For right-heavy: count Tn over positive residuals.
+        // For left-heavy: count Tn over negative residuals.
+        const Tn = residuals.filter(rr => direction * rr.r > 0).reduce((s, rr) => s + rr.rank, 0);
+        const signs = residuals.map(rr => (direction * rr.r) >= 0 ? 1 : -1);
         let k0_new = 0;
         if (est === "L0") {
-          // L₀ = (4Tn - n(n+1)) / (2n - 1)
           const n = residuals.length;
           const Lnum = 4 * Tn - n * (n + 1);
           const Lden = 2 * n - 1;
           k0_new = Math.max(0, Math.floor(Math.max(0, Lnum / Lden)));
         } else {
-          // R₀ = γ* - 1, γ* = right-most run length of negative-signed ranks (reverse from end)
           let gamma = 0;
           for (let i = signs.length - 1; i >= 0; i--) {
             if (signs[i] > 0) break;
@@ -196,23 +210,25 @@
         if (k0_new === k0 && iter > 0) break;
         k0 = k0_new;
         if (k0 <= 0) break;
-        // Trim the k0 most extreme positive-residual studies, refit mu.
+        // Trim the k0 most extreme studies on the heavy side.
         const sorted = [...rows].sort((a, b) => Math.abs(b.te - mu) - Math.abs(a.te - mu));
-        // Only trim those with positive residual (suggesting asymmetry right).
         const trimmedIdx = new Set();
         for (const r of sorted) {
-          if (r.te - mu > 0 && trimmedIdx.size < k0) trimmedIdx.add(r);
+          if (direction * (r.te - mu) > 0 && trimmedIdx.size < k0) trimmedIdx.add(r);
         }
         const remaining = rows.filter(r => !trimmedIdx.has(r));
         if (remaining.length < 2) break;
         mu = fePool(remaining).mean;
       }
-      // Impute k0 studies mirrored around mu
-      const largestPos = rows.filter(r => r.te > mu).sort((a, b) => (b.te - mu) - (a.te - mu)).slice(0, k0);
-      const imputed = largestPos.map(r => ({ te: 2 * mu - r.te, se: r.se, imputed: true }));
+      // Impute k0 studies mirrored around mu, on the heavy side.
+      const heavySide = rows
+        .filter(r => direction * (r.te - mu) > 0)
+        .sort((a, b) => direction * ((b.te - mu) - (a.te - mu)))
+        .slice(0, k0);
+      const imputed = heavySide.map(r => ({ te: 2 * mu - r.te, se: r.se, imputed: true }));
       const combined = [...rows, ...imputed];
       const adjusted = fePool(combined);
-      return { k0, mu, adjusted, imputed };
+      return { k0, mu, adjusted, imputed, direction };
     }
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
@@ -235,12 +251,15 @@
       const { pet, peese } = petPeese(rows);
       const petZ = pet.b0 / pet.seB0;
       const peeseZ = peese.b0 / peese.seB0;
-      // Stanley-Doucouliagos conditional procedure: test the PET *intercept* (b0) against H0: no true effect.
-      // If PET rejects null (evidence of a true effect after bias correction), switch to PEESE for the estimate.
-      const petIntP = pFromZ(petZ);
+      // Stanley-Doucouliagos conditional procedure: test the PET intercept (b0)
+      // against H0: no true effect. The original prescription is a one-sided
+      // test in the hypothesised direction (V6-05): if FE point estimate is
+      // positive, test whether PET intercept > 0; if negative, < 0.
+      const direction = fe.mean >= 0 ? 1 : -1;
+      const petIntP = (direction * petZ > 0) ? (1 - pnorm(direction * petZ)) : 0.5;
       const conditional = petIntP < alpha
-        ? `PEESE (PET intercept p < ${alpha})`
-        : `PET (PET intercept p ≥ ${alpha})`;
+        ? `PEESE (PET intercept one-sided p < ${alpha})`
+        : `PET (PET intercept one-sided p ≥ ${alpha})`;
       const tf = trimAndFill(rows, tfEst);
 
       const resRows = [

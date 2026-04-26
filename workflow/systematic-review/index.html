@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
   <meta name="description" content="Systematic review workflow on allmeta — six tools in PRISMA order: PICO, search, dedupe, screen, RoB, synthesis.">
   <title>Systematic review workflow — allmeta</title>
   <link rel="stylesheet" href="../styles.css">
@@ -19,7 +19,7 @@
     </header>
 
     <nav class="workflow-nav" aria-label="Workflow paths">
-      <a href="./" class="current">Systematic review</a>
+      <a href="./" class="current" aria-current="page">Systematic review</a>
       <a href="../rapid-review/">Rapid review</a>
       <a href="../prognostic-review/">Prognostic review</a>
       <a href="../network-meta-analysis/">Network meta-analysis</a>

@@ -18,7 +18,10 @@
   let filterButtons = [];
   let subcategoryButtons = [];
 
-  // Safe scheme prefixes for launch links. Rejects javascript:, data:, file: (etc.)
+  // Safe scheme prefixes for launch links. Rejects javascript:, data:, vbscript:,
+  // about:, etc. file: is intentionally accepted at the resolved-URL stage so the
+  // hub still works when index.html is opened directly from disk (offline-first
+  // design). External (http(s)) links are also accepted via the same gate.
   const SAFE_SCHEMES = /^(https?:|\.|\/|#)/i;
 
   function safeHref(path) {
@@ -115,8 +118,9 @@
       bar.id = "subcategory-bar";
       bar.className = "filters subfilters";
       bar.setAttribute("aria-label", "Subcategory filter");
-      bar.setAttribute("aria-live", "polite");
-      bar.setAttribute("aria-relevant", "additions removals");
+      // No aria-live here — re-announcing 6-12 chips on every category change is
+      // verbose. The existing #results-summary live region announces the
+      // post-filter result count, which is the actionable signal.
     }
     // Always re-position next to filterBar so re-runs of createFilterButtons
     // can't leave the bar orphaned (P1-01 idempotency).
@@ -380,4 +384,8 @@
   render();
 
   searchInput.addEventListener("input", onSearchInput);
+  // E6: clear pending timer on pagehide so we don't fire after navigation away.
+  window.addEventListener("pagehide", function () {
+    if (searchTimer) { clearTimeout(searchTimer); searchTimer = null; }
+  });
 })();

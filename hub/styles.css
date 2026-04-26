@@ -239,7 +239,10 @@ code {
 .filter-chip {
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid var(--border);
+  /* AV6-09: explicit ~3:1 border so inactive chips meet WCAG 1.4.11
+     non-text-contrast against the cream panel. var(--border) at 0.12 was
+     too translucent (~1.5:1) for SR-disabled visual users. */
+  border: 1px solid rgba(31, 30, 26, 0.34);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--ink);
