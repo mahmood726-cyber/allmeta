@@ -263,7 +263,6 @@ window.HTML_APPS_PROJECTS = [
   {
     name: "Network MA (SUCRA)",
     featured: true,
-    featuredRank: 2,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-nma",
     path: "./bayesian-nma/index.html",
@@ -678,15 +677,17 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "NMA Pro v8",
+    featured: true,
+    featuredRank: 2,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\nma-pro-v2",
     path: "./nma-pro-v2/nma-pro-v8.0.html",
     collection: "existing",
     mode: "file",
     category: "Network Meta-Analysis",
-    summary: "Network meta-analysis workbench v8.0 with accessibility hardening, R benchmark harness, and rapid-review workflow.",
+    summary: "End-to-end network meta-analysis workbench v8.0: contrast-based pooling, design-by-treatment inconsistency, node-splitting, SUCRA ranking, league tables, R benchmark harness. The canonical NMA app — start here for any network meta-analysis.",
     note: "Real app is nma-pro-v8.0.html; index.html is a thin stub.",
-    tags: ["nma", "network-meta-analysis", "accessibility"]
+    tags: ["nma", "network-meta-analysis", "accessibility", "anchor"]
   },
   {
     name: "NMA Dose-Response",
