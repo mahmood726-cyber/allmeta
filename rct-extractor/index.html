@@ -328,9 +328,10 @@
       const LINEAR_TOL = 0.05; // 5% on linear scale, with denom floor
       const NEAR_ZERO = 1e-6;  // numeric noise below measurement precision
       const rows = regexExt.map(r => {
-        const rx = { type: r.effect_type, est: r.point_estimate, lo: r.ci?.lower, hi: r.ci?.upper };
-        const matches = llmItems.filter(l => l.type === rx.type)
-          .sort((a, b) => Math.abs(a.estimate - rx.est) - Math.abs(b.estimate - rx.est));
+        // V11-E07 — coerce to Number; NaN sort comparators yield undefined order.
+        const rx = { type: r.effect_type, est: Number(r.point_estimate), lo: Number(r.ci?.lower), hi: Number(r.ci?.upper) };
+        const matches = llmItems.filter(l => l.type === rx.type && Number.isFinite(Number(l.estimate)))
+          .sort((a, b) => Math.abs(Number(a.estimate) - rx.est) - Math.abs(Number(b.estimate) - rx.est));
         const m = matches[0];
         let agree = false;
         if (m && Number.isFinite(m.estimate) && Number.isFinite(rx.est)) {
@@ -510,24 +511,49 @@
       return true;
     }
 
+    // V11-E01: emit the {_schema, _savedAt, studies:[{label,est,se}]} envelope
+    // every consumer (workbench, forest-plot, bayesian-ma, funnel-plot, etc.)
+    // expects. Read the existing payload via the same envelope and merge
+    // into payload.studies — never overwrite or write a raw Array.
+    function busPayloadFromRows(rows) {
+      return {
+        _schema: "ma-studies-v1",
+        _savedAt: new Date().toISOString(),
+        studies: rows.map((r, i) => ({
+          label: r.study || ("Study " + (i + 1)),
+          est: r.te,
+          se: r.se
+        }))
+      };
+    }
+    function readBusStudies() {
+      try {
+        const raw = localStorage.getItem("ma-studies-v1");
+        if (!raw) return [];
+        const p = JSON.parse(raw);
+        if (p && p._schema === "ma-studies-v1" && Array.isArray(p.studies)) return p.studies;
+      } catch (_) { /* ignore */ }
+      return [];
+    }
     document.getElementById("btn-send-workbench").addEventListener("click", () => {
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
       if (!validatePushRows(rows, "pushing")) return;
-      // Atomic read-modify-write: validate existing bus content first.
-      let existing = [];
-      try {
-        const raw = JSON.parse(localStorage.getItem("ma-studies-v1") || "[]");
-        if (Array.isArray(raw)) existing = raw.filter(x => x && typeof x === "object" && !Array.isArray(x));
-      } catch (_) { existing = []; }
-      localStorage.setItem("ma-studies-v1", JSON.stringify(existing.concat(rows)));
-      Toast.show(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`, "warn");
+      const newStudies = busPayloadFromRows(rows).studies;
+      const merged = readBusStudies().concat(newStudies);
+      const payload = { _schema: "ma-studies-v1", _savedAt: new Date().toISOString(), studies: merged };
+      localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
+      Toast.show(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`);
     });
     document.getElementById("btn-send-forest").addEventListener("click", () => {
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
       if (!validatePushRows(rows, "sending to the forest plot")) return;
+      // forest-plot/index.html reads the same ma-studies-v1 bus; write the
+      // schema envelope (was previously a dead `forest-plot-v1` key with raw CSV).
+      const merged = readBusStudies().concat(busPayloadFromRows(rows).studies);
+      const payload = { _schema: "ma-studies-v1", _savedAt: new Date().toISOString(), studies: merged };
+      localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
       const lines = rows.map((r, i) => `Study ${i + 1}, ${r.te.toFixed(3)}, ${r.se.toFixed(3)}`).join("\n");
-      localStorage.setItem("forest-plot-v1", lines);
-      navigator.clipboard.writeText(lines).then(() => Toast.show(`${rows.length} rows saved to forest-plot-v1 and clipboard.`, "warn"));
+      navigator.clipboard.writeText(lines).then(() => Toast.show(`${rows.length} rows pushed to ma-studies-v1 bus and copied to clipboard.`));
     });
     document.getElementById("btn-export-csv").addEventListener("click", () => {
       const head = "type,estimate,ci_lower,ci_upper,p_value,standard_error,confidence,source_text\n";

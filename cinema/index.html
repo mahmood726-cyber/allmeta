@@ -138,19 +138,28 @@
     ];
     let ROWS = JSON.parse(JSON.stringify(DEFAULT_ROWS));
 
+    // V11 F-04 — replace pure-additive score with a GRADE-style downgrade rule
+    // closer to Nikolakopoulou 2020:
+    //  • Each "major concerns" domain downgrades 1 level (start at High → Moderate
+    //    → Low → Very low, max 3 downgrades).
+    //  • "Some concerns" do NOT downgrade individually; ≥3 of them downgrade by 1.
+    // Reviewers retain final judgment.
     function downgradeScore(row) {
-      let s = 0;
+      let major = 0, some = 0;
       for (const d of DOMAINS) {
-        const lvl = LEVELS.find(l => l[0] === row[d]);
-        s += lvl ? lvl[2] : 0;
+        const v = row[d];
+        if (v === "major") major++;
+        else if (v === "some") some++;
       }
-      return s;
+      // Cumulative downgrade count (capped at 3 = High → Very low).
+      const downgrades = Math.min(3, major + (some >= 3 ? 1 : 0));
+      return downgrades;
     }
 
-    function confidenceFrom(score) {
-      if (score === 0) return ["high", "High"];
-      if (score <= 2) return ["mod", "Moderate"];
-      if (score <= 4) return ["low", "Low"];
+    function confidenceFrom(downgrades) {
+      if (downgrades === 0) return ["high", "High"];
+      if (downgrades === 1) return ["mod", "Moderate"];
+      if (downgrades === 2) return ["low", "Low"];
       return ["vlow", "Very low"];
     }
 

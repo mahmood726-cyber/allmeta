@@ -4257,25 +4257,21 @@ function recalculatePooledEffect(studies, tauPrior, weightCap) {
 
  if (totalWeight < 1e-10) return { pooled: NaN, lower: NaN, upper: NaN, se: NaN, tau2: 0, I2: 0, pValue: NaN };
 
-
-
- var maxWeight = totalWeight * weightCap;
-
- weights = weights.map(function(w) { return Math.min(w, maxWeight); });
-
- totalWeight = weights.reduce(function(a, b) { return a + b; }, 0);
-
-
+ // V11 F-01 — compute Q, C, τ², I² from RAW (uncapped) inverse-variance
+ // weights. Capping was previously applied BEFORE Q, distorting τ² and
+ // I² (Cochrane Handbook does not recommend weight-capping for IV/DL).
+ var rawWeights = weights.slice();
+ var rawTotalWeight = totalWeight;
 
  var feEffect = 0;
 
  for (var i = 0; i < n; i++) {
 
- feEffect += weights[i] * effects[i];
+ feEffect += rawWeights[i] * effects[i];
 
  }
 
- feEffect /= totalWeight;
+ feEffect /= rawTotalWeight;
 
 
 
@@ -4283,13 +4279,13 @@ function recalculatePooledEffect(studies, tauPrior, weightCap) {
 
  for (var i = 0; i < n; i++) {
 
- Q += weights[i] * Math.pow(effects[i] - feEffect, 2);
+ Q += rawWeights[i] * Math.pow(effects[i] - feEffect, 2);
 
  }
 
 
 
- var C = totalWeight - weights.reduce(function(a, w) { return a + w * w; }, 0) / totalWeight;
+ var C = rawTotalWeight - rawWeights.reduce(function(a, w) { return a + w * w; }, 0) / rawTotalWeight;
 
  var tau2 = (C > 1e-10) ? Math.max(0, (Q - (n - 1)) / C) : 0;
 

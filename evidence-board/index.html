@@ -409,10 +409,11 @@
       function loadState() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) {
-            return { entries: SEED.slice() };
-          }
+          if (!raw) return { entries: SEED.slice() };
           const parsed = JSON.parse(raw);
+          // V11-E08 — guard against null / non-object payloads (JSON.parse('null')
+          // is a valid value); accessing .entries on null throws TypeError.
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { entries: SEED.slice() };
           return { entries: Array.isArray(parsed.entries) ? parsed.entries : SEED.slice() };
         } catch (error) {
           return { entries: SEED.slice() };
@@ -573,7 +574,8 @@
         reader.onload = function () {
           try {
             const parsed = JSON.parse(String(reader.result || ""));
-            if (!Array.isArray(parsed.entries)) {
+            // V11-E08 — null-guard before .entries access.
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Array.isArray(parsed.entries)) {
               throw new Error("Invalid format");
             }
             // V9-E09 — coerce/validate each entry; assign fresh id if missing

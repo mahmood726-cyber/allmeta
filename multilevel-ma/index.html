@@ -234,8 +234,10 @@
       const totalW = f.weights.reduce((a, b) => a + b, 0);
       const body = document.getElementById("body");
       const __bodyParts = [""];
+      // V11-E03 — escape user-controlled label/study before innerHTML insertion.
+      const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
       rows.forEach((r, i) => {
-        __bodyParts.push(`<tr><td>${r.study}</td><td>${r.label}</td><td>${fmt(r.te)}</td><td>${fmt(r.se)}</td><td>${(100 * f.weights[i] / totalW).toFixed(1)}%</td></tr>`);
+        __bodyParts.push(`<tr><td>${esc(r.study)}</td><td>${esc(r.label)}</td><td>${fmt(r.te)}</td><td>${fmt(r.se)}</td><td>${(100 * f.weights[i] / totalW).toFixed(1)}%</td></tr>`);
       });
       __bodyParts.push(`<tr class="pooled-row"><td colspan="2"><strong>Pooled</strong></td><td colspan="2"><strong>${fmt(f.mu)} [${fmt(f.mu - 1.96 * f.seMu)}, ${fmt(f.mu + 1.96 * f.seMu)}]</strong></td><td>100%</td></tr>`);
       drawForest(rows, f);
@@ -261,13 +263,15 @@
 
       __svgParts.push(`<line x1="${X(0)}" y1="15" x2="${X(0)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
 
+      // V11-E03 — escape user-controlled study/label in SVG text nodes.
+      const escSvg = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
       let y = 30;
       for (const s of studies) {
-        __svgParts.push(`<text x="10" y="${y + 4}" font-size="12" fill="currentColor" font-weight="700">Study ${s}</text>`);
+        __svgParts.push(`<text x="10" y="${y + 4}" font-size="12" fill="currentColor" font-weight="700">Study ${escSvg(s)}</text>`);
         y += rowH;
         const grp = rows.filter(r => r.study === s);
         for (const r of grp) {
-          __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label || ""}</text>`);
+          __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${escSvg(r.label || "")}</text>`);
           const l = r.te - 1.96 * r.se, h = r.te + 1.96 * r.se;
           __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`);
           __svgParts.push(`<rect x="${X(r.te) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
