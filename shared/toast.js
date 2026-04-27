@@ -42,7 +42,13 @@
     // V8-A11Y-05: keyboard dismissal — Escape removes the most recent visible toast.
     if (!document.__toastEscapeBound) {
       document.addEventListener("keydown", function (e) {
-        if (e.key !== "Escape" || !containerEl) return;
+        if (e.key !== "Escape") return;
+        // V9-E14: bail if container was detached from DOM (SPA route change);
+        // next show() will rebuild via ensureContainer().
+        if (!containerEl || !document.body.contains(containerEl)) {
+          containerEl = null;
+          return;
+        }
         const visible = containerEl.querySelectorAll(".toast-item.is-visible");
         if (!visible.length) return;
         const last = visible[visible.length - 1];

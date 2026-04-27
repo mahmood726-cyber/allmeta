@@ -115,10 +115,10 @@
     }
 
     // --- Bivariate random-effects pool with iterated weighted least squares ---
-    // We use the simplified Harbord-Whiting approximation: alternating univariate REML on
+    // We use the simplified Harbord-Whiting approximation: alternating univariate DerSimonian-Laird on
     // logit-Se and logit-FPR with shared correlation estimate, then 1 correction pass.
     function pool(studies) {
-      // Univariate REML τ² estimates + weighted means
+      // Univariate DerSimonian-Laird τ² estimates + weighted means (matches footer)
       function uniPool(ys, vs) {
         const w = vs.map(v => 1 / v);
         const sw = w.reduce((a, b) => a + b, 0);

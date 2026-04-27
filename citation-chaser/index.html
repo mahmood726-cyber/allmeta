@@ -127,9 +127,17 @@
       const mailto = document.getElementById("mailto").value.trim();
       const u = new URL(url);
       if (mailto) u.searchParams.set("mailto", mailto);
-      const r = await fetch(u.toString());
-      if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
-      return r.json();
+      // V9-E01: pass AbortController signal so cancel actually aborts in-flight requests.
+      const opts = ABORT && ABORT.signal ? { signal: ABORT.signal } : {};
+      try {
+        const r = await fetch(u.toString(), opts);
+        if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
+        return r.json();
+      } catch (e) {
+        // Re-throw AbortError so the caller's existing aborted-check handles it.
+        if (e && e.name === "AbortError") throw e;
+        throw e;
+      }
     }
 
     function parseSeedInput(text) {
@@ -290,9 +298,8 @@
 
     function drawYears(works) {
       const svg = document.getElementById("years");
-      svg.innerHTML = "";
       const years = works.map(w => w.year).filter(Number.isFinite);
-      if (years.length === 0) return;
+      if (years.length === 0) { svg.innerHTML = ""; return; }
       const min = Math.min(...years), max = Math.max(...years);
       const counts = {};
       for (const y of years) counts[y] = (counts[y] || 0) + 1;
@@ -301,21 +308,32 @@
       const nYears = max - min + 1;
       const bw = plotW / nYears;
       const maxC = Math.max(...Object.values(counts));
+      // V9-E03: build into a single string array and assign innerHTML once
+      // to avoid O(n²) reparse on each `+= "<rect>"`.
+      const parts = [];
       for (let y = min; y <= max; y++) {
         const x = padL + (y - min) * bw;
         const c = counts[y] || 0;
         const h = (c / maxC) * plotH;
-        svg.innerHTML += `<rect x="${x + 1}" y="${padT + plotH - h}" width="${bw - 2}" height="${h}" fill="var(--accent)" opacity="0.8"/>`;
+        parts.push(`<rect x="${x + 1}" y="${padT + plotH - h}" width="${bw - 2}" height="${h}" fill="var(--accent)" opacity="0.8"/>`);
       }
-      svg.innerHTML += `<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`;
-      svg.innerHTML += `<text x="${padL}" y="${H - 8}" font-size="11" fill="currentColor">${min}</text>`;
-      svg.innerHTML += `<text x="${padL + plotW}" y="${H - 8}" text-anchor="end" font-size="11" fill="currentColor">${max}</text>`;
+      parts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      parts.push(`<text x="${padL}" y="${H - 8}" font-size="11" fill="currentColor">${min}</text>`);
+      parts.push(`<text x="${padL + plotW}" y="${H - 8}" text-anchor="end" font-size="11" fill="currentColor">${max}</text>`);
+      svg.innerHTML = parts.join("");
     }
 
     function downloadCSV() {
       const works = [...DEDUP.values()].map(v => ({ ...v.work, source: v.source }));
       const header = ["id", "title", "year", "doi", "cited_by_count", "authors", "source"];
-      const esc = s => { if (s == null) return ""; const str = String(s); return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str; };
+      // V9-E02: prepend "'" to cells starting with formula prefix [=+@\t\r] per
+      // lessons.md "CSV formula injection: prepend ' to cells starting with =+@\t\r".
+      const esc = s => {
+        if (s == null) return "";
+        let str = String(s);
+        if (/^[=+@\t\r]/.test(str)) str = "'" + str;
+        return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      };
       const csv = [header.join(","), ...works.map(w => header.map(k => esc(w[k])).join(","))].join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);

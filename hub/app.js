@@ -338,9 +338,13 @@
 
     resultsSummary.textContent = `${visible.length} project${visible.length === 1 ? "" : "s"} shown`;
     // Hide featured strip when actively filtering / searching — it's a "browse" affordance.
+    // V9-E13: use the .hidden attribute consistently (was previously mixing
+    // .hidden in renderFeaturedStrip with style.display here, which created a
+    // potential race where a filter-clear couldn't unhide if .hidden=true).
     if (featuredStrip) {
       const filtering = activeFilter !== "All" || !!query;
-      featuredStrip.style.display = filtering ? "none" : "";
+      const noFeatured = !projects.some((p) => p.featured);
+      featuredStrip.hidden = filtering || noFeatured;
     }
   }
 

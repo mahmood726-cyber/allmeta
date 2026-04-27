@@ -569,12 +569,29 @@
       const sessionList = document.getElementById("sessionList");
 
       function loadState() {
+        // V9-E11 — validate parsed state shape against DEFAULT_STATE per key;
+        // a tampered/legacy payload like {"durations":"oops"} would otherwise
+        // overwrite the nested object with a string and break the timer.
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) {
-            return structuredClone(DEFAULT_STATE);
+          if (!raw) return structuredClone(DEFAULT_STATE);
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return structuredClone(DEFAULT_STATE);
+          const out = structuredClone(DEFAULT_STATE);
+          for (const key of Object.keys(DEFAULT_STATE)) {
+            const def = DEFAULT_STATE[key];
+            const got = parsed[key];
+            if (got === undefined) continue;
+            // Type-check: only assign if the parsed value is the same shape as default.
+            if (Array.isArray(def)) {
+              if (Array.isArray(got)) out[key] = got;
+            } else if (def !== null && typeof def === "object") {
+              if (got !== null && typeof got === "object" && !Array.isArray(got)) out[key] = { ...def, ...got };
+            } else {
+              if (typeof got === typeof def) out[key] = got;
+            }
           }
-          return Object.assign(structuredClone(DEFAULT_STATE), JSON.parse(raw));
+          return out;
         } catch (error) {
           return structuredClone(DEFAULT_STATE);
         }

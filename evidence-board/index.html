@@ -486,16 +486,31 @@
           `;
 
           article.querySelector('[data-action="edit"]').addEventListener("click", function () {
-            const title = prompt("Edit title", entry.title);
-            if (title === null) { return; }
-            const finding = prompt("Edit finding", entry.finding);
-            if (finding === null) { return; }
-            const action = prompt("Edit next action", entry.action || "");
-            if (action === null) { return; }
-            entry.title = title.trim() || entry.title;
-            entry.finding = finding.trim() || entry.finding;
-            entry.action = action.trim();
-            persistAndRender();
+            // V9-E10 — replace blocking prompt() chain with an inline editor.
+            if (article.querySelector(".inline-editor")) return;
+            const editor = document.createElement("div");
+            editor.className = "inline-editor";
+            editor.style.cssText = "display:grid;gap:0.5rem;margin-top:0.5rem;padding:0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-soft,#f7f4ee)";
+            editor.innerHTML = ''
+              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Title <input data-edit="title" type="text" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit"></label>'
+              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Finding <textarea data-edit="finding" rows="3" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit"></textarea></label>'
+              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Next action <input data-edit="action" type="text" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit"></label>'
+              + '<div style="display:flex;gap:0.5rem"><button class="button" type="button" data-edit-action="save">Save</button><button class="button" type="button" data-edit-action="cancel">Cancel</button></div>';
+            editor.querySelector('[data-edit="title"]').value = entry.title || "";
+            editor.querySelector('[data-edit="finding"]').value = entry.finding || "";
+            editor.querySelector('[data-edit="action"]').value = entry.action || "";
+            article.appendChild(editor);
+            editor.querySelector('[data-edit="title"]').focus();
+            editor.querySelector('[data-edit-action="cancel"]').addEventListener("click", function () { editor.remove(); });
+            editor.querySelector('[data-edit-action="save"]').addEventListener("click", function () {
+              const t = editor.querySelector('[data-edit="title"]').value.trim();
+              const f = editor.querySelector('[data-edit="finding"]').value.trim();
+              const a = editor.querySelector('[data-edit="action"]').value.trim();
+              if (t) entry.title = t;
+              if (f) entry.finding = f;
+              entry.action = a;
+              persistAndRender();
+            });
           });
 
           article.querySelector('[data-action="delete"]').addEventListener("click", function () {
@@ -561,10 +576,26 @@
             if (!Array.isArray(parsed.entries)) {
               throw new Error("Invalid format");
             }
-            state.entries = parsed.entries;
+            // V9-E09 — coerce/validate each entry; assign fresh id if missing
+            // or non-string; clamp string fields; strip unknown keys.
+            const VALID_TYPES = new Set(["evidence", "task", "decision", "note"]);
+            const VALID_CONF = new Set(["High", "Moderate", "Low"]);
+            state.entries = parsed.entries.map(function (e) {
+              const eid = (e && typeof e.id === "string" && e.id) ? e.id : (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "id-" + Math.random().toString(36).slice(2));
+              return {
+                id: eid,
+                title: typeof e?.title === "string" ? e.title.slice(0, 500) : "",
+                type: VALID_TYPES.has(e?.type) ? e.type : "note",
+                confidence: VALID_CONF.has(e?.confidence) ? e.confidence : "Moderate",
+                source: typeof e?.source === "string" ? e.source.slice(0, 1000) : "",
+                finding: typeof e?.finding === "string" ? e.finding.slice(0, 5000) : "",
+                action: typeof e?.action === "string" ? e.action.slice(0, 2000) : ""
+              };
+            });
             persistAndRender();
           } catch (error) {
-            alert("That JSON file does not match the expected Evidence Board format.");
+            if (typeof Toast !== "undefined") Toast.show("That JSON file does not match the expected Evidence Board format.", "error");
+            else alert("That JSON file does not match the expected Evidence Board format.");
           } finally {
             importJson.value = "";
           }
@@ -575,5 +606,6 @@
       render();
     })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>
