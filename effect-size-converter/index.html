@@ -71,6 +71,7 @@
     button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
       outline: 2px solid var(--accent); outline-offset: 2px;
     }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
@@ -177,7 +178,7 @@
 
     <section class="panel results" aria-label="Results">
       <h2>Conversions</h2>
-      <div id="warn-slot" role="status" aria-live="polite" aria-atomic="true"></div>
+      <div id="warn-slot" role="status" aria-live="polite"></div>
       <table>
         <thead>
           <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th></tr>

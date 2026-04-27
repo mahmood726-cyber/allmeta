@@ -177,16 +177,18 @@
     nav.crumbs { padding: 0.5rem clamp(1rem, 3vw, 3rem); font-size: 0.85rem; color: var(--muted); }
     nav.crumbs a { color: var(--accent); text-decoration: none; }
     nav.crumbs a:hover { text-decoration: underline; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
   <nav class="crumbs"><a href="../">← allmeta</a> · PRISMA-NMA Checklist</nav>
   <header>
     <h1>PRISMA-NMA Checklist</h1>
     <p>Reporting checklist for systematic reviews with network meta-analysis. Implements the Hutton et al. (2015) PRISMA-NMA extension over the PRISMA 2009 base (the original combination as published). Items are presented in PRISMA 2020 ordering for ease of cross-reference, but the wording follows Hutton 2015 verbatim — there is no official PRISMA-NMA over PRISMA 2020 yet. For the PRISMA 2020 statement itself, see the separate <a href="../prisma-checklist/index.html">PRISMA 2020 Checklist</a> tool. Fill each box; export the completed checklist as Markdown for supplementary material.</p>
   </header>
 
-  <main>
+  <main id="main">
     <div class="toolbar">
       <button id="exportMd" class="primary" type="button">Export Markdown</button>
       <button id="copyMd" type="button">Copy to clipboard</button>

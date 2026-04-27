@@ -413,12 +413,12 @@
 
     async function onRunWebR() {
       if (!document.getElementById("f-acknowledge").checked) {
-        alert("Please check the acknowledgement box first.");
+        Toast.show("Please check the acknowledgement box first.", "warn");
         return;
       }
       const state = readState();
       const parsed = parseStudies(state.data);
-      if (!parsed.studies.length) { alert("No studies parsed."); return; }
+      if (!parsed.studies.length) { Toast.show("No studies parsed.", "warn"); return; }
 
       const btn = document.getElementById("btn-run-webr");
       btn.disabled = true;
@@ -447,11 +447,11 @@
 
     function onParseR() {
       const text = document.getElementById("f-r-output").value;
-      if (!text.trim()) { alert("Paste the R output first."); return; }
+      if (!text.trim()) { Toast.show("Paste the R output first.", "warn"); return; }
       const r = parseROutput(text);
       lastR = r;
       if (!Object.values(r).some(v => v != null)) {
-        alert("Could not find any expected fields in the pasted output.");
+        Toast.show("Could not find any expected fields in the pasted output.", "warn");
         setStatus("error", "Parse failed");
         return;
       }
@@ -461,7 +461,7 @@
     function onExportR() {
       const state = readState();
       const parsed = parseStudies(state.data);
-      if (!parsed.studies.length) { alert("No studies."); return; }
+      if (!parsed.studies.length) { Toast.show("No studies.", "warn"); return; }
       const script = rScript(parsed.studies, state.method, state.test);
       const blob = new Blob([script], { type: "text/x-rsrc;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -515,7 +515,7 @@
     }
 
     async function downloadCert() {
-      if (!lastBrowser || !lastR) { alert("Run a comparison first."); return; }
+      if (!lastBrowser || !lastR) { Toast.show("Run a comparison first.", "warn"); return; }
       const c = compare(lastBrowser, lastR);
       const bodyCore = {
         "_schema": "truthcert-webr-v1",
@@ -586,13 +586,13 @@
     function onBusLoad() {
       try {
         const raw = localStorage.getItem(BUS_KEY);
-        if (!raw) { alert("No shared studies."); return; }
+        if (!raw) { Toast.show("No shared studies.", "warn"); return; }
         const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed bus payload."); return; }
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed bus payload.", "warn"); return; }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
-      } catch(e) { alert("Could not load: " + e.message); }
+      } catch(e) { Toast.show("Could not load: " + e.message, "warn"); }
     }
     function onExample() {
       document.getElementById("f-data").value = EXAMPLE;
@@ -671,5 +671,6 @@
     })();
   })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

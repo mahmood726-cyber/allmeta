@@ -410,12 +410,12 @@
       return { state: state, svg: buildSvg(state, parsed.rows, domains, summary) };
     }
     function onDownloadSvg() {
-      const r = currentSvg(); if (!r) return alert("Nothing to export.");
+      const r = currentSvg(); if (!r) return Toast.show("Nothing to export.", "warn");
       downloadBlob(new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"}),
                    "rob-" + slugify(r.state.title, "traffic-light") + ".svg");
     }
     function onDownloadPng() {
-      const r = currentSvg(); if (!r) return alert("Nothing to export.");
+      const r = currentSvg(); if (!r) return Toast.show("Nothing to export.", "warn");
       const m = r.svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
       const W = m ? Math.round(parseFloat(m[1])) : 820;
       const H = m ? Math.round(parseFloat(m[2])) : 600;
@@ -432,7 +432,7 @@
         URL.revokeObjectURL(url);
         canvas.toBlob(function (blob) { if (blob) downloadBlob(blob, "rob-" + slugify(r.state.title, "traffic-light") + ".png"); }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
       img.src = url;
     }
     function onDownloadJson() {
@@ -447,7 +447,7 @@
         try {
           const parsed = JSON.parse(reader.result);
           if (parsed && typeof parsed === "object") { writeState(parsed); render(); }
-        } catch (e) { alert("Could not parse JSON: " + e.message); }
+        } catch (e) { Toast.show("Could not parse JSON: " + e.message, "warn"); }
       };
       reader.readAsText(file);
     }
@@ -493,5 +493,6 @@
     render();
   })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

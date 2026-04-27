@@ -197,17 +197,29 @@
     const focusables = popoverEl.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    if (!focusables.length) return;
+    if (!focusables.length) {
+      // No focusables inside (shouldn't happen — close button is always there);
+      // pin focus to the popover container itself.
+      e.preventDefault();
+      popoverEl.focus();
+      return;
+    }
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
     const active = document.activeElement;
+    // Single-focusable case: pin Tab/Shift-Tab to the only focusable.
+    if (focusables.length === 1) {
+      e.preventDefault();
+      first.focus();
+      return;
+    }
     if (e.shiftKey) {
       if (active === first || active === popoverEl) {
         e.preventDefault();
         last.focus();
       }
     } else {
-      if (active === last) {
+      if (active === last || active === popoverEl) {
         e.preventDefault();
         first.focus();
       }

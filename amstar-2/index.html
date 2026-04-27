@@ -142,14 +142,17 @@
       for (const [num] of ITEMS) {
         const v = STATE[num];
         if (v === "N") {
+          // Per Shea 2017 BMJ 358:j4008: a "No" on a critical domain is a critical
+          // flaw; a "No" on a non-critical domain is a non-critical weakness.
           if (CRITICAL.has(num)) critical++;
           else nonc++;
         } else if (v === "PY") {
-          // Partial Yes counts as a weakness on both critical and non-critical items.
-          // Per Shea 2017, a PY on a critical item is treated as a critical flaw for
-          // the purpose of the overall confidence rating.
-          if (CRITICAL.has(num)) critical++;
-          else nonc++;
+          // Per Shea 2017: Partial Yes is NOT a critical flaw — it indicates the
+          // criterion is partially met. We count it as a non-critical weakness
+          // regardless of whether the domain is "critical" in AMSTAR-2 terms,
+          // since only an explicit "No" on a critical domain triggers the
+          // critical-flaw escalation.
+          nonc++;
         }
       }
       document.getElementById("c-critical").textContent = critical;

@@ -69,13 +69,14 @@
   <link rel="stylesheet" href="../hub/app-style.css">
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Meta-Regression</h1>
     <p>Fit a random-effects meta-regression with one moderator. Paule-Mandel τ² + Knapp-Hartung t(k-2) CIs (with <code>max(1, …)</code> floor per advanced-stats.md). Bubble plot with fitted line.</p>
   </header>
 
-  <main class="layout">
+  <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
 
@@ -533,11 +534,11 @@
       return { state, svg: buildSvg(state, parsed.studies, fitted) };
     }
     function onDownloadSvg() {
-      const r = currentSvg(); if (!r) return alert("Need ≥3 studies.");
+      const r = currentSvg(); if (!r) return Toast.show("Need ≥3 studies.", "warn");
       downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "metareg-"+slugify(r.state.title,"plot")+".svg");
     }
     function onDownloadPng() {
-      const r = currentSvg(); if (!r) return alert("Need ≥3 studies.");
+      const r = currentSvg(); if (!r) return Toast.show("Need ≥3 studies.", "warn");
       const W=720,H=520,scale=2;
       const img = new Image();
       const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
@@ -551,7 +552,7 @@
         URL.revokeObjectURL(url);
         canvas.toBlob(function(b){ if (b) downloadBlob(b, "metareg-"+slugify(r.state.title,"plot")+".png"); }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
       img.src = url;
     }
     function onDownloadJson() {
@@ -562,14 +563,14 @@
     function onExportR() {
       const state = readState();
       const parsed = parseStudies(state.data);
-      if (!parsed.studies.length) return alert("No studies to export.");
+      if (!parsed.studies.length) return Toast.show("No studies to export.", "warn");
       downloadBlob(new Blob([rScript(parsed.studies, state)],{type:"text/x-rsrc;charset=utf-8"}), "metareg-validate.R");
     }
     function onImportJson(file) {
       const r = new FileReader();
       r.onload = function () {
         try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
-        catch(e) { alert("Could not parse JSON: "+e.message); }
+        catch(e) { Toast.show("Could not parse JSON: "+e.message, "warn"); }
       };
       r.readAsText(file);
     }
@@ -590,20 +591,20 @@
     function onBusLoad() {
       try {
         const raw = localStorage.getItem("ma-studies-v1");
-        if (!raw) { alert("No shared studies yet."); return; }
+        if (!raw) { Toast.show("No shared studies yet.", "warn"); return; }
         const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed shared payload."); return; }
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed shared payload.", "warn"); return; }
         const lines = p.studies.map(s => {
           const mod = s.moderator == null ? "" : s.moderator;
           return [s.label, s.est, s.se, mod].join(", ");
         });
         document.getElementById("f-data").value = lines.join("\n");
         render();
-      } catch (e) { alert("Could not load shared: " + e.message); }
+      } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
     }
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
-      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
       const payload = {
         "_schema": "ma-studies-v1",
         "_savedAt": new Date().toISOString(),
@@ -611,8 +612,8 @@
       };
       try {
         localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
-        alert("Saved " + parsed.studies.length + " studies to shared bus.");
-      } catch (e) { alert("Could not save: " + e.message); }
+        Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
+      } catch (e) { Toast.show("Could not save: " + e.message, "warn"); }
     }
 
     function attach() {
@@ -642,5 +643,6 @@
     render();
   })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

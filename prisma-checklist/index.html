@@ -298,7 +298,7 @@
           }
           render();
         } catch (err) {
-          alert("Invalid JSON: " + err.message);
+          Toast.show("Invalid JSON: " + err.message, "warn");
         }
       };
       reader.readAsText(f);
@@ -307,5 +307,6 @@
 
     render();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

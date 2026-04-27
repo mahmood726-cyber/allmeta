@@ -498,13 +498,13 @@
     function validatePushRows(rows, context) {
       const families = new Set(rows.map(r => r.scale_family));
       if (families.size > 1) {
-        alert(`Mixed scale families detected (ratio + linear). Pooling these together is not meaningful — select only one type before ${context}.`);
+        Toast.show(`Mixed scale families detected (ratio + linear). Pooling these together is not meaningful — select only one type before ${context}.`, "warn");
         return false;
       }
       const scales = new Set(rows.map(r => r.scale));
       if (scales.size > 1 && rows[0] && rows[0].scale_family === "ratio") {
         const list = Array.from(scales).sort().join(", ");
-        alert(`Mixed ratio scales detected (${list}). Per Cochrane §10.4, HR, OR, RR, and IRR answer different clinical questions and should not be pooled together without explicit conversion. Filter to a single scale before ${context}.`);
+        Toast.show(`Mixed ratio scales detected (${list}). Per Cochrane §10.4, HR, OR, RR, and IRR answer different clinical questions and should not be pooled together without explicit conversion. Filter to a single scale before ${context}.`, "warn");
         return false;
       }
       return true;
@@ -520,14 +520,14 @@
         if (Array.isArray(raw)) existing = raw.filter(x => x && typeof x === "object" && !Array.isArray(x));
       } catch (_) { existing = []; }
       localStorage.setItem("ma-studies-v1", JSON.stringify(existing.concat(rows)));
-      alert(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`);
+      Toast.show(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`, "warn");
     });
     document.getElementById("btn-send-forest").addEventListener("click", () => {
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
       if (!validatePushRows(rows, "sending to the forest plot")) return;
       const lines = rows.map((r, i) => `Study ${i + 1}, ${r.te.toFixed(3)}, ${r.se.toFixed(3)}`).join("\n");
       localStorage.setItem("forest-plot-v1", lines);
-      navigator.clipboard.writeText(lines).then(() => alert(`${rows.length} rows saved to forest-plot-v1 and clipboard.`));
+      navigator.clipboard.writeText(lines).then(() => Toast.show(`${rows.length} rows saved to forest-plot-v1 and clipboard.`, "warn"));
     });
     document.getElementById("btn-export-csv").addEventListener("click", () => {
       const head = "type,estimate,ci_lower,ci_upper,p_value,standard_error,confidence,source_text\n";
@@ -548,5 +548,6 @@
     probeAPI();
     probeLLM();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

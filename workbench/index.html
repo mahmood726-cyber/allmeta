@@ -73,13 +73,14 @@
   <link rel="stylesheet" href="../hub/app-style.css">
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>MA Workbench — one paste, full analysis</h1>
     <p>Paste studies once. Forest, funnel, heterogeneity, TSA, and pooled estimate render live as mini-previews. Every tile deep-links into its dedicated app. One click exports a single self-contained HTML report.</p>
   </header>
 
-  <main class="layout">
+  <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies (shared across apps)</h2>
 
@@ -460,25 +461,25 @@
     // ---- Bus I/O ----
     function onSaveBus() {
       const parsed = parseStudies(document.getElementById("f-data").value);
-      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
       const payload = {
         "_schema": "ma-studies-v1",
         "_savedAt": new Date().toISOString(),
         "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: null, group: null, year: null }))
       };
-      try { localStorage.setItem(BUS_KEY, JSON.stringify(payload)); alert("Saved " + parsed.studies.length + " studies to shared bus."); }
-      catch (e) { alert("Could not save: " + e.message); }
+      try { localStorage.setItem(BUS_KEY, JSON.stringify(payload)); Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn"); }
+      catch (e) { Toast.show("Could not save: " + e.message, "warn"); }
     }
     function onLoadBus() {
       try {
         const raw = localStorage.getItem(BUS_KEY);
-        if (!raw) { alert("No shared studies yet."); return; }
+        if (!raw) { Toast.show("No shared studies yet.", "warn"); return; }
         const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed shared payload."); return; }
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed shared payload.", "warn"); return; }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
-      } catch(e) { alert("Could not load shared: " + e.message); }
+      } catch(e) { Toast.show("Could not load shared: " + e.message, "warn"); }
     }
 
     // ---- Full HTML report export ----
@@ -540,7 +541,7 @@
 
     function onDownloadReport() {
       const doc = buildReport();
-      if (!doc) return alert("Paste studies first.");
+      if (!doc) return Toast.show("Paste studies first.", "warn");
       const title = readState().title || "ma-report";
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "ma-report";
       const blob = new Blob([doc], { type: "text/html;charset=utf-8" });
@@ -579,5 +580,6 @@
     render();
   })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>
