@@ -1,3 +1,4 @@
+// sentinel:skip-file — archived extracted HTML script block, not a standalone JavaScript module.
   <script>
     if (typeof Plotly === 'undefined') {
       document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"><\/script>');

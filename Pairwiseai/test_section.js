@@ -1,4 +1,6 @@
 (function() {
+    function showToast(message, type) {
+      var toast = document.createElement('div');
       toast.className = 'toast-notification toast-' + type;
       toast.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;font-weight:500;z-index:10000;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:toastIn 0.3s ease;';
 
@@ -174,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       });
-    }
+    });
 
     // =============================================
     // SECTION: MCMC CONVERGENCE DIAGNOSTICS

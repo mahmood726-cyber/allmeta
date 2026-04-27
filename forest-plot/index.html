@@ -615,7 +615,7 @@ Study C, 0.05, 0.18"></textarea>
           if (blob) downloadBlob(blob, "forest-" + slugify(r.state.title, "plot") + ".png");
         }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "error"); };
       img.src = url;
     }
 
@@ -665,7 +665,7 @@ Study C, 0.05, 0.18"></textarea>
         if (!raw) { Toast.show("No shared studies yet. Paste or save from another tool first.", "warn"); return; }
         const p = JSON.parse(raw);
         if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) {
-          Toast.show("Shared studies payload is malformed (expected _schema=ma-studies-v1).", "warn"); return;
+          Toast.show("Shared studies payload is malformed (expected _schema=ma-studies-v1).", "error"); return;
         }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");

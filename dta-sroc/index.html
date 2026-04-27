@@ -392,7 +392,7 @@
         URL.revokeObjectURL(url);
         canvas.toBlob(function(b){ if (b) downloadBlob(b, "sroc-"+slugify(r.state.title,"plot")+".png"); }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "error"); };
       img.src = url;
     }
     function onDownloadJson() {

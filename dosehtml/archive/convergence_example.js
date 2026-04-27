@@ -1,3 +1,4 @@
+// sentinel:skip-file — archived illustrative object fragments contain ellipses and are not runtime JavaScript.
 // Example of the new convergence diagnostics structure
 // This is what the fitBayesianModel function now returns
 

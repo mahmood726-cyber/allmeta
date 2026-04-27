@@ -474,7 +474,7 @@
       const r = parseROutput(text);
       lastR = r;
       if (!Object.values(r).some(v => v != null)) {
-        Toast.show("Could not find any expected fields in the pasted output.", "warn");
+        Toast.show("Could not find any expected fields in the pasted output.", "error");
         setStatus("error", "Parse failed");
         return;
       }
@@ -611,7 +611,7 @@
         const raw = localStorage.getItem(BUS_KEY);
         if (!raw) { Toast.show("No shared studies.", "warn"); return; }
         const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed bus payload.", "warn"); return; }
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed bus payload.", "error"); return; }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();

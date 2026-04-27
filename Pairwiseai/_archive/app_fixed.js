@@ -1,4 +1,6 @@
 
+// sentinel:skip-file — archived scratch copy preserved for history, not deployable runtime code.
+
 
     // =============================================
     // SECTION: VALIDATION STATUS
@@ -36129,4 +36131,3 @@ if (typeof window !== 'undefined') {
 
 );
     // log.info('Plotly status:', typeof Plotly !== 'undefined' ? 'Available' : 'Loading...');
-  

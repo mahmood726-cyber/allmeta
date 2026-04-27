@@ -1707,7 +1707,7 @@ Test B 2021,72,8,18,202</pre>
       const to = document.getElementById('calcToType').value;
       const br = parseFloat(document.getElementById('calcBaselineRisk').value);
       const n = parseInt(document.getElementById('calcN').value);
-      if (isNaN(value)) { alert('Please enter a valid value'); return; }
+      if (isNaN(value)) { (window.Toast ? Toast.show('Please enter a valid value', 'warn') : alert('Please enter a valid value')); return; }
       try {
         const result = EffectSizeCalculator.convert(value, from, to, {
           baselineRisk: br, n1: n, n2: n
@@ -1719,7 +1719,7 @@ Test B 2021,72,8,18,202</pre>
           '<strong>' + to + ' = ' + result.value.toFixed(4) + '</strong></p>';
         resultsDiv.style.display = 'block';
       } catch(e) {
-        alert('Conversion error: ' + e.message);
+        (window.Toast ? Toast.show('Conversion error: ' + e.message, 'error') : alert('Conversion error: ' + e.message));
       }
     }
     function computeEffectSize() {
@@ -1753,7 +1753,7 @@ Test B 2021,72,8,18,202</pre>
         }
         document.getElementById('calcResults').style.display = 'block';
       } catch(e) {
-        alert('Computation error: ' + e.message);
+        (window.Toast ? Toast.show('Computation error: ' + e.message, 'error') : alert('Computation error: ' + e.message));
       }
     }
     function computeFrom2x2() {
@@ -1782,7 +1782,7 @@ Test B 2021,72,8,18,202</pre>
           '<p><strong>P(control):</strong> ' + (result.p_control*100).toFixed(1) + '%</p>';
         document.getElementById('calcResults').style.display = 'block';
       } catch(e) {
-        alert('Calculation error: ' + e.message);
+        (window.Toast ? Toast.show('Calculation error: ' + e.message, 'error') : alert('Calculation error: ' + e.message));
       }
     }
     </script>
@@ -3735,5 +3735,6 @@ document.getElementById('quickStartModal').addEventListener('click', function(e)
   }
 });
 </script>
+<script src="../shared/toast.js" defer></script>
 </body>
 </html>

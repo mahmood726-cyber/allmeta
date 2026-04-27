@@ -540,7 +540,7 @@
         URL.revokeObjectURL(url);
         canvas.toBlob(function(b){ if (b) downloadBlob(b, "baujat-plot.png"); }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "error"); };
       img.src = url;
     }
     function onDownloadJson() {
@@ -572,7 +572,7 @@
         const raw = localStorage.getItem("ma-studies-v1");
         if (!raw) { Toast.show("No shared studies yet.", "warn"); return; }
         const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed shared payload.", "warn"); return; }
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed shared payload.", "error"); return; }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
