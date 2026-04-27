@@ -590,13 +590,13 @@ Study C, 0.05, 0.18"></textarea>
     }
 
     function onDownloadSvg() {
-      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
       downloadBlob(new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"}),
                    "forest-" + slugify(r.state.title, "plot") + ".svg");
     }
 
     function onDownloadPng() {
-      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
       const m = r.svg.match(/viewBox="0 0 (\d+) (\d+)"/);
       const W = m ? parseInt(m[1], 10) : 780;
       const H = m ? parseInt(m[2], 10) : 600;
@@ -615,7 +615,7 @@ Study C, 0.05, 0.18"></textarea>
           if (blob) downloadBlob(blob, "forest-" + slugify(r.state.title, "plot") + ".png");
         }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
       img.src = url;
     }
 
@@ -632,7 +632,7 @@ Study C, 0.05, 0.18"></textarea>
         try {
           const parsed = JSON.parse(reader.result);
           if (parsed && typeof parsed === "object") { writeState(parsed); render(); }
-        } catch (e) { alert("Could not parse JSON: " + e.message); }
+        } catch (e) { Toast.show("Could not parse JSON: " + e.message, "warn"); }
       };
       reader.readAsText(file);
     }
@@ -662,19 +662,19 @@ Study C, 0.05, 0.18"></textarea>
     function onBusLoad() {
       try {
         const raw = localStorage.getItem("ma-studies-v1");
-        if (!raw) { alert("No shared studies yet. Paste or save from another tool first."); return; }
+        if (!raw) { Toast.show("No shared studies yet. Paste or save from another tool first.", "warn"); return; }
         const p = JSON.parse(raw);
         if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) {
-          alert("Shared studies payload is malformed (expected _schema=ma-studies-v1)."); return;
+          Toast.show("Shared studies payload is malformed (expected _schema=ma-studies-v1).", "warn"); return;
         }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
-      } catch (e) { alert("Could not load shared studies: " + e.message); }
+      } catch (e) { Toast.show("Could not load shared studies: " + e.message, "warn"); }
     }
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
-      if (!parsed.studies.length) { alert("Nothing to save — paste at least one study."); return; }
+      if (!parsed.studies.length) { Toast.show("Nothing to save — paste at least one study.", "warn"); return; }
       const payload = {
         "_schema": "ma-studies-v1",
         "_savedAt": new Date().toISOString(),
@@ -682,8 +682,8 @@ Study C, 0.05, 0.18"></textarea>
       };
       try {
         localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
-        alert("Saved " + parsed.studies.length + " studies to the shared MA bus.");
-      } catch (e) { alert("Could not save: " + e.message); }
+        Toast.show("Saved " + parsed.studies.length + " studies to the shared MA bus.", "warn");
+      } catch (e) { Toast.show("Could not save: " + e.message, "warn"); }
     }
 
     function attach() {
@@ -730,5 +730,6 @@ Study C, 0.05, 0.18"></textarea>
       }
     });
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

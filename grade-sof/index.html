@@ -367,13 +367,17 @@
 
     function renderWizardPanel(o, idx) {
       const g = o.grade || { design:"rct", rob:0, inc:0, ind:0, imp:0, pub:0, large:0, dose:false, conf:false };
+      // AV6-01: name= ties radios into a native browser radiogroup so DOM-level
+      // mutual exclusion holds without relying on the JS handler.
       const radio = (name, val, current, label) => {
         const checked = (current|0) === (val|0) ? " checked" : "";
-        return '<label><input type="radio" data-grade="' + name + '" data-idx="' + idx + '" value="' + val + '"' + checked + '> ' + label + '</label>';
+        const groupName = "grade-" + name + "-" + idx;
+        return '<label><input type="radio" name="' + groupName + '" data-grade="' + name + '" data-idx="' + idx + '" value="' + val + '"' + checked + '> ' + label + '</label>';
       };
       const designRadio = (val, label) => {
         const checked = g.design === val ? " checked" : "";
-        return '<label><input type="radio" data-grade="design" data-idx="' + idx + '" value="' + val + '"' + checked + '> ' + label + '</label>';
+        const groupName = "grade-design-" + idx;
+        return '<label><input type="radio" name="' + groupName + '" data-grade="design" data-idx="' + idx + '" value="' + val + '"' + checked + '> ' + label + '</label>';
       };
       const upgradeEnabled = g.design === "obs" && (g.rob|0)+(g.inc|0)+(g.ind|0)+(g.imp|0)+(g.pub|0) === 0;
       const computed = gradeCompute(g);
@@ -714,7 +718,7 @@
             for (const k of Object.keys(HEADER_FIELDS)) state[k] = p[k] || "";
             render();
           }
-        } catch (e) { alert("Could not parse JSON: " + e.message); }
+        } catch (e) { Toast.show("Could not parse JSON: " + e.message, "warn"); }
       };
       r.readAsText(file);
     }
@@ -775,5 +779,6 @@
       }
     });
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

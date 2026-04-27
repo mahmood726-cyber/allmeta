@@ -176,7 +176,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       if (rows.length < 2) return;
       let f;
       try { f = fit(rows); }
-      catch (e) { alert(e.message); return; }
+      catch (e) { Toast.show(e.message, "warn"); return; }
 
       // Component table
       const cBody = document.getElementById("comp-body");
@@ -251,5 +251,6 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     document.getElementById("btn-run").addEventListener("click", run);
     run();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

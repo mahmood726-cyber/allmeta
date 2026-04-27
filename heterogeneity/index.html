@@ -526,7 +526,7 @@
     function onDownloadSvg() {
       const state = readState();
       const parsed = parseStudies(state.data);
-      if (parsed.studies.length < 2) return alert("Need ≥2 studies.");
+      if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
       const info = renderStats(parsed.studies, state.tau2);
       const svg = buildSvg(parsed.studies, info.sum);
       downloadBlob(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}), "baujat-"+slugify("","plot")+".svg");
@@ -534,7 +534,7 @@
     function onDownloadPng() {
       const state = readState();
       const parsed = parseStudies(state.data);
-      if (parsed.studies.length < 2) return alert("Need ≥2 studies.");
+      if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
       const info = renderStats(parsed.studies, state.tau2);
       const svg = buildSvg(parsed.studies, info.sum);
       const W=680, H=440, scale=2;
@@ -550,7 +550,7 @@
         URL.revokeObjectURL(url);
         canvas.toBlob(function(b){ if (b) downloadBlob(b, "baujat-plot.png"); }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
       img.src = url;
     }
     function onDownloadJson() {
@@ -562,7 +562,7 @@
       const r = new FileReader();
       r.onload = function () {
         try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
-        catch(e) { alert("Could not parse JSON: "+e.message); }
+        catch(e) { Toast.show("Could not parse JSON: "+e.message, "warn"); }
       };
       r.readAsText(file);
     }
@@ -580,17 +580,17 @@
     function onBusLoad() {
       try {
         const raw = localStorage.getItem("ma-studies-v1");
-        if (!raw) { alert("No shared studies yet."); return; }
+        if (!raw) { Toast.show("No shared studies yet.", "warn"); return; }
         const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { alert("Malformed shared payload."); return; }
+        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed shared payload.", "warn"); return; }
         const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
-      } catch (e) { alert("Could not load shared: " + e.message); }
+      } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
     }
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
-      if (!parsed.studies.length) { alert("Nothing to save."); return; }
+      if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
       const payload = {
         "_schema": "ma-studies-v1",
         "_savedAt": new Date().toISOString(),
@@ -598,8 +598,8 @@
       };
       try {
         localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
-        alert("Saved " + parsed.studies.length + " studies to shared bus.");
-      } catch (e) { alert("Could not save: " + e.message); }
+        Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
+      } catch (e) { Toast.show("Could not save: " + e.message, "warn"); }
     }
 
     function attach() {
@@ -628,5 +628,6 @@
     render();
   })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

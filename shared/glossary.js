@@ -28,13 +28,13 @@
     "PM": "Shorthand for Paule–Mandel τ² estimator.",
     "HKSJ": "Hartung–Knapp–Sidik–Jonkman variance correction. Replaces z with t_{k-1} and inflates SE; floor q*≥1 to avoid narrowing the CI when Q<k-1.",
     "Hartung-Knapp": "See HKSJ — small-sample correction for random-effects meta-analysis.",
-    "fixed-effect": "Pooling model assuming a single common true effect. All study variation is sampling noise. Misleading when heterogeneity is non-trivial.",
+    "fixed-effect": "Pooling model assuming a single common true effect (Cochrane Handbook v6+ now prefers 'common-effect' to avoid the long-standing fixed-effect/fixed-effects ambiguity; Borenstein 2010 RSM 1:97). All study variation is sampling noise. Misleading when heterogeneity is non-trivial.",
     "random-effects": "Pooling model assuming each study has its own true effect drawn from a distribution N(μ, τ²).",
     "inverse-variance": "Each study contributes weight 1/SE² (or 1/(SE²+τ²) under random effects).",
     "Mantel-Haenszel": "Pooling method for binary outcomes that performs better than IV when events are sparse; computed on the natural log scale.",
     "Peto OR": "Approximate odds-ratio pooling for rare events; valid when events <1-5%, the true effect is not extreme (OR not far from 1), and arm sizes are not grossly unequal. Cochrane Handbook §10.4.1.1; Bradburn 2007.",
     // Heterogeneity
-    "I-squared": "Proportion of total variance attributable to between-study heterogeneity. ≥75% = considerable; ≥50% = substantial. Not the magnitude of heterogeneity (τ²).",
+    "I-squared": "Proportion of total variance attributable to between-study heterogeneity. Cochrane Handbook §10.10.2 indicative bands (overlapping, NOT strict thresholds): 0-40% may not be important, 30-60% moderate, 50-90% substantial, 75-100% considerable. Report τ² alongside — I² measures proportion, not magnitude.",
     "I²": "See I-squared. Does NOT indicate the size of heterogeneity — report τ² alongside.",
     "tau-squared": "Between-study variance under a random-effects model. The actual scale of heterogeneity.",
     "τ²": "See tau-squared.",
@@ -56,7 +56,7 @@
     "AMSTAR-2": "16-item appraisal tool for systematic reviews of interventions. Shea 2017.",
     // GRADE
     "GRADE": "Grading of Recommendations, Assessment, Development and Evaluations — four-tier certainty (High/Moderate/Low/Very low) across five downgrade domains.",
-    "CINeMA": "Confidence In NMA — adapts GRADE to network meta-analysis (6 domains, study limitations through publication bias).",
+    "CINeMA": "Confidence In Network Meta-Analysis — 6 domains: within-study bias, reporting bias, indirectness, imprecision, heterogeneity, incoherence (Nikolakopoulou 2020 PLoS Med 17:e1003082).",
     "CERQual": "Confidence in Evidence from Reviews of Qualitative research — GRADE analogue for qualitative evidence synthesis.",
     "certainty of evidence": "Confidence in the estimate; rated under GRADE as High/Moderate/Low/Very low after considering 5 downgrade domains.",
     // NMA
@@ -76,19 +76,20 @@
     // Survival / IPD
     "RMST": "Restricted mean survival time — area under S(t) up to a fixed τ*. Pool differences, not ratios. Always state τ*.",
     "IPD": "Individual patient data — gold standard but rarely available. Two-stage and one-stage IV models exist.",
-    "Guyot IPD": "Reconstruction of individual time-to-event data from a published Kaplan–Meier curve. Approximate — never claim IPD-level accuracy.",
+    "Guyot IPD": "Reconstruction of IPD from a digitised Kaplan–Meier curve plus published at-risk numbers (Guyot 2012 BMC Med Res Methodol 12:9). Approximate — never claim IPD-level accuracy.",
     "Schoenfeld test": "Tests proportional hazards assumption; if rejected, a single HR is misleading.",
     "Kaplan-Meier": "Non-parametric estimate of survival function S(t) from time-to-event data.",
     // Effect sizes
-    "RR": "Risk ratio = P(event|exposed) / P(event|control). Preferred for binary outcomes when communicating risk.",
-    "OR": "Odds ratio. Approximates RR only for rare events (baseline risk <10%).",
+    "RR": "Risk ratio = P(event|exposed) / P(event|control). For cumulative incidence (binary outcomes). Distinct from rate ratio (incidence-rate data); both abbreviated RR — context matters.",
+    "rate ratio": "Ratio of incidence rates (events per person-time): IR_exposed / IR_control. Distinct from risk ratio; both abbreviated RR. Preferred when follow-up varies between subjects.",
+    "OR": "Odds ratio. OR ≈ RR only when baseline risk is low (commonly <10% rule of thumb) AND effect size is modest — large ORs diverge from RRs even at modest baseline risk (Zhang & Yu 1998 JAMA 280:1690).",
     "HR": "Hazard ratio. Assumes proportional hazards. Not a direct risk ratio.",
     "MD": "Mean difference between groups (same scale).",
     "SMD": "Standardised mean difference (Cohen's d / Hedges' g). Pooled across heterogeneous scales.",
     "Hedges g": "Bias-corrected SMD; multiply Cohen's d by 1 - 3/(4(N₁+N₂)-9).",
     "Fisher z": "Variance-stabilising transform for correlations: z = atanh(r), Var(z) = 1/(n-3).",
     // Sensitivity / advanced
-    "fragility index": "Minimum number of event re-classifications, in one arm only (typically the arm with fewer events, not always the experimental arm), that flips a significant trial to non-significant. Walsh 2014.",
+    "fragility index": "Minimum number of event re-classifications, in one arm only (typically the arm with fewer events, not always the experimental arm), that flips a significant trial to non-significant (Walsh 2014). Some implementations test both arms and use the smaller flip count (Lin & Lee 2020).",
     "TSA": "Trial Sequential Analysis — sequential monitoring boundaries for cumulative meta-analyses (O'Brien-Fleming).",
     "Copas selection": "Sensitivity model for selective publication. Needs k≥15.",
     "leave-one-out": "Sensitivity analysis recomputing the pooled estimate after omitting each study in turn.",
@@ -178,16 +179,38 @@
     popoverEl = null;
     if (popoverFor) popoverFor.removeAttribute("aria-describedby");
     popoverFor = null;
-    document.removeEventListener("keydown", handleEscape, true);
+    document.removeEventListener("keydown", handleKeydown, true);
     document.removeEventListener("click", handleOutsideClick, true);
   }
 
-  function handleEscape(e) {
+  // AV6-07: trap Tab/Shift-Tab inside the popover so keyboard users can't
+  // walk past it while it's open; Escape returns focus to the trigger.
+  function handleKeydown(e) {
+    if (!popoverEl) return;
     if (e.key === "Escape") {
-      // P1-07: capture the trigger BEFORE closePopover() nulls it.
       const target = popoverFor;
       closePopover();
       if (target) target.focus();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusables = popoverEl.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || active === popoverEl) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
   }
 
@@ -232,7 +255,7 @@
     popoverEl.style.top = top + "px";
     btn.setAttribute("aria-describedby", id);
     popoverFor = btn;
-    document.addEventListener("keydown", handleEscape, true);
+    document.addEventListener("keydown", handleKeydown, true);
     document.addEventListener("click", handleOutsideClick, true);
     // Move focus into the popover so keyboard users can close via the close
     // button or Escape and screen readers announce the dialog content.

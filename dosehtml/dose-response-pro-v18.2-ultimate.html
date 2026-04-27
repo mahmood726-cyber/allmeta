@@ -1190,7 +1190,7 @@ tbody tr:hover { background: var(--bg-primary); }
 // GLOBAL STATE
 // ================================================================
 let analysisResults = null;
-let currentTheme = localStorage.getItem('theme') || 'dark';
+let currentTheme = localStorage.getItem('theme_v18_2') || 'dark';
 let excludedStudies = new Set();
 let currentCI = 95;
 let currentTau2 = null; // null = auto (REML)
@@ -1227,7 +1227,7 @@ function logAudit(action, details = {}) {
     details
   };
   auditTrail.push(entry);
-  localStorage.setItem('dose_response_v18_audit', JSON.stringify(auditTrail));
+  localStorage.setItem('dose_response_v18_2_audit', JSON.stringify(auditTrail));
 }
 
 // ================================================================
@@ -1287,7 +1287,7 @@ function hideProgress() {
 }
 
 function showAuditLog() {
-  const saved = localStorage.getItem('dose_response_v18_audit');
+  const saved = localStorage.getItem('dose_response_v18_2_audit');
   const log = saved ? JSON.parse(saved) : auditTrail;
   const modal = document.getElementById('auditModal');
   const logDiv = document.getElementById('auditLog');
@@ -4940,7 +4940,7 @@ function showToast(msg, variant) {
 function toggleTheme() {
   currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', currentTheme);
-  localStorage.setItem('theme', currentTheme);
+  localStorage.setItem('theme_v18_2', currentTheme);
   if (analysisResults) updateAllDisplays();
   logAudit('theme_toggled', { theme: currentTheme });
 }
@@ -4960,13 +4960,13 @@ function saveAnalysis() {
     }
   };
 
-  localStorage.setItem('dose_response_v18_save', JSON.stringify(saveData));
+  localStorage.setItem('dose_response_v18_2_save', JSON.stringify(saveData));
   showToast('Analysis saved!');
   logAudit('analysis_saved');
 }
 
 function loadAnalysis() {
-  const saved = localStorage.getItem('dose_response_v18_save');
+  const saved = localStorage.getItem('dose_response_v18_2_save');
   if (!saved) { showToast('No saved analysis found', true); return; }
 
   try {

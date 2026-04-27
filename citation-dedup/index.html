@@ -404,7 +404,7 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textare
       const yearTol = parseInt(document.getElementById("year-tol").value, 10) || 0;
       const requireAuthor = document.getElementById("req-author").value;
       const records = parseInput(text, format);
-      if (records.length === 0) { alert("No citations parsed."); return; }
+      if (records.length === 0) { Toast.show("No citations parsed.", "warn"); return; }
       const groups = dedup(records, threshold, yearTol, requireAuthor);
       LAST_STATE = { records, groups };
       render();
@@ -418,5 +418,6 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textare
     // Auto-run on load with the default demo content
     document.getElementById("btn-run").click();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

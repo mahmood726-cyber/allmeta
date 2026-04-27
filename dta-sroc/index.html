@@ -335,8 +335,8 @@
       if (parsed.studies.some(s => s.corrected)) {
         extras.push("One or more studies had a zero cell — 0.5 continuity correction applied to that study only.");
       }
-      if (parsed.studies.length && parsed.studies.length < 4) {
-        extras.push("k = " + parsed.studies.length + " — Moses SROC is unreliable for very small k (consider k ≥ 4).");
+      if (parsed.studies.length && parsed.studies.length < 5) {
+        extras.push("k = " + parsed.studies.length + " — Moses SROC unreliable for k < 5; bivariate / HSROC also commonly fail to converge below k = 5 (advanced-stats.md).");
       }
       const all = parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
@@ -374,11 +374,11 @@
       return { state, svg: buildSvg(state, parsed.studies, fit) };
     }
     function onDownloadSvg() {
-      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
       downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "sroc-"+slugify(r.state.title,"plot")+".svg");
     }
     function onDownloadPng() {
-      const r = currentSvg(); if (!r) return alert("No studies parsed.");
+      const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
       const W=620,H=620,scale=2;
       const img = new Image();
       const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
@@ -392,7 +392,7 @@
         URL.revokeObjectURL(url);
         canvas.toBlob(function(b){ if (b) downloadBlob(b, "sroc-"+slugify(r.state.title,"plot")+".png"); }, "image/png");
       };
-      img.onerror = function () { URL.revokeObjectURL(url); alert("PNG render failed."); };
+      img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "warn"); };
       img.src = url;
     }
     function onDownloadJson() {
@@ -404,7 +404,7 @@
       const r = new FileReader();
       r.onload = function () {
         try { const p = JSON.parse(r.result); if (p && typeof p === "object") { writeState(p); render(); } }
-        catch(e) { alert("Could not parse JSON: "+e.message); }
+        catch(e) { Toast.show("Could not parse JSON: "+e.message, "warn"); }
       };
       r.readAsText(file);
     }
@@ -439,5 +439,6 @@
     render();
   })();
   </script>
+  <script src="../shared/toast.js" defer></script>
 </body>
 </html>

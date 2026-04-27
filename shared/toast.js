@@ -1,0 +1,61 @@
+// toast.js — non-blocking notification helper for inner apps.
+//
+// Usage: include via `<script src="../shared/toast.js" defer></script>` and
+// replace `alert("…")` with `Toast.show("…")`. Long-form: `Toast.show(msg, "warn", 4000)`.
+// Levels: "info" (default), "warn", "error". The toast appears bottom-right,
+// auto-dismisses after `duration` ms (default 2400), and auto-stacks if
+// multiple are active. No external dependencies; CSP-friendly (no inline
+// styles after init — uses class selectors only).
+
+(function (global) {
+  "use strict";
+
+  let containerEl = null;
+
+  function ensureContainer() {
+    if (containerEl && document.body.contains(containerEl)) return containerEl;
+    if (!document.getElementById("__toast-style")) {
+      const style = document.createElement("style");
+      style.id = "__toast-style";
+      style.textContent = `
+.toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+.toast-item { background: #1c1f23; color: #fffaf1; padding: 0.55rem 0.95rem; border-radius: 6px; font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; box-shadow: 0 6px 24px rgba(0,0,0,0.18); max-width: min(420px, 80vw); pointer-events: auto; opacity: 0; transform: translateY(8px); transition: opacity 0.18s ease, transform 0.18s ease; }
+.toast-item.is-visible { opacity: 1; transform: translateY(0); }
+.toast-item.toast-warn { background: #b05a1c; }
+.toast-item.toast-error { background: #912121; }
+.toast-item.toast-info { background: #1c1f23; }
+@media (prefers-color-scheme: light) {
+  .toast-item.toast-info { background: #15181d; color: #fafaf6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-item { transition: none; }
+}
+`;
+      document.head.appendChild(style);
+    }
+    containerEl = document.createElement("div");
+    containerEl.className = "toast-container";
+    containerEl.setAttribute("role", "status");
+    containerEl.setAttribute("aria-live", "polite");
+    containerEl.setAttribute("aria-atomic", "false");
+    document.body.appendChild(containerEl);
+    return containerEl;
+  }
+
+  function show(msg, level, duration) {
+    if (!msg) return;
+    const c = ensureContainer();
+    const item = document.createElement("div");
+    item.className = "toast-item toast-" + (level || "info");
+    item.textContent = String(msg);
+    c.appendChild(item);
+    requestAnimationFrame(() => item.classList.add("is-visible"));
+    const ms = Number.isFinite(duration) ? duration : (level === "error" ? 4000 : 2400);
+    setTimeout(() => {
+      item.classList.remove("is-visible");
+      setTimeout(() => item.remove(), 220);
+    }, ms);
+  }
+
+  global.Toast = { show };
+})(typeof window !== "undefined" ? window : this);
