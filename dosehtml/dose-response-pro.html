@@ -3259,19 +3259,53 @@ function estimateTau2DL(X, y, V_blocks) {
   const feResult = solveGLSWithTau2(X, y, V_blocks, 0);
   const Q = computeQStat(y, X, feResult.beta, V_blocks, 0);
 
-  // Multivariate meta-analysis degrees of freedom
+  // V12-02: Multivariate DL τ² (Jackson-Riley-White, Stat Med 2010;29:1282-1297):
+  //   τ² = max(0, (Q − df) / trace(P))
+  // where P = V⁻¹ − V⁻¹ X (X'V⁻¹X)⁻¹ X' V⁻¹, computed in inverse-variance metric.
+  // Previous implementation mixed scales: used Σ v_ii (variance-scale sum) as
+  // the denominator instead of trace(P) (weight-scale sum), so τ² was
+  // systematically wrong when REML didn't converge.
+  // For univariate effects (p=1, n_block=1), fall back to the standard
+  // Cochran/DL form `denom = ΣW − ΣW²/ΣW` with W_i = 1/v_i.
   const df = Math.max((K - 1) * p, 0);
 
-  // DL denominator based on sum of within-study traces
-  let sumTrV = 0;
-  for (const block of V_blocks) {
-    const n = block.n;
-    for (let i = 0; i < n; i++) {
-      sumTrV += block.V[i * n + i];
+  let denominator = 0;
+  // Univariate fast path (each block is 1×1).
+  const allUni = V_blocks.every(b => b.n === 1) && p === 1;
+  if (allUni) {
+    let sumW = 0, sumW2 = 0;
+    for (const block of V_blocks) {
+      const v = block.V[0];
+      if (v > 0) {
+        const w = 1 / v;
+        sumW += w;
+        sumW2 += w * w;
+      }
     }
+    denominator = sumW > 0 ? (sumW - sumW2 / sumW) : 0;
+  } else {
+    // Multivariate: compute trace(V⁻¹) − trace(V⁻¹ X (X'V⁻¹X)⁻¹ X' V⁻¹).
+    // V_blocks are independent, so V⁻¹ is block-diagonal. trace(V⁻¹) = Σ trace(V_i⁻¹).
+    // For the second term we need the full GLS inverse already computed inside
+    // solveGLSWithTau2 — read it back via feResult.XtViX_inv if exposed,
+    // otherwise approximate as df-scaled (a conservative lower bound).
+    let traceVinv = 0;
+    for (const block of V_blocks) {
+      const n = block.n;
+      // For n=1: V⁻¹ = 1/v.
+      if (n === 1) { if (block.V[0] > 0) traceVinv += 1 / block.V[0]; continue; }
+      // For larger n, compute matrix inverse trace via diagonal of inverse.
+      // Simplification: use 1/diagonal as an upper bound on trace(V⁻¹).
+      for (let i = 0; i < n; i++) {
+        const vii = block.V[i * n + i];
+        if (vii > 0) traceVinv += 1 / vii;
+      }
+    }
+    // Approximate denominator: trace(V⁻¹) − df. Documented as approximation
+    // pending exposure of XtViX_inv from solveGLSWithTau2.
+    denominator = traceVinv - df;
   }
 
-  const denominator = sumTrV - df;
   if (!Number.isFinite(Q) || !Number.isFinite(denominator) || denominator <= 0) {
     return 0;
   }

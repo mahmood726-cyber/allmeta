@@ -52,6 +52,9 @@
         const visible = containerEl.querySelectorAll(".toast-item.is-visible");
         if (!visible.length) return;
         const last = visible[visible.length - 1];
+        // V12-E04 — clear the auto-dismiss timer so it doesn't fire later
+        // on a detached node (and accumulate timers in long sessions).
+        if (last.__dismissTimer) { clearTimeout(last.__dismissTimer); last.__dismissTimer = null; }
         last.classList.remove("is-visible");
         setTimeout(() => last.remove(), 220);
       });
@@ -69,10 +72,14 @@
     c.appendChild(item);
     requestAnimationFrame(() => item.classList.add("is-visible"));
     const ms = Number.isFinite(duration) ? duration : (level === "error" ? 4000 : 2400);
-    setTimeout(() => {
+    // V12-E04 — store timer id on the element so the Escape handler can
+    // clearTimeout before manually fading; prevents leaked closures and
+    // stranded setTimeout callbacks firing on detached nodes.
+    const timerId = setTimeout(() => {
       item.classList.remove("is-visible");
       setTimeout(() => item.remove(), 220);
     }, ms);
+    item.__dismissTimer = timerId;
   }
 
   global.Toast = { show };

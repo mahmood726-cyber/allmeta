@@ -3572,7 +3572,7 @@ function getOutcomeMetadata(e) {
 }
 
 function mapOutcomeToStandard(e) {
-  const t = e.toLowerCase().trim().replace(/[Ã¢â‚¬ÂÃ¢â‚¬“Ã¢â‚¬”]/g, "-").replace(/\s+/g, " ");
+  const t = e.toLowerCase().trim().replace(/[‐‑‒–—―]/g, "-").replace(/\s+/g, " ");
   for (const [n, a] of Object.entries(OUTCOME_DICTIONARY))
     for (const s of a)
       if (t === s) return {
@@ -3612,10 +3612,10 @@ function mapOutcomeToStandard(e) {
   }
 }
 const FOLLOW_UP_PATTERNS = [{
-  regex: /(\d+(?:\.\d+)?)\s*[-Ã¢â‚¬“]?\s*months?\s*(?:follow[- ]?up)?/i,
+  regex: /(\d+(?:\.\d+)?)\s*[-–]?\s*months?\s*(?:follow[- ]?up)?/i,
   unit: 1
 }, {
-  regex: /(\d+(?:\.\d+)?)\s*[-Ã¢â‚¬“]?\s*years?\s*(?:follow[- ]?up)?/i,
+  regex: /(\d+(?:\.\d+)?)\s*[-–]?\s*years?\s*(?:follow[- ]?up)?/i,
   unit: 12
 }, {
   regex: /median\s*(?:FU|follow[- ]?up)\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*years?/i,
@@ -3633,13 +3633,13 @@ const FOLLOW_UP_PATTERNS = [{
   regex: /(\d+(?:\.\d+)?)\s*weeks?/i,
   unit: .23
 }, {
-  regex: /at\s*(\d+(?:\.\d+)?)\s*[-Ã¢â‚¬“]?\s*months?/i,
+  regex: /at\s*(\d+(?:\.\d+)?)\s*[-–]?\s*months?/i,
   unit: 1
 }, {
-  regex: /at\s*(\d+(?:\.\d+)?)\s*[-Ã¢â‚¬“]?\s*years?/i,
+  regex: /at\s*(\d+(?:\.\d+)?)\s*[-–]?\s*years?/i,
   unit: 12
 }, {
-  regex: /(\d+(?:\.\d+)?)\s*[-Ã¢â‚¬“]?\s*year/i,
+  regex: /(\d+(?:\.\d+)?)\s*[-–]?\s*year/i,
   unit: 12
 }, {
   regex: /^(\d+(?:\.\d+)?)$/,

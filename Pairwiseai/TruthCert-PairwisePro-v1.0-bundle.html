@@ -10063,10 +10063,11 @@ function mantelHaenszel(studies, measure = 'OR') {
     const OR_MH = sumR / sumS;
     const logOR = Math.log(OR_MH);
 
-    // Robins-Breslow-Greenland variance estimator
-    const varLogOR = (sumP * sumR) / (2 * sumR * sumR) +
+    // V12-01 Robins-Breslow-Greenland variance: sumP/sumQ already accumulate
+    // Σ(P_i·R_i) and Σ(Q_i·S_i); denominators must be 2·R² and 2·S² alone.
+    const varLogOR = sumP / (2 * sumR * sumR) +
                      (sumPRS) / (2 * sumR * sumS) +
-                     (sumQ * sumS) / (2 * sumS * sumS);
+                     sumQ / (2 * sumS * sumS);
     const seLogOR = Math.sqrt(varLogOR);
 
     const z = logOR / seLogOR;
