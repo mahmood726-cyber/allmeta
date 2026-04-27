@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+  <meta name="description" content="Pick a review workflow on allmeta — systematic, rapid, prognostic, network meta-analysis, or diagnostic test accuracy. Each path lists the tools in methodological order.">
+  <title>Pick a workflow — allmeta</title>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    .workflow-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin: 1.5rem 0;
+    }
+    .workflow-card {
+      display: block;
+      padding: 1.1rem 1.25rem;
+      border: 1px solid rgba(31,30,26,0.18);
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      background: rgba(255,255,255,0.7);
+      transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+    }
+    .workflow-card:hover, .workflow-card:focus-visible {
+      border-color: #c75b39;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(199, 91, 57, 0.12);
+    }
+    .workflow-card h2 {
+      margin: 0 0 0.35rem; font-size: 1.05rem; color: #2c5e8a;
+    }
+    .workflow-card p { margin: 0 0 0.4rem; color: #5c6470; font-size: 0.92rem; line-height: 1.45; }
+    .workflow-card .when { display: inline-block; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 999px; background: rgba(29, 111, 112, 0.12); color: #1d6f70; margin-top: 0.25rem; }
+    @media (prefers-color-scheme: dark) {
+      .workflow-card { background: rgba(28,31,35,0.7); border-color: rgba(231,228,220,0.18); color: #e7e4dc; }
+      .workflow-card h2 { color: #6aa6d4; }
+      .workflow-card p { color: #98a0ae; }
+      .workflow-card .when { background: rgba(110,184,185,0.18); color: #6eb8b9; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to workflow picker</a>
+  <a class="hub-back" href="../" aria-label="Back to allmeta hub">← allmeta</a>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Pick a workflow</p>
+      <h1>Which kind of review are you running?</h1>
+      <p class="lede">Each workflow is a curated sequence of allmeta tools in methodological order — from question framing through synthesis and reporting. Pick the one that matches your evidence question. You can always combine tools later directly from the <a href="../">catalogue</a>.</p>
+    </header>
+
+    <main id="main">
+      <div class="workflow-grid">
+        <a class="workflow-card" href="./systematic-review/">
+          <h2>Systematic review</h2>
+          <p>The full PRISMA 2020 sequence: PICO → search → dedupe → dual screen → RoB → synthesis → GRADE.</p>
+          <span class="when">When you have time and want Cochrane-level rigour</span>
+        </a>
+        <a class="workflow-card" href="./rapid-review/">
+          <h2>Rapid review</h2>
+          <p>Cochrane Rapid Reviews Methods Group (Garritty 2021) — single-reviewer screening with verification, streamlined extraction, primary-outcome RoB.</p>
+          <span class="when">When you have a deadline (decision in days/weeks)</span>
+        </a>
+        <a class="workflow-card" href="./prognostic-review/">
+          <h2>Prognostic review</h2>
+          <p>PROGRESS framework + PICOTS, CHARMS extraction, QUIPS / PROBAST, GRADE-for-prognosis (Foroutan 2020).</p>
+          <span class="when">When the question is about prognostic factors or prediction models</span>
+        </a>
+        <a class="workflow-card" href="./network-meta-analysis/">
+          <h2>Network meta-analysis</h2>
+          <p>Multi-treatment comparisons: transitivity, consistency, node-splitting, SUCRA ranking, CINeMA confidence.</p>
+          <span class="when">When the question compares more than two interventions</span>
+        </a>
+        <a class="workflow-card" href="./diagnostic-test-accuracy/">
+          <h2>Diagnostic test accuracy</h2>
+          <p>QUADAS-2 appraisal, bivariate / HSROC pooling, threshold-effect detection, GRADE-DTA.</p>
+          <span class="when">When the outcome is a diagnostic test's sensitivity / specificity</span>
+        </a>
+      </div>
+
+      <p class="foot">
+        Not sure which one fits? Most clinical-effectiveness reviews start with <a href="./systematic-review/">systematic review</a>. For a guideline urgency, see <a href="./rapid-review/">rapid review</a>. Each workflow page links the same allmeta tools — picking the wrong one isn't a hard error.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

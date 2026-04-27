@@ -27,7 +27,7 @@
         </p>
         <div class="hero-actions">
           <a class="button button-primary" href="#catalog">Browse the catalog</a>
-          <a class="button button-secondary" href="./workflow/systematic-review/">Workflows</a>
+          <a class="button button-secondary" href="./workflow/">Pick a workflow</a>
           <a class="button button-secondary" href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">Courses ↗</a>
         </div>
       </div>
@@ -38,11 +38,11 @@
             <strong id="launchable-count" class="metric-value">0</strong>
           </article>
           <article class="metric-card">
-            <span class="metric-label">Linked externally</span>
+            <span class="metric-label">Externally hosted</span>
             <strong id="server-count" class="metric-value">0</strong>
           </article>
           <article class="metric-card">
-            <span class="metric-label">Productivity tools</span>
+            <span class="metric-label">Recently added</span>
             <strong id="new-count" class="metric-value">0</strong>
           </article>
           <article class="metric-card">
@@ -51,10 +51,10 @@
           </article>
         </div>
         <div class="tip-card">
-          <p class="tip-title">Run it locally</p>
+          <p class="tip-title">First time?</p>
           <p class="tip-copy">
-            Clone the repo and serve it with any static file server:
-            <code>python -m http.server 8080</code>, then open <code>http://localhost:8080</code>.
+            <a href="./workflow/">Pick a workflow</a> — systematic, rapid, prognostic, NMA, or DTA — and the right tools surface at each step.
+            Already have a method in mind? <a href="#catalog">Browse the catalog</a> directly.
           </p>
         </div>
       </div>
@@ -91,6 +91,15 @@
             <li>The source for each app is in the linked repository.</li>
           </ul>
         </article>
+        <article class="panel-card">
+          <h2>Are they validated?</h2>
+          <ul class="notes-list">
+            <li><strong>Cross-checked against R</strong> — most pooling, heterogeneity, and DTA tools have parity tests against <code>metafor</code>, <code>meta</code>, <code>netmeta</code>, or <code>mada</code>.</li>
+            <li><strong>WebR Studio</strong> runs real R in the browser if you want to verify a result against canonical CRAN packages without installing anything.</li>
+            <li><strong>TruthCert receipts</strong> — selected apps emit HMAC-signed bundles so a reviewer can verify that the inputs and outputs you saw are the inputs and outputs the analysis ran on.</li>
+            <li>Sources, validation harnesses, and known limits are documented in the <a href="https://github.com/mahmood726-cyber/allmeta">repository</a>.</li>
+          </ul>
+        </article>
       </section>
 
       <section class="featured-strip" id="featured-strip" aria-label="Most-used tools" hidden></section>
@@ -98,6 +107,34 @@
       <!-- WCAG 4.1.3 — count announcements live in #results-summary; keep grid quiet to avoid 71-card storm on every keystroke -->
       <section class="catalog-grid" id="project-grid"></section>
     </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <div class="footer-grid">
+        <div class="footer-credit-block">
+          <p class="footer-credit">
+            Maintained by <strong>Mahmood</strong> · Open source on
+            <a href="https://github.com/mahmood726-cyber/allmeta">GitHub</a> ·
+            MIT licence
+          </p>
+          <p class="footer-cite">
+            Cite as: <em>allmeta — open browser-only tools for evidence synthesis. <a href="https://mahmood726-cyber.github.io/allmeta/">mahmood726-cyber.github.io/allmeta</a>.</em>
+          </p>
+          <p class="footer-press">
+            Tip: press <kbd>/</kbd> to jump to search.
+          </p>
+        </div>
+        <nav class="footer-links-block" aria-label="Site help">
+          <h2 class="footer-h">Help</h2>
+          <ul class="footer-links">
+            <li><a href="#about">About this catalogue</a></li>
+            <li><a href="./workflow/">Pick a workflow</a></li>
+            <li><a href="./webr-validator/index.html">Verify a TruthCert receipt</a></li>
+            <li><a href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">26-course collection ↗</a></li>
+            <li><a href="https://github.com/mahmood726-cyber/allmeta/issues" target="_blank" rel="noopener">Report an issue ↗</a></li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
   </div>
 
   <script src="./hub/projects.js"></script>

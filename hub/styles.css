@@ -634,4 +634,65 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   .metric-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  /* U-P1-06: cap the filter bar on mobile so 17 chips don't push the catalogue
+     below 6 rows. Vertical scroll preserves discoverability without dominating
+     the viewport. */
+  .filters {
+    max-height: 11.5rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
+
+/* Site footer (U-P1-01, U-P1-07) */
+.site-footer {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.footer-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 2fr 1fr;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .footer-grid { grid-template-columns: 1fr; }
+}
+.footer-credit { margin: 0 0 6px; }
+.footer-cite { margin: 0 0 6px; font-style: normal; }
+.footer-cite em { font-style: italic; color: var(--ink); }
+.footer-press { margin: 6px 0 0; font-size: 0.85rem; }
+.footer-press kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 0 1px;
+  font: inherit;
+  font-size: 0.78rem;
+  background: rgba(31,30,26,0.06);
+  border: 1px solid rgba(31,30,26,0.18);
+  border-radius: 4px;
+  color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  .footer-press kbd {
+    background: rgba(231,228,220,0.08);
+    border-color: rgba(231,228,220,0.18);
+  }
+}
+.footer-h {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { margin-bottom: 4px; }
+.footer-links a { color: var(--accent-cool); text-decoration: none; }
+.footer-links a:hover, .footer-links a:focus-visible { text-decoration: underline; }

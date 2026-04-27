@@ -277,10 +277,22 @@
 
   // DOM builder — never use innerHTML with user-controlled content. Projects.js is
   // developer-controlled but we treat it defensively per the P0-Sec5 review finding.
+  // U-P1-05: stable anchor per card so deep-links like #card-forest-plot-viewer
+  // round-trip on share. Slugified from project name; safe-charset only.
+  function slugify(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60);
+  }
+
   function renderCard(project) {
     const article = document.createElement("article");
     article.className = "project-card";
     if (project.featured) article.classList.add("project-card-featured");
+    const slug = slugify(project.name);
+    if (slug) article.id = "card-" + slug;
 
     const head = document.createElement("div"); head.className = "project-head";
     head.appendChild(makeThumb(project));
@@ -486,5 +498,19 @@
   // E6: clear pending timer on pagehide so we don't fire after navigation away.
   window.addEventListener("pagehide", function () {
     if (searchTimer) { clearTimeout(searchTimer); searchTimer = null; }
+  });
+
+  // U-P2-01: "/" focuses the search input (GitHub-style power-user shortcut).
+  // Ignored when the user is already typing in any form field, when a
+  // modifier is held, or when the slash is the first char of intentional
+  // input (e.g., regex search).
+  window.addEventListener("keydown", function (e) {
+    if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (!searchInput) return;
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
   });
 })();
