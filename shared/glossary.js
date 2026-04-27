@@ -23,7 +23,7 @@
     // Pooling & estimators
     "DerSimonian-Laird": "Method-of-moments random-effects estimator for τ². Underestimates τ² with k<10; prefer REML or Paule–Mandel for small k.",
     "DL": "Shorthand for DerSimonian–Laird τ² estimator (random-effects pooling).",
-    "REML": "Restricted maximum-likelihood τ² estimator. Recommended default for k<10; Cochrane Handbook §10.10.4.",
+    "REML": "Restricted maximum-likelihood τ² estimator. Recommended default at any k; particularly important for k<10, where DerSimonian-Laird underestimates τ². Cochrane Handbook §10.10.4.",
     "Paule-Mandel": "Iterative τ² estimator that performs well at small k. Often preferred over DL when REML fails to converge.",
     "PM": "Shorthand for Paule–Mandel τ² estimator.",
     "HKSJ": "Hartung–Knapp–Sidik–Jonkman variance correction. Replaces z with t_{k-1} and inflates SE; floor q*≥1 to avoid narrowing the CI when Q<k-1.",
@@ -264,7 +264,13 @@
     document.body.appendChild(popoverEl);
     const r = btn.getBoundingClientRect();
     const left = Math.max(8, Math.min(window.innerWidth - popoverEl.offsetWidth - 8, r.left + window.scrollX));
-    const top = r.bottom + window.scrollY + 4;
+    // D1-P2-03: flip above the trigger when there's no room below — prevents
+    // the popover being clipped on terms near the viewport bottom.
+    const popH = popoverEl.offsetHeight;
+    const spaceBelow = window.innerHeight - r.bottom;
+    const top = (spaceBelow < popH + 8 && r.top > popH + 8)
+      ? r.top + window.scrollY - popH - 4
+      : r.bottom + window.scrollY + 4;
     popoverEl.style.left = left + "px";
     popoverEl.style.top = top + "px";
     btn.setAttribute("aria-describedby", id);
@@ -363,6 +369,10 @@
         if (!p) return NodeFilter.FILTER_REJECT;
         const tag = p.nodeName;
         if (tag === "SCRIPT" || tag === "STYLE" || tag === "TEXTAREA" || tag === "INPUT" || tag === "BUTTON" || tag === "LABEL" || tag === "OPTION") return NodeFilter.FILTER_REJECT;
+        // P1-D1-04: technical text (CODE/PRE/KBD/SAMP) must not be reflowed
+        // through the glossary — wrapping `<code>HSROC</code>` as a button
+        // breaks both the visual rendering and any copy-paste of the snippet.
+        if (tag === "CODE" || tag === "PRE" || tag === "KBD" || tag === "SAMP") return NodeFilter.FILTER_REJECT;
         if (p.classList && p.classList.contains("gloss-term")) return NodeFilter.FILTER_REJECT;
         if (p.closest && p.closest(".gloss-skip, [data-gloss-skip], .gloss-popover")) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:">
-  <meta name="description" content="PRISMA-NMA reporting checklist — Hutton 2015 NMA extension over the PRISMA 2009 base (27 base items + 5 NMA-specific S1-S5), fillable, exports to Markdown.">
+  <meta name="description" content="PRISMA-NMA reporting checklist — Hutton 2015 NMA extension over the PRISMA 2009 base. 29 base items (27 PRISMA 2009 + 2 NMA inline at items 18 and 19) plus 5 supplementary NMA items (S1-S5). Fillable, exports to Markdown.">
   <meta name="color-scheme" content="light dark">
   <title>PRISMA-NMA Checklist</title>
   <style>
@@ -185,7 +185,7 @@
   <nav class="crumbs"><a href="../">← allmeta</a> · PRISMA-NMA Checklist</nav>
   <header>
     <h1>PRISMA-NMA Checklist</h1>
-    <p>Reporting checklist for systematic reviews with network meta-analysis. Implements the Hutton et al. (2015) PRISMA-NMA extension over the PRISMA 2009 base (the original combination as published). Items are presented in PRISMA 2020 ordering for ease of cross-reference, but the wording follows Hutton 2015 verbatim — there is no official PRISMA-NMA over PRISMA 2020 yet. For the PRISMA 2020 statement itself, see the separate <a href="../prisma-checklist/index.html">PRISMA 2020 Checklist</a> tool. Fill each box; export the completed checklist as Markdown for supplementary material.</p>
+    <p>Reporting checklist for systematic reviews with network meta-analysis. Implements the Hutton et al. (2015) PRISMA-NMA extension over the PRISMA 2009 base. The checklist contains 29 base items (the 27 PRISMA 2009 items plus two NMA-integrated additions inline at items 18 "Presentation of network structure" and 19 "Summary of network geometry") and 5 supplementary NMA items (S1-S5) interleaved with their relevant section. Item ordering and wording follow Hutton 2015; there is no official PRISMA-NMA over PRISMA 2020 yet. For the PRISMA 2020 statement itself, see the separate <a href="../prisma-checklist/index.html">PRISMA 2020 Checklist</a> tool. Fill each box; export the completed checklist as Markdown for supplementary material.</p>
   </header>
 
   <main id="main">
@@ -202,7 +202,7 @@
   </main>
 
   <footer>
-    Hutton B, Salanti G, Caldwell DM, et al. The PRISMA Extension Statement for Reporting of Systematic Reviews Incorporating Network Meta-analyses of Health Care Interventions: Checklist and Explanations. <em>Ann Intern Med</em> 2015;162(11):777-784. Hutton 2015 is built on the PRISMA 2009 base; this generator presents items in PRISMA 2020 ordering (Page MJ et al. <em>BMJ</em> 2021;372:n71) so the wording reflects current reporting conventions. Item S5 (confidence in the evidence) reflects a post-Hutton extension — the CINeMA framework was introduced by Nikolakopoulou A et al. <em>PLoS Med</em> 2020;17(4):e1003082; GRADE-for-NMA guidance is also accepted in the same role. NMA-specific items carry a purple badge. Stored client-side in <code>localStorage</code>; no data leaves the browser.
+    Hutton B, Salanti G, Caldwell DM, et al. The PRISMA Extension Statement for Reporting of Systematic Reviews Incorporating Network Meta-analyses of Health Care Interventions: Checklist and Explanations. <em>Ann Intern Med</em> 2015;162(11):777-784. Hutton 2015 is built on the PRISMA 2009 base (Moher D et al. <em>BMJ</em> 2009;339:b2535) and this generator follows Hutton 2015's item ordering and wording; for the PRISMA 2020 update see Page MJ et al. <em>BMJ</em> 2021;372:n71. Item S5 (confidence in the evidence) reflects a post-Hutton extension — the CINeMA framework was introduced by Nikolakopoulou A et al. <em>PLoS Med</em> 2020;17(4):e1003082; GRADE-for-NMA guidance is also accepted in the same role. NMA-specific items carry a purple badge. Stored client-side in <code>localStorage</code>; no data leaves the browser.
   </footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -340,6 +340,8 @@
             const badge = document.createElement("span");
             badge.className = "badge";
             badge.textContent = "NMA";
+            // D1-P2-04: SR users hear the abbreviation expansion, not "n m a".
+            badge.setAttribute("aria-label", "Network meta-analysis specific item");
             head.appendChild(badge);
           }
           const prompt = document.createElement("p");
@@ -362,7 +364,7 @@
     }
 
     function buildMarkdown() {
-      const lines = ["# PRISMA-NMA Checklist", "", "_Generated with allmeta — Hutton 2015 NMA extension over PRISMA 2009 (presented in PRISMA 2020 ordering)._", ""];
+      const lines = ["# PRISMA-NMA Checklist", "", "_Generated with allmeta — Hutton 2015 NMA extension over PRISMA 2009 (29 base items including 2 NMA inline at items 18 and 19, plus 5 supplementary items S1-S5; ordering and wording follow Hutton 2015)._", ""];
       ITEMS.forEach(section => {
         lines.push(`## ${section.section}`, "");
         section.items.forEach(item => {

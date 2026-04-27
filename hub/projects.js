@@ -720,7 +720,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "PRISMA-NMA reporting checklist — Hutton 2015 NMA extension (5 NMA-specific items S1-S5) over the PRISMA 2009 base (27 items), in PRISMA 2020 ordering. Fillable, autosaves, exports a Markdown supplement.",
+    summary: "PRISMA-NMA reporting checklist — Hutton 2015 NMA extension over the PRISMA 2009 base. 29 base items (27 PRISMA 2009 + 2 NMA inline at items 18 and 19) plus 5 supplementary NMA items (S1-S5). Fillable, autosaves, exports a Markdown supplement.",
     note: "Single file, offline, localStorage-backed; covers network geometry, transitivity, inconsistency, ranking metrics, and confidence assessment.",
     tags: ["prisma", "nma", "reporting", "hutton-2015"]
   },

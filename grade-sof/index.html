@@ -530,7 +530,19 @@
           } else {
             o.grade[field] = parseInt(el.value, 10) || 0;
           }
+          // D1-P1-07: live-sync the wizard-computed certainty into the outcome
+          // and the visible <select> + SoF preview, so the wizard preview and
+          // exported table never disagree. "Apply to outcome" still commits
+          // the rationale text into Comments.
+          const c = gradeCompute(o.grade);
+          o.certainty = c.level;
+          const row = outcomesWrap.children[idx];
+          if (row) {
+            const certSel = row.querySelector('[data-field="certainty"]');
+            if (certSel) certSel.value = o.certainty;
+          }
           refreshWizardPreview(idx);
+          renderPreview();
           persist();
         });
       });
@@ -719,7 +731,12 @@
             for (const k of Object.keys(HEADER_FIELDS)) state[k] = p[k] || "";
             render();
           }
-        } catch (e) { Toast.show("Could not parse JSON: " + e.message, "warn"); }
+        } catch (e) {
+          // V12-E05/E06 conventions: parse failures are errors, not warnings;
+          // guard against toast.js failing to load.
+          const msg = "Could not parse JSON: " + e.message;
+          if (window.Toast) Toast.show(msg, "error"); else alert(msg);
+        }
       };
       r.readAsText(file);
     }

@@ -96,7 +96,9 @@
       count.setAttribute("aria-hidden", "true"); // SR reads from labelSpan + aria-pressed
       button.appendChild(labelSpan);
       button.appendChild(count);
-      button.setAttribute("aria-label", label + ", " + countForFilter(label) + " tools");
+      // D1-P2-01: pluralisation — "1 tool" not "1 tools".
+      const filterCount = countForFilter(label);
+      button.setAttribute("aria-label", label + ", " + filterCount + (filterCount === 1 ? " tool" : " tools"));
       button.addEventListener("click", function () {
         activeFilter = label;
         activeSubcategory = "All"; // top-level change resets subcategory
@@ -153,7 +155,8 @@
       count.setAttribute("aria-hidden", "true");
       btn.appendChild(labelSpan);
       btn.appendChild(count);
-      btn.setAttribute("aria-label", sub + ", " + countForSubcategory(activeFilter, sub) + " tools");
+      const subCount = countForSubcategory(activeFilter, sub);
+      btn.setAttribute("aria-label", sub + ", " + subCount + (subCount === 1 ? " tool" : " tools"));
       btn.addEventListener("click", function () {
         activeSubcategory = sub;
         subcategoryButtons.forEach((b) => {
