@@ -326,7 +326,7 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 .featured-card {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
   padding: 14px 16px;
   background: rgba(179, 80, 43, 0.08);
   border: 1px solid rgba(179, 80, 43, 0.42);
@@ -335,6 +335,7 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   font-family: system-ui, sans-serif;
   transition: background .15s ease, border-color .15s ease, transform .15s ease;
 }
+.featured-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .featured-card:hover, .featured-card:focus {
   background: rgba(179, 80, 43, 0.14);
   border-color: rgba(179, 80, 43, 0.35);
@@ -433,15 +434,67 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
 
 .project-head {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
+}
+
+.project-head > div {
+  flex: 1;
+  min-width: 0;
 }
 
 .project-head h3 {
   margin: 0;
   font-size: 1.26rem;
 }
+
+/* Inline-SVG thumbnails. Each card and featured-card gets a category-coloured
+   gradient panel with a category-specific SVG icon rendered via currentColor.
+   No CDN, no external assets. */
+.project-thumb {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #555, #333);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+}
+.project-thumb svg {
+  width: 70%;
+  height: 70%;
+  display: block;
+}
+.project-thumb-lg {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+/* Category palettes — keep the same hue family per concept so the catalogue
+   reads at a glance ("the warm-orange ones are heterogeneity",
+   "the indigo-cyan ones are NMA" etc.). */
+.project-thumb-pooling      { background: linear-gradient(135deg, #2c5e8a, #1d6f70); }
+.project-thumb-heterogeneity{ background: linear-gradient(135deg, #c75b39, #a63d1f); }
+.project-thumb-pubbias      { background: linear-gradient(135deg, #7d4f9c, #5a3a78); }
+.project-thumb-nma          { background: linear-gradient(135deg, #1d6f70, #134d4f); }
+.project-thumb-dta          { background: linear-gradient(135deg, #3a7a8c, #1f5566); }
+.project-thumb-rob          { background: linear-gradient(135deg, #a34a12, #6e3208); }
+.project-thumb-reporting    { background: linear-gradient(135deg, #2f52a0, #1c357a); }
+.project-thumb-screening    { background: linear-gradient(135deg, #0d7a27, #0a5a1c); }
+.project-thumb-search       { background: linear-gradient(135deg, #5a8aa8, #2c5e8a); }
+.project-thumb-planning     { background: linear-gradient(135deg, #6b9a6e, #3f6f48); }
+.project-thumb-rwasm        { background: linear-gradient(135deg, #1f1e1a, #444); }
+.project-thumb-trial        { background: linear-gradient(135deg, #b05a1c, #7a3d10); }
+.project-thumb-qualitative  { background: linear-gradient(135deg, #8a7d2c, #5a5118); }
+.project-thumb-living       { background: linear-gradient(135deg, #c75b39, #1d6f70); }
+.project-thumb-hta          { background: linear-gradient(135deg, #4a4a78, #2c2c5a); }
+.project-thumb-productivity { background: linear-gradient(135deg, #5a8aa8, #1d6f70); }
+.project-thumb-default      { background: linear-gradient(135deg, #5c6470, #2c333d); }
 
 .project-folder {
   margin-top: 4px;

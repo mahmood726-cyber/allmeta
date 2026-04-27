@@ -263,6 +263,7 @@ window.HTML_APPS_PROJECTS = [
   {
     name: "Network MA (SUCRA)",
     featured: true,
+    featuredRank: 2,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "C:\\HTML apps\\bayesian-nma",
     path: "./bayesian-nma/index.html",
@@ -522,16 +523,18 @@ window.HTML_APPS_PROJECTS = [
   },
   {
     name: "TruthCert Pairwise Pro",
+    featured: true,
+    featuredRank: 1,
     subcategory: "Pooling",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/truthcert-course.html",
     folder: "C:\\HTML apps\\Truthcert1",
-    path: "./Truthcert1/index.html",
+    path: "./Truthcert1/TruthCert-PairwisePro-v1.0-production.html",
     collection: "existing",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Pairwise meta-analysis workspace with a stable landing page, production HTML build, and paper package.",
-    note: "Use the landing page to reach the production build without hunting through backup artifacts.",
-    tags: ["pairwise", "truthcert", "meta-analysis"]
+    summary: "End-to-end pairwise meta-analysis workspace: paste data, run pooling with DL/REML/PM/HKSJ, render forest/funnel/cumulative views, export TruthCert receipts. The most-used app in the catalogue — start here for any pairwise MA.",
+    note: "Loads the production HTML directly. Use ./Truthcert1/index.html for the landing page that links the bundle, paper, and backups.",
+    tags: ["pairwise", "truthcert", "meta-analysis", "anchor"]
   },
   {
     name: "AdaptSim",
