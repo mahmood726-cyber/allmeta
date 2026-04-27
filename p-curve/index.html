@@ -182,7 +182,7 @@
       puBody.innerHTML = `
         <tr><td>Significant p-values used</td><td>${nSig}</td></tr>
         <tr><td>p-uniform effect estimate (δ, z-units)</td><td>${fmt(delta)}</td></tr>
-        <tr><td>Equivalent Cohen's d (approx, large-n)</td><td>${fmt(delta / Math.sqrt(1), 3)}</td></tr>`;
+        <tr><td>p-uniform δ (z-units; not Cohen's d — sample n not collected)</td><td>${fmt(delta, 3)}</td></tr>`;
 
       drawCurve(raw);
       testsBody.innerHTML = __testsBodyParts.join("");

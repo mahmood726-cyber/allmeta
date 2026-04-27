@@ -81,15 +81,17 @@
       <label>
         <span>Random-effects τ² estimator</span>
         <select id="tau-est">
-          <option value="DL" selected>DerSimonian-Laird</option>
-          <option value="PM">Paule-Mandel</option>
+          <option value="PM" selected>Paule-Mandel</option>
+          <option value="DL">DerSimonian-Laird</option>
           <option value="FE">Fixed-effect only</option>
         </select>
+        <span class="hint">Per advanced-stats.md, DL is biased low for k&lt;10 — Paule-Mandel is the safer default.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Pool</button>
     </section>
 
     <section class="panel">
+      <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-bottom:0.6rem" role="status" aria-live="polite"></div>
       <h2>Studies &amp; pooled</h2>
       <table>
         <thead><tr><th>Study</th><th>events/n</th><th>p</th><th>95% CI</th><th>weight</th></tr></thead>
@@ -264,6 +266,16 @@
       const trans = document.getElementById("trans").value;
       const tauEst = document.getElementById("tau-est").value;
       const rows = parseTable(text);
+      // V9-05 — DL k<10 banner.
+      const kw = document.getElementById("k-warn");
+      if (kw) {
+        if (tauEst === "DL" && rows.length < 10 && rows.length >= 2) {
+          kw.textContent = "k = " + rows.length + " — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Switch to Paule-Mandel for inference.";
+          kw.style.display = "block";
+        } else {
+          kw.style.display = "none";
+        }
+      }
       if (rows.length < 2) {
         document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 2 studies.</td></tr>`;
         return;

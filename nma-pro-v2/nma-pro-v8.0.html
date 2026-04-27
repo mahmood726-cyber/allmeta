@@ -40,9 +40,15 @@
 .tabs-recent-chip--empty{cursor:default;color:var(--text-tertiary);transform:none}
 .tab-btn[hidden]{display:none!important}
 @media(max-width:980px){.tabs-tools{grid-template-columns:1fr}}
-</style>
+
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  
+    @media (max-width: 640px) { input, select, textarea { font-size: 16px !important; } } /* iOS auto-zoom prevention */
+  </style>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <div id="ariaLiveRegion" class="sr-only" aria-live="polite"></div>
 <header class="app-header"><div class="container"><div class="app-header__inner">
 <div class="app-logo"><div class="app-logo__badge">NMA</div><div style="display:flex;flex-direction:column"><span class="app-logo__title">NMA Pro</span><span class="app-logo__version">v8.1 — Network Meta-Analysis Platform</span></div></div>
@@ -54,9 +60,9 @@
 <label class="checkbox-label" style="display:flex;align-items:center;gap:4px;font-size:var(--text-xs);white-space:nowrap;" title="Enable class effect models — assign treatment classes in the data table"><input type="checkbox" id="classEffectsToggle"> Class Effects</label>
 <select class="select" id="classModelSelect" aria-label="Class effect model type" style="display:none;font-size:var(--text-xs);"><option value="common">Common Class Effect</option><option value="exchangeable">Exchangeable</option></select>
 <button class="btn btn--primary btn--lg" id="runAnalysisBtn">Run Analysis</button><button class="btn btn--secondary btn--lg" id="runEverythingBtn" title="Run complete analysis pipeline: NMA + Pub Bias + Robustness + Reports">Run All</button>
-<button class="btn btn--ghost btn--icon" id="saveSessionBtn" aria-label="Save session" title="Save Session">??</button>
-<button class="btn btn--ghost btn--icon" id="loadSessionBtn" aria-label="Load session" title="Load Session">??</button>
-<button class="btn btn--ghost btn--icon" id="helpBtn" aria-label="Help" title="Help & Documentation">?</button>
+<button class="btn btn--ghost btn--icon" id="saveSessionBtn" aria-label="Save session" title="Save Session">💾</button>
+<button class="btn btn--ghost btn--icon" id="loadSessionBtn" aria-label="Load session" title="Load Session">📂</button>
+<button class="btn btn--ghost btn--icon" id="helpBtn" aria-label="Help" title="Help & Documentation">❓</button>
 <button class="btn btn--ghost btn--icon" id="themeToggle"><span id="themeIcon"></span></button>
 <button class="btn btn--ghost btn--icon" id="journalModeBtn" title="Toggle publication-ready figure styling">J</button>
 </div></div></div></header>
@@ -192,7 +198,7 @@ R netmeta (v3.2-0) Reference:
 </div>
 </div>
 </div>
-<main class="app-main"><div class="container">
+<main id="main" class="app-main"><div class="container">
 <section class="tabs-tools" aria-label="Tab navigation tools">
 <div>
 <label class="tabs-tools__label" for="nma-tab-search">Find Workspace</label>
@@ -6600,7 +6606,7 @@ toggleMenu(btn){const menu=btn.nextElementSibling;document.querySelectorAll('.do
 init(){document.addEventListener('click',e=>{if(!e.target.closest('.download-dropdown')){document.querySelectorAll('.download-dropdown__menu.show').forEach(m=>m.classList.remove('show'))}})}
 };
 
-function toggleTheme(){const html=document.documentElement,curr=html.getAttribute('data-theme'),next=curr==='light'?'dark':'light';html.setAttribute('data-theme',next);document.getElementById('themeIcon').textContent=next==='light'?'??':'??';localStorage.setItem('nma-pro-theme',next);if(AppState.results)setTimeout(()=>{refreshAllPlots()},100)}
+function toggleTheme(){const html=document.documentElement,curr=html.getAttribute('data-theme'),next=curr==='light'?'dark':'light';html.setAttribute('data-theme',next);document.getElementById('themeIcon').textContent=next==='light'?'☀️':'🌙';localStorage.setItem('nma-pro-theme',next);if(AppState.results)setTimeout(()=>{refreshAllPlots()},100)}
 function refreshAllPlots(){if(!AppState.results)return;const r=AppState.results;renderNetworkGraph(AppState.studies,r.treatments);renderForestPlot(r);if(Array.isArray(AppState.ranking)&&AppState.ranking.length>0){renderRankingTable(AppState.ranking);renderRankogram(AppState.ranking);renderRankProbMatrix(AppState.ranking)}if(r.heterogeneity)renderFunnelPlot(r);if(r.consistency){renderConsistencyResults(r.consistency);renderConsistencyPlot(r.consistency)}if(AppState.contributionMatrix&&AppState.contributionMatrix.applicable)renderContributionMatrix(AppState.contributionMatrix);if(AppState.netHeatData&&AppState.netHeatData.applicable)renderNetHeatPlot(AppState.netHeatData);if(AppState.metaRegResult&&AppState.metaRegCovariate)renderBubblePlot(AppState.metaRegResult,AppState.metaRegCovariate);if(AppState.cnmaResults){refreshCNMAForestPlot();renderCNMASplitPlot(AppState.cnmaResults)};if(AppState.bayesianResults)renderBayesianResults(AppState.bayesianResults);if(AppState.leaveOneOutResults&&AppState.leaveOneOutResults.applicable){renderLeaveOneOutResults(AppState.leaveOneOutResults);drawInfluencePlot(AppState.leaveOneOutResults)}if(AppState.cumulativeResults)renderCumulativeResults(AppState.cumulativeResults);if(AppState.doseResponseResults&&AppState.doseResponseResults.applicable)refreshDoseResponsePlot();if(AppState.subgroupResults&&AppState.subgroupResults.applicable){renderSubgroupResults(AppState.subgroupResults);renderSubgroupForestPlot(AppState.subgroupResults)}if(AppState.pubBiasResults)renderPubBiasResults(AppState.pubBiasResults);if(AppState.cstreamResults)renderCSTREAMResults(AppState.cstreamResults);try{ComparisonHeatmap.render(AppState.results);}catch(e){}TreatmentFocusLab.render()}
 function restoreLoadedAnalysisState(){if(!AppState.results||typeof AppState.results!=='object')return;try{refreshAllPlots();if(AppState.results.heterogeneity)updateHeterogeneityPanel(AppState.results.heterogeneity,AppState.results.tau2CI,AppState.results.effects?.correctionMethod,AppState.results.modelSelection);if(AppState.results.leagueTable)renderLeagueTable(AppState.results.leagueTable,AppState.effectMeasure);if(AppState.cinemaResults)renderCINeMAResults(AppState.cinemaResults);if(AppState.gradeResults)renderGRADEResults(AppState.gradeResults);if(AppState.results.effects&&AppState.reference)renderEValues(AppState.results);if(AppState.results.effects)renderThresholdAnalysis(AppState.results)}catch(err){console.warn('Failed to restore loaded analysis state',err)}}
 function refreshDoseResponsePlot(){const dr=AppState.doseResponseResults;if(!dr||!dr.applicable||typeof Plotly==='undefined'||!dr.doseEffectCurve||dr.doseEffectCurve.length===0)return;const colors=getThemeColors();const isRatio=['OR','RR','HR'].includes(AppState.effectMeasure);const plotEl=document.getElementById('doseResponsePlot');if(!plotEl)return;const plotWidth=plotEl.offsetWidth||800;const maxDose=dr.doseData&&dr.doseData.length>0?Math.max(...dr.doseData.map(d=>d.dose)):1;Plotly.newPlot('doseResponsePlot',[{type:'scatter',mode:'lines',name:'Emax Curve',x:dr.doseEffectCurve.map(d=>d.dose),y:dr.doseEffectCurve.map(d=>isRatio?Math.exp(d.effect):d.effect),line:{color:colors.accent,width:3}},{type:'scatter',mode:'markers',name:'Studies',x:dr.doseData.map(d=>d.dose),y:dr.doseData.map(d=>isRatio?Math.exp(d.yi):d.yi),marker:{size:12,color:colors.node,line:{color:'white',width:1}},text:dr.doseData.map(d=>d.study),hovertemplate:'%{text}<br>Dose: %{x}<br>Effect: %{y:.3f}<extra></extra>'}],{paper_bgcolor:colors.background,plot_bgcolor:colors.background,width:plotWidth,height:340,xaxis:{title:{text:'Dose (mg)',font:{size:12}},gridcolor:colors.grid,tickfont:{color:colors.text}},yaxis:{title:{text:isRatio?'Odds Ratio':'Effect Size',font:{size:12}},gridcolor:colors.grid,tickfont:{color:colors.text}},shapes:[{type:'line',x0:0,x1:maxDose*1.2,y0:isRatio?1:0,y1:isRatio?1:0,line:{color:colors.danger,width:1,dash:'dash'}}],margin:{l:60,r:20,t:20,b:50},font:{color:colors.text},showlegend:true,legend:{x:1,y:1,xanchor:'right'}},{responsive:true})}
@@ -7885,7 +7891,7 @@ container.innerHTML=html}
 
 function renderLeagueTable(leagueTable,effectMeasure){const{table,treatments}=leagueTable;const container=document.getElementById('leagueTableContainer');const isRatio=['OR','RR','HR'].includes(effectMeasure);let html='<table class="league-table"><thead><tr><th></th>';treatments.forEach(t=>html+=`<th>${Security.escapeHtml(t)}</th>`);html+='</tr></thead><tbody>';table.forEach((row,i)=>{html+=`<tr><th>${Security.escapeHtml(treatments[i])}</th>`;row.forEach(cell=>{if(cell.isRef)html+=`<td class="reference-cell">${Security.escapeHtml(cell.treatment)}</td>`;else{let cls='';const isBenefit=cell.benefit;if(cell.significant){cls=isBenefit?'cell--significant cell--benefit':'cell--significant cell--harm'}else{cls=isBenefit?'cell--benefit-light':'cell--harm-light'}html+=`<td class="${cls}" title="${cell.displayEst.toFixed(2)} (${cell.displayLower.toFixed(2)} to ${cell.displayUpper.toFixed(2)})${cell.significant?' - Significant':''}">${cell.displayEst.toFixed(2)}</td>`}});html+='</tr>'});html+=`</tbody></table><p class="text-xs text-secondary mt-2">Row vs column. <span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px">Green</span> = row better (significant). <span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:4px">Red</span> = row worse (significant). Light shading = not significant.</p>`;container.innerHTML=html}
 
-function renderRankingTable(ranking){const tbody=document.getElementById('rankingTableBody');tbody.innerHTML='';ranking.forEach((item,i)=>{const tr=document.createElement('tr');const medal=i===0?'??':i===1?'??':i===2?'??':item.rank;tr.innerHTML=`<td class="font-semibold">${medal}</td><td>${Security.escapeHtml(item.treatment)}</td><td class="font-mono">${item.pScore.toFixed(3)}</td><td class="font-mono">${item.sucra.toFixed(1)}%</td><td class="font-mono">${item.meanRank.toFixed(1)}</td><td class="font-mono text-xs">${item.rankCI[0].toFixed(1)}-${item.rankCI[1].toFixed(1)}</td>`;tbody.appendChild(tr)});
+function renderRankingTable(ranking){const tbody=document.getElementById('rankingTableBody');tbody.innerHTML='';ranking.forEach((item,i)=>{const tr=document.createElement('tr');const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':item.rank;tr.innerHTML=`<td class="font-semibold">${medal}</td><td>${Security.escapeHtml(item.treatment)}</td><td class="font-mono">${item.pScore.toFixed(3)}</td><td class="font-mono">${item.sucra.toFixed(1)}%</td><td class="font-mono">${item.meanRank.toFixed(1)}</td><td class="font-mono text-xs">${item.rankCI[0].toFixed(1)}-${item.rankCI[1].toFixed(1)}</td>`;tbody.appendChild(tr)});
 // Auto-interpretation for ranking
 if(typeof AutoInterpret!=='undefined'){
 const autoText=AutoInterpret.ranking(ranking);
@@ -11466,7 +11472,7 @@ const transReport=TransitivityExplainer.generateAssessmentReport(result);
 html=TransitivityExplainer.plainLanguageExplanation+`
 <h4 class="font-semibold mb-2">Transitivity Assessment Results</h4>
 <div class="alert alert--${transReport.riskLevel==='Low'?'success':transReport.riskLevel==='Moderate'?'warning':'danger'} mb-4">
-<span class="alert__icon">${transReport.riskLevel==='Low'?'?':transReport.riskLevel==='Moderate'?'??':'??'}</span>
+<span class="alert__icon">${transReport.riskLevel==='Low'?'✅':transReport.riskLevel==='Moderate'?'⚠️':'🚨'}</span>
 <div class="alert__text">${Security.escapeHtml(transReport.plainLanguage)}</div></div>
 <div class="stat-grid"><div class="stat-card"><div class="stat-card__value">${(result.similarityScore*100||0).toFixed(0)}%</div><div class="stat-card__label">Similarity</div></div>
 <div class="stat-card ${result.transitivityViolation?'stat-card--warning':'stat-card--success'}"><div class="stat-card__value">${result.transitivityViolation?'Risk':'OK'}</div><div class="stat-card__label">Transitivity</div></div></div>
@@ -12839,7 +12845,7 @@ this.setLanguage(saved,false)
 }
 };
 
-document.addEventListener('DOMContentLoaded',()=>{initializePanels();RapidReview.init();injectEnhancementPanels();PlotDownloader.init();HelpSystem.init();ContextualHelpTips.init();SessionManager.init();KeyboardShortcuts.init();const savedTheme=localStorage.getItem('nma-pro-theme');if(savedTheme){document.documentElement.setAttribute('data-theme',savedTheme);document.getElementById('themeIcon').textContent=savedTheme==='light'?'??':'??'}
+document.addEventListener('DOMContentLoaded',()=>{initializePanels();RapidReview.init();injectEnhancementPanels();PlotDownloader.init();HelpSystem.init();ContextualHelpTips.init();SessionManager.init();KeyboardShortcuts.init();const savedTheme=localStorage.getItem('nma-pro-theme');if(savedTheme){document.documentElement.setAttribute('data-theme',savedTheme);document.getElementById('themeIcon').textContent=savedTheme==='light'?'☀️':'🌙'}
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
 document.getElementById('themeToggle').addEventListener('click',toggleTheme);
 document.getElementById('runAnalysisBtn').addEventListener('click',runAnalysis);

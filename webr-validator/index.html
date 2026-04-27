@@ -73,17 +73,22 @@
     .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
                    padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
     .file-input-hidden { display:none; }
+  
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  
+    @media (max-width: 640px) { input, select, textarea { font-size: 16px !important; } } /* iOS auto-zoom prevention */
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>WebR Validator — browser vs R (metafor)</h1>
     <p>Validate the pooled estimate, τ², I², and Q from the browser against R's <code>metafor::rma</code>. Two paths: (1) run <strong>WebR</strong> directly in this tab (~30 MB one-time download) or (2) export an R script, run in your local R, paste the output back. Either path produces a signed TruthCert-style receipt.</p>
   </header>
 
-  <main class="layout">
+  <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
 

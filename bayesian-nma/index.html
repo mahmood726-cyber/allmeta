@@ -98,6 +98,7 @@ A, B, -0.32, 0.08</textarea>
       <h2>Network diagram</h2>
       <svg id="network" viewBox="0 0 600 340" role="img" aria-label="Network of comparisons"></svg>
       <div class="note" id="fit-note"><span id="fit-summary"></span> <strong>Caveat:</strong> this is a consistency-only frequentist model with a Bayesian-style posterior approximation. It does not formally test loop inconsistency (use node-splitting or design-by-treatment in dedicated NMA software). Heterogeneity is captured via a pooled τ² across all contrasts; the DL estimator here is a univariate approximation to the NMA-specific version in <code>netmeta</code>.</div>
+      <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-top:0.6rem" role="status" aria-live="polite"></div>
     </section>
   </main>
   <footer>
@@ -271,6 +272,16 @@ A, B, -0.32, 0.08</textarea>
       const rows = parse(document.getElementById("src").value);
       const refTrt = document.getElementById("ref").value.trim() || "A";
       const direction = document.getElementById("direction").value;
+      // V9-D-2 — DL k<10 banner.
+      const kw = document.getElementById("k-warn");
+      if (kw) {
+        if (rows.length < 10 && rows.length >= 2) {
+          kw.textContent = "k = " + rows.length + " contrasts — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Treat output as illustrative; for inference use netmeta REML.";
+          kw.style.display = "block";
+        } else {
+          kw.style.display = "none";
+        }
+      }
       if (rows.length < 2) { document.getElementById("eff-body").innerHTML = `<tr><td colspan="5">Need at least 2 contrasts.</td></tr>`; return; }
       const fit = fitNMA(rows, refTrt);
       const draws = sample(fit.beta, fit.cov, 5000);

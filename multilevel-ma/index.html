@@ -191,8 +191,18 @@
       const seMu = Math.sqrt(1 / swFinal);
       const I2_study = tau2_study / (tau2_study + tau2_within + 1e-10);
       const I2_within = tau2_within / (tau2_study + tau2_within + 1e-10);
+      // V9-08 — HKSJ adjustment with cluster df = J-1 (J = number of studies).
+      // q-floor at 1 per Cochrane Handbook §10.10.4 / advanced-stats.md.
+      const J = studies.size;
+      const dfHK = Math.max(1, J - 1);
+      const qStar = wFinal.reduce((acc, w, i) => acc + w * (rows[i].te - mu) * (rows[i].te - mu), 0) / dfHK;
+      const qFloored = Math.max(1, qStar);
+      const seMuHK = Math.sqrt(qFloored / swFinal);
+      // t-quantile at 0.975 — small-df table fallback.
+      const T = [12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
+      const tCrit = dfHK >= 1 && dfHK <= 30 ? T[dfHK - 1] : 1.96;
 
-      return { mu, seMu, tau2_study, tau2_within, weights: wFinal, I2_study, I2_within, studies };
+      return { mu, seMu, seMuHK, tCrit, tau2_study, tau2_within, weights: wFinal, I2_study, I2_within, studies, J };
     }
 
     function run() {
@@ -204,7 +214,8 @@
         <table>
           <tbody>
             <tr><td><strong>Pooled estimate</strong></td><td><strong>${fmt(f.mu)}</strong></td><td>SE = ${fmt(f.seMu)}</td></tr>
-            <tr><td>95% CI</td><td colspan="2">[${fmt(f.mu - 1.96 * f.seMu)}, ${fmt(f.mu + 1.96 * f.seMu)}]</td></tr>
+            <tr><td>95% CI (z)</td><td colspan="2">[${fmt(f.mu - 1.96 * f.seMu)}, ${fmt(f.mu + 1.96 * f.seMu)}]</td></tr>
+            <tr><td>95% CI (HKSJ + t<sub>${f.J - 1}</sub>)</td><td colspan="2">[${fmt(f.mu - f.tCrit * f.seMuHK)}, ${fmt(f.mu + f.tCrit * f.seMuHK)}]</td></tr>
             <tr><td>τ²_study (between-study)</td><td colspan="2">${fmt(f.tau2_study, 4)} — share ${(f.I2_study * 100).toFixed(1)}%</td></tr>
             <tr><td>τ²_within (within-study)</td><td colspan="2">${fmt(f.tau2_within, 4)} — share ${(f.I2_within * 100).toFixed(1)}%</td></tr>
           </tbody>

@@ -26,6 +26,10 @@
 
   function safeHref(path) {
     if (typeof path !== "string" || !path) return "#";
+    // V9-E04: reject protocol-relative URLs (//evil.com/x). The leading-slash
+    // branch of SAFE_SCHEMES is intentional for /-rooted relative paths, but
+    // // would resolve to a cross-origin URL via the URL constructor.
+    if (path.startsWith("//")) return "#";
     if (!SAFE_SCHEMES.test(path) && !/^\.\.?\//.test(path)) return "#";
     try {
       const u = new URL(path, window.location.href);

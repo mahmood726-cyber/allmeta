@@ -131,7 +131,7 @@ window.HTML_APPS_PROJECTS = [
     mode: "file",
     category: "Risk of Bias",
     summary: "Risk of Bias in Non-randomized Studies of Exposures: 7 domains with signaling questions and algorithmic judgments, plus traffic-light chart.",
-    note: "Higgins 2022 (draft). For exposure epidemiology.",
+    note: "Higgins, Morgan, Rooney et al. Environ Int 2024;186:108602. For exposure epidemiology.",
     tags: ["robins-e", "exposure", "environmental", "risk-of-bias"]
   },
   {
