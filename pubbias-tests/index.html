@@ -50,15 +50,17 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Small-study-effect tests</h1>
     <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple.</p>
   </header>
-  <main>
+  <main id="main">
     <section class="panel">
       <h2>Input</h2>
       <label>
@@ -94,7 +96,7 @@
     </section>
   </main>
   <footer>
-    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne &amp; Egger (BMJ 2011) for comparison of power.
+    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons (Egger 1997 is the original Egger paper, not a co-author of the BMJ 2011 article).
   </footer>
   <script>
     function pnorm(x) {

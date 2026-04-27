@@ -10,6 +10,15 @@
     <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <style>
+        /* V8-A11Y-01: gate all animations (tutorialPulse infinite + others) for vestibular users. */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
         :root {
             /* Primary colors */
             --primary: #2563eb;

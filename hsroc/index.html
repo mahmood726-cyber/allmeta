@@ -81,7 +81,7 @@
     </section>
   </main>
   <footer>
-    Model: bivariate random-effects on logit-Se, logit-FPR, correlation ρ. Implemented as alternating univariate DerSimonian-Laird pools on each margin plus an empirical residual correlation — this is a Harbord-Whiting-style approximation and is NOT iterated to convergence. For rigorous Reitsma/HSROC estimates use <code>mada::reitsma</code> (also available via WebR Studio). 0.5 continuity correction when any cell is zero. HSROC curve plotted as the locus of (FPR, Se) pairs consistent with the mean linear predictor.
+    Model: bivariate random-effects on logit-Se, logit-FPR, correlation ρ — Reitsma JB et al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (HSROC). Implemented here as alternating univariate DerSimonian-Laird pools on each margin plus an empirical residual correlation — this is a Harbord-Whiting-style approximation (Harbord RM et al. <em>Biostatistics</em> 2007;8:239–251) and is NOT iterated to convergence. For rigorous Reitsma/HSROC estimates use <code>mada::reitsma</code> (also available via WebR Studio). 0.5 continuity correction when any cell is zero. HSROC curve plotted as the locus of (FPR, Se) pairs consistent with the mean linear predictor.
   </footer>
   <script>
     function parse(text) {

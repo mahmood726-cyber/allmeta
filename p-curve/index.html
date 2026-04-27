@@ -50,15 +50,17 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>p-curve &amp; p-uniform</h1>
     <p>Publication-bias-robust effect estimation from the distribution of statistically significant p-values. A right-skewed p-curve indicates evidential value; a flat or left-skewed curve is consistent with no true effect or selective reporting.</p>
   </header>
-  <main>
+  <main id="main">
     <section class="panel">
       <h2>Input</h2>
       <label>
@@ -106,7 +108,7 @@
     </section>
   </main>
   <footer>
-    p-curve: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. J Exp Psychol Gen 2014. Right-skew test (effect) pools uniformly-transformed p·20 values via Stouffer. Flatness test against a 33%-power null. p-uniform: van Assen MALM, van Aert RCM, Wicherts JM. Psychol Methods 2015.
+    p-curve: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. <strong>Method-vs-code disclosure (allmeta heuristic):</strong> the right-skew test here uses Fisher's combined method <code>-2·Σ ln(pp) ~ χ²(2k)</code> on uniformly-transformed pp = p/0.05 values (the original Simonsohn 2014 paper recommends Stouffer's z-pool; both detect right-skew but power differs). The flatness "no evidential value" indicator is a binomial test of pp ≤ 0.5 vs 0.5 against a U(0,1) null — NOT Simonsohn's 33%-power flatness test, which is not implemented here. Read the indicator as "right-skew not detected (k may be small)" rather than positive evidence of no effect. p-uniform: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309.
   </footer>
   <script>
     function pnorm(x) {

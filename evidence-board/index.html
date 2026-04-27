@@ -276,9 +276,11 @@
         grid-template-columns: 1fr;
       }
     }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <div class="shell">
     <header class="hero">
@@ -310,7 +312,7 @@
       </div>
     </header>
 
-    <main class="layout">
+    <main id="main" class="layout">
       <section class="panel">
         <h2>Add Evidence Note</h2>
         <p class="subtle">Keep each note compact: what it is, what it says, how much you trust it, and what to do next.</p>
@@ -354,8 +356,8 @@
         <h2>Board</h2>
         <p class="subtle">Filter the notes, export them to JSON, or import a previous board snapshot.</p>
         <div class="filters">
-          <input id="searchInput" type="search" placeholder="Search title, source, finding, action">
-          <select id="confidenceFilter">
+          <input id="searchInput" type="search" placeholder="Search title, source, finding, action" aria-label="Search notes by title, source, finding, or action">
+          <select id="confidenceFilter" aria-label="Filter notes by confidence level">
             <option value="All">All confidence levels</option>
             <option value="High">High</option>
             <option value="Moderate">Moderate</option>

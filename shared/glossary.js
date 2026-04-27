@@ -186,7 +186,9 @@
   // AV6-07: trap Tab/Shift-Tab inside the popover so keyboard users can't
   // walk past it while it's open; Escape returns focus to the trigger.
   function handleKeydown(e) {
-    if (!popoverEl) return;
+    // E9 v8: also bail if popover got detached without our knowing (race
+    // window between close-button click handler and our keydown listener).
+    if (!popoverEl || !document.contains(popoverEl)) return;
     if (e.key === "Escape") {
       const target = popoverFor;
       closePopover();

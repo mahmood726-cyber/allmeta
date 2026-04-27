@@ -35,10 +35,22 @@
     }
     containerEl = document.createElement("div");
     containerEl.className = "toast-container";
+    // role=status implies aria-live=polite; explicit aria-live is redundant.
     containerEl.setAttribute("role", "status");
-    containerEl.setAttribute("aria-live", "polite");
     containerEl.setAttribute("aria-atomic", "false");
     document.body.appendChild(containerEl);
+    // V8-A11Y-05: keyboard dismissal — Escape removes the most recent visible toast.
+    if (!document.__toastEscapeBound) {
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || !containerEl) return;
+        const visible = containerEl.querySelectorAll(".toast-item.is-visible");
+        if (!visible.length) return;
+        const last = visible[visible.length - 1];
+        last.classList.remove("is-visible");
+        setTimeout(() => last.remove(), 220);
+      });
+      document.__toastEscapeBound = true;
+    }
     return containerEl;
   }
 

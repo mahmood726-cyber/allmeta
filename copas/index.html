@@ -48,15 +48,17 @@
     .note strong { color: var(--warn); }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Copas selection model — sensitivity</h1>
     <p>Sensitivity of the pooled effect under assumed selection mechanisms (Copas 2000). The selection parameter γ controls how strongly a study's precision (1/SE) determines publication. Output: adjusted estimate across γ.</p>
   </header>
-  <main>
+  <main id="main">
     <section class="panel">
       <h2>Input</h2>
       <label>
@@ -80,6 +82,7 @@
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit sensitivity grid</button>
     </section>
     <section class="panel">
+      <div id="k-warn" class="note" style="display:none;background:var(--warn-soft,#fbeedd);border-left:3px solid var(--warn,#b05a1c);color:var(--warn,#b05a1c)" role="status" aria-live="polite"></div>
       <h2>Sensitivity across γ</h2>
       <table>
         <thead><tr><th>γ (selection strength)</th><th>Implied unpublished fraction</th><th>Adjusted pooled</th><th>95% CI</th></tr></thead>
@@ -91,7 +94,7 @@
     </section>
   </main>
   <footer>
-    Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. Biostatistics 2000;1:247-262. Simplified implementation: per-study selection probability p(s) = Φ(γ_0 + γ_1 / s), back-weighted inverse-variance re-pooling. Full Copas MLE in <code>metasens::copas</code>.
+    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95–109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247-262 (extension). <strong>Simplified implementation:</strong> per-study selection probability p(s) = Φ(γ_0 + γ_1 / s), back-weighted inverse-variance re-pooling. Full Copas MLE in <code>metasens::copas</code>. Per advanced-stats.md, <strong>Copas selection models need k ≥ 15</strong> for stable estimation — this app does not enforce that gate; treat output as illustrative if k &lt; 15.
   </footer>
   <script>
     function pnorm(x) {
@@ -149,6 +152,15 @@
     function run() {
       const rows = parse(document.getElementById("src").value);
       const pUnobs = parseFloat(document.getElementById("p-unobs").value) || 0.2;
+      const warnEl = document.getElementById("k-warn");
+      if (warnEl) {
+        if (rows.length < 15 && rows.length >= 3) {
+          warnEl.textContent = "k = " + rows.length + " — Copas selection model needs k ≥ 15 for stable estimation (advanced-stats.md). Output below is illustrative; do not use for inference.";
+          warnEl.style.display = "block";
+        } else {
+          warnEl.style.display = "none";
+        }
+      }
       if (rows.length < 3) return;
 
       // Standard FE pool

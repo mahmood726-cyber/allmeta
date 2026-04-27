@@ -82,7 +82,7 @@
     </section>
   </main>
   <footer>
-    Variance decomposition: var(θ_ij) = σ²_ij (within-effect sampling) + τ²_within (within-study heterogeneity across effect sizes) + τ²_study (between-study). Estimation: iterated REML-style method-of-moments (Cheung 2014 simplification of metafor::rma.mv). For robust inference with highly clustered data, RVE is the gold standard.
+    Variance decomposition: var(θ_ij) = σ²_ij (within-effect sampling) + τ²_within (within-study heterogeneity across effect sizes) + τ²_study (between-study). Foundational 3-level MA: Konstantopoulos S. <em>Res Synth Methods</em> 2011;2:61–76. Implementation here: iterated method-of-moments per Cheung MWL. <em>Psychol Methods</em> 2014;19:211–229 — NOT REML (previous "REML-style" wording was inaccurate; this is pure MoM). For robust inference with highly clustered data, RVE is the gold standard: Hedges LV, Tipton E, Johnson MC. <em>Res Synth Methods</em> 2010;1:39–65 — current pooled-CI uses 1.96 z-quantile without HK adjustment, so small-cluster Type-I error is inflated; treat the report as descriptive when number-of-clusters &lt; 10.
   </footer>
   <script>
     function parse(text) {
