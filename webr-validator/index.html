@@ -124,8 +124,8 @@
         <legend>WebR source</legend>
         <label>
           <span class="lbl">WebR module URL</span>
-          <input type="text" id="f-webr-url" value="https://webr.r-wasm.org/latest/webr.mjs">
-          <span class="hint">Default is the public CDN; for offline use, download a release from <code>github.com/r-wasm/webr/releases</code> and point this at a self-hosted path. Adapter won't fire until you click "Run in WebR".</span>
+          <input type="text" id="f-webr-url" value="https://webr.r-wasm.org/v0.5.4/webr.mjs">
+          <span class="hint">Default is a pinned WebR release (v0.5.4) to avoid silent behavioural drift; for offline use, download from <code>github.com/r-wasm/webr/releases</code> and point this at a self-hosted path. Adapter won't fire until you click "Run in WebR".</span>
         </label>
       </fieldset>
 
@@ -277,7 +277,7 @@
       }
       return tau2;
     }
-    function browserFit(studies, method) {
+    function browserFit(studies, method, test) {
       const k = studies.length;
       if (!k) return null;
       let tau2;
@@ -289,7 +289,25 @@
       const Q0 = wsum(studies, 0).Q;
       const df = k-1;
       const I2 = df > 0 ? Math.max(0, 100*(Q0-df)/Q0) : 0;
-      return { estimate: s.mu, se: se, ci_lb: s.mu - 1.96*se, ci_ub: s.mu + 1.96*se, tau2: tau2, I2: I2, QE: Q0, k: k };
+      // V10-02: when test="knha", apply HKSJ q-floor + t_{k-1} so the
+      // browser-side CI matches metafor's HKSJ output, not the z-CI.
+      let ci_lb, ci_ub, se_used = se;
+      if (test === "knha" && df > 0) {
+        let q = 0;
+        for (const st of studies) { const w = 1/(st.v + tau2); q += w * (st.est - s.mu) * (st.est - s.mu); }
+        const qStar = Math.max(1, q / df);
+        const seHK = Math.sqrt(qStar / s.sw);
+        // t-quantile at 0.975, df=k-1, table for df 1..30 then z fallback.
+        const T = [12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
+        const tCrit = (df >= 1 && df <= 30) ? T[df - 1] : 1.96;
+        ci_lb = s.mu - tCrit * seHK;
+        ci_ub = s.mu + tCrit * seHK;
+        se_used = seHK;
+      } else {
+        ci_lb = s.mu - 1.96 * se;
+        ci_ub = s.mu + 1.96 * se;
+      }
+      return { estimate: s.mu, se: se_used, ci_lb, ci_ub, tau2, I2, QE: Q0, k };
     }
 
     // ---- R script generation ----
@@ -606,7 +624,7 @@
     function onReset() {
       if (!confirm("Clear inputs?")) return;
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.value = ""; }
-      document.getElementById("f-webr-url").value = "https://webr.r-wasm.org/latest/webr.mjs";
+      document.getElementById("f-webr-url").value = "https://webr.r-wasm.org/v0.5.4/webr.mjs";
       document.getElementById("f-method").value = "PM";
       document.getElementById("f-test").value = "z";
       render();
@@ -618,7 +636,7 @@
       const state = readState();
       const parsed = parseStudies(state.data);
       if (parsed.studies.length) {
-        lastBrowser = browserFit(parsed.studies, state.method);
+        lastBrowser = browserFit(parsed.studies, state.method, state.test);
         rscriptHost.textContent = rScript(parsed.studies, state.method, state.test);
         renderCompare(lastBrowser, lastR);
       } else {

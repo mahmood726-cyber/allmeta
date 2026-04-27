@@ -189,11 +189,21 @@
       const swFinal = wFinal.reduce((a, b) => a + b, 0);
       const mu = rows.reduce((acc, r, i) => acc + wFinal[i] * r.te, 0) / swFinal;
       const seMu = Math.sqrt(1 / swFinal);
-      const I2_study = tau2_study / (tau2_study + tau2_within + 1e-10);
-      const I2_within = tau2_within / (tau2_study + tau2_within + 1e-10);
+      // V10-08 — Cheung 2014 §3.2 / Higgins-Thompson 2002 σ²_typical for I²
+      // decomposition: σ² = (k-1) Σwᵢ / [(Σwᵢ)² − Σwᵢ²] using w = 1/(SE²)
+      // (NOT τ²-inflated weights). Without σ² the "shares" are τ²-only and
+      // overstate heterogeneity proportions when sampling variance is large.
+      const wSamp = rows.map(r => 1 / (r.se * r.se));
+      const sumWsamp = wSamp.reduce((a, b) => a + b, 0);
+      const sumW2samp = wSamp.reduce((a, b) => a + b * b, 0);
+      const denomSig = sumWsamp * sumWsamp - sumW2samp;
+      const sigma2_typical = denomSig > 1e-12 ? ((rows.length - 1) * sumWsamp) / denomSig : 0;
+      const totalVar = tau2_study + tau2_within + sigma2_typical + 1e-10;
+      const I2_study = tau2_study / totalVar;
+      const I2_within = tau2_within / totalVar;
       // V9-08 — HKSJ adjustment with cluster df = J-1 (J = number of studies).
       // q-floor at 1 per Cochrane Handbook §10.10.4 / advanced-stats.md.
-      const J = studies.size;
+      const J = studies.length;
       const dfHK = Math.max(1, J - 1);
       const qStar = wFinal.reduce((acc, w, i) => acc + w * (rows[i].te - mu) * (rows[i].te - mu), 0) / dfHK;
       const qFloored = Math.max(1, qStar);

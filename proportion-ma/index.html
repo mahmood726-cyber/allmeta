@@ -76,7 +76,7 @@
           <option value="logit">Logit</option>
           <option value="raw">Raw (no transform) — not recommended</option>
         </select>
-        <span class="hint">Freeman-Tukey is recommended when event rates are extreme (near 0 or 1).</span>
+        <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G et al. <em>Res Synth Methods</em> 2019;10:476-483 showed it can produce nonsensical back-transformed pooled CIs in some settings; for rare events prefer logit with continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
       </label>
       <label>
         <span>Random-effects τ² estimator</span>
@@ -104,7 +104,7 @@
     </section>
   </main>
   <footer>
-    Freeman-Tukey: <code>FT = ½(arcsin√(x/(n+1)) + arcsin√((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). Logit: <code>ln(p/(1-p))</code>, variance <code>1/x + 1/(n-x)</code> with 0.5 correction at zeros. Clopper-Pearson: <code>qbeta(α/2, x, n-x+1)</code>.
+    Freeman-Tukey: <code>FT = ½(arcsin√(x/(n+1)) + arcsin√((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer et al. <em>Res Synth Methods</em> 2019;10:476-483):</strong> FT back-transformed pooled CI can be nonsensical in some settings; prefer logit + continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/(x+0.5) + 1/(n-x+0.5)</code> with Cochrane Handbook §10.4.4 / Sweeting 2004 correction at zeros (cn=n+1). Clopper-Pearson: <code>qbeta(α/2, x, n-x+1)</code>.
   </footer>
   <script>
     // --- parsing ---
@@ -211,11 +211,13 @@
     }
 
     function logitTransform(x, n) {
-      // Standard Cochrane 0.5 continuity correction for zero / full-count cells.
-      // Apply the same +0.5 to both numerator and denominator complement symmetrically,
-      // leaving the denominator unchanged: cx = x ± 0.5 or cx = n ∓ 0.5 at extremes.
-      const cx = x === 0 ? 0.5 : (x === n ? n - 0.5 : x);
-      const cn = n;  // keep denominator; the 0.5 offset in cx suffices to bound logit.
+      // V10-03 — Cochrane Handbook §10.4.4 / Sweeting 2004 continuity correction:
+      // at extremes (x=0 or x=n) add 0.5 to BOTH numerator and complement, and 1
+      // to denominator. Variance becomes 1/(x+0.5) + 1/(n-x+0.5). Matches
+      // metafor::escalc(measure="PLO"). Non-extreme counts are uncorrected.
+      const extreme = (x === 0) || (x === n);
+      const cx = extreme ? x + 0.5 : x;
+      const cn = extreme ? n + 1 : n;
       const p = cx / cn;
       return { y: Math.log(p / (1 - p)), v: 1 / cx + 1 / (cn - cx) };
     }

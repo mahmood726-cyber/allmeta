@@ -578,14 +578,14 @@
             }
             // V9-E09 — coerce/validate each entry; assign fresh id if missing
             // or non-string; clamp string fields; strip unknown keys.
-            const VALID_TYPES = new Set(["evidence", "task", "decision", "note"]);
+            const VALID_TYPES = new Set(["Trial", "Meta-analysis", "Review", "Guideline", "Internal Note"]);
             const VALID_CONF = new Set(["High", "Moderate", "Low"]);
             state.entries = parsed.entries.map(function (e) {
               const eid = (e && typeof e.id === "string" && e.id) ? e.id : (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "id-" + Math.random().toString(36).slice(2));
               return {
                 id: eid,
                 title: typeof e?.title === "string" ? e.title.slice(0, 500) : "",
-                type: VALID_TYPES.has(e?.type) ? e.type : "note",
+                type: VALID_TYPES.has(e?.type) ? e.type : "Internal Note",
                 confidence: VALID_CONF.has(e?.confidence) ? e.confidence : "Moderate",
                 source: typeof e?.source === "string" ? e.source.slice(0, 1000) : "",
                 finding: typeof e?.finding === "string" ? e.finding.slice(0, 5000) : "",
