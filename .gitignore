@@ -26,3 +26,7 @@ sentinel-findings.md
 sentinel-findings.jsonl
 review-findings.md
 review-findings.jsonl
+review-findings-*.md
+
+# Overmind runtime artifacts (per-project decision logs)
+**/DECISIONS.md
