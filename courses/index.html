@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
-  <meta name="description" content="Browse the 26 synthesis courses paired with allmeta tools — foundations, workflows, methods, reporting, and applied tracks. Free, browser-only, available in 12 languages.">
+  <meta name="description" content="Browse the 22 synthesis courses paired with allmeta tools — foundations, workflows, methods, reporting, and applied tracks. Free, browser-only, available in 12 languages.">
   <title>Courses — allmeta</title>
   <link rel="stylesheet" href="../workflow/styles.css">
   <style>
@@ -47,6 +47,13 @@
     }
     .course-card .ext {
       display: inline-block; margin-left: 0.3rem; font-size: 0.78rem; color: #5c6470;
+    }
+    /* WCAG 2.4.4 / 3.2.5 — externally-targeted links are announced as
+       "opens in new tab" via this visually-hidden helper. */
+    .visually-hidden {
+      position: absolute !important; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
     }
     .course-meta {
       display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem;
@@ -94,22 +101,22 @@
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html" target="_blank" rel="noopener">
             <h3>Evidence synthesis — foundations</h3>
             <p>The big picture: what a systematic review is, why pooling, where heterogeneity comes from, what a forest plot means.</p>
-            <span class="pairs">Pairs with: Forest Plot, Workbench<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Forest Plot, Workbench<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-topic-selection-course.html" target="_blank" rel="noopener">
             <h3>Picking a meta-analysis topic</h3>
             <p>PICO and PECO question framing, search-feasibility checks, scope discipline, and avoiding the duplicate-review trap.</p>
-            <span class="pairs">Pairs with: PICO, Search Translator<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: PICO, Search Translator<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html" target="_blank" rel="noopener">
             <h3>Meta-analysis methods</h3>
             <p>Estimators (DL, REML, Paule-Mandel, MH, Peto), the inverse-variance weighting story, and when to use which.</p>
-            <span class="pairs">Pairs with: Workbench, MH/Peto, Effect-Size Converter<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Workbench, MH/Peto, Effect-Size Converter<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/becoming-methodologist.html" target="_blank" rel="noopener">
             <h3>Becoming a methodologist</h3>
             <p>The career path: from running your first MA to publishing methodological work. Mentors, journals, expectations.</p>
-            <span class="pairs">Pairs with: WebR Studio, WebR Validator<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: WebR Studio, WebR Validator<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
         </div>
       </section>
@@ -121,32 +128,32 @@
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/rapid-reviews-course.html" target="_blank" rel="noopener">
             <h3>Rapid reviews</h3>
             <p>Cochrane Rapid Reviews Methods Group (Garritty 2021) — single-reviewer screening with verification, streamlined extraction.</p>
-            <span class="pairs">Pairs with: Rapid review workflow<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Rapid review workflow<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/prognostic-reviews-course.html" target="_blank" rel="noopener">
             <h3>Prognostic reviews</h3>
             <p>PROGRESS framework, PICOTS, CHARMS extraction, QUIPS / PROBAST appraisal, GRADE-for-prognosis.</p>
-            <span class="pairs">Pairs with: Prognostic review workflow<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Prognostic review workflow<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/umbrella-reviews-course.html" target="_blank" rel="noopener">
             <h3>Umbrella reviews</h3>
             <p>Reviews of systematic reviews: when to do one, AMSTAR-2 appraisal, handling overlap, conflicting reviews.</p>
-            <span class="pairs">Pairs with: AMSTAR-2<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: AMSTAR-2<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/qualitative-evidence-synthesis-course.html" target="_blank" rel="noopener">
             <h3>Qualitative evidence synthesis</h3>
             <p>Thomas-and-Harden thematic synthesis, GRADE-CERQual confidence, when narrative beats meta-aggregation.</p>
-            <span class="pairs">Pairs with: Thematic Synthesis, GRADE-CERQual<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Thematic Synthesis, GRADE-CERQual<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/living-reviews-course.html" target="_blank" rel="noopener">
             <h3>Living reviews</h3>
             <p>Continuously updated evidence syntheses: trigger criteria, version control, sustaining a living review.</p>
-            <span class="pairs">Pairs with: Living Meta, CardioSynth<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Living Meta, CardioSynth<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/observational-evidence-course.html" target="_blank" rel="noopener">
             <h3>Observational evidence</h3>
             <p>Pooling cohorts and case-controls: ROBINS-I, confounding control, when adjusted estimates can be combined.</p>
-            <span class="pairs">Pairs with: ROBINS-I<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: ROBINS-I<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
         </div>
       </section>
@@ -158,27 +165,27 @@
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html" target="_blank" rel="noopener">
             <h3>Advanced meta-analysis</h3>
             <p>Network meta-analysis, multilevel models, meta-regression, GOSH, Bucher indirect, transitivity and consistency.</p>
-            <span class="pairs">Pairs with: NMA Pro v8, GOSH, Multi-level MA, Bucher<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: NMA Pro v8, GOSH, Multi-level MA, Bucher<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/ipd-meta-analysis-course.html" target="_blank" rel="noopener">
             <h3>IPD meta-analysis</h3>
             <p>One-stage vs two-stage, harmonising covariates, IPD vs aggregate-data trade-offs, K-M reconstruction.</p>
-            <span class="pairs">Pairs with: IPD Meta-Pro, K-M Reconstructor<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: IPD Meta-Pro, K-M Reconstructor<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/dta-course-when-the-test-lies-v4.html" target="_blank" rel="noopener">
             <h3>Diagnostic test accuracy — "when the test lies"</h3>
             <p>Bivariate and HSROC pooling, threshold effects, QUADAS-2, Reitsma vs Rutter-Gatsonis.</p>
-            <span class="pairs">Pairs with: HSROC, DTA SROC, QUADAS-2<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: HSROC, DTA SROC, QUADAS-2<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/publication-bias-detective.html" target="_blank" rel="noopener">
             <h3>Publication bias — detective work</h3>
             <p>Funnel asymmetry, Egger and Peters tests, trim-and-fill, PET-PEESE, Copas, p-curve. Pick the right tool for the bias mechanism.</p>
-            <span class="pairs">Pairs with: PET-PEESE, p-curve, Funnel, Pub-bias Tests<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: PET-PEESE, p-curve, Funnel, Pub-bias Tests<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/cast-when-certainty-kills.html" target="_blank" rel="noopener">
             <h3>Trial sequential analysis — when certainty kills</h3>
             <p>Sequential monitoring boundaries, O'Brien-Fleming alpha-spending, Required Information Size, futility.</p>
-            <span class="pairs">Pairs with: TSA Calculator, PowerMA / RIS<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: TSA Calculator, PowerMA / RIS<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
         </div>
       </section>
@@ -190,17 +197,17 @@
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html" target="_blank" rel="noopener">
             <h3>Risk of bias — mastery</h3>
             <p>RoB 2 (Sterne 2019), ROBINS-I (Sterne 2016), ROBINS-E (Higgins 2024), QUADAS-2, when to use which.</p>
-            <span class="pairs">Pairs with: RoB 2, ROBINS-I, ROBINS-E, QUADAS-2, RoB Traffic Light<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: RoB 2, ROBINS-I, ROBINS-E, QUADAS-2, RoB Traffic Light<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/grade-certainty-course.html" target="_blank" rel="noopener">
             <h3>GRADE certainty</h3>
             <p>The five downgrade domains, three upgrade considerations, NMA-specific CINeMA, GRADE-DTA, GRADE-CERQual.</p>
-            <span class="pairs">Pairs with: GRADE SoF, CINeMA, GRADE-CERQual<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: GRADE SoF, CINeMA, GRADE-CERQual<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-writing-course.html" target="_blank" rel="noopener">
             <h3>Writing the meta-analysis</h3>
             <p>PRISMA 2020 reporting, PRISMA-NMA, structured abstracts, supplementary materials, what reviewers actually look for.</p>
-            <span class="pairs">Pairs with: PRISMA Checklist, PRISMA Flow, PRISMA-NMA<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: PRISMA Checklist, PRISMA Flow, PRISMA-NMA<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
         </div>
       </section>
@@ -212,28 +219,28 @@
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html" target="_blank" rel="noopener">
             <h3>Meta-sprint</h3>
             <p>How to run a meta-analysis in a week without sacrificing rigour. Templates, checklists, parallelisation.</p>
-            <span class="pairs">Pairs with: Citation Dedup, PRISMA Screening, Focus Studio<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: Citation Dedup, PRISMA Screening, Focus Studio<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/hta-oman-course.html" target="_blank" rel="noopener">
             <h3>Health technology assessment</h3>
             <p>Cost-effectiveness, decision analysis, MCID and non-inferiority margins. Built around an HTA Oman case study.</p>
-            <span class="pairs">Pairs with: HTA Pro, MCID &amp; NI margin<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: HTA Pro, MCID &amp; NI margin<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/ai-meta-analysis-course.html" target="_blank" rel="noopener">
             <h3>AI-assisted meta-analysis</h3>
             <p>Using LLMs responsibly: extraction, screening, what to verify, where to keep humans in the loop.</p>
-            <span class="pairs">Pairs with: RCT Extractor, Local AI setup<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: RCT Extractor, Local AI setup<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
           <a class="course-card" href="https://mahmood726-cyber.github.io/synthesis-courses/truthcert-course.html" target="_blank" rel="noopener">
             <h3>TruthCert — reproducibility receipts</h3>
             <p>HMAC-signed bundles for evidence reproducibility: what a receipt covers, what it doesn't, how reviewers verify.</p>
-            <span class="pairs">Pairs with: TruthCert Pairwise Pro, WebR Validator<span class="ext"> ↗</span></span>
+            <span class="pairs">Pairs with: TruthCert Pairwise Pro, WebR Validator<span class="ext" aria-hidden="true"> ↗</span><span class="visually-hidden"> (opens in new tab)</span></span>
           </a>
         </div>
       </section>
 
       <p class="foot">
-        New to evidence synthesis? Start with <a href="https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html" target="_blank" rel="noopener">Foundations</a>, then pick a <a href="../workflow/">workflow</a>. The full multi-language collection lives at <a href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">synthesis-courses ↗</a>.
+        New to evidence synthesis? Start with <a href="https://mahmood726-cyber.github.io/synthesis-courses/synthesis-course.html" target="_blank" rel="noopener">Foundations<span class="visually-hidden"> (opens in new tab)</span></a>, then pick a <a href="../workflow/">workflow</a>. The full multi-language collection lives at <a href="https://mahmood726-cyber.github.io/synthesis-courses/" target="_blank" rel="noopener">synthesis-courses <span aria-hidden="true">↗</span><span class="visually-hidden"> (opens in new tab)</span></a>.
       </p>
     </main>
   </div>
