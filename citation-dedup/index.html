@@ -153,6 +153,36 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textare
     Title normalisation: lowercase, strip punctuation, collapse whitespace, drop stopwords (<code>a/an/the/of/in/on/for/and/or/to</code>). Similarity: Jaccard on character trigrams (n=3) over the normalised title.
   </footer>
   <script>
+    // Minimal toast helper for inline status notifications.
+    const Toast = {
+      show(message, level = 'info') {
+        const id = 'alm-toast';
+        let el = document.getElementById(id);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = id;
+          el.setAttribute('role', 'status');
+          el.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);' +
+            'padding:.5rem 1rem;border-radius:6px;font:13px/1.4 system-ui,sans-serif;' +
+            'z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:opacity .2s';
+          document.body.appendChild(el);
+        }
+        const colors = {
+          info: { bg: '#dbeafe', fg: '#1e3a8a' },
+          warn: { bg: '#fef3c7', fg: '#78350f' },
+          error: { bg: '#fee2e2', fg: '#7f1d1d' },
+          success: { bg: '#dcfce7', fg: '#14532d' },
+        };
+        const c = colors[level] || colors.info;
+        el.style.background = c.bg;
+        el.style.color = c.fg;
+        el.textContent = message;
+        el.style.opacity = '1';
+        clearTimeout(Toast._t);
+        Toast._t = setTimeout(() => { el.style.opacity = '0'; }, 3500);
+      },
+    };
+
     // --- normalisation ---
     const STOPWORDS = new Set(["a","an","the","of","in","on","for","and","or","to","with","at","by"]);
 

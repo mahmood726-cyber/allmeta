@@ -10,45 +10,32 @@
 
 'use strict';
 
-// Environment-aware module loading
-let PerformanceEngine, SIMDVectorizer, ComputationCache, MemoryPool, Environment;
+// CYCLE 3.2: removed duplicate declarations. PerformanceEngine, SIMDVectorizer,
+// ComputationCache, MemoryPool, and Environment are canonical in
+// HTA/src/engine/performanceEngine.js (loaded first via script tag).
+// The original `let PerformanceEngine, ...` at script top-level caused
+// "Identifier already declared" because class-declarations in prior script tags
+// share the same global lexical environment. Browser path now reads globals
+// directly; Node.js path uses prefixed locals to avoid re-declaration.
 
+// Node.js environment: load via require() inside a block so no `var`/`let`
+// re-declarations are hoisted to the global lexical environment (which would
+// conflict with the class-declarations already present from performanceEngine.js).
 if (typeof module !== 'undefined' && module.exports) {
-    // Node.js environment
-    const perfEngine = require('./performanceEngine');
-    PerformanceEngine = perfEngine.PerformanceEngine;
-    SIMDVectorizer = perfEngine.SIMDVectorizer;
-    ComputationCache = perfEngine.ComputationCache;
-    MemoryPool = perfEngine.MemoryPool;
-    Environment = perfEngine.Environment;
-} else if (typeof window !== 'undefined') {
-    // Browser environment - assumes performanceEngine.js is loaded via script tag
-    PerformanceEngine = window.PerformanceEngine || self.PerformanceEngine;
-    SIMDVectorizer = window.SIMDVectorizer || self.SIMDVectorizer;
-    ComputationCache = window.ComputationCache || self.ComputationCache;
-    MemoryPool = window.MemoryPool || self.MemoryPool;
-    Environment = window.Environment || self.Environment;
+    // This branch is never taken in the browser, so the const bindings here
+    // only exist in Node.js scope and do not collide with the browser globals.
+    const _perfEngine = require('./performanceEngine');
+    module.exports._resolved = _perfEngine; // carry through for Node consumers
 }
-
-// Fallback Environment if not available
-if (!Environment) {
-    Environment = {
-        isBrowser: typeof window !== 'undefined',
-        isNode: typeof process !== 'undefined' && process.versions != null,
-        get hardwareConcurrency() {
-            if (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) {
-                return navigator.hardwareConcurrency;
-            }
-            return 4;
-        }
-    };
-}
+// Browser path: PerformanceEngine / SIMDVectorizer / ComputationCache /
+// MemoryPool / Environment are already globals from performanceEngine.js —
+// no re-declaration needed.
 
 // Global performance engine instance
 let engine = null;
-const simd = SIMDVectorizer ? new SIMDVectorizer() : null;
-const cache = ComputationCache ? new ComputationCache({ maxSize: 500, ttl: 600000 }) : null;
-const memoryPool = MemoryPool ? new MemoryPool() : null;
+const simd = (typeof SIMDVectorizer !== 'undefined' && SIMDVectorizer) ? new SIMDVectorizer() : null;
+const cache = (typeof ComputationCache !== 'undefined' && ComputationCache) ? new ComputationCache({ maxSize: 500, ttl: 600000 }) : null;
+const memoryPool = (typeof MemoryPool !== 'undefined' && MemoryPool) ? new MemoryPool() : null;
 
 async function getEngine() {
     if (!engine) {

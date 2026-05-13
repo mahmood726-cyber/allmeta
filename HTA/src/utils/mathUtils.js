@@ -5,31 +5,8 @@
  * Reference: RFC-005 Determinism Contract
  */
 
-/**
- * Kahan summation for numerical stability
- */
-class KahanSum {
-    constructor() {
-        this.sum = 0;
-        this.c = 0;  // Compensation for lost low-order bits
-    }
-
-    add(value) {
-        const y = value - this.c;
-        const t = this.sum + y;
-        this.c = (t - this.sum) - y;
-        this.sum = t;
-    }
-
-    total() {
-        return this.sum;
-    }
-
-    reset() {
-        this.sum = 0;
-        this.c = 0;
-    }
-}
+// CYCLE 3.2: removed duplicate declaration. KahanSum is canonical in HTA/src/utils/kahan.js.
+// Any consumer of KahanSum inside this file will use the global from kahan.js.
 
 /**
  * Statistical helper functions

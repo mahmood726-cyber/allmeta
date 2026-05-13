@@ -28,7 +28,7 @@ var KahanRef = (function resolveKahan() {
 
 // ============ NAMED CONSTANTS ============
 const DEFAULT_BISECTION_TOL = 0.01;
-const DEFAULT_BISECTION_MAX_ITER = 200;
+// CYCLE 3.2: removed duplicate declaration. DEFAULT_BISECTION_MAX_ITER is canonical in HTA/src/engine/thresholdAnalysis.js.
 const DEFAULT_AFFORDABILITY_STEPS = 50;
 const DEFAULT_SENSITIVITY_STEPS = 100;
 
