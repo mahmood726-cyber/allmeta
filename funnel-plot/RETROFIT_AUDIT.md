@@ -37,7 +37,7 @@ Verified via `funnel-plot/tests/sanity.spec.mjs` (Playwright on Chromium):
 - [x] Pre-retrofit feature: funnel-plot SVG still renders (chart-download present-good intact)
 - [x] results-export JSON contains real Egger values (not just form state — fixes the legacy "Download JSON" gap)
 
-Run: `cd C:\Projects\allmeta\hub\shared\tests && npx playwright test funnel-plot-sanity.spec.mjs --reporter=list`
+Run: `cd ../../hub/shared/tests && npx playwright test funnel-plot-sanity.spec.mjs --reporter=list`
 Result: **5 passed (16.2s)**
 
 ### Items deferred to human-eyeball review
