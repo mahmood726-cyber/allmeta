@@ -155,7 +155,15 @@
 
   function getFilters() {
     const categoryFilters = Array.from(new Set(projects.map((project) => project.category))).sort();
-    return ["All", "Existing", "New"].concat(categoryFilters);
+    // "Needs polish" only appears once triage.json has loaded with at least one
+    // tier 3-5 app. Until then, it's hidden — the hub doesn't surface a filter
+    // that filters to zero results.
+    const polishCount = projects.reduce((n, p) => {
+      const t = (triageByKey[projectKey(p)] || {}).tier;
+      return n + ((t === 3 || t === 4 || t === 5) ? 1 : 0);
+    }, 0);
+    const polish = polishCount > 0 ? ["Needs polish"] : [];
+    return ["All", "Existing", "New"].concat(polish).concat(categoryFilters);
   }
 
   // Subcategory chips appear when a top-level category that has subcategorised
@@ -173,6 +181,12 @@
     if (label === "All") return projects.length;
     if (label === "Existing" || label === "New") {
       return projects.filter((p) => p.collection === label.toLowerCase()).length;
+    }
+    if (label === "Needs polish") {
+      return projects.filter((p) => {
+        const t = (triageByKey[projectKey(p)] || {}).tier;
+        return t === 3 || t === 4 || t === 5;
+      }).length;
     }
     return projects.filter((p) => p.category === label).length;
   }
@@ -287,6 +301,10 @@
     if (activeFilter === "All") return true;
     if (activeFilter === "Existing" || activeFilter === "New") {
       return project.collection === activeFilter.toLowerCase();
+    }
+    if (activeFilter === "Needs polish") {
+      const t = (triageByKey[projectKey(project)] || {}).tier;
+      return t === 3 || t === 4 || t === 5;
     }
     if (project.category !== activeFilter) return false;
     if (activeSubcategory && activeSubcategory !== "All") {
