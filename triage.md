@@ -2,31 +2,28 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T22:10:57Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T22:15:04Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 8
 - Tier 2 — Working: 1
-- Tier 3 — Polish needed: 49
-- Tier 4 — Hardening priority: 5
+- Tier 3 — Polish needed: 52
+- Tier 4 — Hardening priority: 2
 - Tier 5 — Active rebuild: 3
 
 ## Tier 5 — Active rebuild (3)
 
-- **IPD-Meta-Pro** — stub_count=68 (>= 6)
+- **IPD-Meta-Pro** — stub_count=64 (>= 6)
 - **living-meta** — missing index.html
 - **prisma-checklist** — stub_count=13 (>= 6)
 
-## Tier 4 — Hardening priority (5)
+## Tier 4 — Hardening priority (2)
 
-- **HTA** — stub_count=1
-- **p-curve** — stub_count=1
-- **Pairwiseai** — stub_count=2
 - **quadas-2** — runtime_health=MISSING-MOUNT (and not informational kind)
 - **rct-extractor** — runtime_health=NEEDS-SERVICE
 
-## Tier 3 — Polish needed (49)
+## Tier 3 — Polish needed (52)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
@@ -47,6 +44,7 @@ Generated: 2026-05-13T22:10:57Z · scanner v0.1.0 · 66 apps
 - **gosh-metareg** — no tests · no R-parity test · no README
 - **grade-sof** — no R-parity test · no README
 - **hsroc** — no tests · no R-parity test · no README
+- **HTA** — no tests · no R-parity test
 - **influence** — no tests · no R-parity test · no README
 - **kanban-lab** — no README
 - **km-reconstructor** — no tests · no R-parity test · no README
@@ -60,6 +58,8 @@ Generated: 2026-05-13T22:10:57Z · scanner v0.1.0 · 66 apps
 - **nma-dose-response-app** — no R-parity test
 - **nma-global-inconsistency** — no tests · no R-parity test · no README
 - **nma-inconsistency** — no tests · no R-parity test · no README
+- **p-curve** — no tests · no R-parity test · no README
+- **Pairwiseai** — no tests · no R-parity test · no README
 - **pico** — no tests · no README
 - **powerma** — no tests · no R-parity test · no README
 - **prisma-nma** — no tests · no R-parity test · no README

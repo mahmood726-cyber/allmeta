@@ -1,12 +1,13 @@
 {
   "apps": {
     "HTA": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no tests",
+        "no R-parity test"
       ],
       "signals": {
         "category": "Health Technology Assessment",
@@ -21,11 +22,11 @@
         "last_touched_unix": 1778703164,
         "playwright_pass": null,
         "runtime_health": "OK",
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 392.15
       },
-      "tier": 4
+      "tier": 3
     },
     "IPD-Meta-Pro": {
       "auto_tier": 5,
@@ -33,7 +34,7 @@
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=68 (>= 6)"
+        "stub_count=64 (>= 6)"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -48,19 +49,21 @@
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
-        "stub_count": 68,
+        "stub_count": 64,
         "test_count": 0,
         "total_size_kb": 4.3
       },
       "tier": 5
     },
     "Pairwiseai": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=2"
+        "no tests",
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -75,11 +78,11 @@
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
-        "stub_count": 2,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 1988.05
       },
-      "tier": 4
+      "tier": 3
     },
     "Truthcert1": {
       "auto_tier": 3,
@@ -1263,12 +1266,14 @@
       "tier": 1
     },
     "p-curve": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no tests",
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -1283,11 +1288,11 @@
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 15.61
       },
-      "tier": 4
+      "tier": 3
     },
     "pet-peese": {
       "auto_tier": 1,
@@ -1887,13 +1892,13 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:10:57Z",
+  "generated_at": "2026-05-13T22:15:04Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 8,
     "tier_2": 1,
-    "tier_3": 49,
-    "tier_4": 5,
+    "tier_3": 52,
+    "tier_4": 2,
     "tier_5": 3,
     "total": 66
   }

@@ -65,3 +65,20 @@ def test_stub_count_ignores_stub_word_in_markdown_documentation(tmp_path):
     )
     from triage.signals import stub_count
     assert stub_count(app) == 0
+
+
+def test_stub_count_ignores_not_implemented_in_methodology_prose(tmp_path):
+    """Cycle 2.4 regression: 'not implemented' as part of methodology
+    documentation (e.g. p-curve explaining which variant of a test the
+    app uses, by contrast with one that is 'not implemented here') is
+    NOT a code stub. HTA, Pairwiseai (x2), p-curve all hit this."""
+    app = tmp_path / "method-doc"
+    app.mkdir()
+    (app / "index.html").write_text(
+        "<!doctype html><html><body><p>The right-skew test uses Fisher's "
+        "combined method, not Simonsohn's 33%-power flatness test, which "
+        "is not implemented here.</p></body></html>",
+        encoding="utf-8",
+    )
+    from triage.signals import stub_count
+    assert stub_count(app) == 0

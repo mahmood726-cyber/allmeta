@@ -17,7 +17,13 @@ _STUB_PATTERNS = re.compile(
     #   template-slot use-case.
     # - \bstub\b is restricted to non-.md files (see _SCAN_SUFFIXES).  Documentation
     #   markdown legitimately uses "stub" as English (e.g. "pandas stub", "stub_count").
-    r"\bTODO\b|\bstub\b|REPLACE_ME|__PLACEHOLDER__|not implemented|"
+    # Cycle 2.4 tightening:
+    # - "not implemented" removed: appears in legitimate methodology documentation
+    #   prose (e.g. p-curve explaining which test variant it uses, by contrast with
+    #   one "not implemented here").  HTA, Pairwiseai (x2 files), p-curve all
+    #   produced false-positive stub_count=1-2 from this.  Real stub coverage
+    #   preserved by TODO, \bstub\b, REPLACE_ME, __PLACEHOLDER__, throw new Error\(.unimpl.
+    r"\bTODO\b|\bstub\b|REPLACE_ME|__PLACEHOLDER__|"
     r"throw new Error\(.unimpl",
     re.IGNORECASE,
 )
