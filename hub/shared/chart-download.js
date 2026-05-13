@@ -105,7 +105,36 @@
       };
       img.src = blobURL;
     });
-    // PDF handler wired in Task 12.
+    target.querySelector('[data-fmt="pdf"]').addEventListener('click', () => {
+      const src = getSvg(); if (!src) { console.warn('[alm.chartDownload] no SVG'); return; }
+      if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+        console.warn('[alm.chartDownload] jspdf not loaded; include hub/shared/vendor/jspdf.min.js before chart-download.js');
+        return;
+      }
+      const prepared = _prepareSvg(src);
+      const svgText = _serialize(prepared);
+      const vb = prepared.getAttribute('viewBox').split(/\s+/).map(Number);
+      const [, , w, h] = vb;
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(w * scale);
+      canvas.height = Math.ceil(h * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      const img = new Image();
+      const blobURL = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(blobURL);
+        const pngDataUrl = canvas.toDataURL('image/png');
+        const JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+        const pdf = new JsPDF({ orientation: w > h ? 'l' : 'p', unit: 'pt', format: [w, h] });
+        pdf.addImage(pngDataUrl, 'PNG', 0, 0, w, h);
+        const blob = pdf.output('blob');
+        _download(blob, basename + '.pdf');
+      };
+      img.src = blobURL;
+    });
   }
   init._prepareSvg = _prepareSvg;
   init._serialize = _serialize;
