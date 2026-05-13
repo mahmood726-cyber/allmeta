@@ -2,13 +2,13 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T22:18:17Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T22:34:20Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
-- Tier 1 — Validated: 8
+- Tier 1 — Validated: 10
 - Tier 2 — Working: 1
-- Tier 3 — Polish needed: 53
+- Tier 3 — Polish needed: 51
 - Tier 4 — Hardening priority: 2
 - Tier 5 — Active rebuild: 2
 
@@ -22,7 +22,7 @@ Generated: 2026-05-13T22:18:17Z · scanner v0.1.0 · 66 apps
 - **quadas-2** — runtime_health=MISSING-MOUNT (and not informational kind)
 - **rct-extractor** — runtime_health=NEEDS-SERVICE
 
-## Tier 3 — Polish needed (53)
+## Tier 3 — Polish needed (51)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
@@ -44,7 +44,6 @@ Generated: 2026-05-13T22:18:17Z · scanner v0.1.0 · 66 apps
 - **grade-sof** — no R-parity test · no README
 - **hsroc** — no tests · no R-parity test · no README
 - **HTA** — no tests · no R-parity test
-- **influence** — no tests · no R-parity test · no README
 - **kanban-lab** — no README
 - **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
@@ -58,7 +57,6 @@ Generated: 2026-05-13T22:18:17Z · scanner v0.1.0 · 66 apps
 - **nma-dose-response-app** — no R-parity test
 - **nma-global-inconsistency** — no tests · no R-parity test · no README
 - **nma-inconsistency** — no tests · no R-parity test · no README
-- **p-curve** — no tests · no R-parity test · no README
 - **Pairwiseai** — no tests · no R-parity test · no README
 - **pico** — no tests · no README
 - **powerma** — no tests · no R-parity test · no README
@@ -82,13 +80,15 @@ Generated: 2026-05-13T22:18:17Z · scanner v0.1.0 · 66 apps
 
 - **prisma-flow** — working — no flags · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 
-## Tier 1 — Validated (8)
+## Tier 1 — Validated (10)
 
 - **dta-sroc** — test_count=4 · has R-parity test · last_touched 0d ago
 - **effect-size-converter** — no README · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2). · **override**
 - **forest-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **funnel-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **heterogeneity** — test_count=4 · has R-parity test · last_touched 0d ago
+- **influence** — test_count=3 · has R-parity test · last_touched 0d ago
 - **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago
 - **nma-pro-v2** — total_size_kb=3.32 (< 10.0) · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed. auto_tier=4 because total_size_kb=3.32 < 10.0 threshold (nma-pro-v8.0.html lives in a subdir, not top-level; index.html is a thin redirect). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 3 tests, R-parity coverage (Cycle 2.2). · **override**
+- **p-curve** — test_count=3 · has R-parity test · last_touched 0d ago
 - **pet-peese** — test_count=3 · has R-parity test · last_touched 0d ago

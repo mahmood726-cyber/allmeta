@@ -800,33 +800,33 @@
       "tier": 3
     },
     "influence": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 1,
+      "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "test_count=3",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "influence",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778711183,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
-        "total_size_kb": 12.82
+        "test_count": 3,
+        "total_size_kb": 20.75
       },
-      "tier": 3
+      "tier": 1
     },
     "kanban-lab": {
       "auto_tier": 3,
@@ -935,13 +935,13 @@
         "is_hub_linked": true,
         "key": "living-meta",
         "kind": "informational",
-        "last_touched_days": 16,
-        "last_touched_unix": 1777293841,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778710723,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
-        "total_size_kb": 0.86
+        "total_size_kb": 0.87
       },
       "tier": 3
     },
@@ -1271,33 +1271,33 @@
       "tier": 1
     },
     "p-curve": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 1,
+      "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "test_count=3",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "p-curve",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778711634,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
-        "total_size_kb": 15.61
+        "test_count": 3,
+        "total_size_kb": 20.5
       },
-      "tier": 3
+      "tier": 1
     },
     "pet-peese": {
       "auto_tier": 1,
@@ -1897,12 +1897,12 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:18:17Z",
+  "generated_at": "2026-05-13T22:34:20Z",
   "scanner_version": "0.1.0",
   "totals": {
-    "tier_1": 8,
+    "tier_1": 10,
     "tier_2": 1,
-    "tier_3": 53,
+    "tier_3": 51,
     "tier_4": 2,
     "tier_5": 2,
     "total": 66
