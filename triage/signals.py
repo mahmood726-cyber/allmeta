@@ -5,6 +5,7 @@ data; they fail closed (raise) only on operator error."""
 from __future__ import annotations
 from pathlib import Path
 import re
+import subprocess
 
 _STUB_PATTERNS = re.compile(
     r"\bTODO\b|\bstub\b|placeholder|REPLACE_ME|__PLACEHOLDER__|not implemented|"
@@ -53,3 +54,26 @@ def total_size_kb(app_dir: Path) -> float:
             except OSError:
                 continue
     return round(total / 1024.0, 2)
+
+
+def last_touched_unix(app_dir: Path, repo_root: Path) -> int | None:
+    """Most recent commit timestamp touching this folder. None on failure."""
+    try:
+        res = subprocess.run(
+            ["git", "log", "-1", "--format=%ct", "--", str(app_dir.relative_to(repo_root))],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, ValueError):
+        return None
+    out = (res.stdout or "").strip()
+    if not out:
+        return None
+    try:
+        return int(out)
+    except ValueError:
+        return None
