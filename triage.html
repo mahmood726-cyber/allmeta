@@ -1,0 +1,81 @@
+<!-- generated 2026-05-13T10:48:15Z · scanner v0.1.0 -->
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>allmeta triage atlas</title>
+<style>
+  body{font:14px/1.45 system-ui,sans-serif;margin:1.5rem;color:#0f172a;background:#f8fafc}
+  h1{margin:0 0 .25rem}
+  .meta{color:#475569;margin-bottom:1rem}
+  .filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+  .chip{padding:.25rem .6rem;border:1px solid #cbd5e1;border-radius:9999px;background:#fff;cursor:pointer;font-size:13px}
+  .chip.is-active{background:#0f172a;color:#fff;border-color:#0f172a}
+  table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #e2e8f0}
+  th,td{padding:.4rem .55rem;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;font-size:13px}
+  th{cursor:pointer;background:#f1f5f9}
+  td.tier-1{background:#dcfce7}
+  td.tier-2{background:#f1f5f9}
+  td.tier-3{background:#fef9c3}
+  td.tier-4{background:#fed7aa}
+  td.tier-5{background:#fecaca}
+  input[type=search]{padding:.4rem .6rem;border:1px solid #cbd5e1;border-radius:6px;width:280px}
+</style></head><body>
+<h1>allmeta triage atlas</h1>
+<div class="meta" id="meta-line"></div>
+<div class="filters">
+  <input type="search" id="q" placeholder="Search app name…">
+  <button class="chip is-active" data-tier="all">All</button>
+  <button class="chip" data-tier="1">Tier 1</button>
+  <button class="chip" data-tier="2">Tier 2</button>
+  <button class="chip" data-tier="3">Tier 3</button>
+  <button class="chip" data-tier="4">Tier 4</button>
+  <button class="chip" data-tier="5">Tier 5</button>
+</div>
+<table id="t">
+  <thead><tr>
+    <th data-k="key">App</th><th data-k="tier">Tier</th><th data-k="kind">Kind</th>
+    <th data-k="confidence">Conf</th><th>Reasons</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+<script>
+const DATA = [{"key": "rct-extractor", "tier": 4, "kind": "non-numerical", "confidence": "medium", "reasons": ["stub_count=1"]}, {"key": "local-ai", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "webr-studio", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "local-install", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "nma-global-inconsistency", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "p-curve", "tier": 4, "kind": "numerical", "confidence": "medium", "reasons": ["stub_count=1"]}, {"key": "limit-ma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "gosh-metareg", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "powerma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "cerqual", "tier": 3, "kind": "non-numerical", "confidence": "medium", "reasons": ["no tests", "no README"]}, {"key": "robins-e", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "citation-chaser", "tier": 4, "kind": "non-numerical", "confidence": "medium", "reasons": ["stub_count=1"]}, {"key": "nma-inconsistency", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "bucher", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "multilevel-ma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "pubbias-tests", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "copas", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "influence", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "bayesian-mcmc", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "mh-peto", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "thematic-synthesis", "tier": 4, "kind": "non-numerical", "confidence": "medium", "reasons": ["stub_count=4"]}, {"key": "bayesian-nma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "component-nma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "mcid", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "robins-i", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "quadas-2", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "amstar-2", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "cinema", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "hsroc", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "gosh", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "pico", "tier": 5, "kind": "non-numerical", "confidence": "medium", "reasons": ["stub_count=7 (>= 6)"]}, {"key": "prisma-checklist", "tier": 5, "kind": "non-numerical", "confidence": "medium", "reasons": ["stub_count=14 (>= 6)"]}, {"key": "search-translator", "tier": 3, "kind": "non-numerical", "confidence": "medium", "reasons": ["no tests", "no README"]}, {"key": "median-to-mean", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "rob2", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "pet-peese", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "proportion-ma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "km-reconstructor", "tier": 4, "kind": "numerical", "confidence": "medium", "reasons": ["stub_count=1"]}, {"key": "citation-dedup", "tier": 4, "kind": "non-numerical", "confidence": "medium", "reasons": ["stub_count=1"]}, {"key": "effect-size-converter", "tier": 5, "kind": "numerical", "confidence": "medium", "reasons": ["stub_count=9 (>= 6)"]}, {"key": "dosehtml", "tier": 5, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=22 (>= 6)"]}, {"key": "Truthcert1", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=42 (>= 6)", "override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete."]}, {"key": "focus-studio", "tier": 4, "kind": "non-numerical", "confidence": "high", "reasons": ["stub_count=2"]}, {"key": "kanban-lab", "tier": 4, "kind": "non-numerical", "confidence": "high", "reasons": ["stub_count=4"]}, {"key": "evidence-board", "tier": 4, "kind": "non-numerical", "confidence": "high", "reasons": ["stub_count=5"]}, {"key": "HTA", "tier": 5, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=54 (>= 6)"]}, {"key": "IPD-Meta-Pro", "tier": 5, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=115 (>= 6)"]}, {"key": "Pairwiseai", "tier": 5, "kind": "numerical", "confidence": "medium", "reasons": ["stub_count=408 (>= 6)"]}, {"key": "living-meta", "tier": 5, "kind": "numerical", "confidence": "medium", "reasons": ["missing index.html"]}, {"key": "nma-pro-v2", "tier": 5, "kind": "numerical", "confidence": "medium", "reasons": ["missing index.html"]}, {"key": "nma-dose-response-app", "tier": 5, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=86 (>= 6)"]}, {"key": "prisma-flow", "tier": 5, "kind": "non-numerical", "confidence": "high", "reasons": ["stub_count=7 (>= 6)", "override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."]}, {"key": "prisma-nma", "tier": 3, "kind": "numerical", "confidence": "medium", "reasons": ["no tests", "no R-parity test", "no README"]}, {"key": "forest-plot", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=2"]}, {"key": "funnel-plot", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}, {"key": "rob-traffic-light", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}, {"key": "heterogeneity", "tier": 3, "kind": "numerical", "confidence": "high", "reasons": ["no R-parity test", "no README"]}, {"key": "tsa", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}, {"key": "grade-sof", "tier": 5, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=12 (>= 6)"]}, {"key": "dta-sroc", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}, {"key": "workbench", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}, {"key": "meta-regression", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=2"]}, {"key": "cumulative-subgroup", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}, {"key": "webr-validator", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=3"]}, {"key": "bayesian-ma", "tier": 3, "kind": "numerical", "confidence": "high", "reasons": ["no R-parity test", "no README"]}, {"key": "prisma-screen", "tier": 4, "kind": "numerical", "confidence": "high", "reasons": ["stub_count=1"]}];
+const tbody = document.querySelector("#t tbody");
+let tier = "all", q = "", sortKey = "tier", sortDir = 1;
+function render(){
+  tbody.innerHTML = "";
+  let rows = DATA.slice().filter(r => (tier==="all" || String(r.tier)===tier)
+    && (q==="" || r.key.toLowerCase().includes(q)));
+  rows.sort((a,b) => {
+    const av = a[sortKey] ?? "", bv = b[sortKey] ?? "";
+    if (av < bv) return -1*sortDir;
+    if (av > bv) return 1*sortDir;
+    return 0;
+  });
+  for (const r of rows){
+    const tr = document.createElement("tr");
+    const tdK = document.createElement("td"); tdK.textContent = r.key;
+    const tdT = document.createElement("td"); tdT.textContent = r.tier; tdT.className = "tier-" + r.tier;
+    const tdKind = document.createElement("td"); tdKind.textContent = r.kind;
+    const tdC = document.createElement("td"); tdC.textContent = r.confidence;
+    const tdR = document.createElement("td"); tdR.textContent = (r.reasons||[]).join(" · ");
+    tr.append(tdK, tdT, tdKind, tdC, tdR);
+    tbody.appendChild(tr);
+  }
+  document.getElementById("meta-line").textContent = rows.length + " of " + DATA.length + " apps";
+}
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll(".chip").forEach(x => x.classList.remove("is-active"));
+  c.classList.add("is-active");
+  tier = c.dataset.tier;
+  render();
+}));
+document.getElementById("q").addEventListener("input", e => { q = e.target.value.toLowerCase(); render(); });
+document.querySelectorAll("th[data-k]").forEach(h => h.addEventListener("click", () => {
+  const k = h.dataset.k;
+  if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; }
+  render();
+}));
+render();
+</script>
+</body></html>

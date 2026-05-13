@@ -9,11 +9,11 @@ def test_load_overrides_good(fixtures_root):
     assert ov["prisma-flow"]["kind"] == "non-numerical"
 
 
-def test_load_overrides_empty(fixtures_root):
-    # fixtures_root = .../triage/tests/fixtures -> .parent.parent = .../triage
+def test_load_overrides_parses_live_file(fixtures_root):
+    # Smoke-test: the live triage-overrides.yaml loads without error and
+    # returns a dict (may be empty or populated as curated overrides evolve).
     ov = load_overrides(fixtures_root.parent.parent / "triage-overrides.yaml")
-    # Default file ships with apps: {}
-    assert ov == {}
+    assert isinstance(ov, dict)
 
 
 def test_load_overrides_bad_tier_fails_closed(fixtures_root):

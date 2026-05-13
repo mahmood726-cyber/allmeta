@@ -28,14 +28,67 @@ _ARRAY_RE = re.compile(r"window\.HTML_APPS_PROJECTS\s*=\s*(\[.*?\]);?\s*$", re.D
 
 
 def _js_to_json(blob: str) -> str:
-    """Best-effort JS-object-literal -> JSON. Quotes bare keys, swaps single quotes,
-    strips trailing commas before } or ]. Does not handle template literals or comments."""
+    """Best-effort JS-object-literal -> JSON. Quotes bare keys, swaps single-quoted
+    string delimiters to double quotes, strips trailing commas before } or ].
+
+    Handles the apostrophe-in-double-quoted-string case: bare apostrophes that appear
+    inside already-double-quoted JS strings (e.g. ``"Cook's distance"``) must NOT be
+    converted to double-quotes. We do a state-machine scan instead of a blanket replace.
+    Does not handle template literals.
+    """
     blob = re.sub(r"/\*.*?\*/", "", blob, flags=re.DOTALL)
     blob = re.sub(r"(^|\s)//[^\n]*", "", blob)
     blob = re.sub(r"([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:", r'\1"\2":', blob)
-    blob = blob.replace("'", '"')
+    blob = _swap_single_quoted_strings(blob)
     blob = re.sub(r",(\s*[}\]])", r"\1", blob)
     return blob
+
+
+def _swap_single_quoted_strings(blob: str) -> str:
+    """Replace single-quote string delimiters with double-quotes while leaving
+    apostrophes that appear inside double-quoted strings untouched.
+
+    Strategy: walk character by character tracking whether we are inside a
+    double-quoted string or a single-quoted string.  Only emit ``"`` for the
+    opening/closing single-quote of a single-quoted string; leave bare apostrophes
+    inside double-quoted strings as-is (they are valid JSON content).
+    """
+    result: list[str] = []
+    i = 0
+    n = len(blob)
+    in_dq = False  # inside a "..." string
+    in_sq = False  # inside a '...' string
+
+    while i < n:
+        ch = blob[i]
+
+        if ch == "\\" and (in_dq or in_sq):
+            # Escape sequence — emit as-is and skip next char
+            result.append(ch)
+            i += 1
+            if i < n:
+                result.append(blob[i])
+                i += 1
+            continue
+
+        if ch == '"' and not in_sq:
+            in_dq = not in_dq
+            result.append(ch)
+            i += 1
+            continue
+
+        if ch == "'" and not in_dq:
+            # Single-quote delimiter → emit double-quote
+            in_sq = not in_sq
+            result.append('"')
+            i += 1
+            continue
+
+        # Plain character (may be apostrophe inside a double-quoted string — keep it)
+        result.append(ch)
+        i += 1
+
+    return "".join(result)
 
 
 def load_projects(projects_js: Path) -> list[dict]:

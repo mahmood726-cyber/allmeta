@@ -1,3 +1,9 @@
 # Human always wins. auto_tier preserved in triage.json for transparency.
 # Schema: apps.<folder-name>: {tier?: 1-5, kind?: 'numerical'|'non-numerical', reason: str, expires?: ISO-date}
-apps: {}
+apps:
+  Truthcert1:
+    tier: 4
+    reason: "Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete."
+  prisma-flow:
+    kind: non-numerical
+    reason: "Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."

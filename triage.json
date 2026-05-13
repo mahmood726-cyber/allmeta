@@ -1,0 +1,1802 @@
+{
+  "apps": {
+    "HTA": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=54 (>= 6)"
+      ],
+      "signals": {
+        "category": "Health Technology Assessment",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": true,
+        "is_hub_linked": true,
+        "key": "HTA",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 54,
+        "test_count": 0,
+        "total_size_kb": 392.15
+      },
+      "tier": 5
+    },
+    "IPD-Meta-Pro": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=115 (>= 6)"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": true,
+        "is_hub_linked": true,
+        "key": "IPD-Meta-Pro",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 115,
+        "test_count": 0,
+        "total_size_kb": 4.3
+      },
+      "tier": 5
+    },
+    "Pairwiseai": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=408 (>= 6)"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "Pairwiseai",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 408,
+        "test_count": 0,
+        "total_size_kb": 1988.05
+      },
+      "tier": 5
+    },
+    "Truthcert1": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": {
+        "reason": "Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete.",
+        "tier": 4
+      },
+      "reasons": [
+        "stub_count=42 (>= 6)",
+        "override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete."
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": 1,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "Truthcert1",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 42,
+        "test_count": 0,
+        "total_size_kb": 653.16
+      },
+      "tier": 4
+    },
+    "amstar-2": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Risk of Bias",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "amstar-2",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 12.75
+      },
+      "tier": 3
+    },
+    "bayesian-ma": {
+      "auto_tier": 3,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "bayesian-ma",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 1,
+        "total_size_kb": 28.95
+      },
+      "tier": 3
+    },
+    "bayesian-mcmc": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "bayesian-mcmc",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 18.48
+      },
+      "tier": 3
+    },
+    "bayesian-nma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "bayesian-nma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 19.23
+      },
+      "tier": 3
+    },
+    "bucher": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "bucher",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 10.25
+      },
+      "tier": 3
+    },
+    "cerqual": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no README"
+      ],
+      "signals": {
+        "category": "Qualitative Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "cerqual",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 13.33
+      },
+      "tier": 3
+    },
+    "cinema": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "cinema",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.37
+      },
+      "tier": 3
+    },
+    "citation-chaser": {
+      "auto_tier": 4,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Search",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "citation-chaser",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 0,
+        "total_size_kb": 19.04
+      },
+      "tier": 4
+    },
+    "citation-dedup": {
+      "auto_tier": 4,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Screening & Extraction",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "citation-dedup",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 0,
+        "total_size_kb": 20.66
+      },
+      "tier": 4
+    },
+    "component-nma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "component-nma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.37
+      },
+      "tier": 3
+    },
+    "copas": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "copas",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.41
+      },
+      "tier": 3
+    },
+    "cumulative-subgroup": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "cumulative-subgroup",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 34.92
+      },
+      "tier": 4
+    },
+    "dosehtml": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=22 (>= 6)"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": true,
+        "is_hub_linked": true,
+        "key": "dosehtml",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 22,
+        "test_count": 1,
+        "total_size_kb": 144.92
+      },
+      "tier": 5
+    },
+    "dta-sroc": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "dta-sroc",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 23.26
+      },
+      "tier": 4
+    },
+    "effect-size-converter": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=9 (>= 6)"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "effect-size-converter",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 9,
+        "test_count": 0,
+        "total_size_kb": 32.58
+      },
+      "tier": 5
+    },
+    "evidence-board": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=5"
+      ],
+      "signals": {
+        "category": "Research Notes",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "evidence-board",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 5,
+        "test_count": 1,
+        "total_size_kb": 22.31
+      },
+      "tier": 4
+    },
+    "focus-studio": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=2"
+      ],
+      "signals": {
+        "category": "Productivity",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "focus-studio",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 2,
+        "test_count": 1,
+        "total_size_kb": 28.67
+      },
+      "tier": 4
+    },
+    "forest-plot": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=2"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "forest-plot",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 2,
+        "test_count": 1,
+        "total_size_kb": 35.61
+      },
+      "tier": 4
+    },
+    "funnel-plot": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "funnel-plot",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 29.62
+      },
+      "tier": 4
+    },
+    "gosh": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "gosh",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 12.76
+      },
+      "tier": 3
+    },
+    "gosh-metareg": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "gosh-metareg",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 13.1
+      },
+      "tier": 3
+    },
+    "grade-sof": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=12 (>= 6)"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "grade-sof",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306452,
+        "playwright_pass": null,
+        "stub_count": 12,
+        "test_count": 1,
+        "total_size_kb": 43.54
+      },
+      "tier": 5
+    },
+    "heterogeneity": {
+      "auto_tier": 3,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "heterogeneity",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 1,
+        "total_size_kb": 30.58
+      },
+      "tier": 3
+    },
+    "hsroc": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Diagnostic Test Accuracy",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "hsroc",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 16.97
+      },
+      "tier": 3
+    },
+    "influence": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "influence",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 12.82
+      },
+      "tier": 3
+    },
+    "kanban-lab": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=4"
+      ],
+      "signals": {
+        "category": "Productivity",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "kanban-lab",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 4,
+        "test_count": 1,
+        "total_size_kb": 17.57
+      },
+      "tier": 4
+    },
+    "km-reconstructor": {
+      "auto_tier": 4,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "km-reconstructor",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 0,
+        "total_size_kb": 18.06
+      },
+      "tier": 4
+    },
+    "limit-ma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "limit-ma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 12.3
+      },
+      "tier": 3
+    },
+    "living-meta": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "missing index.html"
+      ],
+      "signals": {
+        "category": "Living Meta-Analysis",
+        "featured_rank": null,
+        "has_index": false,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "living-meta",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777293841,
+        "playwright_pass": null,
+        "stub_count": 2,
+        "test_count": 0,
+        "total_size_kb": 0.0
+      },
+      "tier": 5
+    },
+    "local-ai": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "R / WASM",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "local-ai",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 12.52
+      },
+      "tier": 3
+    },
+    "local-install": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "R / WASM",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "local-install",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 13.26
+      },
+      "tier": 3
+    },
+    "mcid": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Trial Design",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "mcid",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 11.08
+      },
+      "tier": 3
+    },
+    "median-to-mean": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "median-to-mean",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.67
+      },
+      "tier": 3
+    },
+    "meta-regression": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=2"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "meta-regression",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 2,
+        "test_count": 1,
+        "total_size_kb": 32.2
+      },
+      "tier": 4
+    },
+    "mh-peto": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "mh-peto",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.51
+      },
+      "tier": 3
+    },
+    "multilevel-ma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "multilevel-ma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 17.5
+      },
+      "tier": 3
+    },
+    "nma-dose-response-app": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=86 (>= 6)"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": true,
+        "is_hub_linked": true,
+        "key": "nma-dose-response-app",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 86,
+        "test_count": 1,
+        "total_size_kb": 1874.38
+      },
+      "tier": 5
+    },
+    "nma-global-inconsistency": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "nma-global-inconsistency",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 15.06
+      },
+      "tier": 3
+    },
+    "nma-inconsistency": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "nma-inconsistency",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 19.05
+      },
+      "tier": 3
+    },
+    "nma-pro-v2": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "missing index.html"
+      ],
+      "signals": {
+        "category": "Network Meta-Analysis",
+        "featured_rank": 2,
+        "has_index": false,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "nma-pro-v2",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777295804,
+        "playwright_pass": null,
+        "stub_count": 37,
+        "test_count": 0,
+        "total_size_kb": 0.0
+      },
+      "tier": 5
+    },
+    "p-curve": {
+      "auto_tier": 4,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "p-curve",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 0,
+        "total_size_kb": 15.61
+      },
+      "tier": 4
+    },
+    "pet-peese": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "pet-peese",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 18.73
+      },
+      "tier": 3
+    },
+    "pico": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=7 (>= 6)"
+      ],
+      "signals": {
+        "category": "Planning",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "pico",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 7,
+        "test_count": 0,
+        "total_size_kb": 14.05
+      },
+      "tier": 5
+    },
+    "powerma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Trial Design",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "powerma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.66
+      },
+      "tier": 3
+    },
+    "prisma-checklist": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=14 (>= 6)"
+      ],
+      "signals": {
+        "category": "Reporting",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "prisma-checklist",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 14,
+        "test_count": 0,
+        "total_size_kb": 19.75
+      },
+      "tier": 5
+    },
+    "prisma-flow": {
+      "auto_tier": 5,
+      "confidence": "high",
+      "kind": "non-numerical",
+      "override": {
+        "kind": "non-numerical",
+        "reason": "Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
+      },
+      "reasons": [
+        "stub_count=7 (>= 6)",
+        "override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": true,
+        "is_hub_linked": true,
+        "key": "prisma-flow",
+        "kind": "numerical",
+        "last_touched_days": 18,
+        "last_touched_unix": 1777111704,
+        "playwright_pass": null,
+        "stub_count": 7,
+        "test_count": 1,
+        "total_size_kb": 26.04
+      },
+      "tier": 5
+    },
+    "prisma-nma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "prisma-nma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 25.79
+      },
+      "tier": 3
+    },
+    "prisma-screen": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "prisma-screen",
+        "kind": "numerical",
+        "last_touched_days": 18,
+        "last_touched_unix": 1777110725,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 25.66
+      },
+      "tier": 4
+    },
+    "proportion-ma": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "proportion-ma",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 19.92
+      },
+      "tier": 3
+    },
+    "pubbias-tests": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "pubbias-tests",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 15.95
+      },
+      "tier": 3
+    },
+    "quadas-2": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Risk of Bias",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "quadas-2",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 16.35
+      },
+      "tier": 3
+    },
+    "rct-extractor": {
+      "auto_tier": 4,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Screening & Extraction",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "rct-extractor",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 0,
+        "total_size_kb": 32.99
+      },
+      "tier": 4
+    },
+    "rob-traffic-light": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "rob-traffic-light",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 24.94
+      },
+      "tier": 4
+    },
+    "rob2": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Risk of Bias",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "rob2",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 18.42
+      },
+      "tier": 3
+    },
+    "robins-e": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Risk of Bias",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "robins-e",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 15.88
+      },
+      "tier": 3
+    },
+    "robins-i": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "Risk of Bias",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "robins-i",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 17.74
+      },
+      "tier": 3
+    },
+    "search-translator": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no README"
+      ],
+      "signals": {
+        "category": "Search",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "search-translator",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 14.14
+      },
+      "tier": 3
+    },
+    "thematic-synthesis": {
+      "auto_tier": 4,
+      "confidence": "medium",
+      "kind": "non-numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=4"
+      ],
+      "signals": {
+        "category": "Qualitative Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "thematic-synthesis",
+        "kind": "non-numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 4,
+        "test_count": 0,
+        "total_size_kb": 12.95
+      },
+      "tier": 4
+    },
+    "tsa": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "tsa",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 28.09
+      },
+      "tier": 4
+    },
+    "webr-studio": {
+      "auto_tier": 3,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "no tests",
+        "no R-parity test",
+        "no README"
+      ],
+      "signals": {
+        "category": "R / WASM",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "webr-studio",
+        "kind": "numerical",
+        "last_touched_days": 0,
+        "last_touched_unix": 1778664333,
+        "playwright_pass": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 26.91
+      },
+      "tier": 3
+    },
+    "webr-validator": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=3"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "webr-validator",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 3,
+        "test_count": 1,
+        "total_size_kb": 35.39
+      },
+      "tier": 4
+    },
+    "workbench": {
+      "auto_tier": 4,
+      "confidence": "high",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "stub_count=1"
+      ],
+      "signals": {
+        "category": "Evidence Synthesis",
+        "featured_rank": null,
+        "has_index": true,
+        "has_r_parity": false,
+        "has_readme": false,
+        "is_hub_linked": true,
+        "key": "workbench",
+        "kind": "numerical",
+        "last_touched_days": 15,
+        "last_touched_unix": 1777306397,
+        "playwright_pass": null,
+        "stub_count": 1,
+        "test_count": 1,
+        "total_size_kb": 33.15
+      },
+      "tier": 4
+    }
+  },
+  "generated_at": "2026-05-13T10:48:15Z",
+  "scanner_version": "0.1.0",
+  "totals": {
+    "tier_1": 0,
+    "tier_2": 0,
+    "tier_3": 34,
+    "tier_4": 20,
+    "tier_5": 12,
+    "total": 66
+  }
+}
