@@ -102,3 +102,102 @@ def render_md(records: list[dict], out_path: Path, *, scanner_version: str, now_
             lines.append(f"- {r['key']} (tier {r['tier']}) — manual review")
         lines.append("")
     out_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+_HTML_TEMPLATE = """<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>allmeta triage atlas</title>
+<style>
+  body{font:14px/1.45 system-ui,sans-serif;margin:1.5rem;color:#0f172a;background:#f8fafc}
+  h1{margin:0 0 .25rem}
+  .meta{color:#475569;margin-bottom:1rem}
+  .filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+  .chip{padding:.25rem .6rem;border:1px solid #cbd5e1;border-radius:9999px;background:#fff;cursor:pointer;font-size:13px}
+  .chip.is-active{background:#0f172a;color:#fff;border-color:#0f172a}
+  table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #e2e8f0}
+  th,td{padding:.4rem .55rem;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;font-size:13px}
+  th{cursor:pointer;background:#f1f5f9}
+  td.tier-1{background:#dcfce7}
+  td.tier-2{background:#f1f5f9}
+  td.tier-3{background:#fef9c3}
+  td.tier-4{background:#fed7aa}
+  td.tier-5{background:#fecaca}
+  input[type=search]{padding:.4rem .6rem;border:1px solid #cbd5e1;border-radius:6px;width:280px}
+</style></head><body>
+<h1>allmeta triage atlas</h1>
+<div class="meta" id="meta-line"></div>
+<div class="filters">
+  <input type="search" id="q" placeholder="Search app name…">
+  <button class="chip is-active" data-tier="all">All</button>
+  <button class="chip" data-tier="1">Tier 1</button>
+  <button class="chip" data-tier="2">Tier 2</button>
+  <button class="chip" data-tier="3">Tier 3</button>
+  <button class="chip" data-tier="4">Tier 4</button>
+  <button class="chip" data-tier="5">Tier 5</button>
+</div>
+<table id="t">
+  <thead><tr>
+    <th data-k="key">App</th><th data-k="tier">Tier</th><th data-k="kind">Kind</th>
+    <th data-k="confidence">Conf</th><th>Reasons</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+<script>
+const DATA = __DATA__;
+const tbody = document.querySelector("#t tbody");
+let tier = "all", q = "", sortKey = "tier", sortDir = 1;
+function render(){
+  tbody.innerHTML = "";
+  let rows = DATA.slice().filter(r => (tier==="all" || String(r.tier)===tier)
+    && (q==="" || r.key.toLowerCase().includes(q)));
+  rows.sort((a,b) => {
+    const av = a[sortKey] ?? "", bv = b[sortKey] ?? "";
+    if (av < bv) return -1*sortDir;
+    if (av > bv) return 1*sortDir;
+    return 0;
+  });
+  for (const r of rows){
+    const tr = document.createElement("tr");
+    const tdK = document.createElement("td"); tdK.textContent = r.key;
+    const tdT = document.createElement("td"); tdT.textContent = r.tier; tdT.className = "tier-" + r.tier;
+    const tdKind = document.createElement("td"); tdKind.textContent = r.kind;
+    const tdC = document.createElement("td"); tdC.textContent = r.confidence;
+    const tdR = document.createElement("td"); tdR.textContent = (r.reasons||[]).join(" · ");
+    tr.append(tdK, tdT, tdKind, tdC, tdR);
+    tbody.appendChild(tr);
+  }
+  document.getElementById("meta-line").textContent = rows.length + " of " + DATA.length + " apps";
+}
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll(".chip").forEach(x => x.classList.remove("is-active"));
+  c.classList.add("is-active");
+  tier = c.dataset.tier;
+  render();
+}));
+document.getElementById("q").addEventListener("input", e => { q = e.target.value.toLowerCase(); render(); });
+document.querySelectorAll("th[data-k]").forEach(h => h.addEventListener("click", () => {
+  const k = h.dataset.k;
+  if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; }
+  render();
+}));
+render();
+</script>
+</body></html>"""
+
+
+def render_html(records: list[dict], out_path: Path, *, scanner_version: str, now_iso: str) -> None:
+    data = [
+        {
+            "key": r["key"],
+            "tier": r["tier"],
+            "kind": r["kind"],
+            "confidence": r["confidence"],
+            "reasons": r.get("reasons", []),
+        }
+        for r in records
+    ]
+    blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    html = _HTML_TEMPLATE.replace("__DATA__", blob)
+    header = f"<!-- generated {now_iso} · scanner v{scanner_version} -->\n"
+    out_path.write_text(header + html, encoding="utf-8")
