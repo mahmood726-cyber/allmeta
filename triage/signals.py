@@ -29,3 +29,27 @@ def stub_count(app_dir: Path) -> int:
             continue
         n += len(_STUB_PATTERNS.findall(text))
     return n
+
+
+def has_index(app_dir: Path) -> bool:
+    return (app_dir / "index.html").is_file()
+
+
+def has_readme(app_dir: Path) -> bool:
+    return (app_dir / "README.md").is_file()
+
+
+def total_size_kb(app_dir: Path) -> float:
+    """Sum of top-level index.html + *.js + *.css. Top level only (not recursive)."""
+    if not app_dir.exists() or not app_dir.is_dir():
+        return 0.0
+    total = 0
+    for p in app_dir.iterdir():
+        if not p.is_file():
+            continue
+        if p.name == "index.html" or p.suffix.lower() in (".js", ".css"):
+            try:
+                total += p.stat().st_size
+            except OSError:
+                continue
+    return round(total / 1024.0, 2)
