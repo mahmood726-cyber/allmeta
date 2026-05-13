@@ -347,6 +347,19 @@
     pill.className = "pill " + (isNew ? "pill-new" : isServer ? "pill-server" : "pill-ready");
     pill.textContent = isNew ? "New App" : isServer ? "Needs HTTP" : "Launchable";
     head.appendChild(pill);
+    // Triage atlas — only Tier 1 is positively badged on the main grid.
+    // Tiers 2–5 stay unbadged; the improvement queue is in triage.html.
+    const triageRec = triageByKey[projectKey(project)];
+    if (triageRec && triageRec.tier === 1) {
+      const badge = document.createElement("span");
+      badge.className = "tier-badge tier-badge--validated";
+      badge.textContent = "Validated";
+      badge.tabIndex = 0;
+      const reasons = (triageRec.reasons || []).join("\n");
+      if (reasons) badge.setAttribute("data-reasons", reasons);
+      badge.setAttribute("aria-label", "Validated — " + (reasons || "tier 1"));
+      head.appendChild(badge);
+    }
     article.appendChild(head);
 
     const summary = document.createElement("p");
