@@ -2,25 +2,20 @@
 
 # allmeta runtime-health audit
 
-Generated: 2026-05-13T19:39:47Z · auditor v0.1.0 · 66 apps
+Generated: 2026-05-13T20:13:33Z · auditor v0.1.0 · 66 apps
 
 ## Summary
 
 - UNKNOWN — probe crashed (no observations): 0
 - TIMEOUT — page did not reach networkidle: 0
 - NEEDS-SERVICE — UI text indicates a backend dependency: 1
-- CONSOLE-ERRORS — non-empty console.error after noise filter: 2
+- CONSOLE-ERRORS — non-empty console.error after noise filter: 0
 - MISSING-MOUNT — no primary interactive landmark: 3
-- OK — loaded cleanly with a primary mount: 60
+- OK — loaded cleanly with a primary mount: 62
 
 ## NEEDS-SERVICE — UI text indicates a backend dependency (1)
 
 - **rct-extractor** — UI text matched: '\\bnot reachable\\b'
-
-## CONSOLE-ERRORS — non-empty console.error after noise filter (2)
-
-- **citation-dedup** — console.error: pageerror: Toast is not defined
-- **HTA** — console.error: pageerror: Identifier 'KahanSum' has already been declared · console.error: pageerror: Identifier 'EVPPICalculator' has already been declared · console.error: pageerror: Identifier 'EVSICalculator' has already been declared
 
 ## MISSING-MOUNT — no primary interactive landmark (3)
 
@@ -28,65 +23,67 @@ Generated: 2026-05-13T19:39:47Z · auditor v0.1.0 · 66 apps
 - **local-ai** — no primary mount landmark (svg/canvas/textarea/table input/action button)
 - **local-install** — no primary mount landmark (svg/canvas/textarea/table input/action button)
 
-## OK — loaded cleanly with a primary mount (60)
+## OK — loaded cleanly with a primary mount (62)
 
-- **amstar-2** — loaded in 1130 ms
-- **bayesian-ma** — loaded in 1460 ms
-- **bayesian-mcmc** — loaded in 1104 ms
-- **bayesian-nma** — loaded in 1130 ms
-- **bucher** — loaded in 1116 ms
-- **cerqual** — loaded in 1100 ms
-- **cinema** — loaded in 1125 ms
-- **citation-chaser** — loaded in 1132 ms
-- **component-nma** — loaded in 1123 ms
-- **copas** — loaded in 1139 ms
-- **cumulative-subgroup** — loaded in 1408 ms
-- **dosehtml** — loaded in 1512 ms
-- **dta-sroc** — loaded in 1448 ms
-- **effect-size-converter** — loaded in 1524 ms
-- **evidence-board** — loaded in 1399 ms
-- **forest-plot** — loaded in 1504 ms
-- **funnel-plot** — loaded in 1616 ms
-- **gosh** — loaded in 1514 ms
-- **gosh-metareg** — loaded in 1157 ms
-- **grade-sof** — loaded in 1692 ms
-- **heterogeneity** — loaded in 1462 ms
-- **hsroc** — loaded in 1121 ms
-- **influence** — loaded in 1134 ms
-- **IPD-Meta-Pro** — loaded in 1710 ms
-- **kanban-lab** — loaded in 1459 ms
-- **km-reconstructor** — loaded in 1102 ms
-- **limit-ma** — loaded in 1115 ms
-- **living-meta** — loaded in 1119 ms
-- **mcid** — loaded in 1117 ms
-- **median-to-mean** — loaded in 1106 ms
-- **meta-regression** — loaded in 1538 ms
-- **mh-peto** — loaded in 1117 ms
-- **multilevel-ma** — loaded in 1163 ms
-- **nma-dose-response-app** — loaded in 1742 ms
-- **nma-global-inconsistency** — loaded in 1123 ms
-- **nma-inconsistency** — loaded in 1115 ms
-- **nma-pro-v2** — loaded in 3453 ms
-- **p-curve** — loaded in 1118 ms
-- **Pairwiseai** — loaded in 2140 ms
-- **pet-peese** — loaded in 1357 ms
-- **pico** — loaded in 1400 ms
-- **powerma** — loaded in 1127 ms
-- **prisma-checklist** — loaded in 1424 ms
-- **prisma-flow** — loaded in 1154 ms
-- **prisma-nma** — loaded in 1549 ms
-- **prisma-screen** — loaded in 1126 ms
-- **proportion-ma** — loaded in 1110 ms
-- **pubbias-tests** — loaded in 1104 ms
-- **quadas-2** — loaded in 1119 ms
-- **rob-traffic-light** — loaded in 1461 ms
-- **rob2** — loaded in 1116 ms
-- **robins-e** — loaded in 1134 ms
-- **robins-i** — loaded in 1141 ms
-- **search-translator** — loaded in 1116 ms
-- **thematic-synthesis** — loaded in 1100 ms
-- **Truthcert1** — loaded in 3237 ms
-- **tsa** — loaded in 1485 ms
-- **webr-studio** — loaded in 1120 ms
-- **webr-validator** — loaded in 1416 ms
-- **workbench** — loaded in 1398 ms
+- **amstar-2** — loaded in 1140 ms
+- **bayesian-ma** — loaded in 1760 ms
+- **bayesian-mcmc** — loaded in 1144 ms
+- **bayesian-nma** — loaded in 1145 ms
+- **bucher** — loaded in 1159 ms
+- **cerqual** — loaded in 1118 ms
+- **cinema** — loaded in 1114 ms
+- **citation-chaser** — loaded in 1145 ms
+- **citation-dedup** — loaded in 1396 ms
+- **component-nma** — loaded in 1403 ms
+- **copas** — loaded in 1144 ms
+- **cumulative-subgroup** — loaded in 1489 ms
+- **dosehtml** — loaded in 1620 ms
+- **dta-sroc** — loaded in 1572 ms
+- **effect-size-converter** — loaded in 1587 ms
+- **evidence-board** — loaded in 1342 ms
+- **forest-plot** — loaded in 1681 ms
+- **funnel-plot** — loaded in 1548 ms
+- **gosh** — loaded in 1494 ms
+- **gosh-metareg** — loaded in 1124 ms
+- **grade-sof** — loaded in 1623 ms
+- **heterogeneity** — loaded in 1468 ms
+- **hsroc** — loaded in 1134 ms
+- **HTA** — loaded in 2432 ms
+- **influence** — loaded in 1124 ms
+- **IPD-Meta-Pro** — loaded in 1681 ms
+- **kanban-lab** — loaded in 1508 ms
+- **km-reconstructor** — loaded in 1133 ms
+- **limit-ma** — loaded in 1117 ms
+- **living-meta** — loaded in 1115 ms
+- **mcid** — loaded in 1136 ms
+- **median-to-mean** — loaded in 1123 ms
+- **meta-regression** — loaded in 1661 ms
+- **mh-peto** — loaded in 1128 ms
+- **multilevel-ma** — loaded in 1123 ms
+- **nma-dose-response-app** — loaded in 1704 ms
+- **nma-global-inconsistency** — loaded in 1119 ms
+- **nma-inconsistency** — loaded in 1114 ms
+- **nma-pro-v2** — loaded in 2389 ms
+- **p-curve** — loaded in 1131 ms
+- **Pairwiseai** — loaded in 3447 ms
+- **pet-peese** — loaded in 1474 ms
+- **pico** — loaded in 1518 ms
+- **powerma** — loaded in 1139 ms
+- **prisma-checklist** — loaded in 1446 ms
+- **prisma-flow** — loaded in 1156 ms
+- **prisma-nma** — loaded in 1534 ms
+- **prisma-screen** — loaded in 1155 ms
+- **proportion-ma** — loaded in 1154 ms
+- **pubbias-tests** — loaded in 1177 ms
+- **quadas-2** — loaded in 1128 ms
+- **rob-traffic-light** — loaded in 1462 ms
+- **rob2** — loaded in 1139 ms
+- **robins-e** — loaded in 1147 ms
+- **robins-i** — loaded in 1144 ms
+- **search-translator** — loaded in 1136 ms
+- **thematic-synthesis** — loaded in 1142 ms
+- **Truthcert1** — loaded in 2551 ms
+- **tsa** — loaded in 1450 ms
+- **webr-studio** — loaded in 1104 ms
+- **webr-validator** — loaded in 1660 ms
+- **workbench** — loaded in 1470 ms
