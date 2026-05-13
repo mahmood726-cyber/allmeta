@@ -97,3 +97,16 @@ def confidence(sig: dict) -> str:
     if informative >= 4:
         return "medium"
     return "low"
+
+
+def apply_override(record: dict, *, override: dict | None) -> dict:
+    """Mutates record in place to apply override, preserving auto_tier."""
+    if not override:
+        return record
+    if "tier" in override:
+        record["tier"] = override["tier"]
+    if "kind" in override:
+        record["kind"] = override["kind"]
+    record["override"] = dict(override)
+    record["reasons"].append(f"override applied: {override.get('reason', '')}".strip(": "))
+    return record
