@@ -1,6 +1,46 @@
 (function () {
   const projects = Array.isArray(window.HTML_APPS_PROJECTS) ? window.HTML_APPS_PROJECTS.slice() : [];
 
+  // Triage atlas — fail-open. If ./triage.json is missing, malformed, or
+  // returns an unknown major version, the hub renders exactly as it did before.
+  // Map from canonical app key (folder name) -> {tier, reasons}.
+  let triageByKey = Object.create(null);
+  const SUPPORTED_TRIAGE_MAJOR = 0;
+
+  function projectKey(project) {
+    const path = (project && project.path) || "";
+    if (!path) return "";
+    if (/^https?:/i.test(path)) {
+      try { const parts = new URL(path).pathname.split("/").filter(Boolean); return parts[parts.length - 1] || ""; }
+      catch (_) { return ""; }
+    }
+    let p = path;
+    if (p.startsWith("./")) p = p.slice(2);
+    if (p.endsWith("/index.html")) p = p.slice(0, -"/index.html".length);
+    return p.replace(/^\/+|\/+$/g, "").split("/")[0];
+  }
+
+  function loadTriage() {
+    return fetch("./triage.json", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("triage.json HTTP " + r.status); return r.json(); })
+      .then(function (payload) {
+        const ver = String(payload && payload.scanner_version || "0.0.0");
+        const major = parseInt(ver.split(".")[0], 10);
+        if (!Number.isFinite(major) || major > SUPPORTED_TRIAGE_MAJOR) {
+          console.warn("[triage] unknown major version " + ver + "; ignoring");
+          return;
+        }
+        const apps = (payload && payload.apps) || {};
+        const map = Object.create(null);
+        for (const k of Object.keys(apps)) {
+          const a = apps[k] || {};
+          map[k] = { tier: a.tier, reasons: a.reasons || [], confidence: a.confidence };
+        }
+        triageByKey = map;
+      })
+      .catch(function (err) { console.warn("[triage] fail-open:", err && err.message || err); });
+  }
+
   // Inline-SVG thumbnail set. Offline-first (no CDN), CSP-friendly.
   // Each icon is 40x40 with a viewBox of 0 0 40 40 and uses currentColor so the
   // CSS .project-thumb-* gradient backgrounds render through. Pick by
@@ -490,9 +530,17 @@
 
   readUrlState();
   updateMetrics();
+  // Initial render runs synchronously; triage is layered on top once loaded.
+  // This keeps the hub usable even on networks where ./triage.json is slow.
   createFilterButtons();
   renderFeaturedStrip();
   render();
+  loadTriage().then(function () {
+    // Re-render the parts that depend on tier data.
+    updateMetrics();
+    renderFeaturedStrip();
+    render();
+  });
 
   searchInput.addEventListener("input", onSearchInput);
   // E6: clear pending timer on pagehide so we don't fire after navigation away.
