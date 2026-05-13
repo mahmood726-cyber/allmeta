@@ -1,0 +1,7 @@
+apps:
+  Truthcert1:
+    tier: 4
+    reason: "Known stubs in app.min.js"
+  prisma-flow:
+    kind: non-numerical
+    reason: "UI tool"

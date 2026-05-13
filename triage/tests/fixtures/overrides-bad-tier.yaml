@@ -1,0 +1,4 @@
+apps:
+  foo:
+    tier: 9
+    reason: "out of range"
