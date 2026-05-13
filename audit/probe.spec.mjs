@@ -13,7 +13,9 @@ const TIMEOUT_MS = parseInt(process.env.ALM_AUDIT_TIMEOUT_MS || '30000', 10);
 // in a comma-separated string in Playwright ≥1.50 — the slash-regex form triggers
 // a CSS parse error on the whole selector.  Action buttons are handled via the
 // .or(getByRole) composition below (see _mountLocator factory).
-const MOUNT_CSS = 'svg, canvas, textarea, table input';
+// Cycle 3.3: widened to include free-standing inputs, select, and form so that
+// interactive apps like focus-studio (no svg/canvas/textarea/table) are detected.
+const MOUNT_CSS = 'svg, canvas, textarea, table input, input[type="text"], input[type="number"], input[type="search"], select, form';
 
 const NEEDS_SERVICE_PATTERNS = [
   /\bnot reachable\b/i,
@@ -58,7 +60,7 @@ for (const app of APPS) {
         // locator for action buttons.  Mixing 'button:has-text(/regex/)' in a plain
         // CSS comma-list fails in Playwright 1.60 with a CSS parse error.
         const mountLoc = page.locator(MOUNT_CSS).or(
-          page.getByRole('button', { name: /compute|run|pool|estimate|analy[sz]e|extract|score|update|render/i })
+          page.getByRole('button', { name: /compute|run|pool|estimate|analy[sz]e|extract|score|update|render|start|reset|skip|add|new|save|load|export|build|generate|fit|simulate|plot|chart|submit|apply|copy|continue|next|back|search|find|upload|download|clear|cancel|create|edit|delete|remove/i })
         );
         await mountLoc.first().waitFor({ state: 'visible', timeout: 2000 });
         mount_found = true;
