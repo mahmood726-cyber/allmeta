@@ -62,3 +62,38 @@ def assign_tier(sig: dict, *, now_unix: int) -> tuple[int, list[str]]:
 
     reasons.append("working — no flags")
     return 2, reasons
+
+
+def confidence(sig: dict) -> str:
+    """Heuristic confidence in the tier assignment. 12 signals total."""
+    informative = 0
+    if sig.get("has_index"):
+        informative += 1
+    if (sig.get("total_size_kb") or 0.0) > 0:
+        informative += 1
+    if sig.get("last_touched_unix") is not None:
+        informative += 1
+    if sig.get("is_hub_linked"):
+        informative += 1
+    if sig.get("category"):
+        informative += 1
+    if (sig.get("test_count") or 0) > 0:
+        informative += 1
+    if sig.get("has_r_parity"):
+        informative += 1
+    if sig.get("playwright_pass") is not None:
+        informative += 1
+    if sig.get("has_readme"):
+        informative += 1
+    if sig.get("kind"):
+        informative += 1
+    # stub_count is always informative (even at 0)
+    informative += 1
+    # featured_rank: count only if present
+    if sig.get("featured_rank") is not None:
+        informative += 1
+    if informative >= 8:
+        return "high"
+    if informative >= 4:
+        return "medium"
+    return "low"
