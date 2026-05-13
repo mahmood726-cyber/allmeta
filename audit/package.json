@@ -1,0 +1,11 @@
+{
+  "name": "alm-audit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "probe": "playwright test probe.spec.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.0"
+  }
+}
