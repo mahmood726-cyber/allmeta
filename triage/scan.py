@@ -21,6 +21,7 @@ def main(
     repo_root: Path,
     overrides_path: Path | None,
     playwright_report_path: Path | None,
+    runtime_health_path: Path | None = None,
     now_unix: int | None = None,
 ) -> None:
     """Orchestrate: load projects → extract signals → assign tiers → apply overrides → render artifacts.
@@ -29,6 +30,7 @@ def main(
         repo_root: path to the allmeta repo root (contains hub/ folder)
         overrides_path: path to triage-overrides.yaml (None = no overrides)
         playwright_report_path: path to playwright report JSON (None = no playwright data)
+        runtime_health_path: path to runtime-health.json (None = no runtime data; backward-compat)
         now_unix: current timestamp (Unix seconds; default = time.time())
     """
     now_unix = now_unix or int(time.time())
@@ -36,6 +38,11 @@ def main(
     overrides = load_overrides(overrides_path) if overrides_path else {}
     projects = load_projects(repo_root / "hub" / "projects.js")
     pw_report = S.load_playwright_report(playwright_report_path) if playwright_report_path else None
+    # Cycle 4.1: auto-discover runtime-health.json at repo root if not explicitly supplied.
+    if runtime_health_path is None:
+        candidate = repo_root / "runtime-health.json"
+        runtime_health_path = candidate if candidate.is_file() else None
+    rh_data = S.load_runtime_health(runtime_health_path) if runtime_health_path else None
 
     records: list[dict] = []
     for proj in projects:
@@ -49,6 +56,7 @@ def main(
             repo_root=repo_root,
             project_meta=proj,
             playwright_report=pw_report,
+            runtime_health=rh_data,
         )
 
         # Compute last_touched_days for CSV / dashboard
@@ -56,6 +64,12 @@ def main(
             sig["last_touched_days"] = (now_unix - sig["last_touched_unix"]) // 86400
         else:
             sig["last_touched_days"] = None
+
+        # Cycle 4.1: pre-apply kind override so assign_tier sees the correct kind
+        # (e.g. "informational") before runtime-health demotion rules fire.
+        app_override = overrides.get(proj["key"])
+        if app_override and "kind" in app_override:
+            sig["kind"] = app_override["kind"]
 
         tier, reasons = R.assign_tier(sig, now_unix=now_unix)
         record = {
@@ -100,12 +114,15 @@ def _cli() -> int:
                    help="path to triage-overrides.yaml (default: triage/triage-overrides.yaml)")
     p.add_argument("--playwright-report", default=None,
                    help="path to playwright report JSON (optional)")
+    p.add_argument("--runtime-health", default=None,
+                   help="path to runtime-health.json (optional; auto-discovered at repo root)")
     args = p.parse_args()
 
     main(
         repo_root=Path(args.repo_root).resolve(),
         overrides_path=Path(args.overrides).resolve() if args.overrides else None,
         playwright_report_path=Path(args.playwright_report).resolve() if args.playwright_report else None,
+        runtime_health_path=Path(args.runtime_health).resolve() if args.runtime_health else None,
     )
     print(f"OK · scanner v{SCANNER_VERSION}")
     return 0

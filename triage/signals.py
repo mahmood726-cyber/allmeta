@@ -147,6 +147,29 @@ def playwright_pass(app_key: str, report: dict | None) -> bool | None:
     return None
 
 
+def load_runtime_health(report_path: Path) -> dict | None:
+    """Load runtime-health.json produced by Cycle 3.1 auditor.
+    Returns the parsed dict on success or None on missing/malformed file."""
+    if not report_path.is_file():
+        return None
+    try:
+        return _json.loads(report_path.read_text(encoding="utf-8", errors="replace"))
+    except (OSError, ValueError):
+        return None
+
+
+def runtime_health_state(app_key: str, runtime_data: dict | None) -> str | None:
+    """Return the state string for app_key (e.g. 'OK', 'NEEDS-SERVICE') or
+    None if the app is not present in the report or report is absent."""
+    if not runtime_data:
+        return None
+    apps = runtime_data.get("apps") or {}
+    entry = apps.get(app_key)
+    if not entry:
+        return None
+    return entry.get("state") or None
+
+
 def kind_from_category(category: str | None) -> str:
     if category and category in _NON_NUMERICAL_CATEGORIES:
         return "non-numerical"
@@ -159,6 +182,7 @@ def extract_signals(
     repo_root: Path,
     project_meta: dict | None,
     playwright_report: dict | None,
+    runtime_health: dict | None = None,
 ) -> dict:
     """Compose all signals for a single app. Never raises; returns dict with
     nullable fields if a signal couldn't be computed."""
@@ -178,4 +202,5 @@ def extract_signals(
         "test_count": test_count(app_dir),
         "has_r_parity": has_r_parity(app_dir),
         "playwright_pass": playwright_pass(key, playwright_report),
+        "runtime_health": runtime_health_state(key, runtime_health),
     }

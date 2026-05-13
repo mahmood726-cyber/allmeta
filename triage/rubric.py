@@ -19,6 +19,23 @@ def assign_tier(sig: dict, *, now_unix: int) -> tuple[int, list[str]]:
         reasons.append(f"stub_count={sig['stub_count']} (>= {STUB_REBUILD_THRESHOLD})")
         return 5, reasons
 
+    # Cycle 4.1: runtime-health evidence (direct observation > static heuristics).
+    # TIMEOUT / UNKNOWN = page-load failure → Tier 5 (worse than stub heuristic).
+    # NEEDS-SERVICE / CONSOLE-ERRORS → Tier 4.
+    # MISSING-MOUNT → Tier 4 unless kind is "informational" (static info pages
+    #   legitimately have no interactive landmark).
+    rh = sig.get("runtime_health")
+    if rh in ("TIMEOUT", "UNKNOWN"):
+        reasons.append(f"runtime_health={rh}")
+        return 5, reasons
+    if rh in ("NEEDS-SERVICE", "CONSOLE-ERRORS"):
+        reasons.append(f"runtime_health={rh}")
+        return 4, reasons
+    if rh == "MISSING-MOUNT" and sig.get("kind") != "informational":
+        reasons.append("runtime_health=MISSING-MOUNT (and not informational kind)")
+        return 4, reasons
+    # rh == "OK" or rh == "MISSING-MOUNT" (informational) or rh is None → fall through
+
     if (sig["stub_count"] or 0) >= 1:
         reasons.append(f"stub_count={sig['stub_count']}")
         return 4, reasons

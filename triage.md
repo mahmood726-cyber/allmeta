@@ -2,14 +2,14 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T22:04:18Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T22:10:57Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 8
-- Tier 2 — Working: 0
-- Tier 3 — Polish needed: 52
-- Tier 4 — Hardening priority: 3
+- Tier 2 — Working: 1
+- Tier 3 — Polish needed: 49
+- Tier 4 — Hardening priority: 5
 - Tier 5 — Active rebuild: 3
 
 ## Tier 5 — Active rebuild (3)
@@ -18,13 +18,15 @@ Generated: 2026-05-13T22:04:18Z · scanner v0.1.0 · 66 apps
 - **living-meta** — missing index.html
 - **prisma-checklist** — stub_count=13 (>= 6)
 
-## Tier 4 — Hardening priority (3)
+## Tier 4 — Hardening priority (5)
 
 - **HTA** — stub_count=1
 - **p-curve** — stub_count=1
 - **Pairwiseai** — stub_count=2
+- **quadas-2** — runtime_health=MISSING-MOUNT (and not informational kind)
+- **rct-extractor** — runtime_health=NEEDS-SERVICE
 
-## Tier 3 — Polish needed (52)
+## Tier 3 — Polish needed (49)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
@@ -49,8 +51,8 @@ Generated: 2026-05-13T22:04:18Z · scanner v0.1.0 · 66 apps
 - **kanban-lab** — no README
 - **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
-- **local-ai** — no tests · no R-parity test · no README
-- **local-install** — no tests · no R-parity test · no README
+- **local-ai** — no tests · no README · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
+- **local-install** — no tests · no README · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **mcid** — no tests · no R-parity test · no README
 - **median-to-mean** — no tests · no R-parity test · no README
 - **mh-peto** — no tests · no R-parity test · no README
@@ -60,13 +62,10 @@ Generated: 2026-05-13T22:04:18Z · scanner v0.1.0 · 66 apps
 - **nma-inconsistency** — no tests · no R-parity test · no README
 - **pico** — no tests · no README
 - **powerma** — no tests · no R-parity test · no README
-- **prisma-flow** — no R-parity test · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 - **prisma-nma** — no tests · no R-parity test · no README
 - **prisma-screen** — no R-parity test · no README
 - **proportion-ma** — no tests · no R-parity test · no README
 - **pubbias-tests** — no tests · no R-parity test · no README
-- **quadas-2** — no tests · no R-parity test · no README
-- **rct-extractor** — no tests · no README
 - **rob-traffic-light** — no R-parity test · no README
 - **rob2** — no tests · no R-parity test · no README
 - **robins-e** — no tests · no R-parity test · no README
@@ -78,6 +77,10 @@ Generated: 2026-05-13T22:04:18Z · scanner v0.1.0 · 66 apps
 - **webr-studio** — no tests · no R-parity test · no README
 - **webr-validator** — no R-parity test · no README
 - **workbench** — no R-parity test · no README
+
+## Tier 2 — Working (1)
+
+- **prisma-flow** — working — no flags · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 
 ## Tier 1 — Validated (8)
 

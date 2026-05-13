@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 
 
-_ALLOWED_KINDS = {"numerical", "non-numerical"}
+_ALLOWED_KINDS = {"numerical", "non-numerical", "informational"}
 
 
 def load_overrides(yaml_path: Path) -> dict[str, dict]:

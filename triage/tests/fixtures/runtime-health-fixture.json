@@ -1,0 +1,40 @@
+{
+  "apps": {
+    "rct-extractor": {
+      "state": "NEEDS-SERVICE",
+      "confidence": "high",
+      "reasons": ["backend missing"],
+      "url": "./rct-extractor/index.html"
+    },
+    "local-ai": {
+      "state": "MISSING-MOUNT",
+      "confidence": "medium",
+      "reasons": ["no mount point found"],
+      "url": "./local-ai/index.html"
+    },
+    "broken-page": {
+      "state": "TIMEOUT",
+      "confidence": "high",
+      "reasons": ["page load timed out"],
+      "url": "./broken-page/index.html"
+    },
+    "error-page": {
+      "state": "CONSOLE-ERRORS",
+      "confidence": "high",
+      "reasons": ["console errors detected"],
+      "url": "./error-page/index.html"
+    },
+    "unknown-page": {
+      "state": "UNKNOWN",
+      "confidence": "low",
+      "reasons": ["probe crashed"],
+      "url": "./unknown-page/index.html"
+    },
+    "good-app": {
+      "state": "OK",
+      "confidence": "high",
+      "reasons": ["loaded in 1200 ms"],
+      "url": "./good-app/index.html"
+    }
+  }
+}

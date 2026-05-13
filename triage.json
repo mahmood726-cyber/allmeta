@@ -20,6 +20,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778703164,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 1,
         "test_count": 0,
         "total_size_kb": 392.15
@@ -46,6 +47,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 68,
         "test_count": 0,
         "total_size_kb": 4.3
@@ -72,6 +74,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 2,
         "test_count": 0,
         "total_size_kb": 1988.05
@@ -100,6 +103,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 653.16
@@ -128,6 +132,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.75
@@ -155,6 +160,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 28.95
@@ -183,6 +189,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 18.48
@@ -211,6 +218,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 19.23
@@ -239,6 +247,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 10.25
@@ -266,6 +275,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 13.33
@@ -294,6 +304,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.37
@@ -321,6 +332,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 19.04
@@ -348,6 +360,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778703164,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 21.86
@@ -376,6 +389,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.37
@@ -404,6 +418,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.41
@@ -431,6 +446,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 34.92
@@ -457,6 +473,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 144.92
@@ -485,6 +502,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778709422,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 4,
         "total_size_kb": 30.95
@@ -515,6 +533,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778706067,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 41.67
@@ -541,6 +560,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 22.31
@@ -567,6 +587,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 28.67
@@ -595,6 +616,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778683790,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 4,
         "total_size_kb": 42.74
@@ -623,6 +645,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778684279,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 4,
         "total_size_kb": 37.39
@@ -651,6 +674,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.76
@@ -679,6 +703,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 13.1
@@ -706,6 +731,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306452,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 43.54
@@ -734,6 +760,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778709422,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 4,
         "total_size_kb": 37.77
@@ -762,6 +789,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 16.97
@@ -790,6 +818,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.82
@@ -816,6 +845,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 17.57
@@ -844,6 +874,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 18.06
@@ -872,6 +903,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.3
@@ -898,6 +930,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777293841,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 0.0
@@ -907,12 +940,15 @@
     "local-ai": {
       "auto_tier": 3,
       "confidence": "medium",
-      "kind": "numerical",
-      "override": null,
+      "kind": "informational",
+      "override": {
+        "kind": "informational",
+        "reason": "Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
+      },
       "reasons": [
         "no tests",
-        "no R-parity test",
-        "no README"
+        "no README",
+        "override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
         "category": "R / WASM",
@@ -922,10 +958,11 @@
         "has_readme": false,
         "is_hub_linked": true,
         "key": "local-ai",
-        "kind": "numerical",
+        "kind": "informational",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.52
@@ -935,12 +972,15 @@
     "local-install": {
       "auto_tier": 3,
       "confidence": "medium",
-      "kind": "numerical",
-      "override": null,
+      "kind": "informational",
+      "override": {
+        "kind": "informational",
+        "reason": "Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
+      },
       "reasons": [
         "no tests",
-        "no R-parity test",
-        "no README"
+        "no README",
+        "override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
         "category": "R / WASM",
@@ -950,10 +990,11 @@
         "has_readme": false,
         "is_hub_linked": true,
         "key": "local-install",
-        "kind": "numerical",
+        "kind": "informational",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 13.26
@@ -982,6 +1023,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 11.08
@@ -1010,6 +1052,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.67
@@ -1038,6 +1081,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778683790,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 4,
         "total_size_kb": 42.56
@@ -1066,6 +1110,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.51
@@ -1094,6 +1139,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 17.5
@@ -1120,6 +1166,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 1874.38
@@ -1148,6 +1195,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 15.06
@@ -1176,6 +1224,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 19.05
@@ -1206,6 +1255,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778708442,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 3.32
@@ -1232,6 +1282,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 1,
         "test_count": 0,
         "total_size_kb": 15.61
@@ -1260,6 +1311,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778709422,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 24.54
@@ -1287,6 +1339,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.05
@@ -1315,6 +1368,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.66
@@ -1341,6 +1395,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 13,
         "test_count": 0,
         "total_size_kb": 19.75
@@ -1348,7 +1403,7 @@
       "tier": 5
     },
     "prisma-flow": {
-      "auto_tier": 3,
+      "auto_tier": 2,
       "confidence": "high",
       "kind": "non-numerical",
       "override": {
@@ -1356,7 +1411,7 @@
         "reason": "Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
       },
       "reasons": [
-        "no R-parity test",
+        "working — no flags",
         "override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
       ],
       "signals": {
@@ -1367,15 +1422,16 @@
         "has_readme": true,
         "is_hub_linked": true,
         "key": "prisma-flow",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 18,
         "last_touched_unix": 1777111704,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 26.04
       },
-      "tier": 3
+      "tier": 2
     },
     "prisma-nma": {
       "auto_tier": 3,
@@ -1399,6 +1455,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 25.79
@@ -1426,6 +1483,7 @@
         "last_touched_days": 18,
         "last_touched_unix": 1777110725,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 25.66
@@ -1454,6 +1512,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 19.92
@@ -1482,6 +1541,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 15.95
@@ -1489,14 +1549,12 @@
       "tier": 3
     },
     "quadas-2": {
-      "auto_tier": 3,
+      "auto_tier": 4,
       "confidence": "medium",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "runtime_health=MISSING-MOUNT (and not informational kind)"
       ],
       "signals": {
         "category": "Risk of Bias",
@@ -1510,20 +1568,20 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 16.35
       },
-      "tier": 3
+      "tier": 4
     },
     "rct-extractor": {
-      "auto_tier": 3,
+      "auto_tier": 4,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "runtime_health=NEEDS-SERVICE"
       ],
       "signals": {
         "category": "Screening & Extraction",
@@ -1537,11 +1595,12 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "NEEDS-SERVICE",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 32.99
       },
-      "tier": 3
+      "tier": 4
     },
     "rob-traffic-light": {
       "auto_tier": 3,
@@ -1564,6 +1623,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 24.94
@@ -1592,6 +1652,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 18.42
@@ -1620,6 +1681,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 15.88
@@ -1648,6 +1710,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 17.74
@@ -1675,6 +1738,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 14.14
@@ -1702,6 +1766,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.95
@@ -1729,6 +1794,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 28.09
@@ -1757,6 +1823,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 26.91
@@ -1784,6 +1851,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 35.39
@@ -1811,6 +1879,7 @@
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 33.15
@@ -1818,13 +1887,13 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:04:18Z",
+  "generated_at": "2026-05-13T22:10:57Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 8,
-    "tier_2": 0,
-    "tier_3": 52,
-    "tier_4": 3,
+    "tier_2": 1,
+    "tier_3": 49,
+    "tier_4": 5,
     "tier_5": 3,
     "total": 66
   }
