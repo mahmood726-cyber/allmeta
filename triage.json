@@ -914,31 +914,36 @@
       "tier": 3
     },
     "living-meta": {
-      "auto_tier": 5,
+      "auto_tier": 3,
       "confidence": "medium",
-      "kind": "numerical",
-      "override": null,
+      "kind": "informational",
+      "override": {
+        "kind": "informational",
+        "reason": "Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
+      },
       "reasons": [
-        "missing index.html"
+        "no tests",
+        "no README",
+        "override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
       ],
       "signals": {
         "category": "Living Meta-Analysis",
         "featured_rank": null,
-        "has_index": false,
+        "has_index": true,
         "has_r_parity": false,
         "has_readme": false,
         "is_hub_linked": true,
         "key": "living-meta",
-        "kind": "numerical",
+        "kind": "informational",
         "last_touched_days": 16,
         "last_touched_unix": 1777293841,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
-        "total_size_kb": 0.0
+        "total_size_kb": 0.86
       },
-      "tier": 5
+      "tier": 3
     },
     "local-ai": {
       "auto_tier": 3,
@@ -1892,14 +1897,14 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:15:04Z",
+  "generated_at": "2026-05-13T22:18:17Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 8,
     "tier_2": 1,
-    "tier_3": 52,
+    "tier_3": 53,
     "tier_4": 2,
-    "tier_5": 3,
+    "tier_5": 2,
     "total": 66
   }
 }

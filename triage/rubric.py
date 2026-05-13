@@ -42,7 +42,7 @@ def assign_tier(sig: dict, *, now_unix: int) -> tuple[int, list[str]]:
     if sig["playwright_pass"] is False:
         reasons.append("playwright failing")
         return 4, reasons
-    if (sig["total_size_kb"] or 0.0) < MIN_VALIDATED_SIZE_KB:
+    if (sig["total_size_kb"] or 0.0) < MIN_VALIDATED_SIZE_KB and sig.get("kind") != "informational":
         reasons.append(f"total_size_kb={sig['total_size_kb']} (< {MIN_VALIDATED_SIZE_KB})")
         return 4, reasons
 

@@ -2,20 +2,19 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T22:15:04Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T22:18:17Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 8
 - Tier 2 — Working: 1
-- Tier 3 — Polish needed: 52
+- Tier 3 — Polish needed: 53
 - Tier 4 — Hardening priority: 2
-- Tier 5 — Active rebuild: 3
+- Tier 5 — Active rebuild: 2
 
-## Tier 5 — Active rebuild (3)
+## Tier 5 — Active rebuild (2)
 
 - **IPD-Meta-Pro** — stub_count=64 (>= 6)
-- **living-meta** — missing index.html
 - **prisma-checklist** — stub_count=13 (>= 6)
 
 ## Tier 4 — Hardening priority (2)
@@ -23,7 +22,7 @@ Generated: 2026-05-13T22:15:04Z · scanner v0.1.0 · 66 apps
 - **quadas-2** — runtime_health=MISSING-MOUNT (and not informational kind)
 - **rct-extractor** — runtime_health=NEEDS-SERVICE
 
-## Tier 3 — Polish needed (52)
+## Tier 3 — Polish needed (53)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
@@ -49,6 +48,7 @@ Generated: 2026-05-13T22:15:04Z · scanner v0.1.0 · 66 apps
 - **kanban-lab** — no README
 - **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
+- **living-meta** — no tests · no README · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
 - **local-ai** — no tests · no README · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **local-install** — no tests · no README · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **mcid** — no tests · no R-parity test · no README
