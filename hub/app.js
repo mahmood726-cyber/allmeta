@@ -422,8 +422,18 @@
     // Featured cards render in array order, but `featuredRank` (lower first)
     // overrides — lets us pin the canonical anchor app at position 1 without
     // having to physically move it in projects.js.
+    // Triage atlas teeth: a project is featured if it's Tier 1 OR has an explicit
+    // featured=true flag in projects.js (backward compat for when triage.json is
+    // missing or hasn't been generated yet).
+    function isFeatured(p) {
+      const t = (triageByKey[projectKey(p)] || {}).tier;
+      if (t === 1) return true;
+      // No triage data for this app? Fall back to legacy featured flag.
+      if (t == null && p.featured) return true;
+      return false;
+    }
     const featured = projects
-      .filter((p) => p.featured && p.mode !== "server")
+      .filter((p) => isFeatured(p) && p.mode !== "server")
       .map((p, i) => ({ p, i }))
       .sort((a, b) => {
         const ra = (a.p.featuredRank == null) ? 99 : a.p.featuredRank;
