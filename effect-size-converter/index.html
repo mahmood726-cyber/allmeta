@@ -74,6 +74,15 @@
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.2 shared UX modules:
+       wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+       skipped: chart-download (no pre-existing download; inline SVG is read-only display) -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -174,6 +183,10 @@
         <button type="button" id="btn-derive" class="primary">Derive & fill SE</button>
       </fieldset>
 
+      <!-- csv-upload mount: SMD-from-means batch input (m1,sd1,n1,m2,sd2,n2) -->
+      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
+      <!-- reset-undo mount: Undo stack + dialog-confirmed Clear -->
+      <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;"></div>
       <button type="button" id="btn-convert" class="primary" style="width:100%; margin-top:0.5rem">Convert</button>
     </section>
 
@@ -196,11 +209,15 @@
         </svg>
         <p class="note">All conversions are mapped to the SMD scale for visual comparison (binary ratios converted via Cox's constant √3/π ≈ 0.5513). The plot area is always rendered so automated checks can confirm the canvas is live; the dot + whisker show each scale's estimate with its 95% CI after conversion.</p>
       </div>
+      <!-- axis-controls mount: axis range for the SMD forest plot (override deferred — renders, no-op) -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem;"></div>
+      <!-- results-export mount: CSV + JSON export of the conversion table -->
+      <div id="alm-export-mount" style="margin-top:0.5rem;"></div>
       <div id="ai-host"></div>
     </section>
   </main>
   <footer>
-    Formulas follow Borenstein et al., <em>Introduction to Meta-Analysis</em> (Wiley, 2009). Cox constant <code>√3/π ≈ 0.5513</code>. HR → OR approximation valid only when event rate is low and follow-up balanced. Hedges' <em>g</em> correction applied when df is known.
+    Formulas follow Borenstein et al., <em>Introduction to Meta-Analysis</em> (Wiley, 2009). Cox constant <code>√3/π ≈ 0.5513</code>. <abbr data-gloss="HR">HR</abbr> → <abbr data-gloss="OR">OR</abbr> approximation valid only when event rate is low and follow-up balanced. Hedges' <em>g</em> correction applied when df is known. Effect sizes: <abbr data-gloss="SMD">SMD</abbr>, <abbr data-gloss="RR">RR</abbr>, <abbr data-gloss="RD">RD</abbr>, <abbr data-gloss="OR">OR</abbr>. <abbr data-gloss="CI">CI</abbr> = 95% confidence interval; <abbr data-gloss="Effect">SE</abbr> = standard error on the log scale for ratios.
   </footer>
   <script>
     // --- math helpers ---
@@ -625,6 +642,184 @@
       document.body.prepend(banner);
       console.error("[effect-size-converter init]", initErr);
     }
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.2 shared UX modules. Wire-in per RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+  //   skipped: chart-download (no pre-existing download; inline SVG is read-only display)
+  // Adapter shims map to the existing engine without changing math.
+  // Deferred: axis-controls renders but does not drive the forest plot X domain —
+  //   renderForest() auto-computes its domain; wiring lo/hi overrides deferred to a future cycle.
+  // CSV upload: SMD-from-means only (m1,sd1,n1,m2,sd2,n2). Multi-mode CSV would
+  //   require mode-detection; single-mode covers the most common academic use case.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims --------------------------------------------------
+
+    // Snapshot: capture every relevant form field into a flat object.
+    window.__almSnapshot = function () {
+      var ids = ['in-type','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-n2','der-p','der-pointabs',
+                 'der-lo','der-hi','der-scale'];
+      var snap = {};
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) snap[id] = el.value;
+      });
+      return snap;
+    };
+
+    // Restore: apply snapshot back to form controls and re-render.
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ids = ['in-type','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-n2','der-p','der-pointabs',
+                 'der-lo','der-hi','der-scale'];
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (isEmpty) {
+          // restore defaults by clearing derive fields; keep type/est at current
+          if (['der-t','der-n1','der-f','der-n2','der-p','der-pointabs','der-lo','der-hi'].includes(id)) el.value = '';
+        } else {
+          if (snap[id] != null) el.value = snap[id];
+        }
+      });
+      if (typeof runConvert === 'function') runConvert();
+    };
+
+    // Return the current conversion table rows as a results object.
+    window.__almResults = function () {
+      var type = (document.getElementById('in-type') || {}).value || '';
+      var est  = parseFloat((document.getElementById('in-est') || {}).value);
+      var se   = parseFloat((document.getElementById('in-se')  || {}).value);
+      var rows = document.querySelectorAll('#results-body tr');
+      var tableRows = [];
+      rows.forEach(function (tr) {
+        var cells = tr.querySelectorAll('td');
+        if (cells.length >= 4) {
+          tableRows.push({
+            scale: cells[0].textContent,
+            point: cells[1].textContent,
+            se:    cells[2].textContent,
+            ci95:  cells[3].textContent,
+          });
+        }
+      });
+      return {
+        _schema: 'esc-results-v1',
+        type: type,
+        input_estimate: isFinite(est) ? est : null,
+        input_se: isFinite(se) ? se : null,
+        rows: tableRows,
+      };
+    };
+
+    // CSV-upload onParse: set type to SMD, populate means/SD derive fields,
+    // run Derive then Convert for the first row.
+    window.__almLoadCSV = function (rows) {
+      if (!rows || rows.length === 0) return;
+      window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+      var r = rows[0];
+      var set = function (id, v) {
+        var el = document.getElementById(id);
+        if (el && v != null && String(v) !== '') el.value = String(v);
+      };
+      // Switch to SMD mode for means-based input
+      set('in-type', 'SMD');
+      // Place group stats into the derive-SE section (n1, n2 already used by t/F derivation)
+      // We compute the SMD ourselves and put it directly into in-est + in-se via escalc formula.
+      var m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), n1 = parseInt(r.n1, 10);
+      var m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2), n2 = parseInt(r.n2, 10);
+      if ([m1,sd1,n1,m2,sd2,n2].every(isFinite) && n1 > 1 && n2 > 1 && sd1 > 0 && sd2 > 0) {
+        var df = n1 + n2 - 2;
+        var Sp = Math.sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / df);
+        var d  = (m1 - m2) / Sp;
+        var J  = 1 - 3 / (4 * df - 1);  // Hedges correction
+        var g  = d * J;
+        var vi = (n1 + n2) / (n1 * n2) + g * g / (2 * df);
+        var se = Math.sqrt(vi);
+        set('in-est', g.toFixed(6));
+        set('in-se',  se.toFixed(6));
+        // Also populate n1/n2 for Hedges' g branch in convert()
+        set('der-n1', String(n1));
+        set('der-n2', String(n2));
+        if (typeof runConvert === 'function') runConvert();
+      }
+    };
+
+    // ---- module init -----------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'm1',  required: true,  type: 'float',  example: '52.5' },
+        { name: 'sd1', required: true,  type: 'float',  example: '8.2'  },
+        { name: 'n1',  required: true,  type: 'float',  example: '30'   },
+        { name: 'm2',  required: true,  type: 'float',  example: '47.1' },
+        { name: 'sd2', required: true,  type: 'float',  example: '7.9'  },
+        { name: 'n2',  required: true,  type: 'float',  example: '30'   },
+      ],
+      onParse: function (result) {
+        window.__almLoadCSV(result.rows);
+      },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [{ key: 'x', label: 'Forest X axis (SMD scale)', range: [null, null], log: false }],
+      onChange: function (state) {
+        window.__almAxis = state;
+        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
+        // renderForest() domain — auto-computed from xPad = maxAbs * 1.15.
+        // Wiring lo/hi requires threading overrides through renderForest(); deferred.
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'effect-size-converter-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    } else {
+      // Write initial state so page link is shareable immediately.
+      if (window.__almSnapshot) {
+        window.alm.urlState.write(window.__almSnapshot());
+      }
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      root: document.body,
+      glossaryUrl: '../hub/shared/glossary.json',
+    });
+
+    // Update URL state after every conversion so the link stays shareable.
+    var _origRunConvert = (typeof runConvert === 'function') ? runConvert : null;
+    // Intercept the Convert button to snapshot + write URL after each run.
+    var btnConvert = document.getElementById('btn-convert');
+    if (btnConvert) {
+      btnConvert.addEventListener('click', function () {
+        if (window.alm && window.alm.urlState && window.__almSnapshot) {
+          window.alm.urlState.write(window.__almSnapshot());
+        }
+      });
+    }
+  })();
   </script>
 </body>
 </html>
