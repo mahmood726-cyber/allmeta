@@ -2,13 +2,13 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T22:43:52Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T22:47:43Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 10
-- Tier 2 — Working: 13
-- Tier 3 — Polish needed: 39
+- Tier 2 — Working: 20
+- Tier 3 — Polish needed: 32
 - Tier 4 — Hardening priority: 2
 - Tier 5 — Active rebuild: 2
 
@@ -22,9 +22,8 @@ Generated: 2026-05-13T22:43:52Z · scanner v0.1.0 · 66 apps
 - **quadas-2** — runtime_health=MISSING-MOUNT (and not informational kind)
 - **rct-extractor** — runtime_health=NEEDS-SERVICE
 
-## Tier 3 — Polish needed (39)
+## Tier 3 — Polish needed (32)
 
-- **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
 - **bayesian-mcmc** — no tests · no R-parity test · no README
 - **bayesian-nma** — no tests · no R-parity test · no README
@@ -41,7 +40,6 @@ Generated: 2026-05-13T22:43:52Z · scanner v0.1.0 · 66 apps
 - **HTA** — no tests · no R-parity test
 - **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
-- **mcid** — no tests · no R-parity test · no README
 - **median-to-mean** — no tests · no R-parity test · no README
 - **mh-peto** — no tests · no R-parity test · no README
 - **multilevel-ma** — no tests · no R-parity test · no README
@@ -49,23 +47,19 @@ Generated: 2026-05-13T22:43:52Z · scanner v0.1.0 · 66 apps
 - **nma-global-inconsistency** — no tests · no R-parity test · no README
 - **nma-inconsistency** — no tests · no R-parity test · no README
 - **Pairwiseai** — no tests · no R-parity test · no README
-- **powerma** — no tests · no R-parity test · no README
 - **prisma-nma** — no tests · no R-parity test · no README
 - **prisma-screen** — no R-parity test · no README
 - **proportion-ma** — no tests · no R-parity test · no README
 - **pubbias-tests** — no tests · no R-parity test · no README
-- **rob-traffic-light** — no R-parity test · no README
-- **rob2** — no tests · no R-parity test · no README
-- **robins-e** — no tests · no R-parity test · no README
-- **robins-i** — no tests · no R-parity test · no README
 - **Truthcert1** — no tests · no R-parity test · no README
 - **tsa** — no R-parity test · no README
 - **webr-studio** — no tests · no R-parity test · no README
 - **webr-validator** — no R-parity test · no README
 - **workbench** — no R-parity test · no README
 
-## Tier 2 — Working (13)
+## Tier 2 — Working (20)
 
+- **amstar-2** — working — no flags
 - **cerqual** — working — no flags
 - **citation-chaser** — working — no flags
 - **citation-dedup** — working — no flags
@@ -75,8 +69,14 @@ Generated: 2026-05-13T22:43:52Z · scanner v0.1.0 · 66 apps
 - **living-meta** — working — no flags · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
 - **local-ai** — working — no flags · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **local-install** — working — no flags · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
+- **mcid** — working — no flags
 - **pico** — working — no flags
+- **powerma** — working — no flags
 - **prisma-flow** — working — no flags · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
+- **rob-traffic-light** — working — no flags · override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical. · **override**
+- **rob2** — working — no flags
+- **robins-e** — working — no flags
+- **robins-i** — working — no flags
 - **search-translator** — working — no flags
 - **thematic-synthesis** — working — no flags
 

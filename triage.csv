@@ -7,9 +7,9 @@ nma-global-inconsistency,3,3,numerical,medium,0,0,False,0,15.06,True,,no tests |
 p-curve,1,1,numerical,high,0,3,True,0,20.88,True,,test_count=3 | has R-parity test | last_touched 0d ago
 limit-ma,3,3,numerical,medium,0,0,False,0,12.3,True,,no tests | no R-parity test | no README
 gosh-metareg,3,3,numerical,medium,0,0,False,0,13.1,True,,no tests | no R-parity test | no README
-powerma,3,3,numerical,medium,0,0,False,0,14.66,True,,no tests | no R-parity test | no README
+powerma,2,2,non-numerical,high,0,1,False,0,14.66,True,,working — no flags
 cerqual,2,2,non-numerical,high,0,1,False,0,13.33,True,,working — no flags
-robins-e,3,3,numerical,medium,0,0,False,0,15.88,True,,no tests | no R-parity test | no README
+robins-e,2,2,non-numerical,high,0,1,False,0,15.88,True,,working — no flags
 citation-chaser,2,2,non-numerical,high,0,1,False,0,19.04,True,,working — no flags
 nma-inconsistency,3,3,numerical,medium,0,0,False,0,19.05,True,,no tests | no R-parity test | no README
 bucher,3,3,numerical,medium,0,0,False,0,10.25,True,,no tests | no R-parity test | no README
@@ -22,10 +22,10 @@ mh-peto,3,3,numerical,medium,0,0,False,0,14.51,True,,no tests | no R-parity test
 thematic-synthesis,2,2,non-numerical,high,0,1,False,0,12.95,True,,working — no flags
 bayesian-nma,3,3,numerical,medium,0,0,False,0,19.23,True,,no tests | no R-parity test | no README
 component-nma,3,3,numerical,medium,0,0,False,0,14.37,True,,no tests | no R-parity test | no README
-mcid,3,3,numerical,medium,0,0,False,0,11.08,True,,no tests | no R-parity test | no README
-robins-i,3,3,numerical,medium,0,0,False,0,17.74,True,,no tests | no R-parity test | no README
-quadas-2,4,4,numerical,medium,0,0,False,0,16.35,True,,runtime_health=MISSING-MOUNT (and not informational kind)
-amstar-2,3,3,numerical,medium,0,0,False,0,12.75,True,,no tests | no R-parity test | no README
+mcid,2,2,non-numerical,high,0,1,False,0,11.08,True,,working — no flags
+robins-i,2,2,non-numerical,high,0,1,False,0,17.74,True,,working — no flags
+quadas-2,4,4,non-numerical,medium,0,0,False,0,16.35,True,,runtime_health=MISSING-MOUNT (and not informational kind)
+amstar-2,2,2,non-numerical,high,0,1,False,0,12.75,True,,working — no flags
 cinema,3,3,numerical,medium,0,0,False,0,14.37,True,,no tests | no R-parity test | no README
 hsroc,3,3,numerical,medium,0,0,False,0,16.97,True,,no tests | no R-parity test | no README
 gosh,3,3,numerical,medium,0,0,False,0,12.76,True,,no tests | no R-parity test | no README
@@ -33,7 +33,7 @@ pico,2,2,non-numerical,high,0,1,False,0,14.05,True,,working — no flags
 prisma-checklist,5,5,non-numerical,medium,13,0,False,0,19.75,True,,stub_count=13 (>= 6)
 search-translator,2,2,non-numerical,high,0,1,False,0,14.14,True,,working — no flags
 median-to-mean,3,3,numerical,medium,0,0,False,0,14.67,True,,no tests | no R-parity test | no README
-rob2,3,3,numerical,medium,0,0,False,0,18.42,True,,no tests | no R-parity test | no README
+rob2,2,2,non-numerical,high,0,1,False,0,18.42,True,,working — no flags
 pet-peese,1,1,numerical,high,0,3,True,0,24.54,True,,test_count=3 | has R-parity test | last_touched 0d ago
 proportion-ma,3,3,numerical,medium,0,0,False,0,19.92,True,,no tests | no R-parity test | no README
 km-reconstructor,3,3,numerical,medium,0,0,False,0,18.06,True,,no tests | no R-parity test | no README
@@ -54,7 +54,7 @@ prisma-flow,2,2,non-numerical,high,0,1,False,18,26.04,True,,working — no flags
 prisma-nma,3,3,numerical,medium,0,0,False,0,25.79,True,,no tests | no R-parity test | no README
 forest-plot,1,1,numerical,high,0,4,True,0,42.74,True,,test_count=4 | has R-parity test | last_touched 0d ago
 funnel-plot,1,1,numerical,high,0,4,True,0,37.39,True,,test_count=4 | has R-parity test | last_touched 0d ago
-rob-traffic-light,3,3,numerical,high,0,1,False,16,24.94,True,,no R-parity test | no README
+rob-traffic-light,2,2,non-numerical,high,0,2,False,16,24.94,True,,working — no flags | override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical.
 heterogeneity,1,1,numerical,high,0,4,True,0,37.77,True,,test_count=4 | has R-parity test | last_touched 0d ago
 tsa,3,3,numerical,high,0,1,False,16,28.09,True,,no R-parity test | no README
 grade-sof,3,3,numerical,high,0,1,False,16,43.54,True,,no R-parity test | no README

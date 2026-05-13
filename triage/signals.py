@@ -129,6 +129,15 @@ def has_r_parity(app_dir: Path) -> bool:
 _NON_NUMERICAL_CATEGORIES = {
     "Reporting", "Screening & Extraction", "Search", "Planning",
     "Productivity", "Research Notes", "Qualitative Synthesis",
+    # Cycle 5.3: RoB tools are visual/qualitative assessments — no numerical
+    # pooling engine to validate against R. Adding here so apps like amstar-2,
+    # quadas-2, rob2, robins-i, robins-e don't get demoted to Tier 3 for
+    # missing an inapplicable R-parity test.
+    "Risk of Bias",
+    # Trial Design tools (mcid, powerma) are calculators with closed-form
+    # solutions, not pooling engines. They have their own validation needs
+    # but R-parity vs metafor is not the right benchmark.
+    "Trial Design",
 }
 
 

@@ -114,33 +114,31 @@
       "tier": 3
     },
     "amstar-2": {
-      "auto_tier": 3,
-      "confidence": "medium",
-      "kind": "numerical",
+      "auto_tier": 2,
+      "confidence": "high",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Risk of Bias",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "amstar-2",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 12.75
       },
-      "tier": 3
+      "tier": 2
     },
     "bayesian-ma": {
       "auto_tier": 3,
@@ -275,7 +273,7 @@
         "key": "cerqual",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -331,7 +329,7 @@
         "key": "citation-chaser",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -358,7 +356,7 @@
         "key": "citation-dedup",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778703164,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -558,7 +556,7 @@
         "key": "evidence-board",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -585,7 +583,7 @@
         "key": "focus-studio",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -843,7 +841,7 @@
         "key": "kanban-lab",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -932,7 +930,7 @@
         "key": "living-meta",
         "kind": "informational",
         "last_touched_days": 0,
-        "last_touched_unix": 1778710723,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -963,7 +961,7 @@
         "key": "local-ai",
         "kind": "informational",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
@@ -994,7 +992,7 @@
         "key": "local-install",
         "kind": "informational",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -1004,33 +1002,31 @@
       "tier": 2
     },
     "mcid": {
-      "auto_tier": 3,
-      "confidence": "medium",
-      "kind": "numerical",
+      "auto_tier": 2,
+      "confidence": "high",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Trial Design",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "mcid",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 11.08
       },
-      "tier": 3
+      "tier": 2
     },
     "median-to-mean": {
       "auto_tier": 3,
@@ -1340,7 +1336,7 @@
         "key": "pico",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -1350,33 +1346,31 @@
       "tier": 2
     },
     "powerma": {
-      "auto_tier": 3,
-      "confidence": "medium",
-      "kind": "numerical",
+      "auto_tier": 2,
+      "confidence": "high",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Trial Design",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "powerma",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 14.66
       },
-      "tier": 3
+      "tier": 2
     },
     "prisma-checklist": {
       "auto_tier": 5,
@@ -1554,7 +1548,7 @@
     "quadas-2": {
       "auto_tier": 4,
       "confidence": "medium",
-      "kind": "numerical",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
         "runtime_health=MISSING-MOUNT (and not informational kind)"
@@ -1567,7 +1561,7 @@
         "has_readme": false,
         "is_hub_linked": true,
         "key": "quadas-2",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
@@ -1606,119 +1600,116 @@
       "tier": 4
     },
     "rob-traffic-light": {
-      "auto_tier": 3,
+      "auto_tier": 2,
       "confidence": "high",
-      "kind": "numerical",
-      "override": null,
+      "kind": "non-numerical",
+      "override": {
+        "kind": "non-numerical",
+        "reason": "Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical."
+      },
       "reasons": [
-        "no R-parity test",
-        "no README"
+        "working — no flags",
+        "override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical."
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "rob-traffic-light",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 2,
         "total_size_kb": 24.94
       },
-      "tier": 3
+      "tier": 2
     },
     "rob2": {
-      "auto_tier": 3,
-      "confidence": "medium",
-      "kind": "numerical",
+      "auto_tier": 2,
+      "confidence": "high",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Risk of Bias",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "rob2",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 18.42
       },
-      "tier": 3
+      "tier": 2
     },
     "robins-e": {
-      "auto_tier": 3,
-      "confidence": "medium",
-      "kind": "numerical",
+      "auto_tier": 2,
+      "confidence": "high",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Risk of Bias",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "robins-e",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 15.88
       },
-      "tier": 3
+      "tier": 2
     },
     "robins-i": {
-      "auto_tier": 3,
-      "confidence": "medium",
-      "kind": "numerical",
+      "auto_tier": 2,
+      "confidence": "high",
+      "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Risk of Bias",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "robins-i",
-        "kind": "numerical",
+        "kind": "non-numerical",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 17.74
       },
-      "tier": 3
+      "tier": 2
     },
     "search-translator": {
       "auto_tier": 2,
@@ -1738,7 +1729,7 @@
         "key": "search-translator",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -1765,7 +1756,7 @@
         "key": "thematic-synthesis",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778712262,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -1888,12 +1879,12 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:43:52Z",
+  "generated_at": "2026-05-13T22:47:43Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 10,
-    "tier_2": 13,
-    "tier_3": 39,
+    "tier_2": 20,
+    "tier_3": 32,
     "tier_4": 2,
     "tier_5": 2,
     "total": 66
