@@ -67,13 +67,19 @@
     .file-input-hidden { display:none; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Meta-Regression</h1>
-    <p>Fit a random-effects meta-regression with one moderator. Paule-Mandel τ² + Knapp-Hartung t(k-2) CIs (with <code>max(1, …)</code> floor per advanced-stats.md). Bubble plot with fitted line.</p>
+    <p>Fit a random-effects meta-regression with one moderator. <abbr data-gloss="PM">Paule-Mandel</abbr> <abbr data-gloss="tau2">τ²</abbr> + <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> t(k−2) CIs (with <code>max(1, …)</code> floor). <abbr data-gloss="R2">R²</abbr> and <abbr data-gloss="QE">Q_E</abbr> reported. Bubble plot with fitted regression line and CI band.</p>
   </header>
 
   <main id="main" class="layout">
@@ -82,11 +88,13 @@
 
       <fieldset>
         <legend>Data</legend>
+        <div id="alm-csv-mount"></div>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE, moderator</code></span>
           <textarea id="f-data" spellcheck="false"></textarea>
-          <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored.</span>
+          <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored. Extra columns beyond <code>moderator</code> are passed through as covariates.</span>
         </label>
+        <div id="alm-undo-mount" style="display:inline-flex;margin-top:.4rem"></div>
       </fieldset>
 
       <fieldset>
@@ -103,9 +111,11 @@
           <span class="lbl">Effect label (y-axis)</span>
           <input type="text" id="f-effectlabel" value="Effect (logOR)">
         </label>
+        <div id="alm-axis-mount" style="margin-top:.5rem"></div>
       </fieldset>
 
       <div id="stats-wrap"></div>
+      <div id="alm-export-mount" style="margin-top:.5rem"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
 
       <div class="actions">
@@ -118,7 +128,7 @@
         <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
         <button type="button" id="btn-rscript">Export R script</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
-        <button type="button" id="btn-reset">Reset</button>
+        <button type="button" id="btn-reset" style="display:none">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
       </div>
     </section>
@@ -129,7 +139,7 @@
     </section>
   </main>
 
-  <p class="footer-note">τ² via Paule-Mandel bisection; CIs use Knapp-Hartung <code>t(k−2)</code> with <code>q = max(1, RSS/(k−2))</code> floor. Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="PM", test="knha")</code>.</p>
+  <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> via <abbr data-gloss="PM">Paule-Mandel</abbr> bisection; CIs use <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> <code>t(k−2)</code> with <code>q = max(1, <abbr data-gloss="QE">RSS</abbr>/(k−2))</code> floor (<abbr data-gloss="HKSJ">HKSJ</abbr>). <abbr data-gloss="R2">R²</abbr> measures the proportion of <abbr data-gloss="tau2">τ²</abbr> explained by the moderator; <abbr data-gloss="QE">Q_E</abbr> tests residual heterogeneity (df = k−2). Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="<abbr data-gloss="PM">PM</abbr>", test="knha")</code>.</p>
 
   <script>
   (function () {
@@ -333,6 +343,9 @@
       return (lo+hi)/2;
     }
 
+    // Expose tQuantile975 so the alm-init IIFE can compute CI bounds in __almResults.
+    window._almTQuantile975 = function (df) { return tQuantile975(df); };
+
     function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
     function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
     function niceTicks(lo,hi,n) {
@@ -433,10 +446,23 @@
 
     function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
 
+    // Last-computed result cache — populated by render(), read by __almResults().
+    // Exposed on window so the alm-init IIFE (separate script block) can access them.
+    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null;
+    window._almLastFitted  = function () { return _lastFitted; };
+    window._almLastStudies = function () { return _lastStudies; };
+    window._almLastHK      = function () { return _lastHK; };
+    window._almLastR2      = function () { return _lastR2; };
+    window._almLastQE      = function () { return _lastQE; };
+
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
       const fitted = fitPM(parsed.studies);
+
+      // Populate last-computed cache for __almResults() (read by alm-init IIFE).
+      _lastStudies = parsed.studies;
+      _lastFitted  = fitted;
 
       const parts = [];
       parts.push(statCard("k", String(parsed.studies.length)));
@@ -444,6 +470,7 @@
         const f = fitted.fit;
         const k = parsed.studies.length;
         const hk = hksj(k, 2, f.rss, f.swxx, f.sw, f.det);
+        _lastHK = hk;
         const tCrit = tQuantile975(hk.df);
         const seB0 = Math.sqrt(hk.varB0), seB1 = Math.sqrt(hk.varB1);
         const tB1 = f.b1 / seB1;
@@ -457,6 +484,7 @@
         // Q_E (residual heterogeneity) tests whether residual heterogeneity remains.
         const tau2Null = fitPMNull(parsed.studies);
         const r2 = tau2Null > 0 ? Math.max(0, 1 - fitted.tau2 / tau2Null) : 0;
+        _lastR2 = r2;
         parts.push(statCard("R² (τ² explained)", fmt(100 * r2, 1) + "%"));
         // Residual heterogeneity test: Q_E = sum w_i * r_i² with w from null
         // model (Cochrane Handbook §10.11.4 follow-up). df = k-2.
@@ -469,8 +497,11 @@
           }
           const dfE = parsed.studies.length - 2;
           const pQE = 1 - chiSqCDF(qE, dfE);
+          _lastQE = { qE, dfE, pQE };
           parts.push(statCard("Q_E (residual)", fmt(qE, 2) + " (df " + dfE + "), p = " + fmt(pQE, 3)));
         }
+      } else {
+        _lastHK = null; _lastR2 = 0; _lastQE = null;
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
 
@@ -487,6 +518,12 @@
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥3 studies.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+      // url-state write (after each render so the link is always shareable)
+      try {
+        if (window.alm && window.alm.urlState && window.__almSnapshot) {
+          window.alm.urlState.write(window.__almSnapshot());
+        }
+      } catch(e) {}
     }
 
     function rScript(studies, state) {
@@ -641,6 +678,176 @@
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example meta-regression"; document.getElementById("f-modlabel").value = "Baseline LVEF (%)"; }
     attach();
     render();
+  })();
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.1 shared UX modules. Per meta-regression/RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state,
+  //            reset-undo, tooltips
+  //   skipped (present-good): chart-download (native HiDPI SVG+PNG is superior)
+  // Adapter shims map to the existing engine. No math changes.
+  // Deferred: axis-controls renders min/max inputs but does NOT yet drive the
+  //   SVG x/y axis domain. The buildSvg() function auto-computes its domain
+  //   from moderator values and CI bounds; wiring __almAxis lo/hi overrides
+  //   requires threading them through render() — deferred to a future cycle.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims --------------------------------------------------
+
+    // Load rows from csv-upload into the textarea using the app's native
+    // "label, estimate, SE, moderator" line format.
+    // The covariate column is user-supplied — csv-upload passes through any
+    // extra header verbatim as row[headerName]. We take the FIRST extra
+    // column after {study, yi, vi} as the moderator value.
+    window.__almLoad = function (rows) {
+      var lines = rows.filter(function (r) {
+        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
+      }).map(function (r) {
+        // SE from vi (variance). Find moderator: first key beyond study/yi/vi.
+        var se = Math.sqrt(r.vi);
+        var modVal = '';
+        var reserved = { study: 1, yi: 1, vi: 1 };
+        for (var k in r) {
+          if (Object.prototype.hasOwnProperty.call(r, k) && !reserved[k]) {
+            var v = r[k];
+            if (v != null && v !== '') { modVal = v; break; }
+          }
+        }
+        return r.study + ', ' + r.yi + ', ' + se + (modVal !== '' ? ', ' + modVal : '');
+      });
+      var ta = document.getElementById('f-data');
+      if (!ta) return;
+      ta.value = lines.join('\n');
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // Return the last computed meta-regression coefficients as a flat dict
+    // for results-export. Reads via window accessors exposed from the main IIFE.
+    window.__almResults = function () {
+      var fitted  = window._almLastFitted  ? window._almLastFitted()  : null;
+      var studies = window._almLastStudies ? window._almLastStudies() : [];
+      var hk      = window._almLastHK      ? window._almLastHK()      : null;
+      var r2      = window._almLastR2      ? window._almLastR2()      : 0;
+      var qeObj   = window._almLastQE      ? window._almLastQE()      : null;
+      var out = { _schema: 'meta-regression-results-v1', k: studies.length };
+      if (fitted && fitted.fit && hk) {
+        var f = fitted.fit;
+        var df = hk.df;
+        // tQuantile975 is defined in the main IIFE scope and not directly
+        // callable here; we inline the t-critical read via the stat card text
+        // or re-derive from hk.df. Use a closure-safe reference if available.
+        var tCrit = (window._almTQuantile975 ? window._almTQuantile975(df) : NaN);
+        var seB0 = Math.sqrt(hk.varB0);
+        var seB1 = Math.sqrt(hk.varB1);
+        out.intercept    = f.b0;
+        out.intercept_se = seB0;
+        out.intercept_ci_lb = isFinite(tCrit) ? f.b0 - tCrit * seB0 : NaN;
+        out.intercept_ci_ub = isFinite(tCrit) ? f.b0 + tCrit * seB0 : NaN;
+        out.slope        = f.b1;
+        out.slope_se     = seB1;
+        out.slope_ci_lb  = isFinite(tCrit) ? f.b1 - tCrit * seB1 : NaN;
+        out.slope_ci_ub  = isFinite(tCrit) ? f.b1 + tCrit * seB1 : NaN;
+        out.tau2_pm      = fitted.tau2;
+        out.hksj_q       = hk.q;
+        out.hksj_q_df    = df;
+        out.R2_tau2      = r2;
+        if (qeObj) {
+          out.QE    = qeObj.qE;
+          out.QE_df = qeObj.dfE;
+          out.QE_p  = qeObj.pQE;
+        }
+      }
+      return out;
+    };
+
+    // Snapshot: capture every form control value into a flat object.
+    window.__almSnapshot = function () {
+      var ta = document.getElementById('f-data');
+      var ti = document.getElementById('f-title');
+      var ml = document.getElementById('f-modlabel');
+      var el = document.getElementById('f-effectlabel');
+      return {
+        data:        ta ? ta.value : '',
+        title:       ti ? ti.value : '',
+        modlabel:    ml ? ml.value : '',
+        effectlabel: el ? el.value : 'Effect (logOR)'
+      };
+    };
+
+    // Restore: apply snapshot back to form controls and re-render.
+    // snap === {} means "clear all".
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ta = document.getElementById('f-data');
+      var ti = document.getElementById('f-title');
+      var ml = document.getElementById('f-modlabel');
+      var el = document.getElementById('f-effectlabel');
+      if (ta) ta.value = isEmpty ? '' : (snap.data        != null ? snap.data        : '');
+      if (ti) ti.value = isEmpty ? '' : (snap.title       != null ? snap.title       : '');
+      if (ml) ml.value = isEmpty ? '' : (snap.modlabel    != null ? snap.modlabel    : '');
+      if (el) el.value = isEmpty ? 'Effect (logOR)' : (snap.effectlabel != null ? snap.effectlabel : 'Effect (logOR)');
+      // Dispatch input on f-data to trigger the engine's render() listener.
+      if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // ---- module init -----------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study',     required: true,  type: 'string', example: 'Smith 2024' },
+        { name: 'yi',        required: true,  type: 'float',  example: '0.21' },
+        { name: 'vi',        required: true,  type: 'float',  example: '0.04' },
+        // Extra columns are passed through as covariates (fuzzy-match fallthrough).
+        // Name your covariate column anything — e.g. 'year', 'dose', 'lvef'.
+        // The first extra column is used as the moderator value.
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+        window.__almLoad(result.rows);
+      },
+    });
+
+    // Both axes user-controllable; moderator (x) and effect (y).
+    // NOTE: axis-controls renders min/max inputs but does NOT yet drive the
+    // SVG axis domain. buildSvg() auto-computes its domain; wiring __almAxis
+    // lo/hi into buildSvg() requires threading overrides through render() —
+    // deferred to a future cycle. Controls are functional UI, domain override is no-op.
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'Covariate (x)', range: [null, null], log: false },
+        { key: 'y', label: 'Effect (y)',     range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        window.__almAxis = state;
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'meta-regression-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    // Tooltips: scan footer and header for annotated <abbr> elements.
+    window.alm.tooltips({ src: '../hub/shared/glossary.json' });
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
