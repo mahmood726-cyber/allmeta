@@ -9,16 +9,20 @@ import re
 import subprocess
 
 _STUB_PATTERNS = re.compile(
-    # "placeholder" as an HTML attribute (placeholder="..." or placeholder=...)
-    # is NOT a stub marker — it's a legitimate UI hint text attribute.  Match
-    # the word only when it is NOT immediately preceded by an equals sign or a
-    # quote (i.e. not in attribute-value position).
-    r"\bTODO\b|\bstub\b|(?<![='\"])placeholder(?![='\"])|REPLACE_ME|__PLACEHOLDER__|not implemented|"
+    # Cycle 2.3 tightening:
+    # - "placeholder" removed entirely: appears as HTML attribute, CSS pseudo-element
+    #   (::placeholder), JS object property key (placeholder: "..."), JS variable name
+    #   (const placeholder = ...) and comment prose across too many legitimate files to
+    #   be a reliable stub signal.  __PLACEHOLDER__ (below) covers the actual unfilled-
+    #   template-slot use-case.
+    # - \bstub\b is restricted to non-.md files (see _SCAN_SUFFIXES).  Documentation
+    #   markdown legitimately uses "stub" as English (e.g. "pandas stub", "stub_count").
+    r"\bTODO\b|\bstub\b|REPLACE_ME|__PLACEHOLDER__|not implemented|"
     r"throw new Error\(.unimpl",
     re.IGNORECASE,
 )
 
-_SCAN_SUFFIXES = (".html", ".js", ".css", ".py", ".md")
+_SCAN_SUFFIXES = (".html", ".js", ".css", ".py")
 
 
 def stub_count(app_dir: Path) -> int:

@@ -35,3 +35,33 @@ def test_stub_count_ignores_html_placeholder_attribute(tmp_path):
         encoding="utf-8",
     )
     assert stub_count(app_dir) == 0
+
+
+def test_stub_count_ignores_placeholder_as_js_object_key(fixtures_root, tmp_path):
+    """Cycle 2.3 regression: `placeholder:` as a JS object key (config / LocalLLM panel)
+    is legitimate code, not a stub marker. effect-size-converter hit this."""
+    app = tmp_path / "esc-style"
+    app.mkdir()
+    (app / "index.html").write_text(
+        '<!doctype html><html><body><script>'
+        'const cfg = { url: "http://localhost", placeholder: "Custom URL" };'
+        '</script></body></html>',
+        encoding="utf-8",
+    )
+    from triage.signals import stub_count
+    assert stub_count(app) == 0
+
+
+def test_stub_count_ignores_stub_word_in_markdown_documentation(tmp_path):
+    """Cycle 2.3 regression: 'stub' as English text in markdown documentation
+    (e.g. RETROFIT_AUDIT.md describing audit findings) is NOT a code stub.
+    nma-pro-v2 hit this with 'pandas stub' and 'stub_count' in audit docs."""
+    app = tmp_path / "doc-style"
+    app.mkdir()
+    (app / "index.html").write_text("<!doctype html><html><body>ok</body></html>", encoding="utf-8")
+    (app / "RETROFIT_AUDIT.md").write_text(
+        "# audit\n\nThe stub detector reported pandas stub fixtures. stub_count was 5.\n",
+        encoding="utf-8",
+    )
+    from triage.signals import stub_count
+    assert stub_count(app) == 0
