@@ -44,3 +44,15 @@ def test_probe_runs_against_a_real_app_and_writes_jsonl(tmp_path):
     assert rec["key"] == "forest-plot"
     assert rec["load_ok"] is True
     assert rec["probe_crashed"] is False
+    # Regression (two bugs fixed together):
+    # 1. Selector: 'button:has-text(/regex/)' CANNOT appear in a CSS comma-list in
+    #    Playwright ≥1.50 — the slash-regex form triggers a CSS parse error on the
+    #    whole selector, causing mount_found=False for every app.  Fix: use MOUNT_CSS
+    #    (plain CSS union) + locator.or(page.getByRole('button', {name:/regex/})).
+    # 2. Timing: isVisible({timeout:…}) ignores the timeout in Playwright ≥1.50 and
+    #    returns immediately; JS-rendered SVGs may not be in the DOM yet at networkidle.
+    #    Fix: add 500 ms waitForTimeout settle + use waitFor({state:'visible', timeout:2000}).
+    assert rec["mount_found"] is True, (
+        "forest-plot mount not found — check probe.spec.mjs: must use MOUNT_CSS (no regex) "
+        "+ locator.or(getByRole) and waitFor({state:'visible'}) with 500 ms settle."
+    )

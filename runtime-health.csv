@@ -1,0 +1,67 @@
+app,state,confidence,load_ok,timed_out,load_time_ms,mount_found,n_console_errors,n_ui_matches,reasons
+amstar-2,OK,high,True,False,1130,True,1,0,loaded in 1130 ms
+bayesian-ma,OK,high,True,False,1460,True,1,0,loaded in 1460 ms
+bayesian-mcmc,OK,high,True,False,1104,True,1,0,loaded in 1104 ms
+bayesian-nma,OK,high,True,False,1130,True,1,0,loaded in 1130 ms
+bucher,OK,high,True,False,1116,True,1,0,loaded in 1116 ms
+cerqual,OK,high,True,False,1100,True,1,0,loaded in 1100 ms
+cinema,OK,high,True,False,1125,True,1,0,loaded in 1125 ms
+citation-chaser,OK,high,True,False,1132,True,1,0,loaded in 1132 ms
+citation-dedup,CONSOLE-ERRORS,high,True,False,1383,True,2,0,console.error: pageerror: Toast is not defined
+component-nma,OK,high,True,False,1123,True,1,0,loaded in 1123 ms
+copas,OK,high,True,False,1139,True,1,0,loaded in 1139 ms
+cumulative-subgroup,OK,high,True,False,1408,True,1,0,loaded in 1408 ms
+dosehtml,OK,high,True,False,1512,True,0,0,loaded in 1512 ms
+dta-sroc,OK,high,True,False,1448,True,1,0,loaded in 1448 ms
+effect-size-converter,OK,high,True,False,1524,True,1,0,loaded in 1524 ms
+evidence-board,OK,high,True,False,1399,True,1,0,loaded in 1399 ms
+focus-studio,MISSING-MOUNT,medium,True,False,3434,False,1,0,no primary mount landmark (svg/canvas/textarea/table input/action button)
+forest-plot,OK,high,True,False,1504,True,1,0,loaded in 1504 ms
+funnel-plot,OK,high,True,False,1616,True,1,0,loaded in 1616 ms
+gosh,OK,high,True,False,1514,True,1,0,loaded in 1514 ms
+gosh-metareg,OK,high,True,False,1157,True,1,0,loaded in 1157 ms
+grade-sof,OK,high,True,False,1692,True,1,0,loaded in 1692 ms
+heterogeneity,OK,high,True,False,1462,True,1,0,loaded in 1462 ms
+hsroc,OK,high,True,False,1121,True,1,0,loaded in 1121 ms
+HTA,CONSOLE-ERRORS,high,True,False,2340,True,7,0,console.error: pageerror: Identifier 'KahanSum' has already been declared | console.error: pageerror: Identifier 'EVPPICalculator' has already been declared | console.error: pageerror: Identifier 'EVSICalculator' has already been declared
+influence,OK,high,True,False,1134,True,1,0,loaded in 1134 ms
+IPD-Meta-Pro,OK,high,True,False,1710,True,0,0,loaded in 1710 ms
+kanban-lab,OK,high,True,False,1459,True,1,0,loaded in 1459 ms
+km-reconstructor,OK,high,True,False,1102,True,1,0,loaded in 1102 ms
+limit-ma,OK,high,True,False,1115,True,1,0,loaded in 1115 ms
+living-meta,OK,high,True,False,1119,True,0,0,loaded in 1119 ms
+local-ai,MISSING-MOUNT,medium,True,False,3358,False,1,0,no primary mount landmark (svg/canvas/textarea/table input/action button)
+local-install,MISSING-MOUNT,medium,True,False,3077,False,1,0,no primary mount landmark (svg/canvas/textarea/table input/action button)
+mcid,OK,high,True,False,1117,True,1,0,loaded in 1117 ms
+median-to-mean,OK,high,True,False,1106,True,1,0,loaded in 1106 ms
+meta-regression,OK,high,True,False,1538,True,1,0,loaded in 1538 ms
+mh-peto,OK,high,True,False,1117,True,1,0,loaded in 1117 ms
+multilevel-ma,OK,high,True,False,1163,True,1,0,loaded in 1163 ms
+nma-dose-response-app,OK,high,True,False,1742,True,1,0,loaded in 1742 ms
+nma-global-inconsistency,OK,high,True,False,1123,True,1,0,loaded in 1123 ms
+nma-inconsistency,OK,high,True,False,1115,True,1,0,loaded in 1115 ms
+nma-pro-v2,OK,high,True,False,3453,True,0,0,loaded in 3453 ms
+p-curve,OK,high,True,False,1118,True,1,0,loaded in 1118 ms
+Pairwiseai,OK,high,True,False,2140,True,2,0,loaded in 2140 ms
+pet-peese,OK,high,True,False,1357,True,1,0,loaded in 1357 ms
+pico,OK,high,True,False,1400,True,1,0,loaded in 1400 ms
+powerma,OK,high,True,False,1127,True,1,0,loaded in 1127 ms
+prisma-checklist,OK,high,True,False,1424,True,1,0,loaded in 1424 ms
+prisma-flow,OK,high,True,False,1154,True,1,0,loaded in 1154 ms
+prisma-nma,OK,high,True,False,1549,True,1,0,loaded in 1549 ms
+prisma-screen,OK,high,True,False,1126,True,1,0,loaded in 1126 ms
+proportion-ma,OK,high,True,False,1110,True,1,0,loaded in 1110 ms
+pubbias-tests,OK,high,True,False,1104,True,1,0,loaded in 1104 ms
+quadas-2,OK,high,True,False,1119,True,1,0,loaded in 1119 ms
+rct-extractor,NEEDS-SERVICE,high,True,False,3851,True,2,1,UI text matched: '\\bnot reachable\\b'
+rob-traffic-light,OK,high,True,False,1461,True,1,0,loaded in 1461 ms
+rob2,OK,high,True,False,1116,True,1,0,loaded in 1116 ms
+robins-e,OK,high,True,False,1134,True,1,0,loaded in 1134 ms
+robins-i,OK,high,True,False,1141,True,1,0,loaded in 1141 ms
+search-translator,OK,high,True,False,1116,True,1,0,loaded in 1116 ms
+thematic-synthesis,OK,high,True,False,1100,True,1,0,loaded in 1100 ms
+Truthcert1,OK,high,True,False,3237,True,1,0,loaded in 3237 ms
+tsa,OK,high,True,False,1485,True,1,0,loaded in 1485 ms
+webr-studio,OK,high,True,False,1120,True,1,0,loaded in 1120 ms
+webr-validator,OK,high,True,False,1416,True,1,0,loaded in 1416 ms
+workbench,OK,high,True,False,1398,True,1,0,loaded in 1398 ms

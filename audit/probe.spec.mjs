@@ -8,13 +8,12 @@ const OUTPUT = join(__dirname, '.probe-output.jsonl');
 const APPS = JSON.parse(process.env.ALM_AUDIT_APPS_JSON || '[]');
 const TIMEOUT_MS = parseInt(process.env.ALM_AUDIT_TIMEOUT_MS || '30000', 10);
 
-const MOUNT_SELECTOR = [
-  'svg',
-  'canvas',
-  'textarea',
-  'table input',
-  'button:has-text(/compute|run|pool|estimate|analy[sz]e|extract|score|update|render/i)',
-].join(', ');
+// CSS-only union for structural landmarks.
+// NOTE: 'button:has-text(/regex/i)' CANNOT be combined with plain CSS selectors
+// in a comma-separated string in Playwright ≥1.50 — the slash-regex form triggers
+// a CSS parse error on the whole selector.  Action buttons are handled via the
+// .or(getByRole) composition below (see _mountLocator factory).
+const MOUNT_CSS = 'svg, canvas, textarea, table input';
 
 const NEEDS_SERVICE_PATTERNS = [
   /\bnot reachable\b/i,
@@ -49,8 +48,20 @@ for (const app of APPS) {
       const url = `${app.path.startsWith('./') ? '/' + app.path.slice(2) : app.path}`;
       await page.goto(url, { waitUntil: 'networkidle', timeout: TIMEOUT_MS });
       load_ok = true;
+      // Brief settle after networkidle so JS-rendered elements (e.g. SVG via innerHTML)
+      // have time to paint before we check visibility.  isVisible() is immediate (the
+      // deprecated timeout option is ignored in Playwright ≥1.50), so we use waitFor
+      // with state:'visible' which actually polls until the element appears.
+      await page.waitForTimeout(500);
       try {
-        mount_found = await page.locator(MOUNT_SELECTOR).first().isVisible({ timeout: 2000 });
+        // Use locator.or() to combine CSS landmarks with a Playwright-native role
+        // locator for action buttons.  Mixing 'button:has-text(/regex/)' in a plain
+        // CSS comma-list fails in Playwright 1.60 with a CSS parse error.
+        const mountLoc = page.locator(MOUNT_CSS).or(
+          page.getByRole('button', { name: /compute|run|pool|estimate|analy[sz]e|extract|score|update|render/i })
+        );
+        await mountLoc.first().waitFor({ state: 'visible', timeout: 2000 });
+        mount_found = true;
       } catch (_) {
         mount_found = false;
       }

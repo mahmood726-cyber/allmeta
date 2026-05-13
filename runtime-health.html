@@ -1,0 +1,82 @@
+<!-- generated 2026-05-13T19:39:47Z · auditor v0.1.0 -->
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>allmeta runtime-health audit</title>
+<style>
+  body{font:14px/1.45 system-ui,sans-serif;margin:1.5rem;color:#0f172a;background:#f8fafc}
+  h1{margin:0 0 .25rem}
+  .meta{color:#475569;margin-bottom:1rem}
+  .filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+  .chip{padding:.25rem .6rem;border:1px solid #cbd5e1;border-radius:9999px;background:#fff;cursor:pointer;font-size:13px}
+  .chip.is-active{background:#0f172a;color:#fff;border-color:#0f172a}
+  table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #e2e8f0}
+  th,td{padding:.4rem .55rem;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;font-size:13px}
+  th{cursor:pointer;background:#f1f5f9}
+  td.s-UNKNOWN        {background:#e0e7ff}
+  td.s-TIMEOUT        {background:#fecaca}
+  td.s-NEEDS-SERVICE  {background:#fed7aa}
+  td.s-CONSOLE-ERRORS {background:#fef9c3}
+  td.s-MISSING-MOUNT  {background:#fde68a}
+  td.s-OK             {background:#dcfce7}
+  input[type=search]{padding:.4rem .6rem;border:1px solid #cbd5e1;border-radius:6px;width:280px}
+</style></head><body>
+<h1>allmeta runtime-health audit</h1>
+<div class="meta" id="meta-line"></div>
+<div class="filters">
+  <input type="search" id="q" placeholder="Search app name…">
+  <button class="chip is-active" data-state="all">All</button>
+  <button class="chip" data-state="UNKNOWN">UNKNOWN</button>
+  <button class="chip" data-state="TIMEOUT">TIMEOUT</button>
+  <button class="chip" data-state="NEEDS-SERVICE">NEEDS-SERVICE</button>
+  <button class="chip" data-state="CONSOLE-ERRORS">CONSOLE-ERRORS</button>
+  <button class="chip" data-state="MISSING-MOUNT">MISSING-MOUNT</button>
+  <button class="chip" data-state="OK">OK</button>
+</div>
+<table id="t">
+  <thead><tr>
+    <th data-k="key">App</th><th data-k="state">State</th><th data-k="confidence">Conf</th>
+    <th>Reasons</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+<script>
+const DATA = [{"key": "amstar-2", "state": "OK", "confidence": "high", "reasons": ["loaded in 1130 ms"]}, {"key": "bayesian-ma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1460 ms"]}, {"key": "bayesian-mcmc", "state": "OK", "confidence": "high", "reasons": ["loaded in 1104 ms"]}, {"key": "bayesian-nma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1130 ms"]}, {"key": "bucher", "state": "OK", "confidence": "high", "reasons": ["loaded in 1116 ms"]}, {"key": "cerqual", "state": "OK", "confidence": "high", "reasons": ["loaded in 1100 ms"]}, {"key": "cinema", "state": "OK", "confidence": "high", "reasons": ["loaded in 1125 ms"]}, {"key": "citation-chaser", "state": "OK", "confidence": "high", "reasons": ["loaded in 1132 ms"]}, {"key": "citation-dedup", "state": "CONSOLE-ERRORS", "confidence": "high", "reasons": ["console.error: pageerror: Toast is not defined"]}, {"key": "component-nma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1123 ms"]}, {"key": "copas", "state": "OK", "confidence": "high", "reasons": ["loaded in 1139 ms"]}, {"key": "cumulative-subgroup", "state": "OK", "confidence": "high", "reasons": ["loaded in 1408 ms"]}, {"key": "dosehtml", "state": "OK", "confidence": "high", "reasons": ["loaded in 1512 ms"]}, {"key": "dta-sroc", "state": "OK", "confidence": "high", "reasons": ["loaded in 1448 ms"]}, {"key": "effect-size-converter", "state": "OK", "confidence": "high", "reasons": ["loaded in 1524 ms"]}, {"key": "evidence-board", "state": "OK", "confidence": "high", "reasons": ["loaded in 1399 ms"]}, {"key": "focus-studio", "state": "MISSING-MOUNT", "confidence": "medium", "reasons": ["no primary mount landmark (svg/canvas/textarea/table input/action button)"]}, {"key": "forest-plot", "state": "OK", "confidence": "high", "reasons": ["loaded in 1504 ms"]}, {"key": "funnel-plot", "state": "OK", "confidence": "high", "reasons": ["loaded in 1616 ms"]}, {"key": "gosh", "state": "OK", "confidence": "high", "reasons": ["loaded in 1514 ms"]}, {"key": "gosh-metareg", "state": "OK", "confidence": "high", "reasons": ["loaded in 1157 ms"]}, {"key": "grade-sof", "state": "OK", "confidence": "high", "reasons": ["loaded in 1692 ms"]}, {"key": "heterogeneity", "state": "OK", "confidence": "high", "reasons": ["loaded in 1462 ms"]}, {"key": "hsroc", "state": "OK", "confidence": "high", "reasons": ["loaded in 1121 ms"]}, {"key": "HTA", "state": "CONSOLE-ERRORS", "confidence": "high", "reasons": ["console.error: pageerror: Identifier 'KahanSum' has already been declared", "console.error: pageerror: Identifier 'EVPPICalculator' has already been declared", "console.error: pageerror: Identifier 'EVSICalculator' has already been declared"]}, {"key": "influence", "state": "OK", "confidence": "high", "reasons": ["loaded in 1134 ms"]}, {"key": "IPD-Meta-Pro", "state": "OK", "confidence": "high", "reasons": ["loaded in 1710 ms"]}, {"key": "kanban-lab", "state": "OK", "confidence": "high", "reasons": ["loaded in 1459 ms"]}, {"key": "km-reconstructor", "state": "OK", "confidence": "high", "reasons": ["loaded in 1102 ms"]}, {"key": "limit-ma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1115 ms"]}, {"key": "living-meta", "state": "OK", "confidence": "high", "reasons": ["loaded in 1119 ms"]}, {"key": "local-ai", "state": "MISSING-MOUNT", "confidence": "medium", "reasons": ["no primary mount landmark (svg/canvas/textarea/table input/action button)"]}, {"key": "local-install", "state": "MISSING-MOUNT", "confidence": "medium", "reasons": ["no primary mount landmark (svg/canvas/textarea/table input/action button)"]}, {"key": "mcid", "state": "OK", "confidence": "high", "reasons": ["loaded in 1117 ms"]}, {"key": "median-to-mean", "state": "OK", "confidence": "high", "reasons": ["loaded in 1106 ms"]}, {"key": "meta-regression", "state": "OK", "confidence": "high", "reasons": ["loaded in 1538 ms"]}, {"key": "mh-peto", "state": "OK", "confidence": "high", "reasons": ["loaded in 1117 ms"]}, {"key": "multilevel-ma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1163 ms"]}, {"key": "nma-dose-response-app", "state": "OK", "confidence": "high", "reasons": ["loaded in 1742 ms"]}, {"key": "nma-global-inconsistency", "state": "OK", "confidence": "high", "reasons": ["loaded in 1123 ms"]}, {"key": "nma-inconsistency", "state": "OK", "confidence": "high", "reasons": ["loaded in 1115 ms"]}, {"key": "nma-pro-v2", "state": "OK", "confidence": "high", "reasons": ["loaded in 3453 ms"]}, {"key": "p-curve", "state": "OK", "confidence": "high", "reasons": ["loaded in 1118 ms"]}, {"key": "Pairwiseai", "state": "OK", "confidence": "high", "reasons": ["loaded in 2140 ms"]}, {"key": "pet-peese", "state": "OK", "confidence": "high", "reasons": ["loaded in 1357 ms"]}, {"key": "pico", "state": "OK", "confidence": "high", "reasons": ["loaded in 1400 ms"]}, {"key": "powerma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1127 ms"]}, {"key": "prisma-checklist", "state": "OK", "confidence": "high", "reasons": ["loaded in 1424 ms"]}, {"key": "prisma-flow", "state": "OK", "confidence": "high", "reasons": ["loaded in 1154 ms"]}, {"key": "prisma-nma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1549 ms"]}, {"key": "prisma-screen", "state": "OK", "confidence": "high", "reasons": ["loaded in 1126 ms"]}, {"key": "proportion-ma", "state": "OK", "confidence": "high", "reasons": ["loaded in 1110 ms"]}, {"key": "pubbias-tests", "state": "OK", "confidence": "high", "reasons": ["loaded in 1104 ms"]}, {"key": "quadas-2", "state": "OK", "confidence": "high", "reasons": ["loaded in 1119 ms"]}, {"key": "rct-extractor", "state": "NEEDS-SERVICE", "confidence": "high", "reasons": ["UI text matched: '\\\\bnot reachable\\\\b'"]}, {"key": "rob-traffic-light", "state": "OK", "confidence": "high", "reasons": ["loaded in 1461 ms"]}, {"key": "rob2", "state": "OK", "confidence": "high", "reasons": ["loaded in 1116 ms"]}, {"key": "robins-e", "state": "OK", "confidence": "high", "reasons": ["loaded in 1134 ms"]}, {"key": "robins-i", "state": "OK", "confidence": "high", "reasons": ["loaded in 1141 ms"]}, {"key": "search-translator", "state": "OK", "confidence": "high", "reasons": ["loaded in 1116 ms"]}, {"key": "thematic-synthesis", "state": "OK", "confidence": "high", "reasons": ["loaded in 1100 ms"]}, {"key": "Truthcert1", "state": "OK", "confidence": "high", "reasons": ["loaded in 3237 ms"]}, {"key": "tsa", "state": "OK", "confidence": "high", "reasons": ["loaded in 1485 ms"]}, {"key": "webr-studio", "state": "OK", "confidence": "high", "reasons": ["loaded in 1120 ms"]}, {"key": "webr-validator", "state": "OK", "confidence": "high", "reasons": ["loaded in 1416 ms"]}, {"key": "workbench", "state": "OK", "confidence": "high", "reasons": ["loaded in 1398 ms"]}];
+const tbody = document.querySelector("#t tbody");
+let state = "all", q = "", sortKey = "state", sortDir = 1;
+function render(){
+  tbody.innerHTML = "";
+  let rows = DATA.slice().filter(r => (state==="all" || r.state===state)
+    && (q==="" || r.key.toLowerCase().includes(q)));
+  rows.sort((a,b) => {
+    const av = a[sortKey] ?? "", bv = b[sortKey] ?? "";
+    if (av < bv) return -1*sortDir;
+    if (av > bv) return 1*sortDir;
+    return 0;
+  });
+  for (const r of rows){
+    const tr = document.createElement("tr");
+    const tdK = document.createElement("td"); tdK.textContent = r.key;
+    const tdS = document.createElement("td"); tdS.textContent = r.state; tdS.className = "s-" + r.state;
+    const tdC = document.createElement("td"); tdC.textContent = r.confidence;
+    const tdR = document.createElement("td"); tdR.textContent = (r.reasons||[]).join(" · ");
+    tr.append(tdK, tdS, tdC, tdR);
+    tbody.appendChild(tr);
+  }
+  document.getElementById("meta-line").textContent = rows.length + " of " + DATA.length + " apps";
+}
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll(".chip").forEach(x => x.classList.remove("is-active"));
+  c.classList.add("is-active");
+  state = c.dataset.state;
+  render();
+}));
+document.getElementById("q").addEventListener("input", e => { q = e.target.value.toLowerCase(); render(); });
+document.querySelectorAll("th[data-k]").forEach(h => h.addEventListener("click", () => {
+  const k = h.dataset.k;
+  if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; }
+  render();
+}));
+render();
+</script>
+</body></html>

@@ -1,0 +1,1406 @@
+{
+  "apps": {
+    "HTA": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+          "pageerror: Identifier 'KahanSum' has already been declared",
+          "pageerror: Identifier 'EVPPICalculator' has already been declared",
+          "pageerror: Identifier 'EVSICalculator' has already been declared",
+          "pageerror: Identifier 'PerformanceEngine' has already been declared",
+          "pageerror: Identifier 'MemoryPool' has already been declared",
+          "pageerror: Identifier 'DEFAULT_BISECTION_MAX_ITER' has already been declared"
+        ],
+        "key": "HTA",
+        "load_ok": true,
+        "load_time_ms": 2340,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./HTA/index.html"
+      },
+      "reasons": [
+        "console.error: pageerror: Identifier 'KahanSum' has already been declared",
+        "console.error: pageerror: Identifier 'EVPPICalculator' has already been declared",
+        "console.error: pageerror: Identifier 'EVSICalculator' has already been declared"
+      ],
+      "state": "CONSOLE-ERRORS",
+      "url": "./HTA/index.html"
+    },
+    "IPD-Meta-Pro": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [],
+        "key": "IPD-Meta-Pro",
+        "load_ok": true,
+        "load_time_ms": 1710,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./IPD-Meta-Pro/ipd-meta-pro.html"
+      },
+      "reasons": [
+        "loaded in 1710 ms"
+      ],
+      "state": "OK",
+      "url": "./IPD-Meta-Pro/ipd-meta-pro.html"
+    },
+    "Pairwiseai": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+          "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+        ],
+        "key": "Pairwiseai",
+        "load_ok": true,
+        "load_time_ms": 2140,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./Pairwiseai/main-screen.html"
+      },
+      "reasons": [
+        "loaded in 2140 ms"
+      ],
+      "state": "OK",
+      "url": "./Pairwiseai/main-screen.html"
+    },
+    "Truthcert1": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "Truthcert1",
+        "load_ok": true,
+        "load_time_ms": 3237,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./Truthcert1/TruthCert-PairwisePro-v1.0-production.html"
+      },
+      "reasons": [
+        "loaded in 3237 ms"
+      ],
+      "state": "OK",
+      "url": "./Truthcert1/TruthCert-PairwisePro-v1.0-production.html"
+    },
+    "amstar-2": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "amstar-2",
+        "load_ok": true,
+        "load_time_ms": 1130,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./amstar-2/index.html"
+      },
+      "reasons": [
+        "loaded in 1130 ms"
+      ],
+      "state": "OK",
+      "url": "./amstar-2/index.html"
+    },
+    "bayesian-ma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "bayesian-ma",
+        "load_ok": true,
+        "load_time_ms": 1460,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./bayesian-ma/index.html"
+      },
+      "reasons": [
+        "loaded in 1460 ms"
+      ],
+      "state": "OK",
+      "url": "./bayesian-ma/index.html"
+    },
+    "bayesian-mcmc": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "bayesian-mcmc",
+        "load_ok": true,
+        "load_time_ms": 1104,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./bayesian-mcmc/index.html"
+      },
+      "reasons": [
+        "loaded in 1104 ms"
+      ],
+      "state": "OK",
+      "url": "./bayesian-mcmc/index.html"
+    },
+    "bayesian-nma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "bayesian-nma",
+        "load_ok": true,
+        "load_time_ms": 1130,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./bayesian-nma/index.html"
+      },
+      "reasons": [
+        "loaded in 1130 ms"
+      ],
+      "state": "OK",
+      "url": "./bayesian-nma/index.html"
+    },
+    "bucher": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "bucher",
+        "load_ok": true,
+        "load_time_ms": 1116,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./bucher/index.html"
+      },
+      "reasons": [
+        "loaded in 1116 ms"
+      ],
+      "state": "OK",
+      "url": "./bucher/index.html"
+    },
+    "cerqual": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "cerqual",
+        "load_ok": true,
+        "load_time_ms": 1100,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./cerqual/index.html"
+      },
+      "reasons": [
+        "loaded in 1100 ms"
+      ],
+      "state": "OK",
+      "url": "./cerqual/index.html"
+    },
+    "cinema": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "cinema",
+        "load_ok": true,
+        "load_time_ms": 1125,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./cinema/index.html"
+      },
+      "reasons": [
+        "loaded in 1125 ms"
+      ],
+      "state": "OK",
+      "url": "./cinema/index.html"
+    },
+    "citation-chaser": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "citation-chaser",
+        "load_ok": true,
+        "load_time_ms": 1132,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./citation-chaser/index.html"
+      },
+      "reasons": [
+        "loaded in 1132 ms"
+      ],
+      "state": "OK",
+      "url": "./citation-chaser/index.html"
+    },
+    "citation-dedup": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+          "pageerror: Toast is not defined"
+        ],
+        "key": "citation-dedup",
+        "load_ok": true,
+        "load_time_ms": 1383,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./citation-dedup/index.html"
+      },
+      "reasons": [
+        "console.error: pageerror: Toast is not defined"
+      ],
+      "state": "CONSOLE-ERRORS",
+      "url": "./citation-dedup/index.html"
+    },
+    "component-nma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "component-nma",
+        "load_ok": true,
+        "load_time_ms": 1123,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./component-nma/index.html"
+      },
+      "reasons": [
+        "loaded in 1123 ms"
+      ],
+      "state": "OK",
+      "url": "./component-nma/index.html"
+    },
+    "copas": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "copas",
+        "load_ok": true,
+        "load_time_ms": 1139,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./copas/index.html"
+      },
+      "reasons": [
+        "loaded in 1139 ms"
+      ],
+      "state": "OK",
+      "url": "./copas/index.html"
+    },
+    "cumulative-subgroup": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "cumulative-subgroup",
+        "load_ok": true,
+        "load_time_ms": 1408,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./cumulative-subgroup/index.html"
+      },
+      "reasons": [
+        "loaded in 1408 ms"
+      ],
+      "state": "OK",
+      "url": "./cumulative-subgroup/index.html"
+    },
+    "dosehtml": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [],
+        "key": "dosehtml",
+        "load_ok": true,
+        "load_time_ms": 1512,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./dosehtml/dose-response-pro.html"
+      },
+      "reasons": [
+        "loaded in 1512 ms"
+      ],
+      "state": "OK",
+      "url": "./dosehtml/dose-response-pro.html"
+    },
+    "dta-sroc": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "dta-sroc",
+        "load_ok": true,
+        "load_time_ms": 1448,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./dta-sroc/index.html"
+      },
+      "reasons": [
+        "loaded in 1448 ms"
+      ],
+      "state": "OK",
+      "url": "./dta-sroc/index.html"
+    },
+    "effect-size-converter": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "effect-size-converter",
+        "load_ok": true,
+        "load_time_ms": 1524,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./effect-size-converter/index.html"
+      },
+      "reasons": [
+        "loaded in 1524 ms"
+      ],
+      "state": "OK",
+      "url": "./effect-size-converter/index.html"
+    },
+    "evidence-board": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "evidence-board",
+        "load_ok": true,
+        "load_time_ms": 1399,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./evidence-board/index.html"
+      },
+      "reasons": [
+        "loaded in 1399 ms"
+      ],
+      "state": "OK",
+      "url": "./evidence-board/index.html"
+    },
+    "focus-studio": {
+      "confidence": "medium",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "focus-studio",
+        "load_ok": true,
+        "load_time_ms": 3434,
+        "mount_found": false,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./focus-studio/index.html"
+      },
+      "reasons": [
+        "no primary mount landmark (svg/canvas/textarea/table input/action button)"
+      ],
+      "state": "MISSING-MOUNT",
+      "url": "./focus-studio/index.html"
+    },
+    "forest-plot": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "forest-plot",
+        "load_ok": true,
+        "load_time_ms": 1504,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./forest-plot/index.html"
+      },
+      "reasons": [
+        "loaded in 1504 ms"
+      ],
+      "state": "OK",
+      "url": "./forest-plot/index.html"
+    },
+    "funnel-plot": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "funnel-plot",
+        "load_ok": true,
+        "load_time_ms": 1616,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./funnel-plot/index.html"
+      },
+      "reasons": [
+        "loaded in 1616 ms"
+      ],
+      "state": "OK",
+      "url": "./funnel-plot/index.html"
+    },
+    "gosh": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "gosh",
+        "load_ok": true,
+        "load_time_ms": 1514,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./gosh/index.html"
+      },
+      "reasons": [
+        "loaded in 1514 ms"
+      ],
+      "state": "OK",
+      "url": "./gosh/index.html"
+    },
+    "gosh-metareg": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "gosh-metareg",
+        "load_ok": true,
+        "load_time_ms": 1157,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./gosh-metareg/index.html"
+      },
+      "reasons": [
+        "loaded in 1157 ms"
+      ],
+      "state": "OK",
+      "url": "./gosh-metareg/index.html"
+    },
+    "grade-sof": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "grade-sof",
+        "load_ok": true,
+        "load_time_ms": 1692,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./grade-sof/index.html"
+      },
+      "reasons": [
+        "loaded in 1692 ms"
+      ],
+      "state": "OK",
+      "url": "./grade-sof/index.html"
+    },
+    "heterogeneity": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "heterogeneity",
+        "load_ok": true,
+        "load_time_ms": 1462,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./heterogeneity/index.html"
+      },
+      "reasons": [
+        "loaded in 1462 ms"
+      ],
+      "state": "OK",
+      "url": "./heterogeneity/index.html"
+    },
+    "hsroc": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "hsroc",
+        "load_ok": true,
+        "load_time_ms": 1121,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./hsroc/index.html"
+      },
+      "reasons": [
+        "loaded in 1121 ms"
+      ],
+      "state": "OK",
+      "url": "./hsroc/index.html"
+    },
+    "influence": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "influence",
+        "load_ok": true,
+        "load_time_ms": 1134,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./influence/index.html"
+      },
+      "reasons": [
+        "loaded in 1134 ms"
+      ],
+      "state": "OK",
+      "url": "./influence/index.html"
+    },
+    "kanban-lab": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "kanban-lab",
+        "load_ok": true,
+        "load_time_ms": 1459,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./kanban-lab/index.html"
+      },
+      "reasons": [
+        "loaded in 1459 ms"
+      ],
+      "state": "OK",
+      "url": "./kanban-lab/index.html"
+    },
+    "km-reconstructor": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "km-reconstructor",
+        "load_ok": true,
+        "load_time_ms": 1102,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./km-reconstructor/index.html"
+      },
+      "reasons": [
+        "loaded in 1102 ms"
+      ],
+      "state": "OK",
+      "url": "./km-reconstructor/index.html"
+    },
+    "limit-ma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "limit-ma",
+        "load_ok": true,
+        "load_time_ms": 1115,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./limit-ma/index.html"
+      },
+      "reasons": [
+        "loaded in 1115 ms"
+      ],
+      "state": "OK",
+      "url": "./limit-ma/index.html"
+    },
+    "living-meta": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [],
+        "key": "living-meta",
+        "load_ok": true,
+        "load_time_ms": 1119,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./living-meta/living-meta-complete.html"
+      },
+      "reasons": [
+        "loaded in 1119 ms"
+      ],
+      "state": "OK",
+      "url": "./living-meta/living-meta-complete.html"
+    },
+    "local-ai": {
+      "confidence": "medium",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "local-ai",
+        "load_ok": true,
+        "load_time_ms": 3358,
+        "mount_found": false,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./local-ai/index.html"
+      },
+      "reasons": [
+        "no primary mount landmark (svg/canvas/textarea/table input/action button)"
+      ],
+      "state": "MISSING-MOUNT",
+      "url": "./local-ai/index.html"
+    },
+    "local-install": {
+      "confidence": "medium",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "local-install",
+        "load_ok": true,
+        "load_time_ms": 3077,
+        "mount_found": false,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./local-install/index.html"
+      },
+      "reasons": [
+        "no primary mount landmark (svg/canvas/textarea/table input/action button)"
+      ],
+      "state": "MISSING-MOUNT",
+      "url": "./local-install/index.html"
+    },
+    "mcid": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "mcid",
+        "load_ok": true,
+        "load_time_ms": 1117,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./mcid/index.html"
+      },
+      "reasons": [
+        "loaded in 1117 ms"
+      ],
+      "state": "OK",
+      "url": "./mcid/index.html"
+    },
+    "median-to-mean": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "median-to-mean",
+        "load_ok": true,
+        "load_time_ms": 1106,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./median-to-mean/index.html"
+      },
+      "reasons": [
+        "loaded in 1106 ms"
+      ],
+      "state": "OK",
+      "url": "./median-to-mean/index.html"
+    },
+    "meta-regression": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "meta-regression",
+        "load_ok": true,
+        "load_time_ms": 1538,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./meta-regression/index.html"
+      },
+      "reasons": [
+        "loaded in 1538 ms"
+      ],
+      "state": "OK",
+      "url": "./meta-regression/index.html"
+    },
+    "mh-peto": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "mh-peto",
+        "load_ok": true,
+        "load_time_ms": 1117,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./mh-peto/index.html"
+      },
+      "reasons": [
+        "loaded in 1117 ms"
+      ],
+      "state": "OK",
+      "url": "./mh-peto/index.html"
+    },
+    "multilevel-ma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "multilevel-ma",
+        "load_ok": true,
+        "load_time_ms": 1163,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./multilevel-ma/index.html"
+      },
+      "reasons": [
+        "loaded in 1163 ms"
+      ],
+      "state": "OK",
+      "url": "./multilevel-ma/index.html"
+    },
+    "nma-dose-response-app": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "nma-dose-response-app",
+        "load_ok": true,
+        "load_time_ms": 1742,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./nma-dose-response-app/index.html"
+      },
+      "reasons": [
+        "loaded in 1742 ms"
+      ],
+      "state": "OK",
+      "url": "./nma-dose-response-app/index.html"
+    },
+    "nma-global-inconsistency": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "nma-global-inconsistency",
+        "load_ok": true,
+        "load_time_ms": 1123,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./nma-global-inconsistency/index.html"
+      },
+      "reasons": [
+        "loaded in 1123 ms"
+      ],
+      "state": "OK",
+      "url": "./nma-global-inconsistency/index.html"
+    },
+    "nma-inconsistency": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "nma-inconsistency",
+        "load_ok": true,
+        "load_time_ms": 1115,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./nma-inconsistency/index.html"
+      },
+      "reasons": [
+        "loaded in 1115 ms"
+      ],
+      "state": "OK",
+      "url": "./nma-inconsistency/index.html"
+    },
+    "nma-pro-v2": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [],
+        "key": "nma-pro-v2",
+        "load_ok": true,
+        "load_time_ms": 3453,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./nma-pro-v2/nma-pro-v8.0.html"
+      },
+      "reasons": [
+        "loaded in 3453 ms"
+      ],
+      "state": "OK",
+      "url": "./nma-pro-v2/nma-pro-v8.0.html"
+    },
+    "p-curve": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "p-curve",
+        "load_ok": true,
+        "load_time_ms": 1118,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./p-curve/index.html"
+      },
+      "reasons": [
+        "loaded in 1118 ms"
+      ],
+      "state": "OK",
+      "url": "./p-curve/index.html"
+    },
+    "pet-peese": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "pet-peese",
+        "load_ok": true,
+        "load_time_ms": 1357,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./pet-peese/index.html"
+      },
+      "reasons": [
+        "loaded in 1357 ms"
+      ],
+      "state": "OK",
+      "url": "./pet-peese/index.html"
+    },
+    "pico": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "pico",
+        "load_ok": true,
+        "load_time_ms": 1400,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./pico/index.html"
+      },
+      "reasons": [
+        "loaded in 1400 ms"
+      ],
+      "state": "OK",
+      "url": "./pico/index.html"
+    },
+    "powerma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "powerma",
+        "load_ok": true,
+        "load_time_ms": 1127,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./powerma/index.html"
+      },
+      "reasons": [
+        "loaded in 1127 ms"
+      ],
+      "state": "OK",
+      "url": "./powerma/index.html"
+    },
+    "prisma-checklist": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "prisma-checklist",
+        "load_ok": true,
+        "load_time_ms": 1424,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./prisma-checklist/index.html"
+      },
+      "reasons": [
+        "loaded in 1424 ms"
+      ],
+      "state": "OK",
+      "url": "./prisma-checklist/index.html"
+    },
+    "prisma-flow": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "prisma-flow",
+        "load_ok": true,
+        "load_time_ms": 1154,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./prisma-flow/index.html"
+      },
+      "reasons": [
+        "loaded in 1154 ms"
+      ],
+      "state": "OK",
+      "url": "./prisma-flow/index.html"
+    },
+    "prisma-nma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "prisma-nma",
+        "load_ok": true,
+        "load_time_ms": 1549,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./prisma-nma/index.html"
+      },
+      "reasons": [
+        "loaded in 1549 ms"
+      ],
+      "state": "OK",
+      "url": "./prisma-nma/index.html"
+    },
+    "prisma-screen": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "prisma-screen",
+        "load_ok": true,
+        "load_time_ms": 1126,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./prisma-screen/index.html"
+      },
+      "reasons": [
+        "loaded in 1126 ms"
+      ],
+      "state": "OK",
+      "url": "./prisma-screen/index.html"
+    },
+    "proportion-ma": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "proportion-ma",
+        "load_ok": true,
+        "load_time_ms": 1110,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./proportion-ma/index.html"
+      },
+      "reasons": [
+        "loaded in 1110 ms"
+      ],
+      "state": "OK",
+      "url": "./proportion-ma/index.html"
+    },
+    "pubbias-tests": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "pubbias-tests",
+        "load_ok": true,
+        "load_time_ms": 1104,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./pubbias-tests/index.html"
+      },
+      "reasons": [
+        "loaded in 1104 ms"
+      ],
+      "state": "OK",
+      "url": "./pubbias-tests/index.html"
+    },
+    "quadas-2": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "quadas-2",
+        "load_ok": true,
+        "load_time_ms": 1119,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./quadas-2/index.html"
+      },
+      "reasons": [
+        "loaded in 1119 ms"
+      ],
+      "state": "OK",
+      "url": "./quadas-2/index.html"
+    },
+    "rct-extractor": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+          "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+        ],
+        "key": "rct-extractor",
+        "load_ok": true,
+        "load_time_ms": 3851,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [
+          "\\bnot reachable\\b"
+        ],
+        "url": "./rct-extractor/index.html"
+      },
+      "reasons": [
+        "UI text matched: '\\\\bnot reachable\\\\b'"
+      ],
+      "state": "NEEDS-SERVICE",
+      "url": "./rct-extractor/index.html"
+    },
+    "rob-traffic-light": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "rob-traffic-light",
+        "load_ok": true,
+        "load_time_ms": 1461,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./rob-traffic-light/index.html"
+      },
+      "reasons": [
+        "loaded in 1461 ms"
+      ],
+      "state": "OK",
+      "url": "./rob-traffic-light/index.html"
+    },
+    "rob2": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "rob2",
+        "load_ok": true,
+        "load_time_ms": 1116,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./rob2/index.html"
+      },
+      "reasons": [
+        "loaded in 1116 ms"
+      ],
+      "state": "OK",
+      "url": "./rob2/index.html"
+    },
+    "robins-e": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "robins-e",
+        "load_ok": true,
+        "load_time_ms": 1134,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./robins-e/index.html"
+      },
+      "reasons": [
+        "loaded in 1134 ms"
+      ],
+      "state": "OK",
+      "url": "./robins-e/index.html"
+    },
+    "robins-i": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "robins-i",
+        "load_ok": true,
+        "load_time_ms": 1141,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./robins-i/index.html"
+      },
+      "reasons": [
+        "loaded in 1141 ms"
+      ],
+      "state": "OK",
+      "url": "./robins-i/index.html"
+    },
+    "search-translator": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "search-translator",
+        "load_ok": true,
+        "load_time_ms": 1116,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./search-translator/index.html"
+      },
+      "reasons": [
+        "loaded in 1116 ms"
+      ],
+      "state": "OK",
+      "url": "./search-translator/index.html"
+    },
+    "thematic-synthesis": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "thematic-synthesis",
+        "load_ok": true,
+        "load_time_ms": 1100,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./thematic-synthesis/index.html"
+      },
+      "reasons": [
+        "loaded in 1100 ms"
+      ],
+      "state": "OK",
+      "url": "./thematic-synthesis/index.html"
+    },
+    "tsa": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "tsa",
+        "load_ok": true,
+        "load_time_ms": 1485,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./tsa/index.html"
+      },
+      "reasons": [
+        "loaded in 1485 ms"
+      ],
+      "state": "OK",
+      "url": "./tsa/index.html"
+    },
+    "webr-studio": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "webr-studio",
+        "load_ok": true,
+        "load_time_ms": 1120,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./webr-studio/index.html"
+      },
+      "reasons": [
+        "loaded in 1120 ms"
+      ],
+      "state": "OK",
+      "url": "./webr-studio/index.html"
+    },
+    "webr-validator": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "webr-validator",
+        "load_ok": true,
+        "load_time_ms": 1416,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./webr-validator/index.html"
+      },
+      "reasons": [
+        "loaded in 1416 ms"
+      ],
+      "state": "OK",
+      "url": "./webr-validator/index.html"
+    },
+    "workbench": {
+      "confidence": "high",
+      "probe": {
+        "console_errors": [
+          "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+        ],
+        "key": "workbench",
+        "load_ok": true,
+        "load_time_ms": 1398,
+        "mount_found": true,
+        "probe_crashed": false,
+        "timed_out": false,
+        "ui_text_matches": [],
+        "url": "./workbench/index.html"
+      },
+      "reasons": [
+        "loaded in 1398 ms"
+      ],
+      "state": "OK",
+      "url": "./workbench/index.html"
+    }
+  },
+  "audit_version": "0.1.0",
+  "generated_at": "2026-05-13T19:39:47Z",
+  "totals": {
+    "CONSOLE-ERRORS": 2,
+    "MISSING-MOUNT": 3,
+    "NEEDS-SERVICE": 1,
+    "OK": 60,
+    "TIMEOUT": 0,
+    "UNKNOWN": 0,
+    "total": 66
+  }
+}
