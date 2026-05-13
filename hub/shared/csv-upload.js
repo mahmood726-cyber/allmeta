@@ -127,20 +127,80 @@
     return { headers: rawHeaders, rows: rows, warnings: warnings };
   }
 
-  // Public init — parser-only in this task; DOM/UI lands in Task 9.
+  const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid #cbd5e1;border-radius:6px}.alm-csv button{padding:.3rem .6rem;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#b45309;font-size:12px}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid #e2e8f0;text-align:left}`;
+  let _stylesInjected = false;
+  function _ensureStyle() {
+    if (_stylesInjected) return;
+    const s = document.createElement('style'); s.textContent = _STYLE;
+    document.head.appendChild(s); _stylesInjected = true;
+  }
+  function _formatPanel(columns) {
+    const rows = columns.map(c =>
+      `<tr><td>${c.name}</td><td>${c.type || 'string'}</td><td>${c.required ? 'yes' : ''}</td><td>${c.example != null ? c.example : ''}</td></tr>`
+    ).join('');
+    return `<details data-section="format" open><summary>Expected CSV format</summary>
+      <table><thead><tr><th>column</th><th>type</th><th>required</th><th>example</th></tr></thead><tbody>${rows}</tbody></table>
+      <p style="margin-top:.4rem"><button type="button" data-action="sample">Download sample CSV</button></p>
+    </details>`;
+  }
+  function _sampleCSV(columns) {
+    const header = columns.map(c => c.name).join(',');
+    const example = columns.map(c => {
+      if (c.example != null) return c.example;
+      if (c.type === 'int') return '1';
+      if (c.type === 'float') return '0.1';
+      return c.name === 'study' ? 'StudyA' : 'x';
+    }).join(',');
+    return header + '\n' + example;
+  }
+  function _download(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
   function init(opts) {
     opts = opts || {};
-    var target = null;
-    if (typeof opts.target === 'string') {
-      target = document.querySelector(opts.target);
-    } else if (opts.target) {
-      target = opts.target;
+    const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
+    if (!target) { console.warn('[alm.csvUpload] target not found'); return; }
+    const columns = opts.columns || [];
+    const onParse = typeof opts.onParse === 'function' ? opts.onParse : () => {};
+    _ensureStyle();
+    target.innerHTML = `
+      <div class="alm-csv">
+        <div class="alm-csv-row">
+          <label>Upload CSV: <input type="file" accept=".csv,text/csv"></label>
+          <span>or paste below:</span>
+        </div>
+        <textarea placeholder="Paste CSV here (with header row)"></textarea>
+        <div class="alm-csv-row">
+          <button type="button" data-action="parse-paste">Parse pasted text</button>
+        </div>
+        <div data-section="warnings"></div>
+        ${_formatPanel(columns)}
+      </div>`;
+    const fileInput = target.querySelector('input[type="file"]');
+    const ta = target.querySelector('textarea');
+    const warnEl = target.querySelector('[data-section="warnings"]');
+    function _emit(text) {
+      const result = parse(text, columns);
+      warnEl.innerHTML = result.warnings.map(w => '<div>' + String.fromCharCode(8226) + ' ' + w + '</div>').join('');
+      onParse(result);
     }
-    if (!target) {
-      console.warn('[alm.csvUpload] target not found');
-      return;
-    }
-    console.warn('[alm.csvUpload] UI not yet implemented (Task 9 pending)');
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => _emit(String(reader.result));
+      reader.readAsText(f);
+    });
+    target.querySelector('[data-action="parse-paste"]').addEventListener('click', () => {
+      _emit(ta.value);
+    });
+    target.querySelector('[data-action="sample"]').addEventListener('click', () => {
+      _download(new Blob([_sampleCSV(columns)], { type: 'text/csv' }), 'sample.csv');
+    });
   }
 
   // Attach parse directly onto init so callers can use
