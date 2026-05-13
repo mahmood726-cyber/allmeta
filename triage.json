@@ -258,20 +258,19 @@
       "tier": 3
     },
     "cerqual": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Qualitative Synthesis",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "cerqual",
         "kind": "non-numerical",
@@ -280,10 +279,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 13.33
       },
-      "tier": 3
+      "tier": 2
     },
     "cinema": {
       "auto_tier": 3,
@@ -315,20 +314,19 @@
       "tier": 3
     },
     "citation-chaser": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Search",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "citation-chaser",
         "kind": "non-numerical",
@@ -337,26 +335,25 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 19.04
       },
-      "tier": 3
+      "tier": 2
     },
     "citation-dedup": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Screening & Extraction",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "citation-dedup",
         "kind": "non-numerical",
@@ -365,10 +362,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 21.86
       },
-      "tier": 3
+      "tier": 2
     },
     "component-nma": {
       "auto_tier": 3,
@@ -544,19 +541,19 @@
       "tier": 1
     },
     "evidence-board": {
-      "auto_tier": 3,
+      "auto_tier": 2,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Research Notes",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "evidence-board",
         "kind": "non-numerical",
@@ -568,22 +565,22 @@
         "test_count": 1,
         "total_size_kb": 22.31
       },
-      "tier": 3
+      "tier": 2
     },
     "focus-studio": {
-      "auto_tier": 3,
+      "auto_tier": 2,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Productivity",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "focus-studio",
         "kind": "non-numerical",
@@ -595,7 +592,7 @@
         "test_count": 1,
         "total_size_kb": 28.67
       },
-      "tier": 3
+      "tier": 2
     },
     "forest-plot": {
       "auto_tier": 1,
@@ -824,24 +821,24 @@
         "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 3,
-        "total_size_kb": 20.75
+        "total_size_kb": 21.15
       },
       "tier": 1
     },
     "kanban-lab": {
-      "auto_tier": 3,
+      "auto_tier": 2,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Productivity",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "kanban-lab",
         "kind": "non-numerical",
@@ -853,7 +850,7 @@
         "test_count": 1,
         "total_size_kb": 17.57
       },
-      "tier": 3
+      "tier": 2
     },
     "km-reconstructor": {
       "auto_tier": 3,
@@ -914,16 +911,15 @@
       "tier": 3
     },
     "living-meta": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "informational",
       "override": {
         "kind": "informational",
         "reason": "Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
       },
       "reasons": [
-        "no tests",
-        "no README",
+        "working — no flags",
         "override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
       ],
       "signals": {
@@ -931,7 +927,7 @@
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "living-meta",
         "kind": "informational",
@@ -940,22 +936,21 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 0.87
       },
-      "tier": 3
+      "tier": 2
     },
     "local-ai": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "informational",
       "override": {
         "kind": "informational",
         "reason": "Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       },
       "reasons": [
-        "no tests",
-        "no README",
+        "working — no flags",
         "override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
@@ -963,7 +958,7 @@
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "local-ai",
         "kind": "informational",
@@ -972,22 +967,21 @@
         "playwright_pass": null,
         "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 12.52
       },
-      "tier": 3
+      "tier": 2
     },
     "local-install": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "informational",
       "override": {
         "kind": "informational",
         "reason": "Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       },
       "reasons": [
-        "no tests",
-        "no README",
+        "working — no flags",
         "override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
@@ -995,7 +989,7 @@
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "local-install",
         "kind": "informational",
@@ -1004,10 +998,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 13.26
       },
-      "tier": 3
+      "tier": 2
     },
     "mcid": {
       "auto_tier": 3,
@@ -1295,7 +1289,7 @@
         "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 3,
-        "total_size_kb": 20.5
+        "total_size_kb": 20.88
       },
       "tier": 1
     },
@@ -1329,20 +1323,19 @@
       "tier": 1
     },
     "pico": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Planning",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "pico",
         "kind": "non-numerical",
@@ -1351,10 +1344,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 14.05
       },
-      "tier": 3
+      "tier": 2
     },
     "powerma": {
       "auto_tier": 3,
@@ -1728,20 +1721,19 @@
       "tier": 3
     },
     "search-translator": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Search",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "search-translator",
         "kind": "non-numerical",
@@ -1750,26 +1742,25 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 14.14
       },
-      "tier": 3
+      "tier": 2
     },
     "thematic-synthesis": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no README"
+        "working — no flags"
       ],
       "signals": {
         "category": "Qualitative Synthesis",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "thematic-synthesis",
         "kind": "non-numerical",
@@ -1778,10 +1769,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 0,
+        "test_count": 1,
         "total_size_kb": 12.95
       },
-      "tier": 3
+      "tier": 2
     },
     "tsa": {
       "auto_tier": 3,
@@ -1897,12 +1888,12 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:34:20Z",
+  "generated_at": "2026-05-13T22:43:52Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 10,
-    "tier_2": 1,
-    "tier_3": 51,
+    "tier_2": 13,
+    "tier_3": 39,
     "tier_4": 2,
     "tier_5": 2,
     "total": 66

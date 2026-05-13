@@ -2,13 +2,13 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T22:34:20Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T22:43:52Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 10
-- Tier 2 — Working: 1
-- Tier 3 — Polish needed: 51
+- Tier 2 — Working: 13
+- Tier 3 — Polish needed: 39
 - Tier 4 — Hardening priority: 2
 - Tier 5 — Active rebuild: 2
 
@@ -22,34 +22,25 @@ Generated: 2026-05-13T22:34:20Z · scanner v0.1.0 · 66 apps
 - **quadas-2** — runtime_health=MISSING-MOUNT (and not informational kind)
 - **rct-extractor** — runtime_health=NEEDS-SERVICE
 
-## Tier 3 — Polish needed (51)
+## Tier 3 — Polish needed (39)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
 - **bayesian-mcmc** — no tests · no R-parity test · no README
 - **bayesian-nma** — no tests · no R-parity test · no README
 - **bucher** — no tests · no R-parity test · no README
-- **cerqual** — no tests · no README
 - **cinema** — no tests · no R-parity test · no README
-- **citation-chaser** — no tests · no README
-- **citation-dedup** — no tests · no README
 - **component-nma** — no tests · no R-parity test · no README
 - **copas** — no tests · no R-parity test · no README
 - **cumulative-subgroup** — no R-parity test · no README
 - **dosehtml** — no R-parity test
-- **evidence-board** — no README
-- **focus-studio** — no README
 - **gosh** — no tests · no R-parity test · no README
 - **gosh-metareg** — no tests · no R-parity test · no README
 - **grade-sof** — no R-parity test · no README
 - **hsroc** — no tests · no R-parity test · no README
 - **HTA** — no tests · no R-parity test
-- **kanban-lab** — no README
 - **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
-- **living-meta** — no tests · no README · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
-- **local-ai** — no tests · no README · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
-- **local-install** — no tests · no README · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **mcid** — no tests · no R-parity test · no README
 - **median-to-mean** — no tests · no R-parity test · no README
 - **mh-peto** — no tests · no R-parity test · no README
@@ -58,7 +49,6 @@ Generated: 2026-05-13T22:34:20Z · scanner v0.1.0 · 66 apps
 - **nma-global-inconsistency** — no tests · no R-parity test · no README
 - **nma-inconsistency** — no tests · no R-parity test · no README
 - **Pairwiseai** — no tests · no R-parity test · no README
-- **pico** — no tests · no README
 - **powerma** — no tests · no R-parity test · no README
 - **prisma-nma** — no tests · no R-parity test · no README
 - **prisma-screen** — no R-parity test · no README
@@ -68,17 +58,27 @@ Generated: 2026-05-13T22:34:20Z · scanner v0.1.0 · 66 apps
 - **rob2** — no tests · no R-parity test · no README
 - **robins-e** — no tests · no R-parity test · no README
 - **robins-i** — no tests · no R-parity test · no README
-- **search-translator** — no tests · no README
-- **thematic-synthesis** — no tests · no README
 - **Truthcert1** — no tests · no R-parity test · no README
 - **tsa** — no R-parity test · no README
 - **webr-studio** — no tests · no R-parity test · no README
 - **webr-validator** — no R-parity test · no README
 - **workbench** — no R-parity test · no README
 
-## Tier 2 — Working (1)
+## Tier 2 — Working (13)
 
+- **cerqual** — working — no flags
+- **citation-chaser** — working — no flags
+- **citation-dedup** — working — no flags
+- **evidence-board** — working — no flags
+- **focus-studio** — working — no flags
+- **kanban-lab** — working — no flags
+- **living-meta** — working — no flags · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
+- **local-ai** — working — no flags · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
+- **local-install** — working — no flags · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
+- **pico** — working — no flags
 - **prisma-flow** — working — no flags · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
+- **search-translator** — working — no flags
+- **thematic-synthesis** — working — no flags
 
 ## Tier 1 — Validated (10)
 
