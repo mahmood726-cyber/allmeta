@@ -77,3 +77,32 @@ def last_touched_unix(app_dir: Path, repo_root: Path) -> int | None:
         return int(out)
     except ValueError:
         return None
+
+
+_PARITY_TOKENS = ("metafor", "_parity", "_against_r", "_compare_r", "mada", "netmeta_compare")
+
+
+def _iter_test_files(app_dir: Path):
+    tests = app_dir / "tests"
+    if not tests.is_dir():
+        return
+    for p in tests.glob("test_*.py"):
+        yield p
+    for p in tests.glob("test_*.mjs"):
+        yield p
+    pw = tests / "playwright"
+    if pw.is_dir():
+        for p in pw.glob("*.spec.*"):
+            yield p
+
+
+def test_count(app_dir: Path) -> int:
+    return sum(1 for _ in _iter_test_files(app_dir))
+
+
+def has_r_parity(app_dir: Path) -> bool:
+    for p in _iter_test_files(app_dir):
+        name = p.name.lower()
+        if any(tok in name for tok in _PARITY_TOKENS):
+            return True
+    return False
