@@ -6,7 +6,7 @@
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=54 (>= 6)"
+        "stub_count=23 (>= 6)"
       ],
       "signals": {
         "category": "Health Technology Assessment",
@@ -20,7 +20,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 54,
+        "stub_count": 23,
         "test_count": 0,
         "total_size_kb": 392.15
       },
@@ -32,7 +32,7 @@
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=115 (>= 6)"
+        "stub_count=96 (>= 6)"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -46,7 +46,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 115,
+        "stub_count": 96,
         "test_count": 0,
         "total_size_kb": 4.3
       },
@@ -58,7 +58,7 @@
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=408 (>= 6)"
+        "stub_count=233 (>= 6)"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -72,7 +72,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 408,
+        "stub_count": 233,
         "test_count": 0,
         "total_size_kb": 1988.05
       },
@@ -87,7 +87,7 @@
         "tier": 4
       },
       "reasons": [
-        "stub_count=42 (>= 6)",
+        "stub_count=30 (>= 6)",
         "override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete."
       ],
       "signals": {
@@ -102,7 +102,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 42,
+        "stub_count": 30,
         "test_count": 0,
         "total_size_kb": 653.16
       },
@@ -303,12 +303,13 @@
       "tier": 3
     },
     "citation-chaser": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no tests",
+        "no README"
       ],
       "signals": {
         "category": "Search",
@@ -322,19 +323,20 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 19.04
       },
-      "tier": 4
+      "tier": 3
     },
     "citation-dedup": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no tests",
+        "no README"
       ],
       "signals": {
         "category": "Screening & Extraction",
@@ -348,11 +350,11 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 20.66
       },
-      "tier": 4
+      "tier": 3
     },
     "component-nma": {
       "auto_tier": 3,
@@ -411,12 +413,13 @@
       "tier": 3
     },
     "cumulative-subgroup": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -430,11 +433,11 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 34.92
       },
-      "tier": 4
+      "tier": 3
     },
     "dosehtml": {
       "auto_tier": 5,
@@ -442,7 +445,7 @@
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=22 (>= 6)"
+        "stub_count=16 (>= 6)"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -456,19 +459,20 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 22,
+        "stub_count": 16,
         "test_count": 1,
         "total_size_kb": 144.92
       },
       "tier": 5
     },
     "dta-sroc": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -482,19 +486,19 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 23.26
       },
-      "tier": 4
+      "tier": 3
     },
     "effect-size-converter": {
-      "auto_tier": 5,
+      "auto_tier": 4,
       "confidence": "medium",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=9 (>= 6)"
+        "stub_count=1"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -508,19 +512,19 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 9,
+        "stub_count": 1,
         "test_count": 0,
         "total_size_kb": 32.58
       },
-      "tier": 5
+      "tier": 4
     },
     "evidence-board": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=5"
+        "no README"
       ],
       "signals": {
         "category": "Research Notes",
@@ -534,19 +538,19 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 5,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 22.31
       },
-      "tier": 4
+      "tier": 3
     },
     "focus-studio": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=2"
+        "no README"
       ],
       "signals": {
         "category": "Productivity",
@@ -560,63 +564,67 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 2,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 28.67
       },
-      "tier": 4
+      "tier": 3
     },
     "forest-plot": {
-      "auto_tier": 4,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=2"
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "forest-plot",
         "kind": "numerical",
-        "last_touched_days": 15,
-        "last_touched_unix": 1777306397,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778681041,
         "playwright_pass": null,
-        "stub_count": 2,
-        "test_count": 1,
-        "total_size_kb": 35.61
+        "stub_count": 0,
+        "test_count": 4,
+        "total_size_kb": 42.74
       },
-      "tier": 4
+      "tier": 1
     },
     "funnel-plot": {
-      "auto_tier": 4,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "funnel-plot",
         "kind": "numerical",
-        "last_touched_days": 15,
-        "last_touched_unix": 1777306397,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778682328,
         "playwright_pass": null,
-        "stub_count": 1,
-        "test_count": 1,
-        "total_size_kb": 29.62
+        "stub_count": 0,
+        "test_count": 4,
+        "total_size_kb": 37.39
       },
-      "tier": 4
+      "tier": 1
     },
     "gosh": {
       "auto_tier": 3,
@@ -675,12 +683,13 @@
       "tier": 3
     },
     "grade-sof": {
-      "auto_tier": 5,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=12 (>= 6)"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -694,11 +703,11 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306452,
         "playwright_pass": null,
-        "stub_count": 12,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 43.54
       },
-      "tier": 5
+      "tier": 3
     },
     "heterogeneity": {
       "auto_tier": 3,
@@ -784,12 +793,12 @@
       "tier": 3
     },
     "kanban-lab": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=4"
+        "no README"
       ],
       "signals": {
         "category": "Productivity",
@@ -803,19 +812,21 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 4,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 17.57
       },
-      "tier": 4
+      "tier": 3
     },
     "km-reconstructor": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no tests",
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -829,11 +840,11 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 18.06
       },
-      "tier": 4
+      "tier": 3
     },
     "limit-ma": {
       "auto_tier": 3,
@@ -880,10 +891,10 @@
         "is_hub_linked": true,
         "key": "living-meta",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777293841,
         "playwright_pass": null,
-        "stub_count": 2,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 0.0
       },
@@ -1002,30 +1013,32 @@
       "tier": 3
     },
     "meta-regression": {
-      "auto_tier": 4,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=2"
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "meta-regression",
         "kind": "numerical",
-        "last_touched_days": 15,
-        "last_touched_unix": 1777306397,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778683423,
         "playwright_pass": null,
-        "stub_count": 2,
-        "test_count": 1,
-        "total_size_kb": 32.2
+        "stub_count": 0,
+        "test_count": 4,
+        "total_size_kb": 42.56
       },
-      "tier": 4
+      "tier": 1
     },
     "mh-peto": {
       "auto_tier": 3,
@@ -1089,7 +1102,7 @@
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=86 (>= 6)"
+        "stub_count=14 (>= 6)"
       ],
       "signals": {
         "category": "Network Meta-Analysis",
@@ -1103,7 +1116,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 86,
+        "stub_count": 14,
         "test_count": 1,
         "total_size_kb": 1874.38
       },
@@ -1182,10 +1195,10 @@
         "is_hub_linked": true,
         "key": "nma-pro-v2",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777295804,
         "playwright_pass": null,
-        "stub_count": 37,
+        "stub_count": 3,
         "test_count": 0,
         "total_size_kb": 0.0
       },
@@ -1246,12 +1259,12 @@
       "tier": 3
     },
     "pico": {
-      "auto_tier": 5,
+      "auto_tier": 4,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=7 (>= 6)"
+        "stub_count=1"
       ],
       "signals": {
         "category": "Planning",
@@ -1265,11 +1278,11 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 7,
+        "stub_count": 1,
         "test_count": 0,
         "total_size_kb": 14.05
       },
-      "tier": 5
+      "tier": 4
     },
     "powerma": {
       "auto_tier": 3,
@@ -1305,7 +1318,7 @@
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=14 (>= 6)"
+        "stub_count=13 (>= 6)"
       ],
       "signals": {
         "category": "Reporting",
@@ -1319,14 +1332,14 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 14,
+        "stub_count": 13,
         "test_count": 0,
         "total_size_kb": 19.75
       },
       "tier": 5
     },
     "prisma-flow": {
-      "auto_tier": 5,
+      "auto_tier": 4,
       "confidence": "high",
       "kind": "non-numerical",
       "override": {
@@ -1334,7 +1347,7 @@
         "reason": "Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
       },
       "reasons": [
-        "stub_count=7 (>= 6)",
+        "stub_count=4",
         "override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
       ],
       "signals": {
@@ -1349,11 +1362,11 @@
         "last_touched_days": 18,
         "last_touched_unix": 1777111704,
         "playwright_pass": null,
-        "stub_count": 7,
+        "stub_count": 4,
         "test_count": 1,
         "total_size_kb": 26.04
       },
-      "tier": 5
+      "tier": 4
     },
     "prisma-nma": {
       "auto_tier": 3,
@@ -1384,12 +1397,13 @@
       "tier": 3
     },
     "prisma-screen": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -1403,11 +1417,11 @@
         "last_touched_days": 18,
         "last_touched_unix": 1777110725,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 25.66
       },
-      "tier": 4
+      "tier": 3
     },
     "proportion-ma": {
       "auto_tier": 3,
@@ -1494,12 +1508,13 @@
       "tier": 3
     },
     "rct-extractor": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no tests",
+        "no README"
       ],
       "signals": {
         "category": "Screening & Extraction",
@@ -1513,19 +1528,20 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 32.99
       },
-      "tier": 4
+      "tier": 3
     },
     "rob-traffic-light": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -1539,11 +1555,11 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 24.94
       },
-      "tier": 4
+      "tier": 3
     },
     "rob2": {
       "auto_tier": 3,
@@ -1657,12 +1673,13 @@
       "tier": 3
     },
     "thematic-synthesis": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=4"
+        "no tests",
+        "no README"
       ],
       "signals": {
         "category": "Qualitative Synthesis",
@@ -1676,19 +1693,20 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "stub_count": 4,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 12.95
       },
-      "tier": 4
+      "tier": 3
     },
     "tsa": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -1702,11 +1720,11 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 28.09
       },
-      "tier": 4
+      "tier": 3
     },
     "webr-studio": {
       "auto_tier": 3,
@@ -1737,12 +1755,13 @@
       "tier": 3
     },
     "webr-validator": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=3"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -1756,19 +1775,20 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
-        "stub_count": 3,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 35.39
       },
-      "tier": 4
+      "tier": 3
     },
     "workbench": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "stub_count=1"
+        "no R-parity test",
+        "no README"
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -1782,21 +1802,21 @@
         "last_touched_days": 15,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
-        "stub_count": 1,
+        "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 33.15
       },
-      "tier": 4
+      "tier": 3
     }
   },
-  "generated_at": "2026-05-13T10:48:15Z",
+  "generated_at": "2026-05-13T14:48:47Z",
   "scanner_version": "0.1.0",
   "totals": {
-    "tier_1": 0,
+    "tier_1": 3,
     "tier_2": 0,
-    "tier_3": 34,
-    "tier_4": 20,
-    "tier_5": 12,
+    "tier_3": 50,
+    "tier_4": 5,
+    "tier_5": 8,
     "total": 66
   }
 }

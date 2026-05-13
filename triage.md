@@ -2,55 +2,36 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T10:48:15Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T14:48:47Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
-- Tier 1 — Validated: 0
+- Tier 1 — Validated: 3
 - Tier 2 — Working: 0
-- Tier 3 — Polish needed: 34
-- Tier 4 — Hardening priority: 20
-- Tier 5 — Active rebuild: 12
+- Tier 3 — Polish needed: 50
+- Tier 4 — Hardening priority: 5
+- Tier 5 — Active rebuild: 8
 
-## Tier 5 — Active rebuild (12)
+## Tier 5 — Active rebuild (8)
 
-- **dosehtml** — stub_count=22 (>= 6)
-- **effect-size-converter** — stub_count=9 (>= 6)
-- **grade-sof** — stub_count=12 (>= 6)
-- **HTA** — stub_count=54 (>= 6)
-- **IPD-Meta-Pro** — stub_count=115 (>= 6)
+- **dosehtml** — stub_count=16 (>= 6)
+- **HTA** — stub_count=23 (>= 6)
+- **IPD-Meta-Pro** — stub_count=96 (>= 6)
 - **living-meta** — missing index.html
-- **nma-dose-response-app** — stub_count=86 (>= 6)
+- **nma-dose-response-app** — stub_count=14 (>= 6)
 - **nma-pro-v2** — missing index.html
-- **Pairwiseai** — stub_count=408 (>= 6)
-- **pico** — stub_count=7 (>= 6)
-- **prisma-checklist** — stub_count=14 (>= 6)
-- **prisma-flow** — stub_count=7 (>= 6) · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
+- **Pairwiseai** — stub_count=233 (>= 6)
+- **prisma-checklist** — stub_count=13 (>= 6)
 
-## Tier 4 — Hardening priority (20)
+## Tier 4 — Hardening priority (5)
 
-- **citation-chaser** — stub_count=1
-- **citation-dedup** — stub_count=1
-- **cumulative-subgroup** — stub_count=1
-- **dta-sroc** — stub_count=1
-- **evidence-board** — stub_count=5
-- **focus-studio** — stub_count=2
-- **forest-plot** — stub_count=2
-- **funnel-plot** — stub_count=1
-- **kanban-lab** — stub_count=4
-- **km-reconstructor** — stub_count=1
-- **meta-regression** — stub_count=2
+- **effect-size-converter** — stub_count=1
 - **p-curve** — stub_count=1
-- **prisma-screen** — stub_count=1
-- **rct-extractor** — stub_count=1
-- **rob-traffic-light** — stub_count=1
-- **thematic-synthesis** — stub_count=4
-- **Truthcert1** — stub_count=42 (>= 6) · override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete. · **override**
-- **tsa** — stub_count=1
-- **webr-validator** — stub_count=3
-- **workbench** — stub_count=1
+- **pico** — stub_count=1
+- **prisma-flow** — stub_count=4 · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
+- **Truthcert1** — stub_count=30 (>= 6) · override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete. · **override**
 
-## Tier 3 — Polish needed (34)
+## Tier 3 — Polish needed (50)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
@@ -59,13 +40,22 @@ Generated: 2026-05-13T10:48:15Z · scanner v0.1.0 · 66 apps
 - **bucher** — no tests · no R-parity test · no README
 - **cerqual** — no tests · no README
 - **cinema** — no tests · no R-parity test · no README
+- **citation-chaser** — no tests · no README
+- **citation-dedup** — no tests · no README
 - **component-nma** — no tests · no R-parity test · no README
 - **copas** — no tests · no R-parity test · no README
+- **cumulative-subgroup** — no R-parity test · no README
+- **dta-sroc** — no R-parity test · no README
+- **evidence-board** — no README
+- **focus-studio** — no README
 - **gosh** — no tests · no R-parity test · no README
 - **gosh-metareg** — no tests · no R-parity test · no README
+- **grade-sof** — no R-parity test · no README
 - **heterogeneity** — no R-parity test · no README
 - **hsroc** — no tests · no R-parity test · no README
 - **influence** — no tests · no R-parity test · no README
+- **kanban-lab** — no README
+- **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
 - **local-ai** — no tests · no R-parity test · no README
 - **local-install** — no tests · no R-parity test · no README
@@ -78,11 +68,24 @@ Generated: 2026-05-13T10:48:15Z · scanner v0.1.0 · 66 apps
 - **pet-peese** — no tests · no R-parity test · no README
 - **powerma** — no tests · no R-parity test · no README
 - **prisma-nma** — no tests · no R-parity test · no README
+- **prisma-screen** — no R-parity test · no README
 - **proportion-ma** — no tests · no R-parity test · no README
 - **pubbias-tests** — no tests · no R-parity test · no README
 - **quadas-2** — no tests · no R-parity test · no README
+- **rct-extractor** — no tests · no README
+- **rob-traffic-light** — no R-parity test · no README
 - **rob2** — no tests · no R-parity test · no README
 - **robins-e** — no tests · no R-parity test · no README
 - **robins-i** — no tests · no R-parity test · no README
 - **search-translator** — no tests · no README
+- **thematic-synthesis** — no tests · no README
+- **tsa** — no R-parity test · no README
 - **webr-studio** — no tests · no R-parity test · no README
+- **webr-validator** — no R-parity test · no README
+- **workbench** — no R-parity test · no README
+
+## Tier 1 — Validated (3)
+
+- **forest-plot** — test_count=4 · has R-parity test · last_touched 0d ago
+- **funnel-plot** — test_count=4 · has R-parity test · last_touched 0d ago
+- **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago

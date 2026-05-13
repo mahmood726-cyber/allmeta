@@ -1,5 +1,5 @@
 app,tier,auto_tier,kind,confidence,stub_count,test_count,has_r_parity,last_touched_days,total_size_kb,is_hub_linked,featured_rank,reasons
-rct-extractor,4,4,non-numerical,medium,1,0,False,0,32.99,True,,stub_count=1
+rct-extractor,3,3,non-numerical,medium,0,0,False,0,32.99,True,,no tests | no README
 local-ai,3,3,numerical,medium,0,0,False,0,12.52,True,,no tests | no R-parity test | no README
 webr-studio,3,3,numerical,medium,0,0,False,0,26.91,True,,no tests | no R-parity test | no README
 local-install,3,3,numerical,medium,0,0,False,0,13.26,True,,no tests | no R-parity test | no README
@@ -10,7 +10,7 @@ gosh-metareg,3,3,numerical,medium,0,0,False,0,13.1,True,,no tests | no R-parity 
 powerma,3,3,numerical,medium,0,0,False,0,14.66,True,,no tests | no R-parity test | no README
 cerqual,3,3,non-numerical,medium,0,0,False,0,13.33,True,,no tests | no README
 robins-e,3,3,numerical,medium,0,0,False,0,15.88,True,,no tests | no R-parity test | no README
-citation-chaser,4,4,non-numerical,medium,1,0,False,0,19.04,True,,stub_count=1
+citation-chaser,3,3,non-numerical,medium,0,0,False,0,19.04,True,,no tests | no README
 nma-inconsistency,3,3,numerical,medium,0,0,False,0,19.05,True,,no tests | no R-parity test | no README
 bucher,3,3,numerical,medium,0,0,False,0,10.25,True,,no tests | no R-parity test | no README
 multilevel-ma,3,3,numerical,medium,0,0,False,0,17.5,True,,no tests | no R-parity test | no README
@@ -19,7 +19,7 @@ copas,3,3,numerical,medium,0,0,False,0,14.41,True,,no tests | no R-parity test |
 influence,3,3,numerical,medium,0,0,False,0,12.82,True,,no tests | no R-parity test | no README
 bayesian-mcmc,3,3,numerical,medium,0,0,False,0,18.48,True,,no tests | no R-parity test | no README
 mh-peto,3,3,numerical,medium,0,0,False,0,14.51,True,,no tests | no R-parity test | no README
-thematic-synthesis,4,4,non-numerical,medium,4,0,False,0,12.95,True,,stub_count=4
+thematic-synthesis,3,3,non-numerical,medium,0,0,False,0,12.95,True,,no tests | no README
 bayesian-nma,3,3,numerical,medium,0,0,False,0,19.23,True,,no tests | no R-parity test | no README
 component-nma,3,3,numerical,medium,0,0,False,0,14.37,True,,no tests | no R-parity test | no README
 mcid,3,3,numerical,medium,0,0,False,0,11.08,True,,no tests | no R-parity test | no README
@@ -29,39 +29,39 @@ amstar-2,3,3,numerical,medium,0,0,False,0,12.75,True,,no tests | no R-parity tes
 cinema,3,3,numerical,medium,0,0,False,0,14.37,True,,no tests | no R-parity test | no README
 hsroc,3,3,numerical,medium,0,0,False,0,16.97,True,,no tests | no R-parity test | no README
 gosh,3,3,numerical,medium,0,0,False,0,12.76,True,,no tests | no R-parity test | no README
-pico,5,5,non-numerical,medium,7,0,False,0,14.05,True,,stub_count=7 (>= 6)
-prisma-checklist,5,5,non-numerical,medium,14,0,False,0,19.75,True,,stub_count=14 (>= 6)
+pico,4,4,non-numerical,medium,1,0,False,0,14.05,True,,stub_count=1
+prisma-checklist,5,5,non-numerical,medium,13,0,False,0,19.75,True,,stub_count=13 (>= 6)
 search-translator,3,3,non-numerical,medium,0,0,False,0,14.14,True,,no tests | no README
 median-to-mean,3,3,numerical,medium,0,0,False,0,14.67,True,,no tests | no R-parity test | no README
 rob2,3,3,numerical,medium,0,0,False,0,18.42,True,,no tests | no R-parity test | no README
 pet-peese,3,3,numerical,medium,0,0,False,0,18.73,True,,no tests | no R-parity test | no README
 proportion-ma,3,3,numerical,medium,0,0,False,0,19.92,True,,no tests | no R-parity test | no README
-km-reconstructor,4,4,numerical,medium,1,0,False,0,18.06,True,,stub_count=1
-citation-dedup,4,4,non-numerical,medium,1,0,False,0,20.66,True,,stub_count=1
-effect-size-converter,5,5,numerical,medium,9,0,False,0,32.58,True,,stub_count=9 (>= 6)
-dosehtml,5,5,numerical,high,22,1,False,0,144.92,True,,stub_count=22 (>= 6)
-Truthcert1,4,5,numerical,high,42,0,False,0,653.16,True,1,stub_count=42 (>= 6) | override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete.
-focus-studio,4,4,non-numerical,high,2,1,False,0,28.67,True,,stub_count=2
-kanban-lab,4,4,non-numerical,high,4,1,False,0,17.57,True,,stub_count=4
-evidence-board,4,4,non-numerical,high,5,1,False,0,22.31,True,,stub_count=5
-HTA,5,5,numerical,high,54,0,False,0,392.15,True,,stub_count=54 (>= 6)
-IPD-Meta-Pro,5,5,numerical,high,115,0,False,0,4.3,True,,stub_count=115 (>= 6)
-Pairwiseai,5,5,numerical,medium,408,0,False,0,1988.05,True,,stub_count=408 (>= 6)
-living-meta,5,5,numerical,medium,2,0,False,15,0.0,True,,missing index.html
-nma-pro-v2,5,5,numerical,medium,37,0,False,15,0.0,True,2,missing index.html
-nma-dose-response-app,5,5,numerical,high,86,1,False,0,1874.38,True,,stub_count=86 (>= 6)
-prisma-flow,5,5,non-numerical,high,7,1,False,18,26.04,True,,stub_count=7 (>= 6) | override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R.
+km-reconstructor,3,3,numerical,medium,0,0,False,0,18.06,True,,no tests | no R-parity test | no README
+citation-dedup,3,3,non-numerical,medium,0,0,False,0,20.66,True,,no tests | no README
+effect-size-converter,4,4,numerical,medium,1,0,False,0,32.58,True,,stub_count=1
+dosehtml,5,5,numerical,high,16,1,False,0,144.92,True,,stub_count=16 (>= 6)
+Truthcert1,4,5,numerical,high,30,0,False,0,653.16,True,1,stub_count=30 (>= 6) | override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete.
+focus-studio,3,3,non-numerical,high,0,1,False,0,28.67,True,,no README
+kanban-lab,3,3,non-numerical,high,0,1,False,0,17.57,True,,no README
+evidence-board,3,3,non-numerical,high,0,1,False,0,22.31,True,,no README
+HTA,5,5,numerical,high,23,0,False,0,392.15,True,,stub_count=23 (>= 6)
+IPD-Meta-Pro,5,5,numerical,high,96,0,False,0,4.3,True,,stub_count=96 (>= 6)
+Pairwiseai,5,5,numerical,medium,233,0,False,0,1988.05,True,,stub_count=233 (>= 6)
+living-meta,5,5,numerical,medium,0,0,False,16,0.0,True,,missing index.html
+nma-pro-v2,5,5,numerical,medium,3,0,False,16,0.0,True,2,missing index.html
+nma-dose-response-app,5,5,numerical,high,14,1,False,0,1874.38,True,,stub_count=14 (>= 6)
+prisma-flow,4,4,non-numerical,high,4,1,False,18,26.04,True,,stub_count=4 | override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R.
 prisma-nma,3,3,numerical,medium,0,0,False,0,25.79,True,,no tests | no R-parity test | no README
-forest-plot,4,4,numerical,high,2,1,False,15,35.61,True,,stub_count=2
-funnel-plot,4,4,numerical,high,1,1,False,15,29.62,True,,stub_count=1
-rob-traffic-light,4,4,numerical,high,1,1,False,15,24.94,True,,stub_count=1
+forest-plot,1,1,numerical,high,0,4,True,0,42.74,True,,test_count=4 | has R-parity test | last_touched 0d ago
+funnel-plot,1,1,numerical,high,0,4,True,0,37.39,True,,test_count=4 | has R-parity test | last_touched 0d ago
+rob-traffic-light,3,3,numerical,high,0,1,False,15,24.94,True,,no R-parity test | no README
 heterogeneity,3,3,numerical,high,0,1,False,15,30.58,True,,no R-parity test | no README
-tsa,4,4,numerical,high,1,1,False,15,28.09,True,,stub_count=1
-grade-sof,5,5,numerical,high,12,1,False,15,43.54,True,,stub_count=12 (>= 6)
-dta-sroc,4,4,numerical,high,1,1,False,15,23.26,True,,stub_count=1
-workbench,4,4,numerical,high,1,1,False,15,33.15,True,,stub_count=1
-meta-regression,4,4,numerical,high,2,1,False,15,32.2,True,,stub_count=2
-cumulative-subgroup,4,4,numerical,high,1,1,False,15,34.92,True,,stub_count=1
-webr-validator,4,4,numerical,high,3,1,False,15,35.39,True,,stub_count=3
+tsa,3,3,numerical,high,0,1,False,15,28.09,True,,no R-parity test | no README
+grade-sof,3,3,numerical,high,0,1,False,15,43.54,True,,no R-parity test | no README
+dta-sroc,3,3,numerical,high,0,1,False,15,23.26,True,,no R-parity test | no README
+workbench,3,3,numerical,high,0,1,False,15,33.15,True,,no R-parity test | no README
+meta-regression,1,1,numerical,high,0,4,True,0,42.56,True,,test_count=4 | has R-parity test | last_touched 0d ago
+cumulative-subgroup,3,3,numerical,high,0,1,False,15,34.92,True,,no R-parity test | no README
+webr-validator,3,3,numerical,high,0,1,False,15,35.39,True,,no R-parity test | no README
 bayesian-ma,3,3,numerical,high,0,1,False,15,28.95,True,,no R-parity test | no README
-prisma-screen,4,4,numerical,high,1,1,False,18,25.66,True,,stub_count=1
+prisma-screen,3,3,numerical,high,0,1,False,18,25.66,True,,no R-parity test | no README

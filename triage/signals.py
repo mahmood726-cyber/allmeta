@@ -9,7 +9,11 @@ import re
 import subprocess
 
 _STUB_PATTERNS = re.compile(
-    r"\bTODO\b|\bstub\b|placeholder|REPLACE_ME|__PLACEHOLDER__|not implemented|"
+    # "placeholder" as an HTML attribute (placeholder="..." or placeholder=...)
+    # is NOT a stub marker — it's a legitimate UI hint text attribute.  Match
+    # the word only when it is NOT immediately preceded by an equals sign or a
+    # quote (i.e. not in attribute-value position).
+    r"\bTODO\b|\bstub\b|(?<![='\"])placeholder(?![='\"])|REPLACE_ME|__PLACEHOLDER__|not implemented|"
     r"throw new Error\(.unimpl",
     re.IGNORECASE,
 )
