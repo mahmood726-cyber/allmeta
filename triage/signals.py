@@ -100,6 +100,9 @@ def test_count(app_dir: Path) -> int:
     return sum(1 for _ in _iter_test_files(app_dir))
 
 
+test_count.__test__ = False  # Prevent pytest from auto-collecting this signal extractor in test_*.py importers.
+
+
 def has_r_parity(app_dir: Path) -> bool:
     for p in _iter_test_files(app_dir):
         name = p.name.lower()
