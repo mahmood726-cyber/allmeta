@@ -50,14 +50,21 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>PET-PEESE + Trim-and-Fill</h1>
-    <p>Publication-bias adjustments. PET regresses the effect on SE; PEESE regresses on SE². The Stanley–Doucouliagos conditional procedure uses PET first and switches to PEESE if PET rejects H₀. Duval–Tweedie trim-and-fill imputes missing studies symmetric around the median.</p>
+    <p>Publication-bias adjustments. <abbr data-gloss="PET">PET</abbr> regresses the effect on <abbr data-gloss="SE">SE</abbr>; <abbr data-gloss="PEESE">PEESE</abbr> regresses on SE². The Stanley–Doucouliagos conditional procedure uses PET first and switches to PEESE if PET rejects H₀. Duval–Tweedie trim-and-fill imputes missing studies symmetric around the median.</p>
   </header>
   <main>
     <section class="panel">
@@ -76,6 +83,7 @@
 0.40, 0.20</textarea>
         <span class="hint">Paste raw effects on any scale (log-ratio, SMD, MD). Output uses the same scale.</span>
       </label>
+      <div id="alm-csv-mount"></div>
       <label>
         <span>PET significance threshold</span>
         <input id="alpha" type="number" step="0.01" min="0.01" max="0.5" value="0.10">
@@ -88,7 +96,12 @@
           <option value="R0">R₀</option>
         </select>
       </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Run</button>
+      <div id="alm-axis-mount" style="margin-top:.5rem"></div>
+      <div id="alm-export-mount" style="margin-top:.5rem"></div>
+      <div class="actions">
+        <button type="button" id="btn-run" class="primary">Run</button>
+        <div id="alm-undo-mount" style="display:inline-flex"></div>
+      </div>
     </section>
     <section class="panel">
       <h2>Results</h2>
@@ -102,7 +115,7 @@
     </section>
   </main>
   <footer>
-    PET: Stanley &amp; Doucouliagos (2014) — <code>TE = β₀ + β₁·SE + ε</code>, weighted by 1/SE². PEESE: same model with SE² instead of SE. Trim-and-fill: Duval &amp; Tweedie (2000), iterative L₀ / R₀ estimator, imputes k₀ studies reflected about the adjusted mean. Conditional PET-PEESE procedure follows <em>Cochrane Handbook v6.5 §13.3.5.4</em> (small-study effects); trim-and-fill is positioned as a sensitivity analysis only, never the primary result, per <em>Cochrane Handbook §13.3.5.3</em>. Power is poor for k&lt;10 — interpret with caution.
+    <abbr data-gloss="PET">PET</abbr>: Stanley &amp; Doucouliagos (2014) — <code>TE = β₀ + β₁·<abbr data-gloss="SE">SE</abbr> + ε</code>, weighted by 1/SE². <abbr data-gloss="PEESE">PEESE</abbr>: same model with SE² instead of SE. Trim-and-fill: Duval &amp; Tweedie (2000), iterative L₀ / R₀ estimator, imputes k₀ studies reflected about the adjusted mean. Conditional PET-PEESE procedure follows <em>Cochrane Handbook v6.5 §13.3.5.4</em> (small-study effects); trim-and-fill is positioned as a sensitivity analysis only, never the primary result, per <em>Cochrane Handbook §13.3.5.3</em>. Power is poor for k&lt;10 — interpret with caution.
   </footer>
   <script>
     // --- parse input ---
@@ -164,18 +177,9 @@
     }
 
     // --- trim-and-fill (Duval-Tweedie L₀) ---
-    // Iterative algorithm: center studies around mean, count asymmetry, trim, refit.
-    // Bidirectional: detects whether asymmetry runs right or left from the FE
-    // pooled estimate via the sign of (Tn - n(n+1)/4) and trims the appropriate
-    // tail. Right-asymmetry (small studies pulling estimate UP) and
-    // left-asymmetry (small studies pulling estimate DOWN — common for harms
-    // outcomes) are both handled. (V6-01 fix.)
     function trimAndFill(rows, est = "L0") {
       let mu = fePool(rows).mean;
       let k0 = 0;
-      // Determine asymmetry direction once on the unmodified data: the sign of
-      // (Tn - n(n+1)/4) indicates which tail is heavier (positive → right tail
-      // heavier → trim right; negative → left tail heavier → trim left).
       let direction = 1;
       {
         const initial = rows.map(r => ({ ...r, r: r.te - mu }))
@@ -190,8 +194,6 @@
         const residuals = rows.map(r => ({ ...r, r: r.te - mu }));
         residuals.sort((a, b) => Math.abs(a.r) - Math.abs(b.r));
         residuals.forEach((rr, i) => rr.rank = i + 1);
-        // For right-heavy: count Tn over positive residuals.
-        // For left-heavy: count Tn over negative residuals.
         const Tn = residuals.filter(rr => direction * rr.r > 0).reduce((s, rr) => s + rr.rank, 0);
         const signs = residuals.map(rr => (direction * rr.r) >= 0 ? 1 : -1);
         let k0_new = 0;
@@ -211,7 +213,6 @@
         if (k0_new === k0 && iter > 0) break;
         k0 = k0_new;
         if (k0 <= 0) break;
-        // Trim the k0 most extreme studies on the heavy side.
         const sorted = [...rows].sort((a, b) => Math.abs(b.te - mu) - Math.abs(a.te - mu));
         const trimmedIdx = new Set();
         for (const r of sorted) {
@@ -221,7 +222,6 @@
         if (remaining.length < 2) break;
         mu = fePool(remaining).mean;
       }
-      // Impute k0 studies mirrored around mu, on the heavy side.
       const heavySide = rows
         .filter(r => direction * (r.te - mu) > 0)
         .sort((a, b) => direction * ((b.te - mu) - (a.te - mu)))
@@ -234,11 +234,23 @@
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
+    // Last-computed result cache — populated by run(), read by __almResults().
+    var _lastPET = null;
+    var _lastPEESE = null;
+    var _lastFE = null;
+    var _lastRows = [];
+    // Expose via window accessors so the deferred alm block can cross scope.
+    window._almLastPET     = function () { return _lastPET; };
+    window._almLastPEESE   = function () { return _lastPEESE; };
+    window._almLastFE      = function () { return _lastFE; };
+    window._almLastRows    = function () { return _lastRows; };
+
     function run() {
       const text = document.getElementById("src").value;
       const alpha = parseFloat(document.getElementById("alpha").value) || 0.10;
       const tfEst = document.getElementById("tf-est").value;
       const rows = parseTable(text);
+      _lastRows = rows;
       const warnSlot = document.getElementById("warn-slot");
       warnSlot.innerHTML = "";
       if (rows.length < 5) {
@@ -246,16 +258,16 @@
       }
       if (rows.length < 3) {
         document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 3 studies.</td></tr>`;
+        _lastPET = null; _lastPEESE = null; _lastFE = null;
         return;
       }
       const fe = fePool(rows);
+      _lastFE = fe;
       const { pet, peese } = petPeese(rows);
+      _lastPET = pet;
+      _lastPEESE = peese;
       const petZ = pet.b0 / pet.seB0;
       const peeseZ = peese.b0 / peese.seB0;
-      // Stanley-Doucouliagos conditional procedure: test the PET intercept (b0)
-      // against H0: no true effect. The original prescription is a one-sided
-      // test in the hypothesised direction (V6-05): if FE point estimate is
-      // positive, test whether PET intercept > 0; if negative, < 0.
       const direction = fe.mean >= 0 ? 1 : -1;
       const petIntP = (direction * petZ > 0) ? (1 - pnorm(direction * petZ)) : 0.5;
       const conditional = petIntP < alpha
@@ -278,6 +290,10 @@
       drawFunnel(rows, pet, peese, tf);
       body.innerHTML = __bodyParts.join("");
 
+      // Notify url-state of new snapshot after every run
+      if (window.alm && window.alm.urlState && window.__almSnapshot) {
+        window.alm.urlState.write(window.__almSnapshot());
+      }
     }
 
     function drawFunnel(rows, pet, peese, tf) {
@@ -299,9 +315,7 @@
       svg.innerHTML += `<text x="15" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 15 ${padT + plotH / 2})">SE</text>`;
       // zero line
       svg.innerHTML += `<line x1="${X(0)}" y1="${padT}" x2="${X(0)}" y2="${padT + plotH}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"/>`;
-      // PET / PEESE regression lines: x=effect, y=SE (vertical), invert the linear regression
-      // PET: y = b0 + b1 * SE; so effect = b0 + b1*SE, i.e., SE = (y - b0)/b1
-      // Plot over SE in [0, seMax]
+      // PET / PEESE regression lines
       function drawLine(b0, b1, color, dash) {
         if (!Number.isFinite(b1) || b1 === 0) return;
         const s1 = 0, s2 = seMax;
@@ -327,15 +341,148 @@
     document.getElementById("btn-run").addEventListener("click", run);
     run();
   </script>
-  <script src="../shared/glossary.js" defer></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (window.Glossary) {
-        document.querySelectorAll("header, footer").forEach((el) => {
-          window.Glossary.scan(el, { firstOnly: false });
-        });
+  // =======================================================================
+  // Cycle 2.2 shared-module integration block
+  // Deferred: axis-controls renders but does NOT yet drive drawFunnel()
+  //   domain — drawFunnel() auto-computes domain; wiring __almAxis into
+  //   drawFunnel() requires threading overrides — deferred to a future cycle.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims --------------------------------------------------
+
+    // Load rows from csv-upload (format: [{study, yi, sei}, ...]) into the
+    // textarea using the app's native "effect, SE" line format, then
+    // trigger run() to re-render.
+    window.__almLoad = function (rows) {
+      var lines = rows.filter(function (r) {
+        return isFinite(r.yi) && isFinite(r.sei) && r.sei > 0;
+      }).map(function (r) {
+        return r.yi + ', ' + r.sei;
+      });
+      var ta = document.getElementById('src');
+      if (!ta) return;
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
       }
+      ta.value = lines.join('\n');
+      run();
+    };
+
+    // Return the last computed result as a flat object for results-export.
+    window.__almResults = function () {
+      var pet    = window._almLastPET    ? window._almLastPET()    : null;
+      var peese  = window._almLastPEESE  ? window._almLastPEESE()  : null;
+      var fe     = window._almLastFE     ? window._almLastFE()     : null;
+      var rows   = window._almLastRows   ? window._almLastRows()   : [];
+      var out = { _schema: 'pet-peese-results-v1', k: rows.length };
+      if (fe) {
+        out.fe_mu    = fe.mean;
+        out.fe_se    = fe.se;
+        out.fe_ci_lb = fe.ci[0];
+        out.fe_ci_ub = fe.ci[1];
+        out.fe_p     = fe.p;
+      }
+      if (pet) {
+        var petZ = pet.b0 / pet.seB0;
+        out.pet_b0    = pet.b0;
+        out.pet_se_b0 = pet.seB0;
+        out.pet_b1    = pet.b1;
+        out.pet_p     = 2 * (1 - (function pnorm(x) {
+          var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+          var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+          return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+        })(Math.abs(petZ)));
+      }
+      if (peese) {
+        var peeseZ = peese.b0 / peese.seB0;
+        out.peese_b0    = peese.b0;
+        out.peese_se_b0 = peese.seB0;
+        out.peese_b1    = peese.b1;
+        out.peese_p     = 2 * (1 - (function pnorm(x) {
+          var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+          var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+          return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+        })(Math.abs(peeseZ)));
+      }
+      return out;
+    };
+
+    // Snapshot: capture every form control value into a flat object.
+    window.__almSnapshot = function () {
+      var ta  = document.getElementById('src');
+      var al  = document.getElementById('alpha');
+      var tfe = document.getElementById('tf-est');
+      return {
+        data:    ta  ? ta.value  : '',
+        alpha:   al  ? al.value  : '0.10',
+        tfEst:   tfe ? tfe.value : 'L0'
+      };
+    };
+
+    // Restore: apply snapshot back to form controls and re-render.
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ta  = document.getElementById('src');
+      var al  = document.getElementById('alpha');
+      var tfe = document.getElementById('tf-est');
+      if (ta)  ta.value  = isEmpty ? '' : (snap.data  != null ? snap.data  : '');
+      if (al)  al.value  = isEmpty ? '0.10' : (snap.alpha != null ? snap.alpha : '0.10');
+      if (tfe) tfe.value = isEmpty ? 'L0'   : (snap.tfEst != null ? snap.tfEst : 'L0');
+      run();
+    };
+
+    // ---- module init -----------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: false, type: 'string', example: 'Smith 2024' },
+        { name: 'yi',    required: true,  type: 'float',  example: '0.21' },
+        { name: 'sei',   required: true,  type: 'float',  example: '0.18' },
+      ],
+      onParse: function (result) {
+        window.__almLoad(result.rows);
+      },
     });
+
+    // Axis controls: x = effect (linear or optional log toggle),
+    // y = SE (linear, inverted). Override deferred — drawFunnel() auto-computes domain.
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'Effect axis', range: [null, null], log: false },
+        { key: 'y', label: 'Max SE (y-axis)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        window.__almAxis = state;
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'pet-peese-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    // Tooltips: scan the header and footer for annotated <abbr data-gloss> elements.
+    window.alm.tooltips({ src: '../hub/shared/glossary.json' });
+  })();
   </script>
 </body>
 </html>
