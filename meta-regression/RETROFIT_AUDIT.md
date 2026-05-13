@@ -27,6 +27,24 @@
 
 - `chart-download.js` — SVG and PNG downloads are implemented inline and working correctly; the native SVG builder produces a complete, label-safe vector output (white background, bubble plot, fitted regression line, CI band, all axes baked in as SVG primitives). The shared module adds PDF and edge-crop padding which this plot does not need. Per spec §1 do-no-harm, keep the native implementation.
 
+## Browser sanity (Task 25, 2026-05-13)
+
+Verified via `meta-regression/tests/sanity.spec.mjs` (Playwright on Chromium):
+
+- [x] Page loads with zero console errors
+- [x] All 6 wired alm.* modules expose their init function on `window.alm`
+- [x] All 4 mount points initialise correctly
+- [x] Pre-retrofit feature: bubble plot SVG still renders (chart-download present-good intact)
+- [x] results-export JSON contains real coefficient values (β₀, β₁, R², Q_M — fixes legacy "Download JSON" gap)
+
+### Items deferred to human-eyeball review
+
+- Visual quality of the bubble plot (axis labels intact, fit line drawn)
+- URL state round-trip on real-browser reload
+- Reset-undo `<dialog>` confirm UX
+- Tooltips: `<abbr data-gloss>` hover/focus renders glossary text
+- Axis-controls X-domain override (deferred per Task 23 commit body — engine refactor needed)
+
 ## Notes for Task 23
 
 - The app already has shared-bus integration (`ma-studies-v1`, buttons ↓ Shared / ↑ Shared / Validate (R)) — these are pre-retrofit features that must be preserved (do-no-harm).
