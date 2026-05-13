@@ -1,0 +1,8 @@
+{
+  "name": "alm-shared-tests",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

@@ -9,7 +9,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'python -m http.server 8088 --directory ../../',
+    command: 'python -m http.server 8088 --directory ../../../',
     port: 8088,
     cwd: '.',
     reuseExistingServer: true,
