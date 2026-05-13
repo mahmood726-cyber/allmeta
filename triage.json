@@ -18,7 +18,7 @@
         "key": "HTA",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778703164,
         "playwright_pass": null,
         "stub_count": 23,
         "test_count": 0,
@@ -154,7 +154,7 @@
         "is_hub_linked": true,
         "key": "bayesian-ma",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "stub_count": 0,
@@ -348,11 +348,11 @@
         "key": "citation-dedup",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778703164,
         "playwright_pass": null,
         "stub_count": 0,
         "test_count": 0,
-        "total_size_kb": 20.66
+        "total_size_kb": 21.86
       },
       "tier": 3
     },
@@ -430,7 +430,7 @@
         "is_hub_linked": true,
         "key": "cumulative-subgroup",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "stub_count": 0,
@@ -466,57 +466,62 @@
       "tier": 5
     },
     "dta-sroc": {
-      "auto_tier": 3,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "no R-parity test",
-        "no README"
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "dta-sroc",
         "kind": "numerical",
-        "last_touched_days": 15,
-        "last_touched_unix": 1777306397,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778706936,
         "playwright_pass": null,
         "stub_count": 0,
-        "test_count": 1,
-        "total_size_kb": 23.26
+        "test_count": 4,
+        "total_size_kb": 30.35
       },
-      "tier": 3
+      "tier": 1
     },
     "effect-size-converter": {
       "auto_tier": 4,
-      "confidence": "medium",
+      "confidence": "high",
       "kind": "numerical",
-      "override": null,
+      "override": {
+        "reason": "stub_count=1 false positive: index.html line 593 uses 'placeholder:' as a JS object property key (LocalLLM panel config), not a UI stub or unimplemented marker. App is functionally complete with 3 tests and R-parity coverage (Cycle 2.2).",
+        "tier": 1
+      },
       "reasons": [
-        "stub_count=1"
+        "stub_count=1",
+        "override applied: stub_count=1 false positive: index.html line 593 uses 'placeholder:' as a JS object property key (LocalLLM panel config), not a UI stub or unimplemented marker. App is functionally complete with 3 tests and R-parity coverage (Cycle 2.2)."
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": false,
         "is_hub_linked": true,
         "key": "effect-size-converter",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778706067,
         "playwright_pass": null,
         "stub_count": 1,
-        "test_count": 0,
-        "total_size_kb": 32.58
+        "test_count": 3,
+        "total_size_kb": 41.67
       },
-      "tier": 4
+      "tier": 1
     },
     "evidence-board": {
       "auto_tier": 3,
@@ -590,7 +595,7 @@
         "key": "forest-plot",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778681041,
+        "last_touched_unix": 1778683790,
         "playwright_pass": null,
         "stub_count": 0,
         "test_count": 4,
@@ -618,7 +623,7 @@
         "key": "funnel-plot",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778682328,
+        "last_touched_unix": 1778684279,
         "playwright_pass": null,
         "stub_count": 0,
         "test_count": 4,
@@ -700,7 +705,7 @@
         "is_hub_linked": true,
         "key": "grade-sof",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306452,
         "playwright_pass": null,
         "stub_count": 0,
@@ -710,31 +715,32 @@
       "tier": 3
     },
     "heterogeneity": {
-      "auto_tier": 3,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "no R-parity test",
-        "no README"
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "heterogeneity",
         "kind": "numerical",
-        "last_touched_days": 15,
-        "last_touched_unix": 1777306397,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778705118,
         "playwright_pass": null,
         "stub_count": 0,
-        "test_count": 1,
-        "total_size_kb": 30.58
+        "test_count": 4,
+        "total_size_kb": 37.77
       },
-      "tier": 3
+      "tier": 1
     },
     "hsroc": {
       "auto_tier": 3,
@@ -1032,7 +1038,7 @@
         "key": "meta-regression",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778683423,
+        "last_touched_unix": 1778683790,
         "playwright_pass": null,
         "stub_count": 0,
         "test_count": 4,
@@ -1179,30 +1185,34 @@
       "tier": 3
     },
     "nma-pro-v2": {
-      "auto_tier": 5,
-      "confidence": "medium",
+      "auto_tier": 4,
+      "confidence": "high",
       "kind": "numerical",
-      "override": null,
+      "override": {
+        "reason": "stub_count=5 false positives: (1) RETROFIT_AUDIT.md mentions 'pandas stub' and 'stub_count' in documentation text (not code stubs); (2) nma-pro-v8.0.html line 13045 uses 'placeholder' in a JS comment ('Update placeholder labels when distribution changes'). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 2 tests, and R-parity coverage (Cycle 2.2).",
+        "tier": 1
+      },
       "reasons": [
-        "missing index.html"
+        "stub_count=5",
+        "override applied: stub_count=5 false positives: (1) RETROFIT_AUDIT.md mentions 'pandas stub' and 'stub_count' in documentation text (not code stubs); (2) nma-pro-v8.0.html line 13045 uses 'placeholder' in a JS comment ('Update placeholder labels when distribution changes'). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 2 tests, and R-parity coverage (Cycle 2.2)."
       ],
       "signals": {
         "category": "Network Meta-Analysis",
         "featured_rank": 2,
-        "has_index": false,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_index": true,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "nma-pro-v2",
         "kind": "numerical",
-        "last_touched_days": 16,
-        "last_touched_unix": 1777295804,
+        "last_touched_days": 0,
+        "last_touched_unix": 1778708442,
         "playwright_pass": null,
-        "stub_count": 3,
-        "test_count": 0,
-        "total_size_kb": 0.0
+        "stub_count": 5,
+        "test_count": 3,
+        "total_size_kb": 3.23
       },
-      "tier": 5
+      "tier": 1
     },
     "p-curve": {
       "auto_tier": 4,
@@ -1231,32 +1241,32 @@
       "tier": 4
     },
     "pet-peese": {
-      "auto_tier": 3,
-      "confidence": "medium",
+      "auto_tier": 1,
+      "confidence": "high",
       "kind": "numerical",
       "override": null,
       "reasons": [
-        "no tests",
-        "no R-parity test",
-        "no README"
+        "test_count=3",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
-        "has_readme": false,
+        "has_r_parity": true,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "pet-peese",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778705584,
         "playwright_pass": null,
         "stub_count": 0,
-        "test_count": 0,
-        "total_size_kb": 18.73
+        "test_count": 3,
+        "total_size_kb": 24.07
       },
-      "tier": 3
+      "tier": 1
     },
     "pico": {
       "auto_tier": 4,
@@ -1552,7 +1562,7 @@
         "is_hub_linked": true,
         "key": "rob-traffic-light",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "stub_count": 0,
@@ -1717,7 +1727,7 @@
         "is_hub_linked": true,
         "key": "tsa",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "stub_count": 0,
@@ -1772,7 +1782,7 @@
         "is_hub_linked": true,
         "key": "webr-validator",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "stub_count": 0,
@@ -1799,7 +1809,7 @@
         "is_hub_linked": true,
         "key": "workbench",
         "kind": "numerical",
-        "last_touched_days": 15,
+        "last_touched_days": 16,
         "last_touched_unix": 1777306397,
         "playwright_pass": null,
         "stub_count": 0,
@@ -1809,14 +1819,14 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T14:48:47Z",
+  "generated_at": "2026-05-13T21:48:13Z",
   "scanner_version": "0.1.0",
   "totals": {
-    "tier_1": 3,
+    "tier_1": 8,
     "tier_2": 0,
-    "tier_3": 50,
-    "tier_4": 5,
-    "tier_5": 8,
+    "tier_3": 47,
+    "tier_4": 4,
+    "tier_5": 7,
     "total": 66
   }
 }

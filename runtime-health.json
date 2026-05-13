@@ -8,7 +8,7 @@
         ],
         "key": "HTA",
         "load_ok": true,
-        "load_time_ms": 2699,
+        "load_time_ms": 4483,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -16,7 +16,7 @@
         "url": "./HTA/index.html"
       },
       "reasons": [
-        "loaded in 2699 ms"
+        "loaded in 4483 ms"
       ],
       "state": "OK",
       "url": "./HTA/index.html"
@@ -27,7 +27,7 @@
         "console_errors": [],
         "key": "IPD-Meta-Pro",
         "load_ok": true,
-        "load_time_ms": 1672,
+        "load_time_ms": 1379,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -35,7 +35,7 @@
         "url": "./IPD-Meta-Pro/ipd-meta-pro.html"
       },
       "reasons": [
-        "loaded in 1672 ms"
+        "loaded in 1379 ms"
       ],
       "state": "OK",
       "url": "./IPD-Meta-Pro/ipd-meta-pro.html"
@@ -49,7 +49,7 @@
         ],
         "key": "Pairwiseai",
         "load_ok": true,
-        "load_time_ms": 2553,
+        "load_time_ms": 1614,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -57,30 +57,30 @@
         "url": "./Pairwiseai/main-screen.html"
       },
       "reasons": [
-        "loaded in 2553 ms"
+        "loaded in 1614 ms"
       ],
       "state": "OK",
       "url": "./Pairwiseai/main-screen.html"
     },
     "Truthcert1": {
-      "confidence": "medium",
+      "confidence": "high",
       "probe": {
         "console_errors": [
           "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
         ],
         "key": "Truthcert1",
         "load_ok": true,
-        "load_time_ms": 3792,
-        "mount_found": false,
+        "load_time_ms": 1722,
+        "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
         "ui_text_matches": [],
         "url": "./Truthcert1/TruthCert-PairwisePro-v1.0-production.html"
       },
       "reasons": [
-        "no primary mount landmark (svg/canvas/textarea/table input/action button)"
+        "loaded in 1722 ms"
       ],
-      "state": "MISSING-MOUNT",
+      "state": "OK",
       "url": "./Truthcert1/TruthCert-PairwisePro-v1.0-production.html"
     },
     "amstar-2": {
@@ -91,7 +91,7 @@
         ],
         "key": "amstar-2",
         "load_ok": true,
-        "load_time_ms": 1130,
+        "load_time_ms": 1080,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -99,7 +99,7 @@
         "url": "./amstar-2/index.html"
       },
       "reasons": [
-        "loaded in 1130 ms"
+        "loaded in 1080 ms"
       ],
       "state": "OK",
       "url": "./amstar-2/index.html"
@@ -112,7 +112,7 @@
         ],
         "key": "bayesian-ma",
         "load_ok": true,
-        "load_time_ms": 1493,
+        "load_time_ms": 1334,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -120,7 +120,7 @@
         "url": "./bayesian-ma/index.html"
       },
       "reasons": [
-        "loaded in 1493 ms"
+        "loaded in 1334 ms"
       ],
       "state": "OK",
       "url": "./bayesian-ma/index.html"
@@ -133,7 +133,7 @@
         ],
         "key": "bayesian-mcmc",
         "load_ok": true,
-        "load_time_ms": 1127,
+        "load_time_ms": 1076,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -141,7 +141,7 @@
         "url": "./bayesian-mcmc/index.html"
       },
       "reasons": [
-        "loaded in 1127 ms"
+        "loaded in 1076 ms"
       ],
       "state": "OK",
       "url": "./bayesian-mcmc/index.html"
@@ -154,7 +154,7 @@
         ],
         "key": "bayesian-nma",
         "load_ok": true,
-        "load_time_ms": 1145,
+        "load_time_ms": 1074,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -162,7 +162,7 @@
         "url": "./bayesian-nma/index.html"
       },
       "reasons": [
-        "loaded in 1145 ms"
+        "loaded in 1074 ms"
       ],
       "state": "OK",
       "url": "./bayesian-nma/index.html"
@@ -175,7 +175,7 @@
         ],
         "key": "bucher",
         "load_ok": true,
-        "load_time_ms": 1117,
+        "load_time_ms": 1063,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -183,7 +183,7 @@
         "url": "./bucher/index.html"
       },
       "reasons": [
-        "loaded in 1117 ms"
+        "loaded in 1063 ms"
       ],
       "state": "OK",
       "url": "./bucher/index.html"
@@ -196,7 +196,7 @@
         ],
         "key": "cerqual",
         "load_ok": true,
-        "load_time_ms": 1157,
+        "load_time_ms": 1098,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -204,7 +204,7 @@
         "url": "./cerqual/index.html"
       },
       "reasons": [
-        "loaded in 1157 ms"
+        "loaded in 1098 ms"
       ],
       "state": "OK",
       "url": "./cerqual/index.html"
@@ -217,7 +217,7 @@
         ],
         "key": "cinema",
         "load_ok": true,
-        "load_time_ms": 1123,
+        "load_time_ms": 1088,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -225,7 +225,7 @@
         "url": "./cinema/index.html"
       },
       "reasons": [
-        "loaded in 1123 ms"
+        "loaded in 1088 ms"
       ],
       "state": "OK",
       "url": "./cinema/index.html"
@@ -238,7 +238,7 @@
         ],
         "key": "citation-chaser",
         "load_ok": true,
-        "load_time_ms": 1132,
+        "load_time_ms": 1096,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -246,7 +246,7 @@
         "url": "./citation-chaser/index.html"
       },
       "reasons": [
-        "loaded in 1132 ms"
+        "loaded in 1096 ms"
       ],
       "state": "OK",
       "url": "./citation-chaser/index.html"
@@ -259,7 +259,7 @@
         ],
         "key": "citation-dedup",
         "load_ok": true,
-        "load_time_ms": 1123,
+        "load_time_ms": 1118,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -267,7 +267,7 @@
         "url": "./citation-dedup/index.html"
       },
       "reasons": [
-        "loaded in 1123 ms"
+        "loaded in 1118 ms"
       ],
       "state": "OK",
       "url": "./citation-dedup/index.html"
@@ -280,7 +280,7 @@
         ],
         "key": "component-nma",
         "load_ok": true,
-        "load_time_ms": 1454,
+        "load_time_ms": 1236,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -288,7 +288,7 @@
         "url": "./component-nma/index.html"
       },
       "reasons": [
-        "loaded in 1454 ms"
+        "loaded in 1236 ms"
       ],
       "state": "OK",
       "url": "./component-nma/index.html"
@@ -301,7 +301,7 @@
         ],
         "key": "copas",
         "load_ok": true,
-        "load_time_ms": 1165,
+        "load_time_ms": 1084,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -309,7 +309,7 @@
         "url": "./copas/index.html"
       },
       "reasons": [
-        "loaded in 1165 ms"
+        "loaded in 1084 ms"
       ],
       "state": "OK",
       "url": "./copas/index.html"
@@ -322,7 +322,7 @@
         ],
         "key": "cumulative-subgroup",
         "load_ok": true,
-        "load_time_ms": 1433,
+        "load_time_ms": 1089,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -330,7 +330,7 @@
         "url": "./cumulative-subgroup/index.html"
       },
       "reasons": [
-        "loaded in 1433 ms"
+        "loaded in 1089 ms"
       ],
       "state": "OK",
       "url": "./cumulative-subgroup/index.html"
@@ -341,7 +341,7 @@
         "console_errors": [],
         "key": "dosehtml",
         "load_ok": true,
-        "load_time_ms": 1590,
+        "load_time_ms": 1439,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -349,7 +349,7 @@
         "url": "./dosehtml/dose-response-pro.html"
       },
       "reasons": [
-        "loaded in 1590 ms"
+        "loaded in 1439 ms"
       ],
       "state": "OK",
       "url": "./dosehtml/dose-response-pro.html"
@@ -362,7 +362,7 @@
         ],
         "key": "dta-sroc",
         "load_ok": true,
-        "load_time_ms": 1496,
+        "load_time_ms": 1367,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -370,7 +370,7 @@
         "url": "./dta-sroc/index.html"
       },
       "reasons": [
-        "loaded in 1496 ms"
+        "loaded in 1367 ms"
       ],
       "state": "OK",
       "url": "./dta-sroc/index.html"
@@ -383,7 +383,7 @@
         ],
         "key": "effect-size-converter",
         "load_ok": true,
-        "load_time_ms": 1668,
+        "load_time_ms": 1504,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -391,7 +391,7 @@
         "url": "./effect-size-converter/index.html"
       },
       "reasons": [
-        "loaded in 1668 ms"
+        "loaded in 1504 ms"
       ],
       "state": "OK",
       "url": "./effect-size-converter/index.html"
@@ -404,7 +404,7 @@
         ],
         "key": "evidence-board",
         "load_ok": true,
-        "load_time_ms": 1399,
+        "load_time_ms": 1230,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -412,7 +412,7 @@
         "url": "./evidence-board/index.html"
       },
       "reasons": [
-        "loaded in 1399 ms"
+        "loaded in 1230 ms"
       ],
       "state": "OK",
       "url": "./evidence-board/index.html"
@@ -425,7 +425,7 @@
         ],
         "key": "focus-studio",
         "load_ok": true,
-        "load_time_ms": 1434,
+        "load_time_ms": 1361,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -433,7 +433,7 @@
         "url": "./focus-studio/index.html"
       },
       "reasons": [
-        "loaded in 1434 ms"
+        "loaded in 1361 ms"
       ],
       "state": "OK",
       "url": "./focus-studio/index.html"
@@ -446,7 +446,7 @@
         ],
         "key": "forest-plot",
         "load_ok": true,
-        "load_time_ms": 1597,
+        "load_time_ms": 1347,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -454,7 +454,7 @@
         "url": "./forest-plot/index.html"
       },
       "reasons": [
-        "loaded in 1597 ms"
+        "loaded in 1347 ms"
       ],
       "state": "OK",
       "url": "./forest-plot/index.html"
@@ -467,7 +467,7 @@
         ],
         "key": "funnel-plot",
         "load_ok": true,
-        "load_time_ms": 1671,
+        "load_time_ms": 1356,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -475,7 +475,7 @@
         "url": "./funnel-plot/index.html"
       },
       "reasons": [
-        "loaded in 1671 ms"
+        "loaded in 1356 ms"
       ],
       "state": "OK",
       "url": "./funnel-plot/index.html"
@@ -488,7 +488,7 @@
         ],
         "key": "gosh",
         "load_ok": true,
-        "load_time_ms": 1546,
+        "load_time_ms": 1332,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -496,7 +496,7 @@
         "url": "./gosh/index.html"
       },
       "reasons": [
-        "loaded in 1546 ms"
+        "loaded in 1332 ms"
       ],
       "state": "OK",
       "url": "./gosh/index.html"
@@ -509,7 +509,7 @@
         ],
         "key": "gosh-metareg",
         "load_ok": true,
-        "load_time_ms": 1187,
+        "load_time_ms": 1084,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -517,7 +517,7 @@
         "url": "./gosh-metareg/index.html"
       },
       "reasons": [
-        "loaded in 1187 ms"
+        "loaded in 1084 ms"
       ],
       "state": "OK",
       "url": "./gosh-metareg/index.html"
@@ -530,7 +530,7 @@
         ],
         "key": "grade-sof",
         "load_ok": true,
-        "load_time_ms": 1536,
+        "load_time_ms": 1304,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -538,7 +538,7 @@
         "url": "./grade-sof/index.html"
       },
       "reasons": [
-        "loaded in 1536 ms"
+        "loaded in 1304 ms"
       ],
       "state": "OK",
       "url": "./grade-sof/index.html"
@@ -551,7 +551,7 @@
         ],
         "key": "heterogeneity",
         "load_ok": true,
-        "load_time_ms": 1457,
+        "load_time_ms": 1369,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -559,7 +559,7 @@
         "url": "./heterogeneity/index.html"
       },
       "reasons": [
-        "loaded in 1457 ms"
+        "loaded in 1369 ms"
       ],
       "state": "OK",
       "url": "./heterogeneity/index.html"
@@ -572,7 +572,7 @@
         ],
         "key": "hsroc",
         "load_ok": true,
-        "load_time_ms": 1131,
+        "load_time_ms": 1079,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -580,7 +580,7 @@
         "url": "./hsroc/index.html"
       },
       "reasons": [
-        "loaded in 1131 ms"
+        "loaded in 1079 ms"
       ],
       "state": "OK",
       "url": "./hsroc/index.html"
@@ -593,7 +593,7 @@
         ],
         "key": "influence",
         "load_ok": true,
-        "load_time_ms": 1154,
+        "load_time_ms": 1065,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -601,7 +601,7 @@
         "url": "./influence/index.html"
       },
       "reasons": [
-        "loaded in 1154 ms"
+        "loaded in 1065 ms"
       ],
       "state": "OK",
       "url": "./influence/index.html"
@@ -614,7 +614,7 @@
         ],
         "key": "kanban-lab",
         "load_ok": true,
-        "load_time_ms": 1450,
+        "load_time_ms": 1335,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -622,7 +622,7 @@
         "url": "./kanban-lab/index.html"
       },
       "reasons": [
-        "loaded in 1450 ms"
+        "loaded in 1335 ms"
       ],
       "state": "OK",
       "url": "./kanban-lab/index.html"
@@ -635,7 +635,7 @@
         ],
         "key": "km-reconstructor",
         "load_ok": true,
-        "load_time_ms": 1109,
+        "load_time_ms": 1086,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -643,7 +643,7 @@
         "url": "./km-reconstructor/index.html"
       },
       "reasons": [
-        "loaded in 1109 ms"
+        "loaded in 1086 ms"
       ],
       "state": "OK",
       "url": "./km-reconstructor/index.html"
@@ -656,7 +656,7 @@
         ],
         "key": "limit-ma",
         "load_ok": true,
-        "load_time_ms": 1125,
+        "load_time_ms": 1085,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -664,7 +664,7 @@
         "url": "./limit-ma/index.html"
       },
       "reasons": [
-        "loaded in 1125 ms"
+        "loaded in 1085 ms"
       ],
       "state": "OK",
       "url": "./limit-ma/index.html"
@@ -675,7 +675,7 @@
         "console_errors": [],
         "key": "living-meta",
         "load_ok": true,
-        "load_time_ms": 1131,
+        "load_time_ms": 1080,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -683,7 +683,7 @@
         "url": "./living-meta/living-meta-complete.html"
       },
       "reasons": [
-        "loaded in 1131 ms"
+        "loaded in 1080 ms"
       ],
       "state": "OK",
       "url": "./living-meta/living-meta-complete.html"
@@ -696,7 +696,7 @@
         ],
         "key": "local-ai",
         "load_ok": true,
-        "load_time_ms": 3469,
+        "load_time_ms": 3212,
         "mount_found": false,
         "probe_crashed": false,
         "timed_out": false,
@@ -717,7 +717,7 @@
         ],
         "key": "local-install",
         "load_ok": true,
-        "load_time_ms": 1130,
+        "load_time_ms": 1066,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -725,7 +725,7 @@
         "url": "./local-install/index.html"
       },
       "reasons": [
-        "loaded in 1130 ms"
+        "loaded in 1066 ms"
       ],
       "state": "OK",
       "url": "./local-install/index.html"
@@ -738,7 +738,7 @@
         ],
         "key": "mcid",
         "load_ok": true,
-        "load_time_ms": 1115,
+        "load_time_ms": 1094,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -746,7 +746,7 @@
         "url": "./mcid/index.html"
       },
       "reasons": [
-        "loaded in 1115 ms"
+        "loaded in 1094 ms"
       ],
       "state": "OK",
       "url": "./mcid/index.html"
@@ -759,7 +759,7 @@
         ],
         "key": "median-to-mean",
         "load_ok": true,
-        "load_time_ms": 1131,
+        "load_time_ms": 1117,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -767,7 +767,7 @@
         "url": "./median-to-mean/index.html"
       },
       "reasons": [
-        "loaded in 1131 ms"
+        "loaded in 1117 ms"
       ],
       "state": "OK",
       "url": "./median-to-mean/index.html"
@@ -780,7 +780,7 @@
         ],
         "key": "meta-regression",
         "load_ok": true,
-        "load_time_ms": 1597,
+        "load_time_ms": 1332,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -788,7 +788,7 @@
         "url": "./meta-regression/index.html"
       },
       "reasons": [
-        "loaded in 1597 ms"
+        "loaded in 1332 ms"
       ],
       "state": "OK",
       "url": "./meta-regression/index.html"
@@ -801,7 +801,7 @@
         ],
         "key": "mh-peto",
         "load_ok": true,
-        "load_time_ms": 1124,
+        "load_time_ms": 1069,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -809,7 +809,7 @@
         "url": "./mh-peto/index.html"
       },
       "reasons": [
-        "loaded in 1124 ms"
+        "loaded in 1069 ms"
       ],
       "state": "OK",
       "url": "./mh-peto/index.html"
@@ -822,7 +822,7 @@
         ],
         "key": "multilevel-ma",
         "load_ok": true,
-        "load_time_ms": 1144,
+        "load_time_ms": 1087,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -830,7 +830,7 @@
         "url": "./multilevel-ma/index.html"
       },
       "reasons": [
-        "loaded in 1144 ms"
+        "loaded in 1087 ms"
       ],
       "state": "OK",
       "url": "./multilevel-ma/index.html"
@@ -843,7 +843,7 @@
         ],
         "key": "nma-dose-response-app",
         "load_ok": true,
-        "load_time_ms": 3040,
+        "load_time_ms": 2676,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -851,7 +851,7 @@
         "url": "./nma-dose-response-app/index.html"
       },
       "reasons": [
-        "loaded in 3040 ms"
+        "loaded in 2676 ms"
       ],
       "state": "OK",
       "url": "./nma-dose-response-app/index.html"
@@ -864,7 +864,7 @@
         ],
         "key": "nma-global-inconsistency",
         "load_ok": true,
-        "load_time_ms": 1146,
+        "load_time_ms": 1068,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -872,7 +872,7 @@
         "url": "./nma-global-inconsistency/index.html"
       },
       "reasons": [
-        "loaded in 1146 ms"
+        "loaded in 1068 ms"
       ],
       "state": "OK",
       "url": "./nma-global-inconsistency/index.html"
@@ -885,7 +885,7 @@
         ],
         "key": "nma-inconsistency",
         "load_ok": true,
-        "load_time_ms": 1124,
+        "load_time_ms": 1113,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -893,7 +893,7 @@
         "url": "./nma-inconsistency/index.html"
       },
       "reasons": [
-        "loaded in 1124 ms"
+        "loaded in 1113 ms"
       ],
       "state": "OK",
       "url": "./nma-inconsistency/index.html"
@@ -904,7 +904,7 @@
         "console_errors": [],
         "key": "nma-pro-v2",
         "load_ok": true,
-        "load_time_ms": 1977,
+        "load_time_ms": 2385,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -912,7 +912,7 @@
         "url": "./nma-pro-v2/nma-pro-v8.0.html"
       },
       "reasons": [
-        "loaded in 1977 ms"
+        "loaded in 2385 ms"
       ],
       "state": "OK",
       "url": "./nma-pro-v2/nma-pro-v8.0.html"
@@ -925,7 +925,7 @@
         ],
         "key": "p-curve",
         "load_ok": true,
-        "load_time_ms": 1116,
+        "load_time_ms": 1076,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -933,7 +933,7 @@
         "url": "./p-curve/index.html"
       },
       "reasons": [
-        "loaded in 1116 ms"
+        "loaded in 1076 ms"
       ],
       "state": "OK",
       "url": "./p-curve/index.html"
@@ -946,7 +946,7 @@
         ],
         "key": "pet-peese",
         "load_ok": true,
-        "load_time_ms": 1455,
+        "load_time_ms": 1722,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -954,7 +954,7 @@
         "url": "./pet-peese/index.html"
       },
       "reasons": [
-        "loaded in 1455 ms"
+        "loaded in 1722 ms"
       ],
       "state": "OK",
       "url": "./pet-peese/index.html"
@@ -967,7 +967,7 @@
         ],
         "key": "pico",
         "load_ok": true,
-        "load_time_ms": 1508,
+        "load_time_ms": 1255,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -975,7 +975,7 @@
         "url": "./pico/index.html"
       },
       "reasons": [
-        "loaded in 1508 ms"
+        "loaded in 1255 ms"
       ],
       "state": "OK",
       "url": "./pico/index.html"
@@ -988,7 +988,7 @@
         ],
         "key": "powerma",
         "load_ok": true,
-        "load_time_ms": 1173,
+        "load_time_ms": 1099,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -996,7 +996,7 @@
         "url": "./powerma/index.html"
       },
       "reasons": [
-        "loaded in 1173 ms"
+        "loaded in 1099 ms"
       ],
       "state": "OK",
       "url": "./powerma/index.html"
@@ -1009,7 +1009,7 @@
         ],
         "key": "prisma-checklist",
         "load_ok": true,
-        "load_time_ms": 1428,
+        "load_time_ms": 1239,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1017,7 +1017,7 @@
         "url": "./prisma-checklist/index.html"
       },
       "reasons": [
-        "loaded in 1428 ms"
+        "loaded in 1239 ms"
       ],
       "state": "OK",
       "url": "./prisma-checklist/index.html"
@@ -1030,7 +1030,7 @@
         ],
         "key": "prisma-flow",
         "load_ok": true,
-        "load_time_ms": 1120,
+        "load_time_ms": 1077,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1038,7 +1038,7 @@
         "url": "./prisma-flow/index.html"
       },
       "reasons": [
-        "loaded in 1120 ms"
+        "loaded in 1077 ms"
       ],
       "state": "OK",
       "url": "./prisma-flow/index.html"
@@ -1051,7 +1051,7 @@
         ],
         "key": "prisma-nma",
         "load_ok": true,
-        "load_time_ms": 1124,
+        "load_time_ms": 1289,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1059,7 +1059,7 @@
         "url": "./prisma-nma/index.html"
       },
       "reasons": [
-        "loaded in 1124 ms"
+        "loaded in 1289 ms"
       ],
       "state": "OK",
       "url": "./prisma-nma/index.html"
@@ -1072,7 +1072,7 @@
         ],
         "key": "prisma-screen",
         "load_ok": true,
-        "load_time_ms": 1290,
+        "load_time_ms": 1069,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1080,7 +1080,7 @@
         "url": "./prisma-screen/index.html"
       },
       "reasons": [
-        "loaded in 1290 ms"
+        "loaded in 1069 ms"
       ],
       "state": "OK",
       "url": "./prisma-screen/index.html"
@@ -1093,7 +1093,7 @@
         ],
         "key": "proportion-ma",
         "load_ok": true,
-        "load_time_ms": 1141,
+        "load_time_ms": 1098,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1101,7 +1101,7 @@
         "url": "./proportion-ma/index.html"
       },
       "reasons": [
-        "loaded in 1141 ms"
+        "loaded in 1098 ms"
       ],
       "state": "OK",
       "url": "./proportion-ma/index.html"
@@ -1114,7 +1114,7 @@
         ],
         "key": "pubbias-tests",
         "load_ok": true,
-        "load_time_ms": 1122,
+        "load_time_ms": 1091,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1122,7 +1122,7 @@
         "url": "./pubbias-tests/index.html"
       },
       "reasons": [
-        "loaded in 1122 ms"
+        "loaded in 1091 ms"
       ],
       "state": "OK",
       "url": "./pubbias-tests/index.html"
@@ -1135,7 +1135,7 @@
         ],
         "key": "quadas-2",
         "load_ok": true,
-        "load_time_ms": 3100,
+        "load_time_ms": 3040,
         "mount_found": false,
         "probe_crashed": false,
         "timed_out": false,
@@ -1157,7 +1157,7 @@
         ],
         "key": "rct-extractor",
         "load_ok": true,
-        "load_time_ms": 3931,
+        "load_time_ms": 3552,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1180,7 +1180,7 @@
         ],
         "key": "rob-traffic-light",
         "load_ok": true,
-        "load_time_ms": 1432,
+        "load_time_ms": 1275,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1188,7 +1188,7 @@
         "url": "./rob-traffic-light/index.html"
       },
       "reasons": [
-        "loaded in 1432 ms"
+        "loaded in 1275 ms"
       ],
       "state": "OK",
       "url": "./rob-traffic-light/index.html"
@@ -1201,7 +1201,7 @@
         ],
         "key": "rob2",
         "load_ok": true,
-        "load_time_ms": 1157,
+        "load_time_ms": 1109,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1209,7 +1209,7 @@
         "url": "./rob2/index.html"
       },
       "reasons": [
-        "loaded in 1157 ms"
+        "loaded in 1109 ms"
       ],
       "state": "OK",
       "url": "./rob2/index.html"
@@ -1222,7 +1222,7 @@
         ],
         "key": "robins-e",
         "load_ok": true,
-        "load_time_ms": 1108,
+        "load_time_ms": 1083,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1230,7 +1230,7 @@
         "url": "./robins-e/index.html"
       },
       "reasons": [
-        "loaded in 1108 ms"
+        "loaded in 1083 ms"
       ],
       "state": "OK",
       "url": "./robins-e/index.html"
@@ -1243,7 +1243,7 @@
         ],
         "key": "robins-i",
         "load_ok": true,
-        "load_time_ms": 1167,
+        "load_time_ms": 1072,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1251,7 +1251,7 @@
         "url": "./robins-i/index.html"
       },
       "reasons": [
-        "loaded in 1167 ms"
+        "loaded in 1072 ms"
       ],
       "state": "OK",
       "url": "./robins-i/index.html"
@@ -1264,7 +1264,7 @@
         ],
         "key": "search-translator",
         "load_ok": true,
-        "load_time_ms": 1122,
+        "load_time_ms": 1070,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1272,7 +1272,7 @@
         "url": "./search-translator/index.html"
       },
       "reasons": [
-        "loaded in 1122 ms"
+        "loaded in 1070 ms"
       ],
       "state": "OK",
       "url": "./search-translator/index.html"
@@ -1285,7 +1285,7 @@
         ],
         "key": "thematic-synthesis",
         "load_ok": true,
-        "load_time_ms": 1115,
+        "load_time_ms": 1075,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1293,7 +1293,7 @@
         "url": "./thematic-synthesis/index.html"
       },
       "reasons": [
-        "loaded in 1115 ms"
+        "loaded in 1075 ms"
       ],
       "state": "OK",
       "url": "./thematic-synthesis/index.html"
@@ -1306,7 +1306,7 @@
         ],
         "key": "tsa",
         "load_ok": true,
-        "load_time_ms": 1415,
+        "load_time_ms": 1090,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1314,7 +1314,7 @@
         "url": "./tsa/index.html"
       },
       "reasons": [
-        "loaded in 1415 ms"
+        "loaded in 1090 ms"
       ],
       "state": "OK",
       "url": "./tsa/index.html"
@@ -1327,7 +1327,7 @@
         ],
         "key": "webr-studio",
         "load_ok": true,
-        "load_time_ms": 1129,
+        "load_time_ms": 1067,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1335,7 +1335,7 @@
         "url": "./webr-studio/index.html"
       },
       "reasons": [
-        "loaded in 1129 ms"
+        "loaded in 1067 ms"
       ],
       "state": "OK",
       "url": "./webr-studio/index.html"
@@ -1348,7 +1348,7 @@
         ],
         "key": "webr-validator",
         "load_ok": true,
-        "load_time_ms": 1547,
+        "load_time_ms": 1276,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1356,7 +1356,7 @@
         "url": "./webr-validator/index.html"
       },
       "reasons": [
-        "loaded in 1547 ms"
+        "loaded in 1276 ms"
       ],
       "state": "OK",
       "url": "./webr-validator/index.html"
@@ -1369,7 +1369,7 @@
         ],
         "key": "workbench",
         "load_ok": true,
-        "load_time_ms": 1510,
+        "load_time_ms": 1351,
         "mount_found": true,
         "probe_crashed": false,
         "timed_out": false,
@@ -1377,19 +1377,19 @@
         "url": "./workbench/index.html"
       },
       "reasons": [
-        "loaded in 1510 ms"
+        "loaded in 1351 ms"
       ],
       "state": "OK",
       "url": "./workbench/index.html"
     }
   },
   "audit_version": "0.1.0",
-  "generated_at": "2026-05-13T20:33:54Z",
+  "generated_at": "2026-05-13T21:48:39Z",
   "totals": {
     "CONSOLE-ERRORS": 0,
-    "MISSING-MOUNT": 3,
+    "MISSING-MOUNT": 2,
     "NEEDS-SERVICE": 1,
-    "OK": 62,
+    "OK": 63,
     "TIMEOUT": 0,
     "UNKNOWN": 0,
     "total": 66

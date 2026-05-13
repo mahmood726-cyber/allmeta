@@ -2,36 +2,34 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-13T14:48:47Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-13T21:48:13Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
-- Tier 1 — Validated: 3
+- Tier 1 — Validated: 8
 - Tier 2 — Working: 0
-- Tier 3 — Polish needed: 50
-- Tier 4 — Hardening priority: 5
-- Tier 5 — Active rebuild: 8
+- Tier 3 — Polish needed: 47
+- Tier 4 — Hardening priority: 4
+- Tier 5 — Active rebuild: 7
 
-## Tier 5 — Active rebuild (8)
+## Tier 5 — Active rebuild (7)
 
 - **dosehtml** — stub_count=16 (>= 6)
 - **HTA** — stub_count=23 (>= 6)
 - **IPD-Meta-Pro** — stub_count=96 (>= 6)
 - **living-meta** — missing index.html
 - **nma-dose-response-app** — stub_count=14 (>= 6)
-- **nma-pro-v2** — missing index.html
 - **Pairwiseai** — stub_count=233 (>= 6)
 - **prisma-checklist** — stub_count=13 (>= 6)
 
-## Tier 4 — Hardening priority (5)
+## Tier 4 — Hardening priority (4)
 
-- **effect-size-converter** — stub_count=1
 - **p-curve** — stub_count=1
 - **pico** — stub_count=1
 - **prisma-flow** — stub_count=4 · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 - **Truthcert1** — stub_count=30 (>= 6) · override applied: Stubs counted from app.min.js (minified bundle); known limitation of stub detector on minified code. App is functionally complete. · **override**
 
-## Tier 3 — Polish needed (50)
+## Tier 3 — Polish needed (47)
 
 - **amstar-2** — no tests · no R-parity test · no README
 - **bayesian-ma** — no R-parity test · no README
@@ -45,13 +43,11 @@ Generated: 2026-05-13T14:48:47Z · scanner v0.1.0 · 66 apps
 - **component-nma** — no tests · no R-parity test · no README
 - **copas** — no tests · no R-parity test · no README
 - **cumulative-subgroup** — no R-parity test · no README
-- **dta-sroc** — no R-parity test · no README
 - **evidence-board** — no README
 - **focus-studio** — no README
 - **gosh** — no tests · no R-parity test · no README
 - **gosh-metareg** — no tests · no R-parity test · no README
 - **grade-sof** — no R-parity test · no README
-- **heterogeneity** — no R-parity test · no README
 - **hsroc** — no tests · no R-parity test · no README
 - **influence** — no tests · no R-parity test · no README
 - **kanban-lab** — no README
@@ -65,7 +61,6 @@ Generated: 2026-05-13T14:48:47Z · scanner v0.1.0 · 66 apps
 - **multilevel-ma** — no tests · no R-parity test · no README
 - **nma-global-inconsistency** — no tests · no R-parity test · no README
 - **nma-inconsistency** — no tests · no R-parity test · no README
-- **pet-peese** — no tests · no R-parity test · no README
 - **powerma** — no tests · no R-parity test · no README
 - **prisma-nma** — no tests · no R-parity test · no README
 - **prisma-screen** — no R-parity test · no README
@@ -84,8 +79,13 @@ Generated: 2026-05-13T14:48:47Z · scanner v0.1.0 · 66 apps
 - **webr-validator** — no R-parity test · no README
 - **workbench** — no R-parity test · no README
 
-## Tier 1 — Validated (3)
+## Tier 1 — Validated (8)
 
+- **dta-sroc** — test_count=4 · has R-parity test · last_touched 0d ago
+- **effect-size-converter** — stub_count=1 · override applied: stub_count=1 false positive: index.html line 593 uses 'placeholder:' as a JS object property key (LocalLLM panel config), not a UI stub or unimplemented marker. App is functionally complete with 3 tests and R-parity coverage (Cycle 2.2). · **override**
 - **forest-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **funnel-plot** — test_count=4 · has R-parity test · last_touched 0d ago
+- **heterogeneity** — test_count=4 · has R-parity test · last_touched 0d ago
 - **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago
+- **nma-pro-v2** — stub_count=5 · override applied: stub_count=5 false positives: (1) RETROFIT_AUDIT.md mentions 'pandas stub' and 'stub_count' in documentation text (not code stubs); (2) nma-pro-v8.0.html line 13045 uses 'placeholder' in a JS comment ('Update placeholder labels when distribution changes'). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 2 tests, and R-parity coverage (Cycle 2.2). · **override**
+- **pet-peese** — test_count=3 · has R-parity test · last_touched 0d ago
