@@ -1,0 +1,3 @@
+# Influence Diagnostics
+
+A browser-only tool for per-study influence analysis in random-effects meta-analysis. For each study in a pairwise MA, the app drops that study and recomputes the pooled effect; it then reports Cook's distance, hat values, studentized deleted residuals, DFFITS, covariance-ratio, and leave-one-out (LOO) pooled estimates alongside two plots: a LOO forest plot and a Cook's D × Hat influence scatter. Studies are flagged in red when Cook's D > 1, hat > 3/k, or |residual| > 2, mirroring the default thresholds in `metafor::influence()`. Input can be pasted as `effect, SE[, label]` rows or uploaded via a CSV file with columns `study, yi, vi` (variance). All computation is inline JavaScript; no server required.

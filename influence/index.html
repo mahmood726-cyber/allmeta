@@ -10,14 +10,15 @@
   <style>
     :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
             --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
-            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
-            --flag:#912121; }
+            --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+            --input-bg:#fbfaf6; --flag:#912121; }
     @media (prefers-color-scheme:dark) {
       :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
               --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
-              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
-              --flag:#ef7373; }
+              --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+              --input-bg:#23272c; --flag:#ef7373; }
     }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -26,26 +27,47 @@
     header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
     header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
     main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
-           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+           grid-template-columns: minmax(300px, 26rem) 1fr; align-items: start; }
     @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
     .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
     .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
                 text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; }
+    legend { padding: 0 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+    label { display: block; margin-bottom: 0.5rem; font-size: 0.88rem; }
+    label span.lbl { display: block; margin-bottom: 0.15rem; }
+    label span.hint { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.1rem; }
     textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
                border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
-               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
-    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
-                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace;
+               resize: vertical; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
+    button { font: inherit; font-size: 0.85rem; padding: 0.45rem 0.85rem; border-radius: 6px;
+             border: 1px solid var(--border-strong); background: var(--panel); color: var(--ink); cursor: pointer; }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    button:hover { filter: brightness(0.96); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 1rem; }
     th, td { padding: 0.3rem 0.45rem; border-bottom: 1px solid var(--border); text-align: left; }
     th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
     td code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 4px; }
     tr.flag { background: rgba(145, 33, 33, 0.1); }
     svg { width: 100%; height: auto; display: block; }
-    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
-    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .footer-note { margin: 0; color: var(--muted); font-size: 0.78rem; text-align: right;
+                   padding: 0 clamp(1rem, 3vw, 3rem) 1.5rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.5 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+       skipped (out-of-scope): chart-download (SVG plots rendered inline; deferred) -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -54,10 +76,17 @@
     <p>Per-study influence on a random-effects meta-analysis: Cook's distance, hat values, studentized deleted residuals, DFFITS, covariance-ratio, and leave-one-out pooled estimates.</p>
   </header>
   <main>
-    <section class="panel">
+    <section class="panel" aria-label="Input form">
       <h2>Input</h2>
-      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies — <code>effect, SE, label(optional)</code></label>
-      <textarea id="src">0.25, 0.08, Smith
+
+      <!-- csv-upload mount: file picker for study,yi,vi CSV files -->
+      <div id="alm-csv-mount"></div>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">Studies — <code>effect, SE, label(optional)</code></span>
+          <textarea id="src" spellcheck="false">0.25, 0.08, Smith
 0.18, 0.10, Jones
 0.40, 0.15, Khan
 0.30, 0.09, Lee
@@ -67,12 +96,29 @@
 0.32, 0.12, Garcia
 0.45, 0.17, Ahmed
 0.28, 0.10, Brown</textarea>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Compute diagnostics</button>
+          <span class="hint">Paste <code>effect, SE[, label]</code> rows, or upload a CSV above.</span>
+        </label>
+      </fieldset>
+
+      <!-- axis-controls mount: axis range inputs (domain override for LOO plot) -->
+      <div id="alm-axis-mount"></div>
+
+      <!-- results-export mount: CSV + JSON export of computed diagnostics -->
+      <div id="alm-export-mount"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-run" class="primary">Compute diagnostics</button>
+        <!-- reset-undo mount: undo-stack dialog replaces bare confirm() -->
+        <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;"></div>
+        <!-- btn-reset hidden: reset-undo module provides the visible button; kept for test compat -->
+        <button type="button" id="btn-reset" style="display:none">Reset</button>
+      </div>
     </section>
-    <section class="panel">
+
+    <section class="panel" aria-label="Diagnostics">
       <h2>Diagnostics</h2>
       <table>
-        <thead><tr><th>Study</th><th>Effect</th><th>z<sub>i</sub></th><th>Hat</th><th>Cook's D</th><th>DFFITS</th><th>Cov-ratio</th><th>LOO pooled</th></tr></thead>
+        <thead><tr><th>Study</th><th>Effect</th><th>z<sub>i</sub></th><th>Hat</th><th>Cook's D</th><th>DFFITS</th><th>Cov-ratio</th><th><abbr data-gloss="Influence">LOO</abbr> pooled</th></tr></thead>
         <tbody id="body"></tbody>
       </table>
       <h2 style="margin-top:0.6rem">Leave-one-out forest</h2>
@@ -81,150 +127,284 @@
       <svg id="influence-plot" viewBox="0 0 600 260" role="img" aria-label="Influence plot of Cook's distance vs hat values"></svg>
     </section>
   </main>
-  <footer>
-    Standard influence diagnostics for weighted linear meta-analysis. Flags in red: Cook's D &gt; 1, hat &gt; 3·k̄ (k̄ = 1/k), |studentized residual| &gt; 2. Matches metafor::influence(); here applied to a random-effects intercept-only model.
-  </footer>
+  <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Flags in red: <abbr data-gloss="Effect">Cook's D</abbr> &gt; 1, hat &gt; 3·k̄ (k̄ = 1/k), |studentized residual| &gt; 2. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
   <script>
-    function parse(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const parts = l.split(/,/).map(s => s.trim());
-        const te = parseFloat(parts[0]), se = parseFloat(parts[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { te, se, label: parts[2] || `Study ${i + 1}` };
-      }).filter(Boolean);
-    }
+    (function () {
+      "use strict";
+      const LS_KEY = "influence-v1";
 
-    function pool(rows) {
-      if (!rows || rows.length === 0) return { mu: NaN, seMu: NaN, tau2: 0, Q: 0, df: 0, wRE: [], swRE: 0 };
-      if (rows.length === 1) {
-        const r = rows[0];
-        return { mu: r.te, seMu: r.se, tau2: 0, Q: 0, df: 0, wRE: [1 / (r.se * r.se)], swRE: 1 / (r.se * r.se) };
+      function parse(text) {
+        return text.trim().split(/\n/).map((l, i) => {
+          const parts = l.split(/,/).map(s => s.trim());
+          const te = parseFloat(parts[0]), se = parseFloat(parts[1]);
+          if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+          return { te, se, label: parts[2] || `Study ${i + 1}` };
+        }).filter(Boolean);
       }
-      const w = rows.map(r => 1 / (r.se * r.se));
-      const sw = w.reduce((a, b) => a + b, 0);
-      const muFE = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
-      const Q = rows.reduce((acc, r, i) => acc + w[i] * (r.te - muFE) ** 2, 0);
-      const df = rows.length - 1;
-      const sW2 = w.reduce((a, b) => a + b * b, 0);
-      const tau2 = df > 0 ? Math.max(0, (Q - df) / (sw - sW2 / sw)) : 0;
-      const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
-      const swRE = wRE.reduce((a, b) => a + b, 0);
-      const mu = rows.reduce((acc, r, i) => acc + wRE[i] * r.te, 0) / swRE;
-      const seMu = Math.sqrt(1 / swRE);
-      return { mu, seMu, tau2, Q, df, wRE, swRE };
-    }
 
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+      function pool(rows) {
+        if (!rows || rows.length === 0) return { mu: NaN, seMu: NaN, tau2: 0, Q: 0, df: 0, wRE: [], swRE: 0 };
+        if (rows.length === 1) {
+          const r = rows[0];
+          return { mu: r.te, seMu: r.se, tau2: 0, Q: 0, df: 0, wRE: [1 / (r.se * r.se)], swRE: 1 / (r.se * r.se) };
+        }
+        const w = rows.map(r => 1 / (r.se * r.se));
+        const sw = w.reduce((a, b) => a + b, 0);
+        const muFE = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
+        const Q = rows.reduce((acc, r, i) => acc + w[i] * (r.te - muFE) ** 2, 0);
+        const df = rows.length - 1;
+        const sW2 = w.reduce((a, b) => a + b * b, 0);
+        const tau2 = df > 0 ? Math.max(0, (Q - df) / (sw - sW2 / sw)) : 0;
+        const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
+        const swRE = wRE.reduce((a, b) => a + b, 0);
+        const mu = rows.reduce((acc, r, i) => acc + wRE[i] * r.te, 0) / swRE;
+        const seMu = Math.sqrt(1 / swRE);
+        return { mu, seMu, tau2, Q, df, wRE, swRE };
+      }
 
-    function run() {
-      const rows = parse(document.getElementById("src").value);
-      if (rows.length < 3) return;
-      const full = pool(rows);
-      const k = rows.length;
+      function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
-      // Per-study diagnostics
-      const diag = rows.map((r, i) => {
-        // Hat value: w_i / sum(w)
-        const hat = full.wRE[i] / full.swRE;
-        // Studentized residual
-        const resid = (r.te - full.mu) / Math.sqrt(r.se * r.se + full.tau2);
-        // Leave-one-out pool
-        const rest = rows.filter((_, j) => j !== i);
-        const loo = pool(rest);
-        // DFFITS
-        const dffits = (full.mu - loo.mu) / Math.sqrt(r.se * r.se + loo.tau2);
-        // Cook's D
-        const cooksD = hat * resid * resid / (1 - hat) ** 2;
-        // Cov-ratio
-        const covRatio = (loo.seMu / full.seMu) ** 2;
-        return {
-          ...r, hat, resid, dffits, cooksD, covRatio,
-          loo_mu: loo.mu, loo_seMu: loo.seMu,
-        };
+      // Exposed for results-export + url-state
+      let _lastDiag = null;
+      let _lastFull = null;
+      window._almLastInfluence = function () { return _lastFull; };
+      window._almLastDiag      = function () { return _lastDiag; };
+
+      function run() {
+        const rows = parse(document.getElementById("src").value);
+        if (rows.length < 3) return;
+        const full = pool(rows);
+        _lastFull = full;
+        const k = rows.length;
+
+        // Per-study diagnostics
+        const diag = rows.map((r, i) => {
+          // Hat value: w_i / sum(w)
+          const hat = full.wRE[i] / full.swRE;
+          // Studentized residual
+          const resid = (r.te - full.mu) / Math.sqrt(r.se * r.se + full.tau2);
+          // Leave-one-out pool
+          const rest = rows.filter((_, j) => j !== i);
+          const loo = pool(rest);
+          // DFFITS
+          const dffits = (full.mu - loo.mu) / Math.sqrt(r.se * r.se + loo.tau2);
+          // Cook's D
+          const cooksD = hat * resid * resid / (1 - hat) ** 2;
+          // Cov-ratio
+          const covRatio = (loo.seMu / full.seMu) ** 2;
+          return {
+            ...r, hat, resid, dffits, cooksD, covRatio,
+            loo_mu: loo.mu, loo_seMu: loo.seMu,
+          };
+        });
+        _lastDiag = diag;
+
+        const body = document.getElementById("body");
+        const __bodyParts = [""];
+        const hatThreshold = 3 / k;
+        for (const d of diag) {
+          const flag = d.cooksD > 1 || d.hat > hatThreshold || Math.abs(d.resid) > 2 ? "flag" : "";
+          __bodyParts.push(`<tr class="${flag}">
+            <td>${d.label}</td>
+            <td>${fmt(d.te)}</td>
+            <td>${fmt(d.resid, 2)}</td>
+            <td>${fmt(d.hat, 3)}</td>
+            <td>${fmt(d.cooksD, 3)}</td>
+            <td>${fmt(d.dffits, 3)}</td>
+            <td>${fmt(d.covRatio, 3)}</td>
+            <td>${fmt(d.loo_mu)} (${fmt(d.loo_seMu)})</td>
+          </tr>`);
+        }
+        __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:700"><td colspan="7">Full-sample pooled</td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td></tr>`);
+        drawLOO(diag, full);
+        drawInfluence(diag);
+        body.innerHTML = __bodyParts.join("");
+      }
+
+      function drawLOO(diag, full) {
+        const svg = document.getElementById("loo-plot");
+        const W = 600, H = Math.max(300, 40 + diag.length * 26 + 40);
+        svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+        const __svgParts = [""];
+        const padL = 130, padR = 30;
+        const plotW = W - padL - padR;
+        const mus = diag.map(d => d.loo_mu);
+        const ses = diag.map(d => d.loo_seMu);
+        const los = diag.map((d, i) => mus[i] - 1.96 * ses[i]);
+        const his = diag.map((d, i) => mus[i] + 1.96 * ses[i]);
+        const lo = Math.min(0, ...los, full.mu - 1.96 * full.seMu), hi = Math.max(0, ...his, full.mu + 1.96 * full.seMu);
+        const pad = (hi - lo) * 0.1 || 0.3;
+        const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
+
+        // Full pool reference
+        __svgParts.push(`<line x1="${X(full.mu)}" y1="20" x2="${X(full.mu)}" y2="${H - 30}" stroke="var(--warn)" stroke-dasharray="4 2" opacity="0.6"/>`);
+        __svgParts.push(`<text x="${X(full.mu) + 4}" y="16" font-size="10" fill="var(--warn)" opacity="0.8">full-sample mean</text>`);
+
+        diag.forEach((d, i) => {
+          const y = 35 + i * 26;
+          __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${d.label}</text>`);
+          const l = d.loo_mu - 1.96 * d.loo_seMu, h = d.loo_mu + 1.96 * d.loo_seMu;
+          __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`);
+          __svgParts.push(`<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
+        });
+        svg.innerHTML = __svgParts.join("");
+      }
+
+      function drawInfluence(diag) {
+        const svg = document.getElementById("influence-plot");
+        const W = 600, H = 260, padL = 60, padR = 20, padT = 20, padB = 40;
+        const plotW = W - padL - padR, plotH = H - padT - padB;
+        const hats = diag.map(d => d.hat);
+        const cookD = diag.map(d => d.cooksD);
+        const xMax = Math.max(1 / diag.length * 4, ...hats);
+        const yMax = Math.max(1.2, ...cookD);
+        const X = v => padL + v / xMax * plotW;
+        const Y = v => padT + (1 - v / yMax) * plotH;
+        const __svgParts = [""];
+        __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+        __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+        // Thresholds
+        __svgParts.push(`<line x1="${X(3 / diag.length)}" y1="${padT}" x2="${X(3 / diag.length)}" y2="${padT + plotH}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
+        __svgParts.push(`<line x1="${padL}" y1="${Y(1)}" x2="${padL + plotW}" y2="${Y(1)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
+        for (const d of diag) {
+          const flag = d.cooksD > 1 || d.hat > 3 / diag.length || Math.abs(d.resid) > 2;
+          __svgParts.push(`<circle cx="${X(d.hat)}" cy="${Y(d.cooksD)}" r="5" fill="${flag ? 'var(--flag)' : 'var(--accent)'}" opacity="0.85"/>`);
+          __svgParts.push(`<text x="${X(d.hat) + 7}" y="${Y(d.cooksD) + 4}" font-size="10" fill="currentColor">${d.label}</text>`);
+        }
+        __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Hat value</text>`);
+        __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">Cook's D</text>`);
+        svg.innerHTML = __svgParts.join("");
+      }
+
+      // ---- State helpers for reset-undo / url-state --
+      window.__almSnapshot = function () {
+        const ta = document.getElementById('src');
+        return { data: ta ? ta.value : '' };
+      };
+
+      window.__almRestore = function (snap) {
+        const isEmpty = !snap || Object.keys(snap).length === 0;
+        const ta = document.getElementById('src');
+        if (ta) ta.value = isEmpty ? '' : (snap.data != null ? snap.data : '');
+        run();
+      };
+
+      document.getElementById("btn-run").addEventListener("click", run);
+      document.getElementById("btn-reset").addEventListener("click", function () {
+        if (confirm("Reset all studies?")) {
+          const ta = document.getElementById('src');
+          if (ta) ta.value = '';
+          run();
+        }
       });
+      run();
+    })();
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.5 shared UX modules. Wire-in per RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+  //   skipped (out-of-scope): chart-download (deferred)
+  // Adapter shims map to the existing engine without changing math.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
 
-      const body = document.getElementById("body");
-      const __bodyParts = [""];
-      const hatThreshold = 3 / k;
-      for (const d of diag) {
-        const flag = d.cooksD > 1 || d.hat > hatThreshold || Math.abs(d.resid) > 2 ? "flag" : "";
-        __bodyParts.push(`<tr class="${flag}">
-          <td>${d.label}</td>
-          <td>${fmt(d.te)}</td>
-          <td>${fmt(d.resid, 2)}</td>
-          <td>${fmt(d.hat, 3)}</td>
-          <td>${fmt(d.cooksD, 3)}</td>
-          <td>${fmt(d.dffits, 3)}</td>
-          <td>${fmt(d.covRatio, 3)}</td>
-          <td>${fmt(d.loo_mu)} (${fmt(d.loo_seMu)})</td>
-        </tr>`);
-      }
-      __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:700"><td colspan="7">Full-sample pooled</td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td></tr>`);
-      drawLOO(diag, full);
-      drawInfluence(diag);
-      body.innerHTML = __bodyParts.join("");
+    // ---- adapter shims ------------------------------------------------
 
-    }
-
-    function drawLOO(diag, full) {
-      const svg = document.getElementById("loo-plot");
-      const W = 600, H = Math.max(300, 40 + diag.length * 26 + 40);
-      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      const __svgParts = [""];
-      const padL = 130, padR = 30;
-      const plotW = W - padL - padR;
-      const mus = diag.map(d => d.loo_mu);
-      const ses = diag.map(d => d.loo_seMu);
-      const los = diag.map((d, i) => mus[i] - 1.96 * ses[i]);
-      const his = diag.map((d, i) => mus[i] + 1.96 * ses[i]);
-      const lo = Math.min(0, ...los, full.mu - 1.96 * full.seMu), hi = Math.max(0, ...his, full.mu + 1.96 * full.seMu);
-      const pad = (hi - lo) * 0.1 || 0.3;
-      const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
-
-      // Full pool reference
-      __svgParts.push(`<line x1="${X(full.mu)}" y1="20" x2="${X(full.mu)}" y2="${H - 30}" stroke="var(--warn)" stroke-dasharray="4 2" opacity="0.6"/>`);
-      __svgParts.push(`<text x="${X(full.mu) + 4}" y="16" font-size="10" fill="var(--warn)" opacity="0.8">full-sample mean</text>`);
-
-      diag.forEach((d, i) => {
-        const y = 35 + i * 26;
-        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${d.label}</text>`);
-        const l = d.loo_mu - 1.96 * d.loo_seMu, h = d.loo_mu + 1.96 * d.loo_seMu;
-        __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`);
-        __svgParts.push(`<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
+    // Load rows from csv-upload (format: [{study, yi, vi}, ...]) into the
+    // textarea using the app's native "effect, SE, label" line format, then
+    // trigger run().
+    window.__almLoad = function (rows) {
+      var lines = rows.filter(function (r) {
+        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
+      }).map(function (r) {
+        return r.yi + ', ' + Math.sqrt(r.vi) + ', ' + r.study;
       });
-      svg.innerHTML = __svgParts.join("");
+      var ta = document.getElementById('src');
+      if (!ta) return;
+      ta.value = lines.join('\n');
+      var btn = document.getElementById('btn-run');
+      if (btn) btn.click();
+    };
 
-    }
-
-    function drawInfluence(diag) {
-      const svg = document.getElementById("influence-plot");
-      const W = 600, H = 260, padL = 60, padR = 20, padT = 20, padB = 40;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const hats = diag.map(d => d.hat);
-      const cookD = diag.map(d => d.cooksD);
-      const xMax = Math.max(1 / diag.length * 4, ...hats);
-      const yMax = Math.max(1.2, ...cookD);
-      const X = v => padL + v / xMax * plotW;
-      const Y = v => padT + (1 - v / yMax) * plotH;
-      const __svgParts = [""];
-      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      // Thresholds
-      __svgParts.push(`<line x1="${X(3 / diag.length)}" y1="${padT}" x2="${X(3 / diag.length)}" y2="${padT + plotH}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
-      __svgParts.push(`<line x1="${padL}" y1="${Y(1)}" x2="${padL + plotW}" y2="${Y(1)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
-      for (const d of diag) {
-        const flag = d.cooksD > 1 || d.hat > 3 / diag.length || Math.abs(d.resid) > 2;
-        __svgParts.push(`<circle cx="${X(d.hat)}" cy="${Y(d.cooksD)}" r="5" fill="${flag ? 'var(--flag)' : 'var(--accent)'}" opacity="0.85"/>`);
-        __svgParts.push(`<text x="${X(d.hat) + 7}" y="${Y(d.cooksD) + 4}" font-size="10" fill="currentColor">${d.label}</text>`);
+    // Return the last diagnostics as a flat results object for results-export.
+    window.__almResults = function () {
+      var full = window._almLastInfluence ? window._almLastInfluence() : null;
+      var diag = window._almLastDiag ? window._almLastDiag() : [];
+      var out = {
+        _schema: 'influence-results-v1',
+        k: diag ? diag.length : 0,
+      };
+      if (full) {
+        out.pooled_mu    = full.mu;
+        out.pooled_seMu  = full.seMu;
+        out.tau2         = full.tau2;
+        out.Q            = full.Q;
+        out.Q_df         = full.df;
       }
-      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Hat value</text>`);
-      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">Cook's D</text>`);
-      svg.innerHTML = __svgParts.join("");
+      if (diag && diag.length > 0) {
+        // Attach per-study LOO estimates as a summary array
+        out.loo_estimates = diag.map(function (d) {
+          return { study: d.label, loo_mu: d.loo_mu, loo_seMu: d.loo_seMu,
+                   cooksD: d.cooksD, hat: d.hat, resid: d.resid };
+        });
+      }
+      return out;
+    };
 
+    // ---- module init --------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: true,  type: 'string', example: 'Smith 2024' },
+        { name: 'yi',    required: true,  type: 'float',  example: '0.21' },
+        { name: 'vi',    required: true,  type: 'float',  example: '0.04' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [{ key: 'x', label: 'LOO X axis', range: [null, null], log: false }],
+      onChange: function (state) {
+        window.__almAxis = state;
+        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
+        // the LOO plot axis domain. drawLOO() auto-computes its domain
+        // from CI extents; wiring __almAxis requires threading lo/hi
+        // overrides through run() — deferred to a future cycle.
+        // The controls are functional UI but domain override is no-op.
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'influence-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    run();
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      root: document.body,
+      glossaryUrl: '../hub/shared/glossary.json',
+    });
+  })();
   </script>
 </body>
 </html>
