@@ -1,1 +1,38 @@
-{ "$schema": "https://json-schema.org/draft-07/schema#", "type": "object", "properties": { "scanner_version": {"type": "string"} }, "required": ["scanner_version"] }
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "allmeta triage atlas",
+  "type": "object",
+  "required": ["scanner_version", "generated_at", "totals", "apps"],
+  "properties": {
+    "scanner_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "totals": {
+      "type": "object",
+      "required": ["tier_1", "tier_2", "tier_3", "tier_4", "tier_5", "total"],
+      "properties": {
+        "tier_1": { "type": "integer", "minimum": 0 },
+        "tier_2": { "type": "integer", "minimum": 0 },
+        "tier_3": { "type": "integer", "minimum": 0 },
+        "tier_4": { "type": "integer", "minimum": 0 },
+        "tier_5": { "type": "integer", "minimum": 0 },
+        "total":  { "type": "integer", "minimum": 0 }
+      }
+    },
+    "apps": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["tier", "auto_tier", "kind", "confidence", "reasons", "signals"],
+        "properties": {
+          "tier":       { "type": "integer", "minimum": 1, "maximum": 5 },
+          "auto_tier":  { "type": "integer", "minimum": 1, "maximum": 5 },
+          "override":   { "type": ["object", "null"] },
+          "kind":       { "type": "string", "enum": ["numerical", "non-numerical"] },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+          "reasons":    { "type": "array", "items": { "type": "string" } },
+          "signals":    { "type": "object" }
+        }
+      }
+    }
+  }
+}
