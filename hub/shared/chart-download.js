@@ -80,7 +80,32 @@
       const prepared = _prepareSvg(src);
       _download(new Blob([_serialize(prepared)], { type: 'image/svg+xml' }), basename + '.svg');
     });
-    // PNG and PDF handlers wired in Tasks 11-12.
+    target.querySelector('[data-fmt="png"]').addEventListener('click', () => {
+      const src = getSvg(); if (!src) { console.warn('[alm.chartDownload] no SVG'); return; }
+      const prepared = _prepareSvg(src);
+      const svgText = _serialize(prepared);
+      const vb = prepared.getAttribute('viewBox').split(/\s+/).map(Number);
+      const [, , w, h] = vb;
+      const scale = (window.devicePixelRatio || 1) * 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(w * scale);
+      canvas.height = Math.ceil(h * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      const img = new Image();
+      const blobURL = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(blobURL);
+        canvas.toBlob(b => _download(b, basename + '.png'), 'image/png');
+      };
+      img.onerror = (e) => {
+        URL.revokeObjectURL(blobURL);
+        console.warn('[alm.chartDownload] PNG load failed:', e);
+      };
+      img.src = blobURL;
+    });
+    // PDF handler wired in Task 12.
   }
   init._prepareSvg = _prepareSvg;
   init._serialize = _serialize;
