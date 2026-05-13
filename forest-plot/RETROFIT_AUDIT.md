@@ -26,3 +26,35 @@
 
 - `chart-download.js` — SVG and PNG downloads are implemented inline and working correctly; the native SVG builder produces a complete, label-safe vector output that does not need the shared module's edge-crop or PDF paths
 - `tooltips.js` (hub module) — glossary integration via `shared/glossary.js` + `Glossary.scan` is already active and covering all jargon in the footer note; swapping APIs would risk regression with no user-visible improvement. New UI surfaces added by other wired-in modules may use `tooltips.js` for their own controls.
+
+## Browser sanity (Task 17, 2026-05-13)
+
+Verified via `forest-plot/tests/sanity.spec.mjs` (Playwright on Chromium, 5/5 passed in 23s):
+
+- [x] Page loads with zero real console errors (CSP `frame-ancestors`-in-meta browser
+      info message filtered — pre-existing, not a retrofit regression; HTTP header is the
+      enforcement path)
+- [x] All 5 wired `alm.*` modules expose their init function on `window.alm`
+      (`csvUpload`, `axisControls`, `resultsExport`, `urlState`, `resetUndo`)
+- [x] All 4 mount points (`#alm-csv-mount .alm-csv`, `#alm-axis-mount .alm-axis`,
+      `#alm-export-mount .alm-export`, `#alm-undo-mount .alm-undo`) initialise correctly
+- [x] Pre-retrofit feature: forest-plot SVG still renders in `#svg-host` with drawn
+      lines (chart-download path intact — do-no-harm gate clean)
+- [x] results-export JSON contains real pooled values (`_schema: forest-plot-results-v1`,
+      `k > 0`, `fe_mu`, `fe_ci_lb/ub`, `re_mu`, `tau2`, `I2` all present — fixes the
+      legacy "Download JSON" gap that exported only raw form state)
+
+### Items deferred to human-eyeball review
+
+- Visual quality of the chart (axis labels, diamond shape, CI whiskers intact)
+- Tooltip behaviour for method labels (`shared/glossary.js` — Task 14 marked
+  present-good; trust the existing Playwright pass in `tooltips.spec.mjs`)
+- URL state round-trip in a real browser (reload, verify state restored from hash)
+- Reset-undo confirm dialog UX and undo-stack depth in interactive use
+
+### Note on runner location
+
+The canonical spec lives at `forest-plot/tests/sanity.spec.mjs`. Because
+`hub/shared/tests/playwright.config.mjs` uses `testDir: '.'` + `testMatch: '*.spec.mjs'`,
+a mirror is kept at `hub/shared/tests/forest-plot-sanity.spec.mjs` so the shared
+webserver (port 8088, repo root) is reused. Both files are identical.
