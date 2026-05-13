@@ -68,6 +68,12 @@
     .file-input-hidden { display: none; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -88,6 +94,7 @@
           <textarea id="f-data" spellcheck="false"></textarea>
           <span class="hint">Lines starting with <code>#</code> and blanks are skipped. SE must be positive.</span>
         </label>
+        <div id="alm-csv-mount"></div>
       </fieldset>
 
       <fieldset>
@@ -113,10 +120,12 @@
           <span class="lbl">Effect label (axis)</span>
           <input type="text" id="f-effect" value="Effect (log scale)">
         </label>
+        <div id="alm-axis-mount" style="margin-top:.5rem"></div>
       </fieldset>
 
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+      <div id="alm-export-mount" style="margin-top:.5rem"></div>
 
       <div class="actions">
         <button type="button" id="btn-svg" class="primary">Download SVG</button>
@@ -127,7 +136,8 @@
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
         <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
-        <button type="button" id="btn-reset">Reset</button>
+        <button type="button" id="btn-reset" style="display:none">Reset</button>
+        <div id="alm-undo-mount" style="display:inline-flex"></div>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
       </div>
     </section>
@@ -138,7 +148,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Egger's regression: intercept from unweighted OLS of <code>est/SE</code> on <code>1/SE</code>. Power is low for k&lt;10. <strong>For binary outcomes (log-OR / log-RR)</strong> Egger has known type-I inflation when events are rare — prefer Peters' test (<a href="../pubbias-tests/index.html">pubbias-tests</a>) or Harbord-Egger modification (per advanced-stats.md). Generated client-side.</p>
+  <p class="footer-note"><abbr data-gloss="Egger">Egger</abbr>'s regression: intercept from unweighted <abbr data-gloss="OLS">OLS</abbr> of <code>est/<abbr data-gloss="SE">SE</abbr></code> on <code>1/SE</code>. Power is low for k&lt;10. <strong>For binary outcomes (<abbr data-gloss="logOR">log-OR</abbr> / <abbr data-gloss="logRR">log-RR</abbr>)</strong> <abbr data-gloss="Egger">Egger</abbr> has known type-I inflation when events are rare — prefer <abbr data-gloss="Peters">Peters</abbr>' test (<a href="../pubbias-tests/index.html">pubbias-tests</a>) or Harbord-Egger modification (per advanced-stats.md). Generated client-side.</p>
 
   <script>
   (function () {
@@ -406,17 +416,31 @@
       warnEl.classList.add("is-visible");
     }
 
+    // Last-computed result cache — populated by render(), read by __almResults().
+    // Exposed on window so the alm-init script block (separate IIFE) can access them.
+    let _lastFE = null, _lastEgg = null, _lastStudies = [];
+    window._almLastFE = function () { return _lastFE; };
+    window._almLastEgg = function () { return _lastEgg; };
+    window._almLastStudies = function () { return _lastStudies; };
+
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
       const fe = poolFE(parsed.studies);
       const egg = egger(parsed.studies);
+      _lastFE = fe; _lastEgg = egg; _lastStudies = parsed.studies;
       renderWarnings(parsed.warnings);
       renderStats(parsed.studies, fe, egg);
       const svg = parsed.studies.length ? buildSvg(state, parsed.studies, fe, egg)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste at least 3 study rows to render.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+      // url-state write (after each render so the link is always shareable)
+      try {
+        if (window.alm && window.alm.urlState && window.__almSnapshot) {
+          window.alm.urlState.write(window.__almSnapshot());
+        }
+      } catch (e) {}
     }
 
     function loadSaved() {
@@ -564,6 +588,152 @@
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example funnel — small-study effect"; }
     attach();
     render();
+  })();
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.1 shared UX modules. Wire-in per funnel-plot/RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state,
+  //            reset-undo, tooltips
+  //   skipped (present-good): chart-download
+  // Adapter shims map to existing engine without changing math.
+  // Deferred: axis-controls renders but does NOT yet drive the SVG x/y axis
+  //   domain — buildSvg() auto-computes domain; wiring __almAxis into
+  //   buildSvg() requires threading overrides through render() — deferred
+  //   to a future cycle.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims --------------------------------------------------
+
+    // Load rows from csv-upload (format: [{study, yi, sei}, ...]) into the
+    // textarea using the app's native "label, estimate, SE" line format, then
+    // dispatch 'input' so render() fires.
+    window.__almLoad = function (rows) {
+      var lines = rows.filter(function (r) {
+        return r.study != null && isFinite(r.yi) && isFinite(r.sei) && r.sei > 0;
+      }).map(function (r) {
+        return r.study + ', ' + r.yi + ', ' + r.sei;
+      });
+      var ta = document.getElementById('f-data');
+      if (!ta) return;
+      ta.value = lines.join('\n');
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // Return the last pooled result as a flat object for results-export.
+    // Reads via window accessors exposed from the main IIFE to cross scope.
+    window.__almResults = function () {
+      var fe = window._almLastFE ? window._almLastFE() : null;
+      var egg = window._almLastEgg ? window._almLastEgg() : null;
+      var studies = window._almLastStudies ? window._almLastStudies() : [];
+      var out = { _schema: 'funnel-plot-results-v1', k: studies.length };
+      if (fe) {
+        out.fe_mu = fe.mu;
+        out.fe_ci_lb = fe.lo;
+        out.fe_ci_ub = fe.hi;
+        out.fe_se = fe.se;
+      }
+      if (egg) {
+        out.egger_intercept = egg.alpha;
+        out.egger_intercept_se = egg.seAlpha;
+        out.egger_t = egg.tAlpha;
+        out.egger_df = egg.df;
+        out.egger_p = egg.p;
+        out.egger_slope = egg.beta;
+        out.egger_slope_se = egg.seBeta;
+      }
+      return out;
+    };
+
+    // Snapshot: capture every form control value into a flat object.
+    window.__almSnapshot = function () {
+      var ta = document.getElementById('f-data');
+      var cn = document.getElementById('f-center');
+      var nv = document.getElementById('f-null');
+      var ti = document.getElementById('f-title');
+      var ef = document.getElementById('f-effect');
+      return {
+        data:    ta ? ta.value : '',
+        center:  cn ? cn.value : 'fe',
+        nullVal: nv ? nv.value : '0',
+        title:   ti ? ti.value : '',
+        effect:  ef ? ef.value : 'Effect (log scale)'
+      };
+    };
+
+    // Restore: apply snapshot back to form controls and re-render.
+    // snap === {} means "clear all".
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ta = document.getElementById('f-data');
+      var cn = document.getElementById('f-center');
+      var nv = document.getElementById('f-null');
+      var ti = document.getElementById('f-title');
+      var ef = document.getElementById('f-effect');
+      if (ta) ta.value  = isEmpty ? '' : (snap.data    != null ? snap.data    : '');
+      if (cn) cn.value  = isEmpty ? 'fe' : (snap.center != null ? snap.center : 'fe');
+      if (nv) nv.value  = isEmpty ? '0'  : (snap.nullVal != null ? snap.nullVal : '0');
+      if (ti) ti.value  = isEmpty ? ''   : (snap.title  != null ? snap.title  : '');
+      if (ef) ef.value  = isEmpty ? 'Effect (log scale)' : (snap.effect != null ? snap.effect : 'Effect (log scale)');
+      // Dispatch input on f-data to trigger the engine's render() listener.
+      if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // ---- module init -----------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: true,  type: 'string', example: 'Smith 2024' },
+        { name: 'yi',    required: true,  type: 'float',  example: '0.21' },
+        { name: 'sei',   required: true,  type: 'float',  example: '0.18' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+        window.__almLoad(result.rows);
+      },
+    });
+
+    // Axis controls: x = effect (with optional log toggle), y = SE (linear,
+    // inverted). Per Task 18 audit, y-axis is SE NOT log-SE; expose a Max SE
+    // override (y upper bound) only. The log toggle applies to the x axis.
+    // NOTE: axis-controls renders min/max inputs but does NOT yet drive the
+    // SVG domain. buildSvg() auto-computes domain from study CIs; threading
+    // __almAxis overrides into buildSvg() deferred to a future cycle.
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'Effect axis', range: [null, null], log: false },
+        { key: 'y', label: 'Max SE (y-axis)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        window.__almAxis = state;
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'funnel-plot-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    // Tooltips: scan the footer note and header for annotated <abbr> elements.
+    window.alm.tooltips({ src: '../hub/shared/glossary.json' });
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
