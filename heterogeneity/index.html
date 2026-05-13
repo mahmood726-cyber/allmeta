@@ -71,6 +71,15 @@
     .file-input-hidden { display:none; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.2 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+       skipped (present-good): chart-download -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -82,6 +91,9 @@
   <main class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
+
+      <!-- csv-upload mount: file picker for study,yi,vi CSV files -->
+      <div id="alm-csv-mount"></div>
 
       <fieldset>
         <legend>Data</legend>
@@ -104,10 +116,16 @@
         </label>
       </fieldset>
 
+      <!-- axis-controls mount: axis range + log-scale toggle -->
+      <div id="alm-axis-mount"></div>
+
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
 
       <div id="loo-wrap"></div>
+
+      <!-- results-export mount: CSV + JSON export of computed heterogeneity stats -->
+      <div id="alm-export-mount"></div>
 
       <div class="actions">
         <button type="button" id="btn-svg" class="primary">Download Baujat SVG</button>
@@ -118,7 +136,10 @@
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
         <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
-        <button type="button" id="btn-reset">Reset</button>
+        <!-- reset-undo mount: replaces bare btn-reset confirm() with undo-stack dialog -->
+        <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;"></div>
+        <!-- btn-reset hidden: reset-undo module provides the visible button; kept for test/bus compat -->
+        <button type="button" id="btn-reset" style="display:none">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
       </div>
     </section>
@@ -131,7 +152,7 @@
     </section>
   </main>
 
-  <p class="footer-note">τ² estimators per DerSimonian &amp; Laird (1986), Paule &amp; Mandel (1982), REML (Viechtbauer 2005). Baujat after Baujat et&nbsp;al. (2002).</p>
+  <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> estimators per <abbr data-gloss="DL">DerSimonian</abbr> &amp; Laird (1986), Paule &amp; Mandel (1982), <abbr data-gloss="REML">REML</abbr> (Viechtbauer 2005). <abbr data-gloss="HKSJ">HKSJ</abbr> correction applied to RE pooled CI. <abbr data-gloss="I2">I²</abbr> via Q-statistic; 95% <abbr data-gloss="PI">PI</abbr> uses t<sub>k-2</sub>. Baujat after Baujat et&nbsp;al. (2002).</p>
 
   <script>
   (function () {
@@ -479,6 +500,12 @@
       warnEl.classList.add("is-visible");
     }
 
+    // Last-computed result cache — populated by render(), read by __almResults().
+    // Exposed on window so the alm-init script block (separate IIFE) can access them.
+    let _lastInfo = null, _lastStudies = [];
+    window._almLastFE = function () { return _lastInfo; };   // alm-init reads this to know render() ran
+    window._almLastStudies = function () { return _lastStudies; };
+
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
@@ -487,12 +514,19 @@
         extras.push("DL is disabled for k<10 (advanced-stats.md); using Paule-Mandel instead.");
       }
       const info = renderStats(parsed.studies, state.tau2);
+      _lastInfo = info; _lastStudies = parsed.studies;
       renderWarnings(parsed.warnings, extras);
       const svg = (parsed.studies.length >= 2 && info)
         ? buildSvg(parsed.studies, info.sum)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥2 study rows.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+      // url-state write (after each render so the link is always shareable)
+      try {
+        if (window.alm && window.alm.urlState && window.__almSnapshot) {
+          window.alm.urlState.write(window.__almSnapshot());
+        }
+      } catch(e) {}
     }
 
     function loadSaved() {
@@ -616,6 +650,133 @@
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; }
     attach();
     render();
+  })();
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.2 shared UX modules. Wire-in per RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+  //   skipped (present-good): chart-download
+  // Adapter shims map to the existing engine without changing math.
+  // Deferred: axis-controls renders but does not yet drive the Baujat plot X/Y
+  //   axis domain — buildSvg() would require a refactor to accept external
+  //   [lo, hi] overrides; deferred to a future cycle (same precedent as forest-plot).
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims --------------------------------------------------
+
+    // Load rows from csv-upload (format: [{study, yi, vi}, ...]) into the
+    // textarea using the app's native "label, estimate, SE" line format, then
+    // dispatch 'input' so render() fires.
+    window.__almLoad = function (rows) {
+      var lines = rows.filter(function (r) {
+        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
+      }).map(function (r) {
+        return r.study + ', ' + r.yi + ', ' + Math.sqrt(r.vi);
+      });
+      var ta = document.getElementById('f-data');
+      if (!ta) return;
+      ta.value = lines.join('\n');
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // Return the last pooled result as a flat object for results-export.
+    // Reads via window accessors exposed from the main IIFE.
+    window.__almResults = function () {
+      var info = window._almLastFE ? window._almLastFE() : null;
+      var studies = window._almLastStudies ? window._almLastStudies() : [];
+      var out = { _schema: 'heterogeneity-results-v1', k: studies.length };
+      if (info && info.sum) {
+        var s = info.sum;
+        out.mu = s.mu;
+        out.se = s.se;
+        out.ci_lb = s.ciLo;
+        out.ci_ub = s.ciHi;
+        out.ci_lb_hksj = s.ciLoHKSJ;
+        out.ci_ub_hksj = s.ciHiHKSJ;
+        out.Q = s.Q;
+        out.Q_df = s.df;
+        out.Q_p = s.pQ;
+        out.I2 = s.I2;
+        out.tau2 = s.tau2;
+      }
+      return out;
+    };
+
+    // Snapshot: capture every form control value into a flat object.
+    window.__almSnapshot = function () {
+      var ta = document.getElementById('f-data');
+      var t2 = document.getElementById('f-tau2');
+      return {
+        data: ta ? ta.value : '',
+        tau2: t2 ? t2.value : 'pm'
+      };
+    };
+
+    // Restore: apply snapshot back to form controls and re-render.
+    // snap === {} means "clear all".
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ta = document.getElementById('f-data');
+      var t2 = document.getElementById('f-tau2');
+      if (ta) ta.value = isEmpty ? '' : (snap.data != null ? snap.data : '');
+      if (t2) t2.value = isEmpty ? 'pm' : (snap.tau2 != null ? snap.tau2 : 'pm');
+      if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    // ---- module init -----------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: true,  type: 'string', example: 'Smith 2024' },
+        { name: 'yi',    required: true,  type: 'float',  example: '0.21' },
+        { name: 'vi',    required: true,  type: 'float',  example: '0.04' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [{ key: 'x', label: 'Baujat X axis', range: [null, null], log: false }],
+      onChange: function (state) {
+        window.__almAxis = state;
+        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
+        // the Baujat plot axis domain. buildSvg() auto-computes its domain
+        // from point extents; wiring __almAxis requires threading lo/hi
+        // overrides through render() — deferred to a future cycle.
+        // The controls are functional UI but domain override is no-op.
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'heterogeneity-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      root: document.body,
+      glossaryUrl: '../hub/shared/glossary.json',
+    });
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
