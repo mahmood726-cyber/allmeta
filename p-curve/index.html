@@ -18,6 +18,7 @@
               --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
               --ok:#5bc47b; --bad:#ef7373; }
     }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -50,13 +51,23 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.5 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+       skipped (out-of-scope): chart-download (SVG histogram rendered inline; deferred) -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>p-curve &amp; p-uniform</h1>
     <p>Publication-bias-robust effect estimation from the distribution of statistically significant p-values. A right-skewed p-curve indicates evidential value; a flat or left-skewed curve is consistent with no true effect or selective reporting.</p>
@@ -64,6 +75,10 @@
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
+
+      <!-- csv-upload mount: file picker for study,p CSV files -->
+      <div id="alm-csv-mount"></div>
+
       <label>
         <span>p-values — one per line (one-sided or two-sided significant, &lt;0.05)</span>
         <textarea id="src">0.001
@@ -91,7 +106,18 @@
         <span>Common df (if t)</span>
         <input id="df" type="number" step="1" min="1" value="100">
       </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Analyze</button>
+
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.5rem"></div>
+
+      <!-- results-export mount -->
+      <div id="alm-export-mount" style="margin-top:0.5rem"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-run" class="primary">Analyze</button>
+        <!-- reset-undo mount -->
+        <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;"></div>
+      </div>
     </section>
     <section class="panel">
       <h2>Evidential value tests (p-curve)</h2>
@@ -109,7 +135,7 @@
     </section>
   </main>
   <footer>
-    p-curve: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. <strong>Method-vs-code disclosure (allmeta heuristic):</strong> the right-skew test here uses Fisher's combined method <code>-2·Σ ln(pp) ~ χ²(2k)</code> on uniformly-transformed pp = p/0.05 values (the original Simonsohn 2014 paper recommends Stouffer's z-pool; both detect right-skew but power differs). The flatness "no evidential value" indicator is a binomial test of pp ≤ 0.5 vs 0.5 against a U(0,1) null — NOT Simonsohn's 33%-power flatness test, which is not implemented here. Read the indicator as "right-skew not detected (k may be small)" rather than positive evidence of no effect. p-uniform: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309.
+    <abbr data-gloss="p-curve">p-curve</abbr>: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. <strong>Method-vs-code disclosure (allmeta heuristic):</strong> the right-skew test here uses <abbr data-gloss="Fisher">Fisher's combined method</abbr> <code>-2&middot;&Sigma; ln(pp) ~ &chi;&sup2;(2k)</code> on uniformly-transformed pp = p/0.05 values (the original Simonsohn 2014 paper recommends Stouffer's z-pool; both detect right-skew but power differs). The flatness "no evidential value" indicator is a <abbr data-gloss="Binomial">binomial test</abbr> of pp &le; 0.5 vs 0.5 against a U(0,1) null &mdash; NOT Simonsohn's 33%-power flatness test, which is not implemented here. Read the indicator as "right-skew not detected (k may be small)" rather than positive evidence of no effect. <abbr data-gloss="p-uniform">p-uniform</abbr>: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309.
   </footer>
   <script>
     function pnorm(x) {
@@ -128,11 +154,16 @@
     }
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
+    // Exposed for results-export
+    var _lastResults = null;
+    window._almLastPcurve = function () { return _lastResults; };
+
     function run() {
       const raw = document.getElementById("src").value.trim().split(/\s+/).map(parseFloat).filter(x => Number.isFinite(x) && x > 0 && x < 0.05);
       const nSig = raw.length;
       if (nSig < 3) {
         document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">Need at least 3 significant (p &lt; 0.05) p-values.</td></tr>`;
+        _lastResults = null;
         return;
       }
 
@@ -170,11 +201,25 @@
         if (!Number.isFinite(delta)) { delta = 0; break; }
       }
 
+      // Save results for export
+      _lastResults = {
+        _schema: 'pcurve-results-v1',
+        k: nSig,
+        fisher_chisq: T_skew,
+        fisher_df: 2 * nSig,
+        fisher_p: p_skew,
+        prop_low: pLow,
+        z_flat: z_flat,
+        p_flat: p_flat,
+        delta_puniform: delta,
+        p_values_used: raw,
+      };
+
       const testsBody = document.getElementById("tests-body");
       const __testsBodyParts = [""];
       const flagSkew = p_skew < 0.05 ? "ok" : "bad";
       const labelSkew = p_skew < 0.05 ? "evidential value" : "no evidential value";
-      __testsBodyParts.push(`<tr><td><code>Right-skew (full p-curve)</code></td><td>χ² = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`);
+      __testsBodyParts.push(`<tr><td><code>Right-skew (full p-curve)</code></td><td>&#x3c7;&sup2; = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`);
       const flagFlat = p_flat < 0.05 ? "ok" : "bad";
       const labelFlat = p_flat < 0.05 ? "non-flat" : "flat (consistent with null + p-hacking)";
       __testsBodyParts.push(`<tr><td><code>Flatness (vs uniform)</code></td><td>z = ${fmt(z_flat, 2)}</td><td>${fmt(p_flat, 3)}</td><td><span class="chip ${flagFlat}">${labelFlat}</span></td></tr>`);
@@ -182,8 +227,8 @@
       const puBody = document.getElementById("pu-body");
       puBody.innerHTML = `
         <tr><td>Significant p-values used</td><td>${nSig}</td></tr>
-        <tr><td>p-uniform effect estimate (δ, z-units)</td><td>${fmt(delta)}</td></tr>
-        <tr><td>p-uniform δ (z-units; not Cohen's d — sample n not collected)</td><td>${fmt(delta, 3)}</td></tr>`;
+        <tr><td>p-uniform effect estimate (&#948;, z-units)</td><td>${fmt(delta)}</td></tr>
+        <tr><td>p-uniform &#948; (z-units; not Cohen's d &mdash; sample n not collected)</td><td>${fmt(delta, 3)}</td></tr>`;
 
       drawCurve(raw);
       testsBody.innerHTML = __testsBodyParts.join("");
@@ -244,8 +289,101 @@
 
     }
 
+    // ---- State helpers for reset-undo / url-state --
+    window.__almSnapshot = function () {
+      var ta = document.getElementById('src');
+      return { data: ta ? ta.value : '' };
+    };
+
+    window.__almRestore = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      var ta = document.getElementById('src');
+      if (ta) ta.value = isEmpty ? '' : (snap.data != null ? snap.data : '');
+      run();
+    };
+
     document.getElementById("btn-run").addEventListener("click", run);
     run();
+  </script>
+  <script>
+  // =======================================================================
+  // Cycle 2.5 shared UX modules. Wire-in per RETROFIT_AUDIT.md:
+  //   wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+  //   skipped (out-of-scope): chart-download (deferred)
+  // Adapter shims map to the existing engine without changing math.
+  // =======================================================================
+  (function () {
+    if (!window.alm) return;  // fail-open: modules not loaded, skip silently
+
+    // ---- adapter shims ------------------------------------------------
+
+    // Load rows from csv-upload (format: [{study, p}, ...]) into the
+    // textarea using the app's native "one p per line" format, then trigger run().
+    window.__almLoad = function (rows) {
+      var lines = rows.filter(function (r) {
+        return isFinite(r.p) && r.p > 0 && r.p < 0.05;
+      }).map(function (r) {
+        return r.p;
+      });
+      var ta = document.getElementById('src');
+      if (!ta) return;
+      ta.value = lines.join('\n');
+      var btn = document.getElementById('btn-run');
+      if (btn) btn.click();
+    };
+
+    // Return the last results as a flat object for results-export.
+    window.__almResults = function () {
+      return window._almLastPcurve ? (window._almLastPcurve() || {}) : {};
+    };
+
+    // ---- module init --------------------------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: false, type: 'string', example: 'Smith 2024' },
+        { name: 'p',     required: true,  type: 'float',  example: '0.032' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [],  // p-curve histogram has no continuous axis to override
+      onChange: function (state) {
+        window.__almAxis = state;
+        // NOTE: the p-curve histogram uses fixed 5 bins (0.01 increments).
+        // Axis domain override is not applicable. Controls are wired but no-op.
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'pcurve-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+  })();
   </script>
 </body>
 </html>
