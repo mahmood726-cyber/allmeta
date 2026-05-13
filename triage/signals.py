@@ -4,6 +4,7 @@ data; they fail closed (raise) only on operator error."""
 
 from __future__ import annotations
 from pathlib import Path
+import json as _json
 import re
 import subprocess
 
@@ -109,3 +110,36 @@ def has_r_parity(app_dir: Path) -> bool:
         if any(tok in name for tok in _PARITY_TOKENS):
             return True
     return False
+
+
+_NON_NUMERICAL_CATEGORIES = {
+    "Reporting", "Screening & Extraction", "Search", "Planning",
+    "Productivity", "Research Notes", "Qualitative Synthesis",
+}
+
+
+def load_playwright_report(report_path: Path) -> dict | None:
+    if not report_path.is_file():
+        return None
+    try:
+        return _json.loads(report_path.read_text(encoding="utf-8", errors="replace"))
+    except (OSError, ValueError):
+        return None
+
+
+def playwright_pass(app_key: str, report: dict | None) -> bool | None:
+    if not report:
+        return None
+    for suite in report.get("suites", []):
+        if suite.get("title", "").lower() == app_key.lower():
+            specs = suite.get("specs") or []
+            if not specs:
+                return None
+            return all(bool(s.get("ok")) for s in specs)
+    return None
+
+
+def kind_from_category(category: str | None) -> str:
+    if category and category in _NON_NUMERICAL_CATEGORIES:
+        return "non-numerical"
+    return "numerical"

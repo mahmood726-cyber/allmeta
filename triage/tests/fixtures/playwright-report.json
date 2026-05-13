@@ -1,0 +1,6 @@
+{
+  "suites": [
+    { "title": "forest-plot", "specs": [{"ok": true}] },
+    { "title": "Truthcert1", "specs": [{"ok": false}] }
+  ]
+}
