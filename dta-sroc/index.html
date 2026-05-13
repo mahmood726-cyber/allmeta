@@ -27,6 +27,9 @@
     html,body { margin:0; padding:0; }
     body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
            background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    .skip-link { position:absolute; left:-9999px; top:0; background:var(--accent); color:#fff;
+                 padding:0.5rem 1rem; z-index:999999; border-radius:0 0 6px 0; font-size:0.9rem; }
+    .skip-link:focus { left:0; }
     header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
     header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
     header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
@@ -47,12 +50,14 @@
     }
     textarea { resize:vertical; min-height:10rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
     input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline:2px solid var(--accent); outline-offset:2px;
+    }
     .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
     button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
              border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
     button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
     button:hover { filter:brightness(0.96); }
-    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
     .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
     .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
@@ -65,26 +70,40 @@
     .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
                    padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
     .file-input-hidden { display:none; }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.2 shared UX modules:
+       wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
+       skipped: chart-download — native buildSvg() + PNG/SVG buttons already present-good -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>DTA SROC Explorer</h1>
-    <p>Diagnostic test accuracy: enter 2×2 counts per study (TP, FP, FN, TN). Plots each study in ROC space, fits the Moses SROC curve, and flags threshold effect via the Spearman correlation between logit(Se) and logit(1−Sp).</p>
+    <p>Diagnostic test accuracy: enter 2×2 counts per study (<abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr>). Plots each study in <abbr data-gloss="ROC">ROC</abbr> space, fits the Moses <abbr data-gloss="SROC">SROC</abbr> curve, and flags threshold effect via the Spearman correlation between logit(<abbr data-gloss="Se">Se</abbr>) and logit(1−<abbr data-gloss="Sp">Sp</abbr>).</p>
   </header>
 
-  <main class="layout">
+  <main id="main-content" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Study data</h2>
+
+      <!-- csv-upload mount: RFC-4180 file picker for study, TP, FP, FN, TN -->
+      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
 
       <fieldset>
         <legend>Data</legend>
         <label>
-          <span class="lbl">CSV: <code>label, TP, FP, FN, TN</code></span>
+          <span class="lbl">CSV: <code>label, <abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr></code></span>
           <textarea id="f-data" spellcheck="false"></textarea>
-          <span class="hint">TP = true positives, FP = false positives, FN = false negatives, TN = true negatives. Continuity correction (+0.5 to all cells) applied only if any cell is zero (advanced-stats.md).</span>
+          <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. Continuity correction (+0.5 to all cells) applied only if any cell is zero (advanced-stats.md).</span>
         </label>
       </fieldset>
 
@@ -96,8 +115,17 @@
         </label>
       </fieldset>
 
+      <!-- axis-controls mount: ROC [0,1]×[0,1] domain; override deferred -->
+      <div id="alm-axis-mount" style="margin-bottom:0.5rem;"></div>
+
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <!-- reset-undo mount: Undo stack + dialog-confirmed Clear -->
+      <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;margin-top:0.5rem;margin-bottom:0.5rem;"></div>
+
+      <!-- results-export mount: CSV + JSON export of per-study rows + summary -->
+      <div id="alm-export-mount" style="margin-bottom:0.5rem;"></div>
 
       <div class="actions">
         <button type="button" id="btn-svg" class="primary">Download SVG</button>
@@ -116,7 +144,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Moses SROC: unweighted OLS of D = logit(Se) − logit(1−Sp) on S = logit(Se) + logit(1−Sp) (Moses et&nbsp;al., <em>Stat Med</em> 1993). The unweighted variant is the more conservative form and is what metafor::reitsma falls back to when bivariate convergence fails. Bivariate (Reitsma 2005) / HSROC (Rutter & Gatsonis 2001) require iterative ML — out of scope for this app.</p>
+  <p class="footer-note">Moses <abbr data-gloss="SROC">SROC</abbr>: unweighted <abbr data-gloss="OLS">OLS</abbr> of D = logit(<abbr data-gloss="Se">Se</abbr>) − logit(1−<abbr data-gloss="Sp">Sp</abbr>) on S = logit(<abbr data-gloss="Se">Se</abbr>) + logit(1−<abbr data-gloss="Sp">Sp</abbr>) (Moses et&nbsp;al., <em>Stat Med</em> 1993). The unweighted variant is the more conservative form and is what metafor::reitsma falls back to when bivariate convergence fails. Bivariate (Reitsma 2005) / HSROC (Rutter &amp; Gatsonis 2001) require iterative ML — out of scope for this app.</p>
 
   <script>
   (function () {
@@ -125,10 +153,62 @@
 
     const fields = { data:"f-data", title:"f-title" };
     const EXAMPLE = "# Example: TP, FP, FN, TN per study\nStudy A, 85, 10, 15, 140\nStudy B, 62, 12, 18, 108\nStudy C, 110, 25, 40, 200\nStudy D, 55, 6, 8, 90\nStudy E, 130, 40, 30, 300\nStudy F, 92, 18, 25, 185\nStudy G, 74, 8, 12, 130";
+    const EXAMPLE_TITLE = "Example SROC - diagnostic test";  // ASCII-safe for btoa/url-state
 
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
     const statsWrap = document.getElementById("stats-wrap");
+
+    // Snapshot / restore helpers for reset-undo and url-state
+    window.__almSnapshot = function () { return readState(); };
+    window.__almRestore  = function (snap) {
+      // When snap is empty ({}) — called by reset-undo "Clear all" — treat as reset.
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      if (isEmpty) {
+        document.getElementById('f-data').value = '';
+        document.getElementById('f-title').value = '';
+      } else {
+        writeState(snap);
+      }
+      render();
+    };
+
+    // Results accessor for results-export
+    window.__almResults = function () {
+      const state = readState();
+      const parsed = parseStudies(state.data);
+      const fit = regressDS(parsed.studies);
+      const rho = spearman(parsed.studies);
+      const m = meanSe(parsed.studies);
+      const rows = parsed.studies.map(function (s) {
+        return {
+          study:    s.label,
+          TP:       s.tp,
+          FP:       s.fp,
+          FN:       s.fn,
+          TN:       s.tn,
+          Se:       +s.se.toFixed(6),
+          Sp:       +s.sp.toFixed(6),
+          FPR:      +s.fpr.toFixed(6),
+          logitSe:  +s.logitSe.toFixed(6),
+          logitFPR: +s.logitFPR.toFixed(6),
+          D:        +s.D.toFixed(6),
+          S:        +s.S.toFixed(6),
+          corrected: s.corrected ? 1 : 0,
+        };
+      });
+      return {
+        _schema: "dta-sroc-results-v1",
+        _savedAt: new Date().toISOString(),
+        k: parsed.studies.length,
+        alpha: fit ? +fit.alpha.toFixed(8) : null,
+        beta:  fit ? +fit.beta.toFixed(8)  : null,
+        spearman_rho: rho != null ? +rho.toFixed(8) : null,
+        mean_se:  m ? +m.se.toFixed(6)  : null,
+        mean_fpr: m ? +m.fpr.toFixed(6) : null,
+        rows: rows,
+      };
+    };
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
@@ -211,7 +291,6 @@
       }
       const rSe = ranks(studies.map(s => s.logitSe));
       const rFPR = ranks(studies.map(s => s.logitFPR));
-      const mean = n => n*(n+1)/2 / n;
       const mbar = (n+1)/2;
       let sxy=0, sxx=0, syy=0;
       for (let i=0;i<n;i++) {
@@ -347,6 +426,14 @@
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Enter at least one study.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+      // Update URL state after every render so link stays shareable.
+      // Wrapped in try-catch: btoa in url-state.js rejects non-Latin1 chars
+      // (e.g. em dashes in custom titles). write() silently fails — no data loss.
+      try {
+        if (window.alm && window.alm.urlState && window.__almSnapshot) {
+          window.alm.urlState.write(window.__almSnapshot());
+        }
+      } catch(e) { /* non-ASCII title — url-state silently unavailable for this state */ }
     }
 
     function loadSaved() {
@@ -408,15 +495,12 @@
       };
       r.readAsText(file);
     }
-    function onReset() {
-      if (!confirm("Clear all inputs?")) return;
-      document.getElementById("f-data").value = "";
-      document.getElementById("f-title").value = "";
-      render();
-    }
     function onExample() {
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
       document.getElementById("f-data").value = EXAMPLE;
-      document.getElementById("f-title").value = "Example SROC — diagnostic test";
+      document.getElementById("f-title").value = EXAMPLE_TITLE;
       render();
     }
     function attach() {
@@ -424,19 +508,97 @@
       document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
       document.getElementById("btn-png").addEventListener("click", onDownloadPng);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
-      document.getElementById("btn-reset").addEventListener("click", onReset);
-      document.getElementById("btn-example").addEventListener("click", onExample);
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
         const f = e.target.files && e.target.files[0];
         if (f) onImportJson(f); e.target.value = "";
       });
+      document.getElementById("btn-example").addEventListener("click", onExample);
+      // btn-reset: delegate to reset-undo module if available (provides undo stack +
+      // dialog confirm), else fall back to direct bare-confirm reset.
+      document.getElementById("btn-reset").addEventListener("click", function() {
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.clear) {
+          window.alm.resetUndo.clear();
+        } else {
+          if (!confirm("Clear all inputs?")) return;
+          document.getElementById("f-data").value = "";
+          document.getElementById("f-title").value = "";
+          render();
+        }
+      });
     }
 
+    // Initial load
     const loaded = loadSaved();
-    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example SROC — diagnostic test"; }
+    if (!loaded) {
+      document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-title").value = EXAMPLE_TITLE;
+    }
     attach();
     render();
+
+    // ---- Cycle 2.2 shared module init -----------------------------------
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: false, type: 'string', example: 'Smith 2024' },
+        { name: 'TP',    required: true,  type: 'float',  example: '80' },
+        { name: 'FP',    required: true,  type: 'float',  example: '12' },
+        { name: 'FN',    required: true,  type: 'float',  example: '20' },
+        { name: 'TN',    required: true,  type: 'float',  example: '88' },
+      ],
+      onParse: function (result) {
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+          window.alm.resetUndo.snapshot();
+        }
+        // Convert parsed rows back to textarea CSV format
+        var lines = result.rows.map(function (row) {
+          var label = row.study || '';
+          return [label, row.TP, row.FP, row.FN, row.TN].join(', ');
+        });
+        document.getElementById('f-data').value = lines.join('\n');
+        render();
+      },
+    });
+
+    // Axis controls: ROC space is [0,1]×[0,1] fixed — override deferred.
+    // Renders controls for user reference; buildSvg() uses fixed unit square domain.
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: '1 − Sp axis (FPR)', range: [0, 1], log: false },
+        { key: 'y', label: 'Se axis (Sensitivity)', range: [0, 1], log: false },
+      ],
+      onChange: function (state) {
+        window.__almAxis = state;
+        // NOTE: ROC domain is fixed [0,1]×[0,1] which is scientifically correct.
+        // Axis-controls renders the controls but does not yet drive buildSvg() domain.
+        // Deferred — same pattern as funnel-plot / pet-peese Cycle 2.2.
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'dta-sroc-results',
+      getResults: function () { return window.__almResults(); },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      window.__almRestore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: function () { return window.__almSnapshot(); },
+      restore:  function (snap) { return window.__almRestore(snap); },
+      capacity: 20,
+    });
+
+    window.alm.tooltips({ src: '../hub/shared/glossary.json' });
+
   })();
   </script>
   <script src="../shared/toast.js" defer></script>

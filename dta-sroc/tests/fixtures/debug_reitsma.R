@@ -1,0 +1,8 @@
+suppressPackageStartupMessages(library(mada))
+d <- read.csv("C:/Projects/allmeta/dta-sroc/tests/fixtures/sroc-tiny.csv")
+r <- reitsma(d)
+cat("coefficients:\n")
+print(r$coefficients)
+cat("Psi matrix:\n")
+print(r$Psi)
+cat("convergence:", r$optim$convergence, "\n")
