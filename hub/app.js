@@ -120,7 +120,7 @@
   const counts = {
     launchable: document.getElementById("launchable-count"),
     server: document.getElementById("server-count"),
-    added: document.getElementById("new-count"),
+    validated: document.getElementById("validated-count"),
     categories: document.getElementById("category-count")
   };
 
@@ -200,7 +200,10 @@
     const categories = new Set(projects.map((project) => project.category));
     counts.launchable.textContent = String(projects.filter((project) => project.mode === "file").length);
     counts.server.textContent = String(projects.filter((project) => project.mode === "url").length);
-    counts.added.textContent = String(projects.filter((project) => project.collection === "new").length);
+    // Validated apps = tier 1. Falls back to 0 when triage.json hasn't loaded yet.
+    counts.validated.textContent = String(
+      projects.filter((p) => (triageByKey[projectKey(p)] || {}).tier === 1).length
+    );
     counts.categories.textContent = String(categories.size);
   }
 
