@@ -143,3 +143,31 @@ def kind_from_category(category: str | None) -> str:
     if category and category in _NON_NUMERICAL_CATEGORIES:
         return "non-numerical"
     return "numerical"
+
+
+def extract_signals(
+    *,
+    app_dir: Path,
+    repo_root: Path,
+    project_meta: dict | None,
+    playwright_report: dict | None,
+) -> dict:
+    """Compose all signals for a single app. Never raises; returns dict with
+    nullable fields if a signal couldn't be computed."""
+    key = (project_meta or {}).get("key") or app_dir.name
+    cat = (project_meta or {}).get("category")
+    return {
+        "key": key,
+        "stub_count": stub_count(app_dir),
+        "has_index": has_index(app_dir),
+        "has_readme": has_readme(app_dir),
+        "total_size_kb": total_size_kb(app_dir),
+        "last_touched_unix": last_touched_unix(app_dir, repo_root),
+        "is_hub_linked": project_meta is not None,
+        "featured_rank": (project_meta or {}).get("featuredRank"),
+        "category": cat,
+        "kind": kind_from_category(cat),
+        "test_count": test_count(app_dir),
+        "has_r_parity": has_r_parity(app_dir),
+        "playwright_pass": playwright_pass(key, playwright_report),
+    }
