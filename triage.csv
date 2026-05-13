@@ -54,7 +54,7 @@ prisma-flow,2,2,non-numerical,high,0,1,False,18,26.04,True,,working — no flags
 prisma-nma,3,3,numerical,medium,0,0,False,0,25.79,True,,no tests | no R-parity test | no README
 forest-plot,1,1,numerical,high,0,4,True,0,42.74,True,,test_count=4 | has R-parity test | last_touched 0d ago
 funnel-plot,1,1,numerical,high,0,4,True,0,37.39,True,,test_count=4 | has R-parity test | last_touched 0d ago
-rob-traffic-light,2,2,non-numerical,high,0,2,False,16,24.94,True,,working — no flags | override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical.
+rob-traffic-light,2,2,non-numerical,high,0,2,False,0,24.94,True,,working — no flags | override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical.
 heterogeneity,1,1,numerical,high,0,4,True,0,37.77,True,,test_count=4 | has R-parity test | last_touched 0d ago
 tsa,3,3,numerical,high,0,1,False,16,28.09,True,,no R-parity test | no README
 grade-sof,3,3,numerical,high,0,1,False,16,43.54,True,,no R-parity test | no README
