@@ -726,3 +726,38 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
 .footer-links li { margin-bottom: 4px; }
 .footer-links a { color: var(--accent-cool); text-decoration: none; }
 .footer-links a:hover, .footer-links a:focus-visible { text-decoration: underline; }
+/* Triage atlas — Tier-1 badge. Rendered by hub/app.js after fetching triage.json.
+   Fails open: if triage.json is missing, this CSS is dormant (no .tier-badge nodes). */
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  margin-left: 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  position: relative;
+}
+.tier-badge--validated {
+  background: #dcfce7;
+  color: #14532d;
+  border: 1px solid #86efac;
+}
+.tier-badge[data-reasons]:hover::after,
+.tier-badge[data-reasons]:focus-visible::after {
+  content: attr(data-reasons);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.7rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 4px;
+  white-space: pre-line;
+  max-width: 280px;
+  z-index: 10;
+}
+.tier-badge:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
