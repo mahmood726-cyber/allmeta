@@ -419,11 +419,13 @@
         const mod = await import(url);
         const WebRCtor = mod.WebR;
         if (!WebRCtor) throw new Error("Imported module has no WebR class export.");
-        // Cycle 6.3: derive baseUrl from the import URL (strip the webr.mjs
-        // filename). Without baseUrl, WebR's worker hard-codes the CDN for
-        // R.wasm / R.js / webr-worker.js (~30 MB) regardless of where
-        // webr.mjs was imported from.
-        const webrBaseUrl = url.replace(/webr\.mjs(\?.*)?$/, "");
+        // Cycle 6.3 + 6.3.1: derive an ABSOLUTE baseUrl from the import URL.
+        // Without baseUrl, WebR's worker hard-codes the CDN for R.wasm / R.js /
+        // webr-worker.js (~30 MB). And baseUrl must be absolute, otherwise the
+        // worker re-resolves the relative URL against its own location and
+        // produces a doubled path.
+        const stripped = url.replace(/webr\.mjs(\?.*)?$/, "");
+        const webrBaseUrl = new URL(stripped, location.href).href;
         log("Using WebR baseUrl: " + webrBaseUrl);
         webR = new WebRCtor({ baseUrl: webrBaseUrl });
         await webR.init();

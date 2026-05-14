@@ -488,13 +488,18 @@ print(summary(res))`,
       try {
         firstLoadNote.style.display = "block";
         outEl.textContent = "Fetching WebR runtime…";
-        // Cycle 6.2 + 6.3: WebR is self-hosted via the shinylive bundle so the
-        // hub-level service worker (sw.js, Cycle 6.1) can cache it for instant
-        // subsequent loads. Cycle 6.3 fix: passing baseUrl is REQUIRED — without
-        // it WebR's worker hard-codes the v0.5.5 CDN for R.wasm / R.js /
-        // webr-worker.js (~30 MB) regardless of where webr.mjs itself was
-        // imported from. baseUrl must end with a trailing slash.
-        const LOCAL_WEBR_DIR = "../r-shiny/shinylive/webr/";
+        // Cycle 6.2 + 6.3 + 6.3.1: WebR is self-hosted via the shinylive bundle
+        // so the hub-level service worker (sw.js, Cycle 6.1) can cache it for
+        // instant subsequent loads. baseUrl is REQUIRED — without it, WebR's
+        // worker hard-codes the v0.5.5 CDN for R.wasm / R.js / webr-worker.js
+        // (~30 MB) regardless of where webr.mjs itself was imported from.
+        //
+        // Cycle 6.3.1: baseUrl MUST be absolute. A relative URL like
+        // "../r-shiny/shinylive/webr/" gets re-resolved inside the worker
+        // against the WORKER's location (not the page's), so "../" walks
+        // up from the wrong place and produces /a/b/../a/b/R.js (404).
+        // Resolve to an absolute URL against the current page first.
+        const LOCAL_WEBR_DIR = new URL("../r-shiny/shinylive/webr/", location.href).href;
         const LOCAL_WEBR = LOCAL_WEBR_DIR + "webr.mjs";
         const CDN_WEBR_DIR = "https://webr.r-wasm.org/v0.5.5/";
         const CDN_WEBR = CDN_WEBR_DIR + "webr.mjs";
