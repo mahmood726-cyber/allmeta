@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebR SharedWorker pilot</title>
+  <style>
+    body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           padding: 1.5rem; max-width: 70rem; margin: 0 auto; background: #f6f4ef; color: #15181d; }
+    h1 { font-size: 1.3rem; margin: 0 0 0.5rem; }
+    .meta { color: #5c6470; font-size: 0.85rem; margin: 0 0 1rem; }
+    button { padding: 0.4rem 0.9rem; margin: 0.15rem 0.25rem 0.15rem 0; border: 1px solid #d9d5cc;
+             background: #fff; border-radius: 6px; cursor: pointer; font: 0.86rem inherit; }
+    button:hover { background: #f0ede5; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    pre { background: #fff; border: 1px solid #d9d5cc; padding: 0.7rem; border-radius: 6px;
+          max-height: 40rem; overflow: auto; font: 0.82rem/1.4 "SF Mono", Consolas, monospace; white-space: pre-wrap; }
+    .row { display: flex; gap: 1rem; }
+    .col { flex: 1; min-width: 0; }
+    h2 { font-size: 0.95rem; margin: 0.8rem 0 0.4rem; color: #5c6470; text-transform: uppercase; letter-spacing: 0.05em; }
+    .ok { color: #0d7a27; font-weight: 600; }
+    .fail { color: #b05a1c; font-weight: 600; }
+    code { background: #e8f0f7; padding: 0.05rem 0.3rem; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>WebR in a SharedWorker — empirical pilot</h1>
+  <p class="meta">Probes each capability sequentially. Each row prints <code>OK</code> or the exact error. Open in a second tab to test session sharing.</p>
+
+  <div>
+    <button id="b-import">1. import webr.mjs</button>
+    <button id="b-init" disabled>2. WebR.init()</button>
+    <button id="b-math" disabled>3. eval 2+2</button>
+    <button id="b-vector" disabled>4. eval sum(1:100)</button>
+    <button id="b-metafor" disabled>5. install metafor</button>
+    <button id="b-rma" disabled>6. rma() with metafor</button>
+    <button id="b-plot" disabled>7. capture a plot</button>
+    <button id="b-session" disabled>8. session ID</button>
+    <button id="b-all" style="background:#2c5e8a;color:#fff;border-color:#2c5e8a">Run all in order</button>
+  </div>
+
+  <h2>Log</h2>
+  <pre id="log">Open the SharedWorker, then click "Run all in order".</pre>
+
+  <script>
+    const logEl = document.getElementById("log");
+    function log(...parts) {
+      const stamp = new Date().toISOString().slice(11, 23);
+      const line = stamp + "  " + parts.map(p => typeof p === "string" ? p : JSON.stringify(p, null, 2)).join(" ");
+      logEl.textContent += "\n" + line;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(line);
+    }
+
+    let port = null;
+    let initialised = false;
+
+    function open() {
+      if (!("SharedWorker" in self)) {
+        log("FAIL: SharedWorker not supported in this browser");
+        return null;
+      }
+      try {
+        const sw = new SharedWorker("./worker.js", { type: "module", name: "alm-webr-pilot" });
+        log("SharedWorker constructed:", sw.constructor.name);
+        sw.port.onmessage = (m) => {
+          const d = m.data;
+          if (d && d.type === "hello") {
+            log(`HELLO  sessionId=${d.sessionId}  ports=${d.ports}`);
+            return;
+          }
+          if (d && d.cmd) {
+            const tag = d.ok ? "OK  " : "FAIL";
+            const cls = d.ok ? "ok" : "fail";
+            log(`${tag} ${d.cmd}: ${JSON.stringify(d)}`);
+            if (d.cmd === "import" && d.ok) {
+              document.getElementById("b-init").disabled = false;
+            }
+            if (d.cmd === "init" && d.ok) {
+              initialised = true;
+              ["b-math","b-vector","b-metafor","b-rma","b-plot","b-session"].forEach(id => {
+                document.getElementById(id).disabled = false;
+              });
+            }
+          } else {
+            log("MSG:", d);
+          }
+        };
+        sw.port.onmessageerror = (e) => log("messageerror:", e);
+        sw.port.start();
+        return sw.port;
+      } catch (e) {
+        log("FAIL constructing SharedWorker:", String(e));
+        return null;
+      }
+    }
+
+    port = open();
+
+    function send(cmd) {
+      if (!port) { log("no port"); return; }
+      log(`-> ${cmd}`);
+      port.postMessage(cmd);
+    }
+
+    document.getElementById("b-import").onclick = () => send("import");
+    document.getElementById("b-init").onclick = () => send("init");
+    document.getElementById("b-math").onclick = () => send("math");
+    document.getElementById("b-vector").onclick = () => send("vector");
+    document.getElementById("b-metafor").onclick = () => send("metafor");
+    document.getElementById("b-rma").onclick = () => send("rma");
+    document.getElementById("b-plot").onclick = () => send("plot");
+    document.getElementById("b-session").onclick = () => send("session");
+
+    document.getElementById("b-all").onclick = async () => {
+      // Send sequentially, waiting between for any in-flight reply
+      const cmds = ["session","import","init","math","vector","metafor","rma","plot","session"];
+      for (const c of cmds) {
+        send(c);
+        // wait for the reply matching this cmd (or 90 s timeout per step)
+        await new Promise((resolve) => {
+          const start = Date.now();
+          const tick = setInterval(() => {
+            const text = logEl.textContent;
+            // Match the most recent line for this cmd that's a reply (not the "-> cmd" send line)
+            const lines = text.split("\n").slice(-8);
+            if (lines.some(l => (l.includes(`OK  ${c}:`) || l.includes(`FAIL ${c}:`)))) {
+              clearInterval(tick); resolve();
+            } else if (Date.now() - start > 90000) {
+              clearInterval(tick); log(`TIMEOUT waiting for ${c}`); resolve();
+            }
+          }, 250);
+        });
+      }
+      log("--- run-all complete ---");
+    };
+  </script>
+</body>
+</html>
