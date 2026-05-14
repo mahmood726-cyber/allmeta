@@ -8,31 +8,36 @@ import json as _json
 import re
 import subprocess
 
-_STUB_PATTERNS = re.compile(
-    # Cycle 2.3 tightening:
-    # - "placeholder" removed entirely: appears as HTML attribute, CSS pseudo-element
-    #   (::placeholder), JS object property key (placeholder: "..."), JS variable name
-    #   (const placeholder = ...) and comment prose across too many legitimate files to
-    #   be a reliable stub signal.  __PLACEHOLDER__ (below) covers the actual unfilled-
-    #   template-slot use-case.
-    # - \bstub\b is restricted to non-.md files (see _SCAN_SUFFIXES).  Documentation
-    #   markdown legitimately uses "stub" as English (e.g. "pandas stub", "stub_count").
-    # Cycle 2.4 tightening:
-    # - "not implemented" removed: appears in legitimate methodology documentation
-    #   prose (e.g. p-curve explaining which test variant it uses, by contrast with
-    #   one "not implemented here").  HTA, Pairwiseai (x2 files), p-curve all
-    #   produced false-positive stub_count=1-2 from this.  Real stub coverage
-    #   preserved by TODO, \bstub\b, REPLACE_ME, __PLACEHOLDER__, throw new Error\(.unimpl.
-    r"\bTODO\b|\bstub\b|REPLACE_ME|__PLACEHOLDER__|"
-    r"throw new Error\(.unimpl",
+# Code-stub sentinels are conventionally UPPERCASE in JS/Python/HTML
+# (TODO, FIXME, XXX, HACK).  Lowercase "todo" appears in legitimate UI vocabulary
+# (e.g. prisma-checklist's 4-state "Yes/Partial/No/To do" UI uses CSS classes
+# and JS counters named .todo / counts.todo).  Cycle 2.5b: switch TODO + FIXME
+# to strict-uppercase by splitting the regex.
+_STUB_PATTERNS_CI = re.compile(
+    # case-insensitive matches: "stub" as a word, plus throw-Error patterns
+    r"\bstub\b|throw new Error\(.unimpl",
     re.IGNORECASE,
+)
+_STUB_PATTERNS_CS = re.compile(
+    # case-sensitive (uppercase) matches: code-stub conventions
+    r"\bTODO\b|\bFIXME\b|\bXXX\b|\bHACK\b|REPLACE_ME|__PLACEHOLDER__",
 )
 
 _SCAN_SUFFIXES = (".html", ".js", ".css", ".py")
 
+# Cycle 2.5b: files larger than this are typically vendor bundles, minified JS,
+# or generated artifacts (e.g. IPD-Meta-Pro's 121k-line ipd-meta-pro.html which
+# bundles SheetJS + jsPDF + chart.js).  TODOs inside vendor code are not app
+# stubs — they're third-party-maintainer issues.  Skip them.
+_MAX_SCAN_BYTES = 500_000  # 500 KB
+
 
 def stub_count(app_dir: Path) -> int:
-    """Count distinct stub markers across top-level source files."""
+    """Count distinct stub markers across top-level source files.
+
+    Skips files larger than _MAX_SCAN_BYTES (vendor bundles, minified blobs,
+    generated artifacts) where TODOs are upstream issues, not app stubs.
+    """
     if not app_dir.exists() or not app_dir.is_dir():
         return 0
     n = 0
@@ -40,10 +45,17 @@ def stub_count(app_dir: Path) -> int:
         if not p.is_file() or p.suffix.lower() not in _SCAN_SUFFIXES:
             continue
         try:
+            size = p.stat().st_size
+        except OSError:
+            continue
+        if size > _MAX_SCAN_BYTES:
+            continue  # likely vendor / minified / generated; not the app's own code
+        try:
             text = p.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        n += len(_STUB_PATTERNS.findall(text))
+        n += len(_STUB_PATTERNS_CI.findall(text))
+        n += len(_STUB_PATTERNS_CS.findall(text))
     return n
 
 

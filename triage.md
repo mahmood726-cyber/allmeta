@@ -2,22 +2,17 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T05:31:55Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-14T05:36:44Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 10
-- Tier 2 — Working: 20
-- Tier 3 — Polish needed: 34
+- Tier 2 — Working: 21
+- Tier 3 — Polish needed: 35
 - Tier 4 — Hardening priority: 0
-- Tier 5 — Active rebuild: 2
+- Tier 5 — Active rebuild: 0
 
-## Tier 5 — Active rebuild (2)
-
-- **IPD-Meta-Pro** — stub_count=64 (>= 6)
-- **prisma-checklist** — stub_count=13 (>= 6)
-
-## Tier 3 — Polish needed (34)
+## Tier 3 — Polish needed (35)
 
 - **bayesian-ma** — no R-parity test · no README
 - **bayesian-mcmc** — no tests · no R-parity test · no README
@@ -33,6 +28,7 @@ Generated: 2026-05-14T05:31:55Z · scanner v0.1.0 · 66 apps
 - **grade-sof** — no R-parity test · no README
 - **hsroc** — no tests · no R-parity test · no README
 - **HTA** — no tests · no R-parity test
+- **IPD-Meta-Pro** — no tests · override applied: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal. · **override**
 - **km-reconstructor** — no tests · no R-parity test · no README
 - **limit-ma** — no tests · no R-parity test · no README
 - **median-to-mean** — no tests · no R-parity test · no README
@@ -54,7 +50,7 @@ Generated: 2026-05-14T05:31:55Z · scanner v0.1.0 · 66 apps
 - **webr-validator** — no R-parity test · no README
 - **workbench** — no R-parity test · no README
 
-## Tier 2 — Working (20)
+## Tier 2 — Working (21)
 
 - **amstar-2** — working — no flags
 - **cerqual** — working — no flags
@@ -69,6 +65,7 @@ Generated: 2026-05-14T05:31:55Z · scanner v0.1.0 · 66 apps
 - **mcid** — working — no flags
 - **pico** — working — no flags
 - **powerma** — working — no flags
+- **prisma-checklist** — working — no flags
 - **prisma-flow** — working — no flags · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 - **rob-traffic-light** — working — no flags · override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical. · **override**
 - **rob2** — working — no flags

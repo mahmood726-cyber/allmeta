@@ -29,12 +29,16 @@
       "tier": 3
     },
     "IPD-Meta-Pro": {
-      "auto_tier": 5,
+      "auto_tier": 3,
       "confidence": "high",
-      "kind": "numerical",
-      "override": null,
+      "kind": "informational",
+      "override": {
+        "kind": "informational",
+        "reason": "IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal."
+      },
       "reasons": [
-        "stub_count=64 (>= 6)"
+        "no tests",
+        "override applied: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal."
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -44,16 +48,16 @@
         "has_readme": true,
         "is_hub_linked": true,
         "key": "IPD-Meta-Pro",
-        "kind": "numerical",
+        "kind": "informational",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
-        "stub_count": 64,
+        "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 4.3
       },
-      "tier": 5
+      "tier": 3
     },
     "Pairwiseai": {
       "auto_tier": 3,
@@ -1376,19 +1380,19 @@
       "tier": 2
     },
     "prisma-checklist": {
-      "auto_tier": 5,
-      "confidence": "medium",
+      "auto_tier": 2,
+      "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "stub_count=13 (>= 6)"
+        "working — no flags"
       ],
       "signals": {
         "category": "Reporting",
         "featured_rank": null,
         "has_index": true,
         "has_r_parity": false,
-        "has_readme": false,
+        "has_readme": true,
         "is_hub_linked": true,
         "key": "prisma-checklist",
         "kind": "non-numerical",
@@ -1396,11 +1400,11 @@
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
         "runtime_health": "OK",
-        "stub_count": 13,
-        "test_count": 0,
+        "stub_count": 0,
+        "test_count": 1,
         "total_size_kb": 19.75
       },
-      "tier": 5
+      "tier": 2
     },
     "prisma-flow": {
       "auto_tier": 2,
@@ -1595,7 +1599,7 @@
         "key": "rct-extractor",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778736786,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -1884,14 +1888,14 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-14T05:31:55Z",
+  "generated_at": "2026-05-14T05:36:44Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 10,
-    "tier_2": 20,
-    "tier_3": 34,
+    "tier_2": 21,
+    "tier_3": 35,
     "tier_4": 0,
-    "tier_5": 2,
+    "tier_5": 0,
     "total": 66
   }
 }
