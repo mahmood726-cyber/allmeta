@@ -161,6 +161,52 @@
       return { b0, b1, seB0: Math.sqrt(Math.max(varB0, 0)), seB1: Math.sqrt(Math.max(varB1, 0)), n: xs.length };
     }
 
+    // Cycle 7.6: PET/PEESE p-values should use a t-distribution with
+    // df = k - 2 (two regression params), not the normal CDF.  Using
+    // pnorm gives anti-conservative p at small k.  Helpers added below.
+    function lnGamma(x) {
+      var cof = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+                 -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
+      var y = x, tmp = x + 5.5;
+      tmp -= (x + 0.5) * Math.log(tmp);
+      var ser = 1.000000000190015;
+      for (var j = 0; j < 6; j++) { y += 1; ser += cof[j] / y; }
+      return -tmp + Math.log(2.5066282746310005 * ser / x);
+    }
+    function betaCF(x, a, b) {
+      var MAXIT = 200, EPS = 3e-10, FPMIN = 1e-30;
+      var qab = a + b, qap = a + 1, qam = a - 1;
+      var c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d; var h = d;
+      for (var m = 1; m <= MAXIT; m++) {
+        var m2 = 2 * m;
+        var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d;
+        var del = d * c; h *= del;
+        if (Math.abs(del - 1) < EPS) break;
+      }
+      return h;
+    }
+    function betaInc(a, b, x) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      var bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+      if (x < (a + 1) / (a + b + 2)) return bt * betaCF(x, a, b) / a;
+      return 1 - bt * betaCF(1 - x, b, a) / b;
+    }
+    function pt2(t, df) {
+      if (!isFinite(t) || df <= 0) return NaN;
+      var x = df / (df + t * t);
+      return betaInc(df / 2, 0.5, x);
+    }
+
     // normal CDF for z→p (two-sided)
     function pnorm(x) {
       const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
@@ -389,26 +435,21 @@
         out.fe_p     = fe.p;
       }
       if (pet) {
+        // Cycle 7.6: PET regression is a WLS with k - 2 df, so p uses a
+        // t-distribution (was incorrectly using pnorm — anti-conservative
+        // by ~2x at k=10).
         var petZ = pet.b0 / pet.seB0;
         out.pet_b0    = pet.b0;
         out.pet_se_b0 = pet.seB0;
         out.pet_b1    = pet.b1;
-        out.pet_p     = 2 * (1 - (function pnorm(x) {
-          var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-          var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-          return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
-        })(Math.abs(petZ)));
+        out.pet_p     = pt2(petZ, pet.n - 2);
       }
       if (peese) {
         var peeseZ = peese.b0 / peese.seB0;
         out.peese_b0    = peese.b0;
         out.peese_se_b0 = peese.seB0;
         out.peese_b1    = peese.b1;
-        out.peese_p     = 2 * (1 - (function pnorm(x) {
-          var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-          var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-          return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
-        })(Math.abs(peeseZ)));
+        out.peese_p     = pt2(peeseZ, peese.n - 2);
       }
       return out;
     };
