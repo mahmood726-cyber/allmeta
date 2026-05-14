@@ -2,7 +2,7 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T10:47:59Z · scanner v0.1.0 · 69 apps
+Generated: 2026-05-14T12:03:35Z · scanner v0.1.0 · 69 apps
 
 ## Summary
 
@@ -25,7 +25,7 @@ Generated: 2026-05-14T10:47:59Z · scanner v0.1.0 · 69 apps
 - **citation-chaser** — test_count=3 · last_touched 0d ago
 - **citation-dedup** — test_count=3 · last_touched 0d ago
 - **component-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
-- **copas** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally. · **override**
+- **copas** — test_count=4 · has R-parity test · last_touched 0d ago
 - **cumulative-subgroup** — test_count=5 · has R-parity test · last_touched 0d ago
 - **dosehtml** — test_count=4 · last_touched 0d ago · override applied: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html (the real dose-response app). Atlas measures the launcher, which is intentionally minimal. · **override**
 - **dta-diagnostic** — test_count=3 · last_touched 0d ago · override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R. · **override**
@@ -35,7 +35,7 @@ Generated: 2026-05-14T10:47:59Z · scanner v0.1.0 · 69 apps
 - **focus-studio** — test_count=3 · last_touched 0d ago
 - **forest-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **funnel-plot** — test_count=4 · has R-parity test · last_touched 0d ago
-- **gosh** — test_count=3 · last_touched 0d ago · override applied: Engine performs all-subset pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
+- **gosh** — test_count=4 · has R-parity test · last_touched 0d ago
 - **gosh-metareg** — test_count=3 · last_touched 0d ago · override applied: Engine performs all-subset meta-regression that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
 - **grade-sof** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — produces structured GRADE Summary of Findings tables, not numerical estimates; R-parity is not the right benchmark. · **override**
 - **heterogeneity** — test_count=4 · has R-parity test · last_touched 0d ago
@@ -45,7 +45,7 @@ Generated: 2026-05-14T10:47:59Z · scanner v0.1.0 · 69 apps
 - **IPD-Meta-Pro** — test_count=3 · last_touched 0d ago · override applied: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal. · **override**
 - **kanban-lab** — test_count=3 · last_touched 0d ago
 - **km-reconstructor** — test_count=3 · last_touched 0d ago · override applied: Specialised methodology (Guyot IPD reconstruction from K-M curves); no canonical metafor equivalent — engine validated internally. · **override**
-- **limit-ma** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias method (Limit meta-analysis, Rücker-Schwarzer); no canonical metafor equivalent — engine validated internally. · **override**
+- **limit-ma** — test_count=4 · has R-parity test · last_touched 0d ago
 - **living-meta** — test_count=3 · last_touched 0d ago · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
 - **local-ai** — test_count=3 · last_touched 0d ago · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **local-install** — test_count=3 · last_touched 0d ago · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
@@ -69,7 +69,7 @@ Generated: 2026-05-14T10:47:59Z · scanner v0.1.0 · 69 apps
 - **prisma-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app (PRISMA-NMA checklist tool); produces structured reporting output, not numerical estimates — R-parity is not the right benchmark. · **override**
 - **prisma-screen** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — PRISMA screening workspace and flow diagram; produces structured output, not numerical estimates; R-parity is not the right benchmark. · **override**
 - **proportion-ma** — test_count=4 · has R-parity test · last_touched 0d ago
-- **pubbias-tests** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally. · **override**
+- **pubbias-tests** — test_count=4 · has R-parity test · last_touched 0d ago
 - **quadas-2** — test_count=3 · last_touched 0d ago
 - **rct-extractor** — test_count=3 · last_touched 0d ago
 - **rob-traffic-light** — test_count=4 · last_touched 0d ago · override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical. · **override**

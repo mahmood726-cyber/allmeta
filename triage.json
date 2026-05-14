@@ -464,32 +464,29 @@
     "copas": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "copas",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778757718,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 14.41
+        "test_count": 4,
+        "total_size_kb": 21.2
       },
       "tier": 1
     },
@@ -763,32 +760,29 @@
     "gosh": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Engine performs all-subset pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Engine performs all-subset pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "gosh",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778758484,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 12.76
+        "test_count": 4,
+        "total_size_kb": 22.38
       },
       "tier": 1
     },
@@ -1006,32 +1000,29 @@
     "limit-ma": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Specialised publication-bias method (Limit meta-analysis, Rücker-Schwarzer); no canonical metafor equivalent — engine validated internally."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Specialised publication-bias method (Limit meta-analysis, Rücker-Schwarzer); no canonical metafor equivalent — engine validated internally."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "limit-ma",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778760180,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 12.3
+        "test_count": 4,
+        "total_size_kb": 18.92
       },
       "tier": 1
     },
@@ -1707,32 +1698,29 @@
     "pubbias-tests": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "pubbias-tests",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778759196,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 15.95
+        "test_count": 4,
+        "total_size_kb": 24.7
       },
       "tier": 1
     },
@@ -2093,7 +2081,7 @@
       "tier": 1
     }
   },
-  "generated_at": "2026-05-14T10:47:59Z",
+  "generated_at": "2026-05-14T12:03:35Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 69,
