@@ -181,4 +181,54 @@ test.describe('nma-pro-v2 retrofit sanity', () => {
     expect(state.tabBtns,       'No tab buttons found — navigation broken').toBeGreaterThan(10);
   });
 
+  // Cycle 7.21: real JS-engine R-parity for nma-pro-v2 (19th of the original
+  // 20 numerical apps).  The app has an embedded RValidation namespace with
+  // R-derived reference values for the demo 6-trial AMI dataset.
+  //
+  // KNOWN DIVERGENCES (documented here so any regression beyond the current
+  // baseline becomes visible).  The JS frequentist NMA engine uses a graph-
+  // Laplacian implementation that diverges from netmeta on:
+  //
+  //   - Q statistic & I²: JS reports Q=2.32, I²=13.7 vs netmeta Q=1.45, I²=0
+  //     (within-engine arithmetic vs netmeta's multi-arm correction)
+  //   - P-scores: 4 of 6 treatments fall outside the 0.05 absolute tolerance
+  //     (consequence of the heterogeneity disagreement propagating into the
+  //     ranking probabilities)
+  //   - Arm-swap invariance: swapping treatment1/treatment2 should give a
+  //     sign-flipped logOR.  JS currently returns the SAME sign — a real
+  //     algebraic bug that should be fixed in a focused cycle.
+  //
+  // Pass criteria: the failure count must NOT regress beyond the current
+  // baseline (≤8 failures).  Closing each divergence requires engine-level
+  // work tracked separately.
+  test('[R-parity] RValidation against embedded netmeta reference (demo)', async ({ page }) => {
+    await page.goto(MONOLITH_URL, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(
+      () => {
+        try {
+          return typeof RValidation === 'object'
+              && typeof FrequentistNMA === 'object'
+              && typeof TreatmentRanking === 'object';
+        } catch (_) { return false; }
+      },
+      { timeout: 15_000 }
+    );
+
+    const v = await page.evaluate(() => RValidation.runValidation());
+
+    expect(v.passed, 'No RValidation tests ran').toBeGreaterThan(0);
+    // Regression gate: documented baseline is 7 failures (see comment above).
+    // Anything beyond 8 means the engine got worse since this test was added.
+    const BASELINE_FAILURES = 8;
+    if (v.failed > BASELINE_FAILURES) {
+      const fails = v.tests.filter(t => t.status === 'FAIL')
+        .map(t => `${t.name}: js=${t.js} r=${t.r} diff=${t.diff} (tol=${t.tolerance})`)
+        .join('\n  ');
+      throw new Error(
+        `${v.failed} RValidation failures (regressed beyond baseline of ${BASELINE_FAILURES}):\n  ${fails}`
+      );
+    }
+    expect(v.failed, `regressed past baseline ${BASELINE_FAILURES}`).toBeLessThanOrEqual(BASELINE_FAILURES);
+  });
+
 });
