@@ -154,4 +154,53 @@ test.describe('funnel-plot retrofit sanity', () => {
     expect(obj.egger_p,            'egger_p missing').toBeDefined();
   });
 
+  // Cycle 7.5: real JS-engine R-parity. Drives the JS engines with the
+  // funnel-tiny fixture used by test_against_metafor.py and asserts every
+  // *comparable* output matches metafor at 1e-6.
+  //
+  // IMPORTANT: the Egger-test values from this app are NOT compared to R
+  // here. The reason is a documented methodology difference:
+  //   - JS implements Egger's original 1997 formulation — unweighted least-
+  //     squares regression of (effect/SE) on precision (1/SE).
+  //   - metafor::regtest() on an rma.uni object inherits inverse-variance
+  //     weights (1/(SE^2 + tau^2)), i.e. a weighted regression on SE.
+  // These give different intercept t-statistics and different slope/SE pairs
+  // by construction.  Both are correct for their conventions.  Fixing the
+  // gap requires either re-implementing the JS engine on metafor's
+  // formulation or capturing a different R reference.  Tracked separately.
+  test('JS engine R-parity vs metafor REML pool (funnel-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'S1', yi:  0.20, sei: 0.20 },
+      { study: 'S2', yi: -0.10, sei: 0.18 },
+      { study: 'S3', yi:  0.30, sei: 0.15 },
+      { study: 'S4', yi:  0.05, sei: 0.22 },
+      { study: 'S5', yi:  0.15, sei: 0.10 },
+      { study: 'S6', yi: -0.05, sei: 0.12 },
+      { study: 'S7', yi:  0.40, sei: 0.25 },
+      { study: 'S8', yi:  0.18, sei: 0.14 },
+    ];
+    // metafor::rma.uni(method='REML') output. For this fixture REML
+    // estimates tau^2 = 0 so FE and REML pool coincide.
+    const expected = { pool_b: 0.1213967993407, pool_se: 0.05289342302168, k: 8 };
+    const TOL = 1e-6;
+
+    await page.goto(FUNNEL_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastFE && window._almLastFE() !== null,
+      { timeout: 5_000 }
+    );
+    const result = await page.evaluate(() => ({
+      fe: window._almLastFE(),
+      studies: window._almLastStudies(),
+    }));
+
+    expect(result.studies.length, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(result.fe.mu - expected.pool_b),
+      `pool mu: ${result.fe.mu} vs metafor b=${expected.pool_b}`).toBeLessThan(TOL);
+    expect(Math.abs(result.fe.se - expected.pool_se),
+      `pool se: ${result.fe.se} vs metafor se=${expected.pool_se}`).toBeLessThan(TOL);
+  });
+
 });
