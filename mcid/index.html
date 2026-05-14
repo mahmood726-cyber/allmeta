@@ -99,6 +99,9 @@
     Distribution-based rules: Norman's 0.5·SD (Norman, Sloan &amp; Wyrwich, Med Care 2003); 1·SEM (Wyrwich 1999); 1.96·SEM ≈ 95% smallest detectable change. Anchor-based: Juniper EF et al., J Clin Epidemiol 1994. NI margin: ICH E10, FDA guidance on non-inferiority clinical trials (2016).
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     function num(id) { return parseFloat(document.getElementById(id).value); }
 
     function run() {
@@ -116,7 +119,7 @@
       }
       if (Number.isFinite(sem)) {
         rows.push({ m: "1·SEM", v: sem, rat: "One SEM; matches SD in highly reliable measures." });
-        rows.push({ m: "1.96·SEM (SDC)", v: 1.96 * sem, rat: "Smallest detectable change — outside test-retest noise." });
+        rows.push({ m: "1.96·SEM (SDC)", v: Z975 * sem, rat: "Smallest detectable change — outside test-retest noise." });
       }
       if (Number.isFinite(somewhat) && Number.isFinite(none)) {
         rows.push({ m: "Anchor (Juniper)", v: somewhat - none, rat: "Mean change for 'somewhat improved' − 'no change'." });

@@ -43,9 +43,19 @@ Z975_LITERAL = "1.959963984540054"
 Z975_DECL = f'    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).\n    var Z975 = {Z975_LITERAL};\n\n'
 
 # Patterns to substitute.  Order matters: longer/more-specific patterns first.
+# All patterns require math-adjacent context so prose like "converges to 1.96"
+# or HTML text "z > 1.96 indicate" is never touched.
 SUB_PATTERNS = [
+    # 1) Multiplicative: `1.96 * X` or `1.96*X` (most common)
     (re.compile(r'(?<![\.0-9])1\.96\s*\*'), 'Z975 *'),
-    (re.compile(r'([+\-]\s*)1\.96\b(?!\.)'), r'\1Z975'),  # additive: + 1.96 / - 1.96 (used in some apps)
+    # 2) Additive: `+ 1.96` or `- 1.96` (e.g. y(-1.96), array bound)
+    (re.compile(r'([+\-]\s*)1\.96\b(?!\.)'), r'\1Z975'),
+    # 3) Division: `1.96 / sqrt(...)` (O'Brien-Fleming-style boundaries)
+    (re.compile(r'(?<![\.0-9])1\.96\s*/'), 'Z975 /'),
+    # 4) Function argument: `f(1.96)` or `f(... , 1.96)` or `f(1.96, ...)`
+    (re.compile(r'([\(,]\s*)1\.96(\s*[\),])'), r'\1Z975\2'),
+    # 5) Assignment: `var x = 1.96;` or `obj.k = 1.96,` etc.
+    (re.compile(r'(=\s*)1\.96(\s*[;,)])'), r'\1Z975\2'),
 ]
 
 

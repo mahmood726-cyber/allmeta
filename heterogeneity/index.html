@@ -155,6 +155,9 @@
   <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> estimators per <abbr data-gloss="DL">DerSimonian</abbr> &amp; Laird (1986), Paule &amp; Mandel (1982), <abbr data-gloss="REML">REML</abbr> (Viechtbauer 2005). <abbr data-gloss="HKSJ">HKSJ</abbr> correction applied to RE pooled CI. <abbr data-gloss="I2">I²</abbr> via Q-statistic; 95% <abbr data-gloss="PI">PI</abbr> uses t<sub>k-2</sub>. Baujat after Baujat et&nbsp;al. (2002).</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "heterogeneity-v1";
@@ -259,7 +262,7 @@
       // the RE pooled estimate. q-statistic with floor at 1 to avoid CI
       // narrowing when Q < df (per Cochrane Handbook §10.10.4 + advanced-stats.md).
       let seHKSJ = se;
-      let tCrit = 1.96; // z for k>=30
+      let tCrit = Z975; // z for k>=30
       if (df > 0) {
         const wRE = studies.map(s => 1 / (s.v + tau2));
         const wSum = wRE.reduce((a,b)=>a+b,0);
@@ -270,7 +273,7 @@
         tCrit = tQuantile975(df);
       }
       return {
-        k, mu, se, ciLo: mu-1.96*se, ciHi: mu+1.96*se,
+        k, mu, se, ciLo: mu-Z975 *se, ciHi: mu+Z975 *se,
         seHKSJ, ciLoHKSJ: mu - tCrit*seHKSJ, ciHiHKSJ: mu + tCrit*seHKSJ, tCrit,
         Q:Q0, df, pQ, I2, tau2
       };

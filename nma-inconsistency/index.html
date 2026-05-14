@@ -99,6 +99,9 @@ A, D, -0.48, 0.14</textarea>
     Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>Caveat:</strong> this tool uses fixed-effect weights (no shared τ²) for both consistency and inconsistency models. For heterogeneous networks the Q-statistics are inflated and the LR test is anti-conservative; cross-check with R <code>netmeta::decomp.design</code>. Recommended k≥5 per design.
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     function parse(text) {
       return text.trim().split(/\n/).map(l => {
         const parts = l.split(/,/).map(s => s.trim());
@@ -312,11 +315,11 @@ A, D, -0.48, 0.14</textarea>
         const y = 30 + i * 30;
         __svgParts.push(`<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`);
         // direct
-        const dLo = r.direct.mean - 1.96 * r.direct.se, dHi = r.direct.mean + 1.96 * r.direct.se;
+        const dLo = r.direct.mean - Z975 * r.direct.se, dHi = r.direct.mean + Z975 * r.direct.se;
         __svgParts.push(`<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"/>`);
         __svgParts.push(`<rect x="${X(r.direct.mean) - 3.5}" y="${y - 9.5}" width="7" height="7" fill="var(--accent)"/>`);
         // indirect
-        const iLo = r.indirect.mean - 1.96 * r.indirect.se, iHi = r.indirect.mean + 1.96 * r.indirect.se;
+        const iLo = r.indirect.mean - Z975 * r.indirect.se, iHi = r.indirect.mean + Z975 * r.indirect.se;
         __svgParts.push(`<line x1="${X(iLo)}" y1="${y + 6}" x2="${X(iHi)}" y2="${y + 6}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="3 2"/>`);
         __svgParts.push(`<rect x="${X(r.indirect.mean) - 3.5}" y="${y + 2.5}" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/>`);
       });

@@ -80,6 +80,9 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     // Cycle 6.3.2: register the hub-scoped SW so direct-deep-link users
     // still get cache-first WebR on their second visit.
     if ('serviceWorker' in navigator) {
@@ -315,8 +318,8 @@
         ci_ub = s.mu + tCrit * seHK;
         se_used = seHK;
       } else {
-        ci_lb = s.mu - 1.96 * se;
-        ci_ub = s.mu + 1.96 * se;
+        ci_lb = s.mu - Z975 * se;
+        ci_ub = s.mu + Z975 * se;
       }
       return { estimate: s.mu, se: se_used, ci_lb, ci_ub, tau2, I2, QE: Q0, k };
     }

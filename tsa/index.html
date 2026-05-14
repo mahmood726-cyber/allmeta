@@ -158,6 +158,9 @@
   <p class="footer-note">O'Brien-Fleming boundary z<sub>k</sub> = z<sub>α/2</sub>/√t<sub>k</sub> where t<sub>k</sub> is the information fraction (per advanced-stats.md). Non-binding futility is shown if enabled.</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "tsa-v1";
@@ -287,8 +290,8 @@
       // Zero line
       parts.push("<line x1=\""+L+"\" y1=\""+y(0)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(0)+"\" stroke=\"#7a8294\" stroke-width=\"1\"/>");
       // Conventional ±1.96 lines
-      parts.push("<line x1=\""+L+"\" y1=\""+y(1.96)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(1.96)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
-      parts.push("<line x1=\""+L+"\" y1=\""+y(-1.96)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(-1.96)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
+      parts.push("<line x1=\""+L+"\" y1=\""+y(Z975)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(Z975)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
+      parts.push("<line x1=\""+L+"\" y1=\""+y(-Z975)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(-Z975)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
 
       // O'Brien-Fleming boundaries (sampled over t in [0.05, 1])
       const boundPts = [];
@@ -356,7 +359,7 @@
           const cur = series[series.length-1];
           parts.push(statCard("Current info", fmt(cur.cumInfo, 1) + " (" + fmt(100*cur.cumInfo/ris, 1) + "%)"));
           parts.push(statCard("Cumulative Z", fmt(cur.z, 2)));
-          parts.push(statCard("Pooled μ", fmt(cur.cumMu, 3) + " [" + fmt(cur.cumMu-1.96*cur.cumSE,3) + ", " + fmt(cur.cumMu+1.96*cur.cumSE,3) + "]"));
+          parts.push(statCard("Pooled μ", fmt(cur.cumMu, 3) + " [" + fmt(cur.cumMu-Z975 *cur.cumSE,3) + ", " + fmt(cur.cumMu+Z975 *cur.cumSE,3) + "]"));
           const t = cur.cumInfo / ris;
           const bnd = za / Math.sqrt(Math.max(t, 1e-6));
           parts.push(statCard("OF boundary (now)", "±" + fmt(bnd, 2)));

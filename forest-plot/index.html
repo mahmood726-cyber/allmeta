@@ -152,6 +152,9 @@ Study C, 0.05, 0.18"></textarea>
   <p class="footer-note">Pooling: fixed-effect (inverse-variance) and random-effects (Paule-Mandel τ² + Hartung-Knapp-Sidik-Jonkman SE correction with floor q* ≥ 1, per Cochrane Handbook §10.10.4). The dashed band is the 95% prediction interval (μ ± t<sub>k−2</sub> × √(SE<sub>HKSJ</sub><sup>2</sup> + τ<sup>2</sup>); IntHout 2016, Higgins 2009; undefined for k&lt;3). Computed client-side; no data leaves the browser.</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "forest-plot-v1";
@@ -240,7 +243,7 @@ Study C, 0.05, 0.18"></textarea>
       const mu = swy / sw;
       const se = Math.sqrt(1 / sw);
       // FE CI uses normal — large k by definition.
-      return { mu: mu, se: se, lo: mu - 1.96 * se, hi: mu + 1.96 * se };
+      return { mu: mu, se: se, lo: mu - Z975 * se, hi: mu + Z975 * se };
     }
 
     function computeQ(studies, tau2) {
@@ -387,7 +390,7 @@ Study C, 0.05, 0.18"></textarea>
       // Domain
       let lo = Infinity, hi = -Infinity;
       for (const s of studies) {
-        const cl = s.est - 1.96 * s.se, ch = s.est + 1.96 * s.se;
+        const cl = s.est - Z975 * s.se, ch = s.est + Z975 * s.se;
         if (cl < lo) lo = cl;
         if (ch > hi) hi = ch;
       }
@@ -457,7 +460,7 @@ Study C, 0.05, 0.18"></textarea>
       for (let i = 0; i < k; i++) {
         const s = studies[i];
         const y = TOP + (i + 0.5) * rowH;
-        const cl = s.est - 1.96 * s.se, ch = s.est + 1.96 * s.se;
+        const cl = s.est - Z975 * s.se, ch = s.est + Z975 * s.se;
         // Label
         p.push("<text x=\"" + (LEFT - 8) + "\" y=\"" + (y + 4) + "\" text-anchor=\"end\" font-size=\"12\" fill=\"#15181d\">" + escapeXml(s.label) + "</text>");
         // CI whiskers
