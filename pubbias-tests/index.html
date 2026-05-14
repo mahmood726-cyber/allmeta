@@ -144,6 +144,54 @@
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
     function pz(z) { return 2 * (1 - pnorm(Math.abs(z))); }
+
+    // Cycle 7.6: Egger-family regression tests use a t-distribution with
+    // df = k - 2, not the normal CDF.  Using pz() gave an anti-conservative
+    // p-value (~2× too small at k=10).  metafor::regtest() uses t throughout.
+    function lnGamma(x) {
+      var cof = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+                 -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
+      var y = x, tmp = x + 5.5;
+      tmp -= (x + 0.5) * Math.log(tmp);
+      var ser = 1.000000000190015;
+      for (var j = 0; j < 6; j++) { y += 1; ser += cof[j] / y; }
+      return -tmp + Math.log(2.5066282746310005 * ser / x);
+    }
+    function betaCF(x, a, b) {
+      var MAXIT = 200, EPS = 3e-10, FPMIN = 1e-30;
+      var qab = a + b, qap = a + 1, qam = a - 1;
+      var c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d;
+      var h = d;
+      for (var m = 1; m <= MAXIT; m++) {
+        var m2 = 2 * m;
+        var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d;
+        var del = d * c; h *= del;
+        if (Math.abs(del - 1) < EPS) break;
+      }
+      return h;
+    }
+    function betaInc(a, b, x) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      var bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+      if (x < (a + 1) / (a + b + 2)) return bt * betaCF(x, a, b) / a;
+      return 1 - bt * betaCF(1 - x, b, a) / b;
+    }
+    function pt2(t, df) {
+      // Two-sided t-test p-value
+      if (!isFinite(t) || df <= 0) return NaN;
+      var x = df / (df + t * t);
+      return betaInc(df / 2, 0.5, x);
+    }
     function fmt(x, d) {
       d = d === undefined ? 3 : d;
       return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
@@ -194,7 +242,7 @@
       var ws = rows.map(function () { return 1; });
       var r = wls(xs, ys, ws);
       var z = r.b0 / r.seB0;
-      return { statistic: z, p: pz(z), name: 'Egger (generic)', applicable: 'any effect scale', b0: r.b0, seB0: r.seB0 };
+      return { statistic: z, p: pt2(z, rows.length - 2), name: 'Egger (generic)', applicable: 'any effect scale', b0: r.b0, seB0: r.seB0 };
     }
 
     function beggMazumdar(rows) {
@@ -275,7 +323,7 @@
       });
       var r = wls(xs, ys, ws);
       var z = r.b1 / r.seB1;
-      return { statistic: z, p: pz(z), name: 'Peters (binary)', applicable: 'log-OR, binary outcomes' };
+      return { statistic: z, p: pt2(z, rows.length - 2), name: 'Peters (binary)', applicable: 'log-OR, binary outcomes' };
     }
 
     function harbordTest(rows) {
@@ -292,7 +340,7 @@
       var ws = stats.map(function () { return 1; });
       var r = wls(xs, ys, ws);
       var z = r.b0 / r.seB0;
-      return { statistic: z, p: pz(z), name: 'Harbord (binary)', applicable: 'log-OR with score-test bias correction' };
+      return { statistic: z, p: pt2(z, rows.length - 2), name: 'Harbord (binary)', applicable: 'log-OR with score-test bias correction' };
     }
 
     function thompsonSharp(rows) {
@@ -310,7 +358,7 @@
       var phi = rss / Math.max(1, xs.length - 2);
       var seB0Adj = r.seB0 * Math.sqrt(Math.max(1, phi));
       var z = r.b0 / seB0Adj;
-      return { statistic: z, p: pz(z), name: 'Thompson-Sharp', applicable: 'Egger with multiplicative dispersion' };
+      return { statistic: z, p: pt2(z, rows.length - 2), name: 'Thompson-Sharp', applicable: 'Egger with multiplicative dispersion' };
     }
 
     // ---- axis state ----
