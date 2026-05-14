@@ -56,6 +56,10 @@ SUB_PATTERNS = [
     (re.compile(r'([\(,]\s*)1\.96(\s*[\),])'), r'\1Z975\2'),
     # 5) Assignment: `var x = 1.96;` or `obj.k = 1.96,` etc.
     (re.compile(r'(=\s*)1\.96(\s*[;,)])'), r'\1Z975\2'),
+    # 6) RHS of multiplication: `Z975 * 1.96` or `x * 1.96` (symmetric usage).
+    (re.compile(r'(\*\s*)1\.96\b(?!\.)'), r'\1Z975'),
+    # 7) Comparison: `> 1.96`, `< 1.96`, `>= 1.96`, `<= 1.96` (Wald-test critical-value checks).
+    (re.compile(r'([<>]=?\s*)1\.96\b(?!\.)'), r'\1Z975'),
 ]
 
 

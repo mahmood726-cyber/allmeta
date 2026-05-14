@@ -1081,6 +1081,9 @@ tbody tr:hover { background: var(--bg-primary); }
 </div>
 
 <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
 const APP_STORAGE_KEYS = Object.freeze({
   theme: 'theme',
   audit: 'dose_response_v18_audit',
@@ -4001,7 +4004,7 @@ function updateInterpretationLegacy(r) {
   const tau2MethodText = getTau2MethodText();
 
   let html = `<p><strong>Summary of Findings:</strong> The pooled analysis shows a ${direction} in risk with increasing dose. `;
-  html += `The relative risk per unit dose is <strong>${rr.toFixed(3)}</strong> (${percentChange}% change, 95% CI: [${Math.exp(r.beta[1] - 1.96*r.se[1]).toFixed(2)}, ${Math.exp(r.beta[1] + 1.96*r.se[1]).toFixed(2)}]). `;
+  html += `The relative risk per unit dose is <strong>${rr.toFixed(3)}</strong> (${percentChange}% change, 95% CI: [${Math.exp(r.beta[1] - Z975 *r.se[1]).toFixed(2)}, ${Math.exp(r.beta[1] + Z975 *r.se[1]).toFixed(2)}]). `;
   html += `There is ${trendInterp} (p = ${pLinear < 0.001 ? '<0.001' : pLinear.toFixed(3)}).</p>`;
 
   // Add prediction interval
@@ -4746,7 +4749,7 @@ function computePublicationBiasDiagnostics(points, pooledResult) {
   const trimFill = computeTrimAndFillL0(effects, centerEffect);
 
   const sumZ = snd.reduce((a, b) => a + b, 0);
-  const rosenthalN = Math.max(0, (sumZ * sumZ) / (1.96 * 1.96) - k);
+  const rosenthalN = Math.max(0, (sumZ * sumZ) / (Z975 * Z975) - k);
   const meanEffect = yi.reduce((a, b) => a + b, 0) / k;
   const trivial = 0.01;
   const orwinN = Math.max(0, Math.ceil(k * (Math.abs(meanEffect) - trivial) / trivial));
@@ -4810,7 +4813,7 @@ function drawPublicationBiasFunnel(diagnostics, pooledResult) {
   const yScale = se => padding.top + (se / yMax) * plotH;
 
   // Contour lines for p-value boundaries.
-  const contourZ = [1.64, 1.96, 2.58];
+  const contourZ = [1.64, Z975, 2.58];
   const contourColor = ['rgba(244,114,182,0.35)', 'rgba(245,158,11,0.35)', 'rgba(16,185,129,0.35)'];
   contourZ.forEach((z, idx) => {
     ctx.strokeStyle = contourColor[idx];
@@ -5708,8 +5711,8 @@ cat("Q:", ifelse(is.null(Q), "NA", Q), "df =", ifelse(is.na(df_q), "NA", df_q), 
 
 # Confidence intervals for pooled RR
 rr <- ifelse(is.na(beta[2]), NA, exp(beta[2]))
-ci_lower <- ifelse(is.na(beta[2]) || is.na(se[2]), NA, exp(beta[2] - 1.96 * se[2]))
-ci_upper <- ifelse(is.na(beta[2]) || is.na(se[2]), NA, exp(beta[2] + 1.96 * se[2]))
+ci_lower <- ifelse(is.na(beta[2]) || is.na(se[2]), NA, exp(beta[2] - Z975 * se[2]))
+ci_upper <- ifelse(is.na(beta[2]) || is.na(se[2]), NA, exp(beta[2] + Z975 * se[2]))
 
 cat("\\n=== POOLED ESTIMATE ===\\n")
 cat("RR:", ifelse(is.na(rr), "NA", round(rr, 3)), "\\n")
@@ -7315,8 +7318,8 @@ function performSubgroupAnalysis(variable, modelType) {
       rr: rr,
       rrSE: rrSE,
       rrCI: [
-        Math.exp(contrast.logRR - 1.96 * contrast.seLogRR),
-        Math.exp(contrast.logRR + 1.96 * contrast.seLogRR)
+        Math.exp(contrast.logRR - Z975 * contrast.seLogRR),
+        Math.exp(contrast.logRR + Z975 * contrast.seLogRR)
       ],
       p: contrast.p,
       parameterCount: Array.isArray(result.beta) ? result.beta.length : contrast.p,
@@ -7579,7 +7582,7 @@ function updateSubgroupDoseResponsePlot(results) {
       const dose = minDose + (i / 100) * doseRange;
       const contrast = computeDoseContrast(sg, modelType, dose, 0);
       if (!Number.isFinite(contrast.logRR)) continue;
-      const rrLower = Math.exp(contrast.logRR - 1.96 * contrast.seLogRR);
+      const rrLower = Math.exp(contrast.logRR - Z975 * contrast.seLogRR);
       const x = scaleX(dose);
       const y = scaleY(rrLower);
       if (i === 0) ctx.moveTo(x, y);
@@ -7589,7 +7592,7 @@ function updateSubgroupDoseResponsePlot(results) {
       const dose = minDose + (i / 100) * doseRange;
       const contrast = computeDoseContrast(sg, modelType, dose, 0);
       if (!Number.isFinite(contrast.logRR)) continue;
-      const rrUpper = Math.exp(contrast.logRR + 1.96 * contrast.seLogRR);
+      const rrUpper = Math.exp(contrast.logRR + Z975 * contrast.seLogRR);
       const x = scaleX(dose);
       const y = scaleY(rrUpper);
       if (i === 100) ctx.moveTo(x, y);
@@ -8558,16 +8561,16 @@ function runCoverageSimulation() {
           let tCrit = getTCrit(0.975, dfHKSJ);
           const piSE = Math.sqrt(Math.max(se1 * se1 + Math.max(tau2Value, 0), 0));
           let piT = getTCrit(0.975, piDf);
-          if (!Number.isFinite(tCrit)) tCrit = 1.96;
-          if (!Number.isFinite(piT)) piT = 1.96;
+          if (!Number.isFinite(tCrit)) tCrit = Z975;
+          if (!Number.isFinite(piT)) piT = Z975;
           if (!Number.isFinite(piSE)) {
             throw new Error('Non-finite critical value in coverage simulation');
           }
 
           betaEstimates[betaCount++] = beta1;
 
-          const waldLower = beta1 - 1.96 * se1;
-          const waldUpper = beta1 + 1.96 * se1;
+          const waldLower = beta1 - Z975 * se1;
+          const waldUpper = beta1 + Z975 * se1;
           if (trueBeta1 >= waldLower && trueBeta1 <= waldUpper) waldCoverage++;
 
           const hksjLower = beta1 - tCrit * seHKSJ;
@@ -8798,11 +8801,11 @@ function runTypeIErrorTest() {
           }
 
           const zStat = beta1 / se1;
-          if (Math.abs(zStat) > 1.96) waldFalsePositives++;
+          if (Math.abs(zStat) > Z975) waldFalsePositives++;
 
           const tStat = beta1 / seHKSJ;
           let tCrit = getTCrit(1 - alpha / 2, dfHKSJ);
-          if (!Number.isFinite(tCrit)) tCrit = 1.96;
+          if (!Number.isFinite(tCrit)) tCrit = Z975;
           if (Math.abs(tStat) > tCrit) hksjFalsePositives++;
 
           completedSims++;
@@ -8966,19 +8969,19 @@ function runSingleBenchmarkScenario(scenario, nSim, fitMode) {
         throw new Error('Non-finite benchmark estimate (coverage path)');
       }
 
-      const waldLower = beta1 - 1.96 * se1;
-      const waldUpper = beta1 + 1.96 * se1;
+      const waldLower = beta1 - Z975 * se1;
+      const waldUpper = beta1 + Z975 * se1;
       if (trueBeta1 >= waldLower && trueBeta1 <= waldUpper) waldCoverage++;
 
       let tCrit = getTCrit(0.975, dfHKSJ);
-      if (!Number.isFinite(tCrit)) tCrit = 1.96;
+      if (!Number.isFinite(tCrit)) tCrit = Z975;
       const hksjLower = beta1 - tCrit * seHKSJ;
       const hksjUpper = beta1 + tCrit * seHKSJ;
       if (trueBeta1 >= hksjLower && trueBeta1 <= hksjUpper) hksjCoverage++;
 
       const piSE = Math.sqrt(Math.max(se1 * se1 + tau2Value, 0));
       let piT = getTCrit(0.975, piDf);
-      if (!Number.isFinite(piT)) piT = 1.96;
+      if (!Number.isFinite(piT)) piT = Z975;
       const piLower = beta1 - piT * piSE;
       const piUpper = beta1 + piT * piSE;
       if (trueBeta1 >= piLower && trueBeta1 <= piUpper) piCoverage++;
@@ -9003,11 +9006,11 @@ function runSingleBenchmarkScenario(scenario, nSim, fitMode) {
       }
 
       const zStat = beta1Null / se1Null;
-      if (Math.abs(zStat) > 1.96) waldType1++;
+      if (Math.abs(zStat) > Z975) waldType1++;
 
       const tStat = beta1Null / seHKSJNull;
       let tCritNull = getTCrit(1 - alpha / 2, dfHKSJNull);
-      if (!Number.isFinite(tCritNull)) tCritNull = 1.96;
+      if (!Number.isFinite(tCritNull)) tCritNull = Z975;
       if (Math.abs(tStat) > tCritNull) hksjType1++;
 
       type1N++;

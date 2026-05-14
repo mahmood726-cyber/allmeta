@@ -158,6 +158,9 @@
   <script src="../shared/localllm.js"></script>
   <!-- PDF.js for browser-side text extraction (self-hosted for SRI / offline / strict CSP) -->
   <script type="module">
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     import * as pdfjsLib from "./vendor/pdf.min.mjs";
     pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.min.mjs";
 
@@ -565,7 +568,7 @@
         if (e.standard_error != null && Number.isFinite(e.standard_error)) {
           se = e.standard_error;
         } else if (e.ci && e.ci.lower > 0 && e.ci.upper > 0) {
-          se = (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * 1.96);
+          se = (Math.log(e.ci.upper) - Math.log(e.ci.lower)) / (2 * Z975);
         } else {
           se = NaN;
         }
@@ -574,7 +577,7 @@
         if (e.standard_error != null && Number.isFinite(e.standard_error)) {
           se = e.standard_error;
         } else if (e.ci && Number.isFinite(e.ci.lower) && Number.isFinite(e.ci.upper)) {
-          se = (e.ci.upper - e.ci.lower) / (2 * 1.96);
+          se = (e.ci.upper - e.ci.lower) / (2 * Z975);
         } else {
           se = NaN;
         }
