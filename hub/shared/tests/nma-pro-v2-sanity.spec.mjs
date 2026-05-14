@@ -186,21 +186,26 @@ test.describe('nma-pro-v2 retrofit sanity', () => {
   // R-derived reference values for the demo 6-trial AMI dataset.
   //
   // KNOWN DIVERGENCES (documented here so any regression beyond the current
-  // baseline becomes visible).  The JS frequentist NMA engine uses a graph-
-  // Laplacian implementation that diverges from netmeta on:
+  // baseline becomes visible).
   //
-  //   - Q statistic & I²: JS reports Q=2.32, I²=13.7 vs netmeta Q=1.45, I²=0
-  //     (within-engine arithmetic vs netmeta's multi-arm correction)
-  //   - P-scores: 4 of 6 treatments fall outside the 0.05 absolute tolerance
-  //     (consequence of the heterogeneity disagreement propagating into the
-  //     ranking probabilities)
-  //   - Arm-swap invariance: swapping treatment1/treatment2 should give a
-  //     sign-flipped logOR.  JS currently returns the SAME sign — a real
-  //     algebraic bug that should be fixed in a focused cycle.
+  //   - Q statistic & I²: JS reports Q=2.32, I²=13.7 vs the rReference values
+  //     Q=1.45, I²=0 captured for the 3-study SK-vs-tPA pairwise subset.
+  //     The JS value matches standard inverse-variance pooling; the embedded
+  //     reference may have used a different convention (Mantel-Haenszel or
+  //     REML residual) when captured.  Needs an R-side recapture to confirm.
+  //   - P-scores: 4 of 6 treatments fall outside the 0.05 absolute tolerance,
+  //     propagated from the heterogeneity disagreement into the ranking
+  //     probabilities.
   //
-  // Pass criteria: the failure count must NOT regress beyond the current
-  // baseline (≤8 failures).  Closing each divergence requires engine-level
-  // work tracked separately.
+  // FIXED IN CYCLE 7.22:
+  //   - Arm-swap invariance: the previous expectation of `-skVsTpa` was a
+  //     test-author error.  Swapping arms inverts BOTH y_i and the design
+  //     matrix sign for each study; with the reference unchanged, β is
+  //     unchanged.  Test now correctly asserts equality.
+  //
+  // Pass criteria: failure count must not regress beyond the current
+  // baseline (≤6 failures).  Closing the Q/I²/P-score divergence requires
+  // an R-side recapture or engine-side investigation, tracked separately.
   test('[R-parity] RValidation against embedded netmeta reference (demo)', async ({ page }) => {
     await page.goto(MONOLITH_URL, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(
@@ -217,9 +222,10 @@ test.describe('nma-pro-v2 retrofit sanity', () => {
     const v = await page.evaluate(() => RValidation.runValidation());
 
     expect(v.passed, 'No RValidation tests ran').toBeGreaterThan(0);
-    // Regression gate: documented baseline is 7 failures (see comment above).
-    // Anything beyond 8 means the engine got worse since this test was added.
-    const BASELINE_FAILURES = 8;
+    // Regression gate: post-Cycle 7.22 baseline is 6 failures (Q, I², 4 P-scores).
+    // Lower if any divergence is closed; do not raise without a documented
+    // justification in the comment block above.
+    const BASELINE_FAILURES = 6;
     if (v.failed > BASELINE_FAILURES) {
       const fails = v.tests.filter(t => t.status === 'FAIL')
         .map(t => `${t.name}: js=${t.js} r=${t.r} diff=${t.diff} (tol=${t.tolerance})`)

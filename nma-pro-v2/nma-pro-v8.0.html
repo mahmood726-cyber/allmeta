@@ -2338,7 +2338,12 @@ const skVsTpa=base.effects.effects['SK']?.estimate;
 const swappedStudies=demoStudies.map(s=>({...s,treatment1:s.treatment2,treatment2:s.treatment1,events1:s.events2,n1:s.n2,events2:s.events1,n2:s.n1}));
 const swapped=FrequentistNMA.analyze(swappedStudies,{reference:'tPA',effectMeasure:'OR',estimator:'REML'});
 const skVsTpaSwap=swapped.effects.effects['SK']?.estimate;
-if(Number.isFinite(skVsTpa)&&Number.isFinite(skVsTpaSwap))check('Arm-swap invariance',skVsTpaSwap,-skVsTpa,0.03);
+// Cycle 7.22: arm-swap is *invariant*, not negating. Swapping arms inverts
+// BOTH y_i and the corresponding X-matrix sign for each study, so
+// (X'WX)^{-1} X'Wy is unchanged when the reference is unchanged. The
+// previous expectation of `-skVsTpa` was wrong — the test name "invariance"
+// is correct, but the assertion compared against the negation.
+if(Number.isFinite(skVsTpa)&&Number.isFinite(skVsTpaSwap))check('Arm-swap invariance',skVsTpaSwap,skVsTpa,0.03);
 const altRef=FrequentistNMA.analyze(demoStudies,{reference:'SK',effectMeasure:'OR',estimator:'REML'});
 const tpaVsSk=altRef.effects.effects['tPA']?.estimate;
 if(Number.isFinite(skVsTpa)&&Number.isFinite(tpaVsSk)){check('Reference invariance',tpaVsSk,-skVsTpa,0.03);check('Reciprocal contrast check',skVsTpa,-tpaVsSk,0.001)}
