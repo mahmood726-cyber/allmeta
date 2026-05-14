@@ -9,12 +9,20 @@ from urllib.parse import urlparse
 
 
 def path_to_key(path: str) -> str:
-    """Canonical app key = LAST non-empty path segment.
+    """Canonical app key = last DIRECTORY segment (any trailing filename dropped).
 
     Cycle 5.5: switched from first-segment to last-segment to handle nested
     paths (e.g. r-shiny/annualised-plot/ -> annualised-plot, not r-shiny which
-    collapses 3 distinct apps to the same key). Flat paths are unaffected
-    because their last segment IS their first.
+    collapses 3 distinct apps to the same key).
+
+    Cycle 5.5b: also drop the trailing filename when present, so alias entries
+    that point to a specific file inside an existing app collapse to the app's
+    directory key:
+        ./Truthcert1/TruthCert-PairwisePro-v1.0-production.html  ->  Truthcert1
+        ./IPD-Meta-Pro/ipd-meta-pro.html                          ->  IPD-Meta-Pro
+        ./r-shiny/annualised-plot/                                ->  annualised-plot
+        ./r-shiny/annualised-plot/index.html                      ->  annualised-plot
+        ./forest-plot/index.html                                  ->  forest-plot
     """
     if not path:
         return ""
@@ -24,26 +32,30 @@ def path_to_key(path: str) -> str:
     p = path
     if p.startswith("./"):
         p = p[2:]
-    if p.endswith("/index.html"):
-        p = p[: -len("/index.html")]
     parts = [s for s in p.split("/") if s]
+    # Drop a trailing filename (last segment contains a '.') so the key is
+    # always a directory name.
+    if parts and "." in parts[-1]:
+        parts = parts[:-1]
     return parts[-1] if parts else ""
 
 
 def path_to_app_dir(path: str) -> str:
     """The app's filesystem directory relative to repo root.
 
-    Strips leading ./, strips trailing /index.html, strips trailing /.
-    For URLs (http/https), returns "" since there is no on-disk directory.
+    Strips leading ./, strips any trailing filename (last segment with a dot),
+    strips trailing /. For URLs (http/https), returns "" since there is no
+    on-disk directory.
     """
     if not path or path.startswith(("http://", "https://")):
         return ""
     p = path
     if p.startswith("./"):
         p = p[2:]
-    if p.endswith("/index.html"):
-        p = p[: -len("/index.html")]
-    return p.strip("/")
+    parts = [s for s in p.split("/") if s]
+    if parts and "." in parts[-1]:
+        parts = parts[:-1]
+    return "/".join(parts)
 
 
 _ARRAY_RE = re.compile(r"window\.HTML_APPS_PROJECTS\s*=\s*(\[.*?\]);?\s*$", re.DOTALL)
