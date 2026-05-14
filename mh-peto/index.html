@@ -138,6 +138,11 @@ StudyE, 4, 600, 10, 600</textarea>
 
     // ---- engine (unchanged from pre-retrofit) ----
 
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs.  Using 1.96 introduces a
+    // ~1.3e-5 drift vs metafor / R; the R-parity Playwright test now asserts
+    // 1e-6 agreement so the looser value would fail.
+    var Z975 = 1.959963984540054;
+
     function parse(text) {
       // Accepts either:
       //   study, e1, n1, e2, n2   (study label first — canonical CSV format)
@@ -197,7 +202,7 @@ StudyE, 4, 600, 10, 600</textarea>
       var or = num / denom;
       var varLogOR = 0.5 * (SR / (num * num) + ST / (num * denom) + SS / (denom * denom));
       var seLog = Math.sqrt(varLogOR);
-      return { est: or, logEst: Math.log(or), seLog: seLog, lo: Math.exp(Math.log(or) - 1.96 * seLog), hi: Math.exp(Math.log(or) + 1.96 * seLog) };
+      return { est: or, logEst: Math.log(or), seLog: seLog, lo: Math.exp(Math.log(or) - Z975 * seLog), hi: Math.exp(Math.log(or) + Z975 * seLog) };
     }
 
     function mhRR(rows) {
@@ -213,7 +218,7 @@ StudyE, 4, 600, 10, 600</textarea>
       var rr = num / denom;
       var varLogRR = varNum / (num * denom);
       var seLog = Math.sqrt(Math.max(varLogRR, 0));
-      return { est: rr, logEst: Math.log(rr), seLog: seLog, lo: Math.exp(Math.log(rr) - 1.96 * seLog), hi: Math.exp(Math.log(rr) + 1.96 * seLog) };
+      return { est: rr, logEst: Math.log(rr), seLog: seLog, lo: Math.exp(Math.log(rr) - Z975 * seLog), hi: Math.exp(Math.log(rr) + Z975 * seLog) };
     }
 
     function mhRD(rows) {
@@ -229,7 +234,7 @@ StudyE, 4, 600, 10, 600</textarea>
       if (denom === 0) return null;
       var rd = num / denom;
       var se = Math.sqrt(varNum) / denom;
-      return { est: rd, se: se, lo: rd - 1.96 * se, hi: rd + 1.96 * se };
+      return { est: rd, se: se, lo: rd - Z975 * se, hi: rd + Z975 * se };
     }
 
     function peto(rows) {
@@ -245,7 +250,7 @@ StudyE, 4, 600, 10, 600</textarea>
       if (sumV === 0) return null;
       var logOR = sumOE / sumV;
       var seLog = 1 / Math.sqrt(sumV);
-      return { est: Math.exp(logOR), logEst: logOR, seLog: seLog, lo: Math.exp(logOR - 1.96 * seLog), hi: Math.exp(logOR + 1.96 * seLog) };
+      return { est: Math.exp(logOR), logEst: logOR, seLog: seLog, lo: Math.exp(logOR - Z975 * seLog), hi: Math.exp(logOR + Z975 * seLog) };
     }
 
     function perStudy(rows, measure) {
@@ -257,18 +262,18 @@ StudyE, 4, 600, 10, 600</textarea>
           var or = (a * d) / (b * c);
           var varLog = 1 / a + 1 / b + 1 / c + 1 / d;
           var se = Math.sqrt(varLog);
-          return Object.assign({}, r, { est: or, lo: Math.exp(Math.log(or) - 1.96 * se), hi: Math.exp(Math.log(or) + 1.96 * se) });
+          return Object.assign({}, r, { est: or, lo: Math.exp(Math.log(or) - Z975 * se), hi: Math.exp(Math.log(or) + Z975 * se) });
         }
         if (measure === 'RR') {
           var rr = (a / r.n1) / (c / r.n2);
           var varLogRR = 1 / a - 1 / r.n1 + 1 / c - 1 / r.n2;
           var seRR = Math.sqrt(Math.max(varLogRR, 0));
-          return Object.assign({}, r, { est: rr, lo: Math.exp(Math.log(rr) - 1.96 * seRR), hi: Math.exp(Math.log(rr) + 1.96 * seRR) });
+          return Object.assign({}, r, { est: rr, lo: Math.exp(Math.log(rr) - Z975 * seRR), hi: Math.exp(Math.log(rr) + Z975 * seRR) });
         }
         var p1 = r.e1 / r.n1, p2 = r.e2 / r.n2;
         var rd = p1 - p2;
         var seRD = Math.sqrt(p1 * (1 - p1) / r.n1 + p2 * (1 - p2) / r.n2);
-        return Object.assign({}, r, { est: rd, lo: rd - 1.96 * seRD, hi: rd + 1.96 * seRD });
+        return Object.assign({}, r, { est: rd, lo: rd - Z975 * seRD, hi: rd + Z975 * seRD });
       });
     }
 

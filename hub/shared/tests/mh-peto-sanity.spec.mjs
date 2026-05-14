@@ -140,4 +140,71 @@ test.describe('mh-peto retrofit sanity', () => {
     expect(obj.peto_est, 'peto_est missing — Peto OR not computed for OR measure').toBeDefined();
   });
 
+  // Cycle 7.1: TRUE JS-engine R-parity. Drives the actual JS pooling engine
+  // with the fixture data and asserts every numeric output matches metafor
+  // within 1e-6. Replaces the fixture-drift-only check in
+  // test_against_metafor.py — that test only proves the hardcoded expected
+  // values still match a fresh Rscript run; it never touches the JS engine.
+  test('JS engine R-parity vs metafor::rma.mh and rma.peto (mhpeto-tiny)', async ({ page }) => {
+    // mhpeto-tiny.csv inlined so the test is self-contained.  Same 5 rows
+    // also live in mh-peto/tests/fixtures/mhpeto-tiny.csv used by the R run.
+    const fixture = [
+      { study: 'StudyA', e1: 3, n1: 500, e2:  8, n2: 500 },
+      { study: 'StudyB', e1: 1, n1: 200, e2:  5, n2: 200 },
+      { study: 'StudyC', e1: 0, n1: 150, e2:  4, n2: 150 },
+      { study: 'StudyD', e1: 2, n1: 400, e2:  6, n2: 400 },
+      { study: 'StudyE', e1: 4, n1: 600, e2: 10, n2: 600 },
+    ];
+    // metafor 4.x derived values (log scale for *_b / *_ci_*), captured
+    // 2026-05-14 via fixtures/mhpeto-tiny.R.  Kept in sync with the same
+    // constants in test_against_metafor.py.
+    const expected = {
+      peto_b:     -1.081012806542,
+      peto_ci_lb: -1.681929944791,
+      peto_ci_ub: -0.4800956682933,
+      mh_b:       -1.205880041393,
+      mh_ci_lb:   -1.916110050453,
+      mh_ci_ub:   -0.4956500323332,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(MHPETO_URL);
+    await waitForAlm(page);
+
+    // Inject the fixture into the engine.  __almLoad calls run() internally.
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastMhPeto && window._almLastMhPeto() !== null,
+      { timeout: 5_000 }
+    );
+
+    const r = await page.evaluate(() => window._almLastMhPeto());
+
+    // JS exposes natural-scale OR; metafor exposes log-OR.  Convert and
+    // compare on the same scale.
+    const ln = Math.log;
+    expect(Math.abs(ln(r.mh_est) - expected.mh_b),
+      `mh_est: log(${r.mh_est}) vs metafor b=${expected.mh_b}`)
+      .toBeLessThan(TOL);
+    expect(Math.abs(ln(r.mh_lo) - expected.mh_ci_lb),
+      `mh_lo: log(${r.mh_lo}) vs metafor ci.lb=${expected.mh_ci_lb}`)
+      .toBeLessThan(TOL);
+    expect(Math.abs(ln(r.mh_hi) - expected.mh_ci_ub),
+      `mh_hi: log(${r.mh_hi}) vs metafor ci.ub=${expected.mh_ci_ub}`)
+      .toBeLessThan(TOL);
+
+    expect(Math.abs(ln(r.peto_est) - expected.peto_b),
+      `peto_est: log(${r.peto_est}) vs metafor b=${expected.peto_b}`)
+      .toBeLessThan(TOL);
+    expect(Math.abs(ln(r.peto_lo) - expected.peto_ci_lb),
+      `peto_lo: log(${r.peto_lo}) vs metafor ci.lb=${expected.peto_ci_lb}`)
+      .toBeLessThan(TOL);
+    expect(Math.abs(ln(r.peto_hi) - expected.peto_ci_ub),
+      `peto_hi: log(${r.peto_hi}) vs metafor ci.ub=${expected.peto_ci_ub}`)
+      .toBeLessThan(TOL);
+
+    // k (study count) sanity
+    expect(r.k, 'k mismatch').toBe(fixture.length);
+  });
+
 });
