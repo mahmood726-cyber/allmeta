@@ -146,4 +146,70 @@ test.describe('hsroc retrofit sanity', () => {
     expect(row0.FPR, 'row.FPR missing').toBeDefined();
   });
 
+  // Cycle 7.18: real JS-engine R-parity (16th app).  hsroc's JS engine uses
+  // a DL approximation while mada::reitsma uses full bivariate REML — they
+  // diverge by construction on mu1/mu2/tau²/rho.  Per-study transforms
+  // (Se, Sp, FPR, logitSe, logitFPR) are method-agnostic — pure deterministic
+  // math on 2x2 cell counts — and must match exactly.
+  test('JS engine per-study transforms vs deterministic math (hsroc-tiny)', async ({ page }) => {
+    const csvText = `S1, 80, 40, 20, 160
+S2, 95, 5, 5, 95
+S3, 60, 30, 40, 170
+S4, 88, 12, 12, 88
+S5, 70, 50, 30, 150
+S6, 92, 8, 8, 192
+S7, 55, 45, 45, 155`;
+    const fixtureCounts = [
+      { study: 'S1', TP: 80, FP: 40, FN: 20, TN: 160 },
+      { study: 'S2', TP: 95, FP:  5, FN:  5, TN:  95 },
+      { study: 'S3', TP: 60, FP: 30, FN: 40, TN: 170 },
+      { study: 'S4', TP: 88, FP: 12, FN: 12, TN:  88 },
+      { study: 'S5', TP: 70, FP: 50, FN: 30, TN: 150 },
+      { study: 'S6', TP: 92, FP:  8, FN:  8, TN: 192 },
+      { study: 'S7', TP: 55, FP: 45, FN: 45, TN: 155 },
+    ];
+    // Method-agnostic reference: pure 2x2 transforms.
+    const expected = fixtureCounts.map(r => {
+      const Se  = r.TP / (r.TP + r.FN);
+      const Sp  = r.TN / (r.FP + r.TN);
+      const FPR = r.FP / (r.FP + r.TN);  // = 1 - Sp
+      return {
+        Se, Sp, FPR,
+        logitSe:  Math.log(Se  / (1 - Se)),
+        logitFPR: Math.log(FPR / (1 - FPR)),
+      };
+    });
+    const TOL = 1e-6;  // JS exports rows rounded to 6 decimals.
+
+    await page.goto(HSROC_URL);
+    await waitForAlm(page);
+    await page.evaluate((csv) => {
+      const ta = document.getElementById('f-data');
+      ta.value = csv;
+      if (typeof render === 'function') render();
+    }, csvText);
+    await page.waitForFunction(() => {
+      const r = window.__almResults && window.__almResults();
+      return r && r.rows && r.rows.length === 7;
+    }, { timeout: 5_000 });
+    const r = await page.evaluate(() => window.__almResults());
+
+    expect(r.k, 'k mismatch').toBe(7);
+    expect(r.rows.length, 'rows length').toBe(7);
+    for (let i = 0; i < 7; i++) {
+      const got = r.rows[i];
+      const want = expected[i];
+      expect(Math.abs(got.Se  - want.Se),
+        `row[${i}].Se: ${got.Se} vs ${want.Se}`).toBeLessThan(TOL);
+      expect(Math.abs(got.Sp  - want.Sp),
+        `row[${i}].Sp: ${got.Sp} vs ${want.Sp}`).toBeLessThan(TOL);
+      expect(Math.abs(got.FPR - want.FPR),
+        `row[${i}].FPR: ${got.FPR} vs ${want.FPR}`).toBeLessThan(TOL);
+      expect(Math.abs(got.logitSe  - want.logitSe),
+        `row[${i}].logitSe: ${got.logitSe} vs ${want.logitSe}`).toBeLessThan(TOL);
+      expect(Math.abs(got.logitFPR - want.logitFPR),
+        `row[${i}].logitFPR: ${got.logitFPR} vs ${want.logitFPR}`).toBeLessThan(TOL);
+    }
+  });
+
 });
