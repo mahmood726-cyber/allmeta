@@ -260,8 +260,22 @@
 
       var mus = results.map(function (r) { return r.mu; }).sort(function (a, b) { return a - b; });
       var i2s = results.map(function (r) { return r.I2; }).sort(function (a, b) { return a - b; });
-      var medMu = mus[Math.floor(mus.length / 2)];
-      var medI2 = i2s[Math.floor(i2s.length / 2)];
+      // Cycle 7.19: Type-7 quantile (linear interpolation) — matches R
+      // quantile() default, NumPy default, SAS default.  Previously used
+      // nearest-rank which drifted up to half a step from R; ~3e-3 error
+      // at typical k=5 subset counts.
+      function q7(sorted, p) {
+        var n = sorted.length;
+        if (n === 0) return NaN;
+        if (n === 1) return sorted[0];
+        var h = (n - 1) * p;
+        var lo = Math.floor(h);
+        var frac = h - lo;
+        if (lo + 1 >= n) return sorted[n - 1];
+        return sorted[lo] + frac * (sorted[lo + 1] - sorted[lo]);
+      }
+      var medMu = q7(mus, 0.5);
+      var medI2 = q7(i2s, 0.5);
 
       document.getElementById('m-n').textContent = results.length.toLocaleString();
       document.getElementById('m-est').textContent = fmt(medMu);
@@ -278,8 +292,8 @@
         median_i2: medI2,
         min_est: mus[0],
         max_est: mus[mus.length - 1],
-        q25_est: mus[Math.floor(mus.length * 0.25)],
-        q75_est: mus[Math.floor(mus.length * 0.75)],
+        q25_est: q7(mus, 0.25),
+        q75_est: q7(mus, 0.75),
         studies: rows.map(function (r) { return { label: r.label, te: r.te, se: r.se }; }),
       };
 

@@ -180,4 +180,52 @@ test.describe('gosh retrofit sanity', () => {
     expect(i2Text.trim(), 'Median I² should include %').toContain('%');
   });
 
+  // Cycle 7.19: real JS-engine R-parity (17th app).  gosh full-enumeration
+  // FE pool for k=5 — deterministic, must match metafor::gosh exactly.
+  test('JS engine R-parity vs metafor::gosh (gosh-tiny FE)', async ({ page }) => {
+    const fixture = [
+      { study: 'S01', yi: 0.22, vi: 0.0064 },
+      { study: 'S02', yi: 0.30, vi: 0.0196 },
+      { study: 'S03', yi: 0.27, vi: 0.0081 },
+      { study: 'S04', yi: 0.15, vi: 0.0049 },
+      { study: 'S05', yi: 0.45, vi: 0.0324 },
+    ];
+    // R 4.5.2 / metafor 4.x metafor::gosh(rma.uni(method='FE'))
+    const expected = {
+      n_subsets:  26,    // 2^5 - (single-element and empty subsets) = 31 - 5 - 1 = 26
+      median_est: 0.2217261558338,
+      q25_est:    0.2047081408179,
+      q75_est:    0.2615342255235,
+      min_est:    0.18,
+      max_est:    0.3565384615385,
+      median_i2:  0.0,
+      k:          5,
+    };
+    const TOL = 1e-6;   // closed-form IV pooling is deterministic
+
+    await page.goto(GOSH_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almGoshLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastGosh && window._almLastGosh() !== null,
+      { timeout: 10_000 }
+    );
+    const r = await page.evaluate(() => window._almLastGosh());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    expect(r.n_subsets, 'n_subsets mismatch').toBe(expected.n_subsets);
+    expect(Math.abs(r.median_est - expected.median_est),
+      `median_est: ${r.median_est} vs metafor=${expected.median_est}`).toBeLessThan(TOL);
+    expect(Math.abs(r.q25_est - expected.q25_est),
+      `q25_est: ${r.q25_est} vs metafor=${expected.q25_est}`).toBeLessThan(TOL);
+    expect(Math.abs(r.q75_est - expected.q75_est),
+      `q75_est: ${r.q75_est} vs metafor=${expected.q75_est}`).toBeLessThan(TOL);
+    expect(Math.abs(r.min_est - expected.min_est),
+      `min_est: ${r.min_est} vs metafor=${expected.min_est}`).toBeLessThan(TOL);
+    expect(Math.abs(r.max_est - expected.max_est),
+      `max_est: ${r.max_est} vs metafor=${expected.max_est}`).toBeLessThan(TOL);
+    expect(Math.abs(r.median_i2 - expected.median_i2),
+      `median_i2: ${r.median_i2} vs metafor=${expected.median_i2}`).toBeLessThan(TOL);
+  });
+
 });
