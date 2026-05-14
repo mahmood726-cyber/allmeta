@@ -135,4 +135,49 @@ test.describe('forest-plot retrofit sanity', () => {
     expect(obj.I2,     'I2 missing').toBeDefined();
   });
 
+  // Cycle 7.7: real JS-engine R-parity. Drives the JS pooling engine with the
+  // forest-tiny fixture and asserts FE pool matches metafor::rma.uni at 1e-6.
+  // For this dataset Q < df so REML (R) and PM (JS) both estimate tau^2 = 0,
+  // making FE = REML.  The JS engine uses Paule-Mandel for RE; under tau^2=0
+  // its FE pool is what R reports as the (degenerate) REML pool.
+  test('JS engine R-parity vs metafor::rma.uni (forest-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'A', yi:  0.20, vi: 0.040 },
+      { study: 'B', yi: -0.10, vi: 0.030 },
+      { study: 'C', yi:  0.15, vi: 0.025 },
+      { study: 'D', yi:  0.05, vi: 0.020 },
+      { study: 'E', yi: -0.02, vi: 0.015 },
+    ];
+    const expected = {
+      b:     0.04108527131783,
+      se:    0.06819943394705,
+      ci_lb: -0.0925831629844,
+      ci_ub: 0.1747537056201,
+      k:     5,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(FOREST_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastFE && window._almLastFE() !== null,
+      { timeout: 5_000 }
+    );
+    const result = await page.evaluate(() => ({
+      fe: window._almLastFE(),
+      studies: window._almLastStudies(),
+    }));
+
+    expect(result.studies.length, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(result.fe.mu - expected.b),
+      `FE mu: ${result.fe.mu} vs metafor b=${expected.b}`).toBeLessThan(TOL);
+    expect(Math.abs(result.fe.se - expected.se),
+      `FE se: ${result.fe.se} vs metafor se=${expected.se}`).toBeLessThan(TOL);
+    expect(Math.abs(result.fe.lo - expected.ci_lb),
+      `FE lo: ${result.fe.lo} vs metafor ci.lb=${expected.ci_lb}`).toBeLessThan(TOL);
+    expect(Math.abs(result.fe.hi - expected.ci_ub),
+      `FE hi: ${result.fe.hi} vs metafor ci.ub=${expected.ci_ub}`).toBeLessThan(TOL);
+  });
+
 });

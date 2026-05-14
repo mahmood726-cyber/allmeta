@@ -141,4 +141,51 @@ test.describe('multilevel-ma retrofit sanity', () => {
     expect(obj.tau2_within, 'tau2_within missing').toBeDefined();
   });
 
+  // Cycle 7.8: real JS-engine R-parity. The R script mlma-tiny.R was written
+  // to replicate the JS engine's iterated MoM algorithm (Cheung 2014 style),
+  // NOT metafor::rma.mv REML — so 1e-6 agreement is achievable.
+  test('JS engine R-parity vs MoM replication (mlma-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 1, effect: 0.35, SE: 0.12, label: 'outcome_A' },
+      { study: 1, effect: 0.28, SE: 0.11, label: 'outcome_B' },
+      { study: 2, effect: 0.18, SE: 0.09, label: 'primary' },
+      { study: 2, effect: 0.22, SE: 0.10, label: 'secondary' },
+      { study: 3, effect: 0.50, SE: 0.15, label: 'score_a' },
+      { study: 3, effect: 0.48, SE: 0.14, label: 'score_b' },
+    ];
+    const expected = {
+      mu: 0.3130836394161561, seMu: 0.06607061847114695,
+      seMuHK: 0.08340805896106201, tau2_study: 0.01266049129297928,
+      tau2_within: 0, ci_lb_z: 0.1835876067764213,
+      ci_ub_z: 0.442579672055891, k: 6, J: 3,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(MLMA_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastMlma && window._almLastMlma() !== null,
+      { timeout: 5_000 }
+    );
+    const r = await page.evaluate(() => window._almLastMlma());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    expect(r.J, 'J mismatch').toBe(expected.J);
+    expect(Math.abs(r.mu - expected.mu),
+      `mu: ${r.mu} vs MoM=${expected.mu}`).toBeLessThan(TOL);
+    expect(Math.abs(r.seMu - expected.seMu),
+      `seMu: ${r.seMu} vs MoM=${expected.seMu}`).toBeLessThan(TOL);
+    expect(Math.abs(r.seMuHK - expected.seMuHK),
+      `seMuHK: ${r.seMuHK} vs MoM=${expected.seMuHK}`).toBeLessThan(TOL);
+    expect(Math.abs(r.tau2_study - expected.tau2_study),
+      `tau2_study: ${r.tau2_study} vs MoM=${expected.tau2_study}`).toBeLessThan(TOL);
+    expect(Math.abs(r.tau2_within - expected.tau2_within),
+      `tau2_within: ${r.tau2_within} vs MoM=${expected.tau2_within}`).toBeLessThan(TOL);
+    expect(Math.abs(r.ci_lb_z - expected.ci_lb_z),
+      `ci_lb_z: ${r.ci_lb_z} vs MoM=${expected.ci_lb_z}`).toBeLessThan(TOL);
+    expect(Math.abs(r.ci_ub_z - expected.ci_ub_z),
+      `ci_ub_z: ${r.ci_ub_z} vs MoM=${expected.ci_ub_z}`).toBeLessThan(TOL);
+  });
+
 });

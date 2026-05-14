@@ -108,8 +108,8 @@ qStar <- sum(wFinal * (rows$te - mu)^2) / dfHK
 qF    <- max(1, qStar)
 seMuHK <- sqrt(qF / swFinal)
 
-ci_lb_z <- mu - 1.96 * seMu
-ci_ub_z <- mu + 1.96 * seMu
+ci_lb_z <- mu - qnorm(0.975) * seMu
+ci_ub_z <- mu + qnorm(0.975) * seMu
 
 cat(toJSON(list(
   mu          = as.numeric(mu),

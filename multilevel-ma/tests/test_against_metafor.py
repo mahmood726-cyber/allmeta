@@ -13,8 +13,8 @@ Values captured from a single Rscript run on mlma-tiny.csv (2026-05-14):
    "seMuHK":0.08340805896106201,
    "tau2_study":0.01266049129297928,
    "tau2_within":0,
-   "ci_lb_z":0.1835852272127081,
-   "ci_ub_z":0.4425820516196042,
+   "ci_lb_z":0.1835876067764213,
+   "ci_ub_z":0.442579672055891,
    "k":6,
    "J":3}
 
@@ -38,8 +38,8 @@ def test_mlma_mom_pooled_mean_matches_r():
         "seMuHK":      0.08340805896106201,
         "tau2_study":  0.01266049129297928,
         "tau2_within": 0.0,
-        "ci_lb_z":     0.1835852272127081,
-        "ci_ub_z":     0.4425820516196042,
+        "ci_lb_z":     0.1835876067764213,
+        "ci_ub_z":     0.442579672055891,
         "k":           6,
         "J":           3,
     }
