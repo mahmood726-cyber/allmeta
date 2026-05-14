@@ -66,6 +66,12 @@
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
     .skip-link { position: absolute; left: -10000px; top: 8px; padding: 0.5rem 0.9rem; background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; z-index: 1000; text-decoration: none; }
     .skip-link:focus { left: 8px; }
+    #demo-badge { display: none; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; background: #facc15; color: #78350f; letter-spacing: 0.05em; vertical-align: middle; margin-left: 0.5rem; }
+    #demo-banner { display: none; background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 8px; padding: 0.65rem 1rem; margin-top: 0.8rem; font-size: 0.84rem; }
+    #demo-banner strong { color: var(--warn); }
+    #demo-banner .demo-actions { margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    #live-banner { display: none; background: var(--ok-soft); border: 1px solid var(--ok); border-radius: 8px; padding: 0.55rem 1rem; margin-top: 0.8rem; font-size: 0.84rem; }
+    #live-banner strong { color: var(--ok); }
     /* WCAG-safe visually-hidden utility for screen-reader-only text (captions, descriptions). */
     .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     /* Ensure the Also-run-local-LLM checkbox has a WCAG 2.5.5 touch target */
@@ -80,7 +86,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
-    <h1>RCT Extractor</h1>
+    <h1>RCT Extractor <span id="demo-badge" role="status" aria-live="polite">DEMO</span></h1>
     <p>Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications using your locally-running <code>rct-extractor-v2</code> API. Optional: run a local LLM alongside as a cross-check. Consensus and disagreements are highlighted.</p>
     <div class="status-row" role="status" aria-live="polite" aria-atomic="true">
       <span class="status-pill" id="api-status">checking rct-extractor…</span>
@@ -113,6 +119,15 @@
       </div>
       <div class="note" id="hint-note">
         <strong>First time?</strong> In a terminal: <code>cd C:\Projects\rct-extractor-v2 && pip install fastapi uvicorn python-multipart && uvicorn src.api.main:app --port 8000</code>. Then come back and click Extract.
+      </div>
+      <div id="demo-banner" role="alert" aria-live="polite">
+        <strong>Live backend offline</strong> — switch to Demo mode to try the app with 3 sample extractions (HR, OR, RR) covering the main effect families. CSV export and Workbench push all work in demo mode.
+        <div class="demo-actions">
+          <button type="button" id="btn-enter-demo" class="primary">Switch to Demo mode</button>
+        </div>
+      </div>
+      <div id="live-banner" role="status" aria-live="polite">
+        <strong>Demo mode active.</strong> Results are sample data, not real extractions. <button type="button" id="btn-exit-demo" class="secondary" style="margin-left:0.5rem">Switch back to live backend</button>
       </div>
     </section>
 
@@ -161,6 +176,86 @@
     window.LAST_EXTRACTIONS = window.LAST_EXTRACTIONS || [];
     let LAST_EXTRACTIONS = window.LAST_EXTRACTIONS;
 
+    // ── Demo mode ────────────────────────────────────────────────────────────
+    let DEMO_MODE = false;
+
+    // Fixture shape matches the real /extract response: effect_type, point_estimate,
+    // ci.lower / ci.upper, p_value, standard_error, confidence, automation_tier, source_text.
+    const DEMO_FIXTURE = [
+      {
+        effect_type: "HR",
+        point_estimate: 0.82,
+        ci: { lower: 0.71, upper: 0.95 },
+        p_value: 0.008,
+        standard_error: 0.074,
+        confidence: 0.91,
+        automation_tier: "T1",
+        source_text: "Cardiovascular death or worsening heart failure occurred in 415 (19.4%) empagliflozin vs 511 (24.7%) placebo patients (HR 0.82, 95% CI 0.71–0.95, p=0.008). DEMO — adapted from EMPEROR-Preserved (Anker 2021).",
+      },
+      {
+        effect_type: "OR",
+        point_estimate: 0.74,
+        ci: { lower: 0.58, upper: 0.94 },
+        p_value: 0.013,
+        standard_error: 0.122,
+        confidence: 0.85,
+        automation_tier: "T1",
+        source_text: "Major adverse cardiac events: OR 0.74 (95% CI 0.58 to 0.94, p=0.013) for ezetimibe + simvastatin vs simvastatin alone (n=2410). DEMO — adapted from IMPROVE-IT (Cannon 2015).",
+      },
+      {
+        effect_type: "RR",
+        point_estimate: 0.79,
+        ci: { lower: 0.66, upper: 0.95 },
+        p_value: 0.011,
+        standard_error: 0.091,
+        confidence: 0.88,
+        automation_tier: "T1",
+        source_text: "Hospitalisation for heart failure or cardiovascular death: RR 0.79 (95% CI 0.66–0.95, p=0.011) dapagliflozin vs placebo (n=8474). DEMO — adapted from DAPA-HF (McMurray 2019).",
+      },
+    ];
+
+    const demoBadge  = document.getElementById("demo-badge");
+    const demoBanner = document.getElementById("demo-banner");
+    const liveBanner = document.getElementById("live-banner");
+    const btnEnterDemo = document.getElementById("btn-enter-demo");
+    const btnExitDemo  = document.getElementById("btn-exit-demo");
+
+    function setDemoMode(on) {
+      DEMO_MODE = on;
+      demoBadge.style.display  = on ? "inline" : "none";
+      liveBanner.style.display = on ? "block"  : "none";
+      // When entering demo mode, hide the "offline" banner.
+      // When exiting, show it again only if the backend is still unreachable.
+      if (on) {
+        demoBanner.style.display = "none";
+      } else {
+        const offline = apiStatus.classList.contains("err");
+        demoBanner.style.display = offline ? "block" : "none";
+      }
+    }
+
+    btnEnterDemo.addEventListener("click", () => {
+      setDemoMode(true);
+      // Auto-run with fixture so the user immediately sees sample results.
+      runDemo();
+    });
+    btnExitDemo.addEventListener("click", () => {
+      setDemoMode(false);
+      // Re-probe so the pill is up to date.
+      probeAPI();
+    });
+
+    function runDemo() {
+      resBody.innerHTML = "";
+      const ext = DEMO_FIXTURE;
+      LAST_EXTRACTIONS = ext;
+      window.LAST_EXTRACTIONS = ext;
+      renderRegexRows(ext);
+      renderConsensus(ext, null);
+      drawConfidenceBar(ext);
+    }
+    // ── End demo mode ────────────────────────────────────────────────────────
+
     function esc(s) {
       return String(s == null ? "" : s)
         .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -199,10 +294,14 @@
         const j = await r.json();
         apiStatus.textContent = `rct-extractor v${j.version || "?"}`;
         apiStatus.className = "status-pill ok";
+        // Backend came back online — hide the offline banner (and live-banner if not in demo).
+        demoBanner.style.display = "none";
       } catch (e) {
         if (e.name !== "AbortError") {
-          apiStatus.textContent = "rct-extractor not reachable";
+          apiStatus.textContent = "Live backend offline";
           apiStatus.className = "status-pill err";
+          // Show the demo offer only when NOT already in demo mode.
+          if (!DEMO_MODE) demoBanner.style.display = "block";
         }
       } finally {
         clearTimeout(timeoutId);
@@ -409,6 +508,9 @@
     }
 
     async function run() {
+      // Demo-mode fast path: skip network entirely, render fixture.
+      if (DEMO_MODE) { runDemo(); return; }
+
       btnRun.disabled = true;
       btnRun.textContent = "Extracting…";
       try {

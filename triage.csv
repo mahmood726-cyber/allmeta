@@ -1,5 +1,5 @@
 app,tier,auto_tier,kind,confidence,stub_count,test_count,has_r_parity,last_touched_days,total_size_kb,is_hub_linked,featured_rank,reasons
-rct-extractor,4,4,non-numerical,medium,0,0,False,0,32.99,True,,runtime_health=NEEDS-SERVICE
+rct-extractor,3,3,non-numerical,medium,0,0,False,0,38.3,True,,no tests | no README
 local-ai,2,2,informational,high,0,1,False,0,12.52,True,,working — no flags | override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type.
 webr-studio,3,3,numerical,medium,0,0,False,0,26.91,True,,no tests | no R-parity test | no README
 local-install,2,2,informational,high,0,1,False,0,13.26,True,,working — no flags | override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type.

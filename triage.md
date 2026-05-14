@@ -2,14 +2,14 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T05:23:13Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-14T05:31:55Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
 - Tier 1 — Validated: 10
 - Tier 2 — Working: 20
-- Tier 3 — Polish needed: 33
-- Tier 4 — Hardening priority: 1
+- Tier 3 — Polish needed: 34
+- Tier 4 — Hardening priority: 0
 - Tier 5 — Active rebuild: 2
 
 ## Tier 5 — Active rebuild (2)
@@ -17,11 +17,7 @@ Generated: 2026-05-14T05:23:13Z · scanner v0.1.0 · 66 apps
 - **IPD-Meta-Pro** — stub_count=64 (>= 6)
 - **prisma-checklist** — stub_count=13 (>= 6)
 
-## Tier 4 — Hardening priority (1)
-
-- **rct-extractor** — runtime_health=NEEDS-SERVICE
-
-## Tier 3 — Polish needed (33)
+## Tier 3 — Polish needed (34)
 
 - **bayesian-ma** — no R-parity test · no README
 - **bayesian-mcmc** — no tests · no R-parity test · no README
@@ -51,6 +47,7 @@ Generated: 2026-05-14T05:23:13Z · scanner v0.1.0 · 66 apps
 - **proportion-ma** — no tests · no R-parity test · no README
 - **pubbias-tests** — no tests · no R-parity test · no README
 - **quadas-2** — no tests · no README
+- **rct-extractor** — no tests · no README
 - **Truthcert1** — no tests · no README · override applied: TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **tsa** — no R-parity test · no README
 - **webr-studio** — no tests · no R-parity test · no README

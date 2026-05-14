@@ -109,7 +109,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "runtime_health": "OK",
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 653.16
@@ -1577,12 +1577,13 @@
       "tier": 3
     },
     "rct-extractor": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "runtime_health=NEEDS-SERVICE"
+        "no tests",
+        "no README"
       ],
       "signals": {
         "category": "Screening & Extraction",
@@ -1596,12 +1597,12 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "runtime_health": "NEEDS-SERVICE",
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
-        "total_size_kb": 32.99
+        "total_size_kb": 38.3
       },
-      "tier": 4
+      "tier": 3
     },
     "rob-traffic-light": {
       "auto_tier": 2,
@@ -1883,13 +1884,13 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-14T05:23:13Z",
+  "generated_at": "2026-05-14T05:31:55Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 10,
     "tier_2": 20,
-    "tier_3": 33,
-    "tier_4": 1,
+    "tier_3": 34,
+    "tier_4": 0,
     "tier_5": 2,
     "total": 66
   }

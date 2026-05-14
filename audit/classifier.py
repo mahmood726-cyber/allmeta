@@ -19,6 +19,9 @@ BENIGN_ERROR_PATTERNS = [
     re.compile(r"Content Security Policy", re.IGNORECASE),
     re.compile(r"favicon\.ico", re.IGNORECASE),
     re.compile(r"Failed to load resource.*(?:127\.0\.0\.1|localhost):", re.IGNORECASE),
+    # ERR_CONNECTION_REFUSED is expected when a local-backend probe (health check) fires
+    # at page load and the optional service isn't running. It's not an app bug.
+    re.compile(r"net::ERR_CONNECTION_REFUSED", re.IGNORECASE),
 ]
 
 
