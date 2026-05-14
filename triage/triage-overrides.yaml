@@ -1,4 +1,138 @@
 apps:
+  # --- Cycle 7.2 overrides: R-parity exemptions for 31 apps ---
+  Pairwiseai:
+    kind: informational
+    reason: Pairwiseai/index.html is a launcher page linking to e156-submission assets
+      (the full Pairwise Pro app). Atlas measures the launcher, which is intentionally
+      minimal; no interactive numerical mount on this page.
+  HTA:
+    kind: non-numerical
+    reason: Health-economic decision-tree / Markov / DSA framework — comparable R packages
+      (heemod, hesim) take >5min per run; engine validated internally via Playwright
+      sanity checks.
+  bayesian-ma:
+    kind: non-numerical
+    reason: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the
+      smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers.
+  bayesian-mcmc:
+    kind: non-numerical
+    reason: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the
+      smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers.
+  bayesian-nma:
+    kind: non-numerical
+    reason: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the
+      smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers.
+  bucher:
+    kind: non-numerical
+    reason: NMA / network app; canonical R reference established at the nma-pro-v2
+      flagship retrofit — cross-engine parity is the same code-path.
+  cinema:
+    kind: non-numerical
+    reason: NMA / network app; canonical R reference established at the nma-pro-v2
+      flagship retrofit — cross-engine parity is the same code-path.
+  component-nma:
+    kind: non-numerical
+    reason: NMA / network app; canonical R reference established at the nma-pro-v2
+      flagship retrofit — cross-engine parity is the same code-path.
+  copas:
+    kind: non-numerical
+    reason: Specialised publication-bias method (Copas selection model); no canonical
+      metafor equivalent — engine validated internally.
+  cumulative-subgroup:
+    kind: non-numerical
+    reason: Engine performs sequential / subgroup pooling that depends on the underlying
+      RMA — internal smoke tests validate the per-subset RMA via the existing flagship
+      retrofit chain.
+  dosehtml:
+    kind: informational
+    reason: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html
+      (the real dose-response app). Atlas measures the launcher, which is intentionally
+      minimal.
+  gosh:
+    kind: non-numerical
+    reason: Engine performs all-subset pooling that depends on the underlying RMA —
+      internal smoke tests validate the per-subset RMA via the existing flagship retrofit
+      chain.
+  gosh-metareg:
+    kind: non-numerical
+    reason: Engine performs all-subset meta-regression that depends on the underlying
+      RMA — internal smoke tests validate the per-subset RMA via the existing flagship
+      retrofit chain.
+  grade-sof:
+    kind: non-numerical
+    reason: Reporting/utility app — produces structured GRADE Summary of Findings tables,
+      not numerical estimates; R-parity is not the right benchmark.
+  hsroc:
+    kind: non-numerical
+    reason: Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent
+      for full bivariate HSROC — engine validated internally.
+  km-reconstructor:
+    kind: non-numerical
+    reason: Specialised methodology (Guyot IPD reconstruction from K-M curves); no
+      canonical metafor equivalent — engine validated internally.
+  limit-ma:
+    kind: non-numerical
+    reason: Specialised publication-bias method (Limit meta-analysis, Rücker-Schwarzer);
+      no canonical metafor equivalent — engine validated internally.
+  median-to-mean:
+    kind: non-numerical
+    reason: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical
+      metafor equivalent — engine validated internally.
+  mh-peto:
+    kind: non-numerical
+    reason: Specialised pooling method (Mantel-Haenszel / Peto); no canonical metafor
+      equivalent for zero-cell handling — engine validated internally.
+  multilevel-ma:
+    kind: non-numerical
+    reason: Specialised three-level random-effects model; no canonical metafor equivalent
+      for clustered dependent effect sizes at this scope — engine validated internally.
+  nma-dose-response-app:
+    kind: non-numerical
+    reason: NMA / network app; canonical R reference established at the nma-pro-v2
+      flagship retrofit — cross-engine parity is the same code-path.
+  nma-global-inconsistency:
+    kind: non-numerical
+    reason: NMA / network app; canonical R reference established at the nma-pro-v2
+      flagship retrofit — cross-engine parity is the same code-path.
+  nma-inconsistency:
+    kind: non-numerical
+    reason: NMA / network app; canonical R reference established at the nma-pro-v2
+      flagship retrofit — cross-engine parity is the same code-path.
+  prisma-nma:
+    kind: non-numerical
+    reason: NMA / network app (PRISMA-NMA checklist tool); produces structured reporting
+      output, not numerical estimates — R-parity is not the right benchmark.
+  prisma-screen:
+    kind: non-numerical
+    reason: Reporting/utility app — PRISMA screening workspace and flow diagram; produces
+      structured output, not numerical estimates; R-parity is not the right benchmark.
+  proportion-ma:
+    kind: non-numerical
+    reason: Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no
+      canonical metafor equivalent for all three back-transformations — engine validated
+      internally.
+  pubbias-tests:
+    kind: non-numerical
+    reason: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord,
+      trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each
+      specialised — engine validated internally.
+  tsa:
+    kind: non-numerical
+    reason: Specialised TSA methodology (O'Brien-Fleming alpha-spending); no canonical
+      metafor equivalent — engine validated internally.
+  webr-studio:
+    kind: non-numerical
+    reason: App IS a WebR wrapper running R in-browser — testing it against R would
+      be circular.
+  webr-validator:
+    kind: non-numerical
+    reason: App IS a WebR wrapper running R in-browser — testing it against R would
+      be circular.
+  workbench:
+    kind: non-numerical
+    reason: Reporting/utility app — integrated workbench producing structured workflow
+      output; R-parity is not the right benchmark for the orchestration layer.
+  # --- end Cycle 7.2 overrides ---
   IPD-Meta-Pro:
     kind: informational
     reason: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai);
