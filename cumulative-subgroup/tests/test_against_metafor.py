@@ -7,14 +7,15 @@ The JS engine (cumulative-subgroup/index.html) implements:
   - Final step == full-data RE pool.
 
 The R script (cumul-tiny.R) calls metafor::cumul(rma(yi, vi, method="PM"),
-order = year) and re-computes CI bounds using exactly 1.96 (matching JS).
+order = year) and re-computes CI bounds using qnorm(0.975) exactly
+(matching the JS engine after Cycle 7.1; was 1.96 before).
 The fixture has Q < df so tau² = 0 in both engines (PM floor).
 
 Values captured from a single Rscript run on cumul-tiny.csv (2026-05-14, R 4.5.2):
   {"mu_final":-0.3432098765432097,"se_final":0.08606629658238701,
-   "lo_final":-0.5118998178446882,"hi_final":-0.1745199352417311,
+   "lo_final":-0.511896718127431,"hi_final":-0.1745230349589884,
    "mu_penu":-0.3403508771929825,"se_penu":0.1025978352085154,
-   "lo_penu":-0.5414426342016726,"hi_penu":-0.1392591201842923,
+   "lo_penu":-0.5414389390934481,"hi_penu":-0.1392628152925168,
    "tau2":0,"i2":0,"Q":1.672942386831276,"k":5}
 
 Input: 5 studies, columns: study, year, yi, vi.
@@ -35,8 +36,8 @@ def test_cumulative_pm_matches_metafor_final():
         # Captured from R (cumul-tiny.R on cumul-tiny.csv, 2026-05-14)
         "mu_final": -0.3432098765432097,
         "se_final":  0.08606629658238701,
-        "lo_final": -0.5118998178446882,
-        "hi_final": -0.1745199352417311,
+        "lo_final": -0.511896718127431,
+        "hi_final": -0.1745230349589884,
         "tau2":      0.0,
         "i2":        0.0,
         "Q":         1.672942386831276,
@@ -56,8 +57,8 @@ def test_cumulative_pm_matches_metafor_penultimate():
         # Captured from R (cumul-tiny.R on cumul-tiny.csv, 2026-05-14)
         "mu_penu": -0.3403508771929825,
         "se_penu":  0.1025978352085154,
-        "lo_penu": -0.5414426342016726,
-        "hi_penu": -0.1392591201842923,
+        "lo_penu": -0.5414389390934481,
+        "hi_penu": -0.1392628152925168,
     }
     assert_r_parity(
         expected,

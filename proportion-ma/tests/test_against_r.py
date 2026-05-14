@@ -16,8 +16,8 @@ Values captured from a single Rscript run on prop-tiny.csv (2026-05-14, R 4.5.2)
    "Q":0.1670466754710336,
    "i2":0,
    "poolP":0.08581328456303973,
-   "poolLo":0.06719966814974229,
-   "poolHi":0.1089803243694416,
+   "poolLo":0.0671999729960778,
+   "poolHi":0.1089798521337489,
    "k":5}
 
 Input: 5 rows, columns: study,events,total.
@@ -41,8 +41,8 @@ def test_propma_logit_pm_matches_r():
         "Q":       0.1670466754710336,
         "i2":      0.0,
         "poolP":   0.08581328456303973,
-        "poolLo":  0.06719966814974229,
-        "poolHi":  0.1089803243694416,
+        "poolLo":  0.0671999729960778,
+        "poolHi":  0.1089798521337489,
         "k":       5,
     }
     assert_r_parity(

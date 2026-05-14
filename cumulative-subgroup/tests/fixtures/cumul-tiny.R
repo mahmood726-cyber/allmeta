@@ -32,23 +32,24 @@ res  <- rma(yi, vi, method = "PM")
 ## ---- cumulative estimates (ordered by year) ----
 cum  <- cumul(res, order = yr)
 
-## The JS engine uses exactly 1.96 for 95% CI (not qnorm(0.975)=1.95996...).
-## To ensure tol=1e-6 parity on CI bounds, recompute from estimate+se with 1.96.
-z196 <- 1.96
+## Cycle 7.1 (2026-05-14): JS engine now uses qnorm(0.975) exact, not 1.96.
+## To preserve tol=1e-6 parity on CI bounds, this script must use the same
+## exact constant.  The old hard-coded 1.96 introduced ~1.3e-5 drift.
+z975 <- qnorm(0.975)
 
 ## Last (= full pool) step
 last <- k
 mu_final  <- as.numeric(cum$estimate[last])
 se_final  <- as.numeric(cum$se[last])
-lo_final  <- mu_final - z196 * se_final
-hi_final  <- mu_final + z196 * se_final
+lo_final  <- mu_final - z975 * se_final
+hi_final  <- mu_final + z975 * se_final
 
 ## Penultimate step (k-1 studies)
 penult <- k - 1L
 mu_penu  <- as.numeric(cum$estimate[penult])
 se_penu  <- as.numeric(cum$se[penult])
-lo_penu  <- mu_penu - z196 * se_penu
-hi_penu  <- mu_penu + z196 * se_penu
+lo_penu  <- mu_penu - z975 * se_penu
+hi_penu  <- mu_penu + z975 * se_penu
 
 ## tau2 and I2 from the full-data fit
 tau2_full <- as.numeric(res$tau2)

@@ -73,8 +73,8 @@ i2   <- if (Q > df) 100 * (Q - df) / Q else 0
 
 ## ---- back-transform ----
 poolP <- 1 / (1 + exp(-mu_re))
-poolLo <- 1 / (1 + exp(-(mu_re - 1.96 * seRE)))
-poolHi <- 1 / (1 + exp(-(mu_re + 1.96 * seRE)))
+poolLo <- 1 / (1 + exp(-(mu_re - qnorm(0.975) * seRE)))
+poolHi <- 1 / (1 + exp(-(mu_re + qnorm(0.975) * seRE)))
 
 cat(toJSON(list(
   mu_re    = as.numeric(mu_re),
