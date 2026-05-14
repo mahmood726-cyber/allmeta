@@ -137,4 +137,65 @@ test.describe('influence retrofit sanity', () => {
     expect(obj.loo_estimates.length, 'loo_estimates should have at least 1 entry').toBeGreaterThan(0);
   });
 
+  // Cycle 7.13: real JS-engine R-parity. Cycle 7.13 also upgraded influence's
+  // τ² from DerSimonian-Laird to REML (advanced-stats.md "Never use DL for
+  // k<10"), aligning the JS engine to metafor::rma.uni's default.
+  test('JS engine R-parity vs metafor REML + leave1out (inf-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'Alpha',   yi:  0.20, vi: 0.040 },
+      { study: 'Beta',    yi: -0.10, vi: 0.030 },
+      { study: 'Gamma',   yi:  0.15, vi: 0.025 },
+      { study: 'Delta',   yi:  0.05, vi: 0.020 },
+      { study: 'Epsilon', yi:  0.80, vi: 0.018 },
+    ];
+    const expected = {
+      b:     0.2282308054465,
+      se:    0.1606687989381,
+      tau2:  0.1029364619671,
+      Q:    23.286444141689,
+      k:     5,
+      loo1_estimate: 0.232349108847,
+      loo1_se:       0.2013577851329,
+      loo1_tau2:     0.1390622375901,
+      loo1_Q:       23.155279503106,
+    };
+    const TOL = 1e-6;
+    // JS Fisher-scoring REML may have small convergence drift vs metafor's
+    // Newton-style solver on tau²-dependent fields; allow 1e-4 there.
+    const TAU_TOL = 1e-4;
+
+    await page.goto(INF_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastInfluence && window._almLastInfluence() !== null
+         && window._almLastDiag && window._almLastDiag().length > 0,
+      { timeout: 5_000 }
+    );
+
+    const result = await page.evaluate(() => ({
+      full: window._almLastInfluence(),
+      diag: window._almLastDiag(),
+    }));
+    const full = result.full;
+    const loo1 = result.diag[0];
+
+    expect(result.diag.length, 'k mismatch').toBe(expected.k);
+    // Q is method-agnostic; always exact
+    expect(Math.abs(full.Q - expected.Q),
+      `overall Q: ${full.Q} vs metafor=${expected.Q}`).toBeLessThan(TOL);
+    // REML-dependent: looser tolerance
+    expect(Math.abs(full.tau2 - expected.tau2),
+      `overall tau2: ${full.tau2} vs metafor=${expected.tau2}`).toBeLessThan(TAU_TOL);
+    expect(Math.abs(full.mu - expected.b),
+      `overall mu: ${full.mu} vs metafor b=${expected.b}`).toBeLessThan(TAU_TOL);
+    expect(Math.abs(full.seMu - expected.se),
+      `overall se: ${full.seMu} vs metafor se=${expected.se}`).toBeLessThan(TAU_TOL);
+    // LOO row 1 (Alpha dropped)
+    expect(Math.abs(loo1.loo_mu - expected.loo1_estimate),
+      `loo1 mu: ${loo1.loo_mu} vs metafor=${expected.loo1_estimate}`).toBeLessThan(TAU_TOL);
+    expect(Math.abs(loo1.loo_seMu - expected.loo1_se),
+      `loo1 se: ${loo1.loo_seMu} vs metafor=${expected.loo1_se}`).toBeLessThan(TAU_TOL);
+  });
+
 });
