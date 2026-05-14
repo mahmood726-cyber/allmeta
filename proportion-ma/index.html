@@ -16,6 +16,7 @@
               --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
               --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
     }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -46,22 +47,36 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Proportion MA — single-arm pooling</h1>
-    <p>Pool proportions (or incidences / event rates) across single-arm studies with three transformations. Random-effects DL / REML across studies. Clopper-Pearson per-study CIs; back-transformed pooled CI.</p>
+    <p>Pool proportions (or incidences / event rates) across single-arm studies with three transformations. Random-effects DL / PM across studies. Clopper-Pearson per-study CIs; back-transformed pooled CI.</p>
   </header>
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
-      <label>
-        <span>Studies — <code>events, n, label (optional)</code></span>
+
+      <!-- csv-upload mount: file picker for events,total,label CSV files -->
+      <div id="alm-csv-mount"></div>
+
+      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
+        <span>Studies — <code>events, total, label (optional)</code></span>
         <textarea id="src">12, 150, Study A
 8, 90, Study B
 20, 220, Study C
@@ -80,7 +95,7 @@
         <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G et al. <em>Res Synth Methods</em> 2019;10:476-483 showed it can produce nonsensical back-transformed pooled CIs in some settings; for rare events prefer logit with continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
       </label>
       <label>
-        <span>Random-effects τ² estimator</span>
+        <span>Random-effects <span data-gloss="tau2">&tau;&sup2;</span> estimator</span>
         <select id="tau-est">
           <option value="PM" selected>Paule-Mandel</option>
           <option value="DL">DerSimonian-Laird</option>
@@ -88,7 +103,13 @@
         </select>
         <span class="hint">Per advanced-stats.md, DL is biased low for k&lt;10 — Paule-Mandel is the safer default.</span>
       </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Pool</button>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.25rem">Pool</button>
+
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
 
     <section class="panel">
@@ -102,81 +123,95 @@
       <div id="het"></div>
       <h2 style="margin-top:0.8rem">Forest plot</h2>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of proportions"></svg>
+
+      <!-- chart-download mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
+        <div id="alm-chart-mount"></div>
+      </div>
+
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
     </section>
   </main>
   <footer>
-    Freeman-Tukey: <code>FT = ½(arcsin√(x/(n+1)) + arcsin√((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer et al. <em>Res Synth Methods</em> 2019;10:476-483):</strong> FT back-transformed pooled CI can be nonsensical in some settings; prefer logit + continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/(x+0.5) + 1/(n-x+0.5)</code> with Cochrane Handbook §10.4.4 / Sweeting 2004 correction at zeros (cn=n+1). Clopper-Pearson: <code>qbeta(α/2, x, n-x+1)</code>.
+    Freeman-Tukey: <code>FT = &frac12;(arcsin&radic;(x/(n+1)) + arcsin&radic;((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer et al. <em>Res Synth Methods</em> 2019;10:476-483):</strong> FT back-transformed pooled CI can be nonsensical in some settings; prefer logit + continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/(x+0.5) + 1/(n-x+0.5)</code> with Cochrane Handbook §10.4.4 / Sweeting 2004 correction at zeros (cn=n+1). Clopper-Pearson: <code>qbeta(&alpha;/2, x, n-x+1)</code>. R-parity: logit+PM matches <code>metafor::escalc(measure="PLO")</code> + <code>rma(method="PM")</code> to tolerance 1e-6 (see <code>tests/fixtures/prop-tiny.R</code>).
   </footer>
   <script>
-    // --- parsing ---
+  (function () {
+    'use strict';
+
+    // ---- engine (unchanged from pre-retrofit) ----
+
     function parseTable(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const parts = l.split(/,/).map(s => s.trim());
-        const x = parseInt(parts[0], 10);
-        const n = parseInt(parts[1], 10);
+      return text.trim().split(/\n/).map(function (l, i) {
+        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+        var x = parseInt(parts[0], 10);
+        var n = parseInt(parts[1], 10);
         if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
-        return { x, n, label: parts[2] || `Study ${i + 1}` };
+        return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
       }).filter(Boolean);
     }
 
     // --- inverse beta (Clopper-Pearson) via relation to F-distribution approximation ---
-    // We use a simple bisection on incomplete beta (regularized via Lentz's method).
     function logBeta(a, b) { return logGamma(a) + logGamma(b) - logGamma(a + b); }
 
     function logGamma(x) {
-      const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
-      let sum = 1.000000000190015;
-      let y = x;
-      for (let i = 0; i < 6; i++) { y += 1; sum += c[i] / y; }
+      var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+      var sum = 1.000000000190015;
+      var y = x;
+      for (var i = 0; i < 6; i++) { y += 1; sum += c[i] / y; }
       return (-(x + 5.5) + (x + 0.5) * Math.log(x + 5.5) + Math.log(2.5066282746310005 * sum / x));
     }
 
-    // Regularized incomplete beta I_x(a, b) via continued fraction (Numerical Recipes style).
     function betaIncReg(x, a, b) {
       if (x <= 0) return 0;
       if (x >= 1) return 1;
-      const bt = Math.exp(-logBeta(a, b) + a * Math.log(x) + b * Math.log(1 - x));
+      var bt = Math.exp(-logBeta(a, b) + a * Math.log(x) + b * Math.log(1 - x));
       if (x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
       return 1 - bt * betacf(1 - x, b, a) / b;
     }
 
     function betacf(x, a, b) {
-      const MAX = 200, EPS = 3e-7, FPMIN = 1e-30;
-      const qab = a + b, qap = a + 1, qam = a - 1;
-      let c = 1, d = 1 - qab * x / qap;
+      var MAX = 200, EPS = 3e-7, FPMIN = 1e-30;
+      var qab = a + b, qap = a + 1, qam = a - 1;
+      var c = 1, d = 1 - qab * x / qap;
       if (Math.abs(d) < FPMIN) d = FPMIN;
       d = 1 / d;
-      let h = d;
-      for (let m = 1; m <= MAX; m++) {
-        const m2 = 2 * m;
-        let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      var h = d;
+      for (var m = 1; m <= MAX; m++) {
+        var m2 = 2 * m;
+        var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
         d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
         c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
         d = 1 / d; h *= d * c;
         aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
         d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
         c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
-        d = 1 / d; const del = d * c; h *= del;
+        d = 1 / d; var del = d * c; h *= del;
         if (Math.abs(del - 1) < EPS) return h;
       }
       return h;
     }
 
-    // qbeta (inverse regularized incomplete beta) via bisection
     function qbeta(p, a, b) {
       if (p <= 0) return 0;
       if (p >= 1) return 1;
-      let lo = 0, hi = 1;
-      for (let i = 0; i < 100; i++) {
-        const mid = (lo + hi) / 2;
-        const q = betaIncReg(mid, a, b);
+      var lo = 0, hi = 1;
+      for (var i = 0; i < 100; i++) {
+        var mid = (lo + hi) / 2;
+        var q = betaIncReg(mid, a, b);
         if (q < p) lo = mid; else hi = mid;
         if (hi - lo < 1e-8) break;
       }
       return (lo + hi) / 2;
     }
 
-    function clopperPearson(x, n, alpha = 0.05) {
+    function clopperPearson(x, n, alpha) {
+      alpha = alpha === undefined ? 0.05 : alpha;
       if (x === 0) return [0, qbeta(1 - alpha / 2, x + 1, n - x)];
       if (x === n) return [qbeta(alpha / 2, x, n - x + 1), 1];
       return [qbeta(alpha / 2, x, n - x + 1), qbeta(1 - alpha / 2, x + 1, n - x)];
@@ -184,42 +219,33 @@
 
     // --- transforms ---
     function ftTransform(x, n) {
-      const asin1 = Math.asin(Math.sqrt(x / (n + 1)));
-      const asin2 = Math.asin(Math.sqrt((x + 1) / (n + 1)));
+      var asin1 = Math.asin(Math.sqrt(x / (n + 1)));
+      var asin2 = Math.asin(Math.sqrt((x + 1) / (n + 1)));
       return { y: 0.5 * (asin1 + asin2), v: 1 / (4 * n + 2) };
     }
 
     function ftBack(y, n) {
-      // Barendregt-Doi (2013) double-arcsine back-transform using the harmonic mean of n.
-      // Guarded against sin(2y) ≈ 0 which would otherwise divide by zero.
-      const s = Math.sin(2 * y);
-      if (Math.abs(s) < 1e-8 || !Number.isFinite(n) || n <= 0) return Math.sin(y) ** 2;
-      const inner = s + (s - 1 / s) / n;
-      const rad = 1 - inner * inner;
-      if (rad < 0 || !Number.isFinite(rad)) return Math.sin(y) ** 2;
+      var s = Math.sin(2 * y);
+      if (Math.abs(s) < 1e-8 || !Number.isFinite(n) || n <= 0) return Math.sin(y) * Math.sin(y);
+      var inner = s + (s - 1 / s) / n;
+      var rad = 1 - inner * inner;
+      if (rad < 0 || !Number.isFinite(rad)) return Math.sin(y) * Math.sin(y);
       return 0.5 * (1 - Math.sign(Math.cos(2 * y)) * Math.sqrt(rad));
     }
 
-    function ftBackSimple(y) {
-      // Simple back: p = sin(y)^2 — fallback / coarse approximation
-      return Math.sin(y) ** 2;
-    }
-
     function harmonicMean(ns) {
-      const v = ns.filter(n => n > 0);
+      var v = ns.filter(function (n) { return n > 0; });
       if (!v.length) return NaN;
-      return v.length / v.reduce((a, b) => a + 1 / b, 0);
+      return v.length / v.reduce(function (a, b) { return a + 1 / b; }, 0);
     }
 
     function logitTransform(x, n) {
-      // V10-03 — Cochrane Handbook §10.4.4 / Sweeting 2004 continuity correction:
-      // at extremes (x=0 or x=n) add 0.5 to BOTH numerator and complement, and 1
-      // to denominator. Variance becomes 1/(x+0.5) + 1/(n-x+0.5). Matches
-      // metafor::escalc(measure="PLO"). Non-extreme counts are uncorrected.
-      const extreme = (x === 0) || (x === n);
-      const cx = extreme ? x + 0.5 : x;
-      const cn = extreme ? n + 1 : n;
-      const p = cx / cn;
+      // Cochrane Handbook §10.4.4 / Sweeting 2004: continuity correction at extremes.
+      // Matches metafor::escalc(measure="PLO").
+      var extreme = (x === 0) || (x === n);
+      var cx = extreme ? x + 0.5 : x;
+      var cn = extreme ? n + 1 : n;
+      var p = cx / cn;
       return { y: Math.log(p / (1 - p)), v: 1 / cx + 1 / (cn - cx) };
     }
 
@@ -227,152 +253,314 @@
       return 1 / (1 + Math.exp(-y));
     }
 
-    // --- inverse-variance pooling + DL τ² ---
-    function pool(rows, tauEst = "DL") {
-      const w = rows.map(r => 1 / r.v);
-      const sw = w.reduce((a, b) => a + b, 0);
-      const mu_fe = rows.reduce((a, r, i) => a + w[i] * r.y, 0) / sw;
-      const Q = rows.reduce((a, r, i) => a + w[i] * (r.y - mu_fe) ** 2, 0);
-      const df = rows.length - 1;
-      let tau2 = 0;
-      if (tauEst === "DL") {
-        const swSq = rows.reduce((a, r, i) => a + w[i] * w[i], 0);
+    // --- inverse-variance pooling + DL or PM tau2 ---
+    function pool(rows, tauEst) {
+      var w = rows.map(function (r) { return 1 / r.v; });
+      var sw = w.reduce(function (a, b) { return a + b; }, 0);
+      var mu_fe = rows.reduce(function (a, r, i) { return a + w[i] * r.y; }, 0) / sw;
+      var Q = rows.reduce(function (a, r, i) { return a + w[i] * (r.y - mu_fe) * (r.y - mu_fe); }, 0);
+      var df = rows.length - 1;
+      var tau2 = 0;
+      if (tauEst === 'DL') {
+        var swSq = rows.reduce(function (a, r, i) { return a + w[i] * w[i]; }, 0);
         tau2 = Math.max(0, (Q - df) / (sw - swSq / sw));
-      } else if (tauEst === "PM") {
+      } else if (tauEst === 'PM') {
         // Paule-Mandel iteration
-        let tau = 0;
-        for (let it = 0; it < 50; it++) {
-          const wi = rows.map(r => 1 / (r.v + tau));
-          const swi = wi.reduce((a, b) => a + b, 0);
-          const mu_t = rows.reduce((a, r, i) => a + wi[i] * r.y, 0) / swi;
-          const Qt = rows.reduce((a, r, i) => a + wi[i] * (r.y - mu_t) ** 2, 0);
-          const dQ = rows.reduce((a, r, i) => a + wi[i] * wi[i] * (r.y - mu_t) ** 2, 0);
-          const adj = (Qt - df) / dQ;
+        var tau = 0;
+        for (var it = 0; it < 50; it++) {
+          var wi = rows.map(function (r) { return 1 / (r.v + tau); });
+          var swi = wi.reduce(function (a, b) { return a + b; }, 0);
+          var mu_t = rows.reduce(function (a, r, i) { return a + wi[i] * r.y; }, 0) / swi;
+          var Qt = rows.reduce(function (a, r, i) { return a + wi[i] * (r.y - mu_t) * (r.y - mu_t); }, 0);
+          var dQ = rows.reduce(function (a, r, i) { return a + wi[i] * wi[i] * (r.y - mu_t) * (r.y - mu_t); }, 0);
+          var adj = (Qt - df) / dQ;
           tau = Math.max(0, tau + adj);
           if (Math.abs(adj) < 1e-8) break;
         }
         tau2 = tau;
       }
-      const wRE = rows.map(r => 1 / (r.v + tau2));
-      const swRE = wRE.reduce((a, b) => a + b, 0);
-      const mu_re = rows.reduce((a, r, i) => a + wRE[i] * r.y, 0) / swRE;
-      const seRE = Math.sqrt(1 / swRE);
-      const i2 = Q > df ? 100 * (Q - df) / Q : 0;
-      return { mu_re, seRE, tau2, Q, df, i2, weights: wRE };
+      var wRE = rows.map(function (r) { return 1 / (r.v + tau2); });
+      var swRE = wRE.reduce(function (a, b) { return a + b; }, 0);
+      var mu_re = rows.reduce(function (a, r, i) { return a + wRE[i] * r.y; }, 0) / swRE;
+      var seRE = Math.sqrt(1 / swRE);
+      var i2 = Q > df ? 100 * (Q - df) / Q : 0;
+      return { mu_re: mu_re, seRE: seRE, tau2: tau2, Q: Q, df: df, i2: i2, weights: wRE };
     }
 
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
-    function fmtPct(x, d = 1) { return Number.isFinite(x) ? (100 * x).toFixed(d) + "%" : "—"; }
+    function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
+    function fmtPct(x, d) { d = d === undefined ? 1 : d; return Number.isFinite(x) ? (100 * x).toFixed(d) + '%' : '—'; }
+
+    // ---- axis state (overrideable by axis-controls) ----
+    var _axisState = {};
+
+    // ---- results storage for export ----
+    var _lastResults = null;
 
     function run() {
-      const text = document.getElementById("src").value;
-      const trans = document.getElementById("trans").value;
-      const tauEst = document.getElementById("tau-est").value;
-      const rows = parseTable(text);
-      // V9-05 — DL k<10 banner.
-      const kw = document.getElementById("k-warn");
+      var text = document.getElementById('src').value;
+      var trans = document.getElementById('trans').value;
+      var tauEst = document.getElementById('tau-est').value;
+      var rows = parseTable(text);
+
+      // DL k<10 warning
+      var kw = document.getElementById('k-warn');
       if (kw) {
-        if (tauEst === "DL" && rows.length < 10 && rows.length >= 2) {
-          kw.textContent = "k = " + rows.length + " — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Switch to Paule-Mandel for inference.";
-          kw.style.display = "block";
+        if (tauEst === 'DL' && rows.length < 10 && rows.length >= 2) {
+          kw.textContent = 'k = ' + rows.length + ' — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Switch to Paule-Mandel for inference.';
+          kw.style.display = 'block';
         } else {
-          kw.style.display = "none";
+          kw.style.display = 'none';
         }
       }
       if (rows.length < 2) {
-        document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 2 studies.</td></tr>`;
+        document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
         return;
       }
+
       // transform
-      const transformed = rows.map(r => {
-        if (trans === "ft") return { ...r, ...ftTransform(r.x, r.n) };
-        if (trans === "logit") return { ...r, ...logitTransform(r.x, r.n) };
-        // raw
-        const p = r.x / r.n;
-        return { ...r, y: p, v: Math.max(p * (1 - p) / r.n, 1e-8) };
+      var transformed = rows.map(function (r) {
+        var t;
+        if (trans === 'ft') t = ftTransform(r.x, r.n);
+        else if (trans === 'logit') t = logitTransform(r.x, r.n);
+        else { var p = r.x / r.n; t = { y: p, v: Math.max(p * (1 - p) / r.n, 1e-8) }; }
+        return Object.assign({}, r, t);
       });
-      const pooled = pool(transformed, tauEst === "FE" ? "DL" : tauEst);
+
+      var effTau = (tauEst === 'FE') ? 'DL' : tauEst;
+      var pooled = pool(transformed, effTau);
+
       // Per-study CIs on proportion scale (Clopper-Pearson)
-      const perStudy = rows.map((r, i) => {
-        const [lo, hi] = clopperPearson(r.x, r.n);
-        const w = pooled.weights[i];
-        return { ...r, p: r.x / r.n, lo, hi, w, rel: 100 * w / pooled.weights.reduce((a, b) => a + b, 0) };
+      var totalW = pooled.weights.reduce(function (a, b) { return a + b; }, 0);
+      var perStudy = rows.map(function (r, i) {
+        var cp = clopperPearson(r.x, r.n);
+        var w = pooled.weights[i];
+        return Object.assign({}, r, { p: r.x / r.n, lo: cp[0], hi: cp[1], w: w, rel: 100 * w / totalW });
       });
-      // Pool back-transform
-      const lo = pooled.mu_re - 1.96 * pooled.seRE;
-      const hi = pooled.mu_re + 1.96 * pooled.seRE;
-      let poolP, poolLo, poolHi;
-      if (trans === "ft") {
-        // Barendregt-Doi (2013) back-transform with harmonic mean of n (guarded fallback).
-        const nH = harmonicMean(rows.map(r => r.n));
-        poolP = ftBack(pooled.mu_re, nH);
+
+      // Back-transform pooled estimate
+      var lo = pooled.mu_re - 1.96 * pooled.seRE;
+      var hi = pooled.mu_re + 1.96 * pooled.seRE;
+      var poolP, poolLo, poolHi;
+      if (trans === 'ft') {
+        var nH = harmonicMean(rows.map(function (r) { return r.n; }));
+        poolP  = ftBack(pooled.mu_re, nH);
         poolLo = ftBack(lo, nH);
         poolHi = ftBack(hi, nH);
-      } else if (trans === "logit") {
-        poolP = logitBack(pooled.mu_re);
+      } else if (trans === 'logit') {
+        poolP  = logitBack(pooled.mu_re);
         poolLo = logitBack(lo);
         poolHi = logitBack(hi);
       } else {
-        poolP = pooled.mu_re;
+        poolP  = pooled.mu_re;
         poolLo = Math.max(0, lo);
         poolHi = Math.min(1, hi);
       }
-      render(perStudy, { poolP, poolLo, poolHi, het: pooled });
+
+      // Store for export
+      _lastResults = {
+        _schema:  'propma-results-v1',
+        transform: trans,
+        tauEstimator: tauEst,
+        k:        rows.length,
+        mu_re:    pooled.mu_re,
+        seRE:     pooled.seRE,
+        tau2:     pooled.tau2,
+        Q:        pooled.Q,
+        df:       pooled.df,
+        i2:       pooled.i2,
+        poolP:    poolP,
+        poolLo:   poolLo,
+        poolHi:   poolHi,
+      };
+
+      render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, het: pooled });
+
+      // URL state
+      if (window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ src: text, trans: trans, tau: tauEst });
+      }
     }
 
-    function render(rows, pooled) {
-      const body = document.getElementById("res-body");
-      const __bodyParts = [""];
-      for (const r of rows) {
-        __bodyParts.push(`<tr><td>${r.label}</td><td>${r.x}/${r.n}</td><td>${fmtPct(r.p)}</td><td>${fmtPct(r.lo)} – ${fmtPct(r.hi)}</td><td>${r.rel.toFixed(1)}%</td></tr>`);
-      }
-      __bodyParts.push(`<tr class="pooled-row"><td><strong>Pooled</strong></td><td>—</td><td><strong>${fmtPct(pooled.poolP)}</strong></td><td><strong>${fmtPct(pooled.poolLo)} – ${fmtPct(pooled.poolHi)}</strong></td><td>100%</td></tr>`);
+    var esc = function (s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]);
+      });
+    };
 
-      const het = document.getElementById("het");
-      het.innerHTML = `τ² = <code>${fmt(pooled.het.tau2, 4)}</code> · Q = <code>${fmt(pooled.het.Q, 2)}</code> (df=${pooled.het.df}) · I² = <code>${pooled.het.i2.toFixed(1)}%</code>`;
+    function render(rows, pooled) {
+      var body = document.getElementById('res-body');
+      var bodyParts = [''];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        bodyParts.push('<tr><td>' + esc(r.label) + '</td><td>' + r.x + '/' + r.n + '</td><td>' + fmtPct(r.p) + '</td><td>' + fmtPct(r.lo) + ' – ' + fmtPct(r.hi) + '</td><td>' + r.rel.toFixed(1) + '%</td></tr>');
+      }
+      bodyParts.push('<tr class="pooled-row"><td><strong>Pooled</strong></td><td>—</td><td><strong>' + fmtPct(pooled.poolP) + '</strong></td><td><strong>' + fmtPct(pooled.poolLo) + ' – ' + fmtPct(pooled.poolHi) + '</strong></td><td>100%</td></tr>');
+      body.innerHTML = bodyParts.join('');
+
+      var het = document.getElementById('het');
+      het.innerHTML = '<span data-gloss="tau2">&tau;&sup2;</span> = <code>' + fmt(pooled.het.tau2, 4) + '</code> &middot; Q = <code>' + fmt(pooled.het.Q, 2) + '</code> (df=' + pooled.het.df + ') &middot; <span data-gloss="i2">I&sup2;</span> = <code>' + pooled.het.i2.toFixed(1) + '%</code>';
 
       drawForest(rows, pooled);
-      body.innerHTML = __bodyParts.join("");
-
     }
 
     function drawForest(rows, pooled) {
-      const svg = document.getElementById("forest");
-      const W = 600, H = Math.max(200, 50 + (rows.length + 1) * 26 + 30);
-      const padL = 160, padR = 30, padT = 20, padB = 40;
-      const plotW = W - padL - padR;
-      const plotH = H - padT - padB;
-      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      const __svgParts = [""];
-      const X = p => padL + p * plotW;
-      // axis
-      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH - 22}" x2="${padL + plotW}" y2="${padT + plotH - 22}" stroke="currentColor" opacity="0.5"/>`);
-      for (let t = 0; t <= 1.0001; t += 0.2) {
-        __svgParts.push(`<line x1="${X(t)}" y1="${padT + plotH - 18}" x2="${X(t)}" y2="${padT + plotH - 26}" stroke="currentColor" opacity="0.5"/>`);
-        __svgParts.push(`<text x="${X(t)}" y="${padT + plotH - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`);
-      }
-      rows.forEach((r, i) => {
-        const y = padT + i * 26 + 10;
-        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.label}</text>`);
-        __svgParts.push(`<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`);
-        const sz = 3 + Math.min(r.rel / 4, 7);
-        __svgParts.push(`<rect x="${X(r.p) - sz}" y="${y - sz}" width="${sz * 2}" height="${sz * 2}" fill="var(--accent)"/>`);
-      });
-      // pooled diamond
-      const py = padT + rows.length * 26 + 18;
-      const px = X(pooled.poolP);
-      const pl = X(pooled.poolLo);
-      const ph = X(pooled.poolHi);
-      __svgParts.push(`<text x="${padL - 10}" y="${py + 4}" text-anchor="end" font-size="11" fill="currentColor" font-weight="600">Pooled</text>`);
-      __svgParts.push(`<polygon points="${pl},${py} ${px},${py - 8} ${ph},${py} ${px},${py + 8}" fill="var(--warn)" opacity="0.9"/>`);
-      svg.innerHTML = __svgParts.join("");
+      var svg = document.getElementById('forest');
+      var W = 600, H = Math.max(200, 50 + (rows.length + 1) * 26 + 30);
+      var padL = 160, padR = 30, padT = 20, padB = 40;
+      var plotW = W - padL - padR;
 
+      // Apply axis range override if set
+      var xMin = null, xMax = null;
+      if (_axisState && Array.isArray(_axisState.x)) {
+        if (_axisState.x[0] !== null) xMin = _axisState.x[0];
+        if (_axisState.x[1] !== null) xMax = _axisState.x[1];
+      }
+
+      var autoLo = 0, autoHi = 1;
+      if (rows.length) {
+        autoLo = Math.min.apply(null, rows.map(function (r) { return r.lo; }));
+        autoHi = Math.max.apply(null, rows.map(function (r) { return r.hi; }));
+        var pad2 = (autoHi - autoLo) * 0.08 || 0.05;
+        autoLo = Math.max(0, autoLo - pad2);
+        autoHi = Math.min(1, autoHi + pad2);
+      }
+      autoLo = Math.min(autoLo, pooled.poolLo - 0.02);
+      autoHi = Math.max(autoHi, pooled.poolHi + 0.02);
+      var loP = xMin !== null ? xMin : autoLo;
+      var hiP = xMax !== null ? xMax : autoHi;
+      if (hiP <= loP) hiP = loP + 0.01;
+
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      var svgParts = [''];
+      var X = function (p) { return padL + (p - loP) / (hiP - loP) * plotW; };
+
+      // x-axis
+      svgParts.push('<line x1="' + padL + '" y1="' + (padT + H - padT - padB - 22) + '" x2="' + (padL + plotW) + '" y2="' + (padT + H - padT - padB - 22) + '" stroke="currentColor" opacity="0.5"/>');
+
+      var escSvg = esc;
+      var plotH = H - padT - padB;
+
+      // ticks
+      for (var t = 0; t <= 1.0001; t += 0.2) {
+        var xp = X(t);
+        if (xp < padL || xp > padL + plotW) continue;
+        svgParts.push('<line x1="' + xp + '" y1="' + (padT + plotH - 18) + '" x2="' + xp + '" y2="' + (padT + plotH - 26) + '" stroke="currentColor" opacity="0.5"/>');
+        svgParts.push('<text x="' + xp + '" y="' + (padT + plotH - 5) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + (t * 100).toFixed(0) + '%</text>');
+      }
+
+      rows.forEach(function (r, i) {
+        var y = padT + i * 26 + 10;
+        svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + escSvg(r.label) + '</text>');
+        svgParts.push('<line x1="' + X(r.lo) + '" y1="' + y + '" x2="' + X(r.hi) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>');
+        var sz = 3 + Math.min(r.rel / 4, 7);
+        svgParts.push('<rect x="' + (X(r.p) - sz) + '" y="' + (y - sz) + '" width="' + (sz * 2) + '" height="' + (sz * 2) + '" fill="var(--accent)"/>');
+      });
+
+      // pooled diamond
+      var py = padT + rows.length * 26 + 18;
+      var px = X(pooled.poolP);
+      var pl = X(pooled.poolLo);
+      var ph = X(pooled.poolHi);
+      svgParts.push('<text x="' + (padL - 10) + '" y="' + (py + 4) + '" text-anchor="end" font-size="11" fill="currentColor" font-weight="600">Pooled</text>');
+      svgParts.push('<polygon points="' + pl + ',' + py + ' ' + px + ',' + (py - 8) + ' ' + ph + ',' + py + ' ' + px + ',' + (py + 8) + '" fill="var(--warn)" opacity="0.9"/>');
+      svg.innerHTML = svgParts.join('');
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    document.getElementById("trans").addEventListener("change", run);
-    document.getElementById("tau-est").addEventListener("change", run);
-    run();
+    document.getElementById('btn-run').addEventListener('click', function () {
+      window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
+      run();
+    });
+    document.getElementById('trans').addEventListener('change', run);
+    document.getElementById('tau-est').addEventListener('change', run);
+
+    // ---- snapshot/restore helpers for reset-undo ----
+    function snapshot() {
+      return {
+        src:  document.getElementById('src').value,
+        trans: document.getElementById('trans').value,
+        tau:  document.getElementById('tau-est').value,
+      };
+    }
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.src   !== undefined) document.getElementById('src').value = snap.src;
+      if (snap.trans !== undefined) document.getElementById('trans').value = snap.trans;
+      if (snap.tau   !== undefined) document.getElementById('tau-est').value = snap.tau;
+      run();
+    }
+
+    // ---- load CSV rows into textarea ----
+    window.__almLoad = function (rows) {
+      var lines = rows.map(function (r) {
+        return [r.events !== undefined ? r.events : (r.x !== undefined ? r.x : ''),
+                r.total  !== undefined ? r.total  : (r.n !== undefined ? r.n : ''),
+                r.label || r.study || ''].join(', ');
+      });
+      document.getElementById('src').value = lines.join('\n');
+      run();
+    };
+
+    // Expose last results for export
+    window._almLastPropMA = function () { return _lastResults; };
+
+    // ---- module init ----
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'events', required: true,  type: 'int',    example: '12' },
+        { name: 'total',  required: true,  type: 'int',    example: '150' },
+        { name: 'label',  required: false, type: 'string', example: 'Study A' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.chartDownload({
+      target: '#alm-chart-mount',
+      basename: 'propma-forest',
+      getSvg: function () { return document.getElementById('forest'); },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'X axis (proportion)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        run();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'propma-results',
+      getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      restore(restored);
+    } else {
+      run();
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+
+  })();
   </script>
 </body>
 </html>

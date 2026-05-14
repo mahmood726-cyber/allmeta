@@ -102,11 +102,9 @@ apps:
     kind: non-numerical
     reason: Reporting/utility app — PRISMA screening workspace and flow diagram; produces
       structured output, not numerical estimates; R-parity is not the right benchmark.
-  proportion-ma:
-    kind: non-numerical
-    reason: Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no
-      canonical metafor equivalent for all three back-transformations — engine validated
-      internally.
+  # proportion-ma: Cycle 7.2 override REMOVED (2026-05-14) — real R-parity established
+  #   via logit+PM algorithm matching metafor::escalc(measure="PLO") + PM tau2;
+  #   prop-tiny.R fixture verified; auto_tier=1 now applies.
   pubbias-tests:
     kind: non-numerical
     reason: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord,
