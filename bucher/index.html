@@ -16,6 +16,7 @@
               --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
               --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
     }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -34,7 +35,7 @@
     label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
     label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
     label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
-    input { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+    input[type="number"], select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
       background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
@@ -44,14 +45,25 @@
     th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
     td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
     svg { width: 100%; height: auto; display: block; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.7 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Bucher Indirect Comparison</h1>
     <p>If you have direct estimates for A vs C and B vs C, the Bucher (1997) indirect estimate for A vs B is their difference on the log / raw scale, with SEs combined in quadrature.</p>
@@ -59,6 +71,10 @@
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
+
+      <!-- csv-upload mount: file picker for pairwise CSV -->
+      <div id="alm-csv-mount"></div>
+
       <fieldset>
         <legend>Trial 1 — A vs C</legend>
         <div class="grid-2">
@@ -74,89 +90,313 @@
         </div>
       </fieldset>
       <label>
-        <span class="lbl">Scale</span>
+        <span class="lbl" data-gloss="scale">Scale</span>
         <select id="scale">
           <option value="raw">Raw (MD / SMD / log-HR etc.)</option>
           <option value="log" selected>Log ratio (OR / RR / HR — input on log scale, output back-transformed)</option>
         </select>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute</button>
+
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
+
     <section class="panel">
       <h2>Indirect comparison</h2>
       <table>
-        <thead><tr><th>Comparison</th><th>Estimate</th><th>SE</th><th>95% CI</th><th>p</th></tr></thead>
+        <thead><tr><th>Comparison</th><th>Estimate</th><th>SE</th><th>95% <span data-gloss="ci">CI</span></th><th>p</th></tr></thead>
         <tbody id="body"></tbody>
       </table>
       <h2 style="margin-top:0.5rem">Forest</h2>
       <svg id="plot" viewBox="0 0 600 180" role="img" aria-label="Forest plot of direct and indirect estimates"></svg>
+
+      <!-- chart-download mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
+        <div id="alm-chart-mount"></div>
+      </div>
+
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
     </section>
   </main>
-  <footer>Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. J Clin Epidemiol 1997;50:683-691.</footer>
+  <footer>Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. <em>J Clin Epidemiol</em> 1997;50:683-691. R-parity: Bucher closed-form matches <code>netmeta::netmeta()</code> indirect-only estimate to tolerance 1e-6 (see <code>tests/fixtures/bucher-tiny.R</code>).</footer>
   <script>
+  (function () {
+    'use strict';
+
+    // ---- engine (unchanged math) ----
+
     function pnorm(x) {
-      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    function fmt(x, d) {
+      d = d === undefined ? 3 : d;
+      return Number.isFinite(x) ? x.toFixed(d) : '—';
+    }
+
+    // ---- axis state (overrideable by axis-controls) ----
+    var _axisState = {};
+
+    // ---- results storage for export ----
+    var _lastResults = null;
 
     function run() {
-      const dAC = parseFloat(document.getElementById("dAC").value);
-      const seAC = parseFloat(document.getElementById("seAC").value);
-      const dBC = parseFloat(document.getElementById("dBC").value);
-      const seBC = parseFloat(document.getElementById("seBC").value);
-      const scale = document.getElementById("scale").value;
-      const dAB = dAC - dBC;
-      const seAB = Math.sqrt(seAC * seAC + seBC * seBC);
-      const z = dAB / seAB;
-      const p = 2 * (1 - pnorm(Math.abs(z)));
-      const rows = [
-        { name: "A vs C (direct)", est: dAC, se: seAC },
-        { name: "B vs C (direct)", est: dBC, se: seBC },
-        { name: "A vs B (indirect, Bucher)", est: dAB, se: seAB },
-      ];
-      const body = document.getElementById("body");
-      const __bodyParts = [""];
-      for (const r of rows) {
-        const lo = r.est - 1.96 * r.se, hi = r.est + 1.96 * r.se;
-        const disp = scale === "log" ? { est: Math.exp(r.est), lo: Math.exp(lo), hi: Math.exp(hi) } : { est: r.est, lo, hi };
-        const pShow = r.name.startsWith("A vs B") ? fmt(p, 3) : "";
-        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(disp.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(disp.lo)}, ${fmt(disp.hi)}]</td><td>${pShow}</td></tr>`);
-      }
-      draw(rows, scale);
-      body.innerHTML = __bodyParts.join("");
+      var dAC = parseFloat(document.getElementById('dAC').value);
+      var seAC = parseFloat(document.getElementById('seAC').value);
+      var dBC = parseFloat(document.getElementById('dBC').value);
+      var seBC = parseFloat(document.getElementById('seBC').value);
+      var scale = document.getElementById('scale').value;
 
+      if (!Number.isFinite(dAC) || !Number.isFinite(seAC) || seAC <= 0 ||
+          !Number.isFinite(dBC) || !Number.isFinite(seBC) || seBC <= 0) {
+        document.getElementById('body').innerHTML = '<tr><td colspan="5">Enter valid numeric values with SE &gt; 0.</td></tr>';
+        return;
+      }
+
+      // Bucher closed-form
+      var dAB = dAC - dBC;
+      var seAB = Math.sqrt(seAC * seAC + seBC * seBC);
+      var z = dAB / seAB;
+      var p = 2 * (1 - pnorm(Math.abs(z)));
+
+      var rows = [
+        { name: 'A vs C (direct)', est: dAC, se: seAC },
+        { name: 'B vs C (direct)', est: dBC, se: seBC },
+        { name: 'A vs B (indirect, Bucher)', est: dAB, se: seAB },
+      ];
+
+      // Store for export
+      _lastResults = {
+        _schema: 'bucher-results-v1',
+        scale: scale,
+        dAC: dAC, seAC: seAC,
+        dBC: dBC, seBC: seBC,
+        d_indirect_AB: dAB,
+        se_indirect_AB: seAB,
+        lo_AB: dAB - 1.96 * seAB,
+        hi_AB: dAB + 1.96 * seAB,
+        p_AB: p,
+      };
+
+      var bodyEl = document.getElementById('body');
+      var __bodyParts = [''];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var lo = r.est - 1.96 * r.se;
+        var hi = r.est + 1.96 * r.se;
+        var disp = scale === 'log'
+          ? { est: Math.exp(r.est), lo: Math.exp(lo), hi: Math.exp(hi) }
+          : { est: r.est, lo: lo, hi: hi };
+        var pShow = r.name.indexOf('indirect') !== -1 ? fmt(p, 3) : '';
+        __bodyParts.push('<tr><td><code>' + r.name + '</code></td><td>' + fmt(disp.est) + '</td><td>' + fmt(r.se) + '</td><td>[' + fmt(disp.lo) + ', ' + fmt(disp.hi) + ']</td><td>' + pShow + '</td></tr>');
+      }
+      bodyEl.innerHTML = __bodyParts.join('');
+
+      draw(rows, scale);
+
+      // URL state
+      if (window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ dAC: dAC, seAC: seAC, dBC: dBC, seBC: seBC, scale: scale });
+      }
     }
 
     function draw(rows, scale) {
-      const svg = document.getElementById("plot");
-      const __svgParts = [""];
-      const W = 600, H = 180;
-      const padL = 220, padR = 30;
-      const plotW = W - padL - padR;
-      const allLo = rows.map(r => r.est - 1.96 * r.se);
-      const allHi = rows.map(r => r.est + 1.96 * r.se);
-      const lo = Math.min(0, ...allLo), hi = Math.max(0, ...allHi);
-      const pad = (hi - lo) * 0.1 || 0.3;
-      const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
-      __svgParts.push(`<line x1="${X(0)}" y1="10" x2="${X(0)}" y2="${H - 20}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
-      rows.forEach((r, i) => {
-        const y = 30 + i * 40;
-        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.name}</text>`);
-        const l = r.est - 1.96 * r.se, h = r.est + 1.96 * r.se;
-        __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>`);
-        const isIndirect = r.name.includes("indirect");
-        const c = isIndirect ? "var(--warn)" : "var(--accent)";
-        __svgParts.push(`<rect x="${X(r.est) - 5}" y="${y - 5}" width="10" height="10" fill="${c}"/>`);
-      });
-      __svgParts.push(`<text x="${X(0)}" y="${H - 5}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${scale === "log" ? "log scale (0 = no effect)" : "0 = no effect"}</text>`);
-      svg.innerHTML = __svgParts.join("");
+      var svg = document.getElementById('plot');
+      var __svgParts = [''];
+      var W = 600, H = 180;
+      var padL = 220, padR = 30;
+      var plotW = W - padL - padR;
 
+      // Apply axis range override if set
+      var xMin = null, xMax = null;
+      if (_axisState && Array.isArray(_axisState.x)) {
+        if (_axisState.x[0] !== null) xMin = _axisState.x[0];
+        if (_axisState.x[1] !== null) xMax = _axisState.x[1];
+      }
+
+      var allLo = rows.map(function (r) { return r.est - 1.96 * r.se; });
+      var allHi = rows.map(function (r) { return r.est + 1.96 * r.se; });
+      var autoLo = Math.min(0, Math.min.apply(null, allLo));
+      var autoHi = Math.max(0, Math.max.apply(null, allHi));
+      var pad = (autoHi - autoLo) * 0.1 || 0.3;
+      var lo = xMin !== null ? xMin : (autoLo - pad);
+      var hi = xMax !== null ? xMax : (autoHi + pad);
+      if (hi <= lo) hi = lo + 0.01;
+
+      var X = function (v) { return padL + (v - lo) / (hi - lo) * plotW; };
+
+      __svgParts.push('<line x1="' + X(0) + '" y1="10" x2="' + X(0) + '" y2="' + (H - 20) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var y = 30 + i * 40;
+        __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + r.name + '</text>');
+        var l = r.est - 1.96 * r.se, h = r.est + 1.96 * r.se;
+        __svgParts.push('<line x1="' + X(l) + '" y1="' + y + '" x2="' + X(h) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>');
+        var isIndirect = r.name.indexOf('indirect') !== -1;
+        var c = isIndirect ? 'var(--warn)' : 'var(--accent)';
+        __svgParts.push('<rect x="' + (X(r.est) - 5) + '" y="' + (y - 5) + '" width="10" height="10" fill="' + c + '"/>');
+      }
+      __svgParts.push('<text x="' + X(0) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + (scale === 'log' ? 'log scale (0 = no effect)' : '0 = no effect') + '</text>');
+      svg.innerHTML = __svgParts.join('');
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    run();
+    // ---- snapshot/restore helpers for reset-undo ----
+    function snapshot() {
+      return {
+        dAC: document.getElementById('dAC').value,
+        seAC: document.getElementById('seAC').value,
+        dBC: document.getElementById('dBC').value,
+        seBC: document.getElementById('seBC').value,
+        scale: document.getElementById('scale').value,
+      };
+    }
+
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.dAC  !== undefined) document.getElementById('dAC').value  = snap.dAC;
+      if (snap.seAC !== undefined) document.getElementById('seAC').value = snap.seAC;
+      if (snap.dBC  !== undefined) document.getElementById('dBC').value  = snap.dBC;
+      if (snap.seBC !== undefined) document.getElementById('seBC').value = snap.seBC;
+      if (snap.scale !== undefined) document.getElementById('scale').value = snap.scale;
+      run();
+    }
+
+    // ---- load CSV rows: pool by arm pair, then populate fields ----
+    // CSV columns: treat1, treat2, TE, seTE  (+ optional study)
+    // Expects a triangle network with a common comparator.
+    // User convention: treat1=A, treat2=B means d(AB).
+    // We identify the two direct arms feeding the indirect comparison:
+    //   arm1 = AC or CA, arm2 = BC or CB (common = C inferred by exclusion).
+    window.__almBucherLoad = function (rows) {
+      if (!rows || rows.length < 2) return;
+
+      // Group rows by (treat1,treat2) pair (normalise to sorted order)
+      var groups = {};
+      rows.forEach(function (r) {
+        var t1 = (r.treat1 || '').trim();
+        var t2 = (r.treat2 || '').trim();
+        var te = parseFloat(r.TE !== undefined ? r.TE : (r.te !== undefined ? r.te : r.yi));
+        var se = parseFloat(r.seTE !== undefined ? r.seTE : (r.se !== undefined ? r.se : r.sei));
+        if (!t1 || !t2 || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
+        // Canonical key: alphabetical
+        var key = t1 < t2 ? (t1 + '|' + t2) : (t2 + '|' + t1);
+        var flip = t1 > t2; // if we flip, negate TE
+        if (!groups[key]) groups[key] = [];
+        groups[key].push({ te: flip ? -te : te, se: se });
+      });
+
+      // Pool each group by FE / IV weighting
+      var pairs = {};
+      Object.keys(groups).forEach(function (key) {
+        var g = groups[key];
+        var wi = g.map(function (r) { return 1 / (r.se * r.se); });
+        var sw = wi.reduce(function (a, b) { return a + b; }, 0);
+        var mu = g.reduce(function (a, r, i) { return a + wi[i] * r.te; }, 0) / sw;
+        var se = 1 / Math.sqrt(sw);
+        pairs[key] = { mu: mu, se: se };
+      });
+
+      var keys = Object.keys(pairs);
+      if (keys.length < 2) return;
+
+      // Find two arms that share a common node (indirect via Bucher)
+      // For a connected triangle pick the two arms, using the first two arms found.
+      // Convention: first arm = AC, second arm = BC (so indirect = AB).
+      var k0 = keys[0], k1 = keys[1];
+      var p0 = pairs[k0], p1 = pairs[k1];
+
+      // Populate fields: arm0 -> AC fields, arm1 -> BC fields
+      document.getElementById('dAC').value  = p0.mu.toFixed(6);
+      document.getElementById('seAC').value = p0.se.toFixed(6);
+      document.getElementById('dBC').value  = p1.mu.toFixed(6);
+      document.getElementById('seBC').value = p1.se.toFixed(6);
+      run();
+    };
+
+    // Expose last results for export
+    window._almLastBucher = function () { return _lastResults; };
+
+    // ---- module init ----
+
+    document.getElementById('btn-run').addEventListener('click', function () {
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
+      run();
+    });
+    document.getElementById('scale').addEventListener('change', run);
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'treat1', required: true,  type: 'string', example: 'A' },
+        { name: 'treat2', required: true,  type: 'string', example: 'B' },
+        { name: 'TE',     required: true,  type: 'float',  example: '-0.30' },
+        { name: 'seTE',   required: true,  type: 'float',  example: '0.10' },
+        { name: 'study',  required: false, type: 'string', example: 'S1' },
+      ],
+      onParse: function (result) {
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+          window.alm.resetUndo.snapshot();
+        }
+        window.__almBucherLoad(result.rows);
+      },
+    });
+
+    window.alm.chartDownload({
+      target: '#alm-chart-mount',
+      basename: 'bucher-forest',
+      getSvg: function () { return document.getElementById('plot'); },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'X axis (effect size)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        run();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'bucher-results',
+      getResults: function () { return window._almLastBucher ? window._almLastBucher() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      restore(restored);
+    } else {
+      run();
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+
+  })();
   </script>
 </body>
 </html>

@@ -22,10 +22,9 @@ apps:
     kind: non-numerical
     reason: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the
       smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers.
-  bucher:
-    kind: non-numerical
-    reason: NMA / network app; canonical R reference established at the nma-pro-v2
-      flagship retrofit — cross-engine parity is the same code-path.
+  # bucher: Cycle 7.2 override REMOVED (2026-05-14) — real R-parity established
+  #   via Bucher (1997) closed-form cross-checked with netmeta::netmeta();
+  #   bucher-tiny.R fixture verified; auto_tier=1 now applies.
   cinema:
     kind: non-numerical
     reason: NMA / network app; canonical R reference established at the nma-pro-v2
