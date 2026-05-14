@@ -18,7 +18,7 @@ Open http://localhost:8080.
 
 ## What's inside
 
-Seventy-five apps are listed in the hub, including 69 repository-hosted browser apps, 6 externally hosted apps, and 3 R/Shinylive pilot exports from the legacy Shiny portfolio.
+Seventy-six apps are listed in the hub, including 70 repository-hosted browser apps, 6 externally hosted apps, and 3 R/Shinylive pilot exports from the legacy Shiny portfolio.
 
 ## Testing
 

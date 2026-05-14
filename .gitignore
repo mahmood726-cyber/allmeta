@@ -31,6 +31,9 @@ review-findings-*.md
 # Overmind runtime artifacts (per-project decision logs)
 **/DECISIONS.md
 
+# EvidenceOS raw source cache can contain large public registry payloads.
+evidenceos/data/source-cache.json
+
 # Playwright artifacts
 test-results/
 playwright-report/

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'">
+  <title>EvidenceOS - Living Evidence Watch</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to dashboard</a>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">EvidenceOS</p>
+      <h1>Living evidence watch</h1>
+    </div>
+    <nav aria-label="EvidenceOS links">
+      <a href="../">allmeta</a>
+      <a href="./data/report.json">report JSON</a>
+    </nav>
+  </header>
+
+  <main id="workspace" class="workspace">
+    <section class="status-strip" aria-label="Evidence status">
+      <div class="status-copy">
+        <p class="label">Current verdict</p>
+        <h2 id="verdict">Loading source-backed report...</h2>
+        <p id="verdict-detail"></p>
+      </div>
+      <div class="receipt-box">
+        <span class="label">TruthCert draft receipt</span>
+        <code id="receipt-hash">pending</code>
+      </div>
+    </section>
+
+    <section class="question-band" aria-label="Clinical question">
+      <div>
+        <p class="label">Clinical question</p>
+        <p id="clinical-question"></p>
+      </div>
+      <div>
+        <p class="label">Source policy</p>
+        <p id="source-policy"></p>
+      </div>
+      <div>
+        <p class="label">Surveillance anchor</p>
+        <p id="surveillance-anchor"></p>
+      </div>
+    </section>
+
+    <section class="metrics-grid" aria-label="Evidence metrics">
+      <article class="metric"><span>Core trials</span><strong id="metric-core">0</strong></article>
+      <article class="metric"><span>Randomized trials</span><strong id="metric-randomized">0</strong></article>
+      <article class="metric"><span>With results</span><strong id="metric-results">0</strong></article>
+      <article class="metric"><span>Active trials</span><strong id="metric-active">0</strong></article>
+      <article class="metric"><span>Publication candidates</span><strong id="metric-publications">0</strong></article>
+      <article class="metric"><span>OA candidates</span><strong id="metric-oa">0</strong></article>
+    </section>
+
+    <section class="controls" aria-label="Display controls">
+      <label for="trial-filter">Trial view</label>
+      <select id="trial-filter">
+        <option value="core">Core topic only</option>
+        <option value="all">All retrieved trials</option>
+        <option value="results">Result-bearing trials</option>
+        <option value="active">Active trials</option>
+      </select>
+      <label for="publication-filter">Publication view</label>
+      <select id="publication-filter">
+        <option value="oa">Open access candidates</option>
+        <option value="all">All candidates</option>
+        <option value="recent">Since surveillance anchor</option>
+      </select>
+    </section>
+
+    <section class="two-column">
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Trial surveillance</h2>
+          <span id="trial-count" class="count-pill">0 shown</span>
+        </div>
+        <div id="trial-list" class="record-list"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Publication candidates</h2>
+          <span id="publication-count" class="count-pill">0 shown</span>
+        </div>
+        <div id="publication-list" class="record-list"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Update gate</h2>
+        <span id="gate-state" class="count-pill">pending</span>
+      </div>
+      <div class="gate-grid">
+        <div>
+          <p class="label">New trial updates since anchor</p>
+          <strong id="gate-trials">0</strong>
+        </div>
+        <div>
+          <p class="label">New publication candidates since anchor</p>
+          <strong id="gate-publications">0</strong>
+        </div>
+        <div>
+          <p class="label">Meta-analysis readiness</p>
+          <strong id="gate-ready">pending</strong>
+        </div>
+      </div>
+      <p class="gate-note">
+        EvidenceOS does not infer clinical effects from registry metadata. A pooled estimate is unlocked only after
+        source-backed extraction connects to the existing allmeta/WebR analysis engines.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Static vs dynamic disclosure</h2>
+      </div>
+      <div id="disclosure-list" class="disclosure-list"></div>
+    </section>
+  </main>
+
+  <template id="trial-template">
+    <article class="record trial-record">
+      <div class="record-title-row">
+        <h3></h3>
+        <a class="source-link" target="_blank" rel="noopener">CT.gov</a>
+      </div>
+      <dl></dl>
+      <p class="outcomes"></p>
+    </article>
+  </template>
+
+  <template id="publication-template">
+    <article class="record publication-record">
+      <div class="record-title-row">
+        <h3></h3>
+        <a class="source-link" target="_blank" rel="noopener">source</a>
+      </div>
+      <dl></dl>
+    </article>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>

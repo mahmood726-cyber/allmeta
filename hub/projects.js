@@ -13,6 +13,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["extraction", "pdf", "rct", "regex", "fastapi"]
   },
   {
+    name: "EvidenceOS",
+    featured: true,
+    folder: "allmeta/evidenceos",
+    path: "./evidenceos/",
+    collection: "new",
+    mode: "file",
+    category: "Living Evidence",
+    summary: "Serverless living-evidence watch that turns open ClinicalTrials.gov and OpenAlex metadata into a source-backed update gate for a living meta-analysis.",
+    note: "MVP topic: finerenone cardiorenal evidence. Detects update signals and emits a draft TruthCert receipt without inferring clinical effects.",
+    tags: ["living-evidence", "ctgov", "openalex", "truthcert", "surveillance", "meta-analysis"]
+  },
+  {
     name: "Local AI setup",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/ai-meta-analysis-course.html",
     folder: "C:\\HTML apps\\local-ai",
