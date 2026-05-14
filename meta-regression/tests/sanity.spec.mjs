@@ -161,4 +161,61 @@ test.describe('meta-regression retrofit sanity', () => {
     expect(obj.hksj_q,       'hksj_q missing — HKSJ floor not applied').toBeDefined();
   });
 
+  // Cycle 7.11: real JS-engine R-parity. Point estimates (intercept, slope,
+  // tau^2) match metafor::rma.uni(method='PM', test='knha') at 1e-6.
+  //
+  // The SEs are NOT compared here because of a deliberate methodology choice
+  // that diverges from metafor's default behaviour:
+  //
+  // The JS engine applies the HKSJ q-floor q* = max(1, RSS/(k-p)) per
+  // advanced-stats.md rule "HKSJ floor".  metafor's test='knha' uses the raw
+  // q* without the floor.  For data with very-good fit (small RSS) like
+  // mr-tiny, the floor inflates SE to a conservative value while metafor's
+  // raw HKSJ yields a smaller (anti-conservative) SE.  This is the documented
+  // behaviour in the project's advanced-stats rule set; the floor is the
+  // safer convention even though it diverges from metafor.
+  test('JS engine R-parity vs metafor PM point estimates (mr-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'A', yi: 0.10, vi: 0.05,  year: 2010 },
+      { study: 'B', yi: 0.30, vi: 0.04,  year: 2014 },
+      { study: 'C', yi: 0.45, vi: 0.03,  year: 2018 },
+      { study: 'D', yi: 0.55, vi: 0.02,  year: 2020 },
+      { study: 'E', yi: 0.70, vi: 0.025, year: 2022 },
+      { study: 'F', yi: 0.20, vi: 0.06,  year: 2012 },
+    ];
+    const expected = {
+      intercept: -95.650381993419,
+      slope:       0.04763457921955,
+      tau2:        0,
+      k:           6,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(MR_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastFitted && window._almLastFitted() !== null,
+      { timeout: 5_000 }
+    );
+
+    const out = await page.evaluate(() => {
+      const f = window._almLastFitted();
+      return {
+        intercept: f.fit.b0,
+        slope: f.fit.b1,
+        tau2_pm: f.tau2,
+        k: window._almLastStudies().length,
+      };
+    });
+
+    expect(out.k, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(out.intercept - expected.intercept),
+      `intercept: ${out.intercept} vs metafor=${expected.intercept}`).toBeLessThan(TOL);
+    expect(Math.abs(out.slope - expected.slope),
+      `slope: ${out.slope} vs metafor=${expected.slope}`).toBeLessThan(TOL);
+    expect(Math.abs(out.tau2_pm - expected.tau2),
+      `tau2_pm: ${out.tau2_pm} vs metafor=${expected.tau2}`).toBeLessThan(TOL);
+  });
+
 });
