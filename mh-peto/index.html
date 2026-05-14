@@ -16,6 +16,7 @@
               --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
               --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
     }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -46,26 +47,43 @@
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>MH / Peto pooling</h1>
     <p>For rare events, inverse-variance pooling on log-OR is biased. Mantel-Haenszel (fixed-effect) and Peto one-step odds ratio avoid continuity correction and perform well when event rates are low (&lt; 1%).</p>
   </header>
-  <main>
+  <main id="main">
     <section class="panel">
       <h2>Input</h2>
-      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies — <code>events1, n1, events2, n2, label</code></label>
-      <textarea id="src">3, 500, 8, 500, Study A
-1, 200, 5, 200, Study B
-0, 150, 4, 150, Study C
-2, 400, 6, 400, Study D
-4, 600, 10, 600, Study E
-0, 100, 3, 100, Study F
-1, 300, 7, 300, Study G</textarea>
+
+      <!-- csv-upload mount: file picker for study,e1,n1,e2,n2 CSV files -->
+      <div id="alm-csv-mount"></div>
+
+      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
+        Studies — <code>study, e1, n1, e2, n2</code>
+        <span class="hint">events + totals per arm; one row per study</span>
+      </label>
+      <textarea id="src">StudyA, 3, 500, 8, 500
+StudyB, 1, 200, 5, 200
+StudyC, 0, 150, 4, 150
+StudyD, 2, 400, 6, 400
+StudyE, 4, 600, 10, 600</textarea>
       <label>
         <span>Effect measure</span>
         <select id="measure">
@@ -75,6 +93,12 @@
         </select>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Pool</button>
+
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
     <section class="panel">
       <h2>Pooled estimates</h2>
@@ -89,35 +113,79 @@
       </table>
       <h2 style="margin-top:0.5rem">Forest</h2>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of per-study and pooled effects"></svg>
+
+      <!-- chart-download mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
+        <div id="alm-chart-mount"></div>
+      </div>
+
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
     </section>
   </main>
   <footer>
-    MH for OR: Σ(a·d/n) / Σ(b·c/n), with Robins-Breslow-Greenland variance. Peto OR: exp(Σ(O-E) / Σ V). Cochrane Handbook 10.4.4 recommends MH or Peto for rare events over DerSimonian-Laird; Peto requires roughly balanced arms.
+    <span data-gloss="mh-or">MH</span> for OR: &Sigma;(a&middot;d/n) / &Sigma;(b&middot;c/n), with Robins-Breslow-Greenland variance.
+    <span data-gloss="peto-or">Peto OR</span>: exp(&Sigma;(O&minus;E) / &Sigma;V).
+    Cochrane Handbook 10.4.4 recommends MH or Peto for rare events over DerSimonian-Laird; Peto requires roughly balanced arms.
   </footer>
   <script>
+  (function () {
+    'use strict';
+
+    // ---- engine (unchanged from pre-retrofit) ----
+
     function parse(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const parts = l.split(/,/).map(s => s.trim());
-        const e1 = parseInt(parts[0], 10), n1 = parseInt(parts[1], 10);
-        const e2 = parseInt(parts[2], 10), n2 = parseInt(parts[3], 10);
+      // Accepts either:
+      //   study, e1, n1, e2, n2   (study label first — canonical CSV format)
+      //   e1, n1, e2, n2, label   (legacy textarea format, numeric first)
+      return text.trim().split(/\n/).map(function (l, i) {
+        if (!l.trim()) return null;
+        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+        // Try study-first format: parts[0] is string label, rest are numbers
+        var label, e1, n1, e2, n2;
+        if (isNaN(Number(parts[0])) || !Number.isFinite(Number(parts[0]))) {
+          // study name first
+          label = parts[0] || ('Study ' + (i + 1));
+          e1 = parseInt(parts[1], 10); n1 = parseInt(parts[2], 10);
+          e2 = parseInt(parts[3], 10); n2 = parseInt(parts[4], 10);
+        } else {
+          // legacy: numeric first, optional label at end
+          e1 = parseInt(parts[0], 10); n1 = parseInt(parts[1], 10);
+          e2 = parseInt(parts[2], 10); n2 = parseInt(parts[3], 10);
+          label = parts[4] || ('Study ' + (i + 1));
+        }
         if (![e1, n1, e2, n2].every(Number.isFinite) || n1 <= 0 || n2 <= 0 || e1 < 0 || e2 < 0 || e1 > n1 || e2 > n2) return null;
-        return { e1, n1, e2, n2, label: parts[4] || `Study ${i + 1}` };
+        return { e1: e1, n1: n1, e2: e2, n2: n2, label: label };
+      }).filter(Boolean);
+    }
+
+    // NEW: parse from CSV upload row objects (keys: study,e1,n1,e2,n2)
+    function parseRows(rows) {
+      return rows.map(function (r, i) {
+        var e1 = parseInt(r.e1, 10), n1 = parseInt(r.n1, 10);
+        var e2 = parseInt(r.e2, 10), n2 = parseInt(r.n2, 10);
+        if (![e1, n1, e2, n2].every(Number.isFinite) || n1 <= 0 || n2 <= 0 || e1 < 0 || e2 < 0 || e1 > n1 || e2 > n2) return null;
+        return { e1: e1, n1: n1, e2: e2, n2: n2, label: r.study || ('Study ' + (i + 1)) };
       }).filter(Boolean);
     }
 
     function pnorm(x) {
-      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
 
     function mhOR(rows) {
       // Mantel-Haenszel OR with Robins-Breslow-Greenland SE
-      let num = 0, denom = 0;
-      let SR = 0, ST = 0, SS = 0;
-      for (const r of rows) {
-        const a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2, n = r.n1 + r.n2;
+      var num = 0, denom = 0, SR = 0, ST = 0, SS = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2, n = r.n1 + r.n2;
         if (n === 0) continue;
         num += a * d / n;
         denom += b * c / n;
@@ -126,157 +194,298 @@
         SS += ((b + c) * b * c) / (n * n);
       }
       if (denom === 0 || num === 0) return null;
-      const or = num / denom;
-      const varLogOR = 0.5 * (SR / (num * num) + ST / (num * denom) + SS / (denom * denom));
-      const seLog = Math.sqrt(varLogOR);
-      return { est: or, logEst: Math.log(or), seLog, lo: Math.exp(Math.log(or) - 1.96 * seLog), hi: Math.exp(Math.log(or) + 1.96 * seLog) };
+      var or = num / denom;
+      var varLogOR = 0.5 * (SR / (num * num) + ST / (num * denom) + SS / (denom * denom));
+      var seLog = Math.sqrt(varLogOR);
+      return { est: or, logEst: Math.log(or), seLog: seLog, lo: Math.exp(Math.log(or) - 1.96 * seLog), hi: Math.exp(Math.log(or) + 1.96 * seLog) };
     }
 
     function mhRR(rows) {
-      let num = 0, denom = 0;
-      let varNum = 0;
-      for (const r of rows) {
-        const a = r.e1, c = r.e2, n = r.n1 + r.n2;
+      var num = 0, denom = 0, varNum = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var a = r.e1, c = r.e2, n = r.n1 + r.n2;
         num += a * r.n2 / n;
         denom += c * r.n1 / n;
         varNum += ((r.n1 * r.n2 * (a + c)) / (n * n) - (a * c) / n);
       }
       if (denom === 0) return null;
-      const rr = num / denom;
-      const varLogRR = varNum / (num * denom);
-      const seLog = Math.sqrt(Math.max(varLogRR, 0));
-      return { est: rr, logEst: Math.log(rr), seLog, lo: Math.exp(Math.log(rr) - 1.96 * seLog), hi: Math.exp(Math.log(rr) + 1.96 * seLog) };
+      var rr = num / denom;
+      var varLogRR = varNum / (num * denom);
+      var seLog = Math.sqrt(Math.max(varLogRR, 0));
+      return { est: rr, logEst: Math.log(rr), seLog: seLog, lo: Math.exp(Math.log(rr) - 1.96 * seLog), hi: Math.exp(Math.log(rr) + 1.96 * seLog) };
     }
 
     function mhRD(rows) {
-      let num = 0, denom = 0, varNum = 0;
-      for (const r of rows) {
-        const n = r.n1 + r.n2;
-        const w = (r.n1 * r.n2) / n;
+      var num = 0, denom = 0, varNum = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var n = r.n1 + r.n2;
+        var w = (r.n1 * r.n2) / n;
         num += w * (r.e1 / r.n1 - r.e2 / r.n2);
         denom += w;
         varNum += (r.e1 * (r.n1 - r.e1) * r.n2 / (r.n1 * r.n1 * r.n1) + r.e2 * (r.n2 - r.e2) * r.n1 / (r.n2 * r.n2 * r.n2)) * w * w;
       }
       if (denom === 0) return null;
-      const rd = num / denom;
-      const se = Math.sqrt(varNum) / denom;
-      return { est: rd, se, lo: rd - 1.96 * se, hi: rd + 1.96 * se };
+      var rd = num / denom;
+      var se = Math.sqrt(varNum) / denom;
+      return { est: rd, se: se, lo: rd - 1.96 * se, hi: rd + 1.96 * se };
     }
 
     function peto(rows) {
-      let sumOE = 0, sumV = 0;
-      for (const r of rows) {
-        const n = r.n1 + r.n2, m1 = r.e1 + r.e2, m2 = n - m1;
-        const E = r.n1 * m1 / n;
-        const V = (r.n1 * r.n2 * m1 * m2) / (n * n * (n - 1));
+      var sumOE = 0, sumV = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var n = r.n1 + r.n2, m1 = r.e1 + r.e2, m2 = n - m1;
+        var E = r.n1 * m1 / n;
+        var V = (r.n1 * r.n2 * m1 * m2) / (n * n * (n - 1));
         sumOE += (r.e1 - E);
         sumV += V;
       }
       if (sumV === 0) return null;
-      const logOR = sumOE / sumV;
-      const seLog = 1 / Math.sqrt(sumV);
-      return { est: Math.exp(logOR), logEst: logOR, seLog, lo: Math.exp(logOR - 1.96 * seLog), hi: Math.exp(logOR + 1.96 * seLog) };
+      var logOR = sumOE / sumV;
+      var seLog = 1 / Math.sqrt(sumV);
+      return { est: Math.exp(logOR), logEst: logOR, seLog: seLog, lo: Math.exp(logOR - 1.96 * seLog), hi: Math.exp(logOR + 1.96 * seLog) };
     }
 
     function perStudy(rows, measure) {
-      return rows.map(r => {
+      return rows.map(function (r) {
         // 0.5 correction for display
-        let a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2;
+        var a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2;
         if (a === 0 || b === 0 || c === 0 || d === 0) { a += 0.5; b += 0.5; c += 0.5; d += 0.5; }
-        if (measure === "OR") {
-          const or = (a * d) / (b * c);
-          const varLog = 1 / a + 1 / b + 1 / c + 1 / d;
-          const se = Math.sqrt(varLog);
-          return { ...r, est: or, lo: Math.exp(Math.log(or) - 1.96 * se), hi: Math.exp(Math.log(or) + 1.96 * se) };
+        if (measure === 'OR') {
+          var or = (a * d) / (b * c);
+          var varLog = 1 / a + 1 / b + 1 / c + 1 / d;
+          var se = Math.sqrt(varLog);
+          return Object.assign({}, r, { est: or, lo: Math.exp(Math.log(or) - 1.96 * se), hi: Math.exp(Math.log(or) + 1.96 * se) });
         }
-        if (measure === "RR") {
-          const rr = (a / r.n1) / (c / r.n2);
-          const varLog = 1 / a - 1 / r.n1 + 1 / c - 1 / r.n2;
-          const se = Math.sqrt(Math.max(varLog, 0));
-          return { ...r, est: rr, lo: Math.exp(Math.log(rr) - 1.96 * se), hi: Math.exp(Math.log(rr) + 1.96 * se) };
+        if (measure === 'RR') {
+          var rr = (a / r.n1) / (c / r.n2);
+          var varLogRR = 1 / a - 1 / r.n1 + 1 / c - 1 / r.n2;
+          var seRR = Math.sqrt(Math.max(varLogRR, 0));
+          return Object.assign({}, r, { est: rr, lo: Math.exp(Math.log(rr) - 1.96 * seRR), hi: Math.exp(Math.log(rr) + 1.96 * seRR) });
         }
-        const p1 = r.e1 / r.n1, p2 = r.e2 / r.n2;
-        const rd = p1 - p2;
-        const se = Math.sqrt(p1 * (1 - p1) / r.n1 + p2 * (1 - p2) / r.n2);
-        return { ...r, est: rd, lo: rd - 1.96 * se, hi: rd + 1.96 * se };
+        var p1 = r.e1 / r.n1, p2 = r.e2 / r.n2;
+        var rd = p1 - p2;
+        var seRD = Math.sqrt(p1 * (1 - p1) / r.n1 + p2 * (1 - p2) / r.n2);
+        return Object.assign({}, r, { est: rd, lo: rd - 1.96 * seRD, hi: rd + 1.96 * seRD });
       });
     }
 
+    // ---- axis state (overrideable by axis-controls) ----
+    var _axisState = {};
+
+    // ---- results storage for export ----
+    var _lastResults = null;
+
     function run() {
-      const rows = parse(document.getElementById("src").value);
-      const measure = document.getElementById("measure").value;
+      var rows = parse(document.getElementById('src').value);
+      var measure = document.getElementById('measure').value;
       if (rows.length < 2) return;
 
-      const pooled = [];
-      if (measure === "OR") {
-        const mh = mhOR(rows), pe = peto(rows);
-        pooled.push({ name: "MH OR", ...mh });
-        if (pe) pooled.push({ name: "Peto OR", ...pe });
-      } else if (measure === "RR") {
-        pooled.push({ name: "MH RR", ...mhRR(rows) });
+      var pooled = [];
+      var Q = null, QEp = null;
+      if (measure === 'OR') {
+        var mh = mhOR(rows), pe = peto(rows);
+        if (mh) { pooled.push(Object.assign({ name: 'MH OR' }, mh)); Q = mh._Q; }
+        if (pe) pooled.push(Object.assign({ name: 'Peto OR' }, pe));
+      } else if (measure === 'RR') {
+        var mrr = mhRR(rows);
+        if (mrr) pooled.push(Object.assign({ name: 'MH RR' }, mrr));
       } else {
-        pooled.push({ name: "MH RD", ...mhRD(rows) });
+        var mrd = mhRD(rows);
+        if (mrd) pooled.push(Object.assign({ name: 'MH RD' }, mrd));
       }
 
-      const body = document.getElementById("pooled-body");
-      const __bodyParts = [""];
-      for (const p of pooled) {
+      var body = document.getElementById('pooled-body');
+      var parts = [];
+      var firstPooled = pooled[0] || null;
+      for (var i = 0; i < pooled.length; i++) {
+        var p = pooled[i];
         if (!p) continue;
-        const z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
-        const pval = 2 * (1 - pnorm(Math.abs(z)));
-        __bodyParts.push(`<tr><td><code>${p.name}</code></td><td>${fmt(p.est)}</td><td>[${fmt(p.lo)}, ${fmt(p.hi)}]</td><td>${fmt(z, 2)}</td><td>${fmt(pval, 3)}</td></tr>`);
+        var z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
+        var pval = 2 * (1 - pnorm(Math.abs(z)));
+        parts.push('<tr><td><code>' + p.name + '</code></td><td>' + fmt(p.est) + '</td><td>[' + fmt(p.lo) + ', ' + fmt(p.hi) + ']</td><td>' + fmt(z, 2) + '</td><td>' + fmt(pval, 3) + '</td></tr>');
       }
+      body.innerHTML = parts.join('');
 
-      const studies = perStudy(rows, measure);
-      const perBody = document.getElementById("per-body");
-      const __perBodyParts = [""];
-      for (const s of studies) {
-        __perBodyParts.push(`<tr><td>${s.label}</td><td>${s.e1}/${s.n1}</td><td>${s.e2}/${s.n2}</td><td>${fmt(s.est)}</td><td>[${fmt(s.lo)}, ${fmt(s.hi)}]</td></tr>`);
+      var studies = perStudy(rows, measure);
+      var perBody = document.getElementById('per-body');
+      var perParts = [];
+      for (var j = 0; j < studies.length; j++) {
+        var s = studies[j];
+        perParts.push('<tr><td>' + s.label + '</td><td>' + s.e1 + '/' + s.n1 + '</td><td>' + s.e2 + '/' + s.n2 + '</td><td>' + fmt(s.est) + '</td><td>[' + fmt(s.lo) + ', ' + fmt(s.hi) + ']</td></tr>');
       }
+      perBody.innerHTML = perParts.join('');
+
       drawForest(studies, pooled, measure);
-      body.innerHTML = __bodyParts.join("");
-      perBody.innerHTML = __perBodyParts.join("");
 
+      // Build results for export
+      var firstZ = firstPooled ? (firstPooled.logEst !== undefined ? firstPooled.logEst / firstPooled.seLog : firstPooled.est / firstPooled.se) : null;
+      _lastResults = {
+        _schema: 'mhpeto-results-v1',
+        measure: measure,
+        k: rows.length,
+        mh_est: firstPooled ? firstPooled.est : null,
+        mh_lo:  firstPooled ? firstPooled.lo  : null,
+        mh_hi:  firstPooled ? firstPooled.hi  : null,
+        mh_z:   firstZ,
+        mh_p:   firstZ !== null ? 2 * (1 - pnorm(Math.abs(firstZ))) : null,
+      };
+      if (measure === 'OR' && pooled.length >= 2) {
+        var pe2 = pooled[1];
+        var pZ = pe2.logEst / pe2.seLog;
+        _lastResults.peto_est = pe2.est;
+        _lastResults.peto_lo  = pe2.lo;
+        _lastResults.peto_hi  = pe2.hi;
+        _lastResults.peto_z   = pZ;
+        _lastResults.peto_p   = 2 * (1 - pnorm(Math.abs(pZ)));
+      }
+
+      // Persist URL state
+      if (window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ src: document.getElementById('src').value, measure: measure });
+      }
     }
 
     function drawForest(studies, pooled, measure) {
-      const svg = document.getElementById("forest");
-      const W = 600, H = Math.max(200, 40 + (studies.length + pooled.length + 1) * 26);
-      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      const __svgParts = [""];
-      const padL = 130, padR = 30;
-      const plotW = W - padL - padR;
-      const all = [...studies, ...pooled.filter(Boolean)];
-      const loAll = all.map(r => r.lo);
-      const hiAll = all.map(r => r.hi);
-      const logScale = measure !== "RD";
-      const mapFn = v => logScale ? Math.log(Math.max(v, 1e-6)) : v;
-      const lo = Math.min(...loAll.map(mapFn));
-      const hi = Math.max(...hiAll.map(mapFn));
-      const pad = (hi - lo) * 0.1 || 0.3;
-      const X = v => padL + (mapFn(v) - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
-      const null_ = logScale ? 1 : 0;
-      __svgParts.push(`<line x1="${X(null_)}" y1="10" x2="${X(null_)}" y2="${H - 25}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
-      let y = 25;
-      studies.forEach(s => {
-        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${s.label}</text>`);
-        __svgParts.push(`<line x1="${X(s.lo)}" y1="${y}" x2="${X(s.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>`);
-        __svgParts.push(`<rect x="${X(s.est) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
-        y += 22;
-      });
-      y += 6;
-      pooled.filter(Boolean).forEach(p => {
-        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">${p.name}</text>`);
-        __svgParts.push(`<polygon points="${X(p.lo)},${y} ${X(p.est)},${y - 7} ${X(p.hi)},${y} ${X(p.est)},${y + 7}" fill="var(--warn)" opacity="0.9"/>`);
-        y += 24;
-      });
-      svg.innerHTML = __svgParts.join("");
+      var svg = document.getElementById('forest');
+      var W = 600, H = Math.max(200, 40 + (studies.length + pooled.length + 1) * 26);
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      var parts = [];
+      var padL = 130, padR = 30;
+      var plotW = W - padL - padR;
+      var all = studies.concat(pooled.filter(Boolean));
 
+      // Respect axis-controls override
+      var logScale = measure !== 'RD';
+      var xLog = _axisState && _axisState.xLog;
+      if (xLog !== undefined) logScale = xLog;
+
+      var mapFn = function (v) { return logScale ? Math.log(Math.max(v, 1e-6)) : v; };
+
+      var loAll = all.map(function (r) { return r.lo; });
+      var hiAll = all.map(function (r) { return r.hi; });
+      var lo = Math.min.apply(null, loAll.map(mapFn));
+      var hi = Math.max.apply(null, hiAll.map(mapFn));
+
+      // Apply axis range override if set
+      if (_axisState && Array.isArray(_axisState.x)) {
+        if (_axisState.x[0] !== null) lo = logScale ? Math.log(Math.max(_axisState.x[0], 1e-6)) : _axisState.x[0];
+        if (_axisState.x[1] !== null) hi = logScale ? Math.log(Math.max(_axisState.x[1], 1e-6)) : _axisState.x[1];
+      }
+
+      var pad = (hi - lo) * 0.1 || 0.3;
+      var X = function (v) { return padL + (mapFn(v) - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW; };
+      var nullV = logScale ? 1 : 0;
+      parts.push('<line x1="' + X(nullV) + '" y1="10" x2="' + X(nullV) + '" y2="' + (H - 25) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      var y = 25;
+      for (var i = 0; i < studies.length; i++) {
+        var s = studies[i];
+        parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + s.label + '</text>');
+        parts.push('<line x1="' + X(s.lo) + '" y1="' + y + '" x2="' + X(s.hi) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>');
+        parts.push('<rect x="' + (X(s.est) - 3.5) + '" y="' + (y - 3.5) + '" width="7" height="7" fill="var(--accent)"/>');
+        y += 22;
+      }
+      y += 6;
+      for (var j = 0; j < pooled.length; j++) {
+        var p = pooled[j];
+        if (!p) continue;
+        parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">' + p.name + '</text>');
+        parts.push('<polygon points="' + X(p.lo) + ',' + y + ' ' + X(p.est) + ',' + (y - 7) + ' ' + X(p.hi) + ',' + y + ' ' + X(p.est) + ',' + (y + 7) + '" fill="var(--warn)" opacity="0.9"/>');
+        y += 24;
+      }
+      svg.innerHTML = parts.join('');
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    document.getElementById("measure").addEventListener("change", run);
-    run();
+    document.getElementById('btn-run').addEventListener('click', function () {
+      window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
+      run();
+    });
+    document.getElementById('measure').addEventListener('change', run);
+
+    // ---- snapshot/restore helpers for reset-undo ----
+    function snapshot() {
+      return { src: document.getElementById('src').value, measure: document.getElementById('measure').value };
+    }
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.src !== undefined) document.getElementById('src').value = snap.src;
+      if (snap.measure !== undefined) document.getElementById('measure').value = snap.measure;
+      run();
+    }
+
+    // ---- load CSV rows into textarea ----
+    window.__almLoad = function (rows) {
+      var lines = rows.map(function (r) {
+        return [r.study || '', r.e1, r.n1, r.e2, r.n2].join(', ');
+      });
+      document.getElementById('src').value = lines.join('\n');
+      run();
+    };
+
+    // Expose last results for export
+    window._almLastMhPeto = function () { return _lastResults; };
+
+    // ---- module init ----
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'study', required: false, type: 'string', example: 'Smith 2024' },
+        { name: 'e1',    required: true,  type: 'int',    example: '3' },
+        { name: 'n1',    required: true,  type: 'int',    example: '500' },
+        { name: 'e2',    required: true,  type: 'int',    example: '8' },
+        { name: 'n2',    required: true,  type: 'int',    example: '500' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.chartDownload({
+      target: '#alm-chart-mount',
+      basename: 'mhpeto-forest',
+      getSvg: function () { return document.getElementById('forest'); },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'X axis', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        run();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'mhpeto-results',
+      getResults: function () { return window._almLastMhPeto ? window._almLastMhPeto() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      restore(restored);
+    } else {
+      run();
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+  })();
   </script>
 </body>
 </html>

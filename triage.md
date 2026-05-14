@@ -2,7 +2,7 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-14T08:41:36Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
@@ -15,7 +15,7 @@ Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
 ## Tier 1 — Validated (66)
 
 - **amstar-2** — test_count=3 · last_touched 0d ago
-- **bayesian-ma** — test_count=4 · last_touched 16d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
+- **bayesian-ma** — test_count=4 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bayesian-mcmc** — test_count=3 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bayesian-nma** — test_count=3 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bucher** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
@@ -25,7 +25,7 @@ Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
 - **citation-dedup** — test_count=3 · last_touched 0d ago
 - **component-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **copas** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally. · **override**
-- **cumulative-subgroup** — test_count=4 · last_touched 16d ago · override applied: Engine performs sequential / subgroup pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
+- **cumulative-subgroup** — test_count=4 · last_touched 0d ago · override applied: Engine performs sequential / subgroup pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
 - **dosehtml** — test_count=4 · last_touched 0d ago · override applied: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html (the real dose-response app). Atlas measures the launcher, which is intentionally minimal. · **override**
 - **dta-sroc** — test_count=4 · has R-parity test · last_touched 0d ago
 - **effect-size-converter** — no README · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2). · **override**
@@ -35,7 +35,7 @@ Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
 - **funnel-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **gosh** — test_count=3 · last_touched 0d ago · override applied: Engine performs all-subset pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
 - **gosh-metareg** — test_count=3 · last_touched 0d ago · override applied: Engine performs all-subset meta-regression that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
-- **grade-sof** — test_count=4 · last_touched 16d ago · override applied: Reporting/utility app — produces structured GRADE Summary of Findings tables, not numerical estimates; R-parity is not the right benchmark. · **override**
+- **grade-sof** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — produces structured GRADE Summary of Findings tables, not numerical estimates; R-parity is not the right benchmark. · **override**
 - **heterogeneity** — test_count=4 · has R-parity test · last_touched 0d ago
 - **hsroc** — test_count=3 · last_touched 0d ago · override applied: Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent for full bivariate HSROC — engine validated internally. · **override**
 - **HTA** — test_count=3 · last_touched 0d ago · override applied: Health-economic decision-tree / Markov / DSA framework — comparable R packages (heemod, hesim) take >5min per run; engine validated internally via Playwright sanity checks. · **override**
@@ -50,7 +50,7 @@ Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
 - **mcid** — test_count=3 · last_touched 0d ago
 - **median-to-mean** — test_count=3 · last_touched 0d ago · override applied: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical metafor equivalent — engine validated internally. · **override**
 - **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago
-- **mh-peto** — test_count=3 · last_touched 0d ago · override applied: Specialised pooling method (Mantel-Haenszel / Peto); no canonical metafor equivalent for zero-cell handling — engine validated internally. · **override**
+- **mh-peto** — test_count=4 · has R-parity test · last_touched 0d ago
 - **multilevel-ma** — test_count=3 · last_touched 0d ago · override applied: Specialised three-level random-effects model; no canonical metafor equivalent for clustered dependent effect sizes at this scope — engine validated internally. · **override**
 - **nma-dose-response-app** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **nma-global-inconsistency** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
@@ -64,7 +64,7 @@ Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
 - **prisma-checklist** — test_count=3 · last_touched 0d ago
 - **prisma-flow** — test_count=3 · last_touched 0d ago · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 - **prisma-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app (PRISMA-NMA checklist tool); produces structured reporting output, not numerical estimates — R-parity is not the right benchmark. · **override**
-- **prisma-screen** — test_count=4 · last_touched 18d ago · override applied: Reporting/utility app — PRISMA screening workspace and flow diagram; produces structured output, not numerical estimates; R-parity is not the right benchmark. · **override**
+- **prisma-screen** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — PRISMA screening workspace and flow diagram; produces structured output, not numerical estimates; R-parity is not the right benchmark. · **override**
 - **proportion-ma** — test_count=3 · last_touched 0d ago · override applied: Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no canonical metafor equivalent for all three back-transformations — engine validated internally. · **override**
 - **pubbias-tests** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally. · **override**
 - **quadas-2** — test_count=3 · last_touched 0d ago
@@ -76,7 +76,7 @@ Generated: 2026-05-14T08:05:39Z · scanner v0.1.0 · 66 apps
 - **search-translator** — test_count=3 · last_touched 0d ago
 - **thematic-synthesis** — test_count=3 · last_touched 0d ago
 - **Truthcert1** — test_count=3 · last_touched 0d ago · override applied: TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
-- **tsa** — test_count=4 · last_touched 16d ago · override applied: Specialised TSA methodology (O'Brien-Fleming alpha-spending); no canonical metafor equivalent — engine validated internally. · **override**
+- **tsa** — test_count=4 · last_touched 0d ago · override applied: Specialised TSA methodology (O'Brien-Fleming alpha-spending); no canonical metafor equivalent — engine validated internally. · **override**
 - **webr-studio** — test_count=3 · last_touched 0d ago · override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular. · **override**
-- **webr-validator** — test_count=4 · last_touched 16d ago · override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular. · **override**
-- **workbench** — test_count=4 · last_touched 16d ago · override applied: Reporting/utility app — integrated workbench producing structured workflow output; R-parity is not the right benchmark for the orchestration layer. · **override**
+- **webr-validator** — test_count=4 · last_touched 0d ago · override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular. · **override**
+- **workbench** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — integrated workbench producing structured workflow output; R-parity is not the right benchmark for the orchestration layer. · **override**

@@ -78,10 +78,8 @@ apps:
     kind: non-numerical
     reason: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical
       metafor equivalent — engine validated internally.
-  mh-peto:
-    kind: non-numerical
-    reason: Specialised pooling method (Mantel-Haenszel / Peto); no canonical metafor
-      equivalent for zero-cell handling — engine validated internally.
+  # mh-peto: Cycle 7.2 override REMOVED (2026-05-14) — real R-parity established
+  #   via metafor::rma.peto() + rma.mh(); auto_tier=1 now applies.
   multilevel-ma:
     kind: non-numerical
     reason: Specialised three-level random-effects model; no canonical metafor equivalent
