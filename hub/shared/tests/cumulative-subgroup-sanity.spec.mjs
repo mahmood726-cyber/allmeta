@@ -141,4 +141,59 @@ test.describe('cumulative-subgroup retrofit sanity', () => {
     expect(obj.series.length, 'series must have ≥2 steps').toBeGreaterThan(1);
   });
 
+  // Cycle 7.10: real JS-engine R-parity vs metafor cumul (cumul-tiny).
+  test('JS engine R-parity vs metafor cumul ordered by year (cumul-tiny)', async ({ page }) => {
+    // cumul-tiny.csv: study,year,yi,vi -> JS rows: { study, yi, se=sqrt(vi), year }
+    const fixture = [
+      { study: 'S1', yi: -0.30, se: Math.sqrt(0.040), year: 2010 },
+      { study: 'S2', yi: -0.45, se: Math.sqrt(0.050), year: 2012 },
+      { study: 'S3', yi: -0.20, se: Math.sqrt(0.030), year: 2014 },
+      { study: 'S4', yi: -0.55, se: Math.sqrt(0.060), year: 2017 },
+      { study: 'S5', yi: -0.35, se: Math.sqrt(0.025), year: 2020 },
+    ];
+    // R captures (Cycle 7.9 updated: qnorm(0.975) exact, not 1.96)
+    const expected = {
+      mu_final: -0.3432098765432097, se_final: 0.08606629658238701,
+      lo_final: -0.511896718127431,  hi_final: -0.1745230349589884,
+      mu_penu:  -0.3403508771929825, se_penu:  0.1025978352085154,
+      lo_penu:  -0.5414389390934481, hi_penu:  -0.1392628152925168,
+      tau2:     0,
+      Q:        1.672942386831276,
+      k:        5,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(APP_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastCumSub && window._almLastCumSub() !== null,
+      { timeout: 5_000 }
+    );
+    const r = await page.evaluate(() => window._almLastCumSub());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    // Final pool
+    expect(Math.abs(r.mu_final - expected.mu_final),
+      `mu_final: ${r.mu_final} vs metafor=${expected.mu_final}`).toBeLessThan(TOL);
+    expect(Math.abs(r.se_final - expected.se_final),
+      `se_final: ${r.se_final} vs metafor=${expected.se_final}`).toBeLessThan(TOL);
+    expect(Math.abs(r.lo_final - expected.lo_final),
+      `lo_final: ${r.lo_final} vs metafor=${expected.lo_final}`).toBeLessThan(TOL);
+    expect(Math.abs(r.hi_final - expected.hi_final),
+      `hi_final: ${r.hi_final} vs metafor=${expected.hi_final}`).toBeLessThan(TOL);
+    expect(Math.abs(r.tau2_final - expected.tau2),
+      `tau2_final: ${r.tau2_final} vs metafor=${expected.tau2}`).toBeLessThan(TOL);
+    // Penultimate (k-1 step) from series array
+    const penu = r.series[r.series.length - 2];
+    expect(Math.abs(penu.mu - expected.mu_penu),
+      `series[k-2].mu (penultimate): ${penu.mu} vs metafor=${expected.mu_penu}`).toBeLessThan(TOL);
+    expect(Math.abs(penu.se - expected.se_penu),
+      `series[k-2].se: ${penu.se} vs metafor=${expected.se_penu}`).toBeLessThan(TOL);
+    expect(Math.abs(penu.lo - expected.lo_penu),
+      `series[k-2].lo: ${penu.lo} vs metafor=${expected.lo_penu}`).toBeLessThan(TOL);
+    expect(Math.abs(penu.hi - expected.hi_penu),
+      `series[k-2].hi: ${penu.hi} vs metafor=${expected.hi_penu}`).toBeLessThan(TOL);
+  });
+
 });
