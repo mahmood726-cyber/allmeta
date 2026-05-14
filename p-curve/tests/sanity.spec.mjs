@@ -131,4 +131,52 @@ test.describe('p-curve retrofit sanity', () => {
     expect(obj.fisher_chisq,  'fisher_chisq should be positive').toBeGreaterThan(0);
   });
 
+  // Cycle 7.15: real JS-engine R-parity (13th app). p-curve Fisher's combined
+  // statistic + flatness test vs R pchisq + pnorm.
+  test('JS engine R-parity vs R pchisq + pnorm (pcurve-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'Study1', p: 0.003 },
+      { study: 'Study2', p: 0.012 },
+      { study: 'Study3', p: 0.021 },
+      { study: 'Study4', p: 0.038 },
+      { study: 'Study5', p: 0.047 },
+    ];
+    const expected = {
+      fisher_chisq: 10.88867977905,
+      fisher_df:    10,
+      fisher_p:     0.3662564540401,
+      prop_low:     0.6,
+      z_flat:       0.4472135955,
+      p_flat:       0.6547208460186,
+      k:            5,
+    };
+    const TOL = 1e-6;
+    // JS uses A&S pnorm (max abs err 7.5e-8) and a series-based pchisq
+    // approximation (max err ~2e-4 on the tail).  Allow 1e-3 on p-values
+    // that propagate through either CDF.
+    const NORM_TOL = 1e-3;
+
+    await page.goto(PCURVE_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastPcurve && window._almLastPcurve() !== null,
+      { timeout: 5_000 }
+    );
+    const r = await page.evaluate(() => window._almLastPcurve());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    expect(r.fisher_df, 'fisher_df mismatch').toBe(expected.fisher_df);
+    expect(Math.abs(r.fisher_chisq - expected.fisher_chisq),
+      `fisher_chisq: ${r.fisher_chisq} vs R=${expected.fisher_chisq}`).toBeLessThan(TOL);
+    expect(Math.abs(r.fisher_p - expected.fisher_p),
+      `fisher_p: ${r.fisher_p} vs R=${expected.fisher_p}`).toBeLessThan(NORM_TOL);
+    expect(Math.abs(r.prop_low - expected.prop_low),
+      `prop_low: ${r.prop_low} vs R=${expected.prop_low}`).toBeLessThan(TOL);
+    expect(Math.abs(r.z_flat - expected.z_flat),
+      `z_flat: ${r.z_flat} vs R=${expected.z_flat}`).toBeLessThan(TOL);
+    expect(Math.abs(r.p_flat - expected.p_flat),
+      `p_flat: ${r.p_flat} vs R=${expected.p_flat}`).toBeLessThan(NORM_TOL);
+  });
+
 });
