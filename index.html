@@ -139,5 +139,60 @@
 
   <script src="./hub/projects.js"></script>
   <script src="./hub/app.js"></script>
+
+  <!-- Cycle 6.1: service-worker registration + polite Shinylive prefetch. -->
+  <script>
+    // Register the runtime-cache service worker. Guard with feature-detect so
+    // this is a no-op on browsers without SW support (old IE, some embedded).
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function (err) {
+          console.warn('[alm] SW register failed:', err);
+        });
+      });
+    }
+
+    // Politely prefetch the self-hosted Shinylive runtime bundle when the
+    // browser is idle, so r-shiny apps (annualised-plot, dta-diagnostic,
+    // mean-single-group) load from cache on first click. requestIdleCallback
+    // keeps this well off the hub's critical-render path.
+    function _almPrefetchShinylive() {
+      var targets = [
+        './r-shiny/shinylive/shinylive.js',
+        './r-shiny/shinylive/shinylive.css',
+        './r-shiny/shinylive/load-shinylive-sw.js',
+        './r-shiny/shinylive/style-resets.css',
+        './r-shiny/shinylive/webr/R.wasm',
+        './r-shiny/shinylive/webr/R.js',
+        './r-shiny/shinylive/webr/webr-worker.js',
+        './r-shiny/shinylive/webr/library.data.gz',
+      ];
+      for (var i = 0; i < targets.length; i++) {
+        var href = targets[i];
+        var link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = href;
+        // Hint the browser to the asset type so it can prioritise correctly.
+        if (href.endsWith('.css')) {
+          link.as = 'style';
+        } else if (href.endsWith('.js')) {
+          link.as = 'script';
+        } else if (href.endsWith('.wasm')) {
+          link.as = 'fetch';
+          link.crossOrigin = 'anonymous';
+        } else {
+          link.as = 'fetch';
+        }
+        document.head.appendChild(link);
+      }
+    }
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(_almPrefetchShinylive, { timeout: 4000 });
+    } else {
+      // Safari / older browsers: delay 2 s so the hub renders first.
+      setTimeout(_almPrefetchShinylive, 2000);
+    }
+  </script>
 </body>
 </html>
