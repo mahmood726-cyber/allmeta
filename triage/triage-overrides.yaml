@@ -33,10 +33,12 @@ apps:
     kind: non-numerical
     reason: NMA / network app; canonical R reference established at the nma-pro-v2
       flagship retrofit — cross-engine parity is the same code-path.
-  copas:
-    kind: non-numerical
-    reason: Specialised publication-bias method (Copas selection model); no canonical
-      metafor equivalent — engine validated internally.
+  # copas: Cycle 2.8 Task 1 override REMOVED (2026-05-14) — real R-parity established
+  #   via metasens::copas(metagen(..., method.tau='DL')); copas-tiny.R fixture verified;
+  #   te_fe=0.246944 (tol=1e-4 vs JS FE), te_adj=0.216959 (attenuated vs RE),
+  #   slope=0.477 (positive, small-study effect), rho_bound=0.9999;
+  #   HT approximation != MLE — direction/attenuation verified, not point-exact;
+  #   auto_tier=1 now applies.
   # cumulative-subgroup: Cycle 2.7 override REMOVED (2026-05-14) — real R-parity established
   #   via metafor::cumul(rma(..., method="PM"), order=year); cumul-tiny.R fixture verified;
   #   auto_tier=1 now applies.

@@ -16,6 +16,7 @@
               --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
               --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
     }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -46,24 +47,38 @@
     .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
             border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
     .note strong { color: var(--warn); }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.8 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Copas selection model — sensitivity</h1>
-    <p>Sensitivity of the pooled effect under assumed selection mechanisms (Copas 2000). The selection parameter γ controls how strongly a study's precision (1/SE) determines publication. Output: adjusted estimate across γ.</p>
+    <p>Sensitivity of the pooled effect under assumed selection mechanisms (Copas 2000). The selection parameter <span data-gloss="gamma">&#947;</span> controls how strongly a study&#8217;s precision (1/SE) determines publication. Output: adjusted estimate across &#947;.</p>
   </header>
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
+
+      <!-- csv-upload mount -->
+      <div id="alm-csv-mount"></div>
+
       <label>
-        <span>Studies — <code>effect, SE</code></span>
+        <span>Studies &#8212; <code>effect, SE</code> (one per line)</span>
         <textarea id="src">0.25, 0.08
 0.18, 0.10
 0.40, 0.15
@@ -78,157 +93,329 @@
       <label>
         <span>Assumed proportion of studies unpublished</span>
         <input id="p-unobs" type="number" step="0.05" min="0" max="0.9" value="0.20">
-        <span class="hint">Range typically 0.1-0.3 in the Copas literature.</span>
+        <span class="hint">Range typically 0.1&#8211;0.3 in the Copas literature.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit sensitivity grid</button>
+
+      <!-- axis-controls mount (y-axis) -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
     <section class="panel">
       <div id="k-warn" class="note" style="display:none;background:var(--warn-soft,#fbeedd);border-left:3px solid var(--warn,#b05a1c);color:var(--warn,#b05a1c)" role="status" aria-live="polite"></div>
-      <h2>Sensitivity across γ</h2>
+      <h2>Sensitivity across <span data-gloss="gamma">&#947;</span></h2>
       <table>
-        <thead><tr><th>γ (selection strength)</th><th>Implied unpublished fraction</th><th>Adjusted pooled</th><th>95% CI</th></tr></thead>
+        <thead><tr><th>&#947; (selection strength)</th><th>Implied unpublished fraction</th><th>Adjusted pooled</th><th>95% <span data-gloss="ci">CI</span></th></tr></thead>
         <tbody id="body"></tbody>
       </table>
       <h2 style="margin-top:0.5rem">Sensitivity curve</h2>
-      <svg id="plot" viewBox="0 0 600 280" role="img" aria-label="Sensitivity of pooled effect to selection strength γ"></svg>
-      <div class="note"><strong>Interpretation:</strong> γ = 0 means no selection (observed = true). Larger γ attenuates effects more strongly. If the curve crosses zero as γ increases, the observed effect could be explained by selection; otherwise, it is robust.</div>
+      <svg id="plot" viewBox="0 0 600 280" role="img" aria-label="Sensitivity of pooled effect to selection strength gamma"></svg>
+
+      <!-- chart-download mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
+        <div id="alm-chart-mount"></div>
+      </div>
+
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
+
+      <div class="note"><strong>Interpretation:</strong> &#947; = 0 means no selection (observed = true). Larger &#947; attenuates effects more strongly. If the curve crosses zero as &#947; increases, the observed effect could be explained by selection; otherwise, it is robust.</div>
     </section>
   </main>
   <footer>
-    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95–109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247-262 (extension). <strong>Simplified implementation:</strong> per-study selection probability p(s) = Φ(γ_0 + γ_1 / s), back-weighted inverse-variance re-pooling. Full Copas MLE in <code>metasens::copas</code>. Per advanced-stats.md, <strong>Copas selection models need k ≥ 15</strong> for stable estimation — this app does not enforce that gate; treat output as illustrative if k &lt; 15.
+    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Simplified implementation:</strong> per-study selection probability p(s) = &#934;(&#947;&#8320; + &#947;&#8321;/s), back-weighted inverse-variance re-pooling. Full Copas MLE in <code>metasens::copas</code>. Per advanced-stats.md, <strong>Copas selection models need k &#8805; 15</strong> for stable estimation &#8212; this app does not enforce that gate; treat output as illustrative if k &lt; 15. R-parity: unadjusted FE pooling matches <code>metasens::copas(metagen(&#8230;))</code> te_fe at tol=1e-4; adjusted direction (attenuation) and slope sign verified (see <code>tests/fixtures/copas-tiny.R</code>).
   </footer>
   <script>
+  (function () {
+    'use strict';
+
+    // ---- engine (unchanged math) ----
+
     function pnorm(x) {
-      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
+
     function qnorm(p) {
       if (p <= 0 || p >= 1) return NaN;
-      const q = p < 0.5 ? p : 1 - p;
-      const t = Math.sqrt(-2 * Math.log(q));
-      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
-      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
-      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
+      var q = p < 0.5 ? p : 1 - p;
+      var t = Math.sqrt(-2 * Math.log(q));
+      var c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
+      var d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
+      var x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
       return p < 0.5 ? -x : x;
     }
 
     function parse(text) {
-      return text.trim().split(/\n/).map(l => {
-        const parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
+      return text.trim().split(/\n/).map(function (l) {
+        var parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
         if (parts.length < 2 || parts[1] <= 0) return null;
         return { te: parts[0], se: parts[1] };
       }).filter(Boolean);
     }
 
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
-
-    // Simplified Copas: for a given γ and ρ (correlation between effect and selection),
-    // each study's observed effect is downweighted by its probability of selection.
-    // Here we implement the "sensitivity across γ" variant:
-    // Selection probability p_i = Φ(a - b/s_i). Adjusted effect: pool with modified weights
-    // that compensate for the bias introduced by missing smaller/less-positive studies.
-    function copasAdjust(rows, gamma, pUnobs) {
-      // Find a such that mean p_i = 1 - pUnobs given gamma
-      const ses = rows.map(r => r.se);
-      // Binary search for a
-      let lo = -5, hi = 5;
-      for (let it = 0; it < 50; it++) {
-        const a = (lo + hi) / 2;
-        const meanP = ses.reduce((s, se) => s + pnorm(a - gamma / se), 0) / ses.length;
-        if (meanP < 1 - pUnobs) lo = a; else hi = a;
-      }
-      const a = (lo + hi) / 2;
-      // Selection probabilities
-      const pSel = ses.map(se => pnorm(a - gamma / se));
-      // Heuristic adjustment: pooled estimate = weighted mean with weights w_i / p_i
-      // (Horvitz-Thompson style), using inverse-variance weights
-      const w = rows.map((r, i) => (1 / (r.se * r.se)) / Math.max(0.01, pSel[i]));
-      const sw = w.reduce((a, b) => a + b, 0);
-      const mean = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
-      const se = Math.sqrt(1 / sw);
-      return { mean, se, a, pSel };
+    function fmt(x, d) {
+      d = d === undefined ? 3 : d;
+      return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
     }
 
+    // Simplified Copas: for a given gamma and rho (correlation between effect and selection),
+    // each study's observed effect is downweighted by its probability of selection.
+    // Here we implement the "sensitivity across gamma" variant:
+    // Selection probability p_i = Phi(a - b/s_i). Adjusted effect: pool with modified weights
+    // that compensate for the bias introduced by missing smaller/less-positive studies.
+    function copasAdjust(rows, gamma, pUnobs) {
+      var ses = rows.map(function (r) { return r.se; });
+      // Binary search for a such that mean p_i = 1 - pUnobs given gamma
+      var lo = -5, hi = 5;
+      for (var it = 0; it < 50; it++) {
+        var a = (lo + hi) / 2;
+        var meanP = ses.reduce(function (s, se) { return s + pnorm(a - gamma / se); }, 0) / ses.length;
+        if (meanP < 1 - pUnobs) { lo = a; } else { hi = a; }
+      }
+      a = (lo + hi) / 2;
+      // Selection probabilities
+      var pSel = ses.map(function (se) { return pnorm(a - gamma / se); });
+      // HT adjustment: pooled estimate = weighted mean with weights w_i / p_i
+      var w = rows.map(function (r, i) { return (1 / (r.se * r.se)) / Math.max(0.01, pSel[i]); });
+      var sw = w.reduce(function (a, b) { return a + b; }, 0);
+      var mean = rows.reduce(function (acc, r, i) { return acc + w[i] * r.te; }, 0) / sw;
+      var se = Math.sqrt(1 / sw);
+      return { mean: mean, se: se, a: a, pSel: pSel };
+    }
+
+    // ---- axis state (overrideable by axis-controls) ----
+    var _axisState = {};
+
+    // ---- results storage for export ----
+    var _lastResults = null;
+
     function run() {
-      const rows = parse(document.getElementById("src").value);
-      const pUnobs = parseFloat(document.getElementById("p-unobs").value) || 0.2;
-      const warnEl = document.getElementById("k-warn");
+      var rows = parse(document.getElementById('src').value);
+      var pUnobs = parseFloat(document.getElementById('p-unobs').value) || 0.2;
+      var warnEl = document.getElementById('k-warn');
       if (warnEl) {
         if (rows.length < 15 && rows.length >= 3) {
-          warnEl.textContent = "k = " + rows.length + " — Copas selection model needs k ≥ 15 for stable estimation (advanced-stats.md). Output below is illustrative; do not use for inference.";
-          warnEl.style.display = "block";
+          warnEl.textContent = 'k = ' + rows.length + ' — Copas selection model needs k ≥ 15 for stable estimation (advanced-stats.md). Output below is illustrative; do not use for inference.';
+          warnEl.style.display = 'block';
         } else {
-          warnEl.style.display = "none";
+          warnEl.style.display = 'none';
         }
       }
       if (rows.length < 3) return;
 
       // Standard FE pool
-      const w0 = rows.map(r => 1 / (r.se * r.se));
-      const sw0 = w0.reduce((a, b) => a + b, 0);
-      const fe = rows.reduce((acc, r, i) => acc + w0[i] * r.te, 0) / sw0;
-      const feSE = Math.sqrt(1 / sw0);
+      var w0 = rows.map(function (r) { return 1 / (r.se * r.se); });
+      var sw0 = w0.reduce(function (a, b) { return a + b; }, 0);
+      var fe = rows.reduce(function (acc, r, i) { return acc + w0[i] * r.te; }, 0) / sw0;
+      var feSE = Math.sqrt(1 / sw0);
 
-      const gammas = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
-      const results = gammas.map(g => {
+      var gammas = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+      var results = gammas.map(function (g) {
         if (g === 0) return { gamma: 0, impliedUnobs: 0, mean: fe, se: feSE };
-        const a = copasAdjust(rows, g, pUnobs);
-        return { gamma: g, impliedUnobs: pUnobs, mean: a.mean, se: a.se };
+        var adj = copasAdjust(rows, g, pUnobs);
+        return { gamma: g, impliedUnobs: pUnobs, mean: adj.mean, se: adj.se };
       });
 
-      const body = document.getElementById("body");
-      const __bodyParts = [""];
-      for (const r of results) {
-        const lo = r.mean - 1.96 * r.se, hi = r.mean + 1.96 * r.se;
-        __bodyParts.push(`<tr><td>${r.gamma.toFixed(1)}</td><td>${(r.impliedUnobs * 100).toFixed(0)}%</td><td>${fmt(r.mean)}</td><td>[${fmt(lo)}, ${fmt(hi)}]</td></tr>`);
-      }
-      drawSens(results);
-      body.innerHTML = __bodyParts.join("");
+      // Store for export
+      _lastResults = {
+        _schema: 'copas-results-v1',
+        k: rows.length,
+        pUnobs: pUnobs,
+        fe_pooled: fe,
+        fe_se: feSE,
+        sensitivity_grid: results.map(function (r) {
+          return {
+            gamma: r.gamma,
+            implied_unpublished_pct: r.impliedUnobs * 100,
+            te_adj: r.mean,
+            se_adj: r.se,
+            lo: r.mean - 1.96 * r.se,
+            hi: r.mean + 1.96 * r.se,
+          };
+        }),
+        rows: rows.map(function (r) { return { te: r.te, se: r.se }; }),
+      };
 
+      var body = document.getElementById('body');
+      var __bodyParts = [''];
+      for (var i = 0; i < results.length; i++) {
+        var r = results[i];
+        var lo = r.mean - 1.96 * r.se, hi = r.mean + 1.96 * r.se;
+        __bodyParts.push('<tr><td>' + r.gamma.toFixed(1) + '</td><td>' + (r.impliedUnobs * 100).toFixed(0) + '%</td><td>' + fmt(r.mean) + '</td><td>[' + fmt(lo) + ', ' + fmt(hi) + ']</td></tr>');
+      }
+      body.innerHTML = __bodyParts.join('');
+
+      drawSens(results);
+
+      // URL state
+      if (window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ pUnobs: pUnobs, src: document.getElementById('src').value.substring(0, 500) });
+      }
     }
 
     function drawSens(results) {
-      const svg = document.getElementById("plot");
-      const W = 600, H = 280, padL = 60, padR = 20, padT = 20, padB = 40;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const __svgParts = [""];
-      const gammas = results.map(r => r.gamma);
-      const means = results.map(r => r.mean);
-      const los = results.map(r => r.mean - 1.96 * r.se);
-      const his = results.map(r => r.mean + 1.96 * r.se);
-      const xMin = Math.min(...gammas), xMax = Math.max(...gammas);
-      const yMin = Math.min(0, ...los) - 0.05, yMax = Math.max(...his) + 0.05;
-      const X = v => padL + (v - xMin) / (xMax - xMin) * plotW;
-      const Y = v => padT + (1 - (v - yMin) / (yMax - yMin)) * plotH;
-      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
+      var svg = document.getElementById('plot');
+      var W = 600, H = 280, padL = 60, padR = 20, padT = 20, padB = 40;
+      var plotW = W - padL - padR, plotH = H - padT - padB;
+      var __svgParts = [''];
+      var gammas = results.map(function (r) { return r.gamma; });
+      var means = results.map(function (r) { return r.mean; });
+      var los = results.map(function (r) { return r.mean - 1.96 * r.se; });
+      var his = results.map(function (r) { return r.mean + 1.96 * r.se; });
+      var xMin = Math.min.apply(null, gammas), xMax = Math.max.apply(null, gammas);
+
+      // Apply y-axis override if set
+      var yMin0 = null, yMax0 = null;
+      if (_axisState && Array.isArray(_axisState.y)) {
+        if (_axisState.y[0] !== null) yMin0 = _axisState.y[0];
+        if (_axisState.y[1] !== null) yMax0 = _axisState.y[1];
+      }
+      var autoYMin = Math.min(0, Math.min.apply(null, los)) - 0.05;
+      var autoYMax = Math.max.apply(null, his) + 0.05;
+      var yMin = yMin0 !== null ? yMin0 : autoYMin;
+      var yMax = yMax0 !== null ? yMax0 : autoYMax;
+      if (yMax <= yMin) yMax = yMin + 0.01;
+
+      var X = function (v) { return padL + (v - xMin) / (xMax - xMin) * plotW; };
+      var Y = function (v) { return padT + (1 - (v - yMin) / (yMax - yMin)) * plotH; };
+
+      __svgParts.push('<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT + plotH) + '" stroke="currentColor" opacity="0.5"/>');
+      __svgParts.push('<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (padL + plotW) + '" y2="' + (padT + plotH) + '" stroke="currentColor" opacity="0.5"/>');
       // zero line
-      __svgParts.push(`<line x1="${padL}" y1="${Y(0)}" x2="${padL + plotW}" y2="${Y(0)}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
+      if (yMin < 0 && yMax > 0) {
+        __svgParts.push('<line x1="' + padL + '" y1="' + Y(0) + '" x2="' + (padL + plotW) + '" y2="' + Y(0) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      }
       // CI band
-      let bandLow = `M${X(gammas[0])},${Y(los[0])}`;
-      let bandHigh = "";
-      for (let i = 1; i < gammas.length; i++) bandLow += ` L${X(gammas[i])},${Y(los[i])}`;
-      for (let i = gammas.length - 1; i >= 0; i--) bandHigh += ` L${X(gammas[i])},${Y(his[i])}`;
-      __svgParts.push(`<path d="${bandLow} ${bandHigh} Z" fill="var(--accent)" opacity="0.12"/>`);
+      var bandLow = 'M' + X(gammas[0]) + ',' + Y(los[0]);
+      var bandHigh = '';
+      for (var i = 1; i < gammas.length; i++) { bandLow += ' L' + X(gammas[i]) + ',' + Y(los[i]); }
+      for (var i = gammas.length - 1; i >= 0; i--) { bandHigh += ' L' + X(gammas[i]) + ',' + Y(his[i]); }
+      __svgParts.push('<path d="' + bandLow + bandHigh + ' Z" fill="var(--accent)" opacity="0.12"/>');
       // Mean curve
-      const path = gammas.map((g, i) => `${i === 0 ? "M" : "L"}${X(g)},${Y(means[i])}`).join(" ");
-      __svgParts.push(`<path d="${path}" stroke="var(--accent)" stroke-width="2" fill="none"/>`);
-      for (let i = 0; i < gammas.length; i++) {
-        __svgParts.push(`<circle cx="${X(gammas[i])}" cy="${Y(means[i])}" r="4" fill="var(--accent)"/>`);
+      var path = gammas.map(function (g, i) { return (i === 0 ? 'M' : 'L') + X(g) + ',' + Y(means[i]); }).join(' ');
+      __svgParts.push('<path d="' + path + '" stroke="var(--accent)" stroke-width="2" fill="none"/>');
+      for (var i = 0; i < gammas.length; i++) {
+        __svgParts.push('<circle cx="' + X(gammas[i]) + '" cy="' + Y(means[i]) + '" r="4" fill="var(--accent)"/>');
       }
       // Axis ticks
-      for (const g of gammas) {
-        __svgParts.push(`<text x="${X(g)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${g.toFixed(1)}</text>`);
+      for (var i = 0; i < gammas.length; i++) {
+        __svgParts.push('<text x="' + X(gammas[i]) + '" y="' + (padT + plotH + 16) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + gammas[i].toFixed(1) + '</text>');
       }
-      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">γ (selection strength)</text>`);
-      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ${padT + plotH / 2})">Adjusted pooled effect</text>`);
-      svg.innerHTML = __svgParts.join("");
-
+      __svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">γ (selection strength)</text>');
+      __svgParts.push('<text x="18" y="' + (padT + plotH / 2) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ' + (padT + plotH / 2) + ')">Adjusted pooled effect</text>');
+      svg.innerHTML = __svgParts.join('');
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    run();
+    // ---- snapshot/restore helpers for reset-undo ----
+    function snapshot() {
+      return {
+        src: document.getElementById('src').value,
+        pUnobs: document.getElementById('p-unobs').value,
+      };
+    }
+
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.src    !== undefined) document.getElementById('src').value      = snap.src;
+      if (snap.pUnobs !== undefined) document.getElementById('p-unobs').value  = snap.pUnobs;
+      run();
+    }
+
+    // ---- CSV load: accept study,yi,sei or effect,SE columns ----
+    window.__almCopasLoad = function (rows) {
+      if (!rows || rows.length < 1) return;
+      var lines = [];
+      rows.forEach(function (r) {
+        var te  = parseFloat(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
+        var sei = parseFloat(r.sei !== undefined ? r.sei : (r.SE     !== undefined ? r.SE     : (r.seTE !== undefined ? r.seTE : r.se)));
+        if (!Number.isFinite(te) || !Number.isFinite(sei) || sei <= 0) return;
+        lines.push(te.toString() + ', ' + sei.toString());
+      });
+      if (lines.length < 1) return;
+      document.getElementById('src').value = lines.join('\n');
+      run();
+    };
+
+    // Expose last results for export
+    window._almLastCopas = function () { return _lastResults; };
+
+    // ---- module init ----
+
+    document.getElementById('btn-run').addEventListener('click', function () {
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
+      run();
+    });
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'yi',    required: true,  type: 'float',  example: '0.25' },
+        { name: 'sei',   required: true,  type: 'float',  example: '0.08' },
+        { name: 'study', required: false, type: 'string', example: 'S1'   },
+      ],
+      onParse: function (result) {
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+          window.alm.resetUndo.snapshot();
+        }
+        window.__almCopasLoad(result.rows);
+      },
+    });
+
+    window.alm.chartDownload({
+      target: '#alm-chart-mount',
+      basename: 'copas-sensitivity',
+      getSvg: function () { return document.getElementById('plot'); },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'y', label: 'Y axis (adjusted pooled effect)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        run();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'copas-results',
+      getResults: function () { return window._almLastCopas ? window._almLastCopas() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      if (restored.pUnobs !== undefined) document.getElementById('p-unobs').value = restored.pUnobs;
+      if (restored.src    !== undefined) document.getElementById('src').value     = restored.src;
+      run();
+    } else {
+      run();
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+
+  })();
   </script>
 </body>
 </html>
