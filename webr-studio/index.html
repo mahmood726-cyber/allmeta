@@ -488,9 +488,21 @@ print(summary(res))`,
       try {
         firstLoadNote.style.display = "block";
         outEl.textContent = "Fetching WebR runtime…";
-        // Pin to a known WebR release to avoid silent behaviour changes and reduce supply-chain surface.
-        const WEBR_VERSION = "v0.5.4";
-        const { WebR } = await import(`https://webr.r-wasm.org/${WEBR_VERSION}/webr.mjs`);
+        // Cycle 6.2: WebR is now self-hosted via the shinylive bundle so the
+        // hub-level service worker (sw.js, Cycle 6.1) can cache it for instant
+        // subsequent loads.  Fall back to the CDN if the local copy is missing
+        // (e.g. someone deployed only the top-level allmeta dir without the
+        // r-shiny tree).  Pinned to v0.5.4 either way.
+        const LOCAL_WEBR = "../r-shiny/shinylive/webr/webr.mjs";
+        const CDN_WEBR = "https://webr.r-wasm.org/v0.5.4/webr.mjs";
+        let mod;
+        try {
+          mod = await import(LOCAL_WEBR);
+        } catch (_localErr) {
+          outEl.textContent = "Local WebR not found, falling back to CDN…";
+          mod = await import(CDN_WEBR);
+        }
+        const { WebR } = mod;
         webR = new WebR({ interactive: false });
         await webR.init();
         outEl.textContent = "WebR ready. Click 'Run in R' to install packages and run the selected template.";
@@ -502,7 +514,7 @@ print(summary(res))`,
       } catch (err) {
         statusEl.textContent = "error";
         statusEl.className = "status-badge error";
-        outEl.textContent = "Failed to load WebR:\n" + String(err) + "\n\nCheck your network; WebR loads from https://webr.r-wasm.org/.";
+        outEl.textContent = "Failed to load WebR:\n" + String(err) + "\n\nCheck your network; the local WebR is at ../r-shiny/shinylive/webr/, CDN fallback at https://webr.r-wasm.org/.";
       }
     }
 

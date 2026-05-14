@@ -124,8 +124,8 @@
         <legend>WebR source</legend>
         <label>
           <span class="lbl">WebR module URL</span>
-          <input type="text" id="f-webr-url" value="https://webr.r-wasm.org/v0.5.4/webr.mjs">
-          <span class="hint">Default is a pinned WebR release (v0.5.4) to avoid silent behavioural drift; for offline use, download from <code>github.com/r-wasm/webr/releases</code> and point this at a self-hosted path. Adapter won't fire until you click "Run in WebR".</span>
+          <input type="text" id="f-webr-url" value="../r-shiny/shinylive/webr/webr.mjs">
+          <span class="hint">Cycle 6.2: defaults to the self-hosted WebR v0.5.4 bundled with shinylive (cached aggressively by the hub service worker). For the CDN, use <code>https://webr.r-wasm.org/v0.5.4/webr.mjs</code>. Adapter won't fire until you click "Run in WebR".</span>
         </label>
       </fieldset>
 
@@ -624,7 +624,7 @@
     function onReset() {
       if (!confirm("Clear inputs?")) return;
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.value = ""; }
-      document.getElementById("f-webr-url").value = "https://webr.r-wasm.org/v0.5.4/webr.mjs";
+      document.getElementById("f-webr-url").value = "../r-shiny/shinylive/webr/webr.mjs";
       document.getElementById("f-method").value = "PM";
       document.getElementById("f-test").value = "z";
       render();
