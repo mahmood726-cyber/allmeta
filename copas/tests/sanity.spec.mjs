@@ -161,4 +161,47 @@ test.describe('copas retrofit sanity', () => {
       .toBeLessThanOrEqual(row0.te_adj + 0.01);
   });
 
+  // Cycle 7.14: real JS-engine R-parity (12th app).
+  //
+  // The R parity script uses metasens::copas() with full MLE; the JS engine
+  // uses a Horvitz-Thompson approximation.  Adjusted estimates diverge by
+  // construction.  This test asserts only the UNADJUSTED FE baseline, which
+  // is standard inverse-variance pooling and must match metafor exactly.
+  test('JS engine R-parity vs metafor FE pool (copas-tiny unadjusted)', async ({ page }) => {
+    const fixture = [
+      { study: 'S01', yi: 0.25, sei: 0.08 },
+      { study: 'S02', yi: 0.18, sei: 0.10 },
+      { study: 'S03', yi: 0.40, sei: 0.15 },
+      { study: 'S04', yi: 0.30, sei: 0.09 },
+      { study: 'S05', yi: 0.12, sei: 0.07 },
+      { study: 'S06', yi: 0.55, sei: 0.20 },
+      { study: 'S07', yi: 0.22, sei: 0.08 },
+      { study: 'S08', yi: 0.32, sei: 0.12 },
+      { study: 'S09', yi: 0.45, sei: 0.17 },
+      { study: 'S10', yi: 0.28, sei: 0.10 },
+    ];
+    const expected = { te_fe: 0.246944262521, se_fe: 0.031411004650, k: 10 };
+    const TOL = 1e-6;
+
+    await page.goto(COPAS_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almCopasLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastCopas && window._almLastCopas() !== null,
+      { timeout: 5_000 }
+    );
+    const r = await page.evaluate(() => window._almLastCopas());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(r.fe_pooled - expected.te_fe),
+      `fe_pooled: ${r.fe_pooled} vs metafor=${expected.te_fe}`).toBeLessThan(TOL);
+    expect(Math.abs(r.fe_se - expected.se_fe),
+      `fe_se: ${r.fe_se} vs metafor=${expected.se_fe}`).toBeLessThan(TOL);
+    // Sanity: gamma=0 row in sensitivity grid should equal the unadjusted pool
+    const grid0 = r.sensitivity_grid[0];
+    expect(grid0.gamma, 'sensitivity_grid[0].gamma should be 0').toBe(0);
+    expect(Math.abs(grid0.te_adj - r.fe_pooled),
+      `grid[0].te_adj should equal fe_pooled at gamma=0`).toBeLessThan(TOL);
+  });
+
 });
