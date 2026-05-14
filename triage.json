@@ -287,32 +287,29 @@
     "bucher": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Network Meta-Analysis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "bucher",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778753792,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 10.25
+        "test_count": 4,
+        "total_size_kb": 18.93
       },
       "tier": 1
     },
@@ -499,32 +496,29 @@
     "cumulative-subgroup": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Engine performs sequential / subgroup pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=4",
-        "last_touched 0d ago",
-        "override applied: Engine performs sequential / subgroup pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain."
+        "test_count=5",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "cumulative-subgroup",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778754606,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 4,
-        "total_size_kb": 34.92
+        "test_count": 5,
+        "total_size_kb": 41.11
       },
       "tier": 1
     },
@@ -583,7 +577,7 @@
         "key": "dta-diagnostic",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778750605,
+        "last_touched_unix": 1778753310,
         "playwright_pass": null,
         "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
@@ -894,32 +888,29 @@
     "hsroc": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent for full bivariate HSROC — engine validated internally."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent for full bivariate HSROC — engine validated internally."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Diagnostic Test Accuracy",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "hsroc",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778755559,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 16.97
+        "test_count": 4,
+        "total_size_kb": 29.89
       },
       "tier": 1
     },
@@ -2102,7 +2093,7 @@
       "tier": 1
     }
   },
-  "generated_at": "2026-05-14T09:25:26Z",
+  "generated_at": "2026-05-14T10:47:59Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 69,

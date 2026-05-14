@@ -106,7 +106,15 @@ def last_touched_unix(app_dir: Path, repo_root: Path) -> int | None:
         return None
 
 
-_PARITY_TOKENS = ("metafor", "_parity", "_against_r", "_compare_r", "mada", "netmeta_compare")
+_PARITY_TOKENS = (
+    "metafor", "_parity", "_against_", "_compare_", "mada", "netmeta",
+    "bayesmeta", "metasens", "puniform",
+)
+# Cycle 2.7: broadened from `_against_r` to `_against_` so files named
+# `test_against_netmeta.py`, `test_against_mada.py` etc. are detected.
+# Same for `_compare_*`. Plus added specific R package names (netmeta,
+# bayesmeta, metasens, puniform) so future retrofits can use natural
+# names without contortion.
 
 
 def _iter_test_files(app_dir: Path):

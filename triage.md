@@ -2,7 +2,7 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T09:25:26Z · scanner v0.1.0 · 69 apps
+Generated: 2026-05-14T10:47:59Z · scanner v0.1.0 · 69 apps
 
 ## Summary
 
@@ -19,14 +19,14 @@ Generated: 2026-05-14T09:25:26Z · scanner v0.1.0 · 69 apps
 - **bayesian-ma** — test_count=4 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bayesian-mcmc** — test_count=3 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bayesian-nma** — test_count=3 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
-- **bucher** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
+- **bucher** — test_count=4 · has R-parity test · last_touched 0d ago
 - **cerqual** — test_count=3 · last_touched 0d ago
 - **cinema** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **citation-chaser** — test_count=3 · last_touched 0d ago
 - **citation-dedup** — test_count=3 · last_touched 0d ago
 - **component-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **copas** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally. · **override**
-- **cumulative-subgroup** — test_count=4 · last_touched 0d ago · override applied: Engine performs sequential / subgroup pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
+- **cumulative-subgroup** — test_count=5 · has R-parity test · last_touched 0d ago
 - **dosehtml** — test_count=4 · last_touched 0d ago · override applied: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html (the real dose-response app). Atlas measures the launcher, which is intentionally minimal. · **override**
 - **dta-diagnostic** — test_count=3 · last_touched 0d ago · override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R. · **override**
 - **dta-sroc** — test_count=4 · has R-parity test · last_touched 0d ago
@@ -39,7 +39,7 @@ Generated: 2026-05-14T09:25:26Z · scanner v0.1.0 · 69 apps
 - **gosh-metareg** — test_count=3 · last_touched 0d ago · override applied: Engine performs all-subset meta-regression that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
 - **grade-sof** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — produces structured GRADE Summary of Findings tables, not numerical estimates; R-parity is not the right benchmark. · **override**
 - **heterogeneity** — test_count=4 · has R-parity test · last_touched 0d ago
-- **hsroc** — test_count=3 · last_touched 0d ago · override applied: Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent for full bivariate HSROC — engine validated internally. · **override**
+- **hsroc** — test_count=4 · has R-parity test · last_touched 0d ago
 - **HTA** — test_count=3 · last_touched 0d ago · override applied: Health-economic decision-tree / Markov / DSA framework — comparable R packages (heemod, hesim) take >5min per run; engine validated internally via Playwright sanity checks. · **override**
 - **influence** — test_count=3 · has R-parity test · last_touched 0d ago
 - **IPD-Meta-Pro** — test_count=3 · last_touched 0d ago · override applied: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal. · **override**
