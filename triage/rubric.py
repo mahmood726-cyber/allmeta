@@ -31,10 +31,14 @@ def assign_tier(sig: dict, *, now_unix: int) -> tuple[int, list[str]]:
     if rh in ("NEEDS-SERVICE", "CONSOLE-ERRORS"):
         reasons.append(f"runtime_health={rh}")
         return 4, reasons
-    if rh == "MISSING-MOUNT" and sig.get("kind") != "informational":
-        reasons.append("runtime_health=MISSING-MOUNT (and not informational kind)")
+    if rh == "MISSING-MOUNT" and sig.get("kind") not in ("informational", "non-numerical"):
+        reasons.append("runtime_health=MISSING-MOUNT (kind is neither informational nor non-numerical)")
         return 4, reasons
-    # rh == "OK" or rh == "MISSING-MOUNT" (informational) or rh is None → fall through
+    # rh == "OK", or rh == "MISSING-MOUNT" with kind in {informational, non-numerical}, or rh is None → fall through
+    # Cycle 5.5c: non-numerical apps with a deliberate override (e.g. R-Shinylive wrappers
+    # where the real interactive UI is inside an iframe the probe can't drill into) are
+    # legitimately MISSING-MOUNT at the wrapper level; the override expresses the author's
+    # judgement that the page is intentionally light-weight.
 
     if (sig["stub_count"] or 0) >= 1:
         reasons.append(f"stub_count={sig['stub_count']}")

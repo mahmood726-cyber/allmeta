@@ -89,7 +89,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778746047,
         "playwright_pass": null,
-        "runtime_health": "OK",
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 1988.05
@@ -121,7 +121,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778746047,
         "playwright_pass": null,
-        "runtime_health": "OK",
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 653.16
@@ -179,9 +179,9 @@
         "key": "annualised-plot",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778750206,
+        "last_touched_unix": 1778750605,
         "playwright_pass": null,
-        "runtime_health": null,
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 0.71
@@ -583,9 +583,9 @@
         "key": "dta-diagnostic",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778750206,
+        "last_touched_unix": 1778750605,
         "playwright_pass": null,
-        "runtime_health": null,
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 0.71
@@ -1191,9 +1191,9 @@
         "key": "mean-single-group",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778750206,
+        "last_touched_unix": 1778750605,
         "playwright_pass": null,
-        "runtime_health": null,
+        "runtime_health": "MISSING-MOUNT",
         "stub_count": 0,
         "test_count": 3,
         "total_size_kb": 0.71
@@ -2102,7 +2102,7 @@
       "tier": 1
     }
   },
-  "generated_at": "2026-05-14T09:20:22Z",
+  "generated_at": "2026-05-14T09:25:26Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 69,
