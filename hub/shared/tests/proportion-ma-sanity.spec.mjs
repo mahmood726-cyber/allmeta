@@ -140,4 +140,56 @@ test.describe('proportion-ma retrofit sanity', () => {
     expect(obj.i2,   'i2 missing').toBeDefined();
   });
 
+  // Cycle 7.9: real JS-engine R-parity vs R logit pool (prop-tiny).
+  test('JS engine R-parity vs R logit pool (prop-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'Study A', events: 12, total: 150 },
+      { study: 'Study B', events:  8, total:  90 },
+      { study: 'Study C', events: 20, total: 220 },
+      { study: 'Study D', events:  5, total:  60 },
+      { study: 'Study E', events: 15, total: 180 },
+    ];
+    const expected = {
+      mu_re:   -2.365861008193144,
+      seRE:     0.1350315581077194,
+      tau2:     0, i2: 0,
+      poolP:    0.08581328456303973,
+      poolLo:   0.0671999729960778,
+      poolHi:   0.1089798521337489,
+      k:        5,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(APP_URL);
+    await waitForAlm(page);
+    // The R script uses the logit transform; pin the JS UI to match
+    // (default in the UI is Freeman-Tukey double arcsine).
+    await page.evaluate(() => {
+      const sel = document.getElementById('trans');
+      if (sel) { sel.value = 'logit'; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastPropMA && window._almLastPropMA() !== null,
+      { timeout: 5_000 }
+    );
+    const r = await page.evaluate(() => window._almLastPropMA());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(r.mu_re  - expected.mu_re),
+      `mu_re: ${r.mu_re} vs R=${expected.mu_re}`).toBeLessThan(TOL);
+    expect(Math.abs(r.seRE   - expected.seRE),
+      `seRE: ${r.seRE} vs R=${expected.seRE}`).toBeLessThan(TOL);
+    expect(Math.abs(r.tau2   - expected.tau2),
+      `tau2: ${r.tau2} vs R=${expected.tau2}`).toBeLessThan(TOL);
+    expect(Math.abs(r.i2     - expected.i2),
+      `i2: ${r.i2} vs R=${expected.i2}`).toBeLessThan(TOL);
+    expect(Math.abs(r.poolP  - expected.poolP),
+      `poolP: ${r.poolP} vs R=${expected.poolP}`).toBeLessThan(TOL);
+    expect(Math.abs(r.poolLo - expected.poolLo),
+      `poolLo: ${r.poolLo} vs R=${expected.poolLo}`).toBeLessThan(TOL);
+    expect(Math.abs(r.poolHi - expected.poolHi),
+      `poolHi: ${r.poolHi} vs R=${expected.poolHi}`).toBeLessThan(TOL);
+  });
+
 });
