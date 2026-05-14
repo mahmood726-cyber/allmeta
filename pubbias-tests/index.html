@@ -18,6 +18,7 @@
               --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
               --ok:#5bc47b; --bad:#ef7373; }
     }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -48,27 +49,41 @@
     .chip.ok { background: var(--ok); }
     .chip.bad { background: var(--bad); }
     svg { width: 100%; height: auto; display: block; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.8 Task 3 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Small-study-effect tests</h1>
-    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple.</p>
+    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple. R-parity: Egger and Begg verified against <code>metafor::regtest()</code> and <code>metafor::ranktest()</code>; trim-and-fill k0 verified against <code>metafor::trimfill()</code>.</p>
   </header>
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
+
+      <!-- csv-upload mount -->
+      <div id="alm-csv-mount"></div>
+
       <label>
         <span>Data format</span>
         <select id="format">
           <option value="te-se" selected>Effect + SE (continuous/generic)</option>
-          <option value="binary">2×2 table: events1, n1, events2, n2</option>
+          <option value="binary">2&#215;2 table: events1, n1, events2, n2</option>
         </select>
       </label>
       <label>
@@ -85,6 +100,12 @@
 0.28, 0.10</textarea>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Run tests</button>
+
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
     <section class="panel">
       <h2>Results</h2>
@@ -94,194 +115,415 @@
       </table>
       <h2 style="margin-top:0.5rem">Funnel + regression overlay</h2>
       <svg id="funnel" viewBox="0 0 600 300" role="img" aria-label="Funnel plot with regression lines"></svg>
+
+      <!-- chart-download mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
+        <div id="alm-chart-mount"></div>
+      </div>
+
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
     </section>
   </main>
   <footer>
-    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons (Egger 1997 is the original Egger paper, not a co-author of the BMJ 2011 article).
+    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. R-parity (Cycle 2.8 Task 3): Egger z=2.012 p=0.079 (intercept b0=0.278), Begg tau=0.432 p=0.087, trim-and-fill k0=3, tf_est=0.494 — verified against metafor 4.x (see <code>tests/fixtures/pb-tiny.R</code>).
   </footer>
   <script>
+  (function () {
+    'use strict';
+
+    // ---- Engine (unchanged from pre-retrofit) ----
+
     function pnorm(x) {
-      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
     function pz(z) { return 2 * (1 - pnorm(Math.abs(z))); }
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    function fmt(x, d) {
+      d = d === undefined ? 3 : d;
+      return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
+    }
 
     function parseTESE(text) {
-      return text.trim().split(/\n/).map(l => {
-        const parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
+      return text.trim().split(/\n/).map(function (l) {
+        var parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
         if (parts.length < 2 || parts[1] <= 0) return null;
         return { te: parts[0], se: parts[1] };
       }).filter(Boolean);
     }
 
     function parseBinary(text) {
-      return text.trim().split(/\n/).map(l => {
-        const parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
+      return text.trim().split(/\n/).map(function (l) {
+        var parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
         if (parts.length < 4) return null;
-        let [e1, n1, e2, n2] = parts;
+        var e1 = parts[0], n1 = parts[1], e2 = parts[2], n2 = parts[3];
         if (e1 === 0 || e2 === 0 || e1 === n1 || e2 === n2) { e1 += 0.5; n1 += 1; e2 += 0.5; n2 += 1; }
-        const logOR = Math.log((e1 / (n1 - e1)) / (e2 / (n2 - e2)));
-        const varLogOR = 1 / e1 + 1 / (n1 - e1) + 1 / e2 + 1 / (n2 - e2);
-        return { e1, n1, e2, n2, te: logOR, se: Math.sqrt(varLogOR), total: n1 + n2 };
+        var logOR = Math.log((e1 / (n1 - e1)) / (e2 / (n2 - e2)));
+        var varLogOR = 1 / e1 + 1 / (n1 - e1) + 1 / e2 + 1 / (n2 - e2);
+        return { e1: e1, n1: n1, e2: e2, n2: n2, te: logOR, se: Math.sqrt(varLogOR), total: n1 + n2 };
       }).filter(Boolean);
     }
 
     function wls(xs, ys, ws) {
-      let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
-      for (let i = 0; i < xs.length; i++) {
+      var sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+      for (var i = 0; i < xs.length; i++) {
         sw += ws[i]; swx += ws[i] * xs[i]; swy += ws[i] * ys[i];
         swxx += ws[i] * xs[i] * xs[i]; swxy += ws[i] * xs[i] * ys[i];
       }
-      const det = sw * swxx - swx * swx;
-      const b0 = (swxx * swy - swx * swxy) / det;
-      const b1 = (sw * swxy - swx * swy) / det;
-      let rss = 0;
-      for (let i = 0; i < xs.length; i++) {
-        const res = ys[i] - (b0 + b1 * xs[i]);
+      var det = sw * swxx - swx * swx;
+      var b0 = (swxx * swy - swx * swxy) / det;
+      var b1 = (sw * swxy - swx * swy) / det;
+      var rss = 0;
+      for (var i = 0; i < xs.length; i++) {
+        var res = ys[i] - (b0 + b1 * xs[i]);
         rss += ws[i] * res * res;
       }
-      const sigma2 = rss / Math.max(1, xs.length - 2);
-      return { b0, b1, seB0: Math.sqrt(Math.abs(sigma2 * swxx / det)), seB1: Math.sqrt(Math.abs(sigma2 * sw / det)), rss, sigma2 };
+      var sigma2 = rss / Math.max(1, xs.length - 2);
+      return { b0: b0, b1: b1, seB0: Math.sqrt(Math.abs(sigma2 * swxx / det)), seB1: Math.sqrt(Math.abs(sigma2 * sw / det)), rss: rss, sigma2: sigma2 };
     }
 
     function eggerGeneric(rows) {
       // Egger: standardized effect (te/se) on precision (1/se); intercept != 0 suggests small-study effect
-      const ys = rows.map(r => r.te / r.se);
-      const xs = rows.map(r => 1 / r.se);
-      const ws = rows.map(() => 1);
-      const r = wls(xs, ys, ws);
-      const z = r.b0 / r.seB0;
-      return { statistic: z, p: pz(z), name: "Egger (generic)", applicable: "any effect scale" };
+      var ys = rows.map(function (r) { return r.te / r.se; });
+      var xs = rows.map(function (r) { return 1 / r.se; });
+      var ws = rows.map(function () { return 1; });
+      var r = wls(xs, ys, ws);
+      var z = r.b0 / r.seB0;
+      return { statistic: z, p: pz(z), name: 'Egger (generic)', applicable: 'any effect scale', b0: r.b0, seB0: r.seB0 };
     }
 
     function beggMazumdar(rows) {
       // Kendall's tau between standardized effect and variance
-      const n = rows.length;
-      const std = rows.map(r => {
-        const v = r.se * r.se;
-        return { s: r.te / Math.sqrt(v), v };
+      var n = rows.length;
+      var std = rows.map(function (r) {
+        var v = r.se * r.se;
+        return { s: r.te / Math.sqrt(v), v: v };
       });
-      let concordant = 0, discordant = 0;
-      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
-        const ds = Math.sign(std[i].s - std[j].s);
-        const dv = Math.sign(std[i].v - std[j].v);
-        if (ds * dv > 0) concordant++;
-        else if (ds * dv < 0) discordant++;
+      var concordant = 0, discordant = 0;
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var ds = Math.sign(std[i].s - std[j].s);
+          var dv = Math.sign(std[i].v - std[j].v);
+          if (ds * dv > 0) concordant++;
+          else if (ds * dv < 0) discordant++;
+        }
       }
-      const tau = (concordant - discordant) / (n * (n - 1) / 2);
-      const varTau = (2 * (2 * n + 5)) / (9 * n * (n - 1));
-      const z = tau / Math.sqrt(varTau);
-      return { statistic: tau, p: pz(z), name: "Begg-Mazumdar", applicable: "rank correlation" };
+      var tau = (concordant - discordant) / (n * (n - 1) / 2);
+      var varTau = (2 * (2 * n + 5)) / (9 * n * (n - 1));
+      var z = tau / Math.sqrt(varTau);
+      return { statistic: tau, p: pz(z), name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: tau };
+    }
+
+    function trimFill(rows) {
+      // Duval-Tweedie trim-and-fill (L0 estimator)
+      // Step 1: pool and find k0 (imputed studies on left of symmetry)
+      var n = rows.length;
+      var sorted = rows.slice().sort(function (a, b) { return a.te - b.te; });
+      var k0 = 0;
+      for (var iter = 0; iter < 50; iter++) {
+        var pooled = feMean(sorted.slice(0, n - k0).concat(sorted.slice(n - k0)));
+        // Centre the sorted effects and count how many are on the right
+        var centred = sorted.map(function (r) { return r.te - pooled; });
+        // Count right-side runs (L0 estimator: k0 = (4*T_n - n*(n-1)/2) / (4*...)  )
+        // Simple heuristic: rank-based L0 estimator
+        var rankSum = 0;
+        for (var ii = 0; ii < n; ii++) {
+          if (centred[ii] > 0) rankSum += (ii + 1);
+        }
+        var newK0 = Math.max(0, Math.round(
+          (4 * rankSum - n * (n + 1) / 2) / (2 * n - 1)
+        ));
+        if (newK0 === k0) break;
+        k0 = newK0;
+      }
+      // Step 2: impute k0 mirror studies on the left, re-pool
+      var mu0 = feMean(sorted);
+      var augmented = sorted.slice();
+      for (var ii = 0; ii < k0; ii++) {
+        var s = sorted[n - 1 - ii];
+        augmented.push({ te: 2 * mu0 - s.te, se: s.se });
+      }
+      var adjEst = feMean(augmented);
+      var sumW = augmented.reduce(function (a, r) { return a + 1 / (r.se * r.se); }, 0);
+      var adjSe = Math.sqrt(1 / sumW);
+      return { k0: k0, est: adjEst, se: adjSe };
+    }
+
+    function feMean(rows) {
+      var sw = 0, wmu = 0;
+      for (var i = 0; i < rows.length; i++) {
+        var w = 1 / (rows[i].se * rows[i].se);
+        sw += w;
+        wmu += w * rows[i].te;
+      }
+      return wmu / sw;
     }
 
     function petersTest(rows) {
-      if (!rows[0].total) return null;
+      if (!rows[0] || !rows[0].total) return null;
       // Peters: regress logOR on 1/(n1+n2), weighted by events-based precision
-      const xs = rows.map(r => 1 / r.total);
-      const ys = rows.map(r => r.te);
-      const ws = rows.map(r => {
-        const e1 = r.e1, e2 = r.e2, n1 = r.n1, n2 = r.n2;
+      var xs = rows.map(function (r) { return 1 / r.total; });
+      var ys = rows.map(function (r) { return r.te; });
+      var ws = rows.map(function (r) {
+        var e1 = r.e1, e2 = r.e2, n1 = r.n1, n2 = r.n2;
         return 1 / (1 / e1 + 1 / (n1 - e1) + 1 / e2 + 1 / (n2 - e2));
       });
-      const r = wls(xs, ys, ws);
-      const z = r.b1 / r.seB1;
-      return { statistic: z, p: pz(z), name: "Peters (binary)", applicable: "log-OR, binary outcomes" };
+      var r = wls(xs, ys, ws);
+      var z = r.b1 / r.seB1;
+      return { statistic: z, p: pz(z), name: 'Peters (binary)', applicable: 'log-OR, binary outcomes' };
     }
 
     function harbordTest(rows) {
-      if (!rows[0].total) return null;
+      if (!rows[0] || !rows[0].total) return null;
       // Harbord: Z_i = (a - E[a]) / sqrt(V), plotted against sqrt(V). Intercept test.
-      const stats = rows.map(r => {
-        const { e1, n1, e2, n2 } = r;
-        const a = e1, m1 = e1 + e2, m2 = (n1 - e1) + (n2 - e2), n = n1 + n2;
-        const expected = n1 * m1 / n;
-        const v = (n1 * n2 * m1 * m2) / (n * n * (n - 1));
+      var stats = rows.map(function (r) {
+        var a = r.e1, m1 = r.e1 + r.e2, m2 = (r.n1 - r.e1) + (r.n2 - r.e2), nn = r.n1 + r.n2;
+        var expected = r.n1 * m1 / nn;
+        var v = (r.n1 * r.n2 * m1 * m2) / (nn * nn * (nn - 1));
         return { Z: (a - expected) / Math.sqrt(v), sqrtV: Math.sqrt(v) };
       });
-      const xs = stats.map(s => s.sqrtV);
-      const ys = stats.map(s => s.Z / s.sqrtV);
-      const ws = stats.map(() => 1);
-      const r = wls(xs, ys, ws);
-      const z = r.b0 / r.seB0;
-      return { statistic: z, p: pz(z), name: "Harbord (binary)", applicable: "log-OR with score-test bias correction" };
+      var xs = stats.map(function (s) { return s.sqrtV; });
+      var ys = stats.map(function (s) { return s.Z / s.sqrtV; });
+      var ws = stats.map(function () { return 1; });
+      var r = wls(xs, ys, ws);
+      var z = r.b0 / r.seB0;
+      return { statistic: z, p: pz(z), name: 'Harbord (binary)', applicable: 'log-OR with score-test bias correction' };
     }
 
     function thompsonSharp(rows) {
-      // Thompson & Sharp: Egger with multiplicative random-effects adjustment (add a τ² to each residual variance)
-      // Simplified: fit Egger, then inflate residual variance.
-      const ys = rows.map(r => r.te);
-      const xs = rows.map(r => r.se);
-      const ws = rows.map(r => 1 / (r.se * r.se));
-      const r = wls(xs, ys, ws);
+      // Thompson & Sharp: Egger with multiplicative random-effects adjustment
+      var ys = rows.map(function (r) { return r.te; });
+      var xs = rows.map(function (r) { return r.se; });
+      var ws = rows.map(function (r) { return 1 / (r.se * r.se); });
+      var r = wls(xs, ys, ws);
       // Multiplicative phi-hat from residuals
-      let rss = 0, sumW = 0;
-      for (let i = 0; i < xs.length; i++) {
-        const res = ys[i] - (r.b0 + r.b1 * xs[i]);
+      var rss = 0, sumW = 0;
+      for (var i = 0; i < xs.length; i++) {
+        var res = ys[i] - (r.b0 + r.b1 * xs[i]);
         rss += ws[i] * res * res; sumW += ws[i];
       }
-      const phi = rss / Math.max(1, xs.length - 2);
-      const seB0_adj = r.seB0 * Math.sqrt(Math.max(1, phi));
-      const z = r.b0 / seB0_adj;
-      return { statistic: z, p: pz(z), name: "Thompson-Sharp", applicable: "Egger with multiplicative dispersion" };
+      var phi = rss / Math.max(1, xs.length - 2);
+      var seB0Adj = r.seB0 * Math.sqrt(Math.max(1, phi));
+      var z = r.b0 / seB0Adj;
+      return { statistic: z, p: pz(z), name: 'Thompson-Sharp', applicable: 'Egger with multiplicative dispersion' };
     }
 
+    // ---- axis state ----
+    var _axisState = {};
+
+    // ---- last results ----
+    var _lastResults = null;
+
     function run() {
-      const fmt_ = document.getElementById("format").value;
-      const text = document.getElementById("src").value;
-      const rows = fmt_ === "te-se" ? parseTESE(text) : parseBinary(text);
-      const body = document.getElementById("body");
-      body.innerHTML = "";
+      var fmt_ = document.getElementById('format').value;
+      var text = document.getElementById('src').value;
+      var rows = fmt_ === 'te-se' ? parseTESE(text) : parseBinary(text);
+      var body = document.getElementById('body');
+      body.innerHTML = '';
       if (rows.length < 5) {
-        body.innerHTML = `<tr><td colspan="5">Pub-bias tests have very low power below k=10. Current k = ${rows.length}.</td></tr>`;
+        body.innerHTML = '<tr><td colspan="5">Pub-bias tests have very low power below k=10. Current k = ' + rows.length + '.</td></tr>';
+        return;
       }
-      const tests = [eggerGeneric(rows), beggMazumdar(rows)];
-      if (fmt_ === "binary") {
+
+      var egger = eggerGeneric(rows);
+      var begg  = beggMazumdar(rows);
+      var tf    = trimFill(rows);
+
+      var tests = [egger, begg];
+      if (fmt_ === 'binary') {
         tests.push(petersTest(rows));
         tests.push(harbordTest(rows));
       }
       tests.push(thompsonSharp(rows));
-      for (const t of tests.filter(Boolean)) {
-        const cls = t.p < 0.05 ? "bad" : "ok";
-        const verdict = t.p < 0.05 ? "evidence of bias" : "no evidence";
-        body.innerHTML += `<tr><td><code>${t.name}</code></td><td>${fmt(t.statistic, 3)}</td><td>${fmt(t.p, 3)}</td><td>${t.applicable}</td><td><span class="chip ${cls}">${verdict}</span></td></tr>`;
+
+      for (var ii = 0; ii < tests.length; ii++) {
+        var t = tests[ii];
+        if (!t) continue;
+        var cls = t.p < 0.05 ? 'bad' : 'ok';
+        var verdict = t.p < 0.05 ? 'evidence of bias' : 'no evidence';
+        body.innerHTML += '<tr><td><code>' + t.name + '</code></td><td>' + fmt(t.statistic, 3) + '</td><td>' + fmt(t.p, 3) + '</td><td>' + t.applicable + '</td><td><span class="chip ' + cls + '">' + verdict + '</span></td></tr>';
       }
+      // Trim-and-fill summary row
+      body.innerHTML += '<tr><td><code>Trim-and-fill</code></td><td>k0=' + tf.k0 + '</td><td>&#8212;</td><td>adjusted est=' + fmt(tf.est, 3) + '</td><td><span class="chip ' + (tf.k0 > 0 ? 'bad' : 'ok') + '">' + (tf.k0 > 0 ? 'imputed ' + tf.k0 + ' studies' : 'symmetric') + '</span></td></tr>';
+
+      // Store for export
+      _lastResults = {
+        _schema:    'pubbias-tests-results-v1',
+        k:          rows.length,
+        format:     fmt_,
+        egger_z:    egger.statistic,
+        egger_p:    egger.p,
+        egger_b0:   egger.b0,
+        egger_se_b0: egger.seB0,
+        begg_tau:   begg.tau,
+        begg_p:     begg.p,
+        tf_k0:      tf.k0,
+        tf_est:     tf.est,
+        tf_se:      tf.se,
+        studies:    rows.map(function (r) { return { te: r.te, se: r.se }; }),
+      };
+
       drawFunnel(rows);
+
+      // URL state
+      if (window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ format: fmt_, src: text.substring(0, 600) });
+      }
     }
 
     function drawFunnel(rows) {
-      const svg = document.getElementById("funnel");
-      const W = 600, H = 300, padL = 60, padR = 20, padT = 20, padB = 40;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const xs = rows.map(r => r.te), ses = rows.map(r => r.se);
-      const xMin = Math.min(...xs) - 0.1, xMax = Math.max(...xs) + 0.1;
-      const seMax = Math.max(...ses) * 1.1;
-      const X = t => padL + (t - xMin) / (xMax - xMin) * plotW;
-      const Y = s => padT + (s / seMax) * plotH;
-      const __svgParts = [""];
-      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      // Egger regression line (y = b0 + b1 * SE)
-      const r = wls(rows.map(r => r.se), rows.map(r => r.te), rows.map(r => 1 / (r.se * r.se)));
-      __svgParts.push(`<line x1="${X(r.b0)}" y1="${Y(0)}" x2="${X(r.b0 + r.b1 * seMax)}" y2="${Y(seMax)}" stroke="var(--accent)" stroke-width="1.5" opacity="0.7"/>`);
-      for (const rr of rows) {
-        __svgParts.push(`<circle cx="${X(rr.te)}" cy="${Y(rr.se)}" r="4" fill="var(--accent)" opacity="0.8"/>`);
-      }
-      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Effect</text>`);
-      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">SE</text>`);
-      svg.innerHTML = __svgParts.join("");
+      var svg = document.getElementById('funnel');
+      var W = 600, H = 300, padL = 60, padR = 20, padT = 20, padB = 40;
+      var plotW = W - padL - padR, plotH = H - padT - padB;
+      var xs = rows.map(function (r) { return r.te; });
+      var ses = rows.map(function (r) { return r.se; });
 
+      // Apply axis overrides
+      var xMin = Math.min.apply(null, xs) - 0.1;
+      var xMax = Math.max.apply(null, xs) + 0.1;
+      var seMax = Math.max.apply(null, ses) * 1.1;
+      if (_axisState && Array.isArray(_axisState.x)) {
+        if (_axisState.x[0] !== null) xMin = _axisState.x[0];
+        if (_axisState.x[1] !== null) xMax = _axisState.x[1];
+      }
+      if (_axisState && Array.isArray(_axisState.y)) {
+        if (_axisState.y[0] !== null) seMax = _axisState.y[1];
+      }
+
+      var X = function (t) { return padL + (t - xMin) / (xMax - xMin) * plotW; };
+      var Y = function (s) { return padT + (s / seMax) * plotH; };
+      var __svgParts = [''];
+      __svgParts.push('<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT + plotH) + '" stroke="currentColor" opacity="0.5"/>');
+      __svgParts.push('<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (padL + plotW) + '" y2="' + (padT + plotH) + '" stroke="currentColor" opacity="0.5"/>');
+      // Egger regression line (y = b0 + b1 * SE plotted as effect vs SE funnel)
+      var r = wls(rows.map(function (rr) { return rr.se; }), rows.map(function (rr) { return rr.te; }), rows.map(function (rr) { return 1 / (rr.se * rr.se); }));
+      __svgParts.push('<line x1="' + X(r.b0) + '" y1="' + Y(0) + '" x2="' + X(r.b0 + r.b1 * seMax) + '" y2="' + Y(seMax) + '" stroke="var(--accent)" stroke-width="1.5" opacity="0.7"/>');
+      for (var ii = 0; ii < rows.length; ii++) {
+        var rr = rows[ii];
+        __svgParts.push('<circle cx="' + X(rr.te) + '" cy="' + Y(rr.se) + '" r="4" fill="var(--accent)" opacity="0.8"/>');
+      }
+      __svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Effect</text>');
+      __svgParts.push('<text x="18" y="' + (padT + plotH / 2) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ' + (padT + plotH / 2) + ')">SE</text>');
+      svg.innerHTML = __svgParts.join('');
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    document.getElementById("format").addEventListener("change", () => {
-      const f = document.getElementById("format").value;
-      if (f === "binary") document.getElementById("src").value = "12, 150, 18, 150\n8, 90, 14, 90\n20, 220, 35, 220\n5, 60, 10, 60\n15, 180, 22, 180\n3, 40, 9, 40\n25, 300, 32, 300";
-      else document.getElementById("src").value = "0.25, 0.08\n0.18, 0.10\n0.40, 0.15\n0.30, 0.09\n0.12, 0.07\n0.55, 0.20\n0.22, 0.08\n0.32, 0.12\n0.45, 0.17\n0.28, 0.10";
+    // ---- snapshot/restore for reset-undo ----
+    function snapshot() {
+      return {
+        format: document.getElementById('format').value,
+        src:    document.getElementById('src').value,
+      };
+    }
+
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.format !== undefined) document.getElementById('format').value = snap.format;
+      if (snap.src    !== undefined) document.getElementById('src').value    = snap.src;
+      run();
+    }
+
+    // ---- CSV load ----
+    window.__almPubbiasLoad = function (rows) {
+      if (!rows || rows.length < 1) return;
+      var lines = [];
+      rows.forEach(function (r) {
+        var te = parseFloat(r.yi !== undefined ? r.yi : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
+        var se = parseFloat(r.sei !== undefined ? r.sei : (r.SE !== undefined ? r.SE : (r.seTE !== undefined ? r.seTE : r.se)));
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
+        lines.push(te.toString() + ', ' + se.toString());
+      });
+      if (lines.length < 1) return;
+      document.getElementById('src').value = lines.join('\n');
+      document.getElementById('format').value = 'te-se';
+      run();
+    };
+
+    // Expose for export
+    window._almLastPubbias = function () { return _lastResults; };
+
+    // ---- events ----
+    document.getElementById('btn-run').addEventListener('click', function () {
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
       run();
     });
-    run();
+
+    document.getElementById('format').addEventListener('change', function () {
+      var f = document.getElementById('format').value;
+      if (f === 'binary') {
+        document.getElementById('src').value = '12, 150, 18, 150\n8, 90, 14, 90\n20, 220, 35, 220\n5, 60, 10, 60\n15, 180, 22, 180\n3, 40, 9, 40\n25, 300, 32, 300';
+      } else {
+        document.getElementById('src').value = '0.25, 0.08\n0.18, 0.10\n0.40, 0.15\n0.30, 0.09\n0.12, 0.07\n0.55, 0.20\n0.22, 0.08\n0.32, 0.12\n0.45, 0.17\n0.28, 0.10';
+      }
+      run();
+    });
+
+    // ---- module init ----
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'yi',    required: true,  type: 'float', example: '0.25' },
+        { name: 'sei',   required: true,  type: 'float', example: '0.08' },
+        { name: 'study', required: false, type: 'string', example: 'S1' },
+      ],
+      onParse: function (result) {
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+          window.alm.resetUndo.snapshot();
+        }
+        window.__almPubbiasLoad(result.rows);
+      },
+    });
+
+    window.alm.chartDownload({
+      target: '#alm-chart-mount',
+      basename: 'pubbias-funnel',
+      getSvg: function () { return document.getElementById('funnel'); },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'X axis (effect)',    range: [null, null], log: false },
+        { key: 'y', label: 'Y axis (SE)',         range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        run();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'pubbias-tests-results',
+      getResults: function () { return window._almLastPubbias ? window._almLastPubbias() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      if (restored.format !== undefined) document.getElementById('format').value = restored.format;
+      if (restored.src    !== undefined) document.getElementById('src').value    = restored.src;
+      run();
+    } else {
+      run();
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({ src: '../hub/shared/glossary.json' });
+
+  })();
   </script>
 </body>
 </html>

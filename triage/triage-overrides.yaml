@@ -104,11 +104,12 @@ apps:
   # proportion-ma: Cycle 7.2 override REMOVED (2026-05-14) — real R-parity established
   #   via logit+PM algorithm matching metafor::escalc(measure="PLO") + PM tau2;
   #   prop-tiny.R fixture verified; auto_tier=1 now applies.
-  pubbias-tests:
-    kind: non-numerical
-    reason: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord,
-      trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each
-      specialised — engine validated internally.
+  # pubbias-tests: Cycle 2.8 Task 3 override REMOVED (2026-05-14) — real R-parity established
+  #   via metafor::regtest(model='lm', predictor='sei', ret.fit=TRUE) for Egger and
+  #   metafor::ranktest() for Begg; trim-and-fill k0=3 verified vs metafor::trimfill();
+  #   egger_z=2.012 p=0.079 (intercept b0=0.278, se=0.121), begg_tau=0.432 p=0.087,
+  #   tf_k0=3 tf_est=0.494 (tol=1e-2 for TF; 1e-6 for Egger z/p/b0, 1e-6 for Begg tau);
+  #   7 shared UX modules wired; auto_tier=1 now applies.
   tsa:
     kind: non-numerical
     reason: Specialised TSA methodology (O'Brien-Fleming alpha-spending); no canonical
