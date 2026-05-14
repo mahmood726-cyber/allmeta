@@ -222,8 +222,10 @@
       iframe.src = './webr-studio/?prewarm=1';
       iframe.setAttribute('aria-hidden', 'true');
       iframe.setAttribute('title', 'WebR pre-warm');
-      iframe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;visibility:hidden';
-      iframe.loading = 'lazy';
+      // Keep the iframe in-flow visually but invisible. We deliberately do
+      // NOT use loading='lazy': lazy iframes never load when positioned off-
+      // screen (the browser sees they're below the viewport and waits).
+      iframe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;visibility:hidden;pointer-events:none';
       document.body.appendChild(iframe);
       var torn = false;
       function teardown() {
