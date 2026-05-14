@@ -153,6 +153,8 @@
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
+    // Cycle 7.2: exact qnorm(0.995) for 99% CI funnel boundary (was 2.58; ~4e-3 drift).
+    var Z995 = 2.5758293035489004;
 
   (function () {
     "use strict";
@@ -347,8 +349,8 @@
       p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + Z975 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
 
       // 99% funnel (faint)
-      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - 2.58 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");
-      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + 2.58 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - Z995 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + Z995 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");
 
       // Vertical centre line
       p.push("<line x1=\"" + x(centre) + "\" y1=\"" + T + "\" x2=\"" + x(centre) + "\" y2=\"" + (T + plotH) + "\" stroke=\"#2c5e8a\" stroke-width=\"1\"/>");
