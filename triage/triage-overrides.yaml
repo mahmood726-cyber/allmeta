@@ -59,10 +59,10 @@ apps:
     kind: non-numerical
     reason: Reporting/utility app — produces structured GRADE Summary of Findings tables,
       not numerical estimates; R-parity is not the right benchmark.
-  hsroc:
-    kind: non-numerical
-    reason: Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent
-      for full bivariate HSROC — engine validated internally.
+  # hsroc: Cycle 2.7 Task 3 override REMOVED (2026-05-14) — real R-parity established
+  #   via mada::reitsma(); hsroc-tiny.R + hsroc-tiny.csv fixture verified;
+  #   mu1=1.428039825037, mu2=-1.898869844426, rho=-0.884 (no boundary artefact);
+  #   parameterisation: logit(FPR) matches mada exactly (no sign-flip); auto_tier=1 now applies.
   km-reconstructor:
     kind: non-numerical
     reason: Specialised methodology (Guyot IPD reconstruction from K-M curves); no

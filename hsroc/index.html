@@ -8,272 +8,582 @@
   <meta name="color-scheme" content="light dark">
   <title>HSROC / Bivariate DTA</title>
   <style>
-    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
-            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
-            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
-    @media (prefers-color-scheme:dark) {
-      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
-              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
-              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
     }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
-    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
-    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
-    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
-    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
-           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
-    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
-    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
-                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-    textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;
-               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
-               border-radius: 6px; font: 0.86rem/1.4 "SF Mono", Consolas, monospace; }
-    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
-                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
-    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
-    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
-    .pooled-row { background: var(--accent-soft); font-weight: 600; }
-    svg { width: 100%; height: auto; display: block; }
-    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
-            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
-    .note strong { color: var(--warn); }
-    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
-    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    .skip-link { position:absolute; left:-9999px; top:0; background:var(--accent); color:#fff;
+                 padding:0.5rem 1rem; z-index:999999; border-radius:0 0 6px 0; font-size:0.9rem; }
+    .skip-link:focus { left:0; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
+    .layout { display:grid; grid-template-columns:minmax(320px,28rem) 1fr;
+              gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+    .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    fieldset { border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem 1rem; margin:0 0 1rem; }
+    legend { padding:0 0.5rem; font-size:0.85rem; font-weight:600; color:var(--accent); }
+    label { display:block; margin-bottom:0.5rem; font-size:0.88rem; }
+    label span.lbl { display:block; margin-bottom:0.15rem; }
+    label span.hint { display:block; color:var(--muted); font-size:0.75rem; margin-top:0.1rem; }
+    input[type="number"],input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.9rem;
+    }
+    textarea { resize:vertical; min-height:10rem; font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,monospace; font-size:0.8rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline:2px solid var(--accent); outline-offset:2px;
+    }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); }
+    button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
+    .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .preview-wrap { position:sticky; top:1rem; }
+    .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
+    .warn-banner { margin-top:0.5rem; padding:0.5rem 0.75rem; background:var(--warn-soft);
+                   color:var(--warn); border:1px solid var(--warn); border-radius:6px; font-size:0.82rem; display:none; }
+    .warn-banner.is-visible { display:block; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
+                   padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
+    .file-input-hidden { display:none; }
+    table { width:100%; border-collapse:collapse; font-size:0.85rem; margin:0.5rem 0; }
+    th, td { padding:0.35rem 0.5rem; border-bottom:1px solid var(--border); text-align:left; }
+    th { color:var(--muted); font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.7 shared UX modules:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips (7 total) -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
-<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
-    <h1>Bivariate DTA / HSROC</h1>
-    <p>Meta-analysis of diagnostic test accuracy: bivariate random-effects model on logit(sensitivity) and logit(1-specificity), with a parametric HSROC curve. Approximates Reitsma/Harbord via method-of-moments + IGLS iteration. For rigorous estimates use R's <code>mada</code>.</p>
+    <h1>Bivariate <abbr data-gloss="DTA">DTA</abbr> / <abbr data-gloss="HSROC">HSROC</abbr></h1>
+    <p>Meta-analysis of diagnostic test accuracy: bivariate random-effects model on logit(<abbr data-gloss="Se">Se</abbr>) and logit(<abbr data-gloss="FPR">FPR</abbr> = 1−<abbr data-gloss="Sp">Sp</abbr>), with a parametric <abbr data-gloss="HSROC">HSROC</abbr> curve and summary operating point. Approximates Reitsma/Harbord via DerSimonian-Laird on each margin. For rigorous estimates use R's <code>mada::reitsma</code>.</p>
   </header>
-  <main id="main">
-    <section class="panel">
-      <h2>Input</h2>
-      <label for="src" style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies — <code>TP, FP, FN, TN, label</code> (per line)</label>
-      <textarea id="src">85, 9, 15, 91, Smith 2018
-72, 11, 18, 99, Jones 2019
-110, 18, 20, 152, Khan 2020
-45, 6, 8, 41, Lee 2021
-92, 14, 14, 80, Park 2022
-60, 8, 11, 121, Garcia 2022
-120, 22, 16, 142, Ahmed 2023</textarea>
-      <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.7rem">Fit</button>
+
+  <main id="main-content" class="layout">
+    <section class="panel" aria-label="Input form">
+      <h2>Study data</h2>
+
+      <!-- csv-upload mount: RFC-4180 file picker for study, TP, FP, FN, TN -->
+      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
+
+      <fieldset>
+        <legend>Data</legend>
+        <label>
+          <span class="lbl">CSV: <code>label, <abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr></code></span>
+          <textarea id="f-data" spellcheck="false" aria-label="Study data: label, TP, FP, FN, TN per line"></textarea>
+          <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. Continuity correction (+0.5 to all cells) applied only if any cell is zero (advanced-stats.md).</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Display</legend>
+        <label>
+          <span class="lbl">Plot title</span>
+          <input type="text" id="f-title" placeholder="e.g. CT for pulmonary embolism — HSROC">
+        </label>
+      </fieldset>
+
+      <!-- axis-controls mount: ROC [0,1]×[0,1] domain; override deferred -->
+      <div id="alm-axis-mount" style="margin-bottom:0.5rem;"></div>
+
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;margin-top:0.5rem;margin-bottom:0.5rem;"></div>
+
+      <!-- results-export mount: CSV + JSON export of per-study rows + bivariate summary -->
+      <div id="alm-export-mount" style="margin-bottom:0.5rem;"></div>
+
+      <!-- chart-download mount: SVG + PNG download of the SROC plot -->
+      <div id="alm-chart-mount" style="margin-bottom:0.5rem;"></div>
+
+      <div class="actions">
+        <button type="button" id="btn-run" class="primary">Fit</button>
+        <button type="button" id="btn-example">Load example</button>
+        <button type="button" id="btn-reset">Reset</button>
+      </div>
     </section>
-    <section class="panel">
-      <h2>Per study (Clopper-Pearson 95% CI)</h2>
-      <table id="per-study">
-        <thead><tr><th>Study</th><th>Se</th><th>Sp</th><th>logit(Se)</th><th>logit(1-Sp)</th></tr></thead>
-        <tbody id="res-body"></tbody>
-      </table>
+
+    <section class="panel preview-wrap" aria-label="SROC preview">
+      <h2>Per study (<abbr data-gloss="Clopper-Pearson">Clopper-Pearson</abbr> 95% CI)</h2>
+      <div id="per-study-wrap"></div>
       <h2 style="margin-top:0.8rem">Summary estimates</h2>
-      <div id="summary"></div>
-      <h2 style="margin-top:0.8rem">SROC plot</h2>
-      <svg id="sroc" viewBox="0 0 600 500" role="img" aria-label="SROC plot — observed points plus HSROC curve and summary operating point"></svg>
+      <div id="summary-wrap"></div>
+      <h2 style="margin-top:0.8rem"><abbr data-gloss="SROC">SROC</abbr> plot</h2>
+      <!-- chart-download target: #sroc-host contains the SVG rendered by drawSROC() -->
+      <div id="sroc-host" aria-label="SROC plot"></div>
     </section>
   </main>
-  <footer>
-    Model: bivariate random-effects on logit-Se, logit-FPR, correlation ρ — Reitsma JB et al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (HSROC). Implemented here as alternating univariate DerSimonian-Laird pools on each margin plus an empirical residual correlation — this is a Harbord-Whiting-style approximation (Harbord RM et al. <em>Biostatistics</em> 2007;8:239–251) and is NOT iterated to convergence. For rigorous Reitsma/HSROC estimates use <code>mada::reitsma</code> (also available via WebR Studio). 0.5 continuity correction when any cell is zero. HSROC curve plotted as the locus of (FPR, Se) pairs consistent with the mean linear predictor.
-  </footer>
+
+  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Implemented as alternating univariate DerSimonian-Laird pools on each margin + empirical residual correlation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251 approximation; NOT iterated to convergence). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor.</p>
+
   <script>
-    function parse(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const parts = l.split(/,/).map(s => s.trim());
-        const TP = parseFloat(parts[0]), FP = parseFloat(parts[1]), FN = parseFloat(parts[2]), TN = parseFloat(parts[3]);
-        if (![TP, FP, FN, TN].every(Number.isFinite)) return null;
-        return { TP, FP, FN, TN, label: parts[4] || `Study ${i + 1}` };
-      }).filter(Boolean);
-    }
+  (function () {
+    "use strict";
+    const LS_KEY = "hsroc-v1";
 
-    function corrected(r) {
-      if (r.TP === 0 || r.FP === 0 || r.FN === 0 || r.TN === 0) {
-        return { TP: r.TP + 0.5, FP: r.FP + 0.5, FN: r.FN + 0.5, TN: r.TN + 0.5 };
+    const fields = { data: "f-data", title: "f-title" };
+    const EXAMPLE_DATA = "Smith 2018, 80, 40, 20, 160\nJones 2019, 95, 5, 5, 95\nKhan 2020, 60, 30, 40, 170\nLee 2021, 88, 12, 12, 88\nPark 2022, 70, 50, 30, 150\nGarcia 2022, 92, 8, 8, 192\nAhmed 2023, 55, 45, 45, 155";
+    const EXAMPLE_TITLE = "Example HSROC - diagnostic test";
+
+    const warnEl  = document.getElementById("warn-banner");
+    const statsWrap = document.getElementById("stats-wrap");
+    const perStudyWrap = document.getElementById("per-study-wrap");
+    const summaryWrap  = document.getElementById("summary-wrap");
+    const srocHost = document.getElementById("sroc-host");
+
+    // --- Snapshot / restore for reset-undo and url-state ---
+    window.__almSnapshot = function () { return readState(); };
+    window.__almRestore  = function (snap) {
+      var isEmpty = !snap || Object.keys(snap).length === 0;
+      if (isEmpty) {
+        document.getElementById("f-data").value = "";
+        document.getElementById("f-title").value = "";
+      } else {
+        writeState(snap);
       }
-      return r;
-    }
+      render();
+    };
 
-    function perStudy(rows) {
-      return rows.map(r => {
-        const c = corrected(r);
-        const se = c.TP / (c.TP + c.FN);
-        const sp = c.TN / (c.TN + c.FP);
-        const fpr = 1 - sp;
-        const logitSe = Math.log(se / (1 - se));
-        const logitFPR = Math.log(fpr / (1 - fpr));
-        const vSe = 1 / c.TP + 1 / c.FN;
-        const vFPR = 1 / c.FP + 1 / c.TN;
-        return { ...r, se, sp, fpr, logitSe, logitFPR, vSe, vFPR };
+    // --- Results accessor for results-export ---
+    window.__almResults = function () {
+      var state = readState();
+      var parsed = parseStudies(state.data);
+      var p = parsed.studies.length >= 3 ? pool(parsed.studies) : null;
+      var rows = parsed.studies.map(function (s) {
+        return {
+          study:     s.label,
+          TP:        s.tp,
+          FP:        s.fp,
+          FN:        s.fn,
+          TN:        s.tn,
+          Se:        +s.se.toFixed(6),
+          Sp:        +s.sp.toFixed(6),
+          FPR:       +s.fpr.toFixed(6),
+          logitSe:   +s.logitSe.toFixed(6),
+          logitFPR:  +s.logitFPR.toFixed(6),
+          corrected: s.corrected ? 1 : 0,
+        };
       });
+      return {
+        _schema:   "hsroc-results-v1",
+        _savedAt:  new Date().toISOString(),
+        k:         parsed.studies.length,
+        mu_se:     p ? +p.muSe.toFixed(8)    : null,
+        mu_fpr:    p ? +p.muFPR.toFixed(8)   : null,
+        tau_se2:   p ? +p.tauSe2.toFixed(8)  : null,
+        tau_fpr2:  p ? +p.tauFPR2.toFixed(8) : null,
+        rho:       p ? +p.rho.toFixed(8)     : null,
+        pool_se:   p ? +invLogit(p.muSe).toFixed(6)  : null,
+        pool_sp:   p ? +(1 - invLogit(p.muFPR)).toFixed(6) : null,
+        rows:      rows,
+      };
+    };
+
+    // --- SVG accessor for chart-download ---
+    window.__almSvg = function () {
+      var svg = srocHost.querySelector("svg");
+      return svg ? svg.outerHTML : null;
+    };
+
+    function readState() {
+      var o = {};
+      for (var k in fields) {
+        var el = document.getElementById(fields[k]);
+        if (el) o[k] = el.value || "";
+      }
+      return o;
+    }
+    function writeState(s) {
+      for (var k in fields) {
+        var el = document.getElementById(fields[k]);
+        if (el && k in s) el.value = s[k];
+      }
     }
 
-    // --- Bivariate random-effects pool with iterated weighted least squares ---
-    // We use the simplified Harbord-Whiting approximation: alternating univariate DerSimonian-Laird on
-    // logit-Se and logit-FPR with shared correlation estimate, then 1 correction pass.
+    function parseStudies(text) {
+      var studies = [], warnings = [];
+      var lines = String(text || "").split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var raw = lines[i].trim();
+        if (!raw || raw.startsWith("#")) continue;
+        // Skip header rows: if any of the last 4 comma-separated tokens are non-numeric
+        var parts = raw.split(/\s*[,\t]\s*/);
+        if (parts.length < 4) { warnings.push("Line " + (i+1) + ": need at least 4 columns"); continue; }
+        var tn = parseFloat(parts[parts.length - 1]);
+        var fn = parseFloat(parts[parts.length - 2]);
+        var fp = parseFloat(parts[parts.length - 3]);
+        var tp = parseFloat(parts[parts.length - 4]);
+        if (![tp, fp, fn, tn].every(function (v) { return Number.isFinite(v) && v >= 0; })) {
+          if (studies.length === 0 && i < 3) continue; // tolerate header
+          warnings.push("Line " + (i+1) + ": non-numeric or negative cell"); continue;
+        }
+        var label = parts.slice(0, parts.length - 4).join(", ") || ("Study " + (studies.length + 1));
+        // Continuity correction: +0.5 only if ANY cell is zero (advanced-stats.md)
+        var zero = tp === 0 || fp === 0 || fn === 0 || tn === 0;
+        var cc = zero ? 0.5 : 0;
+        var tpA = tp+cc, fpA = fp+cc, fnA = fn+cc, tnA = tn+cc;
+        var se  = tpA / (tpA + fnA);
+        var sp  = tnA / (tnA + fpA);
+        var fpr = 1 - sp;
+        var logitSe  = Math.log(se  / (1 - se));
+        var logitFPR = Math.log(fpr / (1 - fpr));
+        var vSe  = 1/tpA + 1/fnA;
+        var vFPR = 1/fpA + 1/tnA;
+        studies.push({
+          label: label, tp: tp, fp: fp, fn: fn, tn: tn,
+          corrected: zero,
+          se: se, sp: sp, fpr: fpr,
+          logitSe: logitSe, logitFPR: logitFPR,
+          vSe: vSe, vFPR: vFPR,
+        });
+      }
+      return { studies: studies, warnings: warnings };
+    }
+
+    // Bivariate DL approximation: univariate DL on each margin + empirical correlation
     function pool(studies) {
-      // Univariate DerSimonian-Laird τ² estimates + weighted means (matches footer)
       function uniPool(ys, vs) {
-        const w = vs.map(v => 1 / v);
-        const sw = w.reduce((a, b) => a + b, 0);
-        const muFE = ys.reduce((a, y, i) => a + w[i] * y, 0) / sw;
-        const Q = ys.reduce((a, y, i) => a + w[i] * (y - muFE) ** 2, 0);
-        const df = ys.length - 1;
-        const swSq = w.reduce((a, b) => a + b * b, 0);
-        const tau2 = Math.max(0, (Q - df) / (sw - swSq / sw));
-        const wRE = vs.map(v => 1 / (v + tau2));
-        const swRE = wRE.reduce((a, b) => a + b, 0);
-        const mu = ys.reduce((a, y, i) => a + wRE[i] * y, 0) / swRE;
-        const seMu = Math.sqrt(1 / swRE);
-        return { mu, seMu, tau2, weights: wRE };
+        var w = vs.map(function (v) { return 1/v; });
+        var sw = w.reduce(function (a,b) { return a+b; }, 0);
+        var muFE = ys.reduce(function (a,y,i) { return a + w[i]*y; }, 0) / sw;
+        var Q = ys.reduce(function (a,y,i) { return a + w[i]*(y-muFE)*(y-muFE); }, 0);
+        var df = ys.length - 1;
+        var swSq = w.reduce(function (a,b) { return a + b*b; }, 0);
+        var tau2 = Math.max(0, (Q - df) / (sw - swSq/sw));
+        var wRE = vs.map(function (v) { return 1/(v + tau2); });
+        var swRE = wRE.reduce(function (a,b) { return a+b; }, 0);
+        var mu = ys.reduce(function (a,y,i) { return a + wRE[i]*y; }, 0) / swRE;
+        var seMu = Math.sqrt(1/swRE);
+        return { mu: mu, seMu: seMu, tau2: tau2 };
       }
 
-      const logitSes = studies.map(s => s.logitSe);
-      const logitFPRs = studies.map(s => s.logitFPR);
-      const vSes = studies.map(s => s.vSe);
-      const vFPRs = studies.map(s => s.vFPR);
-      const seRes = uniPool(logitSes, vSes);
-      const fprRes = uniPool(logitFPRs, vFPRs);
+      var logitSes  = studies.map(function (s) { return s.logitSe;  });
+      var logitFPRs = studies.map(function (s) { return s.logitFPR; });
+      var vSes  = studies.map(function (s) { return s.vSe;  });
+      var vFPRs = studies.map(function (s) { return s.vFPR; });
 
-      // Correlation between random effects: Pearson of residuals weighted
-      const rSe = studies.map(s => s.logitSe - seRes.mu);
-      const rFPR = studies.map(s => s.logitFPR - fprRes.mu);
-      let num = 0, dSe = 0, dFPR = 0;
-      for (let i = 0; i < rSe.length; i++) {
-        num += rSe[i] * rFPR[i];
-        dSe += rSe[i] ** 2;
-        dFPR += rFPR[i] ** 2;
+      var seRes  = uniPool(logitSes,  vSes);
+      var fprRes = uniPool(logitFPRs, vFPRs);
+
+      // Empirical correlation of residuals
+      var rSe  = studies.map(function (s) { return s.logitSe  - seRes.mu;  });
+      var rFPR = studies.map(function (s) { return s.logitFPR - fprRes.mu; });
+      var num = 0, dSe = 0, dFPR = 0;
+      for (var i = 0; i < rSe.length; i++) {
+        num  += rSe[i] * rFPR[i];
+        dSe  += rSe[i]  * rSe[i];
+        dFPR += rFPR[i] * rFPR[i];
       }
-      let rho = Number.isFinite(num / Math.sqrt(dSe * dFPR)) ? num / Math.sqrt(dSe * dFPR) : 0;
+      var rho = (Number.isFinite(num / Math.sqrt(dSe * dFPR)))
+        ? num / Math.sqrt(dSe * dFPR) : 0;
       rho = Math.max(-0.95, Math.min(0.95, rho));
 
       return {
-        muSe: seRes.mu, seMuSe: seRes.seMu, tauSe2: seRes.tau2,
-        muFPR: fprRes.mu, seMuFPR: fprRes.seMu, tauFPR2: fprRes.tau2,
-        rho,
+        muSe:   seRes.mu,   seMuSe:  seRes.seMu,  tauSe2:  seRes.tau2,
+        muFPR:  fprRes.mu,  seMuFPR: fprRes.seMu, tauFPR2: fprRes.tau2,
+        rho:    rho,
       };
     }
 
     function invLogit(x) { return 1 / (1 + Math.exp(-x)); }
 
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
-    function fmtPct(x, d = 1) { return Number.isFinite(x) ? (100 * x).toFixed(d) + "%" : "—"; }
+    function fmt(x, d) { return Number.isFinite(x) ? x.toFixed(d == null ? 3 : d) : "—"; }
+    function fmtPct(x) { return Number.isFinite(x) ? (100*x).toFixed(1) + "%" : "—"; }
 
-    function run() {
-      const text = document.getElementById("src").value;
-      const raw = parse(text);
-      if (raw.length < 3) {
-        document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 3 studies.</td></tr>`;
-        return;
-      }
-      const studies = perStudy(raw);
-      const p = pool(studies);
-
-      // Per-study table
-      const body = document.getElementById("res-body");
-      const __bodyParts = [""];
-      for (const s of studies) {
-        __bodyParts.push(`<tr><td>${s.label}</td><td>${fmtPct(s.se)}</td><td>${fmtPct(s.sp)}</td><td>${fmt(s.logitSe)}</td><td>${fmt(s.logitFPR)}</td></tr>`);
-      }
-
-      // Summary
-      const sumSe = invLogit(p.muSe);
-      const sumSp = 1 - invLogit(p.muFPR);
-      // 95% CI on logit scale → back-transform
-      const ciSe = [invLogit(p.muSe - 1.96 * p.seMuSe), invLogit(p.muSe + 1.96 * p.seMuSe)];
-      const ciSp = [1 - invLogit(p.muFPR + 1.96 * p.seMuFPR), 1 - invLogit(p.muFPR - 1.96 * p.seMuFPR)];
-      document.getElementById("summary").innerHTML = `
-        <table>
-          <tbody>
-            <tr><td><strong>Pooled Sensitivity</strong></td><td><strong>${fmtPct(sumSe)}</strong></td><td>95% CI ${fmtPct(ciSe[0])} – ${fmtPct(ciSe[1])}</td></tr>
-            <tr><td><strong>Pooled Specificity</strong></td><td><strong>${fmtPct(sumSp)}</strong></td><td>95% CI ${fmtPct(ciSp[0])} – ${fmtPct(ciSp[1])}</td></tr>
-            <tr><td>τ²(logit Se)</td><td>${fmt(p.tauSe2, 4)}</td><td>τ²(logit FPR) = ${fmt(p.tauFPR2, 4)}</td></tr>
-            <tr><td>Corr(logitSe, logitFPR)</td><td>${fmt(p.rho, 3)}</td><td>positive ρ ↔ threshold effect (logitSe ↑ with logitFPR ↑); equivalently negative Corr(logitSe, logitSp). |ρ|&gt;0.6 → SROC is the right summary, pooled Se/Sp misleading.</td></tr>
-          </tbody>
-        </table>`;
-
-      drawSROC(studies, p);
-      body.innerHTML = __bodyParts.join("");
-
+    function escXml(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
 
     function drawSROC(studies, p) {
-      const svg = document.getElementById("sroc");
-      const W = 600, H = 500;
-      const padL = 60, padR = 20, padT = 20, padB = 50;
-      const plotW = W - padL - padR, plotH = H - padT - padB;
-      const __svgParts = [""];
-      const X = x => padL + x * plotW;  // 1-Sp (FPR) on x
-      const Y = y => padT + (1 - y) * plotH;  // Se on y
+      var W=600, H=500, padL=60, padR=20, padT=30, padB=55;
+      var plotW = W-padL-padR, plotH = H-padT-padB;
+      var parts = [];
 
-      // Grid
-      for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
-        __svgParts.push(`<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${padT + plotH}" stroke="currentColor" opacity="0.07"/>`);
-        __svgParts.push(`<line x1="${padL}" y1="${Y(t)}" x2="${padL + plotW}" y2="${Y(t)}" stroke="currentColor" opacity="0.07"/>`);
-        __svgParts.push(`<text x="${X(t)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`);
-        __svgParts.push(`<text x="${padL - 10}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${(t * 100).toFixed(0)}%</text>`);
+      function X(x) { return padL + x * plotW; }
+      function Y(y) { return padT + (1-y) * plotH; }
+
+      parts.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H +
+        '" role="img" aria-label="HSROC plot — observed study points, HSROC curve, and summary operating point" style="background:#fff">');
+
+      // Grid lines
+      var ticks = [0, 0.2, 0.4, 0.6, 0.8, 1];
+      for (var ti = 0; ti < ticks.length; ti++) {
+        var t = ticks[ti];
+        parts.push('<line x1="' + X(t) + '" y1="' + padT + '" x2="' + X(t) + '" y2="' + (padT+plotH) + '" stroke="#888" stroke-opacity="0.13"/>');
+        parts.push('<line x1="' + padL + '" y1="' + Y(t) + '" x2="' + (padL+plotW) + '" y2="' + Y(t) + '" stroke="#888" stroke-opacity="0.13"/>');
+        parts.push('<text x="' + X(t) + '" y="' + (padT+plotH+16) + '" text-anchor="middle" font-size="11" fill="#5c6470">' + (t*100).toFixed(0) + '%</text>');
+        parts.push('<text x="' + (padL-10) + '" y="' + (Y(t)+4) + '" text-anchor="end" font-size="11" fill="#5c6470">' + (t*100).toFixed(0) + '%</text>');
       }
+
       // Axes
-      __svgParts.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
-      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">1 − Specificity (FPR)</text>`);
-      __svgParts.push(`<text x="20" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 20 ${padT + plotH / 2})">Sensitivity</text>`);
+      parts.push('<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+plotH) + '" stroke="#5c6470" stroke-opacity="0.5"/>');
+      parts.push('<line x1="' + padL + '" y1="' + (padT+plotH) + '" x2="' + (padL+plotW) + '" y2="' + (padT+plotH) + '" stroke="#5c6470" stroke-opacity="0.5"/>');
+      parts.push('<text x="' + (padL+plotW/2) + '" y="' + (H-10) + '" text-anchor="middle" font-size="11" fill="#5c6470">1 − Specificity (FPR)</text>');
+      parts.push('<text x="18" y="' + (padT+plotH/2) + '" text-anchor="middle" font-size="11" fill="#5c6470" transform="rotate(-90 18 ' + (padT+plotH/2) + ')">Sensitivity</text>');
+
       // Diagonal reference
-      __svgParts.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="currentColor" opacity="0.25" stroke-dasharray="3 3"/>`);
+      parts.push('<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(1) + '" y2="' + Y(1) + '" stroke="#888" stroke-opacity="0.3" stroke-dasharray="4 4"/>');
 
-      // Study points sized by total n
-      const totalNs = studies.map(s => s.TP + s.FP + s.FN + s.TN);
-      const maxN = Math.max(...totalNs);
-      studies.forEach((s, i) => {
-        const r = 3 + (totalNs[i] / maxN) * 7;
-        __svgParts.push(`<circle cx="${X(s.fpr)}" cy="${Y(s.se)}" r="${r}" fill="var(--accent)" opacity="0.8"/>`);
-      });
-
-      // HSROC curve: generate as locus of (FPR, Se) with theta shifting,
-      // using the bivariate mean linear predictor and correlation.
-      // Simplified: parametrize by θ (= threshold on logit scale) and plot
-      //   Se = invLogit(μSe - (ρ·σSe/σFPR) · (logitFPR - μFPR))
-      // which is the conditional expectation of logit(Se) given logit(FPR).
-      if (p.tauFPR2 > 0 && p.tauSe2 > 0) {
-        const slope = p.rho * Math.sqrt(p.tauSe2 / p.tauFPR2);
-        const intercept = p.muSe - slope * p.muFPR;
-        const pts = [];
-        for (let lf = -5; lf <= 5; lf += 0.05) {
-          const fpr = 1 / (1 + Math.exp(-lf));
-          const se = 1 / (1 + Math.exp(-(intercept + slope * lf)));
-          pts.push([fpr, se]);
-        }
-        const path = pts.map((pt, i) => `${i === 0 ? "M" : "L"}${X(pt[0])},${Y(pt[1])}`).join(" ");
-        __svgParts.push(`<path d="${path}" fill="none" stroke="var(--warn)" stroke-width="2"/>`);
+      // Study points sized by total N
+      var totalNs = studies.map(function (s) { return s.tp + s.fp + s.fn + s.tn; });
+      var maxN = Math.max.apply(null, totalNs);
+      for (var si = 0; si < studies.length; si++) {
+        var s = studies[si];
+        var r = 3 + (totalNs[si]/maxN) * 7;
+        parts.push('<circle cx="' + X(s.fpr) + '" cy="' + Y(s.se) + '" r="' + r + '" fill="#2c5e8a" fill-opacity="0.8"><title>' + escXml(s.label) + ': Se=' + fmtPct(s.se) + ', Sp=' + fmtPct(s.sp) + '</title></circle>');
       }
 
-      // Summary operating point with 95% CI (as rectangle)
-      const sumSe = invLogit(p.muSe);
-      const sumFPR = invLogit(p.muFPR);
-      const seLo = invLogit(p.muSe - 1.96 * p.seMuSe);
-      const seHi = invLogit(p.muSe + 1.96 * p.seMuSe);
-      const fprLo = invLogit(p.muFPR - 1.96 * p.seMuFPR);
-      const fprHi = invLogit(p.muFPR + 1.96 * p.seMuFPR);
-      __svgParts.push(`<rect x="${X(fprLo)}" y="${Y(seHi)}" width="${X(fprHi) - X(fprLo)}" height="${Y(seLo) - Y(seHi)}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`);
-      __svgParts.push(`<circle cx="${X(sumFPR)}" cy="${Y(sumSe)}" r="7" fill="var(--warn)" stroke="white" stroke-width="2"/>`);
+      // HSROC curve: conditional mean logitSe given logitFPR
+      if (p && p.tauFPR2 > 0 && p.tauSe2 > 0) {
+        var slope = p.rho * Math.sqrt(p.tauSe2 / p.tauFPR2);
+        var intercept = p.muSe - slope * p.muFPR;
+        var curvePts = [];
+        for (var lf = -6; lf <= 6; lf += 0.05) {
+          var fpr = 1/(1+Math.exp(-lf));
+          var se  = 1/(1+Math.exp(-(intercept + slope * lf)));
+          curvePts.push(X(fpr) + "," + Y(se));
+        }
+        parts.push('<polyline points="' + curvePts.join(" ") + '" fill="none" stroke="#b05a1c" stroke-width="2"/>');
+      }
+
+      // Summary operating point + CI rectangle
+      if (p) {
+        var sumSe  = invLogit(p.muSe);
+        var sumFPR = invLogit(p.muFPR);
+        var seLo  = invLogit(p.muSe  - 1.96*p.seMuSe);
+        var seHi  = invLogit(p.muSe  + 1.96*p.seMuSe);
+        var fprLo = invLogit(p.muFPR - 1.96*p.seMuFPR);
+        var fprHi = invLogit(p.muFPR + 1.96*p.seMuFPR);
+        parts.push('<rect x="' + X(fprLo) + '" y="' + Y(seHi) + '" width="' + (X(fprHi)-X(fprLo)) + '" height="' + (Y(seLo)-Y(seHi)) + '" fill="none" stroke="#b05a1c" stroke-dasharray="3 3" stroke-opacity="0.7"/>');
+        parts.push('<circle cx="' + X(sumFPR) + '" cy="' + Y(sumSe) + '" r="7" fill="#b05a1c" stroke="#fff" stroke-width="2"><title>Summary: Se=' + fmtPct(sumSe) + ', Sp=' + fmtPct(1-sumFPR) + '</title></circle>');
+      }
 
       // Legend
-      __svgParts.push(`<circle cx="${padL + 15}" cy="${padT + 15}" r="5" fill="var(--accent)" opacity="0.8"/><text x="${padL + 28}" y="${padT + 19}" font-size="11" fill="currentColor">study</text>`);
-      __svgParts.push(`<circle cx="${padL + 85}" cy="${padT + 15}" r="6" fill="var(--warn)" stroke="white" stroke-width="2"/><text x="${padL + 98}" y="${padT + 19}" font-size="11" fill="currentColor">summary point</text>`);
-      __svgParts.push(`<line x1="${padL + 200}" y1="${padT + 15}" x2="${padL + 220}" y2="${padT + 15}" stroke="var(--warn)" stroke-width="2"/><text x="${padL + 226}" y="${padT + 19}" font-size="11" fill="currentColor">HSROC</text>`);
-      svg.innerHTML = __svgParts.join("");
+      parts.push('<circle cx="' + (padL+15) + '" cy="' + (padT+15) + '" r="5" fill="#2c5e8a" fill-opacity="0.8"/>');
+      parts.push('<text x="' + (padL+28) + '" y="' + (padT+19) + '" font-size="11" fill="#15181d">study</text>');
+      parts.push('<circle cx="' + (padL+85) + '" cy="' + (padT+15) + '" r="6" fill="#b05a1c" stroke="#fff" stroke-width="2"/>');
+      parts.push('<text x="' + (padL+98) + '" y="' + (padT+19) + '" font-size="11" fill="#15181d">summary</text>');
+      parts.push('<line x1="' + (padL+190) + '" y1="' + (padT+15) + '" x2="' + (padL+210) + '" y2="' + (padT+15) + '" stroke="#b05a1c" stroke-width="2"/>');
+      parts.push('<text x="' + (padL+216) + '" y="' + (padT+19) + '" font-size="11" fill="#15181d">HSROC</text>');
 
+      parts.push('</svg>');
+      return parts.join("");
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
-    run();
+    function render() {
+      var state = readState();
+      var parsed = parseStudies(state.data);
+      var studies = parsed.studies;
+      var warnings = parsed.warnings;
+
+      // Warnings banner
+      var msgs = [];
+      if (warnings.length > 0) msgs.push(warnings.join("; "));
+      if (studies.length > 0 && studies.length < 5) msgs.push("k=" + studies.length + " — bivariate convergence may fail (advanced-stats.md recommends k≥5).");
+      if (msgs.length > 0) {
+        warnEl.textContent = msgs.join(" ");
+        warnEl.classList.add("is-visible");
+      } else {
+        warnEl.textContent = "";
+        warnEl.classList.remove("is-visible");
+      }
+
+      if (studies.length < 3) {
+        perStudyWrap.innerHTML = "<p style=\"color:var(--muted);font-size:0.85rem\">Need at least 3 studies.</p>";
+        summaryWrap.innerHTML  = "";
+        srocHost.innerHTML = "";
+        statsWrap.innerHTML = "";
+        return;
+      }
+
+      var p = pool(studies);
+
+      // Per-study table
+      var tbl = ['<table><thead><tr><th>Study</th><th>Se</th><th>Sp</th><th>logit(Se)</th><th>logit(FPR)</th></tr></thead><tbody>'];
+      for (var i = 0; i < studies.length; i++) {
+        var s = studies[i];
+        tbl.push('<tr><td>' + escXml(s.label) + '</td><td>' + fmtPct(s.se) + '</td><td>' + fmtPct(s.sp) + '</td><td>' + fmt(s.logitSe) + '</td><td>' + fmt(s.logitFPR) + '</td></tr>');
+      }
+      tbl.push('</tbody></table>');
+      perStudyWrap.innerHTML = tbl.join("");
+
+      // Summary estimates
+      var sumSe  = invLogit(p.muSe);
+      var sumSp  = 1 - invLogit(p.muFPR);
+      var ciSe   = [invLogit(p.muSe  - 1.96*p.seMuSe),  invLogit(p.muSe  + 1.96*p.seMuSe)];
+      var ciSp   = [1 - invLogit(p.muFPR + 1.96*p.seMuFPR), 1 - invLogit(p.muFPR - 1.96*p.seMuFPR)];
+      summaryWrap.innerHTML = '<table><tbody>' +
+        '<tr><td><strong>Pooled Sensitivity</strong></td><td><strong>' + fmtPct(sumSe) + '</strong></td><td>95% CI ' + fmtPct(ciSe[0]) + ' – ' + fmtPct(ciSe[1]) + '</td></tr>' +
+        '<tr><td><strong>Pooled Specificity</strong></td><td><strong>' + fmtPct(sumSp) + '</strong></td><td>95% CI ' + fmtPct(ciSp[0]) + ' – ' + fmtPct(ciSp[1]) + '</td></tr>' +
+        '<tr><td>τ²(logit Se)</td><td>' + fmt(p.tauSe2, 4) + '</td><td>τ²(logit FPR) = ' + fmt(p.tauFPR2, 4) + '</td></tr>' +
+        '<tr><td>Corr(logit Se, logit FPR)</td><td>' + fmt(p.rho, 3) + '</td><td>|ρ|&gt;0.6 → threshold effect: SROC is the right summary (advanced-stats.md).</td></tr>' +
+        '</tbody></table>';
+
+      // Stat chips
+      statsWrap.innerHTML = '<div class="stats">' +
+        '<div class="stat"><span class="k">k studies</span><span class="v">' + studies.length + '</span></div>' +
+        '<div class="stat"><span class="k">Pooled Se</span><span class="v">' + fmtPct(sumSe) + '</span></div>' +
+        '<div class="stat"><span class="k">Pooled Sp</span><span class="v">' + fmtPct(sumSp) + '</span></div>' +
+        '<div class="stat"><span class="k">ρ (rho)</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
+        '</div>';
+
+      // SROC plot
+      srocHost.innerHTML = drawSROC(studies, p);
+
+      // Persist to localStorage
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+
+      // Push url-state if available
+      try {
+        if (window.alm && window.alm.urlState && window.alm.urlState.write) {
+          window.alm.urlState.write(state);
+        }
+      } catch(e) {}
+    }
+
+    function loadState() {
+      // localStorage first, then example (url-state read happens after module init)
+      try {
+        var saved = localStorage.getItem(LS_KEY);
+        if (saved) { var obj = JSON.parse(saved); if (obj && obj.data) { writeState(obj); return; } }
+      } catch(e) {}
+      // Default example
+      document.getElementById("f-data").value = EXAMPLE_DATA;
+      document.getElementById("f-title").value = EXAMPLE_TITLE;
+    }
+
+    function init() {
+      loadState();
+      render();
+
+      document.getElementById("btn-run").addEventListener("click", render);
+
+      // csv-upload: when user imports a CSV file, populate f-data
+      window.alm.csvUpload({
+        target:  "#alm-csv-mount",
+        columns: [
+          { name: "label", required: false, type: "string", example: "Smith 2024" },
+          { name: "TP",    required: true,  type: "float",  example: "80" },
+          { name: "FP",    required: true,  type: "float",  example: "12" },
+          { name: "FN",    required: true,  type: "float",  example: "20" },
+          { name: "TN",    required: true,  type: "float",  example: "88" },
+        ],
+        onParse: function (result) {
+          if (window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+            window.alm.resetUndo.snapshot();
+          }
+          var lines = result.rows.map(function (row) {
+            return [row.label || row.study || "", row.TP, row.FP, row.FN, row.TN].join(", ");
+          });
+          document.getElementById("f-data").value = lines.join("\n");
+          render();
+        },
+      });
+
+      // chart-download: wraps srocHost SVG
+      window.alm.chartDownload({
+        target:  "#alm-chart-mount",
+        getSvg:  function () { return srocHost.querySelector("svg"); },
+        basename: "hsroc",
+      });
+
+      // axis-controls: ROC [0,1]×[0,1] — wire in with override deferred
+      window.alm.axisControls({
+        target: "#alm-axis-mount",
+        axes: [
+          { key: "x", label: "1 − Sp axis (FPR)", range: [0, 1], log: false },
+          { key: "y", label: "Se axis (Sensitivity)", range: [0, 1], log: false },
+        ],
+        onChange: function (state) { window.__almAxis = state; },
+      });
+
+      // results-export
+      window.alm.resultsExport({
+        target:     "#alm-export-mount",
+        basename:   "hsroc-results",
+        getResults: function () { return window.__almResults(); },
+      });
+
+      // reset-undo
+      window.alm.resetUndo({
+        target:   "#alm-undo-mount",
+        snapshot: function () { return window.__almSnapshot(); },
+        restore:  function (snap) { return window.__almRestore(snap); },
+        capacity: 20,
+      });
+
+      // url-state init + restore
+      window.alm.urlState({ version: 1 });
+      var restored = window.alm.urlState.read();
+      if (restored && Object.keys(restored).length > 0) {
+        window.__almRestore(restored);
+      }
+
+      // tooltips
+      window.alm.tooltips({ src: "../hub/shared/glossary.json" });
+
+      // Load example button
+      document.getElementById("btn-example").addEventListener("click", function () {
+        document.getElementById("f-data").value  = EXAMPLE_DATA;
+        document.getElementById("f-title").value = EXAMPLE_TITLE;
+        render();
+      });
+
+      // Reset button — delegate to reset-undo clear
+      document.getElementById("btn-reset").addEventListener("click", function () {
+        if (window.alm.resetUndo && window.alm.resetUndo.clear) {
+          window.alm.resetUndo.clear();
+        } else {
+          document.getElementById("f-data").value  = "";
+          document.getElementById("f-title").value = "";
+          render();
+        }
+      });
+
+      // Re-render on data change
+      document.getElementById("f-data").addEventListener("input", render);
+      document.getElementById("f-title").addEventListener("input", render);
+    }
+
+    init();
+  })();
   </script>
 </body>
 </html>
