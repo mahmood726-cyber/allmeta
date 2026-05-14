@@ -2,12 +2,12 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T05:36:44Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-14T05:42:41Z · scanner v0.1.0 · 66 apps
 
 ## Summary
 
-- Tier 1 — Validated: 10
-- Tier 2 — Working: 21
+- Tier 1 — Validated: 31
+- Tier 2 — Working: 0
 - Tier 3 — Polish needed: 35
 - Tier 4 — Hardening priority: 0
 - Tier 5 — Active rebuild: 0
@@ -50,39 +50,36 @@ Generated: 2026-05-14T05:36:44Z · scanner v0.1.0 · 66 apps
 - **webr-validator** — no R-parity test · no README
 - **workbench** — no R-parity test · no README
 
-## Tier 2 — Working (21)
+## Tier 1 — Validated (31)
 
-- **amstar-2** — working — no flags
-- **cerqual** — working — no flags
-- **citation-chaser** — working — no flags
-- **citation-dedup** — working — no flags
-- **evidence-board** — working — no flags
-- **focus-studio** — working — no flags
-- **kanban-lab** — working — no flags
-- **living-meta** — working — no flags · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
-- **local-ai** — working — no flags · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
-- **local-install** — working — no flags · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
-- **mcid** — working — no flags
-- **pico** — working — no flags
-- **powerma** — working — no flags
-- **prisma-checklist** — working — no flags
-- **prisma-flow** — working — no flags · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
-- **rob-traffic-light** — working — no flags · override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical. · **override**
-- **rob2** — working — no flags
-- **robins-e** — working — no flags
-- **robins-i** — working — no flags
-- **search-translator** — working — no flags
-- **thematic-synthesis** — working — no flags
-
-## Tier 1 — Validated (10)
-
+- **amstar-2** — test_count=3 · last_touched 0d ago
+- **cerqual** — test_count=3 · last_touched 0d ago
+- **citation-chaser** — test_count=3 · last_touched 0d ago
+- **citation-dedup** — test_count=3 · last_touched 0d ago
 - **dta-sroc** — test_count=4 · has R-parity test · last_touched 0d ago
 - **effect-size-converter** — no README · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2). · **override**
+- **evidence-board** — test_count=3 · last_touched 0d ago
+- **focus-studio** — test_count=3 · last_touched 0d ago
 - **forest-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **funnel-plot** — test_count=4 · has R-parity test · last_touched 0d ago
 - **heterogeneity** — test_count=4 · has R-parity test · last_touched 0d ago
 - **influence** — test_count=3 · has R-parity test · last_touched 0d ago
+- **kanban-lab** — test_count=3 · last_touched 0d ago
+- **living-meta** — test_count=3 · last_touched 0d ago · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
+- **local-ai** — test_count=3 · last_touched 0d ago · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
+- **local-install** — test_count=3 · last_touched 0d ago · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
+- **mcid** — test_count=3 · last_touched 0d ago
 - **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago
 - **nma-pro-v2** — total_size_kb=3.32 (< 10.0) · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed. auto_tier=4 because total_size_kb=3.32 < 10.0 threshold (nma-pro-v8.0.html lives in a subdir, not top-level; index.html is a thin redirect). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 3 tests, R-parity coverage (Cycle 2.2). · **override**
 - **p-curve** — test_count=3 · has R-parity test · last_touched 0d ago
 - **pet-peese** — test_count=3 · has R-parity test · last_touched 0d ago
+- **pico** — test_count=3 · last_touched 0d ago
+- **powerma** — test_count=3 · last_touched 0d ago
+- **prisma-checklist** — test_count=3 · last_touched 0d ago
+- **prisma-flow** — test_count=3 · last_touched 18d ago · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
+- **rob-traffic-light** — test_count=4 · last_touched 0d ago · override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical. · **override**
+- **rob2** — test_count=3 · last_touched 0d ago
+- **robins-e** — test_count=3 · last_touched 0d ago
+- **robins-i** — test_count=3 · last_touched 0d ago
+- **search-translator** — test_count=3 · last_touched 0d ago
+- **thematic-synthesis** — test_count=3 · last_touched 0d ago

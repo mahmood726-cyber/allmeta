@@ -113,7 +113,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "runtime_health": "MISSING-MOUNT",
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 653.16
@@ -121,12 +121,13 @@
       "tier": 3
     },
     "amstar-2": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Risk of Bias",
@@ -142,10 +143,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 12.75
       },
-      "tier": 2
+      "tier": 1
     },
     "bayesian-ma": {
       "auto_tier": 3,
@@ -263,12 +264,13 @@
       "tier": 3
     },
     "cerqual": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Qualitative Synthesis",
@@ -284,10 +286,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 13.33
       },
-      "tier": 2
+      "tier": 1
     },
     "cinema": {
       "auto_tier": 3,
@@ -319,12 +321,13 @@
       "tier": 3
     },
     "citation-chaser": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Search",
@@ -340,18 +343,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 19.04
       },
-      "tier": 2
+      "tier": 1
     },
     "citation-dedup": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Screening & Extraction",
@@ -367,10 +371,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 21.86
       },
-      "tier": 2
+      "tier": 1
     },
     "component-nma": {
       "auto_tier": 3,
@@ -546,12 +550,13 @@
       "tier": 1
     },
     "evidence-board": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Research Notes",
@@ -567,18 +572,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 22.31
       },
-      "tier": 2
+      "tier": 1
     },
     "focus-studio": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Productivity",
@@ -594,10 +600,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 28.67
       },
-      "tier": 2
+      "tier": 1
     },
     "forest-plot": {
       "auto_tier": 1,
@@ -831,12 +837,13 @@
       "tier": 1
     },
     "kanban-lab": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Productivity",
@@ -852,10 +859,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
-        "total_size_kb": 17.57
+        "test_count": 3,
+        "total_size_kb": 17.9
       },
-      "tier": 2
+      "tier": 1
     },
     "km-reconstructor": {
       "auto_tier": 3,
@@ -916,7 +923,7 @@
       "tier": 3
     },
     "living-meta": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "informational",
       "override": {
@@ -924,7 +931,8 @@
         "reason": "Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
       },
       "reasons": [
-        "working — no flags",
+        "test_count=3",
+        "last_touched 0d ago",
         "override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
       ],
       "signals": {
@@ -941,13 +949,13 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 0.87
       },
-      "tier": 2
+      "tier": 1
     },
     "local-ai": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "informational",
       "override": {
@@ -955,7 +963,8 @@
         "reason": "Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       },
       "reasons": [
-        "working — no flags",
+        "test_count=3",
+        "last_touched 0d ago",
         "override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
@@ -972,13 +981,13 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 12.52
       },
-      "tier": 2
+      "tier": 1
     },
     "local-install": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "informational",
       "override": {
@@ -986,7 +995,8 @@
         "reason": "Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       },
       "reasons": [
-        "working — no flags",
+        "test_count=3",
+        "last_touched 0d ago",
         "override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
@@ -1003,18 +1013,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 13.26
       },
-      "tier": 2
+      "tier": 1
     },
     "mcid": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Trial Design",
@@ -1030,10 +1041,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 11.08
       },
-      "tier": 2
+      "tier": 1
     },
     "median-to-mean": {
       "auto_tier": 3,
@@ -1326,12 +1337,13 @@
       "tier": 1
     },
     "pico": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Planning",
@@ -1347,18 +1359,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 14.05
       },
-      "tier": 2
+      "tier": 1
     },
     "powerma": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Trial Design",
@@ -1374,18 +1387,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 14.66
       },
-      "tier": 2
+      "tier": 1
     },
     "prisma-checklist": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Reporting",
@@ -1397,17 +1411,17 @@
         "key": "prisma-checklist",
         "kind": "non-numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778664333,
+        "last_touched_unix": 1778737139,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 19.75
       },
-      "tier": 2
+      "tier": 1
     },
     "prisma-flow": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": {
@@ -1415,7 +1429,8 @@
         "reason": "Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
       },
       "reasons": [
-        "working — no flags",
+        "test_count=3",
+        "last_touched 18d ago",
         "override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R."
       ],
       "signals": {
@@ -1432,10 +1447,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 26.04
       },
-      "tier": 2
+      "tier": 1
     },
     "prisma-nma": {
       "auto_tier": 3,
@@ -1609,7 +1624,7 @@
       "tier": 3
     },
     "rob-traffic-light": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": {
@@ -1617,7 +1632,8 @@
         "reason": "Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical."
       },
       "reasons": [
-        "working — no flags",
+        "test_count=4",
+        "last_touched 0d ago",
         "override applied: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine to validate against R. Hub category is generic Evidence Synthesis; explicitly non-numerical."
       ],
       "signals": {
@@ -1634,18 +1650,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 2,
+        "test_count": 4,
         "total_size_kb": 24.94
       },
-      "tier": 2
+      "tier": 1
     },
     "rob2": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Risk of Bias",
@@ -1661,18 +1678,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 18.42
       },
-      "tier": 2
+      "tier": 1
     },
     "robins-e": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Risk of Bias",
@@ -1688,18 +1706,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 15.88
       },
-      "tier": 2
+      "tier": 1
     },
     "robins-i": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Risk of Bias",
@@ -1715,18 +1734,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 17.74
       },
-      "tier": 2
+      "tier": 1
     },
     "search-translator": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Search",
@@ -1742,18 +1762,19 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 14.14
       },
-      "tier": 2
+      "tier": 1
     },
     "thematic-synthesis": {
-      "auto_tier": 2,
+      "auto_tier": 1,
       "confidence": "high",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "working — no flags"
+        "test_count=3",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Qualitative Synthesis",
@@ -1769,10 +1790,10 @@
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 1,
+        "test_count": 3,
         "total_size_kb": 12.95
       },
-      "tier": 2
+      "tier": 1
     },
     "tsa": {
       "auto_tier": 3,
@@ -1888,11 +1909,11 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-14T05:36:44Z",
+  "generated_at": "2026-05-14T05:42:41Z",
   "scanner_version": "0.1.0",
   "totals": {
-    "tier_1": 10,
-    "tier_2": 21,
+    "tier_1": 31,
+    "tier_2": 0,
     "tier_3": 35,
     "tier_4": 0,
     "tier_5": 0,
