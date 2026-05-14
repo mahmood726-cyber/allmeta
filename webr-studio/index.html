@@ -574,12 +574,6 @@ print(summary(res))`,
         btnRun.disabled = false;
         document.getElementById("packages").textContent = "Bundled R + CRAN binary repo. Packages install on first use.";
         firstLoadNote.style.display = "none";
-        // Cycle 6.4: notify the hub (if we're inside a pre-warm iframe) that
-        // the compiled WASM module is now in V8's per-URL cache and any
-        // navigation to /webr-studio/ in the parent tab will reuse it.
-        if (window.parent && window.parent !== window) {
-          try { window.parent.postMessage({ type: "webr-prewarmed" }, location.origin); } catch (_) {}
-        }
       } catch (err) {
         stopBootTicker();
         statusEl.textContent = "error";
@@ -664,19 +658,6 @@ print(summary(res))`,
     document.getElementById("r-code").addEventListener("keydown", e => {
       if (e.key === "Escape") { e.preventDefault(); btnRun.focus(); }
     });
-
-    // Cycle 6.4 Option-1: pre-warm mode. The hub embeds /webr-studio/?prewarm=1
-    // in a hidden iframe so V8 caches the compiled R.wasm module before the
-    // user clicks through. In that mode we hide the UI panels (the iframe is
-    // off-screen anyway) and just boot WebR. The compiled WASM stays in V8's
-    // per-URL cache for the same-tab navigation later.
-    const isPrewarm = new URLSearchParams(location.search).get("prewarm") === "1";
-    if (isPrewarm) {
-      // Hide everything except the boot bar — saves rendering work and makes
-      // it obvious in DevTools what this iframe is doing if anyone inspects.
-      document.querySelectorAll("main, footer, .skip-link, #hub-back").forEach(el => el.style.display = "none");
-      document.querySelector("header h1").innerHTML = "WebR pre-warm <span class='status-badge loading'>booting</span>";
-    }
 
     // Defer boot so the initial page reaches networkidle before WebR's WASM fetch starts.
     // Otherwise the continuous WASM download prevents Playwright's networkidle from ever firing.

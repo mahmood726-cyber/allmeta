@@ -193,69 +193,12 @@
       // Safari / older browsers: delay 2 s so the hub renders first.
       setTimeout(_almPrefetchShinylive, 2000);
     }
-
-    // Cycle 6.4 Option-1: pre-warm WebR in a hidden iframe so the V8 compile
-    // cache holds R.wasm by the time the user clicks "WebR Studio".  Gated:
-    //   - opt-out via localStorage flag `alm-no-prewarm` (or ?no-prewarm in URL)
-    //   - skipped on data-saver / 2g / slow-2g connections
-    //   - delayed 8 s after page load so it never races the hub's own assets
-    //   - delayed further until requestIdleCallback fires (browser is idle)
-    //   - iframe is torn down once WebR signals 'webr-prewarmed' (we got what
-    //     we needed — the V8 compile cache is now warm for /webr-studio/)
-    function _almShouldPrewarm() {
-      try {
-        if (new URLSearchParams(location.search).get('no-prewarm') === '1') return false;
-        if (localStorage.getItem('alm-no-prewarm') === '1') return false;
-      } catch (_) {}
-      var c = navigator.connection;
-      if (c) {
-        if (c.saveData) return false;
-        if (c.effectiveType === '2g' || c.effectiveType === 'slow-2g') return false;
-      }
-      // Coarse memory check — devices reporting <2 GB are usually low-end phones.
-      if (navigator.deviceMemory && navigator.deviceMemory < 2) return false;
-      return true;
-    }
-    function _almPrewarmWebR() {
-      if (!_almShouldPrewarm()) return;
-      var iframe = document.createElement('iframe');
-      iframe.src = './webr-studio/?prewarm=1';
-      iframe.setAttribute('aria-hidden', 'true');
-      iframe.setAttribute('title', 'WebR pre-warm');
-      // Keep the iframe in-flow visually but invisible. We deliberately do
-      // NOT use loading='lazy': lazy iframes never load when positioned off-
-      // screen (the browser sees they're below the viewport and waits).
-      iframe.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;border:0;visibility:hidden;pointer-events:none';
-      document.body.appendChild(iframe);
-      var torn = false;
-      function teardown() {
-        if (torn) return;
-        torn = true;
-        try { iframe.remove(); } catch (_) {}
-        window.removeEventListener('message', onMsg);
-      }
-      function onMsg(ev) {
-        if (ev.source !== iframe.contentWindow) return;
-        if (ev.origin !== location.origin) return;
-        if (ev.data && ev.data.type === 'webr-prewarmed') teardown();
-      }
-      window.addEventListener('message', onMsg);
-      // Safety: tear down after 90 s even if the iframe never reports back.
-      setTimeout(teardown, 90000);
-    }
-    function _almSchedulePrewarm() {
-      var trigger = function () {
-        if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(_almPrewarmWebR, { timeout: 6000 });
-        } else {
-          _almPrewarmWebR();
-        }
-      };
-      // 8-second delay so the hub finishes rendering + prefetching first.
-      setTimeout(trigger, 8000);
-    }
-    if (document.readyState === 'complete') _almSchedulePrewarm();
-    else window.addEventListener('load', _almSchedulePrewarm);
+    // Cycle 6.4: hub-level WebR pre-warm iframe was tested and reverted —
+    // V8's WASM compile cache did not cross the iframe→top-level navigation
+    // boundary in repeated probes (only ~3 s saved at best, with 30 s worst-
+    // case contention during SW cache rollover).  The progressive boot UX
+    // in /webr-studio/ delivers the real win: the user can edit code and
+    // data while WebR boots.
   </script>
 </body>
 </html>
