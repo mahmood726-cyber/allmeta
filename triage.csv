@@ -24,7 +24,7 @@ bayesian-nma,3,3,numerical,medium,0,0,False,0,19.23,True,,no tests | no R-parity
 component-nma,3,3,numerical,medium,0,0,False,0,14.37,True,,no tests | no R-parity test | no README
 mcid,2,2,non-numerical,high,0,1,False,0,11.08,True,,working — no flags
 robins-i,2,2,non-numerical,high,0,1,False,0,17.74,True,,working — no flags
-quadas-2,4,4,non-numerical,medium,0,0,False,0,16.35,True,,runtime_health=MISSING-MOUNT (and not informational kind)
+quadas-2,3,3,non-numerical,medium,0,0,False,0,16.35,True,,no tests | no README
 amstar-2,2,2,non-numerical,high,0,1,False,0,12.75,True,,working — no flags
 cinema,3,3,numerical,medium,0,0,False,0,14.37,True,,no tests | no R-parity test | no README
 hsroc,3,3,numerical,medium,0,0,False,0,16.97,True,,no tests | no R-parity test | no README
@@ -40,7 +40,7 @@ km-reconstructor,3,3,numerical,medium,0,0,False,0,18.06,True,,no tests | no R-pa
 citation-dedup,2,2,non-numerical,high,0,1,False,0,21.86,True,,working — no flags
 effect-size-converter,1,3,numerical,high,0,3,True,0,41.67,True,,"no README | override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2)."
 dosehtml,3,3,numerical,high,0,1,False,0,144.92,True,,no R-parity test
-Truthcert1,3,3,numerical,high,0,0,False,0,653.16,True,1,no tests | no R-parity test | no README
+Truthcert1,3,3,informational,high,0,0,False,0,653.16,True,1,"no tests | no README | override applied: TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type."
 focus-studio,2,2,non-numerical,high,0,1,False,0,28.67,True,,working — no flags
 kanban-lab,2,2,non-numerical,high,0,1,False,0,17.57,True,,working — no flags
 evidence-board,2,2,non-numerical,high,0,1,False,0,22.31,True,,working — no flags

@@ -2,7 +2,7 @@
 
 # allmeta runtime-health audit
 
-Generated: 2026-05-13T22:49:41Z · auditor v0.1.0 · 66 apps
+Generated: 2026-05-14T05:21:07Z · auditor v0.1.0 · 66 apps
 
 ## Summary
 
@@ -10,80 +10,77 @@ Generated: 2026-05-13T22:49:41Z · auditor v0.1.0 · 66 apps
 - TIMEOUT — page did not reach networkidle: 0
 - NEEDS-SERVICE — UI text indicates a backend dependency: 1
 - CONSOLE-ERRORS — non-empty console.error after noise filter: 0
-- MISSING-MOUNT — no primary interactive landmark: 2
-- OK — loaded cleanly with a primary mount: 63
+- MISSING-MOUNT — no primary interactive landmark: 0
+- OK — loaded cleanly with a primary mount: 65
 
 ## NEEDS-SERVICE — UI text indicates a backend dependency (1)
 
 - **rct-extractor** — UI text matched: '\\bnot reachable\\b'
 
-## MISSING-MOUNT — no primary interactive landmark (2)
+## OK — loaded cleanly with a primary mount (65)
 
-- **local-ai** — no primary mount landmark (svg/canvas/textarea/table input/action button)
-- **quadas-2** — no primary mount landmark (svg/canvas/textarea/table input/action button)
-
-## OK — loaded cleanly with a primary mount (63)
-
-- **amstar-2** — loaded in 1066 ms
-- **bayesian-ma** — loaded in 1274 ms
-- **bayesian-mcmc** — loaded in 1102 ms
-- **bayesian-nma** — loaded in 1084 ms
-- **bucher** — loaded in 1079 ms
-- **cerqual** — loaded in 1084 ms
-- **cinema** — loaded in 1065 ms
-- **citation-chaser** — loaded in 1102 ms
-- **citation-dedup** — loaded in 1278 ms
-- **component-nma** — loaded in 1259 ms
-- **copas** — loaded in 1094 ms
-- **cumulative-subgroup** — loaded in 1239 ms
-- **dosehtml** — loaded in 1305 ms
-- **dta-sroc** — loaded in 1388 ms
-- **effect-size-converter** — loaded in 1423 ms
-- **evidence-board** — loaded in 1201 ms
-- **focus-studio** — loaded in 1303 ms
-- **forest-plot** — loaded in 1359 ms
-- **funnel-plot** — loaded in 1347 ms
-- **gosh** — loaded in 1306 ms
-- **gosh-metareg** — loaded in 1092 ms
-- **grade-sof** — loaded in 1289 ms
-- **heterogeneity** — loaded in 1354 ms
-- **hsroc** — loaded in 1069 ms
-- **HTA** — loaded in 1873 ms
-- **influence** — loaded in 1136 ms
-- **IPD-Meta-Pro** — loaded in 1404 ms
-- **kanban-lab** — loaded in 1258 ms
-- **km-reconstructor** — loaded in 1089 ms
-- **limit-ma** — loaded in 1086 ms
-- **living-meta** — loaded in 1080 ms
-- **local-install** — loaded in 1065 ms
-- **mcid** — loaded in 1090 ms
-- **median-to-mean** — loaded in 1075 ms
-- **meta-regression** — loaded in 1338 ms
-- **mh-peto** — loaded in 1099 ms
-- **multilevel-ma** — loaded in 1087 ms
-- **nma-dose-response-app** — loaded in 2260 ms
-- **nma-global-inconsistency** — loaded in 1080 ms
-- **nma-inconsistency** — loaded in 1094 ms
-- **nma-pro-v2** — loaded in 1699 ms
-- **p-curve** — loaded in 1334 ms
-- **Pairwiseai** — loaded in 1651 ms
-- **pet-peese** — loaded in 1307 ms
-- **pico** — loaded in 1282 ms
-- **powerma** — loaded in 1082 ms
-- **prisma-checklist** — loaded in 1253 ms
-- **prisma-flow** — loaded in 1097 ms
-- **prisma-nma** — loaded in 1328 ms
-- **prisma-screen** — loaded in 1091 ms
-- **proportion-ma** — loaded in 1084 ms
-- **pubbias-tests** — loaded in 1096 ms
-- **rob-traffic-light** — loaded in 1283 ms
-- **rob2** — loaded in 1068 ms
-- **robins-e** — loaded in 1112 ms
-- **robins-i** — loaded in 1068 ms
-- **search-translator** — loaded in 1091 ms
-- **thematic-synthesis** — loaded in 1070 ms
-- **Truthcert1** — loaded in 4224 ms
-- **tsa** — loaded in 1261 ms
-- **webr-studio** — loaded in 1102 ms
-- **webr-validator** — loaded in 1296 ms
-- **workbench** — loaded in 1266 ms
+- **amstar-2** — loaded in 1151 ms
+- **bayesian-ma** — loaded in 1429 ms
+- **bayesian-mcmc** — loaded in 1171 ms
+- **bayesian-nma** — loaded in 1180 ms
+- **bucher** — loaded in 1210 ms
+- **cerqual** — loaded in 1259 ms
+- **cinema** — loaded in 1237 ms
+- **citation-chaser** — loaded in 1231 ms
+- **citation-dedup** — loaded in 1274 ms
+- **component-nma** — loaded in 1401 ms
+- **copas** — loaded in 1174 ms
+- **cumulative-subgroup** — loaded in 1371 ms
+- **dosehtml** — loaded in 1627 ms
+- **dta-sroc** — loaded in 1518 ms
+- **effect-size-converter** — loaded in 1483 ms
+- **evidence-board** — loaded in 1318 ms
+- **focus-studio** — loaded in 1387 ms
+- **forest-plot** — loaded in 1479 ms
+- **funnel-plot** — loaded in 1907 ms
+- **gosh** — loaded in 1449 ms
+- **gosh-metareg** — loaded in 1216 ms
+- **grade-sof** — loaded in 1427 ms
+- **heterogeneity** — loaded in 1433 ms
+- **hsroc** — loaded in 1263 ms
+- **HTA** — loaded in 4362 ms
+- **influence** — loaded in 1208 ms
+- **IPD-Meta-Pro** — loaded in 3501 ms
+- **kanban-lab** — loaded in 1344 ms
+- **km-reconstructor** — loaded in 1143 ms
+- **limit-ma** — loaded in 1164 ms
+- **living-meta** — loaded in 1246 ms
+- **local-ai** — loaded in 1426 ms
+- **local-install** — loaded in 1143 ms
+- **mcid** — loaded in 1153 ms
+- **median-to-mean** — loaded in 1207 ms
+- **meta-regression** — loaded in 1472 ms
+- **mh-peto** — loaded in 1215 ms
+- **multilevel-ma** — loaded in 1182 ms
+- **nma-dose-response-app** — loaded in 2849 ms
+- **nma-global-inconsistency** — loaded in 1218 ms
+- **nma-inconsistency** — loaded in 1204 ms
+- **nma-pro-v2** — loaded in 2731 ms
+- **p-curve** — loaded in 2130 ms
+- **Pairwiseai** — loaded in 2795 ms
+- **pet-peese** — loaded in 1643 ms
+- **pico** — loaded in 1409 ms
+- **powerma** — loaded in 1246 ms
+- **prisma-checklist** — loaded in 1333 ms
+- **prisma-flow** — loaded in 1165 ms
+- **prisma-nma** — loaded in 1314 ms
+- **prisma-screen** — loaded in 1194 ms
+- **proportion-ma** — loaded in 1148 ms
+- **pubbias-tests** — loaded in 1174 ms
+- **quadas-2** — loaded in 1101 ms
+- **rob-traffic-light** — loaded in 1378 ms
+- **rob2** — loaded in 1262 ms
+- **robins-e** — loaded in 1283 ms
+- **robins-i** — loaded in 1158 ms
+- **search-translator** — loaded in 1128 ms
+- **thematic-synthesis** — loaded in 1260 ms
+- **Truthcert1** — loaded in 4660 ms
+- **tsa** — loaded in 1305 ms
+- **webr-studio** — loaded in 1370 ms
+- **webr-validator** — loaded in 1398 ms
+- **workbench** — loaded in 1341 ms

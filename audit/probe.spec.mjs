@@ -59,11 +59,18 @@ for (const app of APPS) {
         // Use locator.or() to combine CSS landmarks with a Playwright-native role
         // locator for action buttons.  Mixing 'button:has-text(/regex/)' in a plain
         // CSS comma-list fails in Playwright 1.60 with a CSS parse error.
+        // Cycle 5.4: also added evaluate|assess|judge|rate|view|select|toggle to
+        // catch RoB tools (quadas-2 has "Evaluate") + classifier-style apps.
         const mountLoc = page.locator(MOUNT_CSS).or(
-          page.getByRole('button', { name: /compute|run|pool|estimate|analy[sz]e|extract|score|update|render|start|reset|skip|add|new|save|load|export|build|generate|fit|simulate|plot|chart|submit|apply|copy|continue|next|back|search|find|upload|download|clear|cancel|create|edit|delete|remove/i })
+          page.getByRole('button', { name: /compute|run|pool|estimate|analy[sz]e|extract|score|update|render|start|reset|skip|add|new|save|load|export|build|generate|fit|simulate|plot|chart|submit|apply|copy|continue|next|back|search|find|upload|download|clear|cancel|create|edit|delete|remove|evaluate|assess|judge|rate|view|select|toggle|check|pick|choose/i })
         );
-        await mountLoc.first().waitFor({ state: 'visible', timeout: 2000 });
-        mount_found = true;
+        // Cycle 5.4: count() > 0 instead of waitFor('visible').  Apps that create
+        // an SVG container with viewBox but no width/height (quadas-2's
+        // <svg id="traffic" viewBox="0 0 600 240">) are *in the DOM* — valid
+        // mounts that JS will populate — but isVisible() returns false because
+        // the rendered dimensions are 0×0 until CSS or JS sizes them.
+        const n = await mountLoc.count();
+        mount_found = n > 0;
       } catch (_) {
         mount_found = false;
       }

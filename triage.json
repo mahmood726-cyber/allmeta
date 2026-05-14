@@ -87,12 +87,15 @@
     "Truthcert1": {
       "auto_tier": 3,
       "confidence": "high",
-      "kind": "numerical",
-      "override": null,
+      "kind": "informational",
+      "override": {
+        "kind": "informational",
+        "reason": "TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type."
+      },
       "reasons": [
         "no tests",
-        "no R-parity test",
-        "no README"
+        "no README",
+        "override applied: TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type."
       ],
       "signals": {
         "category": "Evidence Synthesis",
@@ -102,7 +105,7 @@
         "has_readme": false,
         "is_hub_linked": true,
         "key": "Truthcert1",
-        "kind": "numerical",
+        "kind": "informational",
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
@@ -963,7 +966,7 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778712262,
         "playwright_pass": null,
-        "runtime_health": "MISSING-MOUNT",
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 1,
         "total_size_kb": 12.52
@@ -1546,12 +1549,13 @@
       "tier": 3
     },
     "quadas-2": {
-      "auto_tier": 4,
+      "auto_tier": 3,
       "confidence": "medium",
       "kind": "non-numerical",
       "override": null,
       "reasons": [
-        "runtime_health=MISSING-MOUNT (and not informational kind)"
+        "no tests",
+        "no README"
       ],
       "signals": {
         "category": "Risk of Bias",
@@ -1565,12 +1569,12 @@
         "last_touched_days": 0,
         "last_touched_unix": 1778664333,
         "playwright_pass": null,
-        "runtime_health": "MISSING-MOUNT",
+        "runtime_health": "OK",
         "stub_count": 0,
         "test_count": 0,
         "total_size_kb": 16.35
       },
-      "tier": 4
+      "tier": 3
     },
     "rct-extractor": {
       "auto_tier": 4,
@@ -1879,13 +1883,13 @@
       "tier": 3
     }
   },
-  "generated_at": "2026-05-13T22:49:33Z",
+  "generated_at": "2026-05-14T05:23:13Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 10,
     "tier_2": 20,
-    "tier_3": 32,
-    "tier_4": 2,
+    "tier_3": 33,
+    "tier_4": 1,
     "tier_5": 2,
     "total": 66
   }

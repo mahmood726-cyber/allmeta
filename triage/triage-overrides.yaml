@@ -1,4 +1,10 @@
 apps:
+  Truthcert1:
+    kind: informational
+    reason: TruthCert1/index.html is a 53-line landing page with cards + figure images
+      (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc).
+      No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive
+      for this page type.
   effect-size-converter:
     reason: 'Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS.
       auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed
