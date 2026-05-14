@@ -164,6 +164,9 @@
   <p class="footer-note">Conjugate model: y<sub>i</sub> ∼ N(θ, v<sub>i</sub>+τ²), θ ∼ N(μ₀, τ₀²). Posterior: θ | data ∼ N(μ*, τ*²) with τ*² = (1/τ₀² + Σ 1/(v<sub>i</sub>+τ²))<sup>−1</sup>. Posterior probabilities come from the Gaussian CDF.</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "bayesian-ma-v1";
@@ -237,7 +240,7 @@
       const postVar = 1 / precSum;
       const postMean = mpSum * postVar;
       const postSD = Math.sqrt(postVar);
-      return { mu: postMean, sd: postSD, lo: postMean - 1.96*postSD, hi: postMean + 1.96*postSD };
+      return { mu: postMean, sd: postSD, lo: postMean - Z975 *postSD, hi: postMean + Z975 *postSD };
     }
 
     // Standard normal CDF

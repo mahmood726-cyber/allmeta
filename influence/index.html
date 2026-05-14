@@ -129,6 +129,9 @@
   </main>
   <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Flags in red: <abbr data-gloss="Effect">Cook's D</abbr> &gt; 1, hat &gt; 3·k̄ (k̄ = 1/k), |studentized residual| &gt; 2. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     (function () {
       "use strict";
       const LS_KEY = "influence-v1";
@@ -230,9 +233,9 @@
         const plotW = W - padL - padR;
         const mus = diag.map(d => d.loo_mu);
         const ses = diag.map(d => d.loo_seMu);
-        const los = diag.map((d, i) => mus[i] - 1.96 * ses[i]);
-        const his = diag.map((d, i) => mus[i] + 1.96 * ses[i]);
-        const lo = Math.min(0, ...los, full.mu - 1.96 * full.seMu), hi = Math.max(0, ...his, full.mu + 1.96 * full.seMu);
+        const los = diag.map((d, i) => mus[i] - Z975 * ses[i]);
+        const his = diag.map((d, i) => mus[i] + Z975 * ses[i]);
+        const lo = Math.min(0, ...los, full.mu - Z975 * full.seMu), hi = Math.max(0, ...his, full.mu + Z975 * full.seMu);
         const pad = (hi - lo) * 0.1 || 0.3;
         const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
 
@@ -243,7 +246,7 @@
         diag.forEach((d, i) => {
           const y = 35 + i * 26;
           __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${d.label}</text>`);
-          const l = d.loo_mu - 1.96 * d.loo_seMu, h = d.loo_mu + 1.96 * d.loo_seMu;
+          const l = d.loo_mu - Z975 * d.loo_seMu, h = d.loo_mu + Z975 * d.loo_seMu;
           __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`);
           __svgParts.push(`<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
         });

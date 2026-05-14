@@ -158,6 +158,9 @@
   <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − μ_all)², df = G − 1. The overall μ used is the all-studies RE pool. I² of differences = max(0, 100·(Q − df)/Q).</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "cumulative-subgroup-v1";
@@ -236,7 +239,7 @@
       const tau2 = tau2_PM(studies);
       const s = weightedSums(studies, tau2);
       const se = Math.sqrt(1/s.sw);
-      return { mu: s.mu, se, lo: s.mu-1.96*se, hi: s.mu+1.96*se, tau2, Q: s.Q, k: studies.length };
+      return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: s.Q, k: studies.length };
     }
 
     // Cumulative: sort by year (or row order) and compute pooled estimate at each step

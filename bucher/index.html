@@ -129,6 +129,9 @@
   </main>
   <footer>Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. <em>J Clin Epidemiol</em> 1997;50:683-691. R-parity: Bucher closed-form matches <code>netmeta::netmeta()</code> indirect-only estimate to tolerance 1e-6 (see <code>tests/fixtures/bucher-tiny.R</code>).</footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     'use strict';
 
@@ -184,8 +187,8 @@
         dBC: dBC, seBC: seBC,
         d_indirect_AB: dAB,
         se_indirect_AB: seAB,
-        lo_AB: dAB - 1.96 * seAB,
-        hi_AB: dAB + 1.96 * seAB,
+        lo_AB: dAB - Z975 * seAB,
+        hi_AB: dAB + Z975 * seAB,
         p_AB: p,
       };
 
@@ -193,8 +196,8 @@
       var __bodyParts = [''];
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
-        var lo = r.est - 1.96 * r.se;
-        var hi = r.est + 1.96 * r.se;
+        var lo = r.est - Z975 * r.se;
+        var hi = r.est + Z975 * r.se;
         var disp = scale === 'log'
           ? { est: Math.exp(r.est), lo: Math.exp(lo), hi: Math.exp(hi) }
           : { est: r.est, lo: lo, hi: hi };
@@ -225,8 +228,8 @@
         if (_axisState.x[1] !== null) xMax = _axisState.x[1];
       }
 
-      var allLo = rows.map(function (r) { return r.est - 1.96 * r.se; });
-      var allHi = rows.map(function (r) { return r.est + 1.96 * r.se; });
+      var allLo = rows.map(function (r) { return r.est - Z975 * r.se; });
+      var allHi = rows.map(function (r) { return r.est + Z975 * r.se; });
       var autoLo = Math.min(0, Math.min.apply(null, allLo));
       var autoHi = Math.max(0, Math.max.apply(null, allHi));
       var pad = (autoHi - autoLo) * 0.1 || 0.3;
@@ -241,7 +244,7 @@
         var r = rows[i];
         var y = 30 + i * 40;
         __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + r.name + '</text>');
-        var l = r.est - 1.96 * r.se, h = r.est + 1.96 * r.se;
+        var l = r.est - Z975 * r.se, h = r.est + Z975 * r.se;
         __svgParts.push('<line x1="' + X(l) + '" y1="' + y + '" x2="' + X(h) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>');
         var isIndirect = r.name.indexOf('indirect') !== -1;
         var c = isIndirect ? 'var(--warn)' : 'var(--accent)';

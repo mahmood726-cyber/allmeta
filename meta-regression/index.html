@@ -142,6 +142,9 @@
   <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> via <abbr data-gloss="PM">Paule-Mandel</abbr> bisection; CIs use <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> <code>t(k−2)</code> with <code>q = max(1, <abbr data-gloss="QE">RSS</abbr>/(k−2))</code> floor (<abbr data-gloss="HKSJ">HKSJ</abbr>). <abbr data-gloss="R2">R²</abbr> measures the proportion of <abbr data-gloss="tau2">τ²</abbr> explained by the moderator; <abbr data-gloss="QE">Q_E</abbr> tests residual heterogeneity (df = k−2). Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="<abbr data-gloss="PM">PM</abbr>", test="knha")</code>.</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "meta-regression-v1";
@@ -365,7 +368,7 @@
       let xLo=Infinity, xHi=-Infinity, yLo=Infinity, yHi=-Infinity;
       for (const s of studies) {
         if (s.x < xLo) xLo = s.x; if (s.x > xHi) xHi = s.x;
-        const cl = s.est - 1.96*s.se, ch = s.est + 1.96*s.se;
+        const cl = s.est - Z975 *s.se, ch = s.est + Z975 *s.se;
         if (cl < yLo) yLo = cl; if (ch > yHi) yHi = ch;
       }
       if (!(xHi > xLo)) { xLo = (xLo||0)-1; xHi = (xHi||0)+1; }

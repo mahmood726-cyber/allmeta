@@ -132,6 +132,9 @@
     Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Simplified implementation:</strong> per-study selection probability p(s) = &#934;(&#947;&#8320; + &#947;&#8321;/s), back-weighted inverse-variance re-pooling. Full Copas MLE in <code>metasens::copas</code>. Per advanced-stats.md, <strong>Copas selection models need k &#8805; 15</strong> for stable estimation &#8212; this app does not enforce that gate; treat output as illustrative if k &lt; 15. R-parity: unadjusted FE pooling matches <code>metasens::copas(metagen(&#8230;))</code> te_fe at tol=1e-4; adjusted direction (attenuation) and slope sign verified (see <code>tests/fixtures/copas-tiny.R</code>).
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     'use strict';
 
@@ -237,8 +240,8 @@
             implied_unpublished_pct: r.impliedUnobs * 100,
             te_adj: r.mean,
             se_adj: r.se,
-            lo: r.mean - 1.96 * r.se,
-            hi: r.mean + 1.96 * r.se,
+            lo: r.mean - Z975 * r.se,
+            hi: r.mean + Z975 * r.se,
           };
         }),
         rows: rows.map(function (r) { return { te: r.te, se: r.se }; }),
@@ -248,7 +251,7 @@
       var __bodyParts = [''];
       for (var i = 0; i < results.length; i++) {
         var r = results[i];
-        var lo = r.mean - 1.96 * r.se, hi = r.mean + 1.96 * r.se;
+        var lo = r.mean - Z975 * r.se, hi = r.mean + Z975 * r.se;
         __bodyParts.push('<tr><td>' + r.gamma.toFixed(1) + '</td><td>' + (r.impliedUnobs * 100).toFixed(0) + '%</td><td>' + fmt(r.mean) + '</td><td>[' + fmt(lo) + ', ' + fmt(hi) + ']</td></tr>');
       }
       body.innerHTML = __bodyParts.join('');
@@ -268,8 +271,8 @@
       var __svgParts = [''];
       var gammas = results.map(function (r) { return r.gamma; });
       var means = results.map(function (r) { return r.mean; });
-      var los = results.map(function (r) { return r.mean - 1.96 * r.se; });
-      var his = results.map(function (r) { return r.mean + 1.96 * r.se; });
+      var los = results.map(function (r) { return r.mean - Z975 * r.se; });
+      var his = results.map(function (r) { return r.mean + Z975 * r.se; });
       var xMin = Math.min.apply(null, gammas), xMax = Math.max.apply(null, gammas);
 
       // Apply y-axis override if set

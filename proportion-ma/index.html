@@ -141,6 +141,9 @@
     Freeman-Tukey: <code>FT = &frac12;(arcsin&radic;(x/(n+1)) + arcsin&radic;((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer et al. <em>Res Synth Methods</em> 2019;10:476-483):</strong> FT back-transformed pooled CI can be nonsensical in some settings; prefer logit + continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/(x+0.5) + 1/(n-x+0.5)</code> with Cochrane Handbook §10.4.4 / Sweeting 2004 correction at zeros (cn=n+1). Clopper-Pearson: <code>qbeta(&alpha;/2, x, n-x+1)</code>. R-parity: logit+PM matches <code>metafor::escalc(measure="PLO")</code> + <code>rma(method="PM")</code> to tolerance 1e-6 (see <code>tests/fixtures/prop-tiny.R</code>).
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     'use strict';
 
@@ -338,8 +341,8 @@
       });
 
       // Back-transform pooled estimate
-      var lo = pooled.mu_re - 1.96 * pooled.seRE;
-      var hi = pooled.mu_re + 1.96 * pooled.seRE;
+      var lo = pooled.mu_re - Z975 * pooled.seRE;
+      var hi = pooled.mu_re + Z975 * pooled.seRE;
       var poolP, poolLo, poolHi;
       if (trans === 'ft') {
         var nH = harmonicMean(rows.map(function (r) { return r.n; }));

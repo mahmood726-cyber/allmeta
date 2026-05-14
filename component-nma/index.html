@@ -94,6 +94,9 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     Welton NJ, Caldwell DM, Adamopoulos E, Vedhara K. Mixed treatment comparison meta-analysis of complex interventions: psychological interventions in coronary heart disease. Am J Epidemiol 2009;169:1158-1165.
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     // Parse: arm A components, arm B components, effect, SE
     function parse(text) {
       return text.trim().split(/\n/).map(l => {
@@ -184,7 +187,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       cBody.innerHTML = "";
       const compRows = f.comps.map((c, i) => {
         const e = f.beta[i], se = Math.sqrt(f.cov[i][i]);
-        return { name: c, e, se, lo: e - 1.96 * se, hi: e + 1.96 * se };
+        return { name: c, e, se, lo: e - Z975 * se, hi: e + Z975 * se };
       });
       for (const r of compRows) {
         cBody.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
@@ -210,7 +213,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
           varSum += 2 * f.cov[ia][ib];
         }
         const se = Math.sqrt(Math.max(varSum, 0));
-        return { name, e: mean, se, lo: mean - 1.96 * se, hi: mean + 1.96 * se };
+        return { name, e: mean, se, lo: mean - Z975 * se, hi: mean + Z975 * se };
       });
       for (const r of intRows) {
         iBody.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;

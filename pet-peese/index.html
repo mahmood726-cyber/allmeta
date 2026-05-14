@@ -118,6 +118,9 @@
     <abbr data-gloss="PET">PET</abbr>: Stanley &amp; Doucouliagos (2014) — <code>TE = β₀ + β₁·<abbr data-gloss="SE">SE</abbr> + ε</code>, weighted by 1/SE². <abbr data-gloss="PEESE">PEESE</abbr>: same model with SE² instead of SE. Trim-and-fill: Duval &amp; Tweedie (2000), iterative L₀ / R₀ estimator, imputes k₀ studies reflected about the adjusted mean. Conditional PET-PEESE procedure follows <em>Cochrane Handbook v6.5 §13.3.5.4</em> (small-study effects); trim-and-fill is positioned as a sensitivity analysis only, never the primary result, per <em>Cochrane Handbook §13.3.5.3</em>. Power is poor for k&lt;10 — interpret with caution.
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     // --- parse input ---
     function parseTable(text) {
       return text.trim().split(/\n/).map(l => {
@@ -133,7 +136,7 @@
       const sw = w.reduce((a, b) => a + b, 0);
       const mean = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
       const se = Math.sqrt(1 / sw);
-      return { mean, se, ci: [mean - 1.96 * se, mean + 1.96 * se], p: pFromZ(mean / se) };
+      return { mean, se, ci: [mean - Z975 * se, mean + Z975 * se], p: pFromZ(mean / se) };
     }
 
     // --- weighted linear regression of y on x with weights w ---
@@ -277,8 +280,8 @@
 
       const resRows = [
         { name: "FE meta-analysis", est: fe.mean, se: fe.se, ci: fe.ci, p: fe.p },
-        { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - 1.96 * pet.seB0, pet.b0 + 1.96 * pet.seB0], p: pFromZ(petZ) },
-        { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - 1.96 * peese.seB0, peese.b0 + 1.96 * peese.seB0], p: pFromZ(peeseZ) },
+        { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - Z975 * pet.seB0, pet.b0 + Z975 * pet.seB0], p: pFromZ(petZ) },
+        { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - Z975 * peese.seB0, peese.b0 + Z975 * peese.seB0], p: pFromZ(peeseZ) },
         { name: `Trim-and-fill (k₀=${tf.k0})`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
       ];
       const body = document.getElementById("res-body");

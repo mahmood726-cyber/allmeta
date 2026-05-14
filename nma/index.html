@@ -152,6 +152,9 @@
   <p class="footer-note">Contrast-level WLS per Lu G, Ades AE. <em>Stat Med</em> 2004;23:3105–3124 — simplified here: no multi-arm τ²/2 off-diagonal correction, no node-splitting in v1. SUCRA: Salanti G, Ades AE, Ioannidis JPA. <em>J Clin Epidemiol</em> 2011;64:163–171 — probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md).</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "nma-v1";
@@ -367,7 +370,7 @@
       const covAB = (treatA === fit.refTreat || treatB === fit.refTreat) ? 0 : fit.cov[idx[treatA]][idx[treatB]];
       const est = dB - dA;
       const se = Math.sqrt(Math.max(0, varB + varA - 2*covAB));
-      return { est, se, lo: est - 1.96*se, hi: est + 1.96*se };
+      return { est, se, lo: est - Z975 *se, hi: est + Z975 *se };
     }
 
     // MC SUCRA: sample d from MVN(estimate, cov), rank each sample, aggregate

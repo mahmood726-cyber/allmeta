@@ -151,6 +151,9 @@
   <p class="footer-note"><abbr data-gloss="Egger">Egger</abbr>'s regression: intercept from unweighted <abbr data-gloss="OLS">OLS</abbr> of <code>est/<abbr data-gloss="SE">SE</abbr></code> on <code>1/SE</code>. Power is low for k&lt;10. <strong>For binary outcomes (<abbr data-gloss="logOR">log-OR</abbr> / <abbr data-gloss="logRR">log-RR</abbr>)</strong> <abbr data-gloss="Egger">Egger</abbr> has known type-I inflation when events are rare — prefer <abbr data-gloss="Peters">Peters</abbr>' test (<a href="../pubbias-tests/index.html">pubbias-tests</a>) or Harbord-Egger modification (per advanced-stats.md). Generated client-side.</p>
 
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     "use strict";
     const LS_KEY = "funnel-plot-v1";
@@ -202,7 +205,7 @@
       for (const s of studies) { sw += 1/s.v; swy += s.est/s.v; }
       const mu = swy / sw;
       const se = Math.sqrt(1 / sw);
-      return { mu: mu, se: se, lo: mu - 1.96 * se, hi: mu + 1.96 * se };
+      return { mu: mu, se: se, lo: mu - Z975 * se, hi: mu + Z975 * se };
     }
 
     // Egger's regression: y_i = est_i/se_i, x_i = 1/se_i. Unweighted OLS.
@@ -311,13 +314,13 @@
       for (const s of studies) if (s.se > maxSE) maxSE = s.se;
       maxSE = maxSE * 1.15 || 1;
 
-      // Effect axis: encompass all study CIs and the funnel limits at maxSE (±1.96*maxSE)
+      // Effect axis: encompass all study CIs and the funnel limits at maxSE (±Z975 *maxSE)
       let xLo = Infinity, xHi = -Infinity;
       for (const s of studies) {
-        if (s.est - 1.96 * s.se < xLo) xLo = s.est - 1.96 * s.se;
-        if (s.est + 1.96 * s.se > xHi) xHi = s.est + 1.96 * s.se;
+        if (s.est - Z975 * s.se < xLo) xLo = s.est - Z975 * s.se;
+        if (s.est + Z975 * s.se > xHi) xHi = s.est + Z975 * s.se;
       }
-      const funLo = centre - 1.96 * maxSE, funHi = centre + 1.96 * maxSE;
+      const funLo = centre - Z975 * maxSE, funHi = centre + Z975 * maxSE;
       if (funLo < xLo) xLo = funLo;
       if (funHi > xHi) xHi = funHi;
       if (isFinite(nullV)) { if (nullV < xLo) xLo = nullV; if (nullV > xHi) xHi = nullV; }
@@ -339,9 +342,9 @@
       // Plot frame
       p.push("<rect x=\"" + L + "\" y=\"" + T + "\" width=\"" + plotW + "\" height=\"" + plotH + "\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
 
-      // Pseudo-CI funnel: lines from (centre, 0) to (centre ± 1.96*maxSE, maxSE)
-      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - 1.96 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
-      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + 1.96 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
+      // Pseudo-CI funnel: lines from (centre, 0) to (centre ± Z975 *maxSE, maxSE)
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - Z975 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
+      p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + Z975 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
 
       // 99% funnel (faint)
       p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - 2.58 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#d9d5cc\" stroke-dasharray=\"2 3\" stroke-width=\"1\"/>");

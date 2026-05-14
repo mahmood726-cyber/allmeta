@@ -117,6 +117,9 @@
     R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: DL tau&#178; then WLS of te &#126; SE, intercept at SE=0 is the limit estimate. R-parity: <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code>.
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
   (function () {
     'use strict';
 
@@ -197,26 +200,26 @@
         k:         rows.length,
         fe_est:    fe.mean,
         fe_se:     fe.seMean,
-        fe_ci_lo:  fe.mean - 1.96 * fe.seMean,
-        fe_ci_hi:  fe.mean + 1.96 * fe.seMean,
+        fe_ci_lo:  fe.mean - Z975 * fe.seMean,
+        fe_ci_hi:  fe.mean + Z975 * fe.seMean,
         re_est:    re.mean,
         re_se:     re.seMean,
-        re_ci_lo:  re.mean - 1.96 * re.seMean,
-        re_ci_hi:  re.mean + 1.96 * re.seMean,
+        re_ci_lo:  re.mean - Z975 * re.seMean,
+        re_ci_hi:  re.mean + Z975 * re.seMean,
         tau2_dl:   d.tau2,
         tau_dl:    Math.sqrt(d.tau2),
         limit_est: lim.limit,
         limit_se:  lim.seLimit,
-        limit_ci_lo: lim.limit - 1.96 * lim.seLimit,
-        limit_ci_hi: lim.limit + 1.96 * lim.seLimit,
+        limit_ci_lo: lim.limit - Z975 * lim.seLimit,
+        limit_ci_hi: lim.limit + Z975 * lim.seLimit,
         slope:     lim.slope,
       };
 
       var body = document.getElementById('body');
       var __bodyParts = [''];
-      __bodyParts.push('<tr><td><code>Fixed effect</code></td><td>' + fmt(fe.mean) + '</td><td>' + fmt(fe.seMean) + '</td><td>[' + fmt(fe.mean - 1.96 * fe.seMean) + ', ' + fmt(fe.mean + 1.96 * fe.seMean) + ']</td></tr>');
-      __bodyParts.push('<tr><td><code>Random effects (DL)</code></td><td>' + fmt(re.mean) + '</td><td>' + fmt(re.seMean) + '</td><td>[' + fmt(re.mean - 1.96 * re.seMean) + ', ' + fmt(re.mean + 1.96 * re.seMean) + ']</td></tr>');
-      __bodyParts.push('<tr style="background:var(--accent-soft); font-weight:600"><td><code>Limit (Rücker)</code></td><td>' + fmt(lim.limit) + '</td><td>' + fmt(lim.seLimit) + '</td><td>[' + fmt(lim.limit - 1.96 * lim.seLimit) + ', ' + fmt(lim.limit + 1.96 * lim.seLimit) + ']</td></tr>');
+      __bodyParts.push('<tr><td><code>Fixed effect</code></td><td>' + fmt(fe.mean) + '</td><td>' + fmt(fe.seMean) + '</td><td>[' + fmt(fe.mean - Z975 * fe.seMean) + ', ' + fmt(fe.mean + Z975 * fe.seMean) + ']</td></tr>');
+      __bodyParts.push('<tr><td><code>Random effects (DL)</code></td><td>' + fmt(re.mean) + '</td><td>' + fmt(re.seMean) + '</td><td>[' + fmt(re.mean - Z975 * re.seMean) + ', ' + fmt(re.mean + Z975 * re.seMean) + ']</td></tr>');
+      __bodyParts.push('<tr style="background:var(--accent-soft); font-weight:600"><td><code>Limit (Rücker)</code></td><td>' + fmt(lim.limit) + '</td><td>' + fmt(lim.seLimit) + '</td><td>[' + fmt(lim.limit - Z975 * lim.seLimit) + ', ' + fmt(lim.limit + Z975 * lim.seLimit) + ']</td></tr>');
       body.innerHTML = __bodyParts.join('');
 
       drawFunnel(rows, re, lim);

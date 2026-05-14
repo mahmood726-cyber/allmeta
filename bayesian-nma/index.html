@@ -106,6 +106,9 @@ A, B, -0.32, 0.08</textarea>
     Consistency model per Lu &amp; Ades (2004), solved by weighted least squares in R's <code>netmeta</code>. SUCRA per Salanti et al. (2011). Posterior approximation: normal with mean = WLS estimate, covariance = (X'WX)⁻¹, assuming a flat prior on basic parameters.
   </footer>
   <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
     // --- parsing ---
     function parse(text) {
       return text.trim().split(/\n/).map(l => {
@@ -294,7 +297,7 @@ A, B, -0.32, 0.08</textarea>
       for (let i = 0; i < fit.beta.length; i++) {
         const est = fit.beta[i];
         const se = Math.sqrt(fit.cov[i][i]);
-        const lo = est - 1.96 * se, hi = est + 1.96 * se;
+        const lo = est - Z975 * se, hi = est + Z975 * se;
         // P(better than ref): drawn diffs (d_i - 0) < 0 if direction=negative
         const draws_i = draws.map(d => d[i]);
         const pBetter = direction === "negative"
