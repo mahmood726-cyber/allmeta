@@ -122,4 +122,42 @@ test.describe('effect-size-converter retrofit sanity', () => {
     expect(obj.rows.length, 'Expected at least one conversion row').toBeGreaterThan(0);
   });
 
+  // Cycle 7.16: real JS-engine R-parity (14th app).
+  //
+  // For SMD via raw cell-mean inputs the JS engine uses Hedges' simple-J
+  // approximation (1 - 3/(4*df-1)) instead of metafor's log-gamma exact J.
+  // These agree to ~1e-5 on yi and ~1e-5 on vi.  Test against the metafor
+  // reference at tol=1e-4 for SMD derived from m1/sd1/n1 + m2/sd2/n2.
+  test('JS engine R-parity vs metafor::escalc SMD (esc-tiny row 1)', async ({ page }) => {
+    // First SMD row from esc-tiny.csv
+    const fixture = [
+      { mode: 'SMD', m1: 52.5, sd1: 8.2, n1: 30, m2: 47.1, sd2: 7.9, n2: 30 },
+    ];
+    // metafor::escalc(measure='SMD', m1i, sd1i, n1i, m2i, sd2i, n2i) row 1
+    const expected = { yi: 0.6619744469902, vi: 0.07031841807057 };
+    const TOL = 1e-4;  // simple-J approximation matches metafor to ~1e-5
+
+    await page.goto(ESC_URL);
+    await waitForAlm(page);
+    await page.evaluate((rows) => window.__almLoadCSV(rows), fixture);
+    // Wait for runConvert to populate the form fields after __almLoadCSV
+    await page.waitForFunction(() => {
+      const v = document.getElementById('in-est')?.value;
+      return v && parseFloat(v) > 0;
+    }, { timeout: 5_000 });
+
+    const out = await page.evaluate(() => {
+      const est = parseFloat(document.getElementById('in-est').value);
+      const se  = parseFloat(document.getElementById('in-se').value);
+      const type = document.getElementById('in-type').value;
+      return { est, se, type, vi: se * se };
+    });
+
+    expect(out.type, 'type should be SMD').toBe('SMD');
+    expect(Math.abs(out.est - expected.yi),
+      `SMD yi: ${out.est} vs metafor=${expected.yi}`).toBeLessThan(TOL);
+    expect(Math.abs(out.vi - expected.vi),
+      `SMD vi: ${out.vi} vs metafor=${expected.vi}`).toBeLessThan(TOL);
+  });
+
 });

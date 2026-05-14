@@ -740,7 +740,11 @@
         var d  = (m1 - m2) / Sp;
         var J  = 1 - 3 / (4 * df - 1);  // Hedges correction
         var g  = d * J;
-        var vi = (n1 + n2) / (n1 * n2) + g * g / (2 * df);
+        // Cycle 7.16: metafor::escalc(SMD).vi = (n1+n2)/(n1*n2) + g^2 / (2*(n1+n2))
+        // was previously written as `g*g / (2*df)` which gave a ~1.3e-4 drift
+        // vs metafor.  The Python pytest fixture (test_smd_formula_matches_escalc_row0)
+        // correctly documents the metafor formula.
+        var vi = (n1 + n2) / (n1 * n2) + g * g / (2 * (n1 + n2));
         var se = Math.sqrt(vi);
         set('in-est', g.toFixed(6));
         set('in-se',  se.toFixed(6));
