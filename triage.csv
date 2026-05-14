@@ -2,9 +2,9 @@ app,tier,auto_tier,kind,confidence,stub_count,test_count,has_r_parity,last_touch
 rct-extractor,1,1,non-numerical,high,0,3,False,0,38.3,True,,test_count=3 | last_touched 0d ago
 local-ai,1,1,informational,high,0,3,False,0,12.52,True,,test_count=3 | last_touched 0d ago | override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type.
 webr-studio,1,1,non-numerical,high,0,3,False,0,26.91,True,,test_count=3 | last_touched 0d ago | override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular.
-r-shiny,5,5,numerical,medium,0,0,False,,75.78,True,,missing index.html
-r-shiny,5,5,numerical,medium,0,0,False,,75.78,True,,missing index.html
-r-shiny,5,5,numerical,medium,0,0,False,,75.78,True,,missing index.html
+annualised-plot,1,1,non-numerical,high,0,3,False,0,0.71,True,,test_count=3 | last_touched 0d ago | override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R.
+dta-diagnostic,1,1,non-numerical,high,0,3,False,0,0.71,True,,test_count=3 | last_touched 0d ago | override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R.
+mean-single-group,1,1,non-numerical,high,0,3,False,0,0.71,True,,test_count=3 | last_touched 0d ago | override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R.
 local-install,1,1,informational,high,0,3,False,0,13.26,True,,test_count=3 | last_touched 0d ago | override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type.
 nma-global-inconsistency,1,1,non-numerical,high,0,3,False,0,15.06,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
 p-curve,1,1,numerical,high,0,3,True,0,20.88,True,,test_count=3 | has R-parity test | last_touched 0d ago
@@ -16,12 +16,12 @@ robins-e,1,1,non-numerical,high,0,3,False,0,15.88,True,,test_count=3 | last_touc
 citation-chaser,1,1,non-numerical,high,0,3,False,0,19.04,True,,test_count=3 | last_touched 0d ago
 nma-inconsistency,1,1,non-numerical,high,0,3,False,0,19.05,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
 bucher,1,1,non-numerical,high,0,3,False,0,10.25,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
-multilevel-ma,1,1,numerical,high,0,4,True,0,24.45,True,,test_count=4 | has R-parity test | last_touched 0d ago
+multilevel-ma,1,1,numerical,high,0,4,True,0,24.9,True,,test_count=4 | has R-parity test | last_touched 0d ago
 pubbias-tests,1,1,non-numerical,high,0,3,False,0,15.95,True,,"test_count=3 | last_touched 0d ago | override applied: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally."
 copas,1,1,non-numerical,high,0,3,False,0,14.41,True,,test_count=3 | last_touched 0d ago | override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally.
 influence,1,1,numerical,high,0,3,True,0,21.15,True,,test_count=3 | has R-parity test | last_touched 0d ago
 bayesian-mcmc,1,1,non-numerical,high,0,3,False,0,18.48,True,,"test_count=3 | last_touched 0d ago | override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers."
-mh-peto,1,1,numerical,high,0,4,True,0,22.78,True,,test_count=4 | has R-parity test | last_touched 0d ago
+mh-peto,1,1,numerical,high,0,4,True,0,23.26,True,,test_count=4 | has R-parity test | last_touched 0d ago
 thematic-synthesis,1,1,non-numerical,high,0,3,False,0,12.95,True,,test_count=3 | last_touched 0d ago
 bayesian-nma,1,1,non-numerical,high,0,3,False,0,19.23,True,,"test_count=3 | last_touched 0d ago | override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers."
 component-nma,1,1,non-numerical,high,0,3,False,0,14.37,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
@@ -38,20 +38,14 @@ search-translator,1,1,non-numerical,high,0,3,False,0,14.14,True,,test_count=3 | 
 median-to-mean,1,1,non-numerical,high,0,3,False,0,14.67,True,,test_count=3 | last_touched 0d ago | override applied: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical metafor equivalent — engine validated internally.
 rob2,1,1,non-numerical,high,0,3,False,0,18.42,True,,test_count=3 | last_touched 0d ago
 pet-peese,1,1,numerical,high,0,3,True,0,24.54,True,,test_count=3 | has R-parity test | last_touched 0d ago
-proportion-ma,1,1,numerical,high,0,4,True,0,26.2,True,,test_count=4 | has R-parity test | last_touched 0d ago
+proportion-ma,1,1,numerical,high,0,4,True,0,26.76,True,,test_count=4 | has R-parity test | last_touched 0d ago
 km-reconstructor,1,1,non-numerical,high,0,3,False,0,18.06,True,,test_count=3 | last_touched 0d ago | override applied: Specialised methodology (Guyot IPD reconstruction from K-M curves); no canonical metafor equivalent — engine validated internally.
 citation-dedup,1,1,non-numerical,high,0,3,False,0,21.86,True,,test_count=3 | last_touched 0d ago
 effect-size-converter,1,3,numerical,high,0,3,True,0,41.67,True,,"no README | override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2)."
-dosehtml,1,1,informational,high,0,4,False,0,144.92,True,,"test_count=4 | last_touched 0d ago | override applied: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html (the real dose-response app). Atlas measures the launcher, which is intentionally minimal."
-Truthcert1,1,1,informational,high,0,3,False,0,653.16,True,1,"test_count=3 | last_touched 0d ago | override applied: TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type."
 focus-studio,1,1,non-numerical,high,0,3,False,0,28.67,True,,test_count=3 | last_touched 0d ago
 kanban-lab,1,1,non-numerical,high,0,3,False,0,17.9,True,,test_count=3 | last_touched 0d ago
 evidence-board,1,1,non-numerical,high,0,3,False,0,22.31,True,,test_count=3 | last_touched 0d ago
 HTA,1,1,non-numerical,high,0,3,False,0,392.15,True,,"test_count=3 | last_touched 0d ago | override applied: Health-economic decision-tree / Markov / DSA framework — comparable R packages (heemod, hesim) take >5min per run; engine validated internally via Playwright sanity checks."
-IPD-Meta-Pro,1,1,informational,high,0,3,False,0,4.3,True,,"test_count=3 | last_touched 0d ago | override applied: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal."
-Pairwiseai,1,1,informational,high,0,3,False,0,1988.05,True,,"test_count=3 | last_touched 0d ago | override applied: Pairwiseai/index.html is a launcher page linking to e156-submission assets (the full Pairwise Pro app). Atlas measures the launcher, which is intentionally minimal; no interactive numerical mount on this page."
-living-meta,1,1,informational,high,0,3,False,0,0.87,True,,"test_count=3 | last_touched 0d ago | override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal."
-nma-pro-v2,1,4,numerical,high,0,3,True,0,3.32,True,2,"total_size_kb=3.32 (< 10.0) | override applied: Cycle 2.3: stub_count=0 after placeholder detector removed. auto_tier=4 because total_size_kb=3.32 < 10.0 threshold (nma-pro-v8.0.html lives in a subdir, not top-level; index.html is a thin redirect). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 3 tests, R-parity coverage (Cycle 2.2)."
 nma-dose-response-app,1,1,non-numerical,high,0,3,False,0,1874.38,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
 prisma-flow,1,1,non-numerical,high,0,3,False,0,26.04,True,,test_count=3 | last_touched 0d ago | override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R.
 prisma-nma,1,1,non-numerical,high,0,3,False,0,25.79,True,,"test_count=3 | last_touched 0d ago | override applied: NMA / network app (PRISMA-NMA checklist tool); produces structured reporting output, not numerical estimates — R-parity is not the right benchmark."

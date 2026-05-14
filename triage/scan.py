@@ -46,7 +46,10 @@ def main(
 
     records: list[dict] = []
     for proj in projects:
-        app_dir = repo_root / proj["key"]
+        # Cycle 5.5: use app_dir (filesystem location) not key (unique id) for lookups.
+        # For flat paths these are identical; for nested paths (e.g. r-shiny/annualised-plot)
+        # app_dir preserves the parent folder while key is the leaf.
+        app_dir = repo_root / (proj.get("app_dir") or proj["key"])
         if not app_dir.is_dir():
             # External URL apps or moved folders — skip silently
             continue

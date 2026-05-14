@@ -27,7 +27,13 @@ _IS_WINDOWS = os.name == "nt"
 
 
 def _select_in_repo_apps(projects: list[dict], repo_root: Path) -> list[dict]:
-    """Keep only apps with a local-path entry whose folder exists on disk."""
+    """Keep only apps with a local-path entry whose folder exists on disk.
+
+    Cycle 5.5: uses app_dir (filesystem location) for the is_dir() check,
+    falling back to key for backward compatibility. For nested-path apps
+    (e.g. r-shiny/annualised-plot), app_dir = 'r-shiny/annualised-plot'
+    while key = 'annualised-plot'.
+    """
     out = []
     for p in projects:
         path = p.get("path") or ""
@@ -36,7 +42,8 @@ def _select_in_repo_apps(projects: list[dict], repo_root: Path) -> list[dict]:
         key = p.get("key")
         if not key:
             continue
-        if (repo_root / key).is_dir():
+        app_dir = p.get("app_dir") or key
+        if (repo_root / app_dir).is_dir():
             out.append({"key": key, "path": path})
     return out
 

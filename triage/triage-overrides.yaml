@@ -174,3 +174,14 @@ apps:
     reason: Visual Risk-of-Bias traffic-light renderer. No numerical pooling engine
       to validate against R. Hub category is generic Evidence Synthesis; explicitly
       non-numerical.
+  # --- Cycle 5.5: R-Shinylive app overrides ---
+  annualised-plot:
+    kind: non-numerical
+    reason: "R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R."
+  dta-diagnostic:
+    kind: non-numerical
+    reason: "R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R."
+  mean-single-group:
+    kind: non-numerical
+    reason: "R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R."
+  # --- end Cycle 5.5 overrides ---

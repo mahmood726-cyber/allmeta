@@ -2,25 +2,20 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T09:04:09Z · scanner v0.1.0 · 69 apps
+Generated: 2026-05-14T09:15:44Z · scanner v0.1.0 · 63 apps
 
 ## Summary
 
-- Tier 1 — Validated: 66
+- Tier 1 — Validated: 63
 - Tier 2 — Working: 0
 - Tier 3 — Polish needed: 0
 - Tier 4 — Hardening priority: 0
-- Tier 5 — Active rebuild: 3
+- Tier 5 — Active rebuild: 0
 
-## Tier 5 — Active rebuild (3)
-
-- **r-shiny** — missing index.html
-- **r-shiny** — missing index.html
-- **r-shiny** — missing index.html
-
-## Tier 1 — Validated (66)
+## Tier 1 — Validated (63)
 
 - **amstar-2** — test_count=3 · last_touched 0d ago
+- **annualised-plot** — test_count=3 · last_touched 0d ago · override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R. · **override**
 - **bayesian-ma** — test_count=4 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bayesian-mcmc** — test_count=3 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
 - **bayesian-nma** — test_count=3 · last_touched 0d ago · override applied: Bayesian MA app — canonical R refs (bayesmeta, bnma) take >60s on the smallest fixture; engine is validated internally via Stan/JAGS-equivalent samplers. · **override**
@@ -32,7 +27,7 @@ Generated: 2026-05-14T09:04:09Z · scanner v0.1.0 · 69 apps
 - **component-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **copas** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally. · **override**
 - **cumulative-subgroup** — test_count=4 · last_touched 0d ago · override applied: Engine performs sequential / subgroup pooling that depends on the underlying RMA — internal smoke tests validate the per-subset RMA via the existing flagship retrofit chain. · **override**
-- **dosehtml** — test_count=4 · last_touched 0d ago · override applied: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html (the real dose-response app). Atlas measures the launcher, which is intentionally minimal. · **override**
+- **dta-diagnostic** — test_count=3 · last_touched 0d ago · override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R. · **override**
 - **dta-sroc** — test_count=4 · has R-parity test · last_touched 0d ago
 - **effect-size-converter** — no README · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2). · **override**
 - **evidence-board** — test_count=3 · last_touched 0d ago
@@ -46,14 +41,13 @@ Generated: 2026-05-14T09:04:09Z · scanner v0.1.0 · 69 apps
 - **hsroc** — test_count=3 · last_touched 0d ago · override applied: Specialised DTA method (HSROC/bivariate); no canonical metafor equivalent for full bivariate HSROC — engine validated internally. · **override**
 - **HTA** — test_count=3 · last_touched 0d ago · override applied: Health-economic decision-tree / Markov / DSA framework — comparable R packages (heemod, hesim) take >5min per run; engine validated internally via Playwright sanity checks. · **override**
 - **influence** — test_count=3 · has R-parity test · last_touched 0d ago
-- **IPD-Meta-Pro** — test_count=3 · last_touched 0d ago · override applied: IPD-Meta-Pro/index.html is a 47-line launcher (same pattern as Pairwiseai); the real app is ipd-meta-pro.html (121k lines, skipped by 500KB stub-scan size cap). Atlas measures the launcher index, which is intentionally minimal. · **override**
 - **kanban-lab** — test_count=3 · last_touched 0d ago
 - **km-reconstructor** — test_count=3 · last_touched 0d ago · override applied: Specialised methodology (Guyot IPD reconstruction from K-M curves); no canonical metafor equivalent — engine validated internally. · **override**
 - **limit-ma** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias method (Limit meta-analysis, Rücker-Schwarzer); no canonical metafor equivalent — engine validated internally. · **override**
-- **living-meta** — test_count=3 · last_touched 0d ago · override applied: Redirect stub at index.html points to living-meta-complete.html (the real app, per projects.js path). Atlas measures size of index.html which is intentionally minimal. · **override**
 - **local-ai** — test_count=3 · last_touched 0d ago · override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **local-install** — test_count=3 · last_touched 0d ago · override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **mcid** — test_count=3 · last_touched 0d ago
+- **mean-single-group** — test_count=3 · last_touched 0d ago · override applied: R-Shinylive app — runs the original R Shiny UI in-browser via WebR. R-parity not applicable: the app IS R. · **override**
 - **median-to-mean** — test_count=3 · last_touched 0d ago · override applied: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical metafor equivalent — engine validated internally. · **override**
 - **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago
 - **mh-peto** — test_count=4 · has R-parity test · last_touched 0d ago
@@ -61,9 +55,7 @@ Generated: 2026-05-14T09:04:09Z · scanner v0.1.0 · 69 apps
 - **nma-dose-response-app** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **nma-global-inconsistency** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **nma-inconsistency** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
-- **nma-pro-v2** — total_size_kb=3.32 (< 10.0) · override applied: Cycle 2.3: stub_count=0 after placeholder detector removed. auto_tier=4 because total_size_kb=3.32 < 10.0 threshold (nma-pro-v8.0.html lives in a subdir, not top-level; index.html is a thin redirect). App is a 14,332-line functionally complete NMA platform with 6/7 audit dimensions present-good, 3 tests, R-parity coverage (Cycle 2.2). · **override**
 - **p-curve** — test_count=3 · has R-parity test · last_touched 0d ago
-- **Pairwiseai** — test_count=3 · last_touched 0d ago · override applied: Pairwiseai/index.html is a launcher page linking to e156-submission assets (the full Pairwise Pro app). Atlas measures the launcher, which is intentionally minimal; no interactive numerical mount on this page. · **override**
 - **pet-peese** — test_count=3 · has R-parity test · last_touched 0d ago
 - **pico** — test_count=3 · last_touched 0d ago
 - **powerma** — test_count=3 · last_touched 0d ago
@@ -81,7 +73,6 @@ Generated: 2026-05-14T09:04:09Z · scanner v0.1.0 · 69 apps
 - **robins-i** — test_count=3 · last_touched 0d ago
 - **search-translator** — test_count=3 · last_touched 0d ago
 - **thematic-synthesis** — test_count=3 · last_touched 0d ago
-- **Truthcert1** — test_count=3 · last_touched 0d ago · override applied: TruthCert1/index.html is a 53-line landing page with cards + figure images (links to TruthCert-PairwisePro-v1.0-production.html, e156-submission/, etc). No interactive primary mount; MISSING-MOUNT from runtime audit is a false-positive for this page type. · **override**
 - **tsa** — test_count=4 · last_touched 0d ago · override applied: Specialised TSA methodology (O'Brien-Fleming alpha-spending); no canonical metafor equivalent — engine validated internally. · **override**
 - **webr-studio** — test_count=3 · last_touched 0d ago · override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular. · **override**
 - **webr-validator** — test_count=4 · last_touched 0d ago · override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular. · **override**

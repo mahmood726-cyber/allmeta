@@ -42,7 +42,12 @@ def assign_tier(sig: dict, *, now_unix: int) -> tuple[int, list[str]]:
     if sig["playwright_pass"] is False:
         reasons.append("playwright failing")
         return 4, reasons
-    if (sig["total_size_kb"] or 0.0) < MIN_VALIDATED_SIZE_KB and sig.get("kind") != "informational":
+    # Cycle 5.5: also exempt non-numerical from the size check. Non-numerical apps
+    # (Shinylive wrappers, Bayesian samplers, etc.) may have their bulk in
+    # subdirectories (e.g. r-shiny/annualised-plot/shinylive/) that are not
+    # counted by the top-level-only total_size_kb scanner.
+    _size_exempt_kinds = {"informational", "non-numerical"}
+    if (sig["total_size_kb"] or 0.0) < MIN_VALIDATED_SIZE_KB and sig.get("kind") not in _size_exempt_kinds:
         reasons.append(f"total_size_kb={sig['total_size_kb']} (< {MIN_VALIDATED_SIZE_KB})")
         return 4, reasons
 

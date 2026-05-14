@@ -9,8 +9,13 @@ from urllib.parse import urlparse
 
 
 def path_to_key(path: str) -> str:
-    """Canonical app key = folder name. Strips ./ prefix and /index.html suffix.
-    For http(s) URLs, uses the last non-empty path segment."""
+    """Canonical app key = LAST non-empty path segment.
+
+    Cycle 5.5: switched from first-segment to last-segment to handle nested
+    paths (e.g. r-shiny/annualised-plot/ -> annualised-plot, not r-shiny which
+    collapses 3 distinct apps to the same key). Flat paths are unaffected
+    because their last segment IS their first.
+    """
     if not path:
         return ""
     if path.startswith(("http://", "https://")):
@@ -21,7 +26,24 @@ def path_to_key(path: str) -> str:
         p = p[2:]
     if p.endswith("/index.html"):
         p = p[: -len("/index.html")]
-    return p.strip("/").split("/")[0]
+    parts = [s for s in p.split("/") if s]
+    return parts[-1] if parts else ""
+
+
+def path_to_app_dir(path: str) -> str:
+    """The app's filesystem directory relative to repo root.
+
+    Strips leading ./, strips trailing /index.html, strips trailing /.
+    For URLs (http/https), returns "" since there is no on-disk directory.
+    """
+    if not path or path.startswith(("http://", "https://")):
+        return ""
+    p = path
+    if p.startswith("./"):
+        p = p[2:]
+    if p.endswith("/index.html"):
+        p = p[: -len("/index.html")]
+    return p.strip("/")
 
 
 _ARRAY_RE = re.compile(r"window\.HTML_APPS_PROJECTS\s*=\s*(\[.*?\]);?\s*$", re.DOTALL)
@@ -99,11 +121,13 @@ def load_projects(projects_js: Path) -> list[dict]:
     arr = json.loads(_js_to_json(m.group(1)))
     rows = []
     for entry in arr:
-        key = path_to_key(entry.get("path", ""))
+        raw_path = entry.get("path", "")
+        key = path_to_key(raw_path)
         rows.append({
             "key": key,
             "name": entry.get("name", ""),
-            "path": entry.get("path", ""),
+            "path": raw_path,
+            "app_dir": path_to_app_dir(raw_path),  # Cycle 5.5: fs location, distinct from key for nested paths
             "category": entry.get("category"),
             "subcategory": entry.get("subcategory"),
             "featured": bool(entry.get("featured")),
