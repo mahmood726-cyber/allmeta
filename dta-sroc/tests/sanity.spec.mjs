@@ -144,4 +144,52 @@ test.describe('dta-sroc retrofit sanity', () => {
     expect(row0.FPR, 'row.FPR missing').toBeDefined();
   });
 
+  // Cycle 7.17: real JS-engine R-parity (15th app). Moses SROC vs R lm(D ~ S).
+  test('JS engine R-parity vs R Moses SROC (sroc-tiny)', async ({ page }) => {
+    // sroc-tiny.csv (6 studies) — drive via the form textarea since dta-sroc
+    // has no __almLoad helper (the CSV upload onParse handler manipulates the
+    // textarea directly).
+    const csvText = `S1, 80, 12, 20, 88
+S2, 75, 15, 25, 85
+S3, 90, 8, 10, 92
+S4, 70, 18, 30, 82
+S5, 85, 10, 15, 90
+S6, 78, 14, 22, 86`;
+
+    // R 4.5.2 / sroc-tiny.R: Moses unweighted OLS of D = logit(Se) - logit(FPR)
+    // on S = logit(Se) + logit(FPR).
+    const expected = {
+      alpha: 5.965318230251,
+      beta:  4.912027004731,
+      k:     6,
+    };
+    const TOL = 1e-6;
+    // JS rounds alpha/beta to 8 decimals at export; honour that.
+    const ROUNDED_TOL = 1e-7;
+
+    await page.goto(DTA_URL);
+    await waitForAlm(page);
+    await page.evaluate((csv) => {
+      const ta = document.getElementById('f-data');
+      ta.value = csv;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      // The render() function reads from the textarea on every change;
+      // an explicit programmatic call is the most reliable trigger.
+      if (typeof render === 'function') render();
+    }, csvText);
+
+    await page.waitForFunction(() => {
+      const r = window.__almResults && window.__almResults();
+      return r && r.alpha !== null && r.beta !== null;
+    }, { timeout: 5_000 });
+
+    const r = await page.evaluate(() => window.__almResults());
+
+    expect(r.k, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(r.alpha - expected.alpha),
+      `Moses alpha: ${r.alpha} vs R=${expected.alpha}`).toBeLessThan(ROUNDED_TOL);
+    expect(Math.abs(r.beta - expected.beta),
+      `Moses beta: ${r.beta} vs R=${expected.beta}`).toBeLessThan(ROUNDED_TOL);
+  });
+
 });
