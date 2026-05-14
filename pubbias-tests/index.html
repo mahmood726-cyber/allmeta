@@ -303,32 +303,59 @@
     }
 
     function trimFill(rows) {
-      // Duval-Tweedie trim-and-fill (L0 estimator)
-      // Step 1: pool and find k0 (imputed studies on left of symmetry)
+      // Cycle 7.24: Duval-Tweedie L0 trim-and-fill, correctly implemented.
+      //
+      // The previous implementation ranked studies by te-sorted POSITION,
+      // not by signed rank of absolute residuals — which is what the
+      // Duval-Tweedie 2000 paper specifies and what metafor::trimfill
+      // actually uses.  On pb-tiny it estimated k0=7 (vs metafor 3),
+      // a 2.3× over-estimate.
+      //
+      // Correct L0 estimator (Duval & Tweedie 2000):
+      //   1. Pool FE.  Residuals r_i = t_i - μ̂.
+      //   2. Rank |r_i| ascending: rank 1..n.
+      //   3. T_n = sum of ranks where r_i > 0 (positive-side rank sum).
+      //   4. L0 = max(0, round((4*T_n - n*(n+1)) / (2n - 1)))
+      //   5. Iterate: trim L0 most-extreme positive residuals, repool,
+      //      recompute residuals (using the trimmed pool), recount L0
+      //      until convergence.
       var n = rows.length;
-      var sorted = rows.slice().sort(function (a, b) { return a.te - b.te; });
-      var k0 = 0;
-      for (var iter = 0; iter < 50; iter++) {
-        var pooled = feMean(sorted.slice(0, n - k0).concat(sorted.slice(n - k0)));
-        // Centre the sorted effects and count how many are on the right
-        var centred = sorted.map(function (r) { return r.te - pooled; });
-        // Count right-side runs (L0 estimator: k0 = (4*T_n - n*(n-1)/2) / (4*...)  )
-        // Simple heuristic: rank-based L0 estimator
-        var rankSum = 0;
-        for (var ii = 0; ii < n; ii++) {
-          if (centred[ii] > 0) rankSum += (ii + 1);
-        }
-        var newK0 = Math.max(0, Math.round(
-          (4 * rankSum - n * (n + 1) / 2) / (2 * n - 1)
-        ));
-        if (newK0 === k0) break;
-        k0 = newK0;
+      if (n < 3) return { k0: 0, est: feMean(rows), se: 1 / Math.sqrt(rows.reduce(function (a, r) { return a + 1/(r.se*r.se); }, 0)) };
+
+      function computeL0(activeRows, pool) {
+        var resids = activeRows.map(function (r) { return r.te - pool; });
+        var absRanks = resids.map(function (r, i) { return { i: i, abs: Math.abs(r), sign: Math.sign(r) }; });
+        absRanks.sort(function (a, b) { return a.abs - b.abs; });
+        absRanks.forEach(function (x, k) { x.rank = k + 1; });
+        var Tn = absRanks.filter(function (x) { return x.sign > 0; })
+                          .reduce(function (s, x) { return s + x.rank; }, 0);
+        var m = activeRows.length;
+        var L0 = Math.max(0, Math.round((4 * Tn - m * (m + 1)) / (2 * m - 1)));
+        return { L0: L0, absRanks: absRanks };
       }
-      // Step 2: impute k0 mirror studies on the left, re-pool
-      var mu0 = feMean(sorted);
-      var augmented = sorted.slice();
+
+      // Duval-Tweedie iteration: pool the TRIMMED set, but compute T_n / L0
+      // using residuals on ALL n studies from that trimmed pool.
+      var k0 = 0;
+      var active = rows.slice();
+      for (var iter = 0; iter < 50; iter++) {
+        var pool = feMean(active);
+        var step = computeL0(rows, pool);
+        if (step.L0 === k0) break;
+        k0 = step.L0;
+        var positiveByRank = step.absRanks.filter(function (x) { return x.sign > 0; })
+                                          .sort(function (a, b) { return b.rank - a.rank; });
+        var trimIdx = new Set(positiveByRank.slice(0, k0).map(function (x) { return x.i; }));
+        active = rows.filter(function (_, i) { return !trimIdx.has(i); });
+      }
+
+      // Impute k0 mirror studies on the LEFT (low-effect side) of the
+      // original pool, then refit.
+      var mu0 = feMean(rows);
+      var sortedByTe = rows.slice().sort(function (a, b) { return b.te - a.te; });  // descending
+      var augmented = rows.slice();
       for (var ii = 0; ii < k0; ii++) {
-        var s = sorted[n - 1 - ii];
+        var s = sortedByTe[ii];
         augmented.push({ te: 2 * mu0 - s.te, se: s.se });
       }
       var adjEst = feMean(augmented);

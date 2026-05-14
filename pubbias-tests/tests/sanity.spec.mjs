@@ -206,7 +206,8 @@ test.describe('pubbias-tests retrofit sanity', () => {
     // metafor::ranktest uses the exact distribution for k <= 50.  Difference
     // is ~5e-3 in p for the pb-tiny fixture.
     const BEGG_TOL = 1e-2;
-    const TF_TOL   = 1e-4;  // trim-and-fill iterative — small drift expected
+    // tf_est: JS uses FE pool on augmented set; metafor uses REML.  Diff ~3e-3.
+    const TF_TOL   = 5e-3;
 
     await page.goto(PUBBIAS_URL);
     await waitForAlm(page);
@@ -239,10 +240,16 @@ test.describe('pubbias-tests retrofit sanity', () => {
     expect(Math.abs(r.begg_p - expected.begg_p),
       `Begg p: ${r.begg_p} vs metafor=${expected.begg_p}`).toBeLessThan(BEGG_TOL);
 
-    // Trim-and-fill — the JS engine uses the L0 estimator with a simplified
-    // rank-based recurrence; metafor::trimfill() uses the iterative L0/R0/Q0
-    // estimator with a different inner loop.  k0 may match by luck but the
-    // adjusted estimate typically drifts at the 1e-3 level.  Not asserted.
+    // Cycle 7.24: trim-and-fill k0 now matches metafor::trimfill exactly.
+    // The fix replaced a broken rank-by-te implementation with the proper
+    // Duval-Tweedie L0 algorithm (sign × rank of absolute residuals; iterate
+    // re-pooling the trimmed set until L0 converges).  The adjusted estimate
+    // (tf_est) still drifts ~3e-3 because metafor pools the augmented set
+    // under REML while JS uses FE — a smaller secondary gap to close in a
+    // future cycle.
+    expect(r.tf_k0, `tf_k0 mismatch`).toBe(expected.tf_k0);
+    expect(Math.abs(r.tf_est - expected.tf_est),
+      `tf_est: ${r.tf_est} vs metafor=${expected.tf_est}`).toBeLessThan(TF_TOL);
   });
 
 });
