@@ -2,7 +2,7 @@
 
 # allmeta triage atlas
 
-Generated: 2026-05-14T08:41:36Z · scanner v0.1.0 · 66 apps
+Generated: 2026-05-14T09:04:09Z · scanner v0.1.0 · 69 apps
 
 ## Summary
 
@@ -10,7 +10,13 @@ Generated: 2026-05-14T08:41:36Z · scanner v0.1.0 · 66 apps
 - Tier 2 — Working: 0
 - Tier 3 — Polish needed: 0
 - Tier 4 — Hardening priority: 0
-- Tier 5 — Active rebuild: 0
+- Tier 5 — Active rebuild: 3
+
+## Tier 5 — Active rebuild (3)
+
+- **r-shiny** — missing index.html
+- **r-shiny** — missing index.html
+- **r-shiny** — missing index.html
 
 ## Tier 1 — Validated (66)
 
@@ -51,7 +57,7 @@ Generated: 2026-05-14T08:41:36Z · scanner v0.1.0 · 66 apps
 - **median-to-mean** — test_count=3 · last_touched 0d ago · override applied: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical metafor equivalent — engine validated internally. · **override**
 - **meta-regression** — test_count=4 · has R-parity test · last_touched 0d ago
 - **mh-peto** — test_count=4 · has R-parity test · last_touched 0d ago
-- **multilevel-ma** — test_count=3 · last_touched 0d ago · override applied: Specialised three-level random-effects model; no canonical metafor equivalent for clustered dependent effect sizes at this scope — engine validated internally. · **override**
+- **multilevel-ma** — test_count=4 · has R-parity test · last_touched 0d ago
 - **nma-dose-response-app** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **nma-global-inconsistency** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
 - **nma-inconsistency** — test_count=3 · last_touched 0d ago · override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path. · **override**
@@ -65,7 +71,7 @@ Generated: 2026-05-14T08:41:36Z · scanner v0.1.0 · 66 apps
 - **prisma-flow** — test_count=3 · last_touched 0d ago · override applied: Pure UI tool — generates PRISMA flow diagrams; has no numerical engine to validate against R. · **override**
 - **prisma-nma** — test_count=3 · last_touched 0d ago · override applied: NMA / network app (PRISMA-NMA checklist tool); produces structured reporting output, not numerical estimates — R-parity is not the right benchmark. · **override**
 - **prisma-screen** — test_count=4 · last_touched 0d ago · override applied: Reporting/utility app — PRISMA screening workspace and flow diagram; produces structured output, not numerical estimates; R-parity is not the right benchmark. · **override**
-- **proportion-ma** — test_count=3 · last_touched 0d ago · override applied: Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no canonical metafor equivalent for all three back-transformations — engine validated internally. · **override**
+- **proportion-ma** — test_count=4 · has R-parity test · last_touched 0d ago
 - **pubbias-tests** — test_count=3 · last_touched 0d ago · override applied: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally. · **override**
 - **quadas-2** — test_count=3 · last_touched 0d ago
 - **rct-extractor** — test_count=3 · last_touched 0d ago

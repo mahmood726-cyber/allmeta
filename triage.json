@@ -1185,7 +1185,7 @@
         "key": "mh-peto",
         "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778748224,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
@@ -1197,32 +1197,29 @@
     "multilevel-ma": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Specialised three-level random-effects model; no canonical metafor equivalent for clustered dependent effect sizes at this scope — engine validated internally."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Specialised three-level random-effects model; no canonical metafor equivalent for clustered dependent effect sizes at this scope — engine validated internally."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "multilevel-ma",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778748876,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 17.5
+        "test_count": 4,
+        "total_size_kb": 24.45
       },
       "tier": 1
     },
@@ -1594,32 +1591,29 @@
     "proportion-ma": {
       "auto_tier": 1,
       "confidence": "high",
-      "kind": "non-numerical",
-      "override": {
-        "kind": "non-numerical",
-        "reason": "Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no canonical metafor equivalent for all three back-transformations — engine validated internally."
-      },
+      "kind": "numerical",
+      "override": null,
       "reasons": [
-        "test_count=3",
-        "last_touched 0d ago",
-        "override applied: Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no canonical metafor equivalent for all three back-transformations — engine validated internally."
+        "test_count=4",
+        "has R-parity test",
+        "last_touched 0d ago"
       ],
       "signals": {
         "category": "Evidence Synthesis",
         "featured_rank": null,
         "has_index": true,
-        "has_r_parity": false,
+        "has_r_parity": true,
         "has_readme": true,
         "is_hub_linked": true,
         "key": "proportion-ma",
-        "kind": "non-numerical",
+        "kind": "numerical",
         "last_touched_days": 0,
-        "last_touched_unix": 1778746047,
+        "last_touched_unix": 1778749413,
         "playwright_pass": null,
         "runtime_health": "OK",
         "stub_count": 0,
-        "test_count": 3,
-        "total_size_kb": 19.92
+        "test_count": 4,
+        "total_size_kb": 26.2
       },
       "tier": 1
     },
@@ -1682,6 +1676,33 @@
         "total_size_kb": 16.35
       },
       "tier": 1
+    },
+    "r-shiny": {
+      "auto_tier": 5,
+      "confidence": "medium",
+      "kind": "numerical",
+      "override": null,
+      "reasons": [
+        "missing index.html"
+      ],
+      "signals": {
+        "category": "R / WASM",
+        "featured_rank": null,
+        "has_index": false,
+        "has_r_parity": false,
+        "has_readme": true,
+        "is_hub_linked": true,
+        "key": "r-shiny",
+        "kind": "numerical",
+        "last_touched_days": null,
+        "last_touched_unix": null,
+        "playwright_pass": null,
+        "runtime_health": null,
+        "stub_count": 0,
+        "test_count": 0,
+        "total_size_kb": 75.78
+      },
+      "tier": 5
     },
     "rct-extractor": {
       "auto_tier": 1,
@@ -2012,14 +2033,14 @@
       "tier": 1
     }
   },
-  "generated_at": "2026-05-14T08:41:36Z",
+  "generated_at": "2026-05-14T09:04:09Z",
   "scanner_version": "0.1.0",
   "totals": {
     "tier_1": 66,
     "tier_2": 0,
     "tier_3": 0,
     "tier_4": 0,
-    "tier_5": 0,
-    "total": 66
+    "tier_5": 3,
+    "total": 69
   }
 }

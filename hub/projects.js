@@ -37,6 +37,39 @@ window.HTML_APPS_PROJECTS = [
     tags: ["webr", "r", "wasm", "metafor", "netmeta", "bayesmeta", "metasens", "mada"]
   },
   {
+    name: "Annualised Outcome Plot (R/Shinylive)",
+    folder: "allmeta/r-shiny/annualised-plot",
+    path: "./r-shiny/annualised-plot/",
+    collection: "new",
+    mode: "file",
+    category: "R / WASM",
+    summary: "Legacy R Shiny annualised-rate plotting app exported with Shinylive. Runs the original Shiny UI in the browser through webR, with sample CSV support and local file upload.",
+    note: "Pilot conversion from the D-drive R portfolio; first load uses the shared Shinylive/webR runtime.",
+    tags: ["shinylive", "webr", "r-shiny", "plotting", "annualised-rate"]
+  },
+  {
+    name: "Diagnostic Test Accuracy (R/Shinylive)",
+    folder: "allmeta/r-shiny/dta-diagnostic",
+    path: "./r-shiny/dta-diagnostic/",
+    collection: "new",
+    mode: "file",
+    category: "R / WASM",
+    summary: "Legacy R Shiny diagnostic test accuracy app exported with Shinylive. Computes threshold-based classification summaries and ROC/AUC outputs using browser-side R.",
+    note: "Pilot conversion from the D-drive R portfolio; data stays in the browser.",
+    tags: ["shinylive", "webr", "r-shiny", "dta", "roc"]
+  },
+  {
+    name: "Mean Single-Group Meta-Analysis (R/Shinylive)",
+    folder: "allmeta/r-shiny/mean-single-group",
+    path: "./r-shiny/mean-single-group/",
+    collection: "new",
+    mode: "file",
+    category: "R / WASM",
+    summary: "Legacy R Shiny single-group meta-analysis app exported with Shinylive. Uses browser-side R and metafor for pooled mean analyses, plots, and tabular diagnostics.",
+    note: "Pilot conversion from the D-drive R portfolio; heavier analyses may take longer on first load.",
+    tags: ["shinylive", "webr", "r-shiny", "metafor", "single-group"]
+  },
+  {
     name: "Local R Install",
     folder: "C:\\HTML apps\\local-install",
     path: "./local-install/index.html",

@@ -2,6 +2,9 @@ app,tier,auto_tier,kind,confidence,stub_count,test_count,has_r_parity,last_touch
 rct-extractor,1,1,non-numerical,high,0,3,False,0,38.3,True,,test_count=3 | last_touched 0d ago
 local-ai,1,1,informational,high,0,3,False,0,12.52,True,,test_count=3 | last_touched 0d ago | override applied: Cycle 4.1: Static info page for setting up a local LLM via Ollama; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type.
 webr-studio,1,1,non-numerical,high,0,3,False,0,26.91,True,,test_count=3 | last_touched 0d ago | override applied: App IS a WebR wrapper running R in-browser — testing it against R would be circular.
+r-shiny,5,5,numerical,medium,0,0,False,,75.78,True,,missing index.html
+r-shiny,5,5,numerical,medium,0,0,False,,75.78,True,,missing index.html
+r-shiny,5,5,numerical,medium,0,0,False,,75.78,True,,missing index.html
 local-install,1,1,informational,high,0,3,False,0,13.26,True,,test_count=3 | last_touched 0d ago | override applied: Cycle 4.1: Static info page with one-command R install steps; no interactive landmark expected. MISSING-MOUNT from runtime audit is a false-positive for this page type.
 nma-global-inconsistency,1,1,non-numerical,high,0,3,False,0,15.06,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
 p-curve,1,1,numerical,high,0,3,True,0,20.88,True,,test_count=3 | has R-parity test | last_touched 0d ago
@@ -13,7 +16,7 @@ robins-e,1,1,non-numerical,high,0,3,False,0,15.88,True,,test_count=3 | last_touc
 citation-chaser,1,1,non-numerical,high,0,3,False,0,19.04,True,,test_count=3 | last_touched 0d ago
 nma-inconsistency,1,1,non-numerical,high,0,3,False,0,19.05,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
 bucher,1,1,non-numerical,high,0,3,False,0,10.25,True,,test_count=3 | last_touched 0d ago | override applied: NMA / network app; canonical R reference established at the nma-pro-v2 flagship retrofit — cross-engine parity is the same code-path.
-multilevel-ma,1,1,non-numerical,high,0,3,False,0,17.5,True,,test_count=3 | last_touched 0d ago | override applied: Specialised three-level random-effects model; no canonical metafor equivalent for clustered dependent effect sizes at this scope — engine validated internally.
+multilevel-ma,1,1,numerical,high,0,4,True,0,24.45,True,,test_count=4 | has R-parity test | last_touched 0d ago
 pubbias-tests,1,1,non-numerical,high,0,3,False,0,15.95,True,,"test_count=3 | last_touched 0d ago | override applied: Specialised publication-bias test suite (Egger, Peters, Begg, Harbord, trim-and-fill, PET-PEESE, Copas); the underlying individual tests are each specialised — engine validated internally."
 copas,1,1,non-numerical,high,0,3,False,0,14.41,True,,test_count=3 | last_touched 0d ago | override applied: Specialised publication-bias method (Copas selection model); no canonical metafor equivalent — engine validated internally.
 influence,1,1,numerical,high,0,3,True,0,21.15,True,,test_count=3 | has R-parity test | last_touched 0d ago
@@ -35,7 +38,7 @@ search-translator,1,1,non-numerical,high,0,3,False,0,14.14,True,,test_count=3 | 
 median-to-mean,1,1,non-numerical,high,0,3,False,0,14.67,True,,test_count=3 | last_touched 0d ago | override applied: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical metafor equivalent — engine validated internally.
 rob2,1,1,non-numerical,high,0,3,False,0,18.42,True,,test_count=3 | last_touched 0d ago
 pet-peese,1,1,numerical,high,0,3,True,0,24.54,True,,test_count=3 | has R-parity test | last_touched 0d ago
-proportion-ma,1,1,non-numerical,high,0,3,False,0,19.92,True,,test_count=3 | last_touched 0d ago | override applied: Specialised proportion pooling (logit/double-arcsine/Freeman-Tukey); no canonical metafor equivalent for all three back-transformations — engine validated internally.
+proportion-ma,1,1,numerical,high,0,4,True,0,26.2,True,,test_count=4 | has R-parity test | last_touched 0d ago
 km-reconstructor,1,1,non-numerical,high,0,3,False,0,18.06,True,,test_count=3 | last_touched 0d ago | override applied: Specialised methodology (Guyot IPD reconstruction from K-M curves); no canonical metafor equivalent — engine validated internally.
 citation-dedup,1,1,non-numerical,high,0,3,False,0,21.86,True,,test_count=3 | last_touched 0d ago
 effect-size-converter,1,3,numerical,high,0,3,True,0,41.67,True,,"no README | override applied: Cycle 2.3: stub_count=0 after placeholder detector removed from _STUB_PATTERNS. auto_tier=3 because no README.md at top-level (app has 3 tests + R-parity; confirmed functionally complete, Cycle 2.2)."
