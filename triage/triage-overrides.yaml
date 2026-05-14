@@ -37,11 +37,9 @@ apps:
     kind: non-numerical
     reason: Specialised publication-bias method (Copas selection model); no canonical
       metafor equivalent — engine validated internally.
-  cumulative-subgroup:
-    kind: non-numerical
-    reason: Engine performs sequential / subgroup pooling that depends on the underlying
-      RMA — internal smoke tests validate the per-subset RMA via the existing flagship
-      retrofit chain.
+  # cumulative-subgroup: Cycle 2.7 override REMOVED (2026-05-14) — real R-parity established
+  #   via metafor::cumul(rma(..., method="PM"), order=year); cumul-tiny.R fixture verified;
+  #   auto_tier=1 now applies.
   dosehtml:
     kind: informational
     reason: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html

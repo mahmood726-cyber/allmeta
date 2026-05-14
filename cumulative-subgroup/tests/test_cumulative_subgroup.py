@@ -73,3 +73,42 @@ def test_script_close_not_in_string():
     text = INDEX.read_text(encoding="utf-8")
     m = re.search(r"<script>\s*(.*?)\s*</script>", text, re.DOTALL)
     assert m and "</script>" not in m.group(1)
+
+
+# ---- Cycle 2.7 module wiring checks ----
+def test_shared_module_scripts_present():
+    """All 7 shared UX modules are <script>-imported."""
+    text = INDEX.read_text(encoding="utf-8")
+    for mod in ("csv-upload.js", "chart-download.js", "axis-controls.js",
+                "results-export.js", "url-state.js", "reset-undo.js", "tooltips.js"):
+        assert f"shared/{mod}" in text, f"Missing script import for {mod}"
+
+
+def test_module_mount_points_present():
+    """All required mount-point divs exist."""
+    text = INDEX.read_text(encoding="utf-8")
+    for mid in ("alm-csv-mount", "alm-chart-mount", "alm-export-mount",
+                "alm-undo-mount", "alm-axis-mount"):
+        assert f'id="{mid}"' in text, f"Missing mount point #{mid}"
+
+
+def test_alm_init_calls_present():
+    """All 7 window.alm.* init calls are present."""
+    text = INDEX.read_text(encoding="utf-8")
+    for call in ("window.alm.csvUpload", "window.alm.chartDownload",
+                 "window.alm.axisControls", "window.alm.resultsExport",
+                 "window.alm.urlState", "window.alm.resetUndo",
+                 "window.alm.tooltips"):
+        assert call in text, f"Missing init call: {call}"
+
+
+def test_results_schema_marker():
+    """Results export schema marker is present."""
+    text = INDEX.read_text(encoding="utf-8")
+    assert '"cumsub-results-v1"' in text
+
+
+def test_last_results_exposed():
+    """window._almLastCumSub is exposed for the export module."""
+    text = INDEX.read_text(encoding="utf-8")
+    assert "_almLastCumSub" in text

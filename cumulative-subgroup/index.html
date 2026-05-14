@@ -67,17 +67,30 @@
     .file-input-hidden { display:none; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.7 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Cumulative + Subgroup Meta-Analysis</h1>
     <p>Two views on the same studies: cumulative pooled estimate as studies accrue (optionally by year), and subgroup pooled estimates with a between-subgroup Q test. Random-effects pooling via Paule-Mandel.</p>
   </header>
 
-  <main class="layout">
+  <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
+
+      <!-- csv-upload mount: file picker for CSV files -->
+      <div id="alm-csv-mount"></div>
 
       <fieldset>
         <legend>Data</legend>
@@ -106,6 +119,11 @@
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
 
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.5rem"></div>
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
+
       <div class="actions">
         <button type="button" id="btn-svg" class="primary">Download SVG</button>
         <button type="button" id="btn-png">Download PNG</button>
@@ -124,6 +142,16 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2 id="preview-heading">Preview</h2>
       <div id="svg-host"></div>
+      <!-- chart-download mount -->
+      <div class="actions" style="margin-top:0.5rem">
+        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
+        <div id="alm-chart-mount"></div>
+      </div>
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
     </section>
   </main>
 
@@ -436,6 +464,12 @@
 
     function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
 
+    // ---- results storage for export ----
+    let _lastResults = null;
+
+    // ---- axis state (overrideable by axis-controls) ----
+    let _axisState = {};
+
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
@@ -448,11 +482,13 @@
       const extras = [];
       if (parsed.studies.length < 2) {
         svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥2 studies.</text></svg>";
+        _lastResults = null;
       } else if (state.view === "subgroup") {
         const groupsPresent = parsed.studies.some(s => s.group);
         if (!groupsPresent) {
           extras.push("No group column detected — add a 5th column to split studies.");
           svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Subgroup view needs a group column.</text></svg>";
+          _lastResults = null;
         } else {
           const sub = subgroup(parsed.studies);
           parts.push(statCard("Groups", String(sub.groups.length)));
@@ -460,6 +496,20 @@
           parts.push(statCard("Q_bw (df="+sub.df_bw+")", fmt(sub.Q_bw,2)+", p="+fmt(sub.pQ,3)));
           parts.push(statCard("I² diff", fmt(sub.I2_bw,1)+"%"));
           svg = buildSubgroupSvg(state, sub);
+          _lastResults = {
+            _schema: "cumsub-results-v1",
+            view: "subgroup",
+            k: parsed.studies.length,
+            groups: sub.groups.length,
+            overall_mu: sub.overall.mu,
+            overall_lo: sub.overall.lo,
+            overall_hi: sub.overall.hi,
+            overall_tau2: sub.overall.tau2,
+            Q_bw: sub.Q_bw,
+            df_bw: sub.df_bw,
+            I2_bw: sub.I2_bw,
+            pQ: sub.pQ,
+          };
         }
       } else {
         const cum = cumulative(parsed.studies);
@@ -467,6 +517,18 @@
         parts.push(statCard("Final pooled", fmt(final.mu)+" ["+fmt(final.lo)+", "+fmt(final.hi)+"]"));
         parts.push(statCard("Final τ²", fmt(final.tau2,4)));
         svg = buildCumulativeSvg(state, cum);
+        _lastResults = {
+          _schema: "cumsub-results-v1",
+          view: "cumulative",
+          k: parsed.studies.length,
+          mu_final: final.mu,
+          se_final: final.se,
+          lo_final: final.lo,
+          hi_final: final.hi,
+          tau2_final: final.tau2,
+          Q_final: final.Q,
+          series: cum.series.map(s => ({ step: s.step, label: s.label, year: s.year, mu: s.mu, se: s.se, lo: s.lo, hi: s.hi, tau2: s.tau2 })),
+        };
       }
 
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
@@ -475,6 +537,11 @@
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+
+      // notify url-state
+      if (window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ data: state.data, view: state.view, title: state.title });
+      }
     }
 
     function rScript(studies, state) {
@@ -577,17 +644,53 @@
       r.readAsText(file);
     }
     function onReset() {
-      if (!confirm("Clear inputs?")) return;
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
       document.getElementById("f-data").value = "";
       document.getElementById("f-view").value = "cumulative";
       document.getElementById("f-title").value = "";
       render();
     }
     function onExample() {
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
       document.getElementById("f-data").value = EXAMPLE;
       document.getElementById("f-title").value = "Example cumulative + subgroup MA";
       render();
     }
+
+    // ---- snapshot/restore for reset-undo ----
+    function snapshot() {
+      return {
+        data:  document.getElementById("f-data").value,
+        view:  document.getElementById("f-view").value,
+        title: document.getElementById("f-title").value,
+      };
+    }
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.data  !== undefined) document.getElementById("f-data").value  = snap.data;
+      if (snap.view  !== undefined) document.getElementById("f-view").value  = snap.view;
+      if (snap.title !== undefined) document.getElementById("f-title").value = snap.title;
+      render();
+    }
+
+    // ---- CSV upload bridge ----
+    window.__almLoad = function (rows) {
+      const lines = rows.map(function (r) {
+        const cols = [r.label || r.study || "", r.est !== undefined ? r.est : (r.yi !== undefined ? r.yi : ""), r.se !== undefined ? r.se : ""];
+        if (r.year != null) cols.push(r.year);
+        if (r.group) { if (r.year == null) cols.push(""); cols.push(r.group); }
+        return cols.join(", ");
+      });
+      document.getElementById("f-data").value = lines.join("\n");
+      render();
+    };
+
+    // Expose last results for export
+    window._almLastCumSub = function () { return _lastResults; };
 
     // ---- Shared MA bus (ma-studies-v1) ----
     function onBusLoad() {
@@ -644,6 +747,66 @@
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example cumulative + subgroup MA"; }
     attach();
     render();
+
+    // ---- shared UX module init (Cycle 2.7) ----
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'label',    required: false, type: 'string', example: 'Trial A' },
+        { name: 'estimate', required: true,  type: 'float',  example: '-0.30' },
+        { name: 'SE',       required: true,  type: 'float',  example: '0.14' },
+        { name: 'year',     required: false, type: 'int',    example: '2015' },
+        { name: 'group',    required: false, type: 'string', example: 'Low-risk' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.chartDownload({
+      target: '#alm-chart-mount',
+      basename: 'cumsub-plot',
+      getSvg: function () {
+        const el = document.querySelector('#svg-host svg');
+        return el || null;
+      },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'X axis (effect)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        render();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'cumsub-results',
+      getResults: function () { return window._almLastCumSub ? window._almLastCumSub() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    const restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      restore(restored);
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+
   })();
   </script>
   <script src="../shared/toast.js" defer></script>
