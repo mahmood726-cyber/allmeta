@@ -150,4 +150,65 @@ test.describe('heterogeneity retrofit sanity', () => {
     expect(obj.Q,    'Q missing').toBeDefined();
   });
 
+  // Cycle 7.4: real JS-engine R-parity. Drives the engine with the same
+  // het-tiny fixture used by test_against_metafor.py and asserts every
+  // numerical output matches metafor::rma.uni(method='REML') within 1e-6.
+  // Replaces the fixture-drift check in the pytest file — that test only
+  // verifies the hardcoded values still match R; it never touches JS.
+  test('JS engine R-parity vs metafor::rma.uni (REML, het-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'A', yi:  0.20, vi: 0.040 },
+      { study: 'B', yi: -0.10, vi: 0.030 },
+      { study: 'C', yi:  0.15, vi: 0.025 },
+      { study: 'D', yi:  0.05, vi: 0.020 },
+      { study: 'E', yi: -0.02, vi: 0.015 },
+    ];
+    // metafor 4.x / R 4.5.2 output (kept in sync with test_against_metafor.py)
+    // For REML on this data Q < df so tau2 estimates to 0 and CI uses Z975.
+    const expected = {
+      b: 0.04108527131783, se: 0.06819943394705,
+      ci_lb: -0.0925831629844, ci_ub: 0.1747537056201,
+      tau2: 0.0, I2: 0.0, Q: 2.022080103359,
+      QEp: 0.7316975563492, k: 5,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(HET_URL);
+    await waitForAlm(page);
+
+    // Pin to REML so the JS engine matches what R is doing.
+    await page.evaluate(() => {
+      const reml = document.querySelector('input[name="tau2"][value="reml"]');
+      if (reml) { reml.checked = true; reml.dispatchEvent(new Event('change', {bubbles:true})); }
+      const sel = document.querySelector('select#tau2, select[name="tau2"]');
+      if (sel) { sel.value = 'reml'; sel.dispatchEvent(new Event('change', {bubbles:true})); }
+    });
+
+    await page.evaluate((rows) => window.__almLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastFE && window._almLastFE() !== null,
+      { timeout: 5_000 }
+    );
+
+    const sum = await page.evaluate(() => window._almLastFE().sum);
+
+    expect(sum.k, 'k mismatch').toBe(expected.k);
+    expect(Math.abs(sum.mu - expected.b),
+      `mu: ${sum.mu} vs metafor b=${expected.b}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.se - expected.se),
+      `se: ${sum.se} vs metafor se=${expected.se}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.ciLo - expected.ci_lb),
+      `ciLo: ${sum.ciLo} vs metafor ci.lb=${expected.ci_lb}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.ciHi - expected.ci_ub),
+      `ciHi: ${sum.ciHi} vs metafor ci.ub=${expected.ci_ub}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.tau2 - expected.tau2),
+      `tau2: ${sum.tau2} vs metafor tau2=${expected.tau2}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.I2 - expected.I2),
+      `I2: ${sum.I2} vs metafor I2=${expected.I2}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.Q - expected.Q),
+      `Q: ${sum.Q} vs metafor Q=${expected.Q}`).toBeLessThan(TOL);
+    expect(Math.abs(sum.pQ - expected.QEp),
+      `pQ: ${sum.pQ} vs metafor QEp=${expected.QEp}`).toBeLessThan(TOL);
+  });
+
 });
