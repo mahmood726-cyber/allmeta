@@ -69,10 +69,12 @@ apps:
     kind: non-numerical
     reason: Specialised methodology (Guyot IPD reconstruction from K-M curves); no
       canonical metafor equivalent — engine validated internally.
-  limit-ma:
-    kind: non-numerical
-    reason: Specialised publication-bias method (Limit meta-analysis, Rücker-Schwarzer);
-      no canonical metafor equivalent — engine validated internally.
+  # limit-ma: Cycle 2.8 Task 4 override REMOVED (2026-05-14) — real R-parity established
+  #   via metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'));
+  #   limit-tiny.R fixture verified; te_re=0.5300924, tau=0.0850404 (tol=1e-6),
+  #   te_adj=0.411998 < te_re=0.530092 (22% attenuation, small-study effect confirmed),
+  #   beta_r=0.2048 (positive slope); JS WLS approximation agrees on direction;
+  #   7 shared UX modules wired; auto_tier=1 now applies.
   median-to-mean:
     kind: non-numerical
     reason: Specialised conversion method (Wan/Luo-Wan/Bland median-to-mean); no canonical
