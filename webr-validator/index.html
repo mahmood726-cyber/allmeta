@@ -79,6 +79,17 @@
     @media (max-width: 640px) { input, select, textarea { font-size: 16px !important; } } /* iOS auto-zoom prevention */
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script>
+    // Cycle 6.3.2: register the hub-scoped SW so direct-deep-link users
+    // still get cache-first WebR on their second visit.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function (err) {
+          console.warn('[webr-validator] SW register failed:', err);
+        });
+      });
+    }
+  </script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
