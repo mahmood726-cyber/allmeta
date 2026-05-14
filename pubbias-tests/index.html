@@ -246,23 +246,58 @@
     }
 
     function beggMazumdar(rows) {
-      // Kendall's tau between standardized effect and variance
+      // Cycle 7.23: full Begg-Mazumdar studentized rank correlation.
+      //
+      // The previous implementation correlated raw z-scores (te/se) with
+      // variances (v), which is closer to a precision-vs-effect Egger-like
+      // test than to Begg-Mazumdar.  metafor::ranktest() uses the proper
+      // standardization from Begg & Mazumdar (1994):
+      //
+      //   v* = 1 / Σ(1/v_j)             (pooled variance under FE)
+      //   θ̂ = Σ(t_j / v_j) / Σ(1/v_j)   (pooled FE mean)
+      //   t*_i = (t_i - θ̂) / sqrt(v_i - v*)
+      //
+      // Kendall's τ is then computed between t*_i and v_i.  Under no
+      // publication bias, the residual t*_i is uncorrelated with v_i.
       var n = rows.length;
-      var std = rows.map(function (r) {
-        var v = r.se * r.se;
-        return { s: r.te / Math.sqrt(v), v: v };
-      });
-      var concordant = 0, discordant = 0;
-      for (var i = 0; i < n; i++) {
-        for (var j = i + 1; j < n; j++) {
-          var ds = Math.sign(std[i].s - std[j].s);
-          var dv = Math.sign(std[i].v - std[j].v);
-          if (ds * dv > 0) concordant++;
-          else if (ds * dv < 0) discordant++;
+      if (n < 2) return { statistic: NaN, p: NaN, name: 'Begg-Mazumdar', tau: NaN };
+      var v = rows.map(function (r) { return r.se * r.se; });
+      var sumInvV = v.reduce(function (a, b) { return a + 1 / b; }, 0);
+      var vStar = 1 / sumInvV;
+      var thetaHat = rows.reduce(function (a, r, i) { return a + r.te / v[i]; }, 0) / sumInvV;
+
+      var pairs = rows.map(function (r, i) {
+        var diff = v[i] - vStar;
+        // Begg-Mazumdar denominator can be zero or near-zero when v_i ≈ v*;
+        // in that degenerate case skip (tStar undefined).
+        var tStar = diff > 1e-12 ? (r.te - thetaHat) / Math.sqrt(diff) : null;
+        return { tStar: tStar, v: v[i] };
+      }).filter(function (p) { return p.tStar !== null; });
+
+      var m = pairs.length;
+      if (m < 2) return { statistic: NaN, p: NaN, name: 'Begg-Mazumdar', tau: NaN };
+
+      // Kendall's tau-b — corrects denominator for ties.  R's cor.test
+      // (which metafor::ranktest uses) returns tau-b by default.  pb-tiny has
+      // tied sei values, so tau-a vs tau-b differs at the ~1e-2 level.
+      var concordant = 0, discordant = 0, tiedX = 0, tiedY = 0;
+      for (var i = 0; i < m; i++) {
+        for (var j = i + 1; j < m; j++) {
+          var dx = pairs[i].tStar - pairs[j].tStar;
+          var dy = pairs[i].v - pairs[j].v;
+          if (dx === 0 && dy === 0) { /* tied in both — neither C/D nor tiedX/Y */ }
+          else if (dx === 0) tiedX++;
+          else if (dy === 0) tiedY++;
+          else if (dx * dy > 0) concordant++;
+          else discordant++;
         }
       }
-      var tau = (concordant - discordant) / (n * (n - 1) / 2);
-      var varTau = (2 * (2 * n + 5)) / (9 * n * (n - 1));
+      var n0 = m * (m - 1) / 2;
+      var tau = (concordant - discordant) / Math.sqrt((n0 - tiedX) * (n0 - tiedY));
+      // Variance of tau-b under H0 with ties is complex; use the no-ties form
+      // as an approximation (matches metafor's normal-approximation fallback
+      // when exact p is not requested).
+      var varTau = (2 * (2 * m + 5)) / (9 * m * (m - 1));
       var z = tau / Math.sqrt(varTau);
       return { statistic: tau, p: pz(z), name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: tau };
     }

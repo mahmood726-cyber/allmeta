@@ -202,8 +202,11 @@ test.describe('pubbias-tests retrofit sanity', () => {
       tf_est:      0.4939061137764,
     };
     const TOL = 1e-6;
-    const BEGG_TOL = 1e-4;  // ranktest "ties" warning -> exact p approximate
-    const TF_TOL  = 1e-4;   // trim-and-fill iterative — small drift expected
+    // begg_p uses normal approximation (z = tau / sqrt(var_tau)) while
+    // metafor::ranktest uses the exact distribution for k <= 50.  Difference
+    // is ~5e-3 in p for the pb-tiny fixture.
+    const BEGG_TOL = 1e-2;
+    const TF_TOL   = 1e-4;  // trim-and-fill iterative — small drift expected
 
     await page.goto(PUBBIAS_URL);
     await waitForAlm(page);
@@ -225,13 +228,17 @@ test.describe('pubbias-tests retrofit sanity', () => {
       `Egger z: ${r.egger_z} vs metafor=${expected.egger_z}`).toBeLessThan(TOL);
     expect(Math.abs(r.egger_p - expected.egger_p),
       `Egger p: ${r.egger_p} vs metafor=${expected.egger_p}`).toBeLessThan(TOL);
-    // Begg-Mazumdar is NOT compared here — the JS engine uses raw Kendall
-    // tau between te/se and v, while metafor::ranktest() applies the proper
-    // Begg-Mazumdar studentization (t_i centred by pooled mean and rescaled
-    // by sqrt(v_i * (1 - v_i / sum_v))).  Different algorithm => different
-    // tau value (and sometimes a sign flip).  Closing this gap is a per-app
-    // engine fix tracked separately.
-    //
+    // Cycle 7.23: Begg-Mazumdar tau now matches metafor::ranktest exactly.
+    // The fix moved from raw Kendall tau on (te/se, v) to proper Begg
+    // studentization: t*_i = (t_i - θ̂_FE) / sqrt(v_i - v*), then tau-b
+    // between t*_i and v_i (matches R's cor.test default).  The p-value
+    // still uses normal approximation (~5e-3 gap vs metafor's exact
+    // distribution for k=10).
+    expect(Math.abs(r.begg_tau - expected.begg_tau),
+      `Begg tau: ${r.begg_tau} vs metafor=${expected.begg_tau}`).toBeLessThan(TOL);
+    expect(Math.abs(r.begg_p - expected.begg_p),
+      `Begg p: ${r.begg_p} vs metafor=${expected.begg_p}`).toBeLessThan(BEGG_TOL);
+
     // Trim-and-fill — the JS engine uses the L0 estimator with a simplified
     // rank-based recurrence; metafor::trimfill() uses the iterative L0/R0/Q0
     // estimator with a different inner loop.  k0 may match by luck but the
