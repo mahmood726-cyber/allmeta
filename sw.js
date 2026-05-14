@@ -1,15 +1,13 @@
-// allmeta hub service worker. Cycle 6.1.
-// Cache-first for the self-hosted Shinylive / WebR runtime so the 3 R-based
-// Shinylive apps (annualised-plot, dta-diagnostic, mean-single-group) feel
-// instant on second visit.
+// allmeta hub service worker. Cycle 6.1, updated Cycle 6.3.
+// Cache-first for the self-hosted Shinylive / WebR runtime.
 //
-// webr-studio and webr-validator use the external webr.r-wasm.org CDN — those
-// requests are not intercepted here (cross-origin fetch would be blocked anyway).
+// Cycle 6.3 fix: webr-studio and webr-validator now also pull from the local
+// r-shiny/shinylive/webr/ tree (via baseUrl), so the same SW now covers them.
 //
 // Versioned cache name: bump the version suffix when the shinylive bundle
-// changes (e.g. alm-runtime-v2) to bust the old cache cleanly.
+// changes (e.g. alm-runtime-v3) to bust the old cache cleanly.
 
-const CACHE = 'alm-runtime-v1';
+const CACHE = 'alm-runtime-v2';
 
 // Paths we cache aggressively (cache-first). Everything under
 // r-shiny/shinylive/ is stable per Shinylive's own bundling, so

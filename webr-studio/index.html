@@ -116,7 +116,7 @@
       <div class="kbd-hint">Tip: edit the R code below to customise the call. <code>Ctrl+Enter</code> runs · <code>Esc</code> returns focus to the Run button.</div>
       <h2 style="margin-top:1rem">R code</h2>
       <textarea id="r-code" style="min-height:12rem" spellcheck="false"></textarea>
-      <div class="note" id="first-load-note" style="display:none"><strong>First run:</strong> WebR downloads ~30 MB and installs R packages on demand. Subsequent runs are instant (cached by the browser).</div>
+      <div class="note" id="first-load-note" style="display:none"><strong>First run:</strong> WebR loads from a local, service-worker-cached copy (~30 MB). If you opened the allmeta hub first the runtime is already pre-warmed; otherwise the first load takes a few seconds. R packages install on demand on first use.</div>
     </section>
     <section class="panel">
       <h2>Output</h2>
@@ -488,22 +488,27 @@ print(summary(res))`,
       try {
         firstLoadNote.style.display = "block";
         outEl.textContent = "Fetching WebR runtime…";
-        // Cycle 6.2: WebR is now self-hosted via the shinylive bundle so the
+        // Cycle 6.2 + 6.3: WebR is self-hosted via the shinylive bundle so the
         // hub-level service worker (sw.js, Cycle 6.1) can cache it for instant
-        // subsequent loads.  Fall back to the CDN if the local copy is missing
-        // (e.g. someone deployed only the top-level allmeta dir without the
-        // r-shiny tree).  Pinned to v0.5.4 either way.
-        const LOCAL_WEBR = "../r-shiny/shinylive/webr/webr.mjs";
-        const CDN_WEBR = "https://webr.r-wasm.org/v0.5.4/webr.mjs";
+        // subsequent loads. Cycle 6.3 fix: passing baseUrl is REQUIRED — without
+        // it WebR's worker hard-codes the v0.5.5 CDN for R.wasm / R.js /
+        // webr-worker.js (~30 MB) regardless of where webr.mjs itself was
+        // imported from. baseUrl must end with a trailing slash.
+        const LOCAL_WEBR_DIR = "../r-shiny/shinylive/webr/";
+        const LOCAL_WEBR = LOCAL_WEBR_DIR + "webr.mjs";
+        const CDN_WEBR_DIR = "https://webr.r-wasm.org/v0.5.5/";
+        const CDN_WEBR = CDN_WEBR_DIR + "webr.mjs";
         let mod;
+        let webrBaseUrl = LOCAL_WEBR_DIR;
         try {
           mod = await import(LOCAL_WEBR);
         } catch (_localErr) {
           outEl.textContent = "Local WebR not found, falling back to CDN…";
           mod = await import(CDN_WEBR);
+          webrBaseUrl = CDN_WEBR_DIR;
         }
         const { WebR } = mod;
-        webR = new WebR({ interactive: false });
+        webR = new WebR({ interactive: false, baseUrl: webrBaseUrl });
         await webR.init();
         outEl.textContent = "WebR ready. Click 'Run in R' to install packages and run the selected template.";
         statusEl.textContent = "ready";

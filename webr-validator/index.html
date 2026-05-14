@@ -419,7 +419,13 @@
         const mod = await import(url);
         const WebRCtor = mod.WebR;
         if (!WebRCtor) throw new Error("Imported module has no WebR class export.");
-        webR = new WebRCtor();
+        // Cycle 6.3: derive baseUrl from the import URL (strip the webr.mjs
+        // filename). Without baseUrl, WebR's worker hard-codes the CDN for
+        // R.wasm / R.js / webr-worker.js (~30 MB) regardless of where
+        // webr.mjs was imported from.
+        const webrBaseUrl = url.replace(/webr\.mjs(\?.*)?$/, "");
+        log("Using WebR baseUrl: " + webrBaseUrl);
+        webR = new WebRCtor({ baseUrl: webrBaseUrl });
         await webR.init();
         log("WebR initialised.");
         log("Installing metafor (first run only, may take a minute)…");
