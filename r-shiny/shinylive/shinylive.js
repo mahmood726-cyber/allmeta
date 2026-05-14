@@ -1,3 +1,4 @@
+/* sentinel:skip-file -- vendored Shinylive/WebR runtime */
 // Shinylive 0.10.8
 // Copyright 2026 Posit, PBC
 import {

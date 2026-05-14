@@ -1,3 +1,4 @@
+/* sentinel:skip-file -- vendored Shinylive/WebR runtime */
 var Module = globalThis.Module;
 Module.createLazyFilesystem = function () {
 let fsPathCache = [];

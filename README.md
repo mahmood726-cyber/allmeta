@@ -18,7 +18,7 @@ Open http://localhost:8080.
 
 ## What's inside
 
-Twenty-five apps ship in this repository. Five more — AdaptSim, Al-Mizan, CardioOracle, CardioSynth, NICE Cardiology — are hosted in their own GitHub Pages sites and linked from the hub.
+Seventy-five apps are listed in the hub, including 69 repository-hosted browser apps, 6 externally hosted apps, and 3 R/Shinylive pilot exports from the legacy Shiny portfolio.
 
 ## Testing
 
