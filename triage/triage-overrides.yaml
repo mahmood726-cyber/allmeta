@@ -47,11 +47,11 @@ apps:
     reason: dosehtml/index.html is a 49-line launcher page linking to dose-response-pro.html
       (the real dose-response app). Atlas measures the launcher, which is intentionally
       minimal.
-  gosh:
-    kind: non-numerical
-    reason: Engine performs all-subset pooling that depends on the underlying RMA —
-      internal smoke tests validate the per-subset RMA via the existing flagship retrofit
-      chain.
+  # gosh: Cycle 2.8 Task 2 override REMOVED (2026-05-14) — real R-parity established
+  #   via metafor::gosh(rma.uni(yi, vi, method="FE")); gosh-tiny.R fixture verified;
+  #   26 subsets (k=5 full enumeration), median_est=0.2217 (tol=1e-4 vs JS FE),
+  #   full_k_est=0.2254 (tol=1e-6), all-subset min=0.18/max=0.3565;
+  #   random-sampling branch for k>15 per advanced-stats.md; auto_tier=1 now applies.
   gosh-metareg:
     kind: non-numerical
     reason: Engine performs all-subset meta-regression that depends on the underlying
