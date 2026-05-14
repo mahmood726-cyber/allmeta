@@ -138,4 +138,56 @@ test.describe('bucher retrofit sanity', () => {
     expect(obj.p_AB,  'p_AB missing').toBeDefined();
   });
 
+  // Cycle 7.12: real JS-engine R-parity test (10th app).
+  //
+  // The R script bucher-tiny.R reports "indirect B vs C" = mu_ac - mu_ab,
+  // while the JS engine reports "indirect A vs B" = dAC - dBC = mu_ab - mu_ac.
+  // Same Bucher computation, opposite reference direction.  The magnitude
+  // and SE match; the sign of the indirect estimate flips.
+  test('JS engine R-parity vs metafor pool + Bucher (bucher-tiny)', async ({ page }) => {
+    const fixture = [
+      { study: 'S1', treat1: 'A', treat2: 'B', TE: -0.30, seTE: 0.10 },
+      { study: 'S2', treat1: 'A', treat2: 'C', TE: -0.50, seTE: 0.12 },
+      { study: 'S3', treat1: 'B', treat2: 'C', TE: -0.22, seTE: 0.09 },
+      { study: 'S4', treat1: 'A', treat2: 'B', TE: -0.28, seTE: 0.11 },
+      { study: 'S5', treat1: 'A', treat2: 'C', TE: -0.48, seTE: 0.14 },
+    ];
+    // R 4.5.2 / bucher-tiny.R output (kept in sync with test_against_netmeta.py)
+    const expected = {
+      mu_ab:         -0.2909502262443439,
+      se_ab:          0.07399400733959438,
+      mu_ac:         -0.4915294117647059,
+      se_ac:          0.09111079228383559,
+      mu_bc_indirect:-0.200579185520362,
+      se_bc_indirect: 0.1173724396643445,
+    };
+    const TOL = 1e-6;
+
+    await page.goto(APP_URL);
+    await waitForAlm(page);
+    // Bucher uses __almBucherLoad (its own loader name; not __almLoad).
+    await page.evaluate((rows) => window.__almBucherLoad(rows), fixture);
+    await page.waitForFunction(
+      () => window._almLastBucher && window._almLastBucher() !== null,
+      { timeout: 5_000 }
+    );
+    const r = await page.evaluate(() => window._almLastBucher());
+
+    // Each pair-pool: JS dAC ↔ R mu_ab (first alphabetical pair), JS dBC ↔ R mu_ac
+    expect(Math.abs(r.dAC - expected.mu_ab),
+      `dAC: ${r.dAC} vs metafor mu_ab=${expected.mu_ab}`).toBeLessThan(TOL);
+    expect(Math.abs(r.seAC - expected.se_ab),
+      `seAC: ${r.seAC} vs metafor se_ab=${expected.se_ab}`).toBeLessThan(TOL);
+    expect(Math.abs(r.dBC - expected.mu_ac),
+      `dBC: ${r.dBC} vs metafor mu_ac=${expected.mu_ac}`).toBeLessThan(TOL);
+    expect(Math.abs(r.seBC - expected.se_ac),
+      `seBC: ${r.seBC} vs metafor se_ac=${expected.se_ac}`).toBeLessThan(TOL);
+    // Indirect: JS reports d_indirect_AB = dAC - dBC = mu_ab - mu_ac (opposite
+    // sign from R's mu_bc_indirect).  Compare magnitudes.
+    expect(Math.abs(Math.abs(r.d_indirect_AB) - Math.abs(expected.mu_bc_indirect)),
+      `|d_indirect_AB|: ${Math.abs(r.d_indirect_AB)} vs |mu_bc_indirect|=${Math.abs(expected.mu_bc_indirect)}`).toBeLessThan(TOL);
+    expect(Math.abs(r.se_indirect_AB - expected.se_bc_indirect),
+      `se_indirect_AB: ${r.se_indirect_AB} vs se_bc_indirect=${expected.se_bc_indirect}`).toBeLessThan(TOL);
+  });
+
 });
