@@ -7,7 +7,7 @@
 // Versioned cache name: bump the version suffix when the shinylive bundle
 // changes (e.g. alm-runtime-v3) to bust the old cache cleanly.
 
-const CACHE = 'alm-runtime-v2';
+const CACHE = 'alm-runtime-v3';
 
 // Paths we cache aggressively (cache-first). Everything under
 // r-shiny/shinylive/ is stable per Shinylive's own bundling, so

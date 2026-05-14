@@ -29,6 +29,9 @@
     .status-badge.loading { background: var(--warn-soft); color: var(--warn); }
     .status-badge.ready { background: var(--ok-soft); color: var(--ok); }
     .status-badge.error { background: var(--warn-soft); color: var(--warn); }
+    .boot-bar { height: 4px; background: var(--accent-soft); border-radius: 2px; overflow: hidden; margin: 0.7rem 0 0.2rem; max-width: 320px; }
+    .boot-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; }
+    .boot-bar.done .boot-bar-fill { background: var(--ok); }
     main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
            grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
     @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
@@ -87,6 +90,8 @@
   <header>
     <h1>WebR Studio <span id="status" class="status-badge loading" role="status" aria-live="polite" aria-atomic="true">booting</span></h1>
     <p>Real R, in your browser, via <a href="https://docs.r-wasm.org/webr/" style="color:var(--accent)">WebR</a>. Runs <code>metafor</code>, <code>meta</code>, <code>netmeta</code>, <code>metasens</code>, <code>bayesmeta</code>, and <code>mada</code> as genuine R packages — same output you'd get on your desktop.</p>
+    <div id="boot-bar" class="boot-bar" aria-hidden="true"><div id="boot-bar-fill" class="boot-bar-fill"></div></div>
+    <p id="boot-tip" style="margin:0.2rem 0 0;color:var(--muted);font-size:0.78rem">First load takes ~30 s while R compiles. <strong>You can edit the data and R code while it boots</strong> — your edits are kept.</p>
     <div class="packages" id="packages"></div>
   </header>
   <main id="main">
@@ -497,10 +502,42 @@ print(summary(res))`,
     let webR = null;
     const loadedPkgs = new Set();
 
+    // Cycle 6.4: progressive boot phases. WebR doesn't emit progress events,
+    // so we show time-anchored estimates. The ticker auto-clears when init()
+    // resolves, so warm-cache loads (4 s) just skip through the phases.
+    const BOOT_PHASES = [
+      { at:    0, label: "downloading R runtime…",   bar: 5 },
+      { at: 3500, label: "compiling WebAssembly…",   bar: 30 },
+      { at: 9000, label: "booting R interpreter…",   bar: 60 },
+      { at: 18000, label: "loading R libraries…",     bar: 85 },
+      { at: 27000, label: "almost there…",            bar: 95 },
+    ];
+    let bootTickerId = null;
+    let bootStartedAt = 0;
+    function startBootTicker() {
+      bootStartedAt = performance.now();
+      const tick = () => {
+        const t = performance.now() - bootStartedAt;
+        let phase = BOOT_PHASES[0];
+        for (const p of BOOT_PHASES) { if (t >= p.at) phase = p; }
+        statusEl.textContent = phase.label;
+        const bar = document.getElementById("boot-bar-fill");
+        if (bar) bar.style.width = phase.bar + "%";
+      };
+      tick();
+      bootTickerId = setInterval(tick, 400);
+    }
+    function stopBootTicker() {
+      if (bootTickerId !== null) { clearInterval(bootTickerId); bootTickerId = null; }
+      const bar = document.getElementById("boot-bar-fill");
+      if (bar) bar.style.width = "100%";
+    }
+
     async function boot() {
       try {
         firstLoadNote.style.display = "block";
         outEl.textContent = "Fetching WebR runtime…";
+        startBootTicker();
         // Cycle 6.2 + 6.3 + 6.3.1: WebR is self-hosted via the shinylive bundle
         // so the hub-level service worker (sw.js, Cycle 6.1) can cache it for
         // instant subsequent loads. baseUrl is REQUIRED — without it, WebR's
@@ -528,13 +565,23 @@ print(summary(res))`,
         const { WebR } = mod;
         webR = new WebR({ interactive: false, baseUrl: webrBaseUrl });
         await webR.init();
+        stopBootTicker();
+        const bbar = document.getElementById("boot-bar"); if (bbar) bbar.style.display = "none";
+        const btip = document.getElementById("boot-tip"); if (btip) btip.style.display = "none";
         outEl.textContent = "WebR ready. Click 'Run in R' to install packages and run the selected template.";
         statusEl.textContent = "ready";
         statusEl.className = "status-badge ready";
         btnRun.disabled = false;
         document.getElementById("packages").textContent = "Bundled R + CRAN binary repo. Packages install on first use.";
         firstLoadNote.style.display = "none";
+        // Cycle 6.4: notify the hub (if we're inside a pre-warm iframe) that
+        // the compiled WASM module is now in V8's per-URL cache and any
+        // navigation to /webr-studio/ in the parent tab will reuse it.
+        if (window.parent && window.parent !== window) {
+          try { window.parent.postMessage({ type: "webr-prewarmed" }, location.origin); } catch (_) {}
+        }
       } catch (err) {
+        stopBootTicker();
         statusEl.textContent = "error";
         statusEl.className = "status-badge error";
         outEl.textContent = "Failed to load WebR:\n" + String(err) + "\n\nCheck your network; the local WebR is at ../r-shiny/shinylive/webr/, CDN fallback at https://webr.r-wasm.org/.";
@@ -617,6 +664,19 @@ print(summary(res))`,
     document.getElementById("r-code").addEventListener("keydown", e => {
       if (e.key === "Escape") { e.preventDefault(); btnRun.focus(); }
     });
+
+    // Cycle 6.4 Option-1: pre-warm mode. The hub embeds /webr-studio/?prewarm=1
+    // in a hidden iframe so V8 caches the compiled R.wasm module before the
+    // user clicks through. In that mode we hide the UI panels (the iframe is
+    // off-screen anyway) and just boot WebR. The compiled WASM stays in V8's
+    // per-URL cache for the same-tab navigation later.
+    const isPrewarm = new URLSearchParams(location.search).get("prewarm") === "1";
+    if (isPrewarm) {
+      // Hide everything except the boot bar — saves rendering work and makes
+      // it obvious in DevTools what this iframe is doing if anyone inspects.
+      document.querySelectorAll("main, footer, .skip-link, #hub-back").forEach(el => el.style.display = "none");
+      document.querySelector("header h1").innerHTML = "WebR pre-warm <span class='status-badge loading'>booting</span>";
+    }
 
     // Defer boot so the initial page reaches networkidle before WebR's WASM fetch starts.
     // Otherwise the continuous WASM download prevents Playwright's networkidle from ever firing.
