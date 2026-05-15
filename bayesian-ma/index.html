@@ -161,7 +161,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Conjugate model: y<sub>i</sub> ∼ N(θ, v<sub>i</sub>+τ²), θ ∼ N(μ₀, τ₀²). Posterior: θ | data ∼ N(μ*, τ*²) with τ*² = (1/τ₀² + Σ 1/(v<sub>i</sub>+τ²))<sup>−1</sup>. Posterior probabilities come from the Gaussian CDF.</p>
+  <p class="footer-note">Conjugate model: y<sub>i</sub> ∼ N(θ, v<sub>i</sub>+τ²), θ ∼ N(μ₀, τ₀²). Posterior: θ | data ∼ N(μ*, τ*²) with τ*² = (1/τ₀² + Σ 1/(v<sub>i</sub>+τ²))<sup>−1</sup>. Posterior probabilities come from the Gaussian CDF (West 2009, ~1e-15). τ² option uses the canonical Paule-Mandel root (Σwᵢ(yᵢ−μ̄)²=k−1). <strong>R-parity:</strong> posterior mean/SD/CrI and tail/ROPE probabilities match the exact analytic conjugate posterior, and PM τ² the canonical root, to 1e-9 (<code>hub/shared/tests/bayesian-ma-parity.spec.mjs</code>). Deterministic closed-form — no MCMC, so R̂/ESS are inapplicable.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -243,14 +243,31 @@
       return { mu: postMean, sd: postSD, lo: postMean - Z975 *postSD, hi: postMean + Z975 *postSD };
     }
 
-    // Standard normal CDF
-    function normCDF(z) {
-      const b1=0.319381530, b2=-0.356563782, b3=1.781477937, b4=-1.821255978, b5=1.330274429, p=0.2316419, c2=0.3989422804014327;
-      const az = Math.abs(z);
-      const t = 1/(1+p*az);
-      const b = c2*Math.exp(-az*az/2);
-      const n = 1 - b*(b1*t + b2*t*t + b3*t*t*t + b4*Math.pow(t,4) + b5*Math.pow(t,5));
-      return z >= 0 ? n : 1 - n;
+    // Standard normal CDF — West (2009), absolute accuracy ~1e-15.
+    // Replaces Abramowitz-Stegun 7.1.26 (~7.5e-8) so posterior tail and
+    // ROPE probabilities match R's pnorm to machine precision.
+    function normCDF(x) {
+      const z = Math.abs(x);
+      let p;
+      if (z > 37) { p = 0; }
+      else {
+        const e = Math.exp(-z * z / 2);
+        if (z < 7.07106781186547) {
+          let b = 3.52624965998911e-2 * z + 0.700383064443688;
+          b = b * z + 6.37396220353165; b = b * z + 33.912866078383;
+          b = b * z + 112.079291497871; b = b * z + 221.213596169931;
+          b = b * z + 220.206867912376;
+          let d = 8.83883476483184e-2 * z + 1.75566716318264;
+          d = d * z + 16.064177579207; d = d * z + 86.7807322029461;
+          d = d * z + 296.564248779674; d = d * z + 637.333633378831;
+          d = d * z + 793.826512519948; d = d * z + 440.413735824752;
+          p = e * b / d;
+        } else {
+          const f = z + 1 / (z + 2 / (z + 3 / (z + 4 / (z + 13 / 20))));
+          p = e / (2.506628274631 * f);
+        }
+      }
+      return x > 0 ? 1 - p : p;
     }
 
     function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
@@ -528,6 +545,22 @@
         const f = e.target.files && e.target.files[0]; if (f) onImportJson(f); e.target.value = "";
       });
     }
+
+    // Pure-compute hook for R-parity tests (deterministic conjugate model;
+    // no MCMC, so analytic-posterior parity IS the correct validation —
+    // R-hat/ESS are inapplicable to a closed-form posterior).
+    window.__almBayesMA = function (studies, opts) {
+      const st = studies.map(s => ({ est: +s.est, v: +s.se * +s.se }));
+      const tau2 = opts.tau2 != null ? +opts.tau2 : tau2PM(st);
+      const post = posterior(st, +opts.mu0, +opts.tau0, tau2);
+      const out = { tau2PM: tau2PM(st), tau2, post };
+      if (opts.threshold != null)
+        out.pLess = normCDF((+opts.threshold - post.mu) / post.sd);
+      if (opts.rope != null)
+        out.pInside = normCDF((+opts.rope - post.mu) / post.sd)
+                    - normCDF((-+opts.rope - post.mu) / post.sd);
+      return out;
+    };
 
     const loaded = loadSaved();
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; }
