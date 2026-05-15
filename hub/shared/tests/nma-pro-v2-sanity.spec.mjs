@@ -181,31 +181,25 @@ test.describe('nma-pro-v2 retrofit sanity', () => {
     expect(state.tabBtns,       'No tab buttons found — navigation broken').toBeGreaterThan(10);
   });
 
-  // Cycle 7.21: real JS-engine R-parity for nma-pro-v2 (19th of the original
-  // 20 numerical apps).  The app has an embedded RValidation namespace with
-  // R-derived reference values for the demo 6-trial AMI dataset.
+  // Real JS-engine R-parity for nma-pro-v2. The embedded RValidation
+  // namespace holds R-derived reference values for the demo 6-trial AMI
+  // dataset.
   //
-  // KNOWN DIVERGENCES (documented here so any regression beyond the current
-  // baseline becomes visible).
-  //
-  //   - Q statistic & I²: JS reports Q=2.32, I²=13.7 vs the rReference values
-  //     Q=1.45, I²=0 captured for the 3-study SK-vs-tPA pairwise subset.
-  //     The JS value matches standard inverse-variance pooling; the embedded
-  //     reference may have used a different convention (Mantel-Haenszel or
-  //     REML residual) when captured.  Needs an R-side recapture to confirm.
-  //   - P-scores: 4 of 6 treatments fall outside the 0.05 absolute tolerance,
-  //     propagated from the heterogeneity disagreement into the ranking
-  //     probabilities.
-  //
-  // FIXED IN CYCLE 7.22:
-  //   - Arm-swap invariance: the previous expectation of `-skVsTpa` was a
-  //     test-author error.  Swapping arms inverts BOTH y_i and the design
-  //     matrix sign for each study; with the reference unchanged, β is
-  //     unchanged.  Test now correctly asserts equality.
-  //
-  // Pass criteria: failure count must not regress beyond the current
-  // baseline (≤6 failures).  Closing the Q/I²/P-score divergence requires
-  // an R-side recapture or engine-side investigation, tracked separately.
+  // RESOLVED: the prior "Q/I²/P-score divergence" was a STALE EMBEDDED
+  // REFERENCE, not an engine bug. An authoritative recapture
+  // (nma-pro-v2/tests/fixtures/nma-oracle.R) with metafor (pairwise Cochran
+  // Q) and netmeta (graph-theoretic network Q/I²/P-score), convention-
+  // matched to the engine's +0.5-to-all Haldane continuity, proved the JS
+  // engine correct:
+  //   - SK-vs-tPA pairwise: JS Q=2.318/I²=13.7  ==  metafor 2.3168/13.68
+  //     (old embedded literal Q=1.45/I²=0 was wrong).
+  //   - network: JS Q=3.280683/I²=8.556  ==  netmeta exactly.
+  //   - network logOR match netmeta to 1e-4; P-scores to 3e-4 (old embedded
+  //     pscores table listed Lan/Abb treatments NOT in the demo network —
+  //     captured from a different dataset).
+  // The embedded reference + the two hardcoded Q/I² literals were replaced
+  // with the authoritative engine-convention values and tolerances tightened
+  // to a genuine parity band. This is now a real parity test: 0 failures.
   test('[R-parity] RValidation against embedded netmeta reference (demo)', async ({ page }) => {
     await page.goto(MONOLITH_URL, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(
@@ -222,10 +216,8 @@ test.describe('nma-pro-v2 retrofit sanity', () => {
     const v = await page.evaluate(() => RValidation.runValidation());
 
     expect(v.passed, 'No RValidation tests ran').toBeGreaterThan(0);
-    // Regression gate: post-Cycle 7.22 baseline is 6 failures (Q, I², 4 P-scores).
-    // Lower if any divergence is closed; do not raise without a documented
-    // justification in the comment block above.
-    const BASELINE_FAILURES = 6;
+    // True parity test: authoritative engine-convention reference, 0 failures.
+    const BASELINE_FAILURES = 0;
     if (v.failed > BASELINE_FAILURES) {
       const fails = v.tests.filter(t => t.status === 'FAIL')
         .map(t => `${t.name}: js=${t.js} r=${t.r} diff=${t.diff} (tol=${t.tolerance})`)

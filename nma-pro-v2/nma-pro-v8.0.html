@@ -2266,20 +2266,26 @@ announce('CADTH template exported');
 };
 
 const RValidation={
+// Authoritative reference recaptured 2026 from R metafor (pairwise Cochran
+// Q) + netmeta (graph-theoretic network Q/I2/P-score), convention-matched
+// to this engine's +0.5-to-all Haldane continuity. See
+// nma-pro-v2/tests/fixtures/nma-oracle.R. Supersedes a stale capture whose
+// pairwise Q=1.45/I2=0 was wrong and whose pscores listed Lan/Abb
+// treatments absent from the demo network.
 rReference:{
 effectSizes:{
-'GUSTO-1':{logOR:0.1127,se:0.0443,comparison:'SK vs tPA'},
-'ASSENT-2':{logOR:-0.0072,se:0.0523,comparison:'TNK vs tPA'},
-'INJECT':{logOR:-0.0722,se:0.0876,comparison:'SK vs rPA'},
-'GISSI-2':{logOR:0.0293,se:0.0483,comparison:'SK vs tPA'},
-'ISIS-3':{logOR:0.0255,se:0.0374,comparison:'SK vs tPA'}
+'GUSTO-1':{logOR:0.112107,se:0.044914,comparison:'SK vs tPA'},
+'ASSENT-2':{logOR:-0.002345,se:0.054040,comparison:'TNK vs tPA'},
+'INJECT':{logOR:-0.063893,se:0.089076,comparison:'SK vs rPA'},
+'GISSI-2':{logOR:0.033726,se:0.049965,comparison:'SK vs tPA'},
+'ISIS-3':{logOR:0.026561,se:0.039425,comparison:'SK vs tPA'}
 },
-heterogeneity:{tau2:0.0000,tau:0.0000,I2:0.0,Q:7.94,df:6},
-networkOR:{'SK':1.031,'TNK':0.993,'rPA':1.008,'Abb':1.057,'Lan':1.047},
-pscores:{'TNK':0.859,'tPA':0.574,'rPA':0.532,'Lan':0.408,'SK':0.369,'Abb':0.257},
-pairwiseSKtPA:{pooledLogOR_REML:0.0580,se:0.0255,tau2:0.0000,I2:0.0,Q:1.45,df:2}
+heterogeneity:{tau2:0.00026626,tau:0.01631756,I2:8.555626,Q:3.280683,df:3},
+networkOR:{'tPA':1.000000,'SK':1.054465,'TNK':0.997654,'rPA':1.084514},
+pscores:{'tPA':0.762194,'TNK':0.706796,'SK':0.281933,'rPA':0.249077},
+pairwiseSKtPA:{pooledLogOR_REML:0.056338,se:0.027877,tau2:0.00037103,I2:13.675841,Q:2.316849,df:2}
 },
-tolerance:{logOR:0.02,se:0.01,tau2:0.005,I2:5,pScore:0.05,OR:0.05},
+tolerance:{logOR:0.002,se:0.002,tau2:0.001,I2:0.5,pScore:0.005,OR:0.005},
 runValidation(){
 const results={passed:0,failed:0,tests:[]};
 const tol=this.tolerance;
@@ -2302,9 +2308,9 @@ const df=yi.length-1;
 const C=sumW-Stats.sum(wi.map(w=>w*w))/sumW;
 const tau2DL=Math.max(0,(Q-df)/C);
 const I2=df>0?Math.max(0,(Q-df)/Q*100):0;
-check('Q statistic',Q,1.45,0.5);
+check('Q statistic',Q,this.rReference.pairwiseSKtPA.Q,0.05);
 check('tau2 (DL)',tau2DL,0.0,tol.tau2);
-check('I2',I2,0.0,tol.I2);
+check('I2',I2,this.rReference.pairwiseSKtPA.I2,tol.I2);
 const demoStudies=[
 {name:'GUSTO-1',treatment1:'SK',events1:1135,n1:13780,treatment2:'tPA',events2:1021,n2:13746},
 {name:'ASSENT-2',treatment1:'TNK',events1:749,n1:8461,treatment2:'tPA',events2:753,n2:8488},
