@@ -91,7 +91,7 @@
     </section>
   </main>
   <footer>
-    Applicability is judged for D1–D3 only (not for Flow & Timing). Judgments are Low / High / Unclear. The tool supplies signaling questions; reviewers still decide the final judgment, informed by the auto-suggested default.
+    Applicability is judged for D1–D3 only (not for Flow & Timing). Judgments are Low / High / Unclear. The tool supplies signaling questions; reviewers still decide the final judgment, informed by the auto-suggested default. <strong>Behaviourally verified:</strong> the per-domain auto-suggested risk-of-bias (D1–D4 signaling rules + incomplete→unclear) is pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/quadas-2-behavior.spec.mjs</code>).
   </footer>
   <script>
     const Y = "Y", N = "N", U = "U";  // Yes, No, Unclear
@@ -288,6 +288,20 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for behavioural tests (the deterministic
+    // auto-suggested per-domain risk-of-bias; reviewer override is UI-only
+    // so the suggestion is the testable algorithm). answers =
+    // {D1:{"1.1":"Y",...},...}; missing answers → "unclear".
+    window.__almQuadas = function (answers) {
+      const out = {};
+      for (const d of DOMAINS) {
+        const a = (answers && answers[d.id]) || {};
+        const allAns = d.questions.every(q => a[q.id] != null);
+        out[d.id] = allAns ? d.suggestRoB(a) : "unclear";
+      }
+      return out;
+    };
 
     document.getElementById("btn-eval").addEventListener("click", evaluate);
     render();
