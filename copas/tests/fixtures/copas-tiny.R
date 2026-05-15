@@ -20,13 +20,16 @@
 ##   slope   = 0.477176161301    (positive: small-study effects larger than large-study)
 ##   rho_bound = 0.9999
 ##
-## NOTE: The JS engine uses an HT approximation, NOT the full MLE — so te_adj
-## from JS will differ from metasens::copas() at any given gamma. The R-parity
-## tests verify:
-##   (a) unadjusted FE/RE from the JS engine match te_fe/te_re (tol=1e-4)
-##   (b) Copas-adjusted direction: te_adj < te_re (attenuation toward null)
-##   (c) slope > 0 (consistent with apparent small-study effect in the fixture)
-##   (d) rho_bound = 0.9999 (model ran to completion with k=10 < 15 threshold)
+## NOTE: As of the Copas-MLE rewrite the JS engine implements the FULL
+## Copas & Shi (2000) profile likelihood (faithful port of
+## metasens:::copas.loglik.without.beta). Engine R-parity is verified by
+## copas-oracle.R + tests/copas-parity.spec.mjs (profile MLE matches
+## metasens to ~1e-4 on effect / rho [where identified] / tau at shared
+## (gamma0,gamma1) points). This script remains the unadjusted-baseline
+## reference: the JS fe_pooled/fe_se match metafor to 1e-6, and te_adj/
+## slope/rho_bound below stay valid metasens::copas() values. metasens's
+## single auto-selected te_adj (contourLines slope machinery) is NOT
+## reproduced by the app by design — it reports the full sensitivity curve.
 ##
 ## Usage (called by test_against_metasens.py):
 ##   Rscript --vanilla copas-tiny.R copas-tiny.csv

@@ -125,7 +125,7 @@ test.describe('copas retrofit sanity', () => {
   });
 
   // T5 — results-export JSON contains copas-results-v1 schema
-  test('results-export JSON contains copas-results-v1 schema', async ({ page }) => {
+  test('results-export JSON contains copas-results-v2 schema', async ({ page }) => {
     await page.goto(COPAS_URL);
     await waitForAlm(page);
     await waitForResults(page);
@@ -143,30 +143,30 @@ test.describe('copas retrofit sanity', () => {
     const text = readFileSync(path, 'utf-8');
     const obj = JSON.parse(text);
 
-    expect(obj._schema, 'Missing or wrong _schema').toBe('copas-results-v1');
+    // v2 contract: Copas & Shi profile-MLE on the publication-probability path.
+    expect(obj._schema, 'Missing or wrong _schema').toBe('copas-results-v2');
     expect(obj.k,       'k (study count) missing').toBeGreaterThan(0);
     expect(obj.fe_pooled, 'fe_pooled missing').toBeDefined();
     expect(obj.sensitivity_grid, 'sensitivity_grid missing').toBeDefined();
     expect(Array.isArray(obj.sensitivity_grid), 'sensitivity_grid should be array').toBe(true);
-    expect(obj.sensitivity_grid.length, 'Expected 7 gamma steps').toBe(7);
-    // First grid row: gamma=0 (no adjustment)
+    expect(obj.sensitivity_grid.length, 'Expected 8 publprob steps').toBe(8);
+    // First grid row: publprob=1.0 (no selection)
     const row0 = obj.sensitivity_grid[0];
-    expect(row0.gamma, 'grid[0].gamma should be 0').toBe(0);
+    expect(row0.publprob, 'grid[0].publprob should be 1').toBe(1);
     expect(row0.te_adj, 'grid[0].te_adj missing').toBeDefined();
-    // Last grid row: gamma=3.0 (strongest selection)
-    const rowLast = obj.sensitivity_grid[6];
-    expect(rowLast.gamma, 'grid[6].gamma should be 3').toBe(3);
-    // Attenuation: at gamma=3, te_adj should be less than at gamma=0
-    expect(rowLast.te_adj, 'grid last te_adj should attenuate vs gamma=0')
+    expect(row0.gamma1, 'grid[0].gamma1 should be 0 (no selection)').toBe(0);
+    // Last grid row: publprob=0.3 (strongest selection)
+    const rowLast = obj.sensitivity_grid[7];
+    expect(rowLast.publprob, 'grid[7].publprob should be 0.3').toBeCloseTo(0.3, 10);
+    // Attenuation: strongest selection attenuates vs the no-selection anchor.
+    expect(rowLast.te_adj, 'grid last te_adj should attenuate vs publprob=1')
       .toBeLessThanOrEqual(row0.te_adj + 0.01);
   });
 
-  // Cycle 7.14: real JS-engine R-parity (12th app).
-  //
-  // The R parity script uses metasens::copas() with full MLE; the JS engine
-  // uses a Horvitz-Thompson approximation.  Adjusted estimates diverge by
-  // construction.  This test asserts only the UNADJUSTED FE baseline, which
-  // is standard inverse-variance pooling and must match metafor exactly.
+  // JS-engine R-parity. The Copas profile-MLE adjusted curve is validated to
+  // ~1e-4 vs metasens in copas-parity.spec.mjs. Here: the UNADJUSTED FE
+  // baseline must match metafor exactly, and the no-selection anchor
+  // (publprob=1, g1=0) reduces to ~the unadjusted pool.
   test('JS engine R-parity vs metafor FE pool (copas-tiny unadjusted)', async ({ page }) => {
     const fixture = [
       { study: 'S01', yi: 0.25, sei: 0.08 },
@@ -197,11 +197,14 @@ test.describe('copas retrofit sanity', () => {
       `fe_pooled: ${r.fe_pooled} vs metafor=${expected.te_fe}`).toBeLessThan(TOL);
     expect(Math.abs(r.fe_se - expected.se_fe),
       `fe_se: ${r.fe_se} vs metafor=${expected.se_fe}`).toBeLessThan(TOL);
-    // Sanity: gamma=0 row in sensitivity grid should equal the unadjusted pool
+    // No-selection anchor (publprob=1, g1=0): Copas profile MLE reduces to
+    // ~the unadjusted pool (not bit-identical — it is the MLE, not IV).
     const grid0 = r.sensitivity_grid[0];
-    expect(grid0.gamma, 'sensitivity_grid[0].gamma should be 0').toBe(0);
+    expect(grid0.publprob, 'sensitivity_grid[0].publprob should be 1').toBe(1);
+    expect(grid0.gamma1, 'sensitivity_grid[0].gamma1 should be 0').toBe(0);
     expect(Math.abs(grid0.te_adj - r.fe_pooled),
-      `grid[0].te_adj should equal fe_pooled at gamma=0`).toBeLessThan(TOL);
+      `grid[0].te_adj (${grid0.te_adj}) should ~= fe_pooled (${r.fe_pooled})`)
+      .toBeLessThan(1e-3);
   });
 
 });
