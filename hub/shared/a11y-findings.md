@@ -1,6 +1,6 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-15T22:14:38.810Z
+Generated: 2026-05-15T22:29:01.118Z
 Apps scanned: 69/69
 Total violation instances: 50
 

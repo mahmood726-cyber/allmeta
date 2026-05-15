@@ -103,7 +103,7 @@ AND
     </section>
   </main>
   <footer>
-    PubMed field tags handled: <code>[MeSH Terms]</code>, <code>[Mesh]</code>, <code>[tiab]</code>, <code>[ti]</code>, <code>[tw]</code>, <code>[pt]</code>, <code>[all]</code>. Built-in MeSH→Emtree dictionary is minimal and focused on cardiology / pharmacology examples. This tool is a syntactic translator, not a concept mapper — you still need to review and tune the output.
+    PubMed field tags handled: <code>[MeSH Terms]</code>, <code>[Mesh]</code>, <code>[tiab]</code>, <code>[ti]</code>, <code>[tw]</code>, <code>[pt]</code>, <code>[all]</code>. Built-in MeSH→Emtree dictionary is minimal and focused on cardiology / pharmacology examples. This tool is a syntactic translator, not a concept mapper — you still need to review and tune the output. <strong>Behaviourally verified:</strong> every field-tag rewrite, the MeSH→Emtree dictionary mapping, the unmapped-MeSH warning, boolean preservation and multi-line round-trip are pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/search-translator-behavior.spec.mjs</code>).
   </footer>
   <script>
     // --- small built-in MeSH → Emtree mapping (editable) ---
@@ -243,6 +243,12 @@ AND
       const t3 = countTokens(central);
       drawBars([t1, t2, t3], ["PubMed (source)", "Embase", "CENTRAL"]);
     }
+
+    // Pure-compute hook for behavioural tests (deterministic translation).
+    window.__almTranslate = function (text) {
+      const r = translate(text);
+      return { embase: r.embase, central: r.central, warnings: warnings.slice() };
+    };
 
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("btn-clear").addEventListener("click", () => {
