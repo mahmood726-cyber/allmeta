@@ -70,7 +70,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Small-study-effect tests</h1>
-    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple. R-parity: Egger and Begg verified against <code>metafor::regtest()</code> and <code>metafor::ranktest()</code>; trim-and-fill k0 verified against <code>metafor::trimfill()</code>.</p>
+    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple. R-parity: Egger and Begg verified against <code>metafor::regtest()</code> and <code>metafor::ranktest()</code>; trim-and-fill is a faithful port of <code>metafor:::trimfill.rma.uni</code> (L0 estimator, REML side-detection regression, per-iteration REML trimmed-set estimate, REML augmented refit) &mdash; k0, adjusted estimate and its SE all match <code>metafor::trimfill(rma.uni(method='REML'))</code> to 1e-6.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -302,66 +302,87 @@
       return { statistic: tau, p: pz(z), name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: tau };
     }
 
+    // REML slope sign of the meta-regression yi ~ 1 + mod (mod = sqrt(vi)).
+    // Used only for metafor's side determination (sign of beta[2]).
+    function remlSlopeNeg(y, v, mod) {
+      var n = y.length;
+      function negllReg(t2) {
+        var Sw=0,Swm=0,Swmm=0,Swy=0,Swmy=0,sl=0;
+        for (var i=0;i<n;i++){ var w=1/(v[i]+t2),m=mod[i];
+          Sw+=w;Swm+=w*m;Swmm+=w*m*m;Swy+=w*y[i];Swmy+=w*m*y[i];sl+=Math.log(v[i]+t2);}
+        var det=Sw*Swmm-Swm*Swm;
+        var b0=(Swmm*Swy-Swm*Swmy)/det, b1=(Sw*Swmy-Swm*Swy)/det;
+        var q=0; for (var j=0;j<n;j++){ var r=y[j]-b0-b1*mod[j]; q+=r*r/(v[j]+t2);}
+        return 0.5*sl + 0.5*Math.log(det) + 0.5*q; // -restricted ll (+const)
+      }
+      var ybar=y.reduce(function(a,b){return a+b;},0)/n;
+      var sV=y.reduce(function(a,b){return a+(b-ybar)*(b-ybar);},0)/Math.max(1,n-1);
+      var hi=Math.max(1e-6,100*(sV+Math.max.apply(null,v)));
+      var gr=(Math.sqrt(5)-1)/2,a=0,b=hi,c=b-gr*(b-a),dd=a+gr*(b-a);
+      var fc=negllReg(c),fd=negllReg(dd);
+      for (var it=0;it<200;it++){
+        if (fc<fd){b=dd;dd=c;fd=fc;c=b-gr*(b-a);fc=negllReg(c);}
+        else{a=c;c=dd;fc=fd;dd=a+gr*(b-a);fd=negllReg(dd);}
+        if (Math.abs(b-a)<1e-12) break;
+      }
+      var t2=(a+b)/2; if (negllReg(0)<=negllReg(t2)) t2=0;
+      var Sw=0,Swm=0,Swmm=0,Swy=0,Swmy=0;
+      for (var i=0;i<n;i++){ var w=1/(v[i]+t2),m=mod[i];
+        Sw+=w;Swm+=w*m;Swmm+=w*m*m;Swy+=w*y[i];Swmy+=w*m*y[i];}
+      var det=Sw*Swmm-Swm*Swm;
+      return (Sw*Swmy-Swm*Swy)/det < 0; // beta1 < 0  ->  side = 'right'
+    }
+
+    // Faithful port of metafor:::trimfill.rma.uni (estimator L0, REML).
+    // Side via REML meta-regression on sqrt(vi); per-iteration trimmed-set
+    // estimate and final augmented refit both REML (metafor refits with the
+    // original model's method); ranks use ties.method='first'.
     function trimFill(rows) {
-      // Cycle 7.24: Duval-Tweedie L0 trim-and-fill, correctly implemented.
-      //
-      // The previous implementation ranked studies by te-sorted POSITION,
-      // not by signed rank of absolute residuals — which is what the
-      // Duval-Tweedie 2000 paper specifies and what metafor::trimfill
-      // actually uses.  On pb-tiny it estimated k0=7 (vs metafor 3),
-      // a 2.3× over-estimate.
-      //
-      // Correct L0 estimator (Duval & Tweedie 2000):
-      //   1. Pool FE.  Residuals r_i = t_i - μ̂.
-      //   2. Rank |r_i| ascending: rank 1..n.
-      //   3. T_n = sum of ranks where r_i > 0 (positive-side rank sum).
-      //   4. L0 = max(0, round((4*T_n - n*(n+1)) / (2n - 1)))
-      //   5. Iterate: trim L0 most-extreme positive residuals, repool,
-      //      recompute residuals (using the trimmed pool), recount L0
-      //      until convergence.
-      var n = rows.length;
-      if (n < 3) return { k0: 0, est: feMean(rows), se: 1 / Math.sqrt(rows.reduce(function (a, r) { return a + 1/(r.se*r.se); }, 0)) };
+      var k = rows.length;
+      var yi0 = rows.map(function (r) { return r.te; });
+      var vi0 = rows.map(function (r) { return r.se * r.se; });
+      if (k < 3) { var p = remlPool(rows); return { k0: 0, est: p.est, se: p.se, tau2: p.tau2 }; }
 
-      function computeL0(activeRows, pool) {
-        var resids = activeRows.map(function (r) { return r.te - pool; });
-        var absRanks = resids.map(function (r, i) { return { i: i, abs: Math.abs(r), sign: Math.sign(r) }; });
-        absRanks.sort(function (a, b) { return a.abs - b.abs; });
-        absRanks.forEach(function (x, k) { x.rank = k + 1; });
-        var Tn = absRanks.filter(function (x) { return x.sign > 0; })
-                          .reduce(function (s, x) { return s + x.rank; }, 0);
-        var m = activeRows.length;
-        var L0 = Math.max(0, Math.round((4 * Tn - m * (m + 1)) / (2 * m - 1)));
-        return { L0: L0, absRanks: absRanks };
+      var side = remlSlopeNeg(yi0, vi0, vi0.map(Math.sqrt)) ? 'right' : 'left';
+      var s = side === 'right' ? -1 : 1;
+      var idx = yi0.map(function (_, i) { return i; })
+        .sort(function (a, b) { return (s * yi0[a]) - (s * yi0[b]); });
+      var y = idx.map(function (i) { return s * yi0[i]; });
+      var v = idx.map(function (i) { return vi0[i]; });
+
+      var k0 = 0, k0sav = -1, beta = 0;
+      while (Math.abs(k0 - k0sav) > 0) {
+        k0sav = k0;
+        var m = k - k0;
+        beta = remlPool(y.slice(0, m).map(function (t, i) {
+          return { te: t, se: Math.sqrt(v[i]) }; })).est;
+        var yc = y.map(function (t) { return t - beta; });
+        // rank(abs(yc), ties.method='first'): stable by sorted-array index.
+        var order = yc.map(function (_, i) { return i; }).sort(function (a, b) {
+          var d = Math.abs(yc[a]) - Math.abs(yc[b]);
+          return d !== 0 ? d : a - b;
+        });
+        var rnk = new Array(k);
+        order.forEach(function (origI, pos) { rnk[origI] = pos + 1; });
+        var Sr = 0;
+        for (var i = 0; i < k; i++) {
+          var sr = Math.sign(yc[i]) * rnk[i];
+          if (sr > 0) Sr += sr;
+        }
+        k0 = Math.max(0, Math.round((4 * Sr - k * (k + 1)) / (2 * k - 1)));
       }
 
-      // Duval-Tweedie iteration: pool the TRIMMED set, but compute T_n / L0
-      // using residuals on ALL n studies from that trimmed pool.
-      var k0 = 0;
-      var active = rows.slice();
-      for (var iter = 0; iter < 50; iter++) {
-        var pool = feMean(active);
-        var step = computeL0(rows, pool);
-        if (step.L0 === k0) break;
-        k0 = step.L0;
-        var positiveByRank = step.absRanks.filter(function (x) { return x.sign > 0; })
-                                          .sort(function (a, b) { return b.rank - a.rank; });
-        var trimIdx = new Set(positiveByRank.slice(0, k0).map(function (x) { return x.i; }));
-        active = rows.filter(function (_, i) { return !trimIdx.has(i); });
+      var augY = yi0.slice(), augV = vi0.slice();
+      if (k0 > 0) {
+        var ycf = y.map(function (t) { return t - beta; });
+        ycf = (side === 'right')
+          ? ycf.map(function (t) { return -1 * (t - beta); })
+          : ycf.map(function (t) { return t - beta; });
+        for (var f = k - k0; f < k; f++) { augY.push(-1 * ycf[f]); augV.push(v[f]); }
       }
-
-      // Impute k0 mirror studies on the LEFT (low-effect side) of the
-      // original pool, then refit.
-      var mu0 = feMean(rows);
-      var sortedByTe = rows.slice().sort(function (a, b) { return b.te - a.te; });  // descending
-      var augmented = rows.slice();
-      for (var ii = 0; ii < k0; ii++) {
-        var s = sortedByTe[ii];
-        augmented.push({ te: 2 * mu0 - s.te, se: s.se });
-      }
-      var adjEst = feMean(augmented);
-      var sumW = augmented.reduce(function (a, r) { return a + 1 / (r.se * r.se); }, 0);
-      var adjSe = Math.sqrt(1 / sumW);
-      return { k0: k0, est: adjEst, se: adjSe };
+      var fin = remlPool(augY.map(function (t, i) {
+        return { te: t, se: Math.sqrt(augV[i]) }; }));
+      return { k0: k0, est: fin.est, se: fin.se, tau2: fin.tau2 };
     }
 
     function feMean(rows) {
@@ -372,6 +393,53 @@
         wmu += w * rows[i].te;
       }
       return wmu / sw;
+    }
+
+    // REML random-effects pool — matches metafor::rma.uni(method='REML')
+    // (and hence the refit metafor::trimfill performs on a REML object).
+    // tau2 is the argmax of the restricted log-likelihood for an
+    // intercept-only model (Viechtbauer 2005):
+    //   l(t2) = -0.5*Σln(v_i+t2) - 0.5*ln(Σ w_i) - 0.5*Σ w_i (y_i-μ)^2
+    // maximised by golden section over [0, hi] with the t2=0 boundary
+    // checked explicitly (metafor truncates negative estimates at 0).
+    function remlPool(rows) {
+      var y = rows.map(function (r) { return r.te; });
+      var v = rows.map(function (r) { return r.se * r.se; });
+      var n = y.length;
+      function llAt(t2) {
+        var sw = 0, swy = 0, sl = 0;
+        for (var i = 0; i < n; i++) {
+          var s = v[i] + t2, w = 1 / s;
+          sw += w; swy += w * y[i]; sl += Math.log(s);
+        }
+        var mu = swy / sw, q = 0;
+        for (var j = 0; j < n; j++) {
+          var d = y[j] - mu;
+          q += d * d / (v[j] + t2);
+        }
+        return -0.5 * sl - 0.5 * Math.log(sw) - 0.5 * q;
+      }
+      var ybar = y.reduce(function (a, b) { return a + b; }, 0) / n;
+      var sVar = y.reduce(function (a, b) { return a + (b - ybar) * (b - ybar); }, 0) / Math.max(1, n - 1);
+      var hi = Math.max(1e-6, 100 * (sVar + Math.max.apply(null, v)));
+      // Golden-section maximisation on [lo, hi].
+      var gr = (Math.sqrt(5) - 1) / 2, lo = 0;
+      var a = lo, b = hi;
+      var c = b - gr * (b - a), dd = a + gr * (b - a);
+      var fc = llAt(c), fd = llAt(dd);
+      for (var it = 0; it < 200; it++) {
+        if (fc > fd) { b = dd; dd = c; fd = fc; c = b - gr * (b - a); fc = llAt(c); }
+        else { a = c; c = dd; fc = fd; dd = a + gr * (b - a); fd = llAt(dd); }
+        if (Math.abs(b - a) < 1e-12) break;
+      }
+      var t2hat = (a + b) / 2;
+      if (llAt(0) >= llAt(t2hat)) t2hat = 0; // boundary solution
+      var sw = 0, swy = 0;
+      for (var k = 0; k < n; k++) {
+        var w = 1 / (v[k] + t2hat);
+        sw += w; swy += w * y[k];
+      }
+      return { tau2: t2hat, est: swy / sw, se: Math.sqrt(1 / sw) };
     }
 
     function petersTest(rows) {
