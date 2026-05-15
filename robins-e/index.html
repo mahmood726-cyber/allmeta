@@ -92,7 +92,7 @@
     </section>
   </main>
   <footer>
-    Domains: D1 Confounding, D2 Measurement of the exposure, D3 Selection into the study, D4 Post-exposure interventions, D5 Missing data, D6 Measurement of the outcome, D7 Selection of the reported result. Overall: the worst domain (any critical → critical; any serious otherwise → serious; any moderate → moderate; else low). NI in any domain → overall NI.
+    Domains: D1 Confounding, D2 Measurement of the exposure, D3 Selection into the study, D4 Post-exposure interventions, D5 Missing data, D6 Measurement of the outcome, D7 Selection of the reported result. Per-domain judgments in this simplified tool are Low / Moderate / Serious (a "Very high / Critical" rating is not auto-derived from the signaling questions — that remains reviewer territory). Overall: the worst domain (serious → serious; moderate → moderate; else low); NI in any domain → overall NI. <strong>Behaviourally verified:</strong> all seven per-domain judgments and the worst-domain overall (incl. NI-precedence) are pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/robins-e-behavior.spec.mjs</code>).
   </footer>
   <script>
     const Y = "Y", PY = "PY", PN = "PN", N = "N", NI = "NI";
@@ -283,6 +283,19 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for behavioural tests (deterministic per-domain
+    // D1-D7 + worst-domain overall, ni-precedence).
+    window.__almRobinsE = function (answers) {
+      const verdicts = {};
+      for (const d of DOMAINS) {
+        const a = (answers && answers[d.id]) || {};
+        const allAns = d.questions.every(q => a[q.id] != null);
+        verdicts[d.id] = allAns ? d.judge(a) : "ni";
+      }
+      verdicts.overall = overall(verdicts);
+      return verdicts;
+    };
 
     document.getElementById("btn-eval").addEventListener("click", evaluate);
     render();
