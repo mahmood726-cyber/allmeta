@@ -149,7 +149,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Contrast-level WLS per Lu G, Ades AE. <em>Stat Med</em> 2004;23:3105–3124 — simplified here: no multi-arm τ²/2 off-diagonal correction, no node-splitting in v1. SUCRA: Salanti G, Ades AE, Ioannidis JPA. <em>J Clin Epidemiol</em> 2011;64:163–171 — probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md).</p>
+  <p class="footer-note">Contrast-level WLS per Lu G, Ades AE. <em>Stat Med</em> 2004;23:3105–3124 — simplified here: no multi-arm τ²/2 off-diagonal correction, no node-splitting in v1. SUCRA: Salanti G, Ades AE, Ioannidis JPA. <em>J Clin Epidemiol</em> 2011;64:163–171 — probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md). <strong>R-parity:</strong> on a consistent network (τ²=0) the FE/RE network effects and SE match <code>netmeta()</code> to 1e-4 and MC-SUCRA tracks <code>netrank()</code> P-score within Monte-Carlo error (<code>hub/shared/tests/nma-parity.spec.mjs</code>).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -632,6 +632,32 @@
         const f = e.target.files && e.target.files[0]; if (f) onImportJson(f); e.target.value = "";
       });
     }
+
+    // Pure-compute hook for R-parity tests (deterministic FE/RE point
+    // estimates; SUCRA remains MC). Independent of UI state.
+    function _packFit(fit, treatments, ref) {
+      if (!fit || fit.error) return { error: fit && fit.error };
+      const est = {}; est[ref] = { d: 0, se: 0 };
+      fit.nonref.forEach((t, k) => {
+        est[t] = { d: fit.d[k], se: Math.sqrt(Math.max(0, fit.cov[k][k])) };
+      });
+      return { tau2: fit.tau2, est };
+    }
+    window.__almNmaCompute = function (text, refTreat) {
+      const { rows } = parseContrasts(text);
+      const treatments = uniqueTreatments(rows);
+      const ref = refTreat || treatments[0];
+      const fe = fitNMA(rows, treatments, ref, "fe");
+      const re = fitNMA(rows, treatments, ref, "re");
+      const base = re && !re.error ? re : fe;
+      const mc = mcSucra(base, treatments, 10000);
+      return {
+        treatments, ref,
+        fe: _packFit(fe, treatments, ref),
+        re: _packFit(re, treatments, ref),
+        sucra: mc ? Object.fromEntries(treatments.map((t, i) => [t, mc.sucra[i]])) : null,
+      };
+    };
 
     const loaded = loadSaved();
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo"; }
