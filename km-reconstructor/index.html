@@ -114,7 +114,7 @@
     </section>
   </main>
   <footer>
-    Guyot P, Ades AE, Ouwens MJNM, Welton NJ. Enhanced secondary analysis of survival data: reconstructing the data from published Kaplan-Meier survival curves. BMC Med Res Methodol 2012;12:9.
+    Guyot P, Ades AE, Ouwens MJNM, Welton NJ. Enhanced secondary analysis of survival data: reconstructing the data from published Kaplan-Meier survival curves. BMC Med Res Methodol 2012;12:9. <strong>Validation:</strong> the reconstructed K-M tracks the digitized input to &lt;0.02 survival; total events hits the reported value; median &amp; events fall within a documented heuristic band of R <code>IPDfromKM</code>'s full Guyot reconstruction — explicitly NOT IPD-level parity (<code>hub/shared/tests/km-reconstructor-parity.spec.mjs</code>).
   </footer>
   <script>
     let IPD = [];
@@ -298,6 +298,32 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for validation. NOTE: this is a simplified
+    // Guyot-style heuristic — the test asserts the reconstructed KM
+    // tracks the digitized input and that events/median are CLOSE to a
+    // full-Guyot reference (IPDfromKM) within a documented band, NOT
+    // bitwise IPD parity (per advanced-stats.md: never claim IPD-level
+    // accuracy from reconstructed data).
+    window.__almKM = function (curveText, riskText, totEvents) {
+      const curve = parseCurve(curveText);
+      const risk = parseRisk(riskText);
+      const te = parseInt(totEvents, 10);
+      const { ipd } = reconstruct(curve, risk, Number.isFinite(te) ? te : NaN);
+      const km = kmFromIPD(ipd);
+      // Reconstructed survival at each digitized curve time (step function).
+      const reconAt = curve.map(p => {
+        let s = 1;
+        for (const q of km) { if (q.t <= p.t) s = q.s; else break; }
+        return { t: p.t, sDigit: p.s, sRecon: s };
+      });
+      return {
+        n: ipd.length,
+        events: ipd.filter(r => r.event === 1).length,
+        median: medianSurvival(km),
+        reconAt,
+      };
+    };
 
     document.getElementById("btn-run").addEventListener("click", run);
     document.getElementById("btn-export").addEventListener("click", () => {
