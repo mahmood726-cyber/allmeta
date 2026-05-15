@@ -67,7 +67,7 @@
   --input-bg:         #ffffff;
   --accent:           var(--color-primary-500);
   --accent-soft:      var(--color-primary-100);
-  --warn:             #b05a1c;
+  --warn:             #9a4e17; /* a11y: text on --warn-soft = 5.28:1 (was #b05a1c = 4.25:1, < WCAG AA 4.5) */
   --warn-soft:        #fbeedd;
 
   /* ---- Typography ---- */

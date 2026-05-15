@@ -44,9 +44,9 @@
       row.innerHTML = `
         <label>${a.label}</label>
         <span>min</span>
-        <input type="number" data-axis="${a.key}" data-edge="min" value="${a.range[0] ?? ''}">
+        <input type="number" aria-label="${a.label} axis minimum" data-axis="${a.key}" data-edge="min" value="${a.range[0] ?? ''}">
         <span>max</span>
-        <input type="number" data-axis="${a.key}" data-edge="max" value="${a.range[1] ?? ''}">
+        <input type="number" aria-label="${a.label} axis maximum" data-axis="${a.key}" data-edge="max" value="${a.range[1] ?? ''}">
         <label style="font-weight:400"><input type="checkbox" data-axis="${a.key}" data-edge="log" ${a.log ? 'checked' : ''}> log</label>`;
       row.querySelectorAll('input').forEach(inp => {
         inp.addEventListener('change', () => {
