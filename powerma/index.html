@@ -106,17 +106,36 @@
     </section>
   </main>
   <footer>
-    Formula (continuous): N_per_arm = 2·(z_{1-α/2} + z_{1-β})² / (MD/SD)². For binary with RRR: effect size d = arcsin√p1 − arcsin√p0 and N_per_arm = (z_{1-α/2} + z_{1-β})² / (d²·fractional allocation). RIS = N_per_arm × 2 × (1/(1 − D²)) when D² is the diversity inflation (Wetterslev 2008).
+    Formula (continuous): N_per_arm = 2·(z_{1-α/2} + z_{1-β})² / (MD/SD)². For binary with RRR: effect size d = arcsin√p1 − arcsin√p0 and N_per_arm = (z_{1-α/2} + z_{1-β})² / (d²·fractional allocation). RIS = N_per_arm × 2 × (1/(1 − D²)) when D² is the diversity inflation (Wetterslev 2008). <strong>R-parity:</strong> z-quantiles use Wichura AS241; sample sizes match the formulas evaluated with R's exact <code>qnorm</code> to 1e-6 (continuous &amp; binary arcsine; <code>hub/shared/tests/powerma-parity.spec.mjs</code>).
   </footer>
   <script>
+    // Wichura (1988) AS241 — the algorithm R's qnorm() uses (~1e-15).
+    // Replaces a Beasley-Springer rational erring ~4e-4, which propagated
+    // into (z_{1-a/2}+z_{1-b})^2 and could flip the ceil'd N by one.
     function qnorm(p) {
-      if (p <= 0 || p >= 1) return NaN;
-      const q = p < 0.5 ? p : 1 - p;
-      const t = Math.sqrt(-2 * Math.log(q));
-      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
-      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
-      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
-      return p < 0.5 ? -x : x;
+      if (p <= 0) return -Infinity;
+      if (p >= 1) return Infinity;
+      const q = p - 0.5;
+      let r, val;
+      if (Math.abs(q) <= 0.425) {
+        r = 0.180625 - q * q;
+        val = q * (((((((r * 2509.0809287301226727 + 33430.575583588128105) * r + 67265.770927008700853) * r + 45921.953931549871457) * r + 13731.693765509461125) * r + 1971.5909503065514427) * r + 133.14166789178437745) * r + 3.387132872796366608)
+          / (((((((r * 5226.495278852854561 + 28729.085735721942674) * r + 39307.89580009271061) * r + 21213.794301586595867) * r + 5394.1960214247511077) * r + 687.1870074920579083) * r + 42.313330701600911252) * r + 1);
+      } else {
+        r = q < 0 ? p : 1 - p;
+        r = Math.sqrt(-Math.log(r));
+        if (r <= 5) {
+          r -= 1.6;
+          val = (((((((r * 7.7454501427834140764e-4 + 0.0227238449892691845833) * r + 0.24178072517745061177) * r + 1.27045825245236838258) * r + 3.64784832476320460504) * r + 5.7694972214606914055) * r + 4.6303378461565452959) * r + 1.42343711074968357734)
+            / (((((((r * 1.05075007164441684324e-9 + 5.475938084995344946e-4) * r + 0.0151986665636164571966) * r + 0.14810397642748007459) * r + 0.68976733498510000455) * r + 1.6763848301838038494) * r + 2.05319162663775882187) * r + 1);
+        } else {
+          r -= 5;
+          val = (((((((r * 2.01033439929228813265e-7 + 2.71155556874348757815e-5) * r + 0.0012426609473880784386) * r + 0.026532189526576123093) * r + 0.29656057182850489123) * r + 1.7848265399172913358) * r + 5.4637849111641143699) * r + 6.6579046435011037772)
+            / (((((((r * 2.04426310338993978564e-15 + 1.4215117583164458887e-7) * r + 1.8463183175100546818e-5) * r + 7.868691311456132591e-4) * r + 0.0148753612908506148525) * r + 0.13692988092273580531) * r + 0.59983220655588793769) * r + 1);
+        }
+        if (q < 0) val = -val;
+      }
+      return val;
     }
     function fmt(x, d = 0) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
@@ -152,8 +171,16 @@
         totalN = nPerArm * (1 + ratio);
         eventsTarget = null;
       }
-      return { nPerArm: Math.ceil(nPerArm), totalN: Math.ceil(totalN), eventsTarget };
+      return {
+        nPerArm: Math.ceil(nPerArm), totalN: Math.ceil(totalN), eventsTarget,
+        nPerArmRaw: nPerArm, totalNRaw: totalN, za, zb,
+      };
     }
+
+    // Pure-compute hook for R-parity tests (deterministic).
+    window.__almPowerMA = function (outcome, inputs) {
+      return sampleSize(outcome, inputs);
+    };
 
     function run() {
       const outcome = document.getElementById("outcome").value;
