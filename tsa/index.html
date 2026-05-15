@@ -155,7 +155,7 @@
     </section>
   </main>
 
-  <p class="footer-note">O'Brien-Fleming boundary z<sub>k</sub> = z<sub>α/2</sub>/√t<sub>k</sub> where t<sub>k</sub> is the information fraction (per advanced-stats.md). Non-binding futility is shown if enabled.</p>
+  <p class="footer-note">O'Brien-Fleming boundary z<sub>k</sub> = z<sub>α/2</sub>/√t<sub>k</sub> where t<sub>k</sub> is the information fraction (per advanced-stats.md). Non-binding futility is shown if enabled. <strong>R-parity:</strong> RIS, cumulative-Z and the O'Brien-Fleming boundary match the documented formulas evaluated with R's exact <code>qnorm</code> to 1e-6 (<code>hub/shared/tests/tsa-parity.spec.mjs</code>).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -514,6 +514,24 @@
         if (f) onImportJson(f); e.target.value = "";
       });
     }
+
+    // Pure-compute hook for R-parity tests (deterministic). Independent of
+    // UI state. RIS / cumulative-Z / O'Brien-Fleming boundary per
+    // advanced-stats.md (z_k = z_{alpha/2}/sqrt(t_k); RIS x D).
+    window.__almTsaCompute = function (o) {
+      const za = normQuantile(1 - o.alpha / 2);
+      const zb = normQuantile(o.power);
+      const ris = Math.pow(za + zb, 2) / (o.delta * o.delta) * (o.D || 1);
+      const cum = cumulative((o.studies || []).map(s => ({
+        label: s.label, est: s.est, se: s.se, v: s.se * s.se })));
+      const ob = (o.tGrid || []).map(t => za / Math.sqrt(t));
+      return {
+        za, zb, ris,
+        cumulative: cum.map(c => ({
+          cumInfo: c.cumInfo, cumMu: c.cumMu, cumSE: c.cumSE, z: c.z })),
+        ob,
+      };
+    };
 
     const loaded = loadSaved();
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example TSA — logOR for mortality"; }
