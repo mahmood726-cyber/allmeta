@@ -114,7 +114,7 @@
     </section>
   </main>
   <footer>
-    R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: DL tau&#178; then WLS of te &#126; SE, intercept at SE=0 is the limit estimate. R-parity: <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code>.
+    R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: the full Rücker limit meta-analysis &mdash; DL &tau;&#178;, radial (Galbraith) regression of TE on the &tau;-inflated SE, limit estimate <code>&beta;<sub>r</sub> + &tau;&middot;&alpha;<sub>r</sub></code> (<code>method.adjust='beta0'</code>) with closed-form SE and the small-study/residual Q decomposition. R-parity: matches <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code> to 1e-6 on TE.adjust, seTE.adjust, &alpha;<sub>r</sub>, &beta;<sub>r</sub>, Q.small, Q.resid and G&#178; (<code>tests/copas-parity</code>-style oracle; see <code>hub/shared/tests/limit-ma-parity.spec.mjs</code>).
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -161,31 +161,88 @@
       return { tau2: tau2, muFE: muFE };
     }
 
-    // Rücker limit: WLS of te ~ beta0 + beta1*SE, weights 1/(se^2 + tau^2).
-    // Intercept beta0 at SE=0 is the limit estimate (Rücker 2011 §2.3 simplified).
-    // R-parity: verified direction and attenuation vs metasens::limitmeta().
+    // Sample mean / variance (R's mean(), var() with n-1 denominator).
+    function _mean(a) {
+      return a.reduce(function (s, v) { return s + v; }, 0) / a.length;
+    }
+    function _varS(a) {
+      var m = _mean(a), n = a.length;
+      return a.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / (n - 1);
+    }
+
+    // Faithful port of metasens:::radialregression(TE, seTE, k):
+    // OLS of (TE/seTE) on (1/seTE) in the Galbraith/radial plot.
+    function radialReg(te, se, k) {
+      var x = se.map(function (s) { return 1 / s; });
+      var y = te.map(function (t, i) { return t / se[i]; });
+      var xb = _mean(x), yb = _mean(y);
+      var Sxx = 0, Sxy = 0;
+      for (var i = 0; i < k; i++) {
+        Sxx += (x[i] - xb) * (x[i] - xb);
+        Sxy += (x[i] - xb) * (y[i] - yb);
+      }
+      var slope = Sxy / Sxx;
+      var intercept = yb - slope * xb;
+      var sse = 0, sst = 0;
+      for (var j = 0; j < k; j++) {
+        var fit = intercept + slope * x[j];
+        sse += (y[j] - fit) * (y[j] - fit);
+        sst += (y[j] - yb) * (y[j] - yb);
+      }
+      var sigma = Math.sqrt(sse / (k - 2));
+      var rsq = 1 - sse / sst;
+      var invSe = se.map(function (s) { return 1 / s; }); // sqrt(1/se^2)
+      var seSlope = 1 / Math.sqrt(_varS(invSe)) / Math.sqrt(k - 1);
+      var seInt = seSlope * _mean(se.map(function (s) { return 1 / (s * s); }));
+      return { intercept: intercept, slope: slope, sigma: sigma,
+               r_squared: rsq, se_slope: seSlope, se_intercept: seInt };
+    }
+
+    // Rücker et al. (2011) limit meta-analysis — faithful port of
+    // metasens::limitmeta(method.adjust='beta0'). All closed-form.
     function limitMA(rows) {
+      var k = rows.length;
+      var te = rows.map(function (r) { return r.te; });
+      var se = rows.map(function (r) { return r.se; });
       var d = dl(rows);
-      var tau2 = d.tau2;
-      var w = rows.map(function (r) { return 1 / (r.se * r.se + tau2); });
-      var sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
-      for (var i = 0; i < rows.length; i++) {
-        var x = rows[i].se, y = rows[i].te, wi = w[i];
-        sw += wi; swx += wi * x; swy += wi * y;
-        swxx += wi * x * x; swxy += wi * x * y;
-      }
-      var det = sw * swxx - swx * swx;
-      var b0 = (swxx * swy - swx * swxy) / det;
-      var b1 = (sw * swxy - swx * swy) / det;
-      var rss = 0;
-      for (var j = 0; j < rows.length; j++) {
-        var res = rows[j].te - (b0 + b1 * rows[j].se);
-        rss += w[j] * res * res;
-      }
-      var sigma2 = rss / Math.max(1, rows.length - 2);
-      var varB0 = sigma2 * swxx / det;
-      var seB0 = Math.sqrt(Math.max(varB0, 0));
-      return { limit: b0, seLimit: seB0, slope: b1, tau2: tau2 };
+      var tau2 = d.tau2, tau = Math.sqrt(tau2);
+
+      // DL random-effects weights and tau-inflated SE.
+      var wRandom = rows.map(function (r) { return 1 / (r.se * r.se + tau2); });
+      var seTau = wRandom.map(function (w) { return Math.sqrt(1 / w); });
+
+      var regF = radialReg(te, se, k);          // raw-SE radial
+      var regR = radialReg(te, seTau, k);       // tau-inflated radial
+      var alphaR = regR.intercept;
+      var betaR  = regR.slope;
+
+      // Shrunken per-study limit estimates.
+      var teLimit = te.map(function (t, i) {
+        return betaR + Math.sqrt(tau2 / (seTau[i] * seTau[i])) * (t - betaR);
+      });
+      var regL = radialReg(teLimit, se.slice(), k);
+
+      // beta0 adjusted (limit) estimate + closed-form SE.
+      var TEadjust = betaR + tau * alphaR;
+      var sqrtW = wRandom.map(Math.sqrt);
+      var vsw = _varS(sqrtW);
+      var varBeta = 1 / vsw / (k - 1);
+      var varAlpha = _mean(wRandom) / vsw / (k - 1);
+      var covAB = -_mean(sqrtW) / vsw / (k - 1);
+      var seAdjust = Math.sqrt(varBeta + tau2 * varAlpha + 2 * tau * covAB);
+
+      // Q decomposition (small-study vs residual) and G².
+      var Q = pool(rows, 0).Q;            // FE Cochran Q (= metagen $Q)
+      var Qresid = regF.sigma * regF.sigma * (k - 2);
+      var Qsmall = Q - Qresid;
+      var Gsquared = 1 - regL.r_squared;
+
+      return {
+        limit: TEadjust, seLimit: seAdjust, slope: betaR,
+        alpha_r: alphaR, beta_r: betaR, te_limit: teLimit,
+        Q: Q, Q_small: Qsmall, Q_resid: Qresid, G_squared: Gsquared,
+        tau2: tau2,
+      };
     }
 
     function run() {
@@ -213,6 +270,15 @@
         limit_ci_lo: lim.limit - Z975 * lim.seLimit,
         limit_ci_hi: lim.limit + Z975 * lim.seLimit,
         slope:     lim.slope,
+        // Rücker (2011) limitmeta(beta0) diagnostics — metasens-parity.
+        _schema:   'limit-ma-results-v2',
+        alpha_r:   lim.alpha_r,
+        beta_r:    lim.beta_r,
+        Q:         lim.Q,
+        Q_small:   lim.Q_small,
+        Q_resid:   lim.Q_resid,
+        G_squared: lim.G_squared,
+        te_limit:  lim.te_limit,
       };
 
       var body = document.getElementById('body');

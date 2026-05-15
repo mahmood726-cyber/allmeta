@@ -145,11 +145,11 @@ test.describe('limit-ma retrofit sanity', () => {
     await expect(hubLink).toBeVisible();
   });
 
-  // Cycle 7.20: real JS-engine R-parity (18th app).  Limit-MA's unadjusted
-  // FE/RE baselines + DL tau² are closed-form deterministic and must match
-  // metasens at 1e-6.  The limit-adjusted estimate (te_adj) is NOT compared
-  // because JS uses a WLS sketch while metasens::limitmeta uses the full
-  // Rücker (2011) algorithm with residual decomposition — documented gap.
+  // Limit-MA's unadjusted FE/RE baselines + DL tau² are closed-form
+  // deterministic and must match metasens at 1e-6. The limit-adjusted
+  // estimate is now the full Rücker (2011) limitmeta(beta0) algorithm and
+  // is validated end-to-end in limit-ma-parity.spec.mjs (TE.adjust,
+  // seTE.adjust, alpha.r, beta.r, Q.small, Q.resid, G² to 1e-6).
   test('JS engine R-parity vs metasens FE/RE/tau (limit-tiny)', async ({ page }) => {
     const fixture = [
       { study: 'S01', yi: 0.55, sei: 0.08 },
