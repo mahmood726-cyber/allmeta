@@ -1,0 +1,8 @@
+studlab,treat1,treat2,TE,seTE
+S1,a,control,-0.40,0.12
+S2,b,control,-0.30,0.15
+S3,a+b,control,-0.65,0.13
+S4,a+c,control,-0.55,0.16
+S5,c,control,-0.20,0.18
+S6,b+c,control,-0.45,0.14
+S7,a+b+c,control,-0.80,0.20

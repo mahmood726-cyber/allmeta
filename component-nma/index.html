@@ -91,7 +91,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     </section>
   </main>
   <footer>
-    Welton NJ, Caldwell DM, Adamopoulos E, Vedhara K. Mixed treatment comparison meta-analysis of complex interventions: psychological interventions in coronary heart disease. Am J Epidemiol 2009;169:1158-1165.
+    Welton NJ, Caldwell DM, Adamopoulos E, Vedhara K. Mixed treatment comparison meta-analysis of complex interventions: psychological interventions in coronary heart disease. Am J Epidemiol 2009;169:1158-1165. <strong>R-parity:</strong> the additive engine matches <code>netmeta::discomb(inactive="control")</code> to 1e-4 on component effects + SE and the additive Q decomposition (<code>hub/shared/tests/component-nma-parity.spec.mjs</code>).
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -175,6 +175,8 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
+    let _lastCnma = null;
+
     function run() {
       const rows = parse(document.getElementById("src").value);
       if (rows.length < 2) return;
@@ -220,7 +222,20 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       }
 
       drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
+
+      // Engine-state exposure for R-parity tests (do-no-harm).
+      _lastCnma = {
+        comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,
+        components: Object.fromEntries(compRows.map(r => [r.name, { est: r.e, se: r.se }])),
+        combinations: Object.fromEntries(intRows.map(r => [r.name, { est: r.e, se: r.se }])),
+      };
     }
+
+    window.__almCnmaLoad = function (text) {
+      document.getElementById("src").value = text;
+      run();
+    };
+    window._almLastCnma = function () { return _lastCnma; };
 
     function drawForest(items) {
       const svg = document.getElementById("forest");
