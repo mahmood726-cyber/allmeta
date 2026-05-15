@@ -96,7 +96,7 @@ A, D, -0.48, 0.14</textarea>
     </section>
   </main>
   <footer>
-    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>Caveat:</strong> this tool uses fixed-effect weights (no shared τ²) for both consistency and inconsistency models. For heterogeneous networks the Q-statistics are inflated and the LR test is anti-conservative; cross-check with R <code>netmeta::decomp.design</code>. Recommended k≥5 per design.
+    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Caveat:</strong> this tool uses fixed-effect weights (no shared τ²) for both consistency and inconsistency models. For heterogeneous networks the Q-statistics are inflated and the LR test is anti-conservative — for random-effects inconsistency use full R <code>netmeta</code>. Recommended k≥5 per design.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -195,9 +195,13 @@ A, D, -0.48, 0.14</textarea>
           const fit = fitNMA(others, a);
           const iB = fit.idx[b];
           if (iB == null || iB < 1) continue;
+          // fitNMA β is the (b vs ref-a) contrast; `direct` is normalised to
+          // the (a vs b) orientation, so the indirect estimate must be
+          // negated to compare like-for-like (else diff/z/p and the plot
+          // whiskers are mis-oriented). Matches netmeta::netsplit.
           const est = fit.beta[iB - 1];
           const se = Math.sqrt(fit.cov[iB - 1][iB - 1]);
-          ind = { mean: est, se };
+          ind = { mean: -est, se };
         } catch (e) { continue; }
         const dirPool = fePool(direct);
         if (!ind) continue;
@@ -265,14 +269,47 @@ A, D, -0.48, 0.14</textarea>
 
     // (invert defined above in math utils; reusing it.)
 
-    function chiSqCDF(x, k) {
-      // Incomplete gamma via Lanczos-Wilson-Hilferty approximation for moderate k
-      if (k <= 0) return 0;
-      // Wilson-Hilferty
-      const t = Math.pow(x / k, 1 / 3) - (1 - 2 / (9 * k));
-      const z = t / Math.sqrt(2 / (9 * k));
-      return pnorm(z);
+    // Accurate chi-square CDF = regularised lower incomplete gamma
+    // P(k/2, x/2) (Numerical Recipes gammp; ~1e-14). Replaces the prior
+    // Wilson-Hilferty approximation, which was notably inaccurate at low df
+    // (e.g. the df=1 design-by-treatment test) vs R's exact pchisq.
+    function _lngamma(z) {
+      const g = 7, c = [0.99999999999980993, 676.5203681218851,
+        -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+        12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
+        1.5056327351493116e-7];
+      if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - _lngamma(1 - z);
+      z -= 1; let x = c[0];
+      for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+      const t = z + g + 0.5;
+      return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
     }
+    function _gammp(s, x) {
+      if (x <= 0) return 0;
+      if (x < s + 1) {
+        let ap = s, sum = 1 / s, del = sum;
+        for (let n = 0; n < 300; n++) {
+          ap += 1; del *= x / ap; sum += del;
+          if (Math.abs(del) < Math.abs(sum) * 1e-15) break;
+        }
+        return sum * Math.exp(-x + s * Math.log(x) - _lngamma(s));
+      }
+      let b = x + 1 - s, c = 1e300, d = 1 / b, h = d;
+      for (let i = 1; i < 300; i++) {
+        const an = -i * (i - s);
+        b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+        c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+        d = 1 / d; const del = d * c; h *= del;
+        if (Math.abs(del - 1) < 1e-15) break;
+      }
+      return 1 - Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
+    }
+    function chiSqCDF(x, k) {
+      if (k <= 0 || x <= 0) return 0;
+      return _gammp(k / 2, x / 2);
+    }
+
+    let _lastInco = null;
 
     function run() {
       const rows = parse(document.getElementById("src").value);
@@ -298,7 +335,33 @@ A, D, -0.48, 0.14</textarea>
       drawNS(ns);
       body.innerHTML = __bodyParts.join("");
 
+      // Engine-state exposure for R-parity tests (do-no-harm).
+      try {
+        const net = fitNMA(rows);
+        const estimates = {};
+        net.trts.forEach((t, i) => {
+          estimates[t] = i === 0
+            ? { est: 0, se: 0 }
+            : { est: net.beta[i - 1], se: Math.sqrt(net.cov[i - 1][i - 1]) };
+        });
+        _lastInco = {
+          trts: net.trts, Q: net.Q, df: net.df, estimates: estimates,
+          nodeSplit: ns.map(r => ({
+            comparison: r.comparison,
+            direct: { mean: r.direct.mean, se: r.direct.se },
+            indirect: { mean: r.indirect.mean, se: r.indirect.se },
+            diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p,
+          })),
+          dbt: { Q: g.Q, df: g.df, p: g.p },
+        };
+      } catch (_) { /* leave _lastInco as-is on degenerate input */ }
     }
+
+    window.__almIncoLoad = function (text) {
+      document.getElementById("src").value = text;
+      run();
+    };
+    window._almLastInco = function () { return _lastInco; };
 
     function drawNS(ns) {
       const svg = document.getElementById("ns-plot");
