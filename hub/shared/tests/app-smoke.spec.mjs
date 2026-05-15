@@ -28,7 +28,7 @@ const INFRA = new Set(['hub', 'shared', 'tests', 'scripts', 'docs',
 const covered = new Set(
   readdirSync(here)
     .filter(f => f.endsWith('.spec.mjs'))
-    .map(f => f.replace(/-(sanity|parity)\.spec\.mjs$/, '')
+    .map(f => f.replace(/-(sanity|parity|behavior)\.spec\.mjs$/, '')
                 .replace(/\.spec\.mjs$/, '')));
 
 const apps = readdirSync(root)

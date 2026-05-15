@@ -150,7 +150,7 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textare
     </section>
   </main>
   <footer>
-    Title normalisation: lowercase, strip punctuation, collapse whitespace, drop stopwords (<code>a/an/the/of/in/on/for/and/or/to</code>). Similarity: Jaccard on character trigrams (n=3) over the normalised title.
+    Title normalisation: lowercase, strip punctuation, collapse whitespace, drop stopwords (<code>a/an/the/of/in/on/for/and/or/to</code>). Similarity: Jaccard on character trigrams (n=3) over the normalised title. <strong>Behaviourally verified:</strong> DOI-variant merging, title near-duplicate merging, distinct-paper separation, the year-tolerance and same-author guards, and the normalisation/Jaccard primitives are pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/citation-dedup-behavior.spec.mjs</code>).
   </footer>
   <script>
     // Minimal toast helper for inline status notifications.
@@ -445,6 +445,25 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,"></textare
       // Already has demo text; just run
       document.getElementById("btn-run").click();
     });
+
+    // Pure-compute hooks for behavioural tests (deterministic dedup).
+    window.__almDedup = function (records, opts) {
+      opts = opts || {};
+      const groups = dedup(records,
+        opts.threshold == null ? 0.85 : +opts.threshold,
+        opts.yearTol == null ? 0 : +opts.yearTol,
+        opts.requireAuthor || "no");
+      return {
+        clusters: groups.map(g => g.map(i => records[i].id)),
+        nClusters: groups.length,
+      };
+    };
+    window.__almDedupUtil = {
+      normTitle: normTitle,
+      normDOI: normDOI,
+      jaccardTitles: (t1, t2) =>
+        jaccard(trigrams(normTitle(t1)), trigrams(normTitle(t2))),
+    };
 
     // Auto-run on load with the default demo content
     document.getElementById("btn-run").click();

@@ -1,22 +1,38 @@
 {
-  "generated": "2026-05-15T21:58:46.371Z",
+  "generated": "2026-05-15T22:14:38.810Z",
   "appsScanned": 69,
   "appsFailedToLoad": [],
-  "totalViolationInstances": 45,
+  "totalViolationInstances": 50,
   "rankedRules": [
     {
       "id": "select-name",
       "impact": "critical",
-      "apps": 1,
-      "nodes": 1,
+      "apps": 2,
+      "nodes": 7,
       "help": "Select element must have an accessible name",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/select-name?application=playwright"
     },
     {
+      "id": "button-name",
+      "impact": "critical",
+      "apps": 1,
+      "nodes": 1,
+      "help": "Buttons must have discernible text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright"
+    },
+    {
+      "id": "label",
+      "impact": "critical",
+      "apps": 1,
+      "nodes": 1,
+      "help": "Form elements must have labels",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/label?application=playwright"
+    },
+    {
       "id": "color-contrast",
       "impact": "serious",
-      "apps": 18,
-      "nodes": 90,
+      "apps": 19,
+      "nodes": 116,
       "help": "Elements must meet minimum color contrast ratio thresholds",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
     },
@@ -37,10 +53,18 @@
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/nested-interactive?application=playwright"
     },
     {
+      "id": "label-title-only",
+      "impact": "serious",
+      "apps": 1,
+      "nodes": 1,
+      "help": "Form elements should have a visible label",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/label-title-only?application=playwright"
+    },
+    {
       "id": "region",
       "impact": "moderate",
       "apps": 11,
-      "nodes": 37,
+      "nodes": 35,
       "help": "All page content should be contained by landmarks",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright"
     },
@@ -85,14 +109,6 @@
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/landmark-main-is-top-level?application=playwright"
     },
     {
-      "id": "landmark-one-main",
-      "impact": "moderate",
-      "apps": 1,
-      "nodes": 1,
-      "help": "Document should have one main landmark",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/landmark-one-main?application=playwright"
-    },
-    {
       "id": "page-has-heading-one",
       "impact": "moderate",
       "apps": 1,
@@ -103,8 +119,8 @@
     {
       "id": "empty-table-header",
       "impact": "minor",
-      "apps": 5,
-      "nodes": 5,
+      "apps": 6,
+      "nodes": 6,
       "help": "Table header text should not be empty",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/empty-table-header?application=playwright"
     }
@@ -528,7 +544,7 @@
           "impact": "moderate",
           "help": "All page content should be contained by landmarks",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
-          "nodes": 17
+          "nodes": 15
         },
         {
           "id": "scrollable-region-focusable",
@@ -566,13 +582,41 @@
     },
     "nma-pro-v2": {
       "ok": true,
-      "count": 2,
+      "count": 7,
       "violations": [
         {
-          "id": "landmark-one-main",
-          "impact": "moderate",
-          "help": "Document should have one main landmark",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/landmark-one-main?application=playwright",
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodes": 26
+        },
+        {
+          "id": "empty-table-header",
+          "impact": "minor",
+          "help": "Table header text should not be empty",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/empty-table-header?application=playwright",
+          "nodes": 1
+        },
+        {
+          "id": "label-title-only",
+          "impact": "serious",
+          "help": "Form elements should have a visible label",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/label-title-only?application=playwright",
+          "nodes": 1
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "help": "Form elements must have labels",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/label?application=playwright",
           "nodes": 1
         },
         {
@@ -581,6 +625,13 @@
           "help": "Page should contain a level-one heading",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/page-has-heading-one?application=playwright",
           "nodes": 1
+        },
+        {
+          "id": "select-name",
+          "impact": "critical",
+          "help": "Select element must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/select-name?application=playwright",
+          "nodes": 6
         }
       ]
     },
