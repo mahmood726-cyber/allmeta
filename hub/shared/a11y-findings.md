@@ -1,8 +1,8 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-15T06:28:23.421Z
+Generated: 2026-05-15T06:51:49.847Z
 Apps scanned: 69/69
-Total violation instances: 69
+Total violation instances: 62
 
 ## Ranked rules (fix top-down — breadth = one fix, many apps)
 
@@ -10,10 +10,10 @@ Total violation instances: 69
 |-----:|------|--------|-----:|------:|-------------|
 | 1 | `label` | critical | 6 | 6 | Form elements must have labels |
 | 2 | `select-name` | critical | 3 | 18 | Select element must have an accessible name |
-| 3 | `color-contrast` | serious | 17 | 89 | Elements must meet minimum color contrast ratio thresholds |
+| 3 | `color-contrast` | serious | 18 | 90 | Elements must meet minimum color contrast ratio thresholds |
 | 4 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
 | 5 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
-| 6 | `region` | moderate | 23 | 138 | All page content should be contained by landmarks |
+| 6 | `region` | moderate | 15 | 45 | All page content should be contained by landmarks |
 | 7 | `landmark-one-main` | moderate | 6 | 6 | Document should have one main landmark |
 | 8 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
 | 9 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
@@ -27,7 +27,7 @@ Total violation instances: 69
 
 | App | Rule violations | Status |
 |-----|----------------:|--------|
-| HTA | 3 | scanned |
+| HTA | 4 | scanned |
 | IPD-Meta-Pro | 2 | scanned |
 | Pairwiseai | 2 | scanned |
 | Truthcert1 | 3 | scanned |
@@ -44,19 +44,19 @@ Total violation instances: 69
 | courses | 1 | scanned |
 | cumulative-subgroup | 0 | scanned |
 | dosehtml | 2 | scanned |
-| dta-sroc | 1 | scanned |
+| dta-sroc | 0 | scanned |
 | effect-size-converter | 1 | scanned |
 | evidence-board | 1 | scanned |
 | evidenceos | 0 | scanned |
 | focus-studio | 1 | scanned |
 | forest-plot | 0 | scanned |
-| funnel-plot | 1 | scanned |
+| funnel-plot | 0 | scanned |
 | gosh | 0 | scanned |
 | gosh-metareg | 0 | scanned |
 | grade-sof | 1 | scanned |
-| heterogeneity | 1 | scanned |
-| hsroc | 1 | scanned |
-| influence | 1 | scanned |
+| heterogeneity | 0 | scanned |
+| hsroc | 0 | scanned |
+| influence | 0 | scanned |
 | kanban-lab | 1 | scanned |
 | km-reconstructor | 1 | scanned |
 | limit-ma | 1 | scanned |
@@ -64,7 +64,7 @@ Total violation instances: 69
 | local-ai | 2 | scanned |
 | mcid | 0 | scanned |
 | median-to-mean | 1 | scanned |
-| meta-regression | 1 | scanned |
+| meta-regression | 0 | scanned |
 | mh-peto | 1 | scanned |
 | multilevel-ma | 1 | scanned |
 | nma | 2 | scanned |
@@ -72,8 +72,8 @@ Total violation instances: 69
 | nma-global-inconsistency | 1 | scanned |
 | nma-inconsistency | 1 | scanned |
 | nma-pro-v2 | 2 | scanned |
-| p-curve | 1 | scanned |
-| pet-peese | 1 | scanned |
+| p-curve | 0 | scanned |
+| pet-peese | 0 | scanned |
 | pico | 2 | scanned |
 | powerma | 0 | scanned |
 | prisma-checklist | 1 | scanned |

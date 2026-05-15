@@ -3,12 +3,30 @@
   let _stylesInjected = false;
   let _glossary = {};
   let _nextId = 0;
+  let _tipLayer = null;
 
   function _ensureStyle() {
     if (_stylesInjected) return;
     const s = document.createElement('style'); s.textContent = _STYLE;
     document.head.appendChild(s);
     _stylesInjected = true;
+  }
+  // Tooltip spans must live inside a landmark or axe `region` (best-practice)
+  // flags every one. Single named region container, display:contents so no
+  // layout box is generated — absolutely-positioned tips keep the initial
+  // containing block exactly as when they were direct <body> children.
+  function _ensureLayer() {
+    if (_tipLayer && _tipLayer.isConnected) return _tipLayer;
+    _tipLayer = document.getElementById('alm-tip-layer');
+    if (!_tipLayer) {
+      _tipLayer = document.createElement('div');
+      _tipLayer.id = 'alm-tip-layer';
+      _tipLayer.setAttribute('role', 'region');
+      _tipLayer.setAttribute('aria-label', 'Glossary tooltips');
+      _tipLayer.style.display = 'contents';
+      document.body.appendChild(_tipLayer);
+    }
+    return _tipLayer;
   }
   function _attach(abbr) {
     const term = abbr.getAttribute('data-gloss');
@@ -21,7 +39,7 @@
     tip.textContent = entry
       ? entry.short + (entry.long ? ' — ' + entry.long : '')
       : abbr.textContent.trim();
-    document.body.appendChild(tip);
+    _ensureLayer().appendChild(tip);
     abbr.setAttribute('aria-describedby', id);
     abbr.tabIndex = 0;
     const show = () => {
