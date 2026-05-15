@@ -176,7 +176,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Columns after the Cochrane SoF template (GRADE Handbook). Four-tier certainty: High, Moderate, Low, Very low. Use your browser's print dialog to PDF the preview.</p>
+  <p class="footer-note">Columns after the Cochrane SoF template (GRADE Handbook). Four-tier certainty: High, Moderate, Low, Very low (RCT starts High, observational starts Low; downgrade rob/inconsistency/indirectness/imprecision/publication-bias; upgrade large-effect/dose-response/plausible-confounding only for observational studies with no downgrades). <strong>Behaviourally verified:</strong> the start/downgrade/upgrade/clamp/gating logic is pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/grade-sof-behavior.spec.mjs</code>). Use your browser's print dialog to PDF the preview.</p>
 
   <script>
   (function () {
@@ -782,6 +782,11 @@
     } else {
       state = JSON.parse(JSON.stringify(EXAMPLE_STATE));
     }
+
+    // Pure-compute hook for behavioural tests (deterministic GRADE
+    // certainty: start High[RCT]/Low[obs], downgrade rob/inc/ind/imp/pub,
+    // upgrade only for observational with zero downgrades).
+    window.__almGrade = function (g) { return gradeCompute(g); };
 
     attach();
     render();

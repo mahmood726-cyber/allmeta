@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-15T22:44:48.024Z",
+  "generated": "2026-05-15T22:57:07.446Z",
   "appsScanned": 69,
   "appsFailedToLoad": [],
   "totalViolationInstances": 50,
@@ -32,7 +32,7 @@
       "id": "color-contrast",
       "impact": "serious",
       "apps": 19,
-      "nodes": 121,
+      "nodes": 116,
       "help": "Elements must meet minimum color contrast ratio thresholds",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
     },
@@ -64,7 +64,7 @@
       "id": "region",
       "impact": "moderate",
       "apps": 11,
-      "nodes": 37,
+      "nodes": 35,
       "help": "All page content should be contained by landmarks",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright"
     },
@@ -544,7 +544,7 @@
           "impact": "moderate",
           "help": "All page content should be contained by landmarks",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
-          "nodes": 17
+          "nodes": 15
         },
         {
           "id": "scrollable-region-focusable",
@@ -596,7 +596,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 31
+          "nodes": 26
         },
         {
           "id": "empty-table-header",
