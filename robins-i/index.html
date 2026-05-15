@@ -92,7 +92,7 @@
     </section>
   </main>
   <footer>
-    Domains (Sterne 2016): Pre-intervention — D1 Confounding, D2 Selection of participants. At-intervention — D3 Classification of interventions. Post-intervention — D4 Deviations from intended interventions, D5 Missing data, D6 Measurement of outcomes, D7 Selection of reported result. Overall: the worst domain judgment (any critical → critical; any serious and no critical → serious; etc.). An NI for any domain leaves the overall as NI.
+    Domains (Sterne 2016): Pre-intervention — D1 Confounding, D2 Selection of participants. At-intervention — D3 Classification of interventions. Post-intervention — D4 Deviations from intended interventions, D5 Missing data, D6 Measurement of outcomes, D7 Selection of reported result. Overall: the worst domain judgment (any critical → critical; any serious and no critical → serious; etc.). An NI for any domain leaves the overall as NI. <strong>Behaviourally verified:</strong> all seven per-domain judgments and the worst-domain overall (incl. NI-precedence) are pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/robins-i-behavior.spec.mjs</code>).
   </footer>
   <script>
     const Y = "Y", PY = "PY", PN = "PN", N = "N", NI = "NI";
@@ -299,6 +299,19 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for behavioural tests (deterministic Sterne-2016
+    // per-domain D1-D7 + worst-domain overall, ni-precedence).
+    window.__almRobinsI = function (answers) {
+      const verdicts = {};
+      for (const d of DOMAINS) {
+        const a = (answers && answers[d.id]) || {};
+        const allAns = d.questions.every(q => a[q.id] != null);
+        verdicts[d.id] = allAns ? d.judge(a) : "ni";
+      }
+      verdicts.overall = overall(verdicts);
+      return verdicts;
+    };
 
     document.getElementById("btn-eval").addEventListener("click", evaluate);
     render();
