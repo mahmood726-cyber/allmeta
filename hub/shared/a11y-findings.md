@@ -1,27 +1,29 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-15T21:30:21.075Z
+Generated: 2026-05-15T21:42:46.957Z
 Apps scanned: 69/69
-Total violation instances: 60
+Total violation instances: 59
 
 ## Ranked rules (fix top-down — breadth = one fix, many apps)
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
-| 1 | `label` | critical | 6 | 6 | Form elements must have labels |
-| 2 | `select-name` | critical | 1 | 1 | Select element must have an accessible name |
-| 3 | `color-contrast` | serious | 18 | 90 | Elements must meet minimum color contrast ratio thresholds |
-| 4 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
-| 5 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
-| 6 | `region` | moderate | 15 | 43 | All page content should be contained by landmarks |
-| 7 | `landmark-one-main` | moderate | 6 | 6 | Document should have one main landmark |
-| 8 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
-| 9 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
-| 10 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
-| 11 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
-| 12 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
-| 13 | `page-has-heading-one` | moderate | 1 | 1 | Page should contain a level-one heading |
-| 14 | `empty-table-header` | minor | 5 | 5 | Table header text should not be empty |
+| 1 | `select-name` | critical | 2 | 7 | Select element must have an accessible name |
+| 2 | `button-name` | critical | 1 | 1 | Buttons must have discernible text |
+| 3 | `label` | critical | 1 | 1 | Form elements must have labels |
+| 4 | `color-contrast` | serious | 19 | 117 | Elements must meet minimum color contrast ratio thresholds |
+| 5 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
+| 6 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
+| 7 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
+| 8 | `region` | moderate | 15 | 43 | All page content should be contained by landmarks |
+| 9 | `landmark-one-main` | moderate | 5 | 5 | Document should have one main landmark |
+| 10 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
+| 11 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
+| 12 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
+| 13 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
+| 14 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
+| 15 | `page-has-heading-one` | moderate | 1 | 1 | Page should contain a level-one heading |
+| 16 | `empty-table-header` | minor | 6 | 6 | Table header text should not be empty |
 
 ## Per-app violation counts
 
@@ -59,19 +61,19 @@ Total violation instances: 60
 | influence | 0 | scanned |
 | kanban-lab | 1 | scanned |
 | km-reconstructor | 1 | scanned |
-| limit-ma | 1 | scanned |
+| limit-ma | 0 | scanned |
 | living-meta | 5 | scanned |
 | local-ai | 2 | scanned |
 | mcid | 0 | scanned |
 | median-to-mean | 0 | scanned |
 | meta-regression | 0 | scanned |
-| mh-peto | 1 | scanned |
-| multilevel-ma | 1 | scanned |
+| mh-peto | 0 | scanned |
+| multilevel-ma | 0 | scanned |
 | nma | 2 | scanned |
 | nma-dose-response-app | 4 | scanned |
-| nma-global-inconsistency | 1 | scanned |
+| nma-global-inconsistency | 0 | scanned |
 | nma-inconsistency | 1 | scanned |
-| nma-pro-v2 | 2 | scanned |
+| nma-pro-v2 | 7 | scanned |
 | p-curve | 0 | scanned |
 | pet-peese | 0 | scanned |
 | pico | 2 | scanned |
@@ -88,11 +90,11 @@ Total violation instances: 60
 | rob2 | 0 | scanned |
 | robins-e | 0 | scanned |
 | robins-i | 0 | scanned |
-| search-translator | 2 | scanned |
+| search-translator | 1 | scanned |
 | thematic-synthesis | 2 | scanned |
 | tsa | 0 | scanned |
 | webr-pilot | 2 | scanned |
-| webr-studio | 2 | scanned |
+| webr-studio | 1 | scanned |
 | webr-validator | 0 | scanned |
 | workbench | 0 | scanned |
 | workflow | 1 | scanned |
