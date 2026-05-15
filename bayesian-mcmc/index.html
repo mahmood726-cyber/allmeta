@@ -97,7 +97,7 @@
     </section>
   </main>
   <footer>
-    Gibbs sampler: alternating conditional draws on μ | θ, τ, y; τ² via Metropolis-Hastings with normal proposal; θ_i | μ, τ, y_i. Convergence diagnostics: R-hat (Gelman-Rubin split chains) and ESS (effective sample size via autocorrelation). For serious Bayesian meta-analysis use <code>bayesmeta</code>, <code>RoBMA</code>, or Stan directly.
+    Gibbs sampler: alternating conditional draws on μ | θ, τ, y; τ² via Metropolis-Hastings with normal proposal; θ_i | μ, τ, y_i. Convergence diagnostics: R-hat (Gelman-Rubin split chains) and ESS (effective sample size via autocorrelation). Chains are reproducible from a seed (mulberry32 PRNG; independent per-chain seeds). <strong>R-parity:</strong> seeded summaries are bitwise-reproducible and the posterior for μ and τ matches R <code>bayesmeta</code>'s exact (deterministic) posterior within Monte-Carlo error, with R-hat≈1 and healthy ESS (<code>hub/shared/tests/bayesian-mcmc-parity.spec.mjs</code>). For serious Bayesian meta-analysis use <code>bayesmeta</code>, <code>RoBMA</code>, or Stan directly.
   </footer>
   <script>
     function parse(text) {
@@ -109,14 +109,37 @@
       }).filter(Boolean);
     }
 
-    function rnorm(mu = 0, sigma = 1) {
-      const u1 = 1 - Math.random(), u2 = Math.random();
-      return mu + sigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    // Seeded PRNG (mulberry32) so a given `seed` yields reproducible
+    // chains. Previously rnorm/runif used the global Math.random() and
+    // the gibbs() `seed` argument was silently ignored — a reproducibility
+    // defect for a scientific MCMC tool. Default falls back to a
+    // time-seed when no seed is supplied (interactive use).
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
     }
-    function runif() { return Math.random(); }
+    function makeRng(seed) {
+      const u = (seed == null || !Number.isFinite(+seed))
+        ? (Date.now() >>> 0) : (+seed >>> 0);
+      const r = mulberry32(u);
+      return {
+        unif: r,
+        norm: (mu = 0, sigma = 1) => {
+          const u1 = 1 - r(), u2 = r();
+          return mu + sigma * Math.sqrt(-2 * Math.log(u1))
+            * Math.cos(2 * Math.PI * u2);
+        },
+      };
+    }
 
-    // One-chain Gibbs MCMC
+    // One-chain Gibbs MCMC (reproducible given `seed`).
     function gibbs(rows, iter, burn, tauPrior, seed) {
+      const rng = makeRng(seed);
+      const rnorm = rng.norm, runif = rng.unif;
       const k = rows.length;
       let theta = rows.map(r => r.te);
       let mu = theta.reduce((a, b) => a + b, 0) / k;
@@ -238,11 +261,16 @@
       await new Promise(r => setTimeout(r, 30));
 
       try {
+        // Independent per-chain seeds (well-separated) so R-hat/ESS are
+        // meaningful. Base from the clock for interactive variability.
+        const base = (Date.now() >>> 0);
+        const predRng = makeRng((base + 0x2545F491) >>> 0);
         const chains = [];
         for (let c = 0; c < chainsN; c++) {
           status.textContent = `Chain ${c + 1} / ${chainsN}…`;
           await new Promise(r => setTimeout(r, 10));
-          chains.push(gibbs(rows, iter, burn, tauPrior));
+          chains.push(gibbs(rows, iter, burn, tauPrior,
+            (base + c * 0x9E3779B1) >>> 0));
         }
 
         const muAll = chains.flatMap(c => c.mu);
@@ -254,7 +282,7 @@
         const rTau = chainsN > 1 ? rhat(chains.map(c => c.tau)) : NaN;
         const essMu = ess(muAll);
         const essTau = ess(tauAll);
-        const predSamples = muAll.map((m, i) => m + rnorm(0, tauAll[i]));
+        const predSamples = muAll.map((m, i) => m + predRng.norm(0, tauAll[i]));
         const sPred = summary(predSamples);
 
         const html = [
@@ -334,6 +362,27 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for R-parity tests. Seeded -> reproducible;
+    // posterior summaries validated vs R bayesmeta (exact, deterministic)
+    // within a Monte-Carlo band; R-hat/ESS are sanity-checked.
+    window.__almMCMC = function (rowsIn, o) {
+      const rows = rowsIn.map(r => ({ te: +r.te, se: +r.se }));
+      const nC = o.chains || 1, base = (o.seed >>> 0);
+      const chains = [];
+      for (let c = 0; c < nC; c++)
+        chains.push(gibbs(rows, o.iter, o.burn, o.tauPrior,
+          (base + c * 0x9E3779B1) >>> 0));
+      const muAll = chains.flatMap(c => c.mu);
+      const tauAll = chains.flatMap(c => c.tau);
+      return {
+        mu: summary(muAll), tau: summary(tauAll),
+        rhatMu: nC > 1 ? rhat(chains.map(c => c.mu)) : NaN,
+        rhatTau: nC > 1 ? rhat(chains.map(c => c.tau)) : NaN,
+        essMu: ess(muAll), essTau: ess(tauAll),
+        acceptance: chains[0].acceptance,
+      };
+    };
 
     document.getElementById("btn-run").addEventListener("click", run);
     // Auto-run for the plot to exist on first load (small sample)
