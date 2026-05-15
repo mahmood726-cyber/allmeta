@@ -83,7 +83,7 @@
     </section>
   </main>
   <footer>
-    Critical domains (Shea 2017): 2 (protocol pre-registered), 4 (comprehensive search), 7 (list of excluded studies with reasons), 9 (risk of bias in included studies), 11 (appropriate meta-analytic methods), 13 (accounted for RoB when interpreting), 15 (investigated publication bias). Overall: <strong>High</strong> = 0–1 non-critical weakness; <strong>Moderate</strong> = &gt;1 non-critical, 0 critical; <strong>Low</strong> = 1 critical; <strong>Critically Low</strong> = &gt;1 critical.
+    Critical domains (Shea 2017): 2 (protocol pre-registered), 4 (comprehensive search), 7 (list of excluded studies with reasons), 9 (risk of bias in included studies), 11 (appropriate meta-analytic methods), 13 (accounted for RoB when interpreting), 15 (investigated publication bias). Overall: <strong>High</strong> = 0–1 non-critical weakness; <strong>Moderate</strong> = &gt;1 non-critical, 0 critical; <strong>Low</strong> = 1 critical; <strong>Critically Low</strong> = &gt;1 critical. A "No" on a critical domain is a critical flaw; "Partial Yes" is a non-critical weakness even on a critical domain (only an explicit "No" escalates). <strong>Behaviourally verified:</strong> the full rating algorithm is pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/amstar-2-behavior.spec.mjs</code>).
   </footer>
   <script>
     const CRITICAL = new Set(["2", "4", "7", "9", "11", "13", "15"]);
@@ -138,36 +138,41 @@
       evaluate();
     }
 
-    function evaluate() {
+    // Pure Shea-2017 computation (no DOM) — used by evaluate() and the
+    // behavioural-test hook. state = {"1":"Y","2":"N",...}.
+    function amstarCompute(state) {
       let critical = 0, nonc = 0;
       for (const [num] of ITEMS) {
-        const v = STATE[num];
+        const v = state[num];
         if (v === "N") {
-          // Per Shea 2017 BMJ 358:j4008: a "No" on a critical domain is a critical
-          // flaw; a "No" on a non-critical domain is a non-critical weakness.
+          // Shea 2017 BMJ 358:j4008: "No" on a critical domain → critical
+          // flaw; "No" on a non-critical domain → non-critical weakness.
           if (CRITICAL.has(num)) critical++;
           else nonc++;
         } else if (v === "PY") {
-          // Per Shea 2017: Partial Yes is NOT a critical flaw — it indicates the
-          // criterion is partially met. We count it as a non-critical weakness
-          // regardless of whether the domain is "critical" in AMSTAR-2 terms,
-          // since only an explicit "No" on a critical domain triggers the
-          // critical-flaw escalation.
+          // Partial Yes is NOT a critical flaw (only an explicit "No" on a
+          // critical domain escalates) — counts as a non-critical weakness.
           nonc++;
         }
       }
-      document.getElementById("c-critical").textContent = critical;
-      document.getElementById("c-nonc").textContent = nonc;
       let rating, cls;
       if (critical > 1) { rating = "Critically low"; cls = "clow"; }
       else if (critical === 1) { rating = "Low"; cls = "low"; }
       else if (nonc > 1) { rating = "Moderate"; cls = "mod"; }
       else { rating = "High"; cls = "high"; }
+      return { critical, nonc, rating, cls };
+    }
+
+    function evaluate() {
+      const r = amstarCompute(STATE);
+      document.getElementById("c-critical").textContent = r.critical;
+      document.getElementById("c-nonc").textContent = r.nonc;
       const el = document.getElementById("rating");
-      el.textContent = rating;
-      el.className = "rating " + cls;
+      el.textContent = r.rating;
+      el.className = "rating " + r.cls;
       drawPlot();
     }
+    window.__almAmstar = function (state) { return amstarCompute(state || {}); };
 
     function drawPlot() {
       const svg = document.getElementById("plot");
