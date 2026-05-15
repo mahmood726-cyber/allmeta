@@ -119,7 +119,7 @@
           <div class="num">${num}${isCritical ? " ★" : ""}</div>
           <div class="text">${text}${isCritical ? ' <span class="critical">CRITICAL</span>' : ""}</div>
           <div class="status">
-            <select data-num="${num}">
+            <select data-num="${num}" aria-label="AMSTAR-2 item ${num} rating">
               <option value=""${st === "" ? " selected" : ""}>—</option>
               <option value="Y"${st === "Y" ? " selected" : ""}>Yes</option>
               <option value="PY"${st === "PY" ? " selected" : ""}>Partial Yes</option>

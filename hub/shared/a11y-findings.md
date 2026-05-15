@@ -1,19 +1,19 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-15T06:51:49.847Z
+Generated: 2026-05-15T21:30:21.075Z
 Apps scanned: 69/69
-Total violation instances: 62
+Total violation instances: 60
 
 ## Ranked rules (fix top-down — breadth = one fix, many apps)
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
 | 1 | `label` | critical | 6 | 6 | Form elements must have labels |
-| 2 | `select-name` | critical | 3 | 18 | Select element must have an accessible name |
+| 2 | `select-name` | critical | 1 | 1 | Select element must have an accessible name |
 | 3 | `color-contrast` | serious | 18 | 90 | Elements must meet minimum color contrast ratio thresholds |
 | 4 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
 | 5 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
-| 6 | `region` | moderate | 15 | 45 | All page content should be contained by landmarks |
+| 6 | `region` | moderate | 15 | 43 | All page content should be contained by landmarks |
 | 7 | `landmark-one-main` | moderate | 6 | 6 | Document should have one main landmark |
 | 8 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
 | 9 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
@@ -31,7 +31,7 @@ Total violation instances: 62
 | IPD-Meta-Pro | 2 | scanned |
 | Pairwiseai | 2 | scanned |
 | Truthcert1 | 3 | scanned |
-| amstar-2 | 1 | scanned |
+| amstar-2 | 0 | scanned |
 | bayesian-ma | 0 | scanned |
 | bayesian-mcmc | 0 | scanned |
 | bayesian-nma | 0 | scanned |
@@ -63,7 +63,7 @@ Total violation instances: 62
 | living-meta | 5 | scanned |
 | local-ai | 2 | scanned |
 | mcid | 0 | scanned |
-| median-to-mean | 1 | scanned |
+| median-to-mean | 0 | scanned |
 | meta-regression | 0 | scanned |
 | mh-peto | 1 | scanned |
 | multilevel-ma | 1 | scanned |
