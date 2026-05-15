@@ -1,29 +1,27 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-15T06:18:30.683Z
+Generated: 2026-05-15T06:28:23.421Z
 Apps scanned: 69/69
-Total violation instances: 117
+Total violation instances: 69
 
 ## Ranked rules (fix top-down — breadth = one fix, many apps)
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
-| 1 | `label` | critical | 7 | 7 | Form elements must have labels |
-| 2 | `select-name` | critical | 4 | 24 | Select element must have an accessible name |
-| 3 | `button-name` | critical | 1 | 1 | Buttons must have discernible text |
-| 4 | `color-contrast` | serious | 18 | 115 | Elements must meet minimum color contrast ratio thresholds |
-| 5 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
-| 6 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
-| 7 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
-| 8 | `region` | moderate | 66 | 215 | All page content should be contained by landmarks |
-| 9 | `landmark-one-main` | moderate | 5 | 5 | Document should have one main landmark |
-| 10 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
-| 11 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
-| 12 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
-| 13 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
-| 14 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
-| 15 | `page-has-heading-one` | moderate | 1 | 1 | Page should contain a level-one heading |
-| 16 | `empty-table-header` | minor | 6 | 6 | Table header text should not be empty |
+| 1 | `label` | critical | 6 | 6 | Form elements must have labels |
+| 2 | `select-name` | critical | 3 | 18 | Select element must have an accessible name |
+| 3 | `color-contrast` | serious | 17 | 89 | Elements must meet minimum color contrast ratio thresholds |
+| 4 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
+| 5 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
+| 6 | `region` | moderate | 23 | 138 | All page content should be contained by landmarks |
+| 7 | `landmark-one-main` | moderate | 6 | 6 | Document should have one main landmark |
+| 8 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
+| 9 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
+| 10 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
+| 11 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
+| 12 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
+| 13 | `page-has-heading-one` | moderate | 1 | 1 | Page should contain a level-one heading |
+| 14 | `empty-table-header` | minor | 5 | 5 | Table header text should not be empty |
 
 ## Per-app violation counts
 
@@ -33,68 +31,68 @@ Total violation instances: 117
 | IPD-Meta-Pro | 2 | scanned |
 | Pairwiseai | 2 | scanned |
 | Truthcert1 | 3 | scanned |
-| amstar-2 | 2 | scanned |
-| bayesian-ma | 1 | scanned |
-| bayesian-mcmc | 1 | scanned |
-| bayesian-nma | 1 | scanned |
-| bucher | 1 | scanned |
-| cerqual | 3 | scanned |
-| citation-chaser | 2 | scanned |
-| citation-dedup | 2 | scanned |
-| component-nma | 1 | scanned |
-| copas | 1 | scanned |
+| amstar-2 | 1 | scanned |
+| bayesian-ma | 0 | scanned |
+| bayesian-mcmc | 0 | scanned |
+| bayesian-nma | 0 | scanned |
+| bucher | 0 | scanned |
+| cerqual | 2 | scanned |
+| citation-chaser | 1 | scanned |
+| citation-dedup | 1 | scanned |
+| component-nma | 0 | scanned |
+| copas | 0 | scanned |
 | courses | 1 | scanned |
-| cumulative-subgroup | 1 | scanned |
+| cumulative-subgroup | 0 | scanned |
 | dosehtml | 2 | scanned |
 | dta-sroc | 1 | scanned |
 | effect-size-converter | 1 | scanned |
-| evidence-board | 2 | scanned |
+| evidence-board | 1 | scanned |
 | evidenceos | 0 | scanned |
-| focus-studio | 2 | scanned |
-| forest-plot | 1 | scanned |
+| focus-studio | 1 | scanned |
+| forest-plot | 0 | scanned |
 | funnel-plot | 1 | scanned |
-| gosh | 1 | scanned |
-| gosh-metareg | 1 | scanned |
-| grade-sof | 2 | scanned |
+| gosh | 0 | scanned |
+| gosh-metareg | 0 | scanned |
+| grade-sof | 1 | scanned |
 | heterogeneity | 1 | scanned |
 | hsroc | 1 | scanned |
 | influence | 1 | scanned |
 | kanban-lab | 1 | scanned |
-| km-reconstructor | 2 | scanned |
-| limit-ma | 2 | scanned |
+| km-reconstructor | 1 | scanned |
+| limit-ma | 1 | scanned |
 | living-meta | 5 | scanned |
 | local-ai | 2 | scanned |
-| mcid | 1 | scanned |
-| median-to-mean | 2 | scanned |
+| mcid | 0 | scanned |
+| median-to-mean | 1 | scanned |
 | meta-regression | 1 | scanned |
-| mh-peto | 2 | scanned |
-| multilevel-ma | 2 | scanned |
-| nma | 3 | scanned |
+| mh-peto | 1 | scanned |
+| multilevel-ma | 1 | scanned |
+| nma | 2 | scanned |
 | nma-dose-response-app | 4 | scanned |
-| nma-global-inconsistency | 2 | scanned |
-| nma-inconsistency | 2 | scanned |
-| nma-pro-v2 | 7 | scanned |
+| nma-global-inconsistency | 1 | scanned |
+| nma-inconsistency | 1 | scanned |
+| nma-pro-v2 | 2 | scanned |
 | p-curve | 1 | scanned |
 | pet-peese | 1 | scanned |
 | pico | 2 | scanned |
-| powerma | 1 | scanned |
-| prisma-checklist | 2 | scanned |
-| prisma-flow | 1 | scanned |
+| powerma | 0 | scanned |
+| prisma-checklist | 1 | scanned |
+| prisma-flow | 0 | scanned |
 | prisma-nma | 1 | scanned |
-| prisma-screen | 2 | scanned |
-| proportion-ma | 1 | scanned |
-| pubbias-tests | 1 | scanned |
-| quadas-2 | 1 | scanned |
+| prisma-screen | 1 | scanned |
+| proportion-ma | 0 | scanned |
+| pubbias-tests | 0 | scanned |
+| quadas-2 | 0 | scanned |
 | rct-extractor | 2 | scanned |
-| rob-traffic-light | 1 | scanned |
-| rob2 | 1 | scanned |
-| robins-e | 1 | scanned |
-| robins-i | 1 | scanned |
-| search-translator | 3 | scanned |
-| thematic-synthesis | 3 | scanned |
-| tsa | 1 | scanned |
+| rob-traffic-light | 0 | scanned |
+| rob2 | 0 | scanned |
+| robins-e | 0 | scanned |
+| robins-i | 0 | scanned |
+| search-translator | 2 | scanned |
+| thematic-synthesis | 2 | scanned |
+| tsa | 0 | scanned |
 | webr-pilot | 2 | scanned |
-| webr-studio | 3 | scanned |
-| webr-validator | 1 | scanned |
-| workbench | 1 | scanned |
+| webr-studio | 2 | scanned |
+| webr-validator | 0 | scanned |
+| workbench | 0 | scanned |
 | workflow | 1 | scanned |
