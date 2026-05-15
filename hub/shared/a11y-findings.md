@@ -1,6 +1,6 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-15T22:29:01.118Z
+Generated: 2026-05-15T22:44:48.024Z
 Apps scanned: 69/69
 Total violation instances: 50
 
@@ -11,11 +11,11 @@ Total violation instances: 50
 | 1 | `select-name` | critical | 2 | 7 | Select element must have an accessible name |
 | 2 | `button-name` | critical | 1 | 1 | Buttons must have discernible text |
 | 3 | `label` | critical | 1 | 1 | Form elements must have labels |
-| 4 | `color-contrast` | serious | 19 | 116 | Elements must meet minimum color contrast ratio thresholds |
+| 4 | `color-contrast` | serious | 19 | 121 | Elements must meet minimum color contrast ratio thresholds |
 | 5 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
 | 6 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
 | 7 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
-| 8 | `region` | moderate | 11 | 35 | All page content should be contained by landmarks |
+| 8 | `region` | moderate | 11 | 37 | All page content should be contained by landmarks |
 | 9 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
 | 10 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
 | 11 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |

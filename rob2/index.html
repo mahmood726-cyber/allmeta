@@ -97,7 +97,7 @@
     </section>
   </main>
   <footer>
-    Domains per RoB 2 (Sterne 2019): D1 randomization, D2 deviations from intended intervention, D3 missing outcome data, D4 outcome measurement, D5 selection of reported result. Overall: <strong>Low</strong> if all domains low; <strong>High</strong> if any domain high or multiple domains with some concerns; else <strong>Some concerns</strong>.
+    Domains per RoB 2 (Sterne 2019): D1 randomization, D2 deviations from intended intervention, D3 missing outcome data, D4 outcome measurement, D5 selection of reported result. Overall (deterministic part of the algorithm): <strong>Low</strong> if all domains low; <strong>High</strong> if any domain is High; otherwise <strong>Some concerns</strong>. Sterne 2019 notes that "some concerns" in multiple domains <em>may</em> warrant an upgrade to High — this is left to reviewer judgment and is <strong>not</strong> applied automatically here. Behaviourally pinned in <code>hub/shared/tests/rob2-behavior.spec.mjs</code>.
   </footer>
   <script>
     // Simplified but faithful RoB 2 per-domain algorithms.
@@ -321,6 +321,19 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for behavioural tests (deterministic Sterne 2019
+    // per-domain + overall algorithm). answers = {D1:{"1.1":"Y",...},...}
+    window.__almRoB2 = function (answers) {
+      const verdicts = {};
+      for (const d of DOMAINS) {
+        const a = (answers && answers[d.id]) || {};
+        const allAnswered = d.questions.every(q => a[q.id] != null);
+        verdicts[d.id] = allAnswered ? d.judge(a) : "ni";
+      }
+      verdicts.overall = overall(verdicts);
+      return verdicts;
+    };
 
     document.getElementById("btn-eval").addEventListener("click", evaluate);
     render();
