@@ -98,7 +98,7 @@ A, B, -0.32, 0.08</textarea>
       <svg id="sucra-plot" viewBox="0 0 600 260" role="img" aria-label="SUCRA bar chart"></svg>
       <h2>Network diagram</h2>
       <svg id="network" viewBox="0 0 600 340" role="img" aria-label="Network of comparisons"></svg>
-      <div class="note" id="fit-note"><span id="fit-summary"></span> <strong>Caveat:</strong> this is a consistency-only frequentist model with a Bayesian-style posterior approximation. It does not formally test loop inconsistency (use node-splitting or design-by-treatment in dedicated NMA software). Heterogeneity is captured via a pooled τ² across all contrasts; the DL estimator here is a univariate approximation to the NMA-specific version in <code>netmeta</code>.</div>
+      <div class="note" id="fit-note"><span id="fit-summary"></span> <strong>Caveat:</strong> this is a consistency-only frequentist model with a Bayesian-style posterior approximation. It does not formally test loop inconsistency (use node-splitting or design-by-treatment in dedicated NMA software). Heterogeneity is captured via a pooled τ² across all contrasts; the DL estimator here is a univariate approximation to the NMA-specific version in <code>netmeta</code>. <strong>R-parity:</strong> on a consistent network (τ²=0) the WLS point estimates and SE match <code>netmeta()</code> to 1e-4 and the MVN-posterior SUCRA tracks <code>netrank()</code> P-score within Monte-Carlo error (<code>hub/shared/tests/bayesian-nma-parity.spec.mjs</code>).</div>
       <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-top:0.6rem" role="status" aria-live="polite"></div>
     </section>
   </main>
@@ -369,6 +369,26 @@ A, B, -0.32, 0.08</textarea>
         svg.innerHTML += `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="13" font-weight="600" fill="var(--accent)">${n.t}</text>`;
       }
     }
+
+    // Pure-compute hook for R-parity tests. Point estimates (WLS beta,
+    // cov, DL tau2) are deterministic -> tight netmeta parity; SUCRA is
+    // MVN-sampled (Laplace approx) -> compared loosely to netrank P-score.
+    window.__almBNMA = function (text, refTrt, direction) {
+      const rows = parse(text);
+      const fit = fitNMA(rows, refTrt || "A");
+      const est = {};
+      fit.trts.forEach((t, i) => {
+        est[t] = i === 0 ? { est: 0, se: 0 }
+          : { est: fit.beta[i - 1],
+              se: Math.sqrt(Math.max(0, fit.cov[i - 1][i - 1])) };
+      });
+      const sc = sucra(sample(fit.beta, fit.cov, 10000),
+                        direction || "negative");
+      const sucraByTrt = {};
+      fit.trts.forEach((t, i) => { sucraByTrt[t] = sc.sucra[i]; });
+      return { trts: fit.trts, refTrt: fit.refTrt, estimates: est,
+               tau2: fit.tau2, I2: fit.I2, sucra: sucraByTrt };
+    };
 
     document.getElementById("btn-run").addEventListener("click", run);
     run();
