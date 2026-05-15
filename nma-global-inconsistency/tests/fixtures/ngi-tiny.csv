@@ -1,0 +1,8 @@
+studlab,treat1,treat2,TE,seTE,design
+S1,A,B,0.20,0.10,AB
+S2,A,B,0.35,0.12,AB
+S3,A,B,0.28,0.09,AB
+S4,A,C,0.50,0.11,AC
+S5,A,C,0.42,0.13,AC
+S6,B,C,0.18,0.10,BC
+S7,B,C,0.25,0.14,BC
