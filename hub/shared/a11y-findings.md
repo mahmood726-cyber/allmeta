@@ -1,28 +1,27 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-16T00:51:06.714Z
+Generated: 2026-05-16T01:05:10.130Z
 Apps scanned: 69/69
-Total violation instances: 50
+Total violation instances: 48
 
 ## Ranked rules (fix top-down — breadth = one fix, many apps)
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
-| 1 | `select-name` | critical | 2 | 7 | Select element must have an accessible name |
+| 1 | `select-name` | critical | 2 | 4 | Select element must have an accessible name |
 | 2 | `button-name` | critical | 1 | 1 | Buttons must have discernible text |
-| 3 | `label` | critical | 1 | 1 | Form elements must have labels |
-| 4 | `color-contrast` | serious | 19 | 116 | Elements must meet minimum color contrast ratio thresholds |
-| 5 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
-| 6 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
-| 7 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
-| 8 | `region` | moderate | 11 | 35 | All page content should be contained by landmarks |
-| 9 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
-| 10 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
-| 11 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
-| 12 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
-| 13 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
-| 14 | `page-has-heading-one` | moderate | 1 | 1 | Page should contain a level-one heading |
-| 15 | `empty-table-header` | minor | 6 | 6 | Table header text should not be empty |
+| 3 | `color-contrast` | serious | 19 | 113 | Elements must meet minimum color contrast ratio thresholds |
+| 4 | `scrollable-region-focusable` | serious | 2 | 3 | Scrollable region must have keyboard access |
+| 5 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
+| 6 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
+| 7 | `region` | moderate | 11 | 37 | All page content should be contained by landmarks |
+| 8 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
+| 9 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
+| 10 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
+| 11 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
+| 12 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
+| 13 | `page-has-heading-one` | moderate | 1 | 1 | Page should contain a level-one heading |
+| 14 | `empty-table-header` | minor | 5 | 5 | Table header text should not be empty |
 
 ## Per-app violation counts
 
@@ -72,7 +71,7 @@ Total violation instances: 50
 | nma-dose-response-app | 4 | scanned |
 | nma-global-inconsistency | 0 | scanned |
 | nma-inconsistency | 1 | scanned |
-| nma-pro-v2 | 7 | scanned |
+| nma-pro-v2 | 5 | scanned |
 | p-curve | 0 | scanned |
 | pet-peese | 0 | scanned |
 | pico | 2 | scanned |
