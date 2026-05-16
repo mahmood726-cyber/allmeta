@@ -103,7 +103,9 @@
     }
     .item-num {
       font-weight: 600;
-      color: var(--accent);
+      /* a11y: explicit dark teal (6.2:1 on white) — var(--accent)
+         resolved to #4f8d82 = 3.84:1, below WCAG AA 4.5. */
+      color: #2f6b60;
       font-variant-numeric: tabular-nums;
       min-width: 2.5rem;
     }

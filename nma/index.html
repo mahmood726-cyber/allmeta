@@ -61,8 +61,10 @@
     .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
     table.league { width:100%; border-collapse:collapse; font-size:0.78rem; font-variant-numeric:tabular-nums; }
     table.league th, table.league td { padding:0.35rem 0.5rem; border:1px solid var(--border); text-align:center; }
-    table.league th { font-weight:700; background:var(--accent-soft); color:var(--accent); }
-    table.league td.diag { background:var(--accent-soft); font-weight:700; color:var(--accent); }
+    /* a11y: explicit dark teal (>=5.4:1 on --accent-soft) — var(--accent)
+       resolved to #4f8d82 on #e8f3f1 = 3.38:1, below WCAG AA 4.5. */
+    table.league th { font-weight:700; background:var(--accent-soft); color:#2f6b60; }
+    table.league td.diag { background:var(--accent-soft); font-weight:700; color:#2f6b60; }
     table.league td.pos { color:#0d7a27; }
     table.league td.neg { color:#912121; }
     .sucra-row { display:grid; grid-template-columns:8rem 1fr 3rem; gap:0.5rem; align-items:center; padding:0.2rem 0; font-size:0.85rem; }
