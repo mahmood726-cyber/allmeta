@@ -102,7 +102,7 @@
     </section>
   </main>
   <footer>
-    Default rating uses <strong>worst-component anchoring</strong> — no numeric thresholds. All "No" or "Very minor" → High; Moderate in any component → Moderate; Serious in any → Low (or Very low if serious in ≥2 components). This reproduces the qualitative reasoning in Lewin 2018; reviewers should justify any manual override narratively.
+    Default rating uses <strong>worst-component anchoring</strong> — no numeric thresholds. All "No" or "Very minor" → High; Moderate in any component → Moderate; Serious in any → Low (or Very low if serious in ≥2 components). This reproduces the qualitative reasoning in Lewin 2018; reviewers should justify any manual override narratively. <strong>Behaviourally verified:</strong> the worst-component anchoring (incl. the ≥2-serious → Very low rule and missing-component defaults) is pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/cerqual-behavior.spec.mjs</code>).
   </footer>
   <script>
     const LEVELS = [
@@ -227,6 +227,13 @@
       svg.innerHTML = __svgParts.join("");
 
     }
+
+    // Pure-compute hook for behavioural tests (deterministic CERQual
+    // worst-component anchoring). r = {method,coherence,adequacy,
+    // relevance} each none|minor|mod|ser (missing → none).
+    window.__almCerqual = function (r) {
+      return { worst: worstLevel(r || {}), conf: conf(r || {})[1] };
+    };
 
     render();
   </script>
