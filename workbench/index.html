@@ -151,7 +151,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Deep links open dedicated apps with the same shared data. Close, rename, or remove the shared bus entry via browser storage tools.</p>
+  <p class="footer-note">Deep links open dedicated apps with the same shared data. Close, rename, or remove the shared bus entry via browser storage tools. <strong>R-parity:</strong> the headline pooled estimate uses the canonical Paule-Mandel random-effects model (τ² = root of Q(τ²)=k−1) and matches an independent R reference to 1e-6 on τ², estimate, SE, CI, Cochran Q and I² (<code>hub/shared/tests/workbench-parity.spec.mjs</code>).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -576,6 +576,14 @@
       document.getElementById("btn-example").addEventListener("click", onExample);
       document.getElementById("btn-reset").addEventListener("click", onReset);
     }
+
+    // Pure-compute hook for R-parity tests (canonical Paule-Mandel
+    // random-effects pool: tau2 = root of Q(tau2)=k-1, then IV pool).
+    // studies: [{est, se}].
+    window.__almWorkbench = function (studies) {
+      const st = (studies || []).map(s => ({ est: +s.est, v: +s.se * +s.se }));
+      return poolAll(st);
+    };
 
     const loaded = loadSaved();
     if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example meta-analysis"; }

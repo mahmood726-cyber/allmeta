@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-16T00:37:21.519Z",
+  "generated": "2026-05-16T00:51:06.714Z",
   "appsScanned": 69,
   "appsFailedToLoad": [],
   "totalViolationInstances": 50,
@@ -32,7 +32,7 @@
       "id": "color-contrast",
       "impact": "serious",
       "apps": 19,
-      "nodes": 140,
+      "nodes": 116,
       "help": "Elements must meet minimum color contrast ratio thresholds",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
     },
@@ -596,7 +596,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 50
+          "nodes": 26
         },
         {
           "id": "empty-table-header",
