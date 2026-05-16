@@ -275,7 +275,7 @@
     </section>
   </main>
 
-  <p class="footer-note">PRISMA 2020 flow template after Page et&nbsp;al., BMJ 2021;372:n71. Generated client-side; no data leaves the browser.</p>
+  <p class="footer-note">PRISMA 2020 flow template after Page et&nbsp;al., BMJ 2021;372:n71. Generated client-side; no data leaves the browser. <strong>Behaviourally verified:</strong> the stage-count reconciliation (screened=identified−removed; sought=screened−excluded; assessed=sought−not-retrieved; plus the exclusion-overflow checks and zero-gating) is pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/prisma-flow-behavior.spec.mjs</code>).</p>
 
   <script>
   (function () {
@@ -640,6 +640,11 @@
         e.target.value = "";
       });
     }
+
+    // Pure-compute hook for behavioural tests (deterministic PRISMA
+    // stage-count reconciliation). s = {db,reg,removed,screened,
+    // excludedScreen,sought,notRetrieved,assessed,excludedEligible}.
+    window.__almPrisma = function (s) { return validate(s || {}); };
 
     loadSaved();
     attachInputs();

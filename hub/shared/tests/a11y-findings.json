@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-15T23:47:34.783Z",
+  "generated": "2026-05-15T23:59:37.533Z",
   "appsScanned": 69,
   "appsFailedToLoad": [],
   "totalViolationInstances": 50,
@@ -32,7 +32,7 @@
       "id": "color-contrast",
       "impact": "serious",
       "apps": 19,
-      "nodes": 117,
+      "nodes": 116,
       "help": "Elements must meet minimum color contrast ratio thresholds",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
     },
@@ -135,7 +135,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 2
+          "nodes": 1
         },
         {
           "id": "nested-interactive",
