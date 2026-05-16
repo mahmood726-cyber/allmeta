@@ -152,7 +152,7 @@
     </section>
   </main>
   <footer>
-    The rct-extractor-v2 API is Python/FastAPI — uses 180+ regex patterns with 97.7% sensitivity on the CT.gov external-validation set. Optional LLM consensus layer uses Ollama via <code>../shared/localllm.js</code>. Results bus (<code>ma-studies-v1</code> in localStorage) feeds MA Workbench and Forest Plot Viewer.
+    The rct-extractor-v2 API is Python/FastAPI — uses 180+ regex patterns with 97.7% sensitivity on the CT.gov external-validation set. Optional LLM consensus layer uses Ollama via <code>../shared/localllm.js</code>. Results bus (<code>ma-studies-v1</code> in localStorage) feeds MA Workbench and Forest Plot Viewer. <strong>Behaviourally verified:</strong> the bus serialization (ratio→ln(estimate), CI→SE on the log scale via /(2·z<sub>.975</sub>); linear identity scale; unknown/non-positive dropped; the {_schema,studies[]} envelope) and the Cochrane §10.4 mixed-scale/family guard are pinned by deterministic constructed-oracle tests (<code>hub/shared/tests/rct-extractor-behavior.spec.mjs</code>).
   </footer>
 
   <script src="../shared/localllm.js"></script>
@@ -641,6 +641,25 @@
       } catch (_) { /* ignore */ }
       return [];
     }
+    // Pure-compute hook for behavioural tests: the deterministic
+    // extraction → ma-studies-v1 serialization (ratio→log(te), CI→SE via
+    // /(2·Z975)) + the Cochrane §10.4 mixed-scale guard (boolean only,
+    // no Toast). This is the contract feeding MA Workbench / Forest Plot.
+    window.__almRctBus = function (extractions) {
+      const all = (extractions || []).map(toBusRow);
+      const rows = all.filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
+      let mixedOk = true;
+      if (rows.length) {
+        const fam = new Set(rows.map(r => r.scale_family));
+        if (fam.size > 1) mixedOk = false;
+        else {
+          const sc = new Set(rows.map(r => r.scale));
+          if (sc.size > 1 && rows[0].scale_family === "ratio") mixedOk = false;
+        }
+      }
+      return { rows: all, payload: busPayloadFromRows(rows), mixedOk };
+    };
+
     document.getElementById("btn-send-workbench").addEventListener("click", () => {
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
       if (!validatePushRows(rows, "pushing")) return;
