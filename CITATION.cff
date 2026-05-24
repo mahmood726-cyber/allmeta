@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+title: "allmeta — open browser-only tools for evidence synthesis"
+message: >
+  If you use allmeta in your research, please cite it using the metadata in this
+  file. A persistent DOI will be added once a Zenodo release is minted.
+type: software
+authors:
+  - family-names: Ahmad
+    given-names: Mahmood
+    # orcid: add your ORCID here (e.g. https://orcid.org/0000-0000-0000-0000)
+repository-code: "https://github.com/mahmood726-cyber/allmeta"
+url: "https://mahmood726-cyber.github.io/allmeta/"
+abstract: >
+  allmeta is a browser-only catalog of evidence-synthesis tools spanning
+  pairwise and network meta-analysis, diagnostic test accuracy, dose-response
+  modelling, risk-of-bias assessment, GRADE, PRISMA, trial sequential analysis,
+  individual participant data analysis, and clinical decision support. Each app
+  is a self-contained HTML+JS+CSS bundle that runs offline; computation happens
+  client-side and no data is uploaded. Many numerical engines are cross-checked
+  against canonical R packages (metafor, meta, netmeta, mada). Selected apps
+  emit HMAC-signed TruthCert receipts so reviewers can verify that the inputs
+  and outputs in a result page match the analysis that produced them.
+keywords:
+  - meta-analysis
+  - systematic-review
+  - network-meta-analysis
+  - diagnostic-test-accuracy
+  - risk-of-bias
+  - grade
+  - prisma
+  - trial-sequential-analysis
+  - evidence-synthesis
+  - reproducibility
+  - browser-only
+  - webr
+license: MIT
+version: "v11"
+date-released: 2026-05-24

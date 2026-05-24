@@ -761,3 +761,65 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   z-index: 10;
 }
 .tier-badge:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+
+/* Windows High Contrast / forced-colors mode (WCAG 1.4.1, 1.4.11, V9-A11Y-11).
+   The OS supplies the palette; we surrender our colors and ensure focusable
+   elements + borders use system tokens so they remain visible. */
+@media (forced-colors: active) {
+  :root {
+    --bg: Canvas;
+    --bg-soft: Canvas;
+    --surface: Canvas;
+    --surface-strong: Canvas;
+    --ink: CanvasText;
+    --muted: CanvasText;
+    --border: CanvasText;
+    --accent: LinkText;
+    --accent-strong: LinkText;
+    --accent-cool: LinkText;
+    --shadow: none;
+  }
+  body {
+    background: Canvas;
+    color: CanvasText;
+  }
+  a,
+  .footer-links a,
+  .hero a {
+    color: LinkText;
+  }
+  a:visited { color: VisitedText; }
+  .button,
+  .button-primary,
+  .button-secondary {
+    forced-color-adjust: none;
+    border: 1px solid ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+  .button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  .metric-card,
+  .panel-card,
+  .controls-panel,
+  .featured-strip,
+  .catalog-grid > *,
+  .tip-card {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+  .tier-badge { forced-color-adjust: none; border: 1px solid CanvasText; background: Canvas; color: CanvasText; }
+  .tier-badge--validated { background: Canvas; color: CanvasText; border-color: CanvasText; }
+  .status-badge { border: 1px solid CanvasText; background: Canvas; color: CanvasText; }
+  /* Defeat decorative background gradients that vanish in forced colors */
+  .hero,
+  .hero-panel { background: Canvas; }
+}
+

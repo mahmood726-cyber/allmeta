@@ -1,0 +1,83 @@
+/* allmeta — Windows High Contrast / forced-colors mode (WCAG 1.4.1, 1.4.11).
+ *
+ * Each app self-styles, so OS-supplied palette tokens (Canvas, CanvasText,
+ * ButtonText, LinkText, Highlight, VisitedText) are forced over our custom
+ * variables when forced-colors is active. We surrender our color palette so
+ * the OS contrast contract wins, but we keep our structural CSS.
+ *
+ * Apps with custom-colored decorative svg/canvas plots should add their own
+ * targeted overrides — this file establishes baseline survivability only.
+ */
+@media (forced-colors: active) {
+  :root {
+    --bg: Canvas;
+    --bg-soft: Canvas;
+    --surface: Canvas;
+    --surface-strong: Canvas;
+    --ink: CanvasText;
+    --muted: CanvasText;
+    --border: CanvasText;
+    --accent: LinkText;
+    --accent-strong: LinkText;
+    --accent-cool: LinkText;
+    --shadow: none;
+  }
+  body, html {
+    background: Canvas !important;
+    color: CanvasText !important;
+  }
+  a, .link {
+    color: LinkText;
+  }
+  a:visited {
+    color: VisitedText;
+  }
+  button,
+  .button,
+  .btn,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    forced-color-adjust: none;
+    border: 1px solid ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+  button:focus-visible,
+  .button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  /* Inputs surrender background gradients */
+  input, select, textarea {
+    background: Field;
+    color: FieldText;
+    border: 1px solid FieldText;
+  }
+  /* Structural cards / panels keep a visible outline */
+  .card, .panel, .panel-card, .metric-card, section, article {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  /* Tables: cell borders must remain visible */
+  table, th, td {
+    border-color: CanvasText;
+  }
+  /* Defeat decorative gradient backgrounds that vanish in forced colors */
+  [class*="hero"],
+  [class*="banner"],
+  [class*="gradient"] {
+    background: Canvas !important;
+  }
+  /* SVG/canvas plots: hint to the UA that authors handle palette themselves.
+     Apps with critical-color plots should set forced-color-adjust:none on the
+     specific element and supply explicit colors. */
+  svg, canvas {
+    forced-color-adjust: auto;
+  }
+}
