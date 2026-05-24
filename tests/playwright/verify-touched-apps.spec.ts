@@ -296,6 +296,48 @@ for (const p of NMA_BUS_APPS) {
   });
 }
 
+// ---- PWA: manifest is reachable + valid + linked from the hub --------------
+
+test("PWA: hub manifest is reachable, valid, and linked from /", async ({ page, request }) => {
+  // 1. Manifest file is served and parses.
+  const manifestRes = await request.get("/manifest.json");
+  expect(manifestRes.status(), "manifest.json must be reachable").toBe(200);
+  const manifest = await manifestRes.json();
+  expect(manifest.name).toBeTruthy();
+  expect(manifest.short_name).toBeTruthy();
+  expect(manifest.start_url).toBeTruthy();
+  expect(manifest.display).toMatch(/^(standalone|fullscreen|minimal-ui)$/);
+  expect(Array.isArray(manifest.icons) && manifest.icons.length > 0).toBeTruthy();
+
+  // 2. Each icon path resolves.
+  for (const icon of manifest.icons) {
+    const r = await request.get("/" + icon.src);
+    expect.soft(r.status(), `icon ${icon.src} must be reachable`).toBe(200);
+  }
+
+  // 3. Hub /index.html declares the manifest + theme color.
+  await page.goto("/", { waitUntil: "load" });
+  const linkHref = await page.locator('link[rel="manifest"]').getAttribute("href");
+  expect(linkHref).toMatch(/manifest\.json$/);
+  const themeColor = await page.locator('meta[name="theme-color"]').getAttribute("content");
+  expect(themeColor).toBeTruthy();
+
+  // 4. Service worker registers (already wired in /sw.js).
+  const swStatus = await page.evaluate(async () => {
+    if (!("serviceWorker" in navigator)) return "no-support";
+    // SW registration is async; the index.html registers on load.
+    try {
+      // Wait briefly for registration to complete.
+      await new Promise(r => setTimeout(r, 1000));
+      const reg = await navigator.serviceWorker.getRegistration("./");
+      return reg ? "registered" : "not-registered";
+    } catch (e) {
+      return "error: " + (e as Error).message;
+    }
+  });
+  expect(swStatus, "service worker must be registered").toBe("registered");
+});
+
 // ---- nma-pro-v2 drill: plots must actually render --------------------------
 //
 // User report (2026-05-24): "as i think in nma pro expacially they done always

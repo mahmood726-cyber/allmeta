@@ -1,0 +1,53 @@
+{
+  "name": "allmeta — open tools for evidence synthesis",
+  "short_name": "allmeta",
+  "description": "Browser-only, offline-capable meta-analysis suite. 76+ tools across pairwise / NMA / DTA / IPD / dose-response / survival / HTA / GRADE / PRISMA / TSA. Validated against metafor / meta / netmeta / mada.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f4ef",
+  "theme_color": "#2c5e8a",
+  "lang": "en",
+  "categories": ["education", "productivity", "medical", "utilities"],
+  "icons": [
+    {
+      "src": "shared/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "shared/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Forest plot",
+      "short_name": "Forest",
+      "description": "Pairwise random-effects forest plot",
+      "url": "./forest-plot/"
+    },
+    {
+      "name": "NMA Pro",
+      "short_name": "NMA",
+      "description": "Network meta-analysis with multi-arm correction",
+      "url": "./nma-pro-v2/"
+    },
+    {
+      "name": "Workbench",
+      "short_name": "Workbench",
+      "description": "Single-effect analysis workbench",
+      "url": "./workbench/"
+    },
+    {
+      "name": "WebR Validator",
+      "short_name": "WebR",
+      "description": "Verify results in R (in-browser)",
+      "url": "./webr-validator/"
+    }
+  ]
+}

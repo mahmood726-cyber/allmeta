@@ -12,6 +12,13 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>allmeta — open tools for evidence synthesis</title>
   <link rel="stylesheet" href="./hub/styles.css">
+  <!-- PWA: manifest + icons + theme so users can install the hub as a
+       standalone app. Service worker is already registered below; the
+       install banner appears once the user engages with the page. -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./shared/icon.svg">
+  <link rel="apple-touch-icon" href="./shared/icon.svg">
+  <meta name="theme-color" content="#2c5e8a">
 </head>
 <body>
   <a class="skip-link" href="#catalog">Skip to catalogue</a>
@@ -199,6 +206,41 @@
     // case contention during SW cache rollover).  The progressive boot UX
     // in /webr-studio/ delivers the real win: the user can edit code and
     // data while WebR boots.
+
+    // PWA install prompt — capture beforeinstallprompt so the user can
+    // install on demand (Chrome/Edge desktop + Android). On iOS Safari the
+    // event never fires; the user uses "Add to Home Screen" from the share
+    // sheet. Display logic: show a small pill-button in the bottom-right
+    // corner once installability is detected; hide on accept/dismiss/install.
+    (function () {
+      var deferred = null;
+      var btn = null;
+      function makeButton() {
+        if (btn) return btn;
+        btn = document.createElement('button');
+        btn.id = 'alm-install-btn';
+        btn.type = 'button';
+        btn.textContent = '⬇ Install app';
+        btn.setAttribute('aria-label', 'Install allmeta as a standalone app');
+        btn.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9999;padding:10px 16px;background:#2c5e8a;color:#fff;border:none;border-radius:999px;font:600 13px/1 system-ui,-apple-system,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.18);display:none';
+        btn.addEventListener('click', function () {
+          if (!deferred) return;
+          deferred.prompt();
+          deferred.userChoice.finally(function () { deferred = null; btn.style.display = 'none'; });
+        });
+        document.body.appendChild(btn);
+        return btn;
+      }
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferred = e;
+        makeButton().style.display = 'inline-flex';
+      });
+      window.addEventListener('appinstalled', function () {
+        if (btn) btn.style.display = 'none';
+        deferred = null;
+      });
+    })();
   </script>
 </body>
 </html>
