@@ -13,6 +13,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["extraction", "pdf", "rct", "regex", "fastapi"]
   },
   {
+    name: "RevMan Importer",
+    featured: true,
+    folder: "allmeta/revman-importer",
+    path: "./revman-importer/",
+    collection: "new",
+    mode: "file",
+    category: "Screening & Extraction",
+    summary: "Drop a Cochrane RevMan .rm5 / .rm6 file; this app reads the comparisons (DICH, CONTINUOUS, and O-E-Variance), lists the studies, and pushes the selected comparison into the shared ma-comparisons-v1 bus so nma-pro-v2 / forest-plot / bayesian-nma can load it without re-typing.",
+    note: "100% browser-side; nothing is uploaded. JSZip vendored under shared/vendor/.",
+    tags: ["revman", "cochrane", "rm5", "rm6", "import", "extraction"]
+  },
+  {
     name: "EvidenceOS",
     featured: true,
     folder: "allmeta/evidenceos",

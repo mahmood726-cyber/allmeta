@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Import Cochrane RevMan .rm5 / .rm6 reviews and push extracted comparisons to the shared ma-comparisons-v1 bus.">
+  <meta name="color-scheme" content="light dark">
+  <title>RevMan Importer (.rm5 / .rm6)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --ok:#0d7a27; --bad:#912121; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --ok:#5bc47b; --bad:#ef7373; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .drop {
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 1.5rem; text-align: center; cursor: pointer;
+      background: var(--input-bg); color: var(--muted);
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .drop:hover, .drop:focus, .drop.is-over {
+      border-color: var(--accent); background: var(--accent-soft); color: var(--ink); outline: none;
+    }
+    .drop input { display: none; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.primary:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.7; }
+    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--border);
+                   padding: 0.4rem 0.85rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; margin-top: 0.75rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .chip { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 600; color: white; }
+    .chip.ok { background: var(--ok); }
+    .chip.warn { background: var(--warn); }
+    .chip.bad { background: var(--bad); }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .err { color: var(--bad); }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- JSZip handles the .rm5 zip envelope (RevMan ≥ 5.2). Raw-XML .rm5 still works
+       without JSZip — the reader falls back to DOMParser when the file isn't a zip. -->
+  <script src="../shared/vendor/jszip-3.10.1.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
+  <script src="../shared/ma-comparisons-v1.js"></script>
+  <script src="../shared/revman-reader.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>RevMan Importer (.rm5 / .rm6)</h1>
+    <p>Drop a Cochrane RevMan review file (<code>.rm5</code> or <code>.rm6</code>); this app reads
+       the comparisons, lists each study row, and pushes the selected comparison into the shared
+       <code>ma-comparisons-v1</code> bus so any NMA / pairwise app in the suite (forest-plot,
+       nma-pro-v2, bayesian-nma, …) can consume it without re-typing.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>1. Pick a file</h2>
+      <label class="drop" id="drop" tabindex="0">
+        <input type="file" id="picker" accept=".rm5,.rm6,.xml,application/zip,application/xml,text/xml">
+        <strong>Click or drop a .rm5 / .rm6 file</strong><br>
+        <span style="font-size:0.8rem">Reads stay on this device — nothing is uploaded.</span>
+      </label>
+      <div id="status" style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)"></div>
+
+      <h2 style="margin-top:1rem">2. Pick a comparison</h2>
+      <select id="comparison-pick" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--ink)" disabled>
+        <option value="">(load a file first)</option>
+      </select>
+
+      <h2 style="margin-top:1rem">3. Send to bus</h2>
+      <button type="button" id="btn-push" class="primary" style="width:100%" disabled>Push selected comparison to ma-comparisons-v1 bus</button>
+      <div class="note" id="push-status" style="display:none"></div>
+
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:1rem">
+        Tip: open <a href="../nma-pro-v2/">NMA Pro v2</a> after pushing and click
+        <strong>Load from bus</strong> to load the comparison.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Review metadata</h2>
+      <div id="meta" style="font-size:0.88rem;color:var(--muted)">Drop a file to see the review title, version, comparisons, and outcomes.</div>
+
+      <h2 style="margin-top:1.2rem">Studies in selected comparison</h2>
+      <div id="preview-host"></div>
+    </section>
+  </main>
+
+  <footer>
+    Cochrane RevMan format reference: <code>https://documentation.cochrane.org/revman-kb/revman-data-formats</code>.
+    Parsing supports the documented <code>DICH_OUTCOME</code> (binary 2&times;2),
+    <code>CONTINUOUS_OUTCOME</code> (mean &plusmn; SD), and <code>O_E_AND_VARIANCE</code> (logHR / logOR) schemas.
+    Outcomes with non-standard subgroup structures may need manual review.
+  </footer>
+
+  <script>
+  (function () {
+    "use strict";
+    var STATE = { parsed: null, selectedComparisonIdx: null };
+
+    var dropEl = document.getElementById("drop");
+    var pickEl = document.getElementById("picker");
+    var statusEl = document.getElementById("status");
+    var comparisonSel = document.getElementById("comparison-pick");
+    var metaEl = document.getElementById("meta");
+    var previewEl = document.getElementById("preview-host");
+    var pushBtn = document.getElementById("btn-push");
+    var pushStatus = document.getElementById("push-status");
+
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg || "";
+      statusEl.className = (kind === "err") ? "err" : "";
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function renderMeta(parsed) {
+      var totalStudies = parsed.comparisons.reduce(function (n, c) {
+        return n + c.outcomes.reduce(function (m, o) { return m + o.studies.length; }, 0);
+      }, 0);
+      metaEl.innerHTML =
+        '<div><strong>Title:</strong> ' + escapeHtml(parsed.title || "(untitled)") + '</div>' +
+        '<div><strong>Version:</strong> ' + escapeHtml(parsed.version || "?") + '</div>' +
+        '<div><strong>Comparisons:</strong> ' + parsed.comparisons.length + '</div>' +
+        '<div><strong>Total study rows:</strong> ' + totalStudies + '</div>';
+    }
+
+    function renderPreview(comparison) {
+      if (!comparison) { previewEl.innerHTML = ""; return; }
+      var rows = [];
+      for (var i = 0; i < comparison.outcomes.length; i++) {
+        var o = comparison.outcomes[i];
+        for (var j = 0; j < o.studies.length; j++) {
+          var s = o.studies[j];
+          rows.push(
+            "<tr><td>" + escapeHtml(s.id || "") + "</td>" +
+            "<td>" + escapeHtml(o.name || "") + "</td>" +
+            "<td>" + escapeHtml(s.scale || o.type) + "</td>" +
+            "<td>" + (s.arms || []).map(function (a) {
+              if (a.events != null) return escapeHtml(a.treatment) + ": " + a.events + "/" + a.n;
+              if (a.mean != null) return escapeHtml(a.treatment) + ": " + a.mean + "±" + a.sd + " (n=" + a.n + ")";
+              return escapeHtml(a.treatment) + ": (no data)";
+            }).join(" vs ") + "</td></tr>"
+          );
+        }
+      }
+      previewEl.innerHTML =
+        '<table><thead><tr><th>Study</th><th>Outcome</th><th>Scale</th><th>Arms</th></tr></thead>' +
+        '<tbody>' + (rows.join("") || '<tr><td colspan="4" style="color:var(--muted)">No data rows in this comparison.</td></tr>') + '</tbody></table>';
+    }
+
+    function populateComparisons(parsed) {
+      comparisonSel.innerHTML = parsed.comparisons.length
+        ? parsed.comparisons.map(function (c, i) {
+            return '<option value="' + i + '">' + escapeHtml(c.name || ("Comparison " + (i + 1))) + '</option>';
+          }).join("")
+        : '<option value="">(no comparisons found)</option>';
+      comparisonSel.disabled = !parsed.comparisons.length;
+      pushBtn.disabled = !parsed.comparisons.length;
+      if (parsed.comparisons.length) {
+        STATE.selectedComparisonIdx = 0;
+        comparisonSel.value = "0";
+        renderPreview(parsed.comparisons[0]);
+      }
+    }
+
+    comparisonSel.addEventListener("change", function () {
+      var idx = parseInt(comparisonSel.value, 10);
+      STATE.selectedComparisonIdx = isNaN(idx) ? null : idx;
+      if (STATE.parsed && STATE.selectedComparisonIdx != null) {
+        renderPreview(STATE.parsed.comparisons[STATE.selectedComparisonIdx]);
+      }
+    });
+
+    pushBtn.addEventListener("click", function () {
+      if (!STATE.parsed || STATE.selectedComparisonIdx == null) return;
+      if (!window.MaComparisons) {
+        pushStatus.style.display = "block";
+        pushStatus.innerHTML = '<strong class="err">Bus helper not loaded.</strong>';
+        return;
+      }
+      var comparison = STATE.parsed.comparisons[STATE.selectedComparisonIdx];
+      var env = window.RevmanReader.comparisonToBus(comparison);
+      var ok = MaComparisons.write(env);
+      pushStatus.style.display = "block";
+      if (ok) {
+        pushStatus.innerHTML = '<strong style="color:var(--ok)">✓ Saved.</strong> ' +
+          env.studies.length + ' studies pushed to <code>ma-comparisons-v1</code>. ' +
+          'Open <a href="../nma-pro-v2/">NMA Pro</a> and click <strong>Load from bus</strong>.';
+      } else {
+        pushStatus.innerHTML = '<strong class="err">Could not save to bus.</strong> The comparison may have unsupported outcome types.';
+      }
+    });
+
+    function handleFile(file) {
+      if (!file) return;
+      setStatus("Reading " + file.name + " (" + Math.round(file.size / 1024) + " KB)…");
+      file.arrayBuffer().then(function (buf) {
+        return window.RevmanReader.parse(buf, { jszip: window.JSZip });
+      }).then(function (parsed) {
+        STATE.parsed = parsed;
+        renderMeta(parsed);
+        populateComparisons(parsed);
+        setStatus("Parsed: " + parsed.comparisons.length + " comparisons, " +
+                  parsed.studyCount + " study rows.");
+      }).catch(function (err) {
+        STATE.parsed = null;
+        comparisonSel.disabled = true;
+        pushBtn.disabled = true;
+        metaEl.innerHTML = '';
+        previewEl.innerHTML = '';
+        setStatus("Parse failed: " + (err && err.message ? err.message : String(err)), "err");
+      });
+    }
+
+    pickEl.addEventListener("change", function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (f) handleFile(f);
+    });
+    dropEl.addEventListener("click", function () { pickEl.click(); });
+    dropEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickEl.click(); }
+    });
+    ["dragenter", "dragover"].forEach(function (ev) {
+      dropEl.addEventListener(ev, function (e) { e.preventDefault(); dropEl.classList.add("is-over"); });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      dropEl.addEventListener(ev, function (e) { e.preventDefault(); dropEl.classList.remove("is-over"); });
+    });
+    dropEl.addEventListener("drop", function (e) {
+      var f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    });
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

@@ -296,6 +296,46 @@ for (const p of NMA_BUS_APPS) {
   });
 }
 
+// ---- RevMan importer: loads, parses a fixture, pushes to bus ---------------
+
+test("RevMan importer: parses a .rm5 fixture and pushes to ma-comparisons bus", async ({ page }) => {
+  test.setTimeout(45_000);
+  await page.goto("/revman-importer/", { waitUntil: "load" });
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+
+  // Helper + reader + JSZip must all be globally defined.
+  const globals = await page.evaluate(() => {
+    const w = window as unknown as { JSZip?: unknown; MaComparisons?: unknown; RevmanReader?: unknown };
+    return { jszip: !!w.JSZip, mc: !!w.MaComparisons, reader: !!w.RevmanReader };
+  });
+  expect(globals).toEqual({ jszip: true, mc: true, reader: true });
+
+  // Use the file-picker programmatically with our fixture; bypasses drag/drop.
+  const picker = page.locator("#picker");
+  await picker.setInputFiles({ files: ["../fixtures/revman/tiny.rm5"] } as never).catch(async () => {
+    // Direct file path:
+    await picker.setInputFiles(["../../tests/fixtures/revman/tiny.rm5"]);
+  });
+
+  // Wait for the comparison dropdown to enable + populate.
+  await page.waitForFunction(() => {
+    const sel = document.getElementById("comparison-pick") as HTMLSelectElement | null;
+    return !!sel && !sel.disabled && sel.options.length > 0;
+  }, null, { timeout: 10_000 });
+
+  // Push to bus.
+  await page.click("#btn-push");
+
+  // Confirm status note shows success + bus has the data.
+  await expect(page.locator("#push-status")).toContainText(/Saved|pushed/i);
+  const busHas = await page.evaluate(() => {
+    const w = window as unknown as { MaComparisons?: { read?: () => unknown } };
+    const env = w.MaComparisons?.read?.() as { studies?: unknown[] } | null;
+    return env && Array.isArray(env.studies) ? env.studies.length : 0;
+  });
+  expect(busHas).toBeGreaterThan(0);
+});
+
 // ---- PWA: manifest is reachable + valid + linked from the hub --------------
 
 test("PWA: hub manifest is reachable, valid, and linked from /", async ({ page, request }) => {
