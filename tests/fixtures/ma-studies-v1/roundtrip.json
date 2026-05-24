@@ -1,0 +1,11 @@
+{
+  "_schema": "ma-studies-v1",
+  "_savedAt": "2026-05-24T08:00:00.000Z",
+  "studies": [
+    { "label": "Trial A 2018", "est": -0.22, "se": 0.11, "moderator": null, "group": null, "year": 2018 },
+    { "label": "Trial B 2019", "est": -0.31, "se": 0.14, "moderator": null, "group": null, "year": 2019 },
+    { "label": "Trial C 2020", "est":  0.04, "se": 0.19, "moderator": null, "group": null, "year": 2020 },
+    { "label": "Trial D 2021", "est": -0.18, "se": 0.09, "moderator": null, "group": null, "year": 2021 },
+    { "label": "Trial E 2022", "est": -0.42, "se": 0.17, "moderator": null, "group": null, "year": 2022 }
+  ]
+}

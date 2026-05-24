@@ -1,0 +1,14 @@
+{
+  "_schema": "ma-studies-v1",
+  "_savedAt": "2026-05-24T08:00:00.000Z",
+  "studies": [
+    {
+      "label": "EMPA-REG OUTCOME 2015",
+      "est": -0.3424903089467727,
+      "se": 0.07854583108809834,
+      "moderator": null,
+      "group": "SGLT2",
+      "year": 2015
+    }
+  ]
+}
