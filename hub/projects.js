@@ -25,6 +25,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["revman", "cochrane", "rm5", "rm6", "import", "extraction"]
   },
   {
+    name: "Multi-outcome MA (bivariate REML)",
+    featured: true,
+    folder: "allmeta/multi-outcome-ma",
+    path: "./multi-outcome-ma/",
+    collection: "new",
+    mode: "file",
+    category: "Pairwise MA",
+    summary: "Bivariate (K=2) random-effects meta-analysis with REML estimation of the 2×2 between-study covariance Σ_RE = (τ₁, τ₂, ρ_between). Borrows strength across correlated outcomes — studies that report only one outcome still contribute to the joint pooled estimate via ρ_between. Side-by-side comparison with separate univariate REML shows the CI tightening.",
+    note: "Reference: Riley 2007 (Biostatistics); Jackson, Riley & White 2011 (Stat Med); Achana 2014 §3.1 (Res Synth Methods). Roadmap: K ≥ 3 and network multi-outcome.",
+    tags: ["multivariate", "bivariate", "multi-outcome", "borrowing-of-strength", "reml", "achana"]
+  },
+  {
     name: "Cross-design synthesis",
     featured: true,
     folder: "allmeta/cross-design",
