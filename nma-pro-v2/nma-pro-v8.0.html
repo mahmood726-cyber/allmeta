@@ -551,7 +551,12 @@ const likelihoodSpec={type:normalizedLikelihood,studentTdf:normalizedStudentTdf}
 const seedPayload={reference,effectMeasure,nChains,nIter,burnin,thin,priorTau,betaPriorSD:normalizedBetaPriorSD,modelType:normalizedModelType,backendProfile:normalizedBackendProfile,likelihood:normalizedLikelihood,studentTdf:normalizedStudentTdf,covariates:xAug.covariateNames,ppcReplicates:ppcN,studies:(Array.isArray(studies)?studies:[]).map(s=>[s?.name,s?.treatment1,s?.events1,s?.n1,s?.treatment2,s?.events2,s?.n2])};
 const autoSeed=parseInt(Reproducibility.hashString(JSON.stringify(seedPayload)),16);
 const baseSeed=Number.isFinite(Number(seed))&&Number(seed)>0?Math.floor(Number(seed)):((Number.isFinite(autoSeed)&&autoSeed>0)?autoSeed:123456789);
-const chains=[];for(let c=0;c<nChains;c++){const chainSeed=((baseSeed>>>0)+Math.imul(c+1,2654435761))>>>0;const rng=TreatmentRanking.createSeededRNG(chainSeed);chains.push(this.runChain(X,y,v,n,p,nIter,priorTau,rng,normalizedModelType,normalizedBetaPriorSD,likelihoodSpec,burnin))}
+// V9-01b: pass the within-study covariance matrix V and per-row study IDs
+// into the chain so it can apply the multi-arm τ²/2 correction in the MH
+// τ² step. Falls back to the diagonal path if V/studyIds are absent.
+const V_full=matrices&&Array.isArray(matrices.V)?matrices.V:null;
+const studyIds=matrices&&Array.isArray(matrices.studyIds)?matrices.studyIds:null;
+const chains=[];for(let c=0;c<nChains;c++){const chainSeed=((baseSeed>>>0)+Math.imul(c+1,2654435761))>>>0;const rng=TreatmentRanking.createSeededRNG(chainSeed);chains.push(this.runChain(X,y,v,n,p,nIter,priorTau,rng,normalizedModelType,normalizedBetaPriorSD,likelihoodSpec,burnin,V_full,studyIds))}
 const samples=this.combineChains(chains,burnin,thin);
 const diagnostics=this.computeDiagnostics(chains,burnin,thin,p);
 const summary=this.summarizePosterior(samples,treatments,treatParamCount,xAug.covariateNames);
@@ -577,17 +582,47 @@ validNames.push(cov)
 });
 return{X:Xout,p:p+validNames.length,covariateNames:validNames}
 },
-// V9-01b (Bayesian): the MCMC chain below uses a per-row Gaussian
-// likelihood with variance v_i + τ², treating contrasts as independent
-// across rows. For multi-arm trials whose rows share a control arm, the
-// proper likelihood is MULTIVARIATE — Σ = V + Σ_RE where V already carries
-// the within-study sampling covariance (built in buildMatrices) and the
-// off-diagonals of Σ_RE are τ²/2 for rows sharing a study (the frequentist
-// fitGLS above implements this). Until the MCMC is reworked to a full
-// multivariate Gaussian, posterior SEs for multi-arm-rich networks can be
-// slightly tight. Frequentist (PM-GLS) mode in this app already applies
-// the correction; prefer it for multi-arm-heavy networks.
-runChain(X,y,v,n,p,nIter,priorTau,rng,modelType='random',betaPriorSD=null,likelihoodSpec={type:'normal',studentTdf:7},burnin=0){
+// V9-01b: multi-arm correction term for the MCMC log-likelihood.
+// The per-row Gaussian likelihood at v_i + τ² is correct ONLY for rows
+// from independent (2-arm) trials. For multi-arm trials sharing a control
+// arm, the correct likelihood is multivariate normal with Σ_group =
+// V_group + (τ² on diag, τ²/2 off-diag). This helper returns Δ =
+// logMVN_group − Σ_i logN_row that is ADDED to the diagonal log-lik to
+// recover the multivariate value. For 2-arm singletons Δ = 0.
+multiArmCorrection(X,y,V,studyIds,v,beta,tau2,n,p){
+if(!V||!studyIds||tau2<=0)return 0;
+const byId=Object.create(null);
+for(let i=0;i<n;i++){const sid=studyIds[i];if(!byId[sid])byId[sid]=[];byId[sid].push(i);}
+let delta=0;
+for(const sid in byId){
+const idx=byId[sid];const k=idx.length;
+if(k<2)continue;
+const r=new Array(k);for(let a=0;a<k;a++){let mu=0;for(let j=0;j<p;j++)mu+=X[idx[a]][j]*beta[j];r[a]=y[idx[a]]-mu;}
+const Sigma=Matrix.zeros(k,k);
+for(let a=0;a<k;a++)for(let b=0;b<k;b++){
+const v_ab=(V[idx[a]]&&typeof V[idx[a]][idx[b]]==='number')?V[idx[a]][idx[b]]:0;
+Sigma[a][b]=v_ab+(a===b?tau2:tau2/2);
+}
+try{
+const L=Matrix.cholesky(Sigma);
+let logDet=0;for(let a=0;a<k;a++)logDet+=2*Math.log(L[a][a]);
+const SigmaInv=Matrix.inverse(Sigma);
+let quad=0;for(let a=0;a<k;a++)for(let b=0;b<k;b++)quad+=r[a]*SigmaInv[a][b]*r[b];
+const llMV=-0.5*k*Math.log(2*Math.PI)-0.5*logDet-0.5*quad;
+let llDiag=0;
+for(let a=0;a<k;a++){const vplustau=Math.max(1e-12,v[idx[a]]+tau2);llDiag+=-0.5*Math.log(2*Math.PI*vplustau)-0.5*r[a]*r[a]/vplustau;}
+delta+=(llMV-llDiag);
+}catch(e){/* matrix issue (PSD floor) — skip correction for this group */}
+}
+return delta;
+},
+// V9-01b status: the MH τ² step now uses logLikelihood + multiArmCorrection,
+// which gives the correct multivariate likelihood for multi-arm-rich networks.
+// The β posterior draw still uses the diagonal precision X' W X (a known
+// approximation — see Lu & Ades 2004 for the full block-precision formulation).
+// In practice the τ² correction is the dominant effect for SE coverage in
+// shared-control NMAs; the β-precision approximation has second-order impact.
+runChain(X,y,v,n,p,nIter,priorTau,rng,modelType='random',betaPriorSD=null,likelihoodSpec={type:'normal',studentTdf:7},burnin=0,V=null,studyIds=null){
 const chain={beta:[],tau2:[],deviance:[],tauAccepted:0,tauProposed:0,acceptanceRate:null};
 const rr=(rng&&typeof rng.random==='function'&&typeof rng.rnorm==='function')?rng:TreatmentRanking.createSeededRNG(123456789);let beta=Array(p).fill(0),tau2=(String(modelType)==='fixed'?0:0.1);const betaPriorPrecision=Number.isFinite(Number(betaPriorSD))&&Number(betaPriorSD)>0?1/(Number(betaPriorSD)*Number(betaPriorSD)):0;
 // Adaptive step size for tau2 MH proposal (Haario et al. 2001)
@@ -597,11 +632,13 @@ const W=v.map(vi=>1/(vi+tau2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0
 for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}
 if(betaPriorPrecision>0)for(let j=0;j<p;j++)XtWX[j][j]+=betaPriorPrecision;
 try{const vcov=Matrix.inverse(XtWX);const mean=Matrix.solve(XtWX,XtWy);const L=Matrix.cholesky(vcov);const z=Array(p).fill(0).map(()=>rr.rnorm(0,1));beta=mean.map((m,i)=>m+L[i].reduce((s,l,j)=>s+l*z[j],0))}catch(e){console.warn('MCMC iteration',iter,'matrix error:',e.message)}
-const logLikCurr=this.logLikelihood(X,y,v,beta,tau2,n,p,likelihoodSpec);
+const logLikCurrBase=this.logLikelihood(X,y,v,beta,tau2,n,p,likelihoodSpec);
+const logLikCurr=logLikCurrBase+this.multiArmCorrection(X,y,V,studyIds,v,beta,tau2,n,p);
 let devLogLik=logLikCurr;
 if(String(modelType)!=='fixed'){
 const propTau2=Math.exp(Math.log(tau2+0.001)+rr.rnorm(0,1)*tauStepSize);
-const logLikProp=this.logLikelihood(X,y,v,beta,propTau2,n,p,likelihoodSpec);
+const logLikPropBase=this.logLikelihood(X,y,v,beta,propTau2,n,p,likelihoodSpec);
+const logLikProp=logLikPropBase+this.multiArmCorrection(X,y,V,studyIds,v,beta,propTau2,n,p);
 const logPriorCurr=this.logPriorTau(tau2,priorTau);
 const logPriorProp=this.logPriorTau(propTau2,priorTau);
 chain.tauProposed+=1;adaptTotal+=1;

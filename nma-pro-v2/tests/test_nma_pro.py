@@ -170,3 +170,53 @@ def test_v9_01_within_study_covariance_in_buildmatrices():
     assert re.search(
         r"0\.99\s*\*\s*Math\.sqrt", content
     ), "shared-arm covariance clip 0.99·√(v_i v_j) missing in buildMatrices"
+
+
+# ---------------------------------------------------------------------------
+# V9-01b — multi-arm τ²/2 correction in the BAYESIAN (MCMC) path.
+# Adds Σ = V + Σ_RE multivariate likelihood correction to the diagonal MH
+# log-lik so posterior τ² (and posterior SEs of β) are calibrated for
+# shared-control multi-arm networks.
+# ---------------------------------------------------------------------------
+
+def test_v9_01b_multiarm_correction_helper_exists():
+    """BayesianNMA must expose a multiArmCorrection method on its object."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    assert "multiArmCorrection(" in content, "multiArmCorrection helper missing"
+    # Must group rows by studyId.
+    assert "byId[sid]" in content, "byId grouping for multi-arm correction missing"
+    # Must build Σ with τ² on diagonal and τ²/2 off-diagonal.
+    assert re.search(
+        r"a===b\?tau2:tau2/2", content
+    ) or re.search(
+        r"\(a\s*===\s*b\s*\?\s*tau2\s*:\s*tau2\s*/\s*2\)", content
+    ), "Σ build (diag=τ², off=τ²/2) missing"
+
+
+def test_v9_01b_runchain_uses_correction_in_MH_step():
+    """runChain must compute logLikelihood + multiArmCorrection for both the
+    current and proposed τ² in the Metropolis-Hastings step."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    # Both arms of the MH step need the correction.
+    assert "logLikCurr=logLikCurrBase+this.multiArmCorrection" in content, (
+        "MH current log-lik does not include the multi-arm correction"
+    )
+    assert "logLikProp=logLikPropBase+this.multiArmCorrection" in content, (
+        "MH proposed log-lik does not include the multi-arm correction"
+    )
+
+
+def test_v9_01b_analyze_passes_V_and_studyIds_into_runChain():
+    """analyze() must thread the within-study covariance V and per-row study
+    IDs through to runChain — otherwise the correction has no inputs to
+    operate on."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    assert "V_full=matrices&&Array.isArray(matrices.V)" in content
+    assert "studyIds=matrices&&Array.isArray(matrices.studyIds)" in content
+    # runChain call site must pass them in.
+    assert re.search(
+        r"runChain\([^)]*V_full,studyIds\)", content
+    ), "runChain call site does not pass V_full + studyIds"

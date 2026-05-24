@@ -2,7 +2,9 @@ cff-version: 1.2.0
 title: "allmeta — open browser-only tools for evidence synthesis"
 message: >
   If you use allmeta in your research, please cite it using the metadata in this
-  file. A persistent DOI will be added once a Zenodo release is minted.
+  file. Once a v1.0.0 release is tagged and Zenodo is connected, the
+  `identifiers` block below will carry a concept DOI that resolves to every
+  archived version.
 type: software
 authors:
   - family-names: Ahmad
@@ -10,6 +12,13 @@ authors:
     # orcid: add your ORCID here (e.g. https://orcid.org/0000-0000-0000-0000)
 repository-code: "https://github.com/mahmood726-cyber/allmeta"
 url: "https://mahmood726-cyber.github.io/allmeta/"
+# Concept DOI — fill in after the first Zenodo deposit. See RELEASING.md for the
+# one-time connect-Zenodo + push-tag workflow. The concept DOI is version-less
+# (always resolves to the latest archived release); per-release DOIs differ.
+# identifiers:
+#   - description: "Zenodo concept DOI"
+#     type: doi
+#     value: "10.5281/zenodo.XXXXXXX"
 abstract: >
   allmeta is a browser-only catalog of evidence-synthesis tools spanning
   pairwise and network meta-analysis, diagnostic test accuracy, dose-response
