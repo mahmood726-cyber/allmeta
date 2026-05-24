@@ -25,6 +25,42 @@ window.HTML_APPS_PROJECTS = [
     tags: ["revman", "cochrane", "rm5", "rm6", "import", "extraction"]
   },
   {
+    name: "Cross-design synthesis",
+    featured: true,
+    folder: "allmeta/cross-design",
+    path: "./cross-design/",
+    collection: "new",
+    mode: "file",
+    category: "Pairwise MA",
+    summary: "Combine RCT and observational evidence with three side-by-side estimators: naive pool (reference only), power prior (observational at downweight α ∈ [0,1]), and Welton design-bias random-effects (RCTs anchor μ; δ_obs and σ²_bias estimated from obs studies). Closes a methodology gap in HTA / decision-modelling contexts where RCT evidence alone is insufficient.",
+    note: "Reference: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Ibrahim & Chen 2000 power prior; Schmitz, Adams, Walsh 2013 (Res Synth Methods).",
+    tags: ["cross-design", "rct", "observational", "power-prior", "design-bias", "hta"]
+  },
+  {
+    name: "PROSPERO Templater",
+    featured: true,
+    folder: "allmeta/prospero-templater",
+    path: "./prospero-templater/",
+    collection: "new",
+    mode: "file",
+    category: "PRISMA & Reporting",
+    summary: "Fill the 39-field PROSPERO registration form from your PICO + protocol draft. Auto-saves locally; export the whole filled form as Markdown for review or copy each field into PROSPERO.",
+    note: "Unofficial templater — submit at https://www.crd.york.ac.uk/PROSPERO/. No data leaves your device.",
+    tags: ["prospero", "registration", "protocol", "prisma", "templater"]
+  },
+  {
+    name: "BMA across τ² priors",
+    featured: true,
+    folder: "allmeta/bma-tau-priors",
+    path: "./bma-tau-priors/",
+    collection: "new",
+    mode: "file",
+    category: "Pairwise MA",
+    summary: "Bayesian Model Averaging across τ² priors (half-normal, half-Cauchy, inverse-gamma, uniform). Closes prior-sensitivity for small-k random-effects meta-analysis: the averaged posterior automatically downweights priors that fit the data poorly via their marginal likelihood. Drop-in sensitivity layer over any pooler.",
+    note: "Reference: Friede, Röver, Wandel & Neuenschwander 2017 (Biom J). Simpson-rule marginalisation over a τ² grid + Laplace approximation for μ given τ².",
+    tags: ["bma", "bayesian", "model-averaging", "tau-prior", "sensitivity", "small-k"]
+  },
+  {
     name: "RVE Meta-Regression",
     featured: true,
     folder: "allmeta/rve-meta",

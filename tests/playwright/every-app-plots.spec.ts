@@ -63,6 +63,9 @@ const LOAD_ONLY_APPS: { path: string; skip?: string }[] = [
   { path: "/rct-extractor/" },                     // probes :8000; benign
   { path: "/revman-importer/" },
   { path: "/rve-meta/" },
+  { path: "/bma-tau-priors/" },
+  { path: "/prospero-templater/" },
+  { path: "/cross-design/", skip: "renders forest SVG; covered as a plot test below" },
   { path: "/rob-traffic-light/" },
   { path: "/rob2/" },
   { path: "/robins-e/" },
@@ -114,6 +117,9 @@ const PLOT_APPS: PlotApp[] = [
   // DTA
   { path: "/dta-sroc/", runBtn: "#btn-run", plotSelector: "svg" },
   { path: "/hsroc/", runBtn: "#btn-run", plotSelector: "svg" },
+
+  // Cross-design synthesis app — auto-runs on load + renders a 3-method forest
+  { path: "/cross-design/", runBtn: "#btn-run", plotSelector: "#forest-host svg" },
 
   // NMA-pro (special: data must be loaded via window.loadDemo)
   {

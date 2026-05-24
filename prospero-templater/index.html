@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="PROSPERO submission templater — fill the 47-question PROSPERO form from PICO + protocol drafts, export ready to paste.">
+  <meta name="color-scheme" content="light dark">
+  <title>PROSPERO Templater</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(360px, 30rem) 1fr; align-items: start; }
+    @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.5rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    input, textarea, select { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    textarea { min-height: 4.5rem; font-family: "SF Mono", Consolas, monospace; font-size: 0.83rem; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--border);
+                   padding: 0.45rem 0.95rem; border-radius: 6px; font-size: 0.86rem; cursor: pointer; }
+    .preview { background: var(--input-bg); padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 8px;
+               font-size: 0.9rem; line-height: 1.55; white-space: pre-wrap; max-height: 70vh; overflow-y: auto; }
+    .preview h3 { margin: 1rem 0 0.3rem; font-size: 0.9rem; color: var(--accent); }
+    .preview h3:first-child { margin-top: 0; }
+    .preview .num { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; margin-right: 0.4rem; }
+    details { margin-bottom: 0.4rem; border: 1px solid var(--border); border-radius: 6px; }
+    details summary { padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; background: var(--accent-soft); border-radius: 6px; font-size: 0.85rem; }
+    details[open] summary { border-radius: 6px 6px 0 0; }
+    details > div { padding: 0.7rem 0.9rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    .actions { display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>PROSPERO Templater</h1>
+    <p>Fill out the PROSPERO submission form from your PICO + protocol draft, then copy each section into <a href="https://www.crd.york.ac.uk/PROSPERO/" target="_blank" rel="noopener">PROSPERO</a>. Auto-saves to localStorage so you can come back; export the whole filled form as Markdown for review or Word/email. No data leaves your device.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Form inputs</h2>
+
+      <details open><summary>1. Administrative</summary><div>
+        <label>1. Review title<input id="f1" type="text" placeholder="e.g., Effectiveness of X for outcome Y in population Z: a systematic review"></label>
+        <label>2. Original or update<select id="f2"><option>Original review</option><option>Update of a previous review</option></select></label>
+        <label>3. Anticipated start date<input id="f3" type="date"></label>
+        <label>4. Anticipated completion date<input id="f4" type="date"></label>
+        <label>5. Stage of review at time of submission<select id="f5"><option>Preliminary searches</option><option>Piloting of the study selection process</option><option>Formal screening of search results</option><option>Risk of bias (quality) assessment</option><option>Data extraction</option><option>Data analysis</option></select></label>
+      </div></details>
+
+      <details><summary>2. Team</summary><div>
+        <label>6. Named contact<input id="f6" type="text"></label>
+        <label>7. Named contact email<input id="f7" type="email"></label>
+        <label>8. Named contact address<textarea id="f8" rows="3"></textarea></label>
+        <label>9. Organisational affiliation<input id="f9" type="text"></label>
+        <label>10. Review team members and their organisational affiliations<textarea id="f10" rows="4" placeholder="Name 1, Affiliation 1&#10;Name 2, Affiliation 2"></textarea></label>
+        <label>11. Funding sources / sponsors<textarea id="f11" rows="2"></textarea></label>
+        <label>12. Conflicts of interest<textarea id="f12" rows="2"></textarea></label>
+        <label>13. Collaborators<textarea id="f13" rows="2"></textarea></label>
+      </div></details>
+
+      <details><summary>3. Review question</summary><div>
+        <label>14. Review question<textarea id="f14" rows="3" placeholder="In [population], does [intervention] vs [comparator] affect [outcome]?"></textarea></label>
+        <label>15. Searches (databases + dates + restrictions)<textarea id="f15" rows="4"></textarea></label>
+        <label>16. URL to search strategy<input id="f16" type="url" placeholder="optional"></label>
+        <label>17. Condition or domain being studied<textarea id="f17" rows="2"></textarea></label>
+        <label>18. Participants / population<textarea id="f18" rows="2"></textarea></label>
+        <label>19. Intervention(s), exposure(s)<textarea id="f19" rows="2"></textarea></label>
+        <label>20. Comparator(s) / control<textarea id="f20" rows="2"></textarea></label>
+        <label>21. Types of study to be included<textarea id="f21" rows="2" placeholder="e.g., RCTs only; or RCTs + cohort studies"></textarea></label>
+        <label>22. Context<textarea id="f22" rows="2"></textarea></label>
+        <label>23. Main outcomes<textarea id="f23" rows="3" placeholder="Primary: ...&#10;Secondary: ..."></textarea></label>
+        <label>24. Measures of effect<input id="f24" type="text" placeholder="e.g., risk ratio, mean difference"></label>
+        <label>25. Additional outcomes<textarea id="f25" rows="2"></textarea></label>
+      </div></details>
+
+      <details><summary>4. Methods</summary><div>
+        <label>26. Data extraction (selection and coding)<textarea id="f26" rows="3"></textarea></label>
+        <label>27. Risk of bias (quality) assessment<textarea id="f27" rows="3" placeholder="e.g., Cochrane RoB 2 for RCTs; ROBINS-I for non-randomised"></textarea></label>
+        <label>28. Strategy for data synthesis<textarea id="f28" rows="3" placeholder="e.g., random-effects meta-analysis if I² < 75%; otherwise narrative synthesis"></textarea></label>
+        <label>29. Analysis of subgroups or subsets<textarea id="f29" rows="2"></textarea></label>
+      </div></details>
+
+      <details><summary>5. Review details</summary><div>
+        <label>30. Type and method of review<select id="f30"><option>Systematic review</option><option>Meta-analysis</option><option>Living systematic review</option><option>Network meta-analysis</option><option>Diagnostic test accuracy review</option><option>Prognostic review</option><option>Realist synthesis</option><option>Scoping review</option><option>Umbrella review</option></select></label>
+        <label>31. Language<input id="f31" type="text" value="English"></label>
+        <label>32. Country<input id="f32" type="text"></label>
+        <label>33. Other registration details<input id="f33" type="text" placeholder="optional"></label>
+        <label>34. Reference / URL for published protocol<input id="f34" type="url" placeholder="optional"></label>
+        <label>35. Dissemination plans<textarea id="f35" rows="2"></textarea></label>
+        <label>36. Keywords<input id="f36" type="text" placeholder="comma-separated"></label>
+        <label>37. Details of any existing review of the same topic<textarea id="f37" rows="2"></textarea></label>
+        <label>38. Current review status<select id="f38"><option>Ongoing</option><option>Completed but not published</option><option>Completed and published</option></select></label>
+        <label>39. Any additional information<textarea id="f39" rows="2"></textarea></label>
+      </div></details>
+
+      <div class="actions">
+        <button type="button" id="btn-update" class="primary">Update preview</button>
+        <button type="button" id="btn-md" class="ghost">Copy as Markdown</button>
+        <button type="button" id="btn-download-md" class="ghost">Download .md</button>
+        <button type="button" id="btn-clear" class="ghost">Clear all</button>
+      </div>
+      <div class="note">PROSPERO's online form has its own validation — this app generates clean, copy-paste-ready text for each field. Save to your computer first; PROSPERO doesn't auto-save mid-submission.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Filled form preview</h2>
+      <div class="preview" id="preview"></div>
+    </section>
+  </main>
+
+  <footer>
+    Source field list adapted from the PROSPERO 2022 registration form (CRD, University of York). This is an unofficial templater — submit at <code>https://www.crd.york.ac.uk/PROSPERO/</code>.
+  </footer>
+
+  <script>
+  (function () {
+    "use strict";
+    var LS_KEY = "prospero-templater-v1";
+
+    var FIELDS = [
+      ["f1",  "Review title"],
+      ["f2",  "Original or update"],
+      ["f3",  "Anticipated start date"],
+      ["f4",  "Anticipated completion date"],
+      ["f5",  "Stage of review at time of submission"],
+      ["f6",  "Named contact"],
+      ["f7",  "Named contact email"],
+      ["f8",  "Named contact address"],
+      ["f9",  "Organisational affiliation"],
+      ["f10", "Review team members and affiliations"],
+      ["f11", "Funding sources / sponsors"],
+      ["f12", "Conflicts of interest"],
+      ["f13", "Collaborators"],
+      ["f14", "Review question"],
+      ["f15", "Searches (databases, dates, restrictions)"],
+      ["f16", "URL to search strategy"],
+      ["f17", "Condition or domain being studied"],
+      ["f18", "Participants / population"],
+      ["f19", "Intervention(s), exposure(s)"],
+      ["f20", "Comparator(s) / control"],
+      ["f21", "Types of study to be included"],
+      ["f22", "Context"],
+      ["f23", "Main outcomes"],
+      ["f24", "Measures of effect"],
+      ["f25", "Additional outcomes"],
+      ["f26", "Data extraction"],
+      ["f27", "Risk of bias (quality) assessment"],
+      ["f28", "Strategy for data synthesis"],
+      ["f29", "Analysis of subgroups or subsets"],
+      ["f30", "Type and method of review"],
+      ["f31", "Language"],
+      ["f32", "Country"],
+      ["f33", "Other registration details"],
+      ["f34", "Reference / URL for published protocol"],
+      ["f35", "Dissemination plans"],
+      ["f36", "Keywords"],
+      ["f37", "Existing review of same topic"],
+      ["f38", "Current review status"],
+      ["f39", "Additional information"],
+    ];
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function readState() {
+      var s = {};
+      for (var i = 0; i < FIELDS.length; i++) {
+        var el = document.getElementById(FIELDS[i][0]);
+        if (el) s[FIELDS[i][0]] = el.value;
+      }
+      return s;
+    }
+    function writeState(s) {
+      for (var i = 0; i < FIELDS.length; i++) {
+        var el = document.getElementById(FIELDS[i][0]);
+        if (el && typeof s[FIELDS[i][0]] === "string") el.value = s[FIELDS[i][0]];
+      }
+    }
+
+    function buildPreview() {
+      var s = readState();
+      var html = "";
+      for (var i = 0; i < FIELDS.length; i++) {
+        var v = (s[FIELDS[i][0]] || "").trim();
+        var label = FIELDS[i][1];
+        var num = (i + 1).toString();
+        html += '<h3><span class="num">' + num + '.</span>' + escapeHtml(label) + '</h3>';
+        html += v ? escapeHtml(v) : '<em style="color:var(--muted)">(not filled)</em>';
+        html += '\n\n';
+      }
+      document.getElementById("preview").innerHTML = html;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (_) {}
+    }
+
+    function buildMarkdown() {
+      var s = readState();
+      var lines = ["# PROSPERO submission draft\n"];
+      lines.push("> Generated by allmeta/prospero-templater on " + new Date().toISOString().slice(0, 10) + "\n\n");
+      for (var i = 0; i < FIELDS.length; i++) {
+        var v = (s[FIELDS[i][0]] || "").trim();
+        lines.push("## " + (i + 1) + ". " + FIELDS[i][1]);
+        lines.push("");
+        lines.push(v ? v : "_(not filled)_");
+        lines.push("");
+      }
+      return lines.join("\n");
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
+      else {
+        var ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (_) {}
+        document.body.removeChild(ta);
+      }
+    }
+
+    function downloadFile(text, filename) {
+      var blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    document.getElementById("btn-update").addEventListener("click", buildPreview);
+    document.getElementById("btn-md").addEventListener("click", function () {
+      copyToClipboard(buildMarkdown());
+      var btn = document.getElementById("btn-md"); var orig = btn.textContent;
+      btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1500);
+    });
+    document.getElementById("btn-download-md").addEventListener("click", function () {
+      var title = (document.getElementById("f1").value || "prospero-draft")
+                    .toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60);
+      downloadFile(buildMarkdown(), title + ".md");
+    });
+    document.getElementById("btn-clear").addEventListener("click", function () {
+      if (!confirm("Clear all form fields?")) return;
+      for (var i = 0; i < FIELDS.length; i++) {
+        var el = document.getElementById(FIELDS[i][0]);
+        if (el) el.value = (el.tagName === "SELECT") ? el.options[0].value : "";
+      }
+      try { localStorage.removeItem(LS_KEY); } catch (_) {}
+      buildPreview();
+    });
+
+    // Auto-save on input.
+    for (var i = 0; i < FIELDS.length; i++) {
+      var el = document.getElementById(FIELDS[i][0]);
+      if (el) el.addEventListener("input", buildPreview);
+      if (el) el.addEventListener("change", buildPreview);
+    }
+
+    // Restore from localStorage on load.
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (raw) writeState(JSON.parse(raw));
+    } catch (_) {}
+    buildPreview();
+
+    window.__almProspero = function () { return { state: readState(), markdown: buildMarkdown() }; };
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

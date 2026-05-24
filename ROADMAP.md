@@ -31,7 +31,7 @@
 | Multilevel I² missing σ²_typical denom (V9-03) | Off by a known factor | 1 hr | **P1** |
 | proportion-ma logit continuity correction non-standard (V9-10) | Disagrees with metafor at boundary | 1 hr | **P1** |
 | HSROC docstring drift "Univariate REML" → "DL" (V9-09) | Cosmetic | 5 min | **P2** |
-| 76 `alert()` calls in nma-pro-v2 (V9-E08) | UX friction; not accessible to screen readers in same pattern as toasts | 1 day | **P2** |
+| ~~76 `alert()` calls in nma-pro-v2 (V9-E08)~~ | ✅ Resolved (prior cycle): 0 alert() calls remain in nma-pro-v8.0.html. All matches for "alert" are now CSS `.alert--{info,warning,success}` Bootstrap-style alert components — accessible. Verified 2026-05-24. | — | — |
 | No automated nightly hub-crawl on Pages-built artifact | Catches deploy-only regressions | 1 hr | **P2** |
 | No multi-language abstracts of method help | Limits global reach | 1 week | **P3** |
 | No PWA install prompt | Users can't add to home screen as installed app | 2 hr | **P3** |

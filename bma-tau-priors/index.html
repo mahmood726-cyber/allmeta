@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Bayesian Model Averaging across τ² priors — sensitivity layer for small-k random-effects meta-analysis.">
+  <meta name="color-scheme" content="light dark">
+  <title>BMA across τ² priors</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 12rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .summary-card { display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:0.5rem; margin-bottom:0.75rem; }
+    .summary-card .card { background:var(--accent-soft); border-radius:6px; padding:0.5rem 0.7rem; }
+    .summary-card .k { display:block; font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+    .summary-card .v { display:block; font-size:1.05rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .bar { display:inline-block; height:0.6rem; background:var(--accent); border-radius:3px; vertical-align:middle; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/stats-qt.js"></script>
+  <script src="../shared/bma-tau.js"></script>
+  <script src="../shared/ma-studies-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Bayesian Model Averaging across τ² priors</h1>
+    <p>Small-k random-effects meta-analyses are notoriously sensitive to the choice of τ² prior. Rather than picking one, this app integrates the posterior for the pooled effect μ over a panel of priors (half-normal, half-Cauchy, inverse-gamma, uniform), weighting each by its marginal likelihood. Output: posterior μ̂ ± SE with calibrated 95 % credible interval, per-prior contributions, and the τ² posterior mode under each prior. Drop-in sensitivity layer over any existing pooler — use it to bound the influence of the prior choice.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label style="display:block">
+        <span style="font-size:0.85rem">Paste <code>label, yi, vi</code> (or yi, vi only)</span>
+        <textarea id="src">Trial 1, -0.42, 0.012
+Trial 2, -0.25, 0.018
+Trial 3, -0.55, 0.025
+Trial 4, -0.18, 0.030
+Trial 5, -0.38, 0.022</textarea>
+      </label>
+      <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
+        <button type="button" id="btn-run" class="primary" style="flex:1">Run BMA</button>
+        <button type="button" id="btn-bus-load" style="flex:1;background:transparent;color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.85rem;font-weight:600;cursor:pointer">Load from bus</button>
+      </div>
+      <div class="note">
+        <strong>When to use:</strong> k &lt; 15, sparse outcomes, or when reviewers disagree on which τ² prior is "right". The averaged posterior automatically downweights priors that fit the data poorly (low marginal likelihood). Reference: Friede, Röver, Wandel &amp; Neuenschwander 2017, <em>Biom J</em>.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Averaged posterior for μ</h2>
+      <div id="summary-card" class="summary-card"></div>
+      <h2 style="margin-top:1rem">Per-prior contributions</h2>
+      <table>
+        <thead><tr><th>Prior</th><th>Weight</th><th>μ̂</th><th>SE</th><th>τ² (post mode)</th><th></th></tr></thead>
+        <tbody id="per-model"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    Engine: <code>shared/bma-tau.js</code> — Simpson-rule marginalisation over a τ² grid + Laplace approximation for μ given τ². Default model panel: half-normal SD ∈ {0.5, 1.0}, half-Cauchy scale ∈ {0.5, 1.0}, inverse-gamma(0.1, 0.1), uniform(0, 5). 95 % CrI uses the law of total variance across the mixture.
+  </footer>
+
+  <script>
+  (function () {
+    "use strict";
+
+    function parse(text) {
+      var out = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.charAt(0) === "#") continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 2) continue;
+        var yi, vi, label;
+        if (parts.length === 2) {
+          yi = parseFloat(parts[0]); vi = parseFloat(parts[1]); label = "Study " + (out.length + 1);
+        } else {
+          label = parts[0]; yi = parseFloat(parts[1]); vi = parseFloat(parts[2]);
+        }
+        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) continue;
+        out.push({ label: label, yi: yi, vi: vi });
+      }
+      return out;
+    }
+
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 2) {
+        document.getElementById("summary-card").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 studies.</div>';
+        document.getElementById("per-model").innerHTML = "";
+        return;
+      }
+      var yi = rows.map(function (r) { return r.yi; });
+      var vi = rows.map(function (r) { return r.vi; });
+      var result = AlmBMA.fit(yi, vi, AlmBMA.defaultModels());
+      if (!result.ok) {
+        document.getElementById("summary-card").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">BMA failed: ' +
+          (result.error || "unknown") + '</div>';
+        return;
+      }
+      document.getElementById("summary-card").innerHTML =
+        '<div class="card"><span class="k">μ̂ (BMA)</span><span class="v">' + fmt(result.muHat, 4) + '</span></div>' +
+        '<div class="card"><span class="k">SE (post)</span><span class="v">' + fmt(result.sePost, 4) + '</span></div>' +
+        '<div class="card"><span class="k">95 % CrI low</span><span class="v">' + fmt(result.ci_lo, 4) + '</span></div>' +
+        '<div class="card"><span class="k">95 % CrI hi</span><span class="v">' + fmt(result.ci_hi, 4) + '</span></div>' +
+        '<div class="card"><span class="k">k (studies)</span><span class="v">' + rows.length + '</span></div>' +
+        '<div class="card"><span class="k">Models</span><span class="v">' + result.perModel.length + '</span></div>';
+
+      var html = "";
+      for (var i = 0; i < result.perModel.length; i++) {
+        var pm = result.perModel[i];
+        var barW = Math.round(pm.weight * 100);
+        html += "<tr><td><code>" + pm.name + "</code></td>" +
+          "<td>" + fmt(pm.weight, 3) + " <span class='bar' style='width:" + barW + "px'></span></td>" +
+          "<td>" + fmt(pm.muHat, 4) + "</td>" +
+          "<td>" + fmt(pm.sePost, 4) + "</td>" +
+          "<td>" + fmt(pm.tau2_mode, 4) + "</td><td></td></tr>";
+      }
+      document.getElementById("per-model").innerHTML = html;
+
+      window.__almLastBMA = function () { return result; };
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+
+    // Bus interop: load studies via MaStudies.
+    document.getElementById("btn-bus-load").addEventListener("click", function () {
+      if (!window.MaStudies) { alert("Bus helper not loaded"); return; }
+      var studies = MaStudies.read();
+      if (!studies.length) { alert("No shared studies on the bus."); return; }
+      var lines = studies.map(function (s) {
+        return [s.label || "Study", s.est, s.se * s.se].join(", ");
+      });
+      document.getElementById("src").value = lines.join("\n");
+      run();
+    });
+
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

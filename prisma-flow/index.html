@@ -197,6 +197,14 @@
       <h2>Record counts</h2>
 
       <fieldset>
+        <legend>Search log (optional)</legend>
+        <label><span class="lbl">Database / register list — one per line: <code>name, count[, type]</code></span>
+          <textarea id="f-search-log" rows="5" placeholder="MEDLINE, 1245&#10;Embase, 1832&#10;Cochrane CENTRAL, 442&#10;ClinicalTrials.gov, 187, register"></textarea>
+          <span class="hint">When filled, the Databases (n) and Registers (n) below auto-recompute from this log on every edit. `type` defaults to "database"; use "register" for trial registries / WHO ICTRP. Filling the log is optional — leave it blank to type the totals directly below.</span>
+        </label>
+      </fieldset>
+
+      <fieldset>
         <legend>Identification</legend>
         <div class="row-2">
           <label><span class="lbl">Databases (n)</span>
@@ -623,10 +631,44 @@
       render();
     }
 
+    // Search-log parser → auto-sum Databases (n) + Registers (n).
+    // Lines: `name, count[, type]` where type defaults to "database".
+    // type "register" / "registry" routes to f-reg; everything else to f-db.
+    function recomputeFromSearchLog() {
+      const ta = document.getElementById("f-search-log");
+      if (!ta || !ta.value.trim()) return;
+      let dbSum = 0, regSum = 0;
+      const lines = ta.value.split(/\r?\n/);
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith("#")) continue;
+        const parts = line.split(/\s*,\s*/);
+        if (parts.length < 2) continue;
+        const n = parseInt(parts[1], 10);
+        if (!Number.isFinite(n) || n < 0) continue;
+        const type = (parts[2] || "database").toLowerCase();
+        if (/^(register|registry|ictrp|ctgov)$/.test(type)) regSum += n;
+        else dbSum += n;
+      }
+      const dbEl = document.getElementById("f-db");
+      const regEl = document.getElementById("f-reg");
+      if (dbEl) dbEl.value = String(dbSum);
+      if (regEl) regEl.value = String(regSum);
+    }
+
     function attachInputs() {
       for (const id of Object.values(fields)) {
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", render);
+      }
+      // Search-log textarea: recompute Identification totals on every keystroke
+      // then call render to redraw the diagram. Empty search log = manual mode.
+      const searchLogEl = document.getElementById("f-search-log");
+      if (searchLogEl) {
+        searchLogEl.addEventListener("input", function () {
+          recomputeFromSearchLog();
+          render();
+        });
       }
       document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
       document.getElementById("btn-png").addEventListener("click", onDownloadPng);
