@@ -616,20 +616,53 @@ delta+=(llMV-llDiag);
 }
 return delta;
 },
-// V9-01b status: the MH τ² step now uses logLikelihood + multiArmCorrection,
-// which gives the correct multivariate likelihood for multi-arm-rich networks.
-// The β posterior draw still uses the diagonal precision X' W X (a known
-// approximation — see Lu & Ades 2004 for the full block-precision formulation).
-// In practice the τ² correction is the dominant effect for SE coverage in
-// shared-control NMAs; the β-precision approximation has second-order impact.
+// V9-01b helper: build the block-diagonal precision X' Σ⁻¹ X and X' Σ⁻¹ y
+// where Σ = V + Σ_RE (diag=τ², off-diag=τ²/2 for same-study rows). Returns
+// XtPrecX (p×p) and XtPrecy (p) suitable for Cholesky + Gaussian draw.
+// For SINGLETON rows (2-arm trials) Σ_c is 1×1 and falls through to the
+// scalar w_i = 1/(v_i+τ²) — bit-exact same as the old XtWX/XtWy path.
+// For MULTI-ARM groups (k≥2 contrast rows sharing a studyId) we invert the
+// full k×k Σ_c block and accumulate the (i,j) cross terms. Closes the
+// β-precision approximation noted in the prior V9-01b commit.
+buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p){
+const XtPrecX=Matrix.zeros(p,p),XtPrecy=Array(p).fill(0);
+if(!V||!studyIds){
+for(let i=0;i<n;i++){const w=1/(v[i]+tau2);for(let j=0;j<p;j++){XtPrecy[j]+=X[i][j]*w*y[i];for(let k=0;k<p;k++)XtPrecX[j][k]+=X[i][j]*w*X[i][k]}}
+return{XtPrecX,XtPrecy};
+}
+const byId=Object.create(null);
+for(let i=0;i<n;i++){const sid=studyIds[i];if(!byId[sid])byId[sid]=[];byId[sid].push(i);}
+for(const sid in byId){
+const idx=byId[sid];const k=idx.length;
+if(k===1){const i=idx[0];const w=1/(v[i]+tau2);for(let j=0;j<p;j++){XtPrecy[j]+=X[i][j]*w*y[i];for(let kk=0;kk<p;kk++)XtPrecX[j][kk]+=X[i][j]*w*X[i][kk]}continue;}
+const Sigma=Matrix.zeros(k,k);
+for(let a=0;a<k;a++)for(let b=0;b<k;b++){
+const v_ab=(V[idx[a]]&&typeof V[idx[a]][idx[b]]==='number')?V[idx[a]][idx[b]]:0;
+Sigma[a][b]=v_ab+(a===b?tau2:tau2/2);
+}
+let SigmaInv;try{SigmaInv=Matrix.inverse(Sigma);}catch(_){for(let i=0;i<k;i++){const w=1/(v[idx[i]]+tau2);for(let j=0;j<p;j++){XtPrecy[j]+=X[idx[i]][j]*w*y[idx[i]];for(let kk=0;kk<p;kk++)XtPrecX[j][kk]+=X[idx[i]][j]*w*X[idx[i]][kk]}}continue;}
+for(let a=0;a<k;a++)for(let b=0;b<k;b++){
+const w_ab=SigmaInv[a][b];const ia=idx[a],ib=idx[b];
+for(let j=0;j<p;j++){
+XtPrecy[j]+=X[ia][j]*w_ab*y[ib];
+for(let kk=0;kk<p;kk++)XtPrecX[j][kk]+=X[ia][j]*w_ab*X[ib][kk];
+}
+}
+}
+return{XtPrecX,XtPrecy};
+},
+// V9-01b status: the MH τ² step uses logLikelihood + multiArmCorrection
+// for the correct multivariate likelihood, AND the β posterior draw now
+// uses buildBlockPrecision so X' Σ⁻¹ X reflects the true within-multi-arm
+// correlation (Lu & Ades 2004 full block-precision). Both effects are now
+// active: posterior SEs of β are calibrated for shared-control NMAs.
 runChain(X,y,v,n,p,nIter,priorTau,rng,modelType='random',betaPriorSD=null,likelihoodSpec={type:'normal',studentTdf:7},burnin=0,V=null,studyIds=null){
 const chain={beta:[],tau2:[],deviance:[],tauAccepted:0,tauProposed:0,acceptanceRate:null};
 const rr=(rng&&typeof rng.random==='function'&&typeof rng.rnorm==='function')?rng:TreatmentRanking.createSeededRNG(123456789);let beta=Array(p).fill(0),tau2=(String(modelType)==='fixed'?0:0.1);const betaPriorPrecision=Number.isFinite(Number(betaPriorSD))&&Number(betaPriorSD)>0?1/(Number(betaPriorSD)*Number(betaPriorSD)):0;
 // Adaptive step size for tau2 MH proposal (Haario et al. 2001)
 let tauStepSize=0.3;let adaptAccepted=0;let adaptTotal=0;
 for(let iter=0;iter<nIter;iter++){
-const W=v.map(vi=>1/(vi+tau2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);
-for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}
+const {XtPrecX:XtWX,XtPrecy:XtWy}=this.buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p);
 if(betaPriorPrecision>0)for(let j=0;j<p;j++)XtWX[j][j]+=betaPriorPrecision;
 try{const vcov=Matrix.inverse(XtWX);const mean=Matrix.solve(XtWX,XtWy);const L=Matrix.cholesky(vcov);const z=Array(p).fill(0).map(()=>rr.rnorm(0,1));beta=mean.map((m,i)=>m+L[i].reduce((s,l,j)=>s+l*z[j],0))}catch(e){console.warn('MCMC iteration',iter,'matrix error:',e.message)}
 const logLikCurrBase=this.logLikelihood(X,y,v,beta,tau2,n,p,likelihoodSpec);

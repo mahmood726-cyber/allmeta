@@ -23,7 +23,7 @@
 | ----------------------------------------- | ------ | ------ | -------- |
 | 3 apps still load plotly/jspdf/xlsx from CDN (V9-E07) | "fully offline" claim is false on those apps | ~3 MB vendor + SRI | **P0** |
 | No cross-tool data interchange format     | User retypes data 5× across extract → pool → influence → bias → forest | 1-2 days | **P0** |
-| ~~Multi-arm τ²/2 off-diagonal in nma-pro-v2 Bayesian path (V9-01b)~~ | ✅ Resolved 2026-05-24: `multiArmCorrection` helper adds the full multivariate Σ = V + Σ_RE (diag=τ², off=τ²/2) log-likelihood correction in the MH τ² step. β posterior draw still uses the diagonal precision (a second-order approximation; documented in code). | — | — |
+| ~~Multi-arm τ²/2 off-diagonal in nma-pro-v2 Bayesian path (V9-01b)~~ | ✅ Resolved 2026-05-24: `multiArmCorrection` helper adds the full multivariate Σ = V + Σ_RE (diag=τ², off=τ²/2) log-likelihood correction in the MH τ² step, AND `buildBlockPrecision` builds the full block-precision X' Σ⁻¹ X for the β posterior draw (Lu & Ades 2004). Singletons fall through to scalar weights so 2-arm networks are bit-exact. | — | — |
 | No citation infrastructure (no CITATION.cff, no DOI) | Hub uncitable in academic submissions | 1 hr | **P0** |
 | Forced-colors mode not in shared CSS (V9-A11Y-11) | Windows High Contrast users see broken contrast | half day | **P1** |
 | HKSJ in webr-validator ignores `test=knha` (V9-02) | Slight CI undercoverage | 1 hr | **P1** |

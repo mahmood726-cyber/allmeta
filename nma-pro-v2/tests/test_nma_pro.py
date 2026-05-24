@@ -220,3 +220,22 @@ def test_v9_01b_analyze_passes_V_and_studyIds_into_runChain():
     assert re.search(
         r"runChain\([^)]*V_full,studyIds\)", content
     ), "runChain call site does not pass V_full + studyIds"
+
+
+def test_v9_01b_buildBlockPrecision_used_in_runChain():
+    """The β posterior draw must use the block-precision builder so X' Σ⁻¹ X
+    accounts for within-multi-arm correlation (Lu & Ades 2004), not the
+    diagonal X' W X approximation. Singletons fall through to the scalar
+    weights path inside the helper so 2-arm-only networks stay bit-exact."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    assert "buildBlockPrecision(" in content, "buildBlockPrecision helper missing"
+    # The runChain inner loop must consume the helper.
+    assert re.search(
+        r"buildBlockPrecision\(X,y,v,V,studyIds,tau2,n,p\)", content
+    ), "runChain does not call buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p)"
+    # And the singleton branch must keep the scalar weight path so 2-arm
+    # networks have NO numerical drift from the old code path.
+    assert re.search(
+        r"if\s*\(\s*k\s*===\s*1\s*\)", content
+    ), "buildBlockPrecision does not short-circuit singleton clusters"
