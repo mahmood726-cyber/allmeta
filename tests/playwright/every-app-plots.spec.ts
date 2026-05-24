@@ -62,6 +62,7 @@ const LOAD_ONLY_APPS: { path: string; skip?: string }[] = [
   { path: "/quadas-2/" },
   { path: "/rct-extractor/" },                     // probes :8000; benign
   { path: "/revman-importer/" },
+  { path: "/rve-meta/" },
   { path: "/rob-traffic-light/" },
   { path: "/rob2/" },
   { path: "/robins-e/" },

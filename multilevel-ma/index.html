@@ -58,6 +58,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/stats-qt.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -258,9 +259,10 @@
       var qStar = wFinal.reduce(function (acc, w, i) { return acc + w * (rows[i].te - mu) * (rows[i].te - mu); }, 0) / dfHK;
       var qFloored = Math.max(1, qStar);
       var seMuHK = Math.sqrt(qFloored / swFinal);
-      // t-quantile at 0.975 — small-df table fallback.
-      var T = [12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
-      var tCrit = dfHK >= 1 && dfHK <= 30 ? T[dfHK - 1] : 1.96;
+      // t-quantile at 0.975 via exact Hill 1970 qt (handles any df).
+      // Old code used a lookup table df 1..30 + z=1.96 fallback, which
+      // silently introduced ~4% CI undercoverage for J>31 clusters.
+      var tCrit = (window.AlmStats && AlmStats.qt) ? AlmStats.qt(0.975, dfHK) : 1.96;
 
       return { mu: mu, seMu: seMu, seMuHK: seMuHK, tCrit: tCrit, tau2_study: tau2_study, tau2_within: tau2_within, weights: wFinal, I2_study: I2_study, I2_within: I2_within, studies: studies, J: J };
     }

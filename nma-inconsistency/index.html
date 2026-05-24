@@ -83,7 +83,18 @@ C, D, -0.35, 0.14
 A, D, -0.48, 0.14</textarea>
         <span class="hint">Multiple rows per comparison allowed.</span>
       </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Run tests</button>
+      <label style="margin-top:0.5rem;display:block">
+        <span style="font-size:0.85rem;color:var(--muted)">Model</span>
+        <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;">
+          <option value="FE">Fixed-effect (common τ²=0)</option>
+          <option value="PM">Random-effects (Paule-Mandel τ²)</option>
+          <option value="DL">Random-effects (DerSimonian-Laird τ²)</option>
+        </select>
+        <span class="hint" style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.25rem">
+          RE models pool heterogeneity across designs (shared τ²) before testing inconsistency — addresses the "FE Q-statistics inflated under heterogeneity" caveat below.
+        </span>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run tests</button>
     </section>
     <section class="panel">
       <h2>Node-split per comparison</h2>
@@ -99,7 +110,7 @@ A, D, -0.48, 0.14</textarea>
     </section>
   </main>
   <footer>
-    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Caveat:</strong> this tool uses fixed-effect weights (no shared τ²) for both consistency and inconsistency models. For heterogeneous networks the Q-statistics are inflated and the LR test is anti-conservative — for random-effects inconsistency use full R <code>netmeta</code>. Recommended k≥5 per design.
+    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-05-24):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. Recommended k≥5 per design.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -144,15 +155,22 @@ A, D, -0.48, 0.14</textarea>
     }
     function pz(z) { return 2 * (1 - pnorm(Math.abs(z))); }
 
-    // FE inverse-variance pool of a set of rows
-    function fePool(rows) {
-      const w = rows.map(r => 1 / (r.se * r.se));
+    // Inverse-variance pool of a set of rows. tau2 ≥ 0 enables RE weights;
+    // default (omitted) is FE (τ²=0).
+    function ivPool(rows, tau2) {
+      const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
+      const w = rows.map(r => 1 / (r.se * r.se + t2));
       const sw = w.reduce((a, b) => a + b, 0);
       const mean = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
       return { mean, se: Math.sqrt(1 / sw), k: rows.length };
     }
+    // Backward-compat alias for any existing test that references fePool.
+    function fePool(rows) { return ivPool(rows, 0); }
 
-    function fitNMA(rows, refTrt) {
+    function fitNMA(rows, refTrt, tau2) {
+      // V9-06 RE option: callers may pass tau2 ≥ 0 to inflate weights to
+      // w_i = 1/(SE² + τ²). Defaults to tau2=0 (FE) for backward compat.
+      const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
       const trtSet = new Set();
       rows.forEach(r => { trtSet.add(r.A); trtSet.add(r.B); });
       let trts = [...trtSet].sort();
@@ -162,7 +180,7 @@ A, D, -0.48, 0.14</textarea>
       const nBasic = trts.length - 1;
       const X = zeros(rows.length, nBasic);
       const y = rows.map(r => r.te);
-      const w = rows.map(r => 1 / (r.se * r.se));
+      const w = rows.map(r => 1 / (r.se * r.se + t2));
       rows.forEach((r, i) => { const iA = idx[r.A], iB = idx[r.B]; if (iA > 0) X[i][iA - 1] = 1; if (iB > 0) X[i][iB - 1] = -1; });
       const Xt = transpose(X);
       const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
@@ -170,17 +188,49 @@ A, D, -0.48, 0.14</textarea>
       const XtWy = matVec(XtW, y);
       const cov = invert(XtWX);
       const beta = matVec(cov, XtWy);
-      // residual deviance (contribution of each observation)
       const fit = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
       const dev = y.map((yi, i) => w[i] * (yi - fit[i]) ** 2);
       const Q = dev.reduce((a, b) => a + b, 0);
       const df = Math.max(0, rows.length - nBasic);
-      return { trts, idx, X, y, w, beta, cov, Q, df, dev, nBasic, refTrt };
+      return { trts, idx, X, y, w, beta, cov, Q, df, dev, nBasic, refTrt, tau2: t2 };
+    }
+
+    // V9-06: τ² estimators using the consistency-model residuals. Caller
+    // re-fits fitNMA with the estimated τ² to get RE-weighted estimates.
+    function tau2_DL(rows) {
+      const fit0 = fitNMA(rows, null, 0);
+      const sumW = fit0.w.reduce((a, b) => a + b, 0);
+      const sumW2 = fit0.w.reduce((a, b) => a + b * b, 0);
+      const denom = sumW - sumW2 / sumW;
+      if (denom <= 1e-12) return 0;
+      return Math.max(0, (fit0.Q - fit0.df) / denom);
+    }
+    function tau2_PM(rows) {
+      // Iterative Paule-Mandel: find τ² s.t. weighted Q(τ²) = df. Bracket via
+      // monotone bisection (Q is monotone-decreasing in τ²).
+      const fit0 = fitNMA(rows, null, 0);
+      if (fit0.df <= 0) return 0;
+      const Qat = (t2) => fitNMA(rows, null, t2).Q;
+      if (Qat(0) <= fit0.df) return 0;
+      let lo = 0, hi = Math.max(0.001, fit0.Q / fit0.df);
+      // expand until Q(hi) ≤ df
+      for (let g = 0; g < 50 && Qat(hi) > fit0.df; g++) hi *= 2;
+      for (let i = 0; i < 60; i++) {
+        const mid = 0.5 * (lo + hi);
+        if (Qat(mid) > fit0.df) lo = mid; else hi = mid;
+        if (hi - lo < 1e-10) break;
+      }
+      return 0.5 * (lo + hi);
+    }
+    function estimateTau2(rows, method) {
+      if (method === "DL") return tau2_DL(rows);
+      if (method === "PM") return tau2_PM(rows);
+      return 0;  // FE
     }
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
-    function nodeSplit(rows, refTrt) {
+    function nodeSplit(rows, refTrt, tau2) {
       const pairs = new Set();
       for (const r of rows) { pairs.add([r.A, r.B].sort().join("|")); }
       const results = [];
@@ -195,7 +245,7 @@ A, D, -0.48, 0.14</textarea>
         if (direct.length === 0 || others.length === 0) continue;
         let ind = null;
         try {
-          const fit = fitNMA(others, a);
+          const fit = fitNMA(others, a, tau2);
           const iB = fit.idx[b];
           if (iB == null || iB < 1) continue;
           // fitNMA β is the (b vs ref-a) contrast; `direct` is normalised to
@@ -206,7 +256,7 @@ A, D, -0.48, 0.14</textarea>
           const se = Math.sqrt(fit.cov[iB - 1][iB - 1]);
           ind = { mean: -est, se };
         } catch (e) { continue; }
-        const dirPool = fePool(direct);
+        const dirPool = ivPool(direct, tau2);
         if (!ind) continue;
         const diff = dirPool.mean - ind.mean;
         const seDiff = Math.sqrt(dirPool.se * dirPool.se + ind.se * ind.se);
@@ -223,32 +273,29 @@ A, D, -0.48, 0.14</textarea>
       return results;
     }
 
-    function dbt(rows) {
+    function dbt(rows, tau2) {
       // Design-by-treatment inconsistency test (Higgins 2012): compare the consistency model
       // (basic-parameter contrasts only) against a full-design model that gives each design
       // its own contrast parameter. Q_cons − Q_full ~ χ² on df_cons − df_full.
+      // V9-06: tau2 ≥ 0 uses RE-inflated weights w_i = 1/(SE² + τ²) for both models.
+      const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
       try {
-        const cons = fitNMA(rows);
-        // Tag each row with a design label (sorted pair of treatments) for the inconsistency fit.
+        const cons = fitNMA(rows, null, t2);
         const tagged = rows.map(r => ({ ...r, __design: [r.A, r.B].sort().join("|") }));
         const designs = [...new Set(tagged.map(r => r.__design))];
-        // If there are no more designs than basic parameters, the inconsistency model is not
-        // identifiable — report Q_cons but label the comparison as inestimable.
         if (designs.length <= cons.nBasic) {
           return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model unidentifiable (designs ≤ basic parameters)" };
         }
-        // Full-design fit: per-design intercept (dummy columns). Use FE weights (no shared τ²).
         const n = tagged.length;
         const nCols = designs.length;
         const X = Array.from({ length: n }, () => Array(nCols).fill(0));
         tagged.forEach((r, i) => { X[i][designs.indexOf(r.__design)] = 1; });
-        // Signs: flip if treatment order within design is reversed (A-B vs B-A)
         tagged.forEach((r, i) => {
           const [a, b] = [r.A, r.B].sort();
           if (r.A !== a) X[i][designs.indexOf(r.__design)] = -1;
         });
         const y = tagged.map(r => r.te);
-        const w = tagged.map(r => 1 / (r.se * r.se));
+        const w = tagged.map(r => 1 / (r.se * r.se + t2));
         const Xt = X[0].map((_, j) => X.map(row => row[j]));
         const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
         // XtWX
@@ -317,7 +364,10 @@ A, D, -0.48, 0.14</textarea>
     function run() {
       const rows = parse(document.getElementById("src").value);
       if (rows.length < 3) return;
-      const ns = nodeSplit(rows);
+      const modelSel = document.getElementById("f-model");
+      const method = modelSel ? modelSel.value : "FE";
+      const tau2 = estimateTau2(rows, method);
+      const ns = nodeSplit(rows, undefined, tau2);
       const body = document.getElementById("ns-body");
       const __bodyParts = [""];
       for (const r of ns) {
@@ -331,10 +381,12 @@ A, D, -0.48, 0.14</textarea>
           <td>${fmt(r.p, 3)}</td>
           <td><span class="chip ${flag}">${label}</span></td></tr>`);
       }
-      const g = dbt(rows);
+      const g = dbt(rows, tau2);
+      const tauTxt = method === "FE" ? "fixed-effect (τ²=0)" : `${method} τ² = ${fmt(tau2, 4)}`;
       document.getElementById("dbt").innerHTML = `
         <p>Design-by-treatment Q = <code>${fmt(g.Q, 2)}</code>, df = <code>${g.df}</code>, p = <code>${fmt(g.p, 3)}</code>.
-        <span class="chip ${g.p < 0.05 ? 'incon' : 'cons'}">${g.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency"}</span></p>`;
+        <span class="chip ${g.p < 0.05 ? 'incon' : 'cons'}">${g.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency"}</span></p>
+        <p style="font-size:0.83rem;color:var(--muted);margin-top:0.3rem">Model: ${tauTxt}.</p>`;
       drawNS(ns);
       body.innerHTML = __bodyParts.join("");
 

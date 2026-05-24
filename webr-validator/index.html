@@ -95,6 +95,7 @@
     }
   </script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/stats-qt.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -305,17 +306,18 @@
       const Q0 = wsum(studies, 0).Q;
       const df = k-1;
       const I2 = df > 0 ? Math.max(0, 100*(Q0-df)/Q0) : 0;
-      // V10-02: when test="knha", apply HKSJ q-floor + t_{k-1} so the
-      // browser-side CI matches metafor's HKSJ output, not the z-CI.
+      // V10-02 + 2026-05-24 fix: when test="knha", apply HKSJ q-floor +
+      // t_{k-1} via the exact qt (Hill 1970) from shared/stats-qt.js.
+      // The old lookup table only covered df 1..30 then silently fell back
+      // to z=1.96, introducing ~4% CI undercoverage for k>31 (rule from
+      // advanced-stats.md: "HKSJ df: Use qt(alpha/2, k-1) NOT qnorm").
       let ci_lb, ci_ub, se_used = se;
       if (test === "knha" && df > 0) {
         let q = 0;
         for (const st of studies) { const w = 1/(st.v + tau2); q += w * (st.est - s.mu) * (st.est - s.mu); }
         const qStar = Math.max(1, q / df);
         const seHK = Math.sqrt(qStar / s.sw);
-        // t-quantile at 0.975, df=k-1, table for df 1..30 then z fallback.
-        const T = [12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
-        const tCrit = (df >= 1 && df <= 30) ? T[df - 1] : 1.96;
+        const tCrit = (window.AlmStats && AlmStats.qt) ? AlmStats.qt(0.975, df) : 1.96;
         ci_lb = s.mu - tCrit * seHK;
         ci_ub = s.mu + tCrit * seHK;
         se_used = seHK;

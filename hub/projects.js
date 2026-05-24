@@ -25,6 +25,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["revman", "cochrane", "rm5", "rm6", "import", "extraction"]
   },
   {
+    name: "RVE Meta-Regression",
+    featured: true,
+    folder: "allmeta/rve-meta",
+    path: "./rve-meta/",
+    collection: "new",
+    mode: "file",
+    category: "Pairwise MA",
+    summary: "Robust Variance Estimation (Hedges-Tipton-Johnson 2010 CORR working model + CR1 small-sample correction). Cluster-robust meta-regression for dependent effect sizes (multiple outcomes per study, multi-arm trials, repeated measures) — coefficient SEs are correct even when the within-cluster correlation ρ is misspecified.",
+    note: "Closes the inverse-variance underestimate that breaks standard meta-regression when effects are nested. Parity target: robumeta::robu(model='CORR').",
+    tags: ["rve", "robumeta", "cluster-robust", "meta-regression", "dependent-effects", "hedges-tipton"]
+  },
+  {
     name: "EvidenceOS",
     featured: true,
     folder: "allmeta/evidenceos",

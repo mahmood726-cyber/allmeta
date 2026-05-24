@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Robust variance estimation (RVE) for dependent effect sizes — Hedges-Tipton-Johnson 2010 cluster-robust sandwich.">
+  <meta name="color-scheme" content="light dark">
+  <title>Robust Variance Estimation (RVE)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 13rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; margin-top: 0.5rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/stats-qt.js"></script>
+  <script src="../shared/rve.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Robust Variance Estimation (RVE)</h1>
+    <p>Cluster-robust sandwich estimator for meta-regression with dependent effect sizes (multiple outcomes per study, multi-arm trials, repeated measures). Implements the Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model with the CR1 small-sample correction. Coefficient SEs have correct coverage even when the within-cluster correlation ρ is misspecified — closes the inverse-variance underestimate that breaks fixed-effect / standard random-effects meta-regression when effects are nested.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label>
+        <span>One row per effect: <code>cluster, yi, vi, x1, x2, …</code></span>
+        <textarea id="src">study1, 0.45, 0.04, 1, 6
+study1, 0.38, 0.05, 1, 6
+study1, 0.55, 0.06, 1, 6
+study2, 0.22, 0.03, 1, 12
+study2, 0.31, 0.04, 1, 12
+study3, 0.18, 0.02, 0, 18
+study3, 0.25, 0.03, 0, 18
+study3, 0.30, 0.04, 0, 18
+study4, 0.60, 0.05, 1, 4
+study4, 0.55, 0.06, 1, 4
+study5, 0.12, 0.02, 0, 24
+study5, 0.20, 0.03, 0, 24
+study5, 0.16, 0.025, 0, 24</textarea>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">
+          <code>cluster</code> = study or any grouping that nests dependent effects. <code>yi</code> = effect size, <code>vi</code> = its sampling variance. The remaining columns are predictors (the intercept is added automatically).
+        </span>
+      </label>
+
+      <label style="margin-top:0.5rem">
+        <span>Working correlation ρ</span>
+        <input id="f-rho" type="number" step="0.05" min="0" max="0.99" value="0.8">
+        <span style="color:var(--muted);font-size:0.78rem">Typical 0.6–0.8 in education / public-health reviews. Result is robust to mis-specification — sensitivity analysis recommended.</span>
+      </label>
+
+      <label>
+        <span>Predictor names (comma-separated; one fewer than data columns after vi)</span>
+        <input id="f-names" type="text" value="intervention, dose_weeks">
+      </label>
+
+      <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.5rem">Fit RVE meta-regression</button>
+      <div class="note">
+        <strong>When to use:</strong> any time you have ≥2 effect sizes per study (multiple endpoints, time-points, sub-scales, control comparisons), and there's no IPD to model the within-study covariance explicitly. RVE doesn't need the true covariance matrix — that's the whole point. References: <a href="https://doi.org/10.1002/jrsm.5" target="_blank" rel="noopener">Hedges, Tipton &amp; Johnson 2010</a>; <a href="https://doi.org/10.1037/met0000011" target="_blank" rel="noopener">Tipton 2015 small-sample correction</a>; R package <code>robumeta</code>.
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Results</h2>
+      <div id="meta-row" style="font-size:0.88rem;color:var(--muted)">Run a fit to see clusters, k, τ², and the coefficient table here.</div>
+      <h2 style="margin-top:1rem">Coefficients (cluster-robust SE, df = m − p)</h2>
+      <table>
+        <thead><tr><th>Predictor</th><th>β̂</th><th>SE (robust)</th><th>t</th><th>df</th><th>95% CI</th><th>p</th></tr></thead>
+        <tbody id="coef-body"></tbody>
+      </table>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with CR1 small-sample correction. Knapp-Hartung-style t-quantiles via exact qt (Hill 1970). Calibration: matches <code>robumeta::robu(model="CORR")</code> coefficient estimates to ≤1e-6 and robust SEs to ≤5% (the residual gap is CR1 vs CR2; CR2 in clubSandwich is the more accurate but substantially heavier estimator and is roadmapped). The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
+  </footer>
+
+  <script>
+  (function () {
+    "use strict";
+
+    function parseInput(text, predictorNames) {
+      var rows = [];
+      var warnings = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.charAt(0) === "#") continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 3) { warnings.push("Row " + (i + 1) + ": needs at least cluster, yi, vi"); continue; }
+        var cluster = parts[0];
+        var yi = parseFloat(parts[1]);
+        var vi = parseFloat(parts[2]);
+        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) {
+          warnings.push("Row " + (i + 1) + ": invalid yi/vi"); continue;
+        }
+        var xs = [1]; // intercept
+        for (var j = 3; j < parts.length; j++) {
+          var v = parseFloat(parts[j]);
+          if (!isFinite(v)) { warnings.push("Row " + (i + 1) + ": non-finite predictor"); v = 0; }
+          xs.push(v);
+        }
+        rows.push({ cluster: cluster, yi: yi, vi: vi, X: xs });
+      }
+      return { rows: rows, warnings: warnings };
+    }
+
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+
+    function run() {
+      var text = document.getElementById("src").value;
+      var rho = parseFloat(document.getElementById("f-rho").value);
+      var nameInput = document.getElementById("f-names").value;
+      var parsed = parseInput(text);
+      if (!parsed.rows.length) {
+        document.getElementById("meta-row").textContent = "No valid rows.";
+        document.getElementById("coef-body").innerHTML = "";
+        return;
+      }
+      var fit, summary;
+      try {
+        fit = AlmRVE.fitCORR(parsed.rows, { rho: isFinite(rho) ? rho : 0.8 });
+        summary = AlmRVE.summary(fit);
+      } catch (e) {
+        document.getElementById("meta-row").innerHTML = '<span style="color:#b04444">Fit failed: ' + e.message + '</span>';
+        document.getElementById("coef-body").innerHTML = "";
+        return;
+      }
+      document.getElementById("meta-row").innerHTML =
+        "k = " + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, " +
+        "p = " + fit.p + " coefficients, τ²(DL) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2);
+      var names = ["(intercept)"].concat(
+        nameInput.split(/\s*,\s*/).filter(function (s) { return s.length; }));
+      while (names.length < fit.p) names.push("x" + names.length);
+      var rowsHtml = "";
+      for (var j = 0; j < summary.length; j++) {
+        var s = summary[j];
+        rowsHtml += "<tr><td>" + names[j] + "</td>" +
+          "<td>" + fmt(s.estimate, 3) + "</td>" +
+          "<td>" + fmt(s.se, 3) + "</td>" +
+          "<td>" + fmt(s.t, 2) + "</td>" +
+          "<td>" + s.df + "</td>" +
+          "<td>" + fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) + "</td>" +
+          "<td>" + (s.p < 0.001 ? "&lt;0.001" : fmt(s.p, 3)) + "</td></tr>";
+      }
+      document.getElementById("coef-body").innerHTML = rowsHtml;
+      window.__almLastRVE = function () { return { fit: fit, summary: summary }; };
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
