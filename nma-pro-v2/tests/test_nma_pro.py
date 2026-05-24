@@ -123,3 +123,50 @@ def test_retrofit_audit_has_present_good_entries():
         "RETROFIT_AUDIT.md has no 'present-good' entries — "
         "do-no-harm classification may be missing"
     )
+
+
+# ---------------------------------------------------------------------------
+# V9-01 — multi-arm random-effects covariance (τ²/2 off-diagonal for shared
+# control). advanced-stats.md: "Multi-arm trials: Off-diagonal covariance =
+# τ²/2 (shared control)". The implementation lives in fitGLS inside the
+# monolith; these structural assertions verify the contract is wired up.
+# ---------------------------------------------------------------------------
+
+def test_v9_01_studyids_tracked_in_buildmatrices():
+    """buildMatrices must emit studyIds so fitGLS can detect contrasts that
+    share a multi-arm trial. Drift here breaks the off-diagonal correction."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    # The studyIds array must be derived from study names and returned.
+    assert "studyIds" in content, "studyIds tracking absent from buildMatrices"
+    assert re.search(
+        r"studyIds\s*=\s*studies\.map", content
+    ), "studyIds is not derived from the studies array"
+
+
+def test_v9_01_tau2_over_2_offdiagonal_in_fitGLS():
+    """fitGLS must set Σ off-diagonals to τ²/2 for rows sharing a studyId,
+    and 0 otherwise. This is the V9-01 multi-arm shared-control correction."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    # The diagonal must be τ².
+    assert re.search(r"if\s*\(\s*i\s*===?\s*j\s*\)\s*reCov\s*=\s*tau2", content), (
+        "diagonal heterogeneity contribution Σii = τ² not detected in fitGLS"
+    )
+    # The off-diagonal multi-arm correction must be τ²/2.
+    assert re.search(
+        r"studyIds\[i\]\s*===\s*studyIds\[j\][^\n]*reCov\s*=\s*tau2\s*/\s*2",
+        content,
+    ), "off-diagonal Σij = τ²/2 (multi-arm shared control) not detected in fitGLS"
+
+
+def test_v9_01_within_study_covariance_in_buildmatrices():
+    """buildMatrices must build the within-study sampling covariance for
+    OR/RR/HR multi-arm trials (shared-arm variance) — V_ij ≠ 0 when rows
+    share an arm. The clipping safeguard 0.99·√(v_i v_j) must be present."""
+    monolith = APP_DIR / "nma-pro-v8.0.html"
+    content = monolith.read_text(encoding="utf-8", errors="replace")
+    assert "byStudy" in content, "byStudy grouping (shared-arm cov source) missing"
+    assert re.search(
+        r"0\.99\s*\*\s*Math\.sqrt", content
+    ), "shared-arm covariance clip 0.99·√(v_i v_j) missing in buildMatrices"

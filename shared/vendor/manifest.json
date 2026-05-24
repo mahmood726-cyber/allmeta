@@ -1,0 +1,47 @@
+{
+  "chart-4.4.1.umd.min.js": {
+    "size": 205399,
+    "sri": "sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4",
+    "url": "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+  },
+  "d3-7.9.0.min.js": {
+    "size": 279706,
+    "sri": "sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i",
+    "url": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
+  },
+  "docx-7.1.0.js": {
+    "size": 389231,
+    "sri": "sha384-lGLqE+x3VglMuTcmrdpm32ZSDEh1a93PZ+jHuVZ8jG4DayHt4qNBJtmwL76C855e",
+    "url": "https://cdn.jsdelivr.net/npm/docx@7.1.0/build/index.js"
+  },
+  "html2canvas-1.4.1.min.js": {
+    "size": 198689,
+    "sri": "sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H",
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+  },
+  "jspdf-2.5.1.umd.min.js": {
+    "size": 364463,
+    "sri": "sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk",
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  },
+  "jszip-3.10.1.min.js": {
+    "size": 97630,
+    "sri": "sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG",
+    "url": "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
+  },
+  "plotly-2.27.0.min.js": {
+    "size": 3598158,
+    "sri": "sha384-Hl48Kq2HifOWdXEjMsKo6qxqvRLTYqIGbvlENBmkHAxZKIGCXv43H6W1jA671RzC",
+    "url": "https://cdn.plot.ly/plotly-2.27.0.min.js"
+  },
+  "plotly-2.35.0.min.js": {
+    "size": 4513521,
+    "sri": "sha384-TAqBiqItCr14J//ULLD26bSQ8Z6uPnlisSwkvWaqP8SCSiDkgR8jNknuAv8uxSOT",
+    "url": "https://cdn.plot.ly/plotly-2.35.0.min.js"
+  },
+  "xlsx-0.18.5.full.min.js": {
+    "size": 881727,
+    "sri": "sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw",
+    "url": "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+  }
+}

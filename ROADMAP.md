@@ -23,7 +23,7 @@
 | ----------------------------------------- | ------ | ------ | -------- |
 | 3 apps still load plotly/jspdf/xlsx from CDN (V9-E07) | "fully offline" claim is false on those apps | ~3 MB vendor + SRI | **P0** |
 | No cross-tool data interchange format     | User retypes data 5× across extract → pool → influence → bias → forest | 1-2 days | **P0** |
-| Multi-arm τ²/2 off-diagonal missing in nma-pro-v2 (V9-01) | Methodological error in shared-control NMAs | half day | **P0** |
+| Multi-arm τ²/2 off-diagonal in nma-pro-v2 Bayesian path (V9-01b) | Frequentist path (`fitGLS`) is correct (verified 2026-05-24 with regression tests); MCMC path still uses diagonal-only RE covariance. Posterior SEs slightly tight for multi-arm-heavy networks. | 1 day | **P1** |
 | No citation infrastructure (no CITATION.cff, no DOI) | Hub uncitable in academic submissions | 1 hr | **P0** |
 | Forced-colors mode not in shared CSS (V9-A11Y-11) | Windows High Contrast users see broken contrast | half day | **P1** |
 | HKSJ in webr-validator ignores `test=knha` (V9-02) | Slight CI undercoverage | 1 hr | **P1** |

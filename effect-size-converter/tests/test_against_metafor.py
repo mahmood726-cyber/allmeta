@@ -45,7 +45,10 @@ def _run_r():
         errors="replace", timeout=60,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"Rscript failed (exit {proc.returncode}):\n{proc.stderr}")
+        stderr = proc.stderr or ""
+        if "there is no package called" in stderr:
+            pytest.skip("R package missing on this host: " + stderr.strip().splitlines()[0])
+        raise RuntimeError(f"Rscript failed (exit {proc.returncode}):\n{stderr}")
     return json.loads(proc.stdout.strip().splitlines()[-1])
 
 

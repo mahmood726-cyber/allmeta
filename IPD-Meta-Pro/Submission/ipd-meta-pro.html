@@ -13,21 +13,15 @@
 
     
 
-    <!-- CDN Dependencies with offline cache fallback -->
+    <!-- V9-E07: dependencies vendored to ../../shared/vendor/ with SRI. -->
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+    <script src="../../shared/vendor/xlsx-0.18.5.full.min.js"
+            integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw"
+            crossorigin="anonymous"></script>
 
-            crossorigin="anonymous"
-
-            onerror="(async function(){try{if(window.caches){var c=await caches.open('ipd-meta-pro-cdn-v1');var r=await c.match(this.src);if(r){var t=await r.text();var s=document.createElement('script');s.textContent=t;document.head.appendChild(s);console.log('[Offline] XLSX loaded from cache');return;}}}catch(e){}console.warn('[Offline] XLSX unavailable — Excel import/export disabled');window._xlsxUnavailable=true;}).call(this)"></script>
-
-
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-
-            crossorigin="anonymous"
-
-            onerror="(async function(){try{if(window.caches){var c=await caches.open('ipd-meta-pro-cdn-v1');var r=await c.match(this.src);if(r){var t=await r.text();var s=document.createElement('script');s.textContent=t;document.head.appendChild(s);console.log('[Offline] jsPDF loaded from cache');return;}}}catch(e){}console.warn('[Offline] jsPDF unavailable — PDF export disabled');window._jspdfUnavailable=true;}).call(this)"></script>
+    <script src="../../shared/vendor/jspdf-2.5.1.umd.min.js"
+            integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+            crossorigin="anonymous"></script>
 
     <style>:root{--bg-primary:#0a0a0f;--bg-secondary:#12121a;--bg-tertiary:#1a1a25;--bg-card:#15151f;--text-primary:#ffffff;--text-secondary:#a0a0b0;--text-muted:#606070;--accent-primary:#6366f1;--accent-secondary:#8b5cf6;--accent-success:#10b981;--accent-warning:#f59e0b;--accent-danger:#ef4444;--accent-info:#3b82f6;--border-color:#2a2a3a;--gradient-1:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);--gradient-2:linear-gradient(135deg,#3b82f6 0%,#6366f1 100%);--shadow-lg:0 25px 50px -12px rgba(0,0,0,0.5);--shadow-glow:0 0 40px rgba(99,102,241,0.15)}.light-theme{--bg-primary:#f8fafc;--bg-secondary:#ffffff;--bg-tertiary:#f1f5f9;--bg-card:#ffffff;--text-primary:#1e293b;--text-secondary:#475569;--text-muted:#94a3b8;--border-color:#e2e8f0;--shadow-lg:0 25px 50px -12px rgba(0,0,0,0.1);--shadow-glow:0 0 40px rgba(99,102,241,0.1)}
 

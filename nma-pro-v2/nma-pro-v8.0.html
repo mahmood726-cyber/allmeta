@@ -5,7 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NMA Pro v8.1 | Optimized NMA Platform</title>
-<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+<!-- V9-E07: Plotly vendored to ../shared/vendor/ with SRI. -->
+<script src="../shared/vendor/plotly-2.35.0.min.js" integrity="sha384-TAqBiqItCr14J//ULLD26bSQ8Z6uPnlisSwkvWaqP8SCSiDkgR8jNknuAv8uxSOT" crossorigin="anonymous"></script>
 <style>
 :root{--primary-950:#030712;--primary-900:#111827;--primary-800:#1f2937;--primary-700:#374151;--primary-600:#4b5563;--primary-500:#6b7280;--primary-400:#9ca3af;--primary-300:#d1d5db;--primary-200:#e5e7eb;--primary-100:#f3f4f6;--accent-600:#0891b2;--accent-500:#06b6d4;--accent-400:#22d3ee;--accent-glow:rgba(6,182,212,0.3);--secondary-600:#7c3aed;--secondary-500:#8b5cf6;--tertiary-500:#ec4899;--success-500:#10b981;--success-400:#34d399;--success-bg:rgba(16,185,129,0.12);--warning-500:#f59e0b;--warning-400:#fbbf24;--warning-bg:rgba(245,158,11,0.12);--danger-500:#ef4444;--danger-400:#f87171;--danger-bg:rgba(239,68,68,0.12);--info-500:#3b82f6;--info-400:#60a5fa;--info-bg:rgba(59,130,246,0.12);--surface-ground:var(--primary-950);--surface-base:var(--primary-900);--surface-raised:var(--primary-800);--surface-overlay:var(--primary-700);--text-primary:var(--primary-100);--text-secondary:var(--primary-400);--text-tertiary:var(--primary-500);--text-accent:var(--accent-400);--border-subtle:rgba(156,163,175,0.1);--border-default:rgba(156,163,175,0.2);--border-strong:rgba(156,163,175,0.3);--border-focus:var(--accent-500);--font-display:'Outfit',sans-serif;--font-mono:'IBM Plex Mono',monospace;--text-xs:0.6875rem;--text-sm:0.8125rem;--text-base:0.9375rem;--text-lg:1.0625rem;--text-xl:1.25rem;--text-2xl:1.5rem;--text-3xl:2rem;--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--radius-xl:16px;--radius-full:9999px;--shadow-sm:0 1px 2px rgba(0,0,0,0.5);--shadow-md:0 4px 16px rgba(0,0,0,0.4);--shadow-lg:0 12px 40px rgba(0,0,0,0.5);--shadow-glow:0 0 32px var(--accent-glow);--ease-out:cubic-bezier(0.16,1,0.3,1);--transition-fast:150ms var(--ease-out);--z-sticky:200;--z-modal:300}
 [data-theme="light"]{--surface-ground:#f8fafc;--surface-base:#ffffff;--surface-raised:#ffffff;--surface-overlay:#f1f5f9;--text-primary:var(--primary-800);--text-secondary:var(--primary-600);--text-tertiary:var(--primary-500);--text-accent:var(--accent-600);--border-subtle:rgba(30,41,59,0.06);--border-default:rgba(30,41,59,0.12);--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 4px 16px rgba(0,0,0,0.08)}
@@ -573,6 +574,16 @@ validNames.push(cov)
 });
 return{X:Xout,p:p+validNames.length,covariateNames:validNames}
 },
+// V9-01b (Bayesian): the MCMC chain below uses a per-row Gaussian
+// likelihood with variance v_i + τ², treating contrasts as independent
+// across rows. For multi-arm trials whose rows share a control arm, the
+// proper likelihood is MULTIVARIATE — Σ = V + Σ_RE where V already carries
+// the within-study sampling covariance (built in buildMatrices) and the
+// off-diagonals of Σ_RE are τ²/2 for rows sharing a study (the frequentist
+// fitGLS above implements this). Until the MCMC is reworked to a full
+// multivariate Gaussian, posterior SEs for multi-arm-rich networks can be
+// slightly tight. Frequentist (PM-GLS) mode in this app already applies
+// the correction; prefer it for multi-arm-heavy networks.
 runChain(X,y,v,n,p,nIter,priorTau,rng,modelType='random',betaPriorSD=null,likelihoodSpec={type:'normal',studentTdf:7},burnin=0){
 const chain={beta:[],tau2:[],deviance:[],tauAccepted:0,tauProposed:0,acceptanceRate:null};
 const rr=(rng&&typeof rng.random==='function'&&typeof rng.rnorm==='function')?rng:TreatmentRanking.createSeededRNG(123456789);let beta=Array(p).fill(0),tau2=(String(modelType)==='fixed'?0:0.1);const betaPriorPrecision=Number.isFinite(Number(betaPriorSD))&&Number(betaPriorSD)>0?1/(Number(betaPriorSD)*Number(betaPriorSD)):0;
