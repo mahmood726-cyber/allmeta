@@ -9,9 +9,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/tsa/';
+const APP_URL = 'http://localhost:8088/tsa/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/tsa/tests/fixtures/tsa-oracle.json', 'utf-8'));
+  new URL('../../../tsa/tests/fixtures/tsa-oracle.json', import.meta.url), 'utf-8'));
 const TOL = 1e-6;
 
 test.describe('tsa', () => {
@@ -23,7 +23,7 @@ test.describe('tsa', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almTsaCompute === 'function',
       { timeout: 10_000 });
     const h1 = (await page.locator('h1').first().textContent()
@@ -33,7 +33,7 @@ test.describe('tsa', () => {
   });
 
   test('RIS / cumulative-Z / O\'Brien-Fleming R-parity', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almTsaCompute === 'function', { timeout: 10_000 });
     const r = await page.evaluate((o) => window.__almTsaCompute(o), {

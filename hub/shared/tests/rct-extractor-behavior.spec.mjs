@@ -12,7 +12,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/rct-extractor/';
+const APP_URL = 'http://localhost:8088/rct-extractor/';
 const Z = 1.959963984540054;
 const TOL = 1e-6;
 const ln = Math.log;
@@ -26,7 +26,7 @@ test.describe('rct-extractor', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almRctBus === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -34,7 +34,7 @@ test.describe('rct-extractor', () => {
 
   test('ma-studies-v1 serialization + Cochrane §10.4 mixed-scale guard',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almRctBus === 'function',
         { timeout: 10_000 });
       const bus = (ex) => page.evaluate((x) => window.__almRctBus(x), ex);

@@ -17,9 +17,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/bayesian-mcmc/';
+const APP_URL = 'http://localhost:8088/bayesian-mcmc/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/bayesian-mcmc/tests/fixtures/mcmc-oracle.json', 'utf-8'));
+  new URL('../../../bayesian-mcmc/tests/fixtures/mcmc-oracle.json', import.meta.url), 'utf-8'));
 const OPTS = { iter: 15000, burn: 3000, tauPrior: O.tauPrior, seed: 12345, chains: 2 };
 
 test.describe('bayesian-mcmc', () => {
@@ -31,7 +31,7 @@ test.describe('bayesian-mcmc', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almMCMC === 'function',
       { timeout: 15_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -40,7 +40,7 @@ test.describe('bayesian-mcmc', () => {
   test('seeded reproducibility + bayesmeta MC-band + R-hat/ESS',
     async ({ page }) => {
       test.setTimeout(90_000);
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almMCMC === 'function',
         { timeout: 15_000 });
 

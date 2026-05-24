@@ -10,9 +10,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/bayesian-nma/';
+const APP_URL = 'http://localhost:8088/bayesian-nma/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/bayesian-nma/tests/fixtures/bnma-oracle.json', 'utf-8'));
+  new URL('../../../bayesian-nma/tests/fixtures/bnma-oracle.json', import.meta.url), 'utf-8'));
 const FIXTURE = [
   'A, B, 0.20, 0.10', 'A, B, 0.35, 0.12', 'A, B, 0.28, 0.09',
   'A, C, 0.50, 0.11', 'A, C, 0.42, 0.13',
@@ -30,7 +30,7 @@ test.describe('bayesian-nma', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almBNMA === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -38,7 +38,7 @@ test.describe('bayesian-nma', () => {
 
   test('WLS point estimates (tight) + MVN SUCRA (MC band) vs netmeta',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almBNMA === 'function',
         { timeout: 10_000 });
       const r = await page.evaluate(

@@ -15,9 +15,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/km-reconstructor/';
+const APP_URL = 'http://localhost:8088/km-reconstructor/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/km-reconstructor/tests/fixtures/km-oracle.json', 'utf-8'));
+  new URL('../../../km-reconstructor/tests/fixtures/km-oracle.json', import.meta.url), 'utf-8'));
 
 test.describe('km-reconstructor', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe('km-reconstructor', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almKM === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -36,7 +36,7 @@ test.describe('km-reconstructor', () => {
 
   test('tracks digitized input (tight) + close to full-Guyot (band)',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almKM === 'function',
         { timeout: 10_000 });
       const r = await page.evaluate(

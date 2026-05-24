@@ -9,7 +9,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/prisma-screen/';
+const APP_URL = 'http://localhost:8088/prisma-screen/';
 const TOL = 1e-6;
 
 test.describe('prisma-screen', () => {
@@ -21,7 +21,7 @@ test.describe('prisma-screen', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => window.__almScreen && typeof window.__almScreen.kappa === 'function',
       { timeout: 10_000 });
@@ -29,7 +29,7 @@ test.describe('prisma-screen', () => {
   });
 
   test("Cohen's kappa + effectiveTag + PRISMA counts", async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => window.__almScreen, { timeout: 10_000 });
     const K = (r) => page.evaluate((x) => window.__almScreen.kappa(x), r);

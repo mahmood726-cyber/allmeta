@@ -6,7 +6,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/robins-e/';
+const APP_URL = 'http://localhost:8088/robins-e/';
 
 const L = {
   D1: { '1.1': 'Y', '1.2': 'Y', '1.3': 'Y', '1.4': 'N' },
@@ -43,14 +43,14 @@ test.describe('robins-e', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almRobinsE === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('per-domain D1–D7 + worst-domain overall', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almRobinsE === 'function',
       { timeout: 10_000 });
     const ev = (a) => page.evaluate((x) => window.__almRobinsE(x), a);

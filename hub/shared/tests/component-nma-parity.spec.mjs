@@ -10,9 +10,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/component-nma/';
+const APP_URL = 'http://localhost:8088/component-nma/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/component-nma/tests/fixtures/cnma-oracle.json', 'utf-8'));
+  new URL('../../../component-nma/tests/fixtures/cnma-oracle.json', import.meta.url), 'utf-8'));
 const FIXTURE = [
   'a | control | -0.40 | 0.12', 'b | control | -0.30 | 0.15',
   'a+b | control | -0.65 | 0.13', 'a+c | control | -0.55 | 0.16',
@@ -30,7 +30,7 @@ test.describe('component-nma', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window._almLastCnma === 'function',
       { timeout: 10_000 });
     await expect(page.locator('#forest')).toBeVisible();
@@ -38,7 +38,7 @@ test.describe('component-nma', () => {
   });
 
   test('netmeta::discomb additive R-parity (cnma-tiny)', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almCnmaLoad === 'function', { timeout: 10_000 });
     await page.evaluate((t) => window.__almCnmaLoad(t), FIXTURE);

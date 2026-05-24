@@ -6,7 +6,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/robins-i/';
+const APP_URL = 'http://localhost:8088/robins-i/';
 
 // Per-domain "low" presets (form the all-low baseline study).
 const L = {
@@ -49,14 +49,14 @@ test.describe('robins-i', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almRobinsI === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('per-domain D1–D7 judgments + worst-domain overall', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almRobinsI === 'function',
       { timeout: 10_000 });
     const ev = (a) => page.evaluate((x) => window.__almRobinsI(x), a);

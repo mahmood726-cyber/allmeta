@@ -7,7 +7,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/citation-chaser/';
+const APP_URL = 'http://localhost:8088/citation-chaser/';
 
 test.describe('citation-chaser', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe('citation-chaser', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => window.__almChase && typeof window.__almChase.parseSeedInput === 'function',
       { timeout: 10_000 });
@@ -26,7 +26,7 @@ test.describe('citation-chaser', () => {
   });
 
   test('parseSeedInput + normalize + shortId', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => window.__almChase, { timeout: 10_000 });
     const P = (t) => page.evaluate((x) => window.__almChase.parseSeedInput(x), t);
     const N = (w) => page.evaluate((x) => window.__almChase.normalize(x), w);
@@ -37,7 +37,7 @@ test.describe('citation-chaser', () => {
       'https://openalex.org/W2741809807',
       'w314159',                       // bare, lower-case → upper-cased
       '10.1001/jama.2021.1234',        // bare DOI
-      'https://doi.org/10.5555/AbCd',  // DOI URL → prefix stripped (case kept)
+      'https://doi.org/10.5555/AbCd',  // DOI APP_URL → prefix stripped (case kept)
       '   ',                           // blank → filtered
       'not a citation at all',         // unrecognised → dropped
     ].join('\n'))).toEqual([

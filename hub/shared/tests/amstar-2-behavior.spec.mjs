@@ -10,7 +10,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/amstar-2/';
+const APP_URL = 'http://localhost:8088/amstar-2/';
 
 test.describe('amstar-2', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
@@ -21,14 +21,14 @@ test.describe('amstar-2', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almAmstar === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('Shea 2017 overall-confidence rating', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almAmstar === 'function',
       { timeout: 10_000 });
     const r = (s) => page.evaluate((x) => window.__almAmstar(x), s);

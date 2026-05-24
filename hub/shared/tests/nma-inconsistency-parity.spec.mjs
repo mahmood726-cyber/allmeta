@@ -13,9 +13,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/nma-inconsistency/';
+const APP_URL = 'http://localhost:8088/nma-inconsistency/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/nma-inconsistency/tests/fixtures/inco-oracle.json', 'utf-8'));
+  new URL('../../../nma-inconsistency/tests/fixtures/inco-oracle.json', import.meta.url), 'utf-8'));
 const FIXTURE = [
   'A, B, 0.20, 0.10', 'A, B, 0.35, 0.12', 'A, B, 0.28, 0.09',
   'A, C, 0.50, 0.11', 'A, C, 0.42, 0.13',
@@ -34,7 +34,7 @@ test.describe('nma-inconsistency', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window._almLastInco === 'function',
       { timeout: 10_000 });
     await expect(page.locator('#ns-plot')).toBeVisible();
@@ -43,7 +43,7 @@ test.describe('nma-inconsistency', () => {
 
   test('netmeta FE R-parity (inco-tiny: network + node-split + decomp.design)',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(
         () => typeof window.__almIncoLoad === 'function', { timeout: 10_000 });
       await page.evaluate((t) => window.__almIncoLoad(t), FIXTURE);

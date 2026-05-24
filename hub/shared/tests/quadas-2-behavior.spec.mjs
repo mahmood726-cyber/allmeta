@@ -6,7 +6,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/quadas-2/';
+const APP_URL = 'http://localhost:8088/quadas-2/';
 
 test.describe('quadas-2', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
@@ -17,14 +17,14 @@ test.describe('quadas-2', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almQuadas === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('per-domain suggested risk of bias (D1–D4)', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almQuadas === 'function',
       { timeout: 10_000 });
     const ev = (a) => page.evaluate((x) => window.__almQuadas(x), a);

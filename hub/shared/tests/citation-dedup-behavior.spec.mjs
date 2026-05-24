@@ -11,7 +11,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/citation-dedup/';
+const APP_URL = 'http://localhost:8088/citation-dedup/';
 const rec = (id, title, opts = {}) => ({
   id, title, authors: opts.authors || '', year: opts.year || '',
   journal: '', doi: opts.doi || '',
@@ -28,7 +28,7 @@ test.describe('citation-dedup', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almDedup === 'function' &&
             typeof window.__almDedupUtil === 'object', { timeout: 10_000 });
@@ -37,7 +37,7 @@ test.describe('citation-dedup', () => {
 
   test('DOI / title / year / author dedup rules + normalization',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(
         () => typeof window.__almDedup === 'function', { timeout: 10_000 });
       const run = (records, opts) => page.evaluate(

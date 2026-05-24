@@ -6,7 +6,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/search-translator/';
+const APP_URL = 'http://localhost:8088/search-translator/';
 
 test.describe('search-translator', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe('search-translator', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almTranslate === 'function', { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -25,7 +25,7 @@ test.describe('search-translator', () => {
 
   test('PubMed → Embase / CENTRAL field-tag rewrites (exact)',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(
         () => typeof window.__almTranslate === 'function', { timeout: 10_000 });
       const tr = (s) => page.evaluate((t) => window.__almTranslate(t), s);

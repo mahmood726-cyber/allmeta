@@ -10,9 +10,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/powerma/';
+const APP_URL = 'http://localhost:8088/powerma/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/powerma/tests/fixtures/powerma-oracle.json', 'utf-8'));
+  new URL('../../../powerma/tests/fixtures/powerma-oracle.json', import.meta.url), 'utf-8'));
 const TOL = 1e-6;
 
 test.describe('powerma', () => {
@@ -24,14 +24,14 @@ test.describe('powerma', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almPowerMA === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('sample size / RIS R-parity (exact qnorm)', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almPowerMA === 'function',
       { timeout: 10_000 });
 

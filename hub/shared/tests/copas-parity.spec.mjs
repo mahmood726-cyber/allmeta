@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 
 const COPAS_URL = 'http://localhost:8088/copas/';
 const ORACLE = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/copas/tests/fixtures/copas-oracle.json', 'utf-8'));
+  new URL('../../../copas/tests/fixtures/copas-oracle.json', import.meta.url), 'utf-8'));
 
 // copas-tiny fixture (identical to copas-tiny.csv the oracle was built from).
 const FIXTURE = [

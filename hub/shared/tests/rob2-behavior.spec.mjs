@@ -10,7 +10,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/rob2/';
+const APP_URL = 'http://localhost:8088/rob2/';
 
 // Per-domain answer presets hitting each judge() branch.
 const L1 = { '1.1': 'Y', '1.2': 'Y', '1.3': 'N' };
@@ -39,7 +39,7 @@ test.describe('rob2', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almRoB2 === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -47,7 +47,7 @@ test.describe('rob2', () => {
 
   test('per-domain D1–D5 judgments + overall aggregation (Sterne 2019)',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almRoB2 === 'function',
         { timeout: 10_000 });
       const ev = (a) => page.evaluate((x) => window.__almRoB2(x), a);

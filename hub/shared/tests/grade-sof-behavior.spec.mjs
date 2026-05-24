@@ -10,7 +10,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/grade-sof/';
+const APP_URL = 'http://localhost:8088/grade-sof/';
 const G = (o) => ({ design: 'rct', rob: 0, inc: 0, ind: 0, imp: 0, pub: 0,
   large: 0, dose: false, conf: false, ...o });
 
@@ -23,7 +23,7 @@ test.describe('grade-sof', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almGrade === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -31,7 +31,7 @@ test.describe('grade-sof', () => {
 
   test('GRADE certainty: start / downgrade / upgrade / clamp / gating',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almGrade === 'function',
         { timeout: 10_000 });
       const lvl = (o) => page.evaluate((g) => window.__almGrade(g).level, G(o));

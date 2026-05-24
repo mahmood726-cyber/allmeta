@@ -11,9 +11,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/nma/';
+const APP_URL = 'http://localhost:8088/nma/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/nma/tests/fixtures/nma-oracle.json', 'utf-8'));
+  new URL('../../../nma/tests/fixtures/nma-oracle.json', import.meta.url), 'utf-8'));
 const FIXTURE = [
   'S1, A, B, 0.20, 0.10', 'S2, A, B, 0.35, 0.12', 'S3, A, B, 0.28, 0.09',
   'S4, A, C, 0.50, 0.11', 'S5, A, C, 0.42, 0.13',
@@ -31,7 +31,7 @@ test.describe('nma', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almNmaCompute === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -39,7 +39,7 @@ test.describe('nma', () => {
 
   test('netmeta R-parity (nma-tiny: effects/SE/tau2 tight, SUCRA MC band)',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(
         () => typeof window.__almNmaCompute === 'function', { timeout: 10_000 });
       const r = await page.evaluate(

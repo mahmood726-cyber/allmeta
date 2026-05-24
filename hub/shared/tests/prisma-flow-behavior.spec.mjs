@@ -10,7 +10,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const URL = 'http://localhost:8088/prisma-flow/';
+const APP_URL = 'http://localhost:8088/prisma-flow/';
 const S = (o) => ({ db: 0, reg: 0, removed: 0, screened: 0,
   excludedScreen: 0, sought: 0, notRetrieved: 0, assessed: 0,
   excludedEligible: 0, ...o });
@@ -24,14 +24,14 @@ test.describe('prisma-flow', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almPrisma === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('stage-count reconciliation warnings', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almPrisma === 'function',
       { timeout: 10_000 });
     const v = (s) => page.evaluate((x) => window.__almPrisma(x), S(s));

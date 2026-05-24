@@ -10,9 +10,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/bayesian-ma/';
+const APP_URL = 'http://localhost:8088/bayesian-ma/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/bayesian-ma/tests/fixtures/bma-oracle.json', 'utf-8'));
+  new URL('../../../bayesian-ma/tests/fixtures/bma-oracle.json', import.meta.url), 'utf-8'));
 const TOL = 1e-9;        // exact closed-form posterior
 // Canonical Paule-Mandel = root of Q(tau2)=k-1 (NOT metafor's iterative
 // "PM" variant, which is ~1e-5 different). App bisection matches to ~3e-10.
@@ -27,7 +27,7 @@ test.describe('bayesian-ma', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almBayesMA === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -35,7 +35,7 @@ test.describe('bayesian-ma', () => {
 
   test('conjugate posterior + PM tau2 + tail/ROPE R-parity',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almBayesMA === 'function',
         { timeout: 10_000 });
 

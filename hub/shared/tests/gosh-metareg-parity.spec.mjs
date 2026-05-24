@@ -11,9 +11,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/gosh-metareg/';
+const APP_URL = 'http://localhost:8088/gosh-metareg/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/gosh-metareg/tests/fixtures/metareg-oracle.json',
+  new URL('../../../gosh-metareg/tests/fixtures/metareg-oracle.json', import.meta.url),
   'utf-8'));
 const TOL = 1e-6;
 
@@ -26,7 +26,7 @@ test.describe('gosh-metareg', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window.__almMetareg === 'function',
       { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
@@ -34,7 +34,7 @@ test.describe('gosh-metareg', () => {
 
   test('meta-regression DL R-parity vs metafor (moderated residual tau2)',
     async ({ page }) => {
-      await page.goto(URL);
+      await page.goto(APP_URL);
       await page.waitForFunction(() => typeof window.__almMetareg === 'function',
         { timeout: 10_000 });
 

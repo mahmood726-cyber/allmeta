@@ -11,9 +11,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/workbench/';
+const APP_URL = 'http://localhost:8088/workbench/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/workbench/tests/fixtures/workbench-oracle.json', 'utf-8'));
+  new URL('../../../workbench/tests/fixtures/workbench-oracle.json', import.meta.url), 'utf-8'));
 const TOL = 1e-6;
 
 test.describe('workbench', () => {
@@ -25,14 +25,14 @@ test.describe('workbench', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almWorkbench === 'function', { timeout: 10_000 });
     expect(errs, 'console errors: ' + errs.join('; ')).toEqual([]);
   });
 
   test('canonical Paule-Mandel RE pool R-parity', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almWorkbench === 'function', { timeout: 10_000 });
     const r = await page.evaluate(

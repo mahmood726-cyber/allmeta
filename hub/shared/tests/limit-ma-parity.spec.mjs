@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 
 const LIMIT_URL = 'http://localhost:8088/limit-ma/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/limit-ma/tests/fixtures/limit-oracle.json', 'utf-8'));
+  new URL('../../../limit-ma/tests/fixtures/limit-oracle.json', import.meta.url), 'utf-8'));
 
 const FIXTURE = [
   { study: 'S01', yi: 0.55, sei: 0.08 }, { study: 'S02', yi: 0.48, sei: 0.10 },

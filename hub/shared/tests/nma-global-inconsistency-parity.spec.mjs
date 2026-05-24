@@ -10,9 +10,9 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const URL = 'http://localhost:8088/nma-global-inconsistency/';
+const APP_URL = 'http://localhost:8088/nma-global-inconsistency/';
 const O = JSON.parse(readFileSync(
-  'C:/Projects/allmeta/nma-global-inconsistency/tests/fixtures/ngi-oracle.json',
+  new URL('../../../nma-global-inconsistency/tests/fixtures/ngi-oracle.json', import.meta.url),
   'utf-8'));
 const FIXTURE = [
   'A, B, 0.20, 0.10, AB', 'A, B, 0.35, 0.12, AB', 'A, B, 0.28, 0.09, AB',
@@ -30,7 +30,7 @@ test.describe('nma-global-inconsistency', () => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });
     page.on('pageerror', e => { if (!benign(e.message)) errs.push(e.message); });
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(() => typeof window._almLastNgi === 'function',
       { timeout: 10_000 });
     await expect(page.locator('#plot')).toBeVisible();
@@ -38,7 +38,7 @@ test.describe('nma-global-inconsistency', () => {
   });
 
   test('netmeta decomp.design FE R-parity (ngi-tiny)', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(APP_URL);
     await page.waitForFunction(
       () => typeof window.__almNgiLoad === 'function', { timeout: 10_000 });
     await page.evaluate((t) => window.__almNgiLoad(t), FIXTURE);
