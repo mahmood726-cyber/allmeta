@@ -25,6 +25,54 @@ window.HTML_APPS_PROJECTS = [
     tags: ["revman", "cochrane", "rm5", "rm6", "import", "extraction"]
   },
   {
+    name: "Cross-network synthesis (NMA + IPD + obs)",
+    featured: true,
+    folder: "allmeta/cross-network",
+    path: "./cross-network/",
+    collection: "new",
+    mode: "file",
+    category: "Network MA",
+    summary: "Combine RCT NMA + IPD trial-level + observational evidence under a unified bias model. Per-contrast design-bias δ_design + bias variance σ²_design estimated by method of moments against the RCT anchor.",
+    note: "References: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Efthimiou et al. 2017 'GetReal in NMA' (Res Synth Methods 8:23-39).",
+    tags: ["cross-network", "ipd", "observational", "bias-corrected", "synthesis", "welton"]
+  },
+  {
+    name: "Everything model (outcome × time × RoB)",
+    featured: true,
+    folder: "allmeta/everything-model",
+    path: "./everything-model/",
+    collection: "new",
+    mode: "file",
+    category: "Living Evidence",
+    summary: "Joint Bayesian hierarchical model decomposing each effect into outcome mean μ_o + study RE δ_i + time period γ_t + optional RoB shift. Variational EM, browser-tractable. The unifying frame for multi-outcome × multi-snapshot living-evidence syntheses.",
+    note: "Variational EM converges in 50-200 iterations. Closed-form analytic posterior at fixed variance components.",
+    tags: ["bayesian", "hierarchical", "multi-outcome", "time-varying", "rob", "variational-em"]
+  },
+  {
+    name: "Sequential MA (α-spending)",
+    featured: true,
+    folder: "allmeta/sequential-ma",
+    path: "./sequential-ma/",
+    collection: "new",
+    mode: "file",
+    category: "Trial Sequential Analysis",
+    summary: "Adaptive-design TSA with α-spending boundaries (O'Brien-Fleming, Pocock, linear) at each look + optional β-spending futility. Avoids the multiple-comparisons inflation of naive cumulative testing.",
+    note: "References: Lan & DeMets 1983 (Biometrika); O'Brien-Fleming 1979 (Biometrics); Wetterslev et al. 2008 (Clin Epidemiol) on TSA.",
+    tags: ["sequential", "tsa", "alpha-spending", "obrien-fleming", "pocock", "futility"]
+  },
+  {
+    name: "Personalised TE (subgroup shrinkage)",
+    featured: true,
+    folder: "allmeta/personalised-te",
+    path: "./personalised-te/",
+    collection: "new",
+    mode: "file",
+    category: "Pairwise MA",
+    summary: "Empirical Bayes shrinkage of subgroup-specific effect estimates toward the overall pooled effect. Personalised prediction: returns the EB posterior for a patient's subgroup label, or falls back to overall when the subgroup wasn't observed.",
+    note: "References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Morris 1983 posterior variance; James-Stein / EB classics.",
+    tags: ["personalised", "subgroup", "shrinkage", "empirical-bayes", "path", "hte"]
+  },
+  {
     name: "Rare-events GLMM",
     featured: true,
     folder: "allmeta/rare-events-glmm",

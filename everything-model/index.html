@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="The 'everything model': joint outcome × time × RoB Bayesian hierarchical meta-analysis with variational EM.">
+  <meta name="color-scheme" content="light dark">
+  <title>Everything model (outcome × time × RoB)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 14rem; padding: 0.5rem 0.65rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.82rem/1.4 "SF Mono", Consolas, monospace; }
+    input { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.5rem; margin-bottom:0.75rem; }
+    .card { background:var(--accent-soft); border-radius:6px; padding:0.5rem 0.7rem; }
+    .card .k { display:block; font-size:0.72rem; color:var(--muted); text-transform:uppercase; }
+    .card .v { display:block; font-size:1.0rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/everything-model.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Everything model (outcome × time × RoB)</h1>
+    <p>Joint hierarchical model that decomposes each effect estimate y<sub>i,t,o</sub> into outcome mean μ<sub>o</sub>, study random effect δ<sub>i</sub> ~ N(0, τ²), time-period γ<sub>t</sub>, and an optional RoB-driven shift. Variational EM converges in 50-200 iterations — browser-tractable, no MCMC needed. Returns per-outcome μ̂<sub>o</sub>, per-period γ̂<sub>t</sub>, per-study δ̂<sub>i</sub> (shrinkage), and the converged τ².</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Long-format data</h2>
+      <label>
+        <span>One row per (study, time, outcome): <code>study, time, outcome, yi, vi, rob?</code></span>
+        <textarea id="src">study,time,outcome,yi,vi,rob
+S1,2020,primary,-0.30,0.010,low
+S1,2020,secondary,-0.20,0.012,low
+S2,2020,primary,-0.25,0.011,low
+S2,2020,secondary,-0.18,0.012,low
+S3,2021,primary,-0.40,0.014,some
+S3,2021,secondary,-0.30,0.015,some
+S4,2022,primary,-0.20,0.011,low
+S4,2022,secondary,-0.15,0.013,low
+S5,2023,primary,-0.55,0.013,high
+S5,2023,secondary,-0.45,0.014,high
+S6,2024,primary,-0.42,0.012,low
+S6,2024,secondary,-0.32,0.013,low</textarea>
+      </label>
+      <label>
+        <span>RoB bias scale (0 = ignore RoB; >0 applies a shift per the default map)</span>
+        <input id="f-bias-scale" type="number" step="0.05" min="0" max="1" value="0">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit everything model</button>
+    </section>
+    <section class="panel">
+      <h2>Fit summary</h2>
+      <div id="meta" class="grid-cards"></div>
+      <h2 style="margin-top:1rem">Per-outcome pooled effect μ̂<sub>o</sub></h2>
+      <table id="mu"><thead><tr><th>Outcome</th><th>μ̂</th><th>SE</th><th>95% CI</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:1rem">Per-time period effect γ̂<sub>t</sub></h2>
+      <table id="gamma"><thead><tr><th>Time</th><th>γ̂</th><th>Reference?</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:1rem">Per-study random effect δ̂<sub>i</sub> (shrinkage)</h2>
+      <table id="delta"><thead><tr><th>Study</th><th>δ̂</th></tr></thead><tbody></tbody></table>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/everything-model.js</code> — variational EM with closed-form analytic posterior at fixed variance components. Reference: Higgins, Whitehead 1996 (Stat Med 15:2733-2749) on hierarchical Bayesian MA; this is the unifying frame.
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+    function parse(text) {
+      var lines = text.split(/\r?\n/);
+      var rows = [];
+      var startIdx = 0;
+      if (lines[0] && /study.*time.*outcome.*yi/i.test(lines[0])) startIdx = 1;
+      for (var i = startIdx; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 5) continue;
+        var yi = parseFloat(parts[3]), vi = parseFloat(parts[4]);
+        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) continue;
+        rows.push({
+          study: parts[0], time: parts[1], outcome: parts[2],
+          yi: yi, vi: vi, rob: parts[5] || null,
+        });
+      }
+      return rows;
+    }
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 2) { document.getElementById("meta").innerHTML = '<div class="card" style="color:var(--bad)">Need ≥ 2 rows.</div>'; return; }
+      var bs = parseFloat(document.getElementById("f-bias-scale").value);
+      // Default bias map applies only when biasScale > 0. Override here:
+      var biasMap = { low: 0, "some-concerns": 0.1, "some": 0.1, high: 0.2, critical: 0.3 };
+      var r = AlmEverythingModel.fit(rows, { biasMap: biasMap, biasScale: isFinite(bs) ? bs : 0 });
+      if (!r.ok) { document.getElementById("meta").innerHTML = '<div class="card" style="color:var(--bad)">' + (r.error || "Fit failed") + '</div>'; return; }
+      document.getElementById("meta").innerHTML =
+        '<div class="card"><span class="k">τ²_δ</span><span class="v">' + fmt(r.tau2_delta, 4) + '</span></div>' +
+        '<div class="card"><span class="k">Studies</span><span class="v">' + r.studies.length + '</span></div>' +
+        '<div class="card"><span class="k">Time periods</span><span class="v">' + r.times.length + '</span></div>' +
+        '<div class="card"><span class="k">Outcomes</span><span class="v">' + r.outcomes.length + '</span></div>' +
+        '<div class="card"><span class="k">Iterations</span><span class="v">' + r.n_iter + ' (' + (r.converged ? "converged" : "max-iter") + ')</span></div>' +
+        '<div class="card"><span class="k">log-lik</span><span class="v">' + fmt(r.log_likelihood, 2) + '</span></div>';
+
+      var muHtml = "";
+      for (var o in r.mu) {
+        var m = r.mu[o];
+        muHtml += "<tr><td>" + o + "</td><td>" + fmt(m.estimate, 4) + "</td><td>" + fmt(m.se, 4) + "</td><td>" + fmt(m.ci_lo, 3) + ", " + fmt(m.ci_hi, 3) + "</td></tr>";
+      }
+      document.querySelector("#mu tbody").innerHTML = muHtml;
+
+      var gHtml = "";
+      for (var t in r.gamma) {
+        var g = r.gamma[t];
+        gHtml += "<tr><td>" + t + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + (g.is_reference ? "ref" : "") + "</td></tr>";
+      }
+      document.querySelector("#gamma tbody").innerHTML = gHtml;
+
+      var dHtml = "";
+      for (var s in r.delta) {
+        dHtml += "<tr><td>" + s + "</td><td>" + fmt(r.delta[s].estimate, 4) + "</td></tr>";
+      }
+      document.querySelector("#delta tbody").innerHTML = dHtml;
+
+      window.__almLastEverything = function () { return r; };
+    }
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

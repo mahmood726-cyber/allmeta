@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Personalised treatment effect synthesis via empirical Bayes subgroup shrinkage.">
+  <meta name="color-scheme" content="light dark">
+  <title>Personalised TE (subgroup shrinkage)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem; grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 13rem; padding: 0.5rem 0.65rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    input { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .bar { display:inline-block; height:0.55rem; background:var(--accent); border-radius:3px; vertical-align:middle; }
+    .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0.5rem; margin-bottom:0.75rem; }
+    .summary-grid .card { background:var(--accent-soft); border-radius:6px; padding:0.5rem 0.7rem; }
+    .summary-grid .k { display:block; font-size:0.72rem; color:var(--muted); text-transform:uppercase; }
+    .summary-grid .v { display:block; font-size:1.0rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .pred-box { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.6rem 0.9rem; border-radius:4px; margin-top:0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/personalised-te.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Personalised TE synthesis (subgroup shrinkage)</h1>
+    <p>Empirical Bayes shrinkage of subgroup-specific effect estimates. Each subgroup's pooled effect is pulled toward the overall mean by an amount inversely proportional to its precision; rare or noisy subgroups get heavy shrinkage. Personalised prediction: given a patient's subgroup label, return the EB posterior estimate (or fall back to the overall pooled effect when the subgroup wasn't observed).</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Subgroup-specific effects</h2>
+      <label>
+        <span>One row per (study, subgroup, effect): <code>study, subgroup, yi, vi</code></span>
+        <textarea id="src">S1, young, -0.30, 0.020
+S2, young, -0.25, 0.025
+S3, young, -0.40, 0.018
+S4, young, -0.28, 0.022
+S1, old, -0.55, 0.022
+S2, old, -0.50, 0.025
+S3, old, -0.60, 0.020
+S4, old, -0.48, 0.024
+S1, biomarker+, -0.65, 0.030
+S2, biomarker+, -0.70, 0.028</textarea>
+      </label>
+      <label>
+        <span>Predict for patient subgroup label</span>
+        <input id="f-predict" type="text" value="young">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit + predict</button>
+    </section>
+    <section class="panel">
+      <h2>Overall pooled effect</h2>
+      <div id="overall" class="summary-grid"></div>
+      <h2 style="margin-top:1rem">Per-subgroup shrinkage</h2>
+      <table id="subgroups"><thead><tr><th>Subgroup</th><th>Raw μ̂</th><th>Shrunk θ̂</th><th>95% CI (EB)</th><th>w</th><th>k</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:1rem">Personalised prediction</h2>
+      <div class="pred-box" id="pred"></div>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/personalised-te.js</code> — DL τ² within each subgroup + James-Stein / EB shrinkage across subgroups (Morris 1983 posterior variance). References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Brand & Kragh Andersen 1992 (Stat Med 11:1879-1894).
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+    function parse(text) {
+      var rows = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 4) continue;
+        var yi = parseFloat(parts[2]), vi = parseFloat(parts[3]);
+        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) continue;
+        rows.push({ study: parts[0], subgroup: parts[1], yi: yi, vi: vi });
+      }
+      return rows;
+    }
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 2) { document.getElementById("overall").innerHTML = '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 rows.</div>'; return; }
+      var r = AlmPersonalisedTE.fit(rows);
+      if (!r.ok) { document.getElementById("overall").innerHTML = '<div class="card" style="grid-column:1/-1;color:var(--bad)">' + r.error + '</div>'; return; }
+      document.getElementById("overall").innerHTML =
+        '<div class="card"><span class="k">μ̂ overall</span><span class="v">' + fmt(r.overall.mu, 4) + '</span></div>' +
+        '<div class="card"><span class="k">SE</span><span class="v">' + fmt(r.overall.se, 4) + '</span></div>' +
+        '<div class="card"><span class="k">95% CI</span><span class="v">' + fmt(r.overall.ci_lo, 3) + ', ' + fmt(r.overall.ci_hi, 3) + '</span></div>' +
+        '<div class="card"><span class="k">σ²_between</span><span class="v">' + fmt(r.sigma2_between, 4) + '</span></div>' +
+        '<div class="card"><span class="k">Subgroups</span><span class="v">' + r.n_subgroups + '</span></div>';
+      var html = "";
+      for (var name in r.subgroups) {
+        var s = r.subgroups[name];
+        var bar = Math.round(s.shrinkage_weight * 100) + "px";
+        html += "<tr><td><strong>" + name + "</strong></td>" +
+          "<td>" + fmt(s.yi_pooled, 4) + " (SE " + fmt(s.se_pooled, 3) + ")</td>" +
+          "<td><strong>" + fmt(s.theta_shrunk, 4) + "</strong> (SE " + fmt(s.se_shrunk, 3) + ")</td>" +
+          "<td>" + fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) + "</td>" +
+          "<td>" + fmt(s.shrinkage_weight, 2) + " <span class=\"bar\" style=\"width:" + bar + "\"></span></td>" +
+          "<td>" + s.k + "</td></tr>";
+      }
+      document.querySelector("#subgroups tbody").innerHTML = html;
+      var predLabel = (document.getElementById("f-predict").value || "").trim();
+      var p = AlmPersonalisedTE.predict(r, predLabel);
+      document.getElementById("pred").innerHTML =
+        "For patient subgroup <code>" + predLabel + "</code>: " +
+        "<strong>" + fmt(p.estimate, 4) + "</strong> (95% CI " + fmt(p.ci_lo, 3) + ", " + fmt(p.ci_hi, 3) + ") — basis: <em>" + p.basis + "</em>" +
+        (p.shrinkage_weight ? " (shrinkage weight " + fmt(p.shrinkage_weight, 2) + ")" : "");
+      window.__almLastPersonalised = function () { return { fit: r, prediction: p }; };
+    }
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("f-predict").addEventListener("input", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

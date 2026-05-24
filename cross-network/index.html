@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Cross-network bias-corrected synthesis: combine RCT NMA + IPD + observational evidence with per-contrast bias-adjusted pooling.">
+  <meta name="color-scheme" content="light dark">
+  <title>Cross-network synthesis (NMA + IPD + obs)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 13rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/cross-network-synthesis.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Cross-network synthesis (NMA + IPD + obs)</h1>
+    <p>Combine RCT NMA effects, IPD trial-level summaries, and observational evidence under a unified bias model. Each evidence stream gets a design-specific bias offset δ and between-study bias variance σ², estimated by method of moments on the residuals relative to the RCT anchor. The synthesis effect uses inverse-variance weighting with effective variance v + τ²_RCT + σ²_design and bias-adjusted means y − δ_design.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Evidence</h2>
+      <label>
+        <span>One row per effect: <code>contrast, yi, vi, design</code> (design = <code>rct</code> | <code>ipd</code> | <code>obs</code>)</span>
+        <textarea id="src">A_vs_B, -0.30, 0.020, rct
+A_vs_B, -0.28, 0.025, rct
+A_vs_B, -0.32, 0.018, rct
+A_vs_B, -0.31, 0.008, ipd
+A_vs_B, -0.55, 0.014, obs
+A_vs_B, -0.50, 0.012, obs
+A_vs_C, -0.45, 0.024, rct
+A_vs_C, -0.48, 0.022, rct
+A_vs_C, -0.62, 0.014, obs</textarea>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Run bias-corrected synthesis</button>
+      <div class="note">
+        Each contrast is processed independently. The bias offsets δ_ipd, δ_obs are estimated per-contrast — observational data may be biased in different directions for different comparisons. References: Welton, Cooper, Ades, Lu, Sutton 2009 (Stat Med); Efthimiou et al. 2017 "GetReal in NMA" (Res Synth Methods 8:23-39).
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Per-contrast synthesis</h2>
+      <table id="results">
+        <thead><tr><th>Contrast</th><th>Anchor (RCT)</th><th>Synthesis</th><th>95% CI</th><th>δ_obs</th><th>δ_ipd</th><th>k (rct/ipd/obs)</th></tr></thead>
+        <tbody><tr><td colspan="7" style="color:var(--muted)">Run to populate.</td></tr></tbody>
+      </table>
+      <div id="warnings" style="margin-top:0.75rem;font-size:0.83rem;color:var(--warn)"></div>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/cross-network-synthesis.js</code>. τ²_RCT via DL; bias offsets via method of moments on obs/IPD residuals relative to the RCT anchor.
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+    function parse(text) {
+      var rows = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 4) continue;
+        var yi = parseFloat(parts[1]), vi = parseFloat(parts[2]);
+        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) continue;
+        rows.push({ contrast: parts[0], yi: yi, vi: vi, design: parts[3].toLowerCase() });
+      }
+      return rows;
+    }
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (!rows.length) { document.querySelector("#results tbody").innerHTML = '<tr><td colspan="7" style="color:var(--bad)">No valid rows.</td></tr>'; return; }
+      var r = AlmCrossNetwork.fit(rows);
+      var html = "";
+      for (var c in r.contrasts) {
+        var x = r.contrasts[c];
+        html += "<tr><td>" + c + "</td>" +
+          "<td>" + fmt(x.mu_anchor, 4) + " (SE " + fmt(x.se_anchor, 3) + ")</td>" +
+          "<td><strong>" + fmt(x.mu_synthesis, 4) + "</strong> (SE " + fmt(x.se_synthesis, 3) + ")</td>" +
+          "<td>" + fmt(x.ci_lo, 3) + ", " + fmt(x.ci_hi, 3) + "</td>" +
+          "<td>" + fmt(x.delta_obs, 3) + (x.sigma2_obs > 0 ? " (σ²=" + fmt(x.sigma2_obs, 3) + ")" : "") + "</td>" +
+          "<td>" + fmt(x.delta_ipd, 3) + "</td>" +
+          "<td>" + x.k_rct + " / " + x.k_ipd + " / " + x.k_obs + "</td></tr>";
+      }
+      document.querySelector("#results tbody").innerHTML = html;
+      document.getElementById("warnings").innerHTML = (r.warnings || []).map(function (w) { return "⚠ " + w; }).join("<br>");
+      window.__almLastCrossNetwork = function () { return r; };
+    }
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
