@@ -1,0 +1,70 @@
+# Living-evidence cron — daily check for new RCTs / publications on the
+# EvidenceOS topic, diff against last-run snapshot, open an issue when new
+# signals appear. Pure read-only HTTPS queries to ClinicalTrials.gov +
+# OpenAlex; no API keys required.
+#
+# Triggered: 06:00 UTC daily + manual via workflow_dispatch.
+
+name: living-evidence
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Topic key from evidenceos/topics/ (default: finerenone-cardiorenal)'
+        required: false
+        default: 'finerenone-cardiorenal'
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run living-evidence watch
+        id: watch
+        env:
+          TOPIC: ${{ github.event.inputs.topic || 'finerenone-cardiorenal' }}
+        run: |
+          python scripts/living_evidence_watch.py --topic "$TOPIC" \
+            --state-dir evidenceos/state \
+            --out-summary /tmp/watch-summary.md
+          cat /tmp/watch-summary.md
+
+      - name: Commit updated state if changed
+        run: |
+          if [[ -n "$(git status --porcelain evidenceos/state)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add evidenceos/state
+            git commit -m "chore(evidenceos): refresh living-evidence state [skip ci]"
+            git push
+          else
+            echo "No state changes to commit."
+          fi
+
+      - name: Open issue if new signals
+        if: hashFiles('/tmp/watch-summary.md') != ''
+        run: |
+          # Only open an issue when the summary reports >0 new items.
+          if grep -qE '^new\s*:\s*[1-9]' /tmp/watch-summary.md; then
+            TITLE="Living-evidence: new ${TOPIC:-evidence} signal — $(date -u +%Y-%m-%d)"
+            BODY=$(cat /tmp/watch-summary.md)
+            gh issue create --title "$TITLE" --body "$BODY" \
+              --label living-evidence,auto
+          else
+            echo "No new signals; not opening an issue."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOPIC: ${{ github.event.inputs.topic || 'finerenone-cardiorenal' }}

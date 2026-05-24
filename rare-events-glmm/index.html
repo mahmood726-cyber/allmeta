@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Rare-events meta-analysis via binomial-normal GLMM — avoids the +0.5 continuity correction bias.">
+  <meta name="color-scheme" content="light dark">
+  <title>Rare-events GLMM</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 12rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.5rem; margin-bottom:0.75rem; }
+    .summary-grid .card { background:var(--accent-soft); border-radius:6px; padding:0.5rem 0.7rem; }
+    .summary-grid .k { display:block; font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+    .summary-grid .v { display:block; font-size:1.0rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/rare-events-glmm.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Rare-events GLMM</h1>
+    <p>Binomial-normal random-effects logistic model for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases odds-ratio pooling toward the null when events are rare. Uses 10-point Hermite-Gauss quadrature to integrate the random-effects intercept + damped Newton-Raphson on (θ, log τ). Equivalent to <code>metafor::rma.glmm(measure="OR", method="ML")</code> for the conditional approximation.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label style="display:block">
+        <span style="font-size:0.85rem">One row per study: <code>label, events_T, n_T, events_C, n_C</code>. 0-event cells are handled NATIVELY — no continuity correction needed.</span>
+        <textarea id="src">Trial 1, 0, 250, 1, 248
+Trial 2, 2, 500, 5, 510
+Trial 3, 0, 180, 3, 182
+Trial 4, 1, 320, 4, 325
+Trial 5, 3, 600, 7, 605
+Trial 6, 0, 95, 2, 98
+Trial 7, 2, 450, 6, 445
+Trial 8, 1, 210, 3, 215</textarea>
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
+      <div class="note">
+        <strong>When to use:</strong> any meta-analysis where some studies have 0 events in one or both arms. Standard inverse-variance pooling with +0.5 correction biases OR toward 1; the GLMM doesn't because it models the binomial likelihood directly. Reference: Stijnen T, Hamza TH, Ozdemir P 2010 (Stat Med 29:3046-3067).
+      </div>
+    </section>
+    <section class="panel">
+      <h2>GLMM fit</h2>
+      <div id="summary" class="summary-grid"></div>
+      <h2 style="margin-top:1rem">Comparison: GLMM vs inverse-variance with +0.5</h2>
+      <table id="compare" style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">Method</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">OR</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">95% CI</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">τ²</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/rare-events-glmm.js</code> — 10-point Gauss-Hermite quadrature + damped Newton-Raphson. Conditional approximation (control-arm baseline profiled per study). For complex / multi-arm rare-event NMA, use <code>metafor::rma.glmm</code> in R for the full-likelihood unconditional fit.
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+
+    function parse(text) {
+      var rows = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 5) continue;
+        var label = parts[0];
+        var eT = parseInt(parts[1], 10), nT = parseInt(parts[2], 10);
+        var eC = parseInt(parts[3], 10), nC = parseInt(parts[4], 10);
+        if (!isFinite(eT) || !isFinite(nT) || !isFinite(eC) || !isFinite(nC)) continue;
+        if (nT <= 0 || nC <= 0 || eT < 0 || eC < 0 || eT > nT || eC > nC) continue;
+        rows.push({ label: label, events_T: eT, n_T: nT, events_C: eC, n_C: nC });
+      }
+      return rows;
+    }
+
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+
+    function ivPoolWithCC(rows) {
+      // Naive +0.5 continuity correction + inverse-variance log-OR pool.
+      var yi = [], vi = [];
+      for (var i = 0; i < rows.length; i++) {
+        var aT = rows[i].events_T, bT = rows[i].n_T - rows[i].events_T;
+        var aC = rows[i].events_C, bC = rows[i].n_C - rows[i].events_C;
+        var hasZero = (aT === 0 || bT === 0 || aC === 0 || bC === 0);
+        if (hasZero) { aT += 0.5; bT += 0.5; aC += 0.5; bC += 0.5; }
+        var y = Math.log((aT * bC) / (bT * aC));
+        var v = 1 / aT + 1 / bT + 1 / aC + 1 / bC;
+        yi.push(y); vi.push(v);
+      }
+      // DL τ²
+      var w = vi.map(function (v) { return 1 / v; });
+      var sw = w.reduce(function (a, b) { return a + b; }, 0);
+      var swy = 0;
+      for (var k = 0; k < yi.length; k++) swy += w[k] * yi[k];
+      var muFE = swy / sw;
+      var Q = 0;
+      for (var k2 = 0; k2 < yi.length; k2++) Q += w[k2] * (yi[k2] - muFE) * (yi[k2] - muFE);
+      var sw2 = w.reduce(function (a, b) { return a + b * b; }, 0);
+      var denom = sw - sw2 / sw;
+      var tau2 = denom > 1e-12 ? Math.max(0, (Q - (yi.length - 1)) / denom) : 0;
+      // RE pool
+      var w_re = vi.map(function (v) { return 1 / (v + tau2); });
+      var sw_re = w_re.reduce(function (a, b) { return a + b; }, 0);
+      var swy_re = 0;
+      for (var k3 = 0; k3 < yi.length; k3++) swy_re += w_re[k3] * yi[k3];
+      var mu = swy_re / sw_re;
+      var se = Math.sqrt(1 / sw_re);
+      var Z = 1.959963984540054;
+      return { OR: Math.exp(mu), OR_lo: Math.exp(mu - Z * se), OR_hi: Math.exp(mu + Z * se), tau2: tau2 };
+    }
+
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 2) {
+        document.getElementById("summary").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 studies.</div>';
+        return;
+      }
+      var glmm = AlmRareEventsGLMM.fit(rows);
+      if (!glmm.ok) {
+        document.getElementById("summary").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +
+          (glmm.error || "") + '</div>';
+        return;
+      }
+      var iv = ivPoolWithCC(rows);
+      document.getElementById("summary").innerHTML =
+        '<div class="card"><span class="k">OR (GLMM)</span><span class="v">' + fmt(glmm.OR, 3) + '</span></div>' +
+        '<div class="card"><span class="k">95% CI</span><span class="v">' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</span></div>' +
+        '<div class="card"><span class="k">log-OR θ̂</span><span class="v">' + fmt(glmm.theta, 4) + '</span></div>' +
+        '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(glmm.tau2, 4) + '</span></div>' +
+        '<div class="card"><span class="k">k studies</span><span class="v">' + glmm.k + '</span></div>' +
+        '<div class="card"><span class="k">0-event studies</span><span class="v">' + glmm.n_zero_cell_studies + '</span></div>';
+
+      document.querySelector("#compare tbody").innerHTML =
+        '<tr><td>GLMM (no CC)</td><td>' + fmt(glmm.OR, 3) + '</td><td>' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</td><td>' + fmt(glmm.tau2, 4) + '</td></tr>' +
+        '<tr><td>IV pool + 0.5 CC</td><td>' + fmt(iv.OR, 3) + '</td><td>' + fmt(iv.OR_lo, 3) + ', ' + fmt(iv.OR_hi, 3) + '</td><td>' + fmt(iv.tau2, 4) + '</td></tr>';
+
+      window.__almLastRareEventsGLMM = function () { return { glmm: glmm, iv: iv }; };
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

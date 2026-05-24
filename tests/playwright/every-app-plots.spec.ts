@@ -65,6 +65,8 @@ const LOAD_ONLY_APPS: { path: string; skip?: string }[] = [
   { path: "/rve-meta/" },
   { path: "/bma-tau-priors/" },
   { path: "/multi-outcome-ma/" },
+  { path: "/multi-outcome-nma/" },
+  { path: "/rare-events-glmm/" },
   { path: "/prospero-templater/" },
   { path: "/cross-design/", skip: "renders forest SVG; covered as a plot test below" },
   { path: "/rob-traffic-light/" },

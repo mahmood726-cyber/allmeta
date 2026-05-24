@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Multi-arm × multi-outcome NMA (Achana 2014) — joint random-effects pooling across treatments and correlated outcomes.">
+  <meta name="color-scheme" content="light dark">
+  <title>Multi-outcome NMA (Achana 2014)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 14rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    input { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/multi-outcome-nma.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Multi-outcome NMA (Achana 2014)</h1>
+    <p>Joint network meta-analysis across multiple correlated outcomes, with the multi-arm τ²/2 off-diagonal correction layered on the K-outcome between-study covariance Σ_RE^outcomes. Implements Achana et al. 2014 §3.2 (Res Synth Methods 5:35-49). When outcomes are correlated, joint pooling borrows strength across them — studies that report only a subset of outcomes still contribute to the joint network estimates via ρ_between.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label>
+        <span>One contrast row per line: <code>studyId, trtA, trtB, y_o1, se_o1, y_o2, se_o2[, ...]</code>. Use <code>NA</code> for a missing outcome.</span>
+        <textarea id="src">S1, A, B, -0.30, 0.10, -0.35, 0.12
+S2, A, B, -0.25, 0.11, -0.32, 0.13
+S3, A, C, -0.45, 0.12, -0.50, 0.15
+S4, A, C, -0.42, 0.14, -0.48, 0.16
+S5, B, C, -0.15, 0.11, -0.18, 0.13
+S6, A, B, -0.28, 0.10, NA, NA
+S7, A, B, -0.32, 0.11, -0.38, 0.12
+S8, B, C, NA, NA, -0.16, 0.14</textarea>
+      </label>
+      <label>
+        <span>Reference treatment (also the first row in the league table)</span>
+        <input id="f-ref" type="text" value="A">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit multi-outcome NMA</button>
+      <div class="note">
+        Multi-arm trials with 3+ arms: contribute 2 contrast rows per outcome (the multi-arm correction is automatic — same studyId across rows triggers τ²/2 off-diagonals). The Σ_RE^outcomes estimate uses DL τ² per outcome + sample-correlation of per-row residuals — fast and good for typical clinical data. Use the K-variate REML in <code>multi-outcome-ma/</code> for slow-but-exact estimation on small networks.
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Pooled effects vs reference</h2>
+      <div id="meta" style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem"></div>
+      <table id="effects">
+        <thead><tr><th>Treatment</th><th>Outcome</th><th>β̂</th><th>SE</th><th>95% CI</th></tr></thead>
+        <tbody><tr><td colspan="5" style="color:var(--muted)">Run the fit to populate.</td></tr></tbody>
+      </table>
+      <h2 style="margin-top:1rem">Between-study cov Σ_RE^outcomes</h2>
+      <table id="sigma">
+        <thead><tr><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/multi-outcome-nma.js</code>. Achana et al. 2014 §3.2 Res Synth Methods 5:35-49. Σ_per_study = Σ_RE^outcomes ⊗ G_arm where G_arm has 1 on diag and 0.5 off (the multi-arm shared-control correction). β̂ via GLS with block-diagonal Σ + within-study sampling cov.
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+
+    function parse(text) {
+      var rows = [];
+      var lines = text.split(/\r?\n/);
+      var K = null;
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 5 || ((parts.length - 3) % 2 !== 0)) continue;
+        var studyId = parts[0], trtA = parts[1], trtB = parts[2];
+        var nOutcomes = (parts.length - 3) / 2;
+        if (K === null) K = nOutcomes;
+        if (nOutcomes !== K) continue;   // mixed-K rows would be ambiguous
+        var outcomes = [];
+        var anyObserved = false;
+        for (var k = 0; k < K; k++) {
+          var yStr = parts[3 + 2 * k];
+          var seStr = parts[4 + 2 * k];
+          var yv = (yStr.toUpperCase() === "NA") ? NaN : parseFloat(yStr);
+          var sv = (seStr.toUpperCase() === "NA") ? NaN : parseFloat(seStr);
+          if (isFinite(yv) && isFinite(sv) && sv > 0) anyObserved = true;
+          outcomes.push({ yi: yv, sei: isFinite(sv) ? sv : NaN });
+        }
+        if (!anyObserved) continue;
+        rows.push({ studyId: studyId, trtA: trtA, trtB: trtB, outcomes: outcomes });
+      }
+      return { rows: rows, K: K || 0 };
+    }
+
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+
+    function run() {
+      var parsed = parse(document.getElementById("src").value);
+      if (!parsed.rows.length) {
+        document.getElementById("meta").innerHTML = '<span style="color:var(--bad)">No valid contrast rows.</span>';
+        return;
+      }
+      var refTrt = (document.getElementById("f-ref").value || "").trim();
+      // Build the treatment list from the rows; ensure the reference is first.
+      var trtSet = new Set();
+      parsed.rows.forEach(function (r) { trtSet.add(r.trtA); trtSet.add(r.trtB); });
+      var treatments = Array.from(trtSet).sort();
+      if (refTrt && treatments.includes(refTrt)) {
+        treatments = [refTrt].concat(treatments.filter(function (t) { return t !== refTrt; }));
+      }
+      // Group rows by studyId for the API.
+      var byStudy = Object.create(null);
+      var order = [];
+      parsed.rows.forEach(function (r) {
+        if (!byStudy[r.studyId]) { byStudy[r.studyId] = []; order.push(r.studyId); }
+        byStudy[r.studyId].push({ trtA: r.trtA, trtB: r.trtB, outcomes: r.outcomes });
+      });
+      var studies = order.map(function (sid) { return { id: sid, contrasts: byStudy[sid] }; });
+
+      var fit;
+      try {
+        fit = AlmMultiOutcomeNMA.fit(studies, treatments, { K: parsed.K });
+      } catch (e) {
+        document.getElementById("meta").innerHTML = '<span style="color:var(--bad)">Fit failed: ' + e.message + '</span>';
+        return;
+      }
+      if (!fit.ok) {
+        document.getElementById("meta").innerHTML = '<span style="color:var(--bad)">' + (fit.error || "Fit failed") + '</span>';
+        return;
+      }
+      document.getElementById("meta").innerHTML =
+        "K = " + fit.K + " outcomes, m = " + fit.n_studies + " studies, " +
+        fit.n_contrasts + " contrast rows. Ref = <code>" + treatments[0] + "</code>. " +
+        "τ̂ per outcome = [" + fit.taus.map(function (t) { return t.toFixed(3); }).join(", ") + "].";
+
+      var html = "";
+      for (var ko = 0; ko < fit.K; ko++) {
+        var label = "Outcome " + (ko + 1);
+        for (var t = 1; t < treatments.length; t++) {
+          var trt = treatments[t];
+          var e = fit.effects[ko][trt];
+          html += "<tr><td>" + trt + " vs " + treatments[0] + "</td><td>" + label + "</td>" +
+            "<td>" + fmt(e.estimate, 4) + "</td>" +
+            "<td>" + fmt(e.se, 4) + "</td>" +
+            "<td>" + fmt(e.ci_lo, 3) + ", " + fmt(e.ci_hi, 3) + "</td></tr>";
+        }
+      }
+      document.querySelector("#effects tbody").innerHTML = html;
+
+      // Σ_RE table
+      var thead = "<tr><th></th>";
+      for (var k = 0; k < fit.K; k++) thead += "<th>O" + (k + 1) + "</th>";
+      thead += "</tr>";
+      var tbody = "";
+      for (var i = 0; i < fit.K; i++) {
+        tbody += "<tr><th>O" + (i + 1) + "</th>";
+        for (var j = 0; j < fit.K; j++) tbody += "<td>" + fmt(fit.Sigma_RE_outcomes[i][j], 4) + "</td>";
+        tbody += "</tr>";
+      }
+      document.querySelector("#sigma thead").innerHTML = thead;
+      document.querySelector("#sigma tbody").innerHTML = tbody;
+
+      window.__almLastMultiOutcomeNMA = function () { return fit; };
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

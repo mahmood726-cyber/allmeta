@@ -25,6 +25,30 @@ window.HTML_APPS_PROJECTS = [
     tags: ["revman", "cochrane", "rm5", "rm6", "import", "extraction"]
   },
   {
+    name: "Rare-events GLMM",
+    featured: true,
+    folder: "allmeta/rare-events-glmm",
+    path: "./rare-events-glmm/",
+    collection: "new",
+    mode: "file",
+    category: "Pairwise MA",
+    summary: "Binomial-normal random-effects logistic regression for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases OR pooling toward the null. Uses 10-point Gauss-Hermite quadrature + damped Newton-Raphson on (θ, log τ).",
+    note: "Reference: Stijnen, Hamza, Ozdemir 2010 (Stat Med 29:3046-3067). Equivalent to metafor::rma.glmm conditional approximation.",
+    tags: ["glmm", "rare-events", "binomial", "stijnen", "zero-cells", "logistic-re"]
+  },
+  {
+    name: "Multi-outcome NMA (Achana 2014)",
+    featured: true,
+    folder: "allmeta/multi-outcome-nma",
+    path: "./multi-outcome-nma/",
+    collection: "new",
+    mode: "file",
+    category: "Network MA",
+    summary: "Multi-arm × multi-outcome network meta-analysis with joint random-effects pooling. Σ_per_study = Σ_RE^outcomes ⊗ G_arm (G_arm has 1 on diag, 0.5 off — the multi-arm shared-control correction). β̂ via GLS with block-diagonal Σ.",
+    note: "Reference: Achana et al. 2014 §3.2 Res Synth Methods 5:35-49. Handles missing outcomes per study; borrows strength across correlated outcomes.",
+    tags: ["nma", "multi-outcome", "multi-arm", "achana", "kronecker", "borrowing"]
+  },
+  {
     name: "Multi-outcome MA (bivariate REML)",
     featured: true,
     folder: "allmeta/multi-outcome-ma",

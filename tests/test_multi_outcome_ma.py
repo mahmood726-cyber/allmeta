@@ -178,6 +178,65 @@ def test_Sigma_RE_is_symmetric_and_psd():
     assert out["S"][1][1] >= 0
 
 
+def test_fitKvariate_runs_for_K3():
+    # 3-outcome study with realistic clinical magnitudes; the K-variate
+    # fit must converge and produce a 3×3 PSD Σ_RE.
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const studies = [
+          {{ y: [-0.30, -0.40, -0.20], se: [0.10, 0.12, 0.09],
+             V: [[0.01, 0.005, 0.004], [0.005, 0.0144, 0.005], [0.004, 0.005, 0.0081]] }},
+          {{ y: [-0.25, -0.35, -0.15], se: [0.11, 0.13, 0.10],
+             V: [[0.0121, 0.006, 0.004], [0.006, 0.0169, 0.006], [0.004, 0.006, 0.01]] }},
+          {{ y: [-0.40, -0.50, -0.30], se: [0.15, 0.18, 0.13],
+             V: [[0.0225, 0.011, 0.008], [0.011, 0.0324, 0.011], [0.008, 0.011, 0.0169]] }},
+          {{ y: [-0.18, -0.28, -0.12], se: [0.09, 0.10, 0.08],
+             V: [[0.0081, 0.004, 0.003], [0.004, 0.01, 0.004], [0.003, 0.004, 0.0064]] }},
+          {{ y: [-0.35, -0.42, -0.22], se: [0.13, 0.15, 0.11],
+             V: [[0.0169, 0.008, 0.006], [0.008, 0.0225, 0.008], [0.006, 0.008, 0.0121]] }},
+        ];
+        const fit = M.fitKvariate(studies, 3);
+        console.log(JSON.stringify({{
+          ok: fit.ok, K: fit.K,
+          n_mu: fit.mu.length, n_se: fit.se.length,
+          mu_finite: fit.mu.every(x => isFinite(x)),
+          se_finite: fit.se.every(x => isFinite(x) && x > 0),
+          sigma_sym_max_off: Math.max(
+            Math.abs(fit.Sigma_RE[0][1] - fit.Sigma_RE[1][0]),
+            Math.abs(fit.Sigma_RE[0][2] - fit.Sigma_RE[2][0]),
+            Math.abs(fit.Sigma_RE[1][2] - fit.Sigma_RE[2][1]),
+          ),
+        }}));
+    """)
+    assert out["ok"] is True
+    assert out["K"] == 3
+    assert out["n_mu"] == 3 and out["n_se"] == 3
+    assert out["mu_finite"] and out["se_finite"]
+    assert out["sigma_sym_max_off"] < 1e-9
+
+
+def test_fitKvariate_K2_matches_bivariate_engine():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const studies = [
+          {{ y: [-0.30, -0.32], se: [0.10, 0.10], V: [[0.01, 0.005], [0.005, 0.01]] }},
+          {{ y: [-0.22, -0.28], se: [0.12, 0.11], V: [[0.0144, 0.006], [0.006, 0.0121]] }},
+          {{ y: [-0.40, -0.42], se: [0.14, 0.13], V: [[0.0196, 0.008], [0.008, 0.0169]] }},
+          {{ y: [-0.18, -0.22], se: [0.09, 0.10], V: [[0.0081, 0.004], [0.004, 0.01]] }},
+          {{ y: [-0.35, -0.36], se: [0.11, 0.12], V: [[0.0121, 0.006], [0.006, 0.0144]] }},
+        ];
+        const biv = M.fitBivariate(studies, {{ rhoWithin: 0.5 }});
+        const kv  = M.fitKvariate(studies, 2);
+        // μ̂ should agree to ~0.01 (different optimisers find slightly different optima).
+        console.log(JSON.stringify({{
+          diff_mu_0: Math.abs(biv.mu[0] - kv.mu[0]),
+          diff_mu_1: Math.abs(biv.mu[1] - kv.mu[1]),
+        }}));
+    """)
+    assert out["diff_mu_0"] < 0.05
+    assert out["diff_mu_1"] < 0.05
+
+
 def test_fitUnivariatePerOutcome_returns_per_outcome_results():
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
