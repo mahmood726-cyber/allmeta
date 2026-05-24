@@ -7821,6 +7821,21 @@ library(netmeta)
 function renderStudyTable(){
 const tbody=document.getElementById('studyTableBody');
 tbody.innerHTML='';
+// 2026-05-24 UX fix: show an inline empty-state row when the study table is
+// empty, so users know they need to click "Load Dataset" or "+ Add Study"
+// before "Run Analysis" will produce plots. Previously the table just
+// looked broken (header but no rows, plots stuck on the "Run analysis to
+// visualize" placeholder even after clicking Run).
+if(!AppState.studies||AppState.studies.length===0){
+  const tr=document.createElement('tr');
+  const td=document.createElement('td');
+  td.colSpan=18;
+  td.style.cssText='padding:1.5rem;text-align:center;color:var(--text-tertiary);font-size:0.9rem;';
+  td.innerHTML='No studies yet. Click <strong>Load Dataset</strong> (top-right) to load a benchmark example, <strong>+ Add Study</strong> to enter rows manually, or <strong>Import CSV</strong> from the top toolbar. Plots render after <strong>Run Analysis</strong> with ≥ 2 studies.';
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+  return;
+}
 AppState.studies.forEach((s,i)=>{
 const tr=document.createElement('tr');
 const directContrast=Number.isFinite(Number(s?.yi))&&((Number.isFinite(Number(s?.vi))&&Number(s.vi)>0)||(Number.isFinite(Number(s?.se))&&Number(s.se)>0));
