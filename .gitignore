@@ -14,6 +14,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Session resume notes — local-only, may contain internal paths.
+PROGRESS.md
+
 # Editor
 .vscode/
 .idea/
