@@ -88,6 +88,13 @@ const VENDORED: VendoredCheck[] = [
   },
 ];
 
+// NMA-shape apps that should expose window.MaComparisons (ma-comparisons-v1).
+const NMA_BUS_APPS: string[] = [
+  "/nma/", "/nma-pro-v2/", "/bayesian-nma/", "/component-nma/",
+  "/nma-inconsistency/", "/nma-global-inconsistency/",
+  "/nma-dose-response-app/", "/bucher/", "/mh-peto/",
+];
+
 // All ma-studies-v1 bus participants — refactored + newly-wired + helper-only.
 // Each must end with window.MaStudies defined.
 const BUS_APPS: string[] = [
@@ -231,6 +238,29 @@ for (const p of BUS_APPS) {
 
     expect(probes.sriFailures, `SRI failures for ${p}`).toEqual([]);
     expect(probes.consoleErrors, `console errors for ${p}`).toEqual([]);
+  });
+}
+
+// ---- NMA bus participants: MaComparisons must load ------------------------
+
+for (const p of NMA_BUS_APPS) {
+  test(`NMA bus participant: ${p}`, async ({ page }) => {
+    const probes = instrument(page);
+    await page.goto(p, { waitUntil: "load" });
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+
+    const hasHelper = await page.evaluate(() => {
+      const w = window as unknown as {
+        MaComparisons?: { read?: unknown; write?: unknown; fromBinaryTriplets?: unknown };
+      };
+      const m = w.MaComparisons;
+      return !!m && typeof m.read === "function"
+                && typeof m.write === "function"
+                && typeof m.fromBinaryTriplets === "function";
+    });
+    expect(hasHelper, `MaComparisons helper missing/incomplete at ${p}`).toBeTruthy();
+
+    expect(probes.sriFailures, `SRI failures for ${p}`).toEqual([]);
   });
 }
 

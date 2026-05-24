@@ -307,6 +307,178 @@
     return lines.join("\n");
   }
 
+  // ----- TruthCert receipt -----------------------------------------------
+
+  // SubtleCrypto-backed HMAC-SHA-256 over the canonical bus envelope.
+  // Key sourcing rules (encode the lesson from C:\Users\mahmo\.claude\rules\lessons.md
+  // "Cryptography / Signing"):
+  //   1. NEVER use any field of the bundle itself (cert_id, _savedAt) as the
+  //      key — that would let anyone seeing the output forge a signature.
+  //   2. Key must come from outside the bundle: a localStorage user-set key
+  //      (under "truthcert-hmac-key", set by the user via Settings panel),
+  //      or — for tests — an explicit `opts.key` argument.
+  //   3. If no key is available, FAIL CLOSED — emit `{ ok: false, error: "no key" }`
+  //      rather than a placeholder signature. Placeholders are a security bug.
+
+  function _utf8(s) {
+    return new TextEncoder().encode(s);
+  }
+  function _bytesToHex(buf) {
+    var b = new Uint8Array(buf);
+    var hex = "";
+    for (var i = 0; i < b.length; i++) {
+      var x = b[i].toString(16);
+      hex += (x.length === 1 ? "0" : "") + x;
+    }
+    return hex;
+  }
+  function _hasSubtle() {
+    return typeof global.crypto !== "undefined"
+      && typeof global.crypto.subtle !== "undefined"
+      && typeof global.crypto.subtle.importKey === "function";
+  }
+  // Deep-canonicalize: sort keys recursively so any reorder of fields by
+  // a JSON encoder produces the same byte sequence. Note: JSON.stringify's
+  // second-arg "allow-list of keys" filter is RECURSIVE and would silently
+  // drop study fields like est/se/label (not in the top-level list) —
+  // catastrophic for a signature, since tampering est would then produce the
+  // same MAC. Use this canonical form instead.
+  function _canonicalize(obj) {
+    if (obj === null || typeof obj !== "object") return obj;
+    if (Array.isArray(obj)) return obj.map(_canonicalize);
+    var keys = Object.keys(obj).sort();
+    var out = {};
+    for (var i = 0; i < keys.length; i++) {
+      out[keys[i]] = _canonicalize(obj[keys[i]]);
+    }
+    return out;
+  }
+
+  /**
+   * Build and HMAC-sign a TruthCert receipt of the current bus state (or a
+   * caller-supplied study list). Returns a Promise resolving to:
+   *   { ok: true,  receipt: { _schema, _signedAt, studies, signature, alg, keyHint } }
+   *   { ok: false, error: "<reason>" }
+   *
+   * The HMAC key (raw UTF-8 bytes) is taken in this order:
+   *   1. `opts.key` (explicit override; tests, CLI tools)
+   *   2. localStorage "truthcert-hmac-key" (browser; user-configured)
+   *   3. NONE → fail closed.
+   *
+   * `keyHint` is the SHA-256 of the key truncated to 8 hex chars — enough to
+   * identify which key was used without leaking it.
+   */
+  async function toTruthCert(studiesOrOpts, maybeOpts) {
+    var opts = (maybeOpts && typeof maybeOpts === "object") ? maybeOpts
+             : (studiesOrOpts && typeof studiesOrOpts === "object" && !Array.isArray(studiesOrOpts) ? studiesOrOpts : {});
+    var studies = Array.isArray(studiesOrOpts) ? studiesOrOpts : read();
+
+    if (!_hasSubtle()) return { ok: false, error: "WebCrypto SubtleCrypto unavailable" };
+
+    var keyBytes = null;
+    if (opts && typeof opts.key === "string" && opts.key.length > 0) {
+      keyBytes = _utf8(opts.key);
+    } else if (_hasStorage()) {
+      try {
+        var k = global.localStorage.getItem("truthcert-hmac-key");
+        if (k && k.length > 0) keyBytes = _utf8(k);
+      } catch (_) { /* ignore */ }
+    }
+    if (!keyBytes || keyBytes.length === 0) {
+      return { ok: false, error: "no HMAC key — set 'truthcert-hmac-key' in localStorage or pass opts.key" };
+    }
+
+    var env = buildEnvelope(studies);
+    // Canonical message: deep-sorted keys so the same envelope signs to the
+    // same MAC byte-for-byte, regardless of input field order. Studies are
+    // already in caller order; their internal field order is canonicalized.
+    var payload = {
+      _schema: env._schema,
+      _signedAt: new Date().toISOString(),
+      studies: env.studies,
+    };
+    var msg = JSON.stringify(_canonicalize(payload));
+
+    try {
+      var keyObj = await global.crypto.subtle.importKey(
+        "raw", keyBytes,
+        { name: "HMAC", hash: "SHA-256" },
+        false, ["sign"]
+      );
+      var sigBuf = await global.crypto.subtle.sign("HMAC", keyObj, _utf8(msg));
+      var sig = _bytesToHex(sigBuf);
+      var khBuf = await global.crypto.subtle.digest("SHA-256", keyBytes);
+      var keyHint = _bytesToHex(khBuf).slice(0, 8);
+      return {
+        ok: true,
+        receipt: {
+          _schema: payload._schema,
+          _signedAt: payload._signedAt,
+          studies: payload.studies,
+          alg: "HMAC-SHA-256",
+          keyHint: keyHint,
+          signature: sig,
+        },
+      };
+    } catch (e) {
+      return { ok: false, error: "sign failed: " + (e && e.message ? e.message : String(e)) };
+    }
+  }
+
+  /**
+   * Verify a TruthCert receipt against a candidate HMAC key. Returns:
+   *   { ok: true,  valid: boolean,  reason?: string }
+   *   { ok: false, error: "<reason>" }
+   * `valid: true` ⟺ the receipt's signature is a valid HMAC-SHA-256 of
+   * the canonical payload under the candidate key (constant-time compare).
+   */
+  async function verifyTruthCert(receipt, opts) {
+    opts = opts || {};
+    if (!_hasSubtle()) return { ok: false, error: "WebCrypto SubtleCrypto unavailable" };
+    if (!receipt || typeof receipt !== "object") return { ok: false, error: "receipt missing" };
+    if (receipt._schema !== SCHEMA) return { ok: false, error: "wrong schema" };
+    if (receipt.alg !== "HMAC-SHA-256") return { ok: false, error: "unsupported alg: " + receipt.alg };
+    if (typeof receipt.signature !== "string" || receipt.signature.length === 0) {
+      return { ok: false, error: "no signature" };
+    }
+
+    var keyBytes = null;
+    if (typeof opts.key === "string" && opts.key.length) keyBytes = _utf8(opts.key);
+    else if (_hasStorage()) {
+      try {
+        var k = global.localStorage.getItem("truthcert-hmac-key");
+        if (k && k.length) keyBytes = _utf8(k);
+      } catch (_) { /* ignore */ }
+    }
+    if (!keyBytes) return { ok: false, error: "no key for verification" };
+
+    var payload = {
+      _schema: receipt._schema,
+      _signedAt: receipt._signedAt,
+      studies: receipt.studies,
+    };
+    var msg = JSON.stringify(_canonicalize(payload));
+
+    try {
+      var keyObj = await global.crypto.subtle.importKey(
+        "raw", keyBytes,
+        { name: "HMAC", hash: "SHA-256" },
+        false, ["sign"]
+      );
+      var sigBuf = await global.crypto.subtle.sign("HMAC", keyObj, _utf8(msg));
+      var actual = _bytesToHex(sigBuf);
+      // Constant-time hex compare (length-equal). Avoids early-exit
+      // timing side channels that a `===` would leak.
+      var a = String(receipt.signature);
+      if (a.length !== actual.length) return { ok: true, valid: false, reason: "length mismatch" };
+      var diff = 0;
+      for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ actual.charCodeAt(i);
+      return { ok: true, valid: diff === 0, reason: diff === 0 ? undefined : "signature mismatch" };
+    } catch (e) {
+      return { ok: false, error: "verify failed: " + (e && e.message ? e.message : String(e)) };
+    }
+  }
+
   /**
    * Wire a pair of buttons to load/save a textarea against the shared bus.
    * Idempotent if buttons already have listeners (overwrites with new ones).
@@ -373,6 +545,8 @@
     studiesFromTextarea: studiesFromTextarea,
     textareaFromStudies: textareaFromStudies,
     attachButtons: attachButtons,
+    toTruthCert: toTruthCert,
+    verifyTruthCert: verifyTruthCert,
   };
 
   if (typeof module !== "undefined" && module.exports) {

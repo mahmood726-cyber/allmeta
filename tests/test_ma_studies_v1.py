@@ -269,3 +269,95 @@ def test_textareaFromStudies_roundtrip_est_se_label():
     assert len(out) == 2
     assert out[0]["label"] == "Smith"
     assert abs(out[0]["est"] - 0.25) < 1e-12
+
+
+# --- TruthCert receipt (added 2026-05-24 for moat C-3) ------------------------
+# Node 20+ exposes globalThis.crypto with SubtleCrypto. These tests use a
+# canned key passed via opts (not localStorage, which Node lacks). The
+# placeholder-signature lesson is enforced via test_toTruthCert_fails_closed_without_key.
+
+
+def test_toTruthCert_signs_canonical_envelope():
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const studies = [
+            {{ label: "Trial A", est: -0.22, se: 0.11 }},
+            {{ label: "Trial B", est: -0.31, se: 0.14 }}
+          ];
+          const r = await M.toTruthCert(studies, {{ key: "test-key-32-bytes-of-entropy-min" }});
+          console.log(JSON.stringify(r));
+        }})();
+    """)
+    assert out["ok"] is True
+    assert out["receipt"]["_schema"] == "ma-studies-v1"
+    assert out["receipt"]["alg"] == "HMAC-SHA-256"
+    assert len(out["receipt"]["signature"]) == 64   # SHA-256 hex
+    assert len(out["receipt"]["keyHint"]) == 8
+
+
+def test_toTruthCert_fails_closed_without_key():
+    # P0 from lessons.md crypto rule: "Placeholder signatures are a security
+    # bug". If no key is available, the receipt MUST NOT be emitted.
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const r = await M.toTruthCert([{{ label: "x", est: 0.1, se: 0.05 }}]);
+          console.log(JSON.stringify(r));
+        }})();
+    """)
+    assert out["ok"] is False
+    assert "no HMAC key" in out["error"]
+
+
+def test_verifyTruthCert_accepts_own_signature():
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const studies = [
+            {{ label: "A", est: 0.10, se: 0.05 }},
+            {{ label: "B", est: 0.22, se: 0.08 }}
+          ];
+          const key = "consistent-test-key-do-not-leak";
+          const made = await M.toTruthCert(studies, {{ key }});
+          const checked = await M.verifyTruthCert(made.receipt, {{ key }});
+          console.log(JSON.stringify({{ made, checked }}));
+        }})();
+    """)
+    assert out["made"]["ok"] is True
+    assert out["checked"]["ok"] is True
+    assert out["checked"]["valid"] is True
+
+
+def test_verifyTruthCert_rejects_wrong_key():
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const made = await M.toTruthCert(
+            [{{ label: "A", est: 0.1, se: 0.05 }}],
+            {{ key: "real-key" }}
+          );
+          const checked = await M.verifyTruthCert(made.receipt, {{ key: "wrong-key" }});
+          console.log(JSON.stringify(checked));
+        }})();
+    """)
+    assert out["ok"] is True
+    assert out["valid"] is False
+
+
+def test_verifyTruthCert_rejects_tampered_study():
+    # Swap one study's est after signing — MAC must catch it.
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const studies = [{{ label: "A", est: 0.10, se: 0.05 }}];
+          const key = "tamper-key";
+          const made = await M.toTruthCert(studies, {{ key }});
+          // Tamper.
+          made.receipt.studies[0].est = 999;
+          const checked = await M.verifyTruthCert(made.receipt, {{ key }});
+          console.log(JSON.stringify(checked));
+        }})();
+    """)
+    assert out["ok"] is True
+    assert out["valid"] is False
