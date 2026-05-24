@@ -65,6 +65,14 @@ Trial 6, 0, 95, 2, 98
 Trial 7, 2, 450, 6, 445
 Trial 8, 1, 210, 3, 215</textarea>
       </label>
+      <label style="margin-top:0.5rem">
+        <span style="font-size:0.85rem">Model</span>
+        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px">
+          <option value="CM.AL" selected>CM.AL — conditional (fast; control-arm baseline profiled per study)</option>
+          <option value="UM.FS">UM.FS — unconditional (full likelihood; baselines profiled per study; slower)</option>
+        </select>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS matches <code>metafor::rma.glmm(model="UM.FS")</code> within Hermite-quadrature precision (~1e-3 in θ). ~5-10× slower than CM.AL because each study's μ_i is profiled via golden-section search at every (θ, τ²) evaluation.</span>
+      </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
         <strong>When to use:</strong> any meta-analysis where some studies have 0 events in one or both arms. Standard inverse-variance pooling with +0.5 correction biases OR toward 1; the GLMM doesn't because it models the binomial likelihood directly. Reference: Stijnen T, Hamza TH, Ozdemir P 2010 (Stat Med 29:3046-3067).
@@ -148,7 +156,11 @@ Trial 8, 1, 210, 3, 215</textarea>
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 studies.</div>';
         return;
       }
-      var glmm = AlmRareEventsGLMM.fit(rows);
+      var modelEl = document.getElementById("f-model");
+      var model = modelEl ? modelEl.value : "CM.AL";
+      var glmm = model === "UM.FS"
+        ? AlmRareEventsGLMM.fitUnconditional(rows)
+        : AlmRareEventsGLMM.fit(rows);
       if (!glmm.ok) {
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +

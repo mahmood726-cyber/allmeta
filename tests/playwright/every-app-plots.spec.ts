@@ -67,6 +67,8 @@ const LOAD_ONLY_APPS: { path: string; skip?: string }[] = [
   { path: "/multi-outcome-ma/" },
   { path: "/multi-outcome-nma/" },
   { path: "/rare-events-glmm/" },
+  { path: "/nma-meta-reg/", skip: "renders prediction SVG; covered as a plot test below" },
+  { path: "/living-rob-pool/", skip: "renders snapshot SVG; covered as a plot test below" },
   { path: "/prospero-templater/" },
   { path: "/cross-design/", skip: "renders forest SVG; covered as a plot test below" },
   { path: "/rob-traffic-light/" },
@@ -123,6 +125,10 @@ const PLOT_APPS: PlotApp[] = [
 
   // Cross-design synthesis app — auto-runs on load + renders a 3-method forest
   { path: "/cross-design/", runBtn: "#btn-run", plotSelector: "#forest-host svg" },
+
+  // Network meta-regression + Living-RoB pool — both auto-run on load + render
+  { path: "/nma-meta-reg/", runBtn: "#btn-run", plotSelector: "#plot-host" },
+  { path: "/living-rob-pool/", runBtn: "#btn-run", plotSelector: "#plot-host" },
 
   // NMA-pro (special: data must be loaded via window.loadDemo)
   {

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Network meta-regression with treatment × covariate interactions (Cooper 2009; NICE DSU TSD 3).">
+  <meta name="color-scheme" content="light dark">
+  <title>Network meta-regression</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 14rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
+    input { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.5rem; margin-bottom:0.75rem; }
+    .summary-grid .card { background:var(--accent-soft); border-radius:6px; padding:0.5rem 0.7rem; }
+    .summary-grid .k { display:block; font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+    .summary-grid .v { display:block; font-size:1.0rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+    .plot { background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.6rem; margin-top:0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/nma-meta-regression.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Network meta-regression (treatment × covariate)</h1>
+    <p>Adjusts pairwise NMA pooled effects for a single study-level covariate, with a separate interaction slope γ_k per non-reference treatment. The full model is y_i = X_i β + Z_i γ + δ_i + ε_i where Z_i = X_i · (x_i − x̄). Centring at the mean of the covariate gives β̂ the interpretation of "treatment effect at the average study." Predictions at any user-supplied covariate value come with proper SEs that account for Cov(β̂, γ̂).</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Contrast rows + study-level covariate</h2>
+      <label>
+        <span>One row per contrast: <code>studyId, trtA, trtB, yi, sei, covariate</code></span>
+        <textarea id="src">S01, A, B, -0.30, 0.10, 50
+S02, A, B, -0.25, 0.12, 55
+S03, A, B, -0.40, 0.11, 45
+S04, A, B, -0.35, 0.10, 65
+S05, A, C, -0.45, 0.13, 50
+S06, A, C, -0.50, 0.12, 60
+S07, A, C, -0.48, 0.11, 70
+S08, B, C, -0.15, 0.14, 55
+S09, B, C, -0.20, 0.13, 60
+S10, A, B, -0.32, 0.10, 70</textarea>
+      </label>
+      <label>
+        <span>Reference treatment</span>
+        <input id="f-ref" type="text" value="A">
+      </label>
+      <label>
+        <span>Predict at covariate values (comma-separated)</span>
+        <input id="f-predict" type="text" value="40, 50, 60, 70">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit network meta-regression</button>
+      <div class="note">
+        Use a covariate likely to MODIFY treatment effect (mean age, baseline risk, year, dose). The γ̂ tells you whether the effect changes with the covariate — and how much. Always inspect the prediction plot to see whether the effect modification is clinically meaningful across the observed covariate range.
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Fit</h2>
+      <div id="summary" class="summary-grid"></div>
+      <h2 style="margin-top:1rem">β̂ at the mean covariate (x̄)</h2>
+      <table id="beta"><thead><tr><th>Treatment vs ref</th><th>β̂</th><th>SE</th><th>95% CI</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:1rem">γ̂ (treatment × covariate interaction)</h2>
+      <table id="gamma"><thead><tr><th>Treatment vs ref</th><th>γ̂</th><th>SE</th><th>95% CI</th></tr></thead><tbody></tbody></table>
+      <h2 style="margin-top:1rem">Predicted β̂(x)</h2>
+      <table id="pred"><thead id="pred-head-host"><tr><th>Covariate</th></tr></thead><tbody></tbody></table>
+      <div class="plot"><svg id="plot-host" viewBox="0 0 720 320" width="100%" role="img" aria-label="Predicted effect vs covariate"></svg></div>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/nma-meta-regression.js</code>. Estimation: Paule-Mandel τ² + GLS on the augmented design. Reference: Cooper et al. 2009 <em>Stat Med</em>; Dias et al. 2018 NICE DSU TSD 3. Single covariate per fit — for multiple covariates, fit each separately.
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+
+    function parse(text) {
+      var rows = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 6) continue;
+        rows.push({
+          studyId: parts[0], trtA: parts[1], trtB: parts[2],
+          yi: parseFloat(parts[3]), sei: parseFloat(parts[4]),
+          covariate: parseFloat(parts[5]),
+        });
+      }
+      return rows;
+    }
+
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+
+    function drawPredictionPlot(predictions, treatments, refTrt) {
+      var svg = document.getElementById("plot-host");
+      svg.innerHTML = "";
+      if (!predictions.length) return;
+      var W = 720, H = 320, padL = 70, padR = 20, padT = 20, padB = 50;
+      var xs = predictions.map(function (p) { return p.x; });
+      var ys = [];
+      for (var i = 0; i < predictions.length; i++) {
+        for (var k = 1; k < treatments.length; k++) {
+          var e = predictions[i].perTreatment[treatments[k]];
+          ys.push(e.ci_lo); ys.push(e.ci_hi);
+        }
+      }
+      var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+      var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+      var dy = (yMax - yMin) * 0.1 || 0.1;
+      yMin -= dy; yMax += dy;
+      function X(x) { return padL + (W - padL - padR) * (x - xMin) / (xMax - xMin || 1); }
+      function Y(y) { return padT + (H - padT - padB) * (1 - (y - yMin) / (yMax - yMin || 1)); }
+      var colors = ["#2c5e8a", "#a67b15", "#7a3aa6", "#1f7a44", "#b04444"];
+      // zero line
+      svg.insertAdjacentHTML("beforeend",
+        '<line x1="' + X(xMin) + '" x2="' + X(xMax) + '" y1="' + Y(0) + '" y2="' + Y(0) +
+        '" stroke="#9aa0a8" stroke-dasharray="3 3"/>');
+      // axes
+      svg.insertAdjacentHTML("beforeend",
+        '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (H - padB) + '" y2="' + (H - padB) + '" stroke="currentColor"/>' +
+        '<line x1="' + padL + '" x2="' + padL + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="currentColor"/>');
+      // x ticks
+      for (var t = 0; t < 5; t++) {
+        var xv = xMin + (xMax - xMin) * t / 4;
+        svg.insertAdjacentHTML("beforeend",
+          '<line x1="' + X(xv) + '" x2="' + X(xv) + '" y1="' + (H - padB) + '" y2="' + (H - padB + 4) + '" stroke="currentColor"/>' +
+          '<text x="' + X(xv) + '" y="' + (H - padB + 18) + '" text-anchor="middle" font-size="11" fill="currentColor">' + xv.toFixed(1) + '</text>');
+      }
+      svg.insertAdjacentHTML("beforeend",
+        '<text x="' + ((padL + W - padR) / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="12" fill="currentColor">Covariate</text>');
+      // y ticks
+      for (var t2 = 0; t2 < 5; t2++) {
+        var yv = yMin + (yMax - yMin) * t2 / 4;
+        svg.insertAdjacentHTML("beforeend",
+          '<line x1="' + padL + '" x2="' + (padL - 4) + '" y1="' + Y(yv) + '" y2="' + Y(yv) + '" stroke="currentColor"/>' +
+          '<text x="' + (padL - 6) + '" y="' + (Y(yv) + 3) + '" text-anchor="end" font-size="11" fill="currentColor">' + yv.toFixed(2) + '</text>');
+      }
+      svg.insertAdjacentHTML("beforeend",
+        '<text x="20" y="' + ((padT + H - padB) / 2) + '" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 20 ' + ((padT + H - padB) / 2) + ')">Effect (β̂ vs ' + refTrt + ')</text>');
+      // each non-reference treatment: a line + CI ribbon
+      for (var k = 1; k < treatments.length; k++) {
+        var col = colors[(k - 1) % colors.length];
+        var pts = predictions.map(function (p) { return { x: p.x, e: p.perTreatment[treatments[k]] }; });
+        var polyU = pts.map(function (p) { return X(p.x) + "," + Y(p.e.ci_hi); }).join(" ");
+        var polyL = pts.slice().reverse().map(function (p) { return X(p.x) + "," + Y(p.e.ci_lo); }).join(" ");
+        svg.insertAdjacentHTML("beforeend",
+          '<polygon points="' + polyU + " " + polyL + '" fill="' + col + '" opacity="0.18"/>');
+        var line = pts.map(function (p) { return X(p.x) + "," + Y(p.e.estimate); }).join(" ");
+        svg.insertAdjacentHTML("beforeend",
+          '<polyline points="' + line + '" fill="none" stroke="' + col + '" stroke-width="2"/>');
+        // legend
+        var ly = padT + 14 + (k - 1) * 16;
+        svg.insertAdjacentHTML("beforeend",
+          '<rect x="' + (W - padR - 90) + '" y="' + (ly - 8) + '" width="10" height="10" fill="' + col + '"/>' +
+          '<text x="' + (W - padR - 75) + '" y="' + ly + '" font-size="11" fill="currentColor">' + treatments[k] + ' vs ' + refTrt + '</text>');
+      }
+    }
+
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 4) {
+        document.getElementById("summary").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 4 valid contrast rows.</div>';
+        return;
+      }
+      var refTrt = (document.getElementById("f-ref").value || "").trim();
+      var predicts = (document.getElementById("f-predict").value || "")
+        .split(/\s*,\s*/).map(function (s) { return parseFloat(s); }).filter(isFinite);
+
+      var treatments = Array.from(new Set(rows.reduce(function (acc, r) {
+        acc.push(r.trtA); acc.push(r.trtB); return acc;
+      }, []))).sort();
+      if (refTrt && treatments.includes(refTrt)) {
+        treatments = [refTrt].concat(treatments.filter(function (t) { return t !== refTrt; }));
+      }
+      var fit;
+      try {
+        fit = AlmNmaMetaReg.fit(rows, treatments, { predictAt: predicts.length ? predicts : undefined });
+      } catch (e) {
+        document.getElementById("summary").innerHTML =
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Fit failed: ' + e.message + '</div>';
+        return;
+      }
+      document.getElementById("summary").innerHTML =
+        '<div class="card"><span class="k">x̄ (covariate mean)</span><span class="v">' + fmt(fit.xMean, 2) + '</span></div>' +
+        '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(fit.tau2, 4) + '</span></div>' +
+        '<div class="card"><span class="k">n rows</span><span class="v">' + fit.n + '</span></div>' +
+        '<div class="card"><span class="k">p (params)</span><span class="v">' + fit.p + '</span></div>' +
+        '<div class="card"><span class="k">Reference</span><span class="v">' + treatments[0] + '</span></div>' +
+        '<div class="card"><span class="k">Treatments</span><span class="v">' + treatments.length + '</span></div>';
+
+      // β table
+      var bHtml = "";
+      for (var k = 1; k < treatments.length; k++) {
+        var b = fit.beta_at_mean[treatments[k]];
+        bHtml += "<tr><td>" + treatments[k] + " vs " + treatments[0] + "</td><td>" + fmt(b.estimate, 4) + "</td><td>" + fmt(b.se, 4) + "</td><td>" + fmt(b.ci_lo, 3) + ", " + fmt(b.ci_hi, 3) + "</td></tr>";
+      }
+      document.querySelector("#beta tbody").innerHTML = bHtml;
+
+      // γ table
+      var gHtml = "";
+      for (var k2 = 1; k2 < treatments.length; k2++) {
+        var g = fit.gamma[treatments[k2]];
+        gHtml += "<tr><td>" + treatments[k2] + " vs " + treatments[0] + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + fmt(g.se, 4) + "</td><td>" + fmt(g.ci_lo, 3) + ", " + fmt(g.ci_hi, 3) + "</td></tr>";
+      }
+      document.querySelector("#gamma tbody").innerHTML = gHtml;
+
+      // predictions
+      var phead = "<tr><th>Covariate</th>";
+      for (var k3 = 1; k3 < treatments.length; k3++) phead += "<th>" + treatments[k3] + " vs " + treatments[0] + "</th>";
+      phead += "</tr>";
+      // Replace contents of #pred-head-host so the stable ID survives re-renders.
+      document.getElementById("pred-head-host").innerHTML = phead;
+      var pBody = "";
+      for (var i = 0; i < fit.predictions.length; i++) {
+        var p = fit.predictions[i];
+        pBody += "<tr><td>" + fmt(p.x, 2) + "</td>";
+        for (var k4 = 1; k4 < treatments.length; k4++) {
+          var e = p.perTreatment[treatments[k4]];
+          pBody += "<td>" + fmt(e.estimate, 3) + " (" + fmt(e.ci_lo, 3) + ", " + fmt(e.ci_hi, 3) + ")</td>";
+        }
+        pBody += "</tr>";
+      }
+      document.querySelector("#pred tbody").innerHTML = pBody;
+
+      drawPredictionPlot(fit.predictions, treatments, treatments[0]);
+      window.__almLastNmaMetaReg = function () { return fit; };
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

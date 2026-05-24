@@ -75,6 +75,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/webr-runner.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -137,7 +138,7 @@ Study C, 0.05, 0.18"></textarea>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
-        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-verify-live" title="Boot WebR in-page and run metafor::rma live on the current bus state — side-by-side with the JS engine result." style="background:#1f7a44;color:#fff;border:1px solid #1f7a44;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">R live</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
         <button type="button" id="btn-reset" style="display:none">Reset</button>
         <div id="alm-undo-mount" style="display:inline-flex"></div>
@@ -897,8 +898,26 @@ Study C, 0.05, 0.18"></textarea>
     else document.addEventListener("DOMContentLoaded", fn);
   }
   ready(function () {
-    if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    if (window.MaStudies && typeof MaStudies.attachVerifyInRButton === "function") {
+      MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    }
+    if (window.AlmWebR && typeof AlmWebR.attachLiveButton === "function") {
+      // The JS engine in this app exposes its current pool via the
+      // forest plot's pooled-effect computation. Provide getJsResult so
+      // the modal can show |Δ| between R and JS for each field.
+      AlmWebR.attachLiveButton({
+        btn: "#btn-verify-live",
+        method: "REML", test: "z",
+        getJsResult: function () {
+          var s = (typeof window._almForestState === "function") ? window._almForestState() : null;
+          return s && s.pool ? {
+            mu: s.pool.mu, se: s.pool.se,
+            ci_lb: s.pool.ci_lb, ci_ub: s.pool.ci_ub,
+            tau2: s.pool.tau2, I2: s.pool.I2, k: s.pool.k,
+          } : null;
+        },
+      });
+    }
   });
 })();
 </script>

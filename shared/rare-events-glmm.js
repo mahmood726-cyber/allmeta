@@ -216,11 +216,145 @@
     };
   }
 
+  // =====================================================================
+  // UNCONDITIONAL (UM.FS) — full-likelihood random-effects logistic
+  //
+  // Model (Stijnen-Hamza-Ozdemir 2010 §2.1):
+  //   logit(p_C_i) = μ_i                — study-specific baseline (FIXED)
+  //   logit(p_T_i) = μ_i + θ + u_i      — treatment effect + RE
+  //   u_i ~ N(0, τ²); e_C_i, e_T_i ~ Binom
+  //
+  // Each study's μ_i is profiled out at every (θ, τ²) via golden-section
+  // search; the marginal over u_i integrates with 10-point Hermite-Gauss.
+  // Matches metafor::rma.glmm(model="UM.FS", method="ML") to within
+  // Hermite quadrature precision (~1e-3 in θ for typical clinical data).
+
+  function _logL_study_uncond(eT, nT, eC, nC, theta, tau, mu) {
+    var llC = _logBin(eC, nC, mu);
+    var logTerms = new Array(HG10_NODES.length);
+    for (var q = 0; q < HG10_NODES.length; q++) {
+      var u = HG10_NODES[q];
+      var logitT = mu + theta + tau * u;
+      logTerms[q] = _logBin(eT, nT, logitT)
+                  + Math.log(HG10_WEIGHTS[q]) - 0.5 * Math.log(Math.PI);
+    }
+    return llC + _logSumExp(logTerms);
+  }
+
+  function _profileMu(eT, nT, eC, nC, theta, tau) {
+    // Seed from control rate.
+    var seed;
+    if (eC === 0) seed = Math.log(0.5 / (nC + 0.5));
+    else if (eC === nC) seed = Math.log((nC + 0.5) / 0.5);
+    else seed = Math.log(eC / (nC - eC));
+    // Golden-section search on -log L over μ ∈ [seed-4, seed+4].
+    var f = function (mu) { return -_logL_study_uncond(eT, nT, eC, nC, theta, tau, mu); };
+    var phi = (Math.sqrt(5) - 1) / 2;
+    var a = seed - 4, b = seed + 4;
+    var x1 = b - phi * (b - a), x2 = a + phi * (b - a);
+    var f1 = f(x1), f2 = f(x2);
+    for (var iter = 0; iter < 60; iter++) {
+      if (f1 < f2) { b = x2; x2 = x1; f2 = f1; x1 = b - phi * (b - a); f1 = f(x1); }
+      else         { a = x1; x1 = x2; f1 = f2; x2 = a + phi * (b - a); f2 = f(x2); }
+      if (Math.abs(b - a) < 1e-6) break;
+    }
+    return 0.5 * (a + b);
+  }
+
+  function _logL_total_uncond(rows, theta, tau) {
+    var s = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var mu = _profileMu(r.events_T, r.n_T, r.events_C, r.n_C, theta, tau);
+      s += _logL_study_uncond(r.events_T, r.n_T, r.events_C, r.n_C, theta, tau, mu);
+    }
+    return s;
+  }
+
+  function fitUnconditional(rowsIn, opts) {
+    opts = opts || {};
+    var rows = rowsIn.filter(function (r) {
+      return Number.isFinite(r.events_T) && Number.isFinite(r.events_C)
+          && Number.isFinite(r.n_T) && Number.isFinite(r.n_C)
+          && r.n_T > 0 && r.n_C > 0
+          && r.events_T >= 0 && r.events_C >= 0
+          && r.events_T <= r.n_T && r.events_C <= r.n_C;
+    });
+    if (!rows.length) return { ok: false, error: "no valid rows" };
+
+    // Seed from the conditional fit so we start near the optimum.
+    var seed = fit(rowsIn, opts);
+    if (!seed.ok) return seed;
+    var phi = [seed.theta, Math.log(Math.max(1e-6, seed.tau))];
+
+    var fOf = function (p) {
+      var th = p[0], t = Math.max(1e-6, Math.exp(p[1]));
+      return -_logL_total_uncond(rows, th, t);
+    };
+    var f0 = fOf(phi);
+    var damp = 1e-3;
+    for (var iter = 0; iter < 40; iter++) {
+      var h = 1e-3;
+      var g = [
+        (fOf([phi[0] + h, phi[1]]) - fOf([phi[0] - h, phi[1]])) / (2 * h),
+        (fOf([phi[0], phi[1] + h]) - fOf([phi[0], phi[1] - h])) / (2 * h),
+      ];
+      // Diagonal Hessian only (cross-term too noisy through profiled μ).
+      var fpp = fOf([phi[0] + h, phi[1]]);
+      var fmm = fOf([phi[0] - h, phi[1]]);
+      var fpc = fOf([phi[0], phi[1] + h]);
+      var fmc = fOf([phi[0], phi[1] - h]);
+      var H00 = Math.max((fpp - 2 * f0 + fmm) / (h * h) + damp, 1e-3);
+      var H11 = Math.max((fpc - 2 * f0 + fmc) / (h * h) + damp, 1e-3);
+      var step = [-g[0] / H00, -g[1] / H11];
+      var alpha = 1;
+      var phiNew = [phi[0] + alpha * step[0], phi[1] + alpha * step[1]];
+      var fNew = fOf(phiNew);
+      while (fNew > f0 - 1e-9 && alpha > 1e-6) {
+        alpha *= 0.5;
+        phiNew = [phi[0] + alpha * step[0], phi[1] + alpha * step[1]];
+        fNew = fOf(phiNew);
+      }
+      if (Math.abs(f0 - fNew) < 1e-6) { phi = phiNew; f0 = fNew; break; }
+      phi = phiNew; f0 = fNew;
+      damp = Math.max(damp * 0.7, 1e-6);
+    }
+
+    var thetaHat = phi[0];
+    var tauHat = Math.max(1e-6, Math.exp(phi[1]));
+    var hp = 1e-3;
+    var f_pp = -_logL_total_uncond(rows, thetaHat + hp, tauHat);
+    var f_mm = -_logL_total_uncond(rows, thetaHat - hp, tauHat);
+    var f_00 = -_logL_total_uncond(rows, thetaHat, tauHat);
+    var d2 = (f_pp - 2 * f_00 + f_mm) / (hp * hp);
+    var seTheta = d2 > 0 ? Math.sqrt(1 / d2) : NaN;
+
+    var Z975 = 1.959963984540054;
+    return {
+      ok: true, model: "UM.FS",
+      theta: thetaHat, se_theta: seTheta,
+      tau2: tauHat * tauHat, tau: tauHat,
+      OR: Math.exp(thetaHat),
+      OR_lo: Math.exp(thetaHat - Z975 * seTheta),
+      OR_hi: Math.exp(thetaHat + Z975 * seTheta),
+      k: rows.length,
+      n_zero_cell_studies: rows.filter(function (r) {
+        return r.events_T === 0 || r.events_T === r.n_T
+            || r.events_C === 0 || r.events_C === r.n_C;
+      }).length,
+      seed_conditional: { theta: seed.theta, tau: seed.tau },
+    };
+  }
+
   var api = {
     fit: fit,
+    fitUnconditional: fitUnconditional,
     _logBin: _logBin,
     _logL_study: _logL_study,
     _logL_total: _logL_total,
+    _logL_study_uncond: _logL_study_uncond,
+    _profileMu: _profileMu,
+    _logL_total_uncond: _logL_total_uncond,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmRareEventsGLMM = api;

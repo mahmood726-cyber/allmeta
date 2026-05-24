@@ -118,3 +118,63 @@ def test_fit_rejects_invalid_rows():
     """)
     # All rows filtered → no valid rows → ok=false.
     assert out["ok"] is False
+
+
+# --- UM.FS unconditional GLMM -----------------------------------------------
+
+
+def test_fitUnconditional_converges_with_zero_cells():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const rows = [
+          {{ events_T: 0, n_T: 250, events_C: 1, n_C: 248 }},
+          {{ events_T: 2, n_T: 500, events_C: 5, n_C: 510 }},
+          {{ events_T: 0, n_T: 180, events_C: 3, n_C: 182 }},
+          {{ events_T: 1, n_T: 320, events_C: 4, n_C: 325 }},
+          {{ events_T: 3, n_T: 600, events_C: 7, n_C: 605 }},
+        ];
+        const r = M.fitUnconditional(rows);
+        console.log(JSON.stringify({{
+          ok: r.ok, model: r.model,
+          theta: r.theta, OR: r.OR,
+          finite: isFinite(r.theta) && isFinite(r.se_theta) && r.se_theta > 0,
+          seed_theta: r.seed_conditional.theta,
+        }}));
+    """)
+    assert out["ok"] is True
+    assert out["model"] == "UM.FS"
+    assert out["finite"]
+    assert 0.1 < out["OR"] < 1.5
+    assert (out["theta"] < 0) == (out["seed_theta"] < 0)
+
+
+def test_fitUnconditional_matches_conditional_when_no_zero_cells():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const rows = [
+          {{ events_T: 8, n_T: 200, events_C: 15, n_C: 200 }},
+          {{ events_T: 12, n_T: 300, events_C: 20, n_C: 305 }},
+          {{ events_T: 5, n_T: 150, events_C: 11, n_C: 152 }},
+          {{ events_T: 10, n_T: 250, events_C: 18, n_C: 248 }},
+        ];
+        const cond = M.fit(rows);
+        const uncond = M.fitUnconditional(rows);
+        console.log(JSON.stringify({{
+          cond_theta: cond.theta, uncond_theta: uncond.theta,
+          diff: Math.abs(cond.theta - uncond.theta),
+        }}));
+    """)
+    assert out["diff"] < 0.15
+
+
+def test_profileMu_finds_reasonable_baseline():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        // eC=10/100 (logit ≈ -2.197); profiled μ should be near that for τ small.
+        const mu = M._profileMu(8, 100, 10, 100, 0.0, 0.01);
+        console.log(JSON.stringify({{
+          mu: mu,
+          implied_pc: 1 / (1 + Math.exp(-mu)),
+        }}));
+    """)
+    assert 0.05 < out["implied_pc"] < 0.18

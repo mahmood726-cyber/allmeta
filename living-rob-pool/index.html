@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Living-evidence pooling with time-varying RoB downweighting — surface drift in the pooled effect across quarterly snapshots.">
+  <meta name="color-scheme" content="light dark">
+  <title>Living RoB pool</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(340px, 30rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 13rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.82rem/1.4 "SF Mono", Consolas, monospace; }
+    input { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .note { background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.55rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.75rem; }
+    .plot { background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.6rem; margin-top:0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/living-rob-pool.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Living-evidence pool with time-varying RoB</h1>
+    <p>Re-pools your meta-analysis at a sequence of snapshot dates, applying the RoB rating that was effective for each study AS-OF that date. Studies with a re-rated RoB (e.g. a "low" judgment that became "high" after better signal-quality methods) automatically use the appropriate weight at each snapshot. Surfaces drift in the pooled estimate as evidence accumulates and as RoB judgements evolve — the two main reasons a living systematic review's bottom line changes over time.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label>
+        <span>One row per study (TSV-style): <code>yi, vi, published_date, rob_history</code>. <br>
+              The <code>rob_history</code> is a semicolon-separated list of <code>date|rob</code> entries.</span>
+        <textarea id="src">yi,vi,published_date,rob_history
+-0.30,0.010,2021-01-15,2021-01-15|low
+-0.25,0.014,2021-06-01,2021-06-01|low;2024-03-10|some
+-0.40,0.018,2022-02-20,2022-02-20|low
+-0.20,0.012,2022-09-12,2022-09-12|some
+-0.50,0.015,2023-03-05,2023-03-05|low
+-0.35,0.012,2023-09-20,2023-09-20|low;2024-08-15|high
+-0.60,0.020,2024-02-14,2024-02-14|low
+-0.45,0.011,2024-09-01,2024-09-01|low</textarea>
+      </label>
+      <label>
+        <span>Snapshot dates (comma-separated; or leave blank to auto-generate quarterly)</span>
+        <input id="f-snaps" type="text" value="">
+      </label>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Compute snapshot series</button>
+      <div class="note">
+        <strong>Time-varying RoB is the key innovation:</strong> the pool at 2024-01-01 will use a study's RoB AS RATED ON 2023-12-31 (or earlier). The pool at 2025-01-01 may use a different RoB for the SAME study because its rating was updated. This makes the pool's drift reflect both NEW studies AND updated judgements on existing ones — the two reasons a living SR's bottom line moves.
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Snapshot series</h2>
+      <table id="series"><thead><tr><th>Date</th><th>k</th><th>μ̂</th><th>SE</th><th>95% CI</th><th>τ²</th><th>Δ vs prev</th></tr></thead><tbody></tbody></table>
+      <div class="plot"><svg id="plot-host" viewBox="0 0 720 340" width="100%" role="img" aria-label="Pooled effect over snapshot dates"></svg></div>
+    </section>
+  </main>
+  <footer>
+    Engine: <code>shared/living-rob-pool.js</code>. Default RoB → bias mapping: low=0, some=0.25, high=0.5, critical=0.5, unclear=0.25. Override per project as needed. References: Elliott et al. 2017 (PLOS Med 14:e1002264) on living systematic reviews; Cochrane Handbook §10.10 on bias-adjusted sensitivity analyses.
+  </footer>
+  <script>
+  (function () {
+    "use strict";
+
+    function parse(text) {
+      var lines = text.split(/\r?\n/);
+      var rows = [];
+      // Skip the header line if it contains "yi" + "vi" + "rob".
+      var startIdx = 0;
+      if (lines[0] && /yi.*vi.*rob/i.test(lines[0])) startIdx = 1;
+      for (var i = startIdx; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line || line.startsWith("#")) continue;
+        var parts = line.split(/\s*,\s*/);
+        if (parts.length < 4) continue;
+        var yi = parseFloat(parts[0]);
+        var vi = parseFloat(parts[1]);
+        var pub = parts[2];
+        var hist = (parts[3] || "").split(/\s*;\s*/).map(function (h) {
+          var bits = h.split(/\s*\|\s*/);
+          if (bits.length !== 2) return null;
+          return { date: bits[0], rob: bits[1] };
+        }).filter(Boolean);
+        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) continue;
+        rows.push({ yi: yi, vi: vi, published_date: pub, rob_history: hist });
+      }
+      return rows;
+    }
+
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+
+    function drawPlot(series) {
+      var svg = document.getElementById("plot-host");
+      svg.innerHTML = "";
+      var valid = series.filter(function (s) { return isFinite(s.mu); });
+      if (valid.length < 2) return;
+      var W = 720, H = 340, padL = 80, padR = 30, padT = 20, padB = 60;
+      var times = valid.map(function (s) { return new Date(s.date).getTime(); });
+      var ys = [];
+      valid.forEach(function (s) { ys.push(s.ci_lo); ys.push(s.ci_hi); ys.push(s.mu); });
+      var tMin = Math.min.apply(null, times), tMax = Math.max.apply(null, times);
+      var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+      var dy = (yMax - yMin) * 0.1 || 0.1;
+      yMin -= dy; yMax += dy;
+      function X(t) { return padL + (W - padL - padR) * (t - tMin) / (tMax - tMin || 1); }
+      function Y(y) { return padT + (H - padT - padB) * (1 - (y - yMin) / (yMax - yMin || 1)); }
+      svg.insertAdjacentHTML("beforeend",
+        '<line x1="' + X(tMin) + '" x2="' + X(tMax) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#9aa0a8" stroke-dasharray="3 3"/>');
+      svg.insertAdjacentHTML("beforeend",
+        '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (H - padB) + '" y2="' + (H - padB) + '" stroke="currentColor"/>' +
+        '<line x1="' + padL + '" x2="' + padL + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="currentColor"/>');
+      // CI ribbon
+      var upper = valid.map(function (s) { return X(new Date(s.date).getTime()) + "," + Y(s.ci_hi); }).join(" ");
+      var lower = valid.slice().reverse().map(function (s) { return X(new Date(s.date).getTime()) + "," + Y(s.ci_lo); }).join(" ");
+      svg.insertAdjacentHTML("beforeend",
+        '<polygon points="' + upper + " " + lower + '" fill="#2c5e8a" opacity="0.18"/>');
+      var line = valid.map(function (s) { return X(new Date(s.date).getTime()) + "," + Y(s.mu); }).join(" ");
+      svg.insertAdjacentHTML("beforeend",
+        '<polyline points="' + line + '" fill="none" stroke="#2c5e8a" stroke-width="2"/>');
+      valid.forEach(function (s) {
+        svg.insertAdjacentHTML("beforeend",
+          '<circle cx="' + X(new Date(s.date).getTime()) + '" cy="' + Y(s.mu) + '" r="3" fill="#2c5e8a"/>');
+      });
+      // x ticks (5)
+      for (var t = 0; t < 5; t++) {
+        var tv = tMin + (tMax - tMin) * t / 4;
+        var d = new Date(tv).toISOString().slice(0, 10);
+        svg.insertAdjacentHTML("beforeend",
+          '<line x1="' + X(tv) + '" x2="' + X(tv) + '" y1="' + (H - padB) + '" y2="' + (H - padB + 4) + '" stroke="currentColor"/>' +
+          '<text x="' + X(tv) + '" y="' + (H - padB + 20) + '" text-anchor="middle" font-size="11" fill="currentColor">' + d + '</text>');
+      }
+      svg.insertAdjacentHTML("beforeend",
+        '<text x="' + ((padL + W - padR) / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="12" fill="currentColor">Snapshot date</text>');
+      // y ticks (5)
+      for (var t2 = 0; t2 < 5; t2++) {
+        var yv = yMin + (yMax - yMin) * t2 / 4;
+        svg.insertAdjacentHTML("beforeend",
+          '<line x1="' + padL + '" x2="' + (padL - 4) + '" y1="' + Y(yv) + '" y2="' + Y(yv) + '" stroke="currentColor"/>' +
+          '<text x="' + (padL - 6) + '" y="' + (Y(yv) + 3) + '" text-anchor="end" font-size="11" fill="currentColor">' + yv.toFixed(2) + '</text>');
+      }
+      svg.insertAdjacentHTML("beforeend",
+        '<text x="22" y="' + ((padT + H - padB) / 2) + '" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 22 ' + ((padT + H - padB) / 2) + ')">Pooled effect</text>');
+    }
+
+    function run() {
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 2) {
+        document.querySelector("#series tbody").innerHTML =
+          '<tr><td colspan="7" style="color:var(--bad)">Need ≥ 2 studies.</td></tr>';
+        return;
+      }
+      var snapInput = (document.getElementById("f-snaps").value || "").trim();
+      var snaps;
+      if (snapInput) {
+        snaps = snapInput.split(/\s*,\s*/).filter(Boolean);
+      } else {
+        snaps = AlmLivingRoB.defaultSnapshots(rows, 90);
+      }
+      if (!snaps.length) {
+        document.querySelector("#series tbody").innerHTML =
+          '<tr><td colspan="7" style="color:var(--bad)">No snapshot dates derivable from data.</td></tr>';
+        return;
+      }
+      var series = AlmLivingRoB.poolOverTime(rows, snaps);
+      var html = "";
+      for (var i = 0; i < series.length; i++) {
+        var s = series[i];
+        var ci = (isFinite(s.ci_lo) && isFinite(s.ci_hi)) ? fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) : "—";
+        html += "<tr><td>" + s.date + "</td>" +
+          "<td>" + s.k + "</td>" +
+          "<td>" + fmt(s.mu, 4) + "</td>" +
+          "<td>" + fmt(s.se, 4) + "</td>" +
+          "<td>" + ci + "</td>" +
+          "<td>" + fmt(s.tau2, 4) + "</td>" +
+          "<td>" + (i === 0 ? "—" : fmt(s.drift_vs_prev, 4)) + (s.warning ? '<br><span style="color:var(--warn);font-size:0.8em">' + s.warning + '</span>' : "") + "</td></tr>";
+      }
+      document.querySelector("#series tbody").innerHTML = html;
+      drawPlot(series);
+      window.__almLastLivingRoB = function () { return { rows: rows, snaps: snaps, series: series }; };
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

@@ -32,9 +32,33 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Pairwise MA",
-    summary: "Binomial-normal random-effects logistic regression for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases OR pooling toward the null. Uses 10-point Gauss-Hermite quadrature + damped Newton-Raphson on (θ, log τ).",
-    note: "Reference: Stijnen, Hamza, Ozdemir 2010 (Stat Med 29:3046-3067). Equivalent to metafor::rma.glmm conditional approximation.",
+    summary: "Binomial-normal random-effects logistic regression for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases OR pooling toward the null. Both conditional (CM.AL, fast) and unconditional (UM.FS, full-likelihood) variants — 10-point Gauss-Hermite quadrature + damped Newton-Raphson on (θ, log τ).",
+    note: "Reference: Stijnen, Hamza, Ozdemir 2010 (Stat Med 29:3046-3067). UM.FS matches metafor::rma.glmm(model='UM.FS') within Hermite precision.",
     tags: ["glmm", "rare-events", "binomial", "stijnen", "zero-cells", "logistic-re"]
+  },
+  {
+    name: "Living RoB pool",
+    featured: true,
+    folder: "allmeta/living-rob-pool",
+    path: "./living-rob-pool/",
+    collection: "new",
+    mode: "file",
+    category: "Living Evidence",
+    summary: "Living-evidence pooling with time-varying RoB. Each snapshot uses each study's RoB AS RATED ON or before that date, so the pool's drift reflects BOTH new studies AND updated judgements on existing ones — the two reasons a living systematic review's bottom line moves.",
+    note: "Default RoB → bias mapping: low=0, some=0.25, high=0.5. Pairs naturally with the EvidenceOS living-evidence cron + GH Actions update.",
+    tags: ["living-evidence", "time-varying-rob", "snapshots", "drift", "rob2", "sensitivity"]
+  },
+  {
+    name: "Network meta-regression",
+    featured: true,
+    folder: "allmeta/nma-meta-reg",
+    path: "./nma-meta-reg/",
+    collection: "new",
+    mode: "file",
+    category: "Network MA",
+    summary: "NMA with a study-level covariate × treatment interaction. Each non-reference treatment gets its own slope γ_k. Centred at the covariate mean for interpretability; predictions at arbitrary covariate values come with proper SEs accounting for Cov(β̂, γ̂). PM τ² + GLS.",
+    note: "Reference: Cooper et al. 2009 (Stat Med); Dias et al. 2018 NICE DSU TSD 3. Single-covariate; fit separately for each covariate of interest.",
+    tags: ["nma", "meta-regression", "covariate", "interaction", "cooper", "nice-tsd"]
   },
   {
     name: "Multi-outcome NMA (Achana 2014)",
