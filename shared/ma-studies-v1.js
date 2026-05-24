@@ -233,6 +233,125 @@
     return lines.join("\n") + "\n";
   }
 
+  // ----- Textarea I/O helpers --------------------------------------------
+
+  /**
+   * Parse a textarea value whose lines are CSV in one of these formats:
+   *   "label, est, se[, year[, group[, moderator]]]"   (format: "label-est-se")
+   *   "est, se[, label]"                                (format: "est-se-label")
+   *   "est, se, label[, moderator]"                     (format: "est-se-label-mod")
+   * Returns an array of {label, est, se, moderator?, group?, year?} rows,
+   * silently dropping rows with non-finite est/se or se <= 0.
+   */
+  function studiesFromTextarea(text, format) {
+    if (typeof text !== "string") return [];
+    var lines = text.split(/\r?\n/);
+    var rows = [];
+    var fmt = format || "label-est-se";
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line || line.charAt(0) === "#") continue;
+      var parts = line.split(/\s*,\s*/);
+      if (parts.length < 2) continue;
+      var label, est, se, mod = null, group = null, year = null;
+      if (fmt === "est-se-label" || fmt === "est-se-label-mod") {
+        est = parseFloat(parts[0]);
+        se = parseFloat(parts[1]);
+        label = parts[2] ? parts[2] : "Study " + (rows.length + 1);
+        if (fmt === "est-se-label-mod" && parts.length > 3) {
+          var m = parseFloat(parts[3]);
+          if (isFiniteNumber(m)) mod = m;
+        }
+      } else {
+        // "label-est-se" (default)
+        label = parts[0] || ("Study " + (rows.length + 1));
+        est = parseFloat(parts[1]);
+        se = parseFloat(parts[2]);
+        if (parts.length > 3 && parts[3].length) {
+          var y = parseFloat(parts[3]);
+          if (isFiniteNumber(y)) year = y;
+        }
+        if (parts.length > 4 && parts[4].length) group = parts[4];
+        if (parts.length > 5 && parts[5].length) {
+          var m2 = parseFloat(parts[5]);
+          if (isFiniteNumber(m2)) mod = m2;
+        }
+      }
+      if (!isFiniteNumber(est) || !isFiniteNumber(se) || se <= 0) continue;
+      rows.push({ label: label, est: est, se: se, moderator: mod, group: group, year: year });
+    }
+    return rows;
+  }
+
+  /** Inverse of studiesFromTextarea: serialise studies → textarea text. */
+  function textareaFromStudies(studies, format) {
+    var fmt = format || "label-est-se";
+    var lines = [];
+    var s = studies || [];
+    for (var i = 0; i < s.length; i++) {
+      var r = s[i];
+      if (fmt === "est-se-label" || fmt === "est-se-label-mod") {
+        var cols = [r.est, r.se, r.label];
+        if (fmt === "est-se-label-mod" && r.moderator != null) cols.push(r.moderator);
+        lines.push(cols.join(", "));
+      } else {
+        var cols2 = [r.label, r.est, r.se];
+        if (r.year != null) cols2.push(r.year);
+        else if (r.group || r.moderator != null) cols2.push("");
+        if (r.group) cols2.push(r.group);
+        else if (r.moderator != null) cols2.push("");
+        if (r.moderator != null) cols2.push(r.moderator);
+        lines.push(cols2.join(", "));
+      }
+    }
+    return lines.join("\n");
+  }
+
+  /**
+   * Wire a pair of buttons to load/save a textarea against the shared bus.
+   * Idempotent if buttons already have listeners (overwrites with new ones).
+   *
+   *   MaStudies.attachButtons({
+   *     btnLoad: "#btn-bus-load",      // CSS selector or HTMLElement
+   *     btnSave: "#btn-bus-save",
+   *     textarea: "#f-data",            // CSS selector or HTMLElement
+   *     format: "label-est-se",         // or "est-se-label" / "est-se-label-mod"
+   *     onAfterLoad: function () {},    // optional callback after load
+   *     toast: window.Toast,            // optional Toast object with .show
+   *   });
+   */
+  function attachButtons(opts) {
+    if (typeof document === "undefined") return false;
+    function el(x) { return typeof x === "string" ? document.querySelector(x) : x; }
+    var btnLoad = el(opts.btnLoad);
+    var btnSave = el(opts.btnSave);
+    var ta = el(opts.textarea);
+    if (!ta) return false;
+    var fmt = opts.format || "label-est-se";
+    var toast = opts.toast || (typeof window !== "undefined" ? window.Toast : null);
+    function notify(msg, kind) {
+      if (toast && typeof toast.show === "function") toast.show(msg, kind || "warn");
+    }
+    if (btnLoad) {
+      btnLoad.addEventListener("click", function () {
+        var studies = read();
+        if (!studies.length) { notify("No shared studies yet.", "warn"); return; }
+        ta.value = textareaFromStudies(studies, fmt);
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        if (typeof opts.onAfterLoad === "function") opts.onAfterLoad(studies);
+      });
+    }
+    if (btnSave) {
+      btnSave.addEventListener("click", function () {
+        var rows = studiesFromTextarea(ta.value, fmt);
+        if (!rows.length) { notify("Nothing to save.", "warn"); return; }
+        var ok = write(rows);
+        notify(ok ? ("Saved " + rows.length + " studies to shared bus.") : "Could not save to bus.", ok ? "warn" : "error");
+      });
+    }
+    return true;
+  }
+
   // ----- Public API -------------------------------------------------------
 
   var api = {
@@ -251,6 +370,9 @@
     toRatio: toRatio,
     parseCSV: parseCSV,
     toCSV: toCSV,
+    studiesFromTextarea: studiesFromTextarea,
+    textareaFromStudies: textareaFromStudies,
+    attachButtons: attachButtons,
   };
 
   if (typeof module !== "undefined" && module.exports) {

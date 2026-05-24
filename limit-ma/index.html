@@ -59,6 +59,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-studies-v1.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -86,6 +87,10 @@
 0.45, 0.17, S09
 0.58, 0.10, S10</textarea>
       <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.3rem">Fit</button>
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
+        <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
+        <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button>
+      </div>
 
       <!-- reset-undo mount -->
       <div id="alm-undo-mount"></div>
@@ -376,6 +381,14 @@
       }
       run();
     });
+
+    if (window.MaStudies && MaStudies.attachButtons) {
+      MaStudies.attachButtons({
+        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
+        textarea: "#src", format: "est-se-label",
+        onAfterLoad: run,
+      });
+    }
 
     // ---- module init ----
     window.alm.csvUpload({

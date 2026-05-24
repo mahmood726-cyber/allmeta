@@ -50,6 +50,7 @@
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-studies-v1.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -81,6 +82,10 @@
         <label><span>Chains</span><input id="chains" type="number" step="1" min="1" max="4" value="2"></label>
       </div>
       <button type="button" id="btn-run" class="primary" style="width:100%">Run MCMC</button>
+      <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
+        <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
+        <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button>
+      </div>
       <div class="status" id="status">Ready.</div>
     </section>
     <section class="panel">
@@ -386,6 +391,13 @@
     };
 
     document.getElementById("btn-run").addEventListener("click", run);
+    if (window.MaStudies && MaStudies.attachButtons) {
+      MaStudies.attachButtons({
+        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
+        textarea: "#src", format: "est-se-label",
+        onAfterLoad: run,
+      });
+    }
     // Auto-run for the plot to exist on first load (small sample)
     run();
   </script>

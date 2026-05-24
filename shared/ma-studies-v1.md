@@ -118,25 +118,48 @@ their consumer code and use:
 | `MaStudies.toCSV(s)`  | Serializes studies → CSV with header.                  |
 | `MaStudies.fromCI(...)` | Helper: build `{est, se}` from `(point, ciLow, ciHigh, scale)`. |
 | `MaStudies.toRatio(s)`| Display helper: back-transform log to ratio.           |
+| `MaStudies.studiesFromTextarea(text, format)` | Parse a textarea (`"label-est-se"`, `"est-se-label"`, or `"est-se-label-mod"`) into bus rows. |
+| `MaStudies.textareaFromStudies(studies, format)` | Inverse: serialise bus rows → textarea text. |
+| `MaStudies.attachButtons({ btnLoad, btnSave, textarea, format, onAfterLoad, toast })` | One-call wiring: binds Load/Save buttons to a textarea for any participating app. Returns `true` on success. |
 
 The helper is **additive**: existing apps continue to work without change.
 Adoption is per-app, opt-in, and idempotent.
 
-## Apps participating today (2026-05-24)
+## Apps participating today (2026-05-24, after moat C-1/C-2)
 
-| App                  | Reads | Writes |
-| -------------------- | :---: | :----: |
-| rct-extractor        |       | ✅     |
-| forest-plot          | ✅    | ✅     |
-| funnel-plot          | ✅    |        |
-| heterogeneity        | ✅    | ✅     |
-| meta-regression      | ✅    | ✅     |
-| bayesian-ma          | ✅    |        |
-| cumulative-subgroup  | ✅    |        |
-| nma                  | ✅    |        |
-| tsa                  | ✅    |        |
-| webr-validator       | ✅    |        |
-| workbench            | ✅    | ✅     |
+**Fully wired (Load + Save buttons + handler):**
+
+| App                  | Reads | Writes | Textarea format       |
+| -------------------- | :---: | :----: | --------------------- |
+| rct-extractor        |       | ✅     | (computed extraction) |
+| forest-plot          | ✅    | ✅     | label-est-se          |
+| funnel-plot          | ✅    | ✅     | label-est-se          |
+| heterogeneity        | ✅    | ✅     | label-est-se          |
+| meta-regression      | ✅    | ✅     | label-est-se(-mod)    |
+| bayesian-ma          | ✅    | ✅     | label-est-se          |
+| cumulative-subgroup  | ✅    | ✅     | label-est-se          |
+| tsa                  | ✅    | ✅     | label-est-se          |
+| webr-validator       | ✅    |        | label-est-se          |
+| workbench            | ✅    | ✅     | label-est-se          |
+| influence            | ✅    | ✅     | est-se-label          |
+| gosh                 | ✅    | ✅     | est-se-label          |
+| gosh-metareg         | ✅    | ✅     | est-se-label-mod      |
+| pet-peese            | ✅    | ✅     | est-se-label          |
+| pubbias-tests        | ✅    | ✅     | est-se-label          |
+| copas                | ✅    | ✅     | est-se-label          |
+| limit-ma             | ✅    | ✅     | est-se-label          |
+| bayesian-mcmc        | ✅    | ✅     | est-se-label          |
+
+**Helper script loaded but no direct buttons** (data shape doesn't match the
+single-arm `{label, est, se}` contract — pending a future `ma-comparisons-v1`
+extension):
+
+multilevel-ma (cluster-effect-SE-outcome), nma, bayesian-nma,
+nma-inconsistency, nma-global-inconsistency, nma-pro-v2, nma-dose-response-app,
+component-nma, bucher (per-comparison cells), mh-peto (2x2 cells),
+proportion-ma (events/n), p-curve (p-values), powerma (sample-size calc),
+median-to-mean (summary-stats converter), effect-size-converter,
+dta-sroc (DTA 2x2), hsroc (DTA 2x2), mcid (single-MCID calc).
 
 ## Roadmap (post-2026-05-24)
 

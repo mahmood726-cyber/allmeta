@@ -207,3 +207,65 @@ def test_envelope_roundtrip_preserves_canonical_studies():
         assert a["label"] == b["label"]
         assert abs(a["est"] - b["est"]) < 1e-12
         assert abs(a["se"] - b["se"]) < 1e-12
+
+
+# --- Textarea helpers (added 2026-05-24 for moat C-2) -------------------------
+
+
+def test_studiesFromTextarea_label_est_se_default():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const src = "Trial A, -0.22, 0.11\\nTrial B, -0.31, 0.14, 2019, sglt2";
+        console.log(JSON.stringify(M.studiesFromTextarea(src, "label-est-se")));
+    """)
+    assert len(out) == 2
+    assert out[0]["label"] == "Trial A"
+    assert abs(out[0]["est"] + 0.22) < 1e-12
+    assert out[1]["year"] == 2019
+    assert out[1]["group"] == "sglt2"
+
+
+def test_studiesFromTextarea_est_se_label_inverse_format():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const src = "0.25, 0.08, Smith\\n0.18, 0.10, Jones";
+        console.log(JSON.stringify(M.studiesFromTextarea(src, "est-se-label")));
+    """)
+    assert len(out) == 2
+    assert out[0]["label"] == "Smith"
+    assert abs(out[0]["est"] - 0.25) < 1e-12
+    assert abs(out[0]["se"] - 0.08) < 1e-12
+
+
+def test_studiesFromTextarea_est_se_label_mod():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const src = "0.25, 0.08, Smith, 45";
+        console.log(JSON.stringify(M.studiesFromTextarea(src, "est-se-label-mod")));
+    """)
+    assert out[0]["moderator"] == 45
+
+
+def test_studiesFromTextarea_drops_blank_and_comments():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const src = ["# header", "", "Trial A, 0.1, 0.05", "# c", "Trial B, 0.2, 0.07"].join("\\n");
+        console.log(JSON.stringify(M.studiesFromTextarea(src, "label-est-se").map(r => r.label)));
+    """)
+    assert out == ["Trial A", "Trial B"]
+
+
+def test_textareaFromStudies_roundtrip_est_se_label():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const seed = [
+          {{ label: "Smith", est: 0.25, se: 0.08, moderator: null, group: null, year: null }},
+          {{ label: "Jones", est: 0.18, se: 0.10, moderator: null, group: null, year: null }}
+        ];
+        const text = M.textareaFromStudies(seed, "est-se-label");
+        const parsed = M.studiesFromTextarea(text, "est-se-label");
+        console.log(JSON.stringify(parsed));
+    """)
+    assert len(out) == 2
+    assert out[0]["label"] == "Smith"
+    assert abs(out[0]["est"] - 0.25) < 1e-12
