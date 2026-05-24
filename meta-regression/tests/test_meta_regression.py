@@ -49,7 +49,12 @@ def test_no_cdn():
 def test_localstorage_keys():
     text = INDEX.read_text(encoding="utf-8")
     assert '"meta-regression-v1"' in text
-    assert '"ma-studies-v1"' in text  # bus participant
+    # Bus participant — the literal "ma-studies-v1" string now lives in
+    # the canonical helper (shared/ma-studies-v1.js) rather than every
+    # consumer. After 2026-05-24 refactor the contract is the include +
+    # MaStudies.* call sites in this file.
+    assert "shared/ma-studies-v1.js" in text
+    assert "MaStudies" in text
 def test_hksj_floor_applied():
     """advanced-stats.md: HKSJ q must be floored at 1 to avoid under-covering CIs."""
     text = INDEX.read_text(encoding="utf-8")

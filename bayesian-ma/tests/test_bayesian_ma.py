@@ -49,7 +49,12 @@ def test_no_cdn():
 def test_localstorage_keys():
     text = INDEX.read_text(encoding="utf-8")
     assert '"bayesian-ma-v1"' in text
-    assert '"ma-studies-v1"' in text
+    # Bus participation: after 2026-05-24 refactor, the "ma-studies-v1"
+    # string literal lives in shared/ma-studies-v1.js (the canonical
+    # helper) rather than every consumer. The include + MaStudies.*
+    # references in this file are the new contract.
+    assert "shared/ma-studies-v1.js" in text
+    assert "MaStudies" in text
 def test_conjugate_posterior_formula():
     """Posterior precision = sum of inverse variances + prior precision."""
     text = INDEX.read_text(encoding="utf-8")

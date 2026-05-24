@@ -49,7 +49,10 @@ def test_no_cdn():
 def test_localstorage_keys():
     text = INDEX.read_text(encoding="utf-8")
     assert '"cumulative-subgroup-v1"' in text
-    assert '"ma-studies-v1"' in text
+    # Bus participation now via shared/ma-studies-v1.js (helper);
+    # the quoted string literal moved out of consumers as of 2026-05-24.
+    assert "shared/ma-studies-v1.js" in text
+    assert "MaStudies" in text
 def test_two_views_supported():
     text = INDEX.read_text(encoding="utf-8")
     assert 'value="cumulative"' in text

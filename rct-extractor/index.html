@@ -82,6 +82,7 @@
     }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-studies-v1.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -634,13 +635,8 @@
       };
     }
     function readBusStudies() {
-      try {
-        const raw = localStorage.getItem("ma-studies-v1");
-        if (!raw) return [];
-        const p = JSON.parse(raw);
-        if (p && p._schema === "ma-studies-v1" && Array.isArray(p.studies)) return p.studies;
-      } catch (_) { /* ignore */ }
-      return [];
+      // Delegated to shared/ma-studies-v1.js; behaviour-equivalent.
+      return (window.MaStudies && MaStudies.read()) || [];
     }
     // Pure-compute hook for behavioural tests: the deterministic
     // extraction → ma-studies-v1 serialization (ratio→log(te), CI→SE via
@@ -665,19 +661,23 @@
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
       if (!validatePushRows(rows, "pushing")) return;
       const newStudies = busPayloadFromRows(rows).studies;
-      const merged = readBusStudies().concat(newStudies);
-      const payload = { _schema: "ma-studies-v1", _savedAt: new Date().toISOString(), studies: merged };
-      localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
+      if (window.MaStudies) MaStudies.merge(newStudies);
+      else {
+        const merged = readBusStudies().concat(newStudies);
+        localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", _savedAt: new Date().toISOString(), studies: merged }));
+      }
       Toast.show(`Pushed ${rows.length} extraction${rows.length === 1 ? "" : "s"} to the MA Workbench bus.`);
     });
     document.getElementById("btn-send-forest").addEventListener("click", () => {
       const rows = (window.LAST_EXTRACTIONS || []).map(toBusRow).filter(r => r && Number.isFinite(r.te) && Number.isFinite(r.se));
       if (!validatePushRows(rows, "sending to the forest plot")) return;
-      // forest-plot/index.html reads the same ma-studies-v1 bus; write the
-      // schema envelope (was previously a dead `forest-plot-v1` key with raw CSV).
-      const merged = readBusStudies().concat(busPayloadFromRows(rows).studies);
-      const payload = { _schema: "ma-studies-v1", _savedAt: new Date().toISOString(), studies: merged };
-      localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
+      // forest-plot/index.html reads the same ma-studies-v1 bus.
+      const newStudies = busPayloadFromRows(rows).studies;
+      if (window.MaStudies) MaStudies.merge(newStudies);
+      else {
+        const merged = readBusStudies().concat(newStudies);
+        localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", _savedAt: new Date().toISOString(), studies: merged }));
+      }
       const lines = rows.map((r, i) => `Study ${i + 1}, ${r.te.toFixed(3)}, ${r.se.toFixed(3)}`).join("\n");
       navigator.clipboard.writeText(lines).then(() => Toast.show(`${rows.length} rows pushed to ma-studies-v1 bus and copied to clipboard.`));
     });

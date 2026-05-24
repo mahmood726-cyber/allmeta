@@ -75,6 +75,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-studies-v1.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -536,16 +537,12 @@
       document.getElementById("f-title").value = "Example funnel — small-study effect";
       render();
     }
-    // ---- Shared MA bus (ma-studies-v1) ----
+    // ---- Shared MA bus (ma-studies-v1) — delegated to shared/ma-studies-v1.js ----
     function onBusLoad() {
       try {
-        const raw = localStorage.getItem("ma-studies-v1");
-        if (!raw) { Toast.show("No shared studies yet.", "warn"); return; }
-        const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) {
-          Toast.show("Shared studies payload malformed.", "error"); return;
-        }
-        const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
+        const studies = (window.MaStudies && MaStudies.read()) || [];
+        if (!studies.length) { Toast.show("No shared studies yet.", "warn"); return; }
+        const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
       } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
@@ -553,15 +550,10 @@
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
       if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
-      const payload = {
-        "_schema": "ma-studies-v1",
-        "_savedAt": new Date().toISOString(),
-        "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: null, group: null, year: null }))
-      };
-      try {
-        localStorage.setItem("ma-studies-v1", JSON.stringify(payload));
-        Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
-      } catch (e) { Toast.show("Could not save: " + e.message, "warn"); }
+      if (!window.MaStudies) { Toast.show("Bus helper not loaded.", "error"); return; }
+      const ok = MaStudies.write(parsed.studies);
+      if (ok) Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
+      else Toast.show("Could not save to shared bus.", "warn");
     }
 
     function attach() {

@@ -35,7 +35,13 @@ def assert_r_parity(
         errors="replace", timeout=60,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"Rscript failed (exit {proc.returncode}):\n{proc.stderr}")
+        # If a required R package is missing on this host, skip rather than
+        # fail — parity checks need both R and the listed packages, and a
+        # missing package is a host-config gap, not a numeric regression.
+        stderr = proc.stderr or ""
+        if "there is no package called" in stderr:
+            pytest.skip("R package missing on this host: " + stderr.strip().splitlines()[0])
+        raise RuntimeError(f"Rscript failed (exit {proc.returncode}):\n{stderr}")
     r_result = json.loads(proc.stdout.strip().splitlines()[-1])
     mismatches = []
     for key, py_val in python_result.items():

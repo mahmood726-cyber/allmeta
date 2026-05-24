@@ -60,7 +60,11 @@ def test_deep_links_to_dedicated_apps():
     assert not missing, missing
 def test_bus_key_referenced():
     text = INDEX.read_text(encoding="utf-8")
-    assert '"ma-studies-v1"' in text
+    # After 2026-05-24 the literal "ma-studies-v1" key lives in the
+    # canonical helper; consumers reference it via the helper include
+    # and MaStudies.* call sites.
+    assert "shared/ma-studies-v1.js" in text
+    assert "MaStudies" in text
 def test_report_export_self_contained():
     """Full HTML report must be standalone (no external CSS/JS)."""
     text = INDEX.read_text(encoding="utf-8")

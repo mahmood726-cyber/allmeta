@@ -103,7 +103,10 @@ def test_acknowledgement_gate_present():
 
 def test_bus_integration():
     text = INDEX.read_text(encoding="utf-8")
-    assert '"ma-studies-v1"' in text
+    # After 2026-05-24 the literal "ma-studies-v1" lives in the helper
+    # (shared/ma-studies-v1.js); consumers reference it via the include.
+    assert "shared/ma-studies-v1.js" in text
+    assert "MaStudies" in text
     assert "btn-bus-load" in text
 
 

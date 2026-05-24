@@ -164,6 +164,7 @@
 
   <p class="footer-note">Conjugate model: y<sub>i</sub> ∼ N(θ, v<sub>i</sub>+τ²), θ ∼ N(μ₀, τ₀²). Posterior: θ | data ∼ N(μ*, τ*²) with τ*² = (1/τ₀² + Σ 1/(v<sub>i</sub>+τ²))<sup>−1</sup>. Posterior probabilities come from the Gaussian CDF (West 2009, ~1e-15). τ² option uses the canonical Paule-Mandel root (Σwᵢ(yᵢ−μ̄)²=k−1). <strong>R-parity:</strong> posterior mean/SD/CrI and tail/ROPE probabilities match the exact analytic conjugate posterior, and PM τ² the canonical root, to 1e-9 (<code>hub/shared/tests/bayesian-ma-parity.spec.mjs</code>). Deterministic closed-form — no MCMC, so R̂/ESS are inapplicable.</p>
 
+  <script src="../shared/ma-studies-v1.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -507,14 +508,12 @@
       render();
     }
 
-    // ---- Shared MA bus (ma-studies-v1) ----
+    // ---- Shared MA bus (ma-studies-v1) — delegated to shared/ma-studies-v1.js ----
     function onBusLoad() {
       try {
-        const raw = localStorage.getItem(BUS_KEY);
-        if (!raw) { Toast.show("No shared studies yet.", "warn"); return; }
-        const p = JSON.parse(raw);
-        if (!p || p._schema !== "ma-studies-v1" || !Array.isArray(p.studies)) { Toast.show("Malformed bus payload.", "error"); return; }
-        const lines = p.studies.map(s => [s.label, s.est, s.se].join(", "));
+        const studies = (window.MaStudies && MaStudies.read()) || [];
+        if (!studies.length) { Toast.show("No shared studies yet.", "warn"); return; }
+        const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
       } catch (e) { Toast.show("Could not load: " + e.message, "warn"); }
@@ -522,13 +521,10 @@
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
       if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
-      const payload = {
-        "_schema": "ma-studies-v1",
-        "_savedAt": new Date().toISOString(),
-        "studies": parsed.studies.map(s => ({ label: s.label, est: s.est, se: s.se, moderator: null, group: null, year: null }))
-      };
-      try { localStorage.setItem(BUS_KEY, JSON.stringify(payload)); Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn"); }
-      catch (e) { Toast.show("Could not save: " + e.message, "warn"); }
+      if (!window.MaStudies) { Toast.show("Bus helper not loaded.", "error"); return; }
+      const ok = MaStudies.write(parsed.studies);
+      if (ok) Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
+      else Toast.show("Could not save to shared bus.", "warn");
     }
 
     function attach() {

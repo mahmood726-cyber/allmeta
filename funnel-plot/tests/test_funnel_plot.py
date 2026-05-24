@@ -93,6 +93,8 @@ def test_script_close_not_in_string():
 
 def test_funnel_lines_drawn():
     text = INDEX.read_text(encoding="utf-8")
-    # Both 95% and 99% pseudo-CI funnel lines should be drawn
-    assert "1.96 * maxSE" in text
-    assert "2.58 * maxSE" in text
+    # Both 95% and 99% pseudo-CI funnel lines should be drawn — code uses
+    # the exact qnorm constants (Z975, Z995) since the 1.96/2.58 → exact
+    # update (cuts the ~1.3e-5 drift vs metafor noted in test_against_metafor).
+    assert "Z975 * maxSE" in text
+    assert "Z995 * maxSE" in text
