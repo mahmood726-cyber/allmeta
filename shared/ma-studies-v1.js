@@ -524,6 +524,57 @@
     return true;
   }
 
+  // ----- "Verify in R" deep-link -----------------------------------------
+
+  /**
+   * Push the supplied (or current) studies to the bus and open webr-validator
+   * in a new tab pre-loaded with them. `webrPath` defaults to a relative
+   * path that resolves for any app at depth 1 under the repo root
+   * (e.g. /forest-plot/ → /webr-validator/). Apps at deeper paths should
+   * pass an explicit `webrPath` arg.
+   *
+   *   MaStudies.openInWebR();                          // push current bus + open
+   *   MaStudies.openInWebR(studies);                   // push these studies + open
+   *   MaStudies.openInWebR({ studies, webrPath: ... });
+   */
+  function openInWebR(arg, opts) {
+    opts = (opts && typeof opts === "object") ? opts
+         : (arg && typeof arg === "object" && !Array.isArray(arg) ? arg : {});
+    var studies = Array.isArray(arg) ? arg : (opts.studies || null);
+    if (Array.isArray(studies) && studies.length > 0) {
+      write(studies);
+    }
+    // sanity: if there's nothing on the bus, refuse — opening webr with
+    // no studies just shows an empty form, confusing the user.
+    if (!read().length) {
+      if (typeof global.alert === "function") global.alert("No studies on the shared bus yet — save your data to the bus first.");
+      return false;
+    }
+    var path = opts.webrPath || "../webr-validator/?fromBus=1";
+    if (typeof global.open !== "function") return false;
+    var w = global.open(path, "_blank", "noopener,noreferrer");
+    return !!w;
+  }
+
+  /**
+   * Attach a "Verify in R" button to the page. If `btn` resolves, sets up
+   * the click handler that calls openInWebR with the optional studies
+   * provider (e.g. a function that returns the app's current studies).
+   */
+  function attachVerifyInRButton(opts) {
+    if (typeof document === "undefined" || !opts || !opts.btn) return false;
+    var el = typeof opts.btn === "string" ? document.querySelector(opts.btn) : opts.btn;
+    if (!el) return false;
+    el.addEventListener("click", function () {
+      var studies = null;
+      if (typeof opts.getStudies === "function") {
+        try { studies = opts.getStudies(); } catch (_) { studies = null; }
+      }
+      openInWebR(studies, { webrPath: opts.webrPath });
+    });
+    return true;
+  }
+
   // ----- Public API -------------------------------------------------------
 
   var api = {
@@ -547,6 +598,8 @@
     attachButtons: attachButtons,
     toTruthCert: toTruthCert,
     verifyTruthCert: verifyTruthCert,
+    openInWebR: openInWebR,
+    attachVerifyInRButton: attachVerifyInRButton,
   };
 
   if (typeof module !== "undefined" && module.exports) {

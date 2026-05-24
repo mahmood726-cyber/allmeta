@@ -111,7 +111,7 @@
       <div class="actions">
         <button type="button" id="btn-run" class="primary">Compute diagnostics</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
-        <button type="button" id="btn-bus-save" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button>
+        <button type="button" id="btn-bus-save" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button>
         <!-- reset-undo mount: undo-stack dialog replaces bare confirm() -->
         <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;"></div>
         <!-- btn-reset hidden: reset-undo module provides the visible button; kept for test compat -->
@@ -477,5 +477,18 @@
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
 </body>
 </html>

@@ -133,7 +133,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
-        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button>
         <button type="button" id="btn-rscript">Export R script</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
         <button type="button" id="btn-reset">Reset</button>
@@ -809,5 +809,18 @@
   </script>
   <script src="../shared/toast.js" defer></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
 </body>
 </html>

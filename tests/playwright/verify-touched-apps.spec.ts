@@ -241,6 +241,38 @@ for (const p of BUS_APPS) {
   });
 }
 
+// ---- Verify-in-R button: must open webr-validator?fromBus=1 ----------------
+//
+// Sample 3 apps that have the Verify-in-R button (added by
+// scripts/add_verify_in_r.py). Click and assert a new tab opens at
+// /webr-validator/?fromBus=1.
+
+const VERIFY_IN_R_APPS = ["/forest-plot/", "/heterogeneity/", "/funnel-plot/"];
+
+for (const p of VERIFY_IN_R_APPS) {
+  test(`Verify-in-R button: ${p}`, async ({ page, context }) => {
+    await page.goto(p, { waitUntil: "load" });
+    // Push some studies so the bus has data (otherwise openInWebR refuses).
+    await page.evaluate(() => {
+      const w = window as unknown as { MaStudies?: { write?: (s: unknown[]) => unknown } };
+      w.MaStudies?.write?.([
+        { label: "A", est: 0.1, se: 0.05 },
+        { label: "B", est: 0.2, se: 0.08 },
+      ]);
+    });
+    const btn = page.locator("#btn-verify-in-r");
+    await expect(btn).toHaveCount(1);
+    const [popup] = await Promise.all([
+      context.waitForEvent("page", { timeout: 8_000 }),
+      btn.click(),
+    ]);
+    await popup.waitForLoadState("domcontentloaded", { timeout: 8_000 }).catch(() => {});
+    const url = popup.url();
+    expect(url).toMatch(/\/webr-validator\/.*fromBus=1/);
+    await popup.close();
+  });
+}
+
 // ---- NMA bus participants: MaComparisons must load ------------------------
 
 for (const p of NMA_BUS_APPS) {
