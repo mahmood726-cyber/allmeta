@@ -316,17 +316,51 @@
     return true;
   }
 
-  function matchesSearch(project, query) {
-    if (!query) return true;
-    const haystack = [
+  // 2026-05-25: build a per-project derived index ONCE so search can match
+  // app-flow blurbs (a different short description than projects.js summary)
+  // and method-paper citations (authors, titles, journal names). Lets users
+  // type "GLMM", "Stijnen", "RVE", "Hedges" and find the right app.
+  const _SEARCH_INDEX = new Map();   // path → " ... " lowercase haystack
+  function _appKeyFromPath(p) {
+    // "./forest-plot/" → "forest-plot"; "./nma-pro-v2/nma-pro-v8.0.html" → "nma-pro-v2"
+    const m = String(p || "").match(/^\.\/([^\/]+)\//);
+    return m ? m[1] : null;
+  }
+  function _extraSearchTokens(project) {
+    const key = _appKeyFromPath(project.path);
+    if (!key) return "";
+    const parts = [key, key.replace(/-/g, " ")];   // "rare-events-glmm" → "rare events glmm"
+    if (window.AlmFlow && window.AlmFlow.CATALOG && window.AlmFlow.CATALOG[key]) {
+      const cat = window.AlmFlow.CATALOG[key];
+      parts.push(cat.label || "", cat.blurb || "", cat.category || "", cat.kind || "");
+    }
+    if (window.AlmCitation && window.AlmCitation.CITATIONS && window.AlmCitation.CITATIONS[key]) {
+      const cites = window.AlmCitation.CITATIONS[key];
+      if (Array.isArray(cites)) {
+        cites.forEach(c => {
+          parts.push(c.vancouver || "", c.text || "", c.bibtex || "");
+        });
+      }
+    }
+    return parts.join(" ");
+  }
+  function _haystackFor(project) {
+    if (_SEARCH_INDEX.has(project.path)) return _SEARCH_INDEX.get(project.path);
+    const h = [
       project.name,
       project.summary,
       project.note,
       project.category,
       (project.tags || []).join(" "),
-      (project.keywords || []).join(" ")
+      (project.keywords || []).join(" "),
+      _extraSearchTokens(project),
     ].join(" ").toLowerCase();
-    return haystack.includes(query);
+    _SEARCH_INDEX.set(project.path, h);
+    return h;
+  }
+  function matchesSearch(project, query) {
+    if (!query) return true;
+    return _haystackFor(project).includes(query);
   }
 
   function makeTag(text) {

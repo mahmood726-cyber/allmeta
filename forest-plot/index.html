@@ -82,6 +82,8 @@
   <script src="../shared/hero-examples.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../shared/seed-badge.js"></script>
+  <script src="../shared/report-bundle.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -147,7 +149,7 @@ Study C, 0.05, 0.18"></textarea>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
-        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-verify-live" title="Boot WebR in-page and run metafor::rma live on the current bus state — side-by-side with the JS engine result." style="background:#1f7a44;color:#fff;border:1px solid #1f7a44;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">R live</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-verify-live" title="Boot WebR in-page and run metafor::rma live on the current bus state — side-by-side with the JS engine result." style="background:#1f7a44;color:#fff;border:1px solid #1f7a44;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">R live</button><button type="button" id="btn-export-report" title="Download a single self-contained HTML file with inputs, results, the forest plot, citations, R script, and provenance — ready to email / archive / cite." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">&#128190; Export report</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
         <button type="button" id="btn-reset" style="display:none">Reset</button>
         <div id="alm-undo-mount" style="display:inline-flex"></div>
@@ -583,6 +585,21 @@ Study C, 0.05, 0.18"></textarea>
       const fe = poolFE(parsed.studies);
       const re = poolRE_PM(parsed.studies);
       _lastFE = fe; _lastRE = re; _lastStudies = parsed.studies;
+      // 2026-05-25: expose the most recent computed state on window so
+      // helpers like AlmReport.exportBundle and AlmWebR.attachLiveButton
+      // can read it without coupling to internal module variables.
+      // Returns the random-effects pool by default (matches the displayed
+      // diamond); FE values are available via `_almForestState().fe`.
+      window._almForestState = function () {
+        return {
+          studies: parsed.studies,
+          fe: fe,
+          re: re,
+          pool: { mu: re.mu, se: re.se, ci_lb: re.ci_lb, ci_ub: re.ci_ub,
+                  tau2: re.tau2, I2: re.I2, k: parsed.studies.length },
+          opts: { method: "PM", test: "z", title: state.title || "" },
+        };
+      };
       renderStats(parsed.studies, fe, re);
       const svg = parsed.studies.length ? buildSvg(state, parsed.studies, fe, re)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste at least one study row to render.</text></svg>";
@@ -933,6 +950,52 @@ Study C, 0.05, 0.18"></textarea>
         container: "#alm-flow-mount",
         suggestions: ["funnel-plot", "influence", "heterogeneity",
                       "bma-tau-priors", "cross-design", "webr-validator"],
+      });
+    }
+    // 2026-05-25 reproducibility: single-file HTML report exporter.
+    // Bundles inputs + pooled result + the forest plot SVG + Vancouver
+    // citations + an R snippet + AlmBuildInfo provenance into one .html.
+    if (window.AlmReport && typeof AlmReport.attachExportButton === "function") {
+      AlmReport.attachExportButton({
+        btn: "#btn-export-report",
+        getBundle: function () {
+          var s = (typeof window._almForestState === "function") ? window._almForestState() : null;
+          if (!s) {
+            if (window.Toast && Toast.show) Toast.show("Run the pool first — no results to export.", "warn");
+            return null;
+          }
+          var cites = (window.AlmCitation && AlmCitation.CITATIONS)
+            ? (AlmCitation.CITATIONS["forest-plot"] || []) : [];
+          var pool = s.pool || {};
+          var opts = s.opts || {};
+          var rScript =
+            "# Reproduce in R with the 'metafor' package\n" +
+            "library(metafor)\n" +
+            "dat <- data.frame(\n" +
+            "  yi = c(" + (s.studies || []).map(function(x){return x.est;}).join(", ") + "),\n" +
+            "  vi = c(" + (s.studies || []).map(function(x){var se=x.se;return (se*se).toFixed(10);}).join(", ") + "),\n" +
+            "  label = c(" + (s.studies || []).map(function(x){return '\"' + String(x.label||'').replace(/\"/g,'\\\\\"') + '\"';}).join(", ") + ")\n" +
+            ")\n" +
+            "rma(yi, vi, data=dat, method=" + JSON.stringify(opts.method || "REML") + ", test=" + JSON.stringify(opts.test || "knha") + ")";
+          return {
+            appKey: "forest-plot",
+            title: "Random-effects meta-analysis (forest plot)",
+            subtitle: "k=" + (pool.k || 0) + ", method=" + (opts.method || "REML") + ", test=" + (opts.test || "knha"),
+            inputs: { options: opts, studies: s.studies || [] },
+            results: {
+              "effect (mu)": pool.mu != null ? pool.mu.toFixed(6) : "NA",
+              "SE": pool.se != null ? pool.se.toFixed(6) : "NA",
+              "95% CI": pool.ci_lb != null ? "[" + pool.ci_lb.toFixed(4) + ", " + pool.ci_ub.toFixed(4) + "]" : "NA",
+              "tau2": pool.tau2 != null ? pool.tau2.toFixed(6) : "NA",
+              "I2 (%)": pool.I2 != null ? pool.I2.toFixed(2) : "NA",
+              "k (studies)": pool.k || 0,
+            },
+            plots: ["#svg-host"],
+            citations: cites,
+            rScript: rScript,
+            seed: null,   // forest-plot is deterministic — no seed
+          };
+        },
       });
     }
   });

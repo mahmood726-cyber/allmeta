@@ -293,4 +293,25 @@ test.describe('nma-pro-v2 retrofit sanity', () => {
     expect(state.cumulativePopulated, 'cumulative should be auto-populated post-analysis').toBe(true);
   });
 
+  // 2026-05-25 reproducibility: ranking seed must be surfaced in the Results
+  // tab as a copy-able badge so users can quote "seed N" in their methods
+  // sections. Backed by shared/seed-badge.js (AlmSeed.showBadge).
+  test('[repro] seed badge surfaces in Results tab after run', async ({ page }) => {
+    await page.goto(MONOLITH_URL, { waitUntil: 'domcontentloaded' });
+    await waitForApp(page);
+    await page.evaluate(() => {
+      if (typeof BenchmarkDatasets?.loadDataset === 'function') BenchmarkDatasets.loadDataset('thrombolytics');
+    });
+    await page.waitForFunction(() => (window.AppState?.studies?.length ?? 0) > 0, { timeout: 10_000 });
+    await page.click('#runAnalysisBtn');
+    await page.waitForFunction(() => window.AppState?.results != null, { timeout: 30_000 });
+    await page.waitForFunction(
+      () => document.querySelector('#panel-results .alm-seed-badge') != null,
+      { timeout: 10_000 }
+    );
+    const badgeText = await page.locator('#panel-results .alm-seed-badge').textContent();
+    expect(badgeText).toMatch(/Seed:\s*\d+/);
+    expect(badgeText).toMatch(/\(auto\)|\(user\)/);
+  });
+
 });

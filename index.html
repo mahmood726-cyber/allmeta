@@ -146,6 +146,12 @@
   </div>
 
   <script src="./hub/projects.js"></script>
+  <!-- 2026-05-25: load app-flow + citation registries so hub search can
+       match method-paper authors, method names, and short app-flow blurbs.
+       Both modules expose globals (AlmFlow.CATALOG, AlmCite.CITATIONS) that
+       hub/app.js#buildSearchIndex consumes if present. -->
+  <script src="./shared/app-flow.js"></script>
+  <script src="./shared/citation.js"></script>
   <script src="./hub/app.js"></script>
 
   <!-- Cycle 6.1: service-worker registration + polite Shinylive prefetch. -->
