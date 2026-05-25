@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'">
+  <title>Snapshot diff — allmeta</title>
+  <link rel="stylesheet" href="../hub/styles.css">
+  <link rel="icon" type="image/svg+xml" href="../shared/icon.svg">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/autosave.js"></script>
+  <script src="../shared/snapshot-diff.js"></script>
+  <style>
+    :root {
+      --d-fg:#1f2937; --d-muted:#6b7280; --d-line:#e5e7eb; --d-bg:#ffffff;
+      --d-accent:#2563eb; --d-accent-bg:#dbeafe;
+      --d-add:#16a34a; --d-add-bg:#dcfce7;
+      --d-rm:#dc2626;  --d-rm-bg:#fee2e2;
+      --d-chg:#d97706; --d-chg-bg:#fef3c7;
+      --d-prov:#7c3aed; --d-prov-bg:#ede9fe;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --d-fg:#f3f4f6; --d-muted:#9ca3af; --d-line:#374151; --d-bg:#0b1220;
+        --d-accent:#60a5fa; --d-accent-bg:#1e3a8a;
+        --d-add:#4ade80; --d-add-bg:rgba(22,163,74,0.15);
+        --d-rm:#f87171;  --d-rm-bg:rgba(220,38,38,0.15);
+        --d-chg:#fbbf24; --d-chg-bg:rgba(217,119,6,0.15);
+        --d-prov:#a78bfa; --d-prov-bg:rgba(124,58,237,0.15);
+      }
+    }
+    body { font:14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+           color:var(--d-fg); background:var(--bg, #f9fafb); margin:0; }
+    .wrap { max-width:1100px; margin:0 auto; padding:28px 22px 80px; }
+    h1 { font-size:24px; margin:0 0 6px; letter-spacing:-0.01em; }
+    .sub { color:var(--d-muted); font-size:14px; margin:0 0 24px; max-width:720px; line-height:1.55; }
+    .back-to-hub { color:var(--d-muted); text-decoration:none; font-size:13px; }
+    .back-to-hub:hover { color:var(--d-accent); }
+    .inputs { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
+    .inputs label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--d-muted); }
+    .inputs textarea { width:100%; min-height:240px; padding:12px; font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+                       border:1px solid var(--d-line); border-radius:10px; background:var(--d-bg); color:var(--d-fg);
+                       box-sizing:border-box; resize:vertical; }
+    .controls { display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+    .btn { background:var(--d-accent); color:#fff; border:0; border-radius:8px; padding:9px 18px;
+           font:inherit; font-weight:600; cursor:pointer; }
+    .btn.ghost { background:transparent; color:var(--d-fg); border:1px solid var(--d-line); }
+    .btn:hover { filter:brightness(1.05); }
+    .summary { display:flex; gap:12px; flex-wrap:wrap; margin:18px 0; }
+    .pill { font-size:12.5px; padding:6px 12px; border-radius:999px; background:var(--d-accent-bg); color:var(--d-fg); }
+    .pill.added { background:var(--d-add-bg); color:var(--d-add); }
+    .pill.removed { background:var(--d-rm-bg); color:var(--d-rm); }
+    .pill.changed { background:var(--d-chg-bg); color:var(--d-chg); }
+    .pill.prov { background:var(--d-prov-bg); color:var(--d-prov); }
+    .diff-out { background:var(--d-bg); border:1px solid var(--d-line); border-radius:12px;
+                padding:18px 22px; box-shadow:0 4px 12px rgba(0,0,0,0.04); }
+    .diff-out h3 { font-size:15px; margin:18px 0 8px; color:var(--d-muted); letter-spacing:.02em;
+                   text-transform:uppercase; }
+    .d-table { border-collapse:collapse; width:100%; font-size:12.5px; margin:6px 0; }
+    .d-table th, .d-table td { padding:6px 10px; border-bottom:1px solid var(--d-line);
+                                text-align:left; vertical-align:top; }
+    .d-table th { color:var(--d-muted); font-weight:600; font-family:ui-monospace,SFMono-Regular,monospace; }
+    .d-path { font-family:ui-monospace,SFMono-Regular,monospace; color:var(--d-fg); }
+    .d-row.d-added   { background:var(--d-add-bg); }
+    .d-row.d-removed { background:var(--d-rm-bg); }
+    .d-row.d-numeric { background:var(--d-chg-bg); }
+    .d-row.d-changed { background:var(--d-chg-bg); }
+    .d-row.d-timestamp td { color:var(--d-muted); font-style:italic; }
+    .d-before, .d-after { font-family:ui-monospace,SFMono-Regular,monospace; font-size:12px; }
+    .d-pct { font-family:ui-monospace,SFMono-Regular,monospace; font-weight:600; }
+    .d-pct.d-big { color:var(--d-rm); }
+    .d-pct.d-small { color:var(--d-muted); }
+    .d-empty { color:var(--d-muted); font-style:italic; }
+    .empty-state { color:var(--d-muted); padding:24px; text-align:center; font-style:italic; }
+    .file-row { display:flex; gap:8px; align-items:center; margin-bottom:4px; }
+    @media (max-width:680px) { .inputs { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back-to-hub" href="../">← allmeta hub</a>
+    <header>
+      <h1>Snapshot diff</h1>
+      <p class="sub">Paste two allmeta JSON exports (TruthCert receipts, report bundles, or MA-studies envelopes) to see what changed. Numerical fields report % drift; study identity is by label so re-ordering doesn&rsquo;t appear as a diff; timestamps are flagged but not coloured.</p>
+    </header>
+    <div class="inputs">
+      <div>
+        <label for="ta-a">Snapshot A (before / baseline)</label>
+        <div class="file-row"><input type="file" id="file-a" accept="application/json,.json,.txt"></div>
+        <textarea id="ta-a" spellcheck="false" placeholder='Paste JSON, e.g. a TruthCert receipt or a report-bundle export.'></textarea>
+      </div>
+      <div>
+        <label for="ta-b">Snapshot B (after / candidate)</label>
+        <div class="file-row"><input type="file" id="file-b" accept="application/json,.json,.txt"></div>
+        <textarea id="ta-b" spellcheck="false" placeholder='Paste JSON.'></textarea>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="btn-diff" class="btn" type="button">Compare</button>
+      <button id="btn-swap" class="btn ghost" type="button">Swap A ↔ B</button>
+      <button id="btn-demo" class="btn ghost" type="button">Load demo</button>
+      <button id="btn-clear" class="btn ghost" type="button">Clear</button>
+      <span id="err" style="color:var(--d-rm);font-size:13px"></span>
+    </div>
+    <div id="summary" class="summary" aria-live="polite"></div>
+    <div id="diff-out" class="diff-out"><p class="empty-state">Paste two JSON snapshots above and click Compare.</p></div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      var taA = document.getElementById('ta-a');
+      var taB = document.getElementById('ta-b');
+      var fileA = document.getElementById('file-a');
+      var fileB = document.getElementById('file-b');
+      var btnDiff = document.getElementById('btn-diff');
+      var btnSwap = document.getElementById('btn-swap');
+      var btnDemo = document.getElementById('btn-demo');
+      var btnClear = document.getElementById('btn-clear');
+      var out = document.getElementById('diff-out');
+      var summary = document.getElementById('summary');
+      var err = document.getElementById('err');
+
+      function tryParse(s) {
+        try { return { ok: true, value: JSON.parse(s) }; }
+        catch (e) { return { ok: false, error: e.message }; }
+      }
+
+      function setErr(msg) { err.textContent = msg || ''; }
+
+      function renderSummary(d) {
+        summary.innerHTML = '';
+        function pill(text, cls) {
+          var el = document.createElement('span');
+          el.className = 'pill ' + (cls || '');
+          el.textContent = text;
+          summary.appendChild(el);
+        }
+        var s = d.summary;
+        if (s.provenance) pill(s.provenance + ' provenance change' + (s.provenance > 1 ? 's' : ''), 'prov');
+        if (s.fields) pill(s.fields + ' field change' + (s.fields > 1 ? 's' : ''), 'changed');
+        if (s.studiesAdded) pill('+' + s.studiesAdded + ' study' + (s.studiesAdded > 1 ? 'ies' : ''), 'added');
+        if (s.studiesRemoved) pill('−' + s.studiesRemoved + ' study' + (s.studiesRemoved > 1 ? 'ies' : ''), 'removed');
+        if (s.studiesChanged) pill(s.studiesChanged + ' study mutated', 'changed');
+        if (s.maxRelPct > 0) pill('max Δ ' + (s.maxRelPct >= 1 ? s.maxRelPct.toFixed(1) : s.maxRelPct.toFixed(3)) + '%',
+                                  s.maxRelPct > 5 ? 'removed' : 'changed');
+        if (!summary.children.length) pill('no semantic changes');
+      }
+
+      function runDiff() {
+        setErr('');
+        out.innerHTML = '<p class="empty-state">Comparing…</p>';
+        var pa = tryParse(taA.value || '{}');
+        var pb = tryParse(taB.value || '{}');
+        if (!pa.ok) { setErr('A is not valid JSON: ' + pa.error); out.innerHTML = '<p class="empty-state">Fix the JSON in A and retry.</p>'; summary.innerHTML = ''; return; }
+        if (!pb.ok) { setErr('B is not valid JSON: ' + pb.error); out.innerHTML = '<p class="empty-state">Fix the JSON in B and retry.</p>'; summary.innerHTML = ''; return; }
+        var d = window.AlmDiff.diffJson(pa.value, pb.value);
+        renderSummary(d);
+        out.innerHTML = window.AlmDiff.renderHtml(d);
+      }
+
+      function attachFile(input, ta) {
+        input.addEventListener('change', function () {
+          var f = input.files && input.files[0];
+          if (!f) return;
+          var rd = new FileReader();
+          rd.onload = function () { ta.value = String(rd.result || ''); };
+          rd.readAsText(f);
+        });
+      }
+      attachFile(fileA, taA);
+      attachFile(fileB, taB);
+
+      btnDiff.addEventListener('click', runDiff);
+      btnSwap.addEventListener('click', function () {
+        var tmp = taA.value; taA.value = taB.value; taB.value = tmp;
+        runDiff();
+      });
+      btnClear.addEventListener('click', function () {
+        taA.value = ''; taB.value = ''; summary.innerHTML = ''; setErr('');
+        out.innerHTML = '<p class="empty-state">Paste two JSON snapshots above and click Compare.</p>';
+      });
+
+      // Ctrl/Cmd+Enter triggers compare from either textarea.
+      [taA, taB].forEach(function (t) {
+        t.addEventListener('keydown', function (ev) {
+          if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') {
+            ev.preventDefault(); runDiff();
+          }
+        });
+      });
+
+      btnDemo.addEventListener('click', function () {
+        // A small demo that exercises every diff category — provenance,
+        // numeric field drift, timestamp, study add/remove/change.
+        taA.value = JSON.stringify({
+          producedBy: { app: 'allmeta', version: 'v11.0', sha: 'aaa111aaaa', builtAt: '2026-05-20T00:00:00Z' },
+          _signedAt: '2026-05-20T12:00:00Z',
+          seed: 12345,
+          effect: -0.34, ci: [-0.50, -0.18], tau2: 0.052, I2: 23.4,
+          studies: [
+            { label: 'Smith 2020', est: -0.31, se: 0.12 },
+            { label: 'Jones 2021', est: -0.22, se: 0.09 },
+            { label: 'Lee 2022',   est: -0.45, se: 0.15 }
+          ]
+        }, null, 2);
+        taB.value = JSON.stringify({
+          producedBy: { app: 'allmeta', version: 'v11.7', sha: 'bbb222bbbb', builtAt: '2026-05-25T00:00:00Z' },
+          _signedAt: '2026-05-25T13:30:00Z',
+          seed: 12345,
+          effect: -0.30, ci: [-0.47, -0.13], tau2: 0.048, I2: 19.1,
+          studies: [
+            { label: 'Smith 2020', est: -0.31, se: 0.12 },
+            { label: 'Jones 2021', est: -0.20, se: 0.09 },
+            { label: 'Lee 2022',   est: -0.45, se: 0.15 },
+            { label: 'Patel 2023', est: -0.18, se: 0.11 }
+          ]
+        }, null, 2);
+        runDiff();
+      });
+
+      // Autosave the textareas so refreshes don't lose work.
+      if (window.AlmAutosave && AlmAutosave.install) {
+        AlmAutosave.install({ appKey: 'snapshot-diff', selectors: ['textarea'] });
+      }
+    })();
+  </script>
+</body>
+</html>
