@@ -310,7 +310,7 @@
   // ----- TruthCert receipt -----------------------------------------------
 
   // SubtleCrypto-backed HMAC-SHA-256 over the canonical bus envelope.
-  // Key sourcing rules (encode the lesson from C:\Users\mahmo\.claude\rules\lessons.md
+  // Key sourcing rules (encode the lesson from .claude/rules/lessons.md
   // "Cryptography / Signing"):
   //   1. NEVER use any field of the bundle itself (cert_id, _savedAt) as the
   //      key — that would let anyone seeing the output forge a signature.

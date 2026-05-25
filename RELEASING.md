@@ -107,5 +107,5 @@ page (Settings → GitHub → click the repo) gives the exact markdown.
 - Spec for cite-as text: `ROADMAP.md` § *Cite as*.
 - Pages deploy is independent of releases (every push to `main` rebuilds).
 - The TruthCert HMAC-key rotation procedure is separate; see
-  `shared/ma-studies-v1.js` and `C:\Users\mahmo\.claude\rules\lessons.md`
+  `shared/ma-studies-v1.js` and `.claude/rules/lessons.md`
   ("Cryptography / Signing") for the rules that govern it.
