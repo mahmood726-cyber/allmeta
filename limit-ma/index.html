@@ -60,6 +60,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -86,6 +90,9 @@
 0.65, 0.12, S08
 0.45, 0.17, S09
 0.58, 0.10, S10</textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
       <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.3rem">Fit</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
@@ -117,7 +124,9 @@
       <div class="actions">
         <div id="alm-export-mount"></div>
       </div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
   <footer>
     R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: the full Rücker limit meta-analysis &mdash; DL &tau;&#178;, radial (Galbraith) regression of TE on the &tau;-inflated SE, limit estimate <code>&beta;<sub>r</sub> + &tau;&middot;&alpha;<sub>r</sub></code> (<code>method.adjust='beta0'</code>) with closed-form SE and the small-study/residual Q decomposition. R-parity: matches <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code> to 1e-6 on TE.adjust, seTE.adjust, &alpha;<sub>r</sub>, &beta;<sub>r</sub>, Q.small, Q.resid and G&#178; (<code>tests/copas-parity</code>-style oracle; see <code>hub/shared/tests/limit-ma-parity.spec.mjs</code>).
@@ -461,6 +470,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "funnel-plot", "copas", "pet-peese"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#src",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "limit-ma" });
+    }
   });
 })();
 </script>

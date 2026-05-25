@@ -66,6 +66,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -100,6 +104,9 @@
 0.32, 0.12
 0.45, 0.17
 0.28, 0.10</textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Run tests</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
@@ -133,7 +140,9 @@
         <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
         <div id="alm-export-mount"></div>
       </div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
   <footer>
     Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. R-parity (Cycle 2.8 Task 3): Egger z=2.012 p=0.079 (intercept b0=0.278), Begg tau=0.432 p=0.087, trim-and-fill k0=3, tf_est=0.494 — verified against metafor 4.x (see <code>tests/fixtures/pb-tiny.R</code>).
@@ -731,6 +740,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "funnel-plot", "copas", "limit-ma", "pet-peese"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#src",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "pubbias-tests" });
+    }
   });
 })();
 </script>

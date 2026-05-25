@@ -61,6 +61,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -83,6 +87,9 @@
 0.35, 0.16
 0.22, 0.10
 0.40, 0.20</textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
         <span class="hint">Paste raw effects on any scale (log-ratio, SMD, MD). Output uses the same scale.</span>
       </label>
       <div id="alm-csv-mount"></div>
@@ -117,7 +124,9 @@
       <h2 style="margin-top:0.8rem">Funnel plot with adjustments</h2>
       <svg id="funnel" viewBox="0 0 600 300" role="img" aria-label="Funnel plot with PET and PEESE adjustment lines plus trim-and-fill imputed studies"></svg>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</main>
   <footer>
     <abbr data-gloss="PET">PET</abbr>: Stanley &amp; Doucouliagos (2014) — <code>TE = β₀ + β₁·<abbr data-gloss="SE">SE</abbr> + ε</code>, weighted by 1/SE². <abbr data-gloss="PEESE">PEESE</abbr>: same model with SE² instead of SE. Trim-and-fill: Duval &amp; Tweedie (2000), iterative L₀ / R₀ estimator, imputes k₀ studies reflected about the adjusted mean. Conditional PET-PEESE procedure follows <em>Cochrane Handbook v6.5 §13.3.5.4</em> (small-study effects); trim-and-fill is positioned as a sensitivity analysis only, never the primary result, per <em>Cochrane Handbook §13.3.5.3</em>. Power is poor for k&lt;10 — interpret with caution.
   </footer>
@@ -550,6 +559,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "funnel-plot", "copas", "limit-ma"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#src",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "pet-peese" });
+    }
   });
 })();
 </script>

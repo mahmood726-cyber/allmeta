@@ -64,6 +64,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -90,6 +94,9 @@
 0.35, 0.16, Study G
 0.22, 0.10, Study H
 0.40, 0.20, Study I</textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
         <span class="hint">k &#8804; 15 studies: full enumeration (2&#7505; &#8722; 1 subsets). k &gt; 15: random sampling (Olkin &amp; Dahabreh 2012 recommendation).</span>
       </label>
       <label>
@@ -141,7 +148,9 @@
 
       <div class="note"><strong>Interpretation:</strong> multimodal clustering indicates subgroup heterogeneity (the meta-analysis averages two or more distinct populations). A thick &#8220;horizontal band&#8221; at one estimate means most subsets converge on the same answer &#8212; homogeneous evidence. Streaks along the <span data-gloss="i2">I&#178;</span> axis often indicate one or two highly influential outliers.</div>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</main>
   <footer>
     Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 the all-subset enumeration is replaced by random sampling; this matches <code>metafor::gosh()</code> default behaviour. R-parity: full enumeration (k=5, 26 subsets) verified against <code>metafor::gosh(rma.uni(yi, vi, method="FE"))</code>; median FE estimate = 0.2217 (tol=1e-4), 26 subsets (see <code>tests/fixtures/gosh-tiny.R</code>).
   </footer>
@@ -494,6 +503,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "heterogeneity", "influence"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#src",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "gosh" });
+    }
   });
 })();
 </script>

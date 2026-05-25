@@ -82,6 +82,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -102,6 +106,9 @@
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code></span>
           <textarea id="f-data" spellcheck="false"></textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
           <span class="hint">Lines starting with <code>#</code> or blanks are ignored.</span>
         </label>
       </fieldset>
@@ -151,7 +158,9 @@
       <div id="svg-host"></div>
       <h2>Leave-one-out</h2>
       <div id="loo-table"></div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
 
   <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> estimators per <abbr data-gloss="DL">DerSimonian</abbr> &amp; Laird (1986), Paule &amp; Mandel (1982), <abbr data-gloss="REML">REML</abbr> (Viechtbauer 2005). <abbr data-gloss="HKSJ">HKSJ</abbr> correction applied to RE pooled CI. <abbr data-gloss="I2">I²</abbr> via Q-statistic; 95% <abbr data-gloss="PI">PI</abbr> uses t<sub>k-2</sub>. Baujat after Baujat et&nbsp;al. (2002).</p>
@@ -789,6 +798,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "cumulative-subgroup", "gosh", "meta-regression", "bma-tau-priors", "webr-validator"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#f-data",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "heterogeneity" });
+    }
   });
 })();
 </script>

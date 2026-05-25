@@ -44,6 +44,8 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/everything-model.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -85,8 +87,11 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
       <table id="gamma"><thead><tr><th>Time</th><th>γ̂</th><th>Reference?</th></tr></thead><tbody></tbody></table>
       <h2 style="margin-top:1rem">Per-study random effect δ̂<sub>i</sub> (shrinkage)</h2>
       <table id="delta"><thead><tr><th>Study</th><th>δ̂</th></tr></thead><tbody></tbody></table>
-    </section>
-  </main>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
+  <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+</main>
   <footer>
     Engine: <code>shared/everything-model.js</code> — variational EM with closed-form analytic posterior at fixed variance components. Reference: Higgins, Whitehead 1996 (Stat Med 15:2733-2749) on hierarchical Bayesian MA; this is the unifying frame.
   </footer>
@@ -156,5 +161,36 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["living-rob-pool", "forest-plot", "personalised-te"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "everything-model" });
+    }
+  });
+})();
+</script>
 </body>
 </html>

@@ -54,6 +54,7 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -104,7 +105,9 @@ A, B, -0.32, 0.08</textarea>
       <div class="note" id="fit-note"><span id="fit-summary"></span> <strong>Caveat:</strong> this is a consistency-only frequentist model with a Bayesian-style posterior approximation. It does not formally test loop inconsistency (use node-splitting or design-by-treatment in dedicated NMA software). Heterogeneity is captured via a pooled τ² across all contrasts; the DL estimator here is a univariate approximation to the NMA-specific version in <code>netmeta</code>. <strong>R-parity:</strong> on a consistent network (τ²=0) the WLS point estimates and SE match <code>netmeta()</code> to 1e-4 and the MVN-posterior SUCRA tracks <code>netrank()</code> P-score within Monte-Carlo error (<code>hub/shared/tests/bayesian-nma-parity.spec.mjs</code>).</div>
       <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-top:0.6rem" role="status" aria-live="polite"></div>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</main>
   <footer>
     Consistency model per Lu &amp; Ades (2004), solved by weighted least squares in R's <code>netmeta</code>. SUCRA per Salanti et al. (2011). Posterior approximation: normal with mean = WLS estimate, covariance = (X'WX)⁻¹, assuming a flat prior on basic parameters.
   </footer>
@@ -397,5 +400,22 @@ A, B, -0.32, 0.08</textarea>
     run();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["nma-pro-v2", "nma-inconsistency", "nma-meta-reg"],
+      });
+    }
+  });
+})();
+</script>
 </body>
 </html>

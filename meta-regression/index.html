@@ -75,6 +75,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -94,6 +98,9 @@
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE, moderator</code></span>
           <textarea id="f-data" spellcheck="false"></textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
           <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored. Extra columns beyond <code>moderator</code> are passed through as covariates.</span>
         </label>
         <div id="alm-undo-mount" style="display:inline-flex;margin-top:.4rem"></div>
@@ -138,7 +145,9 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2>Bubble plot</h2>
       <div id="svg-host"></div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
 
   <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> via <abbr data-gloss="PM">Paule-Mandel</abbr> bisection; CIs use <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> <code>t(k−2)</code> with <code>q = max(1, <abbr data-gloss="QE">RSS</abbr>/(k−2))</code> floor (<abbr data-gloss="HKSJ">HKSJ</abbr>). <abbr data-gloss="R2">R²</abbr> measures the proportion of <abbr data-gloss="tau2">τ²</abbr> explained by the moderator; <abbr data-gloss="QE">Q_E</abbr> tests residual heterogeneity (df = k−2). Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="<abbr data-gloss="PM">PM</abbr>", test="knha")</code>.</p>
@@ -864,6 +873,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "heterogeneity", "gosh-metareg", "bma-tau-priors", "webr-validator"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#f-data",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "meta-regression" });
+    }
   });
 })();
 </script>

@@ -51,6 +51,8 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/nma-meta-regression.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -97,8 +99,11 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       <h2 style="margin-top:1rem">Predicted β̂(x)</h2>
       <table id="pred"><thead id="pred-head-host"><tr><th>Covariate</th></tr></thead><tbody></tbody></table>
       <div class="plot"><svg id="plot-host" viewBox="0 0 720 320" width="100%" role="img" aria-label="Predicted effect vs covariate"></svg></div>
-    </section>
-  </main>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
+  <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+</main>
   <footer>
     Engine: <code>shared/nma-meta-regression.js</code>. Estimation: Paule-Mandel τ² + GLS on the augmented design. Reference: Cooper et al. 2009 <em>Stat Med</em>; Dias et al. 2018 NICE DSU TSD 3. Single covariate per fit — for multiple covariates, fit each separately.
   </footer>
@@ -266,5 +271,36 @@ S10, A, B, -0.32, 0.10, 70</textarea>
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["nma-pro-v2", "nma", "meta-regression"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "nma-meta-reg" });
+    }
+  });
+})();
+</script>
 </body>
 </html>

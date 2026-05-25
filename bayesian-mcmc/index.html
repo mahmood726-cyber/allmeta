@@ -51,6 +51,7 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -100,7 +101,9 @@
       <svg id="tau-density" viewBox="0 0 600 200" role="img" aria-label="Posterior density of tau"></svg>
       <h2 style="margin-top:0.4rem">Trace plot (μ)</h2>
       <svg id="trace" viewBox="0 0 600 180" role="img" aria-label="Trace of chains for mu"></svg>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
   <footer>
     Gibbs sampler: alternating conditional draws on μ | θ, τ, y; τ² via Metropolis-Hastings with normal proposal; θ_i | μ, τ, y_i. Convergence diagnostics: R-hat (Gelman-Rubin split chains) and ESS (effective sample size via autocorrelation). Chains are reproducible from a seed (mulberry32 PRNG; independent per-chain seeds). <strong>R-parity:</strong> seeded summaries are bitwise-reproducible and the posterior for μ and τ matches R <code>bayesmeta</code>'s exact (deterministic) posterior within Monte-Carlo error, with R-hat≈1 and healthy ESS (<code>hub/shared/tests/bayesian-mcmc-parity.spec.mjs</code>). For serious Bayesian meta-analysis use <code>bayesmeta</code>, <code>RoBMA</code>, or Stan directly.
@@ -412,6 +415,23 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "heterogeneity", "bma-tau-priors", "bayesian-ma", "webr-validator"],
+      });
+    }
   });
 })();
 </script>

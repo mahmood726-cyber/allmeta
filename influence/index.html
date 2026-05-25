@@ -70,6 +70,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -98,6 +102,9 @@
 0.32, 0.12, Garcia
 0.45, 0.17, Ahmed
 0.28, 0.10, Brown</textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
           <span class="hint">Paste <code>effect, SE[, label]</code> rows, or upload a CSV above.</span>
         </label>
       </fieldset>
@@ -129,7 +136,9 @@
       <svg id="loo-plot" viewBox="0 0 600 400" role="img" aria-label="Leave-one-out pooled estimates"></svg>
       <h2 style="margin-top:0.6rem">Cook's D × Hat</h2>
       <svg id="influence-plot" viewBox="0 0 600 260" role="img" aria-label="Influence plot of Cook's distance vs hat values"></svg>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
   <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Flags in red: <abbr data-gloss="Effect">Cook's D</abbr> &gt; 1, hat &gt; 3·k̄ (k̄ = 1/k), |studentized residual| &gt; 2. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
   <script>
@@ -487,6 +496,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "funnel-plot", "gosh", "copas"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#src",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "influence" });
+    }
   });
 })();
 </script>

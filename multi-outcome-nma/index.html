@@ -46,6 +46,8 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/multi-outcome-nma.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -89,7 +91,10 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
         <tbody></tbody>
       </table>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+<div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+</main>
   <footer>
     Engine: <code>shared/multi-outcome-nma.js</code>. Achana et al. 2014 §3.2 Res Synth Methods 5:35-49. Σ_per_study = Σ_RE^outcomes ⊗ G_arm where G_arm has 1 on diag and 0.5 off (the multi-arm shared-control correction). β̂ via GLS with block-diagonal Σ + within-study sampling cov.
   </footer>
@@ -202,5 +207,36 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["nma-pro-v2", "nma-inconsistency", "multi-outcome-ma", "cross-network"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "multi-outcome-nma" });
+    }
+  });
+})();
+</script>
 </body>
 </html>

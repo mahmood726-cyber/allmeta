@@ -38,6 +38,10 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/personalised-te.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -60,6 +64,9 @@ S3, old, -0.60, 0.020
 S4, old, -0.48, 0.024
 S1, biomarker+, -0.65, 0.030
 S2, biomarker+, -0.70, 0.028</textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
       </label>
       <label>
         <span>Predict for patient subgroup label</span>
@@ -74,7 +81,9 @@ S2, biomarker+, -0.70, 0.028</textarea>
       <table id="subgroups"><thead><tr><th>Subgroup</th><th>Raw μ̂</th><th>Shrunk θ̂</th><th>95% CI (EB)</th><th>w</th><th>k</th></tr></thead><tbody></tbody></table>
       <h2 style="margin-top:1rem">Personalised prediction</h2>
       <div class="pred-box" id="pred"></div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
   <footer>
     Engine: <code>shared/personalised-te.js</code> — DL τ² within each subgroup + James-Stein / EB shrinkage across subgroups (Morris 1983 posterior variance). References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Brand & Kragh Andersen 1992 (Stat Med 11:1879-1894).
@@ -134,5 +143,54 @@ S2, biomarker+, -0.70, 0.028</textarea>
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "rve-meta", "everything-model", "cross-design"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#src",
+        adapter: "personalised",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "personalised-te" });
+    }
+  });
+})();
+</script>
 </body>
 </html>

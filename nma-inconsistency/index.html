@@ -57,6 +57,7 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -108,7 +109,9 @@ A, D, -0.48, 0.14</textarea>
       <svg id="ns-plot" viewBox="0 0 600 300" role="img" aria-label="Direct vs indirect estimates per comparison"></svg>
       <div class="note"><strong>Reading the plot:</strong> direct and indirect whiskers should overlap for a consistent network. Non-overlapping whiskers with |z| &gt; 1.96 indicate a specific loop with inconsistency. The global design-by-treatment test is the omnibus check.</div>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</main>
   <footer>
     Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-05-24):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. Recommended k≥5 per design.
   </footer>
@@ -452,5 +455,22 @@ A, D, -0.48, 0.14</textarea>
     run();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["nma-pro-v2", "nma", "nma-global-inconsistency", "bucher"],
+      });
+    }
+  });
+})();
+</script>
 </body>
 </html>

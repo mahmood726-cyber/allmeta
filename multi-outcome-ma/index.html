@@ -51,6 +51,8 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/multi-outcome-ma.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -98,7 +100,10 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
         <tbody></tbody>
       </table>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+<div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+</main>
 
   <footer>
     Engine: <code>shared/multi-outcome-ma.js</code> (bivariate REML via Riley 2007 iteration; coarse-grid + coordinate-descent refinement on the 3-parameter τ₁/τ₂/ρ_between space). Studies with one missing outcome enter via the marginal sub-vector — they still contribute to the pooled estimate of the observed outcome AND to the joint covariance estimate through ρ_between. Roadmap: K ≥ 3, network multi-outcome (Achana 2014 §3.2).
@@ -208,5 +213,36 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "heterogeneity", "multi-outcome-nma"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "multi-outcome-ma" });
+    }
+  });
+})();
+</script>
 </body>
 </html>

@@ -52,6 +52,7 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -92,7 +93,9 @@ C, D, -0.35, 0.14, CD</textarea>
       <h2 style="margin-top:0.6rem">Residual-by-design plot</h2>
       <svg id="plot" viewBox="0 0 600 260" role="img" aria-label="Residuals per design under consistency model"></svg>
     </section>
-  </main>
+  
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</main>
   <footer>
     Method: fit WLS consistency model (X' W X)⁻¹ X' W y with pooled τ². Fit "design model": effect = basic-parameter sum + design-specific deviation. Q_cons - Q_full has Chi-squared distribution on (n_designs - n_basic) df. <strong>R-parity:</strong> consistency / full-design / ΔQ match <code>netmeta(common=TRUE)</code> <code>decomp.design()</code> (Total / Within designs / Between designs) and the LR p uses an exact χ² CDF — verified to 1e-4 (<code>hub/shared/tests/nma-global-inconsistency-parity.spec.mjs</code>).
   </footer>
@@ -311,5 +314,22 @@ C, D, -0.35, 0.14, CD</textarea>
     run();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["nma-pro-v2", "nma-inconsistency", "nma"],
+      });
+    }
+  });
+})();
+</script>
 </body>
 </html>

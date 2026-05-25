@@ -47,6 +47,7 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/living-rob-pool.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -84,7 +85,8 @@
       <table id="series"><thead><tr><th>Date</th><th>k</th><th>μ̂</th><th>SE</th><th>95% CI</th><th>τ²</th><th>Δ vs prev</th></tr></thead><tbody></tbody></table>
       <div class="plot"><svg id="plot-host" viewBox="0 0 720 340" width="100%" role="img" aria-label="Pooled effect over snapshot dates"></svg></div>
     </section>
-  </main>
+  <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+</main>
   <footer>
     Engine: <code>shared/living-rob-pool.js</code>. Default RoB → bias mapping: low=0, some=0.25, high=0.5, critical=0.5, unclear=0.25. Override per project as needed. References: Elliott et al. 2017 (PLOS Med 14:e1002264) on living systematic reviews; Cochrane Handbook §10.10 on bias-adjusted sensitivity analyses.
   </footer>
@@ -214,5 +216,19 @@
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "living-rob-pool" });
+    }
+  });
+})();
+</script>
 </body>
 </html>

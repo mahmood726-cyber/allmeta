@@ -63,6 +63,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -128,7 +129,9 @@
         <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
         <div id="alm-export-mount"></div>
       </div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
   <footer>Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. <em>J Clin Epidemiol</em> 1997;50:683-691. R-parity: Bucher closed-form matches <code>netmeta::netmeta()</code> indirect-only estimate to tolerance 1e-6 (see <code>tests/fixtures/bucher-tiny.R</code>).</footer>
   <script>
@@ -405,5 +408,22 @@
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["nma-pro-v2", "nma", "nma-inconsistency"],
+      });
+    }
+  });
+})();
+</script>
 </body>
 </html>

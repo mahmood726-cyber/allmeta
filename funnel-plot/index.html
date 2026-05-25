@@ -76,6 +76,10 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/app-flow.js"></script>
+  <script src="../shared/canonical-datasets.js"></script>
+  <script src="../shared/hero-examples.js"></script>
+  <script src="../shared/citation.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -94,6 +98,9 @@
         <label>
           <span class="lbl">CSV-style: <code>label, estimate, SE</code> per line</span>
           <textarea id="f-data" spellcheck="false"></textarea>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
+
           <span class="hint">Lines starting with <code>#</code> and blanks are skipped. SE must be positive.</span>
         </label>
         <div id="alm-csv-mount"></div>
@@ -147,7 +154,9 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2>Preview</h2>
       <div id="svg-host"></div>
-    </section>
+    
+      <div id="alm-flow-mount" aria-live="polite"></div>
+</section>
   </main>
 
   <p class="footer-note"><abbr data-gloss="Egger">Egger</abbr>'s regression: intercept from unweighted <abbr data-gloss="OLS">OLS</abbr> of <code>est/<abbr data-gloss="SE">SE</abbr></code> on <code>1/SE</code>. Power is low for k&lt;10. <strong>For binary outcomes (<abbr data-gloss="logOR">log-OR</abbr> / <abbr data-gloss="logRR">log-RR</abbr>)</strong> <abbr data-gloss="Egger">Egger</abbr> has known type-I inflation when events are rare — prefer <abbr data-gloss="Peters">Peters</abbr>' test (<a href="../pubbias-tests/index.html">pubbias-tests</a>) or Harbord-Egger modification (per advanced-stats.md). Generated client-side.</p>
@@ -746,6 +755,55 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
+      AlmFlow.attachContinueBar({
+        container: "#alm-flow-mount",
+        suggestions: ["forest-plot", "pubbias-tests", "copas", "limit-ma", "pet-peese", "influence", "webr-validator"],
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
+      AlmHero.attachHero({
+        container: "#alm-hero-mount",
+        textarea: "#f-data",
+        adapter: "forest",
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmCitation && typeof AlmCitation.attachAuto === "function") {
+      AlmCitation.attachAuto({ container: "#alm-cite-mount", app: "funnel-plot" });
+    }
   });
 })();
 </script>
