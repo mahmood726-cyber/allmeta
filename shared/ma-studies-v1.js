@@ -389,12 +389,25 @@
     }
 
     var env = buildEnvelope(studies);
+    // 2026-05-25: include AlmBuildInfo (app/version/sha/builtAt) in the SIGNED
+    // payload so receipts are tamper-evident about WHICH code produced them.
+    // Reviewers months later can replay against the exact commit, not against
+    // whatever the latest main branch happens to compute.
+    var producedBy = (typeof global.AlmBuildInfo === "object" && global.AlmBuildInfo)
+      ? {
+          app: String(global.AlmBuildInfo.app || "allmeta"),
+          version: String(global.AlmBuildInfo.version || "unknown"),
+          sha: String(global.AlmBuildInfo.sha || "unknown"),
+          builtAt: String(global.AlmBuildInfo.builtAt || ""),
+        }
+      : { app: "allmeta", version: "unknown", sha: "unknown", builtAt: "" };
     // Canonical message: deep-sorted keys so the same envelope signs to the
     // same MAC byte-for-byte, regardless of input field order. Studies are
     // already in caller order; their internal field order is canonicalized.
     var payload = {
       _schema: env._schema,
       _signedAt: new Date().toISOString(),
+      producedBy: producedBy,
       studies: env.studies,
     };
     var msg = JSON.stringify(_canonicalize(payload));
@@ -414,6 +427,7 @@
         receipt: {
           _schema: payload._schema,
           _signedAt: payload._signedAt,
+          producedBy: payload.producedBy,
           studies: payload.studies,
           alg: "HMAC-SHA-256",
           keyHint: keyHint,
@@ -455,6 +469,10 @@
     var payload = {
       _schema: receipt._schema,
       _signedAt: receipt._signedAt,
+      // producedBy is part of the SIGNED payload (added 2026-05-25). Older
+      // receipts without it remain verifiable because _canonicalize drops
+      // undefined keys, and they were signed without it.
+      producedBy: receipt.producedBy,
       studies: receipt.studies,
     };
     var msg = JSON.stringify(_canonicalize(payload));

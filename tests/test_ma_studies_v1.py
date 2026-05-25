@@ -361,3 +361,128 @@ def test_verifyTruthCert_rejects_tampered_study():
     """)
     assert out["ok"] is True
     assert out["valid"] is False
+
+
+# --- producedBy provenance (added 2026-05-25 for polish item 11) --------------
+
+
+def test_toTruthCert_embeds_producedBy_when_buildInfo_loaded():
+    # When AlmBuildInfo is set on the global, toTruthCert should embed it in
+    # the receipt's producedBy field so reviewers know which code produced
+    # the numbers. Required for cross-version reproducibility.
+    out = _run_node(f"""
+        (async () => {{
+          globalThis.AlmBuildInfo = {{
+            app: "allmeta", version: "v11.7", sha: "deadbeefdeadbeef",
+            shortSha: "deadbee", builtAt: "2026-05-25T00:00:00Z"
+          }};
+          const M = require({json.dumps(str(MODULE))});
+          const r = await M.toTruthCert(
+            [{{ label: "A", est: 0.1, se: 0.05 }}],
+            {{ key: "k" }}
+          );
+          console.log(JSON.stringify(r.receipt.producedBy));
+        }})();
+    """)
+    assert out["app"] == "allmeta"
+    assert out["version"] == "v11.7"
+    assert out["sha"] == "deadbeefdeadbeef"
+    assert out["builtAt"] == "2026-05-25T00:00:00Z"
+
+
+def test_toTruthCert_falls_back_when_buildInfo_missing():
+    # If AlmBuildInfo isn't loaded (e.g. an older app that doesn't include
+    # the script), the receipt still emits a sentinel "unknown" rather than
+    # crashing or omitting the field — verification must work regardless.
+    out = _run_node(f"""
+        (async () => {{
+          delete globalThis.AlmBuildInfo;
+          const M = require({json.dumps(str(MODULE))});
+          const r = await M.toTruthCert(
+            [{{ label: "A", est: 0.1, se: 0.05 }}],
+            {{ key: "k" }}
+          );
+          console.log(JSON.stringify(r.receipt.producedBy));
+        }})();
+    """)
+    assert out["version"] == "unknown"
+    assert out["sha"] == "unknown"
+
+
+def test_verifyTruthCert_rejects_tampered_producedBy():
+    # producedBy is in the SIGNED payload — swapping the SHA after signing
+    # must break the MAC. This is the whole point of putting it in the
+    # signed message, not as an attached side-band.
+    out = _run_node(f"""
+        (async () => {{
+          globalThis.AlmBuildInfo = {{
+            app: "allmeta", version: "v11", sha: "real-sha-aaaa",
+            shortSha: "real", builtAt: "2026-05-25T00:00:00Z"
+          }};
+          const M = require({json.dumps(str(MODULE))});
+          const made = await M.toTruthCert(
+            [{{ label: "A", est: 0.1, se: 0.05 }}],
+            {{ key: "k" }}
+          );
+          // Attacker swaps version to claim it came from a different build.
+          made.receipt.producedBy.sha = "forged-sha-zzzz";
+          const checked = await M.verifyTruthCert(made.receipt, {{ key: "k" }});
+          console.log(JSON.stringify(checked));
+        }})();
+    """)
+    assert out["ok"] is True
+    assert out["valid"] is False, "tampering producedBy must invalidate the receipt"
+
+
+def test_verifyTruthCert_backward_compat_with_old_receipts_without_producedBy():
+    # Receipts signed BEFORE 2026-05-25 (when producedBy was added) had no
+    # producedBy field in their canonical payload. They must still verify
+    # after the upgrade. We simulate the old signing path by computing the
+    # HMAC ourselves over the old-format canonical message, then handing the
+    # synthetic receipt to verifyTruthCert.
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const key = "k";
+          const studies = [{{ label: "A", est: 0.1, se: 0.05 }}];
+          // Build the OLD canonical payload (no producedBy), sign it directly.
+          const env = M.buildEnvelope(studies);
+          const oldPayload = {{
+            _schema: env._schema,
+            _signedAt: "2026-05-20T00:00:00.000Z",
+            studies: env.studies,
+          }};
+          // Manual canonicalize (deep-sort keys) — same algorithm as ma-studies.
+          function canon(o) {{
+            if (o === null || typeof o !== "object") return o;
+            if (Array.isArray(o)) return o.map(canon);
+            const ks = Object.keys(o).sort();
+            const out = {{}};
+            for (const k of ks) out[k] = canon(o[k]);
+            return out;
+          }}
+          const msg = JSON.stringify(canon(oldPayload));
+          const enc = new TextEncoder();
+          const keyObj = await crypto.subtle.importKey(
+            "raw", enc.encode(key),
+            {{ name: "HMAC", hash: "SHA-256" }}, false, ["sign"]
+          );
+          const sigBuf = await crypto.subtle.sign("HMAC", keyObj, enc.encode(msg));
+          const sig = Array.from(new Uint8Array(sigBuf)).map(b => b.toString(16).padStart(2,"0")).join("");
+          const khBuf = await crypto.subtle.digest("SHA-256", enc.encode(key));
+          const keyHint = Array.from(new Uint8Array(khBuf)).map(b => b.toString(16).padStart(2,"0")).join("").slice(0,8);
+          const oldReceipt = {{
+            _schema: oldPayload._schema,
+            _signedAt: oldPayload._signedAt,
+            // NO producedBy — this is the old format.
+            studies: oldPayload.studies,
+            alg: "HMAC-SHA-256",
+            keyHint,
+            signature: sig,
+          }};
+          const checked = await M.verifyTruthCert(oldReceipt, {{ key }});
+          console.log(JSON.stringify(checked));
+        }})();
+    """)
+    assert out["ok"] is True
+    assert out["valid"] is True, "old receipts without producedBy must still verify"

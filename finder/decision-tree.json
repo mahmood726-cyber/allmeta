@@ -1,0 +1,151 @@
+{
+  "_meta": {
+    "title": "allmeta Method Finder",
+    "description": "Walk through 2-3 questions to land on the apps that fit your data and analytic question. All recommendations link to canonical method papers and live apps.",
+    "version": 1
+  },
+  "nodes": {
+    "start": {
+      "question": "What's the shape of your evidence?",
+      "options": [
+        { "label": "Pairwise comparisons (one treatment vs control across studies)", "next": "pairwise-outcome" },
+        { "label": "Network of ≥3 treatments (mixed direct + indirect)",            "next": "network-outcome" },
+        { "label": "Diagnostic test accuracy (sensitivity / specificity per study)", "recommend": [
+            { "app": "dta-sroc",  "why": "Bivariate REML pooling of (logit Se, logit Sp). Best when k ≥ 5 and threshold variation is moderate." },
+            { "app": "hsroc",     "why": "Hierarchical SROC model (Rutter & Gatsonis). Use when threshold variation dominates." }
+        ] },
+        { "label": "Single-arm proportions / rates (no comparator)", "recommend": [
+            { "app": "proportion-ma", "why": "Generalised linear mixed-model pooling of proportions on the logit scale; back-transforms to natural %." }
+        ] },
+        { "label": "Dose-response data (continuous exposure)", "recommend": [
+            { "app": "dosehtml",              "why": "Generalised least-squares dose-response with quadratic / restricted-cubic-spline models (Orsini & Greenland)." },
+            { "app": "nma-dose-response-app", "why": "Dose-response within a network of comparators; Emax / cubic spline." }
+        ] },
+        { "label": "Individual-participant data (IPD)", "recommend": [
+            { "app": "IPD-Meta-Pro", "why": "One-stage IPD meta-analysis with multilevel random effects and effect-modifier interactions." }
+        ] },
+        { "label": "Time-to-event registry (reconstruct from published KM curves)", "recommend": [
+            { "app": "Pairwiseai", "why": "Reconstruct IPD from digitised KM curves (Guyot 2012); pools HRs or RMST differences." }
+        ] }
+      ]
+    },
+    "pairwise-outcome": {
+      "question": "What outcome scale?",
+      "options": [
+        { "label": "Binary (OR, RR, RD)",                "next": "pairwise-binary" },
+        { "label": "Continuous (MD, SMD)",                "next": "pairwise-continuous" },
+        { "label": "Time-to-event (HR)",                  "next": "pairwise-hr" },
+        { "label": "Already-computed effect sizes + SE",  "next": "pairwise-generic" }
+      ]
+    },
+    "pairwise-binary": {
+      "question": "Are events rare (< ~5% in either arm), and any zero-cell studies?",
+      "options": [
+        { "label": "Yes — rare events / zero cells",   "recommend": [
+            { "app": "rare-events-glmm", "why": "Unconditional binomial-normal GLMM. No continuity correction; correct frequentist properties even with zeros." },
+            { "app": "mh-peto",          "why": "Mantel-Haenszel and Peto OR — closed-form, no priors, robust for sparse data." }
+        ] },
+        { "label": "No — events common, no zeros", "next": "pairwise-binary-common" }
+      ]
+    },
+    "pairwise-binary-common": {
+      "question": "Heterogeneity expected to be moderate-high (different settings / populations)?",
+      "options": [
+        { "label": "Yes — random effects with prediction interval", "recommend": [
+            { "app": "forest-plot",   "why": "REML + HKSJ + prediction interval; the standard default." },
+            { "app": "heterogeneity", "why": "Decomposes I², τ², Q with Q-profile CI on τ²." },
+            { "app": "bayesian-ma",   "why": "Bayesian hierarchical RE-MA with half-Cauchy / half-normal τ priors and posterior predictive interval." },
+            { "app": "bma-tau-priors","why": "Bayesian model-averaging across half-normal / half-Cauchy / inverse-gamma τ² priors (Friede 2017)." }
+        ] },
+        { "label": "No — homogeneous, fixed effect acceptable", "recommend": [
+            { "app": "forest-plot", "why": "Fixed-effect inverse-variance pooling — also reports the random-effects estimate for comparison." }
+        ] }
+      ]
+    },
+    "pairwise-continuous": {
+      "question": "Different measurement scales across studies?",
+      "options": [
+        { "label": "Yes — need SMD (Cohen's d / Hedges' g)", "recommend": [
+            { "app": "effect-size-converter", "why": "Convert between SMD, Cohen's d, Hedges' g, log-OR, correlation r; also median→mean (Wan / Luo / Shi)." },
+            { "app": "forest-plot",            "why": "SMD pooling with small-sample bias correction." }
+        ] },
+        { "label": "No — same scale, MD is fine", "recommend": [
+            { "app": "forest-plot",    "why": "REML mean-difference pooling with HKSJ." },
+            { "app": "heterogeneity",  "why": "I² / τ² / Q profile with prediction interval." }
+        ] }
+      ]
+    },
+    "pairwise-hr": {
+      "question": "Do you have IPD or published HR estimates only?",
+      "options": [
+        { "label": "Published HR + 95% CI per study", "recommend": [
+            { "app": "forest-plot", "why": "Pools log-HR with inverse-variance; back-transforms to HR. Always pool on the log scale." }
+        ] },
+        { "label": "Reconstructed IPD from KM curves", "recommend": [
+            { "app": "Pairwiseai", "why": "Guyot 2012 IPD reconstruction + Cox / RMST pooling." }
+        ] }
+      ]
+    },
+    "pairwise-generic": {
+      "question": "What's your analytic concern?",
+      "options": [
+        { "label": "Just pool + visualise", "recommend": [
+            { "app": "forest-plot",       "why": "REML + HKSJ + prediction interval." },
+            { "app": "workbench",         "why": "End-to-end pipeline: pool → heterogeneity → bias → sensitivity in one app." }
+        ] },
+        { "label": "Heterogeneity / outliers",   "recommend": [
+            { "app": "heterogeneity",   "why": "I², τ², Q with Q-profile CI." },
+            { "app": "influence",       "why": "Leave-one-out + Cook's distance + studentised residuals." },
+            { "app": "gosh",            "why": "Visualises the pooled estimate across 2^k subsets — identifies outlier-driven shifts." }
+        ] },
+        { "label": "Publication bias / small-study effects", "recommend": [
+            { "app": "funnel-plot",     "why": "Visual asymmetry check; trim-and-fill." },
+            { "app": "pubbias-tests",   "why": "Egger / Begg / Harbord / Peters." },
+            { "app": "pet-peese",       "why": "Stanley-Doucouliagos PET then PEESE if significant." },
+            { "app": "copas",           "why": "Selection-model based bias adjustment." }
+        ] },
+        { "label": "Dependent effect sizes (multiple ES per study)", "recommend": [
+            { "app": "rve-meta",        "why": "Robust variance estimation (Hedges-Tipton-Johnson 2010) with Tipton small-sample correction." }
+        ] },
+        { "label": "Effect modifiers / subgroups",  "recommend": [
+            { "app": "meta-regression",     "why": "Continuous moderator with bubble plot." },
+            { "app": "cumulative-subgroup", "why": "Subgroup pooling + cumulative timeline." },
+            { "app": "personalised-te",     "why": "Empirical-Bayes shrinkage for subgroup-specific TE (Kent PATH statement)." }
+        ] }
+      ]
+    },
+    "network-outcome": {
+      "question": "Network structure?",
+      "options": [
+        { "label": "Standard NMA (pairwise contrasts, no special structure)", "next": "network-standard" },
+        { "label": "Component treatments (combinations like 'A+B')", "recommend": [
+            { "app": "component-nma", "why": "Additive component NMA — estimates per-component effects." }
+        ] },
+        { "label": "Dose-response within network", "recommend": [
+            { "app": "nma-dose-response-app", "why": "Network NMA with Emax / cubic-spline dose-response." }
+        ] },
+        { "label": "Multiple outcomes simultaneously (joint pooling)", "recommend": [
+            { "app": "multi-outcome-nma", "why": "Achana 2014 multi-outcome NMA with between-outcome correlation." }
+        ] },
+        { "label": "Cross-design (RCTs + observational)", "recommend": [
+            { "app": "cross-design",   "why": "Welton hierarchical pooling with bias-adjustment priors." },
+            { "app": "cross-network",  "why": "Bias-calibrated synthesis across RCT + NMA + obs networks." }
+        ] }
+      ]
+    },
+    "network-standard": {
+      "question": "Frequentist or Bayesian?",
+      "options": [
+        { "label": "Frequentist (faster, no MCMC)", "recommend": [
+            { "app": "nma-pro-v2", "why": "Full NMA Pro suite — frequentist netmeta pipeline with ranking, league tables, inconsistency, GRADE." },
+            { "app": "nma",        "why": "Lightweight frequentist NMA with forest + league + rankogram." },
+            { "app": "bucher",     "why": "Bucher single-loop indirect comparison — when network is small and disconnected." }
+        ] },
+        { "label": "Bayesian (proper UQ, ranking probabilities)", "recommend": [
+            { "app": "bayesian-nma", "why": "Hierarchical Bayesian NMA with Gemtc-style priors, SUCRA, pairwise probabilities." },
+            { "app": "nma-pro-v2",   "why": "Has a Bayesian tab — fits Stan-style models in-browser with prior sensitivity panel." }
+        ] }
+      ]
+    }
+  }
+}

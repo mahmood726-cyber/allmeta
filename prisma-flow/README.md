@@ -66,3 +66,23 @@ python -m pytest tests/ -v
 - No "updated reviews" variant (identified via previous reviews) in this
   version.
 - No citation parsing or deduplication — bring your own count totals.
+
+<!-- ALM-AUTO-README-BEGIN (regenerate with scripts/gen_app_readmes.py) -->
+
+## When to use
+
+- **Category:** PRISMA & Reporting
+- **Data shape:** standalone (no `ma-studies` bus integration).
+- **Purpose:** 2020 flow diagram + search log.
+
+## Cite as
+
+Click **📑 Cite as** inside the app for ready-to-paste Vancouver + BibTeX citations covering both the allmeta release and the relevant method paper(s).
+
+## Reproducibility
+
+- Receipts and JSON exports include `producedBy` (app version, git SHA, build timestamp) — see `shared/build-info.js`.
+- For apps with a parity-checked engine, `shared/specs/` contains the R-reference test vectors. Run `python -m pytest tests/` for the full suite.
+- Click **📝 Verify in R** to open a Shinylive R session with the current data pre-loaded for independent re-computation (where supported).
+
+<!-- ALM-AUTO-README-END -->

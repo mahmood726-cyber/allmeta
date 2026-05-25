@@ -26,23 +26,51 @@
      `CITATION.cff`, README badge).
    - `10.5281/zenodo.<version_id>` — this-release DOI.
 
-## Each release (~2 minutes)
+## Each release (~5 minutes)
 
 Per `CLAUDE.md` rule: **only tag and release when explicitly requested.**
 
-1. Make sure `main` is green: `python -m pytest tests/` and
-   `cd tests/playwright && npx playwright test verify-touched-apps.spec.ts`
-   both report all-pass / soft-warns only.
-2. Update `CITATION.cff` `version:` and `date-released:`.
-3. Tag and push:
+1. **Green-tests gate.** All three must pass:
+   ```sh
+   python -m pytest tests/                                       # ~3 min
+   cd tests/playwright && npx playwright test --reporter=line   # ~8 min
+   python -m pytest nma-pro-v2/tests/                            # ~1 min
+   ```
+2. **Bump version in `CITATION.cff`** (`version:` and `date-released:`).
+3. **Regenerate `shared/build-info.js`** so TruthCert receipts and JSON
+   exports embed the new SHA + timestamp. This is the one mechanical
+   step that's easy to forget:
+   ```sh
+   python scripts/regen_build_info.py
+   git add shared/build-info.js CITATION.cff
+   git commit -m "release: bump to vX.Y.Z"
+   git push origin main
+   ```
+   *Why:* Receipts signed without the new SHA point at the previous
+   commit, so reviewers months later can't replay the exact code.
+4. **Tag and push:**
    ```sh
    git tag -a v1.0.0 -m "v1.0.0 — first archived release"
    git push origin v1.0.0
    ```
-4. On GitHub: open the tag → **Draft release** → write release notes
-   (link the relevant PROGRESS.md ledger entries) → **Publish**.
-5. Zenodo picks up the release webhook within ~1 minute and creates a
-   versioned deposit. The concept DOI now resolves to the new version.
+5. **On GitHub:** open the tag → **Draft release** → write release
+   notes (link the relevant PROGRESS.md ledger entries) → **Publish**.
+6. **Zenodo deposit (automatic).** Picks up the release webhook within
+   ~1 minute and creates a versioned deposit. The concept DOI now
+   resolves to the new version. Verify by clicking the badge in README.
+
+## Post-release verification (~2 minutes)
+
+1. **Click the README DOI badge** — it should resolve to the latest
+   versioned deposit. Reload Zenodo's deposit page if needed.
+2. **Verify TruthCert provenance round-trips:**
+   - Open <https://mahmood726-cyber.github.io/allmeta/forest-plot/>
+   - Click "Generate TruthCert", inspect the receipt JSON:
+     `producedBy.sha` should equal the git SHA at the release tag.
+     `producedBy.version` should equal the CITATION.cff version.
+3. **Update `shared/citation.js`** if the released version changed:
+   open the file, update `ALLMETA_CITE.vancouver` and `bibtex` strings
+   to reference the new DOI. Commit + push.
 
 ## After the first deposit
 

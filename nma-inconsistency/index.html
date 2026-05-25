@@ -55,9 +55,11 @@
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
+  <script src="../shared/autosave.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -468,6 +470,20 @@ A, D, -0.48, 0.14</textarea>
         container: "#alm-flow-mount",
         suggestions: ["nma-pro-v2", "nma", "nma-global-inconsistency", "bucher"],
       });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
+      AlmAutosave.install({ appKey: 'nma-inconsistency' });
     }
   });
 })();
