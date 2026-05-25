@@ -450,7 +450,7 @@ tbody tr:hover { background: var(--bg-primary); }
           <button class="btn secondary sm" onclick="importCSV()">📁 Import CSV</button>
           <button class="btn" onclick="runAnalysis()">▶ Run Analysis</button>
         </div>
-        <textarea id="dataInput">id,author,type,dose,cases,n,logRR,se,covariate
+        <textarea id="dataInput" aria-label="📥 Data Input">id,author,type,dose,cases,n,logRR,se,covariate
 1,Bianchi,cc,0,126,414,0,NA,1.2
 1,Bianchi,cc,9.06,61,261,-0.223,0.223,1.5
 1,Bianchi,cc,27,69,228,0,0.234,1.8
@@ -491,7 +491,7 @@ tbody tr:hover { background: var(--bg-primary); }
             <label>τ² (Between-study variance)</label>
             <span class="slider-value" id="tau2Value">Auto</span>
           </div>
-          <input type="range" id="tau2Slider" min="0" max="0.5" step="0.005" value="0" oninput="updateTau2(this.value)">
+          <input type="range" id="tau2Slider" min="0" max="0.5" step="0.005" value="0" oninput="updateTau2(this.value)" aria-label="0 (fixed)">
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-secondary)">
             <span>0 (fixed)</span>
             <span>Auto (REML)</span>
@@ -504,7 +504,7 @@ tbody tr:hover { background: var(--bg-primary); }
             <label>Confidence Interval</label>
             <span class="slider-value" id="ciValue">95%</span>
           </div>
-          <input type="range" id="ciSlider" min="80" max="99" step="1" value="95" oninput="updateCI(this.value)">
+          <input type="range" id="ciSlider" min="80" max="99" step="1" value="95" oninput="updateCI(this.value)" aria-label="80%">
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-secondary)">
             <span>80%</span>
             <span>90%</span>
@@ -518,7 +518,7 @@ tbody tr:hover { background: var(--bg-primary); }
             <label>Influence Threshold (%)</label>
             <span class="slider-value" id="thresholdValue">10%</span>
           </div>
-          <input type="range" id="thresholdSlider" min="5" max="25" step="1" value="10" oninput="updateThreshold(this.value)">
+          <input type="range" id="thresholdSlider" min="5" max="25" step="1" value="10" oninput="updateThreshold(this.value)" aria-label="5% (strict)">
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-secondary)">
             <span>5% (strict)</span>
             <span>10% (standard)</span>
@@ -666,7 +666,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
           <div class="form-group">
             <label>Variable for Subgrouping:</label>
-            <select id="subgroupVariable" class="form-control" onchange="updateSubgroupOptions()">
+            <select id="subgroupVariable" class="form-control" onchange="updateSubgroupOptions()" aria-label="Variable for Subgrouping:">
               <option value="">-- Select a variable --</option>
               <option value="type">Study Type (case-control/cohort)</option>
               <option value="author">Study Author</option>
@@ -683,7 +683,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
           <div class="form-group">
             <label>Analysis Model:</label>
-            <select id="subgroupModel" class="form-control">
+            <select id="subgroupModel" class="form-control" aria-label="Analysis Model:">
               <option value="quadratic">Quadratic (Non-linear)</option>
               <option value="linear">Linear Trend</option>
               <option value="spline">Restricted Cubic Spline</option>
@@ -919,7 +919,7 @@ tbody tr:hover { background: var(--bg-primary); }
         <h2>📉 Downgrade Domains</h2>
         <div class="form-group">
           <label>1. Risk of Bias</label>
-          <select id="gradeRoB" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeRoB" class="form-control" onchange="updateGradeRating()" aria-label="1. Risk of Bias">
             <option value="0">No serious limitations</option>
             <option value="-1">Serious limitations (-1)</option>
             <option value="-2">Very serious limitations (-2)</option>
@@ -929,7 +929,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
         <div class="form-group">
           <label>2. Inconsistency</label>
-          <select id="gradeInconsistency" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeInconsistency" class="form-control" onchange="updateGradeRating()" aria-label="2. Inconsistency">
             <option value="0">No serious inconsistency</option>
             <option value="-1">Serious inconsistency (-1)</option>
             <option value="-2">Very serious inconsistency (-2)</option>
@@ -939,7 +939,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
         <div class="form-group">
           <label>3. Indirectness</label>
-          <select id="gradeIndirectness" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeIndirectness" class="form-control" onchange="updateGradeRating()" aria-label="3. Indirectness">
             <option value="0">No serious indirectness</option>
             <option value="-1">Serious indirectness (-1)</option>
             <option value="-2">Very serious indirectness (-2)</option>
@@ -949,7 +949,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
         <div class="form-group">
           <label>4. Imprecision</label>
-          <select id="gradeImprecision" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeImprecision" class="form-control" onchange="updateGradeRating()" aria-label="4. Imprecision">
             <option value="0">No serious imprecision</option>
             <option value="-1">Serious imprecision (-1)</option>
             <option value="-2">Very serious imprecision (-2)</option>
@@ -959,7 +959,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
         <div class="form-group">
           <label>5. Publication Bias</label>
-          <select id="gradePubBias" class="form-control" onchange="updateGradeRating()">
+          <select id="gradePubBias" class="form-control" onchange="updateGradeRating()" aria-label="5. Publication Bias">
             <option value="0">Undetected</option>
             <option value="-1">Strongly suspected (-1)</option>
           </select>
@@ -971,7 +971,7 @@ tbody tr:hover { background: var(--bg-primary); }
         <h2>📈 Upgrade Domains (Observational Only)</h2>
         <div class="form-group">
           <label>1. Large Effect</label>
-          <select id="gradeLargeEffect" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeLargeEffect" class="form-control" onchange="updateGradeRating()" aria-label="1. Large Effect">
             <option value="0">No large effect</option>
             <option value="1">Large effect (RR>2 or <0.5) (+1)</option>
             <option value="2">Very large effect (RR>5 or <0.2) (+2)</option>
@@ -980,7 +980,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
         <div class="form-group">
           <label>2. Dose-Response Gradient</label>
-          <select id="gradeDoseResponse" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeDoseResponse" class="form-control" onchange="updateGradeRating()" aria-label="2. Dose-Response Gradient">
             <option value="0">No clear gradient</option>
             <option value="1">Clear dose-response gradient (+1)</option>
           </select>
@@ -988,7 +988,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
         <div class="form-group">
           <label>3. Plausible Confounding</label>
-          <select id="gradeConfounding" class="form-control" onchange="updateGradeRating()">
+          <select id="gradeConfounding" class="form-control" onchange="updateGradeRating()" aria-label="3. Plausible Confounding">
             <option value="0">No effect from confounding</option>
             <option value="1">Would reduce effect (+1)</option>
           </select>

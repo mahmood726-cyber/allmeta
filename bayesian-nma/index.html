@@ -69,7 +69,7 @@
       <h2>Input</h2>
       <label>
         <span>Contrasts — <code>treatmentA, treatmentB, effect, SE</code></span>
-        <textarea id="src">A, B, -0.30, 0.10
+        <textarea id="src" aria-label="Input">A, B, -0.30, 0.10
 A, C, -0.20, 0.12
 A, D, -0.50, 0.15
 B, C, 0.10, 0.11
@@ -81,12 +81,12 @@ A, B, -0.32, 0.08</textarea>
       </label>
       <label>
         <span>Reference treatment</span>
-        <input id="ref" type="text" value="A">
+        <input id="ref" type="text" value="A" aria-label="Used as the comparator in the output table.">
         <span class="hint">Used as the comparator in the output table.</span>
       </label>
       <label>
         <span>Preferred direction</span>
-        <select id="direction">
+        <select id="direction" aria-label="Direction">
           <option value="negative" selected>Lower is better</option>
           <option value="positive">Higher is better</option>
         </select>

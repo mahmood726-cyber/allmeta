@@ -66,7 +66,7 @@
       <h2>Contrast rows + study-level covariate</h2>
       <label>
         <span>One row per contrast: <code>studyId, trtA, trtB, yi, sei, covariate</code></span>
-        <textarea id="src">S01, A, B, -0.30, 0.10, 50
+        <textarea id="src" aria-label="Contrast rows + study-level covariate">S01, A, B, -0.30, 0.10, 50
 S02, A, B, -0.25, 0.12, 55
 S03, A, B, -0.40, 0.11, 45
 S04, A, B, -0.35, 0.10, 65
@@ -79,11 +79,11 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       </label>
       <label>
         <span>Reference treatment</span>
-        <input id="f-ref" type="text" value="A">
+        <input id="f-ref" type="text" value="A" aria-label="Predict at covariate values (comma-separated)">
       </label>
       <label>
         <span>Predict at covariate values (comma-separated)</span>
-        <input id="f-predict" type="text" value="40, 50, 60, 70">
+        <input id="f-predict" type="text" value="40, 50, 60, 70" aria-label="F predict">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit network meta-regression</button>
       <div class="note">

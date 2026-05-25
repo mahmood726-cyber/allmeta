@@ -191,9 +191,9 @@
       const idx = tbody.children.length + 1;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><input type="text" value="Study ${idx}" style="width:100%"></td>
-        <td><input type="number" step="0.01" placeholder="0.00" style="width:100%"></td>
-        <td><input type="number" step="0.01" placeholder="0.10" style="width:100%"></td>
+        <td><input type="text" value="Study ${idx}" style="width:100%" aria-label="Input"></td>
+        <td><input type="number" step="0.01" placeholder="0.00" style="width:100%" aria-label="0.00"></td>
+        <td><input type="number" step="0.01" placeholder="0.10" style="width:100%" aria-label="0.10"></td>
         <td><button class="btn" onclick="this.closest('tr').remove()">Remove</button></td>
       `;
       tbody.appendChild(tr);
@@ -230,9 +230,9 @@
         const tbody = document.getElementById('studyBody');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><input type="text" value="${s.name}" style="width:100%"></td>
-          <td><input type="number" step="0.01" value="${s.yi}" style="width:100%"></td>
-          <td><input type="number" step="0.01" value="${s.se}" style="width:100%"></td>
+          <td><input type="text" value="${s.name}" style="width:100%" aria-label="Input"></td>
+          <td><input type="number" step="0.01" value="${s.yi}" style="width:100%" aria-label="Input"></td>
+          <td><input type="number" step="0.01" value="${s.se}" style="width:100%" aria-label="Input"></td>
           <td><button class="btn" onclick="this.closest('tr').remove()">Remove</button></td>
         `;
         tbody.appendChild(tr);

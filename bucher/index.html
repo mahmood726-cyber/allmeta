@@ -84,20 +84,20 @@
       <fieldset>
         <legend>Trial 1 — A vs C</legend>
         <div class="grid-2">
-          <label><span class="lbl">Effect d(AC)</span><input id="dAC" type="number" step="any" value="-0.30"></label>
-          <label><span class="lbl">SE</span><input id="seAC" type="number" step="any" value="0.10"></label>
+          <label><span class="lbl">Effect d(AC)</span><input id="dAC" type="number" step="any" value="-0.30" aria-label="SE"></label>
+          <label><span class="lbl">SE</span><input id="seAC" type="number" step="any" value="0.10" aria-label="Input"></label>
         </div>
       </fieldset>
       <fieldset>
         <legend>Trial 2 — B vs C</legend>
         <div class="grid-2">
-          <label><span class="lbl">Effect d(BC)</span><input id="dBC" type="number" step="any" value="-0.18"></label>
-          <label><span class="lbl">SE</span><input id="seBC" type="number" step="any" value="0.12"></label>
+          <label><span class="lbl">Effect d(BC)</span><input id="dBC" type="number" step="any" value="-0.18" aria-label="SE"></label>
+          <label><span class="lbl">SE</span><input id="seBC" type="number" step="any" value="0.12" aria-label="Se BC"></label>
         </div>
       </fieldset>
       <label>
         <span class="lbl" data-gloss="scale">Scale</span>
-        <select id="scale">
+        <select id="scale" aria-label="Scale">
           <option value="raw">Raw (MD / SMD / log-HR etc.)</option>
           <option value="log" selected>Log ratio (OR / RR / HR — input on log scale, output back-transformed)</option>
         </select>

@@ -107,7 +107,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code></span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
@@ -119,7 +119,7 @@
         <legend>Options</legend>
         <label>
           <span class="lbl">τ² estimator for CI / PI</span>
-          <select id="f-tau2">
+          <select id="f-tau2" aria-label="F tau2">
             <option value="pm">Paule-Mandel (default, any k)</option>
             <option value="reml">REML (any k)</option>
             <option value="dl">DerSimonian-Laird (k ≥ 10 only)</option>
@@ -151,7 +151,7 @@
         <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;"></div>
         <!-- btn-reset hidden: reset-undo module provides the visible button; kept for test/bus compat -->
         <button type="button" id="btn-reset" style="display:none">Reset</button>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
     </section>
 

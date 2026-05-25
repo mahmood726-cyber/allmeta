@@ -93,7 +93,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code></span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies (in order)"></textarea>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
@@ -105,7 +105,7 @@
         <legend>Information size</legend>
         <label>
           <span class="lbl">RIS source</span>
-          <select id="f-ris-mode">
+          <select id="f-ris-mode" aria-label="F ris mode">
             <option value="auto">Auto from target effect + power</option>
             <option value="manual">Manual (inverse-variance units)</option>
           </select>
@@ -113,24 +113,24 @@
         <div class="row-3">
           <label>
             <span class="lbl">Target effect δ</span>
-            <input type="number" id="f-delta" step="any" value="0.20">
+            <input type="number" id="f-delta" step="any" value="0.20" aria-label="α (two-sided)">
           </label>
           <label>
             <span class="lbl">α (two-sided)</span>
-            <input type="number" id="f-alpha" step="0.001" min="0.001" max="0.5" value="0.05">
+            <input type="number" id="f-alpha" step="0.001" min="0.001" max="0.5" value="0.05" aria-label="Power (1-β)">
           </label>
           <label>
             <span class="lbl">Power (1-β)</span>
-            <input type="number" id="f-power" step="0.01" min="0.5" max="0.99" value="0.80">
+            <input type="number" id="f-power" step="0.01" min="0.5" max="0.99" value="0.80" aria-label="F power">
           </label>
         </div>
         <label>
           <span class="lbl">Manual RIS (Σ 1/SE² at target)</span>
-          <input type="number" id="f-ris-manual" step="any" value="200">
+          <input type="number" id="f-ris-manual" step="any" value="200" aria-label="Diversity adjustment D (≥1, from random-effects)">
         </label>
         <label>
           <span class="lbl">Diversity adjustment D (≥1, from random-effects)</span>
-          <input type="number" id="f-diversity" step="0.01" min="1" value="1.00">
+          <input type="number" id="f-diversity" step="0.01" min="1" value="1.00" aria-label="RIS is multiplied by D. Use 1.0 for fixed-effect plan.">
           <span class="hint">RIS is multiplied by D. Use 1.0 for fixed-effect plan.</span>
         </label>
       </fieldset>
@@ -139,7 +139,7 @@
         <legend>Display</legend>
         <label>
           <span class="lbl">Plot title</span>
-          <input type="text" id="f-title" placeholder="e.g. SGLT2i — ACM trial sequential analysis">
+          <input type="text" id="f-title" placeholder="e.g. SGLT2i — ACM trial sequential analysis" aria-label="F title">
         </label>
       </fieldset>
 
@@ -156,7 +156,7 @@
         <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Studio pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
         <button type="button" id="btn-reset">Reset</button>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
     </section>
 

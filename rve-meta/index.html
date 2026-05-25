@@ -62,7 +62,7 @@
       <h2>Studies</h2>
       <label>
         <span>One row per effect: <code>cluster, yi, vi, x1, x2, …</code></span>
-        <textarea id="src">study1, 0.45, 0.04, 1, 6
+        <textarea id="src" aria-label="Studies">study1, 0.45, 0.04, 1, 6
 study1, 0.38, 0.05, 1, 6
 study1, 0.55, 0.06, 1, 6
 study2, 0.22, 0.03, 1, 12
@@ -82,13 +82,13 @@ study5, 0.16, 0.025, 0, 24</textarea>
 
       <label style="margin-top:0.5rem">
         <span>Working correlation ρ</span>
-        <input id="f-rho" type="number" step="0.05" min="0" max="0.99" value="0.8">
+        <input id="f-rho" type="number" step="0.05" min="0" max="0.99" value="0.8" aria-label="F rho">
         <span style="color:var(--muted);font-size:0.78rem">Typical 0.6–0.8 in education / public-health reviews. Result is robust to mis-specification — sensitivity analysis recommended.</span>
       </label>
 
       <label>
         <span>Predictor names (comma-separated; one fewer than data columns after vi)</span>
-        <input id="f-names" type="text" value="intervention, dose_weeks">
+        <input id="f-names" type="text" value="intervention, dose_weeks" aria-label="F names">
       </label>
 
       <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.5rem">Fit RVE meta-regression</button>

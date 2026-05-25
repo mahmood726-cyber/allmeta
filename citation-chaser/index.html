@@ -71,17 +71,17 @@
       <h2>Seeds</h2>
       <label>
         <span class="lbl">DOIs or OpenAlex IDs (one per line)</span>
-        <textarea id="seeds">10.1056/NEJMoa1911303
+        <textarea id="seeds" aria-label="Seeds">10.1056/NEJMoa1911303
 10.1056/NEJMoa2022190</textarea>
         <span class="hint">DOIs like <code>10.1056/NEJMoa1911303</code> or OpenAlex IDs like <code>W4285775090</code>.</span>
       </label>
       <label>
         <span class="lbl">Your email (OpenAlex polite pool — optional)</span>
-        <input id="mailto" type="email" placeholder="you@example.com"><span class="hint">Including your email routes requests through OpenAlex's faster polite pool.</span>
+        <input id="mailto" type="email" placeholder="you@example.com" aria-label="Direction"><span class="hint">Including your email routes requests through OpenAlex's faster polite pool.</span>
       </label>
       <label>
         <span class="lbl">Direction</span>
-        <select id="direction">
+        <select id="direction" aria-label="Direction">
           <option value="both" selected>Both (references + cited-by)</option>
           <option value="refs">Backward only (references)</option>
           <option value="cites">Forward only (cited-by)</option>
@@ -89,7 +89,7 @@
       </label>
       <label>
         <span class="lbl">Max cited-by per seed</span>
-        <input id="max-cites" type="number" step="1" min="10" max="200" value="50">
+        <input id="max-cites" type="number" step="1" min="10" max="200" value="50" aria-label="Max cites">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Chase citations</button>
       <button type="button" id="btn-cancel" class="secondary" style="width:100%; margin-top:0.4rem; display:none">Cancel</button>

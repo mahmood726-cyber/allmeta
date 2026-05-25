@@ -229,7 +229,7 @@
         <button class="btn btn--ghost btn--sm" id="aboutBtn" title="About, Methods & Citation" style="margin-left:var(--space-3);">ℹ️ Cite</button>
         <div class="app-controls">
           <div class="select-wrapper">
-            <select class="select" id="dataTypeSelect">
+            <select class="select" id="dataTypeSelect" aria-label="Data Type Select">
               <option value="binary">Binary (2-arm)</option>
               <option value="continuous">Continuous (2-arm)</option>
               <option value="hr">Time-to-Event (HR)</option>
@@ -239,14 +239,14 @@
             </select>
           </div>
           <div class="select-wrapper">
-            <select class="select" id="effectMeasureSelect">
+            <select class="select" id="effectMeasureSelect" aria-label="Effect Measure Select">
               <option value="OR">Odds Ratio</option>
               <option value="RR">Risk Ratio</option>
               <option value="RD">Risk Difference</option>
             </select>
           </div>
           <div class="select-wrapper">
-            <select class="select" id="tau2MethodSelect">
+            <select class="select" id="tau2MethodSelect" aria-label="Tau2Method Select">
               <option value="REML">REML</option>
               <option value="DL">DerSimonian-Laird</option>
               <option value="PM">Paule-Mandel</option>
@@ -266,7 +266,7 @@
           </button>
           <button class="btn btn--ghost btn--sm" id="saveBtn" onclick="saveProject('TruthCert_Project_' + Date.now(), true)" title="Save project (Ctrl+S to quick save)">Save</button>
           <label class="btn btn--ghost btn--sm" title="Load project file" style="cursor:pointer;">Load
-            <input type="file" accept=".json,.truthcert" onchange="loadProject(this.files[0])" style="display:none;">
+            <input type="file" accept=".json,.truthcert" onchange="loadProject(this.files[0])" style="display:none;" aria-label="Input">
           </label>
           <button class="btn btn--ghost btn--sm" id="undoBtn" onclick="UndoManager.undo()" title="Undo (Ctrl+Z)" disabled>Undo</button>
           <button class="btn btn--ghost btn--sm" id="redoBtn" onclick="UndoManager.redo()" title="Redo (Ctrl+Y)" disabled>Redo</button>
@@ -362,7 +362,7 @@
                   <button class="btn btn--ghost btn--sm" id="loadDemoBtn">Load Demo</button>
                   <button class="btn btn--ghost btn--sm" id="importCsvBtn">Import CSV</button>
                   <button class="btn btn--primary btn--sm" id="importKMBtn" title="Import from KM Extractor JSON">📊 KM Import</button>
-                  <input type="file" id="kmFileInput" accept=".json" style="display: none;">
+                  <input type="file" id="kmFileInput" accept=".json" style="display: none;" aria-label="Km File Input">
                   <button class="btn btn--ghost btn--sm" id="exportCsvBtn">Export CSV</button><button class="btn btn--outline btn--sm" onclick="exportToR()" style="margin-left: 8px;">
                       📊 Export to R
                     </button>
@@ -459,7 +459,7 @@ Test B 2021,72,8,18,202</pre>
                   <div class="input-group" style="margin-bottom: var(--space-4);">
                     <label class="input-label" data-tooltip="The between-study variance estimator. DL (DerSimonian-Laird) is most common; REML is recommended for accuracy; PM (Paule-Mandel) is robust to outliers.">τ² Estimator <span class="info-icon">?</span></label>
                     <div class="select-wrapper" style="width: 100%;">
-                      <select class="select" style="width: 100%;" id="tau2MethodSelectPanel">
+                      <select class="select" style="width: 100%;" id="tau2MethodSelectPanel" aria-label="Model Settings">
                         <option value="REML" selected>REML (Recommended)</option>
                         <option value="DL">DerSimonian-Laird</option>
                         <option value="PM">Paule-Mandel</option>
@@ -485,7 +485,7 @@ Test B 2021,72,8,18,202</pre>
                   <div id="bayesianSettings" style="display: none; padding-left: 20px; margin-bottom: var(--space-3);">
                     <div class="input-group" style="margin-bottom: var(--space-2);">
                       <label class="input-label" style="font-size: 0.75rem;" data-tooltip="Weakly informative uses broad priors; Skeptical places more weight near null; Custom lets you specify the prior mean and SD.">Prior Type <span class="info-icon">?</span></label>
-                      <select class="select select--sm" id="priorTypeSelect" style="width: 100%;">
+                      <select class="select select--sm" id="priorTypeSelect" style="width: 100%;" aria-label="Prior Type Select">
                         <option value="vague" selected>Vague N(0, 10²)</option>
                         <option value="weakly_informative">Weakly Informative N(0, 2.5²)</option>
                         <option value="informative">Informative N(0, 1²)</option>
@@ -496,22 +496,22 @@ Test B 2021,72,8,18,202</pre>
                       <div class="flex gap-2" style="margin-bottom: var(--space-2);">
                         <div style="flex: 1;">
                           <label class="input-label" style="font-size: 0.7rem;">Prior μ Mean</label>
-                          <input type="number" class="input input--sm" id="priorMuMean" value="0" step="0.1">
+                          <input type="number" class="input input--sm" id="priorMuMean" value="0" step="0.1" aria-label="Prior μ Mean">
                         </div>
                         <div style="flex: 1;">
                           <label class="input-label" style="font-size: 0.7rem;">Prior μ SD</label>
-                          <input type="number" class="input input--sm" id="priorMuSD" value="10" step="0.5" min="0.1">
+                          <input type="number" class="input input--sm" id="priorMuSD" value="10" step="0.5" min="0.1" aria-label="Prior μ SD">
                         </div>
                       </div>
                     </div>
                     <div class="flex gap-2" style="margin-bottom: var(--space-2);">
                       <div style="flex: 1;">
                         <label class="input-label" style="font-size: 0.7rem;" data-tooltip="Number of samples drawn from the posterior. More iterations = more stable estimates but slower. 5000-10000 usually sufficient.">MCMC Iterations</label>
-                        <input type="number" class="input input--sm" id="mcmcIterations" value="5000" step="1000" min="1000">
+                        <input type="number" class="input input--sm" id="mcmcIterations" value="5000" step="1000" min="1000" aria-label="MCMC Iterations">
                       </div>
                       <div style="flex: 1;">
                         <label class="input-label" style="font-size: 0.7rem;">Chains</label>
-                        <select class="select select--sm" id="mcmcChains" style="width: 100%;">
+                        <select class="select select--sm" id="mcmcChains" style="width: 100%;" aria-label="Chains">
                           <option value="2" selected>2</option>
                           <option value="3">3</option>
                           <option value="4">4</option>
@@ -524,11 +524,11 @@ Test B 2021,72,8,18,202</pre>
                     <label class="input-label" data-tooltip="Treatment favors: Lower means smaller values are better (e.g., mortality). Higher means larger values are better (e.g., response rate).">Direction <span class="info-icon">?</span></label>
                     <div class="flex gap-4">
                       <label class="flex items-center gap-2 text-sm">
-                        <input type="radio" name="direction" value="lower" checked>
+                        <input type="radio" name="direction" value="lower" checked aria-label="Direction">
                         Lower is better
                       </label>
                       <label class="flex items-center gap-2 text-sm">
-                        <input type="radio" name="direction" value="higher">
+                        <input type="radio" name="direction" value="higher" aria-label="Direction">
                         Higher is better
                       </label>
                     </div>
@@ -536,7 +536,7 @@ Test B 2021,72,8,18,202</pre>
                   <div class="input-group" id="ccSettingGroup">
                     <label class="input-label" data-tooltip="Added to zero cells in 2x2 tables. 0.5 is standard; treatment-arm uses the opposite arm ratio; none excludes zero-cell studies.">Continuity Correction <span class="info-icon">?</span></label>
                     <div class="select-wrapper" style="width: 100%;">
-                      <select class="select select--sm" style="width: 100%;" id="ccMethodSelect">
+                      <select class="select select--sm" style="width: 100%;" id="ccMethodSelect" aria-label="Cc Method Select">
                         <option value="constant" selected>Constant (0.5)</option>
                         <option value="treatment">Treatment-arm</option>
                         <option value="empirical">Empirical</option>
@@ -704,10 +704,10 @@ Test B 2021,72,8,18,202</pre>
                   <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
                     <div class="text-xs font-semibold" style="margin-bottom: var(--space-2);">📊 Covariate Adjustment</div>
                     <div class="flex gap-2" style="margin-bottom: var(--space-2);">
-                      <select id="covariateSelect" class="select" style="flex: 1; font-size: var(--text-xs);">
+                      <select id="covariateSelect" class="select" style="flex: 1; font-size: var(--text-xs);" aria-label="Covariate Select">
                         <option value="">Select covariate...</option>
                       </select>
-                      <select id="covOutcomeSelect" class="select" style="flex: 1; font-size: var(--text-xs);">
+                      <select id="covOutcomeSelect" class="select" style="flex: 1; font-size: var(--text-xs);" aria-label="Cov Outcome Select">
                         <option value="cv_death_or_hfh">cv_death_or_hfh</option>
                       </select>
                     </div>
@@ -717,7 +717,7 @@ Test B 2021,72,8,18,202</pre>
                   </div>
                   <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md);">
                     <div class="text-xs font-semibold" style="margin-bottom: var(--space-2);">📈 Time-Varying Effects</div>
-                    <select id="trajectoryOutcomeSelect" class="select" style="width: 100%; font-size: var(--text-xs); margin-bottom: var(--space-2);">
+                    <select id="trajectoryOutcomeSelect" class="select" style="width: 100%; font-size: var(--text-xs); margin-bottom: var(--space-2);" aria-label="Trajectory Outcome Select">
                       <option value="cv_death_or_hfh">cv_death_or_hfh</option>
                     </select>
                     <button class="btn btn--ghost btn--sm" style="width: 100%;" onclick="runTrajectoryUI()">
@@ -976,23 +976,23 @@ Test B 2021,72,8,18,202</pre>
                   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-3);">
                     <div class="form-group">
                       <label>Country</label>
-                      <select id="htaCountry" class="country-select">
+                      <select id="htaCountry" class="country-select" aria-label="Country">
                         <option value="">Select country...</option>
                       </select>
                     </div>
                     <div class="form-group">
                       <label>Disease Pack</label>
-                      <select id="htaDiseasePack" class="disease-select">
+                      <select id="htaDiseasePack" class="disease-select" aria-label="Disease Pack">
                         <option value="">Select disease topic...</option>
                       </select>
                     </div>
                     <div class="form-group">
                       <label>Currency</label>
-                      <input type="text" id="htaCurrency" value="USD" readonly>
+                      <input type="text" id="htaCurrency" value="USD" readonly aria-label="Currency">
                     </div>
                     <div class="form-group">
                       <label>Price Year</label>
-                      <input type="number" id="htaPriceYear" value="2024">
+                      <input type="number" id="htaPriceYear" value="2024" aria-label="Price Year">
                     </div>
                   </div>
                 </div>
@@ -1001,19 +1001,19 @@ Test B 2021,72,8,18,202</pre>
                   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-3);">
                     <div class="form-group">
                       <label>Intervention Name</label>
-                      <input type="text" id="htaIntervName" placeholder="e.g., New Treatment">
+                      <input type="text" id="htaIntervName" placeholder="e.g., New Treatment" aria-label="Intervention Name">
                     </div>
                     <div class="form-group">
                       <label>Intervention Cost</label>
-                      <input type="number" id="htaIntervCost" value="0" step="0.01">
+                      <input type="number" id="htaIntervCost" value="0" step="0.01" aria-label="Intervention Cost">
                     </div>
                     <div class="form-group">
                       <label>Comparator Name</label>
-                      <input type="text" id="htaCompName" placeholder="e.g., Standard Care">
+                      <input type="text" id="htaCompName" placeholder="e.g., Standard Care" aria-label="Comparator Name">
                     </div>
                     <div class="form-group">
                       <label>Comparator Cost</label>
-                      <input type="number" id="htaCompCost" value="0" step="0.01">
+                      <input type="number" id="htaCompCost" value="0" step="0.01" aria-label="Comparator Cost">
                     </div>
                   </div>
                 </div>
@@ -1022,27 +1022,27 @@ Test B 2021,72,8,18,202</pre>
                   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-3);">
                     <div class="form-group">
                       <label>Willingness-to-Pay (WTP)</label>
-                      <input type="number" id="htaWTP" value="50000" step="1000">
+                      <input type="number" id="htaWTP" value="50000" step="1000" aria-label="Willingness-to-Pay (WTP)">
                     </div>
                     <div class="form-group">
                       <label>Time Horizon (years)</label>
-                      <input type="number" id="htaHorizon" value="10">
+                      <input type="number" id="htaHorizon" value="10" aria-label="Time Horizon (years)">
                     </div>
                     <div class="form-group">
                       <label>Discount Rate (%)</label>
-                      <input type="number" id="htaDiscountRate" value="3.5" step="0.1">
+                      <input type="number" id="htaDiscountRate" value="3.5" step="0.1" aria-label="Discount Rate (%)">
                     </div>
                     <div class="form-group">
                       <label>Baseline Risk</label>
-                      <input type="number" id="htaBaselineRisk" value="0.1" step="0.01" min="0" max="1">
+                      <input type="number" id="htaBaselineRisk" value="0.1" step="0.01" min="0" max="1" aria-label="Baseline Risk">
                     </div>
                     <div class="form-group">
                       <label>QALY Loss per Event</label>
-                      <input type="number" id="htaQalyLoss" value="0.1" step="0.01">
+                      <input type="number" id="htaQalyLoss" value="0.1" step="0.01" aria-label="QALY Loss per Event">
                     </div>
                     <div class="form-group">
                       <label>Cost per Event</label>
-                      <input type="number" id="htaCostEvent" value="1000" step="100">
+                      <input type="number" id="htaCostEvent" value="1000" step="100" aria-label="Cost per Event">
                     </div>
                   </div>
                 </div>
@@ -1310,7 +1310,7 @@ Test B 2021,72,8,18,202</pre>
                   <div class="card__body" style="padding: var(--space-3);">
                     <div style="margin-bottom: var(--space-2);">
                       <label style="font-size: var(--text-xs); color: var(--text-secondary);">Select covariate:</label>
-                      <select id="metaregCovariateSelect" class="select" style="width: 100%; font-size: var(--text-xs); margin-top: 4px;">
+                      <select id="metaregCovariateSelect" class="select" style="width: 100%; font-size: var(--text-xs); margin-top: 4px;" aria-label="Select covariate:">
                         <option value="year">Year</option>
                         <option value="n_total">Sample Size (N)</option>
                         <option value="sei">Standard Error</option>
@@ -1360,19 +1360,19 @@ Test B 2021,72,8,18,202</pre>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); margin-bottom: var(--space-3);">
                       <div>
                         <label style="font-size: var(--text-xs);">Records from databases</label>
-                        <input type="number" id="prisma_records" value="500" class="input input--sm" style="width: 100%;">
+                        <input type="number" id="prisma_records" value="500" class="input input--sm" style="width: 100%;" aria-label="Records from databases">
                       </div>
                       <div>
                         <label style="font-size: var(--text-xs);">Duplicates removed</label>
-                        <input type="number" id="prisma_duplicates" value="50" class="input input--sm" style="width: 100%;">
+                        <input type="number" id="prisma_duplicates" value="50" class="input input--sm" style="width: 100%;" aria-label="Duplicates removed">
                       </div>
                       <div>
                         <label style="font-size: var(--text-xs);">Title/abstract excluded</label>
-                        <input type="number" id="prisma_excluded" value="380" class="input input--sm" style="width: 100%;">
+                        <input type="number" id="prisma_excluded" value="380" class="input input--sm" style="width: 100%;" aria-label="Title/abstract excluded">
                       </div>
                       <div>
                         <label style="font-size: var(--text-xs);">Full-text excluded</label>
-                        <input type="number" id="prisma_ft_excluded" value="55" class="input input--sm" style="width: 100%;">
+                        <input type="number" id="prisma_ft_excluded" value="55" class="input input--sm" style="width: 100%;" aria-label="Full-text excluded">
                       </div>
                     </div>
                     <button class="btn btn--primary btn--sm" onclick="
@@ -1484,7 +1484,7 @@ Test B 2021,72,8,18,202</pre>
                   <div class="card__body" style="padding: var(--space-3);">
                     <div style="margin-bottom: var(--space-2);">
                       <label style="font-size: var(--text-xs);">Control Event Rate (for NNT):</label>
-                      <input type="number" id="clinicalCER" value="0.20" step="0.01" min="0" max="1" class="input input--sm" style="width: 100px;">
+                      <input type="number" id="clinicalCER" value="0.20" step="0.01" min="0" max="1" class="input input--sm" style="width: 100px;" aria-label="Control Event Rate (for NNT):">
                     </div>
                     <button class="btn btn--primary btn--sm" onclick="runClinicalTranslation()">Translate</button>
                     <div id="clinicalResults" style="margin-top: var(--space-3);"></div>
@@ -1498,7 +1498,7 @@ Test B 2021,72,8,18,202</pre>
                   <div class="card__body" style="padding: var(--space-3);">
                     <div style="margin-bottom: var(--space-2);">
                       <label style="font-size: var(--text-xs);">Topic/Condition:</label>
-                      <input type="text" id="searchTopic" placeholder="e.g., diabetes, depression, cancer" class="input input--sm" style="width: 100%;">
+                      <input type="text" id="searchTopic" placeholder="e.g., diabetes, depression, cancer" class="input input--sm" style="width: 100%;" aria-label="Topic/Condition:">
                     </div>
                     <button class="btn btn--primary btn--sm" onclick="generateSearchStrategyUI()">Generate Strategy</button>
                     <div id="searchStrategyPanel" style="margin-top: var(--space-3);"></div>
@@ -1546,11 +1546,11 @@ Test B 2021,72,8,18,202</pre>
             <div class="form-grid" style="gap:var(--space-3);">
               <div class="form-group">
                 <label>Input Value</label>
-                <input type="number" id="calcInputValue" step="any" placeholder="e.g., 1.5">
+                <input type="number" id="calcInputValue" step="any" placeholder="e.g., 1.5" aria-label="Input Value">
               </div>
               <div class="form-group">
                 <label>From Type</label>
-                <select id="calcFromType">
+                <select id="calcFromType" aria-label="From Type">
                   <option value="OR">Odds Ratio (OR)</option>
                   <option value="logOR">Log Odds Ratio</option>
                   <option value="RR">Risk Ratio (RR)</option>
@@ -1563,7 +1563,7 @@ Test B 2021,72,8,18,202</pre>
               </div>
               <div class="form-group">
                 <label>To Type</label>
-                <select id="calcToType">
+                <select id="calcToType" aria-label="To Type">
                   <option value="d">Cohen's d (SMD)</option>
                   <option value="OR">Odds Ratio (OR)</option>
                   <option value="logOR">Log Odds Ratio</option>
@@ -1575,11 +1575,11 @@ Test B 2021,72,8,18,202</pre>
               </div>
               <div class="form-group">
                 <label>Baseline Risk (for RR)</label>
-                <input type="number" id="calcBaselineRisk" value="0.1" min="0" max="1" step="0.01">
+                <input type="number" id="calcBaselineRisk" value="0.1" min="0" max="1" step="0.01" aria-label="Baseline Risk (for RR)">
               </div>
               <div class="form-group">
                 <label>N per group (for g)</label>
-                <input type="number" id="calcN" value="50" min="2">
+                <input type="number" id="calcN" value="50" min="2" aria-label="N per group (for g)">
               </div>
             </div>
             <button class="btn btn-primary" style="margin-top:var(--space-3);" onclick="runEffectSizeConversion()">
@@ -1589,7 +1589,7 @@ Test B 2021,72,8,18,202</pre>
           <div id="calc-compute" class="calc-tab-content" style="display:none;">
             <div class="form-group" style="margin-bottom:var(--space-3);">
               <label>Input Type</label>
-              <select id="computeInputType" onchange="toggleComputeInputs()">
+              <select id="computeInputType" onchange="toggleComputeInputs()" aria-label="Input Type">
                 <option value="means">Means &amp; SDs</option>
                 <option value="t">t-statistic</option>
                 <option value="F">F-statistic</option>
@@ -1600,41 +1600,41 @@ Test B 2021,72,8,18,202</pre>
             <div id="computeMeansInputs" class="form-grid" style="gap:var(--space-3);">
               <div class="form-group">
                 <label>Treatment Mean</label>
-                <input type="number" id="compM1" step="any">
+                <input type="number" id="compM1" step="any" aria-label="Treatment Mean">
               </div>
               <div class="form-group">
                 <label>Treatment SD</label>
-                <input type="number" id="compSD1" step="any" min="0">
+                <input type="number" id="compSD1" step="any" min="0" aria-label="Treatment SD">
               </div>
               <div class="form-group">
                 <label>Treatment N</label>
-                <input type="number" id="compN1" min="2">
+                <input type="number" id="compN1" min="2" aria-label="Treatment N">
               </div>
               <div class="form-group">
                 <label>Control Mean</label>
-                <input type="number" id="compM2" step="any">
+                <input type="number" id="compM2" step="any" aria-label="Control Mean">
               </div>
               <div class="form-group">
                 <label>Control SD</label>
-                <input type="number" id="compSD2" step="any" min="0">
+                <input type="number" id="compSD2" step="any" min="0" aria-label="Control SD">
               </div>
               <div class="form-group">
                 <label>Control N</label>
-                <input type="number" id="compN2" min="2">
+                <input type="number" id="compN2" min="2" aria-label="Control N">
               </div>
             </div>
             <div id="computeStatInputs" class="form-grid" style="gap:var(--space-3);display:none;">
               <div class="form-group">
                 <label id="statValueLabel">t-value</label>
-                <input type="number" id="compStatValue" step="any">
+                <input type="number" id="compStatValue" step="any" aria-label="t-value">
               </div>
               <div class="form-group">
                 <label>N group 1</label>
-                <input type="number" id="compStatN1" min="2">
+                <input type="number" id="compStatN1" min="2" aria-label="N group 1">
               </div>
               <div class="form-group">
                 <label>N group 2</label>
-                <input type="number" id="compStatN2" min="2">
+                <input type="number" id="compStatN2" min="2" aria-label="N group 2">
               </div>
             </div>
             <button class="btn btn-primary" style="margin-top:var(--space-3);" onclick="computeEffectSize()">
@@ -1648,19 +1648,19 @@ Test B 2021,72,8,18,202</pre>
             <div class="form-grid" style="gap:var(--space-3);">
               <div class="form-group">
                 <label>Treatment Events (a)</label>
-                <input type="number" id="table_a" min="0">
+                <input type="number" id="table_a" min="0" aria-label="Treatment Events (a)">
               </div>
               <div class="form-group">
                 <label>Treatment Total (n1)</label>
-                <input type="number" id="table_n1" min="1">
+                <input type="number" id="table_n1" min="1" aria-label="Treatment Total (n1)">
               </div>
               <div class="form-group">
                 <label>Control Events (c)</label>
-                <input type="number" id="table_c" min="0">
+                <input type="number" id="table_c" min="0" aria-label="Control Events (c)">
               </div>
               <div class="form-group">
                 <label>Control Total (n2)</label>
-                <input type="number" id="table_n2" min="1">
+                <input type="number" id="table_n2" min="1" aria-label="Control Total (n2)">
               </div>
             </div>
             <button class="btn btn-primary" style="margin-top:var(--space-3);" onclick="computeFrom2x2()">
@@ -3364,12 +3364,12 @@ function renderSensitivityControls(containerId) {
       <div>
         <label style="font-size: var(--text-xs);">τ² Multiplier: <span id="tau2Val">1.0</span></label>
         <input type="range" min="0.1" max="5" step="0.1" value="1"
-               oninput="updateSensitivity('tau2Adj', this.value)" style="width: 100%;">
+               oninput="updateSensitivity('tau2Adj', this.value)" style="width: 100%;" aria-label="Input">
       </div>
       <div>
         <label style="font-size: var(--text-xs);">Bias Adjustment: <span id="biasVal">0.00</span></label>
         <input type="range" min="-0.5" max="0.5" step="0.05" value="0"
-               oninput="updateSensitivity('biasAdj', this.value)" style="width: 100%;">
+               oninput="updateSensitivity('biasAdj', this.value)" style="width: 100%;" aria-label="Input">
       </div>
       <div id="sensitivityOutput" style="padding: var(--space-2); background: var(--bg-secondary); border-radius: var(--radius-md);">
         <p><strong>Adjusted Effect:</strong> ${SensitivityEngine.state.originalTheta?.toFixed(3) || 'N/A'}</p>

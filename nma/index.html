@@ -101,7 +101,7 @@
           <legend>Data</legend>
           <label>
             <span class="lbl">CSV: <code>study, treatment1, treatment2, estimate, SE</code></span>
-            <textarea id="f-data" spellcheck="false"></textarea>
+            <textarea id="f-data" spellcheck="false" aria-label="Contrasts"></textarea>
             <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. logOR).</span>
           </label>
         </fieldset>
@@ -109,19 +109,19 @@
           <legend>Options</legend>
           <label>
             <span class="lbl">Reference treatment</span>
-            <select id="f-ref"></select>
+            <select id="f-ref" aria-label="F ref"></select>
             <span class="hint">Set to the comparator for the league table; all effects are re-expressed relative to it.</span>
           </label>
           <label>
             <span class="lbl">Model</span>
-            <select id="f-model">
+            <select id="f-model" aria-label="F model">
               <option value="fe" selected>Fixed effect (inverse-variance)</option>
               <option value="re">Random effects (shared τ², DerSimonian-Laird on contrasts)</option>
             </select>
           </label>
           <label>
             <span class="lbl">Plot title</span>
-            <input type="text" id="f-title" placeholder="e.g. Antihypertensives — incident HF">
+            <input type="text" id="f-title" placeholder="e.g. Antihypertensives — incident HF" aria-label="F title">
           </label>
         </fieldset>
 
@@ -135,7 +135,7 @@
           <button type="button" id="btn-import">Import JSON</button>
           <button type="button" id="btn-example">Load example</button>
           <button type="button" id="btn-reset">Reset</button>
-          <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+          <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
         </div>
       </div>
     </section>

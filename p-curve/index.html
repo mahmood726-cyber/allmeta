@@ -85,7 +85,7 @@
 
       <label>
         <span>p-values — one per line (one-sided or two-sided significant, &lt;0.05)</span>
-        <textarea id="src">0.001
+        <textarea id="src" aria-label="Input">0.001
 0.004
 0.012
 0.027
@@ -101,14 +101,14 @@
       </label>
       <label>
         <span>Test type (for effect size)</span>
-        <select id="test">
+        <select id="test" aria-label="Test">
           <option value="z" selected>z-test</option>
           <option value="t">t-test (equal df across studies)</option>
         </select>
       </label>
       <label>
         <span>Common df (if t)</span>
-        <input id="df" type="number" step="1" min="1" value="100">
+        <input id="df" type="number" step="1" min="1" value="100" aria-label="Df">
       </label>
 
       <!-- axis-controls mount -->

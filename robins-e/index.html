@@ -219,7 +219,7 @@
           body.innerHTML += `<div class="q">
             <span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
             <span class="opts">
-              ${[Y, PY, PN, N, NI].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}"><span>${v}</span></label>`).join("")}
+              ${[Y, PY, PN, N, NI].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}" aria-label="${d.id} ${q.id}"><span>${v}</span></label>`).join("")}
             </span>
           </div>`;
         }

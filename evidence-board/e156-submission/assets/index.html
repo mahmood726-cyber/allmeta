@@ -318,10 +318,10 @@
         <p class="subtle">Keep each note compact: what it is, what it says, how much you trust it, and what to do next.</p>
         <form id="noteForm" class="form-grid">
           <label>Title
-            <input id="titleInput" type="text" placeholder="REML sensitivity matched external benchmark">
+            <input id="titleInput" type="text" placeholder="REML sensitivity matched external benchmark" aria-label="Add Evidence Note">
           </label>
           <label>Study Type
-            <select id="typeInput">
+            <select id="typeInput" aria-label="Add Evidence Note">
               <option value="Trial">Trial</option>
               <option value="Meta-analysis">Meta-analysis</option>
               <option value="Review">Review</option>
@@ -330,20 +330,20 @@
             </select>
           </label>
           <label>Confidence
-            <select id="confidenceInput">
+            <select id="confidenceInput" aria-label="Confidence Input">
               <option value="High">High</option>
               <option value="Moderate">Moderate</option>
               <option value="Low">Low</option>
             </select>
           </label>
           <label>Source
-            <input id="sourceInput" type="text" placeholder="F1000 review round 2">
+            <input id="sourceInput" type="text" placeholder="F1000 review round 2" aria-label="Source Input">
           </label>
           <label class="full">Key Finding
-            <textarea id="findingInput" placeholder="State the core finding or observation."></textarea>
+            <textarea id="findingInput" placeholder="State the core finding or observation." aria-label="Finding Input"></textarea>
           </label>
           <label class="full">Next Action
-            <textarea id="actionInput" placeholder="What should happen next because of this note?"></textarea>
+            <textarea id="actionInput" placeholder="What should happen next because of this note?" aria-label="Action Input"></textarea>
           </label>
           <div class="actions full">
             <button class="button primary" type="submit">Save Note</button>
@@ -356,8 +356,8 @@
         <h2>Board</h2>
         <p class="subtle">Filter the notes, export them to JSON, or import a previous board snapshot.</p>
         <div class="filters">
-          <input id="searchInput" type="search" placeholder="Search title, source, finding, action">
-          <select id="confidenceFilter">
+          <input id="searchInput" type="search" placeholder="Search title, source, finding, action" aria-label="Board">
+          <select id="confidenceFilter" aria-label="Board">
             <option value="All">All confidence levels</option>
             <option value="High">High</option>
             <option value="Moderate">Moderate</option>
@@ -366,7 +366,7 @@
           <button class="button" id="exportJson" type="button">Export JSON</button>
           <label class="button" style="display:inline-flex;align-items:center;justify-content:center;">
             Import JSON
-            <input id="importJson" type="file" accept="application/json" hidden>
+            <input id="importJson" type="file" accept="application/json" hidden aria-label="Import Json">
           </label>
         </div>
         <div class="notes" id="notes"></div>

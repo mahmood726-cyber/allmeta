@@ -73,7 +73,7 @@
       <h2>Input</h2>
       <label>
         <span>Contrasts — <code>A, B, effect, SE</code></span>
-        <textarea id="src">A, B, -0.30, 0.10
+        <textarea id="src" aria-label="Input">A, B, -0.30, 0.10
 A, B, -0.32, 0.08
 A, B, -0.28, 0.09
 A, C, -0.20, 0.12
@@ -88,7 +88,7 @@ A, D, -0.48, 0.14</textarea>
       </label>
       <label style="margin-top:0.5rem;display:block">
         <span style="font-size:0.85rem;color:var(--muted)">Model</span>
-        <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;">
+        <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;" aria-label="F model">
           <option value="FE">Fixed-effect (common τ²=0)</option>
           <option value="PM">Random-effects (Paule-Mandel τ²)</option>
           <option value="DL">Random-effects (DerSimonian-Laird τ²)</option>

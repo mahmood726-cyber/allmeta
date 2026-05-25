@@ -1703,7 +1703,7 @@
         
         <div class="app-controls">
           <div class="select-wrapper">
-            <select class="select" id="dataTypeSelect">
+            <select class="select" id="dataTypeSelect" aria-label="Data Type Select">
               <option value="binary">Binary (2-arm)</option>
               <option value="continuous">Continuous (2-arm)</option>
               <option value="hr">Time-to-Event (HR)</option>
@@ -1713,7 +1713,7 @@
           </div>
           
           <div class="select-wrapper">
-            <select class="select" id="effectMeasureSelect">
+            <select class="select" id="effectMeasureSelect" aria-label="Effect Measure Select">
               <option value="OR">Odds Ratio</option>
               <option value="RR">Risk Ratio</option>
               <option value="RD">Risk Difference</option>
@@ -1721,7 +1721,7 @@
           </div>
           
           <div class="select-wrapper">
-            <select class="select" id="tau2MethodSelect">
+            <select class="select" id="tau2MethodSelect" aria-label="Tau2Method Select">
               <option value="REML">REML</option>
               <option value="DL">DerSimonian-Laird</option>
               <option value="PM">Paule-Mandel</option>
@@ -1829,7 +1829,7 @@
                   <button class="btn btn--ghost btn--sm" id="loadDemoBtn">Load Demo</button>
                   <button class="btn btn--ghost btn--sm" id="importCsvBtn">Import CSV</button>
                   <button class="btn btn--primary btn--sm" id="importKMBtn" title="Import from KM Extractor JSON">📊 KM Import</button>
-                  <input type="file" id="kmFileInput" accept=".json" style="display: none;">
+                  <input type="file" id="kmFileInput" accept=".json" style="display: none;" aria-label="Km File Input">
                   <button class="btn btn--ghost btn--sm" id="exportCsvBtn">Export CSV</button>
                   <button class="btn btn--ghost btn--sm" id="clearAllBtn">Clear All</button>
                 </div>
@@ -1868,7 +1868,7 @@
                   <div class="input-group" style="margin-bottom: var(--space-4);">
                     <label class="input-label">τ² Estimator</label>
                     <div class="select-wrapper" style="width: 100%;">
-                      <select class="select" style="width: 100%;" id="tau2MethodSelectPanel">
+                      <select class="select" style="width: 100%;" id="tau2MethodSelectPanel" aria-label="τ² Estimator">
                         <option value="REML" selected>REML (Recommended)</option>
                         <option value="DL">DerSimonian-Laird</option>
                         <option value="PM">Paule-Mandel</option>
@@ -1893,7 +1893,7 @@
                   <div id="bayesianSettings" style="display: none; padding-left: 20px; margin-bottom: var(--space-3);">
                     <div class="input-group" style="margin-bottom: var(--space-2);">
                       <label class="input-label" style="font-size: 0.75rem;">Prior Type</label>
-                      <select class="select select--sm" id="priorTypeSelect" style="width: 100%;">
+                      <select class="select select--sm" id="priorTypeSelect" style="width: 100%;" aria-label="Prior Type">
                         <option value="vague" selected>Vague N(0, 10²)</option>
                         <option value="weakly_informative">Weakly Informative N(0, 2.5²)</option>
                         <option value="informative">Informative N(0, 1²)</option>
@@ -1904,22 +1904,22 @@
                       <div class="flex gap-2" style="margin-bottom: var(--space-2);">
                         <div style="flex: 1;">
                           <label class="input-label" style="font-size: 0.7rem;">Prior μ Mean</label>
-                          <input type="number" class="input input--sm" id="priorMuMean" value="0" step="0.1">
+                          <input type="number" class="input input--sm" id="priorMuMean" value="0" step="0.1" aria-label="Prior μ Mean">
                         </div>
                         <div style="flex: 1;">
                           <label class="input-label" style="font-size: 0.7rem;">Prior μ SD</label>
-                          <input type="number" class="input input--sm" id="priorMuSD" value="10" step="0.5" min="0.1">
+                          <input type="number" class="input input--sm" id="priorMuSD" value="10" step="0.5" min="0.1" aria-label="Prior μ SD">
                         </div>
                       </div>
                     </div>
                     <div class="flex gap-2" style="margin-bottom: var(--space-2);">
                       <div style="flex: 1;">
                         <label class="input-label" style="font-size: 0.7rem;">MCMC Iterations</label>
-                        <input type="number" class="input input--sm" id="mcmcIterations" value="5000" step="1000" min="1000">
+                        <input type="number" class="input input--sm" id="mcmcIterations" value="5000" step="1000" min="1000" aria-label="MCMC Iterations">
                       </div>
                       <div style="flex: 1;">
                         <label class="input-label" style="font-size: 0.7rem;">Chains</label>
-                        <select class="select select--sm" id="mcmcChains" style="width: 100%;">
+                        <select class="select select--sm" id="mcmcChains" style="width: 100%;" aria-label="Chains">
                           <option value="2" selected>2</option>
                           <option value="3">3</option>
                           <option value="4">4</option>
@@ -1933,11 +1933,11 @@
                     <label class="input-label">Direction</label>
                     <div class="flex gap-4">
                       <label class="flex items-center gap-2 text-sm">
-                        <input type="radio" name="direction" value="lower" checked>
+                        <input type="radio" name="direction" value="lower" checked aria-label="Direction">
                         Lower is better
                       </label>
                       <label class="flex items-center gap-2 text-sm">
-                        <input type="radio" name="direction" value="higher">
+                        <input type="radio" name="direction" value="higher" aria-label="Direction">
                         Higher is better
                       </label>
                     </div>
@@ -1946,7 +1946,7 @@
                   <div class="input-group" id="ccSettingGroup">
                     <label class="input-label">Continuity Correction</label>
                     <div class="select-wrapper" style="width: 100%;">
-                      <select class="select select--sm" style="width: 100%;" id="ccMethodSelect">
+                      <select class="select select--sm" style="width: 100%;" id="ccMethodSelect" aria-label="Continuity Correction">
                         <option value="constant" selected>Constant (0.5)</option>
                         <option value="treatment">Treatment-arm</option>
                         <option value="empirical">Empirical</option>
@@ -2090,10 +2090,10 @@
                   <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md); margin-bottom: var(--space-3);">
                     <div class="text-xs font-semibold" style="margin-bottom: var(--space-2);">📊 Covariate Adjustment</div>
                     <div class="flex gap-2" style="margin-bottom: var(--space-2);">
-                      <select id="covariateSelect" class="select" style="flex: 1; font-size: var(--text-xs);">
+                      <select id="covariateSelect" class="select" style="flex: 1; font-size: var(--text-xs);" aria-label="Covariate Select">
                         <option value="">Select covariate...</option>
                       </select>
-                      <select id="covOutcomeSelect" class="select" style="flex: 1; font-size: var(--text-xs);">
+                      <select id="covOutcomeSelect" class="select" style="flex: 1; font-size: var(--text-xs);" aria-label="Cov Outcome Select">
                         <option value="cv_death_or_hfh">cv_death_or_hfh</option>
                       </select>
                     </div>
@@ -2105,7 +2105,7 @@
                   <!-- Trajectory Analysis -->
                   <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md);">
                     <div class="text-xs font-semibold" style="margin-bottom: var(--space-2);">📈 Time-Varying Effects</div>
-                    <select id="trajectoryOutcomeSelect" class="select" style="width: 100%; font-size: var(--text-xs); margin-bottom: var(--space-2);">
+                    <select id="trajectoryOutcomeSelect" class="select" style="width: 100%; font-size: var(--text-xs); margin-bottom: var(--space-2);" aria-label="Trajectory Outcome Select">
                       <option value="cv_death_or_hfh">cv_death_or_hfh</option>
                     </select>
                     <button class="btn btn--ghost btn--sm" style="width: 100%;" onclick="runTrajectoryUI()">
@@ -2346,23 +2346,23 @@
                   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-3);">
                     <div class="form-group">
                       <label>Country</label>
-                      <select id="htaCountry" class="country-select">
+                      <select id="htaCountry" class="country-select" aria-label="Country">
                         <option value="">Select country...</option>
                       </select>
                     </div>
                     <div class="form-group">
                       <label>Disease Pack</label>
-                      <select id="htaDiseasePack" class="disease-select">
+                      <select id="htaDiseasePack" class="disease-select" aria-label="Disease Pack">
                         <option value="">Select disease topic...</option>
                       </select>
                     </div>
                     <div class="form-group">
                       <label>Currency</label>
-                      <input type="text" id="htaCurrency" value="USD" readonly>
+                      <input type="text" id="htaCurrency" value="USD" readonly aria-label="Currency">
                     </div>
                     <div class="form-group">
                       <label>Price Year</label>
-                      <input type="number" id="htaPriceYear" value="2024">
+                      <input type="number" id="htaPriceYear" value="2024" aria-label="Price Year">
                     </div>
                   </div>
                 </div>
@@ -2373,19 +2373,19 @@
                   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-3);">
                     <div class="form-group">
                       <label>Intervention Name</label>
-                      <input type="text" id="htaIntervName" placeholder="e.g., New Treatment">
+                      <input type="text" id="htaIntervName" placeholder="e.g., New Treatment" aria-label="Intervention Name">
                     </div>
                     <div class="form-group">
                       <label>Intervention Cost</label>
-                      <input type="number" id="htaIntervCost" value="0" step="0.01">
+                      <input type="number" id="htaIntervCost" value="0" step="0.01" aria-label="Intervention Cost">
                     </div>
                     <div class="form-group">
                       <label>Comparator Name</label>
-                      <input type="text" id="htaCompName" placeholder="e.g., Standard Care">
+                      <input type="text" id="htaCompName" placeholder="e.g., Standard Care" aria-label="Comparator Name">
                     </div>
                     <div class="form-group">
                       <label>Comparator Cost</label>
-                      <input type="number" id="htaCompCost" value="0" step="0.01">
+                      <input type="number" id="htaCompCost" value="0" step="0.01" aria-label="Comparator Cost">
                     </div>
                   </div>
                 </div>
@@ -2396,27 +2396,27 @@
                   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-3);">
                     <div class="form-group">
                       <label>Willingness-to-Pay (WTP)</label>
-                      <input type="number" id="htaWTP" value="50000" step="1000">
+                      <input type="number" id="htaWTP" value="50000" step="1000" aria-label="Willingness-to-Pay (WTP)">
                     </div>
                     <div class="form-group">
                       <label>Time Horizon (years)</label>
-                      <input type="number" id="htaHorizon" value="10">
+                      <input type="number" id="htaHorizon" value="10" aria-label="Time Horizon (years)">
                     </div>
                     <div class="form-group">
                       <label>Discount Rate (%)</label>
-                      <input type="number" id="htaDiscountRate" value="3.5" step="0.1">
+                      <input type="number" id="htaDiscountRate" value="3.5" step="0.1" aria-label="Discount Rate (%)">
                     </div>
                     <div class="form-group">
                       <label>Baseline Risk</label>
-                      <input type="number" id="htaBaselineRisk" value="0.1" step="0.01" min="0" max="1">
+                      <input type="number" id="htaBaselineRisk" value="0.1" step="0.01" min="0" max="1" aria-label="Baseline Risk">
                     </div>
                     <div class="form-group">
                       <label>QALY Loss per Event</label>
-                      <input type="number" id="htaQalyLoss" value="0.1" step="0.01">
+                      <input type="number" id="htaQalyLoss" value="0.1" step="0.01" aria-label="QALY Loss per Event">
                     </div>
                     <div class="form-group">
                       <label>Cost per Event</label>
-                      <input type="number" id="htaCostEvent" value="1000" step="100">
+                      <input type="number" id="htaCostEvent" value="1000" step="100" aria-label="Cost per Event">
                     </div>
                   </div>
                 </div>
@@ -3824,7 +3824,7 @@
         const minAttr = col.type === 'number' && col.key !== 'yi' ? 'min="0"' : '';
         
         rowHTML += `<td><input type="${col.type}" class="input input--sm ${col.type === 'number' ? 'input--mono' : ''}" 
-          placeholder="${col.placeholder}" ${minAttr} ${stepAttr} value="${safeValue}" data-key="${col.key}"></td>`;
+          placeholder="${col.placeholder}" ${minAttr} ${stepAttr} value="${safeValue}" data-key="${col.key}" aria-label="${col.placeholder}"></td>`;
       });
       
       // Remove button
@@ -15618,7 +15618,7 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               <!-- Layout & Style Preset -->
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Style Preset</label>
-                <select id="forestLayout" class="select select--sm" onchange="applyForestPreset(this.value)">
+                <select id="forestLayout" class="select select--sm" onchange="applyForestPreset(this.value)" aria-label="Style Preset">
                   <option value="default">Default</option>
                   <option value="revman5">RevMan 5 (Cochrane)</option>
                   <option value="jama">JAMA</option>
@@ -15634,7 +15634,7 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Sort by</label>
-                <select id="forestSortBy" class="select select--sm" onchange="updateForestSetting('sortBy', this.value)">
+                <select id="forestSortBy" class="select select--sm" onchange="updateForestSetting('sortBy', this.value)" aria-label="Sort by">
                   <option value="none">Original order</option>
                   <option value="effect">Effect size</option>
                   <option value="precision">Precision (1/SE)</option>
@@ -15645,7 +15645,7 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Sort order</label>
-                <select id="forestSortOrder" class="select select--sm" onchange="updateForestSetting('sortOrder', this.value)">
+                <select id="forestSortOrder" class="select select--sm" onchange="updateForestSetting('sortOrder', this.value)" aria-label="Sort order">
                   <option value="asc">Ascending</option>
                   <option value="desc">Descending</option>
                 </select>
@@ -15656,15 +15656,15 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Display</label>
                 <div style="display: flex; flex-direction: column; gap: var(--space-1);">
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="forestShowWeights" onchange="updateForestSetting('showWeights', this.checked)">
+                    <input type="checkbox" id="forestShowWeights" onchange="updateForestSetting('showWeights', this.checked)" aria-label="Display">
                     Show weights
                   </label>
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="forestShowAnnotation" checked onchange="updateForestSetting('showAnnotation', this.checked)">
+                    <input type="checkbox" id="forestShowAnnotation" checked onchange="updateForestSetting('showAnnotation', this.checked)" aria-label="Display">
                     Show annotations
                   </label>
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="forestShowPrediction" onchange="updateForestSetting('showPrediction', this.checked)">
+                    <input type="checkbox" id="forestShowPrediction" onchange="updateForestSetting('showPrediction', this.checked)" aria-label="Display">
                     Prediction interval
                   </label>
                 </div>
@@ -15673,13 +15673,13 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               <!-- Point Style -->
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Point style</label>
-                <select id="forestPointShape" class="select select--sm" onchange="updateForestSetting('pointShape', this.value)">
+                <select id="forestPointShape" class="select select--sm" onchange="updateForestSetting('pointShape', this.value)" aria-label="Point style">
                   <option value="square">Square</option>
                   <option value="circle">Circle</option>
                   <option value="diamond">Diamond</option>
                 </select>
                 <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px; margin-top: var(--space-1);">
-                  <input type="checkbox" id="forestPointSizeByWeight" checked onchange="updateForestSetting('pointSizeByWeight', this.checked)">
+                  <input type="checkbox" id="forestPointSizeByWeight" checked onchange="updateForestSetting('pointSizeByWeight', this.checked)" aria-label="Point style">
                   Size by weight
                 </label>
               </div>
@@ -15689,16 +15689,16 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Colors</label>
                 <div style="display: flex; gap: var(--space-2); align-items: center;">
                   <label style="font-size: 11px;">Points:</label>
-                  <input type="color" id="forestPointColor" value="#4a7ab8" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateForestSetting('pointColor', this.value)">
+                  <input type="color" id="forestPointColor" value="#4a7ab8" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateForestSetting('pointColor', this.value)" aria-label="Points:">
                   <label style="font-size: 11px;">Diamond:</label>
-                  <input type="color" id="forestDiamondColor" value="#22c55e" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateForestSetting('diamondColor', this.value)">
+                  <input type="color" id="forestDiamondColor" value="#22c55e" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateForestSetting('diamondColor', this.value)" aria-label="Diamond:">
                 </div>
               </div>
               
               <!-- X-axis Scale -->
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">X-axis scale</label>
-                <select id="forestXAxisScale" class="select select--sm" onchange="updateForestSetting('xAxisScale', this.value)">
+                <select id="forestXAxisScale" class="select select--sm" onchange="updateForestSetting('xAxisScale', this.value)" aria-label="X-axis scale">
                   <option value="auto">Auto</option>
                   <option value="linear">Linear</option>
                   <option value="log">Logarithmic</option>
@@ -15707,7 +15707,7 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Decimal places</label>
-                <select id="forestDigits" class="select select--sm" onchange="updateForestSetting('digits', parseInt(this.value))">
+                <select id="forestDigits" class="select select--sm" onchange="updateForestSetting('digits', parseInt(this.value))" aria-label="Decimal places">
                   <option value="1">1</option>
                   <option value="2" selected>2</option>
                   <option value="3">3</option>
@@ -15718,12 +15718,12 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               <!-- Labels -->
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Left label</label>
-                <input type="text" id="forestLeftLabel" class="input input--sm" placeholder="e.g., Favours treatment" style="font-size: 12px;" onchange="updateForestSetting('leftLabel', this.value)">
+                <input type="text" id="forestLeftLabel" class="input input--sm" placeholder="e.g., Favours treatment" style="font-size: 12px;" onchange="updateForestSetting('leftLabel', this.value)" aria-label="Left label">
               </div>
               
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Right label</label>
-                <input type="text" id="forestRightLabel" class="input input--sm" placeholder="e.g., Favours control" style="font-size: 12px;" onchange="updateForestSetting('rightLabel', this.value)">
+                <input type="text" id="forestRightLabel" class="input input--sm" placeholder="e.g., Favours control" style="font-size: 12px;" onchange="updateForestSetting('rightLabel', this.value)" aria-label="Right label">
               </div>
               
             </div>
@@ -15734,12 +15734,12 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               <div style="display: flex; gap: var(--space-4); align-items: center;">
                 <div style="flex: 1;">
                   <label style="font-size: 11px; color: var(--text-muted);">Min:</label>
-                  <input type="number" id="forestXMin" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateForestAxisRange()">
+                  <input type="number" id="forestXMin" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateForestAxisRange()" aria-label="Min:">
                 </div>
                 <div style="flex: 3;">
                   <div id="forestXSlider" style="display: flex; align-items: center; gap: var(--space-2);">
-                    <input type="range" id="forestXMinSlider" min="0" max="100" value="0" style="flex: 1;" oninput="updateForestSliderValue('min', this.value)">
-                    <input type="range" id="forestXMaxSlider" min="0" max="100" value="100" style="flex: 1;" oninput="updateForestSliderValue('max', this.value)">
+                    <input type="range" id="forestXMinSlider" min="0" max="100" value="0" style="flex: 1;" oninput="updateForestSliderValue('min', this.value)" aria-label="Min:">
+                    <input type="range" id="forestXMaxSlider" min="0" max="100" value="100" style="flex: 1;" oninput="updateForestSliderValue('max', this.value)" aria-label="Min:">
                   </div>
                   <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted);">
                     <span id="forestSliderMinLabel">0.1</span>
@@ -15748,7 +15748,7 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
                 </div>
                 <div style="flex: 1;">
                   <label style="font-size: 11px; color: var(--text-muted);">Max:</label>
-                  <input type="number" id="forestXMax" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateForestAxisRange()">
+                  <input type="number" id="forestXMax" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateForestAxisRange()" aria-label="Max:">
                 </div>
                 <button class="btn btn--ghost btn--sm" onclick="resetForestAxisRange()" title="Reset to auto">↺</button>
               </div>
@@ -17091,19 +17091,19 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Display</label>
                 <div style="display: flex; flex-direction: column; gap: var(--space-1);">
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="funnelShowFunnel" checked onchange="updateFunnelSetting('showFunnel', this.checked)">
+                    <input type="checkbox" id="funnelShowFunnel" checked onchange="updateFunnelSetting('showFunnel', this.checked)" aria-label="Display">
                     Show funnel bands
                   </label>
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="funnelHighlightOutliers" checked onchange="updateFunnelSetting('highlightOutliers', this.checked)">
+                    <input type="checkbox" id="funnelHighlightOutliers" checked onchange="updateFunnelSetting('highlightOutliers', this.checked)" aria-label="Display">
                     Highlight outliers
                   </label>
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="funnelShowEgger" onchange="updateFunnelSetting('showEggerLine', this.checked)">
+                    <input type="checkbox" id="funnelShowEgger" onchange="updateFunnelSetting('showEggerLine', this.checked)" aria-label="Display">
                     Show Egger line
                   </label>
                   <label style="display: flex; align-items: center; gap: var(--space-2); font-size: 12px;">
-                    <input type="checkbox" id="funnelShowTrimFill" onchange="updateFunnelSetting('showTrimFill', this.checked)">
+                    <input type="checkbox" id="funnelShowTrimFill" onchange="updateFunnelSetting('showTrimFill', this.checked)" aria-label="Funnel Show Trim Fill">
                     Show trim-fill studies
                   </label>
                 </div>
@@ -17112,7 +17112,7 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               <!-- Funnel Style -->
               <div class="settings-group">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Funnel Style</label>
-                <select id="funnelStyle" class="select select--sm" onchange="updateFunnelSetting('funnelStyle', this.value)">
+                <select id="funnelStyle" class="select select--sm" onchange="updateFunnelSetting('funnelStyle', this.value)" aria-label="Funnel Style">
                   <option value="filled">Filled bands</option>
                   <option value="lines">Lines only</option>
                   <option value="contour">Contour</option>
@@ -17124,9 +17124,9 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-1);">Colors</label>
                 <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;">
                   <label style="font-size: 11px;">Points:</label>
-                  <input type="color" id="funnelPointColor" value="#4a7ab8" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateFunnelSetting('pointColor', this.value)">
+                  <input type="color" id="funnelPointColor" value="#4a7ab8" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateFunnelSetting('pointColor', this.value)" aria-label="Points:">
                   <label style="font-size: 11px;">Outliers:</label>
-                  <input type="color" id="funnelOutlierColor" value="#ef4444" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateFunnelSetting('outlierColor', this.value)">
+                  <input type="color" id="funnelOutlierColor" value="#ef4444" style="width: 30px; height: 24px; border: none; cursor: pointer;" onchange="updateFunnelSetting('outlierColor', this.value)" aria-label="Outliers:">
                 </div>
               </div>
               
@@ -17138,17 +17138,17 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
               <div style="display: flex; gap: var(--space-4); align-items: center;">
                 <div style="flex: 1;">
                   <label style="font-size: 11px; color: var(--text-muted);">Min:</label>
-                  <input type="number" id="funnelXMin" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateFunnelAxisRange()">
+                  <input type="number" id="funnelXMin" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateFunnelAxisRange()" aria-label="Min:">
                 </div>
                 <div style="flex: 3;">
                   <div style="display: flex; align-items: center; gap: var(--space-2);">
-                    <input type="range" id="funnelXMinSlider" min="0" max="100" value="0" style="flex: 1;" oninput="updateFunnelSliderValue('min', this.value)">
-                    <input type="range" id="funnelXMaxSlider" min="0" max="100" value="100" style="flex: 1;" oninput="updateFunnelSliderValue('max', this.value)">
+                    <input type="range" id="funnelXMinSlider" min="0" max="100" value="0" style="flex: 1;" oninput="updateFunnelSliderValue('min', this.value)" aria-label="Min:">
+                    <input type="range" id="funnelXMaxSlider" min="0" max="100" value="100" style="flex: 1;" oninput="updateFunnelSliderValue('max', this.value)" aria-label="Min:">
                   </div>
                 </div>
                 <div style="flex: 1;">
                   <label style="font-size: 11px; color: var(--text-muted);">Max:</label>
-                  <input type="number" id="funnelXMax" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateFunnelAxisRange()">
+                  <input type="number" id="funnelXMax" class="input input--sm" step="0.1" placeholder="Auto" style="width: 80px; font-size: 12px;" onchange="updateFunnelAxisRange()" aria-label="Max:">
                 </div>
                 <button class="btn btn--ghost btn--sm" onclick="resetFunnelAxisRange()" title="Reset to auto">↺</button>
               </div>
@@ -19419,7 +19419,7 @@ Full report available: STATISTICAL_VALIDATION_REPORT.txt
               <!-- Length Selection -->
               <div>
                 <label class="input-label" style="margin-bottom: var(--space-2); display: block;">Report Length</label>
-                <select id="reportLength" class="input" onchange="updateReportSettings()">
+                <select id="reportLength" class="input" onchange="updateReportSettings()" aria-label="Report Length">
                   <option value="brief">Brief (Abstract-length)</option>
                   <option value="standard" selected>Standard (Typical paper)</option>
                   <option value="detailed">Detailed (Comprehensive)</option>
@@ -19430,7 +19430,7 @@ Full report available: STATISTICAL_VALIDATION_REPORT.txt
               <!-- Journal Style -->
               <div>
                 <label class="input-label" style="margin-bottom: var(--space-2); display: block;">Journal Style</label>
-                <select id="reportStyle" class="input" onchange="updateReportSettings()">
+                <select id="reportStyle" class="input" onchange="updateReportSettings()" aria-label="Journal Style">
                   <option value="general" selected>General Scientific</option>
                   <option value="jama">JAMA</option>
                   <option value="bmj">BMJ</option>
@@ -19455,31 +19455,31 @@ Full report available: STATISTICAL_VALIDATION_REPORT.txt
               <label class="input-label" style="margin-bottom: var(--space-2); display: block;">Include Sections</label>
               <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-methods" checked onchange="updateReportSettings()"> Methods
+                  <input type="checkbox" id="sec-methods" checked onchange="updateReportSettings()" aria-label="Include Sections"> Methods
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-results" checked onchange="updateReportSettings()"> Main Results
+                  <input type="checkbox" id="sec-results" checked onchange="updateReportSettings()" aria-label="Include Sections"> Main Results
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-heterogeneity" checked onchange="updateReportSettings()"> Heterogeneity
+                  <input type="checkbox" id="sec-heterogeneity" checked onchange="updateReportSettings()" aria-label="Include Sections"> Heterogeneity
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-bias" checked onchange="updateReportSettings()"> Publication Bias
+                  <input type="checkbox" id="sec-bias" checked onchange="updateReportSettings()" aria-label="Include Sections"> Publication Bias
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-sensitivity" checked onchange="updateReportSettings()"> Sensitivity
+                  <input type="checkbox" id="sec-sensitivity" checked onchange="updateReportSettings()" aria-label="Sec sensitivity"> Sensitivity
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-ddma" checked onchange="updateReportSettings()"> DDMA/Probabilities
+                  <input type="checkbox" id="sec-ddma" checked onchange="updateReportSettings()" aria-label="Sec ddma"> DDMA/Probabilities
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-crossDisc" checked onchange="updateReportSettings()"> Cross-Disciplinary
+                  <input type="checkbox" id="sec-crossDisc" checked onchange="updateReportSettings()" aria-label="Sec cross Disc"> Cross-Disciplinary
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-verdict" checked onchange="updateReportSettings()"> TruthCert Verdict
+                  <input type="checkbox" id="sec-verdict" checked onchange="updateReportSettings()" aria-label="Sec verdict"> TruthCert Verdict
                 </label>
                 <label style="display: flex; align-items: center; gap: var(--space-1); cursor: pointer;">
-                  <input type="checkbox" id="sec-hta" checked onchange="updateReportSettings()"> HTA Analysis
+                  <input type="checkbox" id="sec-hta" checked onchange="updateReportSettings()" aria-label="Sec hta"> HTA Analysis
                 </label>
               </div>
             </div>

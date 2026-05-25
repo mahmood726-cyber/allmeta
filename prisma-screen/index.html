@@ -104,7 +104,7 @@
         <legend>Records CSV</legend>
         <label>
           <span class="lbl">One record per line: <code>id, title, tag1, tag2, stage, reason</code></span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Citations"></textarea>
           <span class="hint"><strong>tag:</strong> <code>include | exclude | duplicate | maybe</code> (empty = undecided). <strong>stage:</strong> <code>title_abstract | full_text</code> (default: title_abstract). <code>tag2</code> is the second reviewer. Everything after <code>stage</code> is the reason string.</span>
         </label>
       </fieldset>
@@ -113,7 +113,7 @@
         <legend>Options</legend>
         <label>
           <span class="lbl">Filter view</span>
-          <select id="f-filter">
+          <select id="f-filter" aria-label="F filter">
             <option value="all">All records</option>
             <option value="include">Include only</option>
             <option value="exclude">Exclude only</option>
@@ -125,7 +125,7 @@
         </label>
         <label>
           <span class="lbl">Keyword filter (title contains…)</span>
-          <input type="text" id="f-kw" placeholder="e.g. SGLT2">
+          <input type="text" id="f-kw" placeholder="e.g. SGLT2" aria-label="F kw">
         </label>
       </fieldset>
 
@@ -138,7 +138,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json,.csv">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json,.csv" aria-label="File import">
       </div>
     </section>
 

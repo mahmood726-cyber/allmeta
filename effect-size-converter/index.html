@@ -102,7 +102,7 @@
         <legend>Effect size</legend>
         <label>
           <span class="lbl">Type</span>
-          <select id="in-type">
+          <select id="in-type" aria-label="Input">
             <option value="OR">Odds ratio (OR)</option>
             <option value="RR">Risk ratio (RR)</option>
             <option value="RD">Risk difference (RD)</option>
@@ -115,11 +115,11 @@
         <div class="grid-2">
           <label>
             <span class="lbl">Point estimate</span>
-            <input id="in-est" type="number" step="any" value="0.75">
+            <input id="in-est" type="number" step="any" value="0.75" aria-label="SE (on log scale for ratios)">
           </label>
           <label>
             <span class="lbl">SE (on log scale for ratios)</span>
-            <input id="in-se" type="number" step="any" value="0.12">
+            <input id="in-se" type="number" step="any" value="0.12" aria-label="Or derive below.">
             <span class="hint">Or derive below.</span>
           </label>
         </div>
@@ -130,12 +130,12 @@
         <div class="grid-2">
           <label>
             <span class="lbl">Baseline risk p₀</span>
-            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20">
+            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20" aria-label="OR ↔ RR ↔ RD.">
             <span class="hint">OR ↔ RR ↔ RD.</span>
           </label>
           <label>
             <span class="lbl">Pooled SD</span>
-            <input id="ctx-sd" type="number" step="any" value="1">
+            <input id="ctx-sd" type="number" step="any" value="1" aria-label="MD ↔ SMD.">
             <span class="hint">MD ↔ SMD.</span>
           </label>
         </div>
@@ -146,40 +146,40 @@
         <div class="grid-2">
           <label>
             <span class="lbl">t-statistic</span>
-            <input id="der-t" type="number" step="any" placeholder="e.g. 2.1">
+            <input id="der-t" type="number" step="any" placeholder="e.g. 2.1" aria-label="n₁">
           </label>
           <label>
             <span class="lbl">n₁</span>
-            <input id="der-n1" type="number" step="1" placeholder="group 1 n">
+            <input id="der-n1" type="number" step="1" placeholder="group 1 n" aria-label="F-statistic (2 groups)">
           </label>
           <label>
             <span class="lbl">F-statistic (2 groups)</span>
-            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41">
+            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41" aria-label="n₂">
           </label>
           <label>
             <span class="lbl">n₂</span>
-            <input id="der-n2" type="number" step="1" placeholder="group 2 n">
+            <input id="der-n2" type="number" step="1" placeholder="group 2 n" aria-label="Two-sided p-value">
           </label>
           <label>
             <span class="lbl">Two-sided p-value</span>
-            <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031">
+            <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031" aria-label="|point estimate| (for p→SE)">
           </label>
           <label>
             <span class="lbl">|point estimate| (for p→SE)</span>
-            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD">
+            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD" aria-label="CI lower">
           </label>
           <label>
             <span class="lbl">CI lower</span>
-            <input id="der-lo" type="number" step="any" placeholder="raw for MD, raw ratio for OR/RR/HR">
+            <input id="der-lo" type="number" step="any" placeholder="raw for MD, raw ratio for OR/RR/HR" aria-label="CI upper">
           </label>
           <label>
             <span class="lbl">CI upper</span>
-            <input id="der-hi" type="number" step="any" placeholder="same scale as lower">
+            <input id="der-hi" type="number" step="any" placeholder="same scale as lower" aria-label="Der hi">
           </label>
         </div>
         <label style="margin-top:0.5rem">
           <span class="lbl">CI is on</span>
-          <select id="der-scale">
+          <select id="der-scale" aria-label="Der scale">
             <option value="log">log scale (enter upper/lower of the ratio itself; we'll log-transform)</option>
             <option value="raw">raw scale (e.g. MD)</option>
           </select>

@@ -61,7 +61,7 @@
       <h2>Studies</h2>
       <label>
         <span>One contrast row per line: <code>studyId, trtA, trtB, y_o1, se_o1, y_o2, se_o2[, ...]</code>. Use <code>NA</code> for a missing outcome.</span>
-        <textarea id="src">S1, A, B, -0.30, 0.10, -0.35, 0.12
+        <textarea id="src" aria-label="Studies">S1, A, B, -0.30, 0.10, -0.35, 0.12
 S2, A, B, -0.25, 0.11, -0.32, 0.13
 S3, A, C, -0.45, 0.12, -0.50, 0.15
 S4, A, C, -0.42, 0.14, -0.48, 0.16
@@ -72,7 +72,7 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
       </label>
       <label>
         <span>Reference treatment (also the first row in the league table)</span>
-        <input id="f-ref" type="text" value="A">
+        <input id="f-ref" type="text" value="A" aria-label="F ref">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit multi-outcome NMA</button>
       <div class="note">

@@ -79,7 +79,7 @@
       <h2>Input</h2>
       <label>
         <span>Studies — one per line: <code>effect, SE</code></span>
-        <textarea id="src">0.18, 0.12
+        <textarea id="src" aria-label="Input">0.18, 0.12
 0.22, 0.08
 0.30, 0.14
 0.27, 0.09
@@ -97,12 +97,12 @@
       <div id="alm-csv-mount"></div>
       <label>
         <span>PET significance threshold</span>
-        <input id="alpha" type="number" step="0.01" min="0.01" max="0.5" value="0.10">
+        <input id="alpha" type="number" step="0.01" min="0.01" max="0.5" value="0.10" aria-label="Stanley &amp;amp; Doucouliagos recommend 0.10 for the conditional switch.">
         <span class="hint">Stanley &amp; Doucouliagos recommend 0.10 for the conditional switch.</span>
       </label>
       <label>
         <span>Trim-and-fill estimator</span>
-        <select id="tf-est">
+        <select id="tf-est" aria-label="Tf est">
           <option value="L0" selected>L₀ (default)</option>
           <option value="R0">R₀</option>
         </select>

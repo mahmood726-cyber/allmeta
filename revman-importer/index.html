@@ -82,14 +82,14 @@
     <section class="panel">
       <h2>1. Pick a file</h2>
       <label class="drop" id="drop" tabindex="0">
-        <input type="file" id="picker" accept=".rm5,.rm6,.xml,application/zip,application/xml,text/xml">
+        <input type="file" id="picker" accept=".rm5,.rm6,.xml,application/zip,application/xml,text/xml" aria-label="Reads stay on this device — nothing is uploaded.">
         <strong>Click or drop a .rm5 / .rm6 file</strong><br>
         <span style="font-size:0.8rem">Reads stay on this device — nothing is uploaded.</span>
       </label>
       <div id="status" style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)"></div>
 
       <h2 style="margin-top:1rem">2. Pick a comparison</h2>
-      <select id="comparison-pick" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--ink)" disabled>
+      <select id="comparison-pick" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--ink)" disabled aria-label="2. Pick a comparison">
         <option value="">(load a file first)</option>
       </select>
 

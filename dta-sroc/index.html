@@ -106,7 +106,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, <abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr></code></span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
           <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. Continuity correction (+0.5 to all cells) applied only if any cell is zero (advanced-stats.md).</span>
         </label>
       </fieldset>
@@ -115,7 +115,7 @@
         <legend>Display</legend>
         <label>
           <span class="lbl">Plot title</span>
-          <input type="text" id="f-title" placeholder="e.g. Troponin for acute MI — SROC">
+          <input type="text" id="f-title" placeholder="e.g. Troponin for acute MI — SROC" aria-label="F title">
         </label>
       </fieldset>
 
@@ -138,7 +138,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
     </section>
 

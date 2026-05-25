@@ -467,13 +467,13 @@
 
         <div class="durations">
           <label>Focus
-            <input id="focusDuration" type="number" min="1" max="120">
+            <input id="focusDuration" type="number" min="1" max="120" aria-label="Durations">
           </label>
           <label>Short
-            <input id="shortDuration" type="number" min="1" max="60">
+            <input id="shortDuration" type="number" min="1" max="60" aria-label="Durations">
           </label>
           <label>Long
-            <input id="longDuration" type="number" min="1" max="90">
+            <input id="longDuration" type="number" min="1" max="90" aria-label="Long Duration">
           </label>
         </div>
       </section>
@@ -511,10 +511,10 @@
           </div>
           <form class="task-form" id="taskForm">
             <label>Task
-              <input id="taskTitle" type="text" placeholder="Write methods section">
+              <input id="taskTitle" type="text" placeholder="Write methods section" aria-label="Task Queue">
             </label>
             <label>Tag
-              <input id="taskTag" type="text" placeholder="paper, code, admin">
+              <input id="taskTag" type="text" placeholder="paper, code, admin" aria-label="Task Queue">
             </label>
             <button class="inline-button primary" type="submit">Add Task</button>
           </form>

@@ -81,7 +81,7 @@
 
       <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
         <span>Studies — <code>events, total, label (optional)</code></span>
-        <textarea id="src">12, 150, Study A
+        <textarea id="src" aria-label="Input">12, 150, Study A
 8, 90, Study B
 20, 220, Study C
 5, 60, Study D
@@ -91,7 +91,7 @@
       </label>
       <label>
         <span>Transformation</span>
-        <select id="trans">
+        <select id="trans" aria-label="Trans">
           <option value="ft" selected>Freeman-Tukey double arcsine</option>
           <option value="logit">Logit</option>
           <option value="raw">Raw (no transform) — not recommended</option>
@@ -100,7 +100,7 @@
       </label>
       <label>
         <span>Random-effects <span data-gloss="tau2">&tau;&sup2;</span> estimator</span>
-        <select id="tau-est">
+        <select id="tau-est" aria-label="Tau est">
           <option value="PM" selected>Paule-Mandel</option>
           <option value="DL">DerSimonian-Laird</option>
           <option value="FE">Fixed-effect only</option>

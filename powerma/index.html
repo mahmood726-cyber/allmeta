@@ -67,33 +67,33 @@
         <legend>Target effect</legend>
         <label>
           <span class="lbl">Outcome type</span>
-          <select id="outcome">
+          <select id="outcome" aria-label="Inputs">
             <option value="binary" selected>Binary (RRR / OR)</option>
             <option value="continuous">Continuous (MD / SMD)</option>
           </select>
         </label>
         <div class="grid-2" id="binary-fields">
-          <label><span class="lbl">Control event rate</span><input id="p0" type="number" step="any" min="0" max="1" value="0.15"></label>
-          <label><span class="lbl">Relative risk reduction</span><input id="rrr" type="number" step="any" value="0.20"><span class="hint">e.g., 0.20 = 20% RRR.</span></label>
+          <label><span class="lbl">Control event rate</span><input id="p0" type="number" step="any" min="0" max="1" value="0.15" aria-label="Relative risk reduction"></label>
+          <label><span class="lbl">Relative risk reduction</span><input id="rrr" type="number" step="any" value="0.20" aria-label="Inputs"><span class="hint">e.g., 0.20 = 20% RRR.</span></label>
         </div>
         <div class="grid-2" id="continuous-fields" style="display:none">
-          <label><span class="lbl">Mean difference</span><input id="md" type="number" step="any" value="0.4"></label>
-          <label><span class="lbl">SD</span><input id="sd-c" type="number" step="any" value="1"></label>
+          <label><span class="lbl">Mean difference</span><input id="md" type="number" step="any" value="0.4" aria-label="SD"></label>
+          <label><span class="lbl">SD</span><input id="sd-c" type="number" step="any" value="1" aria-label="Sd c"></label>
         </div>
       </fieldset>
       <fieldset>
         <legend>Design</legend>
         <div class="grid-2">
-          <label><span class="lbl">α (two-sided)</span><input id="alpha" type="number" step="0.01" min="0.001" max="0.2" value="0.05"></label>
-          <label><span class="lbl">Power (1 − β)</span><input id="power" type="number" step="0.05" min="0.5" max="0.99" value="0.80"></label>
+          <label><span class="lbl">α (two-sided)</span><input id="alpha" type="number" step="0.01" min="0.001" max="0.2" value="0.05" aria-label="Power (1 − β)"></label>
+          <label><span class="lbl">Power (1 − β)</span><input id="power" type="number" step="0.05" min="0.5" max="0.99" value="0.80" aria-label="Power"></label>
         </div>
-        <label><span class="lbl">Ratio (experimental : control)</span><input id="ratio" type="number" step="any" min="0.25" max="4" value="1"></label>
+        <label><span class="lbl">Ratio (experimental : control)</span><input id="ratio" type="number" step="any" min="0.25" max="4" value="1" aria-label="Ratio"></label>
       </fieldset>
       <fieldset>
         <legend>Heterogeneity adjustment</legend>
         <div class="grid-2">
-          <label><span class="lbl">Anticipated I² (%)</span><input id="i2" type="number" step="5" min="0" max="95" value="25"></label>
-          <label><span class="lbl">Diversity D² (%)</span><input id="d2" type="number" step="5" min="0" max="95" value="25"><span class="hint">D² ≥ I²; use if known.</span></label>
+          <label><span class="lbl">Anticipated I² (%)</span><input id="i2" type="number" step="5" min="0" max="95" value="25" aria-label="Diversity D² (%)"></label>
+          <label><span class="lbl">Diversity D² (%)</span><input id="d2" type="number" step="5" min="0" max="95" value="25" aria-label="D2"><span class="hint">D² ≥ I²; use if known.</span></label>
         </div>
       </fieldset>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute</button>

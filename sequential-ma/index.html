@@ -57,7 +57,7 @@
         <span>Two formats accepted:<br>
               (1) <code>t, z</code> — information fraction (0,1] and cumulative Z<br>
               (2) <code>y_cum, se_cum, n_cum</code> — cumulative pooled effect, SE, total N</span>
-        <textarea id="src">0.30, 4.2, 100
+        <textarea id="src" aria-label="Looks (one per row)">0.30, 4.2, 100
 0.55, 4.5, 200
 0.80, 4.8, 350
 1.00, 5.0, 500</textarea>
@@ -67,7 +67,7 @@
       </label>
       <label>
         <span>Family</span>
-        <select id="f-family">
+        <select id="f-family" aria-label="F family">
           <option value="OBF">O'Brien-Fleming (default)</option>
           <option value="POCOCK">Pocock</option>
           <option value="LINEAR">Linear (reference)</option>
@@ -75,11 +75,11 @@
       </label>
       <label>
         <span>α (two-sided)</span>
-        <input id="f-alpha" type="number" step="0.001" value="0.05">
+        <input id="f-alpha" type="number" step="0.001" value="0.05" aria-label="Include β-spending futility?">
       </label>
       <label>
         <span>Include β-spending futility?</span>
-        <select id="f-futility"><option value="0">No</option><option value="1">Yes (β=0.20)</option></select>
+        <select id="f-futility" aria-label="F futility"><option value="0">No</option><option value="1">Yes (β=0.20)</option></select>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute boundaries</button>
     </section>

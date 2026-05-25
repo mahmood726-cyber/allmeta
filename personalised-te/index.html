@@ -55,7 +55,7 @@
       <h2>Subgroup-specific effects</h2>
       <label>
         <span>One row per (study, subgroup, effect): <code>study, subgroup, yi, vi</code></span>
-        <textarea id="src">S1, young, -0.30, 0.020
+        <textarea id="src" aria-label="Subgroup-specific effects">S1, young, -0.30, 0.020
 S2, young, -0.25, 0.025
 S3, young, -0.40, 0.018
 S4, young, -0.28, 0.022
@@ -71,7 +71,7 @@ S2, biomarker+, -0.70, 0.028</textarea>
       </label>
       <label>
         <span>Predict for patient subgroup label</span>
-        <input id="f-predict" type="text" value="young">
+        <input id="f-predict" type="text" value="young" aria-label="F predict">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit + predict</button>
     </section>

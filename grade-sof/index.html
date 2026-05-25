@@ -134,26 +134,26 @@
         <legend>Header</legend>
         <label>
           <span class="lbl">PICO / review question</span>
-          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors compared with placebo for heart failure">
+          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors compared with placebo for heart failure" aria-label="Review">
         </label>
         <div class="row-2">
           <label>
             <span class="lbl">Patient / population</span>
-            <input type="text" id="f-population" placeholder="e.g. Adults with HFpEF">
+            <input type="text" id="f-population" placeholder="e.g. Adults with HFpEF" aria-label="Setting">
           </label>
           <label>
             <span class="lbl">Setting</span>
-            <input type="text" id="f-setting" placeholder="e.g. Outpatient clinic">
+            <input type="text" id="f-setting" placeholder="e.g. Outpatient clinic" aria-label="F setting">
           </label>
         </div>
         <div class="row-2">
           <label>
             <span class="lbl">Intervention</span>
-            <input type="text" id="f-intervention" placeholder="e.g. SGLT2 inhibitor">
+            <input type="text" id="f-intervention" placeholder="e.g. SGLT2 inhibitor" aria-label="Comparator">
           </label>
           <label>
             <span class="lbl">Comparator</span>
-            <input type="text" id="f-comparator" placeholder="e.g. Placebo">
+            <input type="text" id="f-comparator" placeholder="e.g. Placebo" aria-label="F comparator">
           </label>
         </div>
       </fieldset>
@@ -167,7 +167,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
     </section>
 
@@ -327,30 +327,30 @@
         '  <h3 class="row-head-title" style="margin:0; font-size:0.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Outcome ' + (idx+1) + '</h3>',
         '  <button type="button" class="danger" data-action="remove" data-idx="' + idx + '">Remove</button>',
         '</div>',
-        '<label><span class="lbl">Outcome name</span><input type="text" data-field="outcome" value="' + escapeHtml(o.outcome) + '"></label>',
-        '<label><span class="lbl">Follow-up</span><input type="text" data-field="followup" value="' + escapeHtml(o.followup) + '" placeholder="e.g. Median 26 months"></label>',
+        '<label><span class="lbl">Outcome name</span><input type="text" data-field="outcome" value="' + escapeHtml(o.outcome) + '" aria-label="Follow-up"></label>',
+        '<label><span class="lbl">Follow-up</span><input type="text" data-field="followup" value="' + escapeHtml(o.followup) + '" placeholder="e.g. Median 26 months" aria-label="Assumed risk (control)"></label>',
         '<div class="row-2">',
-        '  <label><span class="lbl">Assumed risk (control)</span><input type="text" data-field="assumed" value="' + escapeHtml(o.assumed) + '" placeholder="e.g. 72 per 1,000"></label>',
-        '  <label><span class="lbl">Corresponding risk</span><input type="text" data-field="corresponding" value="' + escapeHtml(o.corresponding) + '" placeholder="e.g. 61 per 1,000 (49 to 76)"></label>',
+        '  <label><span class="lbl">Assumed risk (control)</span><input type="text" data-field="assumed" value="' + escapeHtml(o.assumed) + '" placeholder="e.g. 72 per 1,000" aria-label="Corresponding risk"></label>',
+        '  <label><span class="lbl">Corresponding risk</span><input type="text" data-field="corresponding" value="' + escapeHtml(o.corresponding) + '" placeholder="e.g. 61 per 1,000 (49 to 76)" aria-label="Outcome &#x27; + (idx+1) + &#x27;"></label>',
         '</div>',
         '<div class="row-3">',
-        '  <label><span class="lbl">Effect type</span><select data-field="effectType">',
+        '  <label><span class="lbl">Effect type</span><select data-field="effectType" aria-label="Outcome &#x27; + (idx+1) + &#x27;">',
         '    <option value="RR"' + (o.effectType==="RR"?' selected':'') + '>RR</option>',
         '    <option value="OR"' + (o.effectType==="OR"?' selected':'') + '>OR</option>',
         '    <option value="HR"' + (o.effectType==="HR"?' selected':'') + '>HR</option>',
         '    <option value="MD"' + (o.effectType==="MD"?' selected':'') + '>MD</option>',
         '    <option value="SMD"' + (o.effectType==="SMD"?' selected':'') + '>SMD</option>',
         '  </select></label>',
-        '  <label><span class="lbl">Point estimate</span><input type="text" data-field="effect" value="' + escapeHtml(o.effect) + '" placeholder="0.85"></label>',
-        '  <label><span class="lbl">CI low</span><input type="text" data-field="ciLo" value="' + escapeHtml(o.ciLo) + '" placeholder="0.68"></label>',
+        '  <label><span class="lbl">Point estimate</span><input type="text" data-field="effect" value="' + escapeHtml(o.effect) + '" placeholder="0.85" aria-label="CI low"></label>',
+        '  <label><span class="lbl">CI low</span><input type="text" data-field="ciLo" value="' + escapeHtml(o.ciLo) + '" placeholder="0.68" aria-label="0.68"></label>',
         '</div>',
         '<div class="row-3">',
-        '  <label><span class="lbl">CI high</span><input type="text" data-field="ciHi" value="' + escapeHtml(o.ciHi) + '" placeholder="1.06"></label>',
-        '  <label><span class="lbl">№ participants</span><input type="text" data-field="participants" value="' + escapeHtml(o.participants) + '"></label>',
-        '  <label><span class="lbl">№ studies</span><input type="text" data-field="studies" value="' + escapeHtml(o.studies) + '"></label>',
+        '  <label><span class="lbl">CI high</span><input type="text" data-field="ciHi" value="' + escapeHtml(o.ciHi) + '" placeholder="1.06" aria-label="№ participants"></label>',
+        '  <label><span class="lbl">№ participants</span><input type="text" data-field="participants" value="' + escapeHtml(o.participants) + '" aria-label="№ studies"></label>',
+        '  <label><span class="lbl">№ studies</span><input type="text" data-field="studies" value="' + escapeHtml(o.studies) + '" aria-label="Input"></label>',
         '</div>',
         '<div class="grade-cert-row">',
-        '  <label><span class="lbl">Certainty</span><select data-field="certainty">',
+        '  <label><span class="lbl">Certainty</span><select data-field="certainty" aria-label="Input">',
         '    <option value="high"' + (o.certainty==="high"?' selected':'') + '>High</option>',
         '    <option value="moderate"' + (o.certainty==="moderate"?' selected':'') + '>Moderate</option>',
         '    <option value="low"' + (o.certainty==="low"?' selected':'') + '>Low</option>',
@@ -359,7 +359,7 @@
         '  <button type="button" class="grade-wizard-btn" data-action="wizard-toggle" data-idx="' + idx + '" aria-expanded="false" aria-controls="wizard-' + idx + '">5-domain wizard</button>',
         '</div>',
         renderWizardPanel(o, idx),
-        '<label><span class="lbl">Comments</span><textarea data-field="comments" rows="2" placeholder="Reasons for down/up-grading, caveats">' + escapeHtml(o.comments) + '</textarea></label>',
+        '<label><span class="lbl">Comments</span><textarea data-field="comments" rows="2" placeholder="Reasons for down/up-grading, caveats" aria-label="Reasons for down/up grading, caveats">' + escapeHtml(o.comments) + '</textarea></label>',
         (o.effectType === "OR" || o.effectType === "HR")
           ? `<div style="background:var(--warn-soft); border-left:3px solid var(--warn); padding:0.5rem 0.8rem; border-radius:4px; font-size:0.82rem; margin-top:0.6rem"><strong>${o.effectType} caveat:</strong> corresponding risks must be derived by applying the ${o.effectType} to the assumed risk, not by treating the ${o.effectType} as a risk ratio. ${o.effectType === "OR" ? "ORs approximate RRs only for rare events (baseline risk &lt; 10%)." : "HRs assume proportional hazards and summarise rates over follow-up — they are not direct risk ratios."} Cochrane Handbook §15.4.1.</div>`
           : ""
@@ -374,12 +374,12 @@
       const radio = (name, val, current, label) => {
         const checked = (current|0) === (val|0) ? " checked" : "";
         const groupName = "grade-" + name + "-" + idx;
-        return '<label><input type="radio" name="' + groupName + '" data-grade="' + name + '" data-idx="' + idx + '" value="' + val + '"' + checked + '> ' + label + '</label>';
+        return '<label><input type="radio" name="' + groupName + '" data-grade="' + name + '" data-idx="' + idx + '" value="' + val + '"' + checked + ' aria-label="&#x27; + label + &#x27;"> ' + label + '</label>';
       };
       const designRadio = (val, label) => {
         const checked = g.design === val ? " checked" : "";
         const groupName = "grade-design-" + idx;
-        return '<label><input type="radio" name="' + groupName + '" data-grade="design" data-idx="' + idx + '" value="' + val + '"' + checked + '> ' + label + '</label>';
+        return '<label><input type="radio" name="' + groupName + '" data-grade="design" data-idx="' + idx + '" value="' + val + '"' + checked + ' aria-label="&#x27; + label + &#x27;"> ' + label + '</label>';
       };
       const upgradeEnabled = g.design === "obs" && (g.rob|0)+(g.inc|0)+(g.ind|0)+(g.imp|0)+(g.pub|0) === 0;
       const computed = gradeCompute(g);
@@ -441,8 +441,8 @@
         '      ' + radio("large", 2, g.large, "Very large effect (+2)"),
         '    </div>',
         '    <div class="opts" style="margin-top:0.3rem;">',
-        '      <label><input type="checkbox" data-grade="dose" data-idx="' + idx + '"' + (g.dose ? " checked" : "") + '> Dose-response (+1)</label>',
-        '      <label><input type="checkbox" data-grade="conf" data-idx="' + idx + '"' + (g.conf ? " checked" : "") + '> Plausible residual confounding (+1)</label>',
+        '      <label><input type="checkbox" data-grade="dose" data-idx="' + idx + '"' + (g.dose ? " checked" : "") + ' aria-label="Dose-response (+1)"> Dose-response (+1)</label>',
+        '      <label><input type="checkbox" data-grade="conf" data-idx="' + idx + '"' + (g.conf ? " checked" : "") + ' aria-label="Plausible residual confounding (+1)"> Plausible residual confounding (+1)</label>',
         '    </div>',
         '  </fieldset>',
         '  <div class="preview" id="wizard-preview-' + idx + '" aria-live="polite">',
@@ -532,7 +532,7 @@
             o.grade[field] = parseInt(el.value, 10) || 0;
           }
           // D1-P1-07: live-sync the wizard-computed certainty into the outcome
-          // and the visible <select> + SoF preview, so the wizard preview and
+          // and the visible <select aria-label="Input"> + SoF preview, so the wizard preview and
           // exported table never disagree. "Apply to outcome" still commits
           // the rationale text into Comments.
           const c = gradeCompute(o.grade);
@@ -558,7 +558,7 @@
           o.comments = (existing ? existing + " " : "") + "[GRADE wizard: " + c.rationale + "]";
           // P1-02: surgical update rather than renderForm() — keeps focus,
           // scroll position, and IME state across other rows. Update only the
-          // affected row's certainty <select> and comments <textarea>.
+          // affected row's certainty <select aria-label="Input"> and comments <textarea>.
           const row = outcomesWrap.children[idx];
           if (row) {
             const certSel = row.querySelector('[data-field="certainty"]');

@@ -320,10 +320,10 @@
         <p class="subtle">Keep each note compact: what it is, what it says, how much you trust it, and what to do next.</p>
         <form id="noteForm" class="form-grid">
           <label>Title
-            <input id="titleInput" type="text" placeholder="REML sensitivity matched external benchmark">
+            <input id="titleInput" type="text" placeholder="REML sensitivity matched external benchmark" aria-label="Add Evidence Note">
           </label>
           <label>Study Type
-            <select id="typeInput">
+            <select id="typeInput" aria-label="Add Evidence Note">
               <option value="Trial">Trial</option>
               <option value="Meta-analysis">Meta-analysis</option>
               <option value="Review">Review</option>
@@ -332,20 +332,20 @@
             </select>
           </label>
           <label>Confidence
-            <select id="confidenceInput">
+            <select id="confidenceInput" aria-label="Confidence Input">
               <option value="High">High</option>
               <option value="Moderate">Moderate</option>
               <option value="Low">Low</option>
             </select>
           </label>
           <label>Source
-            <input id="sourceInput" type="text" placeholder="F1000 review round 2">
+            <input id="sourceInput" type="text" placeholder="F1000 review round 2" aria-label="Source Input">
           </label>
           <label class="full">Key Finding
-            <textarea id="findingInput" placeholder="State the core finding or observation."></textarea>
+            <textarea id="findingInput" placeholder="State the core finding or observation." aria-label="Finding Input"></textarea>
           </label>
           <label class="full">Next Action
-            <textarea id="actionInput" placeholder="What should happen next because of this note?"></textarea>
+            <textarea id="actionInput" placeholder="What should happen next because of this note?" aria-label="Action Input"></textarea>
           </label>
           <div class="actions full">
             <button class="button primary" type="submit">Save Note</button>
@@ -368,7 +368,7 @@
           <button class="button" id="exportJson" type="button">Export JSON</button>
           <label class="button" style="display:inline-flex;align-items:center;justify-content:center;">
             Import JSON
-            <input id="importJson" type="file" accept="application/json" hidden>
+            <input id="importJson" type="file" accept="application/json" hidden aria-label="Import Json">
           </label>
         </div>
         <div class="notes" id="notes"></div>
@@ -495,9 +495,9 @@
             editor.className = "inline-editor";
             editor.style.cssText = "display:grid;gap:0.5rem;margin-top:0.5rem;padding:0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--bg-soft,#f7f4ee)";
             editor.innerHTML = ''
-              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Title <input data-edit="title" type="text" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit"></label>'
-              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Finding <textarea data-edit="finding" rows="3" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit"></textarea></label>'
-              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Next action <input data-edit="action" type="text" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit"></label>'
+              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Title <input data-edit="title" type="text" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit" aria-label="Title"></label>'
+              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Finding <textarea data-edit="finding" rows="3" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit" aria-label="Input"></textarea></label>'
+              + '<label style="display:grid;gap:0.25rem;font-size:0.85rem">Next action <input data-edit="action" type="text" style="padding:0.4rem;border:1px solid var(--border);border-radius:6px;font:inherit" aria-label="Next action"></label>'
               + '<div style="display:flex;gap:0.5rem"><button class="button" type="button" data-edit-action="save">Save</button><button class="button" type="button" data-edit-action="cancel">Cancel</button></div>';
             editor.querySelector('[data-edit="title"]').value = entry.title || "";
             editor.querySelector('[data-edit="finding"]').value = entry.finding || "";

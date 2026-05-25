@@ -66,7 +66,7 @@
       <h2>Input</h2>
       <label>
         <span>Studies — <code>effect, SE, moderator, label(optional)</code></span>
-        <textarea id="src">0.25, 0.08, 45, Smith
+        <textarea id="src" aria-label="Input">0.25, 0.08, 45, Smith
 0.18, 0.10, 38, Jones
 0.40, 0.15, 62, Khan
 0.30, 0.09, 55, Lee
@@ -80,7 +80,7 @@
       </label>
       <label>
         <span>Minimum subset size</span>
-        <input id="min-k" type="number" step="1" min="3" value="4">
+        <input id="min-k" type="number" step="1" min="3" value="4" aria-label="Min k">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">

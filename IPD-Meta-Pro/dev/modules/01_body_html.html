@@ -346,7 +346,7 @@
 
                         <div class="drop-zone-hint">Supports .csv, .xlsx, .json, .tsv files</div>
 
-                        <input type="file" id="fileInput" hidden accept=".csv,.xlsx,.xls,.json,.tsv">
+                        <input type="file" id="fileInput" hidden accept=".csv,.xlsx,.xls,.json,.tsv" aria-label="File Input">
 
                     </div>
 
@@ -422,7 +422,7 @@
 
                             <label class="form-label">Study ID Variable</label>
 
-                            <select class="form-select" id="varStudy"></select>
+                            <select class="form-select" id="varStudy" aria-label="Study ID Variable"></select>
 
                         </div>
 
@@ -430,7 +430,7 @@
 
                             <label class="form-label">Treatment Variable</label>
 
-                            <select class="form-select" id="varTreatment"></select>
+                            <select class="form-select" id="varTreatment" aria-label="Treatment Variable"></select>
 
                         </div>
 
@@ -444,7 +444,7 @@
 
                             <label class="form-label">Outcome Type</label>
 
-                            <select class="form-select" id="outcomeType" onchange="updateOutcomeVars()">
+                            <select class="form-select" id="outcomeType" onchange="updateOutcomeVars()" aria-label="Outcome Type">
 
                                 <option value="survival">Time-to-Event (Survival)</option>
 
@@ -460,7 +460,7 @@
 
                             <label class="form-label">Time Variable</label>
 
-                            <select class="form-select" id="varTime"></select>
+                            <select class="form-select" id="varTime" aria-label="Time Variable"></select>
 
                         </div>
 
@@ -468,7 +468,7 @@
 
                             <label class="form-label">Event/Outcome Variable</label>
 
-                            <select class="form-select" id="varEvent"></select>
+                            <select class="form-select" id="varEvent" aria-label="Event/Outcome Variable"></select>
 
                         </div>
 
@@ -514,7 +514,7 @@
 
                             <label class="form-label">Analysis Approach</label>
 
-                            <select class="form-select" id="analysisApproach">
+                            <select class="form-select" id="analysisApproach" aria-label="Analysis Approach">
 
                                 <option value="two-stage">Two-Stage (Study-level then pool)</option>
 
@@ -530,7 +530,7 @@
 
                             <label class="form-label">Effect Measure</label>
 
-                            <select class="form-select" id="effectMeasure">
+                            <select class="form-select" id="effectMeasure" aria-label="Effect Measure">
 
                                 <option value="HR">Hazard Ratio (HR)</option>
 
@@ -558,7 +558,7 @@
 
                             <label class="form-label">Random-Effects Method</label>
 
-                            <select class="form-select" id="reMethod">
+                            <select class="form-select" id="reMethod" aria-label="Random-Effects Method">
 
                                 <option value="FE">Fixed Effect (Inverse Variance)</option>
 
@@ -582,7 +582,7 @@
 
                             <label class="form-label">Confidence Level</label>
 
-                            <select class="form-select" id="confLevel">
+                            <select class="form-select" id="confLevel" aria-label="Confidence Level">
 
                                 <option value="0.95">95%</option>
 
@@ -602,7 +602,7 @@
 
                         <label class="checkbox-item">
 
-                            <input type="checkbox" id="useHKSJ" checked>
+                            <input type="checkbox" id="useHKSJ" checked aria-label="Use HKSJ">
 
                             Apply Hartung-Knapp-Sidik-Jonkman adjustment
 
@@ -730,7 +730,7 @@
 
                             <label class="checkbox-item">
 
-                                <input type="checkbox" name="interaction" value="treatment*age">
+                                <input type="checkbox" name="interaction" value="treatment*age" aria-label="Interaction Terms">
 
                                 Treatment x Age
 
@@ -738,7 +738,7 @@
 
                             <label class="checkbox-item">
 
-                                <input type="checkbox" name="interaction" value="treatment*sex">
+                                <input type="checkbox" name="interaction" value="treatment*sex" aria-label="Interaction">
 
                                 Treatment x Sex
 
@@ -746,7 +746,7 @@
 
                             <label class="checkbox-item">
 
-                                <input type="checkbox" name="interaction" value="treatment*stage">
+                                <input type="checkbox" name="interaction" value="treatment*stage" aria-label="Interaction">
 
                                 Treatment x Stage
 
@@ -1694,7 +1694,7 @@
 
                             <label class="form-label">Prior for Effect (Mean)</label>
 
-                            <select class="form-select" id="priorMean">
+                            <select class="form-select" id="priorMean" aria-label="Prior for Effect (Mean)">
 
                                 <option value="0">Non-informative (0)</option>
 
@@ -1708,7 +1708,7 @@
 
                             <label class="form-label">Prior for Effect (SD)</label>
 
-                            <select class="form-select" id="priorSD">
+                            <select class="form-select" id="priorSD" aria-label="Prior for Effect (SD)">
 
                                 <option value="10">Vague (10)</option>
 
@@ -1724,7 +1724,7 @@
 
                             <label class="form-label">Prior for Tau</label>
 
-                            <select class="form-select" id="priorTau">
+                            <select class="form-select" id="priorTau" aria-label="Prior for Tau">
 
                                 <option value="uniform">Uniform(0, 2)</option>
 
@@ -1746,7 +1746,7 @@
 
                             <label class="form-label">MCMC Iterations</label>
 
-                            <input type="number" class="form-input" id="mcmcIter" value="10000">
+                            <input type="number" class="form-input" id="mcmcIter" value="10000" aria-label="MCMC Iterations">
 
                         </div>
 
@@ -1754,7 +1754,7 @@
 
                             <label class="form-label">Burn-in</label>
 
-                            <input type="number" class="form-input" id="mcmcBurnin" value="2000">
+                            <input type="number" class="form-input" id="mcmcBurnin" value="2000" aria-label="Burn-in">
 
                         </div>
 
@@ -1762,7 +1762,7 @@
 
                             <label class="form-label">Chains</label>
 
-                            <select class="form-select" id="mcmcChains">
+                            <select class="form-select" id="mcmcChains" aria-label="Chains">
 
                                 <option value="2">2</option>
 
@@ -2184,7 +2184,7 @@
 
                             <label class="form-label">Regression Type</label>
 
-                            <select class="form-select" id="metaregType">
+                            <select class="form-select" id="metaregType" aria-label="Regression Type">
 
                                 <option value="mixed">Mixed-Effects (Random slopes)</option>
 

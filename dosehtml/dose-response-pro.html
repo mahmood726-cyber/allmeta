@@ -506,12 +506,12 @@ tbody tr:hover { background: var(--bg-primary); }
         </div>
         <div class="form-group" style="margin-top:12px">
           <label>Primary Model</label>
-          <select id="mainModelSelect" class="form-control" onchange="setMainModel(this.value)">
+          <select id="mainModelSelect" class="form-control" onchange="setMainModel(this.value)" aria-label="Primary Model">
             <option value="quadratic">Quadratic (Default)</option>
             <option value="linear">Linear</option>
           </select>
         </div>
-        <textarea id="dataInput">id,author,type,dose,cases,n,logRR,se,covariate
+        <textarea id="dataInput" aria-label="Primary Model">id,author,type,dose,cases,n,logRR,se,covariate
 1,Bianchi,cc,0,126,414,0,NA,1.2
 1,Bianchi,cc,9.06,61,261,-0.223,0.223,1.5
 1,Bianchi,cc,27,69,228,0,0.234,1.8
@@ -554,9 +554,9 @@ tbody tr:hover { background: var(--bg-primary); }
             <label>τ² (Between-study variance)</label>
             <span class="slider-value" id="tau2Value">Auto</span>
           </div>
-          <input type="range" id="tau2Slider" min="0" max="0.5" step="0.005" value="0" oninput="updateTau2(this.value)">
+          <input type="range" id="tau2Slider" min="0" max="0.5" step="0.005" value="0" oninput="updateTau2(this.value)" aria-label="τ² (Between-study variance)">
           <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--text-secondary)">
-            <input type="checkbox" id="tau2AutoToggle" checked onchange="toggleTau2Auto(this.checked)">
+            <input type="checkbox" id="tau2AutoToggle" checked onchange="toggleTau2Auto(this.checked)" aria-label="τ² (Between-study variance)">
             Auto-estimate τ²
           </label>
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-secondary)">
@@ -571,7 +571,7 @@ tbody tr:hover { background: var(--bg-primary); }
             <label>Confidence Interval</label>
             <span class="slider-value" id="ciValue">95%</span>
           </div>
-          <input type="range" id="ciSlider" min="80" max="99" step="1" value="95" oninput="updateCI(this.value)">
+          <input type="range" id="ciSlider" min="80" max="99" step="1" value="95" oninput="updateCI(this.value)" aria-label="80%">
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-secondary)">
             <span>80%</span>
             <span>90%</span>
@@ -585,7 +585,7 @@ tbody tr:hover { background: var(--bg-primary); }
             <label>Influence Threshold (%)</label>
             <span class="slider-value" id="thresholdValue">10%</span>
           </div>
-          <input type="range" id="thresholdSlider" min="5" max="25" step="1" value="10" oninput="updateThreshold(this.value)">
+          <input type="range" id="thresholdSlider" min="5" max="25" step="1" value="10" oninput="updateThreshold(this.value)" aria-label="5% (strict)">
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-secondary)">
             <span>5% (strict)</span>
             <span>10% (standard)</span>
@@ -599,7 +599,7 @@ tbody tr:hover { background: var(--bg-primary); }
             <span class="slider-value" id="hkValue">Wald</span>
           </div>
           <label style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:12px">
-            <input type="checkbox" id="hkToggle" onchange="updateHKSJ(this.checked)">
+            <input type="checkbox" id="hkToggle" onchange="updateHKSJ(this.checked)" aria-label="Inference Adjustment">
             Apply Hartung-Knapp/Sidik-Jonkman adjustment (small-sample robust)
           </label>
         </div>
@@ -741,7 +741,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
           <div class="form-group">
             <label>Variable for Subgrouping:</label>
-            <select id="subgroupVariable" class="form-control" onchange="updateSubgroupOptions()">
+            <select id="subgroupVariable" class="form-control" onchange="updateSubgroupOptions()" aria-label="Variable for Subgrouping:">
               <option value="">-- Select a variable --</option>
               <option value="type">Study Type (case-control/cohort)</option>
               <option value="author">Study Author</option>
@@ -758,7 +758,7 @@ tbody tr:hover { background: var(--bg-primary); }
 
           <div class="form-group">
             <label>Analysis Model:</label>
-            <select id="subgroupModel" class="form-control">
+            <select id="subgroupModel" class="form-control" aria-label="Analysis Model:">
               <option value="quadratic">Quadratic (Non-linear)</option>
               <option value="linear">Linear Trend</option>
               <option value="spline">Restricted Cubic Spline</option>
@@ -884,7 +884,7 @@ tbody tr:hover { background: var(--bg-primary); }
       </div>
       <div style="margin:10px 0 15px 0;display:flex;gap:20px;flex-wrap:wrap;align-items:center">
         <label style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-secondary)">
-          <input type="checkbox" id="rForceDiag">
+          <input type="checkbox" id="rForceDiag" aria-label="📦 R Code Export (metafor package)">
           Force diagonal V (ignore within-study correlation)
         </label>
       </div>
@@ -950,16 +950,16 @@ tbody tr:hover { background: var(--bg-primary); }
       </div>
       <div style="margin:10px 0 15px 0;display:flex;gap:20px;flex-wrap:wrap;align-items:center">
         <label style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-secondary)">
-          <input type="checkbox" id="coverageFastToggle" onchange="setCoverageSimOptions()">
+          <input type="checkbox" id="coverageFastToggle" onchange="setCoverageSimOptions()" aria-label="Coverage Fast Toggle">
           Fast simulation mode (same estimator)
         </label>
         <label style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-secondary)">
-          <input type="checkbox" id="coverageSimpleRngToggle" onchange="setCoverageSimOptions()">
+          <input type="checkbox" id="coverageSimpleRngToggle" onchange="setCoverageSimOptions()" aria-label="Coverage Simple Rng Toggle">
           Simple PRNG (faster)
         </label>
         <label style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-secondary)">
           Simulation fit mode:
-          <select id="simulationFitMode" onchange="setCoverageSimOptions()" style="padding:4px 6px;border-radius:6px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border)">
+          <select id="simulationFitMode" onchange="setCoverageSimOptions()" style="padding:4px 6px;border-radius:6px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border)" aria-label="Simulation Fit Mode">
             <option value="robust">Robust GLS + fallback (Recommended)</option>
             <option value="strict">Strict GLS only</option>
           </select>
@@ -1049,7 +1049,7 @@ tbody tr:hover { background: var(--bg-primary); }
         <p class="validation-panel-copy">
           Run this script under R, then reload the generated JSON and text artifacts here when the app is served over HTTP.
         </p>
-        <textarea id="rValidationCodeText" class="code-block validation-script-text" readonly># Run with:
+        <textarea id="rValidationCodeText" class="code-block validation-script-text" readonly aria-label="R Validation Script"># Run with:
 # "C:/Program Files/R/R-4.5.2/bin/Rscript.exe" "C:/HTML apps/dosehtml/tests/validate_dose_response_pro.R"</textarea>
       </div>
     </div>

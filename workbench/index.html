@@ -92,7 +92,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code> per study</span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies (shared across apps)"></textarea>
           <span class="hint">Saved to the shared <code>ma-studies-v1</code> bus; other workspace apps can pull it from there.</span>
         </label>
       </fieldset>
@@ -101,15 +101,15 @@
         <legend>Report metadata</legend>
         <label>
           <span class="lbl">Title</span>
-          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors in HFpEF — all-cause mortality">
+          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors in HFpEF — all-cause mortality" aria-label="Effect label">
         </label>
         <label>
           <span class="lbl">Effect label</span>
-          <input type="text" id="f-effect" value="Effect (log scale)">
+          <input type="text" id="f-effect" value="Effect (log scale)" aria-label="Null value (on input scale)">
         </label>
         <label>
           <span class="lbl">Null value (on input scale)</span>
-          <input type="text" id="f-null" value="0">
+          <input type="text" id="f-null" value="0" aria-label="F null">
         </label>
       </fieldset>
 

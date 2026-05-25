@@ -87,7 +87,7 @@
 
       <label>
         <span>Studies &#8212; <code>effect, SE, label</code> (per line)</span>
-        <textarea id="src">0.22, 0.08, Study A
+        <textarea id="src" aria-label="Input">0.22, 0.08, Study A
 0.30, 0.14, Study B
 0.27, 0.09, Study C
 0.15, 0.07, Study D
@@ -103,14 +103,14 @@
       </label>
       <label>
         <span>Pooling model</span>
-        <select id="model">
+        <select id="model" aria-label="Model">
           <option value="FE" selected>Fixed effect</option>
           <option value="DL">Random effects (DerSimonian-Laird)</option>
         </select>
       </label>
       <label id="sample-label" style="display:none">
         <span>Random subsets to draw (k &gt; 15)</span>
-        <input id="n-sample" type="number" step="1000" min="1000" value="5000">
+        <input id="n-sample" type="number" step="1000" min="1000" value="5000" aria-label="metafor default: 10&amp;#160;000. Larger = more accurate density but slower.">
         <span class="hint">metafor default: 10&#160;000. Larger = more accurate density but slower.</span>
       </label>
 

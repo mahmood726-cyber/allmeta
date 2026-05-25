@@ -1861,15 +1861,15 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
               <div>
                 <label style="font-size: 11px; color: var(--muted);">Control Event Rate (CER)</label>
-                <input type="number" id="nntCER" min="0" max="1" step="0.01" value="0.20" placeholder="0.20" style="width: 100%;" />
+                <input type="number" id="nntCER" min="0" max="1" step="0.01" value="0.20" placeholder="0.20" style="width: 100%;" aria-label="Control Event Rate (CER)" />
               </div>
               <div>
                 <label style="font-size: 11px; color: var(--muted);">Effect Size (OR/RR)</label>
-                <input type="number" id="nntEffect" step="0.01" value="" placeholder="From analysis" style="width: 100%;" readonly />
+                <input type="number" id="nntEffect" step="0.01" value="" placeholder="From analysis" style="width: 100%;" readonly aria-label="Effect Size (OR/RR)" />
               </div>
             </div>
             <div class="inline-actions">
-              <select id="nntEffectType" style="width: 100px;">
+              <select id="nntEffectType" style="width: 100px;" aria-label="Effect Size (OR/RR)">
                 <option value="or">Odds Ratio</option>
                 <option value="rr">Risk Ratio</option>
                 <option value="rd">Risk Diff</option>
@@ -1913,11 +1913,11 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
               <label style="font-size: 11px; color: var(--muted);">MCID (Min Clinically Important Diff)</label>
-              <input type="number" id="mcidValue" step="0.1" placeholder="e.g., 0.5" style="width: 100%;" />
+              <input type="number" id="mcidValue" step="0.1" placeholder="e.g., 0.5" style="width: 100%;" aria-label="MCID (Min Clinically Important Diff)" />
             </div>
             <div>
               <label style="font-size: 11px; color: var(--muted);">Non-inferiority Margin</label>
-              <input type="number" id="nonInferiorityMargin" step="0.1" placeholder="e.g., -0.3" style="width: 100%;" />
+              <input type="number" id="nonInferiorityMargin" step="0.1" placeholder="e.g., -0.3" style="width: 100%;" aria-label="Non-inferiority Margin" />
             </div>
           </div>
           <div class="inline-actions" style="margin-top: 10px;">
@@ -1961,13 +1961,13 @@
           </select>
         </div>
         <div class="control inline">
-          <label class="toggle"><input type="checkbox" id="baselineToggle" />Free baseline (E0)</label>
-          <label class="toggle"><input type="checkbox" id="logDoseToggle" />Log dose axis</label>
-          <label class="toggle"><input type="checkbox" id="higherBetterToggle" checked />Higher is better</label>
-          <label class="toggle"><input type="checkbox" id="showBandsToggle" checked />Show 95% bands</label>
-          <label class="toggle"><input type="checkbox" id="randomEffectsToggle" />Random effects (tau2)</label>
-          <label class="toggle"><input type="checkbox" id="multiArmToggle" checked />Multi-arm adjust</label>
-          <label class="toggle"><input type="checkbox" id="covariateToggle" />Use covariates</label>
+          <label class="toggle"><input type="checkbox" id="baselineToggle" aria-label="Free baseline (E0)" />Free baseline (E0)</label>
+          <label class="toggle"><input type="checkbox" id="logDoseToggle" aria-label="Log dose axis" />Log dose axis</label>
+          <label class="toggle"><input type="checkbox" id="higherBetterToggle" checked aria-label="Higher is better" />Higher is better</label>
+          <label class="toggle"><input type="checkbox" id="showBandsToggle" checked aria-label="Show 95% bands" />Show 95% bands</label>
+          <label class="toggle"><input type="checkbox" id="randomEffectsToggle" aria-label="Random effects (tau2)" />Random effects (tau2)</label>
+          <label class="toggle"><input type="checkbox" id="multiArmToggle" checked aria-label="Multi-arm adjust" />Multi-arm adjust</label>
+          <label class="toggle"><input type="checkbox" id="covariateToggle" aria-label="Use covariates" />Use covariates</label>
         </div>
         <div class="control" id="covariateConfig" style="display: none;">
           <label>Meta-Regression Covariates</label>
@@ -2012,7 +2012,7 @@
           <label for="targetDose">Target dose for ranking</label>
           <div class="range-row">
             <input type="range" id="targetDose" min="0" max="100" value="10" step="0.1" />
-            <input type="number" id="targetDoseNumber" min="0" max="100" value="10" step="0.1" />
+            <input type="number" id="targetDoseNumber" min="0" max="100" value="10" step="0.1" aria-label="Target dose for ranking" />
           </div>
         </div>
         <div class="control">
@@ -2029,11 +2029,11 @@
           <label>Statistical Options</label>
           <div class="inline-actions">
             <label class="toggle-label" title="Use Hartung-Knapp-Sidik-Jonkman small-sample correction">
-              <input type="checkbox" id="useKnappHartung" />
+              <input type="checkbox" id="useKnappHartung" aria-label="Knapp-Hartung correction" />
               <span>Knapp-Hartung correction</span>
             </label>
             <label class="toggle-label" title="Show prediction intervals (requires tau^2 > 0)">
-              <input type="checkbox" id="showPredictionInterval" />
+              <input type="checkbox" id="showPredictionInterval" aria-label="Prediction intervals" />
               <span>Prediction intervals</span>
             </label>
           </div>
@@ -2043,7 +2043,7 @@
           <div class="inline-actions">
             <button class="secondary" id="runPermutationTest" title="Exact permutation test for small k">Permutation Test <span class="badge novel">New</span></button>
             <button class="secondary" id="runExactCI" title="Exact confidence intervals">Exact CI</button>
-            <select id="permutationIterations" style="width: 100px;">
+            <select id="permutationIterations" style="width: 100px;" aria-label="Small-Sample &amp; Exact Methods">
               <option value="1000">1,000 perms</option>
               <option value="5000" selected>5,000 perms</option>
               <option value="10000">10,000 perms</option>
@@ -2143,7 +2143,7 @@
         <div class="control">
           <label>Tau-squared Estimation</label>
           <div class="inline-actions">
-            <select id="tau2Estimator" class="dropdown" style="width:140px">
+            <select id="tau2Estimator" class="dropdown" style="width:140px" aria-label="Tau-squared Estimation">
               <option value="REML" selected>REML (recommended)</option>
               <option value="DL">DerSimonian-Laird</option>
               <option value="PM">Paule-Mandel</option>
@@ -2151,7 +2151,7 @@
               <option value="EB">Empirical Bayes</option>
             </select>
             <label class="toggle-label" title="Show profile likelihood CI for tau-squared">
-              <input type="checkbox" id="showTau2CI" />
+              <input type="checkbox" id="showTau2CI" aria-label="Show tau² CI" />
               <span>Show tau² CI</span>
             </label>
           </div>
@@ -2162,11 +2162,11 @@
           <label>Robust Variance Estimation</label>
           <div class="inline-actions">
             <label class="toggle-label" title="Use cluster-robust standard errors (CR2)">
-              <input type="checkbox" id="useRobustSE" />
+              <input type="checkbox" id="useRobustSE" aria-label="Robust SE (CR2)" />
               <span>Robust SE (CR2)</span>
             </label>
             <label class="toggle-label" title="Apply small-sample correction">
-              <input type="checkbox" id="smallSampleCorrection" checked />
+              <input type="checkbox" id="smallSampleCorrection" checked aria-label="Small-sample correction" />
               <span>Small-sample correction</span>
             </label>
           </div>
@@ -2219,7 +2219,7 @@
         <div class="control">
           <label>Gaussian Process Dose-Response</label>
           <div class="inline-actions">
-            <select id="gpKernel" class="dropdown" style="width:120px">
+            <select id="gpKernel" class="dropdown" style="width:120px" aria-label="Gaussian Process Dose-Response">
               <option value="rbf" selected>RBF (Smooth)</option>
               <option value="matern32">Matern 3/2</option>
               <option value="matern52">Matern 5/2</option>
@@ -2243,9 +2243,9 @@
         <div class="control">
           <label>Personalized Dose Optimizer</label>
           <div class="inline-actions">
-            <input type="number" id="patientAge" placeholder="Age" style="width:60px" value="50" />
-            <input type="number" id="patientWeight" placeholder="Weight" style="width:70px" value="70" />
-            <select id="patientRenal" class="dropdown" style="width:80px">
+            <input type="number" id="patientAge" placeholder="Age" style="width:60px" value="50" aria-label="Personalized Dose Optimizer" />
+            <input type="number" id="patientWeight" placeholder="Weight" style="width:70px" value="70" aria-label="Personalized Dose Optimizer" />
+            <select id="patientRenal" class="dropdown" style="width:80px" aria-label="Personalized Dose Optimizer">
               <option value="90" selected>Normal</option>
               <option value="60">Mild CKD</option>
               <option value="30">Moderate CKD</option>
@@ -2262,7 +2262,7 @@
             <button class="secondary" id="generate3DSurface" title="Generate 3D dose-response surface">Generate 3D</button>
             <button class="secondary" id="export3DData" title="Export for Three.js">Export for Three.js</button>
             <label class="toggle-label">
-              <input type="checkbox" id="show3DWireframe" checked />
+              <input type="checkbox" id="show3DWireframe" checked aria-label="Wireframe" />
               <span>Wireframe</span>
             </label>
           </div>
@@ -2306,12 +2306,12 @@
         <div class="control">
           <label>Trim-and-Fill</label>
           <div class="inline-actions">
-            <select id="tafEstimator" class="dropdown" style="width:70px">
+            <select id="tafEstimator" class="dropdown" style="width:70px" aria-label="Trim-and-Fill">
               <option value="L0" selected>L0</option>
               <option value="R0">R0</option>
               <option value="Q0">Q0</option>
             </select>
-            <select id="tafSide" class="dropdown" style="width:80px">
+            <select id="tafSide" class="dropdown" style="width:80px" aria-label="Trim-and-Fill">
               <option value="auto" selected>Auto</option>
               <option value="left">Left</option>
               <option value="right">Right</option>
@@ -2385,7 +2385,7 @@
         <div class="control">
           <label>Multivariate Outcomes</label>
           <div class="inline-actions">
-            <input type="number" id="outcomeCorrelation" placeholder="rho" style="width:60px" value="0.5" step="0.1" min="-1" max="1" />
+            <input type="number" id="outcomeCorrelation" placeholder="rho" style="width:60px" value="0.5" step="0.1" min="-1" max="1" aria-label="Multivariate Outcomes" />
             <button class="secondary" id="runMultivariateOutcomes" title="Multivariate meta-analysis">Pool Bivariate</button>
           </div>
           <div class="hint" id="multivariateResult">Correlated outcomes (Jackson et al. 2011)</div>
@@ -2438,19 +2438,19 @@
           <label>Export Options</label>
           <div class="export-options">
             <label>
-              <input type="checkbox" id="exportWatermark" checked />
+              <input type="checkbox" id="exportWatermark" checked aria-label="Include version watermark on plots (v2.0.1)" />
               <span>Include version watermark on plots (v2.0.1)</span>
             </label>
             <label style="margin-top: 8px;">
-              <input type="checkbox" id="exportTimestamp" checked />
+              <input type="checkbox" id="exportTimestamp" checked aria-label="Include analysis timestamp" />
               <span>Include analysis timestamp</span>
             </label>
             <label style="margin-top: 8px;">
-              <input type="checkbox" id="exportReproducibility" checked />
+              <input type="checkbox" id="exportReproducibility" checked aria-label="Include reproducibility info (seed, settings)" />
               <span>Include reproducibility info (seed, settings)</span>
             </label>
             <label style="margin-top: 8px;">
-              <input type="checkbox" id="exportCitation" />
+              <input type="checkbox" id="exportCitation" aria-label="Include software citation" />
               <span>Include software citation</span>
             </label>
           </div>
@@ -2665,7 +2665,7 @@
         <div class="control">
           <label>Permutation Test</label>
           <div class="inline-actions">
-            <input type="number" id="permutations" placeholder="5000" style="width:70px" value="5000" step="1000" min="1000" max="10000" />
+            <input type="number" id="permutations" placeholder="5000" style="width:70px" value="5000" step="1000" min="1000" max="10000" aria-label="Permutation Test" />
             <button class="secondary" id="runPermutation" title="Non-parametric bias test">Permutation</button>
           </div>
           <div class="hint" id="permutationResultBias">Kendall tau permutation test</div>
@@ -2989,8 +2989,8 @@
         <div class="control">
           <label>Beta-Binomial Bayesian Model</label>
           <div class="inline-actions">
-            <input type="number" id="betaBinomialBurnin" min="1000" max="20000" value="5000" style="width:80px" placeholder="Burn-in" />
-            <input type="number" id="betaBinomialIter" min="5000" max="50000" value="20000" style="width:80px" placeholder="Iterations" />
+            <input type="number" id="betaBinomialBurnin" min="1000" max="20000" value="5000" style="width:80px" placeholder="Burn-in" aria-label="Beta-Binomial Bayesian Model" />
+            <input type="number" id="betaBinomialIter" min="5000" max="50000" value="20000" style="width:80px" placeholder="Iterations" aria-label="Beta-Binomial Bayesian Model" />
             <button class="secondary" id="runBetaBinomialBayesian">Run Analysis</button>
           </div>
           <div class="hint">Handles overdispersion in meta-analysis of proportions (Jackson et al. 2018)</div>
@@ -2999,7 +2999,7 @@
         <div class="control">
           <label>Multivariate Fractional Polynomials</label>
           <div class="inline-actions">
-            <select id="fpMaxDegree" style="width:100px">
+            <select id="fpMaxDegree" style="width:100px" aria-label="Multivariate Fractional Polynomials">
               <option value="2">Degree 2</option>
               <option value="3">Degree 3</option>
             </select>
@@ -3011,13 +3011,13 @@
         <div class="control">
           <label>Copula-Based Bivariate Meta-Analysis</label>
           <div class="inline-actions">
-            <select id="copulaType" style="width:120px">
+            <select id="copulaType" style="width:120px" aria-label="Copula-Based Bivariate Meta-Analysis">
               <option value="gaussian">Gaussian</option>
               <option value="t">t-Copula</option>
               <option value="clayton">Clayton</option>
               <option value="gumbel">Gumbel</option>
             </select>
-            <input type="number" id="copulaBoot" min="500" max="5000" value="1000" style="width:70px" placeholder="Bootstrap" />
+            <input type="number" id="copulaBoot" min="500" max="5000" value="1000" style="width:70px" placeholder="Bootstrap" aria-label="Copula-Based Bivariate Meta-Analysis" />
             <button class="secondary" id="runCopulaBivariate">Run Copula</button>
           </div>
           <div class="hint">Models correlation between outcomes using copula functions (Kuss et al. 2020)</div>
@@ -3026,8 +3026,8 @@
         <div class="control">
           <label>Heterogeneity Subgroup Detection</label>
           <div class="inline-actions">
-            <input type="number" id="subgroupMinSize" min="3" max="20" value="5" style="width:60px" placeholder="Min size" />
-            <input type="number" id="subgroupMaxDepth" min="1" max="5" value="3" style="width:60px" placeholder="Max depth" />
+            <input type="number" id="subgroupMinSize" min="3" max="20" value="5" style="width:60px" placeholder="Min size" aria-label="Heterogeneity Subgroup Detection" />
+            <input type="number" id="subgroupMaxDepth" min="1" max="5" value="3" style="width:60px" placeholder="Max depth" aria-label="Heterogeneity Subgroup Detection" />
             <button class="secondary" id="runSubgroupDetection">Detect Subgroups</button>
           </div>
           <div class="hint">Recursive partitioning for heterogeneity subgroups (Kontopantelis et al. 2021)</div>
@@ -3040,8 +3040,8 @@
         <div class="control">
           <label>Bayesian Network Meta-Analysis</label>
           <div class="inline-actions">
-            <input type="number" id="bmaNBurnin" min="1000" max="20000" value="5000" style="width:70px" placeholder="Burn-in" />
-            <input type="number" id="bmaNIter" min="10000" max="100000" value="50000" style="width:80px" placeholder="Iterations" />
+            <input type="number" id="bmaNBurnin" min="1000" max="20000" value="5000" style="width:70px" placeholder="Burn-in" aria-label="Bayesian Network Meta-Analysis" />
+            <input type="number" id="bmaNIter" min="10000" max="100000" value="50000" style="width:80px" placeholder="Iterations" aria-label="Bayesian Network Meta-Analysis" />
             <button class="secondary" id="runBayesianNMA">Run Bayesian NMA</button>
             <button class="secondary" id="exportNMARankings">Export Rankings</button>
           </div>
@@ -3051,7 +3051,7 @@
         <div class="control">
           <label>Network Meta-Regression</label>
           <div class="inline-actions">
-            <select id="nmaCovariateSelect" style="width:120px">
+            <select id="nmaCovariateSelect" style="width:120px" aria-label="Network Meta-Regression">
               <option value="study_size">Study Size</option>
               <option value="risk_of_bias">Risk of Bias</option>
               <option value="year">Publication Year</option>
@@ -3064,7 +3064,7 @@
         <div class="control">
           <label>Cumulative Network Meta-Analysis</label>
           <div class="inline-actions">
-            <select id="cumulativeOrder" style="width:120px">
+            <select id="cumulativeOrder" style="width:120px" aria-label="Cumulative Network Meta-Analysis">
               <option value="year">By Year</option>
               <option value="sampleSize">By Sample Size</option>
               <option value="quality">By Quality</option>
@@ -3077,7 +3077,7 @@
         <div class="control">
           <label>Component Network Meta-Analysis</label>
           <div class="inline-actions">
-            <input type="text" id="componentDefinition" placeholder="Define components (e.g., A+B+C)" style="width:180px" />
+            <input type="text" id="componentDefinition" placeholder="Define components (e.g., A+B+C)" style="width:180px" aria-label="Component Network Meta-Analysis" />
             <button class="secondary" id="runComponentNMAAdvanced">Analyze Components</button>
           </div>
           <div class="hint">Decompose complex interventions (Welton et al. 2021)</div>
@@ -3086,11 +3086,11 @@
         <div class="control">
           <label>Network Meta-Analysis with Missing Data</label>
           <div class="inline-actions">
-            <select id="missingDataMethod" style="width:140px">
+            <select id="missingDataMethod" style="width:140px" aria-label="Network Meta-Analysis with Missing Data">
               <option value="multipleImputation">Multiple Imputation</option>
               <option value="bayesian">Bayesian Approach</option>
             </select>
-            <input type="number" id="nImputations" min="3" max="20" value="5" style="width:60px" placeholder="Imputations" />
+            <input type="number" id="nImputations" min="3" max="20" value="5" style="width:60px" placeholder="Imputations" aria-label="Network Meta-Analysis with Missing Data" />
             <button class="secondary" id="runNMAMissingData">Handle Missing</button>
           </div>
           <div class="hint">Robust handling of missing outcomes (Zhang et al. 2022)</div>
@@ -3103,8 +3103,8 @@
         <div class="control">
           <label>Informative Prior Bayesian Model</label>
           <div class="inline-actions">
-            <input type="number" id="informativePriorMean" placeholder="μ" style="width:60px" step="0.1" value="0" />
-            <input type="number" id="informativePriorSD" placeholder="σ" style="width:60px" step="0.1" value="5" />
+            <input type="number" id="informativePriorMean" placeholder="μ" style="width:60px" step="0.1" value="0" aria-label="Informative Prior Bayesian Model" />
+            <input type="number" id="informativePriorSD" placeholder="σ" style="width:60px" step="0.1" value="5" aria-label="Informative Prior Bayesian Model" />
             <button class="secondary" id="runInformativePriorBayesian">Run with Prior</button>
           </div>
           <div class="hint">Incorporate external evidence via informative priors (Turner et al. 2020)</div>
@@ -3113,12 +3113,12 @@
         <div class="control">
           <label>Non-Gaussian Random Effects</label>
           <div class="inline-actions">
-            <select id="randomEffectDistribution" style="width:120px">
+            <select id="randomEffectDistribution" style="width:120px" aria-label="Non-Gaussian Random Effects">
               <option value="t">t-distribution</option>
               <option value="laplace">Laplace</option>
               <option value="slash">Slash</option>
             </select>
-            <input type="number" id="nonGaussianBoot" min="500" max="5000" value="1000" style="width:70px" placeholder="Bootstrap" />
+            <input type="number" id="nonGaussianBoot" min="500" max="5000" value="1000" style="width:70px" placeholder="Bootstrap" aria-label="Non-Gaussian Random Effects" />
             <button class="secondary" id="runNonGaussianRE">Run Analysis</button>
           </div>
           <div class="hint">Heavy-tailed distributions for outliers (Baker et al. 2021)</div>
@@ -3127,7 +3127,7 @@
         <div class="control">
           <label>Hierarchical Shrinkage Priors</label>
           <div class="inline-actions">
-            <select id="shrinkagePriorType" style="width:120px">
+            <select id="shrinkagePriorType" style="width:120px" aria-label="Hierarchical Shrinkage Priors">
               <option value="horseshoe">Horseshoe</option>
               <option value="laplace">LASSO-like</option>
               <option value="normal-gamma">Normal-Gamma</option>
@@ -3149,8 +3149,8 @@
         <div class="control">
           <label>Multivariate Bayesian with Missing Data</label>
           <div class="inline-actions">
-            <input type="number" id="multivariateBurnin" min="2000" max="20000" value="5000" style="width:70px" />
-            <input type="number" id="multivariateIter" min="10000" max="50000" value="20000" style="width:80px" />
+            <input type="number" id="multivariateBurnin" min="2000" max="20000" value="5000" style="width:70px" aria-label="Multivariate Bayesian with Missing Data" />
+            <input type="number" id="multivariateIter" min="10000" max="50000" value="20000" style="width:80px" aria-label="Multivariate Bayesian with Missing Data" />
             <button class="secondary" id="runMultivariateBayesianMissing">Run Multivariate</button>
           </div>
           <div class="hint">Handle missing outcomes in multivariate meta-analysis (Riley et al. 2021)</div>
@@ -3159,7 +3159,7 @@
         <div class="control">
           <label>Network Discrepancy Priors</label>
           <div class="inline-actions">
-            <input type="number" id="discrepancySD" placeholder="Discrepancy SD" style="width:100px" step="0.1" value="0.5" />
+            <input type="number" id="discrepancySD" placeholder="Discrepancy SD" style="width:100px" step="0.1" value="0.5" aria-label="Network Discrepancy Priors" />
             <button class="secondary" id="runDiscrepancyPriors">Apply Discrepancy</button>
           </div>
           <div class="hint">Address inconsistency with discrepancy parameters (Dias et al. 2022)</div>
@@ -3172,8 +3172,8 @@
         <div class="control">
           <label>Deep Learning Meta-Analysis</label>
           <div class="inline-actions">
-            <input type="number" id="dlEpochs" min="50" max="500" value="100" style="width:60px" placeholder="Epochs" />
-            <input type="number" id="dlLearningRate" min="0.001" max="0.1" step="0.001" value="0.01" style="width:70px" placeholder="LR" />
+            <input type="number" id="dlEpochs" min="50" max="500" value="100" style="width:60px" placeholder="Epochs" aria-label="Deep Learning Meta-Analysis" />
+            <input type="number" id="dlLearningRate" min="0.001" max="0.1" step="0.001" value="0.01" style="width:70px" placeholder="LR" aria-label="Deep Learning Meta-Analysis" />
             <button class="secondary" id="runDeepLearningMetaAnalysis">Train NN</button>
             <button class="secondary" id="predictDeepLearning">Predict</button>
           </div>
@@ -3183,8 +3183,8 @@
         <div class="control">
           <label>Random Forest Heterogeneity</label>
           <div class="inline-actions">
-            <input type="number" id="rfTrees" min="50" max="500" value="100" style="width:60px" placeholder="Trees" />
-            <input type="number" id="rfMaxDepth" min="3" max="10" value="5" style="width:60px" placeholder="Depth" />
+            <input type="number" id="rfTrees" min="50" max="500" value="100" style="width:60px" placeholder="Trees" aria-label="Random Forest Heterogeneity" />
+            <input type="number" id="rfMaxDepth" min="3" max="10" value="5" style="width:60px" placeholder="Depth" aria-label="Random Forest Heterogeneity" />
             <button class="secondary" id="runRandomForestHeterogeneity">Run RF</button>
             <button class="secondary" id="exportVariableImportance">Importance</button>
           </div>
@@ -3194,7 +3194,7 @@
         <div class="control">
           <label>SVM Study Selection Bias</label>
           <div class="inline-actions">
-            <input type="number" id="svmC" min="0.1" max="10" step="0.1" value="1.0" style="width:60px" placeholder="C" />
+            <input type="number" id="svmC" min="0.1" max="10" step="0.1" value="1.0" style="width:60px" placeholder="C" aria-label="SVM Study Selection Bias" />
             <button class="secondary" id="runSVMBiasDetection">Detect Bias</button>
             <button class="secondary" id="exportBiasClassification">Export Results</button>
           </div>
@@ -3204,8 +3204,8 @@
         <div class="control">
           <label>Gradient Boosting Prediction</label>
           <div class="inline-actions">
-            <input type="number" id="gbTrees" min="50" max="500" value="100" style="width:60px" placeholder="Trees" />
-            <input type="number" id="gbLearningRate" min="0.001" max="0.1" step="0.001" value="0.01" style="width:70px" placeholder="LR" />
+            <input type="number" id="gbTrees" min="50" max="500" value="100" style="width:60px" placeholder="Trees" aria-label="Gradient Boosting Prediction" />
+            <input type="number" id="gbLearningRate" min="0.001" max="0.1" step="0.001" value="0.01" style="width:70px" placeholder="LR" aria-label="Gradient Boosting Prediction" />
             <button class="secondary" id="runGradientBoosting">Run GB</button>
             <button class="secondary" id="predictGradientBoosting">Predict</button>
           </div>
@@ -3215,7 +3215,7 @@
         <div class="control">
           <label>Ensemble Model Selection</label>
           <div class="inline-actions">
-            <select id="ensembleMethod" style="width:140px">
+            <select id="ensembleMethod" style="width:140px" aria-label="Ensemble Model Selection">
               <option value="weighted">Weighted Average</option>
               <option value="stacking">Stacking</option>
               <option value="voting">Voting</option>
@@ -3232,8 +3232,8 @@
         <div class="control">
           <label>Poisson-Gamma Rare Event Model</label>
           <div class="inline-actions">
-            <input type="number" id="poissonGammaBurnin" min="1000" max="20000" value="5000" style="width:70px" />
-            <input type="number" id="poissonGammaIter" min="10000" max="50000" value="20000" style="width:80px" />
+            <input type="number" id="poissonGammaBurnin" min="1000" max="20000" value="5000" style="width:70px" aria-label="Poisson-Gamma Rare Event Model" />
+            <input type="number" id="poissonGammaIter" min="10000" max="50000" value="20000" style="width:80px" aria-label="Poisson-Gamma Rare Event Model" />
             <button class="secondary" id="runPoissonGamma">Fit Model</button>
           </div>
           <div class="hint">Handles rare events and zero cells (Kuss et al. 2019)</div>
@@ -3251,7 +3251,7 @@
         <div class="control">
           <label>Exact Bootstrap for Zero Cells</label>
           <div class="inline-actions">
-            <input type="number" id="zeroCellBoot" min="1000" max="20000" value="10000" style="width:80px" placeholder="Bootstrap" />
+            <input type="number" id="zeroCellBoot" min="1000" max="20000" value="10000" style="width:80px" placeholder="Bootstrap" aria-label="Exact Bootstrap for Zero Cells" />
             <button class="secondary" id="runZeroCellBootstrap">Run Bootstrap</button>
           </div>
           <div class="hint" id="zeroCellResult">Exact inference for studies with zero events (Friedrich et al. 2021)</div>
@@ -3264,7 +3264,7 @@
         <div class="control">
           <label>Youden Index Optimization</label>
           <div class="inline-actions">
-            <select id="youdenMethod" style="width:120px">
+            <select id="youdenMethod" style="width:120px" aria-label="Youden Index Optimization">
               <option value="empirical">Empirical</option>
               <option value="binormal">Binormal</option>
             </select>
@@ -3277,9 +3277,9 @@
         <div class="control">
           <label>Cost-Benefit Optimal Threshold</label>
           <div class="inline-actions">
-            <input type="number" id="costFP" placeholder="Cost FP" style="width:70px" step="0.1" value="1" />
-            <input type="number" id="costFN" placeholder="Cost FN" style="width:70px" step="0.1" value="1" />
-            <input type="number" id="prevalence" placeholder="Prev" style="width:70px" step="0.01" value="0.5" />
+            <input type="number" id="costFP" placeholder="Cost FP" style="width:70px" step="0.1" value="1" aria-label="Cost-Benefit Optimal Threshold" />
+            <input type="number" id="costFN" placeholder="Cost FN" style="width:70px" step="0.1" value="1" aria-label="Cost-Benefit Optimal Threshold" />
+            <input type="number" id="prevalence" placeholder="Prev" style="width:70px" step="0.01" value="0.5" aria-label="Cost-Benefit Optimal Threshold" />
             <button class="secondary" id="runCostBenefitThreshold">Find Optimal</button>
           </div>
           <div class="hint" id="costBenefitResult">Minimize expected cost of misclassification (Grosso et al. 2020)</div>
@@ -3288,12 +3288,12 @@
         <div class="control">
           <label>ROC-Based Threshold with CI</label>
           <div class="inline-actions">
-            <select id="rocMethod" style="width:120px">
+            <select id="rocMethod" style="width:120px" aria-label="ROC-Based Threshold with CI">
               <option value="youden">Youden</option>
               <option value="cost">Cost-Based</option>
               <option value="closest">Closest to (0,1)</option>
             </select>
-            <input type="number" id="rocBoot" min="500" max="5000" value="2000" style="width:70px" placeholder="Bootstrap" />
+            <input type="number" id="rocBoot" min="500" max="5000" value="2000" style="width:70px" placeholder="Bootstrap" aria-label="ROC-Based Threshold with CI" />
             <button class="secondary" id="runROCOptimal">Find Threshold + CI</button>
           </div>
           <div class="hint" id="rocResult">Threshold selection with bootstrap confidence intervals (Zhou et al. 2022)</div>
@@ -3306,9 +3306,9 @@
         <div class="control">
           <label>Bayesian Power Analysis</label>
           <div class="inline-actions">
-            <input type="number" id="priorEffectMean" placeholder="Prior μ" style="width:70px" step="0.1" value="0.5" />
-            <input type="number" id="priorEffectSD" placeholder="Prior σ" style="width:70px" step="0.1" value="0.3" />
-            <input type="number" id="targetEffectSize" placeholder="Effect" style="width:70px" step="0.1" value="0.3" />
+            <input type="number" id="priorEffectMean" placeholder="Prior μ" style="width:70px" step="0.1" value="0.5" aria-label="Bayesian Power Analysis" />
+            <input type="number" id="priorEffectSD" placeholder="Prior σ" style="width:70px" step="0.1" value="0.3" aria-label="Bayesian Power Analysis" />
+            <input type="number" id="targetEffectSize" placeholder="Effect" style="width:70px" step="0.1" value="0.3" aria-label="Bayesian Power Analysis" />
             <button class="secondary" id="runBayesianPower">Calculate Power</button>
           </div>
           <div class="hint" id="bayesianPowerResult">Prior predictive power analysis (Spiegelhalter et al. 2022)</div>
@@ -3317,9 +3317,9 @@
         <div class="control">
           <label>Adaptive Sample Size Re-estimation</label>
           <div class="inline-actions">
-            <input type="number" id="targetAdaptivePower" min="0.5" max="0.99" step="0.05" value="0.8" style="width:60px" />
-            <input type="number" id="minAdaptiveStudies" min="3" max="20" value="5" style="width:60px" />
-            <input type="number" id="maxAdaptiveStudies" min="10" max="100" value="50" style="width:60px" />
+            <input type="number" id="targetAdaptivePower" min="0.5" max="0.99" step="0.05" value="0.8" style="width:60px" aria-label="Adaptive Sample Size Re-estimation" />
+            <input type="number" id="minAdaptiveStudies" min="3" max="20" value="5" style="width:60px" aria-label="Adaptive Sample Size Re-estimation" />
+            <input type="number" id="maxAdaptiveStudies" min="10" max="100" value="50" style="width:60px" aria-label="Adaptive Sample Size Re-estimation" />
             <button class="secondary" id="runAdaptiveReestimation">Plan Adaptive</button>
           </div>
           <div class="hint" id="adaptiveResult">Interim analyses with sample size adjustment (Friede et al. 2020)</div>
@@ -3328,8 +3328,8 @@
         <div class="control">
           <label>Precision-Based Sample Size</label>
           <div class="inline-actions">
-            <input type="number" id="desiredCIWidth" placeholder="CI width" style="width:80px" step="0.05" value="0.4" />
-            <select id="confidenceLevel" style="width:100px">
+            <input type="number" id="desiredCIWidth" placeholder="CI width" style="width:80px" step="0.05" value="0.4" aria-label="Precision-Based Sample Size" />
+            <select id="confidenceLevel" style="width:100px" aria-label="Precision-Based Sample Size">
               <option value="0.95">95% CI</option>
               <option value="0.90">90% CI</option>
             </select>
@@ -3341,9 +3341,9 @@
         <div class="control">
           <label>Multi-Arm Trial Sample Size</label>
           <div class="inline-actions">
-            <input type="number" id="nArms" min="3" max="10" value="3" style="width:50px" />
-            <input type="number" id="controlEventRate" placeholder="Control rate" style="width:80px" step="0.01" value="0.3" />
-            <input type="number" id="targetEffectSizeMA" placeholder="Effect" style="width:70px" step="0.05" value="0.2" />
+            <input type="number" id="nArms" min="3" max="10" value="3" style="width:50px" aria-label="Multi-Arm Trial Sample Size" />
+            <input type="number" id="controlEventRate" placeholder="Control rate" style="width:80px" step="0.01" value="0.3" aria-label="Multi-Arm Trial Sample Size" />
+            <input type="number" id="targetEffectSizeMA" placeholder="Effect" style="width:70px" step="0.05" value="0.2" aria-label="Multi-Arm Trial Sample Size" />
             <button class="secondary" id="runMultiArmSampleSize">Calculate</button>
           </div>
           <div class="hint" id="multiArmResult">Dunnett-adjusted sample size for multi-arm trials (Yap et al. 2022)</div>
@@ -3356,8 +3356,8 @@
         <div class="control">
           <label>Latent Class Meta-Analysis</label>
           <div class="inline-actions">
-            <input type="number" id="nLatentClasses" min="2" max="5" value="2" style="width:50px" />
-            <input type="number" id="latentIter" min="1000" max="20000" value="5000" style="width:70px" />
+            <input type="number" id="nLatentClasses" min="2" max="5" value="2" style="width:50px" aria-label="Latent Class Meta-Analysis" />
+            <input type="number" id="latentIter" min="1000" max="20000" value="5000" style="width:70px" aria-label="Latent Class Meta-Analysis" />
             <button class="secondary" id="runLatentClassMA">Detect Classes</button>
           </div>
           <div class="hint" id="latentClassResult">Identify latent classes of studies (Mavridis et al. 2020)</div>
@@ -3366,7 +3366,7 @@
         <div class="control">
           <label>Mixture Model Subgroups</label>
           <div class="inline-actions">
-            <input type="number" id="maxMixtureComponents" min="2" max="10" value="5" style="width:50px" />
+            <input type="number" id="maxMixtureComponents" min="2" max="10" value="5" style="width:50px" aria-label="Mixture Model Subgroups" />
             <button class="secondary" id="runMixtureSubgroup">Identify Subgroups</button>
             <button class="secondary" id="exportMixturePlot">Export Plot</button>
           </div>
@@ -3376,8 +3376,8 @@
         <div class="control">
           <label>Bayesian Spike-and-Slab Subgroups</label>
           <div class="inline-actions">
-            <input type="number" id="spikeSlabBurnin" min="1000" max="20000" value="5000" style="width:70px" />
-            <input type="number" id="spikeSlabIter" min="10000" max="50000" value="20000" style="width="80px" />
+            <input type="number" id="spikeSlabBurnin" min="1000" max="20000" value="5000" style="width:70px" aria-label="Bayesian Spike-and-Slab Subgroups" />
+            <input type="number" id="spikeSlabIter" min="10000" max="50000" value="20000" style="width="80px" aria-label="Bayesian Spike-and-Slab Subgroups" />
             <button class="secondary" id="runSpikeSlabSubgroups">Detect Subgroups</button>
           </div>
           <div class="hint" id="spikeSlabResult">Variable selection for subgroups (Song et al. 2022)</div>
@@ -3386,8 +3386,8 @@
         <div class="control">
           <label>Change-Point Detection</label>
           <div class="inline-actions">
-            <input type="number" id="maxChangePoints" min="1" max="5" value="3" style="width="50px" />
-            <select id="changePointCovariate" style="width:120px">
+            <input type="number" id="maxChangePoints" min="1" max="5" value="3" style="width="50px" aria-label="Change-Point Detection" />
+            <select id="changePointCovariate" style="width:120px" aria-label="Change-Point Detection">
               <option value="year">Publication Year</option>
               <option value="sample_size">Sample Size</option>
               <option value="risk_of_bias">Risk of Bias</option>
@@ -3404,12 +3404,12 @@
         <div class="control">
           <label>Weight-Function Bias Model</label>
           <div class="inline-actions">
-            <select id="weightFunctionType" style="width:120px">
+            <select id="weightFunctionType" style="width:120px" aria-label="Weight-Function Bias Model">
               <option value="step">Step Function</option>
               <option value="linear">Linear</option>
               <option value="cubic">Cubic</option>
             </select>
-            <input type="number" id="weightBoot" min="500" max="5000" value="1000" style="width:70px" />
+            <input type="number" id="weightBoot" min="500" max="5000" value="1000" style="width:70px" aria-label="Weight-Function Bias Model" />
             <button class="secondary" id="runWeightFunctionBias">Correct Bias</button>
           </div>
           <div class="hint" id="weightFunctionResult">Model publication bias with weight functions (Preston et al. 2020)</div>
@@ -3418,7 +3418,7 @@
         <div class="control">
           <label>PET-PEESE Selection Model</label>
           <div class="inline-actions">
-            <input type="number" id="petPeesAlpha" min="0.01" max="0.1" step="0.01" value="0.05" style="width:60px" />
+            <input type="number" id="petPeesAlpha" min="0.01" max="0.1" step="0.01" value="0.05" style="width:60px" aria-label="PET-PEESE Selection Model" />
             <button class="secondary" id="runPETPEESESelection">Run PET-PEESE</button>
             <button class="secondary" id="exportPETPEESEPlot">Export Plot</button>
           </div>
@@ -3428,12 +3428,12 @@
         <div class="control">
           <label>Trim-and-Fill with Bootstrap</label>
           <div class="inline-actions">
-            <select id="trimFillSide" style="width:100px">
+            <select id="trimFillSide" style="width:100px" aria-label="Trim-and-Fill with Bootstrap">
               <option value="right">Right</option>
               <option value="left">Left</option>
               <option value="both">Both</option>
             </select>
-            <input type="number" id="trimFillBoot" min="500" max="5000" value="1000" style="width:70px" />
+            <input type="number" id="trimFillBoot" min="500" max="5000" value="1000" style="width:70px" aria-label="Trim-and-Fill with Bootstrap" />
             <button class="secondary" id="runTrimFillBootstrap">Run Trim-Fill</button>
           </div>
           <div class="hint" id="trimFillResultBootstrap">Bootstrap-enhanced trim-and-fill (Duval & Tweedie 2020)</div>
@@ -3442,7 +3442,7 @@
         <div class="control">
           <label>Copula Selection Model</label>
           <div class="inline-actions">
-            <select id="copulaSelectionType" style="width:120px">
+            <select id="copulaSelectionType" style="width:120px" aria-label="Copula Selection Model">
               <option value="gaussian">Gaussian</option>
               <option value="t">t-Copula</option>
             </select>
@@ -3458,7 +3458,7 @@
         <div class="control">
           <label>Bayesian Model Averaging (Dose-Response)</label>
           <div class="inline-actions">
-            <select id="bmaModels" multiple style="width:150px" size="4">
+            <select id="bmaModels" multiple style="width:150px" size="4" aria-label="Bayesian Model Averaging (Dose-Response)">
               <option value="linear" selected>Linear</option>
               <option value="emax">Emax</option>
               <option value="hill">Hill</option>
@@ -3473,8 +3473,8 @@
         <div class="control">
           <label>Stacking Meta-Analysis</label>
           <div class="inline-actions">
-            <input type="number" id="stackingFolds" min="3" max="10" value="5" style="width:50px" />
-            <select id="stackingBaseModels" multiple style="width:140px" size="3">
+            <input type="number" id="stackingFolds" min="3" max="10" value="5" style="width:50px" aria-label="Stacking Meta-Analysis" />
+            <select id="stackingBaseModels" multiple style="width:140px" size="3" aria-label="Stacking Meta-Analysis">
               <option value="fixed" selected>Fixed</option>
               <option value="random" selected>Random</option>
               <option value="pm">Paule-Mandel</option>
@@ -3487,7 +3487,7 @@
         <div class="control">
           <label>Hierarchical Model Selection</label>
           <div class="inline-actions">
-            <select id="modelSelectionCriteria" style="width:120px">
+            <select id="modelSelectionCriteria" style="width:120px" aria-label="Hierarchical Model Selection">
               <option value="all">All Criteria</option>
               <option value="aic">AIC Only</option>
               <option value="bic">BIC Only</option>
@@ -3501,12 +3501,12 @@
         <div class="control">
           <label>Predictive Model Selection</label>
           <div class="inline-actions">
-            <select id="predictiveMetric" style="width:100px">
+            <select id="predictiveMetric" style="width:100px" aria-label="Predictive Model Selection">
               <option value="rmse">RMSE</option>
               <option value="mae">MAE</option>
               <option value="crps">CRPS</option>
             </select>
-            <input type="number" id="predictiveFolds" min="3" max="10" value="5" style="width:50px" />
+            <input type="number" id="predictiveFolds" min="3" max="10" value="5" style="width:50px" aria-label="Predictive Model Selection" />
             <button class="secondary" id="runPredictiveSelection">Select by Prediction</button>
           </div>
           <div class="hint" id="predictiveResult">Prediction-based model selection (Winters et al. 2022)</div>
@@ -3519,11 +3519,11 @@
         <div class="control">
           <label>Multilevel Nested Meta-Analysis</label>
           <div class="inline-actions">
-            <select id="nestedLevels" style="width:140px">
+            <select id="nestedLevels" style="width:140px" aria-label="Multilevel Nested Meta-Analysis">
               <option value="2">2 Levels (Study/Site)</option>
               <option value="3">3 Levels (Study/Site/Outcome)</option>
             </select>
-            <input type="number" id="multilevelIter" min="1000" max="20000" value="5000" style="width:70px" />
+            <input type="number" id="multilevelIter" min="1000" max="20000" value="5000" style="width:70px" aria-label="Multilevel Nested Meta-Analysis" />
             <button class="secondary" id="runMultilevelNested">Fit Multilevel</button>
           </div>
           <div class="hint" id="multilevelResult">Nested random effects meta-analysis (Turner et al. 2020)</div>
@@ -3532,7 +3532,7 @@
         <div class="control">
           <label>Individual Patient Data (IPD) Meta-Analysis</label>
           <div class="inline-actions">
-            <select id="ipdMethod" style="width:140px">
+            <select id="ipdMethod" style="width:140px" aria-label="Individual Patient Data (IPD) Meta-Analysis">
               <option value="one-stage">One-Stage</option>
               <option value="two-stage">Two-Stage</option>
             </select>
@@ -3545,12 +3545,12 @@
         <div class="control">
           <label>Robust Bayesian Meta-Analysis</label>
           <div class="inline-actions">
-            <select id="robustPriorType" style="width:120px">
+            <select id="robustPriorType" style="width:120px" aria-label="Robust Bayesian Meta-Analysis">
               <option value="t">t-Distribution</option>
               <option value="huber">Huber</option>
               <option value="tukey">Tukey</option>
             </select>
-            <input type="number" id="robustIter" min="5000" max="50000" value="10000" style="width:70px" />
+            <input type="number" id="robustIter" min="5000" max="50000" value="10000" style="width:70px" aria-label="Robust Bayesian Meta-Analysis" />
             <button class="secondary" id="runRobustBayesian">Run Robust</button>
           </div>
           <div class="hint" id="robustResult">Robust to outliers with heavy-tailed priors (Williams et al. 2022)</div>
@@ -3559,7 +3559,7 @@
         <div class="control">
           <label>Diagnostic Test Accuracy Meta-Analysis</label>
           <div class="inline-actions">
-            <select id="dtaModel" style="width:140px">
+            <select id="dtaModel" style="width:140px" aria-label="Diagnostic Test Accuracy Meta-Analysis">
               <option value="bivariate">Bivariate RE</option>
               <option value="hsroc">HSROC</option>
               <option value="regression">Regression</option>
@@ -3573,7 +3573,7 @@
         <div class="control">
           <label>Network Incoherence Assessment</label>
           <div class="inline-actions">
-            <input type="number" id="incoherenceSim" min="1000" max="20000" value="10000" style="width:70px" />
+            <input type="number" id="incoherenceSim" min="1000" max="20000" value="10000" style="width:70px" aria-label="Network Incoherence Assessment" />
             <button class="secondary" id="runIncoherenceAssessment">Assess Incoherence</button>
             <button class="secondary" id="exportIncoherencePlot">Export Plot</button>
           </div>

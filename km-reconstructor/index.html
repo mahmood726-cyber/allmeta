@@ -69,7 +69,7 @@
       <h2>Input</h2>
       <label>
         <span>Digitized curve — <code>time, survival</code> (survival in 0..1 or 0..100)</span>
-        <textarea id="curve">0, 1.00
+        <textarea id="curve" aria-label="Input">0, 1.00
 3, 0.95
 6, 0.88
 9, 0.82
@@ -84,7 +84,7 @@
       </label>
       <label>
         <span>At-risk table — <code>time, n_at_risk</code></span>
-        <textarea id="risk">0, 200
+        <textarea id="risk" aria-label="Risk">0, 200
 6, 165
 12, 125
 18, 92
@@ -94,7 +94,7 @@
       </label>
       <label>
         <span>Total events reported (optional)</span>
-        <input id="tot-events" type="number" step="1" placeholder="e.g. 145">
+        <input id="tot-events" type="number" step="1" placeholder="e.g. 145" aria-label="Forces the reconstructed tail to match reported events.">
         <span class="hint">Forces the reconstructed tail to match reported events.</span>
       </label>
       <div style="display:flex; gap:0.5rem; margin-top:0.4rem">

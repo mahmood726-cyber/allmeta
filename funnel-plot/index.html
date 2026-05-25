@@ -99,7 +99,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV-style: <code>label, estimate, SE</code> per line</span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
@@ -112,7 +112,7 @@
         <legend>Display</legend>
         <label>
           <span class="lbl">Centre the funnel on</span>
-          <select id="f-center">
+          <select id="f-center" aria-label="F center">
             <option value="fe">Fixed-effect pooled mean</option>
             <option value="null">Null value</option>
           </select>
@@ -120,16 +120,16 @@
         <div class="row-2">
           <label>
             <span class="lbl">Null value (on input scale)</span>
-            <input type="number" id="f-null" step="any" value="0">
+            <input type="number" id="f-null" step="any" value="0" aria-label="Plot title">
           </label>
           <label>
             <span class="lbl">Plot title</span>
-            <input type="text" id="f-title" placeholder="e.g. Small-study effects">
+            <input type="text" id="f-title" placeholder="e.g. Small-study effects" aria-label="F title">
           </label>
         </div>
         <label>
           <span class="lbl">Effect label (axis)</span>
-          <input type="text" id="f-effect" value="Effect (log scale)">
+          <input type="text" id="f-effect" value="Effect (log scale)" aria-label="F effect">
         </label>
         <div id="alm-axis-mount" style="margin-top:.5rem"></div>
       </fieldset>
@@ -149,7 +149,7 @@
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
         <button type="button" id="btn-reset" style="display:none">Reset</button>
         <div id="alm-undo-mount" style="display:inline-flex"></div>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
     </section>
 

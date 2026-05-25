@@ -61,7 +61,7 @@
       <h2>Studies</h2>
       <label style="display:block">
         <span style="font-size:0.85rem">One row per study: <code>label, events_T, n_T, events_C, n_C</code>. 0-event cells are handled NATIVELY — no continuity correction needed.</span>
-        <textarea id="src">Trial 1, 0, 250, 1, 248
+        <textarea id="src" aria-label="Studies">Trial 1, 0, 250, 1, 248
 Trial 2, 2, 500, 5, 510
 Trial 3, 0, 180, 3, 182
 Trial 4, 1, 320, 4, 325
@@ -75,7 +75,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       </label>
       <label style="margin-top:0.5rem">
         <span style="font-size:0.85rem">Model</span>
-        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px">
+        <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
           <option value="CM.AL" selected>CM.AL — conditional (fast; control-arm baseline profiled per study)</option>
           <option value="UM.FS">UM.FS — unconditional (full likelihood; baselines profiled per study; slower)</option>
         </select>

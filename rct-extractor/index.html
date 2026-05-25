@@ -101,13 +101,13 @@
       <h2>Input</h2>
       <label>
         <span class="lbl">API endpoint</span>
-        <input id="api-url" type="text" value="http://127.0.0.1:8000">
+        <input id="api-url" type="text" value="http://127.0.0.1:8000" aria-label="Input">
         <span class="hint">Your rct-extractor-v2 FastAPI server. Start with <code>uvicorn src.api.main:app --port 8000</code>.</span>
       </label>
       <div class="divider"></div>
       <label>
         <span class="lbl">Paste results text</span>
-        <textarea id="text" placeholder="Paste the results paragraph, abstract, or full text of a trial.">The primary endpoint of cardiovascular death or heart failure hospitalization occurred in 386 of 2373 patients (16.3%) in the empagliflozin group and in 451 of 2371 patients (19.0%) in the placebo group (hazard ratio 0.75; 95% confidence interval 0.65 to 0.86; P<0.001).</textarea>
+        <textarea id="text" placeholder="Paste the results paragraph, abstract, or full text of a trial." aria-label="Or upload PDF">The primary endpoint of cardiovascular death or heart failure hospitalization occurred in 386 of 2373 patients (16.3%) in the empagliflozin group and in 451 of 2371 patients (19.0%) in the placebo group (hazard ratio 0.75; 95% confidence interval 0.65 to 0.86; P<0.001).</textarea>
       </label>
       <label for="pdf">
         <span class="lbl">Or upload PDF</span>
@@ -117,7 +117,7 @@
       <div style="display:flex; gap:0.5rem; margin-top:0.6rem; flex-wrap:wrap">
         <button type="button" id="btn-run" class="primary">Extract</button>
         <label class="use-llm-label" style="gap:0.35rem; font-size:0.82rem; margin:0">
-          <input id="use-llm" type="checkbox" style="min-width:18px; min-height:18px"> Also run local LLM (consensus)
+          <input id="use-llm" type="checkbox" style="min-width:18px; min-height:18px" aria-label="Use llm"> Also run local LLM (consensus)
         </label>
       </div>
       <div class="note" id="hint-note">

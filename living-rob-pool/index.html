@@ -61,7 +61,7 @@
       <label>
         <span>One row per study (TSV-style): <code>yi, vi, published_date, rob_history</code>. <br>
               The <code>rob_history</code> is a semicolon-separated list of <code>date|rob</code> entries.</span>
-        <textarea id="src">yi,vi,published_date,rob_history
+        <textarea id="src" aria-label="Studies">yi,vi,published_date,rob_history
 -0.30,0.010,2021-01-15,2021-01-15|low
 -0.25,0.014,2021-06-01,2021-06-01|low;2024-03-10|some
 -0.40,0.018,2022-02-20,2022-02-20|low
@@ -73,7 +73,7 @@
       </label>
       <label>
         <span>Snapshot dates (comma-separated; or leave blank to auto-generate quarterly)</span>
-        <input id="f-snaps" type="text" value="">
+        <input id="f-snaps" type="text" value="" aria-label="F snaps">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute snapshot series</button>
       <div class="note">

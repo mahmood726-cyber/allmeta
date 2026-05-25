@@ -83,7 +83,7 @@
         <legend>Domains</legend>
         <label>
           <span class="lbl">Comma-separated domain headers</span>
-          <input type="text" id="f-domains" value="D1: Randomization, D2: Deviations, D3: Missing data, D4: Outcome, D5: Selection, Overall">
+          <input type="text" id="f-domains" value="D1: Randomization, D2: Deviations, D3: Missing data, D4: Outcome, D5: Selection, Overall" aria-label="Ratings">
           <span class="hint">Leave the last column as <code>Overall</code> to display it in bold. Any number of columns is accepted.</span>
         </label>
       </fieldset>
@@ -92,7 +92,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">One study per line: <code>label, rating1, rating2, …</code></span>
-          <textarea id="f-data" spellcheck="false"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="F data"></textarea>
           <span class="hint">Ratings accepted (any case): <code>low</code>/<code>l</code>/<code>+</code>, <code>some</code>/<code>s</code>/<code>?</code>, <code>high</code>/<code>h</code>/<code>-</code>, <code>unclear</code>/<code>u</code>, <code>na</code>.</span>
         </label>
       </fieldset>
@@ -101,11 +101,11 @@
         <legend>Display</legend>
         <label>
           <span class="lbl">Plot title</span>
-          <input type="text" id="f-title" placeholder="e.g. RoB 2 — mortality outcome">
+          <input type="text" id="f-title" placeholder="e.g. RoB 2 — mortality outcome" aria-label="View">
         </label>
         <label>
           <span class="lbl">View</span>
-          <select id="f-view">
+          <select id="f-view" aria-label="F view">
             <option value="both">Traffic light + summary bar</option>
             <option value="tl">Traffic light only</option>
             <option value="bar">Summary bar only</option>
@@ -130,7 +130,7 @@
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
-        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json">
+        <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
     </section>
 

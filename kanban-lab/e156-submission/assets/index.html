@@ -358,13 +358,13 @@
     <section class="controls">
       <form class="toolbar" id="cardForm">
         <label>Title
-          <input id="titleInput" type="text" placeholder="Refactor project hub copy">
+          <input id="titleInput" type="text" placeholder="Refactor project hub copy" aria-label="Title Input">
         </label>
         <label>Label
-          <input id="labelInput" type="text" placeholder="design, code, docs">
+          <input id="labelInput" type="text" placeholder="design, code, docs" aria-label="Label Input">
         </label>
         <label>Column
-          <select id="statusInput">
+          <select id="statusInput" aria-label="Status Input">
             <option value="backlog">Backlog</option>
             <option value="doing">Doing</option>
             <option value="review">Review</option>
@@ -375,12 +375,12 @@
       </form>
 
       <label>Description
-        <textarea id="descriptionInput" placeholder="Capture the actual next step, not just the headline."></textarea>
+        <textarea id="descriptionInput" placeholder="Capture the actual next step, not just the headline." aria-label="Description Input"></textarea>
       </label>
 
       <div class="search-row">
         <label>Search
-          <input id="searchInput" type="search" placeholder="Filter cards by title, label, or text">
+          <input id="searchInput" type="search" placeholder="Filter cards by title, label, or text" aria-label="Search Input">
         </label>
         <button class="button" id="seedBoard" type="button">Reset Seed Data</button>
       </div>

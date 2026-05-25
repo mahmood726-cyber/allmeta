@@ -427,7 +427,7 @@
 
                         <div class="drop-zone-hint">Supports .csv, .xlsx, .json, .tsv files</div>
 
-                        <input type="file" id="fileInput" hidden accept=".csv,.xlsx,.xls,.json,.tsv">
+                        <input type="file" id="fileInput" hidden accept=".csv,.xlsx,.xls,.json,.tsv" aria-label="File Input">
 
                     </div>
 
@@ -503,7 +503,7 @@
 
                             <label class="form-label">Study ID Variable</label>
 
-                            <select class="form-select" id="varStudy"></select>
+                            <select class="form-select" id="varStudy" aria-label="Study ID Variable"></select>
 
                         </div>
 
@@ -511,7 +511,7 @@
 
                             <label class="form-label">Treatment Variable</label>
 
-                            <select class="form-select" id="varTreatment"></select>
+                            <select class="form-select" id="varTreatment" aria-label="Treatment Variable"></select>
 
                         </div>
 
@@ -525,7 +525,7 @@
 
                             <label class="form-label">Outcome Type</label>
 
-                            <select class="form-select" id="outcomeType" onchange="updateOutcomeVars()">
+                            <select class="form-select" id="outcomeType" onchange="updateOutcomeVars()" aria-label="Outcome Type">
 
                                 <option value="survival">Time-to-Event (Survival)</option>
 
@@ -541,7 +541,7 @@
 
                             <label class="form-label">Time Variable</label>
 
-                            <select class="form-select" id="varTime"></select>
+                            <select class="form-select" id="varTime" aria-label="Time Variable"></select>
 
                         </div>
 
@@ -549,7 +549,7 @@
 
                             <label class="form-label">Event/Outcome Variable</label>
 
-                            <select class="form-select" id="varEvent"></select>
+                            <select class="form-select" id="varEvent" aria-label="Event/Outcome Variable"></select>
 
                         </div>
 
@@ -595,7 +595,7 @@
 
                             <label class="form-label">Analysis Approach</label>
 
-                            <select class="form-select" id="analysisApproach">
+                            <select class="form-select" id="analysisApproach" aria-label="Analysis Approach">
 
                                 <option value="two-stage">Two-Stage (Study-level then pool)</option>
 
@@ -611,7 +611,7 @@
 
                             <label class="form-label">Effect Measure</label>
 
-                            <select class="form-select" id="effectMeasure">
+                            <select class="form-select" id="effectMeasure" aria-label="Effect Measure">
 
                                 <option value="HR">Hazard Ratio (HR)</option>
 
@@ -639,7 +639,7 @@
 
                             <label class="form-label">Random-Effects Method</label>
 
-                            <select class="form-select" id="reMethod">
+                            <select class="form-select" id="reMethod" aria-label="Random-Effects Method">
 
                                 <option value="FE">Fixed Effect (Inverse Variance)</option>
 
@@ -663,7 +663,7 @@
 
                             <label class="form-label">Confidence Level</label>
 
-                            <select class="form-select" id="confLevel">
+                            <select class="form-select" id="confLevel" aria-label="Confidence Level">
 
                                 <option value="0.95">95%</option>
 
@@ -683,7 +683,7 @@
 
                         <label class="checkbox-item">
 
-                            <input type="checkbox" id="useHKSJ" checked>
+                            <input type="checkbox" id="useHKSJ" checked aria-label="Use HKSJ">
 
                             Apply Hartung-Knapp-Sidik-Jonkman adjustment
 
@@ -811,7 +811,7 @@
 
                             <label class="checkbox-item">
 
-                                <input type="checkbox" name="interaction" value="treatment*age">
+                                <input type="checkbox" name="interaction" value="treatment*age" aria-label="Interaction Terms">
 
                                 Treatment x Age
 
@@ -819,7 +819,7 @@
 
                             <label class="checkbox-item">
 
-                                <input type="checkbox" name="interaction" value="treatment*sex">
+                                <input type="checkbox" name="interaction" value="treatment*sex" aria-label="Interaction">
 
                                 Treatment x Sex
 
@@ -827,7 +827,7 @@
 
                             <label class="checkbox-item">
 
-                                <input type="checkbox" name="interaction" value="treatment*stage">
+                                <input type="checkbox" name="interaction" value="treatment*stage" aria-label="Interaction">
 
                                 Treatment x Stage
 
@@ -1775,7 +1775,7 @@
 
                             <label class="form-label">Prior for Effect (Mean)</label>
 
-                            <select class="form-select" id="priorMean">
+                            <select class="form-select" id="priorMean" aria-label="Prior for Effect (Mean)">
 
                                 <option value="0">Non-informative (0)</option>
 
@@ -1789,7 +1789,7 @@
 
                             <label class="form-label">Prior for Effect (SD)</label>
 
-                            <select class="form-select" id="priorSD">
+                            <select class="form-select" id="priorSD" aria-label="Prior for Effect (SD)">
 
                                 <option value="10">Vague (10)</option>
 
@@ -1805,7 +1805,7 @@
 
                             <label class="form-label">Prior for Tau</label>
 
-                            <select class="form-select" id="priorTau">
+                            <select class="form-select" id="priorTau" aria-label="Prior for Tau">
 
                                 <option value="uniform">Uniform(0, 2)</option>
 
@@ -1827,7 +1827,7 @@
 
                             <label class="form-label">MCMC Iterations</label>
 
-                            <input type="number" class="form-input" id="mcmcIter" value="10000">
+                            <input type="number" class="form-input" id="mcmcIter" value="10000" aria-label="MCMC Iterations">
 
                         </div>
 
@@ -1835,7 +1835,7 @@
 
                             <label class="form-label">Burn-in</label>
 
-                            <input type="number" class="form-input" id="mcmcBurnin" value="2000">
+                            <input type="number" class="form-input" id="mcmcBurnin" value="2000" aria-label="Burn-in">
 
                         </div>
 
@@ -1843,7 +1843,7 @@
 
                             <label class="form-label">Chains</label>
 
-                            <select class="form-select" id="mcmcChains">
+                            <select class="form-select" id="mcmcChains" aria-label="Chains">
 
                                 <option value="2">2</option>
 
@@ -2265,7 +2265,7 @@
 
                             <label class="form-label">Regression Type</label>
 
-                            <select class="form-select" id="metaregType">
+                            <select class="form-select" id="metaregType" aria-label="Regression Type">
 
                                 <option value="mixed">Mixed-Effects (Random slopes)</option>
 
@@ -3890,7 +3890,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  <input type="range" id="tauPriorSlider" min="0" max="1" step="0.01" value="0.1"
 
- oninput="updateSensitivityRealtime()" style="width: 100%;">
+ oninput="updateSensitivityRealtime()" style="width: 100%;" aria-label="Heterogeneity Prior (τ²)">
 
  <span id="tauPriorValue">0.10</span>
 
@@ -3902,7 +3902,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  <label>Effect Size Transformation</label>
 
- <select id="effectTransform" onchange="updateSensitivityRealtime()">
+ <select id="effectTransform" onchange="updateSensitivityRealtime()" aria-label="Effect Size Transformation">
 
  <option value="none">None (as reported)</option>
 
@@ -3924,7 +3924,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  <input type="range" id="rhoSlider" min="0" max="0.9" step="0.1" value="0.5"
 
- oninput="updateSensitivityRealtime()" style="width: 100%;">
+ oninput="updateSensitivityRealtime()" style="width: 100%;" aria-label="Correlation Assumption (ρ)">
 
  <span id="rhoValue">0.50</span>
 
@@ -3938,7 +3938,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  <input type="range" id="outlierSlider" min="1" max="4" step="0.5" value="2.5"
 
- oninput="updateSensitivityRealtime()" style="width: 100%;">
+ oninput="updateSensitivityRealtime()" style="width: 100%;" aria-label="Outlier Threshold (IQR multiplier)">
 
  <span id="outlierValue">2.5</span>
 
@@ -3952,7 +3952,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  <input type="range" id="weightCapSlider" min="10" max="100" step="5" value="100"
 
- oninput="updateSensitivityRealtime()" style="width: 100%;">
+ oninput="updateSensitivityRealtime()" style="width: 100%;" aria-label="Weight Cap (%)">
 
  <span id="weightCapValue">100%</span>
 
@@ -5131,13 +5131,13 @@ function copyInterpretation() {
 
  <label>Animation Speed:
 
- <input type="range" id="animSpeedSlider" min="1" max="10" value="5" style="width: 100px;">
+ <input type="range" id="animSpeedSlider" min="1" max="10" value="5" style="width: 100px;" aria-label="Anim Speed Slider">
 
  </label>
 
  <label>
 
- <input type="checkbox" id="showTrailsCheckbox" checked> Show trails
+ <input type="checkbox" id="showTrailsCheckbox" checked aria-label="Show Trails Checkbox"> Show trails
 
  </label>
 
@@ -20483,7 +20483,7 @@ function displayUncertaintyReport() {
 
  html += '<label class="form-label">Enter baseline risk to see natural frequency framing:</label>';
 
- html += '<input type="number" class="form-input" id="baselineRiskInput" placeholder="e.g., 0.15 for 15%" step="0.01" min="0" max="1">';
+ html += '<input type="number" class="form-input" id="baselineRiskInput" placeholder="e.g., 0.15 for 15%" step="0.01" min="0" max="1" aria-label="Enter baseline risk to see natural frequency framing:">';
 
  html += '<button class="btn btn-secondary" onclick="updateNaturalFrequency()" style="margin-top:0.5rem;">Calculate</button>';
 
@@ -20721,7 +20721,7 @@ function showICEMANAssessment() {
 
  html += '<label class="checkbox-item" style="display:block; margin:0.5rem 0;">';
 
- html += '<input type="radio" name="iceman_' + i + '" value="' + j + '"> ' + opt;
+ html += '<input type="radio" name="iceman_' + i + '" value="' + j + '" aria-label="html += &#x27;"> ' + opt;
 
  html += '</label>';
 
@@ -21145,7 +21145,7 @@ function showRiskOfBiasAssessment() {
 
  html += '<td>';
 
- html += '<select class="form-select" style="width:80px;padding:0.25rem;" id="rob_' + i + '_' + j + '" onchange="updateRoBSummary()">';
+ html += '<select class="form-select" style="width:80px;padding:0.25rem;" id="rob_' + i + '_' + j + '" onchange="updateRoBSummary()" aria-label="Rob &#x27; + i + &#x27; &#x27; + j + &#x27;">';
 
  html += '<option value="">-</option>';
 
@@ -21561,7 +21561,7 @@ function showMIDAssessment() {
 
  html += '<h4>Select Outcome Scale</h4>';
 
- html += '<select class="form-select" id="midScaleSelect" onchange="updateMIDAssessment()" style="max-width:400px;">';
+ html += '<select class="form-select" id="midScaleSelect" onchange="updateMIDAssessment()" style="max-width:400px;" aria-label="Select Outcome Scale">';
 
  html += '<option value="">-- Select outcome scale --</option>';
 
@@ -21583,7 +21583,7 @@ function showMIDAssessment() {
 
  html += '<label class="form-label">Enter custom MID value:</label>';
 
- html += '<input type="number" class="form-input" id="customMIDValue" step="0.1" style="max-width:200px;">';
+ html += '<input type="number" class="form-input" id="customMIDValue" step="0.1" style="max-width:200px;" aria-label="Enter custom MID value:">';
 
  html += '</div>';
 
@@ -21811,7 +21811,7 @@ function updateMIDAssessment() {
 
  html += '<div style="min-width:80px;">';
 
- html += '<select class="form-select" style="width:75px;padding:0.25rem;" id="prisma_' + item.num + '">';
+ html += '<select class="form-select" style="width:75px;padding:0.25rem;" id="prisma_' + item.num + '" aria-label="&#x27; + section + &#x27;">';
 
  html += '<option value="">-</option>';
 
@@ -22115,7 +22115,7 @@ function showQualityWeightingOptions() {
 
  html += '<td>' + (s.weight * 100).toFixed(1) + '%</td>';
 
- html += '<td><input type="number" class="form-input" id="quality_' + i + '" value="1" min="0" max="1" step="0.1" style="width:80px;"></td>';
+ html += '<td><input type="number" class="form-input" id="quality_' + i + '" value="1" min="0" max="1" step="0.1" style="width:80px;" aria-label="Quality &#x27; + i + &#x27;"></td>';
 
  html += '</tr>';
 
@@ -22129,7 +22129,7 @@ function showQualityWeightingOptions() {
 
  html += '<label class="form-label">Weighting Method:</label>';
 
- html += '<select class="form-select" id="qualityMethod" style="max-width:400px;">';
+ html += '<select class="form-select" id="qualityMethod" style="max-width:400px;" aria-label="Weighting Method:">';
 
  html += '<option value="variance_quality">Multiply IV weights by quality score</option>';
 
@@ -22407,7 +22407,7 @@ function applyQualityWeighting() {
 
  if (url) {
 
- h += '<p><b>Shareable Link:</b></p><input id="shareUrl" value="'+url+'" style="width:100%;padding:0.5rem" readonly>';
+ h += '<p><b>Shareable Link:</b></p><input id="shareUrl" value="'+url+'" style="width:100%;padding:0.5rem" readonly aria-label="Share Analysis">';
 
  h += '<button class="btn btn-primary" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById(\'shareUrl\').value);alert(\'Copied!\')">Copy</button>';
 
@@ -22681,7 +22681,7 @@ function applyQualityWeighting() {
 
  h += '<p>'+i.full+'</p>';
 
- h += '<h4 style="margin-top:1.5rem">Draft Abstract</h4><textarea id="absText" style="width:100%;height:70px;padding:0.5rem" readonly>'+ab+'</textarea>';
+ h += '<h4 style="margin-top:1.5rem">Draft Abstract</h4><textarea id="absText" style="width:100%;height:70px;padding:0.5rem" readonly aria-label="Summary">'+ab+'</textarea>';
 
  h += '<button class="btn btn-secondary" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(document.getElementById(\'absText\').value)">Copy</button>';
 
@@ -23247,19 +23247,19 @@ function applyQualityWeighting() {
 
  html += '<div style="display:grid;gap:1rem">';
 
- html += '<div><label>Effect Measure:</label><select id="evalMeasure" style="width:100%;padding:0.5rem;margin-top:0.25rem">';
+ html += '<div><label>Effect Measure:</label><select id="evalMeasure" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="Effect Measure:">';
 
  html += '<option value="rr">Risk Ratio / Hazard Ratio</option><option value="or">Odds Ratio</option><option value="smd">Standardized Mean Difference</option></select></div>';
 
- html += '<div><label>Effect Estimate:</label><input id="evalEffect" type="number" step="0.01" value="1.5" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div>';
+ html += '<div><label>Effect Estimate:</label><input id="evalEffect" type="number" step="0.01" value="1.5" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="Effect Estimate:"></div>';
 
  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">';
 
- html += '<div><label>CI Lower:</label><input id="evalLower" type="number" step="0.01" value="1.2" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div>';
+ html += '<div><label>CI Lower:</label><input id="evalLower" type="number" step="0.01" value="1.2" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="CI Lower:"></div>';
 
- html += '<div><label>CI Upper:</label><input id="evalUpper" type="number" step="0.01" value="1.9" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div></div>';
+ html += '<div><label>CI Upper:</label><input id="evalUpper" type="number" step="0.01" value="1.9" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="CI Upper:"></div></div>';
 
- html += '<div id="evalPrevalence" style="display:none"><label>Outcome Prevalence (for OR):</label><input id="evalPrev" type="number" step="0.01" value="0.1" min="0" max="1" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div>';
+ html += '<div id="evalPrevalence" style="display:none"><label>Outcome Prevalence (for OR):</label><input id="evalPrev" type="number" step="0.01" value="0.1" min="0" max="1" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="Outcome Prevalence (for OR):"></div>';
 
  html += '<button class="btn btn-primary" onclick="EValueCalculator.calculate()">Calculate E-Value</button>';
 
@@ -23493,7 +23493,7 @@ function applyQualityWeighting() {
 
  html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">Enter comma-separated p-values:</p>';
 
- html += '<input id="multPValues" type="text" placeholder="0.03, 0.15, 0.04, 0.008" style="width:100%;padding:0.5rem">';
+ html += '<input id="multPValues" type="text" placeholder="0.03, 0.15, 0.04, 0.008" style="width:100%;padding:0.5rem" aria-label="Enter P-Values from Subgroup Analyses">';
 
  html += '<button class="btn btn-primary" style="margin-top:1rem" onclick="MultiplicityAdjustment.calculate()">Calculate Adjusted P-Values</button>';
 
@@ -23763,7 +23763,7 @@ function applyQualityWeighting() {
 
  html += '<label style="display:flex;align-items:center;cursor:pointer">';
 
- html += '<input type="checkbox" id="' + q.id + '" style="margin-right:0.75rem">';
+ html += '<input type="checkbox" id="' + q.id + '" style="margin-right:0.75rem" aria-label="html += q.q + &#x27;">';
 
  html += q.q + '</label></div>';
 
@@ -23939,7 +23939,7 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-top:1.5rem">';
 
- html += '<label><input type="checkbox" id="dontShowProtocol" style="margin-right:0.5rem">Don\'t show this reminder again</label>';
+ html += '<label><input type="checkbox" id="dontShowProtocol" style="margin-right:0.5rem" aria-label="Don\&#x27;t show this reminder again">Don\'t show this reminder again</label>';
 
  html += '</div>';
 
@@ -24009,7 +24009,7 @@ function applyQualityWeighting() {
 
  html += '<div class="modal-body">';
 
- html += '<textarea style="width:100%;height:400px;font-family:monospace;font-size:0.85rem;padding:1rem" readonly>' + template + '</textarea>';
+ html += '<textarea style="width:100%;height:400px;font-family:monospace;font-size:0.85rem;padding:1rem" readonly aria-label="Protocol Template">' + template + '</textarea>';
 
  html += '<button class="btn btn-secondary" style="margin-top:1rem" onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">Copy Template</button>';
 
@@ -24071,7 +24071,7 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-bottom:1rem"><label><strong>Data Availability Type:</strong></label>';
 
- html += '<select id="dataAvailType" style="width:100%;padding:0.5rem;margin-top:0.25rem" onchange="DataAvailabilityGenerator.updateTemplate()">';
+ html += '<select id="dataAvailType" style="width:100%;padding:0.5rem;margin-top:0.25rem" onchange="DataAvailabilityGenerator.updateTemplate()" aria-label="Data Avail Type">';
 
  html += '<option value="fullOpen">Fully Open Access</option>';
 
@@ -24089,7 +24089,7 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-bottom:1rem"><label><strong>Statement:</strong></label>';
 
- html += '<textarea id="dataAvailStatement" style="width:100%;height:150px;padding:0.5rem;margin-top:0.25rem">' + this.templates.fullOpen + '</textarea></div>';
+ html += '<textarea id="dataAvailStatement" style="width:100%;height:150px;padding:0.5rem;margin-top:0.25rem" aria-label="Data Avail Statement">' + this.templates.fullOpen + '</textarea></div>';
 
 
 
@@ -24313,11 +24313,11 @@ function applyQualityWeighting() {
 
  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:1rem">';
 
- html += '<div><label>Effect estimate:</label><input id="missingEffect" type="number" step="0.01" value="0.5" style="width:100%;padding:0.5rem"></div>';
+ html += '<div><label>Effect estimate:</label><input id="missingEffect" type="number" step="0.01" value="0.5" style="width:100%;padding:0.5rem" aria-label="Effect estimate:"></div>';
 
- html += '<div><label>Standard error:</label><input id="missingSE" type="number" step="0.01" value="0.15" style="width:100%;padding:0.5rem"></div>';
+ html += '<div><label>Standard error:</label><input id="missingSE" type="number" step="0.01" value="0.15" style="width:100%;padding:0.5rem" aria-label="Standard error:"></div>';
 
- html += '<div><label>Delta (shift):</label><input id="missingDelta" type="number" step="0.05" value="-0.2" style="width:100%;padding:0.5rem"></div>';
+ html += '<div><label>Delta (shift):</label><input id="missingDelta" type="number" step="0.05" value="-0.2" style="width:100%;padding:0.5rem" aria-label="Delta (shift):"></div>';
 
  html += '</div>';
 
@@ -24473,9 +24473,9 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-bottom:1rem">';
 
- html += '<label><input type="radio" name="hasCOI" value="no" checked onchange="ConflictOfInterest.toggleDetails(false)"> No conflicts of interest to declare</label><br>';
+ html += '<label><input type="radio" name="hasCOI" value="no" checked onchange="ConflictOfInterest.toggleDetails(false)" aria-label="No conflicts of interest to declare"> No conflicts of interest to declare</label><br>';
 
- html += '<label><input type="radio" name="hasCOI" value="yes" onchange="ConflictOfInterest.toggleDetails(true)"> Potential conflicts to disclose</label>';
+ html += '<label><input type="radio" name="hasCOI" value="yes" onchange="ConflictOfInterest.toggleDetails(true)" aria-label="Potential conflicts to disclose"> Potential conflicts to disclose</label>';
 
  html += '</div>';
 
@@ -24487,13 +24487,13 @@ function applyQualityWeighting() {
 
  this.categories.forEach(function(cat, i) {
 
- html += '<label style="display:block;margin:0.25rem 0"><input type="checkbox" id="coi' + i + '"> ' + cat + '</label>';
+ html += '<label style="display:block;margin:0.25rem 0"><input type="checkbox" id="coi' + i + '" aria-label="&#x27; + cat + &#x27;"> ' + cat + '</label>';
 
  });
 
  html += '<div style="margin-top:1rem"><label><strong>Details:</strong></label>';
 
- html += '<textarea id="coiText" style="width:100%;height:80px;padding:0.5rem;margin-top:0.25rem" placeholder="Describe specific conflicts..."></textarea></div>';
+ html += '<textarea id="coiText" style="width:100%;height:80px;padding:0.5rem;margin-top:0.25rem" placeholder="Describe specific conflicts..." aria-label="Check all that apply:"></textarea></div>';
 
  html += '</div>';
 
@@ -24557,7 +24557,7 @@ function applyQualityWeighting() {
 
  html += '<h4>COI Statement</h4>';
 
- html += '<textarea style="width:100%;height:100px;padding:0.5rem;margin-top:0.5rem" readonly>' + statement + '</textarea>';
+ html += '<textarea style="width:100%;height:100px;padding:0.5rem;margin-top:0.5rem" readonly aria-label="COI Statement">' + statement + '</textarea>';
 
  html += '<button class="btn btn-secondary" style="margin-top:0.5rem" onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">Copy</button>';
 
@@ -24675,7 +24675,7 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-bottom:1.5rem"><label><strong>Comparison:</strong></label>';
 
- html += '<input id="cinemaComparison" type="text" placeholder="e.g., Treatment A vs Treatment B" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div>';
+ html += '<input id="cinemaComparison" type="text" placeholder="e.g., Treatment A vs Treatment B" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="Cinema Comparison"></div>';
 
 
 
@@ -24695,7 +24695,7 @@ function applyQualityWeighting() {
 
  for (var i = 0; i < 3; i++) {
 
- html += '<td style="text-align:center"><input type="radio" name="' + key + '" value="' + i + '"' + (i === 0 ? ' checked' : '') + '></td>';
+ html += '<td style="text-align:center"><input type="radio" name="' + key + '" value="' + i + '"' + (i === 0 ? ' checked' : '') + ' aria-label="&#x27; + key + &#x27;"></td>';
 
  }
 
@@ -24861,7 +24861,7 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-bottom:1rem"><label><strong>Authors (comma-separated):</strong></label>';
 
- html += '<input id="creditAuthors" type="text" placeholder="Smith J, Jones A, Williams B" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div>';
+ html += '<input id="creditAuthors" type="text" placeholder="Smith J, Jones A, Williams B" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="Credit Authors"></div>';
 
 
 
@@ -24873,7 +24873,7 @@ function applyQualityWeighting() {
 
  html += '<div style="margin-bottom:0.75rem"><label><strong>' + role + ':</strong></label>';
 
- html += '<input id="credit' + i + '" type="text" placeholder="Author initials (e.g., JS, AJ)" style="width:100%;padding:0.5rem;margin-top:0.25rem"></div>';
+ html += '<input id="credit' + i + '" type="text" placeholder="Author initials (e.g., JS, AJ)" style="width:100%;padding:0.5rem;margin-top:0.25rem" aria-label="Select roles for each contribution:"></div>';
 
  });
 
@@ -29533,7 +29533,7 @@ function showMICEImputationModal() {
 
                         <label class="form-label">Number of Imputations</label>
 
-                        <select class="form-select" id="miceNImp">
+                        <select class="form-select" id="miceNImp" aria-label="Number of Imputations">
 
                             <option value="5" selected>5 (Standard)</option>
 
@@ -29551,7 +29551,7 @@ function showMICEImputationModal() {
 
                         <label class="form-label">Iterations</label>
 
-                        <select class="form-select" id="miceIter">
+                        <select class="form-select" id="miceIter" aria-label="Iterations">
 
                             <option value="5">5</option>
 
@@ -41939,7 +41939,7 @@ function showAddAggregateDataModal() {
 
  <label class="form-label">Study ID</label>
 
- <input type="text" class="form-control" id="adStudyId" placeholder="e.g., Smith2020">
+ <input type="text" class="form-control" id="adStudyId" placeholder="e.g., Smith2020" aria-label="Study ID">
 
  </div>
 
@@ -41947,7 +41947,7 @@ function showAddAggregateDataModal() {
 
  <label class="form-label">Log Effect (log OR, log HR, etc.)</label>
 
- <input type="number" step="0.01" class="form-control" id="adEffect" placeholder="e.g., -0.35">
+ <input type="number" step="0.01" class="form-control" id="adEffect" placeholder="e.g., -0.35" aria-label="Log Effect (log OR, log HR, etc.)">
 
  </div>
 
@@ -41955,7 +41955,7 @@ function showAddAggregateDataModal() {
 
  <label class="form-label">Standard Error</label>
 
- <input type="number" step="0.01" class="form-control" id="adSE" placeholder="e.g., 0.15">
+ <input type="number" step="0.01" class="form-control" id="adSE" placeholder="e.g., 0.15" aria-label="Standard Error">
 
  </div>
 
@@ -41963,7 +41963,7 @@ function showAddAggregateDataModal() {
 
  <label class="form-label">Sample Size</label>
 
- <input type="number" class="form-control" id="adN" placeholder="e.g., 500">
+ <input type="number" class="form-control" id="adN" placeholder="e.g., 500" aria-label="Sample Size">
 
  </div>
 
@@ -41971,7 +41971,7 @@ function showAddAggregateDataModal() {
 
  <label class="form-label">Number of Events (optional)</label>
 
- <input type="number" class="form-control" id="adEvents" placeholder="e.g., 120">
+ <input type="number" class="form-control" id="adEvents" placeholder="e.g., 120" aria-label="Number of Events (optional)">
 
  </div>
 
@@ -44296,7 +44296,7 @@ function showPowerAnalysisModal() {
 
  <label>Minimum detectable effect (log scale for HR/OR)</label>
 
- <input type="number" id="powerEffect" value="0.3" step="0.1" class="form-control">
+ <input type="number" id="powerEffect" value="0.3" step="0.1" class="form-control" aria-label="Minimum detectable effect (log scale for HR/OR)">
 
  </div>
 
@@ -44304,7 +44304,7 @@ function showPowerAnalysisModal() {
 
  <label>Expected event rate (control group)</label>
 
- <input type="number" id="powerEventRate" value="0.2" step="0.05" min="0" max="1" class="form-control">
+ <input type="number" id="powerEventRate" value="0.2" step="0.05" min="0" max="1" class="form-control" aria-label="Expected event rate (control group)">
 
  </div>
 
@@ -44312,7 +44312,7 @@ function showPowerAnalysisModal() {
 
  <label>Significance level (alpha)</label>
 
- <select id="powerAlpha" class="form-control">
+ <select id="powerAlpha" class="form-control" aria-label="Significance level (alpha)">
 
  <option value="0.05" selected>0.05 (two-sided)</option>
 
@@ -44328,7 +44328,7 @@ function showPowerAnalysisModal() {
 
  <label>Power (1 - beta)</label>
 
- <select id="powerPower" class="form-control">
+ <select id="powerPower" class="form-control" aria-label="Power (1 - beta)">
 
  <option value="0.80" selected>80%</option>
 
@@ -44346,7 +44346,7 @@ function showPowerAnalysisModal() {
 
  <label>Allocation ratio (control:treatment)</label>
 
- <input type="number" id="powerRatio" value="1" step="0.5" min="0.5" max="3" class="form-control">
+ <input type="number" id="powerRatio" value="1" step="0.5" min="0.5" max="3" class="form-control" aria-label="Allocation ratio (control:treatment)">
 
  </div>
 
@@ -46266,7 +46266,7 @@ function showMetaRegressionModal() {
 
  <label>Covariate</label>
 
- <select id="metaRegCovariate" class="form-control">
+ <select id="metaRegCovariate" class="form-control" aria-label="Covariate">
 
  ${numericCols.map(col => `<option value="${col}">${col}</option>`).join('')}
 
@@ -59864,13 +59864,13 @@ function showMultipleTestingModal() {
 
  '<p>Enter p-values (comma-separated) to adjust for multiple comparisons:</p>' +
 
- '<textarea id="pvalInput" class="form-input" rows="3" placeholder="0.01, 0.03, 0.12, 0.04"></textarea>' +
+ '<textarea id="pvalInput" class="form-input" rows="3" placeholder="0.01, 0.03, 0.12, 0.04" aria-label="Multiple Testing Correction"></textarea>' +
 
  '<div class="form-group" style="margin-top: 1rem;">' +
 
  '<label>Correction Method</label>' +
 
- '<select id="corrMethod" class="form-select">' +
+ '<select id="corrMethod" class="form-select" aria-label="Correction Method">' +
 
  '<option value="BH">Benjamini-Hochberg (FDR) - Recommended</option>' +
 
@@ -83236,7 +83236,7 @@ function showMediationAnalysis() {
 
                     <label class="form-label">Exposure/Treatment (X)</label>
 
-                    <select class="form-select" id="semExposure">${varOptions}</select>
+                    <select class="form-select" id="semExposure" aria-label="Exposure/Treatment (X)">${varOptions}</select>
 
                 </div>
 
@@ -83244,7 +83244,7 @@ function showMediationAnalysis() {
 
                     <label class="form-label">Mediator (M)</label>
 
-                    <select class="form-select" id="semMediator">${varOptions}</select>
+                    <select class="form-select" id="semMediator" aria-label="Mediator (M)">${varOptions}</select>
 
                 </div>
 
@@ -83252,7 +83252,7 @@ function showMediationAnalysis() {
 
                     <label class="form-label">Outcome (Y)</label>
 
-                    <select class="form-select" id="semOutcome">${varOptions}</select>
+                    <select class="form-select" id="semOutcome" aria-label="Outcome (Y)">${varOptions}</select>
 
                 </div>
 
@@ -83264,7 +83264,7 @@ function showMediationAnalysis() {
 
                 <label class="form-label">Study Variable</label>
 
-                <select class="form-select" id="semStudy">
+                <select class="form-select" id="semStudy" aria-label="Study Variable">
 
                     ${APP.variables.map(v => getVarName(v)).filter(Boolean).map(name => `<option value="${escapeHTML(name)}" ${name.toLowerCase().includes('study') ? 'selected' : ''}>${escapeHTML(name)}</option>`).join('')}
 
@@ -85656,7 +85656,7 @@ function showRiskPredictor() {
 
                         <label class="form-label">Age (years)</label>
 
-                        <input type="number" class="form-input" id="predAge" value="60" min="18" max="100">
+                        <input type="number" class="form-input" id="predAge" value="60" min="18" max="100" aria-label="Age (years)">
 
                     </div>
 
@@ -85664,7 +85664,7 @@ function showRiskPredictor() {
 
                         <label class="form-label">Sex</label>
 
-                        <select class="form-select" id="predSex">
+                        <select class="form-select" id="predSex" aria-label="Sex">
 
                             <option value="0">Female</option>
 
@@ -85680,7 +85680,7 @@ function showRiskPredictor() {
 
                         <label class="form-label">Baseline Risk (%)</label>
 
-                        <input type="number" class="form-input" id="predBaseline" value="20" min="1" max="100">
+                        <input type="number" class="form-input" id="predBaseline" value="20" min="1" max="100" aria-label="Baseline Risk (%)">
 
                         <small style="color:var(--text-muted)">Expected event rate without treatment</small>
 
@@ -85692,7 +85692,7 @@ function showRiskPredictor() {
 
                         <label class="form-label">Disease Stage</label>
 
-                        <select class="form-select" id="predStage">
+                        <select class="form-select" id="predStage" aria-label="Disease Stage">
 
                             <option value="early">Early</option>
 
@@ -86122,7 +86122,7 @@ function showMetaRegCV() {
 
                 <label class="form-label">Select Moderator Variable</label>
 
-                <select class="form-select" id="cvModerator">
+                <select class="form-select" id="cvModerator" aria-label="Select Moderator Variable">
 
                     ${numericVars.map(name => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join('')}
 
@@ -89332,7 +89332,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Expected Effect Size (log scale)</label>
 
-                        <input type="number" class="form-input" id="pwrEffect" value="-0.5" step="0.1">
+                        <input type="number" class="form-input" id="pwrEffect" value="-0.5" step="0.1" aria-label="Expected Effect Size (log scale)">
 
                     </div>
 
@@ -89340,7 +89340,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Number of Studies</label>
 
-                        <input type="number" class="form-input" id="pwrStudies" value="10" min="2">
+                        <input type="number" class="form-input" id="pwrStudies" value="10" min="2" aria-label="Number of Studies">
 
                     </div>
 
@@ -89348,7 +89348,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Average Study Size</label>
 
-                        <input type="number" class="form-input" id="pwrN" value="200" min="10">
+                        <input type="number" class="form-input" id="pwrN" value="200" min="10" aria-label="Average Study Size">
 
                     </div>
 
@@ -89356,7 +89356,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Expected τ² (heterogeneity)</label>
 
-                        <input type="number" class="form-input" id="pwrTau2" value="0.1" step="0.01" min="0">
+                        <input type="number" class="form-input" id="pwrTau2" value="0.1" step="0.01" min="0" aria-label="Expected τ² (heterogeneity)">
 
                     </div>
 
@@ -89364,7 +89364,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Significance Level (Î±)</label>
 
-                        <select class="form-select" id="pwrAlpha">
+                        <select class="form-select" id="pwrAlpha" aria-label="Significance Level (Î±)">
 
                             <option value="0.05">0.05</option>
 
@@ -89380,7 +89380,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Test Type</label>
 
-                        <select class="form-select" id="pwrTest">
+                        <select class="form-select" id="pwrTest" aria-label="Test Type">
 
                             <option value="two-sided">Two-sided</option>
 
@@ -89408,7 +89408,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Desired Power</label>
 
-                        <select class="form-select" id="ssDesiredPower">
+                        <select class="form-select" id="ssDesiredPower" aria-label="Desired Power">
 
                             <option value="0.80">80%</option>
 
@@ -89424,7 +89424,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Expected Effect Size</label>
 
-                        <input type="number" class="form-input" id="ssEffect" value="-0.3" step="0.1">
+                        <input type="number" class="form-input" id="ssEffect" value="-0.3" step="0.1" aria-label="Expected Effect Size">
 
                     </div>
 
@@ -89432,7 +89432,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Expected τ²</label>
 
-                        <input type="number" class="form-input" id="ssTau2" value="0.1" step="0.01">
+                        <input type="number" class="form-input" id="ssTau2" value="0.1" step="0.01" aria-label="Expected τ²">
 
                     </div>
 
@@ -89440,7 +89440,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Average Within-Study Variance</label>
 
-                        <input type="number" class="form-input" id="ssWithinVar" value="0.05" step="0.01">
+                        <input type="number" class="form-input" id="ssWithinVar" value="0.05" step="0.01" aria-label="Average Within-Study Variance">
 
                     </div>
 
@@ -89468,7 +89468,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Simulations</label>
 
-                        <input type="number" class="form-input" id="simN" value="1000" min="100" max="10000">
+                        <input type="number" class="form-input" id="simN" value="1000" min="100" max="10000" aria-label="Simulations">
 
                     </div>
 
@@ -89476,7 +89476,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">True Effect</label>
 
-                        <input type="number" class="form-input" id="simEffect" value="-0.4" step="0.1">
+                        <input type="number" class="form-input" id="simEffect" value="-0.4" step="0.1" aria-label="True Effect">
 
                     </div>
 
@@ -89484,7 +89484,7 @@ function showPowerCalculator() {
 
                         <label class="form-label">Studies per MA</label>
 
-                        <input type="number" class="form-input" id="simK" value="8" min="2">
+                        <input type="number" class="form-input" id="simK" value="8" min="2" aria-label="Studies per MA">
 
                     </div>
 
@@ -94809,7 +94809,7 @@ function showClusteredIPDAnalysis() {
 
                         <label style="display:block;margin-bottom:5px;font-weight:500;">Outcome Variable:</label>
 
-                        <select id="ipdOutcomeVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);">
+                        <select id="ipdOutcomeVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Outcome Variable:">
 
                             ${getVariableOptions()}
 
@@ -94821,7 +94821,7 @@ function showClusteredIPDAnalysis() {
 
                         <label style="display:block;margin-bottom:5px;font-weight:500;">Treatment Variable:</label>
 
-                        <select id="ipdTreatmentVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);">
+                        <select id="ipdTreatmentVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Treatment Variable:">
 
                             ${getVariableOptions()}
 
@@ -94833,7 +94833,7 @@ function showClusteredIPDAnalysis() {
 
                         <label style="display:block;margin-bottom:5px;font-weight:500;">Cluster/Study Variable:</label>
 
-                        <select id="ipdClusterVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);">
+                        <select id="ipdClusterVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Cluster/Study Variable:">
 
                             ${getVariableOptions()}
 
@@ -94845,7 +94845,7 @@ function showClusteredIPDAnalysis() {
 
                         <label style="display:block;margin-bottom:5px;font-weight:500;">Method:</label>
 
-                        <select id="ipdMethod" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);">
+                        <select id="ipdMethod" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Method:">
 
                             <option value="one-stage">One-Stage (Mixed Effects)</option>
 
@@ -112481,7 +112481,7 @@ function showIPD80FastPathPanel() {
       </div>
       <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
         <label class="checkbox-item" style="margin:0;">
-          <input id="ipd80StrictToggle" type="checkbox" ${strictOn ? 'checked' : ''} onchange="ipd80ToggleStrictMode(this.checked)">
+          <input id="ipd80StrictToggle" type="checkbox" ${strictOn ? 'checked' : ''} onchange="ipd80ToggleStrictMode(this.checked)" aria-label="Ipd80Strict Toggle">
           Strict pre-analysis QC gate
         </label>
         <button class="btn btn-secondary" onclick="ipd80PanelRunQC()">Run QC now</button>
@@ -113407,7 +113407,7 @@ function showIPDAutomationSpecModal() {
         <strong>Automation API:</strong> script-first JSON spec runner for reproducible IPD workflows.
       </div>
       <label class="form-label">Automation Spec (JSON)</label>
-      <textarea id="ipdAutomationSpecInput" class="form-textarea" style="min-height:300px;font-family:Consolas,Monaco,monospace;">${initialSpec}</textarea>
+      <textarea id="ipdAutomationSpecInput" class="form-textarea" style="min-height:300px;font-family:Consolas,Monaco,monospace;" aria-label="Automation Spec (JSON)">${initialSpec}</textarea>
       <div id="ipdAutomationSpecStatus" style="font-size:0.9rem;color:var(--text-muted);">Ready.</div>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button class="btn btn-secondary" onclick="ipdAutomationValidateFromModal()">Validate Spec</button>
@@ -113859,33 +113859,33 @@ function showIndependentSignoffModal() {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0.6rem;">
         <div>
           <label class="form-label">Reviewer Name</label>
-          <input id="indSignoffReviewer" class="form-input" placeholder="e.g., Dr Jane Smith">
+          <input id="indSignoffReviewer" class="form-input" placeholder="e.g., Dr Jane Smith" aria-label="Reviewer Name">
         </div>
         <div>
           <label class="form-label">Reviewer Email</label>
-          <input id="indSignoffEmail" class="form-input" placeholder="e.g., reviewer@org.edu">
+          <input id="indSignoffEmail" class="form-input" placeholder="e.g., reviewer@org.edu" aria-label="Reviewer Email">
         </div>
         <div>
           <label class="form-label">Organization</label>
-          <input id="indSignoffOrg" class="form-input" placeholder="e.g., Independent Methods Board">
+          <input id="indSignoffOrg" class="form-input" placeholder="e.g., Independent Methods Board" aria-label="Organization">
         </div>
         <div>
           <label class="form-label">Reviewer Role</label>
-          <input id="indSignoffRole" class="form-input" placeholder="e.g., External Statistical Reviewer">
+          <input id="indSignoffRole" class="form-input" placeholder="e.g., External Statistical Reviewer" aria-label="Reviewer Role">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0.6rem;">
         <div>
           <label class="form-label">Affiliation (optional)</label>
-          <input id="indSignoffAffiliation" class="form-input" placeholder="e.g., Regulatory Science Unit">
+          <input id="indSignoffAffiliation" class="form-input" placeholder="e.g., Regulatory Science Unit" aria-label="Affiliation (optional)">
         </div>
         <div>
           <label class="form-label">Date</label>
-          <input id="indSignoffDate" type="date" class="form-input" value="${defaultDate}">
+          <input id="indSignoffDate" type="date" class="form-input" value="${defaultDate}" aria-label="Date">
         </div>
         <div>
           <label class="form-label">Decision</label>
-          <select id="indSignoffDecision" class="form-select">
+          <select id="indSignoffDecision" class="form-select" aria-label="Decision">
             <option value="agree">Agree</option>
             <option value="agree_with_notes">Agree with notes</option>
             <option value="not_yet_agree">Not yet agree</option>
@@ -113893,7 +113893,7 @@ function showIndependentSignoffModal() {
         </div>
         <div>
           <label class="form-label">Comments (optional)</label>
-          <textarea id="indSignoffComments" class="form-textarea" style="min-height:64px;" placeholder="Optional notes"></textarea>
+          <textarea id="indSignoffComments" class="form-textarea" style="min-height:64px;" placeholder="Optional notes" aria-label="Comments (optional)"></textarea>
         </div>
       </div>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">

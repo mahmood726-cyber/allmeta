@@ -600,13 +600,13 @@
           </select>
         </div>
         <div class="control inline">
-          <label class="toggle"><input type="checkbox" id="baselineToggle" />Free baseline (E0)</label>
-          <label class="toggle"><input type="checkbox" id="logDoseToggle" />Log dose axis</label>
-          <label class="toggle"><input type="checkbox" id="higherBetterToggle" checked />Higher is better</label>
-          <label class="toggle"><input type="checkbox" id="showBandsToggle" checked />Show 95% bands</label>
-          <label class="toggle"><input type="checkbox" id="randomEffectsToggle" />Random effects (tau2)</label>
-          <label class="toggle"><input type="checkbox" id="multiArmToggle" checked />Multi-arm adjust</label>
-          <label class="toggle"><input type="checkbox" id="covariateToggle" />Use covariate</label>
+          <label class="toggle"><input type="checkbox" id="baselineToggle" aria-label="Free baseline (E0)" />Free baseline (E0)</label>
+          <label class="toggle"><input type="checkbox" id="logDoseToggle" aria-label="Log dose axis" />Log dose axis</label>
+          <label class="toggle"><input type="checkbox" id="higherBetterToggle" checked aria-label="Higher is better" />Higher is better</label>
+          <label class="toggle"><input type="checkbox" id="showBandsToggle" checked aria-label="Show 95% bands" />Show 95% bands</label>
+          <label class="toggle"><input type="checkbox" id="randomEffectsToggle" aria-label="Random effects (tau2)" />Random effects (tau2)</label>
+          <label class="toggle"><input type="checkbox" id="multiArmToggle" checked aria-label="Multi-arm adjust" />Multi-arm adjust</label>
+          <label class="toggle"><input type="checkbox" id="covariateToggle" aria-label="Use covariate" />Use covariate</label>
         </div>
         <div class="control">
           <label for="tau2Method">Tau2 estimator</label>
@@ -636,7 +636,7 @@
           <label for="targetDose">Target dose for ranking</label>
           <div class="range-row">
             <input type="range" id="targetDose" min="0" max="100" value="10" step="0.1" />
-            <input type="number" id="targetDoseNumber" min="0" max="100" value="10" step="0.1" />
+            <input type="number" id="targetDoseNumber" min="0" max="100" value="10" step="0.1" aria-label="Target dose for ranking" />
           </div>
         </div>
         <div class="control">
@@ -653,11 +653,11 @@
           <label>Statistical Options</label>
           <div class="inline-actions">
             <label class="toggle-label" title="Use Hartung-Knapp-Sidik-Jonkman small-sample correction">
-              <input type="checkbox" id="useKnappHartung" />
+              <input type="checkbox" id="useKnappHartung" aria-label="Knapp-Hartung correction" />
               <span>Knapp-Hartung correction</span>
             </label>
             <label class="toggle-label" title="Show prediction intervals (requires tau^2 > 0)">
-              <input type="checkbox" id="showPredictionInterval" />
+              <input type="checkbox" id="showPredictionInterval" aria-label="Prediction intervals" />
               <span>Prediction intervals</span>
             </label>
           </div>
@@ -754,14 +754,14 @@
         <div class="control">
           <label>Tau-squared Estimation</label>
           <div class="inline-actions">
-            <select id="tau2Estimator" class="dropdown" style="width:140px">
+            <select id="tau2Estimator" class="dropdown" style="width:140px" aria-label="Tau-squared Estimation">
               <option value="REML" selected>REML (recommended)</option>
               <option value="DL">DerSimonian-Laird</option>
               <option value="PM">Paule-Mandel</option>
               <option value="EB">Empirical Bayes</option>
             </select>
             <label class="toggle-label" title="Show profile likelihood CI for tau-squared">
-              <input type="checkbox" id="showTau2CI" />
+              <input type="checkbox" id="showTau2CI" aria-label="Show tau� CI" />
               <span>Show tau� CI</span>
             </label>
           </div>
@@ -772,11 +772,11 @@
           <label>Robust Variance Estimation</label>
           <div class="inline-actions">
             <label class="toggle-label" title="Use cluster-robust standard errors (CR2)">
-              <input type="checkbox" id="useRobustSE" />
+              <input type="checkbox" id="useRobustSE" aria-label="Robust SE (CR2)" />
               <span>Robust SE (CR2)</span>
             </label>
             <label class="toggle-label" title="Apply small-sample correction">
-              <input type="checkbox" id="smallSampleCorrection" checked />
+              <input type="checkbox" id="smallSampleCorrection" checked aria-label="Small-sample correction" />
               <span>Small-sample correction</span>
             </label>
           </div>
@@ -829,7 +829,7 @@
         <div class="control">
           <label>Gaussian Process Dose-Response</label>
           <div class="inline-actions">
-            <select id="gpKernel" class="dropdown" style="width:120px">
+            <select id="gpKernel" class="dropdown" style="width:120px" aria-label="Gaussian Process Dose-Response">
               <option value="rbf" selected>RBF (Smooth)</option>
               <option value="matern32">Matern 3/2</option>
               <option value="matern52">Matern 5/2</option>
@@ -853,9 +853,9 @@
         <div class="control">
           <label>Personalized Dose Optimizer</label>
           <div class="inline-actions">
-            <input type="number" id="patientAge" placeholder="Age" style="width:60px" value="50" />
-            <input type="number" id="patientWeight" placeholder="Weight" style="width:70px" value="70" />
-            <select id="patientRenal" class="dropdown" style="width:80px">
+            <input type="number" id="patientAge" placeholder="Age" style="width:60px" value="50" aria-label="Personalized Dose Optimizer" />
+            <input type="number" id="patientWeight" placeholder="Weight" style="width:70px" value="70" aria-label="Personalized Dose Optimizer" />
+            <select id="patientRenal" class="dropdown" style="width:80px" aria-label="Personalized Dose Optimizer">
               <option value="90" selected>Normal</option>
               <option value="60">Mild CKD</option>
               <option value="30">Moderate CKD</option>
@@ -872,7 +872,7 @@
             <button class="secondary" id="generate3DSurface" title="Generate 3D dose-response surface">Generate 3D</button>
             <button class="secondary" id="export3DData" title="Export for Three.js">Export for Three.js</button>
             <label class="toggle-label">
-              <input type="checkbox" id="show3DWireframe" checked />
+              <input type="checkbox" id="show3DWireframe" checked aria-label="Wireframe" />
               <span>Wireframe</span>
             </label>
           </div>
@@ -916,12 +916,12 @@
         <div class="control">
           <label>Trim-and-Fill</label>
           <div class="inline-actions">
-            <select id="tafEstimator" class="dropdown" style="width:70px">
+            <select id="tafEstimator" class="dropdown" style="width:70px" aria-label="Trim-and-Fill">
               <option value="L0" selected>L0</option>
               <option value="R0">R0</option>
               <option value="Q0">Q0</option>
             </select>
-            <select id="tafSide" class="dropdown" style="width:80px">
+            <select id="tafSide" class="dropdown" style="width:80px" aria-label="Trim-and-Fill">
               <option value="auto" selected>Auto</option>
               <option value="left">Left</option>
               <option value="right">Right</option>
@@ -995,7 +995,7 @@
         <div class="control">
           <label>Multivariate Outcomes</label>
           <div class="inline-actions">
-            <input type="number" id="outcomeCorrelation" placeholder="rho" style="width:60px" value="0.5" step="0.1" min="-1" max="1" />
+            <input type="number" id="outcomeCorrelation" placeholder="rho" style="width:60px" value="0.5" step="0.1" min="-1" max="1" aria-label="Multivariate Outcomes" />
             <button class="secondary" id="runMultivariate" title="Multivariate meta-analysis">Pool Bivariate</button>
           </div>
           <div class="hint" id="multivariateResult">Correlated outcomes (Jackson et al. 2011)</div>
@@ -1045,7 +1045,7 @@
         <div class="control">
           <label>Permutation Test</label>
           <div class="inline-actions">
-            <input type="number" id="permutations" placeholder="5000" style="width:70px" value="5000" step="1000" min="1000" max="10000" />
+            <input type="number" id="permutations" placeholder="5000" style="width:70px" value="5000" step="1000" min="1000" max="10000" aria-label="Permutation Test" />
             <button class="secondary" id="runPermutation" title="Non-parametric bias test">Permutation</button>
           </div>
           <div class="hint" id="permutationResult">Kendall tau permutation test</div>

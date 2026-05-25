@@ -1541,7 +1541,7 @@
                 <section id="section-parameters" class="content-section" style="display:none;">
                     <div class="content-header">
                         <h2>Parameters</h2>
-                        <input type="text" placeholder="Search parameters..." id="param-search" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
+                        <input type="text" placeholder="Search parameters..." id="param-search" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;" aria-label="Parameters">
                     </div>
                     <div class="content-body">
                         <table class="data-table">
@@ -1644,7 +1644,7 @@
                         <h2>Probabilistic Sensitivity Analysis</h2>
                         <div>
                             <label>Iterations: </label>
-                            <select id="psa-iterations" style="padding: 6px; border-radius: 4px; border: 1px solid var(--border);">
+                            <select id="psa-iterations" style="padding: 6px; border-radius: 4px; border: 1px solid var(--border);" aria-label="Iterations:">
                                 <option value="1000">1,000</option>
                                 <option value="5000">5,000</option>
                                 <option value="10000" selected>10,000 (NICE minimum)</option>
@@ -1720,15 +1720,15 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
                                 <div class="info-item">
                                     <label>WTP Threshold (£)</label>
-                                    <input type="number" id="evpi-wtp" value="30000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="evpi-wtp" value="30000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="WTP Threshold (£)">
                                 </div>
                                 <div class="info-item">
                                     <label>Population Size</label>
-                                    <input type="number" id="evpi-population" value="50000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="evpi-population" value="50000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Population Size">
                                 </div>
                                 <div class="info-item">
                                     <label>Decision Time Horizon (years)</label>
-                                    <input type="number" id="evpi-years" value="10" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="evpi-years" value="10" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Decision Time Horizon (years)">
                                 </div>
                             </div>
                             <button class="btn btn-secondary" id="btn-calc-evpi">Calculate EVPI</button>
@@ -1775,11 +1775,11 @@
                                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px;">
                                     <div class="info-item">
                                         <label>Parameter Range (%)</label>
-                                        <input type="number" id="dsa-range" value="20" min="5" max="50" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                        <input type="number" id="dsa-range" value="20" min="5" max="50" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Parameter Range (%)">
                                     </div>
                                     <div class="info-item">
                                         <label>Outcome Metric</label>
-                                        <select id="dsa-metric" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                        <select id="dsa-metric" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Outcome Metric">
                                             <option value="icer">ICER</option>
                                             <option value="nmb">Net Monetary Benefit</option>
                                             <option value="costs">Incremental Costs</option>
@@ -1788,7 +1788,7 @@
                                     </div>
                                     <div class="info-item">
                                         <label>Max Parameters</label>
-                                        <select id="dsa-max-params" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                        <select id="dsa-max-params" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Max Parameters">
                                             <option value="10">Top 10</option>
                                             <option value="15" selected>Top 15</option>
                                             <option value="20">Top 20</option>
@@ -1855,7 +1855,7 @@
                     <div class="content-body">
                         <div class="info-item" style="margin-bottom: 20px;">
                             <label>Random Seed</label>
-                            <input type="number" id="engine-seed" value="12345" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; width: 150px;">
+                            <input type="number" id="engine-seed" value="12345" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px; width: 150px;" aria-label="Random Seed">
                         </div>
 
                         <div style="display: flex; gap: 12px; margin-bottom: 24px;">
@@ -1940,22 +1940,22 @@
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Number of Patients</label>
-                                    <input type="number" id="microsim-patients" value="10000" min="100" max="1000000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="microsim-patients" value="10000" min="100" max="1000000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Number of Patients">
                                 </div>
                                 <div class="info-item">
                                     <label>Random Seed</label>
-                                    <input type="number" id="microsim-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="microsim-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Random Seed">
                                 </div>
                                 <div class="info-item">
                                     <label>Record History</label>
-                                    <select id="microsim-record-history" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="microsim-record-history" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Record History">
                                         <option value="false">No (faster)</option>
                                         <option value="true">Yes (detailed)</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Semi-Markov</label>
-                                    <select id="microsim-semi-markov" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="microsim-semi-markov" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Semi-Markov">
                                         <option value="true">Enabled</option>
                                         <option value="false">Disabled</option>
                                     </select>
@@ -2018,19 +2018,19 @@
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Number of Patients</label>
-                                    <input type="number" id="des-patients" value="1000" min="100" max="100000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="des-patients" value="1000" min="100" max="100000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Number of Patients">
                                 </div>
                                 <div class="info-item">
                                     <label>Max Time (years)</label>
-                                    <input type="number" id="des-max-time" value="50" min="1" max="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="des-max-time" value="50" min="1" max="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Max Time (years)">
                                 </div>
                                 <div class="info-item">
                                     <label>Random Seed</label>
-                                    <input type="number" id="des-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="des-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Random Seed">
                                 </div>
                                 <div class="info-item">
                                     <label>Discount Rate</label>
-                                    <input type="number" id="des-discount" value="0.035" step="0.001" min="0" max="0.15" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="des-discount" value="0.035" step="0.001" min="0" max="0.15" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Discount Rate">
                                 </div>
                             </div>
                         </div>
@@ -2099,17 +2099,17 @@
                         </div>
                     </div>
                     <div class="content-body">
-                        <input type="file" id="km-file-input" accept=".csv,.json" style="display: none;">
+                        <input type="file" id="km-file-input" accept=".csv,.json" style="display: none;" aria-label="Survival Curve Fitting">
 
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Distributions to Fit</h4>
                             <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px;">
-                                <label><input type="checkbox" class="dist-checkbox" value="exponential" checked> Exponential</label>
-                                <label><input type="checkbox" class="dist-checkbox" value="weibull" checked> Weibull</label>
-                                <label><input type="checkbox" class="dist-checkbox" value="lognormal" checked> Log-Normal</label>
-                                <label><input type="checkbox" class="dist-checkbox" value="loglogistic" checked> Log-Logistic</label>
-                                <label><input type="checkbox" class="dist-checkbox" value="gompertz" checked> Gompertz</label>
-                                <label><input type="checkbox" class="dist-checkbox" value="gamma" checked> Generalized Gamma</label>
+                                <label><input type="checkbox" class="dist-checkbox" value="exponential" checked aria-label="Exponential"> Exponential</label>
+                                <label><input type="checkbox" class="dist-checkbox" value="weibull" checked aria-label="Weibull"> Weibull</label>
+                                <label><input type="checkbox" class="dist-checkbox" value="lognormal" checked aria-label="Log-Normal"> Log-Normal</label>
+                                <label><input type="checkbox" class="dist-checkbox" value="loglogistic" checked aria-label="Log-Logistic"> Log-Logistic</label>
+                                <label><input type="checkbox" class="dist-checkbox" value="gompertz" checked aria-label="Gompertz"> Gompertz</label>
+                                <label><input type="checkbox" class="dist-checkbox" value="gamma" checked aria-label="Generalized Gamma"> Generalized Gamma</label>
                             </div>
                         </div>
 
@@ -2179,7 +2179,7 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Method</label>
-                                    <select id="calibration-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="calibration-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Method">
                                         <option value="nelder-mead">Nelder-Mead (Simplex)</option>
                                         <option value="mcmc">MCMC (Bayesian)</option>
                                         <option value="grid">Grid Search</option>
@@ -2187,11 +2187,11 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Max Iterations</label>
-                                    <input type="number" id="calibration-iterations" value="1000" min="100" max="100000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="calibration-iterations" value="1000" min="100" max="100000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Max Iterations">
                                 </div>
                                 <div class="info-item">
                                     <label>Tolerance</label>
-                                    <input type="number" id="calibration-tolerance" value="0.0001" step="0.0001" min="0.00001" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="calibration-tolerance" value="0.0001" step="0.0001" min="0.00001" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Tolerance">
                                 </div>
                             </div>
                         </div>
@@ -2200,9 +2200,9 @@
                             <h4>Parameters to Calibrate</h4>
                             <div id="calibration-params-container">
                                 <div class="calibration-param-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-top: 12px;">
-                                    <input type="text" class="calib-param-name" placeholder="Parameter name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                                    <input type="number" class="calib-param-lower" placeholder="Lower bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                                    <input type="number" class="calib-param-upper" placeholder="Upper bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" class="calib-param-name" placeholder="Parameter name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Parameters to Calibrate">
+                                    <input type="number" class="calib-param-lower" placeholder="Lower bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Parameters to Calibrate">
+                                    <input type="number" class="calib-param-upper" placeholder="Upper bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Parameters to Calibrate">
                                 </div>
                             </div>
                             <button class="btn btn-secondary" onclick="addCalibrationParam()" style="margin-top: 12px;">+ Add Parameter</button>
@@ -2212,15 +2212,15 @@
                             <h4>Calibration Targets</h4>
                             <div id="calibration-targets-container">
                                 <div class="calibration-target-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 12px;">
-                                    <input type="text" class="calib-target-name" placeholder="Target name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                                    <select class="calib-target-type" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" class="calib-target-name" placeholder="Target name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Calibration Targets">
+                                    <select class="calib-target-type" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Calibration Targets">
                                         <option value="state_proportion">State Proportion</option>
                                         <option value="survival">Survival</option>
                                         <option value="incidence">Incidence</option>
                                     </select>
-                                    <input type="number" class="calib-target-time" placeholder="Time" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                                    <input type="number" class="calib-target-observed" placeholder="Observed value" step="0.001" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                                    <input type="number" class="calib-target-weight" placeholder="Weight" value="1" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" class="calib-target-time" placeholder="Time" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Calibration Targets">
+                                    <input type="number" class="calib-target-observed" placeholder="Observed value" step="0.001" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Calibration Targets">
+                                    <input type="number" class="calib-target-weight" placeholder="Weight" value="1" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Calibration Targets">
                                 </div>
                             </div>
                             <button class="btn btn-secondary" onclick="addCalibrationTarget()" style="margin-top: 12px;">+ Add Target</button>
@@ -2297,15 +2297,15 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>WTP Threshold (£)</label>
-                                    <input type="number" id="evppi-wtp" value="30000" min="0" step="1000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="evppi-wtp" value="30000" min="0" step="1000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="WTP Threshold (£)">
                                 </div>
                                 <div class="info-item">
                                     <label>Annual Population</label>
-                                    <input type="number" id="evppi-population" value="50000" min="1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="evppi-population" value="50000" min="1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Annual Population">
                                 </div>
                                 <div class="info-item">
                                     <label>Time Horizon (years)</label>
-                                    <input type="number" id="evppi-years" value="10" min="1" max="50" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="evppi-years" value="10" min="1" max="50" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Time Horizon (years)">
                                 </div>
                             </div>
                             <p style="margin-top: 16px; color: var(--text-muted); font-size: 13px;">
@@ -2357,28 +2357,28 @@
                         </div>
                     </div>
                     <div class="content-body">
-                        <input type="file" id="nma-file-input" accept=".csv,.json" style="display: none;">
+                        <input type="file" id="nma-file-input" accept=".csv,.json" style="display: none;" aria-label="Network Meta-Analysis">
 
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>NMA Settings</h4>
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Model</label>
-                                    <select id="nma-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="nma-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Model">
                                         <option value="random">Random Effects</option>
                                         <option value="fixed">Fixed Effects</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Method</label>
-                                    <select id="nma-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="nma-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Method">
                                         <option value="bayesian">Bayesian (MCMC)</option>
                                         <option value="frequentist">Frequentist</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Outcome Type</label>
-                                    <select id="nma-outcome" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="nma-outcome" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Outcome Type">
                                         <option value="binary">Binary (OR/RR)</option>
                                         <option value="continuous">Continuous (MD)</option>
                                         <option value="survival">Time-to-event (HR)</option>
@@ -2386,7 +2386,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Reference Treatment</label>
-                                    <select id="nma-reference" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="nma-reference" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Reference Treatment">
                                         <option value="auto">Auto (most connected)</option>
                                     </select>
                                 </div>
@@ -2394,15 +2394,15 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>MCMC Iterations</label>
-                                    <input type="number" id="nma-iterations" value="10000" min="1000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="nma-iterations" value="10000" min="1000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="MCMC Iterations">
                                 </div>
                                 <div class="info-item">
                                     <label>Burn-in</label>
-                                    <input type="number" id="nma-burnin" value="2000" min="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="nma-burnin" value="2000" min="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Burn-in">
                                 </div>
                                 <div class="info-item">
                                     <label>Random Seed</label>
-                                    <input type="number" id="nma-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="nma-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Random Seed">
                                 </div>
                             </div>
                         </div>
@@ -2554,14 +2554,14 @@
                         </div>
                     </div>
                     <div class="content-body">
-                        <input type="file" id="ma-file-input" accept=".csv,.json" style="display: none;">
+                        <input type="file" id="ma-file-input" accept=".csv,.json" style="display: none;" aria-label="Meta-Analysis Methods">
 
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Analysis Settings</h4>
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>τ² Estimation <button type="button" class="help-icon" onclick="showTauMethodHelp()" title="Click for guidance" aria-label="Help with tau-squared estimation method">ⓘ</button></label>
-                                    <select id="ma-tau-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-tau-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Analysis Settings">
                                         <option value="REML">REML (Recommended)</option>
                                         <option value="DL">DerSimonian-Laird</option>
                                         <option value="PM">Paule-Mandel</option>
@@ -2573,7 +2573,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Effect Measure</label>
-                                    <select id="ma-effect-measure" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-effect-measure" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Effect Measure">
                                         <option value="SMD">Standardized Mean Difference</option>
                                         <option value="MD">Mean Difference</option>
                                         <option value="OR">Odds Ratio</option>
@@ -2583,7 +2583,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Confidence Level</label>
-                                    <select id="ma-ci-level" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-ci-level" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Confidence Level">
                                         <option value="0.95">95%</option>
                                         <option value="0.99">99%</option>
                                         <option value="0.90">90%</option>
@@ -2591,7 +2591,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Prediction Interval</label>
-                                    <select id="ma-pred-int" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-pred-int" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Prediction Interval">
                                         <option value="true">Yes</option>
                                         <option value="false">No</option>
                                     </select>
@@ -2601,21 +2601,21 @@
                             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px;">
                                 <div class="info-item">
                                     <label>HKSJ Adjustment</label>
-                                    <select id="ma-hksj" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-hksj" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="HKSJ Adjustment">
                                         <option value="true">Yes (Recommended)</option>
                                         <option value="false">No</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>I² Confidence Interval</label>
-                                    <select id="ma-i2-ci" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-i2-ci" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="I² Confidence Interval">
                                         <option value="true">Yes</option>
                                         <option value="false">No</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Small-study Correction</label>
-                                    <select id="ma-small-study" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-small-study" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Small-study Correction">
                                         <option value="none">None</option>
                                         <option value="knha">Knapp-Hartung</option>
                                         <option value="sj">Sidik-Jonkman</option>
@@ -2623,7 +2623,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Publication Bias Test</label>
-                                    <select id="ma-pub-bias" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ma-pub-bias" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Publication Bias Test">
                                         <option value="egger">Egger's Test</option>
                                         <option value="begg">Begg's Test</option>
                                         <option value="peters">Peters' Test</option>
@@ -2755,10 +2755,10 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Tests to Run</h4>
                             <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
-                                <label><input type="checkbox" class="pub-bias-test" value="egger" checked> Egger's Regression Test</label>
-                                <label><input type="checkbox" class="pub-bias-test" value="begg" checked> Begg & Mazumdar's Rank Correlation</label>
-                                <label><input type="checkbox" class="pub-bias-test" value="trim-fill" checked> Trim and Fill</label>
-                                <label><input type="checkbox" class="pub-bias-test" value="selection" checked> Selection Models</label>
+                                <label><input type="checkbox" class="pub-bias-test" value="egger" checked aria-label="Egger&#x27;s Regression Test"> Egger's Regression Test</label>
+                                <label><input type="checkbox" class="pub-bias-test" value="begg" checked aria-label="Begg &amp; Mazumdar&#x27;s Rank Correlation"> Begg & Mazumdar's Rank Correlation</label>
+                                <label><input type="checkbox" class="pub-bias-test" value="trim-fill" checked aria-label="Trim and Fill"> Trim and Fill</label>
+                                <label><input type="checkbox" class="pub-bias-test" value="selection" checked aria-label="Selection Models"> Selection Models</label>
                             </div>
                         </div>
 
@@ -3124,18 +3124,18 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Estimation Method</label>
-                                    <select id="3level-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="3level-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Estimation Method">
                                         <option value="REML">REML (Recommended)</option>
                                         <option value="ML">Maximum Likelihood</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Study Variable</label>
-                                    <input type="text" id="3level-study-var" value="study" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" id="3level-study-var" value="study" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Study Variable">
                                 </div>
                                 <div class="info-item">
                                     <label>Confidence Level</label>
-                                    <select id="3level-ci" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="3level-ci" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Confidence Level">
                                         <option value="0.95">95%</option>
                                         <option value="0.99">99%</option>
                                     </select>
@@ -3199,10 +3199,10 @@
                             <h4>Outcomes</h4>
                             <div id="mv-outcomes-container" style="margin-top: 12px;">
                                 <div class="mv-outcome-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" class="mv-outcome-name" value="Outcome 1" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" class="mv-outcome-name" value="Outcome 1" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Outcomes">
                                 </div>
                                 <div class="mv-outcome-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" class="mv-outcome-name" value="Outcome 2" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" class="mv-outcome-name" value="Outcome 2" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Outcomes">
                                 </div>
                             </div>
                             <button class="btn btn-secondary" id="btn-add-mv-outcome" style="margin-top: 8px;">+ Add Outcome</button>
@@ -3252,7 +3252,7 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Number of Knots</label>
-                                    <select id="dr-knots" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="dr-knots" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Number of Knots">
                                         <option value="3">3 knots (default)</option>
                                         <option value="4">4 knots</option>
                                         <option value="5">5 knots</option>
@@ -3260,14 +3260,14 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Model</label>
-                                    <select id="dr-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="dr-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Model">
                                         <option value="random">Random Effects</option>
                                         <option value="fixed">Fixed Effect</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Dose Variable</label>
-                                    <input type="text" id="dr-dose-var" value="dose" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" id="dr-dose-var" value="dose" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Dose Variable">
                                 </div>
                             </div>
                         </div>
@@ -3324,14 +3324,14 @@
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Model Type</label>
-                                    <select id="cnma-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="cnma-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Model Type">
                                         <option value="additive">Additive (main effects only)</option>
                                         <option value="interaction2">With 2-way interactions</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Reference</label>
-                                    <select id="cnma-reference" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="cnma-reference" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Reference">
                                         <option value="none">No active components</option>
                                     </select>
                                 </div>
@@ -3390,7 +3390,7 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Spending Function</label>
-                                    <select id="living-boundary" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="living-boundary" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Spending Function">
                                         <option value="OBrien-Fleming">O'Brien-Fleming (Conservative)</option>
                                         <option value="Pocock">Pocock (Even spending)</option>
                                         <option value="Haybittle-Peto">Haybittle-Peto</option>
@@ -3398,11 +3398,11 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Alpha Level</label>
-                                    <input type="number" id="living-alpha" value="0.05" step="0.01" min="0.01" max="0.10" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="living-alpha" value="0.05" step="0.01" min="0.01" max="0.10" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Alpha Level">
                                 </div>
                                 <div class="info-item">
                                     <label>Max Looks</label>
-                                    <input type="number" id="living-max-looks" value="10" min="2" max="50" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="living-max-looks" value="10" min="2" max="50" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Max Looks">
                                 </div>
                             </div>
                         </div>
@@ -3501,62 +3501,62 @@
                                     <tr>
                                         <td>D1: Randomization process</td>
                                         <td>
-                                            <select class="rob2-judgment" data-domain="D1" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="rob2-judgment" data-domain="D1" style="padding: 4px 8px; border-radius: 4px;" aria-label="Rob2 judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low risk</option>
                                                 <option value="Some concerns">Some concerns</option>
                                                 <option value="High">High risk</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="rob2-info" data-domain="D1" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="rob2-info" data-domain="D1" style="width: 100%; padding: 4px;" aria-label="Rob2 info"></td>
                                     </tr>
                                     <tr>
                                         <td>D2: Deviations from interventions</td>
                                         <td>
-                                            <select class="rob2-judgment" data-domain="D2" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="rob2-judgment" data-domain="D2" style="padding: 4px 8px; border-radius: 4px;" aria-label="Rob2 judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low risk</option>
                                                 <option value="Some concerns">Some concerns</option>
                                                 <option value="High">High risk</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="rob2-info" data-domain="D2" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="rob2-info" data-domain="D2" style="width: 100%; padding: 4px;" aria-label="Rob2 info"></td>
                                     </tr>
                                     <tr>
                                         <td>D3: Missing outcome data</td>
                                         <td>
-                                            <select class="rob2-judgment" data-domain="D3" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="rob2-judgment" data-domain="D3" style="padding: 4px 8px; border-radius: 4px;" aria-label="Rob2 judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low risk</option>
                                                 <option value="Some concerns">Some concerns</option>
                                                 <option value="High">High risk</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="rob2-info" data-domain="D3" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="rob2-info" data-domain="D3" style="width: 100%; padding: 4px;" aria-label="Rob2 info"></td>
                                     </tr>
                                     <tr>
                                         <td>D4: Measurement of outcome</td>
                                         <td>
-                                            <select class="rob2-judgment" data-domain="D4" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="rob2-judgment" data-domain="D4" style="padding: 4px 8px; border-radius: 4px;" aria-label="Rob2 judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low risk</option>
                                                 <option value="Some concerns">Some concerns</option>
                                                 <option value="High">High risk</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="rob2-info" data-domain="D4" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="rob2-info" data-domain="D4" style="width: 100%; padding: 4px;" aria-label="Rob2 info"></td>
                                     </tr>
                                     <tr>
                                         <td>D5: Selection of reported result</td>
                                         <td>
-                                            <select class="rob2-judgment" data-domain="D5" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="rob2-judgment" data-domain="D5" style="padding: 4px 8px; border-radius: 4px;" aria-label="Rob2 judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low risk</option>
                                                 <option value="Some concerns">Some concerns</option>
                                                 <option value="High">High risk</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="rob2-info" data-domain="D5" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="rob2-info" data-domain="D5" style="width: 100%; padding: 4px;" aria-label="Rob2 info"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -3589,7 +3589,7 @@
                                     <tr>
                                         <td>D1: Confounding</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D1" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D1" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3598,12 +3598,12 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D1" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D1" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                     <tr>
                                         <td>D2: Selection of participants</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D2" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D2" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3612,12 +3612,12 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D2" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D2" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                     <tr>
                                         <td>D3: Classification of interventions</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D3" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D3" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3626,12 +3626,12 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D3" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D3" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                     <tr>
                                         <td>D4: Deviations from intended interventions</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D4" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D4" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3640,12 +3640,12 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D4" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D4" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                     <tr>
                                         <td>D5: Missing data</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D5" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D5" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3654,12 +3654,12 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D5" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D5" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                     <tr>
                                         <td>D6: Measurement of outcomes</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D6" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D6" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3668,12 +3668,12 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D6" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D6" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                     <tr>
                                         <td>D7: Selection of reported result</td>
                                         <td>
-                                            <select class="robins-judgment" data-domain="D7" style="padding: 4px 8px; border-radius: 4px;">
+                                            <select class="robins-judgment" data-domain="D7" style="padding: 4px 8px; border-radius: 4px;" aria-label="Robins judgment">
                                                 <option value="">Select...</option>
                                                 <option value="Low">Low</option>
                                                 <option value="Moderate">Moderate</option>
@@ -3682,7 +3682,7 @@
                                                 <option value="NI">No information</option>
                                             </select>
                                         </td>
-                                        <td><input type="text" class="robins-info" data-domain="D7" style="width: 100%; padding: 4px;"></td>
+                                        <td><input type="text" class="robins-info" data-domain="D7" style="width: 100%; padding: 4px;" aria-label="Robins info"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -3722,15 +3722,15 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Records from databases</label>
-                                    <input type="number" id="prisma-databases" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-databases" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Records from databases">
                                 </div>
                                 <div class="info-item">
                                     <label>Records from registers</label>
-                                    <input type="number" id="prisma-registers" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-registers" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Records from registers">
                                 </div>
                                 <div class="info-item">
                                     <label>Other methods</label>
-                                    <input type="number" id="prisma-other" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-other" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Other methods">
                                 </div>
                             </div>
                         </div>
@@ -3740,15 +3740,15 @@
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Duplicates removed</label>
-                                    <input type="number" id="prisma-duplicates" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-duplicates" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Duplicates removed">
                                 </div>
                                 <div class="info-item">
                                     <label>Excluded (title)</label>
-                                    <input type="number" id="prisma-excluded-title" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-excluded-title" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Excluded (title)">
                                 </div>
                                 <div class="info-item">
                                     <label>Excluded (abstract)</label>
-                                    <input type="number" id="prisma-excluded-abstract" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-excluded-abstract" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Excluded (abstract)">
                                 </div>
                             </div>
                         </div>
@@ -3758,11 +3758,11 @@
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Reports not retrieved</label>
-                                    <input type="number" id="prisma-not-retrieved" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-not-retrieved" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Reports not retrieved">
                                 </div>
                                 <div class="info-item">
                                     <label>Studies included</label>
-                                    <input type="number" id="prisma-included" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="prisma-included" value="0" min="0" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Studies included">
                                 </div>
                             </div>
                         </div>
@@ -3771,8 +3771,8 @@
                             <h4>Exclusion Reasons</h4>
                             <div id="prisma-exclusion-reasons" style="margin-top: 12px;">
                                 <div class="exclusion-row" style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" class="exclusion-reason" placeholder="Reason" style="flex: 2; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                                    <input type="number" class="exclusion-count" placeholder="n" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" class="exclusion-reason" placeholder="Reason" style="flex: 2; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Exclusion Reasons">
+                                    <input type="number" class="exclusion-count" placeholder="n" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Exclusion Reasons">
                                 </div>
                             </div>
                             <button class="btn btn-secondary" id="btn-add-exclusion-reason" style="margin-top: 8px;">+ Add Reason</button>
@@ -3798,7 +3798,7 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Method</label>
-                                    <select id="ipd-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ipd-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Method">
                                         <option value="one-stage">One-Stage (Mixed Effects)</option>
                                         <option value="two-stage">Two-Stage (Traditional)</option>
                                         <option value="ipd-nma">IPD Network MA</option>
@@ -3806,7 +3806,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Outcome Type</label>
-                                    <select id="ipd-outcome" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ipd-outcome" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Outcome Type">
                                         <option value="continuous">Continuous</option>
                                         <option value="binary">Binary</option>
                                         <option value="survival">Time-to-Event</option>
@@ -3814,14 +3814,14 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Random Slopes</label>
-                                    <select id="ipd-random-slopes" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="ipd-random-slopes" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Random Slopes">
                                         <option value="no">No (Intercepts Only)</option>
                                         <option value="yes">Yes (Treatment x Study)</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Covariates for Interaction</label>
-                                    <input type="text" id="ipd-covariates" placeholder="age, sex, baseline" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" id="ipd-covariates" placeholder="age, sex, baseline" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Covariates for Interaction">
                                 </div>
                             </div>
                         </div>
@@ -3829,7 +3829,7 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>IPD Data Input</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">Paste patient-level data (CSV format with columns: study, patient, treatment, outcome, [covariates])</p>
-                            <textarea id="ipd-data-input" placeholder="study,patient,treatment,outcome,age,sex&#10;Study1,1,1,5.2,45,M&#10;Study1,2,0,3.8,52,F&#10;Study1,3,1,6.1,38,M&#10;Study2,1,1,4.9,61,F&#10;..." style="width: 100%; height: 200px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="ipd-data-input" placeholder="study,patient,treatment,outcome,age,sex&#10;Study1,1,1,5.2,45,M&#10;Study1,2,0,3.8,52,F&#10;Study1,3,1,6.1,38,M&#10;Study2,1,1,4.9,61,F&#10;..." style="width: 100%; height: 200px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="IPD Data Input"></textarea>
                         </div>
 
                         <div class="card">
@@ -3867,7 +3867,7 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Model Type</label>
-                                    <select id="dta-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="dta-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Model Type">
                                         <option value="bivariate">Bivariate (Reitsma et al.)</option>
                                         <option value="hsroc">HSROC (Rutter-Gatsonis)</option>
                                         <option value="network-dta">Network DTA (Multiple Tests)</option>
@@ -3875,7 +3875,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Reference Test (for Network DTA)</label>
-                                    <input type="text" id="dta-reference" placeholder="e.g., histopathology" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" id="dta-reference" placeholder="e.g., histopathology" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Reference Test (for Network DTA)">
                                 </div>
                             </div>
                         </div>
@@ -3883,7 +3883,7 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>2x2 Table Data</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">Enter TP, FP, FN, TN for each study</p>
-                            <textarea id="dta-data-input" placeholder="study,test,tp,fp,fn,tn&#10;Study1,TestA,85,10,15,90&#10;Study1,TestB,80,15,20,85&#10;Study2,TestA,92,8,8,92&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="dta-data-input" placeholder="study,test,tp,fp,fn,tn&#10;Study1,TestA,85,10,15,90&#10;Study1,TestB,80,15,20,85&#10;Study2,TestA,92,8,8,92&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="2x2 Table Data"></textarea>
                         </div>
 
                         <div class="card" style="margin-bottom: 24px;">
@@ -3927,7 +3927,7 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Primary Method</label>
-                                    <select id="pb-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="pb-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Primary Method">
                                         <option value="copas">Copas Selection Model</option>
                                         <option value="robma">RoBMA (Robust Bayesian MA)</option>
                                         <option value="andrews-kasy">Andrews-Kasy</option>
@@ -3936,7 +3936,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>P-value Cutoffs</label>
-                                    <input type="text" id="pb-cutoffs" value="0.05, 0.10" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="text" id="pb-cutoffs" value="0.05, 0.10" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="P-value Cutoffs">
                                 </div>
                             </div>
                         </div>
@@ -3982,15 +3982,15 @@
                                 <div class="info-item">
                                     <label>Tests to Run</label>
                                     <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                        <label><input type="checkbox" id="test-grim" checked> GRIM (Means)</label>
-                                        <label><input type="checkbox" id="test-grimmer" checked> GRIMMER (SDs)</label>
-                                        <label><input type="checkbox" id="test-sprite"> SPRITE (Reconstruction)</label>
-                                        <label><input type="checkbox" id="test-statcheck"> StatCheck (p-values)</label>
+                                        <label><input type="checkbox" id="test-grim" checked aria-label="GRIM (Means)"> GRIM (Means)</label>
+                                        <label><input type="checkbox" id="test-grimmer" checked aria-label="GRIMMER (SDs)"> GRIMMER (SDs)</label>
+                                        <label><input type="checkbox" id="test-sprite" aria-label="SPRITE (Reconstruction)"> SPRITE (Reconstruction)</label>
+                                        <label><input type="checkbox" id="test-statcheck" aria-label="StatCheck (p-values)"> StatCheck (p-values)</label>
                                     </div>
                                 </div>
                                 <div class="info-item">
                                     <label>Decimal Places</label>
-                                    <input type="number" id="fab-decimals" value="2" min="1" max="4" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="fab-decimals" value="2" min="1" max="4" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Decimal Places">
                                 </div>
                             </div>
                         </div>
@@ -3998,7 +3998,7 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Study Data</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">Enter summary statistics (study, n, mean, sd)</p>
-                            <textarea id="fabrication-data-input" placeholder="study,n,mean,sd&#10;Study1,47,3.52,1.23&#10;Study2,31,4.16,0.89&#10;Study3,25,2.84,1.51&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="fabrication-data-input" placeholder="study,n,mean,sd&#10;Study1,47,3.52,1.23&#10;Study2,31,4.16,0.89&#10;Study3,25,2.84,1.51&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Study Data"></textarea>
                         </div>
 
                         <div class="card">
@@ -4046,12 +4046,12 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Training Data (Labeled Abstracts)</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">Provide examples of included/excluded abstracts to train the classifier</p>
-                            <textarea id="ml-training-data" placeholder="label,text&#10;include,This randomized controlled trial compared drug A versus placebo in patients with...&#10;exclude,This review summarizes the current literature on...&#10;include,We conducted a prospective cohort study of 500 patients...&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="ml-training-data" placeholder="label,text&#10;include,This randomized controlled trial compared drug A versus placebo in patients with...&#10;exclude,This review summarizes the current literature on...&#10;include,We conducted a prospective cohort study of 500 patients...&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Training Data (Labeled Abstracts)"></textarea>
                         </div>
 
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Abstracts to Screen</h4>
-                            <textarea id="ml-screen-data" placeholder="id,text&#10;1,This study evaluated the efficacy of...&#10;2,We performed a systematic review of...&#10;3,A multicenter randomized trial was conducted...&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="ml-screen-data" placeholder="id,text&#10;1,This study evaluated the efficacy of...&#10;2,We performed a systematic review of...&#10;3,A multicenter randomized trial was conducted...&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Abstracts to Screen"></textarea>
                         </div>
 
                         <div class="card" style="margin-bottom: 24px;">
@@ -4078,7 +4078,7 @@
                         <div class="card">
                             <h4>PICO Extraction</h4>
                             <div style="margin-top: 12px;">
-                                <textarea id="pico-text-input" placeholder="Paste abstract text here for automatic PICO extraction..." style="width: 100%; height: 100px; padding: 12px; border: 1px solid var(--border); border-radius: 4px;"></textarea>
+                                <textarea id="pico-text-input" placeholder="Paste abstract text here for automatic PICO extraction..." style="width: 100%; height: 100px; padding: 12px; border: 1px solid var(--border); border-radius: 4px;" aria-label="PICO Extraction"></textarea>
                                 <button class="btn btn-secondary" id="btn-extract-pico" style="margin-top: 8px;">Extract PICO</button>
                             </div>
                             <div id="pico-results" style="margin-top: 16px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;"></div>
@@ -4100,7 +4100,7 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Primary Method</label>
-                                    <select id="mr-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="mr-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Primary Method">
                                         <option value="ivw">Inverse Variance Weighted (IVW)</option>
                                         <option value="mr-egger">MR-Egger</option>
                                         <option value="weighted-median">Weighted Median</option>
@@ -4109,7 +4109,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Effect Type</label>
-                                    <select id="mr-effect" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="mr-effect" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Effect Type">
                                         <option value="fixed">Fixed Effects</option>
                                         <option value="random">Random Effects (Multiplicative)</option>
                                     </select>
@@ -4120,7 +4120,7 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Genetic Instrument Data</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">SNP-exposure and SNP-outcome associations</p>
-                            <textarea id="mr-data-input" placeholder="snp,beta_exposure,se_exposure,beta_outcome,se_outcome&#10;rs12345,0.05,0.01,0.02,0.008&#10;rs67890,0.08,0.015,0.025,0.01&#10;rs11111,-0.03,0.012,-0.01,0.009&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="mr-data-input" placeholder="snp,beta_exposure,se_exposure,beta_outcome,se_outcome&#10;rs12345,0.05,0.01,0.02,0.008&#10;rs67890,0.08,0.015,0.025,0.01&#10;rs11111,-0.03,0.012,-0.01,0.009&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Genetic Instrument Data"></textarea>
                         </div>
 
                         <div class="card" style="margin-bottom: 24px;">
@@ -4165,7 +4165,7 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Borrowing Method</label>
-                                    <select id="historical-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="historical-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Borrowing Method">
                                         <option value="power-prior">Power Prior</option>
                                         <option value="map">Meta-Analytic Predictive (MAP)</option>
                                         <option value="robust-map">Robust MAP</option>
@@ -4174,7 +4174,7 @@
                                 </div>
                                 <div class="info-item">
                                     <label>Power Parameter (a0)</label>
-                                    <input type="number" id="historical-a0" value="0.5" min="0" max="1" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="historical-a0" value="0.5" min="0" max="1" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Power Parameter (a0)">
                                 </div>
                             </div>
                         </div>
@@ -4184,15 +4184,15 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Sample Size</label>
-                                    <input type="number" id="current-n" value="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="current-n" value="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Sample Size">
                                 </div>
                                 <div class="info-item">
                                     <label>Mean</label>
-                                    <input type="number" id="current-mean" value="2.5" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="current-mean" value="2.5" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Mean">
                                 </div>
                                 <div class="info-item">
                                     <label>SD</label>
-                                    <input type="number" id="current-sd" value="1.2" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="current-sd" value="1.2" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="SD">
                                 </div>
                             </div>
                         </div>
@@ -4202,15 +4202,15 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Sample Size</label>
-                                    <input type="number" id="historical-n" value="200" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="historical-n" value="200" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Sample Size">
                                 </div>
                                 <div class="info-item">
                                     <label>Mean</label>
-                                    <input type="number" id="historical-mean" value="2.8" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="historical-mean" value="2.8" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Mean">
                                 </div>
                                 <div class="info-item">
                                     <label>SD</label>
-                                    <input type="number" id="historical-sd" value="1.0" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="historical-sd" value="1.0" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="SD">
                                 </div>
                             </div>
                         </div>
@@ -4251,14 +4251,14 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Approach</label>
-                                    <select id="survival-approach" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="survival-approach" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Approach">
                                         <option value="fp">Fractional Polynomials</option>
                                         <option value="royston-parmar">Royston-Parmar (Splines)</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Max Degree / Knots</label>
-                                    <input type="number" id="survival-complexity" value="2" min="1" max="5" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="survival-complexity" value="2" min="1" max="5" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Max Degree / Knots">
                                 </div>
                             </div>
                         </div>
@@ -4266,7 +4266,7 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Reconstructed IPD (from KM curves)</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">Time and cumulative hazard data from each study</p>
-                            <textarea id="survival-data-input" placeholder="study,treatment,time,cumHazard&#10;Study1,A,0,0&#10;Study1,A,6,0.1&#10;Study1,A,12,0.25&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="survival-data-input" placeholder="study,treatment,time,cumHazard&#10;Study1,A,0,0&#10;Study1,A,6,0.1&#10;Study1,A,12,0.25&#10;..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Reconstructed IPD (from KM curves)"></textarea>
                         </div>
 
                         <div class="card">
@@ -4292,14 +4292,14 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Context</label>
-                                    <select id="threshold-context" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="threshold-context" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Context">
                                         <option value="nma">NMA Treatment Ranking</option>
                                         <option value="cea">Cost-Effectiveness Decision</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Decision Criterion</label>
-                                    <select id="threshold-criterion" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="threshold-criterion" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Decision Criterion">
                                         <option value="best">Identify Best Treatment</option>
                                         <option value="better-than-reference">Better Than Reference</option>
                                     </select>
@@ -4309,7 +4309,7 @@
 
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Current Estimates</h4>
-                            <textarea id="threshold-data-input" placeholder="treatment,effect,se&#10;Treatment A,0.5,0.12&#10;Treatment B,0.35,0.15&#10;Treatment C,0.28,0.18&#10;Placebo,0,0.1&#10;..." style="width: 100%; height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="threshold-data-input" placeholder="treatment,effect,se&#10;Treatment A,0.5,0.12&#10;Treatment B,0.35,0.15&#10;Treatment C,0.28,0.18&#10;Placebo,0,0.1&#10;..." style="width: 100%; height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Current Estimates"></textarea>
                         </div>
 
                         <div class="card">
@@ -4347,14 +4347,14 @@
                             <div class="info-grid" style="margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Method</label>
-                                    <select id="federated-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <select id="federated-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Method">
                                         <option value="distributed">Distributed MA (Summary Only)</option>
                                         <option value="differential-privacy">Differential Privacy</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Privacy Parameter (epsilon)</label>
-                                    <input type="number" id="federated-epsilon" value="1.0" min="0.1" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                                    <input type="number" id="federated-epsilon" value="1.0" min="0.1" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Privacy Parameter (epsilon)">
                                     <small style="color: var(--text-muted);">Lower = more private, less accurate</small>
                                 </div>
                             </div>
@@ -4363,7 +4363,7 @@
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Site Summary Statistics</h4>
                             <p style="color: var(--text-muted); margin-bottom: 12px;">Each site shares only summary statistics, not individual data</p>
-                            <textarea id="federated-data-input" placeholder="site,n,mean,variance&#10;Hospital A,150,2.3,1.2&#10;Hospital B,200,2.5,0.9&#10;Hospital C,80,2.1,1.5&#10;..." style="width: 100%; height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;"></textarea>
+                            <textarea id="federated-data-input" placeholder="site,n,mean,variance&#10;Hospital A,150,2.3,1.2&#10;Hospital B,200,2.5,0.9&#10;Hospital C,80,2.1,1.5&#10;..." style="width: 100%; height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: monospace;" aria-label="Site Summary Statistics"></textarea>
                         </div>
 
                         <div class="card" style="margin-bottom: 24px;">
@@ -4422,7 +4422,7 @@
     <div id="test-results-panel"></div>
 
     <!-- Hidden File Input -->
-    <input type="file" id="file-input" accept=".zip,.hta.zip,.json">
+    <input type="file" id="file-input" accept=".zip,.hta.zip,.json" aria-label="File input">
 
     <script src="src/utils/kahan.js"></script>
     <script src="src/utils/pcg32.js"></script>
@@ -4504,9 +4504,9 @@
             row.className = 'calibration-param-row';
             row.style = 'display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-top: 8px;';
             row.innerHTML = `
-                <input type="text" class="calib-param-name" placeholder="Parameter name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                <input type="number" class="calib-param-lower" placeholder="Lower bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                <input type="number" class="calib-param-upper" placeholder="Upper bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                <input type="text" class="calib-param-name" placeholder="Parameter name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Parameter name">
+                <input type="number" class="calib-param-lower" placeholder="Lower bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Lower bound">
+                <input type="number" class="calib-param-upper" placeholder="Upper bound" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Upper bound">
             `;
             container.appendChild(row);
         }
@@ -4517,15 +4517,15 @@
             row.className = 'calibration-target-row';
             row.style = 'display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 8px;';
             row.innerHTML = `
-                <input type="text" class="calib-target-name" placeholder="Target name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                <select class="calib-target-type" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                <input type="text" class="calib-target-name" placeholder="Target name" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Target name">
+                <select class="calib-target-type" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Calib target type">
                     <option value="state_proportion">State Proportion</option>
                     <option value="survival">Survival</option>
                     <option value="incidence">Incidence</option>
                 </select>
-                <input type="number" class="calib-target-time" placeholder="Time" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                <input type="number" class="calib-target-observed" placeholder="Observed value" step="0.001" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
-                <input type="number" class="calib-target-weight" placeholder="Weight" value="1" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
+                <input type="number" class="calib-target-time" placeholder="Time" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Time">
+                <input type="number" class="calib-target-observed" placeholder="Observed value" step="0.001" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Observed value">
+                <input type="number" class="calib-target-weight" placeholder="Weight" value="1" style="padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Weight">
             `;
             container.appendChild(row);
         }
