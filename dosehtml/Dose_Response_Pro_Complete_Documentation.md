@@ -572,7 +572,7 @@ downloadFile(rCode, 'dose_response_analysis.R', 'text/plain');
 
 9. **Orsini N, et al.** (2023). dosresmeta: Multivariate Dose-Response Meta-Analysis. R package version 2.0.1.
 
-10. **Viechtbauer W.** (2010). Conducting meta-analyses in R with the metafor package. *Journal of Statistical Software*, 36(3), 1-48.
+10. **Viechtbauer W.** (2010). Conducting meta-analyses in R with the metafor package. *Journal of Statistical Software*, 36(3), 1-48. doi:10.18637/jss.v036.i03
 
 ---
 

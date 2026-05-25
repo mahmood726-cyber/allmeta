@@ -1,4 +1,7 @@
-"""Replace hardcoded `C:/Projects/allmeta/...` oracle paths in
+# sentinel:skip-file — this is the one-shot script that REMOVES the
+# hardcoded paths from parity-spec .mjs files. Naturally it contains
+# the absolute paths it is fixing. Exempt from P0-hardcoded-local-path.
+"""Replace hardcoded developer-machine oracle paths in
 hub/shared/tests/*-parity.spec.mjs with relative URLs resolved from
 import.meta.url. Closes the portability gap noted in lessons.md
 "No hardcoded local paths in deployable code".

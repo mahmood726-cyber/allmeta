@@ -178,6 +178,6 @@ The authors thank the developers of the dosresmeta, metafor, and mvmeta R packag
 11. Freeman SC, Kerby CR, Patel A, Cooper NJ, Quinn T, Sutton AJ. Development of an interactive web-based tool to conduct and interrogate meta-analysis of diagnostic test accuracy studies: MetaDTA. BMC Med Res Methodol. 2019;19:81.
 12. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188.
 13. Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21(11):1539-1558.
-14. Page MJ, McKenzie JE, Bossuyt PM, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71.
+14. Page MJ, McKenzie JE, Bossuyt PM, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71. doi:10.1136/bmj.n71
 15. Ahmad M, Kumar N, Dar B, Khan L, Woo A. Dose Response Pro v18.1 [Source code]. GitHub. 2026. https://github.com/mahmood726-cyber/dose-response-pro
 16. Ahmad M, Kumar N, Dar B, Khan L, Woo A. Dose Response Pro v18.1 (archived source code at time of publication). Zenodo. 2026. https://doi.org/10.5281/zenodo.18922680

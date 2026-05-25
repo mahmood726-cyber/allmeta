@@ -197,13 +197,13 @@ The software fills an important niche by providing powerful IPD meta-analysis ca
 
 ## References
 
-1. Viechtbauer W (2010). Conducting Meta-Analyses in R with the metafor Package. Journal of Statistical Software, 36(3), 1-48.
+1. Viechtbauer W (2010). Conducting Meta-Analyses in R with the metafor Package. Journal of Statistical Software, 36(3), 1-48. doi:10.18637/jss.v036.i03
 
 2. DerSimonian R, Laird N (1986). Meta-analysis in clinical trials. Controlled Clinical Trials, 7(3), 177-188.
 
 3. Hartung J, Knapp G (2001). On tests of the overall treatment effect in meta-analysis with normally distributed responses. Statistics in Medicine, 20(12), 1771-1782.
 
-4. Riley RD, Higgins JPT, Deeks JJ (2011). Interpretation of random effects meta-analyses. BMJ, 342:d549.
+4. Riley RD, Higgins JPT, Deeks JJ (2011). Interpretation of random effects meta-analyses. BMJ, 342:d549. doi:10.1136/bmj.d549
 
 5. Higgins JPT, Thompson SG (2002). Quantifying heterogeneity in a meta-analysis. Statistics in Medicine, 21(11), 1539-1558.
 

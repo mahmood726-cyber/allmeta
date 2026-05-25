@@ -596,7 +596,7 @@ Potential additional enhancements identified:
 
 3. **Bootstrap CIs**: Efron B, Tibshirani RJ (1994). *An Introduction to the Bootstrap*. Chapman & Hall.
 
-4. **Subgroup Analysis**: Deeks JJ, et al. (2019). Chapter 10: Analysing data and undertaking meta-analyses. *Cochrane Handbook for Systematic Reviews of Interventions*.
+4. **Subgroup Analysis**: Deeks JJ, et al. (2019). Chapter 10: Analysing data and undertaking meta-analyses. *Cochrane Handbook for Systematic Reviews of Interventions*. doi:10.1002/9781119536604
 
 ---
 

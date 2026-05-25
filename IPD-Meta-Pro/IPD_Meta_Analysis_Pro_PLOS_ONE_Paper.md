@@ -490,13 +490,13 @@ IPD Meta-Analysis Pro provides a validated, accessible browser-based tool for in
 
 3. Debray TPA, Moons KGM, van Valkenhoef G, et al. Get real in individual participant data (IPD) meta-analysis: a review of the methodology. Res Synth Methods. 2015;6(4):293-309.
 
-4. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.4. Cochrane; 2023.
+4. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.4. Cochrane; 2023. doi:10.1002/9781119536604
 
 5. Huang Y, Tang J, Tam WWS, et al. Comparing the overall result and interaction in aggregate data meta-analysis and individual patient data meta-analysis. Medicine. 2016;95(14):e3312.
 
 6. Simmonds MC, Higgins JP, Stewart LA, et al. Meta-analysis of individual patient data from randomized trials: a review of methods used in practice. Clin Trials. 2005;2(3):209-217.
 
-7. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48.
+7. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48. doi:10.18637/jss.v036.i03
 
 8. Fisher DJ. Two-stage individual participant data meta-analysis and generalized forest plots. Stata J. 2015;15(2):369-396.
 
@@ -538,7 +538,7 @@ IPD Meta-Analysis Pro provides a validated, accessible browser-based tool for in
 
 27. Light RJ, Pillemer DB. Summing Up: The Science of Reviewing Research. Harvard University Press; 1984.
 
-28. Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. BMJ. 1997;315(7109):629-634.
+28. Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. BMJ. 1997;315(7109):629-634. doi:10.1136/bmj.315.7109.629
 
 29. Begg CB, Mazumdar M. Operating characteristics of a rank correlation test for publication bias. Biometrics. 1994;50(4):1088-1101.
 

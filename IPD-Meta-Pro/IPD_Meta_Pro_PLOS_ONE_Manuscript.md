@@ -262,7 +262,7 @@ No human participants were newly recruited for this software methods study. Anal
 4. Tierney JF, Stewart LA, Ghersi D, Burdett S, Sydes MR. Practical methods for incorporating summary time-to-event data into meta-analysis. Trials. 2007;8:16.
 5. Simmonds MC, Higgins JPT, Stewart LA, Tierney JF, Clarke MJ, Thompson SG. Meta-analysis of individual patient data from randomized trials: a review of methods used in practice. Clin Trials. 2005;2(3):209-217.
 6. Fisher DJ, et al. Meta-analysis of individual participant data by treatment-covariate interactions. Stat Med. 2017;36:331-349.
-7. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48.
+7. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48. doi:10.18637/jss.v036.i03
 8. Schwarzer G. meta: An R package for meta-analysis. R News. 2007;7(3):40-45.
 9. White IR, et al. Meta-analysis with individual participant data. Stata J. 2017;17(3):588-605.
 10. Balduzzi S, Rücker G, Schwarzer G. How to perform a meta-analysis with R: a practical tutorial. Evid Based Ment Health. 2019;22:153-160.
@@ -273,11 +273,11 @@ No human participants were newly recruited for this software methods study. Anal
 15. Salanti G, Ades AE, Ioannidis JPA. Graphical methods and numerical summaries for presenting results from multiple-treatment meta-analysis. J Clin Epidemiol. 2011;64:163-171.
 16. Turner RM, et al. Predicting the extent of heterogeneity in meta-analysis using empirical data from the Cochrane Database. Int J Epidemiol. 2012;41:818-827.
 17. Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21:1539-1558.
-18. Higgins JPT, et al. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.x. Cochrane.
-19. Riley RD, et al. Interpretation of random effects meta-analyses. BMJ. 2011;342:d549.
+18. Higgins JPT, et al. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.x. Cochrane. doi:10.1002/9781119536604
+19. Riley RD, et al. Interpretation of random effects meta-analyses. BMJ. 2011;342:d549. doi:10.1136/bmj.d549
 20. Debray TPA, et al. A framework for developing, implementing, and evaluating clinical prediction models in an IPD meta-analysis context. Stat Med. 2013;32:3158-3180.
 21. Dahabreh IJ, et al. Extending inferences from a randomized trial to a target population. Eur J Epidemiol. 2020;35:111-122.
-22. Page MJ, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71.
+22. Page MJ, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71. doi:10.1136/bmj.n71
 23. Gelman A, et al. Bayesian Data Analysis. 3rd ed. CRC Press; 2013.
 24. Carpenter B, et al. Stan: A probabilistic programming language. J Stat Softw. 2017;76(1):1-32.
 25. Bucher HC, et al. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. J Clin Epidemiol. 1997;50:683-691.
