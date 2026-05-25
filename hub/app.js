@@ -430,7 +430,12 @@
     headText.appendChild(h3);
     head.appendChild(headText);
 
-    const isNew = project.collection === "new";
+    // Pill: "New App" is a freshness signal — true only when the entry was
+    // added to the catalog within NEW_WINDOW_DAYS. Previously this read
+    // project.collection === "new", which was set on 89 of 90 entries and
+    // therefore conveyed no information. The `collection` field is preserved
+    // because the top-bar filter chips ("All / Existing / New") still use it.
+    const isNew = daysSince(parseAdded(project)) < NEW_WINDOW_DAYS;
     const isServer = project.mode === "server";
     const pill = document.createElement("span");
     pill.className = "pill " + (isNew ? "pill-new" : isServer ? "pill-server" : "pill-ready");
