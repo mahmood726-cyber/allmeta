@@ -357,6 +357,49 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   .featured-card:hover, .featured-card:focus { background: rgba(224, 124, 90, 0.16); border-color: rgba(224, 124, 90, 0.40); }
 }
 
+/* Recently-added strip — mirrors .featured-strip layout but with a cooler
+   blue accent so it reads as a separate affordance, and uses card bodies
+   that include a one-line summary plus an "added X days ago" badge. */
+.recent-strip { margin: 12px 0 18px; }
+.recent-strip-heading { font-size: 1.4rem; margin-bottom: 6px; }
+.recent-strip-sub { color: var(--muted); font-family: system-ui, sans-serif; font-size: 0.9rem; margin-bottom: 14px; }
+.recent-strip-row {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.recent-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px;
+  background: rgba(44, 94, 138, 0.06);
+  border: 1px solid rgba(44, 94, 138, 0.30);
+  border-radius: 12px;
+  text-decoration: none; color: var(--ink);
+  font-family: system-ui, sans-serif;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.recent-card:hover, .recent-card:focus {
+  background: rgba(44, 94, 138, 0.12);
+  border-color: rgba(44, 94, 138, 0.50);
+  transform: translateY(-1px);
+}
+.recent-card-head { display: flex; align-items: center; gap: 10px; }
+.recent-card-name { font-size: 0.95rem; font-weight: 600; }
+.recent-card-summary { font-size: 0.82rem; color: var(--muted); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; }
+.recent-card-meta { display: flex; gap: 8px; align-items: center; }
+.recent-card-when {
+  font-size: 0.72rem; color: var(--muted);
+  background: rgba(44, 94, 138, 0.10);
+  padding: 2px 8px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+@media (prefers-color-scheme: dark) {
+  .recent-card { background: rgba(120, 170, 220, 0.08); border-color: rgba(120, 170, 220, 0.20); }
+  .recent-card:hover, .recent-card:focus { background: rgba(120, 170, 220, 0.14); border-color: rgba(120, 170, 220, 0.40); }
+  .recent-card-when { background: rgba(120, 170, 220, 0.14); }
+}
+
 /* Filter chip count "(n)" — quieter than the label */
 .filter-chip-count { opacity: 0.55; font-weight: 500; margin-left: 2px; }
 
@@ -810,6 +853,7 @@ select:focus-visible, textarea:focus-visible, .filter-chip:focus-visible {
   .panel-card,
   .controls-panel,
   .featured-strip,
+  .recent-strip,
   .catalog-grid > *,
   .tip-card {
     border: 1px solid CanvasText;
