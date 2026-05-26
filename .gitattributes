@@ -1,0 +1,22 @@
+# Vendored third-party assets must be treated as binary so Git does not apply
+# CRLF line-ending conversion on Windows clones. Without this, the byte hash of
+# every vendored .min.js file changes on clone — Plotly's <script integrity=...>
+# Subresource-Integrity check then blocks the script, and nma-pro-v2 (and any
+# other app that uses SRI) silently fails to render any plot. Diagnosed
+# 2026-05-26: Windows clone of plotly-2.35.0.min.js had `0d 0a` (CRLF) line
+# endings, hash mismatch, browser blocked the script, every Plotly call failed.
+*.min.js binary
+*.umd.min.js binary
+*.full.min.js binary
+
+# Same defence for other CDN-fetched bundles we vendor.
+shared/vendor/*.js binary
+hub/shared/vendor/*.js binary
+
+# Source files should keep platform-default line endings.
+*.html text
+*.css text
+*.json text
+*.md text
+*.py text eol=lf
+*.sh text eol=lf
