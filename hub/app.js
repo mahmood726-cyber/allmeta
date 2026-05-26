@@ -116,6 +116,40 @@
   const filterBar = document.getElementById("filter-bar");
   const resultsSummary = document.getElementById("results-summary");
   const featuredStrip = document.getElementById("featured-strip");
+  const recentStrip = document.getElementById("recent-strip");
+
+  // "Recently added" / "New App" pill window. Apps with `added` within this
+  // many days of today are surfaced in the recent strip (top 5 by recency)
+  // and badged "New App" on their catalog card.
+  const NEW_WINDOW_DAYS = 60;
+  const RECENT_STRIP_LIMIT = 5;
+
+  // Parse an ISO YYYY-MM-DD `added` field into a Date in UTC midnight. Returns
+  // null on missing or unparseable input so callers can skip those entries.
+  function parseAdded(p) {
+    if (!p || typeof p.added !== "string") return null;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(p.added);
+    if (!m) return null;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function daysSince(date) {
+    if (!date) return Infinity;
+    return (Date.now() - date.getTime()) / 86400000;
+  }
+
+  function formatDaysAgo(days) {
+    if (!isFinite(days)) return "";
+    const d = Math.floor(days);
+    if (d <= 0) return "added today";
+    if (d === 1) return "added 1 day ago";
+    if (d < 14) return "added " + d + " days ago";
+    const weeks = Math.floor(d / 7);
+    if (weeks < 8) return "added " + weeks + (weeks === 1 ? " week ago" : " weeks ago");
+    const months = Math.floor(d / 30);
+    return "added " + months + (months === 1 ? " month ago" : " months ago");
+  }
 
   const counts = {
     launchable: document.getElementById("launchable-count"),
@@ -396,7 +430,12 @@
     headText.appendChild(h3);
     head.appendChild(headText);
 
-    const isNew = project.collection === "new";
+    // Pill: "New App" is a freshness signal — true only when the entry was
+    // added to the catalog within NEW_WINDOW_DAYS. Previously this read
+    // project.collection === "new", which was set on 89 of 90 entries and
+    // therefore conveyed no information. The `collection` field is preserved
+    // because the top-bar filter chips ("All / Existing / New") still use it.
+    const isNew = daysSince(parseAdded(project)) < NEW_WINDOW_DAYS;
     const isServer = project.mode === "server";
     const pill = document.createElement("span");
     pill.className = "pill " + (isNew ? "pill-new" : isServer ? "pill-server" : "pill-ready");
@@ -540,6 +579,72 @@
     featuredStrip.appendChild(row);
   }
 
+  // Render the "Recently added" strip — top N entries by `added` date,
+  // skipping anything without a parseable date. Hidden by render() when a
+  // filter/search is active (it's a browse affordance, not a result).
+  function renderRecentStrip() {
+    if (!recentStrip) return;
+    const dated = projects
+      .map((p) => ({ p, d: parseAdded(p) }))
+      .filter((x) => x.d && x.p.mode !== "server");
+    if (!dated.length) {
+      recentStrip.hidden = true;
+      recentStrip.innerHTML = "";
+      return;
+    }
+    dated.sort((a, b) => b.d.getTime() - a.d.getTime());
+    const top = dated.slice(0, RECENT_STRIP_LIMIT);
+
+    recentStrip.hidden = false;
+    recentStrip.innerHTML = "";
+
+    const heading = document.createElement("h2");
+    heading.className = "recent-strip-heading";
+    heading.textContent = "Recently added";
+    recentStrip.appendChild(heading);
+
+    const sub = document.createElement("p");
+    sub.className = "recent-strip-sub";
+    sub.textContent = "The newest tools in the catalog.";
+    recentStrip.appendChild(sub);
+
+    const row = document.createElement("div");
+    row.className = "recent-strip-row";
+    top.forEach(({ p, d }) => {
+      const card = document.createElement("a");
+      card.className = "recent-card";
+      card.href = safeHref(p.path);
+      card.setAttribute("aria-label", "Open " + p.name);
+
+      const head = document.createElement("span");
+      head.className = "recent-card-head";
+      head.appendChild(makeThumb(p));
+      const name = document.createElement("strong");
+      name.className = "recent-card-name";
+      name.textContent = p.name;
+      head.appendChild(name);
+      card.appendChild(head);
+
+      if (p.summary) {
+        const sm = document.createElement("span");
+        sm.className = "recent-card-summary";
+        sm.textContent = p.summary;
+        card.appendChild(sm);
+      }
+
+      const meta = document.createElement("span");
+      meta.className = "recent-card-meta";
+      const when = document.createElement("span");
+      when.className = "recent-card-when";
+      when.textContent = formatDaysAgo(daysSince(d));
+      meta.appendChild(when);
+      card.appendChild(meta);
+
+      row.appendChild(card);
+    });
+    recentStrip.appendChild(row);
+  }
+
   function render() {
     const query = (searchInput.value || "").trim().toLowerCase();
     const visible = projects.filter((project) => matchesFilter(project) && matchesSearch(project, query));
@@ -566,6 +671,13 @@
       const filtering = activeFilter !== "All" || !!query;
       const noFeatured = !projects.some((p) => p.featured);
       featuredStrip.hidden = filtering || noFeatured;
+    }
+    // Recent strip mirrors the featured strip's hide-when-filtering behaviour
+    // for the same reason: it's a browse affordance, not a result.
+    if (recentStrip) {
+      const filtering = activeFilter !== "All" || !!query;
+      const noDated = !projects.some((p) => parseAdded(p));
+      recentStrip.hidden = filtering || noDated;
     }
   }
 
@@ -612,6 +724,7 @@
   // This keeps the hub usable even on networks where ./triage.json is slow.
   createFilterButtons();
   renderFeaturedStrip();
+  renderRecentStrip();
   render();
   loadTriage().then(function () {
     // Re-render the parts that depend on tier data.

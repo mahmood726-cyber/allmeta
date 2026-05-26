@@ -114,6 +114,12 @@
 
       <section class="featured-strip" id="featured-strip" aria-label="Most-used tools" hidden></section>
 
+      <!-- Recently-added strip: 5 newest catalog entries. Sourced from the
+           `added` field in hub/projects.js (backfilled by scripts/backfill-added-dates.mjs
+           against the git log for hub/projects.js, so the date reflects when each
+           entry was first added to the catalog). Hidden during active search/filter. -->
+      <section class="recent-strip" id="recent-strip" aria-label="Recently added" hidden></section>
+
       <!-- WCAG 4.1.3 — count announcements live in #results-summary; keep grid quiet to avoid a catalog-card storm on every keystroke -->
       <section class="catalog-grid" id="project-grid"></section>
     </main>
