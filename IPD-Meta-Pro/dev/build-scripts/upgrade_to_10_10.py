@@ -20,9 +20,9 @@ def main():
     print("="*60)
 
     # =========================================================================
-    # 1. EFFECT SIZE MEASURES (9â†’10): Add IRR, diagnostic accuracy measures
+    # 1. EFFECT SIZE MEASURES (9→10): Add IRR, diagnostic accuracy measures
     # =========================================================================
-    print("\n[1] Effect Size Measures (9â†’10)")
+    print("\n[1] Effect Size Measures (9→10)")
 
     effect_size_additions = '''
 // === ADDITIONAL EFFECT SIZE MEASURES (10/10 Upgrade) ===
@@ -141,9 +141,9 @@ window.EffectSizeMeasures = EffectSizeMeasures;
         print("  [WARN] Could not find insertion point for effect size measures")
 
     # =========================================================================
-    # 2. SURVIVAL ANALYSIS (9â†’10): Add landmark analysis, flexible parametric
+    # 2. SURVIVAL ANALYSIS (9→10): Add landmark analysis, flexible parametric
     # =========================================================================
-    print("\n[2] Survival Analysis (9â†’10)")
+    print("\n[2] Survival Analysis (9→10)")
 
     survival_additions = '''
 // === ADVANCED SURVIVAL ANALYSIS (10/10 Upgrade) ===
@@ -305,9 +305,9 @@ window.AdvancedSurvival = AdvancedSurvival;
         print("  [WARN] Could not find insertion point for survival additions")
 
     # =========================================================================
-    # 3. NETWORK META-ANALYSIS (8â†’10): Component NMA, network meta-regression
+    # 3. NETWORK META-ANALYSIS (8→10): Component NMA, network meta-regression
     # =========================================================================
-    print("\n[3] Network Meta-Analysis (8â†’10)")
+    print("\n[3] Network Meta-Analysis (8→10)")
 
     nma_additions = '''
 // === ADVANCED NMA METHODS (10/10 Upgrade) ===
@@ -505,9 +505,9 @@ window.AdvancedNMA = AdvancedNMA;
         print("  [WARN] Could not find insertion point for NMA additions")
 
     # =========================================================================
-    # 4. BAYESIAN METHODS (9â†’10): DIC, WAIC, prior sensitivity
+    # 4. BAYESIAN METHODS (9→10): DIC, WAIC, prior sensitivity
     # =========================================================================
-    print("\n[4] Bayesian Methods (9â†’10)")
+    print("\n[4] Bayesian Methods (9→10)")
 
     bayesian_additions = '''
 // === ADVANCED BAYESIAN METHODS (10/10 Upgrade) ===
@@ -731,9 +731,9 @@ window.AdvancedBayesian = AdvancedBayesian;
         print("  [WARN] Could not find insertion point for Bayesian additions")
 
     # =========================================================================
-    # 5. DOCUMENTATION (9â†’10): Interactive tutorials
+    # 5. DOCUMENTATION (9→10): Interactive tutorials
     # =========================================================================
-    print("\n[5] Documentation (9â†’10)")
+    print("\n[5] Documentation (9→10)")
 
     # Add tutorial system
     tutorial_additions = '''

@@ -473,9 +473,9 @@ print("\n[5/8] Updating IV weak instrument thresholds...")
 
 old_iv_threshold = '''const weakIV = fStat < 10;
                 if (weakIV) {
-                    html += '<p style="color: #f44336;">âš ï¸ <strong>Weak instrument warning:</strong> F-statistic < 10 suggests weak instrument bias.</p>';
+                    html += '<p style="color: #f44336;">⚠ï¸ <strong>Weak instrument warning:</strong> F-statistic < 10 suggests weak instrument bias.</p>';
                 } else {
-                    html += '<p style="color: #4CAF50;">âœ… <strong>Strong instrument:</strong> F-statistic â‰¥ 10</p>';
+                    html += '<p style="color: #4CAF50;">✅ <strong>Strong instrument:</strong> F-statistic ≥ 10</p>';
                 }'''
 
 new_iv_threshold = '''// Updated thresholds per Lee et al. (2022) and Stock & Yogo (2005)

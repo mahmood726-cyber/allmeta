@@ -11,7 +11,7 @@ remaining critical gaps for rigorous meta-analysis:
    - Outlier identification
    - Precision-weighted display
 
-2. L'ABBÃ‰ PLOT (L'AbbÃ© 1987)
+2. L'ABBÉ PLOT (L'Abbé 1987)
    - Treatment vs control event rates
    - Visual heterogeneity for binary outcomes
    - Line of equality
@@ -42,7 +42,7 @@ remaining critical gaps for rigorous meta-analysis:
    - DFBETAS
    - Studentized residuals
 
-8. DRAPERY PLOT (RÃ¼cker 2020)
+8. DRAPERY PLOT (Rücker 2020)
    - P-value function visualization
    - Compatibility intervals
    - Full inferential information
@@ -122,7 +122,7 @@ galbraith_code = '''
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // 95% CI bounds (z = Â±1.96)
+            // 95% CI bounds (z = ±1.96)
             ctx.beginPath();
             ctx.moveTo(margin.left, yScale(1.96));
             ctx.lineTo(width - margin.right, yScale(1.96));
@@ -251,18 +251,18 @@ if 'GalbraithPlot = {' not in content:
         enhancements_added.append("1. Galbraith (Radial) Plot (Galbraith 1988)")
 
 # ============================================================================
-# 2. L'ABBÃ‰ PLOT (L'AbbÃ© 1987)
+# 2. L'ABBÉ PLOT (L'Abbé 1987)
 # ============================================================================
 labbe_code = '''
     // ========================================================================
-    // L'ABBÃ‰ PLOT (L'AbbÃ© 1987)
+    // L'ABBÉ PLOT (L'Abbé 1987)
     // ========================================================================
     // RSM Editorial: Essential for binary outcome heterogeneity visualization
-    // Reference: L'AbbÃ© KA, et al. Ann Intern Med 1987;107:224-233
+    // Reference: L'Abbé KA, et al. Ann Intern Med 1987;107:224-233
 
     const LabbePlot = {
         /**
-         * Draw L'AbbÃ© plot for binary outcomes
+         * Draw L'Abbé plot for binary outcomes
          * X-axis: Control event rate, Y-axis: Treatment event rate
          */
         draw: function(canvas, studyData, options = {}) {
@@ -398,7 +398,7 @@ labbe_code = '''
 
             // Title
             ctx.font = 'bold 14px sans-serif';
-            ctx.fillText("L'AbbÃ© Plot", width / 2, 25);
+            ctx.fillText("L'Abbé Plot", width / 2, 25);
 
             // Legend
             ctx.font = '10px sans-serif';
@@ -446,7 +446,7 @@ if 'LabbePlot = {' not in content:
     insert_pos = content.rfind('</script>')
     if insert_pos > 0:
         content = content[:insert_pos] + labbe_code + '\n    ' + content[insert_pos:]
-        enhancements_added.append("2. L'AbbÃ© Plot (L'AbbÃ© 1987)")
+        enhancements_added.append("2. L'Abbé Plot (L'Abbé 1987)")
 
 # ============================================================================
 # 3. CUMULATIVE META-ANALYSIS (Lau 1992)
@@ -695,7 +695,7 @@ cumulative_code = '''
             // Results table
             html += '<div style="max-height:300px;overflow-y:auto">';
             html += '<table class="results-table" style="font-size:0.8rem">';
-            html += '<tr><th>#</th><th>Study</th><th>Effect (95% CI)</th><th>IÂ²</th></tr>';
+            html += '<tr><th>#</th><th>Study</th><th>Effect (95% CI)</th><th>I²</th></tr>';
 
             result.cumulative.forEach(r => {
                 html += `<tr>
@@ -742,7 +742,7 @@ failsafe_code = '''
             const sumZ = zScores.reduce((a, b) => a + b, 0);
             const zCrit = this.normQuantile(1 - alpha / 2);
 
-            // N = (sumZ / z_crit)Â² - k
+            // N = (sumZ / z_crit)² - k
             const N = Math.pow(sumZ / zCrit, 2) - k;
 
             // Tolerance level (5k + 10 rule of thumb)
@@ -770,7 +770,7 @@ failsafe_code = '''
             const sumW = weights.reduce((a, b) => a + b, 0);
             const meanEffect = effects.reduce((sum, e, i) => sum + weights[i] * e, 0) / sumW;
 
-            // N = k Ã— (|dÌ„| - d_trivial) / d_trivial
+            // N = k × (|dÌ„| - d_trivial) / d_trivial
             // Assumes new studies have effect of 0
             if (Math.abs(meanEffect) <= trivialEffect) {
                 return {
@@ -878,7 +878,7 @@ failsafe_code = '''
 
             // Caveat
             html += '<div style="margin-top:1rem;padding:0.75rem;background:var(--bg-secondary);border-radius:6px;font-size:0.85rem">';
-            html += '<strong>âš ï¸ Caveat:</strong> Fail-safe N has been criticized (Becker 2005). ';
+            html += '<strong>⚠ï¸ Caveat:</strong> Fail-safe N has been criticized (Becker 2005). ';
             html += 'Use alongside other publication bias methods (funnel plot, selection models).';
             html += '</div></div>';
 
@@ -975,7 +975,7 @@ influence_code = '''
                     results.outliers.push(studyResult);
                 }
 
-                // Flag influential (Cook's D > 4/k or |DFBETAS| > 2/âˆšk)
+                // Flag influential (Cook's D > 4/k or |DFBETAS| > 2/√k)
                 const dfbetasCutoff = 2 / Math.sqrt(k);
                 if (cookD > 4 / k || Math.abs(dfbetas) > dfbetasCutoff) {
                     results.influential.push(studyResult);
@@ -1153,7 +1153,7 @@ influence_code = '''
                 }
                 html += '</div>';
             } else {
-                html += '<p style="color:var(--accent-success)">âœ“ No outliers or influential studies detected</p>';
+                html += '<p style="color:var(--accent-success)">✓ No outliers or influential studies detected</p>';
             }
 
             // Detailed table
@@ -1189,14 +1189,14 @@ if 'InfluenceDiagnostics = {' not in content:
         enhancements_added.append("5. Influence Diagnostics (Viechtbauer 2010)")
 
 # ============================================================================
-# 6. DRAPERY PLOT (RÃ¼cker 2020)
+# 6. DRAPERY PLOT (Rücker 2020)
 # ============================================================================
 drapery_code = '''
     // ========================================================================
-    // DRAPERY PLOT (RÃ¼cker & Schwarzer 2020)
+    // DRAPERY PLOT (Rücker & Schwarzer 2020)
     // ========================================================================
     // RSM Editorial: Novel visualization of full p-value function
-    // Reference: RÃ¼cker G, Schwarzer G. Res Synth Methods 2020;11:4-17
+    // Reference: Rücker G, Schwarzer G. Res Synth Methods 2020;11:4-17
 
     const DraperyPlot = {
         /**
@@ -1297,7 +1297,7 @@ drapery_code = '''
             ctx.restore();
 
             ctx.font = 'bold 14px sans-serif';
-            ctx.fillText('Drapery Plot (RÃ¼cker 2020)', width / 2, 25);
+            ctx.fillText('Drapery Plot (Rücker 2020)', width / 2, 25);
 
             return canvas;
         },
@@ -1414,7 +1414,7 @@ if 'DraperyPlot = {' not in content:
     insert_pos = content.rfind('</script>')
     if insert_pos > 0:
         content = content[:insert_pos] + drapery_code + '\n    ' + content[insert_pos:]
-        enhancements_added.append("6. Drapery Plot (RÃ¼cker 2020)")
+        enhancements_added.append("6. Drapery Plot (Rücker 2020)")
 
 # ============================================================================
 # 7. QUALITY EFFECTS MODEL (Doi 2015)
@@ -1486,7 +1486,7 @@ quality_effects_code = '''
             const varWeights = variances.map(v => 1 / v);
 
             // Quality-adjusted weights (Doi approach)
-            // w_i = (q_i / sum(q)) Ã— (1/v_i)
+            // w_i = (q_i / sum(q)) × (1/v_i)
             const sumQuality = normQuality.reduce((a, b) => a + b, 0);
             const qeWeights = normQuality.map((q, i) =>
                 (q / sumQuality) * varWeights[i]
@@ -1536,7 +1536,7 @@ quality_effects_code = '''
                 <div class="stat-label">IVhet Effect</div>
             </div>`;
             html += `<div class="stat-box">
-                <div class="stat-value">${ivhetResult.ci_lower.toFixed(3)} â€“ ${ivhetResult.ci_upper.toFixed(3)}</div>
+                <div class="stat-value">${ivhetResult.ci_lower.toFixed(3)} – ${ivhetResult.ci_upper.toFixed(3)}</div>
                 <div class="stat-label">95% CI</div>
             </div>`;
             html += `<div class="stat-box">
@@ -1607,22 +1607,22 @@ ui_v7_code = '''
 
         btnContainer.innerHTML = `
             <button class="btn btn-secondary" onclick="showGalbraithPlot()" title="Galbraith (Radial) Plot">
-                ðŸ“Š Galbraith
+                📊 Galbraith
             </button>
-            <button class="btn btn-secondary" onclick="showLabbePlot()" title="L'AbbÃ© Plot for Binary Outcomes">
-                âš–ï¸ L'AbbÃ©
+            <button class="btn btn-secondary" onclick="showLabbePlot()" title="L'Abbé Plot for Binary Outcomes">
+                ⚖ï¸ L'Abbé
             </button>
             <button class="btn btn-secondary" onclick="showCumulativeMeta()" title="Cumulative Meta-Analysis">
-                ðŸ“ˆ Cumulative
+                📈 Cumulative
             </button>
             <button class="btn btn-secondary" onclick="showFailSafeN()" title="Fail-Safe N Analysis">
-                ðŸ›¡ï¸ Fail-Safe N
+                🛡ï¸ Fail-Safe N
             </button>
             <button class="btn btn-secondary" onclick="showInfluenceDiag()" title="Influence Diagnostics">
                 ðŸ” Influence
             </button>
             <button class="btn btn-secondary" onclick="showDraperyPlot()" title="Drapery Plot (P-value Function)">
-                ðŸŽ­ Drapery
+                🎭 Drapery
             </button>
             <button class="btn btn-secondary" onclick="showQualityEffects()" title="Quality Effects / IVhet">
                 â­ QE/IVhet
@@ -1668,7 +1668,7 @@ ui_v7_code = '''
         canvas.width = 600; canvas.height = 500;
         LabbePlot.draw(canvas, studyData, { showLabels: true, showContours: true });
 
-        showResultModalV7("L'AbbÃ© Plot", '', canvas);
+        showResultModalV7("L'Abbé Plot", '', canvas);
     };
 
     window.showCumulativeMeta = function() {
@@ -1811,10 +1811,10 @@ print("""
        - Outlier detection via residuals
        - Reference: Galbraith 1988
 
-    2. L'ABBÃ‰ PLOT
+    2. L'ABBÉ PLOT
        - Binary outcome visualization
        - Treatment vs control rates
-       - Reference: L'AbbÃ© 1987
+       - Reference: L'Abbé 1987
 
     3. CUMULATIVE META-ANALYSIS
        - Evidence accumulation over time
@@ -1834,7 +1834,7 @@ print("""
     6. DRAPERY PLOT
        - P-value function visualization
        - Full inferential information
-       - Reference: RÃ¼cker 2020
+       - Reference: Rücker 2020
 
     7. QUALITY EFFECTS / IVhet
        - Alternative to DerSimonian-Laird

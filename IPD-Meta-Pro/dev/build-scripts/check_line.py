@@ -39,7 +39,7 @@ for i, line in enumerate(lines):
 
     if in_script:
         for j, char in enumerate(line):
-            if ord(char) > 127 and char not in 'â†’â†â†‘â†“â– â—†â—â—‹â˜…â˜†â™ â™£â™¥â™¦':
+            if ord(char) > 127 and char not in '→â†↑↓■◆â—○★☆♠♣♥♦':
                 # Skip common unicode in strings
                 context = line[max(0,j-10):j+10]
                 if 'emoji' not in context.lower() and 'icon' not in context.lower():

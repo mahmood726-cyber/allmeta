@@ -122,7 +122,7 @@ new_features = '''
                 hideProgress();
 
                 let html = '<div class="analysis-results">';
-                html += '<h3>ðŸŽ¯ Targeted Maximum Likelihood Estimation (TMLE)</h3>';
+                html += '<h3>🎯 Targeted Maximum Likelihood Estimation (TMLE)</h3>';
                 html += '<p><em>Double-robust causal inference with optimal efficiency</em></p>';
 
                 html += '<h4>Causal Effect Estimates</h4>';
@@ -397,16 +397,16 @@ new_features = '''
                 hideProgress();
 
                 let html = '<div class="analysis-results">';
-                html += '<h3>ðŸ“Š 10-Fold Cross-Validation Results</h3>';
+                html += '<h3>📊 10-Fold Cross-Validation Results</h3>';
 
                 html += '<h4>Model Comparison</h4>';
                 html += '<table class="results-table">';
-                html += '<tr><th>Model</th><th>AUC (Mean Â± SD)</th><th>Brier Score</th><th>Calibration Slope</th></tr>';
+                html += '<tr><th>Model</th><th>AUC (Mean ± SD)</th><th>Brier Score</th><th>Calibration Slope</th></tr>';
                 modelResults.forEach(mr => {
                     const isBest = mr.name === bestModel.name;
                     html += `<tr${isBest ? ' style="background-color: rgba(0,255,0,0.1);"' : ''}>`;
                     html += `<td>${mr.name}${isBest ? ' â­' : ''}</td>`;
-                    html += `<td>${mr.meanAUC.toFixed(3)} Â± ${mr.sdAUC.toFixed(3)}</td>`;
+                    html += `<td>${mr.meanAUC.toFixed(3)} ± ${mr.sdAUC.toFixed(3)}</td>`;
                     html += `<td>${mr.meanBrier.toFixed(4)}</td>`;
                     html += `<td>${mr.meanCalib.toFixed(3)}</td>`;
                     html += '</tr>';
@@ -432,19 +432,19 @@ new_features = '''
                 html += `<p>The best performing model is <strong>${bestModel.name}</strong> with a mean AUC of ${bestModel.meanAUC.toFixed(3)}.</p>`;
 
                 if (bestModel.meanAUC >= 0.8) {
-                    html += '<p>âœ… <strong>Excellent discrimination</strong>: AUC â‰¥ 0.8</p>';
+                    html += '<p>✅ <strong>Excellent discrimination</strong>: AUC ≥ 0.8</p>';
                 } else if (bestModel.meanAUC >= 0.7) {
-                    html += '<p>âš ï¸ <strong>Good discrimination</strong>: AUC 0.7-0.8</p>';
+                    html += '<p>⚠ï¸ <strong>Good discrimination</strong>: AUC 0.7-0.8</p>';
                 } else if (bestModel.meanAUC >= 0.6) {
-                    html += '<p>âš ï¸ <strong>Fair discrimination</strong>: AUC 0.6-0.7</p>';
+                    html += '<p>⚠ï¸ <strong>Fair discrimination</strong>: AUC 0.6-0.7</p>';
                 } else {
                     html += '<p>âŒ <strong>Poor discrimination</strong>: AUC < 0.6</p>';
                 }
 
                 if (bestModel.meanBrier < 0.15) {
-                    html += '<p>âœ… <strong>Good calibration</strong>: Brier score < 0.15</p>';
+                    html += '<p>✅ <strong>Good calibration</strong>: Brier score < 0.15</p>';
                 } else {
-                    html += '<p>âš ï¸ <strong>Moderate calibration</strong>: Brier score â‰¥ 0.15</p>';
+                    html += '<p>⚠ï¸ <strong>Moderate calibration</strong>: Brier score ≥ 0.15</p>';
                 }
 
                 html += `<p>Predictors used: ${predictorCols.join(', ')}</p>`;
@@ -597,12 +597,12 @@ new_features = '''
 
             html += '<h4>Leave-One-Out Results</h4>';
             html += '<table class="results-table">';
-            html += '<tr><th>Study Omitted</th><th>Pooled Effect</th><th>95% CI</th><th>IÂ²</th><th>Influence</th></tr>';
+            html += '<tr><th>Study Omitted</th><th>Pooled Effect</th><th>95% CI</th><th>I²</th><th>Influence</th></tr>';
 
             looResults.forEach((r, i) => {
                 const ci_l = r.effect - 1.96 * r.se;
                 const ci_u = r.effect + 1.96 * r.se;
-                const flag = r.influential ? ' âš ï¸' : '';
+                const flag = r.influential ? ' ⚠ï¸' : '';
                 html += `<tr${r.influential ? ' style="background-color: rgba(255,0,0,0.1);"' : ''}>`;
                 html += `<td>${r.study}${flag}</td>`;
                 html += `<td>${r.effect.toFixed(3)}</td>`;
@@ -631,7 +631,7 @@ new_features = '''
             html += '<h4>Summary</h4>';
             html += '<div class="interpretation-box">';
             if (influential.length > 0) {
-                html += `<p>âš ï¸ <strong>${influential.length} potentially influential study(ies) detected:</strong></p>`;
+                html += `<p>⚠ï¸ <strong>${influential.length} potentially influential study(ies) detected:</strong></p>`;
                 html += '<ul>';
                 influential.forEach(s => {
                     html += `<li>${s.study}: DFBETA = ${s.dfbeta.toFixed(3)}</li>`;
@@ -639,7 +639,7 @@ new_features = '''
                 html += '</ul>';
                 html += '<p>Consider sensitivity analysis excluding these studies.</p>';
             } else {
-                html += '<p>âœ… No single study has undue influence on the pooled result.</p>';
+                html += '<p>✅ No single study has undue influence on the pooled result.</p>';
             }
             html += '</div>';
 
@@ -665,7 +665,7 @@ new_features = '''
         const effect = effects.reduce((s, e, i) => s + weights[i] * e.effect, 0) / totalWeight;
         const se = Math.sqrt(1 / totalWeight);
 
-        // Calculate IÂ²
+        // Calculate I²
         const Q = effects.reduce((s, e, i) => s + weights[i] * Math.pow(e.effect - effect, 2), 0);
         const df = effects.length - 1;
         const i2 = Math.max(0, (Q - df) / Q);
@@ -797,7 +797,7 @@ new_features = '''
                 hideProgress();
 
                 let html = '<div class="analysis-results">';
-                html += '<h3>ðŸ”¬ Diagnostic Test Accuracy Meta-Analysis</h3>';
+                html += '<h3>🔬 Diagnostic Test Accuracy Meta-Analysis</h3>';
 
                 html += '<h4>Individual Study Results</h4>';
                 html += '<table class="results-table">';
@@ -833,15 +833,15 @@ new_features = '''
                 html += `<p>The pooled <strong>specificity is ${(pooledSpec.p * 100).toFixed(1)}%</strong>, meaning the test correctly identifies ${(pooledSpec.p * 100).toFixed(0)}% of true negatives.</p>`;
 
                 if (pooledPLR > 10) {
-                    html += '<p>âœ… The positive likelihood ratio > 10 indicates <strong>excellent</strong> diagnostic value for ruling in disease.</p>';
+                    html += '<p>✅ The positive likelihood ratio > 10 indicates <strong>excellent</strong> diagnostic value for ruling in disease.</p>';
                 } else if (pooledPLR > 5) {
-                    html += '<p>âš ï¸ The positive likelihood ratio 5-10 indicates <strong>moderate</strong> diagnostic value.</p>';
+                    html += '<p>⚠ï¸ The positive likelihood ratio 5-10 indicates <strong>moderate</strong> diagnostic value.</p>';
                 }
 
                 if (pooledNLR < 0.1) {
-                    html += '<p>âœ… The negative likelihood ratio < 0.1 indicates <strong>excellent</strong> diagnostic value for ruling out disease.</p>';
+                    html += '<p>✅ The negative likelihood ratio < 0.1 indicates <strong>excellent</strong> diagnostic value for ruling out disease.</p>';
                 } else if (pooledNLR < 0.2) {
-                    html += '<p>âš ï¸ The negative likelihood ratio 0.1-0.2 indicates <strong>moderate</strong> diagnostic value.</p>';
+                    html += '<p>⚠ï¸ The negative likelihood ratio 0.1-0.2 indicates <strong>moderate</strong> diagnostic value.</p>';
                 }
                 html += '</div>';
 
@@ -996,7 +996,7 @@ new_features = '''
             const tStat = slope / slopeSE;
             const pValue = 2 * (1 - tCDF(Math.abs(tStat), effects.length - 2));
 
-            // RÂ² approximation
+            // R² approximation
             const ssReg = slope * slope * sxx;
             const ssTotal = effects.reduce((s, y, i) => s + weights[i] * Math.pow(y - meanY, 2), 0);
             const r2 = ssTotal > 0 ? ssReg / ssTotal : 0;
@@ -1004,7 +1004,7 @@ new_features = '''
             hideProgress();
 
             let html = '<div class="analysis-results">';
-            html += '<h3>ðŸ“ˆ Network Meta-Regression</h3>';
+            html += '<h3>📈 Network Meta-Regression</h3>';
             html += `<p>Moderator: <strong>${moderator}</strong></p>`;
 
             html += '<h4>Regression Coefficients</h4>';
@@ -1016,7 +1016,7 @@ new_features = '''
 
             html += '<h4>Model Fit</h4>';
             html += '<table class="results-table">';
-            html += `<tr><td>RÂ²</td><td>${(r2 * 100).toFixed(1)}%</td></tr>`;
+            html += `<tr><td>R²</td><td>${(r2 * 100).toFixed(1)}%</td></tr>`;
             html += `<tr><td>Number of comparisons</td><td>${effects.length}</td></tr>`;
             html += '</table>';
 

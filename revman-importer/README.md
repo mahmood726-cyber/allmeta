@@ -1,6 +1,6 @@
 # RevMan importer
 
-Cochrane .rm5 / .rm6 â†’ bus.
+Cochrane .rm5 / .rm6 → bus.
 
 Part of the [allmeta](https://github.com/mahmood726-cyber/allmeta) collection.
 
@@ -12,7 +12,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/revman-importer/
 
 - **Category:** Screening & Extraction
 - **Data shape:** standalone (no `ma-studies` bus integration).
-- **Purpose:** Cochrane .rm5 / .rm6 â†’ bus.
+- **Purpose:** Cochrane .rm5 / .rm6 → bus.
 
 ## Cite as
 

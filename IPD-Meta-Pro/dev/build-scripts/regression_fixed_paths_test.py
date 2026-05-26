@@ -220,7 +220,7 @@ def run_static_checks(
         else:
             result.fail(f"Missing required marker: {marker}")
 
-    mojibake = re.compile(r"(â€™|â€œ|â€\x9d|â€“|â€”|Ã.|Â.|ðŸ|IÂ²|Ï„Â²)")
+    mojibake = re.compile(r"(’|“|â€\x9d|–|—|Ã.|Â.|ðŸ|I²|Ï„²)")
     authored_source = "\n".join((head_text, module_text, service_worker_text, trailer_text, confidence_text))
     if mojibake.search(authored_source):
         result.fail("Potential mojibake marker found in source")

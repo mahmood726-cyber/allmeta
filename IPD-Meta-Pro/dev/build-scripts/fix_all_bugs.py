@@ -50,9 +50,9 @@ def main():
 
     if re.search(nested_button_pattern, content):
         content = re.sub(nested_button_pattern, fixed_buttons, content)
-        print("  âœ“ Fixed nested button structure")
+        print("  ✓ Fixed nested button structure")
     else:
-        print("  âš  Nested button pattern not found (may already be fixed)")
+        print("  ⚠ Nested button pattern not found (may already be fixed)")
 
     # =========================================================================
     # FIX 2: Remove duplicate function definitions
@@ -66,7 +66,7 @@ def main():
         content = re.sub(complex_selection_model,
                         'function runSelectionModelAdvanced(effects, variances, pValues)',
                         content)
-        print("  âœ“ Renamed complex runSelectionModel to runSelectionModelAdvanced")
+        print("  ✓ Renamed complex runSelectionModel to runSelectionModelAdvanced")
 
     # The duplicate runMetaRegression at line 17050 with parameter conflicts with 14188
     # Keep both but rename the second to runMetaRegressionWithCovariate
@@ -81,7 +81,7 @@ def main():
     content = re.sub(r'function runMetaRegression\(covariate\)',
                      'function runMetaRegressionWithCovariate(covariate)',
                      content, count=1)
-    print("  âœ“ Renamed second runMetaRegression to runMetaRegressionWithCovariate")
+    print("  ✓ Renamed second runMetaRegression to runMetaRegressionWithCovariate")
 
     # =========================================================================
     # FIX 3: Add missing wrapper functions for onclick handlers
@@ -747,15 +747,15 @@ console.log('[Bug Fix] All wrapper functions loaded successfully');
 
     if re.search(script_end_pattern, content):
         content = re.sub(script_end_pattern, r'\1' + wrapper_functions + r'\n\2', content)
-        print("  âœ“ Added wrapper functions before script end marker")
+        print("  ✓ Added wrapper functions before script end marker")
     else:
         # Alternative: find last </script> tag
         last_script_pos = content.rfind('</script>')
         if last_script_pos > 0:
             content = content[:last_script_pos] + wrapper_functions + '\n' + content[last_script_pos:]
-            print("  âœ“ Added wrapper functions before last </script> tag")
+            print("  ✓ Added wrapper functions before last </script> tag")
         else:
-            print("  âš  Could not find insertion point for wrapper functions")
+            print("  ⚠ Could not find insertion point for wrapper functions")
 
     # =========================================================================
     # FIX 4: Fix syntax issues
@@ -767,13 +767,13 @@ console.log('[Bug Fix] All wrapper functions loaded successfully');
 
     # Ensure proper semicolons after function definitions
     content = re.sub(r'}\s*\n\s*function', '}\n\nfunction', content)
-    print("  âœ“ Normalized function spacing")
+    print("  ✓ Normalized function spacing")
 
     # Fix any stray HTML entities that might have been introduced
     content = content.replace('&amp;', '&')
     content = content.replace('&lt;', '<')
     content = content.replace('&gt;', '>')
-    print("  âœ“ Fixed HTML entities")
+    print("  ✓ Fixed HTML entities")
 
     # =========================================================================
     # FIX 5: Verify and cleanup
@@ -782,7 +782,7 @@ console.log('[Bug Fix] All wrapper functions loaded successfully');
 
     # Remove any double blank lines
     content = re.sub(r'\n{4,}', '\n\n\n', content)
-    print("  âœ“ Cleaned up excessive blank lines")
+    print("  ✓ Cleaned up excessive blank lines")
 
     # Ensure file ends with newline
     if not content.endswith('\n'):

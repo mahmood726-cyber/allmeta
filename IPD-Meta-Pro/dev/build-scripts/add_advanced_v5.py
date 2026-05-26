@@ -71,7 +71,7 @@ new_features = '''
             hideProgress();
 
             let html = '<div class="analysis-results">';
-            html += '<h3>ðŸ“Š P-Curve Analysis</h3>';
+            html += '<h3>📊 P-Curve Analysis</h3>';
             html += '<p><em>Testing for evidential value vs. p-hacking/publication bias</em></p>';
 
             html += '<h4>P-Curve Distribution</h4>';
@@ -80,9 +80,9 @@ new_features = '''
             html += '<h4>Test Results</h4>';
             html += '<table class="results-table">';
             html += '<tr><th>Test</th><th>Statistic</th><th>P-value</th><th>Interpretation</th></tr>';
-            html += `<tr><td>Right-skew test</td><td>${below025}/${n} below 0.025</td><td>${rightSkewP.toFixed(4)}</td><td>${rightSkewP < 0.05 ? 'âœ… Evidential value' : 'âŒ No evidential value'}</td></tr>`;
-            html += `<tr><td>Flatness test</td><td>Binomial</td><td>${flatP.toFixed(4)}</td><td>${flatP > 0.05 ? 'âš ï¸ Possible p-hacking' : 'âœ… Not flat'}</td></tr>`;
-            html += `<tr><td>Stouffer's Z</td><td>${stoufferZ.toFixed(3)}</td><td>${stoufferP.toFixed(4)}</td><td>${stoufferP < 0.05 ? 'âœ… True effect exists' : 'âŒ Inconclusive'}</td></tr>`;
+            html += `<tr><td>Right-skew test</td><td>${below025}/${n} below 0.025</td><td>${rightSkewP.toFixed(4)}</td><td>${rightSkewP < 0.05 ? '✅ Evidential value' : 'âŒ No evidential value'}</td></tr>`;
+            html += `<tr><td>Flatness test</td><td>Binomial</td><td>${flatP.toFixed(4)}</td><td>${flatP > 0.05 ? '⚠ï¸ Possible p-hacking' : '✅ Not flat'}</td></tr>`;
+            html += `<tr><td>Stouffer's Z</td><td>${stoufferZ.toFixed(3)}</td><td>${stoufferP.toFixed(4)}</td><td>${stoufferP < 0.05 ? '✅ True effect exists' : 'âŒ Inconclusive'}</td></tr>`;
             html += `<tr><td>Half P-curve</td><td>${halfBelow}/${n} below 0.5</td><td>${halfP.toFixed(4)}</td><td>-</td></tr>`;
             html += '</table>';
 
@@ -96,10 +96,10 @@ new_features = '''
             html += '<h4>Interpretation</h4>';
             html += '<div class="interpretation-box">';
             if (rightSkewP < 0.05 && flatP > 0.1) {
-                html += '<p>âœ… <strong>The P-curve is right-skewed</strong>, indicating that the set of studies contains evidential value.</p>';
+                html += '<p>✅ <strong>The P-curve is right-skewed</strong>, indicating that the set of studies contains evidential value.</p>';
                 html += '<p>This suggests the effect is likely real and not solely due to publication bias or p-hacking.</p>';
             } else if (flatP < 0.05) {
-                html += '<p>âš ï¸ <strong>The P-curve is flat or left-skewed</strong>, which may indicate:</p>';
+                html += '<p>⚠ï¸ <strong>The P-curve is flat or left-skewed</strong>, which may indicate:</p>';
                 html += '<ul><li>P-hacking (data dredging)</li><li>Selective reporting</li><li>Publication bias</li></ul>';
             } else {
                 html += '<p>â“ <strong>Inconclusive</strong> - the P-curve does not strongly indicate either evidential value or lack thereof.</p>';
@@ -300,7 +300,7 @@ new_features = '''
             hideProgress();
 
             let html = '<div class="analysis-results">';
-            html += '<h3>ðŸ›¡ï¸ E-Value: Sensitivity to Unmeasured Confounding</h3>';
+            html += '<h3>🛡ï¸ E-Value: Sensitivity to Unmeasured Confounding</h3>';
             html += '<p><em>How strong would confounding need to be to explain away the effect?</em></p>';
 
             html += '<h4>E-Value Results</h4>';
@@ -325,9 +325,9 @@ new_features = '''
             html += `<p>The <strong>E-value of ${eValue.toFixed(2)}</strong> means that an unmeasured confounder would need to be associated with both the treatment and outcome by a risk ratio of at least ${eValue.toFixed(2)}-fold each, above and beyond the measured confounders, to fully explain away the observed effect.</p>`;
 
             if (eValue > 3) {
-                html += '<p>âœ… <strong>Robust to unmeasured confounding</strong>: The E-value is large, suggesting the effect is unlikely to be due to unmeasured confounding alone.</p>';
+                html += '<p>✅ <strong>Robust to unmeasured confounding</strong>: The E-value is large, suggesting the effect is unlikely to be due to unmeasured confounding alone.</p>';
             } else if (eValue > 2) {
-                html += '<p>âš ï¸ <strong>Moderate robustness</strong>: The effect could potentially be explained by moderately strong confounding.</p>';
+                html += '<p>⚠ï¸ <strong>Moderate robustness</strong>: The effect could potentially be explained by moderately strong confounding.</p>';
             } else {
                 html += '<p>âŒ <strong>Sensitive to confounding</strong>: Even weak unmeasured confounding could explain the observed effect.</p>';
             }
@@ -490,23 +490,23 @@ new_features = '''
             html += '<h4>Interpretation</h4>';
             html += '<div class="interpretation-box">';
             if (mcarStatistic.pValue > 0.05) {
-                html += '<p>âœ… <strong>Data may be Missing Completely At Random (MCAR)</strong></p>';
+                html += '<p>✅ <strong>Data may be Missing Completely At Random (MCAR)</strong></p>';
                 html += '<p>Complete case analysis may be unbiased, but will lose efficiency.</p>';
             } else {
-                html += '<p>âš ï¸ <strong>Data is NOT Missing Completely At Random</strong></p>';
+                html += '<p>⚠ï¸ <strong>Data is NOT Missing Completely At Random</strong></p>';
                 html += '<p>Multiple imputation or other methods are recommended to avoid bias.</p>';
             }
 
             // Recommendations
             const maxMissing = Math.max(...Object.values(missing).map(m => parseFloat(m.percent)));
             if (maxMissing > 40) {
-                html += '<p>ðŸ”´ <strong>High missing rate detected (>40%)</strong>: Consider excluding these variables or collecting more data.</p>';
+                html += '<p>🔴 <strong>High missing rate detected (>40%)</strong>: Consider excluding these variables or collecting more data.</p>';
             } else if (maxMissing > 20) {
-                html += '<p>ðŸŸ¡ <strong>Moderate missing rate (20-40%)</strong>: Multiple imputation strongly recommended.</p>';
+                html += '<p>🟡 <strong>Moderate missing rate (20-40%)</strong>: Multiple imputation strongly recommended.</p>';
             } else if (maxMissing > 5) {
-                html += '<p>ðŸŸ¢ <strong>Low missing rate (5-20%)</strong>: Multiple imputation or complete case analysis acceptable.</p>';
+                html += '<p>🟢 <strong>Low missing rate (5-20%)</strong>: Multiple imputation or complete case analysis acceptable.</p>';
             } else {
-                html += '<p>âœ… <strong>Very low missing rate (<5%)</strong>: Complete case analysis is typically acceptable.</p>';
+                html += '<p>✅ <strong>Very low missing rate (<5%)</strong>: Complete case analysis is typically acceptable.</p>';
             }
             html += '</div>';
 
@@ -728,7 +728,7 @@ new_features = '''
             hideProgress();
 
             let html = '<div class="analysis-results">';
-            html += '<h3>ðŸ”„ Network Inconsistency Assessment (Node-Splitting)</h3>';
+            html += '<h3>🔄 Network Inconsistency Assessment (Node-Splitting)</h3>';
 
             html += '<h4>Local Inconsistency Tests</h4>';
             html += '<table class="results-table">';
@@ -741,7 +741,7 @@ new_features = '''
                 html += `<td>${r.indirect.toFixed(3)} (${r.indirectSE.toFixed(3)})</td>`;
                 html += `<td>${r.difference.toFixed(3)}</td>`;
                 html += `<td>${r.pValue.toFixed(3)}</td>`;
-                html += `<td>${r.inconsistent ? 'âš ï¸ Inconsistent' : 'âœ… Consistent'}</td>`;
+                html += `<td>${r.inconsistent ? '⚠ï¸ Inconsistent' : '✅ Consistent'}</td>`;
                 html += '</tr>';
             });
             html += '</table>';
@@ -758,14 +758,14 @@ new_features = '''
             html += '<h4>Interpretation</h4>';
             html += '<div class="interpretation-box">';
             if (globalP > 0.10 && inconsistentCount === 0) {
-                html += '<p>âœ… <strong>No significant inconsistency detected</strong></p>';
+                html += '<p>✅ <strong>No significant inconsistency detected</strong></p>';
                 html += '<p>The network is consistent, and direct and indirect evidence agree.</p>';
             } else if (inconsistentCount > 0) {
-                html += `<p>âš ï¸ <strong>${inconsistentCount} comparison(s) show local inconsistency</strong></p>`;
+                html += `<p>⚠ï¸ <strong>${inconsistentCount} comparison(s) show local inconsistency</strong></p>`;
                 html += '<p>Consider investigating the sources of inconsistency (study design, patient populations, etc.)</p>';
             }
             if (globalP < 0.10) {
-                html += '<p>âš ï¸ <strong>Global inconsistency detected</strong> (p < 0.10)</p>';
+                html += '<p>⚠ï¸ <strong>Global inconsistency detected</strong> (p < 0.10)</p>';
                 html += '<p>The network-wide evidence shows statistical inconsistency.</p>';
             }
             html += '</div>';

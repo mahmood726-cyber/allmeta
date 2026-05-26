@@ -282,7 +282,7 @@
  </div>
 
  <div class="form-group">
- <label>Heterogeneity Prior (Ï„Â²)</label>
+ <label>Heterogeneity Prior (Ï„²)</label>
  <input type="range" id="tauPriorSlider" min="0" max="1" step="0.01" value="0.1"
  oninput="updateSensitivityRealtime()" style="width: 100%;">
  <span id="tauPriorValue">0.10</span>
@@ -336,7 +336,7 @@
  </div>
  <div class="stat-box" style="text-align: center;">
  <div class="stat-value" id="sensI2">-</div>
- <div class="stat-label">IÂ²</div>
+ <div class="stat-label">I²</div>
  </div>
  <div class="stat-box" style="text-align: center;">
  <div class="stat-value" id="sensPval">-</div>
@@ -406,7 +406,7 @@ function performSensitivityUpdate() {
  });
 
  if (activeStudies.length < 2) {
- document.getElementById('sensPooled').textContent = 'Need â‰¥2';
+ document.getElementById('sensPooled').textContent = 'Need ≥2';
  return;
  }
 
@@ -443,11 +443,11 @@ function performSensitivityUpdate() {
  var interpretation = '';
 
  if (changePercent < 5) {
- interpretation = '<span style="color: var(--accent-success);">âœ“ Results are ROBUST</span> - conclusions stable across parameter variations.';
+ interpretation = '<span style="color: var(--accent-success);">✓ Results are ROBUST</span> - conclusions stable across parameter variations.';
  } else if (changePercent < 15) {
- interpretation = '<span style="color: var(--accent-warning);">âš  MODERATE sensitivity</span> - some variation but direction consistent.';
+ interpretation = '<span style="color: var(--accent-warning);">⚠ MODERATE sensitivity</span> - some variation but direction consistent.';
  } else {
- interpretation = '<span style="color: var(--accent-danger);">âš  HIGH sensitivity</span> - conclusions depend on analytical choices.';
+ interpretation = '<span style="color: var(--accent-danger);">⚠ HIGH sensitivity</span> - conclusions depend on analytical choices.';
  }
 
  interpretation += '<br><small>Effect changed by ' + changePercent.toFixed(1) + '% from original (' +
@@ -617,8 +617,8 @@ function drawImpactPlot(current, original) {
  var metrics = [
  { label: 'Effect Size', current: current.pooled, original: original.pooled },
  { label: 'Std Error', current: current.se, original: original.se },
- { label: 'Ï„Â²', current: current.tau2, original: original.tau2 },
- { label: 'IÂ²', current: current.I2, original: original.I2 }
+ { label: 'Ï„²', current: current.tau2, original: original.tau2 },
+ { label: 'I²', current: current.I2, original: original.I2 }
  ];
 
  var barHeight = 40;
@@ -753,7 +753,7 @@ function generateClinicalInterpretation(results, config) {
  if (pooled < 1 && pValue < 0.05) {
  interpretation.clinical = 'The treatment reduces the hazard by ' + rrr + '% compared to control. ' +
  'Assuming a baseline 10% event rate, approximately ' + nnt + ' patients would need to be treated ' +
- 'to prevent one additional event (NNT â‰ˆ ' + nnt + ').';
+ 'to prevent one additional event (NNT ≈ ' + nnt + ').';
  } else if (pooled > 1 && pValue < 0.05) {
  interpretation.clinical = 'The treatment increases the hazard by ' + ((pooled - 1) * 100).toFixed(0) +
  '% compared to control, suggesting potential harm.';
@@ -777,13 +777,13 @@ function generateClinicalInterpretation(results, config) {
 
  var hetInterpret = '';
  if (I2 < 25) {
- hetInterpret = 'Heterogeneity was low (IÂ² = ' + I2.toFixed(1) + '%), suggesting consistent effects across studies.';
+ hetInterpret = 'Heterogeneity was low (I² = ' + I2.toFixed(1) + '%), suggesting consistent effects across studies.';
  } else if (I2 < 50) {
- hetInterpret = 'Moderate heterogeneity was observed (IÂ² = ' + I2.toFixed(1) + '%), warranting exploration of potential effect modifiers.';
+ hetInterpret = 'Moderate heterogeneity was observed (I² = ' + I2.toFixed(1) + '%), warranting exploration of potential effect modifiers.';
  } else if (I2 < 75) {
- hetInterpret = 'Substantial heterogeneity was detected (IÂ² = ' + I2.toFixed(1) + '%). Results should be interpreted with caution, and subgroup analyses are recommended.';
+ hetInterpret = 'Substantial heterogeneity was detected (I² = ' + I2.toFixed(1) + '%). Results should be interpreted with caution, and subgroup analyses are recommended.';
  } else {
- hetInterpret = 'Very high heterogeneity (IÂ² = ' + I2.toFixed(1) + '%) suggests that pooling may not be appropriate. Consider exploring sources of variation.';
+ hetInterpret = 'Very high heterogeneity (I² = ' + I2.toFixed(1) + '%) suggests that pooling may not be appropriate. Consider exploring sources of variation.';
  }
  interpretation.clinical += ' ' + hetInterpret;
 
@@ -1556,7 +1556,7 @@ function drawCATEForest(results) {
  ctx.fillStyle = '#ccc';
  ctx.font = '10px system-ui';
  ctx.textAlign = 'right';
- ctx.fillText(cov + ' â‰¤ ' + c.median.toFixed(0), margin.left - 5, yLow + 3);
+ ctx.fillText(cov + ' ≤ ' + c.median.toFixed(0), margin.left - 5, yLow + 3);
  ctx.fillText(cov + ' > ' + c.median.toFixed(0), margin.left - 5, yHigh + 3);
  });
  }
@@ -1616,7 +1616,7 @@ function drawBenefitHistogram(predictions) {
  ctx.font = '10px system-ui';
  ctx.textAlign = 'center';
  ctx.fillText('Predicted Benefit Score', canvas.width / 2, canvas.height - 10);
- ctx.fillText('â† Less Benefit | More Benefit â†’', canvas.width / 2, canvas.height - 25);
+ ctx.fillText('â† Less Benefit | More Benefit →', canvas.width / 2, canvas.height - 25);
  }
 
 function generateReproducibilityReport() {
@@ -1665,7 +1665,7 @@ function generateReproducibilityReport() {
  report.push('- 95% CI: ' + (isLog ? Math.exp(pooled.lower) : pooled.lower).toFixed(4) + ' to ' +
  (isLog ? Math.exp(pooled.upper) : pooled.upper).toFixed(4));
  report.push('- P-value: ' + pooled.pValue.toFixed(6));
- report.push('- Heterogeneity: IÂ² = ' + pooled.I2.toFixed(1) + '%, Ï„Â² = ' + pooled.tau2.toFixed(4));
+ report.push('- Heterogeneity: I² = ' + pooled.I2.toFixed(1) + '%, Ï„² = ' + pooled.tau2.toFixed(4));
  report.push('- Q statistic: ' + pooled.Q.toFixed(2) + ' (df = ' + pooled.df + ', p = ' + pooled.pQ.toFixed(4) + ')');
  report.push('');
 
@@ -3185,7 +3185,7 @@ function hideLoadingOverlay() {
 
  var gradeLabels = ['', 'VERY LOW', 'LOW', 'MODERATE', 'HIGH'];
  var gradeColors = ['', '#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
- var gradeSymbols = ['', 'âŠ•â—‹â—‹â—‹', 'âŠ•âŠ•â—‹â—‹', 'âŠ•âŠ•âŠ•â—‹', 'âŠ•âŠ•âŠ•âŠ•'];
+ var gradeSymbols = ['', '⊕○○○', '⊕⊕○○', '⊕⊕⊕○', '⊕⊕⊕⊕'];
 
  return {
  score: score,
@@ -5901,7 +5901,7 @@ function convertEffectSizes(effect, seEffect, fromType, toType, baseline) {
  if (fromType === 'SMD' && toType === 'OR') {
  result.converted = effect * Math.PI / Math.sqrt(3);
  result.convertedSE = seEffect * Math.PI / Math.sqrt(3);
- result.note = "Using Hasselblad & Hedges (1995) conversion factor of Ï€/âˆš3 â‰ˆ 1.814";
+ result.note = "Using Hasselblad & Hedges (1995) conversion factor of Ï€/√3 ≈ 1.814";
  }
 
  if (fromType === 'OR' && toType === 'SMD') {
@@ -6408,13 +6408,13 @@ function exportProtocol() {
  simulations: 10000,
  scenarios: [
  {
- name: "Moderate heterogeneity (IÂ²=50%, k=10)",
+ name: "Moderate heterogeneity (I²=50%, k=10)",
  typeIError: 0.052,
  power: 0.82,
  coverage: 0.948
  },
  {
- name: "High heterogeneity (IÂ²=75%, k=10)",
+ name: "High heterogeneity (I²=75%, k=10)",
  typeIError: 0.058,
  power: 0.71,
  coverage: 0.941
@@ -6434,7 +6434,7 @@ function exportProtocol() {
  simulations: 10000,
  scenarios: [
  {
- name: "Small k with high IÂ²",
+ name: "Small k with high I²",
  typeIErrorUnadjusted: 0.12,
  typeIErrorAdjusted: 0.054,
  note: "HKSJ dramatically improves Type I error control"
@@ -6447,13 +6447,13 @@ function exportProtocol() {
  simulations: 5000,
  scenarios: [
  {
- name: "Standard scenario (k=10, IÂ²=50%)",
+ name: "Standard scenario (k=10, I²=50%)",
  coverage: 0.952,
  biasPooledEffect: 0.002,
  biasTau: 0.015
  }
  ],
- reference: "RÃ¶ver C. Methods Inf Med 2020;59:e32"
+ reference: "Röver C. Methods Inf Med 2020;59:e32"
  },
  networkMA: {
  description: "Network meta-analysis (Bucher indirect comparisons)",
@@ -6629,7 +6629,7 @@ function displaySensitivityDashboard() {
  html += '<p><em>Instantly compare results across different analytical choices - impossible in R without re-running code</em></p>';
 
  html += '<table class="results-table">';
- html += '<tr><th>Scenario</th><th>Effect</th><th>95% CI</th><th>IÂ²</th><th>k</th><th>p-value</th><th>Change</th><th>Conclusion</th></tr>';
+ html += '<tr><th>Scenario</th><th>Effect</th><th>95% CI</th><th>I²</th><th>k</th><th>p-value</th><th>Change</th><th>Conclusion</th></tr>';
 
  dashboard.scenarios.forEach(function(s, i) {
  if (s.error) {
@@ -6700,18 +6700,18 @@ function calculateRobustnessScore(results, sensitivityResults) {
  score -= 8;
  penalties.push({ factor: "Few studies (k<5)", points: -8 });
  } else if (k >= 10) {
- strengths.push({ factor: "Good number of studies (kâ‰¥10)", points: 0 });
+ strengths.push({ factor: "Good number of studies (k≥10)", points: 0 });
  }
 
  var I2 = results.pooled.I2 || 0;
  if (I2 > 75) {
  score -= 20;
- penalties.push({ factor: "Very high heterogeneity (IÂ²>" + I2.toFixed(0) + "%)", points: -20 });
+ penalties.push({ factor: "Very high heterogeneity (I²>" + I2.toFixed(0) + "%)", points: -20 });
  } else if (I2 > 50) {
  score -= 12;
- penalties.push({ factor: "High heterogeneity (IÂ²=" + I2.toFixed(0) + "%)", points: -12 });
+ penalties.push({ factor: "High heterogeneity (I²=" + I2.toFixed(0) + "%)", points: -12 });
  } else if (I2 < 25) {
- strengths.push({ factor: "Low heterogeneity (IÂ²<25%)", points: 0 });
+ strengths.push({ factor: "Low heterogeneity (I²<25%)", points: 0 });
  }
 
  if (results.eggerP !== undefined && results.eggerP < 0.10) {
@@ -7030,7 +7030,7 @@ function calculateStudyFragilityIndex(study) {
  fragility: fi,
  direction: direction,
  interpretation: fi === 0 ?
- "Could not reverse with â‰¤20 event changes" :
+ "Could not reverse with ≤20 event changes" :
  "Significance reverses with " + fi + " event(s) changed"
  };
  }
@@ -7108,7 +7108,7 @@ function displayFragilityAnalysis() {
 
  if (fragility.pooledFragility) {
  html += '<div class="stat-box" style="text-align:center; margin-bottom:1rem;">';
- html += '<div class="stat-value">' + (fragility.pooledFragility.fi || 'âˆž') + '</div>';
+ html += '<div class="stat-value">' + (fragility.pooledFragility.fi || '∞') + '</div>';
  html += '<div class="stat-label">Pooled Fragility Index</div>';
  html += '<div style="font-size:0.8rem; color:var(--text-secondary);">' +
  fragility.pooledFragility.interpretation + '</div>';
@@ -7264,7 +7264,7 @@ function generateFullReport(results, config) {
  '<p><strong>Generated:</strong> ' + new Date().toLocaleDateString() + '</p>' +
  '<h2>Summary Statistics</h2>' +
  '<div class="stat-box"><div class="stat-value">' + pooledVal.toFixed(3) + '</div><div class="stat-label">Pooled ' + config.effectMeasure + '</div></div>' +
- '<div class="stat-box"><div class="stat-value">' + (results.pooled.I2 || 0).toFixed(1) + '%</div><div class="stat-label">IÂ² Heterogeneity</div></div>' +
+ '<div class="stat-box"><div class="stat-value">' + (results.pooled.I2 || 0).toFixed(1) + '%</div><div class="stat-label">I² Heterogeneity</div></div>' +
  '<div class="stat-box"><div class="stat-value">' + results.studies.length + '</div><div class="stat-label">Studies</div></div>' +
  '<div class="stat-box"><div class="stat-value">' + results.totalN + '</div><div class="stat-label">Participants</div></div>' +
  '<h2>Study Results</h2><table><tr><th>Study</th><th>N</th><th>Effect</th><th>95% CI</th><th>Weight</th></tr>' +
@@ -7390,8 +7390,8 @@ function displayOutlierDetection() {
  html += '</div>';
 
  var categories = [
- { name: 'Statistical Outliers (IQR)', data: detection.outliers.statistical, icon: 'ðŸ“Š' },
- { name: 'Influential Studies', data: detection.outliers.influential, icon: 'âš–ï¸' },
+ { name: 'Statistical Outliers (IQR)', data: detection.outliers.statistical, icon: '📊' },
+ { name: 'Influential Studies', data: detection.outliers.influential, icon: '⚖ï¸' },
  { name: 'Large Residuals', data: detection.outliers.residual, icon: 'ðŸ“' },
  { name: 'Extreme Precision', data: detection.outliers.extreme, icon: 'ðŸ”' }
  ];
@@ -9954,7 +9954,7 @@ function showResultsModal(title, html, options = {}) {
 // Smart number formatting with dynamic precision based on magnitude
 function formatNumber(value, defaultDecimals = 3) {
  if (value == null || isNaN(value)) return 'NA';
- if (!isFinite(value)) return value > 0 ? 'âˆž' : '-âˆž';
+ if (!isFinite(value)) return value > 0 ? '∞' : '-∞';
 
  const absVal = Math.abs(value);
 
@@ -10560,7 +10560,7 @@ const FormValidator = {
         // Update indicator
         if (indicator) {
             indicator.style.display = result.valid ? 'none' : 'inline';
-            indicator.textContent = result.valid ? 'âœ“' : 'âœ—';
+            indicator.textContent = result.valid ? '✓' : '✗';
             indicator.style.color = result.valid ? 'var(--accent-success)' : 'var(--accent-danger)';
         }
 
@@ -10615,7 +10615,7 @@ const FormValidator = {
     // Show validation summary
     showValidationSummary: function(result) {
         if (!result.valid) {
-            const message = `Validation errors:\nâ€¢ ${result.errors.join('\nâ€¢ ')}`;
+            const message = `Validation errors:\n• ${result.errors.join('\n• ')}`;
             showNotification(message, 'error');
             return false;
         }
@@ -10654,7 +10654,7 @@ const UndoManager = {
         if (Array.isArray(oldObj) && Array.isArray(newObj)) {
             // For large arrays (data rows), use length-aware diff
             if (oldObj.length !== newObj.length || oldObj.length > 500) {
-                // Wholesale replace for large or resized arrays â€” still cheaper than full clone
+                // Wholesale replace for large or resized arrays — still cheaper than full clone
                 patches.push({ op: 'replace', path: path, value: newObj, old: oldObj });
                 return patches;
             }
@@ -10736,7 +10736,7 @@ const UndoManager = {
         var now = this._snapshot();
 
         if (!this._baseline) {
-            // First save â€” store full baseline
+            // First save — store full baseline
             this._baseline = now;
             this._current = now;
             this.history.push({ action: action, timestamp: Date.now(), patch: null, inversePatch: null });
@@ -10881,7 +10881,7 @@ const SessionManager = {
         banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;padding:1rem 1.5rem;font-size:0.9rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
         banner.innerHTML = '<div style="flex:1;"><strong>Privacy Notice:</strong> Session auto-save stores data (including any loaded patient data) in your browser\'s localStorage in <em>unencrypted</em> form. ' +
             'For sensitive/identifiable patient data, consider disabling auto-save or clearing your session after use. ' +
-            'All processing is client-side â€” no data is transmitted to any server.</div>' +
+            'All processing is client-side — no data is transmitted to any server.</div>' +
             '<button id="privacyAckBtn" style="margin-left:1rem;padding:0.5rem 1rem;border:2px solid #000;border-radius:6px;background:transparent;color:#000;font-weight:700;cursor:pointer;white-space:nowrap;">I Understand</button>';
         document.body.prepend(banner);
         document.getElementById('privacyAckBtn').addEventListener('click', function() {
@@ -11069,7 +11069,7 @@ const SessionManager = {
                 break;
             case 'unsaved':
                 indicator.classList.add('unsaved');
-                statusEl.textContent = 'â—‹';
+                statusEl.textContent = '○';
                 labelEl.textContent = 'Unsaved';
                 break;
             case 'loaded':
@@ -11092,7 +11092,7 @@ const HelpSystem = {
     showQuickStart: function() {
         const content = `
             <div class="help-content">
-                <h2>ðŸš€ Quick Start Guide</h2>
+                <h2>🚀 Quick Start Guide</h2>
                 <div class="help-section">
                     <h3>Step 1: Import Your Data</h3>
                     <p>Click the <strong>Data</strong> tab and use one of these methods:</p>
@@ -11124,12 +11124,12 @@ const HelpSystem = {
                     <h3>Step 4: Interpret Results</h3>
                     <ul>
                         <li><strong>Forest Plot:</strong> Visualize study effects</li>
-                        <li><strong>IÂ² Statistic:</strong> Heterogeneity measure</li>
+                        <li><strong>I² Statistic:</strong> Heterogeneity measure</li>
                         <li><strong>Publication Bias:</strong> Egger's test, funnel plot</li>
                     </ul>
                 </div>
                 <div class="alert alert-info">
-                    <strong>ðŸ’¡ Tip:</strong> Press <kbd>Ctrl+S</kbd> to save your session at any time.
+                    <strong>💡 Tip:</strong> Press <kbd>Ctrl+S</kbd> to save your session at any time.
                 </div>
             </div>
         `;
@@ -11140,10 +11140,10 @@ const HelpSystem = {
     showTutorials: function() {
         const content = `
             <div class="help-content">
-                <h2>ðŸ“– Interactive Tutorials</h2>
+                <h2>📖 Interactive Tutorials</h2>
                 <div class="tutorial-list">
                     <div class="tutorial-card" onclick="HelpSystem.runTutorial('basic')">
-                        <div class="tutorial-icon">ðŸ“Š</div>
+                        <div class="tutorial-icon">📊</div>
                         <div class="tutorial-info">
                             <h4>Basic Meta-Analysis</h4>
                             <p>Learn the fundamentals with a step-by-step walkthrough</p>
@@ -11151,10 +11151,10 @@ const HelpSystem = {
                         </div>
                     </div>
                     <div class="tutorial-card" onclick="HelpSystem.runTutorial('heterogeneity')">
-                        <div class="tutorial-icon">ðŸ“ˆ</div>
+                        <div class="tutorial-icon">📈</div>
                         <div class="tutorial-info">
                             <h4>Understanding Heterogeneity</h4>
-                            <p>IÂ², Q statistic, and estimator selection</p>
+                            <p>I², Q statistic, and estimator selection</p>
                             <span class="badge badge-warning">Intermediate</span>
                         </div>
                     </div>
@@ -11167,7 +11167,7 @@ const HelpSystem = {
                         </div>
                     </div>
                     <div class="tutorial-card" onclick="HelpSystem.runTutorial('bayesian')">
-                        <div class="tutorial-icon">ðŸŽ²</div>
+                        <div class="tutorial-icon">🎲</div>
                         <div class="tutorial-info">
                             <h4>Bayesian Meta-Analysis</h4>
                             <p>MCMC sampling, prior specification, diagnostics</p>
@@ -11175,7 +11175,7 @@ const HelpSystem = {
                         </div>
                     </div>
                     <div class="tutorial-card" onclick="HelpSystem.runTutorial('nma')">
-                        <div class="tutorial-icon">ðŸ”—</div>
+                        <div class="tutorial-icon">🔗</div>
                         <div class="tutorial-info">
                             <h4>Network Meta-Analysis</h4>
                             <p>Multiple treatment comparisons, SUCRA</p>
@@ -11201,7 +11201,7 @@ const HelpSystem = {
             ],
             heterogeneity: [
                 { target: '#heterogeneityCard', text: 'Heterogeneity measures how much study results vary.' },
-                { target: '#i2Display', text: 'IÂ² shows % of variability due to heterogeneity (>75% = high).' },
+                { target: '#i2Display', text: 'I² shows % of variability due to heterogeneity (>75% = high).' },
                 { target: '#estimatorSelect', text: 'REML is recommended for most cases; DL is faster for large datasets.' }
             ],
             pubBias: [
@@ -11314,51 +11314,51 @@ const HelpSystem = {
                 <h2>â­ Feature Guide</h2>
                 <div class="feature-grid">
                     <div class="feature-item">
-                        <h4>ðŸ”„ Random-Effects Models</h4>
+                        <h4>🔄 Random-Effects Models</h4>
                         <p>7 estimators: REML, DL, PM, SJ, HE, ML, EB</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ“Š Heterogeneity Analysis</h4>
-                        <p>IÂ², HÂ², Q-test, prediction intervals, Q-profile CI</p>
+                        <h4>📊 Heterogeneity Analysis</h4>
+                        <p>I², H², Q-test, prediction intervals, Q-profile CI</p>
                     </div>
                     <div class="feature-item">
                         <h4>ðŸ” Publication Bias</h4>
                         <p>Funnel plot, Egger's, Begg's, trim-and-fill, PET-PEESE</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸŽ² Bayesian Analysis</h4>
+                        <h4>🎲 Bayesian Analysis</h4>
                         <p>MCMC with Metropolis-Hastings, convergence diagnostics</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ“ˆ Meta-Regression</h4>
+                        <h4>📈 Meta-Regression</h4>
                         <p>Moderator analysis with knot-based splines</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ”— Network Meta-Analysis</h4>
+                        <h4>🔗 Network Meta-Analysis</h4>
                         <p>Multiple comparisons, SUCRA, league tables</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ›¡ï¸ Data Guardian</h4>
+                        <h4>🛡ï¸ Data Guardian</h4>
                         <p>Automated data quality checks and validation</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ”§ MICE Imputation</h4>
+                        <h4>🔧 MICE Imputation</h4>
                         <p>Multiple imputation for missing data (PMM method)</p>
                     </div>
                     <div class="feature-item">
-                        <h4>â†©ï¸ Undo/Redo</h4>
+                        <h4>↩ï¸ Undo/Redo</h4>
                         <p>Full state history with Ctrl+Z / Ctrl+Y</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ’¾ Session Management</h4>
+                        <h4>💾 Session Management</h4>
                         <p>Auto-save, export/import JSON sessions</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ“‹ GRADE Assessment</h4>
+                        <h4>📋 GRADE Assessment</h4>
                         <p>Evidence quality rating system</p>
                     </div>
                     <div class="feature-item">
-                        <h4>ðŸ“¤ Export Options</h4>
+                        <h4>📤 Export Options</h4>
                         <p>PDF reports, CSV, R code, publication-ready tables</p>
                     </div>
                 </div>
@@ -11371,7 +11371,7 @@ const HelpSystem = {
     showKeyboardShortcuts: function() {
         const content = `
             <div class="help-content">
-                <h2>âŒ¨ï¸ Keyboard Shortcuts</h2>
+                <h2>⌨ï¸ Keyboard Shortcuts</h2>
                 <table class="shortcuts-table">
                     <thead>
                         <tr><th>Shortcut</th><th>Action</th></tr>
@@ -11387,7 +11387,7 @@ const HelpSystem = {
                     </tbody>
                 </table>
                 <div class="alert alert-info" style="margin-top:1rem;">
-                    <strong>ðŸ’¡ Tip:</strong> Double-click any data cell to edit it directly.
+                    <strong>💡 Tip:</strong> Double-click any data cell to edit it directly.
                 </div>
             </div>
         `;
@@ -11398,19 +11398,19 @@ const HelpSystem = {
     showLimitations: function() {
         const content = `
             <div class="help-content">
-                <h2>âš ï¸ Limitations & Caveats</h2>
+                <h2>⚠ï¸ Limitations & Caveats</h2>
 
                 <div class="limitation-section">
-                    <h3>ðŸ“Š Meta-Analysis Requirements</h3>
+                    <h3>📊 Meta-Analysis Requirements</h3>
                     <ul>
-                        <li><strong>Minimum Studies:</strong> k â‰¥ 3 recommended for reliable heterogeneity estimation. Results with k &lt; 3 should be interpreted with extreme caution.</li>
+                        <li><strong>Minimum Studies:</strong> k ≥ 3 recommended for reliable heterogeneity estimation. Results with k &lt; 3 should be interpreted with extreme caution.</li>
                         <li><strong>Effect Size Independence:</strong> Assumes independent effect sizes per study. Use robust variance estimation for multiple outcomes per study.</li>
                         <li><strong>Publication Bias:</strong> Statistical tests have low power with k &lt; 10 studies.</li>
                     </ul>
                 </div>
 
                 <div class="limitation-section">
-                    <h3>ðŸ”§ MICE Imputation</h3>
+                    <h3>🔧 MICE Imputation</h3>
                     <ul>
                         <li>Uses Predictive Mean Matching (PMM) - a simplified implementation</li>
                         <li>Assumes Missing At Random (MAR) mechanism</li>
@@ -11421,7 +11421,7 @@ const HelpSystem = {
                 </div>
 
                 <div class="limitation-section">
-                    <h3>ðŸ”— Network Meta-Analysis</h3>
+                    <h3>🔗 Network Meta-Analysis</h3>
                     <ul>
                         <li>Uses Bucher's method for indirect comparisons (frequentist)</li>
                         <li>Assumes transitivity and consistency</li>
@@ -11431,7 +11431,7 @@ const HelpSystem = {
                 </div>
 
                 <div class="limitation-section">
-                    <h3>ðŸŽ² Bayesian Analysis</h3>
+                    <h3>🎲 Bayesian Analysis</h3>
                     <ul>
                         <li>MCMC uses Metropolis-Hastings with half-Cauchy prior for Ï„</li>
                         <li>Default burn-in (1,000) may be insufficient for complex models</li>
@@ -11441,7 +11441,7 @@ const HelpSystem = {
                 </div>
 
                 <div class="limitation-section">
-                    <h3>âš¡ Performance</h3>
+                    <h3>⚡ Performance</h3>
                     <ul>
                         <li>Large datasets (n &gt; 10,000 IPD records) may slow down</li>
                         <li>MCMC with &gt; 50,000 samples uses Web Workers but still intensive</li>
@@ -11496,7 +11496,7 @@ const HelpSystem = {
                 </div>
 
                 <div class="about-footer">
-                    <p>Â© 2026 IPD Meta-Analysis Pro. For research use.</p>
+                    <p>© 2026 IPD Meta-Analysis Pro. For research use.</p>
                 </div>
             </div>
         `;
@@ -11806,14 +11806,14 @@ function showInlineDataEditor() {
                         ${APP.data.map((row, i) => `
                             <tr data-row-index="${i}">
                                 ${APP.variables.map(v => '<td class="editable">' + escapeHTML(row[getVarName(v)] ?? '') + '</td>').join('')}
-                                <td><button class="btn btn-danger" onclick="InlineEditor.deleteRow(${i});document.getElementById('inlineEditorModal').remove();showInlineDataEditor();" style="padding:0.25rem 0.5rem;font-size:0.7rem;">Ã—</button></td>
+                                <td><button class="btn btn-danger" onclick="InlineEditor.deleteRow(${i});document.getElementById('inlineEditorModal').remove();showInlineDataEditor();" style="padding:0.25rem 0.5rem;font-size:0.7rem;">×</button></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>
             <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center;">
-                <span style="color:var(--text-muted);font-size:0.85rem;">${APP.data.length} rows Ã— ${APP.variables.length} columns</span>
+                <span style="color:var(--text-muted);font-size:0.85rem;">${APP.data.length} rows × ${APP.variables.length} columns</span>
                 <button class="btn btn-primary" onclick="document.getElementById('inlineEditorModal').remove();updateDataPreview();">Done</button>
             </div>
         </div>
@@ -12052,7 +12052,7 @@ function showMICEImputationModal() {
     modal.innerHTML = `
         <div class="modal" style="max-width:700px;">
             <div class="modal-header">
-                <h3>ðŸ”§ Multiple Imputation (MICE)</h3>
+                <h3>🔧 Multiple Imputation (MICE)</h3>
                 <button class="modal-close" onclick="document.getElementById('miceModal').remove()">&times;</button>
             </div>
 
@@ -13041,7 +13041,7 @@ document.addEventListener('DOMContentLoaded', function() {
  }
  };
 
- // Confidence level z-value: uses APP.config.confLevel (default 0.95 â†’ z=1.96)
+ // Confidence level z-value: uses APP.config.confLevel (default 0.95 → z=1.96)
  // Call getConfZ() instead of hardcoding 1.96 so CIs respect user's chosen level
  function getConfZ() {
  const level = (typeof APP !== 'undefined' && APP.config && APP.config.confLevel) ? APP.config.confLevel : 0.95;
@@ -13864,7 +13864,7 @@ function detectVariableTypes(data, headers) {
  });
  }
 
- // Shared plot margin presets â€” avoids 39 duplicated margin definitions
+ // Shared plot margin presets — avoids 39 duplicated margin definitions
  const PlotDefaults = {
   // Forest plots: wide labels on left, CI text on right
   forest: function() { return { top: 40, right: 120, bottom: 40, left: 150 }; },
@@ -14431,7 +14431,7 @@ function detectVariableTypes(data, headers) {
  });
  },
 
- // L'AbbÃ© plot (for binary outcomes)
+ // L'Abbé plot (for binary outcomes)
  drawLabbe: (canvas, studies, options = {}) => {
  const ctx = canvas.getContext('2d');
  const width = canvas.width = Math.max(canvas.offsetWidth * 2, 800);
@@ -14867,7 +14867,7 @@ const DataPaginator = {
  }
 
  warningDiv.innerHTML = `
- <strong>âš ï¸ Large Dataset Detected:</strong> ${n.toLocaleString()} records loaded.
+ <strong>⚠ï¸ Large Dataset Detected:</strong> ${n.toLocaleString()} records loaded.
  <br><small>For optimal performance, consider using stratified sampling for exploratory analysis.</small>
  <div style="margin-top:0.5rem;">
  <button class="btn btn-secondary btn-sm" onclick="DataPaginator.enableSampling()">
@@ -14959,11 +14959,11 @@ const DataPaginator = {
    ${APP.isSampled ? '<span class="badge badge-warning" style="margin-left:0.5rem;">Sampled</span>' : ''}
  </div>
  <div style="display:flex;gap:0.25rem;align-items:center;">
-   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>âŸª</button>
-   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>â—€</button>
+   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>⟪</button>
+   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>◀</button>
    <span style="padding:0 0.5rem;">Page ${this.currentPage} of ${this.totalPages}</span>
-   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(${this.currentPage + 1})" ${this.currentPage === this.totalPages ? 'disabled' : ''}>â–¶</button>
-   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(${this.totalPages})" ${this.currentPage === this.totalPages ? 'disabled' : ''}>âŸ«</button>
+   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(${this.currentPage + 1})" ${this.currentPage === this.totalPages ? 'disabled' : ''}>▶</button>
+   <button class="btn btn-secondary btn-sm" onclick="DataPaginator.goToPage(${this.totalPages})" ${this.currentPage === this.totalPages ? 'disabled' : ''}>⟫</button>
    ${APP.isSampled ? '<button class="btn btn-secondary btn-sm" onclick="DataPaginator.restoreFullData()" style="margin-left:0.5rem;">Restore Full</button>' : ''}
  </div>
  </div>
@@ -15575,11 +15575,11 @@ function runAnalysis() {
 
  if (k < 3) {
  const proceed = confirm(
- 'âš ï¸ Warning: Only ' + k + ' studies detected.\n\n' +
+ '⚠ï¸ Warning: Only ' + k + ' studies detected.\n\n' +
  'Meta-analysis with k < 3 has important limitations:\n' +
- 'â€¢ Heterogeneity estimates (IÂ², Ï„Â²) are unreliable\n' +
- 'â€¢ Confidence intervals may be too narrow\n' +
- 'â€¢ Publication bias tests have very low power\n\n' +
+ '• Heterogeneity estimates (I², Ï„²) are unreliable\n' +
+ '• Confidence intervals may be too narrow\n' +
+ '• Publication bias tests have very low power\n\n' +
  'Results should be interpreted with extreme caution.\n\n' +
  'Do you want to proceed anyway?'
  );
@@ -15690,7 +15690,7 @@ function runAnalysis() {
  const allPositive = validEffects.every(e => e >= 0);
  const allNegative = validEffects.every(e => e <= 0);
  if (allPositive || allNegative) {
- showNotification('âš ï¸ Separation detected: all effects are in the same direction. Heterogeneity estimates may be unreliable.', 'warning');
+ showNotification('⚠ï¸ Separation detected: all effects are in the same direction. Heterogeneity estimates may be unreliable.', 'warning');
  ErrorHandler.dataError('Separation detected in effect sizes', { allPositive, allNegative, effects: validEffects });
  }
  }
@@ -15704,7 +15704,7 @@ function runAnalysis() {
   studies: invalidStudies.map(s => s.study),
   details: invalidStudies.map(s => ({ study: s.study, variance: s.variance, n: s.n }))
  });
- showNotification('âš ï¸ ' + invalidStudies.length + ' studies have invalid/zero variance (' + studyNames + ') and will use fallback estimation', 'warning');
+ showNotification('⚠ï¸ ' + invalidStudies.length + ' studies have invalid/zero variance (' + studyNames + ') and will use fallback estimation', 'warning');
  }
 
  let result;
@@ -15823,11 +15823,11 @@ function computeQProfile() {
  contentDiv.innerHTML = `
  <div class="grid grid-2" style="margin-bottom:1rem;">
  <div>
- <h4 style="margin-bottom:0.75rem;">Ï„Â² Confidence Interval (Q-Profile)</h4>
+ <h4 style="margin-bottom:0.75rem;">Ï„² Confidence Interval (Q-Profile)</h4>
  <table class="results-table" style="font-size:0.85rem;">
    <tr><th>Parameter</th><th>Point Est.</th><th>${((1-alpha)*100).toFixed(0)}% CI</th></tr>
    <tr>
-     <td>Ï„Â² (Between-study variance)</td>
+     <td>Ï„² (Between-study variance)</td>
      <td>${tau2Point.toFixed(4)}</td>
      <td>[${tau2Lower.toFixed(4)}, ${tau2Upper.toFixed(4)}]</td>
    </tr>
@@ -15837,7 +15837,7 @@ function computeQProfile() {
      <td>[${Math.sqrt(tau2Lower).toFixed(4)}, ${Math.sqrt(tau2Upper).toFixed(4)}]</td>
    </tr>
    <tr>
-     <td>IÂ² (% variability due to heterogeneity)</td>
+     <td>I² (% variability due to heterogeneity)</td>
      <td>${Math.max(0, i2Point).toFixed(1)}%</td>
      <td>[${Math.max(0, i2Lower).toFixed(1)}%, ${Math.min(100, i2Upper).toFixed(1)}%]</td>
    </tr>
@@ -15851,7 +15851,7 @@ function computeQProfile() {
  </div>
  </div>
  <div class="alert alert-info" style="font-size:0.85rem;">
- <strong>Interpretation:</strong> The Q-profile method provides valid confidence intervals for Ï„Â²
+ <strong>Interpretation:</strong> The Q-profile method provides valid confidence intervals for Ï„²
  regardless of the number of studies. CI computed by inverting the Q-test at the ${((1-alpha)*100).toFixed(0)}% level.
  ${k < 5 ? '<br><strong>Note:</strong> With k=' + k + ' studies, CI may be wide and unstable.' : ''}
  </div>
@@ -15944,7 +15944,7 @@ function computeQProfile() {
  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary') || '#a0a0b0';
  ctx.font = '11px system-ui';
  ctx.textAlign = 'center';
- ctx.fillText('Ï„Â²', w/2, h - 5);
+ ctx.fillText('Ï„²', w/2, h - 5);
 
  ctx.save();
  ctx.translate(12, h/2);
@@ -15955,9 +15955,9 @@ function computeQProfile() {
  // Legend
  ctx.font = '9px system-ui';
  ctx.fillStyle = '#ef4444';
- ctx.fillText('Upper Ï‡Â²', w - margin.right - 30, margin.top + 10);
+ ctx.fillText('Upper Ï‡²', w - margin.right - 30, margin.top + 10);
  ctx.fillStyle = '#10b981';
- ctx.fillText('Lower Ï‡Â²', w - margin.right - 30, margin.top + 22);
+ ctx.fillText('Lower Ï‡²', w - margin.right - 30, margin.top + 22);
  }, 100);
 
  showNotification('Q-Profile CI computed', 'success');
@@ -16479,7 +16479,7 @@ function generateReport() {
 
  <h2>Heterogeneity</h2>
  <p>Q = ${r.pooled.Q.toFixed(2)}, df = ${r.pooled.df}, p = ${r.pooled.pQ.toFixed(4)}</p>
- <p>IÂ² = ${r.pooled.I2.toFixed(1)}%, Ï„Â² = ${r.pooled.tau2.toFixed(4)}</p>
+ <p>I² = ${r.pooled.I2.toFixed(1)}%, Ï„² = ${r.pooled.tau2.toFixed(4)}</p>
 
  <h2>Methods</h2>
  <p>Analysis type: ${APP.config.analysisApproach}</p>
@@ -16680,7 +16680,7 @@ function generateForestPlotSVG(canvas, name) {
  svg += ` <polygon points="${xScale(pooledLower)},${pooledY} ${xScale(pooledEffect)},${pooledY - diamondHeight} ${xScale(pooledUpper)},${pooledY} ${xScale(pooledEffect)},${pooledY + diamondHeight}" fill="#1a56db" stroke="#1a56db"/>\n`;
 
  // Pooled label
- svg += ` <text x="${margin.left - 10}" y="${pooledY + 4}" class="pooled-label" text-anchor="end">Overall (${pooled.I2.toFixed(0)}% IÂ²)</text>\n`;
+ svg += ` <text x="${margin.left - 10}" y="${pooledY + 4}" class="pooled-label" text-anchor="end">Overall (${pooled.I2.toFixed(0)}% I²)</text>\n`;
  svg += ` <text x="${width - 20}" y="${pooledY + 4}" class="effect-label" font-weight="bold">${pooledEffect.toFixed(2)} [${pooledLower.toFixed(2)}, ${pooledUpper.toFixed(2)}]</text>\n`;
 
  // X-axis with ticks
@@ -16693,7 +16693,7 @@ function generateForestPlotSVG(canvas, name) {
  }
 
  // X-axis label
- const axisLabel = isLogScale ? `${APP.config.effectMeasure} (favors treatment â†â†’ favors control)` : 'Effect Size';
+ const axisLabel = isLogScale ? `${APP.config.effectMeasure} (favors treatment â†→ favors control)` : 'Effect Size';
  svg += ` <text x="${width/2}" y="${height - 15}" class="axis-label">${axisLabel}</text>\n`;
 
  // Metadata comment for reproducibility
@@ -16702,8 +16702,8 @@ function generateForestPlotSVG(canvas, name) {
  <!-- Studies: ${studies.length} -->
  <!-- Pooled Effect: ${pooledEffect.toFixed(4)} -->
  <!-- 95% CI: [${pooledLower.toFixed(4)}, ${pooledUpper.toFixed(4)}] -->
- <!-- IÂ²: ${pooled.I2.toFixed(1)}% -->
- <!-- Ï„Â²: ${pooled.tau2.toFixed(4)} -->
+ <!-- I²: ${pooled.I2.toFixed(1)}% -->
+ <!-- Ï„²: ${pooled.tau2.toFixed(4)} -->
 `;
 
  svg += `</svg>`;
@@ -17957,15 +17957,15 @@ function generateNaturalLanguageInterpretation(results) {
  const i2 = results.heterogeneity.i2;
  let heteroInterp;
  if (i2 < 25) {
- heteroInterp = 'low heterogeneity (IÂ² < 25%), suggesting consistent effects across studies';
+ heteroInterp = 'low heterogeneity (I² < 25%), suggesting consistent effects across studies';
  } else if (i2 < 50) {
- heteroInterp = 'moderate heterogeneity (IÂ² 25-50%), suggesting some variation in effects';
+ heteroInterp = 'moderate heterogeneity (I² 25-50%), suggesting some variation in effects';
  } else if (i2 < 75) {
- heteroInterp = 'substantial heterogeneity (IÂ² 50-75%), indicating important differences between studies';
+ heteroInterp = 'substantial heterogeneity (I² 50-75%), indicating important differences between studies';
  } else {
- heteroInterp = 'considerable heterogeneity (IÂ² > 75%), suggesting very different effects across studies that may limit the validity of pooling';
+ heteroInterp = 'considerable heterogeneity (I² > 75%), suggesting very different effects across studies that may limit the validity of pooling';
  }
- interp.push(`<strong>Heterogeneity:</strong> There is ${heteroInterp} (IÂ² = ${i2.toFixed(1)}%, Ï„Â² = ${results.heterogeneity.tau2.toFixed(4)}).`);
+ interp.push(`<strong>Heterogeneity:</strong> There is ${heteroInterp} (I² = ${i2.toFixed(1)}%, Ï„² = ${results.heterogeneity.tau2.toFixed(4)}).`);
 
  if (results.heterogeneity.predictionInterval) {
  const pi = results.heterogeneity.predictionInterval;
@@ -18015,10 +18015,10 @@ function assessGRADE(results) {
  const i2 = results.heterogeneity.i2;
  if (i2 > 75) {
  assessment.inconsistency = 'very serious';
- assessment.downgradeFactors.push('Very high heterogeneity (IÂ² > 75%)');
+ assessment.downgradeFactors.push('Very high heterogeneity (I² > 75%)');
  } else if (i2 > 50) {
  assessment.inconsistency = 'serious';
- assessment.downgradeFactors.push('Substantial heterogeneity (IÂ² > 50%)');
+ assessment.downgradeFactors.push('Substantial heterogeneity (I² > 50%)');
  }
 
  const pooled = results.pooled;
@@ -18562,7 +18562,7 @@ function displayTSAResults(results) {
  <td>${s}</td>
  <td>${z.toFixed(3)}</td>
  <td>${(results.informationFraction[i] * 100).toFixed(1)}%</td>
- <td>Â±${bound.toFixed(3)}</td>
+ <td>±${bound.toFixed(3)}</td>
  <td>${crossed ? 'Crossed' : 'Within bounds'}</td>
  </tr>
  `;
@@ -18722,7 +18722,7 @@ function assessRiskOfBias() {
  <div class="modal-body">
  <p style="margin-bottom: 1rem; color: var(--text-secondary);">
  Assess risk of bias for each study using the Cochrane ROB-2 tool.
- Click each cell to cycle through: Low (green) â†’ Some concerns (yellow) â†’ High (red)
+ Click each cell to cycle through: Low (green) → Some concerns (yellow) → High (red)
  </p>
 
  <div style="overflow-x: auto;">
@@ -19214,7 +19214,7 @@ function displayMetaRegressionResults(results) {
  </div>
  <div>
  <p><strong>Intercept:</strong> ${results.intercept.toFixed(4)}</p>
- <p><strong>RÂ²:</strong> ${(results.r2 * 100).toFixed(1)}%</p>
+ <p><strong>R²:</strong> ${(results.r2 * 100).toFixed(1)}%</p>
  </div>
  </div>
  <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
@@ -19468,8 +19468,8 @@ function exportPublicationTables() {
  <h4>Table 3: Heterogeneity Statistics</h4>
  <table class="data-table publication-table" style="font-size: 0.85rem;">
  <tbody>
- <tr><td>IÂ² (inconsistency)</td><td>${APP.results.heterogeneity.i2.toFixed(1)}%</td></tr>
- <tr><td>Ï„Â² (between-study variance)</td><td>${APP.results.heterogeneity.tau2.toFixed(4)}</td></tr>
+ <tr><td>I² (inconsistency)</td><td>${APP.results.heterogeneity.i2.toFixed(1)}%</td></tr>
+ <tr><td>Ï„² (between-study variance)</td><td>${APP.results.heterogeneity.tau2.toFixed(4)}</td></tr>
  <tr><td>Q statistic</td><td>${APP.results.heterogeneity.q.toFixed(2)}</td></tr>
  <tr><td>Q p-value</td><td>${APP.results.heterogeneity.pHet.toFixed(4)}</td></tr>
  </tbody>
@@ -21986,7 +21986,7 @@ function displayCATEResults(results) {
  ${results.flatMap(r => [
  `<tr>
  <td rowspan="2"><strong>${escapeHTML(r.covariate)}</strong><br><span style="font-size: 0.8rem; color: var(--text-muted);">Median: ${r.median.toFixed(2)}</span></td>
- <td>â‰¤ Median</td>
+ <td>≤ Median</td>
  <td>${r.nLow}</td>
  <td>${r.lowEffect.toFixed(4)}</td>
  <td rowspan="2" style="${r.pInteraction < 0.1 ? 'background: #f59e0b22;' : ''}">${r.interaction.toFixed(4)}</td>
@@ -22084,7 +22084,7 @@ function drawCATEPlot(results) {
  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
  ctx.font = '11px system-ui';
  ctx.textAlign = 'right';
- ctx.fillText(`${r.covariate} â‰¤ ${r.median.toFixed(1)}`, margin.left - 10, y1 + 4);
+ ctx.fillText(`${r.covariate} ≤ ${r.median.toFixed(1)}`, margin.left - 10, y1 + 4);
  ctx.fillText(`${r.covariate} > ${r.median.toFixed(1)}`, margin.left - 10, y2 + 4);
  });
  }
@@ -22366,7 +22366,7 @@ function displaySensitivityResults(results) {
 
  <h4 style="margin-top: 1.5rem;">Trim and Fill</h4>
  <p>${escapeHTML(results.trimAndFill.message)}</p>
- <p>Original effect: ${results.trimAndFill.originalEffect.toFixed(4)} â†’
+ <p>Original effect: ${results.trimAndFill.originalEffect.toFixed(4)} →
  Adjusted effect: ${results.trimAndFill.adjustedEffect.toFixed(4)}</p>
 
  <h4 style="margin-top: 1.5rem;">Robustness Checks</h4>
@@ -23009,7 +23009,7 @@ function restoreSession() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸŽ¯ Targeted Maximum Likelihood Estimation (TMLE)</h3>';
+ html += '<h3>🎯 Targeted Maximum Likelihood Estimation (TMLE)</h3>';
  html += '<p><em>Double-robust causal inference with optimal efficiency</em></p>';
 
  html += '<h4>Causal Effect Estimates</h4>';
@@ -23272,16 +23272,16 @@ function runCrossValidation() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“Š 10-Fold Cross-Validation Results</h3>';
+ html += '<h3>📊 10-Fold Cross-Validation Results</h3>';
 
  html += '<h4>Model Comparison</h4>';
  html += '<table class="results-table">';
- html += '<tr><th>Model</th><th>AUC (Mean Â± SD)</th><th>Brier Score</th><th>Calibration Slope</th></tr>';
+ html += '<tr><th>Model</th><th>AUC (Mean ± SD)</th><th>Brier Score</th><th>Calibration Slope</th></tr>';
  modelResults.forEach(mr => {
  const isBest = mr.name === bestModel.name;
  html += `<tr${isBest ? ' style="background-color: rgba(0,255,0,0.1);"' : ''}>`;
  html += `<td>${escapeHTML(mr.name)}${isBest ? ' â­' : ''}</td>`;
- html += `<td>${mr.meanAUC.toFixed(3)} Â± ${mr.sdAUC.toFixed(3)}</td>`;
+ html += `<td>${mr.meanAUC.toFixed(3)} ± ${mr.sdAUC.toFixed(3)}</td>`;
  html += `<td>${mr.meanBrier.toFixed(4)}</td>`;
  html += `<td>${mr.meanCalib.toFixed(3)}</td>`;
  html += '</tr>';
@@ -23306,19 +23306,19 @@ function runCrossValidation() {
  html += `<p>The best performing model is <strong>${escapeHTML(bestModel.name)}</strong> with a mean AUC of ${bestModel.meanAUC.toFixed(3)}.</p>`;
 
  if (bestModel.meanAUC >= 0.8) {
- html += '<p>âœ… <strong>Excellent discrimination</strong>: AUC â‰¥ 0.8</p>';
+ html += '<p>✅ <strong>Excellent discrimination</strong>: AUC ≥ 0.8</p>';
  } else if (bestModel.meanAUC >= 0.7) {
- html += '<p>âš ï¸ <strong>Good discrimination</strong>: AUC 0.7-0.8</p>';
+ html += '<p>⚠ï¸ <strong>Good discrimination</strong>: AUC 0.7-0.8</p>';
  } else if (bestModel.meanAUC >= 0.6) {
- html += '<p>âš ï¸ <strong>Fair discrimination</strong>: AUC 0.6-0.7</p>';
+ html += '<p>⚠ï¸ <strong>Fair discrimination</strong>: AUC 0.6-0.7</p>';
  } else {
  html += '<p>âŒ <strong>Poor discrimination</strong>: AUC < 0.6</p>';
  }
 
  if (bestModel.meanBrier < 0.15) {
- html += '<p>âœ… <strong>Good calibration</strong>: Brier score < 0.15</p>';
+ html += '<p>✅ <strong>Good calibration</strong>: Brier score < 0.15</p>';
  } else {
- html += '<p>âš ï¸ <strong>Moderate calibration</strong>: Brier score â‰¥ 0.15</p>';
+ html += '<p>⚠ï¸ <strong>Moderate calibration</strong>: Brier score ≥ 0.15</p>';
  }
 
  html += `<p>Predictors used: ${safePredictorCols}</p>`;
@@ -23452,12 +23452,12 @@ function runInfluenceDiagnostics() {
 
  html += '<h4>Leave-One-Out Results</h4>';
  html += '<table class="results-table">';
- html += '<tr><th>Study Omitted</th><th>Pooled Effect</th><th>95% CI</th><th>IÂ²</th><th>Influence</th></tr>';
+ html += '<tr><th>Study Omitted</th><th>Pooled Effect</th><th>95% CI</th><th>I²</th><th>Influence</th></tr>';
 
  looResults.forEach((r, i) => {
  const ci_l = r.effect - getConfZ() *r.se;
  const ci_u = r.effect + getConfZ() *r.se;
- const flag = r.influential ? ' âš ï¸' : '';
+ const flag = r.influential ? ' ⚠ï¸' : '';
  html += `<tr${r.influential ? ' style="background-color: rgba(255,0,0,0.1);"' : ''}>`;
  html += `<td>${escapeHTML(r.study)}${flag}</td>`;
  html += `<td>${r.effect.toFixed(3)}</td>`;
@@ -23484,7 +23484,7 @@ function runInfluenceDiagnostics() {
  html += '<h4>Summary</h4>';
  html += '<div class="interpretation-box">';
  if (influential.length > 0) {
- html += `<p>âš ï¸ <strong>${influential.length} potentially influential study(ies) detected:</strong></p>`;
+ html += `<p>⚠ï¸ <strong>${influential.length} potentially influential study(ies) detected:</strong></p>`;
  html += '<ul>';
  influential.forEach(s => {
  html += `<li>${escapeHTML(s.study)}: DFBETA = ${s.dfbeta.toFixed(3)}</li>`;
@@ -23492,7 +23492,7 @@ function runInfluenceDiagnostics() {
  html += '</ul>';
  html += '<p>Consider sensitivity analysis excluding these studies.</p>';
  } else {
- html += '<p>âœ… No single study has undue influence on the pooled result.</p>';
+ html += '<p>✅ No single study has undue influence on the pooled result.</p>';
  }
  html += '</div>';
 
@@ -23624,7 +23624,7 @@ function runDiagnosticMA() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ”¬ Diagnostic Test Accuracy Meta-Analysis</h3>';
+ html += '<h3>🔬 Diagnostic Test Accuracy Meta-Analysis</h3>';
 
  html += '<h4>Individual Study Results</h4>';
  html += '<table class="results-table">';
@@ -23659,15 +23659,15 @@ function runDiagnosticMA() {
  html += `<p>The pooled <strong>specificity is ${(pooledSpec.p * 100).toFixed(1)}%</strong>, meaning the test correctly identifies ${(pooledSpec.p * 100).toFixed(0)}% of true negatives.</p>`;
 
  if (pooledPLR > 10) {
- html += '<p>âœ… The positive likelihood ratio > 10 indicates <strong>excellent</strong> diagnostic value for ruling in disease.</p>';
+ html += '<p>✅ The positive likelihood ratio > 10 indicates <strong>excellent</strong> diagnostic value for ruling in disease.</p>';
  } else if (pooledPLR > 5) {
- html += '<p>âš ï¸ The positive likelihood ratio 5-10 indicates <strong>moderate</strong> diagnostic value.</p>';
+ html += '<p>⚠ï¸ The positive likelihood ratio 5-10 indicates <strong>moderate</strong> diagnostic value.</p>';
  }
 
  if (pooledNLR < 0.1) {
- html += '<p>âœ… The negative likelihood ratio < 0.1 indicates <strong>excellent</strong> diagnostic value for ruling out disease.</p>';
+ html += '<p>✅ The negative likelihood ratio < 0.1 indicates <strong>excellent</strong> diagnostic value for ruling out disease.</p>';
  } else if (pooledNLR < 0.2) {
- html += '<p>âš ï¸ The negative likelihood ratio 0.1-0.2 indicates <strong>moderate</strong> diagnostic value.</p>';
+ html += '<p>⚠ï¸ The negative likelihood ratio 0.1-0.2 indicates <strong>moderate</strong> diagnostic value.</p>';
  }
  html += '</div>';
 
@@ -23817,7 +23817,7 @@ function runNetworkMetaRegression() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“ˆ Network Meta-Regression</h3>';
+ html += '<h3>📈 Network Meta-Regression</h3>';
  const safeModerator = escapeHTML(moderator);
  html += `<p>Moderator: <strong>${safeModerator}</strong></p>`;
 
@@ -23830,7 +23830,7 @@ function runNetworkMetaRegression() {
 
  html += '<h4>Model Fit</h4>';
  html += '<table class="results-table">';
- html += `<tr><td>RÂ²</td><td>${(r2 * 100).toFixed(1)}%</td></tr>`;
+ html += `<tr><td>R²</td><td>${(r2 * 100).toFixed(1)}%</td></tr>`;
  html += `<tr><td>Number of comparisons</td><td>${effects.length}</td></tr>`;
  html += '</table>';
 
@@ -23961,7 +23961,7 @@ function runMetaCART() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸŒ³ Meta-CART: Subgroup Detection via Decision Trees</h3>';
+ html += '<h3>🌳 Meta-CART: Subgroup Detection via Decision Trees</h3>';
  html += '<p><em>Identifies subgroups with differential treatment effects</em></p>';
 
  html += '<h4>Decision Tree Structure</h4>';
@@ -23971,7 +23971,7 @@ function runMetaCART() {
 
  html += '<h4>Identified Subgroups</h4>';
  html += '<table class="results-table">';
- html += '<tr><th>Subgroup</th><th>N Studies</th><th>Pooled Effect</th><th>95% CI</th><th>IÂ²</th></tr>';
+ html += '<tr><th>Subgroup</th><th>N Studies</th><th>Pooled Effect</th><th>95% CI</th><th>I²</th></tr>';
 
  subgroups.forEach((sg, i) => {
  if (sg.studies.length >= 2) {
@@ -24097,7 +24097,7 @@ function extractSubgroups(node, rules) {
  }];
  }
 
- const leftRules = [...rules, `${node.moderator} â‰¤ ${node.threshold.toFixed(2)}`];
+ const leftRules = [...rules, `${node.moderator} ≤ ${node.threshold.toFixed(2)}`];
  const rightRules = [...rules, `${node.moderator} > ${node.threshold.toFixed(2)}`];
 
  return [
@@ -24109,12 +24109,12 @@ function extractSubgroups(node, rules) {
 function renderTreeText(node, indent) {
  const pad = '&nbsp;'.repeat(indent * 4);
  if (node.type === 'leaf') {
- return `${pad}ðŸ“Š N=${node.n}, Effect=${node.effect.toFixed(3)}<br>`;
+ return `${pad}📊 N=${node.n}, Effect=${node.effect.toFixed(3)}<br>`;
  }
  const safeModerator = escapeHTML(node.moderator);
- let html = `${pad}ðŸ”€ ${safeModerator} â‰¤ ${node.threshold.toFixed(2)}?<br>`;
- html += `${pad}â”œâ”€ Yes:<br>${renderTreeText(node.left, indent + 1)}`;
- html += `${pad}â””â”€ No:<br>${renderTreeText(node.right, indent + 1)}`;
+ let html = `${pad}🔀 ${safeModerator} ≤ ${node.threshold.toFixed(2)}?<br>`;
+ html += `${pad}├─ Yes:<br>${renderTreeText(node.left, indent + 1)}`;
+ html += `${pad}└─ No:<br>${renderTreeText(node.right, indent + 1)}`;
  return html;
  }
 
@@ -24210,7 +24210,7 @@ function drawMetaCARTViz(canvas, subgroups) {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“ˆ Sequential Meta-Analysis</h3>';
+ html += '<h3>📈 Sequential Meta-Analysis</h3>';
  html += "<p><em>O'Brien-Fleming boundaries for evidence monitoring</em></p>";
 
  html += '<h4>Cumulative Results</h4>';
@@ -24218,13 +24218,13 @@ function drawMetaCARTViz(canvas, subgroups) {
  html += '<tr><th>Studies</th><th>Effect</th><th>95% CI</th><th>Z-stat</th><th>Boundary</th><th>Status</th></tr>';
 
  cumulative.forEach(c => {
- const status = c.crossed ? 'âœ… Crossed' : 'â³ Continue';
+ const status = c.crossed ? '✅ Crossed' : 'â³ Continue';
  html += `<tr${c.crossed ? ' style="background-color: rgba(0,255,0,0.15);"' : ''}>`;
  html += `<td>1-${c.k}</td>`;
  html += `<td>${c.effect.toFixed(3)}</td>`;
  html += `<td>(${c.ci_l.toFixed(3)}, ${c.ci_u.toFixed(3)})</td>`;
  html += `<td>${c.z.toFixed(2)}</td>`;
- html += `<td>Â±${c.bound.toFixed(2)}</td>`;
+ html += `<td>±${c.bound.toFixed(2)}</td>`;
  html += `<td>${status}</td>`;
  html += '</tr>';
  });
@@ -24236,7 +24236,7 @@ function drawMetaCARTViz(canvas, subgroups) {
  html += '<h4>Interpretation</h4>';
  html += '<div class="interpretation-box">';
  if (crossingPoint >= 0) {
- html += `<p>âœ… <strong>Conclusive evidence reached</strong> after ${crossingPoint + 1} studies.</p>`;
+ html += `<p>✅ <strong>Conclusive evidence reached</strong> after ${crossingPoint + 1} studies.</p>`;
  html += `<p>The Z-statistic crossed the O'Brien-Fleming boundary, indicating sufficient evidence to conclude about the treatment effect.</p>`;
  const finalEffect = cumulative[n - 1];
  if (finalEffect.effect > 0) {
@@ -24425,8 +24425,8 @@ function runMediationAnalysis() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ”— Causal Mediation Analysis</h3>';
- html += `<p>Treatment: ${treatCol} â†’ Mediator: ${actualMediator} â†’ Outcome: ${outcomeCol}</p>`;
+ html += '<h3>🔗 Causal Mediation Analysis</h3>';
+ html += `<p>Treatment: ${treatCol} → Mediator: ${actualMediator} → Outcome: ${outcomeCol}</p>`;
 
  html += '<h4>Path Diagram</h4>';
  html += '<canvas id="mediation-canvas" width="500" height="200"></canvas>';
@@ -24436,7 +24436,7 @@ function runMediationAnalysis() {
  html += '<tr><th>Effect</th><th>Estimate</th><th>SE</th><th>95% CI</th><th>P-value</th></tr>';
  html += `<tr><td>Total Effect (c)</td><td>${totalEffect.toFixed(4)}</td><td>${c_result.slopeSE.toFixed(4)}</td><td>(${(totalEffect - getConfZ() *c_result.slopeSE).toFixed(4)}, ${(totalEffect + getConfZ() *c_result.slopeSE).toFixed(4)})</td><td>${c_result.pValue.toFixed(4)}</td></tr>`;
  html += `<tr><td>Direct Effect (c')</td><td>${c_prime.toFixed(4)}</td><td>${mediatorModel.ses[0].toFixed(4)}</td><td>(${(c_prime - getConfZ() *mediatorModel.ses[0]).toFixed(4)}, ${(c_prime + getConfZ() *mediatorModel.ses[0]).toFixed(4)})</td><td>${mediatorModel.pValues[0].toFixed(4)}</td></tr>`;
- html += `<tr style="background-color: rgba(255,165,0,0.1);"><td>Indirect Effect (aÃ—b)</td><td>${indirectEffect.toFixed(4)}</td><td>${sobelSE.toFixed(4)}</td><td>(${(indirectEffect - getConfZ() *sobelSE).toFixed(4)}, ${(indirectEffect + getConfZ() *sobelSE).toFixed(4)})</td><td>${sobelP.toFixed(4)}</td></tr>`;
+ html += `<tr style="background-color: rgba(255,165,0,0.1);"><td>Indirect Effect (a×b)</td><td>${indirectEffect.toFixed(4)}</td><td>${sobelSE.toFixed(4)}</td><td>(${(indirectEffect - getConfZ() *sobelSE).toFixed(4)}, ${(indirectEffect + getConfZ() *sobelSE).toFixed(4)})</td><td>${sobelP.toFixed(4)}</td></tr>`;
  html += `<tr><td>Proportion Mediated</td><td>${(propMediated * 100).toFixed(1)}%</td><td colspan="3">-</td></tr>`;
  html += '</table>';
 
@@ -24450,10 +24450,10 @@ function runMediationAnalysis() {
  html += '<h4>Interpretation</h4>';
  html += '<div class="interpretation-box">';
  if (sobelP < 0.05) {
- html += `<p>âœ… The <strong>indirect effect is statistically significant</strong> (Sobel p = ${sobelP.toFixed(4)}).</p>`;
+ html += `<p>✅ The <strong>indirect effect is statistically significant</strong> (Sobel p = ${sobelP.toFixed(4)}).</p>`;
  html += `<p>The mediator <strong>${actualMediator}</strong> explains approximately <strong>${Math.abs(propMediated * 100).toFixed(1)}%</strong> of the total treatment effect.</p>`;
  } else {
- html += `<p>âš ï¸ The indirect effect is <strong>not statistically significant</strong> (p = ${sobelP.toFixed(3)}).</p>`;
+ html += `<p>⚠ï¸ The indirect effect is <strong>not statistically significant</strong> (p = ${sobelP.toFixed(3)}).</p>`;
  html += `<p>There is insufficient evidence that ${actualMediator} mediates the treatment effect.</p>`;
  }
 
@@ -24718,8 +24718,8 @@ function runIVAnalysis() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ”§ Instrumental Variable Analysis (2SLS)</h3>';
- html += `<p>Instrument: ${actualIV} â†’ Treatment: ${treatCol} â†’ Outcome: ${outcomeCol}</p>`;
+ html += '<h3>🔧 Instrumental Variable Analysis (2SLS)</h3>';
+ html += `<p>Instrument: ${actualIV} → Treatment: ${treatCol} → Outcome: ${outcomeCol}</p>`;
 
  html += '<h4>First Stage Results</h4>';
  html += '<table class="results-table">';
@@ -24764,9 +24764,9 @@ function runIVAnalysis() {
  html += `<p>The estimated <strong>Local Average Treatment Effect (LATE)</strong> is ${late.toFixed(4)}.</p>`;
 
  if (hausmanP < 0.05) {
- html += '<p>âš ï¸ The Hausman test suggests <strong>significant endogeneity</strong> - OLS estimates are likely biased. IV estimates are preferred.</p>';
+ html += '<p>⚠ï¸ The Hausman test suggests <strong>significant endogeneity</strong> - OLS estimates are likely biased. IV estimates are preferred.</p>';
  } else {
- html += '<p>âœ… The Hausman test does not detect significant endogeneity. OLS and IV estimates are similar.</p>';
+ html += '<p>✅ The Hausman test does not detect significant endogeneity. OLS and IV estimates are similar.</p>';
  }
 
  html += '<p><em>Note: IV validity requires that the instrument affects the outcome ONLY through treatment (exclusion restriction).</em></p>';
@@ -24829,12 +24829,12 @@ function runMultivariateMA() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“Š Multivariate Random-Effects Meta-Analysis</h3>';
+ html += '<h3>📊 Multivariate Random-Effects Meta-Analysis</h3>';
  html += '<p><em>Joint analysis of correlated outcomes</em></p>';
 
  html += '<h4>Pooled Estimates</h4>';
  html += '<table class="results-table">';
- html += '<tr><th>Outcome</th><th>Effect</th><th>SE</th><th>95% CI</th><th>Ï„Â²</th></tr>';
+ html += '<tr><th>Outcome</th><th>Effect</th><th>SE</th><th>95% CI</th><th>Ï„²</th></tr>';
  html += `<tr><td>Outcome 1</td><td>${pooled1.effect.toFixed(3)}</td><td>${pooled1.se.toFixed(3)}</td><td>(${(pooled1.effect - getConfZ() *pooled1.se).toFixed(3)}, ${(pooled1.effect + getConfZ() *pooled1.se).toFixed(3)})</td><td>${(pooled1.tau2 || 0).toFixed(4)}</td></tr>`;
  html += `<tr><td>Outcome 2</td><td>${pooled2.effect.toFixed(3)}</td><td>${pooled2.se.toFixed(3)}</td><td>(${(pooled2.effect - getConfZ() *pooled2.se).toFixed(3)}, ${(pooled2.effect + getConfZ() *pooled2.se).toFixed(3)})</td><td>${(pooled2.tau2 || 0).toFixed(4)}</td></tr>`;
  html += '</table>';
@@ -24854,11 +24854,11 @@ function runMultivariateMA() {
  html += '<p><strong>Multivariate meta-analysis</strong> jointly models correlated outcomes, borrowing strength across related endpoints.</p>';
  html += `<p>The between-study correlation is <strong>Ï = ${rho.toFixed(3)}</strong>.</p>`;
  if (Math.abs(rho) > 0.5) {
- html += '<p>âœ… Strong correlation suggests substantial efficiency gains from multivariate modeling.</p>';
+ html += '<p>✅ Strong correlation suggests substantial efficiency gains from multivariate modeling.</p>';
  } else if (Math.abs(rho) > 0.3) {
- html += '<p>âš ï¸ Moderate correlation - some efficiency gain from multivariate approach.</p>';
+ html += '<p>⚠ï¸ Moderate correlation - some efficiency gain from multivariate approach.</p>';
  } else {
- html += '<p>â„¹ï¸ Weak correlation - univariate analyses may be sufficient.</p>';
+ html += '<p>ℹï¸ Weak correlation - univariate analyses may be sufficient.</p>';
  }
  html += '</div>';
 
@@ -25115,7 +25115,7 @@ function runEValueAnalysis() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ›¡ï¸ E-Value: Sensitivity to Unmeasured Confounding</h3>';
+ html += '<h3>🛡ï¸ E-Value: Sensitivity to Unmeasured Confounding</h3>';
  html += '<p><em>How strong would confounding need to be to explain away the effect?</em></p>';
 
  html += '<h4>E-Value Results</h4>';
@@ -25140,9 +25140,9 @@ function runEValueAnalysis() {
  html += `<p>The <strong>E-value of ${eValue.toFixed(2)}</strong> means that an unmeasured confounder would need to be associated with both the treatment and outcome by a risk ratio of at least ${eValue.toFixed(2)}-fold each, above and beyond the measured confounders, to fully explain away the observed effect.</p>`;
 
  if (eValue > 3) {
- html += '<p>âœ… <strong>Robust to unmeasured confounding</strong>: The E-value is large, suggesting the effect is unlikely to be due to unmeasured confounding alone.</p>';
+ html += '<p>✅ <strong>Robust to unmeasured confounding</strong>: The E-value is large, suggesting the effect is unlikely to be due to unmeasured confounding alone.</p>';
  } else if (eValue > 2) {
- html += '<p>âš ï¸ <strong>Moderate robustness</strong>: The effect could potentially be explained by moderately strong confounding.</p>';
+ html += '<p>⚠ï¸ <strong>Moderate robustness</strong>: The effect could potentially be explained by moderately strong confounding.</p>';
  } else {
  html += '<p>âŒ <strong>Sensitive to confounding</strong>: Even weak unmeasured confounding could explain the observed effect.</p>';
  }
@@ -25295,22 +25295,22 @@ function runMissingDataAnalysis() {
  html += '<h4>Interpretation</h4>';
  html += '<div class="interpretation-box">';
  if (mcarStatistic.pValue > 0.05) {
- html += '<p>âœ… <strong>Data may be Missing Completely At Random (MCAR)</strong></p>';
+ html += '<p>✅ <strong>Data may be Missing Completely At Random (MCAR)</strong></p>';
  html += '<p>Complete case analysis may be unbiased, but will lose efficiency.</p>';
  } else {
- html += '<p>âš ï¸ <strong>Data is NOT Missing Completely At Random</strong></p>';
+ html += '<p>⚠ï¸ <strong>Data is NOT Missing Completely At Random</strong></p>';
  html += '<p>Multiple imputation or other methods are recommended to avoid bias.</p>';
  }
 
  const maxMissing = Math.max(...Object.values(missing).map(m => parseFloat(m.percent)));
  if (maxMissing > 40) {
- html += '<p>ðŸ”´ <strong>High missing rate detected (>40%)</strong>: Consider excluding these variables or collecting more data.</p>';
+ html += '<p>🔴 <strong>High missing rate detected (>40%)</strong>: Consider excluding these variables or collecting more data.</p>';
  } else if (maxMissing > 20) {
- html += '<p>ðŸŸ¡ <strong>Moderate missing rate (20-40%)</strong>: Multiple imputation strongly recommended.</p>';
+ html += '<p>🟡 <strong>Moderate missing rate (20-40%)</strong>: Multiple imputation strongly recommended.</p>';
  } else if (maxMissing > 5) {
- html += '<p>ðŸŸ¢ <strong>Low missing rate (5-20%)</strong>: Multiple imputation or complete case analysis acceptable.</p>';
+ html += '<p>🟢 <strong>Low missing rate (5-20%)</strong>: Multiple imputation or complete case analysis acceptable.</p>';
  } else {
- html += '<p>âœ… <strong>Very low missing rate (<5%)</strong>: Complete case analysis is typically acceptable.</p>';
+ html += '<p>✅ <strong>Very low missing rate (<5%)</strong>: Complete case analysis is typically acceptable.</p>';
  }
  html += '</div>';
 
@@ -25518,7 +25518,7 @@ function runEnhancedNodeSplitting() {
  hideLoadingOverlay();
 
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ”„ Network Inconsistency Assessment (Node-Splitting)</h3>';
+ html += '<h3>🔄 Network Inconsistency Assessment (Node-Splitting)</h3>';
 
  html += '<h4>Local Inconsistency Tests</h4>';
  html += '<table class="results-table">';
@@ -25531,7 +25531,7 @@ function runEnhancedNodeSplitting() {
  html += `<td>${r.indirect.toFixed(3)} (${r.indirectSE.toFixed(3)})</td>`;
  html += `<td>${r.difference.toFixed(3)}</td>`;
  html += `<td>${r.pValue.toFixed(3)}</td>`;
- html += `<td>${r.inconsistent ? 'âš ï¸ Inconsistent' : 'âœ… Consistent'}</td>`;
+ html += `<td>${r.inconsistent ? '⚠ï¸ Inconsistent' : '✅ Consistent'}</td>`;
  html += '</tr>';
  });
  html += '</table>';
@@ -25548,14 +25548,14 @@ function runEnhancedNodeSplitting() {
  html += '<h4>Interpretation</h4>';
  html += '<div class="interpretation-box">';
  if (globalP > 0.10 && inconsistentCount === 0) {
- html += '<p>âœ… <strong>No significant inconsistency detected</strong></p>';
+ html += '<p>✅ <strong>No significant inconsistency detected</strong></p>';
  html += '<p>The network is consistent, and direct and indirect evidence agree.</p>';
  } else if (inconsistentCount > 0) {
- html += `<p>âš ï¸ <strong>${inconsistentCount} comparison(s) show local inconsistency</strong></p>`;
+ html += `<p>⚠ï¸ <strong>${inconsistentCount} comparison(s) show local inconsistency</strong></p>`;
  html += '<p>Consider investigating the sources of inconsistency (study design, patient populations, etc.)</p>';
  }
  if (globalP < 0.10) {
- html += '<p>âš ï¸ <strong>Global inconsistency detected</strong> (p < 0.10)</p>';
+ html += '<p>⚠ï¸ <strong>Global inconsistency detected</strong> (p < 0.10)</p>';
  html += '<p>The network-wide evidence shows statistical inconsistency.</p>';
  }
  html += '</div>';
@@ -29451,7 +29451,7 @@ function runCausalForest() {
 
 function displayCausalForestResults(results) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸŒ² Causal Forest Results</h3>';
+ html += '<h3>🌲 Causal Forest Results</h3>';
  html += '<p><em>Honest estimation of heterogeneous treatment effects (Wager & Athey 2018)</em></p>';
 
  html += '<div class="alert alert-info" style="margin: 1rem 0;">';
@@ -29661,7 +29661,7 @@ function calculatePooledSE(variances, tau2) {
 
 function displayBMAResults(results) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“Š Bayesian Model Averaging</h3>';
+ html += '<h3>📊 Bayesian Model Averaging</h3>';
  html += '<p><em>Accounts for uncertainty in model selection</em></p>';
 
  html += '<div class="alert alert-info" style="margin: 1rem 0;">';
@@ -29671,7 +29671,7 @@ function displayBMAResults(results) {
 
  html += '<h4>Model Posterior Probabilities</h4>';
  html += '<table class="results-table">';
- html += '<tr><th>Model</th><th>Ï„Â²</th><th>Effect</th><th>SE</th><th>Posterior Prob</th></tr>';
+ html += '<tr><th>Model</th><th>Ï„²</th><th>Effect</th><th>SE</th><th>Posterior Prob</th></tr>';
 
  results.models.sort((a, b) => b.posteriorProb - a.posteriorProb).forEach(m => {
  const highlight = m.posteriorProb > 0.25 ? 'background: rgba(99, 102, 241, 0.2);' : '';
@@ -29766,7 +29766,7 @@ function runRobustVarianceEstimation() {
 
 function displayRVEResults(results) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ›¡ï¸ Robust Variance Estimation</h3>';
+ html += '<h3>🛡ï¸ Robust Variance Estimation</h3>';
  html += '<p><em>Handles dependent effect sizes within studies</em></p>';
 
  html += '<div class="alert alert-warning" style="margin: 1rem 0;">';
@@ -29793,7 +29793,7 @@ function displayRVEResults(results) {
  const robustP = 2 * (1 - (jStat && jStat.studentt ? jStat.studentt.cdf(robustT, results.df) : 0.5));
 
  html += '<tr><td>P-value</td><td>' + standardP.toFixed(4) + '</td><td>' + robustP.toFixed(4) + '</td></tr>';
- html += '<tr><td>Degrees of freedom</td><td>âˆž (normal)</td><td>' + results.df.toFixed(1) + ' (t-dist)</td></tr>';
+ html += '<tr><td>Degrees of freedom</td><td>∞ (normal)</td><td>' + results.df.toFixed(1) + ' (t-dist)</td></tr>';
  html += '</table>';
 
  html += '<h4>Clustering Information</h4>';
@@ -29807,14 +29807,14 @@ function displayRVEResults(results) {
  html += '<h4>Interpretation</h4>';
  html += '<div class="interpretation-box">';
  if (seRatio > 1.1) {
- html += '<p>âš ï¸ The robust SE is ' + ((seRatio - 1) * 100).toFixed(0) + '% larger than the standard SE, ';
+ html += '<p>⚠ï¸ The robust SE is ' + ((seRatio - 1) * 100).toFixed(0) + '% larger than the standard SE, ';
  html += 'suggesting positive correlation among effect sizes within clusters. ';
  html += 'Standard meta-analysis may underestimate uncertainty.</p>';
  } else if (seRatio < 0.9) {
  html += '<p>The robust SE is smaller than expected, suggesting negative correlation ';
  html += 'or the model may be misspecified.</p>';
  } else {
- html += '<p>âœ… Standard and robust SEs are similar, suggesting minimal dependence ';
+ html += '<p>✅ Standard and robust SEs are similar, suggesting minimal dependence ';
  html += 'among effect sizes within clusters.</p>';
  }
  html += '</div>';
@@ -29914,7 +29914,7 @@ function displayMultivariateResults(results) {
  return;
  }
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“ˆ Multivariate Meta-Analysis</h3>';
+ html += '<h3>📈 Multivariate Meta-Analysis</h3>';
  html += '<p><em>Joint analysis of correlated outcomes</em></p>';
 
  html += '<div class="alert alert-info" style="margin: 1rem 0;">';
@@ -30089,7 +30089,7 @@ function runCopasSelectionModel() {
 
 function displayCopasResults(data) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“‰ Copas Selection Model</h3>';
+ html += '<h3>📉 Copas Selection Model</h3>';
  html += '<p><em>Sensitivity analysis for publication bias</em></p>';
 
  html += '<div class="alert alert-info" style="margin: 1rem 0;">';
@@ -30123,15 +30123,15 @@ function displayCopasResults(data) {
  const effectChange = ((data.originalEffect - maxGammaResult.effect) / data.originalEffect * 100);
 
  if (Math.abs(effectChange) > 30) {
- html += '<p>âš ï¸ <strong>High sensitivity to publication bias:</strong> ';
+ html += '<p>⚠ï¸ <strong>High sensitivity to publication bias:</strong> ';
  html += 'Under strong selection (Î³=3), the effect estimate changes by ' + Math.abs(effectChange).toFixed(0) + '%. ';
  html += 'The findings may not be robust to publication bias.</p>';
  } else if (Math.abs(effectChange) > 15) {
- html += '<p>âš¡ <strong>Moderate sensitivity:</strong> ';
+ html += '<p>⚡ <strong>Moderate sensitivity:</strong> ';
  html += 'The effect estimate changes by ' + Math.abs(effectChange).toFixed(0) + '% under strong selection. ';
  html += 'Results should be interpreted with some caution.</p>';
  } else {
- html += '<p>âœ… <strong>Robust to publication bias:</strong> ';
+ html += '<p>✅ <strong>Robust to publication bias:</strong> ';
  html += 'The effect estimate remains relatively stable across selection scenarios ';
  html += '(change of only ' + Math.abs(effectChange).toFixed(0) + '%).</p>';
  }
@@ -30327,7 +30327,7 @@ function runDoseResponseMetaAnalysis() {
 
 function displayDoseResponseResults(results) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ’Š Dose-Response Meta-Analysis</h3>';
+ html += '<h3>💊 Dose-Response Meta-Analysis</h3>';
  html += '<p><em>Non-linear dose-response relationship</em></p>';
 
  html += '<h4>Dose-Response Curve</h4>';
@@ -30440,7 +30440,7 @@ function addAdvancedFeatureButtons() {
  const advancedSection = document.createElement('div');
  advancedSection.className = 'advanced-features-section';
  advancedSection.style.cssText = 'margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);';
- advancedSection.innerHTML = '<h4 style="margin-bottom: 0.5rem; color: var(--accent-primary);">ðŸ”¬ Cutting-Edge Methods</h4>' +
+ advancedSection.innerHTML = '<h4 style="margin-bottom: 0.5rem; color: var(--accent-primary);">🔬 Cutting-Edge Methods</h4>' +
  '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">' +
  '<button class="btn btn-secondary" onclick="runCausalForest()" title="Wager & Athey 2018">Causal Forest</button>' +
  '<button class="btn btn-secondary" onclick="runBayesianModelAveraging()" title="Accounts for model uncertainty">BMA</button>' +
@@ -30638,10 +30638,10 @@ function testHomogeneity(effects, variances) {
  I2: I2,
  H2: H2,
  isHomogeneous: pValue > 0.1,
- interpretation: I2 < 25 ? 'Low heterogeneity (IÂ² = ' + I2.toFixed(1) + '%)' :
- I2 < 50 ? 'Moderate heterogeneity (IÂ² = ' + I2.toFixed(1) + '%)' :
- I2 < 75 ? 'Substantial heterogeneity (IÂ² = ' + I2.toFixed(1) + '%)' :
- 'Considerable heterogeneity (IÂ² = ' + I2.toFixed(1) + '%)'
+ interpretation: I2 < 25 ? 'Low heterogeneity (I² = ' + I2.toFixed(1) + '%)' :
+ I2 < 50 ? 'Moderate heterogeneity (I² = ' + I2.toFixed(1) + '%)' :
+ I2 < 75 ? 'Substantial heterogeneity (I² = ' + I2.toFixed(1) + '%)' :
+ 'Considerable heterogeneity (I² = ' + I2.toFixed(1) + '%)'
  };
  }
 
@@ -31080,7 +31080,7 @@ function identifyHeterogeneitySources(studies) {
 
 function displayAssumptionDashboard(diagnostics) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ”¬ Comprehensive Assumption Diagnostics</h3>';
+ html += '<h3>🔬 Comprehensive Assumption Diagnostics</h3>';
  html += '<p><em>All assumption tests in one dashboard - exceeds R capabilities</em></p>';
 
  html += '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0;">';
@@ -31096,7 +31096,7 @@ function displayAssumptionDashboard(diagnostics) {
 
  checks.forEach(c => {
  const color = c.pass ? 'var(--accent-success)' : 'var(--accent-warning)';
- const icon = c.pass ? 'âœ…' : 'âš ï¸';
+ const icon = c.pass ? '✅' : '⚠ï¸';
  html += '<div style="text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">';
  html += '<div style="font-size: 1.5rem;">' + icon + '</div>';
  html += '<div style="color: ' + color + '; font-weight: bold;">' + c.name + '</div>';
@@ -31118,8 +31118,8 @@ function displayAssumptionDashboard(diagnostics) {
  html += '<tr><td>Q statistic</td><td>' + diagnostics.homogeneity.Q.toFixed(2) + '</td></tr>';
  html += '<tr><td>Degrees of freedom</td><td>' + diagnostics.homogeneity.df + '</td></tr>';
  html += '<tr><td>P-value</td><td>' + diagnostics.homogeneity.pValue.toFixed(4) + '</td></tr>';
- html += '<tr><td>IÂ²</td><td>' + diagnostics.homogeneity.I2.toFixed(1) + '%</td></tr>';
- html += '<tr><td>HÂ²</td><td>' + diagnostics.homogeneity.H2.toFixed(2) + '</td></tr>';
+ html += '<tr><td>I²</td><td>' + diagnostics.homogeneity.I2.toFixed(1) + '%</td></tr>';
+ html += '<tr><td>H²</td><td>' + diagnostics.homogeneity.H2.toFixed(2) + '</td></tr>';
  html += '<tr><td colspan="2"><em>' + diagnostics.homogeneity.interpretation + '</em></td></tr>';
  html += '</table>';
 
@@ -31160,8 +31160,8 @@ function displayAssumptionDashboard(diagnostics) {
  html += '<tr><td>Significant p-values</td><td>' + diagnostics.pCurve.nSignificant + '</td></tr>';
  if (diagnostics.pCurve.pValueDistribution) {
  html += '<tr><td>p < 0.01</td><td>' + diagnostics.pCurve.pValueDistribution.below001 + '</td></tr>';
- html += '<tr><td>0.01 â‰¤ p < 0.025</td><td>' + diagnostics.pCurve.pValueDistribution.between001and025 + '</td></tr>';
- html += '<tr><td>0.025 â‰¤ p < 0.05</td><td>' + diagnostics.pCurve.pValueDistribution.between025and05 + '</td></tr>';
+ html += '<tr><td>0.01 ≤ p < 0.025</td><td>' + diagnostics.pCurve.pValueDistribution.between001and025 + '</td></tr>';
+ html += '<tr><td>0.025 ≤ p < 0.05</td><td>' + diagnostics.pCurve.pValueDistribution.between025and05 + '</td></tr>';
  }
  html += '<tr><td colspan="2"><em>' + diagnostics.pCurve.interpretation + '</em></td></tr>';
  html += '</table>';
@@ -31355,7 +31355,7 @@ function estimateTau2(effects, variances, method) {
 
 function displayOptimalModelResults(results) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸŽ¯ Optimal Model Selection</h3>';
+ html += '<h3>🎯 Optimal Model Selection</h3>';
  html += '<p><em>Cross-validated model comparison - automated optimization R cannot do</em></p>';
 
  html += '<div style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; padding: 1.5rem; border-radius: 12px; margin: 1rem 0;">';
@@ -31366,7 +31366,7 @@ function displayOptimalModelResults(results) {
 
  html += '<h4>Model Comparison</h4>';
  html += '<table class="results-table">';
- html += '<tr><th>Model</th><th>Ï„Â²</th><th>Pooled</th><th>SE</th><th>CV-RMSE</th><th>AIC</th><th>BIC</th></tr>';
+ html += '<tr><th>Model</th><th>Ï„²</th><th>Pooled</th><th>SE</th><th>CV-RMSE</th><th>AIC</th><th>BIC</th></tr>';
 
  results.models.sort((a, b) => a.cvMSE - b.cvMSE).forEach((m, i) => {
  const isBest = m.name === results.bestByCV.name;
@@ -31395,16 +31395,16 @@ function displayOptimalModelResults(results) {
 
  html += '<div class="interpretation-box">';
  if (allAgree) {
- html += '<p>âœ… <strong>Strong consensus:</strong> All selection criteria agree on ' + results.bestByCV.name + '.</p>';
+ html += '<p>✅ <strong>Strong consensus:</strong> All selection criteria agree on ' + results.bestByCV.name + '.</p>';
  } else {
- html += '<p>âš ï¸ <strong>Mixed signals:</strong> Different criteria suggest different models. ';
+ html += '<p>⚠ï¸ <strong>Mixed signals:</strong> Different criteria suggest different models. ';
  html += 'Cross-validation is generally most reliable for predictive accuracy.</p>';
  }
 
  if (results.bestByCV.tau2 === 0) {
  html += '<p>The fixed-effect model is preferred, suggesting homogeneous effects across studies.</p>';
  } else {
- html += '<p>Random-effects model (' + results.bestByCV.name + ') is preferred with Ï„Â² = ' +
+ html += '<p>Random-effects model (' + results.bestByCV.name + ') is preferred with Ï„² = ' +
  results.bestByCV.tau2.toFixed(4) + ', indicating between-study heterogeneity.</p>';
  }
  html += '</div>';
@@ -31495,7 +31495,7 @@ function runGOSHAnalysis() {
 
 function displayGOSHResults(results) {
  let html = '<div class="analysis-results">';
- html += '<h3>ðŸ“Š GOSH Plot Analysis</h3>';
+ html += '<h3>📊 GOSH Plot Analysis</h3>';
  if (results.sampled) {
  html += '<p><em>Graphical Display of Study Heterogeneity - ' + results.nSubsets.toLocaleString() + ' randomly sampled subset meta-analyses (exact enumeration not feasible for ' + results.nStudies + ' studies)</em></p>';
  } else {
@@ -31516,9 +31516,9 @@ function displayGOSHResults(results) {
  html += '<table class="results-table">';
  html += '<tr><td>Number of subsets analyzed</td><td>' + results.nSubsets.toLocaleString() + '</td></tr>';
  html += '<tr><td>Pooled effect range</td><td>' + Math.min(...pooledValues).toFixed(4) + ' to ' + Math.max(...pooledValues).toFixed(4) + '</td></tr>';
- html += '<tr><td>IÂ² range</td><td>' + Math.min(...i2Values).toFixed(1) + '% to ' + Math.max(...i2Values).toFixed(1) + '%</td></tr>';
+ html += '<tr><td>I² range</td><td>' + Math.min(...i2Values).toFixed(1) + '% to ' + Math.max(...i2Values).toFixed(1) + '%</td></tr>';
  html += '<tr><td>Full analysis effect</td><td>' + results.fullPooled.toFixed(4) + '</td></tr>';
- html += '<tr><td>Full analysis IÂ²</td><td>' + results.fullI2.toFixed(1) + '%</td></tr>';
+ html += '<tr><td>Full analysis I²</td><td>' + results.fullI2.toFixed(1) + '%</td></tr>';
  html += '</table>';
 
  const outlierThreshold = 0.2;
@@ -31630,7 +31630,7 @@ function drawGOSHPlot(results) {
  ctx.save();
  ctx.translate(15, height / 2);
  ctx.rotate(-Math.PI / 2);
- ctx.fillText('IÂ² (%)', 0, 0);
+ ctx.fillText('I² (%)', 0, 0);
  ctx.restore();
 
  ctx.font = 'bold 14px sans-serif';
@@ -31661,7 +31661,7 @@ function addExceedRButtons() {
  const exceedRDiv = document.createElement('div');
  exceedRDiv.style.cssText = 'margin-top: 0.75rem;';
  exceedRDiv.innerHTML =
- '<h5 style="margin-bottom: 0.5rem; color: var(--accent-success);">ðŸš€ Beyond R Capabilities</h5>' +
+ '<h5 style="margin-bottom: 0.5rem; color: var(--accent-success);">🚀 Beyond R Capabilities</h5>' +
  '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">' +
  '<button class="btn btn-secondary" onclick="runComprehensiveAssumptionChecks()" title="All assumption tests in one click">Assumption Dashboard</button>' +
  '<button class="btn btn-secondary" onclick="runOptimalModelSelection()" title="CV-based model selection">Optimal Model</button>' +
@@ -31834,24 +31834,24 @@ function addExceedRButtons() {
  const I2 = Math.max(0, (Q - df) / Q) * 100;
 
  let html = '<div class="i2-ci-report" style="background:var(--bg-tertiary);padding:1rem;border-radius:8px;margin:1rem 0">';
- html += '<h4 style="margin-bottom:0.5rem">IÂ² Confidence Intervals</h4>';
+ html += '<h4 style="margin-bottom:0.5rem">I² Confidence Intervals</h4>';
  html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">';
  html += 'Point estimate alone is insufficient for inference (Ioannidis 2007)</p>';
 
  html += '<table class="results-table" style="font-size:0.85rem">';
- html += '<tr><th>Method</th><th>IÂ² (95% CI)</th><th>Reference</th></tr>';
+ html += '<tr><th>Method</th><th>I² (95% CI)</th><th>Reference</th></tr>';
 
  html += '<tr><td>Test-based</td>';
- html += '<td>' + I2.toFixed(1) + '% (' + testCI.lower.toFixed(1) + 'â€“' + testCI.upper.toFixed(1) + '%)</td>';
+ html += '<td>' + I2.toFixed(1) + '% (' + testCI.lower.toFixed(1) + '–' + testCI.upper.toFixed(1) + '%)</td>';
  html += '<td>Higgins & Thompson 2002</td></tr>';
 
  html += '<tr><td>Q-profile</td>';
- html += '<td>' + I2.toFixed(1) + '% (' + qCI.lower.toFixed(1) + 'â€“' + qCI.upper.toFixed(1) + '%)</td>';
+ html += '<td>' + I2.toFixed(1) + '% (' + qCI.lower.toFixed(1) + '–' + qCI.upper.toFixed(1) + '%)</td>';
  html += '<td>Viechtbauer 2007</td></tr>';
 
  if (bootCI) {
  html += '<tr><td>Bootstrap</td>';
- html += '<td>' + I2.toFixed(1) + '% (' + bootCI.lower.toFixed(1) + 'â€“' + bootCI.upper.toFixed(1) + '%)</td>';
+ html += '<td>' + I2.toFixed(1) + '% (' + bootCI.lower.toFixed(1) + '–' + bootCI.upper.toFixed(1) + '%)</td>';
  html += '<td>Non-parametric</td></tr>';
  }
 
@@ -32168,7 +32168,7 @@ function addExceedRButtons() {
  }
 
  let html = '<div class="limit-meta-report" style="background:var(--bg-tertiary);padding:1rem;border-radius:8px;margin:1rem 0">';
- html += '<h4 style="margin-bottom:0.5rem">Limit Meta-Analysis (RÃ¼cker 2011)</h4>';
+ html += '<h4 style="margin-bottom:0.5rem">Limit Meta-Analysis (Rücker 2011)</h4>';
  html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">';
  html += 'Extrapolates effect to infinite sample size, removing small-study bias</p>';
 
@@ -32194,7 +32194,7 @@ function addExceedRButtons() {
  html += 'z = ' + result.slopeTest.z.toFixed(2) + ', ';
  html += 'p = ' + result.slopeTest.p.toFixed(4);
  if (result.slopeTest.significant) {
- html += ' <span style="color:var(--accent-warning)">âš ï¸ Significant</span>';
+ html += ' <span style="color:var(--accent-warning)">⚠ï¸ Significant</span>';
  }
  html += '</div>';
 
@@ -32905,7 +32905,7 @@ const TutorialSystem = {
                 {target: '#analysisApproach', text: 'TWO-STAGE approach: First analyzes each study separately (e.g., fit Cox model per study to get HRs), then pools the study-level estimates using standard meta-analysis. Simpler, transparent, but may lose efficiency.'},
                 {target: '#analysisApproach', text: 'ONE-STAGE approach: Fits a single mixed-effects model to all IPD simultaneously, with study as a random/fixed effect. More efficient, handles sparse data better, enables complex covariate-treatment interactions.'},
                 {target: '#runAnalysis', text: 'Run the analysis. Both approaches should give similar results when: (1) studies are reasonably large, (2) effects are homogeneous, (3) no treatment-covariate interactions are modeled.'},
-                {target: '#panel-heterogeneity', text: 'Check heterogeneity. If IÂ² is high or Ï„Â² is substantial, one-stage may better account for within-study vs between-study variation through proper variance decomposition.'},
+                {target: '#panel-heterogeneity', text: 'Check heterogeneity. If I² is high or Ï„² is substantial, one-stage may better account for within-study vs between-study variation through proper variance decomposition.'},
                 {target: '#panel-covariates', text: 'For treatment effect modification analysis (interactions), one-stage is preferred. It properly separates within-study and across-study associations, avoiding ecological bias.'},
                 {target: '#panel-results', text: 'Compare results: If estimates differ substantially between approaches, investigate why. Differences often indicate model misspecification or small-study effects. Riley et al. (2010) and Debray et al. (2015) provide guidance on method selection.'}
             ]
@@ -33163,7 +33163,7 @@ window.showTutorialMenu = showTutorialMenu;
 
  generateReport: function(results) {
  let html = '<div class="ecological-bias-report" style="background:var(--bg-tertiary);padding:1rem;border-radius:8px;margin:1rem 0">';
- html += '<h4 style="margin-bottom:0.5rem">âš ï¸ Ecological Bias Assessment (Berlin 2002)</h4>';
+ html += '<h4 style="margin-bottom:0.5rem">⚠ï¸ Ecological Bias Assessment (Berlin 2002)</h4>';
  html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">';
  html += 'Compares within-study (individual-level) vs across-study (ecological) associations</p>';
 
@@ -33178,7 +33178,7 @@ window.showTutorialMenu = showTutorialMenu;
  });
  html += '</div>';
  } else {
- html += '<p style="color:var(--accent-success)">âœ“ No ecological bias detected</p>';
+ html += '<p style="color:var(--accent-success)">✓ No ecological bias detected</p>';
  }
 
  html += '<div style="padding:0.75rem;background:var(--bg-secondary);border-radius:6px">';
@@ -33366,12 +33366,12 @@ window.showTutorialMenu = showTutorialMenu;
  html += '<div class="stat-label">Pooled Proportion</div></div>';
 
  html += '<div class="stat-box"><div class="stat-value">' +
- (result.ci95[0] * 100).toFixed(1) + 'â€“' + (result.ci95[1] * 100).toFixed(1) + '%</div>';
+ (result.ci95[0] * 100).toFixed(1) + '–' + (result.ci95[1] * 100).toFixed(1) + '%</div>';
  html += '<div class="stat-label">95% CI</div></div>';
 
  html += '<div class="stat-box"><div class="stat-value">' +
  result.heterogeneity.I2.toFixed(1) + '%</div>';
- html += '<div class="stat-label">IÂ²</div></div>';
+ html += '<div class="stat-label">I²</div></div>';
  html += '</div>';
 
  html += '<table class="results-table" style="font-size:0.8rem">';
@@ -33432,7 +33432,7 @@ window.showTutorialMenu = showTutorialMenu;
  results.bootstrap = {
  lower: pooledEffect - getConfZ() *piSEBoot,
  upper: pooledEffect + getConfZ() *piSEBoot,
- method: "Bootstrap-type (with Ï„Â² uncertainty)"
+ method: "Bootstrap-type (with Ï„² uncertainty)"
  };
 
  const pBeneficial = 1 - this.normCDF(0, pooledEffect, piSE);
@@ -33491,8 +33491,8 @@ window.showTutorialMenu = showTutorialMenu;
 
  html += '</div>';
  html += '<div style="font-size:0.75rem;margin-top:0.5rem;text-align:center">';
- html += '<span style="color:var(--accent-primary)">â–ˆ</span> 95% CI ';
- html += '<span style="color:rgba(99,102,241,0.5)">â–ˆ</span> 95% PI';
+ html += '<span style="color:var(--accent-primary)">█</span> 95% CI ';
+ html += '<span style="color:rgba(99,102,241,0.5)">█</span> 95% PI';
  html += '</div></div>';
 
  html += '<div style="margin-top:1rem;padding:0.75rem;background:' +
@@ -33684,20 +33684,20 @@ window.showTutorialMenu = showTutorialMenu;
  btnContainer.style.cssText = 'margin-top:1rem;flex-wrap:wrap;gap:0.5rem';
 
  btnContainer.innerHTML = `
- <button class="btn btn-secondary" onclick="showI2CIAnalysis()" title="IÂ² Confidence Intervals (Higgins & Thompson 2002)">
- ðŸ“Š IÂ² CI
+ <button class="btn btn-secondary" onclick="showI2CIAnalysis()" title="I² Confidence Intervals (Higgins & Thompson 2002)">
+ 📊 I² CI
  </button>
  <button class="btn btn-secondary" onclick="showContourFunnel()" title="Contour-Enhanced Funnel Plot (Peters 2008)">
- ðŸ“ˆ Contour Funnel
+ 📈 Contour Funnel
  </button>
- <button class="btn btn-secondary" onclick="showLimitMeta()" title="Limit Meta-Analysis (RÃ¼cker 2011)">
- ðŸŽ¯ Limit MA
+ <button class="btn btn-secondary" onclick="showLimitMeta()" title="Limit Meta-Analysis (Rücker 2011)">
+ 🎯 Limit MA
  </button>
  <button class="btn btn-secondary" onclick="showFreemanTukey()" title="Freeman-Tukey for Proportions">
- ðŸ”¢ FT Proportions
+ 🔢 FT Proportions
  </button>
  <button class="btn btn-secondary" onclick="showPredictionInterval()" title="Prediction Intervals (IntHout 2016)">
- ðŸ”® Prediction Int
+ 🔮 Prediction Int
  </button>
  `;
 
@@ -33725,7 +33725,7 @@ window.showTutorialMenu = showTutorialMenu;
  r.variances
  );
 
- showResultModal('IÂ² Confidence Intervals', html);
+ showResultModal('I² Confidence Intervals', html);
  };
 
  window.showContourFunnel = function() {
@@ -33976,9 +33976,9 @@ window.showTutorialMenu = showTutorialMenu;
 
  window.GalbraithPlot = GalbraithPlot;
 
- // L'ABBÃ‰ PLOT (L'AbbÃ© 1987)
+ // L'ABBÉ PLOT (L'Abbé 1987)
 
- // Reference: L'AbbÃ© KA, et al. Ann Intern Med 1987;107:224-233
+ // Reference: L'Abbé KA, et al. Ann Intern Med 1987;107:224-233
 
  const LabbePlot = {
 
@@ -34102,7 +34102,7 @@ window.showTutorialMenu = showTutorialMenu;
  ctx.restore();
 
  ctx.font = 'bold 14px sans-serif';
- ctx.fillText("L'AbbÃ© Plot", width / 2, 25);
+ ctx.fillText("L'Abbé Plot", width / 2, 25);
 
  ctx.font = '10px sans-serif';
  ctx.textAlign = 'left';
@@ -34350,7 +34350,7 @@ window.showTutorialMenu = showTutorialMenu;
 
  html += '<div style="max-height:300px;overflow-y:auto">';
  html += '<table class="results-table" style="font-size:0.8rem">';
- html += '<tr><th>#</th><th>Study</th><th>Effect (95% CI)</th><th>IÂ²</th></tr>';
+ html += '<tr><th>#</th><th>Study</th><th>Effect (95% CI)</th><th>I²</th></tr>';
 
  result.cumulative.forEach(r => {
  html += `<tr>
@@ -34492,7 +34492,7 @@ window.showTutorialMenu = showTutorialMenu;
  html += '</table>';
 
  html += '<div style="margin-top:1rem;padding:0.75rem;background:var(--bg-secondary);border-radius:6px;font-size:0.85rem">';
- html += '<strong>âš ï¸ Caveat:</strong> Fail-safe N has been criticized (Becker 2005). ';
+ html += '<strong>⚠ï¸ Caveat:</strong> Fail-safe N has been criticized (Becker 2005). ';
  html += 'Use alongside other publication bias methods (funnel plot, selection models).';
  html += '</div></div>';
 
@@ -34562,7 +34562,7 @@ window.showTutorialMenu = showTutorialMenu;
  results.outliers.push(studyResult);
  }
 
- // Flag influential (Cook\'s D > 4/k or |DFBETAS| > 2/âˆšk)
+ // Flag influential (Cook\'s D > 4/k or |DFBETAS| > 2/√k)
  const dfbetasCutoff = 2 / Math.sqrt(k);
  if (cookD > 4 / k || Math.abs(dfbetas) > dfbetasCutoff) {
  results.influential.push(studyResult);
@@ -34727,7 +34727,7 @@ window.showTutorialMenu = showTutorialMenu;
  }
  html += '</div>';
  } else {
- html += '<p style="color:var(--accent-success)">âœ“ No outliers or influential studies detected</p>';
+ html += '<p style="color:var(--accent-success)">✓ No outliers or influential studies detected</p>';
  }
 
  html += '<div style="max-height:300px;overflow-y:auto">';
@@ -34841,7 +34841,7 @@ window.showTutorialMenu = showTutorialMenu;
  ctx.restore();
 
  ctx.font = 'bold 14px sans-serif';
- ctx.fillText('Drapery Plot (RÃ¼cker 2020)', width / 2, 25);
+ ctx.fillText('Drapery Plot (Rücker 2020)', width / 2, 25);
 
  return canvas;
  },
@@ -35036,7 +35036,7 @@ window.showTutorialMenu = showTutorialMenu;
  <div class="stat-label">IVhet Effect</div>
  </div>`;
  html += `<div class="stat-box">
- <div class="stat-value">${ivhetResult.ci_lower.toFixed(3)} â€“ ${ivhetResult.ci_upper.toFixed(3)}</div>
+ <div class="stat-value">${ivhetResult.ci_lower.toFixed(3)} – ${ivhetResult.ci_upper.toFixed(3)}</div>
  <div class="stat-label">95% CI</div>
  </div>`;
  html += `<div class="stat-box">
@@ -35092,22 +35092,22 @@ window.showTutorialMenu = showTutorialMenu;
 
  btnContainer.innerHTML = `
  <button class="btn btn-secondary" onclick="showGalbraithPlot()" title="Galbraith (Radial) Plot">
- ðŸ“Š Galbraith
+ 📊 Galbraith
  </button>
- <button class="btn btn-secondary" onclick="showLabbePlot()" title="L'AbbÃ© Plot for Binary Outcomes">
- âš–ï¸ L'AbbÃ©
+ <button class="btn btn-secondary" onclick="showLabbePlot()" title="L'Abbé Plot for Binary Outcomes">
+ ⚖ï¸ L'Abbé
  </button>
  <button class="btn btn-secondary" onclick="showCumulativeMeta()" title="Cumulative Meta-Analysis">
- ðŸ“ˆ Cumulative
+ 📈 Cumulative
  </button>
  <button class="btn btn-secondary" onclick="showFailSafeN()" title="Fail-Safe N Analysis">
- ðŸ›¡ï¸ Fail-Safe N
+ 🛡ï¸ Fail-Safe N
  </button>
  <button class="btn btn-secondary" onclick="showInfluenceDiag()" title="Influence Diagnostics">
  ðŸ” Influence
  </button>
  <button class="btn btn-secondary" onclick="showDraperyPlot()" title="Drapery Plot (P-value Function)">
- ðŸŽ­ Drapery
+ 🎭 Drapery
  </button>
  <button class="btn btn-secondary" onclick="showQualityEffects()" title="Quality Effects / IVhet">
  â­ QE/IVhet
@@ -35152,7 +35152,7 @@ window.showTutorialMenu = showTutorialMenu;
  canvas.width = 600; canvas.height = 500;
  LabbePlot.draw(canvas, studyData, { showLabels: true, showContours: true });
 
- showResultModalV7("L'AbbÃ© Plot", '', canvas);
+ showResultModalV7("L'Abbé Plot", '', canvas);
  };
 
  window.showCumulativeMeta = function() {
@@ -35736,7 +35736,7 @@ function calculateGroupDiff(effects, groups) {
    try {
    var resp = await fetch(url, { mode: 'cors' });
    if (resp.ok) await cache.put(url, resp);
-   } catch (e) { /* Offline â€” skip caching */ }
+   } catch (e) { /* Offline — skip caching */ }
   }
   }
  }
@@ -35764,7 +35764,7 @@ function calculateGroupDiff(effects, groups) {
   return resp;
   }
  } catch (e) {
-  // Network failed â€” try cache
+  // Network failed — try cache
   if (window.caches) {
   var cache = await caches.open('ipd-meta-pro-cdn-v1');
   var cached = await cache.match(url);
@@ -35798,7 +35798,7 @@ function calculateGroupDiff(effects, groups) {
  return entry.data;
  }
  }
- } catch (e) { /* Cache miss â€” non-critical */ }
+ } catch (e) { /* Cache miss — non-critical */ }
  return null;
  },
 
@@ -37248,7 +37248,7 @@ const IPDPowerCalculator = {
     interpretResults: function(k, avgN, power, effect) {
         let interpretation = `To achieve ${(power * 100).toFixed(0)}% power for detecting an effect of ${effect.toFixed(2)}, `;
         interpretation += `approximately ${k} studies with an average of ${avgN} patients each are required `;
-        interpretation += `(total N â‰ˆ ${(k * avgN).toLocaleString()} patients). `;
+        interpretation += `(total N ≈ ${(k * avgN).toLocaleString()} patients). `;
 
         if (k <= 5) {
             interpretation += 'This is achievable with a small collaborative consortium.';
@@ -37338,9 +37338,9 @@ function runPowerCalculation(type) {
                     </div>
                 </div>
 
-                <h5 style="margin-top:1.5rem;margin-bottom:0.5rem;">Sensitivity to Heterogeneity (Ï„Â²)</h5>
+                <h5 style="margin-top:1.5rem;margin-bottom:0.5rem;">Sensitivity to Heterogeneity (Ï„²)</h5>
                 <table class="results-table" style="font-size:0.8rem;">
-                    <tr><th>Ï„Â²</th><th>IÂ²</th><th>Power</th></tr>
+                    <tr><th>Ï„²</th><th>I²</th><th>Power</th></tr>
                     ${result.sensitivityAnalysis.map(s => `
                         <tr>
                             <td>${s.tau2.toFixed(2)}</td>
@@ -37582,10 +37582,10 @@ const MetaAnalyticSEM = {
 
         return {
             paths: {
-                a: { estimate: a, se: se_a, z: a / se_a, p: 2 * (1 - this.pnorm(Math.abs(a / se_a))), label: `${X} â†’ ${M}` },
-                b: { estimate: b, se: se_b, z: b / se_b, p: 2 * (1 - this.pnorm(Math.abs(b / se_b))), label: `${M} â†’ ${Y}` },
-                cPrime: { estimate: cPrime, se: Math.sqrt((1 - cPrime * cPrime) / (totalN - 3)), label: `${X} â†’ ${Y} (direct)` },
-                c: { estimate: c, label: `${X} â†’ ${Y} (total)` }
+                a: { estimate: a, se: se_a, z: a / se_a, p: 2 * (1 - this.pnorm(Math.abs(a / se_a))), label: `${X} → ${M}` },
+                b: { estimate: b, se: se_b, z: b / se_b, p: 2 * (1 - this.pnorm(Math.abs(b / se_b))), label: `${M} → ${Y}` },
+                cPrime: { estimate: cPrime, se: Math.sqrt((1 - cPrime * cPrime) / (totalN - 3)), label: `${X} → ${Y} (direct)` },
+                c: { estimate: c, label: `${X} → ${Y} (total)` }
             },
             effects: {
                 indirect: { estimate: indirect, se: se_indirect, z: z_indirect, p: p_indirect, ci_lower: indirect - getConfZ() *se_indirect, ci_upper: indirect + getConfZ() *se_indirect },
@@ -37618,7 +37618,7 @@ const MetaAnalyticSEM = {
                 const I2 = Math.max(0, (Q - df) / Q) * 100;
 
                 results.push({
-                    pair: `${vars[i]} â†” ${vars[j]}`,
+                    pair: `${vars[i]} ↔ ${vars[j]}`,
                     Q: Q,
                     df: df,
                     I2: I2,
@@ -37723,8 +37723,8 @@ function showMediationAnalysis() {
 
             <div class="alert alert-info" style="margin-top:1rem;">
                 <strong>References:</strong><br>
-                â€¢ Cheung MWL (2015). Meta-Analysis: A Structural Equation Modeling Approach. Wiley.<br>
-                â€¢ MacKinnon DP (2008). Introduction to Statistical Mediation Analysis. Erlbaum.
+                • Cheung MWL (2015). Meta-Analysis: A Structural Equation Modeling Approach. Wiley.<br>
+                • MacKinnon DP (2008). Introduction to Statistical Mediation Analysis. Erlbaum.
             </div>
         </div>
     `;
@@ -37757,9 +37757,9 @@ function runMASEMAnalysis() {
                 <div style="text-align:center;padding:1rem;margin-bottom:1rem;background:var(--bg-secondary);border-radius:8px;">
                     <div style="font-family:monospace;font-size:1.1rem;">
                         <span style="background:var(--accent-primary);color:white;padding:0.3rem 0.6rem;border-radius:4px;">${exposure}</span>
-                        <span style="margin:0 0.5rem;">â€”<sup style="font-size:0.7rem;">a=${paths.a.estimate.toFixed(3)}</sup>â†’</span>
+                        <span style="margin:0 0.5rem;">—<sup style="font-size:0.7rem;">a=${paths.a.estimate.toFixed(3)}</sup>→</span>
                         <span style="background:var(--accent-info);color:white;padding:0.3rem 0.6rem;border-radius:4px;">${mediator}</span>
-                        <span style="margin:0 0.5rem;">â€”<sup style="font-size:0.7rem;">b=${paths.b.estimate.toFixed(3)}</sup>â†’</span>
+                        <span style="margin:0 0.5rem;">—<sup style="font-size:0.7rem;">b=${paths.b.estimate.toFixed(3)}</sup>→</span>
                         <span style="background:var(--accent-success);color:white;padding:0.3rem 0.6rem;border-radius:4px;">${outcome}</span>
                     </div>
                     <div style="margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted);">
@@ -37788,8 +37788,8 @@ function runMASEMAnalysis() {
                         <td>${paths.cPrime.label}</td>
                         <td>${paths.cPrime.estimate.toFixed(4)}</td>
                         <td>${paths.cPrime.se.toFixed(4)}</td>
-                        <td>â€”</td>
-                        <td>â€”</td>
+                        <td>—</td>
+                        <td>—</td>
                     </tr>
                 </table>
 
@@ -37797,7 +37797,7 @@ function runMASEMAnalysis() {
                 <table class="results-table" style="margin-bottom:1rem;">
                     <tr><th>Effect</th><th>Estimate</th><th>95% CI</th><th>p-value</th></tr>
                     <tr>
-                        <td><strong>Indirect (aÃ—b)</strong></td>
+                        <td><strong>Indirect (a×b)</strong></td>
                         <td>${effects.indirect.estimate.toFixed(4)}</td>
                         <td>[${effects.indirect.ci_lower.toFixed(4)}, ${effects.indirect.ci_upper.toFixed(4)}]</td>
                         <td class="${effects.indirect.p < 0.05 ? 'significant' : ''}">${effects.indirect.p < 0.001 ? '<0.001' : effects.indirect.p.toFixed(4)}</td>
@@ -37805,14 +37805,14 @@ function runMASEMAnalysis() {
                     <tr>
                         <td>Direct (c')</td>
                         <td>${effects.direct.estimate.toFixed(4)}</td>
-                        <td>â€”</td>
-                        <td>â€”</td>
+                        <td>—</td>
+                        <td>—</td>
                     </tr>
                     <tr>
                         <td>Total (c)</td>
                         <td>${effects.total.estimate.toFixed(4)}</td>
-                        <td>â€”</td>
-                        <td>â€”</td>
+                        <td>—</td>
+                        <td>—</td>
                     </tr>
                     <tr>
                         <td>Proportion Mediated</td>
@@ -37826,7 +37826,7 @@ function runMASEMAnalysis() {
 
                 <h5 style="margin-top:1rem;">Heterogeneity in Correlations</h5>
                 <table class="results-table" style="font-size:0.85rem;">
-                    <tr><th>Correlation</th><th>Q</th><th>IÂ²</th><th>Status</th></tr>
+                    <tr><th>Correlation</th><th>Q</th><th>I²</th><th>Status</th></tr>
                     ${result.heterogeneity.map(h => `
                         <tr>
                             <td>${h.pair}</td>
@@ -37988,26 +37988,26 @@ const SmartInterpretation = {
         if (I2 < 25) {
             level = 'Low';
             concern = 'low';
-            explanation = `IÂ² of ${I2.toFixed(1)}% indicates minimal between-study variability. Studies show consistent effects, strengthening confidence in the pooled estimate.`;
+            explanation = `I² of ${I2.toFixed(1)}% indicates minimal between-study variability. Studies show consistent effects, strengthening confidence in the pooled estimate.`;
         } else if (I2 < 50) {
             level = 'Moderate';
             concern = 'moderate';
-            explanation = `IÂ² of ${I2.toFixed(1)}% suggests moderate heterogeneity. Some variability exists between studies, but the pooled estimate remains informative.`;
+            explanation = `I² of ${I2.toFixed(1)}% suggests moderate heterogeneity. Some variability exists between studies, but the pooled estimate remains informative.`;
         } else if (I2 < 75) {
             level = 'Substantial';
             concern = 'substantial';
-            explanation = `IÂ² of ${I2.toFixed(1)}% indicates substantial heterogeneity. Consider exploring sources through subgroup analysis or meta-regression.`;
+            explanation = `I² of ${I2.toFixed(1)}% indicates substantial heterogeneity. Consider exploring sources through subgroup analysis or meta-regression.`;
         } else {
             level = 'Considerable';
             concern = 'high';
-            explanation = `IÂ² of ${I2.toFixed(1)}% indicates considerable heterogeneity. The pooled estimate should be interpreted cautiously. Subgroup analysis is strongly recommended.`;
+            explanation = `I² of ${I2.toFixed(1)}% indicates considerable heterogeneity. The pooled estimate should be interpreted cautiously. Subgroup analysis is strongly recommended.`;
         }
 
         // Add prediction interval interpretation
         if (tau2 > 0 && k >= 3) {
             const predLower = -getConfZ() *Math.sqrt(tau2);
             const predUpper = getConfZ() * Math.sqrt(tau2);
-            explanation += ` The prediction interval suggests that in a new study, the true effect could range widely (Â±${Math.sqrt(tau2).toFixed(2)} on the effect scale).`;
+            explanation += ` The prediction interval suggests that in a new study, the true effect could range widely (±${Math.sqrt(tau2).toFixed(2)} on the effect scale).`;
         }
 
         return { level, concern, explanation, I2, tau2 };
@@ -38023,10 +38023,10 @@ const SmartInterpretation = {
         // Inconsistency
         if (pooled.I2 >= 75) {
             score -= 2;
-            domains.push({ domain: 'Inconsistency', rating: 'Serious', deduction: -2, reason: `High heterogeneity (IÂ²=${pooled.I2.toFixed(0)}%)` });
+            domains.push({ domain: 'Inconsistency', rating: 'Serious', deduction: -2, reason: `High heterogeneity (I²=${pooled.I2.toFixed(0)}%)` });
         } else if (pooled.I2 >= 50) {
             score -= 1;
-            domains.push({ domain: 'Inconsistency', rating: 'Some concerns', deduction: -1, reason: `Moderate heterogeneity (IÂ²=${pooled.I2.toFixed(0)}%)` });
+            domains.push({ domain: 'Inconsistency', rating: 'Some concerns', deduction: -1, reason: `Moderate heterogeneity (I²=${pooled.I2.toFixed(0)}%)` });
         } else {
             domains.push({ domain: 'Inconsistency', rating: 'No concerns', deduction: 0 });
         }
@@ -38078,7 +38078,7 @@ const SmartInterpretation = {
             limitations.push({
                 issue: 'Substantial heterogeneity',
                 severity: pooled.I2 > 75 ? 'Major' : 'Moderate',
-                detail: `IÂ² of ${pooled.I2.toFixed(1)}% suggests important differences between studies that may limit generalizability.`
+                detail: `I² of ${pooled.I2.toFixed(1)}% suggests important differences between studies that may limit generalizability.`
             });
         }
 
@@ -38218,11 +38218,11 @@ const SmartInterpretation = {
 
         if (config.outcomeType === 'survival' || config.effectMeasure === 'HR') {
             const reduction = Math.abs(1 - effect) * 100;
-            const direction = effect < 1 ? 'â†“' : 'â†‘';
-            const sig = (lower > 1 || upper < 1) ? 'âœ“' : '?';
+            const direction = effect < 1 ? '↓' : '↑';
+            const sig = (lower > 1 || upper < 1) ? '✓' : '?';
             return `IPD-MA (${k} studies, N=${n.toLocaleString()}): ${direction}${reduction.toFixed(0)}% risk (HR ${effect.toFixed(2)}, 95%CI ${lower.toFixed(2)}-${upper.toFixed(2)}) ${sig} #EvidenceSynthesis`;
         } else {
-            const sig = (lower > 0 || upper < 0) ? 'âœ“' : '?';
+            const sig = (lower > 0 || upper < 0) ? '✓' : '?';
             return `IPD-MA (${k} studies, N=${n.toLocaleString()}): ${measure}=${effect.toFixed(2)} (95%CI ${lower.toFixed(2)}-${upper.toFixed(2)}) ${sig} #EvidenceSynthesis`;
         }
     }
@@ -38271,7 +38271,7 @@ function showSmartInterpretation() {
                 <div class="card" style="background:var(--bg-tertiary);">
                     <h5 style="color:var(--accent-warning);margin-bottom:0.5rem;">Heterogeneity</h5>
                     <div class="badge ${interp.heterogeneityInterpretation.level === 'Low' ? 'badge-success' : interp.heterogeneityInterpretation.level === 'Moderate' ? 'badge-info' : 'badge-warning'}" style="margin-bottom:0.5rem;">
-                        ${interp.heterogeneityInterpretation.level} (IÂ²=${interp.heterogeneityInterpretation.I2.toFixed(1)}%)
+                        ${interp.heterogeneityInterpretation.level} (I²=${interp.heterogeneityInterpretation.I2.toFixed(1)}%)
                     </div>
                     <p style="font-size:0.85rem;">${interp.heterogeneityInterpretation.explanation}</p>
                 </div>
@@ -38288,7 +38288,7 @@ function showSmartInterpretation() {
                         <tr>
                             <td>${d.domain}</td>
                             <td><span class="badge ${d.rating.includes('No concerns') ? 'badge-success' : d.rating.includes('Serious') ? 'badge-danger' : 'badge-warning'}">${d.rating}</span></td>
-                            <td>${d.reason || 'â€”'}</td>
+                            <td>${d.reason || '—'}</td>
                         </tr>
                     `).join('')}
                 </table>
@@ -38568,11 +38568,11 @@ const MLSubgroupDiscovery = {
         const rightPath = [...path];
 
         if (node.isNumeric) {
-            leftPath.push(`${node.covariate} â‰¤ ${node.splitPoint.toFixed(1)}`);
+            leftPath.push(`${node.covariate} ≤ ${node.splitPoint.toFixed(1)}`);
             rightPath.push(`${node.covariate} > ${node.splitPoint.toFixed(1)}`);
         } else {
             leftPath.push(`${node.covariate} = ${node.splitValue}`);
-            rightPath.push(`${node.covariate} â‰  ${node.splitValue}`);
+            rightPath.push(`${node.covariate} ≠ ${node.splitValue}`);
         }
 
         return [
@@ -39040,7 +39040,7 @@ const MetaRegressionCV = {
         mse /= k;
         const rmse = Math.sqrt(mse);
 
-        // Calculate RÂ² for CV
+        // Calculate R² for CV
         const meanEffect = studies.reduce((s, st) => s + st.effect, 0) / k;
         const totalSS = studies.reduce((s, st) => s + Math.pow(st.effect - meanEffect, 2), 0);
         const residualSS = predictions.reduce((s, p) => s + p.residual * p.residual, 0);
@@ -39100,13 +39100,13 @@ const MetaRegressionCV = {
         let interpretation = `Leave-one-out cross-validation (${k} folds) `;
 
         if (r2 > 0.5) {
-            interpretation += `shows good predictive performance (CV RÂ² = ${(r2 * 100).toFixed(1)}%). `;
+            interpretation += `shows good predictive performance (CV R² = ${(r2 * 100).toFixed(1)}%). `;
             interpretation += 'The meta-regression model generalizes well to new studies.';
         } else if (r2 > 0.2) {
-            interpretation += `shows moderate predictive performance (CV RÂ² = ${(r2 * 100).toFixed(1)}%). `;
+            interpretation += `shows moderate predictive performance (CV R² = ${(r2 * 100).toFixed(1)}%). `;
             interpretation += 'The model explains some but not all between-study variation.';
         } else {
-            interpretation += `shows limited predictive performance (CV RÂ² = ${(r2 * 100).toFixed(1)}%). `;
+            interpretation += `shows limited predictive performance (CV R² = ${(r2 * 100).toFixed(1)}%). `;
             interpretation += 'The moderator may not be a strong predictor of treatment effect.';
         }
 
@@ -39183,7 +39183,7 @@ function runMetaRegCrossValidation() {
             <div class="stats-grid" style="margin-bottom:1rem;">
                 <div class="stat-box">
                     <div class="stat-value">${(result.cvR2 * 100).toFixed(1)}%</div>
-                    <div class="stat-label">CV RÂ²</div>
+                    <div class="stat-label">CV R²</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-value">${result.rmse.toFixed(4)}</div>
@@ -39215,7 +39215,7 @@ function runMetaRegCrossValidation() {
 
             <div class="alert ${result.calibration.perfect ? 'alert-success' : 'alert-warning'}" style="margin-top:1rem;">
                 <strong>Calibration:</strong> ${result.calibration.perfect ?
-                    'Model is well-calibrated (slope â‰ˆ 1, intercept â‰ˆ 0)' :
+                    'Model is well-calibrated (slope ≈ 1, intercept ≈ 0)' :
                     `Model may need recalibration (slope = ${result.calibration.slope.toFixed(2)}, intercept = ${result.calibration.intercept.toFixed(3)})`}
             </div>
         </div>
@@ -39457,7 +39457,7 @@ function showLivingReviewDashboard() {
                 <h5 style="color:var(--accent-info);margin-bottom:0.5rem;">Update History</h5>
                 <div style="max-height:200px;overflow-y:auto;">
                     <table class="results-table" style="font-size:0.8rem;">
-                        <tr><th>Timestamp</th><th>Studies</th><th>N</th><th>Effect</th><th>IÂ²</th><th>Significant</th></tr>
+                        <tr><th>Timestamp</th><th>Studies</th><th>N</th><th>Effect</th><th>I²</th><th>Significant</th></tr>
                         ${LivingReviewMonitor.state.history.slice().reverse().map(h => {
                             const eff = isLogScale ? Math.exp(h.pooledEffect) : h.pooledEffect;
                             return `
@@ -40266,7 +40266,7 @@ function showPowerMonitor() {
                         </div>
                         <div class="stat-card" style="background:var(--bg-tertiary);">
                             <div class="stat-value">${stats.I2.toFixed(1)}%</div>
-                            <div class="stat-label">IÂ² Heterogeneity</div>
+                            <div class="stat-label">I² Heterogeneity</div>
                         </div>
                     </div>
 
@@ -40327,7 +40327,7 @@ function showPowerMonitor() {
                                     +${target80.additionalStudies} studies needed
                                 </div>
                                 <div style="font-size:0.9rem;">
-                                    â‰ˆ ${Math.round(target80.additionalParticipants)} additional participants
+                                    ≈ ${Math.round(target80.additionalParticipants)} additional participants
                                 </div>
                             `}
                         </div>
@@ -40336,7 +40336,7 @@ function showPowerMonitor() {
                             <h4 style="color:var(--accent-primary);margin-bottom:0.5rem;">Current Effect</h4>
                             <div style="font-size:1.2rem;font-weight:bold;">${stats.pooledEffect.toFixed(3)}</div>
                             <div style="font-size:0.9rem;">SE: ${stats.pooledSE.toFixed(3)}</div>
-                            <div style="font-size:0.9rem;">Ï„Â²: ${stats.tau2.toFixed(4)}</div>
+                            <div style="font-size:0.9rem;">Ï„²: ${stats.tau2.toFixed(4)}</div>
                         </div>
                     </div>
 
@@ -40477,7 +40477,7 @@ tr:hover{background:#f3f4f6}
 <div class="summary-box">
 <h3 style="margin:0">Original Analysis Summary</h3>
 <p>Pooled Effect: ${r.pooled.pooled.toFixed(4)} (95% CI: ${r.pooled.lower.toFixed(4)} to ${r.pooled.upper.toFixed(4)})</p>
-<p>IÂ²: ${r.pooled.I2.toFixed(1)}% | Ï„Â²: ${r.pooled.tau2.toFixed(4)} | Studies: ${studies.length}</p>
+<p>I²: ${r.pooled.I2.toFixed(1)}% | Ï„²: ${r.pooled.tau2.toFixed(4)} | Studies: ${studies.length}</p>
 </div>
 
 <h2>1. Leave-One-Out Analysis</h2>
@@ -40570,7 +40570,7 @@ function initTooltips() {
                 if (!label.querySelector('.tooltip-icon')) {
                     const icon = document.createElement('span');
                     icon.className = 'tooltip-icon';
-                    icon.innerHTML = ' â“˜';
+                    icon.innerHTML = ' ⓘ';
                     icon.style.cssText = 'color:var(--accent-info);cursor:help;font-size:0.9em;';
                     icon.setAttribute('title', text);
                     label.appendChild(icon);
@@ -40629,16 +40629,16 @@ function showContextualHelp(section) {
             <h4>Understanding Heterogeneity</h4>
             <h5>Key Statistics:</h5>
             <ul>
-                <li><strong>IÂ²:</strong> % of variability due to heterogeneity (not chance)</li>
-                <li><strong>Ï„Â²:</strong> Between-study variance on effect scale</li>
+                <li><strong>I²:</strong> % of variability due to heterogeneity (not chance)</li>
+                <li><strong>Ï„²:</strong> Between-study variance on effect scale</li>
                 <li><strong>Q:</strong> Test statistic for homogeneity</li>
                 <li><strong>Prediction Interval:</strong> Where 95% of true effects would fall</li>
             </ul>
             <h5>Interpretation:</h5>
             <ul>
-                <li>IÂ² < 25%: Low heterogeneity</li>
-                <li>IÂ² 25-50%: Moderate heterogeneity</li>
-                <li>IÂ² > 50%: Substantial heterogeneity</li>
+                <li>I² < 25%: Low heterogeneity</li>
+                <li>I² 25-50%: Moderate heterogeneity</li>
+                <li>I² > 50%: Substantial heterogeneity</li>
             </ul>
         `,
         'Publication Bias Assessment': `
@@ -40703,7 +40703,7 @@ function showPowerCalculator() {
                         <input type="number" class="form-input" id="pwrN" value="200" min="10">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Expected Ï„Â² (heterogeneity)</label>
+                        <label class="form-label">Expected Ï„² (heterogeneity)</label>
                         <input type="number" class="form-input" id="pwrTau2" value="0.1" step="0.01" min="0">
                     </div>
                     <div class="form-group">
@@ -40741,7 +40741,7 @@ function showPowerCalculator() {
                         <input type="number" class="form-input" id="ssEffect" value="-0.3" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Expected Ï„Â²</label>
+                        <label class="form-label">Expected Ï„²</label>
                         <input type="number" class="form-input" id="ssTau2" value="0.1" step="0.01">
                     </div>
                     <div class="form-group">
@@ -40823,7 +40823,7 @@ function calculatePower() {
         </div>
         <div class="alert ${power >= 0.8 ? 'alert-success' : 'alert-warning'}">
             ${power >= 0.8 ?
-                'Adequate power (â‰¥80%) to detect the specified effect.' :
+                'Adequate power (≥80%) to detect the specified effect.' :
                 'Insufficient power. Consider more studies or larger sample sizes.'}
         </div>
     `;
@@ -40853,7 +40853,7 @@ function calculateSampleSize() {
         <div class="alert alert-info">
             To achieve ${(power*100).toFixed(0)}% power for detecting an effect of ${effect.toFixed(2)},
             you need approximately <strong>${Math.max(2, k)} studies</strong>.
-            ${tau2 > 0 ? `<br>Note: High heterogeneity (Ï„Â²=${tau2}) increases required sample size.` : ''}
+            ${tau2 > 0 ? `<br>Note: High heterogeneity (Ï„²=${tau2}) increases required sample size.` : ''}
         </div>
     `;
 }
@@ -40956,7 +40956,7 @@ h1{text-align:center;color:#6366f1}
         <p>Studies identified through database searching</p>
         <p class="number">${studies.length + Math.floor(studies.length * 0.3)} studies</p>
     </div>
-    <div class="arrow">â†“</div>
+    <div class="arrow">↓</div>
 
     <div class="row">
         <div class="box" style="flex:2">
@@ -40969,7 +40969,7 @@ h1{text-align:center;color:#6366f1}
             <p class="number">${Math.floor(studies.length * 0.15)}</p>
         </div>
     </div>
-    <div class="arrow">â†“</div>
+    <div class="arrow">↓</div>
 
     <div class="row">
         <div class="box" style="flex:2">
@@ -40982,7 +40982,7 @@ h1{text-align:center;color:#6366f1}
             <p class="number">${Math.floor(studies.length * 0.05)}</p>
         </div>
     </div>
-    <div class="arrow">â†“</div>
+    <div class="arrow">↓</div>
 
     <div class="row">
         <div class="box" style="flex:2">
@@ -40995,7 +40995,7 @@ h1{text-align:center;color:#6366f1}
             <p class="number">${Math.floor(studies.length * 0.05)}</p>
         </div>
     </div>
-    <div class="arrow">â†“</div>
+    <div class="arrow">↓</div>
 
     <div class="row">
         <div class="box final-box" style="flex:2">
@@ -41190,10 +41190,10 @@ function runIntegratedTestSuite() {
     // Test 1: MathUtils functions
     const tests = [
         { name: 'normCDF(0) = 0.5', fn: () => Math.abs(MathUtils.normCDF(0) - 0.5) < 1e-10 },
-        { name: 'normCDF(1.96) â‰ˆ 0.975', fn: () => Math.abs(MathUtils.normCDF(1.96) - 0.975) < 0.001 },
+        { name: 'normCDF(1.96) ≈ 0.975', fn: () => Math.abs(MathUtils.normCDF(1.96) - 0.975) < 0.001 },
         { name: 'normQuantile(0.5) = 0', fn: () => Math.abs(MathUtils.normQuantile(0.5)) < 1e-10 },
-        { name: 'normQuantile(0.975) â‰ˆ 1.96', fn: () => Math.abs(MathUtils.normQuantile(0.975) - 1.96) < 0.001 },
-        { name: 'tQuantile(0.975, 12) â‰ˆ 2.179', fn: () => Math.abs(MathUtils.tQuantile(0.975, 12) - 2.179) < 0.01 },
+        { name: 'normQuantile(0.975) ≈ 1.96', fn: () => Math.abs(MathUtils.normQuantile(0.975) - 1.96) < 0.001 },
+        { name: 'tQuantile(0.975, 12) ≈ 2.179', fn: () => Math.abs(MathUtils.tQuantile(0.975, 12) - 2.179) < 0.01 },
         { name: 'chi2CDF defined', fn: () => typeof MathUtils.chi2CDF === 'function' },
         { name: 'gamma function exists', fn: () => typeof MathUtils.gamma === 'function' || typeof MathUtils.lnGamma === 'function' },
 
@@ -41272,7 +41272,7 @@ function runIntegratedTestSuite() {
                             <tr>
                                 <td>${escapeHTML(r.name)}</td>
                                 <td style="color:${r.passed ? 'var(--accent-success)' : 'var(--accent-danger)'}">
-                                    ${r.passed ? 'âœ“ PASS' : 'âœ— FAIL'}
+                                    ${r.passed ? '✓ PASS' : '✗ FAIL'}
                                     ${r.error ? `<br><small>${escapeHTML(r.error)}</small>` : ''}
                                 </td>
                             </tr>
@@ -41310,21 +41310,21 @@ function showEnhancedExportModal() {
             <div style="display:grid;gap:0.75rem;">
                 <h4 style="color:var(--accent-primary);margin-bottom:0.25rem;">Reports</h4>
                 <button class="btn btn-primary" onclick="exportHTML();this.closest('.modal-overlay').remove()">
-                    ðŸ“„ Full HTML Report
+                    📄 Full HTML Report
                 </button>
                 <button class="btn btn-secondary" onclick="exportPDF();this.closest('.modal-overlay').remove()">
-                    ðŸ“‘ PDF Report
+                    📑 PDF Report
                 </button>
                 <button class="btn btn-secondary" onclick="exportSensitivityAnalysis();this.closest('.modal-overlay').remove()">
                     ðŸ” Sensitivity Analysis Report
                 </button>
                 <button class="btn btn-secondary" onclick="generatePRISMAFlowchart();this.closest('.modal-overlay').remove()">
-                    ðŸ“Š PRISMA-IPD Flowchart
+                    📊 PRISMA-IPD Flowchart
                 </button>
 
                 <h4 style="color:var(--accent-primary);margin:0.75rem 0 0.25rem;">Data</h4>
                 <button class="btn btn-secondary" onclick="exportResults('csv');this.closest('.modal-overlay').remove()">
-                    ðŸ“‹ Results CSV
+                    📋 Results CSV
                 </button>
                 <button class="btn btn-secondary" onclick="exportIPDData();this.closest('.modal-overlay').remove()">
                     ðŸ“ Full IPD Dataset (CSV)
@@ -41332,10 +41332,10 @@ function showEnhancedExportModal() {
 
                 <h4 style="color:var(--accent-primary);margin:0.75rem 0 0.25rem;">Code</h4>
                 <button class="btn btn-secondary" onclick="exportRCode();this.closest('.modal-overlay').remove()">
-                    ðŸ”µ R Code (metafor)
+                    🔵 R Code (metafor)
                 </button>
                 <button class="btn btn-secondary" onclick="exportStataCode();this.closest('.modal-overlay').remove()">
-                    ðŸŸ¢ Stata Code (metan)
+                    🟢 Stata Code (metan)
                 </button>
             </div>
         </div>
@@ -41381,7 +41381,7 @@ function updateHeaderButtons() {
         // Add test suite button
         const testBtn = document.createElement('button');
         testBtn.className = 'btn btn-secondary';
-        testBtn.innerHTML = 'ðŸ§ª Tests';
+        testBtn.innerHTML = '🧪 Tests';
         testBtn.onclick = runIntegratedTestSuite;
         testBtn.title = 'Run integrated test suite';
         testBtn.style.fontSize = '0.8rem';
@@ -44278,7 +44278,7 @@ const BeyondR40 = {
         };
     },
 
-    // Feature 5: Generalized Q-Profile Method for Ï„Â² CI
+    // Feature 5: Generalized Q-Profile Method for Ï„² CI
     // Reference: Viechtbauer (2007) Statistics in Medicine
     qProfileTau2: function(studies, alpha = 0.05) {
         const k = studies.length;
@@ -44404,7 +44404,7 @@ const BeyondR40 = {
         const zBeta = jStat.normal.inv(power, 0, 1);
         const requiredInfo = Math.pow((zAlpha + zBeta) / targetEffect, 2);
 
-        // Diversity adjustment (DÂ²)
+        // Diversity adjustment (D²)
         const avgVar = studies.reduce((s, st) => s + st.vi, 0) / k;
         const D2 = tau2 / (tau2 + avgVar);
         const adjustedRequired = requiredInfo * (1 + D2);
@@ -44633,7 +44633,7 @@ const BeyondR40 = {
     },
 
     // Feature 12: Limit Meta-Analysis
-    // Reference: RÃ¼cker et al. (2011) Biostatistics
+    // Reference: Rücker et al. (2011) Biostatistics
     limitMetaAnalysis: function(studies) {
         const k = studies.length;
         if (k < 3) return { error: "Need at least 3 studies" };
@@ -44682,7 +44682,7 @@ const BeyondR40 = {
             interpretation: Math.abs(wlsResult.slopePValue) < 0.10 ?
                 "Evidence of small-study effects; limit estimate may be more reliable" :
                 "No strong evidence of small-study effects",
-            reference: "RÃ¼cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M (2011). Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics, 12(1), 122-142."
+            reference: "Rücker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M (2011). Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics, 12(1), 122-142."
         };
     },
 
@@ -45634,7 +45634,7 @@ const BeyondR40 = {
             causeSpecificResults: results,
             interpretation: "Cause-specific hazard ratios show treatment effect on each competing event",
             note: "Subdistribution hazard ratios (Fine-Gray) require different pooling approach",
-            reference: "Del Giovane C, Stewart LA, PÃ©rez T (2013). Meta-analysis of competing risks: Systematic review and methodological appraisal. Statistics in Medicine, 32(21), 3616-3638."
+            reference: "Del Giovane C, Stewart LA, Pérez T (2013). Meta-analysis of competing risks: Systematic review and methodological appraisal. Statistics in Medicine, 32(21), 3616-3638."
         };
     },
 
@@ -45643,7 +45643,7 @@ const BeyondR40 = {
     // ==========================================================================
 
     // Feature 29: Component NMA with Interaction Testing
-    // Reference: RÃ¼cker et al. (2020) Biometrical Journal
+    // Reference: Rücker et al. (2020) Biometrical Journal
     componentNMAInteractions: function(studies) {
         // studies: [{study, trt1, trt2, effect, se, components: {A: 1, B: 1, C: 0, ...}}]
         if (!studies || studies.length < 3) return { error: "Need at least 3 studies" };
@@ -45680,7 +45680,7 @@ const BeyondR40 = {
             interpretation: interactionResults.significantInteractions.length > 0 ?
                 `Significant interactions detected: ${interactionResults.significantInteractions.join(', ')}` :
                 "No significant component interactions; additive model appropriate",
-            reference: "RÃ¼cker G, Petropoulou M, Schwarzer G (2020). Network meta-analysis of multicomponent interventions. Biometrical Journal, 62(3), 808-821."
+            reference: "Rücker G, Petropoulou M, Schwarzer G (2020). Network meta-analysis of multicomponent interventions. Biometrical Journal, 62(3), 808-821."
         };
     },
 
@@ -46044,11 +46044,11 @@ const BeyondR40 = {
         if (I2 > 75) {
             certainty -= 2;
             domains.inconsistency = { level: "Serious", downgrade: 2, I2: I2 };
-            downgrades.push(`Inconsistency: IÂ²=${I2.toFixed(0)}% (>75%)`);
+            downgrades.push(`Inconsistency: I²=${I2.toFixed(0)}% (>75%)`);
         } else if (I2 > 50) {
             certainty -= 1;
             domains.inconsistency = { level: "Some concerns", downgrade: 1, I2: I2 };
-            downgrades.push(`Inconsistency: IÂ²=${I2.toFixed(0)}% (50-75%)`);
+            downgrades.push(`Inconsistency: I²=${I2.toFixed(0)}% (50-75%)`);
         } else {
             domains.inconsistency = { level: "Low", downgrade: 0, I2: I2 };
         }
@@ -46118,7 +46118,7 @@ const BeyondR40 = {
             totalDowngrades: 4 - certainty,
             interpretation: this._gradeInterpretation(certainty),
             summary: `${certaintyLabels[certainty]} certainty evidence based on ${downgrades.length > 0 ? downgrades.join('; ') : 'no serious concerns'}`,
-            reference: "Guyatt GH, Oxman AD, SchÃ¼nemann HJ, et al. (2011). GRADE guidelines: A new series of articles in the Journal of Clinical Epidemiology. Journal of Clinical Epidemiology, 64(4), 380-382."
+            reference: "Guyatt GH, Oxman AD, Schünemann HJ, et al. (2011). GRADE guidelines: A new series of articles in the Journal of Clinical Epidemiology. Journal of Clinical Epidemiology, 64(4), 380-382."
         };
     },
 
@@ -46882,7 +46882,7 @@ function showBeyondR40Panel() {
                         <button class="btn btn-secondary" onclick="runBeyondR40('approxBayesianPI')">2. Approx Bayesian PI</button>
                         <button class="btn btn-secondary" onclick="runBeyondR40('studySpecificPI')">3. Study-Specific PI</button>
                         <button class="btn btn-secondary" onclick="runBeyondR40('partitionHeterogeneity')">4. Heterogeneity Partitioning</button>
-                        <button class="btn btn-secondary" onclick="runBeyondR40('qProfileTau2')">5. Q-Profile Ï„Â² CI</button>
+                        <button class="btn btn-secondary" onclick="runBeyondR40('qProfileTau2')">5. Q-Profile Ï„² CI</button>
                         <button class="btn btn-secondary" onclick="runBeyondR40('multiplicativeModel')">6. Multiplicative Model</button>
                         <button class="btn btn-secondary" onclick="runBeyondR40('heterogeneityPower')">7. Heterogeneity Power</button>
                         <button class="btn btn-secondary" onclick="runBeyondR40('optimalInformationSize')">8. Optimal Info Size</button>
@@ -47134,7 +47134,7 @@ document.addEventListener('DOMContentLoaded', function() {
 console.log('[IPD-MA Pro] 40 Beyond R Features Module Loaded - Version ' + BeyondR40.version);
 
 // =============================================================================
-// TRUTHCERT â€” Proof-Carrying Numbers: Input Hashing, Provenance, Certification
+// TRUTHCERT — Proof-Carrying Numbers: Input Hashing, Provenance, Certification
 // =============================================================================
 const TruthCert = {
  version: '1.0.0',
@@ -47257,7 +47257,7 @@ const TruthCert = {
   validations.push({
    validator: 'NO_MEMORY_EVIDENCE',
    outcome: memRefs.length === 0 ? 'PASS' : 'BLOCK',
-   detail: memRefs.length === 0 ? 'No memory-only references found' : 'BLOCK: ' + memRefs.length + ' memory references found â€” claims cannot be certified from memory alone'
+   detail: memRefs.length === 0 ? 'No memory-only references found' : 'BLOCK: ' + memRefs.length + ' memory references found — claims cannot be certified from memory alone'
   });
 
   // V2: Input hash present

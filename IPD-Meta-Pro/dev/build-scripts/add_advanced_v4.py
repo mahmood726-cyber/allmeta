@@ -59,7 +59,7 @@ new_features = '''
                 hideProgress();
 
                 let html = '<div class="analysis-results">';
-                html += '<h3>ðŸŒ³ Meta-CART: Subgroup Detection via Decision Trees</h3>';
+                html += '<h3>🌳 Meta-CART: Subgroup Detection via Decision Trees</h3>';
                 html += '<p><em>Identifies subgroups with differential treatment effects</em></p>';
 
                 html += '<h4>Decision Tree Structure</h4>';
@@ -69,7 +69,7 @@ new_features = '''
 
                 html += '<h4>Identified Subgroups</h4>';
                 html += '<table class="results-table">';
-                html += '<tr><th>Subgroup</th><th>N Studies</th><th>Pooled Effect</th><th>95% CI</th><th>IÂ²</th></tr>';
+                html += '<tr><th>Subgroup</th><th>N Studies</th><th>Pooled Effect</th><th>95% CI</th><th>I²</th></tr>';
 
                 subgroups.forEach((sg, i) => {
                     if (sg.studies.length >= 2) {
@@ -199,7 +199,7 @@ new_features = '''
             }];
         }
 
-        const leftRules = [...rules, `${node.moderator} â‰¤ ${node.threshold.toFixed(2)}`];
+        const leftRules = [...rules, `${node.moderator} ≤ ${node.threshold.toFixed(2)}`];
         const rightRules = [...rules, `${node.moderator} > ${node.threshold.toFixed(2)}`];
 
         return [
@@ -211,11 +211,11 @@ new_features = '''
     function renderTreeText(node, indent) {
         const pad = '&nbsp;'.repeat(indent * 4);
         if (node.type === 'leaf') {
-            return `${pad}ðŸ“Š N=${node.n}, Effect=${node.effect.toFixed(3)}<br>`;
+            return `${pad}📊 N=${node.n}, Effect=${node.effect.toFixed(3)}<br>`;
         }
-        let html = `${pad}ðŸ”€ ${node.moderator} â‰¤ ${node.threshold.toFixed(2)}?<br>`;
-        html += `${pad}â”œâ”€ Yes:<br>${renderTreeText(node.left, indent + 1)}`;
-        html += `${pad}â””â”€ No:<br>${renderTreeText(node.right, indent + 1)}`;
+        let html = `${pad}🔀 ${node.moderator} ≤ ${node.threshold.toFixed(2)}?<br>`;
+        html += `${pad}├─ Yes:<br>${renderTreeText(node.left, indent + 1)}`;
+        html += `${pad}└─ No:<br>${renderTreeText(node.right, indent + 1)}`;
         return html;
     }
 
@@ -317,7 +317,7 @@ new_features = '''
             hideProgress();
 
             let html = '<div class="analysis-results">';
-            html += '<h3>ðŸ“ˆ Sequential Meta-Analysis</h3>';
+            html += '<h3>📈 Sequential Meta-Analysis</h3>';
             html += '<p><em>O\'Brien-Fleming boundaries for evidence monitoring</em></p>';
 
             html += '<h4>Cumulative Results</h4>';
@@ -325,13 +325,13 @@ new_features = '''
             html += '<tr><th>Studies</th><th>Effect</th><th>95% CI</th><th>Z-stat</th><th>Boundary</th><th>Status</th></tr>';
 
             cumulative.forEach(c => {
-                const status = c.crossed ? 'âœ… Crossed' : 'â³ Continue';
+                const status = c.crossed ? '✅ Crossed' : 'â³ Continue';
                 html += `<tr${c.crossed ? ' style="background-color: rgba(0,255,0,0.15);"' : ''}>`;
                 html += `<td>1-${c.k}</td>`;
                 html += `<td>${c.effect.toFixed(3)}</td>`;
                 html += `<td>(${c.ci_l.toFixed(3)}, ${c.ci_u.toFixed(3)})</td>`;
                 html += `<td>${c.z.toFixed(2)}</td>`;
-                html += `<td>Â±${c.bound.toFixed(2)}</td>`;
+                html += `<td>±${c.bound.toFixed(2)}</td>`;
                 html += `<td>${status}</td>`;
                 html += '</tr>';
             });
@@ -343,7 +343,7 @@ new_features = '''
             html += '<h4>Interpretation</h4>';
             html += '<div class="interpretation-box">';
             if (crossingPoint >= 0) {
-                html += `<p>âœ… <strong>Conclusive evidence reached</strong> after ${crossingPoint + 1} studies.</p>`;
+                html += `<p>✅ <strong>Conclusive evidence reached</strong> after ${crossingPoint + 1} studies.</p>`;
                 html += `<p>The Z-statistic crossed the O'Brien-Fleming boundary, indicating sufficient evidence to conclude about the treatment effect.</p>`;
                 const finalEffect = cumulative[n - 1];
                 if (finalEffect.effect > 0) {
@@ -553,8 +553,8 @@ new_features = '''
                 hideProgress();
 
                 let html = '<div class="analysis-results">';
-                html += '<h3>ðŸ”— Causal Mediation Analysis</h3>';
-                html += `<p>Treatment: ${treatCol} â†’ Mediator: ${actualMediator} â†’ Outcome: ${outcomeCol}</p>`;
+                html += '<h3>🔗 Causal Mediation Analysis</h3>';
+                html += `<p>Treatment: ${treatCol} → Mediator: ${actualMediator} → Outcome: ${outcomeCol}</p>`;
 
                 html += '<h4>Path Diagram</h4>';
                 html += '<canvas id="mediation-canvas" width="500" height="200"></canvas>';
@@ -564,7 +564,7 @@ new_features = '''
                 html += '<tr><th>Effect</th><th>Estimate</th><th>SE</th><th>95% CI</th><th>P-value</th></tr>';
                 html += `<tr><td>Total Effect (c)</td><td>${totalEffect.toFixed(4)}</td><td>${c_result.slopeSE.toFixed(4)}</td><td>(${(totalEffect - 1.96 * c_result.slopeSE).toFixed(4)}, ${(totalEffect + 1.96 * c_result.slopeSE).toFixed(4)})</td><td>${c_result.pValue.toFixed(4)}</td></tr>`;
                 html += `<tr><td>Direct Effect (c')</td><td>${c_prime.toFixed(4)}</td><td>${mediatorModel.ses[0].toFixed(4)}</td><td>(${(c_prime - 1.96 * mediatorModel.ses[0]).toFixed(4)}, ${(c_prime + 1.96 * mediatorModel.ses[0]).toFixed(4)})</td><td>${mediatorModel.pValues[0].toFixed(4)}</td></tr>`;
-                html += `<tr style="background-color: rgba(255,165,0,0.1);"><td>Indirect Effect (aÃ—b)</td><td>${indirectEffect.toFixed(4)}</td><td>${sobelSE.toFixed(4)}</td><td>(${(indirectEffect - 1.96 * sobelSE).toFixed(4)}, ${(indirectEffect + 1.96 * sobelSE).toFixed(4)})</td><td>${sobelP.toFixed(4)}</td></tr>`;
+                html += `<tr style="background-color: rgba(255,165,0,0.1);"><td>Indirect Effect (a×b)</td><td>${indirectEffect.toFixed(4)}</td><td>${sobelSE.toFixed(4)}</td><td>(${(indirectEffect - 1.96 * sobelSE).toFixed(4)}, ${(indirectEffect + 1.96 * sobelSE).toFixed(4)})</td><td>${sobelP.toFixed(4)}</td></tr>`;
                 html += `<tr><td>Proportion Mediated</td><td>${(propMediated * 100).toFixed(1)}%</td><td colspan="3">-</td></tr>`;
                 html += '</table>';
 
@@ -578,10 +578,10 @@ new_features = '''
                 html += '<h4>Interpretation</h4>';
                 html += '<div class="interpretation-box">';
                 if (sobelP < 0.05) {
-                    html += `<p>âœ… The <strong>indirect effect is statistically significant</strong> (Sobel p = ${sobelP.toFixed(4)}).</p>`;
+                    html += `<p>✅ The <strong>indirect effect is statistically significant</strong> (Sobel p = ${sobelP.toFixed(4)}).</p>`;
                     html += `<p>The mediator <strong>${actualMediator}</strong> explains approximately <strong>${Math.abs(propMediated * 100).toFixed(1)}%</strong> of the total treatment effect.</p>`;
                 } else {
-                    html += `<p>âš ï¸ The indirect effect is <strong>not statistically significant</strong> (p = ${sobelP.toFixed(3)}).</p>`;
+                    html += `<p>⚠ï¸ The indirect effect is <strong>not statistically significant</strong> (p = ${sobelP.toFixed(3)}).</p>`;
                     html += `<p>There is insufficient evidence that ${actualMediator} mediates the treatment effect.</p>`;
                 }
 
@@ -847,14 +847,14 @@ new_features = '''
                 const D = data.map(d => parseFloat(d[treatCol]) || 0);
                 const Y = data.map(d => parseFloat(d[outcomeCol]) || 0);
 
-                // First Stage: D = Î³â‚€ + Î³â‚Z + Î½
+                // First Stage: D = Î³₀ + Î³â‚Z + Î½
                 const firstStage = simpleRegression(Z, D);
                 const D_hat = Z.map(z => firstStage.intercept + firstStage.slope * z);
 
                 // First stage F-statistic
                 const fStat = Math.pow(firstStage.tStat, 2);
 
-                // Second Stage: Y = Î²â‚€ + Î²â‚DÌ‚ + Îµ
+                // Second Stage: Y = Î²₀ + Î²â‚DÌ‚ + Îµ
                 const secondStage = simpleRegression(D_hat, Y);
 
                 // LATE (Local Average Treatment Effect)
@@ -873,8 +873,8 @@ new_features = '''
                 hideProgress();
 
                 let html = '<div class="analysis-results">';
-                html += '<h3>ðŸ”§ Instrumental Variable Analysis (2SLS)</h3>';
-                html += `<p>Instrument: ${actualIV} â†’ Treatment: ${treatCol} â†’ Outcome: ${outcomeCol}</p>`;
+                html += '<h3>🔧 Instrumental Variable Analysis (2SLS)</h3>';
+                html += `<p>Instrument: ${actualIV} → Treatment: ${treatCol} → Outcome: ${outcomeCol}</p>`;
 
                 html += '<h4>First Stage Results</h4>';
                 html += '<table class="results-table">';
@@ -885,9 +885,9 @@ new_features = '''
 
                 const weakIV = fStat < 10;
                 if (weakIV) {
-                    html += '<p style="color: #f44336;">âš ï¸ <strong>Weak instrument warning:</strong> F-statistic < 10 suggests weak instrument bias.</p>';
+                    html += '<p style="color: #f44336;">⚠ï¸ <strong>Weak instrument warning:</strong> F-statistic < 10 suggests weak instrument bias.</p>';
                 } else {
-                    html += '<p style="color: #4CAF50;">âœ… <strong>Strong instrument:</strong> F-statistic â‰¥ 10</p>';
+                    html += '<p style="color: #4CAF50;">✅ <strong>Strong instrument:</strong> F-statistic ≥ 10</p>';
                 }
 
                 html += '<h4>Second Stage Results (2SLS)</h4>';
@@ -910,9 +910,9 @@ new_features = '''
                 html += `<p>The estimated <strong>Local Average Treatment Effect (LATE)</strong> is ${late.toFixed(4)}.</p>`;
 
                 if (hausmanP < 0.05) {
-                    html += '<p>âš ï¸ The Hausman test suggests <strong>significant endogeneity</strong> - OLS estimates are likely biased. IV estimates are preferred.</p>';
+                    html += '<p>⚠ï¸ The Hausman test suggests <strong>significant endogeneity</strong> - OLS estimates are likely biased. IV estimates are preferred.</p>';
                 } else {
-                    html += '<p>âœ… The Hausman test does not detect significant endogeneity. OLS and IV estimates are similar.</p>';
+                    html += '<p>✅ The Hausman test does not detect significant endogeneity. OLS and IV estimates are similar.</p>';
                 }
 
                 html += '<p><em>Note: IV validity requires that the instrument affects the outcome ONLY through treatment (exclusion restriction).</em></p>';
@@ -982,12 +982,12 @@ new_features = '''
             hideProgress();
 
             let html = '<div class="analysis-results">';
-            html += '<h3>ðŸ“Š Multivariate Random-Effects Meta-Analysis</h3>';
+            html += '<h3>📊 Multivariate Random-Effects Meta-Analysis</h3>';
             html += '<p><em>Joint analysis of correlated outcomes</em></p>';
 
             html += '<h4>Pooled Estimates</h4>';
             html += '<table class="results-table">';
-            html += '<tr><th>Outcome</th><th>Effect</th><th>SE</th><th>95% CI</th><th>Ï„Â²</th></tr>';
+            html += '<tr><th>Outcome</th><th>Effect</th><th>SE</th><th>95% CI</th><th>Ï„²</th></tr>';
             html += `<tr><td>Outcome 1</td><td>${pooled1.effect.toFixed(3)}</td><td>${pooled1.se.toFixed(3)}</td><td>(${(pooled1.effect - 1.96 * pooled1.se).toFixed(3)}, ${(pooled1.effect + 1.96 * pooled1.se).toFixed(3)})</td><td>${(pooled1.tau2 || 0).toFixed(4)}</td></tr>`;
             html += `<tr><td>Outcome 2</td><td>${pooled2.effect.toFixed(3)}</td><td>${pooled2.se.toFixed(3)}</td><td>(${(pooled2.effect - 1.96 * pooled2.se).toFixed(3)}, ${(pooled2.effect + 1.96 * pooled2.se).toFixed(3)})</td><td>${(pooled2.tau2 || 0).toFixed(4)}</td></tr>`;
             html += '</table>';
@@ -1007,11 +1007,11 @@ new_features = '''
             html += '<p><strong>Multivariate meta-analysis</strong> jointly models correlated outcomes, borrowing strength across related endpoints.</p>';
             html += `<p>The between-study correlation is <strong>Ï = ${rho.toFixed(3)}</strong>.</p>`;
             if (Math.abs(rho) > 0.5) {
-                html += '<p>âœ… Strong correlation suggests substantial efficiency gains from multivariate modeling.</p>';
+                html += '<p>✅ Strong correlation suggests substantial efficiency gains from multivariate modeling.</p>';
             } else if (Math.abs(rho) > 0.3) {
-                html += '<p>âš ï¸ Moderate correlation - some efficiency gain from multivariate approach.</p>';
+                html += '<p>⚠ï¸ Moderate correlation - some efficiency gain from multivariate approach.</p>';
             } else {
-                html += '<p>â„¹ï¸ Weak correlation - univariate analyses may be sufficient.</p>';
+                html += '<p>ℹï¸ Weak correlation - univariate analyses may be sufficient.</p>';
             }
             html += '</div>';
 

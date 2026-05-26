@@ -6,12 +6,12 @@ RSM EDITORIAL REVIEW V6 - ADVANCED METHODOLOGICAL ENHANCEMENTS
 As an editor for Research Synthesis Methods, this script adds critical
 methodological features that are essential for rigorous meta-analysis:
 
-1. IÂ² CONFIDENCE INTERVALS (Higgins & Thompson 2002)
-   - Q-profile method for IÂ² CI
+1. I² CONFIDENCE INTERVALS (Higgins & Thompson 2002)
+   - Q-profile method for I² CI
    - Bootstrap CI option
    - Critical for uncertainty quantification
 
-2. Ï„Â² CONFIDENCE INTERVALS (Veroniki 2016)
+2. Ï„² CONFIDENCE INTERVALS (Veroniki 2016)
    - Q-profile method
    - Generalized Q statistic
    - Profile likelihood
@@ -20,7 +20,7 @@ methodological features that are essential for rigorous meta-analysis:
    - Significance contours (p < 0.01, 0.05, 0.10)
    - Visual assessment of publication bias
 
-4. LIMIT META-ANALYSIS (RÃ¼cker 2011)
+4. LIMIT META-ANALYSIS (Rücker 2011)
    - Addresses small-study effects
    - Alternative to trim-and-fill
 
@@ -51,18 +51,18 @@ original_size = len(content)
 enhancements_added = []
 
 # ============================================================================
-# 1. IÂ² CONFIDENCE INTERVALS (Higgins & Thompson 2002)
+# 1. I² CONFIDENCE INTERVALS (Higgins & Thompson 2002)
 # ============================================================================
 i2_ci_code = '''
     // ========================================================================
-    // IÂ² CONFIDENCE INTERVALS (Higgins & Thompson 2002, Ioannidis 2007)
+    // I² CONFIDENCE INTERVALS (Higgins & Thompson 2002, Ioannidis 2007)
     // ========================================================================
-    // RSM Editorial: IÂ² point estimates without CIs are misleading
+    // RSM Editorial: I² point estimates without CIs are misleading
     // Reference: Ioannidis JPA, et al. CMAJ 2007;176:929-934
 
     const I2ConfidenceIntervals = {
         /**
-         * Calculate IÂ² confidence interval using the test-based method
+         * Calculate I² confidence interval using the test-based method
          * Based on the non-central chi-squared distribution
          * Reference: Higgins JPT, Thompson SG. Stat Med 2002;21:1539-1558
          */
@@ -73,7 +73,7 @@ i2_ci_code = '''
             const chi2_lower = this.chi2Quantile(1 - alpha/2, df);
             const chi2_upper = this.chi2Quantile(alpha/2, df);
 
-            // Calculate IÂ² bounds
+            // Calculate I² bounds
             let I2_lower = Math.max(0, (Q - chi2_lower) / Q) * 100;
             let I2_upper = Math.max(0, (Q - chi2_upper) / Q) * 100;
 
@@ -90,7 +90,7 @@ i2_ci_code = '''
         },
 
         /**
-         * Q-profile method for IÂ² CI (Viechtbauer 2007)
+         * Q-profile method for I² CI (Viechtbauer 2007)
          * More accurate but computationally intensive
          */
         qProfile: function(Q, df, tau2, variances, alpha = 0.05) {
@@ -100,11 +100,11 @@ i2_ci_code = '''
 
             const k = variances.length;
 
-            // Use iterative search for tauÂ² CI bounds
+            // Use iterative search for tau² CI bounds
             const tau2_lower = this.findTau2Bound(Q, variances, alpha/2, 'lower');
             const tau2_upper = this.findTau2Bound(Q, variances, 1 - alpha/2, 'upper');
 
-            // Convert tauÂ² bounds to IÂ² bounds
+            // Convert tau² bounds to I² bounds
             const sumInvVar = variances.reduce((sum, v) => sum + 1/v, 0);
             const typicalVar = k / sumInvVar;
 
@@ -121,7 +121,7 @@ i2_ci_code = '''
         },
 
         /**
-         * Bootstrap confidence interval for IÂ²
+         * Bootstrap confidence interval for I²
          */
         bootstrap: function(effects, variances, nBoot = 1000, alpha = 0.05) {
             if (!effects || effects.length < 3) return null;
@@ -135,7 +135,7 @@ i2_ci_code = '''
                 const bootEffects = indices.map(i => effects[i]);
                 const bootVars = indices.map(i => variances[i]);
 
-                // Calculate IÂ² for bootstrap sample
+                // Calculate I² for bootstrap sample
                 const weights = bootVars.map(v => 1/v);
                 const sumW = weights.reduce((a,b) => a+b, 0);
                 const meanEff = bootEffects.reduce((sum, e, i) => sum + weights[i] * e, 0) / sumW;
@@ -209,13 +209,13 @@ i2_ci_code = '''
             return q < 0 ? -x : x;
         },
 
-        // Helper: Find tauÂ² bound using Q-profile
+        // Helper: Find tau² bound using Q-profile
         findTau2Bound: function(Q, variances, p, direction) {
             const k = variances.length;
             const df = k - 1;
             const targetQ = this.chi2Quantile(p, df);
 
-            // Binary search for tauÂ²
+            // Binary search for tau²
             let lo = 0, hi = 100;
             for (let iter = 0; iter < 50; iter++) {
                 const mid = (lo + hi) / 2;
@@ -235,7 +235,7 @@ i2_ci_code = '''
         },
 
         /**
-         * Generate comprehensive IÂ² CI report
+         * Generate comprehensive I² CI report
          */
         generateReport: function(Q, df, tau2, effects, variances) {
             const testCI = this.testBased(Q, df);
@@ -245,24 +245,24 @@ i2_ci_code = '''
             const I2 = Math.max(0, (Q - df) / Q) * 100;
 
             let html = '<div class="i2-ci-report" style="background:var(--bg-tertiary);padding:1rem;border-radius:8px;margin:1rem 0">';
-            html += '<h4 style="margin-bottom:0.5rem">IÂ² Confidence Intervals</h4>';
+            html += '<h4 style="margin-bottom:0.5rem">I² Confidence Intervals</h4>';
             html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">';
             html += 'Point estimate alone is insufficient for inference (Ioannidis 2007)</p>';
 
             html += '<table class="results-table" style="font-size:0.85rem">';
-            html += '<tr><th>Method</th><th>IÂ² (95% CI)</th><th>Reference</th></tr>';
+            html += '<tr><th>Method</th><th>I² (95% CI)</th><th>Reference</th></tr>';
 
             html += '<tr><td>Test-based</td>';
-            html += '<td>' + I2.toFixed(1) + '% (' + testCI.lower.toFixed(1) + 'â€“' + testCI.upper.toFixed(1) + '%)</td>';
+            html += '<td>' + I2.toFixed(1) + '% (' + testCI.lower.toFixed(1) + '–' + testCI.upper.toFixed(1) + '%)</td>';
             html += '<td>Higgins & Thompson 2002</td></tr>';
 
             html += '<tr><td>Q-profile</td>';
-            html += '<td>' + I2.toFixed(1) + '% (' + qCI.lower.toFixed(1) + 'â€“' + qCI.upper.toFixed(1) + '%)</td>';
+            html += '<td>' + I2.toFixed(1) + '% (' + qCI.lower.toFixed(1) + '–' + qCI.upper.toFixed(1) + '%)</td>';
             html += '<td>Viechtbauer 2007</td></tr>';
 
             if (bootCI) {
                 html += '<tr><td>Bootstrap</td>';
-                html += '<td>' + I2.toFixed(1) + '% (' + bootCI.lower.toFixed(1) + 'â€“' + bootCI.upper.toFixed(1) + '%)</td>';
+                html += '<td>' + I2.toFixed(1) + '% (' + bootCI.lower.toFixed(1) + '–' + bootCI.upper.toFixed(1) + '%)</td>';
                 html += '<td>Non-parametric</td></tr>';
             }
 
@@ -295,7 +295,7 @@ if 'I2ConfidenceIntervals' not in content:
     insert_pos = content.rfind('</script>')
     if insert_pos > 0:
         content = content[:insert_pos] + i2_ci_code + '\n    ' + content[insert_pos:]
-        enhancements_added.append("1. IÂ² Confidence Intervals (Higgins & Thompson 2002)")
+        enhancements_added.append("1. I² Confidence Intervals (Higgins & Thompson 2002)")
 
 # ============================================================================
 # 2. CONTOUR-ENHANCED FUNNEL PLOTS (Peters 2008)
@@ -512,19 +512,19 @@ if 'ContourEnhancedFunnel' not in content:
         enhancements_added.append("2. Contour-Enhanced Funnel Plots (Peters 2008)")
 
 # ============================================================================
-# 3. LIMIT META-ANALYSIS (RÃ¼cker 2011)
+# 3. LIMIT META-ANALYSIS (Rücker 2011)
 # ============================================================================
 limit_meta_code = '''
     // ========================================================================
-    // LIMIT META-ANALYSIS (RÃ¼cker 2011, Schwarzer 2010)
+    // LIMIT META-ANALYSIS (Rücker 2011, Schwarzer 2010)
     // ========================================================================
     // RSM Editorial: Addresses small-study effects more robustly than trim-and-fill
-    // Reference: RÃ¼cker G, et al. Biostatistics 2011;12:122-142
+    // Reference: Rücker G, et al. Biostatistics 2011;12:122-142
 
     const LimitMetaAnalysis = {
         /**
          * Perform limit meta-analysis
-         * Extrapolates effect to infinite precision (SE â†’ 0)
+         * Extrapolates effect to infinite precision (SE → 0)
          */
         analyze: function(effects, standardErrors, method = 'mm') {
             const k = effects.length;
@@ -532,11 +532,11 @@ limit_meta_code = '''
                 return { error: "At least 3 studies required" };
             }
 
-            // Calculate precisions (1/SEÂ²)
+            // Calculate precisions (1/SE²)
             const precisions = standardErrors.map(se => 1 / (se * se));
 
-            // Fit weighted linear regression: effect = Î± + Î² * (1/âˆšprecision) + Îµ
-            // At infinite precision, 1/âˆšprecision â†’ 0, so effect â†’ Î±
+            // Fit weighted linear regression: effect = Î± + Î² * (1/√precision) + Îµ
+            // At infinite precision, 1/√precision → 0, so effect → Î±
             const sqrtPrecisions = precisions.map(p => Math.sqrt(p));
             const invSqrtPrecisions = sqrtPrecisions.map(p => 1 / p); // = SE
 
@@ -652,7 +652,7 @@ limit_meta_code = '''
             }
 
             let html = '<div class="limit-meta-report" style="background:var(--bg-tertiary);padding:1rem;border-radius:8px;margin:1rem 0">';
-            html += '<h4 style="margin-bottom:0.5rem">Limit Meta-Analysis (RÃ¼cker 2011)</h4>';
+            html += '<h4 style="margin-bottom:0.5rem">Limit Meta-Analysis (Rücker 2011)</h4>';
             html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">';
             html += 'Extrapolates effect to infinite sample size, removing small-study bias</p>';
 
@@ -679,7 +679,7 @@ limit_meta_code = '''
             html += 'z = ' + result.slopeTest.z.toFixed(2) + ', ';
             html += 'p = ' + result.slopeTest.p.toFixed(4);
             if (result.slopeTest.significant) {
-                html += ' <span style="color:var(--accent-warning)">âš ï¸ Significant</span>';
+                html += ' <span style="color:var(--accent-warning)">⚠ï¸ Significant</span>';
             }
             html += '</div>';
 
@@ -699,7 +699,7 @@ if 'LimitMetaAnalysis' not in content:
     insert_pos = content.rfind('</script>')
     if insert_pos > 0:
         content = content[:insert_pos] + limit_meta_code + '\n    ' + content[insert_pos:]
-        enhancements_added.append("3. Limit Meta-Analysis (RÃ¼cker 2011)")
+        enhancements_added.append("3. Limit Meta-Analysis (Rücker 2011)")
 
 # ============================================================================
 # 4. ECOLOGICAL BIAS WARNING (Berlin 2002)
@@ -867,7 +867,7 @@ ecological_bias_code = '''
          */
         generateReport: function(results) {
             let html = '<div class="ecological-bias-report" style="background:var(--bg-tertiary);padding:1rem;border-radius:8px;margin:1rem 0">';
-            html += '<h4 style="margin-bottom:0.5rem">âš ï¸ Ecological Bias Assessment (Berlin 2002)</h4>';
+            html += '<h4 style="margin-bottom:0.5rem">⚠ï¸ Ecological Bias Assessment (Berlin 2002)</h4>';
             html += '<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">';
             html += 'Compares within-study (individual-level) vs across-study (ecological) associations</p>';
 
@@ -882,7 +882,7 @@ ecological_bias_code = '''
                 });
                 html += '</div>';
             } else {
-                html += '<p style="color:var(--accent-success)">âœ“ No ecological bias detected</p>';
+                html += '<p style="color:var(--accent-success)">✓ No ecological bias detected</p>';
             }
 
             html += '<div style="padding:0.75rem;background:var(--bg-secondary);border-radius:6px">';
@@ -937,7 +937,7 @@ freeman_tukey_code = '''
          * Uses Miller's inverse formula
          */
         backTransform: function(t, n) {
-            // Inverse: p = 0.5 * (1 - sign(cos(2t)) * sqrt(1 - (sin(2t) + (sin(2t) - 1/sin(2t))/n)Â²))
+            // Inverse: p = 0.5 * (1 - sign(cos(2t)) * sqrt(1 - (sin(2t) + (sin(2t) - 1/sin(2t))/n)²))
             const sin2t = Math.sin(2 * t);
             const cos2t = Math.cos(2 * t);
 
@@ -1119,12 +1119,12 @@ freeman_tukey_code = '''
             html += '<div class="stat-label">Pooled Proportion</div></div>';
 
             html += '<div class="stat-box"><div class="stat-value">' +
-                    (result.ci95[0] * 100).toFixed(1) + 'â€“' + (result.ci95[1] * 100).toFixed(1) + '%</div>';
+                    (result.ci95[0] * 100).toFixed(1) + '–' + (result.ci95[1] * 100).toFixed(1) + '%</div>';
             html += '<div class="stat-label">95% CI</div></div>';
 
             html += '<div class="stat-box"><div class="stat-value">' +
                     result.heterogeneity.I2.toFixed(1) + '%</div>';
-            html += '<div class="stat-label">IÂ²</div></div>';
+            html += '<div class="stat-label">I²</div></div>';
             html += '</div>';
 
             // Study results table
@@ -1176,7 +1176,7 @@ prediction_interval_code = '''
             const results = {};
 
             // Method 1: Standard (Higgins 2009)
-            // PI = pooled Â± t_{k-2} Ã— âˆš(Ï„Â² + SEÂ²)
+            // PI = pooled ± t_{k-2} × √(Ï„² + SE²)
             const df = Math.max(1, k - 2);
             const tCrit = this.tQuantile(1 - alpha/2, df);
             const piVar = tau2 + sePooled * sePooled;
@@ -1204,7 +1204,7 @@ prediction_interval_code = '''
             };
 
             // Method 3: Bootstrap-type (approximation)
-            // Accounts for uncertainty in Ï„Â² estimation
+            // Accounts for uncertainty in Ï„² estimation
             const tau2Uncertainty = tau2 * Math.sqrt(2 / (k - 1));
             const piVarBoot = tau2 + tau2Uncertainty + sePooled * sePooled;
             const piSEBoot = Math.sqrt(piVarBoot);
@@ -1212,7 +1212,7 @@ prediction_interval_code = '''
             results.bootstrap = {
                 lower: pooledEffect - 1.96 * piSEBoot,
                 upper: pooledEffect + 1.96 * piSEBoot,
-                method: "Bootstrap-type (with Ï„Â² uncertainty)"
+                method: "Bootstrap-type (with Ï„² uncertainty)"
             };
 
             // Calculate probability that true effect in new study is beneficial
@@ -1282,8 +1282,8 @@ prediction_interval_code = '''
 
             html += '</div>';
             html += '<div style="font-size:0.75rem;margin-top:0.5rem;text-align:center">';
-            html += '<span style="color:var(--accent-primary)">â–ˆ</span> 95% CI ';
-            html += '<span style="color:rgba(99,102,241,0.5)">â–ˆ</span> 95% PI';
+            html += '<span style="color:var(--accent-primary)">█</span> 95% CI ';
+            html += '<span style="color:rgba(99,102,241,0.5)">█</span> 95% PI';
             html += '</div></div>';
 
             // Key message
@@ -1494,20 +1494,20 @@ ui_buttons_code = '''
         btnContainer.style.cssText = 'margin-top:1rem;flex-wrap:wrap;gap:0.5rem';
 
         btnContainer.innerHTML = `
-            <button class="btn btn-secondary" onclick="showI2CIAnalysis()" title="IÂ² Confidence Intervals (Higgins & Thompson 2002)">
-                ðŸ“Š IÂ² CI
+            <button class="btn btn-secondary" onclick="showI2CIAnalysis()" title="I² Confidence Intervals (Higgins & Thompson 2002)">
+                📊 I² CI
             </button>
             <button class="btn btn-secondary" onclick="showContourFunnel()" title="Contour-Enhanced Funnel Plot (Peters 2008)">
-                ðŸ“ˆ Contour Funnel
+                📈 Contour Funnel
             </button>
-            <button class="btn btn-secondary" onclick="showLimitMeta()" title="Limit Meta-Analysis (RÃ¼cker 2011)">
-                ðŸŽ¯ Limit MA
+            <button class="btn btn-secondary" onclick="showLimitMeta()" title="Limit Meta-Analysis (Rücker 2011)">
+                🎯 Limit MA
             </button>
             <button class="btn btn-secondary" onclick="showFreemanTukey()" title="Freeman-Tukey for Proportions">
-                ðŸ”¢ FT Proportions
+                🔢 FT Proportions
             </button>
             <button class="btn btn-secondary" onclick="showPredictionInterval()" title="Prediction Intervals (IntHout 2016)">
-                ðŸ”® Prediction Int
+                🔮 Prediction Int
             </button>
         `;
 
@@ -1537,7 +1537,7 @@ ui_buttons_code = '''
             r.variances
         );
 
-        showResultModal('IÂ² Confidence Intervals', html);
+        showResultModal('I² Confidence Intervals', html);
     };
 
     window.showContourFunnel = function() {
@@ -1672,7 +1672,7 @@ print("=" * 70)
 print("RSM EDITORIAL REQUIREMENTS ADDRESSED:")
 print("-" * 70)
 print("""
-    1. IÂ² CONFIDENCE INTERVALS
+    1. I² CONFIDENCE INTERVALS
        - Test-based method (Higgins & Thompson 2002)
        - Q-profile method (Viechtbauer 2007)
        - Bootstrap confidence intervals
@@ -1686,7 +1686,7 @@ print("""
     3. LIMIT META-ANALYSIS
        - Addresses small-study effects
        - More robust than trim-and-fill
-       - Reference: RÃ¼cker 2011
+       - Reference: Rücker 2011
 
     4. ECOLOGICAL BIAS WARNING
        - Within vs across study effects

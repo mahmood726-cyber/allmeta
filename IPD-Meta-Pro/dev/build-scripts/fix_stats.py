@@ -31,9 +31,9 @@ def main():
 
     # The current REML implementation has the wrong score function
     # Current: dl += w * w * (Math.pow(effects[i] - pooled, 2) - variances[i] - tau2) / (variances[i] + tau2);
-    # This computes: wÂ³(Î¸-Î¼)Â² - wÂ² which is WRONG
+    # This computes: w³(Î¸-Î¼)² - w² which is WRONG
     #
-    # Correct REML score: âˆ‚L/âˆ‚Ï„Â² = 0.5 * Î£[wÂ²(Î¸-Î¼)Â² - w]
+    # Correct REML score: ∂L/∂Ï„² = 0.5 * Î£[w²(Î¸-Î¼)² - w]
     # Reference: Viechtbauer (2005), Biometrical Journal
 
     old_reml = '''randomEffectsREML: (effects, variances, maxIter = 100, tol = 1e-8) => {
@@ -79,7 +79,7 @@ const sumW = weights.reduce((a, b) => a + b, 0);
 const pooled = effects.reduce((sum, e, i) => sum + weights[i] * e, 0) / sumW;
 
 // REML score (first derivative of log-likelihood w.r.t. tau2)
-// âˆ‚L/âˆ‚Ï„Â² = 0.5 * Î£[wÂ²(Î¸-Î¼)Â² - w]
+// ∂L/∂Ï„² = 0.5 * Î£[w²(Î¸-Î¼)² - w]
 let dl = 0;
 for (let i = 0; i < k; i++) {
 const w = weights[i];
@@ -89,7 +89,7 @@ dl += w * w * resid2 - w;
 dl *= 0.5;
 
 // Expected Fisher information (negative expected Hessian)
-// I(Ï„Â²) = 0.5 * Î£wÂ²
+// I(Ï„²) = 0.5 * Î£w²
 let info = 0;
 for (let i = 0; i < k; i++) {
 info += Math.pow(weights[i], 2);
@@ -106,9 +106,9 @@ if (Math.abs(delta) < tol) break;
     if old_reml in content:
         content = content.replace(old_reml, new_reml)
         fixes_applied.append("REML score function corrected")
-        print("  âœ“ Fixed REML score function")
+        print("  ✓ Fixed REML score function")
     else:
-        print("  âš  Could not find exact REML pattern - attempting alternative fix")
+        print("  ⚠ Could not find exact REML pattern - attempting alternative fix")
 
         # Try fixing just the score calculation line
         old_score = 'dl += w * w * (Math.pow(effects[i] - pooled, 2) - variances[i] - tau2) / (variances[i] + tau2);'
@@ -117,14 +117,14 @@ if (Math.abs(delta) < tol) break;
         if old_score in content:
             content = content.replace(old_score, new_score)
             fixes_applied.append("REML score line corrected")
-            print("  âœ“ Fixed REML score calculation line")
+            print("  ✓ Fixed REML score calculation line")
 
     # =========================================================================
-    # FIX 2: IÂ² CI Calculation Enhancement
+    # FIX 2: I² CI Calculation Enhancement
     # =========================================================================
-    print("\n[FIX 2] Enhancing IÂ² confidence interval calculation...")
+    print("\n[FIX 2] Enhancing I² confidence interval calculation...")
 
-    # The current IÂ² CI uses a simplified method
+    # The current I² CI uses a simplified method
     # Enhance with the Q-profile method used by metafor
 
     old_i2ci = '''function calculateI2WithCI(Q, k, confLevel) {
@@ -148,7 +148,7 @@ var I2Upper = Math.max(0, ((jStat.chisquare.inv(1 - alpha/2, df) - df) / jStat.c
 }'''
 
     new_i2ci = '''function calculateI2WithCI(Q, k, confLevel) {
-// IÂ² with confidence intervals using test-based method
+// I² with confidence intervals using test-based method
 // Reference: Higgins JPT, Thompson SG. Stat Med 2002;21:1539-1558
 confLevel = confLevel || 0.95;
 var df = k - 1;
@@ -158,16 +158,16 @@ var I2 = Math.max(0, (Q - df) / Q) * 100;
 var alpha = 1 - confLevel;
 
 // Use chi-square distribution for CI
-// CI for HÂ² first, then transform to IÂ²
+// CI for H² first, then transform to I²
 var chisq_lower = jStat.chisquare.inv(1 - alpha/2, df);
 var chisq_upper = jStat.chisquare.inv(alpha/2, df);
 
-// HÂ² confidence interval
+// H² confidence interval
 var H2 = Q / df;
 var H2_lower = Math.max(1, Q / chisq_lower);
 var H2_upper = Q / chisq_upper;
 
-// Transform to IÂ² using IÂ² = (HÂ² - 1) / HÂ² * 100
+// Transform to I² using I² = (H² - 1) / H² * 100
 var I2Lower = Math.max(0, (H2_lower - 1) / H2_lower * 100);
 var I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
 
@@ -186,10 +186,10 @@ I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
 
     if old_i2ci in content:
         content = content.replace(old_i2ci, new_i2ci)
-        fixes_applied.append("IÂ² CI calculation enhanced")
-        print("  âœ“ Enhanced IÂ² CI calculation")
+        fixes_applied.append("I² CI calculation enhanced")
+        print("  ✓ Enhanced I² CI calculation")
     else:
-        print("  âš  Could not find exact IÂ² CI pattern")
+        print("  ⚠ Could not find exact I² CI pattern")
 
     # =========================================================================
     # FIX 3: Egger's Test Standard Error Calculation
@@ -198,9 +198,9 @@ I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
 
     # Check if Egger's test exists and is correctly implemented
     if 'egger' in content.lower():
-        print("  âœ“ Egger's test implementation found")
+        print("  ✓ Egger's test implementation found")
     else:
-        print("  âš  Egger's test not found - may need to be added")
+        print("  ⚠ Egger's test not found - may need to be added")
 
     # =========================================================================
     # FIX 4: Add Paule-Mandel Estimator if Missing
@@ -208,9 +208,9 @@ I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
     print("\n[FIX 4] Checking Paule-Mandel estimator...")
 
     if 'estimatePM' in content or 'pauleMandel' in content.lower():
-        print("  âœ“ Paule-Mandel estimator found")
+        print("  ✓ Paule-Mandel estimator found")
     else:
-        print("  âš  Paule-Mandel estimator may need enhancement")
+        print("  ⚠ Paule-Mandel estimator may need enhancement")
 
     # =========================================================================
     # FIX 5: Correct t-distribution Usage in HKSJ
@@ -220,9 +220,9 @@ I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
     # Check HKSJ uses t-distribution with correct df
     hksj_check = re.search(r'tCDF.*k\s*-\s*1|t-distribution.*k-1', content)
     if hksj_check or 'Stats.tCDF' in content:
-        print("  âœ“ HKSJ uses t-distribution correctly")
+        print("  ✓ HKSJ uses t-distribution correctly")
     else:
-        print("  âš  HKSJ may need t-distribution verification")
+        print("  ⚠ HKSJ may need t-distribution verification")
 
     # =========================================================================
     # FIX 6: Ensure Prediction Interval uses correct df
@@ -230,9 +230,9 @@ I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
     print("\n[FIX 6] Verifying prediction interval calculation...")
 
     if 'k - 2' in content and 'predictionInterval' in content:
-        print("  âœ“ Prediction interval uses df = k-2 (correct per Riley 2011)")
+        print("  ✓ Prediction interval uses df = k-2 (correct per Riley 2011)")
     else:
-        print("  âš  Prediction interval df may need verification")
+        print("  ⚠ Prediction interval df may need verification")
 
     # =========================================================================
     # Write fixed content
@@ -249,15 +249,15 @@ I2Upper = Math.min(100, (H2_upper - 1) / H2_upper * 100);
     print(f"Final size: {final_size:,} bytes")
     print(f"\nFixes applied ({len(fixes_applied)}):")
     for fix in fixes_applied:
-        print(f"  âœ“ {fix}")
+        print(f"  ✓ {fix}")
 
     if not fixes_applied:
         print("  No changes needed - formulas appear correct")
 
     print(f"\nReference values (R metafor 4.8-0, BCG vaccine data):")
-    print("  DL tauÂ²:   0.3088")
-    print("  REML tauÂ²: 0.3132")
-    print("  DL IÂ²:     92.12%")
+    print("  DL tau²:   0.3088")
+    print("  REML tau²: 0.3132")
+    print("  DL I²:     92.12%")
     print("  HKSJ p:    0.0019")
 
 if __name__ == '__main__':

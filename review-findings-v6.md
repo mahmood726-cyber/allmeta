@@ -39,7 +39,7 @@ Runtime persona blocked — Playwright MCP user-data-dir locked by 8 stale chrom
 ### Engineering
 - **E1** `safeHref()` comment says "Rejects javascript:, data:, file:" but code explicitly ALLOWS `file:` (line 31). Comment lies. (`hub/app.js:22, 29-31`)
 - **E2** dosehtml v18.1/v18.2/v18.3/v19.0 + dose-response-pro.html share localStorage keys (`theme`, `dose_response_v18_save`, `dose_response_v18_audit`). Cross-variant state corruption. (`dosehtml/dose-response-pro-v18.{1,2,3}-*.html`)
-- **E3** `Pairwiseai/app.js` ships severe cp1252-saved-as-UTF-8 mojibake — 148 `â€/â„¢/Â¸` patterns; runtime patches via `startMojibakeObserver()` rather than fixing at source. (`Pairwiseai/app.js`)
+- **E3** `Pairwiseai/app.js` ships severe cp1252-saved-as-UTF-8 mojibake — 148 `â€/™/¸` patterns; runtime patches via `startMojibakeObserver()` rather than fixing at source. (`Pairwiseai/app.js`)
 - **E4** 30+ `alert()/confirm()/prompt()` calls across 12 active inner apps (bayesian-ma, citation-dedup, component-nma, cumulative-subgroup, dta-sroc, forest-plot, funnel-plot, grade-sof, heterogeneity, evidence-board, HTA, IPD-Meta-Pro modules) — block main thread, fail focus on iOS Safari.
 
 ### A11y

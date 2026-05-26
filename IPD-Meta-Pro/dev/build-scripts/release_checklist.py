@@ -20,7 +20,7 @@ if sys.platform == "win32":
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
-MOJIBAKE_PATTERN = re.compile(r"(â€™|â€œ|â€\x9d|â€“|â€”|Ã.|Â.|ðŸ|IÂ²|Ï„Â²|Ï|ÃŽÂ)")
+MOJIBAKE_PATTERN = re.compile(r"(’|“|â€\x9d|–|—|Ã.|Â.|ðŸ|I²|Ï„²|Ï|ÎÂ)")
 
 
 class CheckSummary:
