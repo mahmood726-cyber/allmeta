@@ -1,55 +1,167 @@
 {
-  "fetched_at": "2026-05-25T10:05:02+00:00",
+  "fetched_at": "2026-05-27T09:44:18+00:00",
   "pubs": [],
   "trials": [
     {
-      "id": "NCT05974566",
-      "last_update": "2023-07-26",
-      "status": "UNKNOWN",
-      "title": "Efficacy and Safety of Finerenone in Heart Failure With Reduced Ejection Fraction",
-      "url": "https://clinicaltrials.gov/study/NCT05974566"
-    },
-    {
-      "id": "NCT06301022",
-      "last_update": "2024-03-03",
-      "status": "UNKNOWN",
-      "title": "Effectiveness and Safety of Finerenone in Chinese CKD Patients Without Diabetes Mellitus",
-      "url": "https://clinicaltrials.gov/study/NCT06301022"
-    },
-    {
-      "id": "NCT07235891",
-      "last_update": "2025-11-14",
+      "id": "NCT07605390",
+      "last_update": "2026-05-19",
       "status": "NOT_YET_RECRUITING",
-      "title": "Retinal Protective Effects of Novel Finerenone in Patients With Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT07235891"
+      "title": "RAndomized EHR-based Prescribing to Improve Disease-modifying Therapies for Cardio-Kidney-Metabolic Care (RAPID-CKM)",
+      "url": "https://clinicaltrials.gov/study/NCT07605390"
     },
     {
-      "id": "NCT05013008",
-      "last_update": "2023-09-14",
+      "id": "NCT07442448",
+      "last_update": "2026-02-25",
+      "status": "ENROLLING_BY_INVITATION",
+      "title": "Investigation on the Impact of Finerenone on Myocardial Remodeling in Patients With Diabetic Kidney Disease and Heart Failure",
+      "url": "https://clinicaltrials.gov/study/NCT07442448"
+    },
+    {
+      "id": "NCT05526157",
+      "last_update": "2024-10-10",
       "status": "COMPLETED",
-      "title": "An add-on Study to the FIGARO-DKD Study Called FIGARO-BM to Learn About the Link Between Biomarkers (Substances in the Blood Used as Indicators of Biological Processes, Disease Processes or Responses to Medication) and Finerenone in FIGARO-DKD Participants",
-      "url": "https://clinicaltrials.gov/study/NCT05013008"
+      "title": "An Observational Study, Called FINEGUST, to Learn More About How People With Chronic Kidney Disease and Type 2 Diabetes Are Treated and How the Introduction of New Treatment Options, Like Finerenone, Impacts Clinical Practice",
+      "url": "https://clinicaltrials.gov/study/NCT05526157"
     },
     {
-      "id": "NCT07188805",
+      "id": "NCT05552339",
+      "last_update": "2026-04-08",
+      "status": "COMPLETED",
+      "title": "A Study Called SMART-Finder to Look for People With Increased Amounts of Albumin in the Urine (UACR Level) in a Group of Type 2 Diabetes Mellitus Patients",
+      "url": "https://clinicaltrials.gov/study/NCT05552339"
+    },
+    {
+      "id": "NCT07598864",
+      "last_update": "2026-05-14",
+      "status": "NOT_YET_RECRUITING",
+      "title": "\"Dapagliflozin vs Dapagliflozin-Finerenone for Albuminuria in CKD With Type 2 Diabetes\"",
+      "url": "https://clinicaltrials.gov/study/NCT07598864"
+    },
+    {
+      "id": "NCT06727409",
+      "last_update": "2025-03-01",
+      "status": "RECRUITING",
+      "title": "Use of Clinical-trials and Simulation Models to Estimate Cost-effectiveness of Non-steroidal Mineralocorticoid Antagonists, RASi and SGLT2i as Triple Therapy With Type 2 Diabetes and Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT06727409"
+    },
+    {
+      "id": "NCT06094920",
+      "last_update": "2026-02-10",
+      "status": "COMPLETED",
+      "title": "Treatment Optimization for Patients With Type 2 Diabetes Using Empagliflozin and Finerenone in a Remote Clinical Trial",
+      "url": "https://clinicaltrials.gov/study/NCT06094920"
+    },
+    {
+      "id": "NCT06763146",
       "last_update": "2026-05-15",
-      "status": "RECRUITING",
-      "title": "A Study to Learn More About How Well Finerenone Works, How Safe it is, and How it Moves Into, Through, and Out of the Body Compared to Placebo When Taken With Standard Treatment in Children With Heart Failure and Left Ventricular Systolic Dysfunction",
-      "url": "https://clinicaltrials.gov/study/NCT07188805"
+      "status": "ACTIVE_NOT_RECRUITING",
+      "title": "An Observational Study to Learn More About How Safe Finerenone is and How Well it Works in Indian People With Chronic Kidney Disease and Type 2 Diabetes in Routine Medical Practice",
+      "url": "https://clinicaltrials.gov/study/NCT06763146"
     },
     {
-      "id": "NCT04908436",
-      "last_update": "2022-01-27",
+      "id": "NCT05953701",
+      "last_update": "2025-03-17",
       "status": "COMPLETED",
-      "title": "A Study to Learn How BAY94-8862 Moves Into, Through and Out of the Body, How Safe it is and How it Affects the Body in Adult Participants With Reduced Kidney Function and in Healthy Participants With Similar Age, Weight and Gender Distribution",
-      "url": "https://clinicaltrials.gov/study/NCT04908436"
+      "title": "Secondary Data Analysis of Patients at Risk for CKD to Inspect CKD Prevalence, Diagnosis Rates, Diagnostic Behaviour, Treatment Patterns and Patient Characteristics",
+      "url": "https://clinicaltrials.gov/study/NCT05953701"
     },
     {
-      "id": "NCT07239570",
-      "last_update": "2025-11-18",
+      "id": "NCT05254002",
+      "last_update": "2025-03-17",
+      "status": "COMPLETED",
+      "title": "A Study to Learn How Well the Treatment Combination of Finerenone and Empagliflozin Works and How Safe it is Compared to Each Treatment Alone in Adult Participants With Long-term Kidney Disease (Chronic Kidney Disease) and Type 2 Diabetes",
+      "url": "https://clinicaltrials.gov/study/NCT05254002"
+    },
+    {
+      "id": "NCT06059664",
+      "last_update": "2026-04-09",
       "status": "RECRUITING",
-      "title": "A Biomarker-targeted Clinical Trial to Optimize Treatment for Patients With Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT07239570"
+      "title": "The EFfect of FinErenone in Kidney TransplantiOn Recipients: The EFFEKTOR Study",
+      "url": "https://clinicaltrials.gov/study/NCT06059664"
+    },
+    {
+      "id": "NCT07155694",
+      "last_update": "2025-08-26",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Role of Finerenone in African American Veterans With Diabetic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT07155694"
+    },
+    {
+      "id": "NCT06818305",
+      "last_update": "2025-12-04",
+      "status": "TERMINATED",
+      "title": "Efficacy and Safety of Finerenone and Empagliflozin in Delaying Renal Function Progression After Radical Nephrectomy in High-Risk CKD Patients: A Multicenter RCT",
+      "url": "https://clinicaltrials.gov/study/NCT06818305"
+    },
+    {
+      "id": "NCT07379840",
+      "last_update": "2026-01-30",
+      "status": "RECRUITING",
+      "title": "A Study to Learn More About How Safe Finerenone is and How Well it Works in Adults With Chronic Heart Failure in South Korea",
+      "url": "https://clinicaltrials.gov/study/NCT07379840"
+    },
+    {
+      "id": "NCT07585526",
+      "last_update": "2026-05-09",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Safety and Efficacy of Finerenone in Metabolic Dysfunction Associated Steatotic Liver Disease(MASLD/NAFLD) Related Cirrhosis Patients With Ascites in Prevention of Chronic Kidney Disease.",
+      "url": "https://clinicaltrials.gov/study/NCT07585526"
+    },
+    {
+      "id": "NCT04435626",
+      "last_update": "2025-08-25",
+      "status": "COMPLETED",
+      "title": "Study to Evaluate the Efficacy (Effect on Disease) and Safety of Finerenone in Participants With Heart Failure and Left Ventricular Ejection Fraction (Proportion of Blood Expelled Per Heart Stroke) Greater or Equal to 40%",
+      "url": "https://clinicaltrials.gov/study/NCT04435626"
+    },
+    {
+      "id": "NCT01807221",
+      "last_update": "2021-07-02",
+      "status": "COMPLETED",
+      "title": "Phase IIb Safety and Efficacy Study of Different Oral Doses of BAY94-8862 in Subjects With Worsening Chronic Heart Failure and Left Ventricular Systolic Dysfunction and Either Type 2 Diabetes Mellitus With or Without Chronic Kidney Disease or Chronic Kidney Disease Alone",
+      "url": "https://clinicaltrials.gov/study/NCT01807221"
+    },
+    {
+      "id": "NCT06033950",
+      "last_update": "2025-03-06",
+      "status": "RECRUITING",
+      "title": "A Study to Evaluate Finerenone on Clinical Efficacy and Safety in Patients with Heart Failure Who Are Intolerant or Not Eligible for Treatment with Steroidal Mineralocorticoid Receptor Antagonists",
+      "url": "https://clinicaltrials.gov/study/NCT06033950"
+    },
+    {
+      "id": "NCT07116512",
+      "last_update": "2025-08-06",
+      "status": "COMPLETED",
+      "title": "A Study to Compare How Much of the Study Treatment Finerenone Gets Into the Blood When the Same Amount is Taken in One and in Two Tablets of Different Strengths in Healthy Male Participants",
+      "url": "https://clinicaltrials.gov/study/NCT07116512"
+    },
+    {
+      "id": "NCT05705271",
+      "last_update": "2025-07-08",
+      "status": "COMPLETED",
+      "title": "A Study to Learn How Safe the Study Drug Finerenone is and How Well it Works in Indian People With Long-term Decrease in the Kidneys' Ability to Work Properly (Chronic Kidney Disease) Together With Type 2 Diabetes Mellitus",
+      "url": "https://clinicaltrials.gov/study/NCT05705271"
+    },
+    {
+      "id": "NCT07181135",
+      "last_update": "2026-04-13",
+      "status": "ENROLLING_BY_INVITATION",
+      "title": "FINE-START: Efficacy and Safety of Finerenone in Patients With Chronic Kidney Disease Not Using Renin-angiotensin-system Inhibitors",
+      "url": "https://clinicaltrials.gov/study/NCT07181135"
+    },
+    {
+      "id": "NCT07223502",
+      "last_update": "2026-03-05",
+      "status": "RECRUITING",
+      "title": "A Study Comparing the Clinical Benefit of Finerenone Versus a Fixed Dose Combination (FDC) of Extended-Release Torsemide and Spironolactone in Patients With Hypertension and Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT07223502"
+    },
+    {
+      "id": "NCT07537088",
+      "last_update": "2026-04-17",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Efficacy and Safety of Triple Therapy With Dulaglutide, SGLT2 Inhibitors, and Finerenone in Chinese Adults With Type 2 Diabetes and Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT07537088"
     },
     {
       "id": "NCT06008197",
@@ -66,81 +178,53 @@
       "url": "https://clinicaltrials.gov/study/NCT04881994"
     },
     {
-      "id": "NCT06058585",
-      "last_update": "2026-03-26",
-      "status": "RECRUITING",
-      "title": "The Chronic Kidney Disease Adaptive Platform Trial Investigating Various Agents for Therapeutic Effect",
-      "url": "https://clinicaltrials.gov/study/NCT06058585"
-    },
-    {
-      "id": "NCT04435626",
-      "last_update": "2025-08-25",
-      "status": "COMPLETED",
-      "title": "Study to Evaluate the Efficacy (Effect on Disease) and Safety of Finerenone in Participants With Heart Failure and Left Ventricular Ejection Fraction (Proportion of Blood Expelled Per Heart Stroke) Greater or Equal to 40%",
-      "url": "https://clinicaltrials.gov/study/NCT04435626"
-    },
-    {
-      "id": "NCT05901831",
-      "last_update": "2025-10-19",
-      "status": "COMPLETED",
-      "title": "A Study to Learn How Well the Study Treatment Finerenone Works and How Safe it is in People With Long-term Decrease in the Kidneys' Ability to Work Properly (Chronic Kidney Disease) Together With Type 1 Diabetes",
-      "url": "https://clinicaltrials.gov/study/NCT05901831"
-    },
-    {
-      "id": "NCT07397650",
-      "last_update": "2026-02-08",
-      "status": "RECRUITING",
-      "title": "Efficacy and Safety With Early Treatment of Finerenone in Hospitalized Patients With Heart Failure",
-      "url": "https://clinicaltrials.gov/study/NCT07397650"
-    },
-    {
-      "id": "NCT06059664",
-      "last_update": "2026-04-09",
-      "status": "RECRUITING",
-      "title": "The EFfect of FinErenone in Kidney TransplantiOn Recipients: The EFFEKTOR Study",
-      "url": "https://clinicaltrials.gov/study/NCT06059664"
-    },
-    {
-      "id": "NCT05703880",
-      "last_update": "2024-10-17",
-      "status": "COMPLETED",
-      "title": "An Observational Study Called FIRST-2.0 to Learn More About the Use of the Study Treatment Finerenone Including How Safe it is and How Well it Works Under Real-world Conditions",
-      "url": "https://clinicaltrials.gov/study/NCT05703880"
-    },
-    {
-      "id": "NCT06608212",
-      "last_update": "2026-04-08",
-      "status": "ACTIVE_NOT_RECRUITING",
-      "title": "An Observational Study to Learn More About How Safe Finerenone is and How Well it Works in People With Chronic Kidney Disease and Type 2 Diabetes in Routine Medical Care in the United States",
-      "url": "https://clinicaltrials.gov/study/NCT06608212"
-    },
-    {
-      "id": "NCT06763146",
+      "id": "NCT07232537",
       "last_update": "2026-05-15",
-      "status": "ACTIVE_NOT_RECRUITING",
-      "title": "An Observational Study to Learn More About How Safe Finerenone is and How Well it Works in Indian People With Chronic Kidney Disease and Type 2 Diabetes in Routine Medical Practice",
-      "url": "https://clinicaltrials.gov/study/NCT06763146"
+      "status": "RECRUITING",
+      "title": "An Observational Study Called FINE-REAL Korea to Learn More About the Use of the Drug Finerenone in People With Chronic Kidney Disease and Type 2 Diabetes in a Routine Medical Care Setting in South Korea",
+      "url": "https://clinicaltrials.gov/study/NCT07232537"
     },
     {
-      "id": "NCT07594145",
-      "last_update": "2026-05-18",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Precision T1D Platform - New Therapies for Cardio-Renal Complications",
-      "url": "https://clinicaltrials.gov/study/NCT07594145"
-    },
-    {
-      "id": "NCT01955694",
-      "last_update": "2021-07-15",
+      "id": "NCT01687920",
+      "last_update": "2022-01-27",
       "status": "COMPLETED",
-      "title": "Phase IIb Safety and Efficacy Study of BAY94-8862 in Subjects With Worsening Chronic Heart Failure and Left Ventricular Systolic Dysfunction and Either Type 2 Diabetes Mellitus With or Without Chronic Kidney Disease or Moderate Chronic Kidney Disease Alone",
-      "url": "https://clinicaltrials.gov/study/NCT01955694"
+      "title": "Dose Proportionality Study With BAY94-8862 IR (Immediate Release) Tablets",
+      "url": "https://clinicaltrials.gov/study/NCT01687920"
     },
     {
-      "id": "NCT07575672",
-      "last_update": "2026-05-04",
+      "id": "NCT05013008",
+      "last_update": "2023-09-14",
+      "status": "COMPLETED",
+      "title": "An add-on Study to the FIGARO-DKD Study Called FIGARO-BM to Learn About the Link Between Biomarkers (Substances in the Blood Used as Indicators of Biological Processes, Disease Processes or Responses to Medication) and Finerenone in FIGARO-DKD Participants",
+      "url": "https://clinicaltrials.gov/study/NCT05013008"
+    },
+    {
+      "id": "NCT06301022",
+      "last_update": "2024-03-03",
+      "status": "UNKNOWN",
+      "title": "Effectiveness and Safety of Finerenone in Chinese CKD Patients Without Diabetes Mellitus",
+      "url": "https://clinicaltrials.gov/study/NCT06301022"
+    },
+    {
+      "id": "NCT07235891",
+      "last_update": "2025-11-14",
       "status": "NOT_YET_RECRUITING",
-      "title": "Finerenone in Patients Undergoing Transcatheter Aortic Valve Implantation With Heart Failure",
-      "url": "https://clinicaltrials.gov/study/NCT07575672"
+      "title": "Retinal Protective Effects of Novel Finerenone in Patients With Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT07235891"
+    },
+    {
+      "id": "NCT07188805",
+      "last_update": "2026-05-15",
+      "status": "RECRUITING",
+      "title": "A Study to Learn More About How Well Finerenone Works, How Safe it is, and How it Moves Into, Through, and Out of the Body Compared to Placebo When Taken With Standard Treatment in Children With Heart Failure and Left Ventricular Systolic Dysfunction",
+      "url": "https://clinicaltrials.gov/study/NCT07188805"
+    },
+    {
+      "id": "NCT05974566",
+      "last_update": "2023-07-26",
+      "status": "UNKNOWN",
+      "title": "Efficacy and Safety of Finerenone in Heart Failure With Reduced Ejection Fraction",
+      "url": "https://clinicaltrials.gov/study/NCT05974566"
     },
     {
       "id": "NCT02540993",
@@ -150,39 +234,81 @@
       "url": "https://clinicaltrials.gov/study/NCT02540993"
     },
     {
-      "id": "NCT07232537",
-      "last_update": "2026-05-15",
-      "status": "RECRUITING",
-      "title": "An Observational Study Called FINE-REAL Korea to Learn More About the Use of the Drug Finerenone in People With Chronic Kidney Disease and Type 2 Diabetes in a Routine Medical Care Setting in South Korea",
-      "url": "https://clinicaltrials.gov/study/NCT07232537"
-    },
-    {
-      "id": "NCT06082063",
-      "last_update": "2025-01-08",
-      "status": "RECRUITING",
-      "title": "Multifactorial Intervention to Reduce Cardiovascular Disease in Type 1 Diabetes",
-      "url": "https://clinicaltrials.gov/study/NCT06082063"
-    },
-    {
-      "id": "NCT07181135",
-      "last_update": "2026-04-13",
-      "status": "ENROLLING_BY_INVITATION",
-      "title": "FINE-START: Efficacy and Safety of Finerenone in Patients With Chronic Kidney Disease Not Using Renin-angiotensin-system Inhibitors",
-      "url": "https://clinicaltrials.gov/study/NCT07181135"
-    },
-    {
-      "id": "NCT05047263",
-      "last_update": "2026-02-12",
-      "status": "COMPLETED",
-      "title": "A Trial to Learn How Well Finerenone Works and How Safe it is in Adult Participants With Non-diabetic Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT05047263"
-    },
-    {
-      "id": "NCT07326631",
-      "last_update": "2025-12-24",
+      "id": "NCT07523867",
+      "last_update": "2026-05-09",
       "status": "NOT_YET_RECRUITING",
-      "title": "Finerenone for Cardiorenal Protection in Diabetic CKD: Impact on Renal Function Decline and Heart Failure",
-      "url": "https://clinicaltrials.gov/study/NCT07326631"
+      "title": "Spironolactone Alternate Dosing vs Finerenone in Elevated Potassium - K Safety Study",
+      "url": "https://clinicaltrials.gov/study/NCT07523867"
+    },
+    {
+      "id": "NCT07192952",
+      "last_update": "2026-05-15",
+      "status": "NOT_YET_RECRUITING",
+      "title": "A Study to Learn More About How Safe Finerenone is, When it is Taken for a Longer Time With Standard Treatment, in Children and Young Adults With Heart Failure and Left Ventricular Systolic Dysfunction",
+      "url": "https://clinicaltrials.gov/study/NCT07192952"
+    },
+    {
+      "id": "NCT07594145",
+      "last_update": "2026-05-18",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Precision T1D Platform - New Therapies for Cardio-Renal Complications",
+      "url": "https://clinicaltrials.gov/study/NCT07594145"
+    },
+    {
+      "id": "NCT07026539",
+      "last_update": "2025-06-18",
+      "status": "RECRUITING",
+      "title": "Effect of Treatment With Finerenone on Cardio-Renal Target Organ Damage in Patients With Type 2 Diabetes.",
+      "url": "https://clinicaltrials.gov/study/NCT07026539"
+    },
+    {
+      "id": "NCT07239570",
+      "last_update": "2025-11-18",
+      "status": "RECRUITING",
+      "title": "A Biomarker-targeted Clinical Trial to Optimize Treatment for Patients With Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT07239570"
+    },
+    {
+      "id": "NCT06593327",
+      "last_update": "2026-02-26",
+      "status": "RECRUITING",
+      "title": "NT-ProBNP-based Heart Failure Screening and Prevention Trial in Patients With Type 2 Diabetes: STRONG-DM Study",
+      "url": "https://clinicaltrials.gov/study/NCT06593327"
+    },
+    {
+      "id": "NCT05887817",
+      "last_update": "2024-02-06",
+      "status": "ACTIVE_NOT_RECRUITING",
+      "title": "Effects of Finerenone on Vascular Stiffness and Cardiorenal Biomarkers in T2D and CKD (FIVE-STAR)",
+      "url": "https://clinicaltrials.gov/study/NCT05887817"
+    },
+    {
+      "id": "NCT05640180",
+      "last_update": "2024-01-04",
+      "status": "COMPLETED",
+      "title": "An Observational Study Called FLAMINgO to Learn More About the Treatment Combination of Finerenone and SGLT2 Inhibitors in People With Long-term Kidney Disease (Chronic Kidney Disease) Together With Type 2 Diabetes by Using Routine Medical Care Data and Past Clinical Study Results",
+      "url": "https://clinicaltrials.gov/study/NCT05640180"
+    },
+    {
+      "id": "NCT05457283",
+      "last_update": "2026-05-08",
+      "status": "RECRUITING",
+      "title": "A Study to Learn More About How Safe the Study Treatment Finerenone is in Long-term Use When Taken With an ACE Inhibitor or Angiotensin Receptor Blocker Over 18 Months of Use in Children and Young Adults From 1 to 18 Years of Age With Chronic Kidney Disease and Proteinuria",
+      "url": "https://clinicaltrials.gov/study/NCT05457283"
+    },
+    {
+      "id": "NCT06608212",
+      "last_update": "2026-04-08",
+      "status": "ACTIVE_NOT_RECRUITING",
+      "title": "An Observational Study to Learn More About How Safe Finerenone is and How Well it Works in People With Chronic Kidney Disease and Type 2 Diabetes in Routine Medical Care in the United States",
+      "url": "https://clinicaltrials.gov/study/NCT06608212"
+    },
+    {
+      "id": "NCT01955694",
+      "last_update": "2021-07-15",
+      "status": "COMPLETED",
+      "title": "Phase IIb Safety and Efficacy Study of BAY94-8862 in Subjects With Worsening Chronic Heart Failure and Left Ventricular Systolic Dysfunction and Either Type 2 Diabetes Mellitus With or Without Chronic Kidney Disease or Moderate Chronic Kidney Disease Alone",
+      "url": "https://clinicaltrials.gov/study/NCT01955694"
     },
     {
       "id": "NCT06838416",
@@ -199,165 +325,11 @@
       "url": "https://clinicaltrials.gov/study/NCT05348733"
     },
     {
-      "id": "NCT07026539",
-      "last_update": "2025-06-18",
-      "status": "RECRUITING",
-      "title": "Effect of Treatment With Finerenone on Cardio-Renal Target Organ Damage in Patients With Type 2 Diabetes.",
-      "url": "https://clinicaltrials.gov/study/NCT07026539"
-    },
-    {
-      "id": "NCT07223502",
-      "last_update": "2026-03-05",
-      "status": "RECRUITING",
-      "title": "A Study Comparing the Clinical Benefit of Finerenone Versus a Fixed Dose Combination (FDC) of Extended-Release Torsemide and Spironolactone in Patients With Hypertension and Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT07223502"
-    },
-    {
-      "id": "NCT07116512",
-      "last_update": "2025-08-06",
-      "status": "COMPLETED",
-      "title": "A Study to Compare How Much of the Study Treatment Finerenone Gets Into the Blood When the Same Amount is Taken in One and in Two Tablets of Different Strengths in Healthy Male Participants",
-      "url": "https://clinicaltrials.gov/study/NCT07116512"
-    },
-    {
-      "id": "NCT05953701",
-      "last_update": "2025-03-17",
-      "status": "COMPLETED",
-      "title": "Secondary Data Analysis of Patients at Risk for CKD to Inspect CKD Prevalence, Diagnosis Rates, Diagnostic Behaviour, Treatment Patterns and Patient Characteristics",
-      "url": "https://clinicaltrials.gov/study/NCT05953701"
-    },
-    {
-      "id": "NCT07379840",
-      "last_update": "2026-01-30",
-      "status": "RECRUITING",
-      "title": "A Study to Learn More About How Safe Finerenone is and How Well it Works in Adults With Chronic Heart Failure in South Korea",
-      "url": "https://clinicaltrials.gov/study/NCT07379840"
-    },
-    {
-      "id": "NCT06451458",
-      "last_update": "2025-11-18",
-      "status": "ENROLLING_BY_INVITATION",
-      "title": "ECHO for Diabetes and Multiple Chronic Conditions Study",
-      "url": "https://clinicaltrials.gov/study/NCT06451458"
-    },
-    {
-      "id": "NCT05640180",
-      "last_update": "2024-01-04",
-      "status": "COMPLETED",
-      "title": "An Observational Study Called FLAMINgO to Learn More About the Treatment Combination of Finerenone and SGLT2 Inhibitors in People With Long-term Kidney Disease (Chronic Kidney Disease) Together With Type 2 Diabetes by Using Routine Medical Care Data and Past Clinical Study Results",
-      "url": "https://clinicaltrials.gov/study/NCT05640180"
-    },
-    {
-      "id": "NCT06024746",
-      "last_update": "2025-03-06",
-      "status": "RECRUITING",
-      "title": "A Study to Determine the Efficacy and Safety of Finerenone and SGLT2i in Combination in Hospitalized Patients with Heart Failure (CONFIRMATION-HF)",
-      "url": "https://clinicaltrials.gov/study/NCT06024746"
-    },
-    {
-      "id": "NCT01345656",
-      "last_update": "2022-01-27",
-      "status": "COMPLETED",
-      "title": "BAY94-8862 Dose Finding Trial in Subjects With Chronic Heart Failure and Mild (Part A) or Moderate (Part B) Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT01345656"
-    },
-    {
-      "id": "NCT07280325",
-      "last_update": "2026-05-08",
+      "id": "NCT07547878",
+      "last_update": "2026-05-07",
       "status": "NOT_YET_RECRUITING",
-      "title": "Moxie Self-Management and Education Support Program",
-      "url": "https://clinicaltrials.gov/study/NCT07280325"
-    },
-    {
-      "id": "NCT06033950",
-      "last_update": "2025-03-06",
-      "status": "RECRUITING",
-      "title": "A Study to Evaluate Finerenone on Clinical Efficacy and Safety in Patients with Heart Failure Who Are Intolerant or Not Eligible for Treatment with Steroidal Mineralocorticoid Receptor Antagonists",
-      "url": "https://clinicaltrials.gov/study/NCT06033950"
-    },
-    {
-      "id": "NCT06727409",
-      "last_update": "2025-03-01",
-      "status": "RECRUITING",
-      "title": "Use of Clinical-trials and Simulation Models to Estimate Cost-effectiveness of Non-steroidal Mineralocorticoid Antagonists, RASi and SGLT2i as Triple Therapy With Type 2 Diabetes and Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT06727409"
-    },
-    {
-      "id": "NCT05552339",
-      "last_update": "2026-04-08",
-      "status": "COMPLETED",
-      "title": "A Study Called SMART-Finder to Look for People With Increased Amounts of Albumin in the Urine (UACR Level) in a Group of Type 2 Diabetes Mellitus Patients",
-      "url": "https://clinicaltrials.gov/study/NCT05552339"
-    },
-    {
-      "id": "NCT05526157",
-      "last_update": "2024-10-10",
-      "status": "COMPLETED",
-      "title": "An Observational Study, Called FINEGUST, to Learn More About How People With Chronic Kidney Disease and Type 2 Diabetes Are Treated and How the Introduction of New Treatment Options, Like Finerenone, Impacts Clinical Practice",
-      "url": "https://clinicaltrials.gov/study/NCT05526157"
-    },
-    {
-      "id": "NCT05887817",
-      "last_update": "2024-02-06",
-      "status": "ACTIVE_NOT_RECRUITING",
-      "title": "Effects of Finerenone on Vascular Stiffness and Cardiorenal Biomarkers in T2D and CKD (FIVE-STAR)",
-      "url": "https://clinicaltrials.gov/study/NCT05887817"
-    },
-    {
-      "id": "NCT07598864",
-      "last_update": "2026-05-14",
-      "status": "NOT_YET_RECRUITING",
-      "title": "\"Dapagliflozin vs Dapagliflozin-Finerenone for Albuminuria in CKD With Type 2 Diabetes\"",
-      "url": "https://clinicaltrials.gov/study/NCT07598864"
-    },
-    {
-      "id": "NCT07585526",
-      "last_update": "2026-05-09",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Safety and Efficacy of Finerenone in Metabolic Dysfunction Associated Steatotic Liver Disease(MASLD/NAFLD) Related Cirrhosis Patients With Ascites in Prevention of Chronic Kidney Disease.",
-      "url": "https://clinicaltrials.gov/study/NCT07585526"
-    },
-    {
-      "id": "NCT07554469",
-      "last_update": "2026-04-21",
-      "status": "NOT_YET_RECRUITING",
-      "title": "An Observational Study, Called FINEXPLORER, to Learn More About How Well Finerenone Works in Adults in Spain With Chronic Kidney Disease (CKD) Linked to Type 2 Diabetes, by Looking at Changes in a CKD Risk Score",
-      "url": "https://clinicaltrials.gov/study/NCT07554469"
-    },
-    {
-      "id": "NCT07270367",
-      "last_update": "2025-12-05",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Finerenone and Cardiac Remodeling",
-      "url": "https://clinicaltrials.gov/study/NCT07270367"
-    },
-    {
-      "id": "NCT06278207",
-      "last_update": "2026-03-30",
-      "status": "RECRUITING",
-      "title": "An Observational Study Called FINEROD to Learn More About the Use of the Treatment Finerenone Including How Safe it is and How Well it Works Under Real-world Conditions",
-      "url": "https://clinicaltrials.gov/study/NCT06278207"
-    },
-    {
-      "id": "NCT05457283",
-      "last_update": "2026-05-08",
-      "status": "RECRUITING",
-      "title": "A Study to Learn More About How Safe the Study Treatment Finerenone is in Long-term Use When Taken With an ACE Inhibitor or Angiotensin Receptor Blocker Over 18 Months of Use in Children and Young Adults From 1 to 18 Years of Age With Chronic Kidney Disease and Proteinuria",
-      "url": "https://clinicaltrials.gov/study/NCT05457283"
-    },
-    {
-      "id": "NCT07442448",
-      "last_update": "2026-02-25",
-      "status": "ENROLLING_BY_INVITATION",
-      "title": "Investigation on the Impact of Finerenone on Myocardial Remodeling in Patients With Diabetic Kidney Disease and Heart Failure",
-      "url": "https://clinicaltrials.gov/study/NCT07442448"
-    },
-    {
-      "id": "NCT07155694",
-      "last_update": "2025-08-26",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Role of Finerenone in African American Veterans With Diabetic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT07155694"
+      "title": "Rapid and Simultaneous Initiation of Four Guideline-Directed CKD Therapies (RAPID-CKD)",
+      "url": "https://clinicaltrials.gov/study/NCT07547878"
     },
     {
       "id": "NCT07124039",
@@ -367,18 +339,11 @@
       "url": "https://clinicaltrials.gov/study/NCT07124039"
     },
     {
-      "id": "NCT07583173",
-      "last_update": "2026-05-06",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Effect of Finerenone on Myocardial Fibrosis and Cardiac Function in HFmrEF/HFpEF Patients",
-      "url": "https://clinicaltrials.gov/study/NCT07583173"
-    },
-    {
-      "id": "NCT07537088",
-      "last_update": "2026-04-17",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Efficacy and Safety of Triple Therapy With Dulaglutide, SGLT2 Inhibitors, and Finerenone in Chinese Adults With Type 2 Diabetes and Chronic Kidney Disease",
-      "url": "https://clinicaltrials.gov/study/NCT07537088"
+      "id": "NCT05901831",
+      "last_update": "2025-10-19",
+      "status": "COMPLETED",
+      "title": "A Study to Learn How Well the Study Treatment Finerenone Works and How Safe it is in People With Long-term Decrease in the Kidneys' Ability to Work Properly (Chronic Kidney Disease) Together With Type 1 Diabetes",
+      "url": "https://clinicaltrials.gov/study/NCT05901831"
     },
     {
       "id": "NCT07351864",
@@ -388,18 +353,39 @@
       "url": "https://clinicaltrials.gov/study/NCT07351864"
     },
     {
-      "id": "NCT07523867",
-      "last_update": "2026-05-09",
+      "id": "NCT07280325",
+      "last_update": "2026-05-08",
       "status": "NOT_YET_RECRUITING",
-      "title": "Spironolactone Alternate Dosing vs Finerenone in Elevated Potassium - K Safety Study",
-      "url": "https://clinicaltrials.gov/study/NCT07523867"
+      "title": "Moxie Self-Management and Education Support Program",
+      "url": "https://clinicaltrials.gov/study/NCT07280325"
     },
     {
-      "id": "NCT05254002",
-      "last_update": "2025-03-17",
+      "id": "NCT01345656",
+      "last_update": "2022-01-27",
       "status": "COMPLETED",
-      "title": "A Study to Learn How Well the Treatment Combination of Finerenone and Empagliflozin Works and How Safe it is Compared to Each Treatment Alone in Adult Participants With Long-term Kidney Disease (Chronic Kidney Disease) and Type 2 Diabetes",
-      "url": "https://clinicaltrials.gov/study/NCT05254002"
+      "title": "BAY94-8862 Dose Finding Trial in Subjects With Chronic Heart Failure and Mild (Part A) or Moderate (Part B) Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT01345656"
+    },
+    {
+      "id": "NCT07326631",
+      "last_update": "2025-12-24",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Finerenone for Cardiorenal Protection in Diabetic CKD: Impact on Renal Function Decline and Heart Failure",
+      "url": "https://clinicaltrials.gov/study/NCT07326631"
+    },
+    {
+      "id": "NCT07583173",
+      "last_update": "2026-05-06",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Effect of Finerenone on Myocardial Fibrosis and Cardiac Function in HFmrEF/HFpEF Patients",
+      "url": "https://clinicaltrials.gov/study/NCT07583173"
+    },
+    {
+      "id": "NCT07270367",
+      "last_update": "2025-12-05",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Finerenone and Cardiac Remodeling",
+      "url": "https://clinicaltrials.gov/study/NCT07270367"
     },
     {
       "id": "NCT06143566",
@@ -409,6 +395,55 @@
       "url": "https://clinicaltrials.gov/study/NCT06143566"
     },
     {
+      "id": "NCT07575672",
+      "last_update": "2026-05-04",
+      "status": "NOT_YET_RECRUITING",
+      "title": "Finerenone in Patients Undergoing Transcatheter Aortic Valve Implantation With Heart Failure",
+      "url": "https://clinicaltrials.gov/study/NCT07575672"
+    },
+    {
+      "id": "NCT06082063",
+      "last_update": "2025-01-08",
+      "status": "RECRUITING",
+      "title": "Multifactorial Intervention to Reduce Cardiovascular Disease in Type 1 Diabetes",
+      "url": "https://clinicaltrials.gov/study/NCT06082063"
+    },
+    {
+      "id": "NCT06058585",
+      "last_update": "2026-03-26",
+      "status": "RECRUITING",
+      "title": "The Chronic Kidney Disease Adaptive Platform Trial Investigating Various Agents for Therapeutic Effect",
+      "url": "https://clinicaltrials.gov/study/NCT06058585"
+    },
+    {
+      "id": "NCT04908436",
+      "last_update": "2022-01-27",
+      "status": "COMPLETED",
+      "title": "A Study to Learn How BAY94-8862 Moves Into, Through and Out of the Body, How Safe it is and How it Affects the Body in Adult Participants With Reduced Kidney Function and in Healthy Participants With Similar Age, Weight and Gender Distribution",
+      "url": "https://clinicaltrials.gov/study/NCT04908436"
+    },
+    {
+      "id": "NCT07397650",
+      "last_update": "2026-02-08",
+      "status": "RECRUITING",
+      "title": "Efficacy and Safety With Early Treatment of Finerenone in Hospitalized Patients With Heart Failure",
+      "url": "https://clinicaltrials.gov/study/NCT07397650"
+    },
+    {
+      "id": "NCT05047263",
+      "last_update": "2026-02-12",
+      "status": "COMPLETED",
+      "title": "A Trial to Learn How Well Finerenone Works and How Safe it is in Adult Participants With Non-diabetic Chronic Kidney Disease",
+      "url": "https://clinicaltrials.gov/study/NCT05047263"
+    },
+    {
+      "id": "NCT06451458",
+      "last_update": "2025-11-18",
+      "status": "ENROLLING_BY_INVITATION",
+      "title": "ECHO for Diabetes and Multiple Chronic Conditions Study",
+      "url": "https://clinicaltrials.gov/study/NCT06451458"
+    },
+    {
       "id": "NCT07348718",
       "last_update": "2026-01-08",
       "status": "ACTIVE_NOT_RECRUITING",
@@ -416,32 +451,18 @@
       "url": "https://clinicaltrials.gov/study/NCT07348718"
     },
     {
-      "id": "NCT01807221",
-      "last_update": "2021-07-02",
-      "status": "COMPLETED",
-      "title": "Phase IIb Safety and Efficacy Study of Different Oral Doses of BAY94-8862 in Subjects With Worsening Chronic Heart Failure and Left Ventricular Systolic Dysfunction and Either Type 2 Diabetes Mellitus With or Without Chronic Kidney Disease or Chronic Kidney Disease Alone",
-      "url": "https://clinicaltrials.gov/study/NCT01807221"
-    },
-    {
-      "id": "NCT06818305",
-      "last_update": "2025-12-04",
-      "status": "TERMINATED",
-      "title": "Efficacy and Safety of Finerenone and Empagliflozin in Delaying Renal Function Progression After Radical Nephrectomy in High-Risk CKD Patients: A Multicenter RCT",
-      "url": "https://clinicaltrials.gov/study/NCT06818305"
-    },
-    {
-      "id": "NCT07192952",
-      "last_update": "2026-05-15",
+      "id": "NCT07554469",
+      "last_update": "2026-05-21",
       "status": "NOT_YET_RECRUITING",
-      "title": "A Study to Learn More About How Safe Finerenone is, When it is Taken for a Longer Time With Standard Treatment, in Children and Young Adults With Heart Failure and Left Ventricular Systolic Dysfunction",
-      "url": "https://clinicaltrials.gov/study/NCT07192952"
+      "title": "An Observational Study, Called FINEXPLORER, to Learn More About How Well Finerenone Works in Adults in Spain With Chronic Kidney Disease (CKD) Linked to Type 2 Diabetes, by Looking at Changes in a CKD Risk Score",
+      "url": "https://clinicaltrials.gov/study/NCT07554469"
     },
     {
-      "id": "NCT07547878",
-      "last_update": "2026-05-07",
-      "status": "NOT_YET_RECRUITING",
-      "title": "Rapid and Simultaneous Initiation of Four Guideline-Directed CKD Therapies (RAPID-CKD)",
-      "url": "https://clinicaltrials.gov/study/NCT07547878"
+      "id": "NCT06278207",
+      "last_update": "2026-03-30",
+      "status": "RECRUITING",
+      "title": "An Observational Study Called FINEROD to Learn More About the Use of the Treatment Finerenone Including How Safe it is and How Well it Works Under Real-world Conditions",
+      "url": "https://clinicaltrials.gov/study/NCT06278207"
     },
     {
       "id": "NCT05196035",
@@ -451,32 +472,18 @@
       "url": "https://clinicaltrials.gov/study/NCT05196035"
     },
     {
-      "id": "NCT06593327",
-      "last_update": "2026-02-26",
+      "id": "NCT05703880",
+      "last_update": "2024-10-17",
+      "status": "COMPLETED",
+      "title": "An Observational Study Called FIRST-2.0 to Learn More About the Use of the Study Treatment Finerenone Including How Safe it is and How Well it Works Under Real-world Conditions",
+      "url": "https://clinicaltrials.gov/study/NCT05703880"
+    },
+    {
+      "id": "NCT06024746",
+      "last_update": "2025-03-06",
       "status": "RECRUITING",
-      "title": "NT-ProBNP-based Heart Failure Screening and Prevention Trial in Patients With Type 2 Diabetes: STRONG-DM Study",
-      "url": "https://clinicaltrials.gov/study/NCT06593327"
-    },
-    {
-      "id": "NCT06094920",
-      "last_update": "2026-02-10",
-      "status": "COMPLETED",
-      "title": "Treatment Optimization for Patients With Type 2 Diabetes Using Empagliflozin and Finerenone in a Remote Clinical Trial",
-      "url": "https://clinicaltrials.gov/study/NCT06094920"
-    },
-    {
-      "id": "NCT05705271",
-      "last_update": "2025-07-08",
-      "status": "COMPLETED",
-      "title": "A Study to Learn How Safe the Study Drug Finerenone is and How Well it Works in Indian People With Long-term Decrease in the Kidneys' Ability to Work Properly (Chronic Kidney Disease) Together With Type 2 Diabetes Mellitus",
-      "url": "https://clinicaltrials.gov/study/NCT05705271"
-    },
-    {
-      "id": "NCT01687920",
-      "last_update": "2022-01-27",
-      "status": "COMPLETED",
-      "title": "Dose Proportionality Study With BAY94-8862 IR (Immediate Release) Tablets",
-      "url": "https://clinicaltrials.gov/study/NCT01687920"
+      "title": "A Study to Determine the Efficacy and Safety of Finerenone and SGLT2i in Combination in Hospitalized Patients with Heart Failure (CONFIRMATION-HF)",
+      "url": "https://clinicaltrials.gov/study/NCT06024746"
     }
   ]
 }
