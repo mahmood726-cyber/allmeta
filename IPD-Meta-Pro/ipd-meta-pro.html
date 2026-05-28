@@ -72649,9 +72649,9 @@ const AdvancedSurvival = {
 
             interpretation: pValue > 0.05 ? "PH assumption appears valid" : "PH assumption may be violated",
 
-            method: "Schoenfeld Residuals Test",
+            method: "Simplified PH screen (covariate-vs-event-time correlation; NOT model-based scaled Schoenfeld residuals)",
 
-            reference: "Grambsch PM, Therneau TM. Biometrika 1994;81:515-526"
+            reference: "Screening approximation of the Grambsch-Therneau test (Biometrika 1994;81:515-526) — uses raw covariate-vs-event-time correlation, not scaled residuals from a fitted Cox model; confirm a flagged violation with a full Schoenfeld analysis."
 
         };
 
@@ -80413,7 +80413,7 @@ function runPHAssumptionTest() {
 
 
 
-        const html = '<div class="modal"><div class="modal-header"><h3>PH Assumption Test (Schoenfeld)</h3>' +
+        const html = '<div class="modal"><div class="modal-header"><h3>PH Assumption Screen (covariate–time correlation)</h3>' +
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
