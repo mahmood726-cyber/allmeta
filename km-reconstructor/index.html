@@ -186,18 +186,22 @@
         nRisk = nRisk - d - c;
         C[k].nRisk = nRisk;
       }
-      // If total events constraint provided, scale last-interval events proportionally
+      // Total-events constraint: adjust the event/censoring SPLIT within the fixed
+      // cohort (reclassify censored <-> events per interval) to match the reported
+      // total, keeping each interval's d+c constant so the cohort size is preserved.
+      // Previously the difference was ADDED with no cap, so an impossible totEvents
+      // (> N0) inflated the reconstructed cohort to nonsense (e.g. totEvents=99999 on
+      // N0=200 produced ~111k patients). totEvents is clamped to [0, N0].
       if (Number.isFinite(totEvents)) {
-        const currentTot = C.reduce((s, p) => s + p.d, 0);
-        const diff = totEvents - currentTot;
-        if (Math.abs(diff) > 0 && C.length > 1) {
-          // Spread diff across last few intervals
-          const last = C.length - 1;
-          const perInterval = Math.floor(Math.abs(diff) / Math.max(1, last - 1));
-          const sign = Math.sign(diff);
-          for (let k = 1; k <= last; k++) {
-            const adj = sign * perInterval;
-            if (C[k].d + adj >= 0) C[k].d += adj;
+        const tgt = Math.min(Math.max(0, Math.round(totEvents)), N0); // events cannot exceed the cohort
+        let need = tgt - C.reduce((s, p) => s + p.d, 0);
+        for (let k = 1; k < C.length && need !== 0; k++) {
+          if (need > 0) {            // need more events -> reclassify censored as events
+            const x = Math.min(need, C[k].c);
+            C[k].d += x; C[k].c -= x; need -= x;
+          } else {                   // need fewer events -> reclassify events as censored
+            const x = Math.min(-need, C[k].d);
+            C[k].d -= x; C[k].c += x; need += x;
           }
         }
       }
