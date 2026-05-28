@@ -358,6 +358,18 @@
       if (s.excludedEligible > s.assessed) {
         warnings.push("Reports excluded with reasons (" + s.excludedEligible + ") exceeds assessed (" + s.assessed + ").");
       }
+      // Final reconciliation rung: reports of included studies = assessed − excluded-with-reasons,
+      // and studies ≤ reports. Catches numerically-impossible diagrams (e.g. included > assessed).
+      const expectedReports = Math.max(0, s.assessed - s.excludedEligible);
+      if (s.reports && s.assessed && s.reports !== expectedReports) {
+        warnings.push("Reports of included studies (" + s.reports + ") should equal assessed (" + s.assessed + ") minus excluded with reasons (" + s.excludedEligible + ") = " + expectedReports + ".");
+      }
+      if (s.studies && s.reports && s.studies > s.reports) {
+        warnings.push("Studies included (" + s.studies + ") cannot exceed reports of included studies (" + s.reports + ").");
+      }
+      if (s.studies && s.assessed && s.studies > s.assessed) {
+        warnings.push("Studies included (" + s.studies + ") cannot exceed reports assessed for eligibility (" + s.assessed + ").");
+      }
       return warnings;
     }
 
@@ -433,12 +445,12 @@
       const descA11y = "Identification: " + idTotalA11y + " records (" + (s.db || 0) +
                        " from databases, " + (s.reg || 0) + " from registers). " +
                        "Records screened: " + (s.screened || 0) + ", " +
-                       "excluded: " + (s.screenedExcl || 0) + ". " +
+                       "excluded: " + (s.excludedScreen || 0) + ". " +
                        "Reports sought for retrieval: " + (s.sought || 0) + ", " +
                        "not retrieved: " + (s.notRetrieved || 0) + ". " +
                        "Reports assessed for eligibility: " + (s.assessed || 0) + ", " +
-                       "excluded with reasons: " + (s.assessedExcl || 0) + ". " +
-                       "Studies included in review: " + (s.included || 0) + ".";
+                       "excluded with reasons: " + (s.excludedEligible || 0) + ". " +
+                       "Studies included in review: " + (s.studies || 0) + ".";
 
       const parts = [];
       parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
