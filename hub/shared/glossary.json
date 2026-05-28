@@ -65,6 +65,7 @@
   "ROC":{ "short": "Receiver operating characteristic", "long": "Curve of sensitivity vs 1 − specificity across decision thresholds." },
   "OLS":{ "short": "Ordinary least squares", "long": "Linear-regression fit minimising squared residuals; used for the Moses-Littenberg SROC line." },
   "DTA":{ "short": "Diagnostic test accuracy", "long": "Meta-analysis of test performance (sensitivity/specificity), not treatment effects." },
+  "DOR":{ "short": "Diagnostic odds ratio", "long": "DOR = (Se·Sp)/((1−Se)(1−Sp)) = LR+/LR−; a single global summary of test accuracy." },
   "Bayesian":{ "short": "Bayesian inference", "long": "Inference framework combining prior beliefs with data via Bayes' theorem." },
   "Frequentist":{ "short": "Frequentist inference", "long": "Inference framework based on long-run sampling distributions." },
   "Funnel":{ "short": "Funnel plot", "long": "Scatter of effect vs precision; visual aid for small-study effects." },

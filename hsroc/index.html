@@ -456,11 +456,27 @@
       var sumSp  = 1 - invLogit(p.muFPR);
       var ciSe   = [invLogit(p.muSe  - Z975 *p.seMuSe),  invLogit(p.muSe  + Z975 *p.seMuSe)];
       var ciSp   = [1 - invLogit(p.muFPR + Z975 *p.seMuFPR), 1 - invLogit(p.muFPR - Z975 *p.seMuFPR)];
+      // Likelihood ratios, diagnostic odds ratio, and SROC AUC. Point estimates are
+      // exact functions of the pooled Se/Sp; log-scale CIs use the delta method on
+      // (muSe, muFPR) with their SEs and ρ (variance formulas verified vs Monte Carlo).
+      var sumFPR = 1 - sumSp;                          // = invLogit(p.muFPR)
+      var lrPos  = sumSe / sumFPR;                     // Se / (1 - Sp)
+      var lrNeg  = (1 - sumSe) / sumSp;                // (1 - Se) / Sp
+      var dorVal = lrPos / lrNeg;                      // = exp(muSe - muFPR)
+      var _cov = p.rho * p.seMuSe * p.seMuFPR, _vSe = p.seMuSe * p.seMuSe, _vF = p.seMuFPR * p.seMuFPR;
+      var seLogLRp = Math.sqrt(Math.max(0, (1-sumSe)*(1-sumSe)*_vSe + sumSp*sumSp*_vF - 2*(1-sumSe)*sumSp*_cov));
+      var seLogLRn = Math.sqrt(Math.max(0, sumSe*sumSe*_vSe + sumFPR*sumFPR*_vF - 2*sumSe*sumFPR*_cov));
+      var seLogDOR = Math.sqrt(Math.max(0, _vSe + _vF - 2*_cov));
+      function _ciExp(v, se) { return [Math.exp(Math.log(v) - Z975*se), Math.exp(Math.log(v) + Z975*se)]; }
+      var ciLRp = _ciExp(lrPos, seLogLRp), ciLRn = _ciExp(lrNeg, seLogLRn), ciDOR = _ciExp(dorVal, seLogDOR);
       summaryWrap.innerHTML = '<table><tbody>' +
         '<tr><td><strong>Pooled Sensitivity</strong></td><td><strong>' + fmtPct(sumSe) + '</strong></td><td>95% CI ' + fmtPct(ciSe[0]) + ' – ' + fmtPct(ciSe[1]) + '</td></tr>' +
         '<tr><td><strong>Pooled Specificity</strong></td><td><strong>' + fmtPct(sumSp) + '</strong></td><td>95% CI ' + fmtPct(ciSp[0]) + ' – ' + fmtPct(ciSp[1]) + '</td></tr>' +
         '<tr><td>τ²(logit Se)</td><td>' + fmt(p.tauSe2, 4) + '</td><td>τ²(logit FPR) = ' + fmt(p.tauFPR2, 4) + '</td></tr>' +
         '<tr><td>Corr(logit Se, logit FPR)</td><td>' + fmt(p.rho, 3) + '</td><td>|ρ|&gt;0.6 → threshold effect: SROC is the right summary (advanced-stats.md).</td></tr>' +
+        '<tr><td>Diagnostic OR (<abbr data-gloss="DOR">DOR</abbr>)</td><td>' + fmt(dorVal, 2) + '</td><td>95% CI ' + fmt(ciDOR[0], 2) + ' to ' + fmt(ciDOR[1], 2) + '</td></tr>' +
+        '<tr><td>Positive LR (LR+)</td><td>' + fmt(lrPos, 2) + '</td><td>95% CI ' + fmt(ciLRp[0], 2) + ' to ' + fmt(ciLRp[1], 2) + ' &nbsp;Se/(1-Sp)</td></tr>' +
+        '<tr><td>Negative LR (LR-)</td><td>' + fmt(lrNeg, 2) + '</td><td>95% CI ' + fmt(ciLRn[0], 2) + ' to ' + fmt(ciLRn[1], 2) + ' &nbsp;(1-Se)/Sp</td></tr>' +
         '</tbody></table>';
 
       // Stat chips
@@ -469,6 +485,7 @@
         '<div class="stat"><span class="k">Pooled Se</span><span class="v">' + fmtPct(sumSe) + '</span></div>' +
         '<div class="stat"><span class="k">Pooled Sp</span><span class="v">' + fmtPct(sumSp) + '</span></div>' +
         '<div class="stat" title="Empirical residual correlation of logit(Se) vs logit(FPR). This DerSimonian-Laird approximation does not estimate the bivariate model Ψ correlation — use mada::reitsma for that."><span class="k">ρ (empirical)</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
+        '<div class="stat" title="Diagnostic odds ratio = (Se·Sp)/((1−Se)(1−Sp)). Single global summary of accuracy."><span class="k"><abbr data-gloss="DOR">DOR</abbr></span><span class="v">' + fmt(dorVal, 2) + '</span></div>' +
         '</div>';
 
       // SROC plot
