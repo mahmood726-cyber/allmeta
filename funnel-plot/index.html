@@ -357,6 +357,28 @@
       // Plot frame
       p.push("<rect x=\"" + L + "\" y=\"" + T + "\" width=\"" + plotW + "\" height=\"" + plotH + "\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
 
+      // Contour-enhanced funnel (Peters et al. 2008): significance regions around the
+      // NULL value (z = 1.645/1.96/2.576 for p = 0.10/0.05/0.01). Shading lets the
+      // reader judge whether asymmetry / "missing" studies fall in significant vs
+      // non-significant regions — small-study effects from publication bias tend to
+      // leave gaps in the non-significant (shaded) area. Clipped to the plot frame.
+      {
+        const base = isFinite(nullV) ? nullV : centre;
+        const z90 = 1.6448536269514722;
+        const apexX = x(base), apexY = y(0), botY = y(maxSE);
+        const bx = (z) => x(base + z * maxSE), bxn = (z) => x(base - z * maxSE);
+        const pt = (X, Y) => X + "," + Y;
+        const tri = (a, b, c, fill) => "<polygon points=\"" + a + " " + b + " " + c + "\" fill=\"" + fill + "\"/>";
+        p.push("<defs><clipPath id=\"funclip\"><rect x=\"" + L + "\" y=\"" + T + "\" width=\"" + plotW + "\" height=\"" + plotH + "\"/></clipPath></defs>");
+        p.push("<g clip-path=\"url(#funclip)\">");
+        p.push(tri(pt(bxn(z90), botY), pt(apexX, apexY), pt(bx(z90), botY), "#e4e6ea"));   // p > 0.10
+        p.push(tri(pt(apexX, apexY), pt(bxn(z90), botY), pt(bxn(Z975), botY), "#eef0f3")); // 0.05–0.10 (L)
+        p.push(tri(pt(apexX, apexY), pt(bx(z90), botY), pt(bx(Z975), botY), "#eef0f3"));   // 0.05–0.10 (R)
+        p.push(tri(pt(apexX, apexY), pt(bxn(Z975), botY), pt(bxn(Z995), botY), "#f7f8fa")); // 0.01–0.05 (L)
+        p.push(tri(pt(apexX, apexY), pt(bx(Z975), botY), pt(bx(Z995), botY), "#f7f8fa"));   // 0.01–0.05 (R)
+        p.push("</g>");
+      }
+
       // Pseudo-CI funnel: lines from (centre, 0) to (centre ± Z975 *maxSE, maxSE)
       p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre - Z975 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
       p.push("<line x1=\"" + x(centre) + "\" y1=\"" + y(0) + "\" x2=\"" + x(centre + Z975 * maxSE) + "\" y2=\"" + y(maxSE) + "\" stroke=\"#7a8294\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>");
