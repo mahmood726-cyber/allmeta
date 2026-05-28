@@ -74,6 +74,7 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
 <body>
@@ -117,6 +118,7 @@
 
       <div class="actions">
         <button type="button" id="btn-save-bus" class="primary">↑ Save to shared bus</button>
+        <button type="button" id="btn-push-grade" title="Push the headline pooled estimate (input-scale point + 95% CI) to the GRADE SoF builder via the ma-pooled-v1 bus. For ratio measures (OR/RR/HR), use Forest Plot’s exponentiated scale so GRADE gets the back-transformed value.">→ GRADE</button>
         <button type="button" id="btn-load-bus">↓ Load from bus</button>
         <button type="button" id="btn-report">Download full HTML report</button>
         <button type="button" id="btn-example">Load example</button>
@@ -474,6 +476,25 @@
       if (ok) Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
       else Toast.show("Could not save to shared bus.", "warn");
     }
+    // Push the headline pooled estimate to GRADE SoF via ma-pooled-v1. Carries
+    // the value VERBATIM on the input/analysis scale (workbench shows input-scale
+    // values; scale:"linear"). Ratio measures should be pooled in Forest Plot
+    // with the exponentiated scale so GRADE receives the back-transformed effect.
+    function onPushPooledToGrade() {
+      const parsed = parseStudies(document.getElementById("f-data").value);
+      const pool = poolAll(parsed.studies);
+      if (!pool) { Toast.show("Paste at least 2 studies first.", "warn"); return; }
+      if (!window.MaPooled) { Toast.show("Pooled-bus helper not loaded.", "error"); return; }
+      const title = (document.getElementById("f-title").value || "").trim();
+      const result = {
+        pointEstimate: pool.mu, ciLo: pool.lo, ciHi: pool.hi,
+        scale: "linear", k: pool.k, model: "random",
+      };
+      if (title) result.label = title;
+      const ok = MaPooled.write(result);
+      if (ok) Toast.show("Pooled (input-scale) effect pushed. Open GRADE SoF → “Load pooled”.", "warn");
+      else Toast.show("Could not push pooled result.", "warn");
+    }
     function onLoadBus() {
       try {
         const studies = (window.MaStudies && MaStudies.read()) || [];
@@ -570,6 +591,7 @@
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("btn-save-bus").addEventListener("click", onSaveBus);
+      document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
       document.getElementById("btn-load-bus").addEventListener("click", onLoadBus);
       document.getElementById("btn-report").addEventListener("click", onDownloadReport);
       document.getElementById("btn-example").addEventListener("click", onExample);

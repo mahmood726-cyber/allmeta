@@ -81,3 +81,50 @@ test('ma-pooled bus: Forest Plot → GRADE SoF carries the pooled effect verbati
 
   expect(errors, 'no console errors across producer + consumer').toEqual([]);
 });
+
+test('ma-pooled bus: Workbench (linear scale) → GRADE SoF carries the input-scale estimate', async ({ page }) => {
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  await page.goto(BASE + '/workbench/index.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof window.__almWorkbench === 'function' && window.MaPooled, { timeout: 10000 });
+
+  const produced = await page.evaluate(() => {
+    window.MaPooled.clear();
+    const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+    set('f-data', 'S1, -2.5, 0.6\nS2, -1.8, 0.5\nS3, -3.0, 0.7'); // linear (MD) effects
+    set('f-title', 'Change in 6-min walk (m)');
+    document.getElementById('btn-push-grade').click();
+    const env = JSON.parse(localStorage.getItem('ma-pooled-v1') || 'null');
+    return env && env.result;
+  });
+
+  expect(produced, 'workbench wrote a pooled result').toBeTruthy();
+  expect(produced.scale).toBe('linear');
+  expect(produced.model).toBe('random');
+  expect(produced.k).toBe(3);
+  expect(produced.label).toBe('Change in 6-min walk (m)');
+  expect(produced.ciLo).toBeLessThan(produced.pointEstimate);
+  expect(produced.pointEstimate).toBeLessThan(produced.ciHi);
+
+  await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-load-pooled'), { timeout: 10000 });
+
+  const loaded = await page.evaluate(() => {
+    document.getElementById('btn-load-pooled').click();
+    const rows = document.querySelectorAll('#outcomes-wrap .outcome-row');
+    const last = rows[rows.length - 1];
+    const f = name => { const el = last.querySelector('[data-field="' + name + '"]'); return el ? el.value : null; };
+    return { outcome: f('outcome'), effectType: f('effectType'), effect: f('effect'), ciLo: f('ciLo'), ciHi: f('ciHi'), studies: f('studies') };
+  });
+
+  expect(loaded.outcome).toBe('Change in 6-min walk (m)');
+  expect(loaded.effectType, 'linear scale + no measure → defaults to MD').toBe('MD');
+  expect(loaded.studies).toBe('3');
+  expect(parseFloat(loaded.effect)).toBeCloseTo(produced.pointEstimate, 3);
+  expect(parseFloat(loaded.ciLo)).toBeCloseTo(produced.ciLo, 3);
+  expect(parseFloat(loaded.ciHi)).toBeCloseTo(produced.ciHi, 3);
+
+  expect(errors, 'no console errors').toEqual([]);
+});
