@@ -56,7 +56,7 @@
     .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
                      border-radius: 5px; cursor: pointer; background: var(--input-bg); }
-    .q .opts input { display: none; }
+    .q .opts input { position: absolute; opacity: 0; pointer-events: none; }  /* visually hidden but keyboard-focusable (was display:none -> not tabbable) */
     .q .opts input:checked + span { color: var(--accent); font-weight: 600; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
                      border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }

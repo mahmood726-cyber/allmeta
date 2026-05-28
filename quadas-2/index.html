@@ -51,7 +51,7 @@
     .q .opts { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .q .opts label { font-size: 0.78rem; padding: 0.15rem 0.55rem; border: 1px solid var(--border);
                      border-radius: 5px; cursor: pointer; background: var(--input-bg); }
-    .q .opts input { display: none; }
+    .q .opts input { position: absolute; opacity: 0; pointer-events: none; }  /* visually hidden but keyboard-focusable (was display:none -> not tabbable) */
     .q .opts input:checked + span { color: var(--accent); font-weight: 600; }
     .judge-row { margin-top: 0.75rem; font-size: 0.85rem; background: var(--accent-soft); padding: 0.55rem 0.75rem; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.75rem; }
     .judge-row label { display: flex; align-items: center; gap: 0.4rem; font-weight: 500; }
