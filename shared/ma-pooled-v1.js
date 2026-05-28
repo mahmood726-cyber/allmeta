@@ -1,5 +1,7 @@
 /* shared/ma-pooled-v1.js — pooled-result channel for the allmeta cross-tool bus.
  *
+ * Contract: see shared/ma-pooled-v1.md
+ *
  * Carries ONE pooled meta-analytic effect (the result a pooling app just
  * computed), so a downstream consumer (e.g. grade-sof) can drop the SAME number
  * the user saw into a Summary-of-Findings row WITHOUT re-pooling. Re-pooling in
