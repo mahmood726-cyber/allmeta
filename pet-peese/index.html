@@ -333,7 +333,10 @@
       const petZ = pet.b0 / pet.seB0;
       const peeseZ = peese.b0 / peese.seB0;
       const direction = fe.mean >= 0 ? 1 : -1;
-      const petIntP = (direction * petZ > 0) ? (1 - pnorm(direction * petZ)) : 0.5;
+      // PET intercept is a WLS regression coefficient → its test uses t(k-2), not the
+      // normal (pnorm was anti-conservative by ~2x at small k, and disagreed with the
+      // export which already used t). One-sided p = two-sided pt2/2 in the effect direction.
+      const petIntP = (direction * petZ > 0) ? (pt2(petZ, pet.n - 2) / 2) : 0.5;
       const conditional = petIntP < alpha
         ? `PEESE (PET intercept one-sided p < ${alpha})`
         : `PET (PET intercept one-sided p ≥ ${alpha})`;
@@ -341,8 +344,8 @@
 
       const resRows = [
         { name: "FE meta-analysis", est: fe.mean, se: fe.se, ci: fe.ci, p: fe.p },
-        { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - Z975 * pet.seB0, pet.b0 + Z975 * pet.seB0], p: pFromZ(petZ) },
-        { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - Z975 * peese.seB0, peese.b0 + Z975 * peese.seB0], p: pFromZ(peeseZ) },
+        { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - Z975 * pet.seB0, pet.b0 + Z975 * pet.seB0], p: pt2(petZ, pet.n - 2) },
+        { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - Z975 * peese.seB0, peese.b0 + Z975 * peese.seB0], p: pt2(peeseZ, peese.n - 2) },
         { name: `Trim-and-fill (k₀=${tf.k0})`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
       ];
       const body = document.getElementById("res-body");
