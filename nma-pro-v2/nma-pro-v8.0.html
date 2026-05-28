@@ -18,7 +18,7 @@
 .app-header{background:linear-gradient(180deg,var(--surface-base),transparent);border-bottom:1px solid var(--border-subtle);position:sticky;top:0;z-index:var(--z-sticky);backdrop-filter:blur(16px)}.app-header__inner{display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) 0;gap:var(--space-4);flex-wrap:wrap}.app-logo{display:flex;align-items:center;gap:var(--space-3)}.app-logo__badge{width:52px;height:52px;background:linear-gradient(135deg,var(--accent-500),var(--secondary-500),var(--tertiary-500));border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:var(--text-sm);color:white;box-shadow:var(--shadow-glow)}.app-logo__title{font-size:var(--text-2xl);font-weight:800;background:linear-gradient(135deg,var(--text-primary),var(--text-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.03em}.app-logo__version{font-size:var(--text-xs);color:var(--text-tertiary);font-family:var(--font-mono)}.app-controls{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);font-family:var(--font-display);font-size:var(--text-sm);font-weight:600;border-radius:var(--radius-md);border:1px solid transparent;cursor:pointer;transition:all var(--transition-fast);white-space:nowrap}.btn:disabled{opacity:0.5;cursor:not-allowed}.btn--primary{background:linear-gradient(135deg,var(--accent-600),var(--accent-500));color:white}.btn--primary:hover:not(:disabled){box-shadow:var(--shadow-glow);transform:translateY(-1px)}.btn--secondary{background:linear-gradient(135deg,var(--secondary-600),var(--secondary-500));color:white}.btn--ghost{background:transparent;color:var(--text-secondary);border-color:var(--border-default)}.btn--ghost:hover:not(:disabled){background:var(--surface-overlay);color:var(--text-primary)}.btn--sm{padding:var(--space-1) var(--space-3);font-size:var(--text-xs);min-height:36px}.btn--lg{padding:var(--space-3) var(--space-6);font-size:var(--text-base);border-radius:var(--radius-lg)}.btn--icon{padding:var(--space-2);width:40px;height:40px}
 .select{appearance:none;background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-2) var(--space-8) var(--space-2) var(--space-3);font-family:var(--font-display);font-size:var(--text-sm);color:var(--text-primary);cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%239ca3af' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}.select:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}.input{width:100%;background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);font-family:var(--font-display);font-size:var(--text-sm);color:var(--text-primary)}.input:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}.checkbox-label{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);color:var(--text-secondary);cursor:pointer}.checkbox-label input{width:18px;height:18px;accent-color:var(--accent-500)}
-.tabs-nav{display:flex;gap:2px;background:var(--surface-raised);padding:var(--space-1);border-radius:var(--radius-xl);overflow-x:auto;scrollbar-width:none}.tabs-nav::-webkit-scrollbar{display:none}.tab-btn{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);background:transparent;border:none;border-radius:var(--radius-lg);font-family:var(--font-display);font-size:var(--text-sm);font-weight:500;color:var(--text-tertiary);cursor:pointer;transition:all var(--transition-fast);white-space:nowrap}.tab-btn:hover{background:var(--surface-overlay);color:var(--text-secondary)}.tab-btn--active{background:linear-gradient(135deg,var(--accent-600),var(--accent-500));color:white;box-shadow:var(--shadow-sm)}.tab-panel{display:none;animation:fadeIn 0.4s var(--ease-out)}.tab-panel--active{display:block}@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.tabs-nav{display:flex;gap:2px;background:var(--surface-raised);padding:var(--space-1);border-radius:var(--radius-xl);overflow-x:auto;scrollbar-width:none}.tabs-nav::-webkit-scrollbar{display:none}.tab-btn{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);background:transparent;border:none;border-radius:var(--radius-lg);font-family:var(--font-display);font-size:var(--text-sm);font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all var(--transition-fast);white-space:nowrap}.tab-btn:hover{background:var(--surface-overlay);color:var(--text-primary)}.tab-btn--active{background:linear-gradient(135deg,var(--accent-600),var(--accent-500));color:white;box-shadow:var(--shadow-sm)}.tab-panel{display:none;animation:fadeIn 0.4s var(--ease-out)}.tab-panel--active{display:block}@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .card{background:var(--surface-base);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}.card__header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border-subtle);background:var(--surface-raised);flex-wrap:wrap;gap:var(--space-3)}.card__title{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-base);font-weight:600}.card__body{padding:var(--space-5)}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:var(--space-3)}.stat-card{padding:var(--space-4);background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);text-align:center}.stat-card__value{font-size:var(--text-2xl);font-weight:700;color:var(--text-accent);font-family:var(--font-mono)}.stat-card__label{font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1);text-transform:uppercase;letter-spacing:0.05em}.stat-card--success .stat-card__value{color:var(--success-400)}.stat-card--warning .stat-card__value{color:var(--warning-400)}.stat-card--danger .stat-card__value{color:var(--danger-400)}
 .alert{padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid;display:flex;gap:var(--space-3)}.alert--info{background:var(--info-bg);border-color:rgba(59,130,246,0.3);color:var(--info-400)}.alert--success{background:var(--success-bg);border-color:rgba(16,185,129,0.3);color:var(--success-400)}.alert--warning{background:var(--warning-bg);border-color:rgba(245,158,11,0.3);color:var(--warning-400)}.alert--danger{background:var(--danger-bg);border-color:rgba(239,68,68,0.3);color:var(--danger-400)}.alert__icon{font-size:var(--text-lg);flex-shrink:0}.alert__text{font-size:var(--text-sm);opacity:0.9}
 .health-gauge{width:180px;height:180px;position:relative;margin:0 auto}.health-gauge__svg{transform:rotate(-90deg);filter:drop-shadow(0 0 12px var(--accent-glow))}.health-gauge__bg{fill:none;stroke:var(--surface-overlay);stroke-width:12}.health-gauge__progress{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1s var(--ease-out)}.health-gauge__progress--excellent{stroke:var(--success-500)}.health-gauge__progress--good{stroke:var(--accent-500)}.health-gauge__progress--fair{stroke:var(--warning-500)}.health-gauge__progress--poor{stroke:var(--danger-500)}.health-gauge__value{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}.health-gauge__number{font-size:var(--text-3xl);font-weight:800;font-family:var(--font-mono)}.health-gauge__label{font-size:var(--text-xs);color:var(--text-tertiary);text-transform:uppercase}
@@ -65,7 +65,7 @@
 <input class="input" id="midThresholdInput" type="number" step="0.01" min="0" placeholder="MID" title="Minimally Important Difference threshold" style="width:80px;">
 <label class="checkbox-label" style="display:flex;align-items:center;gap:4px;font-size:var(--text-xs);white-space:nowrap;" title="Enable class effect models — assign treatment classes in the data table"><input type="checkbox" id="classEffectsToggle" aria-label="Class Effects"> Class Effects</label>
 <select class="select" id="classModelSelect" aria-label="Class effect model type" style="display:none;font-size:var(--text-xs);"><option value="common">Common Class Effect</option><option value="exchangeable">Exchangeable</option></select>
-<button class="btn btn--primary btn--lg" id="runAnalysisBtn">Run Analysis</button><button class="btn btn--secondary btn--lg" id="runEverythingBtn" title="Run complete analysis pipeline: NMA + Pub Bias + Robustness + Reports">Run All</button>
+<button class="btn btn--primary btn--lg" id="runAnalysisBtn" title="Pool the network and compute the core results: forest plot, league table, rankings, heterogeneity. Start here. ('Run All' additionally runs every optional module.)">Run Analysis</button><button class="btn btn--secondary btn--lg" id="runEverythingBtn" title="Run complete analysis pipeline: NMA + Pub Bias + Robustness + Reports">Run All</button>
 <button class="btn btn--ghost btn--icon" id="saveSessionBtn" aria-label="Save session" title="Save Session">💾</button>
 <button class="btn btn--ghost btn--icon" id="loadSessionBtn" aria-label="Load session" title="Load Session">📂</button>
 <button class="btn btn--ghost btn--icon" id="helpBtn" aria-label="Help" title="Help & Documentation">❓</button>
@@ -7824,7 +7824,7 @@ resultsPanel.appendChild(focusCard)
 }
 if(resultsPanel&&document.getElementById('treatmentFocusContainer'))TreatmentFocusLab.render();
 }
-function switchTab(tabId){document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.toggle('tab-btn--active',b.dataset.tab===tabId)});document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.toggle('tab-panel--active',p.id===`panel-${tabId}`)});window.TabWorkflowTools?.handleSwitch(tabId);
+function switchTab(tabId){document.querySelectorAll('.tab-btn').forEach(b=>{const on=b.dataset.tab===tabId;b.classList.toggle('tab-btn--active',on);if(b.getAttribute('role')==='tab'){b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;}});document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.toggle('tab-panel--active',p.id===`panel-${tabId}`)});window.TabWorkflowTools?.handleSwitch(tabId);
 // Plotly stamps 0x0 layout when newPlot runs inside a display:none container;
 // once the container becomes visible, the chart stays collapsed until window
 // resize or an explicit Plots.resize. Heterogeneity-onward panels are the
@@ -14530,6 +14530,48 @@ if(document.readyState==='loading'){
 }else{
   initTabWorkflowTools();
 }
+})();
+/* Accessibility: promote the 22-button tab nav to a proper ARIA tablist with
+   roving tabindex + Arrow/Home/End keyboard navigation. Buttons are styled by
+   class, so adding roles is non-breaking; switchTab() keeps aria-selected and
+   tabindex in sync on every activation (programmatic or via number keys). */
+(function(){
+  function initTabA11y(){
+    const nav=document.querySelector('.tabs-nav');
+    if(!nav||nav.dataset.a11yReady)return;
+    const btns=Array.from(nav.querySelectorAll('.tab-btn[data-tab]'));
+    if(!btns.length)return;
+    nav.dataset.a11yReady='1';
+    nav.setAttribute('role','tablist');
+    nav.setAttribute('aria-label','Analysis sections');
+    btns.forEach(b=>{
+      const id=b.dataset.tab;
+      b.setAttribute('role','tab');
+      if(!b.id)b.id='tab-'+id;
+      b.setAttribute('aria-controls','panel-'+id);
+      const on=b.classList.contains('tab-btn--active');
+      b.setAttribute('aria-selected',on?'true':'false');
+      b.tabIndex=on?0:-1;
+      const panel=document.getElementById('panel-'+id);
+      if(panel){panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',b.id);if(!panel.hasAttribute('tabindex'))panel.tabIndex=0;}
+    });
+    nav.addEventListener('keydown',e=>{
+      if(['ArrowRight','ArrowLeft','Home','End'].indexOf(e.key)<0)return;
+      const vis=Array.from(nav.querySelectorAll('.tab-btn[data-tab]')).filter(b=>b.offsetParent!==null);
+      if(!vis.length)return;
+      const cur=vis.indexOf(document.activeElement);
+      let next;
+      if(e.key==='Home')next=0;
+      else if(e.key==='End')next=vis.length-1;
+      else if(e.key==='ArrowRight')next=cur<0?0:(cur+1)%vis.length;
+      else next=cur<0?vis.length-1:(cur-1+vis.length)%vis.length;
+      e.preventDefault();
+      const b=vis[next];
+      if(b){if(typeof switchTab==='function')switchTab(b.dataset.tab);b.focus();}
+    });
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',()=>setTimeout(initTabA11y,0),{once:true});}
+  else{setTimeout(initTabA11y,0);}
 })();
 </script>
 <script src="../shared/toast.js" defer></script>
