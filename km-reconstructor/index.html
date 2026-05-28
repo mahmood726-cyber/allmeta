@@ -111,7 +111,7 @@
       </div>
       <h2 style="margin-top:0.2rem">K-M overlay: digitized vs reconstructed</h2>
       <svg id="km-plot" viewBox="0 0 600 320" role="img" aria-label="Kaplan-Meier overlay comparing digitized curve and reconstructed IPD fit"></svg>
-      <div class="note"><strong>How it works:</strong> Guyot's algorithm distributes events and censoring across intervals such that the product-limit K-M matches the digitized survival at each interval end-point, while total at-risk trajectories match the risk table. The output is one row per subject, with an event time and an event/censor indicator.</div>
+      <div class="note"><strong>How it works:</strong> Between each pair of adjacent digitized points this tool estimates events from the survival drop (d &asymp; n&middot;(1 &minus; S<sub>k</sub>/S<sub>k&minus;1</sub>)) and assigns the residual decrease in the at-risk count to censoring, so the reconstructed K-M tracks the digitized curve and the at-risk totals approximately follow the table. This is a <strong>simplified heuristic</strong>, not Guyot et al.'s full iterative product-limit reconciliation. The output is one row per subject (event time + event/censor indicator); always verify total events / median / log-rank p against the published trial.</div>
     </section>
   </main>
   <footer>
