@@ -1473,7 +1473,7 @@ Test B 2021,72,8,18,202</pre>
                   </div>
                   <div class="card__body" style="padding: var(--space-3);">
                     <button class="btn btn--primary btn--sm" onclick="runFragilityAnalysis()">Calculate Fragility</button>
-                    <div id="fragilityResults" style="margin-top: var(--space-3);"></div>
+                    <div id="fragilityResultsCard" style="margin-top: var(--space-3);"></div>
                   </div>
                 </div>
                 <div class="card" style="background: linear-gradient(135deg, var(--surface-overlay) 0%, rgba(6, 182, 212, 0.1) 100%); border-left: 4px solid #06b6d4;">
@@ -2431,7 +2431,7 @@ function runFragilityAnalysis() {
   const yi = studies.map(s => s.yi);
   const vi = studies.map(s => s.vi || s.sei * s.sei);
   const results = fragilityIndexMA(yi, vi, AppState.results.pooled.theta);
-  document.getElementById('fragilityResults').innerHTML = `
+  const fragilityHtml = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
       <p><strong>Fragility Index:</strong> <span style="font-size: 1.5em; color: ${results.fragilityIndex <= 2 ? 'var(--color-danger-500)' : 'var(--color-success-500)'};">${results.fragilityIndex}</span></p>
       <p><strong>Fragility Quotient:</strong> ${(results.fragilityQuotient * 100).toFixed(1)}% (${results.fragilityIndex}/${AppState.results.k} studies)</p>
@@ -2440,6 +2440,14 @@ function runFragilityAnalysis() {
       </p>
     </div>
   `;
+  // Two fragility result divs previously shared id="fragilityResults" (invalid
+  // HTML), so the interactive card's "Calculate Fragility" button wrote only to
+  // the first (the validation-dashboard panel) and the card stayed empty. Now
+  // the card div has a distinct id; fill both so the result shows in both places.
+  ['fragilityResults', 'fragilityResultsCard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = fragilityHtml;
+  });
   showToast(`Fragility Index = ${results.fragilityIndex}`, results.fragilityIndex <= 2 ? 'warning' : 'success');
 }
 function runClinicalTranslation() {
