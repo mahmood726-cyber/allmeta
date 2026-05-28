@@ -115,11 +115,11 @@
         <div class="grid-2">
           <label>
             <span class="lbl">Point estimate</span>
-            <input id="in-est" type="number" step="any" value="0.75" aria-label="SE (on log scale for ratios)">
+            <input id="in-est" type="number" step="any" value="0.75">
           </label>
           <label>
             <span class="lbl">SE (on log scale for ratios)</span>
-            <input id="in-se" type="number" step="any" value="0.12" aria-label="Or derive below.">
+            <input id="in-se" type="number" step="any" value="0.12">
             <span class="hint">Or derive below.</span>
           </label>
         </div>
@@ -130,12 +130,12 @@
         <div class="grid-2">
           <label>
             <span class="lbl">Baseline risk p₀</span>
-            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20" aria-label="OR ↔ RR ↔ RD.">
+            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20">
             <span class="hint">OR ↔ RR ↔ RD.</span>
           </label>
           <label>
             <span class="lbl">Pooled SD</span>
-            <input id="ctx-sd" type="number" step="any" value="1" aria-label="MD ↔ SMD.">
+            <input id="ctx-sd" type="number" step="any" value="1">
             <span class="hint">MD ↔ SMD.</span>
           </label>
         </div>
@@ -146,35 +146,35 @@
         <div class="grid-2">
           <label>
             <span class="lbl">t-statistic</span>
-            <input id="der-t" type="number" step="any" placeholder="e.g. 2.1" aria-label="n₁">
+            <input id="der-t" type="number" step="any" placeholder="e.g. 2.1">
           </label>
           <label>
             <span class="lbl">n₁</span>
-            <input id="der-n1" type="number" step="1" placeholder="group 1 n" aria-label="F-statistic (2 groups)">
+            <input id="der-n1" type="number" step="1" placeholder="group 1 n">
           </label>
           <label>
             <span class="lbl">F-statistic (2 groups)</span>
-            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41" aria-label="n₂">
+            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41">
           </label>
           <label>
             <span class="lbl">n₂</span>
-            <input id="der-n2" type="number" step="1" placeholder="group 2 n" aria-label="Two-sided p-value">
+            <input id="der-n2" type="number" step="1" placeholder="group 2 n">
           </label>
           <label>
             <span class="lbl">Two-sided p-value</span>
-            <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031" aria-label="|point estimate| (for p→SE)">
+            <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031">
           </label>
           <label>
             <span class="lbl">|point estimate| (for p→SE)</span>
-            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD" aria-label="CI lower">
+            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD">
           </label>
           <label>
             <span class="lbl">CI lower</span>
-            <input id="der-lo" type="number" step="any" placeholder="raw for MD, raw ratio for OR/RR/HR" aria-label="CI upper">
+            <input id="der-lo" type="number" step="any" placeholder="raw for MD, raw ratio for OR/RR/HR">
           </label>
           <label>
             <span class="lbl">CI upper</span>
-            <input id="der-hi" type="number" step="any" placeholder="same scale as lower" aria-label="Der hi">
+            <input id="der-hi" type="number" step="any" placeholder="same scale as lower">
           </label>
         </div>
         <label style="margin-top:0.5rem">

@@ -65,23 +65,23 @@
       <h2>Inputs</h2>
       <fieldset>
         <legend>Distribution-based</legend>
-        <label><span class="lbl">Baseline SD</span><input id="d-sd" type="number" step="any" value="12" aria-label="Inputs"></label>
-        <label><span class="lbl">SEM — standard error of <em>measurement</em> = SD × √(1 − ICC)</span><input id="d-sem" type="number" step="any" value="5" aria-label="Inputs"><span class="hint">Not the standard error of the <em>mean</em>. Used for 1·SEM and 1.96·SEM rules.</span></label>
+        <label><span class="lbl">Baseline SD</span><input id="d-sd" type="number" step="any" value="12"></label>
+        <label><span class="lbl">SEM — standard error of <em>measurement</em> = SD × √(1 − ICC)</span><input id="d-sem" type="number" step="any" value="5"><span class="hint">Not the standard error of the <em>mean</em>. Used for 1·SEM and 1.96·SEM rules.</span></label>
       </fieldset>
       <fieldset>
         <legend>Anchor-based (change by global-rating category)</legend>
         <label><span class="lbl">Mean change in patients reporting "somewhat improved"</span>
-          <input id="a-somewhat" type="number" step="any" value="6.5" aria-label="Mean change in &quot;no change&quot;"></label>
+          <input id="a-somewhat" type="number" step="any" value="6.5"></label>
         <label><span class="lbl">Mean change in "no change"</span>
-          <input id="a-none" type="number" step="any" value="0.5" aria-label="Inputs"></label>
+          <input id="a-none" type="number" step="any" value="0.5"></label>
         <span class="hint">MCID = mean change in "somewhat improved" minus mean change in "no change" (Juniper 1994).</span>
       </fieldset>
       <fieldset>
         <legend>Non-inferiority margin</legend>
         <label><span class="lbl">Active-comparator effect vs placebo (historical)</span>
-          <input id="ni-hist" type="number" step="any" value="8" aria-label="Preservation fraction (M1 → M2)"></label>
+          <input id="ni-hist" type="number" step="any" value="8"></label>
         <label><span class="lbl">Preservation fraction (M1 → M2)</span>
-          <input id="ni-frac" type="number" step="any" min="0" max="1" value="0.5" aria-label="FDA NI guidance: 50% preservation of the active comparator&#x27;s effect is comm">
+          <input id="ni-frac" type="number" step="any" min="0" max="1" value="0.5">
           <span class="hint">FDA NI guidance: 50% preservation of the active comparator's effect is common.</span>
         </label>
       </fieldset>
