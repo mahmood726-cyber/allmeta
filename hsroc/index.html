@@ -155,7 +155,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Implemented as alternating univariate DerSimonian-Laird pools on each margin + empirical residual correlation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251 approximation; NOT iterated to convergence). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor.</p>
+  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Implemented as alternating univariate DerSimonian-Laird pools on each margin + empirical residual correlation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251 approximation; NOT iterated to convergence). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
