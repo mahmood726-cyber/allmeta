@@ -12,7 +12,18 @@
  */
 import { test, expect } from '@playwright/test';
 const B = 'http://127.0.0.1:8080';
-const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
+// Environmental / pre-existing console noise that is NOT a regression (mirrors the
+// verify-touched-apps benign list): the meta-CSP frame-ancestors warning, favicon
+// 404s, and loopback probes from optional shared services (ERR_CONNECTION_REFUSED /
+// Failed to fetch) that aren't running locally.
+const BENIGN_PATTERNS = [
+  /frame-ancestors' is ignored when delivered via a <meta>/,
+  /favicon\.ico/i,
+  /ERR_CONNECTION_REFUSED/i,
+  /Failed to (load resource|fetch)/i,
+  /Service Worker registration failed/i,
+];
+const BENIGN = { test: (s) => BENIGN_PATTERNS.some((re) => re.test(s)) };
 
 for (const app of ['effect-size-converter', 'mcid']) {
   test(`${app}: every input named; no wrapped input has a conflicting aria-label`, async ({ page }) => {
