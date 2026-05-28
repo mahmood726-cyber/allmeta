@@ -346,7 +346,7 @@
         { name: "FE meta-analysis", est: fe.mean, se: fe.se, ci: fe.ci, p: fe.p },
         { name: "PET intercept", est: pet.b0, se: pet.seB0, ci: [pet.b0 - Z975 * pet.seB0, pet.b0 + Z975 * pet.seB0], p: pt2(petZ, pet.n - 2) },
         { name: "PEESE intercept", est: peese.b0, se: peese.seB0, ci: [peese.b0 - Z975 * peese.seB0, peese.b0 + Z975 * peese.seB0], p: pt2(peeseZ, peese.n - 2) },
-        { name: `Trim-and-fill (k₀=${tf.k0})`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
+        { name: `Trim-and-fill (k₀=${tf.k0}, sensitivity only)`, est: tf.adjusted.mean, se: tf.adjusted.se, ci: tf.adjusted.ci, p: tf.adjusted.p },
       ];
       const body = document.getElementById("res-body");
       const __bodyParts = [""];

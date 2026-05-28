@@ -230,7 +230,7 @@
       const labelSkew = p_skew < 0.05 ? "evidential value" : "no evidential value";
       __testsBodyParts.push(`<tr><td><code>Right-skew (full p-curve)</code></td><td>&#x3c7;&sup2; = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`);
       const flagFlat = p_flat < 0.05 ? "ok" : "bad";
-      const labelFlat = p_flat < 0.05 ? "non-flat" : "flat (consistent with null + p-hacking)";
+      const labelFlat = p_flat < 0.05 ? "non-flat" : "right-skew not detected (binomial screen; see 33%-power note)";
       __testsBodyParts.push(`<tr><td><code>Flatness (vs uniform)</code></td><td>z = ${fmt(z_flat, 2)}</td><td>${fmt(p_flat, 3)}</td><td><span class="chip ${flagFlat}">${labelFlat}</span></td></tr>`);
 
       const puBody = document.getElementById("pu-body");
