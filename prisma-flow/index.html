@@ -208,61 +208,61 @@
         <legend>Identification</legend>
         <div class="row-2">
           <label><span class="lbl">Databases (n)</span>
-            <input type="number" id="f-db" min="0" step="1" inputmode="numeric" value="0" aria-label="Registers (n)">
+            <input type="number" id="f-db" min="0" step="1" inputmode="numeric" value="0" aria-label="Databases (n)">
           </label>
           <label><span class="lbl">Registers (n)</span>
-            <input type="number" id="f-reg" min="0" step="1" inputmode="numeric" value="0" aria-label="F reg">
+            <input type="number" id="f-reg" min="0" step="1" inputmode="numeric" value="0" aria-label="Registers (n)">
           </label>
         </div>
         <label><span class="lbl">Records removed before screening (total n)</span>
-          <input type="number" id="f-removed" min="0" step="1" inputmode="numeric" value="0" aria-label="Duplicates, automation flags, and other reasons combined.">
+          <input type="number" id="f-removed" min="0" step="1" inputmode="numeric" value="0" aria-label="Records removed before screening (total n)">
           <span class="hint">Duplicates, automation flags, and other reasons combined.</span>
         </label>
         <label><span class="lbl">Removal breakdown (optional)</span>
-          <textarea id="f-removed-breakdown" rows="2" placeholder="e.g. duplicates n=X; automation n=Y; other n=Z" aria-label="F removed breakdown"></textarea>
+          <textarea id="f-removed-breakdown" rows="2" placeholder="e.g. duplicates n=X; automation n=Y; other n=Z" aria-label="Removal breakdown (optional)"></textarea>
         </label>
       </fieldset>
 
       <fieldset>
         <legend>Screening</legend>
         <label><span class="lbl">Records screened (n)</span>
-          <input type="number" id="f-screened" min="0" step="1" inputmode="numeric" value="0" aria-label="Normally equals (databases + registers) − removed.">
+          <input type="number" id="f-screened" min="0" step="1" inputmode="numeric" value="0" aria-label="Records screened (n)">
           <span class="hint">Normally equals (databases + registers) − removed.</span>
         </label>
         <label><span class="lbl">Records excluded (n)</span>
-          <input type="number" id="f-excluded-screen" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports sought for retrieval (n)">
+          <input type="number" id="f-excluded-screen" min="0" step="1" inputmode="numeric" value="0" aria-label="Records excluded (n)">
         </label>
         <label><span class="lbl">Reports sought for retrieval (n)</span>
-          <input type="number" id="f-sought" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports not retrieved (n)">
+          <input type="number" id="f-sought" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports sought for retrieval (n)">
         </label>
         <label><span class="lbl">Reports not retrieved (n)</span>
-          <input type="number" id="f-not-retrieved" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports assessed for eligibility (n)">
+          <input type="number" id="f-not-retrieved" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports not retrieved (n)">
         </label>
         <label><span class="lbl">Reports assessed for eligibility (n)</span>
-          <input type="number" id="f-assessed" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports excluded with reasons (n)">
+          <input type="number" id="f-assessed" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports assessed for eligibility (n)">
         </label>
         <label><span class="lbl">Reports excluded with reasons (n)</span>
-          <input type="number" id="f-excluded-eligible" min="0" step="1" inputmode="numeric" value="0" aria-label="Exclusion-reason breakdown (optional)">
+          <input type="number" id="f-excluded-eligible" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports excluded with reasons (n)">
         </label>
         <label><span class="lbl">Exclusion-reason breakdown (optional)</span>
-          <textarea id="f-excluded-breakdown" rows="2" placeholder="e.g. wrong design n=X; wrong population n=Y" aria-label="F excluded breakdown"></textarea>
+          <textarea id="f-excluded-breakdown" rows="2" placeholder="e.g. wrong design n=X; wrong population n=Y" aria-label="Exclusion-reason breakdown (optional)"></textarea>
         </label>
       </fieldset>
 
       <fieldset>
         <legend>Included</legend>
         <label><span class="lbl">Studies included in review (n)</span>
-          <input type="number" id="f-studies" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports of included studies (n)">
+          <input type="number" id="f-studies" min="0" step="1" inputmode="numeric" value="0" aria-label="Studies included in review (n)">
         </label>
         <label><span class="lbl">Reports of included studies (n)</span>
-          <input type="number" id="f-reports" min="0" step="1" inputmode="numeric" value="0" aria-label="F reports">
+          <input type="number" id="f-reports" min="0" step="1" inputmode="numeric" value="0" aria-label="Reports of included studies (n)">
         </label>
       </fieldset>
 
       <fieldset>
         <legend>Review metadata (optional)</legend>
         <label><span class="lbl">Review title</span>
-          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors in HFpEF — systematic review" aria-label="F title">
+          <input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors in HFpEF — systematic review" aria-label="Review title">
         </label>
       </fieldset>
 

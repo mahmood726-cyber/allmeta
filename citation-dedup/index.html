@@ -91,7 +91,7 @@
         <legend>Paste citations</legend>
         <label>
           <span class="lbl">Format</span>
-          <select id="format" aria-label="Input">
+          <select id="format" aria-label="Format">
             <option value="csv">CSV: id,title,authors,year,journal,doi</option>
             <option value="titles">Titles only (one per line)</option>
           </select>
@@ -101,7 +101,7 @@
           <textarea id="input" placeholder="R001,Effect of SGLT2 inhibitors in heart failure,Smith J; Doe A,2023,NEJM,10.1056/abc123
 R002,Effects of SGLT2 inhibitor in heart failure patients,Smith J,2023,NEJM,10.1056/abc123
 R003,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet,10.1016/xyz
-R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-label="Input"></textarea>
+R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-label="Citations"></textarea>
           <span class="hint">CSV: first line headers optional. Case and punctuation in titles are normalized.</span>
         </label>
       </fieldset>
@@ -109,16 +109,16 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-labe
         <legend>Matching</legend>
         <label>
           <span class="lbl">Title similarity threshold (Jaccard)</span>
-          <input id="threshold" type="number" step="0.01" min="0" max="1" value="0.85" aria-label="Lower = more aggressive (more groups). 0.85 ≈ typical SR dedup.">
+          <input id="threshold" type="number" step="0.01" min="0" max="1" value="0.85" aria-label="Title similarity threshold (Jaccard)">
           <span class="hint">Lower = more aggressive (more groups). 0.85 ≈ typical SR dedup.</span>
         </label>
         <label>
           <span class="lbl">Year tolerance (± years)</span>
-          <input id="year-tol" type="number" step="1" min="0" value="1" aria-label="Require first-author surname match">
+          <input id="year-tol" type="number" step="1" min="0" value="1" aria-label="Year tolerance (± years)">
         </label>
         <label>
           <span class="lbl">Require first-author surname match</span>
-          <select id="req-author" aria-label="Req author">
+          <select id="req-author" aria-label="Require first-author surname match">
             <option value="no">No — title similarity alone can flag</option>
             <option value="yes" selected>Yes — title AND surname (if surname present)</option>
           </select>

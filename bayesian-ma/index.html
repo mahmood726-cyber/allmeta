@@ -105,17 +105,17 @@
         <div class="row-2">
           <label>
             <span class="lbl">Prior mean μ₀</span>
-            <input type="number" id="f-mu0" step="any" value="0" aria-label="Prior SD τ₀">
+            <input type="number" id="f-mu0" step="any" value="0" aria-label="Prior mean μ₀">
           </label>
           <label>
             <span class="lbl">Prior SD τ₀</span>
-            <input type="number" id="f-tau0" step="any" min="0.01" value="1" aria-label="Large SD = weakly informative. 1000 ≈ flat.">
+            <input type="number" id="f-tau0" step="any" min="0.01" value="1" aria-label="Prior SD τ₀">
             <span class="hint">Large SD = weakly informative. 1000 ≈ flat.</span>
           </label>
         </div>
         <label>
           <span class="lbl">Prior strength slider — τ₀ on log10 scale</span>
-          <input type="range" id="f-slider" min="-2" max="3" step="0.05" value="0" aria-label="1.00">
+          <input type="range" id="f-slider" min="-2" max="3" step="0.05" value="0" aria-label="Prior strength slider — τ₀ on log10 scale">
           <span class="hint">Slide to explore how a more or less informative prior changes the posterior. <span id="slider-val" class="slider-val">1.00</span></span>
         </label>
       </fieldset>
@@ -124,7 +124,7 @@
         <legend>Between-study variance (random effects)</legend>
         <label>
           <span class="lbl">τ² estimator</span>
-          <select id="f-tau-method" aria-label="F tau method">
+          <select id="f-tau-method" aria-label="τ² estimator">
             <option value="0">Fixed effect (τ² = 0)</option>
             <option value="PM" selected>Plug-in τ² via Paule-Mandel (empirical Bayes)</option>
             <option value="manual">Manual τ²</option>
@@ -132,7 +132,7 @@
         </label>
         <label>
           <span class="lbl">Manual τ²</span>
-          <input type="number" id="f-tau2-manual" step="any" min="0" value="0" aria-label="F tau2 manual">
+          <input type="number" id="f-tau2-manual" step="any" min="0" value="0" aria-label="Manual τ²">
         </label>
       </fieldset>
 
@@ -140,11 +140,11 @@
         <legend>Probability targets</legend>
         <label>
           <span class="lbl">Posterior P(θ &lt; c), c =</span>
-          <input type="number" id="f-threshold" step="any" value="0" aria-label="ROPE half-width (practical equivalence |θ| ≤ δ)">
+          <input type="number" id="f-threshold" step="any" value="0" aria-label="Posterior P(θ &lt; c), c =">
         </label>
         <label>
           <span class="lbl">ROPE half-width (practical equivalence |θ| ≤ δ)</span>
-          <input type="number" id="f-rope" step="any" min="0" value="0.1" aria-label="F rope">
+          <input type="number" id="f-rope" step="any" min="0" value="0.1" aria-label="ROPE half-width (practical equivalence |θ| ≤ δ)">
         </label>
       </fieldset>
 
