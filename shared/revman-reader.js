@@ -306,37 +306,23 @@
    */
   function comparisonToBus(comparison) {
     if (!comparison || !Array.isArray(comparison.outcomes)) return null;
-    var firstOutcome = null;
+    // Prefer a non-empty outcome the bus can represent as arm-level counts
+    // (DICH / CONTINUOUS). O-E/Variance outcomes are summary log-HR / Peto effects,
+    // NOT 2x2 counts: the bus carries arm counts and ma-comparisons normalizeStudy
+    // strips any precomputed sidecar, so emitting placeholder 0/1 arms for them
+    // would silently feed a downstream meta-analysis garbage (0/1-vs-0/1). So skip
+    // O-E outcomes here and, if that's all the comparison has, signal "unsupported"
+    // so the caller can refuse the push with a clear message instead of corrupting.
+    var firstOutcome = null, oeOnly = null;
     for (var i = 0; i < comparison.outcomes.length; i++) {
-      if (comparison.outcomes[i].studies.length > 0) {
-        firstOutcome = comparison.outcomes[i];
-        break;
-      }
+      var o = comparison.outcomes[i];
+      if (!o.studies || o.studies.length === 0) continue;
+      if (o.type === "o_e_var") { if (!oeOnly) oeOnly = o; continue; }
+      firstOutcome = o; break;
     }
-    if (!firstOutcome) return null;
-
-    if (firstOutcome.type === "o_e_var") {
-      // O-E/Var rows are summary effects, not arm counts. We emit them in a
-      // sidecar envelope that downstream MaStudies-shape consumers can read.
-      // For now we surface a 2-arm shell (events:0/n:0 placeholder) so the
-      // bus stays validate-safe; consumers checking precomputed.est|se on the
-      // arms pick up the real values.
-      return {
-        _schema: "ma-comparisons-v1",
-        _savedAt: new Date().toISOString(),
-        effectMeasure: firstOutcome.effectMeasure,
-        studies: firstOutcome.studies.map(function (s) {
-          return {
-            id: s.id, year: s.year,
-            arms: [
-              { treatment: firstOutcome.arm1Name, events: 0, n: 1 },
-              { treatment: firstOutcome.arm2Name, events: 0, n: 1 },
-            ],
-            // Sidecar: precomputed effect for consumers that prefer it.
-            precomputed: { est: s.precomputed.est, se: s.precomputed.se },
-          };
-        }),
-      };
+    if (!firstOutcome) {
+      if (oeOnly) return { _unsupported: "o_e_var", name: oeOnly.name, effectMeasure: oeOnly.effectMeasure };
+      return null;
     }
 
     // Binary or continuous: arm rows carry events/n or mean/sd directly.

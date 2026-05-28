@@ -211,6 +211,11 @@
       }
       var comparison = STATE.parsed.comparisons[STATE.selectedComparisonIdx];
       var env = window.RevmanReader.comparisonToBus(comparison);
+      if (env && env._unsupported === "o_e_var") {
+        pushStatus.style.display = "block";
+        pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> This comparison only has an O&#8211;E &amp; Variance outcome (' + env.effectMeasure + ', e.g. Peto / log&#8209;hazard&#8209;ratio) &#8212; a summary effect, not 2&#215;2 counts, so it cannot go on the counts&#8209;based bus without corrupting the result. Pool it in a dedicated time&#8209;to&#8209;event / HR tool.';
+        return;
+      }
       var ok = MaComparisons.write(env);
       pushStatus.style.display = "block";
       if (ok) {
