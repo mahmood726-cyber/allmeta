@@ -40,8 +40,8 @@
     "url": "https://cdn.plot.ly/plotly-2.35.0.min.js"
   },
   "xlsx-0.18.5.full.min.js": {
-    "size": 881727,
-    "sri": "sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw",
+    "size": 881749,
+    "sri": "sha384-ZmG1VCoRXjPXl6lsGHPQCuHnIGCdPOwZ6+9RFJUeLELENdn8kgBpTZ6VOS12HG5l",
     "url": "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
   }
 }
