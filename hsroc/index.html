@@ -468,7 +468,7 @@
         '<div class="stat"><span class="k">k studies</span><span class="v">' + studies.length + '</span></div>' +
         '<div class="stat"><span class="k">Pooled Se</span><span class="v">' + fmtPct(sumSe) + '</span></div>' +
         '<div class="stat"><span class="k">Pooled Sp</span><span class="v">' + fmtPct(sumSp) + '</span></div>' +
-        '<div class="stat"><span class="k">ρ (rho)</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
+        '<div class="stat" title="Empirical residual correlation of logit(Se) vs logit(FPR). This DerSimonian-Laird approximation does not estimate the bivariate model Ψ correlation — use mada::reitsma for that."><span class="k">ρ (empirical)</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
         '</div>';
 
       // SROC plot
