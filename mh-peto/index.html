@@ -234,7 +234,11 @@ StudyE, 4, 600, 10, 600</textarea>
         var w = (r.n1 * r.n2) / n;
         num += w * (r.e1 / r.n1 - r.e2 / r.n2);
         denom += w;
-        varNum += (r.e1 * (r.n1 - r.e1) * r.n2 / (r.n1 * r.n1 * r.n1) + r.e2 * (r.n2 - r.e2) * r.n1 / (r.n2 * r.n2 * r.n2)) * w * w;
+        // var(RD_i) = p1(1-p1)/n1 + p2(1-p2)/n2 = a·b/n1³ + c·d/n2³; the MH pooled
+        // RD is a w-weighted mean so var = Σ wᵢ²·var(RD_i) / (Σwᵢ)². A prior version
+        // multiplied the two terms by n2 and n1 respectively, inflating SE by ~n
+        // (≈21× on the test fixture) and blowing the CI far too wide.
+        varNum += (r.e1 * (r.n1 - r.e1) / (r.n1 * r.n1 * r.n1) + r.e2 * (r.n2 - r.e2) / (r.n2 * r.n2 * r.n2)) * w * w;
       }
       if (denom === 0) return null;
       var rd = num / denom;
