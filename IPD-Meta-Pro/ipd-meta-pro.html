@@ -80431,6 +80431,8 @@ function runPHAssumptionTest() {
 
             '</div>' +
 
+            (result.phHolds ? '' : '<p style="margin-top:.6rem">A single hazard ratio can mislead when PH is violated (crossing/converging risks). Prefer a <button style="padding:4px 10px;border:1px solid #2a6cae;background:#2a6cae;color:#fff;border-radius:6px;cursor:pointer;font:inherit" onclick="this.closest(\'.modal-overlay\').remove(); runRMSTAnalysis();">Run RMST instead</button> (difference in restricted mean survival) or a time-varying HR.</p>') +
+
             '<p style="font-size:0.8rem; color:#666">Reference: ' + result.reference + '</p>' +
 
             '</div></div>';
