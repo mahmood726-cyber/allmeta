@@ -290,9 +290,14 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-labe
       for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
           let dup = false;
-          // DOI exact match → duplicate
+          // DOI exact match is strong evidence, but NOT on its own: a shared/erroneous
+          // DOI (or a cross-criterion transitive chain — A~B by title, B~C by DOI) would
+          // otherwise force-merge clearly different works and lose data. When both titles
+          // are present, require a low title-similarity floor; a missing title trusts the
+          // DOI alone. Floor ≤ the title threshold (DOI is the stronger signal).
           if (feats[i].doi && feats[i].doi === feats[j].doi) {
-            dup = true;
+            const bothTitled = feats[i].titleN && feats[j].titleN;
+            dup = !bothTitled || jaccard(feats[i].trig, feats[j].trig) >= Math.min(0.30, threshold);
           } else {
             // title similarity check
             const sim = jaccard(feats[i].trig, feats[j].trig);
