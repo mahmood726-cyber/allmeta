@@ -137,15 +137,18 @@ AND
       let embase = s;
       let central = s;
 
-      // MeSH/Mesh with subheading variants
-      const meshRe = /"([^"]+)"\s*\[(MeSH Terms|Mesh|MeSH|mesh|MESH)[^\]]*\]/g;
-      embase = embase.replace(meshRe, (_, term) => {
+      // MeSH/Mesh with subheading variants. Capture the qualifier so [Mesh:NoExp]
+      // (do NOT explode) maps to a non-exploded form — Embase /de and CENTRAL [mh ^…] —
+      // instead of /exp (explode), which would invert the user's intent and broaden it.
+      const meshRe = /"([^"]+)"\s*\[(?:MeSH Terms|Mesh|MeSH|mesh|MESH)([^\]]*)\]/g;
+      embase = embase.replace(meshRe, (_, term, qual) => {
         const key = term.toLowerCase().trim();
-        if (MESH_TO_EMTREE[key]) return `'${MESH_TO_EMTREE[key]}'/exp`;
+        const noExp = /noexp/i.test(qual);
+        if (MESH_TO_EMTREE[key]) return `'${MESH_TO_EMTREE[key]}'/${noExp ? 'de' : 'exp'}`;
         warnings.push(`Unmapped MeSH: "${term}" — emitted as free-text in Embase.`);
         return `'${term}':ti,ab`;
       });
-      central = central.replace(meshRe, (_, term) => `[mh "${term}"]`);
+      central = central.replace(meshRe, (_, term, qual) => /noexp/i.test(qual) ? `[mh ^"${term}"]` : `[mh "${term}"]`);
 
       // Title/Abstract tags
       const tiabRe = /"([^"]+)"\s*\[(tiab|Title\/Abstract)\]/g;
@@ -176,6 +179,17 @@ AND
         return `'${term}':ti,ab`;
       });
       central = central.replace(ptRe, (_, term) => `("${term}"):pt`);
+
+      // Silent-passthrough guard: any PubMed field tag still present in the Embase
+      // output was NOT translated (an unsupported tag like [Majr]/[la]/[ad], or an
+      // unquoted tagged term the rules above only match when quoted). It is invalid
+      // Embase syntax, so warn instead of emitting it silently. (Embase never uses
+      // [...] tags natively, so a residual bracket is unambiguously a leak.)
+      const residualTags = embase.match(/\[[A-Za-z][^\]\n]{0,40}\]/g);
+      if (residualTags) {
+        const uniq = Array.from(new Set(residualTags)).slice(0, 8);
+        warnings.push(`Untranslated field tag(s) left as-is: ${uniq.join(", ")}. These are invalid outside PubMed — convert or remove them (auto-translation is incomplete; always review before running).`);
+      }
 
       // Bare quoted phrases with no tag: leave as-is on the embase side but wrap for central
       // Already handled.
