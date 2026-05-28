@@ -130,7 +130,7 @@
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    <abbr data-gloss="PET">PET</abbr>: Stanley &amp; Doucouliagos (2014) — <code>TE = β₀ + β₁·<abbr data-gloss="SE">SE</abbr> + ε</code>, weighted by 1/SE². <abbr data-gloss="PEESE">PEESE</abbr>: same model with SE² instead of SE. Trim-and-fill: Duval &amp; Tweedie (2000), iterative L₀ / R₀ estimator, imputes k₀ studies reflected about the adjusted mean. Conditional PET-PEESE procedure follows <em>Cochrane Handbook v6.5 §13.3.5.4</em> (small-study effects); trim-and-fill is positioned as a sensitivity analysis only, never the primary result, per <em>Cochrane Handbook §13.3.5.3</em>. Power is poor for k&lt;10 — interpret with caution.
+    <abbr data-gloss="PET">PET</abbr>: Stanley &amp; Doucouliagos (2014) — <code>TE = β₀ + β₁·<abbr data-gloss="SE">SE</abbr> + ε</code>, weighted by 1/SE². <abbr data-gloss="PEESE">PEESE</abbr>: same model with SE² instead of SE. Trim-and-fill: Duval &amp; Tweedie (2000), iterative L₀ / R₀ estimator, imputes k₀ studies reflected about the adjusted mean. Conditional PET-PEESE procedure follows <em>Cochrane Handbook v6.5 §13.3.5.4</em> (small-study effects); trim-and-fill is positioned as a sensitivity analysis only, never the primary result, per <em>Cochrane Handbook §13.3.5.3</em>. Power is poor for k&lt;10 — interpret with caution. For binary / log-odds-ratio outcomes the SE-based regression (Egger / PET) is miscalibrated; prefer Peters' or Harbord's test in <a href="../pubbias-tests/">Publication-bias tests</a>.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
