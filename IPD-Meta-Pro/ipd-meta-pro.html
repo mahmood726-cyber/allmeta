@@ -48296,7 +48296,11 @@ function calculateRMST() {
 
 
 
- console.log('Calculating Restricted Mean Survival Time...');
+ // Unified RMST: delegate to the validated path (runRMSTAnalysis -> compareRMST,
+ // tau = 0.9*maxT, proper Greenwood variance). The inline implementation below is
+ // a superseded duplicate (tau=0.8, variance = rmst^2 * cumHazard with a spurious
+ // +1 in the denominator) that disagreed with the live results; it must not run.
+ return runRMSTAnalysis();
 
 
 
