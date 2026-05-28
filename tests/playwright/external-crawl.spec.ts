@@ -56,6 +56,11 @@ const IS_WINDOWS_HOST = process.platform === "win32";
 for (const app of EXTERNAL_APPS) {
   test(`${app.name}`, async ({ page }) => {
     test.skip(!IS_WINDOWS_HOST, "external file:// URLs only reachable on the author's Windows machine");
+    // These repos live OUTSIDE allmeta and may not be checked out on every machine.
+    // Skip (don't fail) when the target isn't present — a missing external repo is
+    // not an allmeta regression; the crawl still runs wherever the repo exists.
+    const fsPath = app.fileUrl.replace(/^file:\/\/\/?/, "");
+    test.skip(!existsSync(fsPath), `${app.name} not present at ${fsPath} on this host`);
 
     const started = Date.now();
     const consoleErrors: string[] = [];
