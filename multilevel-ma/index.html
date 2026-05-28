@@ -59,6 +59,8 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-pooled-v1.js"></script>
+  <script src="../shared/grade-push.js"></script>
   <script src="../shared/stats-qt.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
@@ -120,6 +122,7 @@
         <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
         <div id="alm-export-mount"></div>
       </div>
+      <div id="alm-grade-push" class="actions" style="margin-top:0.5rem;"></div>
     </section>
   </main>
   <footer>
@@ -482,6 +485,25 @@
     }
   });
 })();
+</script>
+<script>
+  (function () {
+    function init() {
+      if (!window.GradePush || !window.MaPooled) return;
+      GradePush.attach({
+        mount: "alm-grade-push", defaultScale: "linear",
+        getPooled: function () {
+          // multilevel-ma displays the z (Wald) CI without HK (see footer), so
+          // carry ci_lb_z/ci_ub_z to match what the user sees.
+          var r = window._almLastMlma && window._almLastMlma();
+          return r && typeof r.mu === "number"
+            ? { mu: r.mu, lo: r.ci_lb_z, hi: r.ci_ub_z, k: r.k, model: "random" } : null;
+        },
+      });
+    }
+    if (document.readyState !== "loading") init();
+    else document.addEventListener("DOMContentLoaded", init);
+  })();
 </script>
 </body>
 </html>

@@ -224,3 +224,59 @@ test('ma-pooled bus: Heterogeneity (export-scale=ratio) → GRADE carries the HK
 
   expect(errors, 'no console errors').toEqual([]);
 });
+
+// Shared-helper (GradePush) producers: cumulative-subgroup + multilevel-ma.
+for (const cfg of [
+  { name: 'cumulative-subgroup', path: '/cumulative-subgroup/index.html', hook: '_almLastCumSub', pick: 'r && (r.view === "subgroup" ? {mu:r.overall_mu, lo:r.overall_lo, hi:r.overall_hi, k:r.k} : r.view === "cumulative" ? {mu:r.mu_final, lo:r.lo_final, hi:r.hi_final, k:r.k} : null)' },
+  { name: 'multilevel-ma', path: '/multilevel-ma/index.html', hook: '_almLastMlma', pick: 'r && (typeof r.mu === "number" ? { mu: r.mu, lo: r.ci_lb_z, hi: r.ci_ub_z, k: r.k } : null)' },
+]) {
+  test(`ma-pooled bus: ${cfg.name} (via GradePush helper) → GRADE`, async ({ page }) => {
+    const errors = [];
+    page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+    page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+    await page.goto(BASE + cfg.path, { waitUntil: 'load' });
+    await page.waitForFunction((h) => typeof window[h] === 'function' && window.MaPooled
+      && document.querySelector('#alm-grade-push .gp-btn'), cfg.hook, { timeout: 10000 });
+
+    const produced = await page.evaluate(({ hook, pick }) => {
+      window.MaPooled.clear();
+      // Ensure the app has computed a pool (some apps load demo data only on click).
+      const ex = document.getElementById('btn-example');
+      if (ex) ex.click();
+      const r = window[hook]();
+      const o = eval(pick); // {mu, lo, hi, k} on the analysis scale
+      const wrap = document.getElementById('alm-grade-push');
+      wrap.querySelector('.gp-outcome').value = 'Primary outcome';
+      wrap.querySelector('.gp-scale').value = 'linear';
+      wrap.querySelector('.gp-btn').click();
+      const env = JSON.parse(localStorage.getItem('ma-pooled-v1') || 'null');
+      return { expected: o && { mu: o.mu, lo: o.lo, hi: o.hi, k: o.k }, stored: env && env.results && env.results[0] };
+    }, { hook: cfg.hook, pick: cfg.pick });
+
+    expect(produced.expected, `${cfg.name} exposed a pooled estimate`).toBeTruthy();
+    expect(produced.stored, 'helper wrote a pooled result').toBeTruthy();
+    expect(produced.stored.scale).toBe('linear');
+    expect(produced.stored.label).toBe('Primary outcome');
+    expect(produced.stored.model).toBe('random');
+    expect(produced.stored.k).toBe(produced.expected.k);
+    expect(produced.stored.pointEstimate).toBeCloseTo(produced.expected.mu, 6);
+    expect(produced.stored.ciLo).toBeCloseTo(produced.expected.lo, 6);
+    expect(produced.stored.ciHi).toBeCloseTo(produced.expected.hi, 6);
+
+    await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+    await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-load-pooled'), { timeout: 10000 });
+    const loaded = await page.evaluate(() => {
+      document.getElementById('btn-load-pooled').click();
+      const rows = document.querySelectorAll('#outcomes-wrap .outcome-row');
+      const last = rows[rows.length - 1];
+      const f = n => { const el = last.querySelector('[data-field="' + n + '"]'); return el ? el.value : null; };
+      return { outcome: f('outcome'), studies: f('studies'), effect: f('effect') };
+    });
+    expect(loaded.outcome).toBe('Primary outcome');
+    expect(loaded.studies).toBe(String(produced.expected.k));
+    expect(parseFloat(loaded.effect)).toBeCloseTo(produced.stored.pointEstimate, 3);
+
+    expect(errors, 'no console errors').toEqual([]);
+  });
+}

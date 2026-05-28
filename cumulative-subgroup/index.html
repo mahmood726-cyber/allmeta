@@ -79,6 +79,8 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-pooled-v1.js"></script>
+  <script src="../shared/grade-push.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
   <script src="../shared/hero-examples.js"></script>
@@ -148,6 +150,7 @@
         <button type="button" id="btn-reset">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
+      <div id="alm-grade-push" class="actions" style="margin-top:0.5rem;"></div>
     </section>
 
     <section class="panel preview-wrap" aria-label="Preview">
@@ -895,6 +898,28 @@
     }
   });
 })();
+</script>
+<script>
+  (function () {
+    function init() {
+      if (!window.GradePush || !window.MaPooled) return;
+      GradePush.attach({
+        mount: "alm-grade-push", defaultScale: "linear",
+        getPooled: function () {
+          var r = window._almLastCumSub && window._almLastCumSub();
+          if (!r || typeof r.k !== "number") return null;
+          // Carry the overall RE pool (subgroup view) or the final cumulative pool.
+          if (r.view === "subgroup" && typeof r.overall_mu === "number")
+            return { mu: r.overall_mu, lo: r.overall_lo, hi: r.overall_hi, k: r.k, model: "random" };
+          if (r.view === "cumulative" && typeof r.mu_final === "number")
+            return { mu: r.mu_final, lo: r.lo_final, hi: r.hi_final, k: r.k, model: "random" };
+          return null;
+        },
+      });
+    }
+    if (document.readyState !== "loading") init();
+    else document.addEventListener("DOMContentLoaded", init);
+  })();
 </script>
 </body>
 </html>
