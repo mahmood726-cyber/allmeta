@@ -772,14 +772,35 @@
         return;
       }
       state.outcomes = readOutcomesFromForm();
-      const rows = list.map(outcomeFromPooled);
-      // Replace a single pristine empty row; otherwise append all queued outcomes.
-      const onlyEmpty = state.outcomes.length === 1 && !state.outcomes[0].outcome && !state.outcomes[0].effect;
-      state.outcomes = onlyEmpty ? rows : state.outcomes.concat(rows);
+      const incoming = list.map(outcomeFromPooled);
+      // Drop a single pristine empty row so the first load fills cleanly.
+      if (state.outcomes.length === 1 && !state.outcomes[0].outcome && !state.outcomes[0].effect) {
+        state.outcomes = [];
+      }
+      // Merge by outcome name: a loaded outcome whose name matches an existing row
+      // refreshes just the POOLED NUMBERS (effect, CI, type, studies, participants)
+      // and PRESERVES the user's GRADE assessment on that row (certainty, the
+      // 5-domain wizard state, comments, follow-up, baseline/corresponding risk).
+      // Re-pushing an updated pool should not wipe manual GRADE work. New names append.
+      for (const o of incoming) {
+        const idx = o.outcome ? state.outcomes.findIndex(x => x.outcome === o.outcome) : -1;
+        if (idx >= 0) {
+          const ex = state.outcomes[idx];
+          ex.effect = o.effect; ex.ciLo = o.ciLo; ex.ciHi = o.ciHi;
+          ex.effectType = o.effectType; ex.studies = o.studies;
+          if (o.participants) ex.participants = o.participants;
+        } else {
+          state.outcomes.push(o);
+        }
+      }
+      if (!state.outcomes.length) state.outcomes = [emptyOutcome()];
+      // Consume-once: the queue is now in the table, so clear the bus. This avoids
+      // re-adding the same outcomes if the user pools more and loads again.
+      MaPooled.clear();
       renderForm();
       renderPreview();
       persist();
-      if (window.Toast) Toast.show("Loaded " + rows.length + " pooled outcome" + (rows.length === 1 ? "" : "s") + " from the bus.", "warn");
+      if (window.Toast) Toast.show("Loaded " + incoming.length + " pooled outcome" + (incoming.length === 1 ? "" : "s") + " (bus cleared).", "warn");
     }
     function onReset() {
       if (!confirm("Clear all content?")) return;

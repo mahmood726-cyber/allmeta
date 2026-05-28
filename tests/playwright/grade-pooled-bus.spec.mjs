@@ -8,6 +8,21 @@ import { test, expect } from '@playwright/test';
 const BASE = 'http://127.0.0.1:8080';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
+// grade-sof loads a 3-outcome EXAMPLE_STATE when it has no saved state (and one of
+// those examples is literally "All-cause mortality"). That would collide with the
+// labels these tests push and confound the assertions, so seed an EMPTY grade-sof
+// state on first load. Conditional, so persistence ACROSS navigations within a test
+// (the consume-once case) is preserved.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      if (!localStorage.getItem('grade-sof-v1')) {
+        localStorage.setItem('grade-sof-v1', JSON.stringify({ outcomes: [{ outcome: '', effect: '' }] }));
+      }
+    } catch (e) { /* ignore */ }
+  });
+});
+
 test('ma-pooled bus: Forest Plot → GRADE SoF carries the pooled effect verbatim', async ({ page }) => {
   const errors = [];
   page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
@@ -221,6 +236,99 @@ test('ma-pooled bus: Heterogeneity (export-scale=ratio) → GRADE carries the HK
   expect(parseFloat(loaded.effect)).toBeCloseTo(produced.stored.pointEstimate, 3);
   expect(parseFloat(loaded.ciLo)).toBeCloseTo(produced.stored.ciLo, 3);
   expect(parseFloat(loaded.ciHi)).toBeCloseTo(produced.stored.ciHi, 3);
+
+  expect(errors, 'no console errors').toEqual([]);
+});
+
+test('ma-pooled bus: GRADE consumes the queue (clears bus) and updates by label on re-load', async ({ page }) => {
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  const pushRound = async (pushes) => {
+    await page.goto(BASE + '/forest-plot/index.html', { waitUntil: 'load' });
+    await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-push-grade'), { timeout: 10000 });
+    await page.evaluate((items) => {
+      const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+      set('f-scale', 'exp');
+      for (const it of items) { set('f-title', it.title); set('f-data', it.data); document.getElementById('btn-push-grade').click(); }
+    }, pushes);
+  };
+  const loadInGrade = async () => {
+    await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+    await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-load-pooled'), { timeout: 10000 });
+    return page.evaluate(() => {
+      document.getElementById('btn-load-pooled').click();
+      const rows = [...document.querySelectorAll('#outcomes-wrap .outcome-row')].map(r => {
+        const f = n => { const el = r.querySelector('[data-field="' + n + '"]'); return el ? el.value : null; };
+        return { outcome: f('outcome'), studies: f('studies') };
+      });
+      return { rows, busLeft: window.MaPooled.read().length };
+    });
+  };
+
+  // Clear the bus for a clean start (grade-sof starts empty via beforeEach seed).
+  await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+  await page.evaluate(() => { window.MaPooled && window.MaPooled.clear(); });
+
+  await pushRound([
+    { title: 'Mortality', data: 'A, -0.16, 0.10\nB, -0.22, 0.12' },
+    { title: 'Hospitalisation', data: 'A, -0.34, 0.11\nB, -0.30, 0.13' },
+  ]);
+  const r1 = await loadInGrade();
+  const named1 = r1.rows.filter(r => r.outcome === 'Mortality' || r.outcome === 'Hospitalisation');
+  expect(named1.length, 'round 1 loads 2 outcomes').toBe(2);
+  expect(r1.busLeft, 'bus is cleared after load (consume-once)').toBe(0);
+
+  // Re-push Mortality (now 3 studies) + a new Bleeding outcome.
+  await pushRound([
+    { title: 'Mortality', data: 'A, -0.16, 0.10\nB, -0.22, 0.12\nC, -0.10, 0.15' },
+    { title: 'Bleeding', data: 'A, 0.20, 0.10\nB, 0.15, 0.12' },
+  ]);
+  const r2 = await loadInGrade();
+  const names = r2.rows.map(r => r.outcome).filter(Boolean);
+  expect(names.filter(n => n === 'Mortality').length, 'Mortality not duplicated').toBe(1);
+  expect(names.sort()).toEqual(['Bleeding', 'Hospitalisation', 'Mortality']);
+  expect(r2.rows.find(r => r.outcome === 'Mortality').studies, 'Mortality row updated to 3 studies').toBe('3');
+  expect(r2.busLeft).toBe(0);
+
+  expect(errors, 'no console errors').toEqual([]);
+});
+
+test('ma-pooled bus: re-loading an outcome refreshes its numbers but preserves GRADE certainty', async ({ page }) => {
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-load-pooled'), { timeout: 10000 });
+
+  const r = await page.evaluate(() => {
+    const M = window.MaPooled; M.clear();
+    const get = (row, f) => { const el = row.querySelector('[data-field="' + f + '"]'); return el ? el.value : null; };
+    const mortRows = () => [...document.querySelectorAll('#outcomes-wrap .outcome-row')]
+      .filter(r => (r.querySelector('[data-field="outcome"]') || {}).value === 'Mortality');
+
+    // 1. push + load a Mortality pool (k=4).
+    M.add({ pointEstimate: 0.85, ciLo: 0.68, ciHi: 1.06, scale: 'ratio', measure: 'RR', k: 4, label: 'Mortality' });
+    document.getElementById('btn-load-pooled').click();
+
+    // 2. user sets certainty = high on that row.
+    const sel = mortRows()[0].querySelector('[data-field="certainty"]');
+    sel.value = 'high'; sel.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // 3. re-push an UPDATED Mortality pool (k=6, different effect) and load again.
+    M.add({ pointEstimate: 0.80, ciLo: 0.66, ciHi: 0.97, scale: 'ratio', measure: 'RR', k: 6, label: 'Mortality' });
+    document.getElementById('btn-load-pooled').click();
+
+    const rows = mortRows();
+    return { count: rows.length, studies: get(rows[0], 'studies'), certainty: get(rows[0], 'certainty'), effect: get(rows[0], 'effect') };
+  });
+
+  expect(r.count, 'Mortality is not duplicated on re-load').toBe(1);
+  expect(r.studies, 'k refreshed to the new pool').toBe('6');
+  expect(parseFloat(r.effect), 'effect refreshed to the new pool').toBeCloseTo(0.80, 3);
+  expect(r.certainty, 'user-set GRADE certainty is preserved across re-load').toBe('high');
 
   expect(errors, 'no console errors').toEqual([]);
 });
