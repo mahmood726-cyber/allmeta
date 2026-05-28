@@ -162,6 +162,7 @@
 
       <div class="actions">
         <button type="button" id="btn-add" class="primary">+ Add outcome</button>
+        <button type="button" id="btn-load-pooled" title="Load a pooled effect (point estimate + 95% CI, exactly as computed) from another allmeta tool via the ma-pooled-v1 bus — e.g. Forest Plot’s “→ GRADE” button — as a new outcome row.">↓ Load pooled</button>
         <button type="button" id="btn-html">Download HTML</button>
         <button type="button" id="btn-json">Download JSON</button>
         <button type="button" id="btn-import">Import JSON</button>
@@ -748,6 +749,38 @@
       renderPreview();
       persist();
     }
+    // Build a SoF outcome row from a ma-pooled-v1 result. The numbers are taken
+    // VERBATIM from the producing tool (no re-pooling), only formatted.
+    function outcomeFromPooled(r) {
+      const o = emptyOutcome();
+      const fmt = x => Number.isFinite(+x) ? (+(+x).toPrecision(4)).toString() : "";
+      o.effect = fmt(r.pointEstimate);
+      o.ciLo = fmt(r.ciLo);
+      o.ciHi = fmt(r.ciHi);
+      const KNOWN = { RR: 1, OR: 1, HR: 1, MD: 1, SMD: 1, RD: 1 };
+      o.effectType = (r.measure && KNOWN[r.measure]) ? r.measure : (r.scale === "ratio" ? "RR" : "MD");
+      if (r.k != null) o.studies = String(r.k);
+      if (r.nTotal != null) o.participants = String(r.nTotal);
+      if (r.label) o.outcome = r.label;
+      return o;
+    }
+    function onLoadPooled() {
+      if (!window.MaPooled) { if (window.Toast) Toast.show("Pooled-bus helper not loaded.", "warn"); return; }
+      const r = MaPooled.read();
+      if (!r) {
+        if (window.Toast) Toast.show("No pooled result on the bus yet. In Forest Plot (or another pooling tool) click “→ GRADE”.", "warn");
+        return;
+      }
+      state.outcomes = readOutcomesFromForm();
+      const o = outcomeFromPooled(r);
+      // Replace a single pristine empty row; otherwise append.
+      const onlyEmpty = state.outcomes.length === 1 && !state.outcomes[0].outcome && !state.outcomes[0].effect;
+      if (onlyEmpty) state.outcomes = [o]; else state.outcomes.push(o);
+      renderForm();
+      renderPreview();
+      persist();
+      if (window.Toast) Toast.show("Loaded pooled effect" + (r.label ? " for “" + r.label + "”" : "") + " (" + o.effectType + " " + o.effect + " [" + o.ciLo + ", " + o.ciHi + "]).", "warn");
+    }
     function onReset() {
       if (!confirm("Clear all content?")) return;
       state = { outcomes: [emptyOutcome()] };
@@ -765,6 +798,7 @@
         if (el) el.addEventListener("input", function () { renderPreview(); persist(); });
       }
       document.getElementById("btn-add").addEventListener("click", onAdd);
+      document.getElementById("btn-load-pooled").addEventListener("click", onLoadPooled);
       document.getElementById("btn-html").addEventListener("click", onDownloadHtml);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-reset").addEventListener("click", onReset);
@@ -793,6 +827,7 @@
     render();
   })();
   </script>
+  <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/glossary.js" defer></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {

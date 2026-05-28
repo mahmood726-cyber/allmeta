@@ -76,6 +76,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/webr-runner.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -149,7 +150,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
-        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-verify-live" title="Boot WebR in-page and run metafor::rma live on the current bus state — side-by-side with the JS engine result." style="background:#1f7a44;color:#fff;border:1px solid #1f7a44;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">R live</button><button type="button" id="btn-export-report" title="Download a single self-contained HTML file with inputs, results, the forest plot, citations, R script, and provenance — ready to email / archive / cite." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">&#128190; Export report</button>
+        <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-push-grade" title="Push the pooled effect (point + 95% CI exactly as shown) to the GRADE SoF builder via the ma-pooled-v1 bus — no re-typing, no re-pooling.">→ GRADE</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-verify-live" title="Boot WebR in-page and run metafor::rma live on the current bus state — side-by-side with the JS engine result." style="background:#1f7a44;color:#fff;border:1px solid #1f7a44;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">R live</button><button type="button" id="btn-export-report" title="Download a single self-contained HTML file with inputs, results, the forest plot, citations, R script, and provenance — ready to email / archive / cite." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">&#128190; Export report</button>
         <button type="button" id="btn-validate-webr" title="Save to bus and open the WebR validator">Validate (R)</button>
         <button type="button" id="btn-reset" style="display:none">Reset</button>
         <div id="alm-undo-mount" style="display:inline-flex"></div>
@@ -732,6 +733,35 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       else Toast.show("Could not save to shared bus.", "warn");
     }
 
+    // ---- Pooled-result bus (ma-pooled-v1) → GRADE SoF ----
+    // Carry the pooled estimate + 95% CI EXACTLY as displayed (RE diamond, HKSJ
+    // t-CI), back-transformed to the natural scale for ratio measures. grade-sof
+    // reads this verbatim — it must NOT re-pool (a different tau2 method would
+    // silently disagree with what the user saw here).
+    function onPushPooledToGrade() {
+      const pool = _lastRE || _lastFE;
+      if (!pool || !isFinite(pool.mu)) {
+        Toast.show("Run the analysis first (need ≥1 study; ≥2 for random-effects pooling).", "warn");
+        return;
+      }
+      if (!window.MaPooled) { Toast.show("Pooled-bus helper not loaded.", "error"); return; }
+      const ratio = (readState().scale === "exp");
+      const tx = v => ratio ? Math.exp(v) : v;
+      const title = (document.getElementById("f-title").value || "").trim();
+      const result = {
+        pointEstimate: tx(pool.mu),
+        ciLo: tx(pool.lo),
+        ciHi: tx(pool.hi),
+        scale: ratio ? "ratio" : "linear",
+        k: pool.k || _lastStudies.length,
+        model: _lastRE ? "random" : "fixed",
+      };
+      if (title) result.label = title;
+      const ok = MaPooled.write(result);
+      if (ok) Toast.show("Pooled effect pushed. Open GRADE SoF → “Load pooled from bus”.", "warn");
+      else Toast.show("Could not push pooled result (no valid pooled estimate yet).", "warn");
+    }
+
     function attach() {
       for (const id of Object.values(fields)) {
         const el = document.getElementById(id);
@@ -744,6 +774,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       document.getElementById("btn-example").addEventListener("click", onExample);
       document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
       document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
+      document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
         onBusSave();  // write current studies to the shared bus first
         window.open("../webr-validator/index.html?fromBus=1", "_blank");
