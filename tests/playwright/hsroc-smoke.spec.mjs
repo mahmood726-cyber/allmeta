@@ -25,6 +25,7 @@ test('hsroc runs example; rho/DOR/LR/AUC render and are internally consistent', 
       seePct: num(chip('Pooled Se')),
       spPct: num(chip('Pooled Sp')),
       dor: num(chip('DOR')),
+      auc: num(chip('SROC AUC')),
       hasLRpos: bodyHas('Positive LR (LR+)'),
       hasLRneg: bodyHas('Negative LR (LR-)'),
     };
@@ -33,6 +34,10 @@ test('hsroc runs example; rho/DOR/LR/AUC render and are internally consistent', 
 
   expect(r.hasLRpos && r.hasLRneg, 'LR+ and LR- rows present').toBe(true);
   expect(r.dor, 'DOR rendered').toBeGreaterThan(0);
+  // SROC AUC must now be a proper diagnostic area (corrected symmetric slope).
+  expect(r.auc, 'AUC rendered').not.toBeNull();
+  expect(r.auc, 'AUC in (0.5, 1]').toBeGreaterThan(0.5);
+  expect(r.auc).toBeLessThanOrEqual(1.0);
   // DOR must equal (Se*Sp)/((1-Se)(1-Sp)) from the displayed pooled Se/Sp (exact by construction).
   const Se = r.seePct / 100, Sp = r.spPct / 100;
   const dorExpected = (Se * Sp) / ((1 - Se) * (1 - Sp));

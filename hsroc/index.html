@@ -377,9 +377,13 @@
         parts.push('<circle cx="' + X(s.fpr) + '" cy="' + Y(s.se) + '" r="' + r + '" fill="#2c5e8a" fill-opacity="0.8"><title>' + escXml(s.label) + ': Se=' + fmtPct(s.se) + ', Sp=' + fmtPct(s.sp) + '</title></circle>');
       }
 
-      // HSROC curve: conditional mean logitSe given logitFPR
+      // SROC curve (symmetric Rutter-Gatsonis / Moses): slope on the logit scale
+      // is σ_Se/σ_FPR = sqrt(τ²_Se/τ²_FPR) — NOT the regression slope ρ·σ_Se/σ_FPR.
+      // The ρ-weighted slope drew the curve backwards (downward) whenever the
+      // between-study correlation was negative; sqrt(τ²_Se/τ²_FPR) matches
+      // mada::reitsma's sroc() exactly (logit-slope 1.328 on the test fixture).
       if (p && p.tauFPR2 > 0 && p.tauSe2 > 0) {
-        var slope = p.rho * Math.sqrt(p.tauSe2 / p.tauFPR2);
+        var slope = Math.sqrt(p.tauSe2 / p.tauFPR2);
         var intercept = p.muSe - slope * p.muFPR;
         var curvePts = [];
         for (var lf = -6; lf <= 6; lf += 0.05) {
@@ -469,6 +473,19 @@
       var seLogDOR = Math.sqrt(Math.max(0, _vSe + _vF - 2*_cov));
       function _ciExp(v, se) { return [Math.exp(Math.log(v) - Z975*se), Math.exp(Math.log(v) + Z975*se)]; }
       var ciLRp = _ciExp(lrPos, seLogLRp), ciLRn = _ciExp(lrNeg, seLogLRn), ciDOR = _ciExp(dorVal, seLogDOR);
+      // SROC AUC: numerical area under the symmetric SROC curve (slope σ_Se/σ_FPR,
+      // matching mada::reitsma) integrated over FPR ∈ (0,1). Only when both τ² > 0.
+      var aucVal = null;
+      if (p.tauFPR2 > 0 && p.tauSe2 > 0) {
+        var _slope = Math.sqrt(p.tauSe2 / p.tauFPR2), _intc = p.muSe - _slope * p.muFPR;
+        var _a = 0, _pF = null, _pSe = null;
+        for (var _lf = -8; _lf <= 8; _lf += 0.01) {
+          var _fpr = 1/(1+Math.exp(-_lf)), _se = 1/(1+Math.exp(-(_intc + _slope*_lf)));
+          if (_pF !== null) _a += (_fpr - _pF) * (_se + _pSe) / 2;
+          _pF = _fpr; _pSe = _se;
+        }
+        aucVal = Math.max(0, Math.min(1, _a));
+      }
       summaryWrap.innerHTML = '<table><tbody>' +
         '<tr><td><strong>Pooled Sensitivity</strong></td><td><strong>' + fmtPct(sumSe) + '</strong></td><td>95% CI ' + fmtPct(ciSe[0]) + ' – ' + fmtPct(ciSe[1]) + '</td></tr>' +
         '<tr><td><strong>Pooled Specificity</strong></td><td><strong>' + fmtPct(sumSp) + '</strong></td><td>95% CI ' + fmtPct(ciSp[0]) + ' – ' + fmtPct(ciSp[1]) + '</td></tr>' +
@@ -477,6 +494,7 @@
         '<tr><td>Diagnostic OR (<abbr data-gloss="DOR">DOR</abbr>)</td><td>' + fmt(dorVal, 2) + '</td><td>95% CI ' + fmt(ciDOR[0], 2) + ' to ' + fmt(ciDOR[1], 2) + '</td></tr>' +
         '<tr><td>Positive LR (LR+)</td><td>' + fmt(lrPos, 2) + '</td><td>95% CI ' + fmt(ciLRp[0], 2) + ' to ' + fmt(ciLRp[1], 2) + ' &nbsp;Se/(1-Sp)</td></tr>' +
         '<tr><td>Negative LR (LR-)</td><td>' + fmt(lrNeg, 2) + '</td><td>95% CI ' + fmt(ciLRn[0], 2) + ' to ' + fmt(ciLRn[1], 2) + ' &nbsp;(1-Se)/Sp</td></tr>' +
+        (aucVal !== null ? '<tr><td>SROC area under curve (AUC)</td><td>' + fmt(aucVal, 3) + '</td><td>Numerical area under the symmetric SROC curve.</td></tr>' : '') +
         '</tbody></table>';
 
       // Stat chips
@@ -486,6 +504,7 @@
         '<div class="stat"><span class="k">Pooled Sp</span><span class="v">' + fmtPct(sumSp) + '</span></div>' +
         '<div class="stat" title="Empirical residual correlation of logit(Se) vs logit(FPR). This DerSimonian-Laird approximation does not estimate the bivariate model Ψ correlation — use mada::reitsma for that."><span class="k">ρ (empirical)</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
         '<div class="stat" title="Diagnostic odds ratio = (Se·Sp)/((1−Se)(1−Sp)). Single global summary of accuracy."><span class="k"><abbr data-gloss="DOR">DOR</abbr></span><span class="v">' + fmt(dorVal, 2) + '</span></div>' +
+        (aucVal !== null ? '<div class="stat" title="Area under the symmetric SROC curve (numerical). 1.0 = perfect, 0.5 = uninformative."><span class="k">SROC AUC</span><span class="v">' + fmt(aucVal, 3) + '</span></div>' : '') +
         '</div>';
 
       // SROC plot
