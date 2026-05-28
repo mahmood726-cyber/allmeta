@@ -56,10 +56,32 @@ def test_accepts_good_linear_result():
     assert out == {"ok": True, "errors": []}
 
 
+def test_accepts_multiple_results():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ pointEstimate: 0.85, ciLo: 0.68, ciHi: 1.06, scale: "ratio", measure: "RR", k: 4, label: "Mortality" }},
+          {{ pointEstimate: -2.5, ciLo: -4.0, ciHi: -1.0, scale: "linear", measure: "MD", k: 6, label: "6MWD" }}
+        ]);
+        console.log(JSON.stringify({{ ok: M.validate(env).ok, n: env.results.length }}));
+    """)
+    assert out == {"ok": True, "n": 2}
+
+
+def test_rejects_empty_results():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = {{ _schema: "ma-pooled-v1", _savedAt: "x", results: [] }};
+        console.log(JSON.stringify(M.validate(env)));
+    """)
+    assert out["ok"] is False
+    assert any("at least one" in e for e in out["errors"])
+
+
 def test_rejects_wrong_schema():
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
-        const env = {{ _schema: "wrong", _savedAt: "x", result: {{ pointEstimate: 1, ciLo: 0.5, ciHi: 2, scale: "ratio", k: 3 }} }};
+        const env = {{ _schema: "wrong", _savedAt: "x", results: [ {{ pointEstimate: 1, ciLo: 0.5, ciHi: 2, scale: "ratio", k: 3 }} ] }};
         console.log(JSON.stringify(M.validate(env)));
     """)
     assert out["ok"] is False
@@ -95,7 +117,7 @@ def test_rejects_bad_scale():
     # is the read() path: a malformed stored payload must be rejected, not coerced.
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
-        const env = {{ _schema: "ma-pooled-v1", _savedAt: "x", result: {{ pointEstimate: 0.85, ciLo: 0.68, ciHi: 1.06, scale: "logit", k: 4 }} }};
+        const env = {{ _schema: "ma-pooled-v1", _savedAt: "x", results: [ {{ pointEstimate: 0.85, ciLo: 0.68, ciHi: 1.06, scale: "logit", k: 4 }} ] }};
         console.log(JSON.stringify(M.validate(env)));
     """)
     assert out["ok"] is False

@@ -766,20 +766,20 @@
     }
     function onLoadPooled() {
       if (!window.MaPooled) { if (window.Toast) Toast.show("Pooled-bus helper not loaded.", "warn"); return; }
-      const r = MaPooled.read();
-      if (!r) {
-        if (window.Toast) Toast.show("No pooled result on the bus yet. In Forest Plot (or another pooling tool) click “→ GRADE”.", "warn");
+      const list = MaPooled.read();
+      if (!list || !list.length) {
+        if (window.Toast) Toast.show("No pooled results on the bus yet. In Forest Plot (or another pooling tool) click “→ GRADE”.", "warn");
         return;
       }
       state.outcomes = readOutcomesFromForm();
-      const o = outcomeFromPooled(r);
-      // Replace a single pristine empty row; otherwise append.
+      const rows = list.map(outcomeFromPooled);
+      // Replace a single pristine empty row; otherwise append all queued outcomes.
       const onlyEmpty = state.outcomes.length === 1 && !state.outcomes[0].outcome && !state.outcomes[0].effect;
-      if (onlyEmpty) state.outcomes = [o]; else state.outcomes.push(o);
+      state.outcomes = onlyEmpty ? rows : state.outcomes.concat(rows);
       renderForm();
       renderPreview();
       persist();
-      if (window.Toast) Toast.show("Loaded pooled effect" + (r.label ? " for “" + r.label + "”" : "") + " (" + o.effectType + " " + o.effect + " [" + o.ciLo + ", " + o.ciHi + "]).", "warn");
+      if (window.Toast) Toast.show("Loaded " + rows.length + " pooled outcome" + (rows.length === 1 ? "" : "s") + " from the bus.", "warn");
     }
     function onReset() {
       if (!confirm("Clear all content?")) return;

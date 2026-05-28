@@ -757,8 +757,8 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         model: _lastRE ? "random" : "fixed",
       };
       if (title) result.label = title;
-      const ok = MaPooled.write(result);
-      if (ok) Toast.show("Pooled effect pushed. Open GRADE SoF → “Load pooled from bus”.", "warn");
+      const n = MaPooled.add(result);
+      if (n) Toast.show(n + " outcome" + (n === 1 ? "" : "s") + " queued for GRADE. Open GRADE SoF → “Load pooled from bus”.", "warn");
       else Toast.show("Could not push pooled result (no valid pooled estimate yet).", "warn");
     }
 

@@ -7,13 +7,18 @@
  * different model), so the contract is: the producer pools, writes the finished
  * estimate here; the consumer reads it verbatim.
  *
+ * The bus holds a QUEUE of pooled results so a multi-outcome GRADE table can be
+ * filled in one go: each producer push APPENDS (add); the consumer reads them all.
+ *
  * Drop-in: <script src="../shared/ma-pooled-v1.js"></script>
- *   write:  MaPooled.write({ pointEstimate, ciLo, ciHi, scale, measure, k, ... })
- *   read:   const r = MaPooled.read();   // result object or null
+ *   add:    MaPooled.add({ pointEstimate, ciLo, ciHi, scale, measure, k, label, ... })
+ *           // appends; re-pushing the same non-empty label REPLACES that entry
+ *   read:   const list = MaPooled.read();   // array of results (possibly empty)
+ *   write:  MaPooled.write(resultOrArray);  // replace the whole queue
  *   helper: MaPooled.fromEstSE(est, se, { scale:"ratio", measure:"RR", k:5 })
  *
  * Schema (envelope):
- *   { _schema:"ma-pooled-v1", _savedAt:ISO, result: {
+ *   { _schema:"ma-pooled-v1", _savedAt:ISO, results: [ {
  *       pointEstimate, ciLo, ciHi,      // NATURAL scale (ratio already exp'd)
  *       scale:"ratio"|"linear",         // ratio => null value 1; linear => 0
  *       measure?:string,                // "OR"/"RR"/"HR"/"MD"/"SMD"/"RD" hint
@@ -21,7 +26,7 @@
  *       nTotal?:int>0,                  // total participants, if known
  *       model?:"random"|"fixed",
  *       label?:string                   // outcome name, if known
- *   } }
+ *   }, ... ] }
  */
 (function (global) {
   "use strict";
@@ -73,7 +78,15 @@
     }
     if (payload._schema !== SCHEMA) errors.push("_schema must equal " + JSON.stringify(SCHEMA));
     if (typeof payload._savedAt !== "string") errors.push("_savedAt must be an ISO 8601 string");
-    errors = errors.concat(validateResult(payload.result));
+    if (!Array.isArray(payload.results)) {
+      errors.push("results must be an array");
+      return { ok: false, errors: errors };
+    }
+    if (payload.results.length < 1) errors.push("results must contain at least one pooled effect");
+    for (var i = 0; i < payload.results.length; i++) {
+      var e = validateResult(payload.results[i]);
+      for (var j = 0; j < e.length; j++) errors.push("results[" + i + "]: " + e[j]);
+    }
     return { ok: errors.length === 0, errors: errors };
   }
 
@@ -94,8 +107,10 @@
     return out;
   }
 
-  function buildEnvelope(result) {
-    return { _schema: SCHEMA, _savedAt: new Date().toISOString(), result: normalizeResult(result) };
+  // Accepts one result object or an array of them.
+  function buildEnvelope(resultOrArray) {
+    var arr = Array.isArray(resultOrArray) ? resultOrArray : [resultOrArray];
+    return { _schema: SCHEMA, _savedAt: new Date().toISOString(), results: arr.map(normalizeResult) };
   }
 
   // ----- Storage I/O ------------------------------------------------------
@@ -105,25 +120,50 @@
     catch (_) { return false; }
   }
 
+  var MAX = 50; // guard against unbounded accumulation
+
+  // Returns the queued pooled results as an array (possibly empty).
   function read() {
-    if (!_hasStorage()) return null;
+    if (!_hasStorage()) return [];
     try {
       var raw = global.localStorage.getItem(KEY);
-      if (!raw) return null;
+      if (!raw) return [];
       var p = JSON.parse(raw);
-      if (p && p._schema === SCHEMA && validate(p).ok) return p.result;
+      if (p && p._schema === SCHEMA && validate(p).ok) return p.results;
     } catch (_) { /* malformed bus = empty */ }
-    return null;
+    return [];
   }
 
-  function write(result) {
+  // Replace the whole queue (accepts one result or an array).
+  function write(resultOrArray) {
     if (!_hasStorage()) return false;
-    var env = buildEnvelope(result);
+    var env = buildEnvelope(resultOrArray);
     if (!validate(env).ok) return false;
     try {
       global.localStorage.setItem(KEY, JSON.stringify(env));
       return true;
     } catch (_) { return false; }
+  }
+
+  // Append one result to the queue. If it carries a non-empty label that already
+  // exists, that entry is REPLACED (re-pushing an outcome updates it, no dupes).
+  // Returns the new queue length, or 0 on failure.
+  function add(result) {
+    if (!_hasStorage()) return 0;
+    var norm = normalizeResult(result);
+    if (!validate(buildEnvelope([norm])).ok) return 0;
+    var list = read();
+    if (norm.label) {
+      var replaced = false;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].label === norm.label) { list[i] = norm; replaced = true; break; }
+      }
+      if (!replaced) list.push(norm);
+    } else {
+      list.push(norm);
+    }
+    if (list.length > MAX) list = list.slice(list.length - MAX);
+    return write(list) ? list.length : 0;
   }
 
   function clear() {
@@ -154,8 +194,8 @@
   }
 
   var api = {
-    KEY: KEY, SCHEMA: SCHEMA,
-    validate: validate, read: read, write: write, clear: clear,
+    KEY: KEY, SCHEMA: SCHEMA, MAX: MAX,
+    validate: validate, read: read, write: write, add: add, clear: clear,
     buildEnvelope: buildEnvelope, fromEstSE: fromEstSE,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

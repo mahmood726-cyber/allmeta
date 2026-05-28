@@ -491,8 +491,8 @@
         scale: "linear", k: pool.k, model: "random",
       };
       if (title) result.label = title;
-      const ok = MaPooled.write(result);
-      if (ok) Toast.show("Pooled (input-scale) effect pushed. Open GRADE SoF → “Load pooled”.", "warn");
+      const n = MaPooled.add(result);
+      if (n) Toast.show(n + " outcome" + (n === 1 ? "" : "s") + " queued for GRADE. Open GRADE SoF → “Load pooled”.", "warn");
       else Toast.show("Could not push pooled result.", "warn");
     }
     function onLoadBus() {
