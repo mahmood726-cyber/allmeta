@@ -216,11 +216,21 @@
         pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> This comparison only has an O&#8211;E &amp; Variance outcome (' + env.effectMeasure + ', e.g. Peto / log&#8209;hazard&#8209;ratio) &#8212; a summary effect, not 2&#215;2 counts, so it cannot go on the counts&#8209;based bus without corrupting the result. Pool it in a dedicated time&#8209;to&#8209;event / HR tool.';
         return;
       }
+      var skipped = (env && env._dropped) || 0;
+      if (env && env.studies && env.studies.length === 0) {
+        pushStatus.style.display = "block";
+        pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> None of the ' +
+          skipped + ' study rows had complete, valid counts (need two arms with events 0&#8211;n and n&gt;0, or mean with sd&gt;0). Nothing was written to the bus.';
+        return;
+      }
       var ok = MaComparisons.write(env);
       pushStatus.style.display = "block";
       if (ok) {
+        var note = skipped > 0
+          ? ' <span class="err">' + skipped + ' row' + (skipped === 1 ? '' : 's') + ' skipped (incomplete or impossible counts).</span>'
+          : '';
         pushStatus.innerHTML = '<strong style="color:var(--ok)">✓ Saved.</strong> ' +
-          env.studies.length + ' studies pushed to <code>ma-comparisons-v1</code>. ' +
+          env.studies.length + ' studies pushed to <code>ma-comparisons-v1</code>.' + note + ' ' +
           'Open <a href="../nma-pro-v2/">NMA Pro</a> and click <strong>Load from bus</strong>.';
       } else {
         pushStatus.innerHTML = '<strong class="err">Could not save to bus.</strong> The comparison may have unsupported outcome types.';

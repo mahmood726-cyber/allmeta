@@ -94,8 +94,15 @@
     var arms = (Array.isArray(study.arms) ? study.arms : [])
       .map(function (a) { return normalizeArm(a, effectMeasure); })
       .filter(function (a) {
+        // Must match validateArm exactly, so buildEnvelope output always passes
+        // validate(): a single impossible row (events>n, events<0, sd<=0) must be
+        // dropped per-row here, NOT survive to make validate reject the whole
+        // envelope and lose every other (good) study.
         if (!nonEmptyString(a.treatment)) return false;
-        if (BINARY[effectMeasure]) return isFiniteNumber(a.events) && isFiniteNumber(a.n) && a.n > 0;
+        if (BINARY[effectMeasure]) {
+          return isFiniteNumber(a.events) && a.events >= 0 &&
+                 isFiniteNumber(a.n) && a.n > 0 && a.events <= a.n;
+        }
         if (CONT[effectMeasure]) return isFiniteNumber(a.mean) && isFiniteNumber(a.sd) && a.sd > 0;
         return false;
       });

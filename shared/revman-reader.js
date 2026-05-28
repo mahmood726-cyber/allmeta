@@ -339,7 +339,13 @@
         studies: studies,
       };
     }
-    return global.MaComparisons.buildEnvelope(studies, firstOutcome.effectMeasure);
+    // buildEnvelope drops studies whose rows are incomplete or impossible
+    // (missing counts, events>n, sd<=0). Report how many so the importer can
+    // tell the user instead of silently shipping fewer studies than they saw.
+    var env = global.MaComparisons.buildEnvelope(studies, firstOutcome.effectMeasure);
+    var dropped = studies.length - (env.studies ? env.studies.length : 0);
+    if (dropped > 0) env._dropped = dropped;
+    return env;
   }
 
   var api = { parse: parse, comparisonToBus: comparisonToBus,
