@@ -333,6 +333,35 @@ test('ma-pooled bus: re-loading an outcome refreshes its numbers but preserves G
   expect(errors, 'no console errors').toEqual([]);
 });
 
+test('ma-pooled bus: GRADE "Load pooled" button shows the queued-outcome count', async ({ page }) => {
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-load-pooled'), { timeout: 10000 });
+
+  // Seed two pooled outcomes, then reload so the badge initialises from the bus.
+  await page.evaluate(() => {
+    window.MaPooled.clear();
+    window.MaPooled.add({ pointEstimate: 0.85, ciLo: 0.68, ciHi: 1.06, scale: 'ratio', k: 4, label: 'Mortality' });
+    window.MaPooled.add({ pointEstimate: 0.71, ciLo: 0.60, ciHi: 0.84, scale: 'ratio', k: 4, label: 'Hospitalisation' });
+  });
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => document.getElementById('btn-load-pooled'), { timeout: 10000 });
+
+  const labelWithQueue = await page.locator('#btn-load-pooled').textContent();
+  expect(labelWithQueue, 'button shows the queued count').toContain('(2)');
+  expect(await page.locator('#btn-load-pooled').evaluate(el => el.classList.contains('has-pooled'))).toBe(true);
+
+  // Consuming the queue resets the badge.
+  await page.locator('#btn-load-pooled').click();
+  const labelAfter = await page.locator('#btn-load-pooled').textContent();
+  expect(labelAfter.trim(), 'badge resets after the queue is consumed').toBe('↓ Load pooled');
+
+  expect(errors, 'no console errors').toEqual([]);
+});
+
 // Shared-helper (GradePush) producers: cumulative-subgroup + multilevel-ma.
 for (const cfg of [
   { name: 'cumulative-subgroup', path: '/cumulative-subgroup/index.html', hook: '_almLastCumSub', pick: 'r && (r.view === "subgroup" ? {mu:r.overall_mu, lo:r.overall_lo, hi:r.overall_hi, k:r.k} : r.view === "cumulative" ? {mu:r.mu_final, lo:r.lo_final, hi:r.hi_final, k:r.k} : null)' },

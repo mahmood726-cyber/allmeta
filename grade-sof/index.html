@@ -54,6 +54,7 @@
     button { font:inherit; font-size:0.85rem; padding:0.45rem 0.85rem; border-radius:6px;
              border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
     button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button#btn-load-pooled.has-pooled { border-color:var(--accent); color:var(--accent); font-weight:600; box-shadow:0 0 0 2px var(--accent-soft); }
     button.danger { border-color:#b05a1c; color:#b05a1c; background:transparent; }
     button:hover { filter:brightness(0.96); }
     button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
@@ -117,6 +118,7 @@
     }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-pooled-v1.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -801,6 +803,17 @@
       renderPreview();
       persist();
       if (window.Toast) Toast.show("Loaded " + incoming.length + " pooled outcome" + (incoming.length === 1 ? "" : "s") + " (bus cleared).", "warn");
+      updateLoadBadge();
+    }
+    // Show how many pooled outcomes are waiting on the bus, so the feature is
+    // discoverable. The storage event keeps it live when a producer pushes from
+    // another tab (e.g. Forest Plot open alongside GRADE).
+    function updateLoadBadge() {
+      const btn = document.getElementById("btn-load-pooled");
+      if (!btn) return;
+      const n = (window.MaPooled && MaPooled.read().length) || 0;
+      btn.textContent = n > 0 ? "↓ Load pooled (" + n + ")" : "↓ Load pooled";
+      btn.classList.toggle("has-pooled", n > 0);
     }
     function onReset() {
       if (!confirm("Clear all content?")) return;
@@ -829,6 +842,11 @@
         const f = e.target.files && e.target.files[0];
         if (f) onImportJson(f); e.target.value = "";
       });
+      // Live badge: refresh on load and whenever another tab writes the pooled bus.
+      updateLoadBadge();
+      window.addEventListener("storage", function (e) {
+        if (!e.key || e.key === "ma-pooled-v1") updateLoadBadge();
+      });
     }
 
     const saved = loadSaved();
@@ -848,7 +866,6 @@
     render();
   })();
   </script>
-  <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/glossary.js" defer></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
