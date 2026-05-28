@@ -241,32 +241,45 @@
     }
 
     function computeCounts(records) {
-      let identified = 0, duplicates = 0, excludedScreen = 0, notRetrieved = 0,
-          excludedFull = 0, included = 0, maybe = 0, undecided = 0;
+      // Walk each record to exactly ONE funnel position so the PRISMA 2020
+      // identities hold BY CONSTRUCTION:
+      //   identified >= screened >= sought >= assessed >= included,
+      //   assessed = excludedFull + included + (pending at full text),
+      //   excludedFull <= assessed.
+      // The previous version tallied each box independently (and a dead if/else
+      // counted an include at the title/abstract stage the same as one at full
+      // text), so "included" could exceed "assessed". Funnel-by-position fixes
+      // that. effectiveTag never returns "" (blank+blank -> "maybe"), so there
+      // is no genuine "undecided" state; it is kept at 0 for the render shape.
+      const notRetrievedRe = /not retriev|unobtainable|full text not/i;
+      let identified = 0, duplicates = 0, excludedScreen = 0, pendingScreen = 0,
+          notRetrieved = 0, excludedFull = 0, included = 0, pendingFull = 0;
       for (const r of records) {
         identified += 1;
         const t = effectiveTag(r);
-        if (t === "duplicate") duplicates += 1;
-        else if (t === "include") {
-          if (r.stage === "full_text") included += 1;
-          else included += 1;
+        if (t === "duplicate") { duplicates += 1; continue; }   // removed before screening
+        // Not a duplicate => screened. Resolve the title/abstract decision:
+        if (r.stage !== "full_text") {
+          if (t === "exclude") { excludedScreen += 1; continue; } // excluded at screening
+          if (t === "maybe")   { pendingScreen += 1; continue; }  // screening unresolved -> not advanced
+          // include @ title/abstract: a single-stage screen's final include;
+          // advances through the funnel below (so single-stage still counts it).
         }
-        else if (t === "exclude") {
-          if (r.stage === "full_text") excludedFull += 1;
-          else excludedScreen += 1;
-        }
-        else if (t === "maybe") maybe += 1;
-        else if (!t) undecided += 1;
-        // "not retrieved" captured separately below
-        if (r.reason && /not retriev|unobtainable|full text not/i.test(r.reason)) notRetrieved += 1;
+        // Advanced past screening = "sought for retrieval" (full-text-stage
+        // records, plus include-tagged title/abstract records).
+        if (r.reason && notRetrievedRe.test(r.reason)) { notRetrieved += 1; continue; } // sought, not retrieved
+        // Assessed for eligibility:
+        if (t === "exclude")      excludedFull += 1;   // excluded at full text, with reason
+        else if (t === "include") included += 1;
+        else                      pendingFull += 1;    // "maybe" at full text: assessed, decision pending
       }
-      const screened = Math.max(0, identified - duplicates);
-      const sought = Math.max(0, screened - excludedScreen - maybe);
-      const assessed = Math.max(0, sought - notRetrieved);
+      const screened = identified - duplicates;
+      const sought = screened - excludedScreen - pendingScreen;   // = number advanced
+      const assessed = sought - notRetrieved;                     // = excludedFull + included + pendingFull
       return {
         identified, duplicates, screened, excludedScreen,
-        sought, notRetrieved, assessed, excludedFull,
-        included, maybe, undecided
+        sought, notRetrieved, assessed, excludedFull, included,
+        maybe: pendingScreen + pendingFull, undecided: 0
       };
     }
 
