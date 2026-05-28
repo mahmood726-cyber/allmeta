@@ -497,7 +497,7 @@
 
       // Leave-one-out
       const rows = [];
-      rows.push("<tr><th>Omitted</th><th>k</th><th>μ</th><th>95% CI</th><th>I²</th><th>τ²</th></tr>");
+      rows.push("<tr><th>Omitted</th><th>k</th><th>μ</th><th title=\"Normal (z) interval — the main panel's pooled CI uses HKSJ+t\">95% CI (z)</th><th>I²</th><th>τ²</th></tr>");
       for (let i=0;i<k;i++) {
         const subset = studies.slice(0,i).concat(studies.slice(i+1));
         const t2 = chosenKey === "reml" ? tau2_REML(subset)
