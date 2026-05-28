@@ -62,3 +62,39 @@ test('citation-dedup: DOI matches need a title floor (no false-merge); true dups
   expect(r.missingTitleMerged, 'same DOI with a missing title trusts the DOI').toBe(true);
   expect(errors, 'no console errors').toEqual([]);
 });
+
+test('citation-dedup: CSV export escapes commas/quotes and neutralizes formula injection', async ({ page }) => {
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.__almDedupUtil && typeof window.__almDedupUtil.csvEscape === 'function', { timeout: 10000 });
+
+  const r = await page.evaluate(() => {
+    const esc = window.__almDedupUtil.csvEscape;
+    return {
+      comma: esc('Smith, J. and Doe, A.'),         // → quoted
+      quote: esc('A "landmark" trial'),             // → quoted, inner "" doubled
+      plain: esc('Heart failure trial'),            // → unquoted
+      formulaEq: esc('=cmd|calc'),                  // → '=... (neutralized)
+      formulaPlus: esc('+1 (additional)'),          // → '+...
+      formulaAt: esc('@SUM(A1:A9)'),                // → '@...
+      minusKept: esc('-2.5 mmHg change'),           // leading minus NOT prefixed
+      crQuoted: esc('line1\rline2'),                // CR must trigger quoting
+      nul: esc(null),                               // → ''
+    };
+  });
+  console.log('  csv:', JSON.stringify(r));
+
+  expect(r.comma, 'comma field is quoted').toBe('"Smith, J. and Doe, A."');
+  expect(r.quote, 'embedded quotes are doubled + field quoted').toBe('"A ""landmark"" trial"');
+  expect(r.plain, 'plain field is left bare').toBe('Heart failure trial');
+  expect(r.formulaEq, 'leading = is neutralized with a quote-prefix').toBe("'=cmd|calc");
+  expect(r.formulaPlus, 'leading + is neutralized').toBe("'+1 (additional)");
+  expect(r.formulaAt, 'leading @ is neutralized').toBe("'@SUM(A1:A9)");
+  expect(r.minusKept, 'leading minus is preserved (legitimate negative numbers)').toBe('-2.5 mmHg change');
+  expect(r.crQuoted, 'a bare CR forces quoting').toBe('"line1\rline2"');
+  expect(r.nul, 'null → empty string').toBe('');
+  expect(errors, 'no console errors').toEqual([]);
+});

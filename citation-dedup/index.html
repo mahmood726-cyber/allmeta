@@ -412,8 +412,15 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-labe
 
     function csvEscape(s) {
       if (s == null) return "";
-      const str = String(s);
-      return /[,"\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      let str = String(s);
+      // CSV formula-injection guard: citation titles/authors/journals are free
+      // text from external databases and this CSV is meant for spreadsheet
+      // re-import. A field starting with = + @ TAB or CR is evaluated as a
+      // formula by Excel/Sheets, so neutralize it with a leading apostrophe.
+      // Deliberately NOT '-': a legitimate leading minus (e.g. a numeric value)
+      // must not be mangled.
+      if (/^[=+@\t\r]/.test(str)) str = "'" + str;
+      return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
     }
 
     document.getElementById("btn-export-clean").addEventListener("click", () => {
@@ -467,6 +474,7 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-labe
     window.__almDedupUtil = {
       normTitle: normTitle,
       normDOI: normDOI,
+      csvEscape: csvEscape,
       jaccardTitles: (t1, t2) =>
         jaccard(trigrams(normTitle(t1)), trigrams(normTitle(t2))),
     };
