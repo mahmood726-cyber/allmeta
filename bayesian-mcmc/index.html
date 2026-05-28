@@ -293,12 +293,23 @@
         const rTau = chainsN > 1 ? rhat(chains.map(c => c.tau)) : NaN;
         const essMu = ess(muAll);
         const essTau = ess(tauAll);
+        // Convergence gate (advanced-stats: Rhat>1.01 → do not interpret; ESS<400 → unreliable CrI).
+        const RHAT_MAX = 1.01, ESS_MIN = 400;
+        const rhatBad = (Number.isFinite(rMu) && rMu > RHAT_MAX) || (Number.isFinite(rTau) && rTau > RHAT_MAX);
+        const essBad = essMu < ESS_MIN || essTau < ESS_MIN;
+        const singleChain = chainsN < 2;
+        const cell = (txt, bad) => bad
+          ? `<td style="color:#dc2626;font-weight:700" title="Outside the trustworthy range">${txt} &#9888;</td>`
+          : `<td>${txt}</td>`;
+        let convWarn = "";
+        if (singleChain) convWarn = "R-hat needs ≥2 chains to assess convergence — set Chains ≥ 2.";
+        else if (rhatBad || essBad) convWarn = "Not converged: R-hat > 1.01 or ESS < 400 — do NOT interpret these credible intervals. Increase iterations and/or chains.";
         const predSamples = muAll.map((m, i) => m + predRng.norm(0, tauAll[i]));
         const sPred = summary(predSamples);
 
         const html = [
-          `<tr><td><code>μ</code></td><td>${fmt(sMu.mean)}</td><td>${fmt(sMu.sd)}</td><td>[${fmt(sMu.lo)}, ${fmt(sMu.hi)}]</td><td>${fmt(rMu, 3)}</td><td>${Math.round(essMu)}</td></tr>`,
-          `<tr><td><code>τ</code></td><td>${fmt(sTau.mean)}</td><td>${fmt(sTau.sd)}</td><td>[${fmt(sTau.lo)}, ${fmt(sTau.hi)}]</td><td>${fmt(rTau, 3)}</td><td>${Math.round(essTau)}</td></tr>`,
+          `<tr><td><code>μ</code></td><td>${fmt(sMu.mean)}</td><td>${fmt(sMu.sd)}</td><td>[${fmt(sMu.lo)}, ${fmt(sMu.hi)}]</td>` + cell(fmt(rMu, 3), Number.isFinite(rMu) && rMu > RHAT_MAX) + cell(Math.round(essMu), essMu < ESS_MIN) + `</tr>`,
+          `<tr><td><code>τ</code></td><td>${fmt(sTau.mean)}</td><td>${fmt(sTau.sd)}</td><td>[${fmt(sTau.lo)}, ${fmt(sTau.hi)}]</td>` + cell(fmt(rTau, 3), Number.isFinite(rTau) && rTau > RHAT_MAX) + cell(Math.round(essTau), essTau < ESS_MIN) + `</tr>`,
           `<tr><td><code>predictive</code></td><td>${fmt(sPred.mean)}</td><td>${fmt(sPred.sd)}</td><td>[${fmt(sPred.lo)}, ${fmt(sPred.hi)}]</td><td>—</td><td>—</td></tr>`,
         ].join("");
         document.getElementById("body").innerHTML = html;
@@ -307,7 +318,12 @@
         drawDensity("tau-density", tauAll, "τ posterior");
         drawTrace(chains.map(c => c.mu));
 
-        status.textContent = `Done. ${chainsN} chain(s) × ${iter} iter. Acceptance ≈ ${(chains[0].acceptance * 100).toFixed(0)}%.`;
+        const doneMsg = `Done. ${chainsN} chain(s) × ${iter} iter. Acceptance ≈ ${(chains[0].acceptance * 100).toFixed(0)}%.`;
+        if (convWarn) {
+          status.innerHTML = `<span style="color:#dc2626;font-weight:700">&#9888; ${convWarn}</span> <span style="opacity:.7">${doneMsg}</span>`;
+        } else {
+          status.textContent = doneMsg;
+        }
       } finally {
         btnRun.disabled = false;
         if (resultsPanel) resultsPanel.removeAttribute("aria-busy");
