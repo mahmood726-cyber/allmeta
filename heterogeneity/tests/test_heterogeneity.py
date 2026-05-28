@@ -62,11 +62,14 @@ def test_dl_gated_for_k_lt_10():
     text = INDEX.read_text(encoding="utf-8")
     assert "k >= 10" in text or "k ≥ 10" in text or "k >= 10" in text
 
-def test_prediction_interval_uses_k_minus_2():
-    """advanced-stats.md: PI uses t_{k-2}, not t_{k-1}; undefined for k<3."""
+def test_prediction_interval_uses_k_minus_1():
+    """advanced-stats.md (resolved 2026-05-25): the 95% PI uses t_{k-1} per the
+    Cochrane Handbook v6.5 (matches metafor predict v4+); the older IntHout-2016
+    t_{k-2} is superseded. Defined for k>=2 (undefined for k<2)."""
     text = INDEX.read_text(encoding="utf-8")
-    assert "tQuantile975(k-2)" in text
-    assert "k >= 3" in text or "k < 3" in text
+    assert "tQuantile975(k-1)" in text
+    assert "tQuantile975(k-2)" not in text
+    assert "k >= 2" in text or "k < 2" in text
 
 def test_numerical_helpers_present():
     text = INDEX.read_text(encoding="utf-8")

@@ -174,3 +174,53 @@ test('ma-pooled bus: multiple pushes queue, re-push by label replaces, GRADE loa
 
   expect(errors, 'no console errors').toEqual([]);
 });
+
+test('ma-pooled bus: Heterogeneity (export-scale=ratio) → GRADE carries the HKSJ pooled effect', async ({ page }) => {
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  await page.goto(BASE + '/heterogeneity/index.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof window._almLastFE === 'function' && window.MaPooled && document.getElementById('btn-push-grade'), { timeout: 10000 });
+
+  const produced = await page.evaluate(() => {
+    window.MaPooled.clear();
+    const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+    set('f-data', 'A, -0.16, 0.10\nB, -0.22, 0.12\nC, -0.10, 0.15'); // logOR
+    set('f-grade-scale', 'ratio');
+    set('f-grade-outcome', 'All-cause mortality');
+    document.getElementById('btn-push-grade').click();
+    const sum = window._almLastFE().sum;
+    const env = JSON.parse(localStorage.getItem('ma-pooled-v1') || 'null');
+    return { sum: sum && { mu: sum.mu, lo: sum.ciLoHKSJ, hi: sum.ciHiHKSJ, k: sum.k }, stored: env && env.results && env.results[0] };
+  });
+
+  expect(produced.sum, 'heterogeneity computed an HKSJ pool').toBeTruthy();
+  expect(produced.stored).toBeTruthy();
+  expect(produced.stored.scale).toBe('ratio');
+  expect(produced.stored.label).toBe('All-cause mortality');
+  expect(produced.stored.model).toBe('random');
+  // Carries the HKSJ CI, exp-back-transformed (not the Wald CI).
+  expect(produced.stored.pointEstimate).toBeCloseTo(Math.exp(produced.sum.mu), 6);
+  expect(produced.stored.ciLo).toBeCloseTo(Math.exp(produced.sum.lo), 6);
+  expect(produced.stored.ciHi).toBeCloseTo(Math.exp(produced.sum.hi), 6);
+
+  await page.goto(BASE + '/grade-sof/index.html', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.MaPooled && document.getElementById('btn-load-pooled'), { timeout: 10000 });
+  const loaded = await page.evaluate(() => {
+    document.getElementById('btn-load-pooled').click();
+    const rows = document.querySelectorAll('#outcomes-wrap .outcome-row');
+    const last = rows[rows.length - 1];
+    const f = n => { const el = last.querySelector('[data-field="' + n + '"]'); return el ? el.value : null; };
+    return { outcome: f('outcome'), effectType: f('effectType'), effect: f('effect'), ciLo: f('ciLo'), ciHi: f('ciHi'), studies: f('studies') };
+  });
+
+  expect(loaded.outcome).toBe('All-cause mortality');
+  expect(loaded.effectType).toBe('RR');
+  expect(loaded.studies).toBe('3');
+  expect(parseFloat(loaded.effect)).toBeCloseTo(produced.stored.pointEstimate, 3);
+  expect(parseFloat(loaded.ciLo)).toBeCloseTo(produced.stored.ciLo, 3);
+  expect(parseFloat(loaded.ciHi)).toBeCloseTo(produced.stored.ciHi, 3);
+
+  expect(errors, 'no console errors').toEqual([]);
+});
