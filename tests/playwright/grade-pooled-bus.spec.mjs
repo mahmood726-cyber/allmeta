@@ -366,6 +366,7 @@ test('ma-pooled bus: GRADE "Load pooled" button shows the queued-outcome count',
 for (const cfg of [
   { name: 'cumulative-subgroup', path: '/cumulative-subgroup/index.html', hook: '_almLastCumSub', pick: 'r && (r.view === "subgroup" ? {mu:r.overall_mu, lo:r.overall_lo, hi:r.overall_hi, k:r.k} : r.view === "cumulative" ? {mu:r.mu_final, lo:r.lo_final, hi:r.hi_final, k:r.k} : null)' },
   { name: 'multilevel-ma', path: '/multilevel-ma/index.html', hook: '_almLastMlma', pick: 'r && (typeof r.mu === "number" ? { mu: r.mu, lo: r.ci_lb_z, hi: r.ci_ub_z, k: r.k } : null)' },
+  { name: 'bayesian-ma', path: '/bayesian-ma/index.html', hook: '_almLastBayes', pick: 'r && (typeof r.mu === "number" ? { mu: r.mu, lo: r.lo, hi: r.hi, k: r.k } : null)' },
 ]) {
   test(`ma-pooled bus: ${cfg.name} (via GradePush helper) → GRADE`, async ({ page }) => {
     const errors = [];

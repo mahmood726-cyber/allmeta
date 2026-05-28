@@ -162,6 +162,7 @@
         <button type="button" id="btn-reset">Reset</button>
         <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
       </div>
+      <div id="alm-grade-push" class="actions" style="margin-top:0.5rem;"></div>
     </section>
 
     <section class="panel preview-wrap" aria-label="Preview">
@@ -176,6 +177,8 @@
 
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-pooled-v1.js"></script>
+  <script src="../shared/grade-push.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -388,6 +391,8 @@
       return { tau2: tau2PM(studies), label: "PM (empirical Bayes)" };
     }
 
+    var _lastPost = null;
+    window._almLastBayes = function () { return _lastPost; };
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
@@ -403,6 +408,7 @@
       let svg = "";
       if (parsed.studies.length && isFinite(mu0) && isFinite(tau0) && tau0 > 0) {
         const post = posterior(parsed.studies, mu0, tau0, t.tau2);
+        _lastPost = { mu: post.mu, lo: post.lo, hi: post.hi, k: parsed.studies.length };
         parts.push(statCard("Posterior mean", fmt(post.mu, 3)));
         parts.push(statCard("95% CrI (τ²-conditional)", "[" + fmt(post.lo, 3) + ", " + fmt(post.hi, 3) + "]"));
         if (parsed.studies.length < 10 && t.tau2 > 0) {
@@ -420,6 +426,7 @@
         }
         svg = buildSvg(state, parsed.studies, post, mu0, tau0);
       } else {
+        _lastPost = null;
         svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need studies and a valid prior (τ₀ > 0).</text></svg>";
       }
 
@@ -653,6 +660,23 @@
     }
   });
 })();
+</script>
+<script>
+  (function () {
+    function init() {
+      if (!window.GradePush || !window.MaPooled) return;
+      GradePush.attach({
+        mount: "alm-grade-push", defaultScale: "linear",
+        getPooled: function () {
+          // Bayesian posterior mean + 95% credible interval (normal-normal).
+          var p = window._almLastBayes && window._almLastBayes();
+          return p && typeof p.mu === "number" ? { mu: p.mu, lo: p.lo, hi: p.hi, k: p.k, model: "random" } : null;
+        },
+      });
+    }
+    if (document.readyState !== "loading") init();
+    else document.addEventListener("DOMContentLoaded", init);
+  })();
 </script>
 </body>
 </html>
