@@ -86,17 +86,17 @@
       <label>
         <span>p-values — one per line (one-sided or two-sided significant, &lt;0.05)</span>
         <textarea id="src" aria-label="Input">0.001
-0.004
-0.012
-0.027
-0.041
+0.003
+0.002
 0.008
-0.019
-0.032
-0.045
+0.012
+0.004
+0.006
+0.001
+0.017
+0.005
 0.009
-0.022
-0.037</textarea>
+0.002</textarea>
         <span class="hint">Only statistically significant p-values are used (0 &lt; p &lt; 0.05). Non-significant inputs are dropped.</span>
       </label>
       <label>
@@ -201,7 +201,12 @@
         });
         const mean = ppd.reduce((s, v) => s + v, 0) / ppd.length;
         if (Math.abs(mean - 0.5) < 1e-4) break;
-        delta += 0.5 * (0.5 - mean);  // damped update
+        // The conditional-CDF transform above is DECREASING in delta, so to pull its
+        // mean down toward 0.5 we must INCREASE delta. The previous (0.5 - mean) sign
+        // pushed delta the wrong way and diverged (e.g. delta=-4.9 for right-skewed
+        // data that has a clear positive effect). Verified vs an R reference.
+        delta += 0.5 * (mean - 0.5);  // damped update
+        delta = Math.max(-10, Math.min(10, delta));  // guard against pathological divergence
         if (!Number.isFinite(delta)) { delta = 0; break; }
       }
 
