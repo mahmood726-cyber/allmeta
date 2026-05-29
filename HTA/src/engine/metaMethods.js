@@ -34,7 +34,7 @@ class MetaAnalysisMethods {
      * For meta-analyses with few studies, we recommend:
      * 1. Use DL with HKSJ adjustment instead of REML (better coverage)
      * 2. Use t-distribution for CIs (more conservative)
-     * 3. Report prediction intervals with t(k-2) distribution
+     * 3. Report prediction intervals with t(k-1) distribution (Cochrane v6.5)
      *
      * Reference: IntHout et al. (2014) "The Hartung-Knapp-Sidik-Jonkman method
      *            for random effects meta-analysis is straightforward and
@@ -167,24 +167,25 @@ class MetaAnalysisMethods {
         // - Uses normal approximation (z = 1.96) when:
         //   k >= 10 and neither HKSJ nor explicit t-distribution requested
         //
-        // RATIONALE: IntHout et al. (2016) showed that t(k-2) provides
-        // better coverage for prediction intervals, especially when k < 10.
+        // RATIONALE: t(k-1) per Cochrane Handbook v6.5 (matches metafor::predict
+        // v4+, verified to ~1e-5). The earlier IntHout-2016 t(k-2) is superseded —
+        // it gives a PI ~3x too wide at k=3 and is undefined at k=2.
         // The normal approximation is acceptable for larger meta-analyses.
         //
-        // FORMULA: PI = θ̂ ± t_{1-α/2,k-2} × √(SE² + τ²)
+        // FORMULA: PI = θ̂ ± t_{1-α/2,k-1} × √(SE² + τ²)
         let predictionInterval = null;
-        if (this.options.predictionInterval && n > 2) {
+        if (this.options.predictionInterval && n > 1) {
             const predSE = Math.sqrt(seRE ** 2 + tauSq);
             // Use t-distribution for HKSJ or when explicitly requested
             // Otherwise use normal (z) for standard RE model
             const useT = this.options.useHKSJ || this.options.predictionUseT || n < 10;
             const critValue = useT ?
-                this.tQuantile(1 - this.options.alpha / 2, n - 2) :
+                this.tQuantile(1 - this.options.alpha / 2, n - 1) :
                 this.normalQuantile(1 - this.options.alpha / 2);
             predictionInterval = {
                 lower: thetaRE - critValue * predSE,
                 upper: thetaRE + critValue * predSE,
-                method: useT ? `t-distribution (df=${n-2})` : 'normal approximation'
+                method: useT ? `t-distribution (df=${n-1})` : 'normal approximation'
             };
         }
 

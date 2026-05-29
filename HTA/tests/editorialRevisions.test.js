@@ -95,7 +95,7 @@ describe('HKSJMetaAnalysis', () => {
         expect(result.I2).toBe(0);
         expect(result.Q).toBe(0);
         expect(result.predictionInterval.lower).toBeNull();
-        expect(result.predictionInterval.message).toContain('3 studies');
+        expect(result.predictionInterval.message).toContain('2 studies');
     });
 
     // --- HKSJ variance inflation ---
@@ -163,23 +163,24 @@ describe('HKSJMetaAnalysis', () => {
         expect(piWidth).toBeGreaterThan(ciWidth);
     });
 
-    test('prediction interval uses t-distribution with k-2 df', () => {
+    test('prediction interval uses t-distribution with k-1 df (Cochrane v6.5)', () => {
         const hksj = new HKSJMetaAnalysis();
         const result = hksj.analyze(FIVE_STUDIES.effects, FIVE_STUDIES.variances);
 
-        expect(result.predictionInterval.df).toBe(3); // 5 - 2
+        expect(result.predictionInterval.df).toBe(4); // 5 - 1 (Cochrane v6.5; was k-2)
         expect(result.predictionInterval.lower).toBeDefined();
         expect(result.predictionInterval.upper).toBeDefined();
         expect(result.predictionInterval.se).toBeGreaterThan(0);
     });
 
-    test('prediction interval requires >= 3 studies', () => {
+    test('prediction interval is defined at k=2 (Cochrane v6.5, df=k-1=1)', () => {
         const hksj = new HKSJMetaAnalysis();
         const result = hksj.analyze([0.5, 0.3], [0.04, 0.09]);
 
-        expect(result.predictionInterval.lower).toBeNull();
-        expect(result.predictionInterval.upper).toBeNull();
-        expect(result.predictionInterval.message).toContain('3 studies');
+        // Under t_{k-1} the PI is defined for k>=2 (the old t_{k-2} was undefined at k=2).
+        expect(result.predictionInterval.lower).not.toBeNull();
+        expect(result.predictionInterval.upper).not.toBeNull();
+        expect(result.predictionInterval.df).toBe(1);
     });
 
     test('prediction interval includes tau2 in width calculation', () => {

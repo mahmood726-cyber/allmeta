@@ -121,19 +121,21 @@ class HKSJMetaAnalysis {
      * Reference: Riley et al. (2011) BMJ
      */
     _calculatePredictionInterval(theta, tau2, se, k) {
-        if (k < 3) {
-            return { lower: null, upper: null, message: 'Requires ≥3 studies' };
+        if (k < 2) {
+            return { lower: null, upper: null, message: 'Requires ≥2 studies' };
         }
 
-        // Prediction interval uses t-distribution with k-2 df
-        const tCrit = this._tQuantile(0.975, k - 2);
+        // Prediction interval uses t-distribution with k-1 df (Cochrane Handbook
+        // v6.5, matches metafor::predict v4+). The earlier IntHout-2016 t(k-2) is
+        // superseded — ~3x too wide at k=3 and undefined at k=2.
+        const tCrit = this._tQuantile(0.975, k - 1);
         const predSE = Math.sqrt(se * se + tau2);
 
         return {
             lower: theta - tCrit * predSE,
             upper: theta + tCrit * predSE,
             se: predSE,
-            df: k - 2
+            df: k - 1
         };
     }
 
@@ -258,7 +260,7 @@ class HKSJMetaAnalysis {
             I2CI: { lower: 0, upper: 0 },
             Q: 0,
             k: 1,
-            predictionInterval: { lower: null, upper: null, message: 'Requires ≥3 studies' }
+            predictionInterval: { lower: null, upper: null, message: 'Requires ≥2 studies' }
         };
     }
 
