@@ -1071,7 +1071,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Q, I\u00b2, \u03c4\u00b2 under DL (k\u226510) / REML / PM, 95% prediction interval via t_{k-2}, Baujat diagnostic plot, and leave-one-out influence.",
+    summary: "Q, I\u00b2 (with Q-profile CI), \u03c4\u00b2 under DL (k\u226510) / REML / PM, 95% prediction interval via t_{k-1}, Baujat diagnostic plot, and leave-one-out influence.",
     note: "Follows advanced-stats.md gates (no DL for k<10). SVG / PNG / JSON export.",
     tags: ["heterogeneity", "baujat", "prediction-interval"]
   },

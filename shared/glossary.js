@@ -39,7 +39,7 @@
     "tau-squared": "Between-study variance under a random-effects model. The actual scale of heterogeneity.",
     "τ²": "See tau-squared.",
     "Cochran Q": "Chi-square statistic for heterogeneity. Underpowered with few studies; do not interpret p>0.10 as 'no heterogeneity'.",
-    "prediction interval": "Range of true effects expected in 95% of future studies: μ ± t_{k-2}·√(SE² + τ²). Undefined for k<3.",
+    "prediction interval": "Range of true effects expected in 95% of future studies: μ ± t_{k-1}·√(SE² + τ²) (Cochrane Handbook v6.5; matches metafor::predict). Undefined for k<2.",
     "PI": "Prediction interval — see entry.",
     // Bias
     "Egger test": "Regression test for funnel-plot asymmetry. Low power for k<10. Use Peters' test for binary outcomes.",
