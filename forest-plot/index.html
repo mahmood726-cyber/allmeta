@@ -165,7 +165,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     </section>
   </main>
 
-  <p class="footer-note">Pooling: fixed-effect (inverse-variance) and random-effects (Paule-Mandel τ² + Hartung-Knapp-Sidik-Jonkman SE correction with floor q* ≥ 1, per Cochrane Handbook §10.10.4). The dashed band is the 95% prediction interval (μ ± t<sub>k−2</sub> × √(SE<sub>HKSJ</sub><sup>2</sup> + τ<sup>2</sup>); IntHout 2016, Higgins 2009; undefined for k&lt;3). Computed client-side; no data leaves the browser.</p>
+  <p class="footer-note">Pooling: fixed-effect (inverse-variance) and random-effects (Paule-Mandel τ² + Hartung-Knapp-Sidik-Jonkman SE correction with floor q* ≥ 1, per Cochrane Handbook §10.10.4). The dashed band is the 95% prediction interval (μ ± t<sub>k−1</sub> × √(SE<sub>HKSJ</sub><sup>2</sup> + τ<sup>2</sup>) per Cochrane Handbook v6.5, matches <code>metafor::predict</code>; undefined for k&lt;2). Computed client-side; no data leaves the browser.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -280,10 +280,10 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     // floor at 1 (per advanced-stats.md) prevents HKSJ from NARROWING the CI
     // when Q < k-1.
     //
-    // PI rationale (IntHout 2016, Higgins et al. 2009): the prediction interval
-    // tells the reader where the *next* study's true effect is likely to fall —
-    // the most-asked clinical question. We use t_{k-2} not t_{k-1} per the
-    // current Cochrane Handbook guidance. Undefined for k<3.
+    // PI rationale (Higgins et al. 2009): the prediction interval tells the reader
+    // where the *next* study's true effect is likely to fall — the most-asked
+    // clinical question. We use t_{k-1} per Cochrane Handbook v6.5 (matches metafor
+    // predict v4+); the older IntHout-2016 t_{k-2} is superseded. Defined for k>=2.
     function poolRE_PM(studies) {
       const k = studies.length;
       if (k < 2) return null;
@@ -327,10 +327,13 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       const qFloored = Math.max(1, qStar);
       const seHKSJ = seBase * Math.sqrt(qFloored);
 
-      // Prediction interval: μ ± t_{k-2} · sqrt(seHKSJ² + τ²). Undefined for k<3.
+      // Prediction interval: μ ± t_{k-1} · sqrt(seHKSJ² + τ²). Uses t_{k-1} per
+      // Cochrane Handbook v6.5 (matches metafor predict v4+, verified to 1e-5);
+      // the older IntHout-2016 t_{k-2} is superseded and gives a PI ~3x too wide
+      // at k=3 (see advanced-stats.md + heterogeneity app). Defined for k>=2.
       let piLo = NaN, piHi = NaN;
-      if (k >= 3) {
-        const tPI = tQuantile975(k - 2);
+      if (k >= 2) {
+        const tPI = tQuantile975(k - 1);
         const sePI = Math.sqrt(seHKSJ * seHKSJ + tau2);
         piLo = fin.mu - tPI * sePI;
         piHi = fin.mu + tPI * sePI;
@@ -505,7 +508,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         if (re) {
           diamond(re.mu, re.lo, re.hi, diamondY + 18, "#2c5e8a", "RE (HKSJ)");
           // Prediction interval — dashed line with end-caps below the RE diamond.
-          // Cochrane Handbook v6.5: PI uses t_{k-2}; undefined for k<3.
+          // Cochrane Handbook v6.5: PI uses t_{k-1}; undefined for k<2.
           if (isFinite(re.piLo) && isFinite(re.piHi)) {
             const piY = diamondY + 32;
             const xLo = x(re.piLo), xHi = x(re.piHi);
@@ -557,7 +560,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         if (isFinite(re.piLo) && isFinite(re.piHi)) {
           parts.push(statCard("95% PI", "[" + fmt(re.piLo) + ", " + fmt(re.piHi) + "]"));
         } else {
-          parts.push(statCard("95% PI", "n/a (k<3)"));
+          parts.push(statCard("95% PI", "n/a (k<2)"));
         }
         parts.push(statCard("I\u00b2", fmt(re.I2, 1) + "%"));
         parts.push(statCard("\u03c4\u00b2", fmt(re.tau2, 4)));
