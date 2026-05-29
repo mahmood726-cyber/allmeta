@@ -107,7 +107,7 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
 </main>
 
   <footer>
-    Engine: <code>shared/multi-outcome-ma.js</code> (bivariate REML via Riley 2007 iteration; coarse-grid + coordinate-descent refinement on the 3-parameter τ₁/τ₂/ρ_between space). Studies with one missing outcome enter via the marginal sub-vector — they still contribute to the pooled estimate of the observed outcome AND to the joint covariance estimate through ρ_between. Roadmap: K ≥ 3, network multi-outcome (Achana 2014 §3.2).
+    Engine: <code>shared/multi-outcome-ma.js</code> (bivariate REML via Riley 2007 iteration; coarse-grid + coordinate-descent refinement on the 3-parameter τ₁/τ₂/ρ_between space). Studies with one missing outcome enter via the marginal sub-vector — they still contribute to the pooled estimate of the observed outcome AND to the joint covariance estimate through ρ_between. Pooled estimates, SEs and Σ_RE reproduce <code>metafor::rma.mv(struct="UN")</code> to ~1e-5 when ρ_between is identified (verified — <code>hub/shared/tests/multi-outcome-ma-parity.spec.mjs</code>); near the ρ_between=±1 boundary the grid can under-estimate the between-study τ by a few percent (the point estimates remain accurate). Roadmap: K ≥ 3, network multi-outcome (Achana 2014 §3.2).
   </footer>
 
   <script>
