@@ -67,9 +67,16 @@
     return function (tau2) {
       if (tau2 < 0) return 0;
       var tau = Math.sqrt(tau2);
+      // Same τ=0 guard as halfNormal/halfCauchy: the τ²-scale density has an
+      // integrable 1/(2τ) singularity at τ=0; return 0 at that node (dropping a
+      // single grid point is harmless on a fine grid). WITHOUT this guard the
+      // Math.max(tau,1e-12) fallback returned ~5e10 at the τ²=0 node, which
+      // dominated the marginal-likelihood integral and gave the uniform prior a
+      // spuriously huge BMA weight (≈1), defeating the model averaging.
+      if (tau === 0) return 0;
       if (tau > upper) return 0;
-      // p_tau = 1/upper → p_{tau²} via Jacobian
-      return (1 / upper) / (2 * Math.max(tau, 1e-12));
+      // p_tau = 1/upper → p_{tau²} via Jacobian 1/(2τ)
+      return (1 / upper) / (2 * tau);
     };
   }
   function _lgamma(x) {
