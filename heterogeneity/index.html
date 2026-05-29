@@ -172,7 +172,7 @@
 </section>
   </main>
 
-  <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> estimators per <abbr data-gloss="DL">DerSimonian</abbr> &amp; Laird (1986), Paule &amp; Mandel (1982), <abbr data-gloss="REML">REML</abbr> (Viechtbauer 2005). <abbr data-gloss="HKSJ">HKSJ</abbr> correction applied to RE pooled CI. <abbr data-gloss="I2">I²</abbr> via Q-statistic; 95% <abbr data-gloss="PI">PI</abbr> uses t<sub>k-1</sub> (Cochrane Handbook v6.5). Baujat after Baujat et&nbsp;al. (2002).</p>
+  <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> estimators per <abbr data-gloss="DL">DerSimonian</abbr> &amp; Laird (1986), Paule &amp; Mandel (1982), <abbr data-gloss="REML">REML</abbr> (Viechtbauer 2005). <abbr data-gloss="HKSJ">HKSJ</abbr> correction applied to RE pooled CI. <abbr data-gloss="I2">I²</abbr> via Q-statistic with 95% Q-profile CI (Viechtbauer 2007; matches <code>metafor::confint</code>); 95% <abbr data-gloss="PI">PI</abbr> uses t<sub>k-1</sub> (Cochrane Handbook v6.5). Baujat after Baujat et&nbsp;al. (2002).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -378,6 +378,43 @@
       if (x<=0) return 0;
       return lowerIncGamma(df/2, x/2);
     }
+    // Inverse χ² CDF (quantile) via bisection on chiSqCDF. Robust; no closed form.
+    function chiSqQuantile(p,df) {
+      if (df <= 0) return NaN;
+      let lo = 0, hi = df + 10*Math.sqrt(2*df) + 10, guard = 0;
+      while (chiSqCDF(hi, df) < p && guard++ < 100) hi *= 2;
+      for (let i=0;i<200;i++) { const m=(lo+hi)/2; if (chiSqCDF(m,df) < p) lo=m; else hi=m; }
+      return (lo+hi)/2;
+    }
+    // Q-profile confidence interval for τ² and I² (Viechtbauer 2007; the method
+    // metafor::confint.rma.uni uses, and what advanced-stats.md prescribes for small k).
+    // Solves the generalised Q-statistic Q_gen(τ²)=Σ wᵢ(τ²)(yᵢ−μ̂(τ²))² — monotone
+    // decreasing in τ² — against the χ²_{k−1} quantiles; then maps the τ² bounds to I²
+    // via the Higgins-Thompson typical within-study variance s². Verified vs metafor to
+    // within metafor's own uniroot tolerance (~1e-4 on τ²); see tests/test_qprofile_ci.py.
+    function qProfileCI(studies) {
+      const k = studies.length, df = k - 1;
+      if (df < 1) return null;
+      const w0 = studies.map(s => 1/s.v);
+      const sw0 = w0.reduce((a,b)=>a+b,0);
+      const sw0sq = w0.reduce((a,b)=>a+b*b,0);
+      const s2 = (k-1)*sw0 / (sw0*sw0 - sw0sq); // typical within-study variance
+      const Q = t2 => weightedSums(studies, t2).Q;
+      const Q0 = Q(0);
+      const qLo = chiSqQuantile(0.025, df); // small target → large τ² (upper bound)
+      const qHi = chiSqQuantile(0.975, df); // large target → small τ² (lower bound)
+      function solve(target) {
+        if (Q0 <= target) return 0;            // Q already below the quantile at τ²=0
+        let lo = 0, hi = 1, guard = 0;
+        while (Q(hi) > target && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
+        for (let i=0;i<200;i++) { const m=(lo+hi)/2; if (Q(m) > target) lo=m; else hi=m; }
+        return (lo+hi)/2;
+      }
+      const tau2Hi = solve(qLo), tau2Lo = solve(qHi);
+      const i2 = t => (t+s2) > 0 ? 100*t/(t+s2) : 0;
+      return { tau2Lo, tau2Hi, I2Lo: i2(tau2Lo), I2Hi: i2(tau2Hi), s2 };
+    }
+    window.__almQProfileCI = qProfileCI; // exposed for R-parity tests
 
     function escapeXml(s) {
       return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
@@ -485,10 +522,17 @@
         piHi = sum.mu + piT*piSE;
       }
 
+      // Q-profile 95% CI for I² and τ² (Viechtbauer 2007). Distribution-free of the
+      // chosen point estimator — it profiles the generalised Q-statistic directly.
+      const qpci = qProfileCI(studies);
+
       const parts = [];
       parts.push(statCard("k", String(k)));
       parts.push(statCard("Q (df=" + sum.df + ")", fmt(sum.Q, 2) + "  p=" + fmt(sum.pQ, 3)));
-      parts.push(statCard("I²", fmt(sum.I2, 1) + "%"));
+      parts.push(statCard("I²", fmt(sum.I2, 1) + "%" +
+        (qpci ? " [" + fmt(qpci.I2Lo, 1) + ", " + fmt(qpci.I2Hi, 1) + "]" : "")));
+      if (qpci) parts.push(statCard("τ² 95% CI (Q-profile)",
+        "[" + fmt(qpci.tau2Lo, 4) + ", " + fmt(qpci.tau2Hi, 4) + "]"));
       parts.push(statCard("τ² (PM)", fmt(tauEstimates.pm, 4)));
       parts.push(statCard("τ² (REML)", fmt(tauEstimates.reml, 4)));
       parts.push(statCard("τ² (DL)", tauEstimates.dl == null ? "k<10 (skipped)" : fmt(tauEstimates.dl, 4)));
@@ -746,6 +790,15 @@
         out.Q_p = s.pQ;
         out.I2 = s.I2;
         out.tau2 = s.tau2;
+      }
+      if (studies.length >= 2 && window.__almQProfileCI) {
+        var qp = window.__almQProfileCI(studies);
+        if (qp) {
+          out.tau2_ci_lb = qp.tau2Lo;
+          out.tau2_ci_ub = qp.tau2Hi;
+          out.I2_ci_lb = qp.I2Lo;
+          out.I2_ci_ub = qp.I2Hi;
+        }
       }
       return out;
     };
