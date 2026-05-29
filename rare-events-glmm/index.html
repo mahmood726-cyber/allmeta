@@ -54,7 +54,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Rare-events GLMM</h1>
-    <p>Binomial-normal random-effects logistic model for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases odds-ratio pooling toward the null when events are rare. Uses 10-point Hermite-Gauss quadrature to integrate the random-effects intercept + damped Newton-Raphson on (θ, log τ). Equivalent to <code>metafor::rma.glmm(measure="OR", method="ML")</code> for the conditional approximation.</p>
+    <p>Binomial-normal random-effects logistic model for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases odds-ratio pooling toward the null when events are rare. Uses 10-point Hermite-Gauss quadrature to integrate the random-effects intercept + damped Newton-Raphson on (θ, log τ). The default UM.FS (unconditional) fit reproduces <code>metafor::rma.glmm(measure="OR", model="UM.FS", method="ML")</code> to ~1e-6.</p>
   </header>
   <main>
     <section class="panel">
@@ -76,10 +76,10 @@ Trial 8, 1, 210, 3, 215</textarea>
       <label style="margin-top:0.5rem">
         <span style="font-size:0.85rem">Model</span>
         <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
-          <option value="CM.AL" selected>CM.AL — conditional (fast; control-arm baseline profiled per study)</option>
-          <option value="UM.FS">UM.FS — unconditional (full likelihood; baselines profiled per study; slower)</option>
+          <option value="UM.FS" selected>UM.FS — unconditional, full likelihood (recommended; matches metafor)</option>
+          <option value="CM.AL">CM.AL — fast approximation (anticonservative CI — see note)</option>
         </select>
-        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS matches <code>metafor::rma.glmm(model="UM.FS")</code> within Hermite-quadrature precision (~1e-3 in θ). ~5-10× slower than CM.AL because each study's μ_i is profiled via golden-section search at every (θ, τ²) evaluation.</span>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS is the recommended path: it reproduces <code>metafor::rma.glmm(model="UM.FS")</code> for the point estimate, SE and 95% CI to ~1e-6 (verified — see <code>hub/shared/tests/rare-events-glmm-parity.spec.mjs</code>). CM.AL is a faster profiled approximation but its likelihood peaks more sharply in θ, so its CI is <strong>anticonservative</strong> (≈12% too narrow on the example) and does <strong>not</strong> reproduce metafor's conditional non-central-hypergeometric CI — use UM.FS (or metafor in R) for inference.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
@@ -99,7 +99,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rare-events-glmm.js</code> — 10-point Gauss-Hermite quadrature + damped Newton-Raphson. Conditional approximation (control-arm baseline profiled per study). For complex / multi-arm rare-event NMA, use <code>metafor::rma.glmm</code> in R for the full-likelihood unconditional fit.
+    Engine: <code>shared/rare-events-glmm.js</code> — 10-point Gauss-Hermite quadrature + damped Newton-Raphson. Default UM.FS = unconditional full likelihood (matches <code>metafor::rma.glmm(model="UM.FS")</code> to ~1e-6); CM.AL is a faster profiled approximation with anticonservative CIs. For complex / multi-arm rare-event NMA, use <code>metafor::rma.glmm</code> in R.
   </footer>
   <script>
   (function () {
@@ -167,7 +167,7 @@ Trial 8, 1, 210, 3, 215</textarea>
         return;
       }
       var modelEl = document.getElementById("f-model");
-      var model = modelEl ? modelEl.value : "CM.AL";
+      var model = modelEl ? modelEl.value : "UM.FS";
       var glmm = model === "UM.FS"
         ? AlmRareEventsGLMM.fitUnconditional(rows)
         : AlmRareEventsGLMM.fit(rows);
