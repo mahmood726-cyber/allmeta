@@ -78,7 +78,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Small-study-effect tests</h1>
-    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple. R-parity: Egger and Begg verified against <code>metafor::regtest()</code> and <code>metafor::ranktest()</code>; trim-and-fill is a faithful port of <code>metafor:::trimfill.rma.uni</code> (L0 estimator, REML side-detection regression, per-iteration REML trimmed-set estimate, REML augmented refit) &mdash; k0, adjusted estimate and its SE all match <code>metafor::trimfill(rma.uni(method='REML'))</code> to 1e-6.</p>
+    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple. R-parity: Egger and Begg verified against <code>metafor::regtest()</code> and <code>metafor::ranktest()</code>; Peters and Harbord verified against <code>meta::metabias()</code> (Peters t=-10.68, Harbord t=-7.43 on the test fixture). Thompson-Sharp here is the <em>multiplicative</em>-dispersion variant (<code>meta</code>'s is the additive variant); both are valid Thompson-Sharp forms. Trim-and-fill is a faithful port of <code>metafor:::trimfill.rma.uni</code> (L0 estimator, REML side-detection regression, per-iteration REML trimmed-set estimate, REML augmented refit) &mdash; k0, adjusted estimate and its SE all match <code>metafor::trimfill(rma.uni(method='REML'))</code> to 1e-6.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -461,12 +461,16 @@
 
     function petersTest(rows) {
       if (!rows[0] || !rows[0].total) return null;
-      // Peters: regress logOR on 1/(n1+n2), weighted by events-based precision
+      // Peters et al. (2006): regress logOR on 1/(n1+n2), weighted by the inverse
+      // variance of the average event probability — w = 1/(1/m_events + 1/m_nonevents)
+      // where m_events = e1+e2 and m_nonevents = (n1−e1)+(n2−e2). The slope tests
+      // asymmetry. Matches meta::metabias(method="Peters"). PRIOR BUG: used the
+      // inverse-variance-of-logOR weight (1/(1/a+1/b+1/c+1/d)) instead.
       var xs = rows.map(function (r) { return 1 / r.total; });
       var ys = rows.map(function (r) { return r.te; });
       var ws = rows.map(function (r) {
-        var e1 = r.e1, e2 = r.e2, n1 = r.n1, n2 = r.n2;
-        return 1 / (1 / e1 + 1 / (n1 - e1) + 1 / e2 + 1 / (n2 - e2));
+        var mEvents = r.e1 + r.e2, mNon = (r.n1 - r.e1) + (r.n2 - r.e2);
+        return 1 / (1 / mEvents + 1 / mNon);
       });
       var r = wls(xs, ys, ws);
       var z = r.b1 / r.seB1;
@@ -475,15 +479,21 @@
 
     function harbordTest(rows) {
       if (!rows[0] || !rows[0].total) return null;
-      // Harbord: Z_i = (a - E[a]) / sqrt(V), plotted against sqrt(V). Intercept test.
+      // Harbord et al. (2006): efficient score Z = a − E[a], information V.
+      // Egger's test on the score-scale estimate (effect = Z/V, se = 1/√V) ⇒
+      // regress (effect/se) = Z/√V on (1/se) = √V; the intercept tests asymmetry.
+      // Unweighted regression with multiplicative residual dispersion (matches
+      // meta::metabias(method="Harbord")). PRIOR BUG: divided the response by √V a
+      // SECOND time (regressed Z/V on √V), inflating the statistic ~57%.
       var stats = rows.map(function (r) {
         var a = r.e1, m1 = r.e1 + r.e2, m2 = (r.n1 - r.e1) + (r.n2 - r.e2), nn = r.n1 + r.n2;
         var expected = r.n1 * m1 / nn;
         var v = (r.n1 * r.n2 * m1 * m2) / (nn * nn * (nn - 1));
-        return { Z: (a - expected) / Math.sqrt(v), sqrtV: Math.sqrt(v) };
+        var score = a - expected;                      // efficient score Z
+        return { y: score / Math.sqrt(v), sqrtV: Math.sqrt(v) }; // Harbord response = Z/√V
       });
       var xs = stats.map(function (s) { return s.sqrtV; });
-      var ys = stats.map(function (s) { return s.Z / s.sqrtV; });
+      var ys = stats.map(function (s) { return s.y; });
       var ws = stats.map(function () { return 1; });
       var r = wls(xs, ys, ws);
       var z = r.b0 / r.seB0;
@@ -640,6 +650,11 @@
 
     // Expose for export
     window._almLastPubbias = function () { return _lastResults; };
+    // Expose the test engine for R-parity tests (parseBinary + each test).
+    window.__almPubBiasEngine = {
+      parseBinary: parseBinary, eggerGeneric: eggerGeneric, beggMazumdar: beggMazumdar,
+      petersTest: petersTest, harbordTest: harbordTest, thompsonSharp: thompsonSharp,
+    };
 
     // ---- events ----
     document.getElementById('btn-run').addEventListener('click', function () {
