@@ -58,9 +58,14 @@ def test_two_views_supported():
     assert 'value="cumulative"' in text
     assert 'value="subgroup"' in text
 def test_between_group_q_formula():
-    """Q_bw = Σ w_g·(μ_g − μ_all)² per Borenstein."""
+    """Q_bw = Σ w_g·(μ_g − M)², centred on the IV-weighted mean of subgroup
+    estimates M = Σ w_g μ_g / Σ w_g (Borenstein 2009 §19; meta::metagen Q.b.random),
+    NOT the all-studies pool. Numerical parity in hub/shared/tests/cumulative-subgroup-qb.spec.mjs."""
     text = INDEX.read_text(encoding="utf-8")
-    assert "Q_bw += w * (g.mu - overall.mu) * (g.mu - overall.mu)" in text
+    assert "Q_bw += w * (g.mu - M_bw) * (g.mu - M_bw)" in text
+    assert "M_bw = swM > 0 ? swMu / swM" in text
+    # The old bug centred on the all-studies pool — must be gone.
+    assert "(g.mu - overall.mu) * (g.mu - overall.mu)" not in text
 def test_chi_sq_cdf_for_pvalue():
     text = INDEX.read_text(encoding="utf-8")
     assert "function chiSqCDF" in text

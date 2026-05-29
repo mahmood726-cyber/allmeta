@@ -171,7 +171,7 @@
 </section>
   </main>
 
-  <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − μ_all)², df = G − 1. The overall μ used is the all-studies RE pool. I² of differences = max(0, 100·(Q − df)/Q).</p>
+  <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − M)², df = G − 1, where w_g = 1/SE(μ_g)² and the centre M = Σ w_g μ_g / Σ w_g is the inverse-variance-weighted mean of the subgroup estimates (matches <code>meta::metagen</code> Q.b.random). I² of differences = max(0, 100·(Q − df)/Q).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -290,20 +290,32 @@
         const p = pool(subset);
         return { name: g, k: subset.length, ...p };
       });
-      // Overall pool
+      // Overall pool (reported as the headline pooled estimate).
       const overall = pool(studies);
-      // Between-group Q: weights are inverse of group-level SEs
+      // Between-group Q test (Borenstein 2009 §19; meta::metagen Q.b.random):
+      // Q_bw = Σ w_g (μ_g − M)², w_g = 1/SE(μ_g)², where the centre M is the
+      // INVERSE-VARIANCE-WEIGHTED MEAN OF THE SUBGROUP ESTIMATES, M = Σ w_g μ_g / Σ w_g
+      // — NOT the all-studies pooled effect. (Using the all-studies pool as the centre
+      // inflates Q_bw and overstates the difference; verified vs meta::metagen.)
+      let swM = 0, swMu = 0;
+      for (const g of groups) {
+        if (!g.se || !isFinite(g.se) || g.se <= 0) continue;
+        const w = 1 / (g.se * g.se);
+        swM += w; swMu += w * g.mu;
+      }
+      const M_bw = swM > 0 ? swMu / swM : overall.mu;
       let Q_bw = 0;
       for (const g of groups) {
         if (!g.se || !isFinite(g.se) || g.se <= 0) continue;
         const w = 1 / (g.se * g.se);
-        Q_bw += w * (g.mu - overall.mu) * (g.mu - overall.mu);
+        Q_bw += w * (g.mu - M_bw) * (g.mu - M_bw);
       }
       const df_bw = groups.length - 1;
       const I2_bw = df_bw > 0 ? Math.max(0, 100 * (Q_bw - df_bw) / Q_bw) : 0;
       const pQ = df_bw > 0 ? 1 - chiSqCDF(Q_bw, df_bw) : NaN;
-      return { groups, overall, Q_bw, df_bw, I2_bw, pQ };
+      return { groups, overall, M_bw, Q_bw, df_bw, I2_bw, pQ };
     }
+    window.__almSubgroup = subgroup; // exposed for R-parity tests
 
     // ---- Chi-square CDF (shared with heterogeneity app) ----
     function lnGamma(x) {
