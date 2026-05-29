@@ -121,9 +121,13 @@
   //     ci_lo, ci_hi, tau2, m_clusters, k_total }
   //
   // The cluster-robust sandwich uses the HTJ "Approximate Inverse"
-  // (CR0/CR1/CR2 family); we implement CR2 (the recommended default in
-  // clubSandwich), which corrects for finite-sample bias in the meat
-  // when clusters are unbalanced.
+  // (CR0/CR1/CR2 family); we implement CR1 (a single scalar correction —
+  // see below). NOTE: this is NOT CR2. The fully bias-corrected CR2 estimator
+  // (clubSandwich / robumeta small=TRUE) applies a per-cluster adjustment matrix
+  // and gives larger, better-calibrated SEs when the number of clusters m is
+  // small; CR1 here is anticonservative in that regime (verified: ~20-30% smaller
+  // SE than robumeta at m=5). Coefficients match robumeta to ~1e-7; SEs do not.
+  // CR2 is roadmapped. For few-cluster inference use robumeta/clubSandwich in R.
 
   function fitCORR(rows, opts) {
     opts = opts || {};

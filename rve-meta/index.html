@@ -55,7 +55,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Robust Variance Estimation (RVE)</h1>
-    <p>Cluster-robust sandwich estimator for meta-regression with dependent effect sizes (multiple outcomes per study, multi-arm trials, repeated measures). Implements the Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model with the CR1 small-sample correction. Coefficient SEs have correct coverage even when the within-cluster correlation ρ is misspecified — closes the inverse-variance underestimate that breaks fixed-effect / standard random-effects meta-regression when effects are nested.</p>
+    <p>Cluster-robust sandwich estimator for meta-regression with dependent effect sizes (multiple outcomes per study, multi-arm trials, repeated measures). Implements the Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model with a CR1 small-sample correction. The robustness is to <em>misspecification of the within-cluster correlation ρ</em> — it closes the inverse-variance underestimate that breaks fixed-effect / standard random-effects meta-regression when effects are nested. Coverage is good when the number of clusters is reasonably large; with <strong>few clusters (m≲20) the CR1 SEs are anticonservative</strong> — see the footer and use <code>robumeta</code>/<code>clubSandwich</code> (CR2) in R for inference there.</p>
   </header>
   <main>
     <section class="panel">
@@ -109,7 +109,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with CR1 small-sample correction. Knapp-Hartung-style t-quantiles via exact qt (Hill 1970). Calibration: matches <code>robumeta::robu(model="CORR")</code> coefficient estimates to ≤1e-6 and robust SEs to ≤5% (the residual gap is CR1 vs CR2; CR2 in clubSandwich is the more accurate but substantially heavier estimator and is roadmapped). The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
+    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with CR1 small-sample correction. Knapp-Hartung-style t-quantiles via exact qt (Hill 1970). Calibration: matches <code>robumeta::robu(model="CORR")</code> coefficient estimates to ~1e-7 (verified). The robust SEs use CR1, which is <strong>anticonservative when the number of clusters m is small</strong> — at m=5 they run ~20-30% below <code>robumeta</code>'s CR2; the gap shrinks as m grows. CR2 (the clubSandwich / <code>robumeta(small=TRUE)</code> per-cluster bias correction) is the accurate default and is roadmapped. <strong>For inference with few clusters (m≲20) use <code>robumeta</code>/<code>clubSandwich</code> in R.</strong> The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
   </footer>
 
   <script>
