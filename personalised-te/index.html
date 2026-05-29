@@ -87,7 +87,7 @@ S2, biomarker+, -0.70, 0.028</textarea>
 </section>
   </main>
   <footer>
-    Engine: <code>shared/personalised-te.js</code> — DL τ² within each subgroup + James-Stein / EB shrinkage across subgroups (Morris 1983 posterior variance). References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Brand & Kragh Andersen 1992 (Stat Med 11:1879-1894).
+    Engine: <code>shared/personalised-te.js</code> — DL τ² within each subgroup + James-Stein / EB shrinkage across subgroups (Morris 1983 posterior variance). The shrunk point estimates reproduce <code>metafor::blup</code> exactly (verified — <code>hub/shared/tests/personalised-te-parity.spec.mjs</code>); the reported SE is intentionally wider than metafor's plug-in <code>blup</code> SE because it adds the Morris-1983 τ²-uncertainty term. References: Kent et al. 2018 PATH Statement (Ann Intern Med 172:35-45); Brand & Kragh Andersen 1992 (Stat Med 11:1879-1894).
   </footer>
   <script>
   (function () {
