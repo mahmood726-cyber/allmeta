@@ -35,3 +35,28 @@ test('forest-plot 95% PI matches metafor::predict (t_{k-1})', async ({ page }) =
   expect(r.pi_lb).toBeGreaterThan(-0.85);
   expect(errors, 'no console errors').toEqual([]);
 });
+
+test('forest-plot Q-profile I²/τ² CI matches metafor::confint', async ({ page }) => {
+  // Heterogeneous k=8 set; metafor confint → I² CI [55.33, 95.52], τ² CI [0.0317, 0.5452].
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+
+  await page.goto(URL, { waitUntil: 'load' });
+  const r = await page.evaluate(() => {
+    const yi = [0.80, 0.20, 0.95, -0.10, 0.55, 0.70, 0.05, 0.40];
+    const vi = [0.02, 0.03, 0.015, 0.04, 0.025, 0.02, 0.05, 0.03];
+    window.__almLoad(yi.map((y, i) => ({ study: 'S' + i, yi: y, vi: vi[i] })));
+    return window.__almResults();
+  });
+  console.log('  forest-plot I² CI:', JSON.stringify({ I2: r.I2, I2ci: [r.I2_ci_lb, r.I2_ci_ub], tau2ci: [r.tau2_ci_lb, r.tau2_ci_ub] }));
+
+  expect(r.I2_ci_lb).toBeCloseTo(55.3285272, 1);
+  expect(r.I2_ci_ub).toBeCloseTo(95.5151118, 1);
+  expect(r.tau2_ci_lb).toBeCloseTo(0.031707203, 3);
+  expect(r.tau2_ci_ub).toBeCloseTo(0.545204664, 3);
+  // CI brackets the point estimate.
+  expect(r.I2_ci_lb).toBeLessThanOrEqual(r.I2 + 1e-6);
+  expect(r.I2_ci_ub).toBeGreaterThanOrEqual(r.I2 - 1e-6);
+  expect(errors, 'no console errors').toEqual([]);
+});
