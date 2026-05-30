@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-30T20:08:10.807Z",
+  "generated": "2026-05-30T20:25:38.868Z",
   "appsScanned": 69,
   "appsFailedToLoad": [],
   "totalViolationInstances": 33,
@@ -8,7 +8,7 @@
       "id": "color-contrast",
       "impact": "serious",
       "apps": 5,
-      "nodes": 31,
+      "nodes": 30,
       "help": "Elements must meet minimum color contrast ratio thresholds",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
     },
@@ -178,8 +178,16 @@
     },
     "bayesian-mcmc": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "bayesian-nma": {
       "ok": true,
@@ -452,7 +460,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 16
+          "nodes": 19
         },
         {
           "id": "region",
@@ -490,15 +498,8 @@
     },
     "nma-pro-v2": {
       "ok": true,
-      "count": 5,
+      "count": 4,
       "violations": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 5
-        },
         {
           "id": "empty-table-header",
           "impact": "minor",

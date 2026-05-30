@@ -1,6 +1,6 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-30T20:08:10.807Z
+Generated: 2026-05-30T20:25:38.868Z
 Apps scanned: 69/69
 Total violation instances: 33
 
@@ -8,7 +8,7 @@ Total violation instances: 33
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
-| 1 | `color-contrast` | serious | 5 | 31 | Elements must meet minimum color contrast ratio thresholds |
+| 1 | `color-contrast` | serious | 5 | 30 | Elements must meet minimum color contrast ratio thresholds |
 | 2 | `scrollable-region-focusable` | serious | 3 | 4 | Scrollable region must have keyboard access |
 | 3 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
 | 4 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
@@ -31,7 +31,7 @@ Total violation instances: 33
 | Truthcert1 | 2 | scanned |
 | amstar-2 | 0 | scanned |
 | bayesian-ma | 0 | scanned |
-| bayesian-mcmc | 0 | scanned |
+| bayesian-mcmc | 1 | scanned |
 | bayesian-nma | 0 | scanned |
 | bucher | 0 | scanned |
 | cerqual | 1 | scanned |
@@ -69,7 +69,7 @@ Total violation instances: 33
 | nma-dose-response-app | 3 | scanned |
 | nma-global-inconsistency | 0 | scanned |
 | nma-inconsistency | 1 | scanned |
-| nma-pro-v2 | 5 | scanned |
+| nma-pro-v2 | 4 | scanned |
 | p-curve | 0 | scanned |
 | pet-peese | 0 | scanned |
 | pico | 1 | scanned |
