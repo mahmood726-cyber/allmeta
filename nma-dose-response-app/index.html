@@ -4206,6 +4206,20 @@
       setResult('resultBestTreatment', results.bestTreatment);
       setResult('resultSUCRA', 'SUCRA: ' + (results.sucra || '—'));
     }
+    // Read the main per-treatment summary table (populated by app.js) for the
+    // Methods+Results export — decoupled from the analysis engine internals.
+    window.__almLastNmaDR = function () {
+      var tb = document.getElementById('summaryBody');
+      if (!tb || !tb.querySelector('tr')) return null;
+      var table = tb.closest('table');
+      var heads = table ? Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); }) : [];
+      var rows = Array.prototype.map.call(tb.querySelectorAll('tr'), function (tr) {
+        var o = {};
+        Array.prototype.forEach.call(tr.children, function (td, i) { o[heads[i] || ('col' + i)] = td.textContent.trim(); });
+        return o;
+      });
+      return { _schema: "nma-dose-response-results-v1", n_treatments: rows.length, treatments: rows };
+    };
 
     // ============================================
     // METHOD BADGES

@@ -35,12 +35,16 @@
 
 ## NEXT — finish the suite-wide features (high priority)
 
-### A. Methods+Results report — last app
-Only **nma-dose-response-app** remains (complex multi-model / dose-response output —
-needs a curated `getResults` summarising the selected model, AUCs, target dose, and
-model-averaging weights rather than a flat dump). RoB/screening tools (rob2, robins-i/e,
-amstar-2, quadas-2, prisma-*, cerqual, cinema) could also export their judgement state
-as a report — lower priority (their "results" are categorical assessments).
+### A. Methods+Results report — status
+The shared report is live in **38 apps**. **nma-dose-response-app** is the one analysis
+app NOT on the shared report, but it is NOT a gap: it ships its OWN richer native exports
+(JSON `#exportJson`, CSV `#exportSummaryCsv`, GRADE profile, LaTeX table). It now also
+exposes `window.__almLastNmaDR()` (reads the per-treatment summary table) so the shared
+report CAN be wired later — the only blocker is that its complex fixed-UI layout overlaps
+the auto-mount placement, so the export bar needs a curated mount location (its results
+panel) rather than the generic before-footer spot. Low priority (already export-complete).
+RoB/screening tools (rob2, robins-i/e, amstar-2, quadas-2, prisma-*, cerqual, cinema) could
+export their judgement state as a report — lower priority (categorical assessments).
 
 ### B. PDF everywhere + Plotly multi-format
 - Vendor `hub/shared/vendor/jspdf.min.js` and include it in the analysis apps so the
