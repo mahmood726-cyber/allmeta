@@ -71,7 +71,7 @@
     if (!manifest.length) { container.innerHTML = ""; return; }
     var html = '<div class="alm-hero-bar" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.5rem;font-size:0.85rem">' +
       '<span style="color:var(--muted,#5c6470);font-weight:600">Try with:</span>' +
-      '<select data-alm-hero style="padding:0.3rem 0.5rem;border:1px solid var(--border,#d9d5cc);background:var(--input-bg,#fbfaf6);color:var(--ink,#15181d);border-radius:4px;font-size:0.83rem">';
+      '<select data-alm-hero aria-label="Load a benchmark dataset" style="padding:0.3rem 0.5rem;border:1px solid var(--border,#d9d5cc);background:var(--input-bg,#fbfaf6);color:var(--ink,#15181d);border-radius:4px;font-size:0.83rem">';
     html += '<option value="">— pick a dataset —</option>';
     manifest.forEach(function (m) {
       html += '<option value="' + m.key + '">' + m.label + '</option>';

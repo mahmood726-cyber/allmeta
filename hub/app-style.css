@@ -16,7 +16,7 @@
   --color-primary-800: #24302d;
   --color-primary-700: #31514b;
   --color-primary-600: #3f7168;
-  --color-primary-500: #4f8d82;
+  --color-primary-500: #3a7066; /* a11y: darkened from #4f8d82 (3.84:1) → 5.69:1 on white, 5.02:1 on the accent-soft tint, for WCAG AA on accent text/buttons */
   --color-primary-400: #6fa9a0;
   --color-primary-300: #9acac3;
   --color-primary-200: #c7e2de;
