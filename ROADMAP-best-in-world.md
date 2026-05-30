@@ -26,22 +26,21 @@
   fixed (WCAG AA); nma-pro-v2 dark-mode text tokens fixed. Total axe violations 56 → ~33.
 - **Chart export (every chart, multi-format):** `hub/shared/chart-export-auto.js` auto-adds
   SVG/PNG/JPG (+PDF when jsPDF present) to every non-Plotly chart; rolled out to ~30 apps.
-- **Methods + Results report:** `results-export.js` now emits a readable .md/.txt report
+- **Methods + Results report:** `results-export.js` emits a readable .md/.txt report
   (auto-built from each app's own title/description/methods footer + computed results);
-  live in **31 apps**.
+  live in **38 apps** — the 20 original `resultsExport` apps + 11 accessor-ready apps +
+  mcid/median-to-mean/powerma/gosh-metareg/km-reconstructor + bayesian-mcmc/bayesian-nma.
 
 ---
 
 ## NEXT — finish the suite-wide features (high priority)
 
-### A. Methods+Results report — remaining apps (needs a `getResults`)
-These compute results but expose no last-result accessor, so a small per-app
-`getResults()` must be written before wiring `resultsExport`:
-`powerma, gosh-metareg, mcid, nma-dose-response-app, bayesian-mcmc, bayesian-nma,
-median-to-mean, km-reconstructor` (+ any RoB/screening tools that should export their
-state: rob2, robins-i/e, amstar-2, quadas-2, prisma-*, cerqual, cinema).
-*Effort: ~½ day. Each: identify the result variables, expose `window.__almLast<App>()`,
-add the include + bootstrap (same pattern as the 11 just wired), verify the report.*
+### A. Methods+Results report — last app
+Only **nma-dose-response-app** remains (complex multi-model / dose-response output —
+needs a curated `getResults` summarising the selected model, AUCs, target dose, and
+model-averaging weights rather than a flat dump). RoB/screening tools (rob2, robins-i/e,
+amstar-2, quadas-2, prisma-*, cerqual, cinema) could also export their judgement state
+as a report — lower priority (their "results" are categorical assessments).
 
 ### B. PDF everywhere + Plotly multi-format
 - Vendor `hub/shared/vendor/jspdf.min.js` and include it in the analysis apps so the
