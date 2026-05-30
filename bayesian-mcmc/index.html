@@ -313,6 +313,13 @@
           `<tr><td><code>predictive</code></td><td>${fmt(sPred.mean)}</td><td>${fmt(sPred.sd)}</td><td>[${fmt(sPred.lo)}, ${fmt(sPred.hi)}]</td><td>—</td><td>—</td></tr>`,
         ].join("");
         document.getElementById("body").innerHTML = html;
+        _lastMCMC = { _schema: "bayesian-mcmc-results-v1", k: rows.length, chains: chainsN,
+          iter: iter, burn: burn,
+          mu_mean: sMu.mean, mu_sd: sMu.sd, mu_cri_lo: sMu.lo, mu_cri_hi: sMu.hi,
+          tau_mean: sTau.mean, tau_cri_lo: sTau.lo, tau_cri_hi: sTau.hi,
+          pred_lo: sPred.lo, pred_hi: sPred.hi,
+          rhat_mu: rMu, rhat_tau: rTau, ess_mu: Math.round(essMu), ess_tau: Math.round(essTau),
+          converged: !(singleChain || rhatBad || essBad) };
 
         drawDensity("mu-density", muAll, "μ posterior");
         drawDensity("tau-density", tauAll, "τ posterior");
@@ -392,6 +399,8 @@
 
     // Pure-compute hook for R-parity tests. Seeded -> reproducible;
     // posterior summaries validated vs R bayesmeta (exact, deterministic)
+    var _lastMCMC = null;
+    window.__almLastMCMC = function () { return _lastMCMC; };
     // within a Monte-Carlo band; R-hat/ESS are sanity-checked.
     window.__almMCMC = function (rowsIn, o) {
       const rows = rowsIn.map(r => ({ te: +r.te, se: +r.se }));
@@ -423,6 +432,7 @@
     run();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
 
 <script>
@@ -468,5 +478,6 @@
   });
 })();
 </script>
+<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"bayesian-mcmc",getResults:function(){var f=window.__almLastMCMC;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 </body>
 </html>
