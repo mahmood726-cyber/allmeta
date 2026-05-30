@@ -106,7 +106,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
   <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
   <footer>
-    Engine: <code>shared/nma-meta-regression.js</code>. Estimation: Paule-Mandel τ² + GLS on the augmented design. Reference: Cooper et al. 2009 <em>Stat Med</em>; Dias et al. 2018 NICE DSU TSD 3. Single covariate per fit — for multiple covariates, fit each separately.
+    Engine: <code>shared/nma-meta-regression.js</code>. Estimation: Paule-Mandel τ² + GLS on the augmented design. Reference: Cooper et al. 2009 <em>Stat Med</em>; Dias et al. 2018 NICE DSU TSD 3. Single covariate per fit — for multiple covariates, fit each separately. <strong>R-parity:</strong> the fit matches <code>netmeta::netmetareg(assumption="independent")</code> to ~1e-6 (see <code>hub/shared/tests/nma-meta-reg-parity.spec.mjs</code>). Note two convention differences if you cross-check in R: this app reports the <code>treatment2 − treatment1</code> contrast and centres the covariate at its mean, whereas <code>netmeta</code> reports the reverse contrast sign and at covariate = 0 — so every coefficient here is the negative of netmeta's, evaluated at a shifted intercept.
   </footer>
   <script>
   (function () {
