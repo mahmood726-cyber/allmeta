@@ -7,8 +7,10 @@
 import { test, expect } from '@playwright/test';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 
-// Apps wired with chart-export-auto.js (kept in sync as the rollout proceeds).
-const WIRED = ['nma-meta-reg', 'km-reconstructor', 'pet-peese', 'median-to-mean'];
+// Representative sample of apps wired with chart-export-auto.js (the full rollout
+// covers ~30 apps; this sample keeps the spec fast while spanning SVG/canvas/RoB types).
+const WIRED = ['nma-meta-reg', 'km-reconstructor', 'pet-peese', 'median-to-mean',
+  'component-nma', 'powerma', 'sequential-ma', 'bayesian-mcmc', 'rob2', 'cross-design'];
 
 for (const app of WIRED) {
   test(`chart export bar present, no errors — ${app}`, async ({ page }) => {
