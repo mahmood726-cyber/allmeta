@@ -81,9 +81,15 @@ export their judgement state as a report — lower priority (categorical assessm
 ---
 
 ## NEXT — accessibility (medium priority)
-1. **nma-dose-response-app dark theme:** dark-on-dark + light-on-light text (~16-19 axe
-   nodes). Its theme variables are crossed; needs a dedicated pass mapping each text/bg
-   pairing to AA.
+1. **nma-dose-response-app dark theme:** ~24 contrast nodes. ROOT CAUSE (diagnosed
+   2026-05-30): the app has an always-dark UI **mixed with some white-background regions**,
+   AND it links `hub/app-style.css` whose `body { color: var(--ink) !important }` follows the
+   **OS** colour-scheme — under a LIGHT OS, `--ink` resolves to dark `#202927` and paints dark
+   text on the app's dark surfaces. A blanket `--ink`/body override flips the failure to
+   light-text-on-white in the white regions, so it needs a **per-surface audit**: give each
+   panel/region an explicit text colour matching its own background, and either stop inheriting
+   app-style.css's body colour or set the app to a fixed scheme. (Done: `.pill` badge fixed —
+   explicit light text on its dark bg, 10.2:1.)
 2. **Structural landmarks:** HTA (9) + nma-dose-response (15) have content outside
    landmarks ("region"). Wrap content in `<main>`/`<section>` with roles.
 3. **focus-studio** "contrast" flags are an axe gradient-background limitation (text is
