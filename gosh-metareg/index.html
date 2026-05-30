@@ -219,9 +219,13 @@
       document.getElementById("m-b").textContent = fmt(median);
       document.getElementById("m-sd").textContent = fmt(sd);
       document.getElementById("m-sign").textContent = signCons ? "yes" : `no (${(pos * 100).toFixed(0)}% positive)`;
+      _lastMetaregGosh = { _schema: "gosh-metareg-results-v1", k: k, n_subsets_fitted: results.length,
+        slope_median: median, slope_mean: mean, slope_sd: sd, prop_positive: pos, sign_consistent: signCons };
       draw(results);
       btn.disabled = false;
     }
+    var _lastMetaregGosh = null;
+    window.__almLastMetaregGosh = function () { return _lastMetaregGosh; };
 
     function draw(pts) {
       const svg = document.getElementById("plot");
@@ -266,6 +270,7 @@
     setTimeout(run, 50);
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
 
 <script>
@@ -311,5 +316,6 @@
   });
 })();
 </script>
+<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"gosh-metareg",getResults:function(){var f=window.__almLastMetaregGosh;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 </body>
 </html>

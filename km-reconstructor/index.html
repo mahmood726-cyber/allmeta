@@ -255,7 +255,12 @@
       const km = kmFromIPD(ipd);
       document.getElementById("c-median").textContent = fmt(medianSurvival(km), 1);
       drawKM(curve, km);
+      _lastKM = { _schema: "km-reconstructor-results-v1", n_reconstructed: ipd.length,
+        n_events: ipd.filter(r => r.event === 1).length,
+        median_survival: medianSurvival(km), n_risk_intervals: risk.length };
     }
+    var _lastKM = null;
+    window.__almLastKM = function () { return _lastKM; };
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
@@ -342,6 +347,8 @@
     run();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
+<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"km-reconstructor",getResults:function(){var f=window.__almLastKM;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 </body>
 </html>

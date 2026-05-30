@@ -212,8 +212,14 @@
 
       drawCurve(outcome, inputs);
       body.innerHTML = __bodyParts.join("");
-
+      _lastPowerMA = { _schema: "powerma-results-v1", outcome: outcome, alpha: alpha, power: power,
+        i2_pct: i2 * 100, d2_pct: d2 * 100,
+        single_study_n_per_arm: base.nPerArm, single_study_total_n: base.totalN,
+        events_target: base.eventsTarget || null,
+        ris_total_n: isFinite(d2Adj) ? Math.round(base.totalN * d2Adj) : null };
     }
+    var _lastPowerMA = null;
+    window.__almLastPowerMA = function () { return _lastPowerMA; };
 
     function drawCurve(outcome, inputs) {
       const svg = document.getElementById("plot");
@@ -270,6 +276,8 @@
     run();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
+<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"powerma",getResults:function(){var f=window.__almLastPowerMA;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 </body>
 </html>
