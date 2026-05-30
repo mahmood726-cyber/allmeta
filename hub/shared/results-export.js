@@ -60,6 +60,50 @@
     return lines.join('\n');
   }
 
+  // ---- Methods + Results prose report -----------------------------------
+  // Auto-pulls the app's own descriptive copy (title, intro, footer/methods note)
+  // — which already documents the method — and formats getResults() beneath it,
+  // so any app wiring resultsExport gets a readable, citable report for free.
+  function _grab(sel) {
+    const el = document.querySelector(sel);
+    return el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
+  }
+  function _autoMeta(opts) {
+    const title = opts.title || _grab('h1') || document.title || 'allmeta analysis';
+    const desc = opts.description || _grab('header p') || _grab('main p') ||
+      (document.querySelector('meta[name="description"]') || {}).content || '';
+    let methods = opts.methods || _grab('.footer-note') || _grab('footer');
+    if (typeof opts.methods === 'function') methods = opts.methods();
+    return { title, desc, methods };
+  }
+  function _resultsBlock(obj, plain) {
+    const rows = _flatKVs(obj).filter(([k]) => k !== '_schema');
+    if (!rows.length) return '_(No results yet — run the analysis first, then export.)_';
+    if (plain) return rows.map(([k, v]) => k + ': ' + (v == null ? '' : v)).join('\n');
+    return _toMD(obj);
+  }
+  function _toReport(obj, opts, plain) {
+    const m = _autoMeta(opts);
+    const today = new Date().toISOString().slice(0, 10);
+    const L = [];
+    L.push((plain ? '' : '# ') + m.title);
+    if (plain) L.push('='.repeat(m.title.length));
+    L.push('');
+    L.push((plain ? '' : '_') + 'Generated ' + today +
+      ' with allmeta — browser-only evidence synthesis (https://github.com/).' + (plain ? '' : '_'));
+    L.push('');
+    L.push((plain ? 'METHODS' : '## Methods'));
+    L.push('');
+    if (m.desc) L.push(m.desc);
+    if (m.methods && m.methods !== m.desc) { L.push(''); L.push(m.methods); }
+    L.push('');
+    L.push((plain ? 'RESULTS' : '## Results'));
+    L.push('');
+    L.push(_resultsBlock(obj, plain));
+    L.push('');
+    return L.join('\n');
+  }
+
   function init(opts) {
     opts = opts || {};
     const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
@@ -69,10 +113,18 @@
     _ensureStyle();
     target.innerHTML = `
       <div class="alm-export">
-        <button type="button" data-action="json">Download JSON</button>
-        <button type="button" data-action="csv">Download CSV</button>
-        <button type="button" data-action="md">Download Markdown</button>
+        <button type="button" data-action="report-md" title="Readable Methods + Results report (Markdown)">Methods+Results (.md)</button>
+        <button type="button" data-action="report-txt" title="Readable Methods + Results report (plain text)">.txt</button>
+        <button type="button" data-action="json">JSON</button>
+        <button type="button" data-action="csv">CSV</button>
+        <button type="button" data-action="md">Data (.md)</button>
       </div>`;
+    target.querySelector('[data-action="report-md"]').addEventListener('click', () => {
+      _download(new Blob([_toReport(getResults(), opts, false)], { type: 'text/markdown' }), basename + '-report.md');
+    });
+    target.querySelector('[data-action="report-txt"]').addEventListener('click', () => {
+      _download(new Blob([_toReport(getResults(), opts, true)], { type: 'text/plain' }), basename + '-report.txt');
+    });
     target.querySelector('[data-action="json"]').addEventListener('click', () => {
       const r = getResults();
       _download(new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' }), basename + '.json');
