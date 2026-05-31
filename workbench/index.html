@@ -74,7 +74,8 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
-  <script src="../shared/ma-pooled-v1.js"></script>
+  <script src="../shared/heterogeneity-ci.js"></script>
+<script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
 <body>
@@ -226,7 +227,11 @@
       const Q0 = wsum(studies, 0).Q;
       const df = k-1;
       const I2 = df > 0 ? Math.max(0, 100*(Q0-df)/Q0) : 0;
-      return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: Q0, I2, k };
+      // Q-profile (Viechtbauer 2007) 95% CI for I²/τ² via the shared module.
+      const ci = (window.AlmHetCI && df > 0) ? window.AlmHetCI.qProfileCI(studies) : null;
+      return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: Q0, I2, k,
+               I2Lo: ci ? ci.I2Lo : null, I2Hi: ci ? ci.I2Hi : null,
+               tau2Lo: ci ? ci.tau2Lo : null, tau2Hi: ci ? ci.tau2Hi : null };
     }
 
     // Egger's test (lightweight)
@@ -398,8 +403,8 @@
       p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
       const lines = [
         { k: "Q (df=" + (pool.k-1) + ")", v: fmt(pool.Q, 2) },
-        { k: "I²", v: fmt(pool.I2, 1) + "%" },
-        { k: "τ² (PM)", v: fmt(pool.tau2, 4) },
+        { k: "I²" + (pool.I2Lo!=null ? " [95% CI]" : ""), v: fmt(pool.I2, 1) + "%" + (pool.I2Lo!=null ? "  [" + fmt(pool.I2Lo,1) + ", " + fmt(pool.I2Hi,1) + "]" : "") },
+        { k: "τ² (PM)" + (pool.tau2Lo!=null ? " [95% CI]" : ""), v: fmt(pool.tau2, 4) + (pool.tau2Lo!=null ? "  [" + fmt(pool.tau2Lo,4) + ", " + fmt(pool.tau2Hi,4) + "]" : "") },
         { k: "95% PI (approx, k=" + pool.k + ")", v: (pool.k >= 3) ? ("[" + fmt(pool.mu - Z975 *Math.sqrt(pool.tau2 + pool.se*pool.se), 3) + ", " + fmt(pool.mu + Z975 *Math.sqrt(pool.tau2 + pool.se*pool.se), 3) + "]") : "k<3 (undefined)" }
       ];
       for (let i=0;i<lines.length;i++) {
@@ -424,8 +429,8 @@
           "<div class=\"headline-stats\">",
           "  <div class=\"stat\"><span class=\"k\">k</span><span class=\"v\">"+pool.k+"</span></div>",
           "  <div class=\"stat\"><span class=\"k\">Pooled (RE, PM)</span><span class=\"v\">"+fmt(pool.mu)+" ["+fmt(pool.lo)+", "+fmt(pool.hi)+"]</span></div>",
-          "  <div class=\"stat\"><span class=\"k\">I²</span><span class=\"v\">"+fmt(pool.I2, 1)+"%</span></div>",
-          "  <div class=\"stat\"><span class=\"k\">τ²</span><span class=\"v\">"+fmt(pool.tau2, 4)+"</span></div>",
+          "  <div class=\"stat\"><span class=\"k\">I²</span><span class=\"v\">"+fmt(pool.I2, 1)+"%"+(pool.I2Lo!=null?" <span style=\"font-weight:400;font-size:0.85em\">["+fmt(pool.I2Lo,1)+", "+fmt(pool.I2Hi,1)+"]</span>":"")+"</span></div>",
+          "  <div class=\"stat\"><span class=\"k\">τ²</span><span class=\"v\">"+fmt(pool.tau2, 4)+(pool.tau2Lo!=null?" <span style=\"font-weight:400;font-size:0.85em\">["+fmt(pool.tau2Lo,4)+", "+fmt(pool.tau2Hi,4)+"]</span>":"")+"</span></div>",
           "</div>"
         ].join("");
       } else {

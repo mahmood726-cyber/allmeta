@@ -74,7 +74,8 @@
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
-  <script src="../shared/build-info.js"></script>
+  <script src="../shared/heterogeneity-ci.js"></script>
+<script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/webr-runner.js"></script>
@@ -272,60 +273,11 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     }
 
     // ---- Q-profile 95% CI for I² and τ² (Viechtbauer 2007; the metafor::confint
-    // method). Self-contained χ² support (lnGamma → regularised lower incomplete
-    // gamma → inverse via bisection). Verified vs metafor::confint to within its
-    // own uniroot tolerance (~1e-4 on τ²); see forest-plot-pi.spec.mjs. ----
-    function _lnGammaFP(x) {
-      const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
-        -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
-      let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t);
-      let s = 1.000000000190015;
-      for (let j = 0; j < 6; j++) { y++; s += c[j] / y; }
-      return -t + Math.log(2.5066282746310005 * s / x);
-    }
-    function _lowerIncGammaFP(a, x) {
-      if (x <= 0) return 0;
-      if (x < a + 1) {
-        let sum = 1 / a, term = sum;
-        for (let n = 1; n < 300; n++) { term *= x / (a + n); sum += term; if (Math.abs(term) < Math.abs(sum) * 1e-14) break; }
-        return sum * Math.exp(-x + a * Math.log(x) - _lnGammaFP(a));
-      }
-      let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
-      for (let i = 1; i < 300; i++) {
-        const an = -i * (i - a);
-        b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
-        c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
-        d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 1e-14) break;
-      }
-      return 1 - Math.exp(-x + a * Math.log(x) - _lnGammaFP(a)) * h;
-    }
-    function _chiSqCDF_FP(x, df) { return x <= 0 ? 0 : _lowerIncGammaFP(df / 2, x / 2); }
-    function _chiSqQuantileFP(p, df) {
-      let lo = 0, hi = df + 10 * Math.sqrt(2 * df) + 10, guard = 0;
-      while (_chiSqCDF_FP(hi, df) < p && guard++ < 100) hi *= 2;
-      for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (_chiSqCDF_FP(m, df) < p) lo = m; else hi = m; }
-      return (lo + hi) / 2;
-    }
+    // method) is provided by the shared single-source module
+    // shared/heterogeneity-ci.js (window.AlmHetCI). Verified vs metafor::confint;
+    // see workbench-qprofile-ci.spec.mjs (+ forest-plot-export-ci for CI plumbing). ----
     function qProfileCI(studies) {
-      const k = studies.length, df = k - 1;
-      if (df < 1) return null;
-      const w0 = studies.map(s => 1 / s.v);
-      const sw0 = w0.reduce((a, b) => a + b, 0);
-      const sw0sq = w0.reduce((a, b) => a + b * b, 0);
-      const s2 = (k - 1) * sw0 / (sw0 * sw0 - sw0sq); // Higgins-Thompson typical within-study variance
-      const Q = t2 => computeQ(studies, t2).Q;
-      const Q0 = Q(0);
-      const qLo = _chiSqQuantileFP(0.025, df), qHi = _chiSqQuantileFP(0.975, df);
-      function solve(target) {
-        if (Q0 <= target) return 0;
-        let lo = 0, hi = 1, guard = 0;
-        while (Q(hi) > target && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-        for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (Q(m) > target) lo = m; else hi = m; }
-        return (lo + hi) / 2;
-      }
-      const tau2Hi = solve(qLo), tau2Lo = solve(qHi);
-      const i2 = t => (t + s2) > 0 ? 100 * t / (t + s2) : 0;
-      return { tau2Lo, tau2Hi, I2Lo: i2(tau2Lo), I2Hi: i2(tau2Hi), s2 };
+      return (window.AlmHetCI ? window.AlmHetCI.qProfileCI(studies) : null);
     }
     window.__almQProfileCI = qProfileCI; // exposed across scopes (results-export reads it)
 

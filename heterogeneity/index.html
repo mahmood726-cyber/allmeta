@@ -81,7 +81,8 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
-  <script src="../shared/build-info.js"></script>
+  <script src="../shared/heterogeneity-ci.js"></script>
+<script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -378,41 +379,12 @@
       if (x<=0) return 0;
       return lowerIncGamma(df/2, x/2);
     }
-    // Inverse χ² CDF (quantile) via bisection on chiSqCDF. Robust; no closed form.
-    function chiSqQuantile(p,df) {
-      if (df <= 0) return NaN;
-      let lo = 0, hi = df + 10*Math.sqrt(2*df) + 10, guard = 0;
-      while (chiSqCDF(hi, df) < p && guard++ < 100) hi *= 2;
-      for (let i=0;i<200;i++) { const m=(lo+hi)/2; if (chiSqCDF(m,df) < p) lo=m; else hi=m; }
-      return (lo+hi)/2;
-    }
     // Q-profile confidence interval for τ² and I² (Viechtbauer 2007; the method
-    // metafor::confint.rma.uni uses, and what advanced-stats.md prescribes for small k).
-    // Solves the generalised Q-statistic Q_gen(τ²)=Σ wᵢ(τ²)(yᵢ−μ̂(τ²))² — monotone
-    // decreasing in τ² — against the χ²_{k−1} quantiles; then maps the τ² bounds to I²
-    // via the Higgins-Thompson typical within-study variance s². Verified vs metafor to
-    // within metafor's own uniroot tolerance (~1e-4 on τ²); see tests/test_qprofile_ci.py.
+    // metafor::confint.rma.uni uses, and what advanced-stats.md prescribes for small k)
+    // is provided by the shared single-source module shared/heterogeneity-ci.js
+    // (window.AlmHetCI). Verified vs metafor::confint; see workbench-qprofile-ci.spec.mjs.
     function qProfileCI(studies) {
-      const k = studies.length, df = k - 1;
-      if (df < 1) return null;
-      const w0 = studies.map(s => 1/s.v);
-      const sw0 = w0.reduce((a,b)=>a+b,0);
-      const sw0sq = w0.reduce((a,b)=>a+b*b,0);
-      const s2 = (k-1)*sw0 / (sw0*sw0 - sw0sq); // typical within-study variance
-      const Q = t2 => weightedSums(studies, t2).Q;
-      const Q0 = Q(0);
-      const qLo = chiSqQuantile(0.025, df); // small target → large τ² (upper bound)
-      const qHi = chiSqQuantile(0.975, df); // large target → small τ² (lower bound)
-      function solve(target) {
-        if (Q0 <= target) return 0;            // Q already below the quantile at τ²=0
-        let lo = 0, hi = 1, guard = 0;
-        while (Q(hi) > target && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-        for (let i=0;i<200;i++) { const m=(lo+hi)/2; if (Q(m) > target) lo=m; else hi=m; }
-        return (lo+hi)/2;
-      }
-      const tau2Hi = solve(qLo), tau2Lo = solve(qHi);
-      const i2 = t => (t+s2) > 0 ? 100*t/(t+s2) : 0;
-      return { tau2Lo, tau2Hi, I2Lo: i2(tau2Lo), I2Hi: i2(tau2Hi), s2 };
+      return (window.AlmHetCI ? window.AlmHetCI.qProfileCI(studies) : null);
     }
     window.__almQProfileCI = qProfileCI; // exposed for R-parity tests
 
