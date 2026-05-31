@@ -84,6 +84,15 @@ export their judgement state as a report — lower priority (categorical assessm
 
 ---
 
+## Prediction intervals (DONE 2026-05-31) — universal t_{k-1}
+The 95% prediction interval (μ ± t_{k-1}·√(τ²+SE²), Cochrane Handbook v6.5) is now a
+single audited routine in `shared/ma-core.js` (`predictionInterval`, exact self-contained
+qt via incomplete-beta; R-verified). Shown in: forest-plot, heterogeneity (pre-existing),
+**workbench** (was a wrong z-approximation — fixed to t_{k-1}), **cumulative-subgroup**,
+**proportion-ma** (back-transformed). Deliberately deferred (non-standard/undefined PI):
+meta-regression (covariate-conditional), multilevel-ma (two variance components), mh-peto
+(fixed-effect, no τ²), limit-ma (small-study-adjusted). Commits `3109b24`/`e9d0dca`/`99d3cb1`.
+
 ## NEXT — correctness depth (high priority, governance-critical)
 1. ✅ **rare-events exact conditional CM.EL (DONE 2026-05-31, `e50d6c5`):** implemented the
    true conditional noncentral-hypergeometric likelihood (Fisher NCHG, Stijnen 2010) with
