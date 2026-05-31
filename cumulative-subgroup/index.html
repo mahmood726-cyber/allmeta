@@ -249,7 +249,11 @@
       const tau2 = tau2_PM(studies);
       const s = weightedSums(studies, tau2);
       const se = Math.sqrt(1/s.sw);
-      return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: s.Q, k: studies.length };
+      const k = studies.length;
+      // 95% prediction interval (t_{k-1}, Cochrane v6.5) via the shared core.
+      const pi = (window.AlmMaCore && k >= 2) ? window.AlmMaCore.predictionInterval({ mu: s.mu, se, tau2, k }) : null;
+      return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: s.Q, k,
+               piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null };
     }
 
     // Cumulative: sort by year (or row order) and compute pooled estimate at each step
@@ -518,6 +522,7 @@
           const sub = subgroup(parsed.studies);
           parts.push(statCard("Groups", String(sub.groups.length)));
           parts.push(statCard("Overall pooled", fmt(sub.overall.mu)+" ["+fmt(sub.overall.lo)+", "+fmt(sub.overall.hi)+"]"));
+          if (sub.overall.piLo != null) parts.push(statCard("95% prediction interval", "["+fmt(sub.overall.piLo)+", "+fmt(sub.overall.piHi)+"]"));
           parts.push(statCard("Q_bw (df="+sub.df_bw+")", fmt(sub.Q_bw,2)+", p="+fmt(sub.pQ,3)));
           parts.push(statCard("I² diff", fmt(sub.I2_bw,1)+"%"));
           svg = buildSubgroupSvg(state, sub);
@@ -529,6 +534,8 @@
             overall_mu: sub.overall.mu,
             overall_lo: sub.overall.lo,
             overall_hi: sub.overall.hi,
+            overall_pi_lo: sub.overall.piLo,
+            overall_pi_hi: sub.overall.piHi,
             overall_tau2: sub.overall.tau2,
             Q_bw: sub.Q_bw,
             df_bw: sub.df_bw,

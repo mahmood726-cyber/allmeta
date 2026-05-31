@@ -61,6 +61,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -347,23 +348,31 @@
         return Object.assign({}, r, { p: r.x / r.n, lo: cp[0], hi: cp[1], w: w, rel: 100 * w / totalW });
       });
 
-      // Back-transform pooled estimate
+      // Back-transform pooled estimate + 95% prediction interval. The PI (t_{k-1},
+      // Cochrane v6.5) is formed on the TRANSFORM scale via the shared core, then
+      // back-transformed exactly like the CI so it stays in [0,1].
       var lo = pooled.mu_re - Z975 * pooled.seRE;
       var hi = pooled.mu_re + Z975 * pooled.seRE;
-      var poolP, poolLo, poolHi;
+      var piT = (window.AlmMaCore && rows.length >= 2)
+        ? window.AlmMaCore.predictionInterval({ mu: pooled.mu_re, se: pooled.seRE, tau2: pooled.tau2, k: rows.length })
+        : null;
+      var poolP, poolLo, poolHi, poolPiLo = null, poolPiHi = null;
       if (trans === 'ft') {
         var nH = harmonicMean(rows.map(function (r) { return r.n; }));
         poolP  = ftBack(pooled.mu_re, nH);
         poolLo = ftBack(lo, nH);
         poolHi = ftBack(hi, nH);
+        if (piT) { poolPiLo = ftBack(piT.lo, nH); poolPiHi = ftBack(piT.hi, nH); }
       } else if (trans === 'logit') {
         poolP  = logitBack(pooled.mu_re);
         poolLo = logitBack(lo);
         poolHi = logitBack(hi);
+        if (piT) { poolPiLo = logitBack(piT.lo); poolPiHi = logitBack(piT.hi); }
       } else {
         poolP  = pooled.mu_re;
         poolLo = Math.max(0, lo);
         poolHi = Math.min(1, hi);
+        if (piT) { poolPiLo = Math.max(0, piT.lo); poolPiHi = Math.min(1, piT.hi); }
       }
 
       // Store for export
@@ -381,9 +390,11 @@
         poolP:    poolP,
         poolLo:   poolLo,
         poolHi:   poolHi,
+        poolPiLo: poolPiLo,
+        poolPiHi: poolPiHi,
       };
 
-      render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, het: pooled });
+      render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, poolPiLo: poolPiLo, poolPiHi: poolPiHi, het: pooled });
 
       // URL state
       if (window.alm && window.alm.urlState) {
@@ -408,7 +419,10 @@
       body.innerHTML = bodyParts.join('');
 
       var het = document.getElementById('het');
-      het.innerHTML = '<span data-gloss="tau2">&tau;&sup2;</span> = <code>' + fmt(pooled.het.tau2, 4) + '</code> &middot; Q = <code>' + fmt(pooled.het.Q, 2) + '</code> (df=' + pooled.het.df + ') &middot; <span data-gloss="i2">I&sup2;</span> = <code>' + pooled.het.i2.toFixed(1) + '%</code>';
+      var piTxt = (pooled.poolPiLo != null)
+        ? ' &middot; 95% prediction interval = <code>' + fmtPct(pooled.poolPiLo) + ' – ' + fmtPct(pooled.poolPiHi) + '</code>'
+        : '';
+      het.innerHTML = '<span data-gloss="tau2">&tau;&sup2;</span> = <code>' + fmt(pooled.het.tau2, 4) + '</code> &middot; Q = <code>' + fmt(pooled.het.Q, 2) + '</code> (df=' + pooled.het.df + ') &middot; <span data-gloss="i2">I&sup2;</span> = <code>' + pooled.het.i2.toFixed(1) + '%</code>' + piTxt;
 
       drawForest(rows, pooled);
     }
