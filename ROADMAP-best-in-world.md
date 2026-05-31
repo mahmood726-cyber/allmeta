@@ -92,10 +92,13 @@ export their judgement state as a report — lower priority (categorical assessm
 3. **Untested-branch audit (continue):** keep spot-checking each effect-measure / sub-method
    in parity-covered apps against meta/metafor (this vein found the subgroup-Q and Harbord/
    Peters bugs). Next candidates: NMA measure branches, DTA LR/DOR edge cases, GLMM RR/RD.
-4. **I²/τ² Q-profile CI** to the remaining poolers (multilevel-ma, cumulative-subgroup,
-   workbench) — extract the verified `qProfileCI` into `shared/heterogeneity-ci.js` (it is
-   currently duplicated in heterogeneity + forest-plot; the 3rd consumer triggers the
-   refactor) with a contract test.
+4. ✅ **I²/τ² Q-profile CI extracted (DONE 2026-05-31, `aba63d5`):** `shared/heterogeneity-ci.js`
+   (`window.AlmHetCI`) is now the single source; heterogeneity + forest-plot delegate to it
+   (dead inline χ² helpers removed), and **workbench** shows the I²/τ² CI as a new consumer.
+   Verified vs `metafor::confint`; `workbench-qprofile-ci.spec.mjs` locks it. Remaining
+   poolers cumulative-subgroup (shows a *between-subgroup* I², different decomposition) and
+   multilevel-ma (two variance components, no single I²) are NOT clean drop-ins — deferred,
+   each needs its own model-appropriate CI rather than the simple-RE Q-profile.
 
 ---
 
