@@ -69,6 +69,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -169,48 +170,14 @@
       //
       // REML implementation: Fisher scoring iteration with PM start.  Same
       // algorithm and convergence tolerance as the heterogeneity engine.
+      // Paule-Mandel τ² via the audited single-source core (shared/ma-core.js).
       function tau2_PM(rows) {
-        // Paule-Mandel: solve sum(w_i (y_i - mu_w)²) = k - 1 for tau²
-        const k = rows.length;
-        if (k < 2) return 0;
-        let tau2 = 0;
-        for (let iter = 0; iter < 200; iter++) {
-          const w = rows.map(r => 1 / (r.se * r.se + tau2));
-          const sw = w.reduce((a, b) => a + b, 0);
-          const mu = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
-          const F = rows.reduce((acc, r, i) => acc + w[i] * (r.te - mu) ** 2, 0) - (k - 1);
-          if (Math.abs(F) < 1e-10) break;
-          // d/dτ² of F = -Σ w_i² (y_i - μ)² + Σ w_i² (y_i - μ)(... derivative of mu);
-          // approximate by -Σ w_i² (y_i - μ)² (Newton on simplified)
-          const dF = -rows.reduce((acc, r, i) => acc + w[i] * w[i] * (r.te - mu) ** 2, 0);
-          if (!isFinite(dF) || Math.abs(dF) < 1e-30) break;
-          const next = Math.max(0, tau2 - F / dF);
-          if (Math.abs(next - tau2) < 1e-12) { tau2 = next; break; }
-          tau2 = next;
-        }
-        return tau2;
+        return rows.length < 2 ? 0 : window.AlmMaCore.tau2PM(rows.map(r => r.te), rows.map(r => r.se * r.se));
       }
 
+      // REML τ² via the audited single-source core (shared/ma-core.js).
       function tau2_REML(rows) {
-        const k = rows.length;
-        if (k < 2) return 0;
-        // Fisher scoring (matches heterogeneity/tau2_REML).  PM start.
-        let tau2 = tau2_PM(rows);
-        for (let iter = 0; iter < 200; iter++) {
-          const w = rows.map(r => 1 / (r.se * r.se + tau2));
-          const sw = w.reduce((a, b) => a + b, 0);
-          const mu = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
-          const sw2 = rows.reduce((acc, r, i) => acc + w[i] * w[i], 0);
-          let num = 0;
-          for (let i = 0; i < k; i++) {
-            num += w[i] * w[i] * (rows[i].te - mu) * (rows[i].te - mu);
-          }
-          const step = (num - sw + sw2 / sw) / sw2;
-          const next = Math.max(0, tau2 + step);
-          if (Math.abs(next - tau2) < 1e-10) { tau2 = next; break; }
-          tau2 = next;
-        }
-        return tau2;
+        return rows.length < 2 ? 0 : window.AlmMaCore.tau2REML(rows.map(r => r.te), rows.map(r => r.se * r.se));
       }
 
       function pool(rows) {

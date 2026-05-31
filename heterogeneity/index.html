@@ -81,7 +81,8 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
-  <script src="../shared/heterogeneity-ci.js"></script>
+  <script src="../shared/ma-core.js"></script>
+<script src="../shared/heterogeneity-ci.js"></script>
 <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
@@ -224,50 +225,16 @@
       return { sw, sw2, swy, mu, Q };
     }
 
+    // τ² estimators delegate to the audited single-source core (shared/ma-core.js),
+    // verified vs metafor::rma. null preserved for k<2 (callers depend on it).
     function tau2_DL(studies) {
-      const k = studies.length;
-      if (k < 2) return null;
-      const { Q, sw, sw2 } = weightedSums(studies, 0);
-      const denom = sw - sw2/sw;
-      if (denom <= 0) return 0;
-      return Math.max(0, (Q - (k-1)) / denom);
+      return studies.length < 2 ? null : window.AlmMaCore.tau2DL(studies.map(s => s.est), studies.map(s => s.v));
     }
-
     function tau2_PM(studies) {
-      const k = studies.length;
-      if (k < 2) return null;
-      const target = k-1;
-      const q0 = weightedSums(studies, 0).Q;
-      if (q0 <= target) return 0;
-      let lo = 0, hi = 100;
-      let qHi = weightedSums(studies, hi).Q;
-      let guard = 0;
-      while (qHi > target && hi < 1e9 && guard < 60) { hi *= 2; qHi = weightedSums(studies, hi).Q; guard++; }
-      for (let i=0; i<100; i++) {
-        const mid = (lo+hi)/2;
-        const q = weightedSums(studies, mid).Q;
-        if (q > target) lo = mid; else hi = mid;
-        if (hi-lo < 1e-9) break;
-      }
-      return (lo+hi)/2;
+      return studies.length < 2 ? null : window.AlmMaCore.tau2PM(studies.map(s => s.est), studies.map(s => s.v));
     }
-
     function tau2_REML(studies) {
-      const k = studies.length;
-      if (k < 2) return null;
-      // Fisher scoring: τ²_{k+1} = τ²_k + [Σw²(y-μ)² - Σw + (Σw²)/Σw] / Σw²
-      // With PM as starting point
-      let tau2 = tau2_PM(studies) || 0;
-      for (let iter=0; iter<200; iter++) {
-        const sums = weightedSums(studies, tau2);
-        let num = 0;
-        for (const s of studies) { const w = 1/(s.v+tau2); num += w*w*(s.est-sums.mu)*(s.est-sums.mu); }
-        const step = (num - sums.sw + sums.sw2 / sums.sw) / sums.sw2;
-        const next = Math.max(0, tau2 + step);
-        if (Math.abs(next - tau2) < 1e-10) { tau2 = next; break; }
-        tau2 = next;
-      }
-      return tau2;
+      return studies.length < 2 ? null : window.AlmMaCore.tau2REML(studies.map(s => s.est), studies.map(s => s.v));
     }
 
     function poolSummary(studies, tau2) {

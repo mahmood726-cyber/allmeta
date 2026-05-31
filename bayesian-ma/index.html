@@ -175,6 +175,7 @@
 
   <p class="footer-note">Conjugate model: y<sub>i</sub> ∼ N(θ, v<sub>i</sub>+τ²), θ ∼ N(μ₀, τ₀²). Posterior: θ | data ∼ N(μ*, τ*²) with τ*² = (1/τ₀² + Σ 1/(v<sub>i</sub>+τ²))<sup>−1</sup>. Posterior probabilities come from the Gaussian CDF (West 2009, ~1e-15). τ² option uses the canonical Paule-Mandel root (Σwᵢ(yᵢ−μ̄)²=k−1). <strong>R-parity:</strong> posterior mean/SD/CrI and tail/ROPE probabilities match the exact analytic conjugate posterior, and PM τ² the canonical root, to 1e-9 (<code>hub/shared/tests/bayesian-ma-parity.spec.mjs</code>). Deterministic closed-form — no MCMC, so R̂/ESS are inapplicable.</p>
 
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
@@ -232,15 +233,9 @@
       for (const s of studies) { const w = 1/(s.v+tau2); Q += w*(s.est-mu)*(s.est-mu); }
       return { sw, swy, mu, Q };
     }
+    // Paule-Mandel τ² via the audited single-source core (shared/ma-core.js).
     function tau2PM(studies) {
-      const k = studies.length;
-      if (k < 2) return 0;
-      const target = k - 1;
-      if (wsum(studies, 0).Q <= target) return 0;
-      let lo=0, hi=100, g=0;
-      while (g<60 && hi<1e9 && wsum(studies,hi).Q > target) { hi *= 2; g++; }
-      for (let i=0;i<100;i++) { const m=(lo+hi)/2; if (wsum(studies,m).Q > target) lo=m; else hi=m; if (hi-lo<1e-9) break; }
-      return (lo+hi)/2;
+      return studies.length < 2 ? 0 : window.AlmMaCore.tau2PM(studies.map(s => s.est), studies.map(s => s.v));
     }
 
     // Posterior θ | y (normal prior × normal likelihoods with known var+τ²)

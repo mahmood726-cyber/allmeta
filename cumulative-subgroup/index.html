@@ -77,6 +77,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
@@ -239,16 +240,9 @@
       for (const s of studies) { const w = 1/(s.v+tau2); Q += w*(s.est-mu)*(s.est-mu); }
       return { sw, sw2, swy, mu, Q };
     }
+    // Paule-Mandel τ² via the audited single-source core (shared/ma-core.js).
     function tau2_PM(studies) {
-      const k = studies.length;
-      if (k < 2) return 0;
-      const target = k-1;
-      const q0 = weightedSums(studies, 0).Q;
-      if (q0 <= target) return 0;
-      let lo=0, hi=100, guard=0;
-      while (guard<60 && hi<1e9 && weightedSums(studies,hi).Q > target) { hi *= 2; guard++; }
-      for (let i=0;i<100;i++) { const m=(lo+hi)/2; if (weightedSums(studies,m).Q > target) lo=m; else hi=m; if (hi-lo<1e-9) break; }
-      return (lo+hi)/2;
+      return studies.length < 2 ? 0 : window.AlmMaCore.tau2PM(studies.map(s => s.est), studies.map(s => s.v));
     }
     function pool(studies) {
       if (!studies.length) return null;
