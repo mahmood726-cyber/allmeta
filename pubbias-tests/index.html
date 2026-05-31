@@ -65,6 +65,8 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/selmodel.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -556,6 +558,15 @@
       // Trim-and-fill summary row
       body.innerHTML += '<tr><td><code>Trim-and-fill</code></td><td>k0=' + tf.k0 + '</td><td>&#8212;</td><td>adjusted est=' + fmt(tf.est, 3) + '</td><td><span class="chip ' + (tf.k0 > 0 ? 'bad' : 'ok') + '">' + (tf.k0 > 0 ? 'imputed ' + tf.k0 + ' studies' : 'symmetric') + '</span></td></tr>';
 
+      // Vevea-Hedges step-function selection model (publication-bias-adjusted mean).
+      var sel = (window.AlmSelModel && rows.length >= 4)
+        ? window.AlmSelModel.fit(rows.map(function (r) { return r.te; }), rows.map(function (r) { return r.se * r.se; }), { steps: [0.025], method: 'REML' })
+        : null;
+      if (sel && isFinite(sel.mu)) {
+        var selCls = (sel.LRTp < 0.05) ? 'bad' : 'ok';
+        body.innerHTML += '<tr><td><code>Selection model (Vevea-Hedges)</code></td><td>&#948;&#8322;=' + fmt(sel.delta[1], 3) + '</td><td>' + fmt(sel.LRTp, 3) + '</td><td>adjusted &#956;=' + fmt(sel.mu, 3) + ' (unadj ' + fmt(sel.unadjusted.mu, 3) + ')</td><td><span class="chip ' + selCls + '">' + (sel.LRTp < 0.05 ? 'evidence of selection' : 'no evidence') + '</span></td></tr>';
+      }
+
       // Store for export
       _lastResults = {
         _schema:    'pubbias-tests-results-v1',
@@ -570,6 +581,11 @@
         tf_k0:      tf.k0,
         tf_est:     tf.est,
         tf_se:      tf.se,
+        sel_mu:     sel ? sel.mu : null,
+        sel_se:     sel ? sel.se : null,
+        sel_delta2: sel ? sel.delta[1] : null,
+        sel_LRT:    sel ? sel.LRT : null,
+        sel_LRTp:   sel ? sel.LRTp : null,
         studies:    rows.map(function (r) { return { te: r.te, se: r.se }; }),
       };
 
