@@ -132,9 +132,15 @@ test('a11y portfolio sweep (discovery baseline)', async ({ page }) => {
   }
   writeFileSync(join(__dirname, '..', 'a11y-findings.md'), md.join('\n') + '\n');
 
-  // Discovery pass: only assert the sweep itself completed across the fleet.
+  // Discovery pass: assert the sweep completed across the fleet.
   console.log(`a11y sweep: ${scanned}/${APPS.length} apps, ` +
     `${ranked.length} distinct rules, ${totalVios} instances`);
   expect(scanned, `apps that failed to load: ${failed.join(', ')}`)
     .toBeGreaterThanOrEqual(APPS.length - 3);
+
+  // Regression GATE: all CRITICAL violations were eliminated (2026-05-29); no new
+  // critical (button-name / select-name / label / aria-* etc.) may be introduced.
+  const criticals = ranked.filter((r) => r.impact === 'critical');
+  const critList = criticals.map((r) => `${r.id} (${r.nodes} nodes, ${r.apps} apps)`).join('; ');
+  expect(criticals, `NEW critical a11y violation(s): ${critList}`).toEqual([]);
 });

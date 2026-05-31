@@ -1,6 +1,6 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-05-30T21:28:22.219Z
+Generated: 2026-05-31T08:03:58.568Z
 Apps scanned: 69/69
 Total violation instances: 33
 
@@ -8,11 +8,11 @@ Total violation instances: 33
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
-| 1 | `color-contrast` | serious | 5 | 30 | Elements must meet minimum color contrast ratio thresholds |
+| 1 | `color-contrast` | serious | 5 | 29 | Elements must meet minimum color contrast ratio thresholds |
 | 2 | `scrollable-region-focusable` | serious | 3 | 4 | Scrollable region must have keyboard access |
 | 3 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
 | 4 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
-| 5 | `region` | moderate | 11 | 35 | All page content should be contained by landmarks |
+| 5 | `region` | moderate | 11 | 39 | All page content should be contained by landmarks |
 | 6 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
 | 7 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
 | 8 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |

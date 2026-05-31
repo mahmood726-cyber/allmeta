@@ -1,0 +1,41 @@
+name: shared-tests
+
+# Gates the hub/shared parity + a11y + export suite (R-parity backbone, a11y-sweep,
+# chart-export, results-report). These use pre-captured R ground truth, so no R is
+# needed in CI. Complements playwright.yml (which only covers tests/playwright).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shared-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      # The Playwright config's webServer launches `python -m http.server`,
+      # so make a `python` shim available on the runner.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --reporter=line
+        env:
+          CI: "true"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-tests-artifacts
+          path: hub/shared/tests/artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
