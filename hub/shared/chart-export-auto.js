@@ -8,8 +8,8 @@
  *   - SVG : true vector (SVG sources only; computed styles inlined, viewBox padded)
  *   - PNG : 2× raster (transparent)
  *   - JPG : 2× raster on white
- *   - PDF : page sized to the chart (needs hub/shared/vendor/jspdf.min.js; the PDF
- *           button is hidden when jsPDF is absent)
+ *   - PDF : page sized to the chart (jsPDF is lazy-loaded from hub/shared/vendor/
+ *           jspdf.min.js, resolved relative to this script, on the first PDF click)
  *
  * Skips: Plotly plots (they ship their own modebar download), inline icons
  * (anything < 200×120), elements marked data-alm-noexport, and anything already
@@ -21,6 +21,29 @@
   "use strict";
   if (window.__almChartExportAuto) return;           // singleton
   window.__almChartExportAuto = true;
+
+  // Resolve this script's own URL so we can lazy-load the vendored jsPDF
+  // (hub/shared/vendor/jspdf.min.js) relative to it — no per-app <script> tag.
+  var SELF_SRC = (document.currentScript && document.currentScript.src) || (function () {
+    var ss = document.getElementsByTagName('script');
+    for (var i = ss.length - 1; i >= 0; i--) if (/chart-export-auto\.js(\?|$)/.test(ss[i].src)) return ss[i].src;
+    return '';
+  })();
+  var _pdfState = 0; // 0 = not requested, 1 = loading, 2 = ready, -1 = failed
+  var _pdfCbs = [];
+  function loadJsPdf(cb) {
+    if ((window.jspdf && window.jspdf.jsPDF) || window.jsPDF) { _pdfState = 2; return cb(true); }
+    _pdfCbs.push(cb);
+    if (_pdfState === 1) return;
+    _pdfState = 1;
+    var url = SELF_SRC ? SELF_SRC.replace(/chart-export-auto\.js(\?.*)?$/, 'vendor/jspdf.min.js') : '';
+    if (!url) { _pdfState = -1; _pdfCbs.splice(0).forEach(function (f) { f(false); }); return; }
+    var s = document.createElement('script');
+    s.src = url;
+    s.onload = function () { _pdfState = 2; _pdfCbs.splice(0).forEach(function (f) { f(true); }); };
+    s.onerror = function () { _pdfState = -1; console.warn('[alm.chartExport] could not load jsPDF from ' + url); _pdfCbs.splice(0).forEach(function (f) { f(false); }); };
+    document.head.appendChild(s);
+  }
 
   var PAD = 12, MIN_W = 200, MIN_H = 120;
   var SVG_PROPS = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity',
@@ -127,7 +150,7 @@
     var fmts = isSvg ? ['SVG', 'PNG', 'JPG', 'PDF'] : ['PNG', 'JPG', 'PDF'];
     var html = '<span class="alm-xbar__lbl" aria-hidden="true">⬇</span>';
     for (var i = 0; i < fmts.length; i++) {
-      if (fmts[i] === 'PDF' && !hasPdf()) continue;
+      // PDF is always offered; jsPDF is lazy-loaded from vendor/ on first click.
       html += '<button type="button" data-xfmt="' + fmts[i].toLowerCase() +
         '" aria-label="Download chart as ' + fmts[i] + '">' + fmts[i] + '</button>';
     }
@@ -142,25 +165,31 @@
         if (fmt === 'svg') download(new Blob([serialize(prep.svg)], { type: 'image/svg+xml' }), basename + '.svg');
         else if (fmt === 'png') rasterize(prep, 'image/png', basename + '.png', null);
         else if (fmt === 'jpg') rasterize(prep, 'image/jpeg', basename + '.jpg', '#ffffff');
-        else if (fmt === 'pdf') toPdf(function (cb) {
-          var svgText = serialize(prep.svg), scale = 2;
-          var cv = document.createElement('canvas');
-          cv.width = Math.ceil(prep.w * scale); cv.height = Math.ceil(prep.h * scale);
-          var cx = cv.getContext('2d'); cx.scale(scale, scale);
-          cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, prep.w, prep.h);
-          var im = new Image(), u = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
-          im.onload = function () { cx.drawImage(im, 0, 0, prep.w, prep.h); URL.revokeObjectURL(u); cb(cv.toDataURL('image/png')); };
-          im.src = u;
-        }, prep.w, prep.h, basename + '.pdf');
+        else if (fmt === 'pdf') loadJsPdf(function (ok) {
+          if (!ok) return;
+          toPdf(function (cb) {
+            var svgText = serialize(prep.svg), scale = 2;
+            var cv = document.createElement('canvas');
+            cv.width = Math.ceil(prep.w * scale); cv.height = Math.ceil(prep.h * scale);
+            var cx = cv.getContext('2d'); cx.scale(scale, scale);
+            cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, prep.w, prep.h);
+            var im = new Image(), u = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
+            im.onload = function () { cx.drawImage(im, 0, 0, prep.w, prep.h); URL.revokeObjectURL(u); cb(cv.toDataURL('image/png')); };
+            im.src = u;
+          }, prep.w, prep.h, basename + '.pdf');
+        });
       } else {
         var cv2 = getCanvasEl(); if (!cv2) return;
         if (fmt === 'png') canvasToBlob(cv2, 'image/png', basename + '.png', null);
         else if (fmt === 'jpg') canvasToBlob(cv2, 'image/jpeg', basename + '.jpg', '#ffffff');
-        else if (fmt === 'pdf') toPdf(function (cb) {
-          var t = document.createElement('canvas'); t.width = cv2.width; t.height = cv2.height;
-          var tx = t.getContext('2d'); tx.fillStyle = '#ffffff'; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(cv2, 0, 0);
-          cb(t.toDataURL('image/png'));
-        }, cv2.width, cv2.height, basename + '.pdf');
+        else if (fmt === 'pdf') loadJsPdf(function (ok) {
+          if (!ok) return;
+          toPdf(function (cb) {
+            var t = document.createElement('canvas'); t.width = cv2.width; t.height = cv2.height;
+            var tx = t.getContext('2d'); tx.fillStyle = '#ffffff'; tx.fillRect(0, 0, t.width, t.height); tx.drawImage(cv2, 0, 0);
+            cb(t.toDataURL('image/png'));
+          }, cv2.width, cv2.height, basename + '.pdf');
+        });
       }
     });
     return bar;

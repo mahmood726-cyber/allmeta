@@ -1,8 +1,9 @@
 /**
  * Regression for the zero-config chart export (hub/shared/chart-export-auto.js):
  * every app that includes it gets a download bar on each chart, and the bar
- * actually produces files in multiple formats (SVG/PNG/JPG; PDF when jsPDF is
- * loaded). Auto-injection must not raise console errors.
+ * actually produces files in multiple formats (SVG/PNG/JPG/PDF — jsPDF is
+ * lazy-loaded from vendor/ on the first PDF click). Auto-injection must not
+ * raise console errors.
  */
 import { test, expect } from '@playwright/test';
 const BENIGN = /frame-ancestors|ERR_CONNECTION/;
@@ -23,7 +24,7 @@ for (const app of WIRED) {
     const bars = await page.$$eval('.alm-xbar', els => els.length);
     expect(bars, 'at least one export bar').toBeGreaterThan(0);
     const fmts = await page.$$eval('.alm-xbar button', els => [...new Set(els.map(e => e.textContent))]);
-    expect(fmts).toEqual(expect.arrayContaining(['SVG', 'PNG', 'JPG']));
+    expect(fmts).toEqual(expect.arrayContaining(['SVG', 'PNG', 'JPG', 'PDF']));
     expect(errs, 'no console errors').toEqual([]);
   });
 }
@@ -39,4 +40,18 @@ test('export actually downloads files with correct extensions', async ({ page })
     ]);
     expect(dl.suggestedFilename().endsWith('.' + fmt.toLowerCase())).toBe(true);
   }
+});
+
+test('PDF export lazy-loads jsPDF from vendor/ and downloads a .pdf', async ({ page }) => {
+  await page.goto('http://localhost:8088/nma-meta-reg/index.html', { waitUntil: 'load' });
+  const b = await page.$('#btn-run'); if (b) await b.click();
+  await page.waitForTimeout(1200);
+  // jsPDF must NOT be present until the first PDF click (lazy-loaded).
+  expect(await page.evaluate(() => !!(window.jspdf || window.jsPDF))).toBe(false);
+  const [dl] = await Promise.all([
+    page.waitForEvent('download', { timeout: 10000 }),
+    page.click('.alm-xbar button:has-text("PDF")'),
+  ]);
+  expect(dl.suggestedFilename().endsWith('.pdf')).toBe(true);
+  expect(await page.evaluate(() => !!(window.jspdf && window.jspdf.jsPDF))).toBe(true);
 });
