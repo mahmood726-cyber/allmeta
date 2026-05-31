@@ -103,11 +103,30 @@
     var crit;
     if (knha) crit = _qt(1 - alpha / 2, df);              // t_{k-1} for HKSJ
     else crit = _qnorm(1 - alpha / 2);                    // z otherwise
-    return {
+    var out = {
       k: k, tau2: t2, mu: mu, se: se,
       ciLo: mu - crit * se, ciHi: mu + crit * se,
       Q: Q, I2: I2, method: method, knha: knha,
     };
+    if (opts.pi && method !== "FE") {
+      var pi = predictionInterval({ mu: mu, se: se, tau2: t2, k: k }, level);
+      if (pi) { out.piLo = pi.lo; out.piHi = pi.hi; }
+    }
+    return out;
+  }
+
+  // Prediction interval for the next study's true effect (Higgins-Thompson-Spiegelhalter
+  // 2009): μ ± t_{k-1} · √(τ̂² + SE²). The t_{k-1} quantile follows the Cochrane Handbook
+  // v6.5 (the repo standard; the older IntHout-2016 t_{k-2} is superseded, and metafor's
+  // predict() default uses z which under-covers). Pass the model SE you report (plain RE
+  // or HKSJ). Undefined for k < 2. Returns { lo, hi, t, sePred } or null.
+  function predictionInterval(fit, level) {
+    var k = fit.k, df = k - 1;
+    if (!(df >= 1)) return null;
+    var alpha = 1 - (level || 0.95);
+    var sePred = Math.sqrt((fit.tau2 || 0) + fit.se * fit.se);
+    var t = _qt(1 - alpha / 2, df);
+    return { lo: fit.mu - t * sePred, hi: fit.mu + t * sePred, t: t, sePred: sePred };
   }
 
   // Standard-normal quantile (Acklam's inverse-CDF approximation, ~1e-9).
@@ -123,19 +142,60 @@
     q = p - 0.5; r = q * q;
     return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
   }
-  // Student-t quantile: prefer the shared AlmStats.qt (exact, Hill 1970) if loaded;
-  // otherwise a Cornish-Fisher expansion off the normal quantile (good for df≥3).
+  // log Γ (Lanczos) + regularised incomplete beta (Numerical Recipes) → exact
+  // Student-t CDF, inverted by bisection. Self-contained so the t-quantile (and
+  // hence the prediction interval) is exact without any external stats dependency.
+  function _lnGammaMC(x) {
+    var c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+      -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
+    var y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t);
+    var s = 1.000000000190015;
+    for (var j = 0; j < 6; j++) { y++; s += c[j] / y; }
+    return -t + Math.log(2.5066282746310005 * s / x);
+  }
+  function _betacf(a, b, x) {
+    var FPMIN = 1e-300, qab = a + b, qap = a + 1, qam = a - 1;
+    var c = 1, d = 1 - qab * x / qap;
+    if (Math.abs(d) < FPMIN) d = FPMIN; d = 1 / d; var h = d;
+    for (var m = 1; m <= 300; m++) {
+      var m2 = 2 * m;
+      var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d; h *= d * c;
+      aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+      d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d; var del = d * c; h *= del;
+      if (Math.abs(del - 1) < 1e-14) break;
+    }
+    return h;
+  }
+  function _betai(a, b, x) {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    var bt = Math.exp(_lnGammaMC(a + b) - _lnGammaMC(a) - _lnGammaMC(b) + a * Math.log(x) + b * Math.log(1 - x));
+    return x < (a + 1) / (a + b + 2) ? bt * _betacf(a, b, x) / a : 1 - bt * _betacf(b, a, 1 - x) / b;
+  }
+  function _tcdf(t, df) {
+    var x = df / (df + t * t), ib = 0.5 * _betai(df / 2, 0.5, x);
+    return t >= 0 ? 1 - ib : ib;
+  }
+  // Student-t quantile: prefer the shared AlmStats.qt if loaded; otherwise invert the
+  // exact t-CDF by bisection (matches R qt to ~1e-10).
   function _qt(p, df) {
     if (global.AlmStats && typeof global.AlmStats.qt === "function") return global.AlmStats.qt(p, df);
-    var z = _qnorm(p), z2 = z * z;
-    var g1 = (z2 * z + z) / 4;
-    var g2 = (5 * z2 * z2 * z + 16 * z2 * z + 3 * z) / 96;
-    var g3 = (3 * Math.pow(z, 7) + 19 * Math.pow(z, 5) + 17 * z2 * z - 15 * z) / 384;
-    return z + g1 / df + g2 / (df * df) + g3 / (df * df * df);
+    if (p <= 0) return -Infinity; if (p >= 1) return Infinity;
+    if (Math.abs(p - 0.5) < 1e-15) return 0;
+    var lo = 0, hi = 4, guard = 0;
+    while (_tcdf(hi, df) < p && guard++ < 200) hi *= 2;
+    var loB = (p < 0.5) ? -hi : 0, hiB = (p < 0.5) ? 0 : hi;
+    for (var i = 0; i < 200; i++) { var m = (loB + hiB) / 2; if (_tcdf(m, df) < p) loB = m; else hiB = m; }
+    return (loB + hiB) / 2;
   }
 
   var api = {
     tau2DL: tau2DL, tau2PM: tau2PM, tau2REML: tau2REML, pool: pool,
+    predictionInterval: predictionInterval,
     _qnorm: _qnorm, _qt: _qt,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

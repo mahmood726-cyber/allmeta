@@ -73,3 +73,21 @@ test('ma-core HKSJ floor (advanced-stats.md) is opt-in and never narrows below D
   expect(r.floor).toBeGreaterThanOrEqual(r.plainDL - 1e-9);
   expect(r.noFloor).toBeLessThan(r.floor + 1e-9);
 });
+
+test('ma-core prediction interval = μ ± t_{k-1}·√(τ²+SE²) (Cochrane v6.5)', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'load' });
+  const r = await page.evaluate(({ yi, vi }) => {
+    const C = window.AlmMaCore;
+    const pool = C.pool(yi, vi, { method: 'PM', pi: true });
+    const pi = C.predictionInterval({ mu: pool.mu, se: pool.se, tau2: pool.tau2, k: pool.k });
+    return { piLo: pool.piLo, piHi: pool.piHi, lo: pi.lo, hi: pi.hi, t: pi.t,
+             k1: C.predictionInterval({ mu: 0.2, se: 0.1, tau2: 0, k: 1 }) };
+  }, { yi: YI, vi: VI });
+  // PM, plain RE SE, k=8 → t_7 PI. R (t_{k-1}) = [-0.30432526, 1.11655187]; the ~1e-4
+  // gap is ma-core's exact PM root vs metafor's uniroot τ² (documented above).
+  expect(r.piLo).toBeCloseTo(-0.30432526, 4);
+  expect(r.piHi).toBeCloseTo(1.11655187, 4);
+  expect(r.lo).toBeCloseTo(r.piLo, 10);          // pool({pi}) and standalone agree
+  expect(r.t).toBeCloseTo(2.36462425, 5);        // exact qt(0.975, 7), self-contained
+  expect(r.k1, 'k<2 → null').toBeNull();
+});
