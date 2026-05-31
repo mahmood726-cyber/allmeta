@@ -74,7 +74,8 @@
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
-  <script src="../shared/heterogeneity-ci.js"></script>
+  <script src="../shared/ma-core.js"></script>
+<script src="../shared/heterogeneity-ci.js"></script>
 <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
@@ -301,29 +302,9 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       const res0 = computeQ(studies, 0);
       const tCrit = tQuantile975(k - 1);
 
-      let tau2;
-      let fin;
-      if (res0.Q <= target) {
-        tau2 = 0;
-        fin = res0;
-      } else {
-        let lo = 0, hi = 100;
-        let qHi = computeQ(studies, hi).Q;
-        let guard = 0;
-        while (qHi > target && hi < 1e9 && guard < 60) {
-          hi *= 2;
-          qHi = computeQ(studies, hi).Q;
-          guard++;
-        }
-        for (let i = 0; i < 100; i++) {
-          const mid = (lo + hi) / 2;
-          const q = computeQ(studies, mid).Q;
-          if (q > target) lo = mid; else hi = mid;
-          if (hi - lo < 1e-9) break;
-        }
-        tau2 = (lo + hi) / 2;
-        fin = computeQ(studies, tau2);
-      }
+      // Paule-Mandel τ² via the audited single-source core (shared/ma-core.js).
+      const tau2 = window.AlmMaCore.tau2PM(studies.map(s => s.est), studies.map(s => s.v));
+      const fin = computeQ(studies, tau2);
 
       const seBase = Math.sqrt(1 / fin.sw);
 
