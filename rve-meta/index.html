@@ -99,7 +99,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
     <section class="panel">
       <h2>Results</h2>
       <div id="meta-row" style="font-size:0.88rem;color:var(--muted)">Run a fit to see clusters, k, τ², and the coefficient table here.</div>
-      <h2 style="margin-top:1rem">Coefficients (cluster-robust SE, df = m − p)</h2>
+      <h2 style="margin-top:1rem">Coefficients (CR2 cluster-robust SE, Satterthwaite df)</h2>
       <table>
         <thead><tr><th>Predictor</th><th>β̂</th><th>SE (robust)</th><th>t</th><th>df</th><th>95% CI</th><th>p</th></tr></thead>
         <tbody id="coef-body"></tbody>
@@ -109,7 +109,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with CR1 small-sample correction. Knapp-Hartung-style t-quantiles via exact qt (Hill 1970). Calibration: matches <code>robumeta::robu(model="CORR")</code> coefficient estimates to ~1e-7 (verified). The robust SEs use CR1, which is <strong>anticonservative when the number of clusters m is small</strong> — at m=5 they run ~20-30% below <code>robumeta</code>'s CR2; the gap shrinks as m grows. CR2 (the clubSandwich / <code>robumeta(small=TRUE)</code> per-cluster bias correction) is the accurate default and is roadmapped. <strong>For inference with few clusters (m≲20) use <code>robumeta</code>/<code>clubSandwich</code> in R.</strong> The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
+    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with the <strong>CR2 bias-reduced small-sample correction</strong> (Tipton 2015; Pustejovsky-Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>, the accurate default for inference with few clusters. τ² is the HTJ CORR moment estimator (not a plain DerSimonian-Laird across rows). t-quantiles via exact qt (Hill 1970). Calibration: matches <code>robumeta::robu(modelweights="CORR", small=TRUE)</code> on <strong>every reported quantity — τ², coefficients, CR2 SEs and Satterthwaite df — to ≤1e-5</strong> (verified on homogeneous and heterogeneous datasets; see <code>rve-meta-cr2-parity.spec.mjs</code>). Because the CORR weights are constant within a cluster, the within-cluster annihilator block is symmetric, so A<sub>j</sub> is a true symmetric inverse-square-root. CR1 (a single scalar correction, anticonservative at small m) remains available via <code>fitCORR(rows,{method:"CR1"})</code>. The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
   </footer>
 
   <script>
@@ -165,7 +165,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
       }
       document.getElementById("meta-row").innerHTML =
         "k = " + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, " +
-        "p = " + fit.p + " coefficients, τ²(DL) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2);
+        "p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2);
       var names = ["(intercept)"].concat(
         nameInput.split(/\s*,\s*/).filter(function (s) { return s.length; }));
       while (names.length < fit.p) names.push("x" + names.length);
@@ -176,7 +176,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
           "<td>" + fmt(s.estimate, 3) + "</td>" +
           "<td>" + fmt(s.se, 3) + "</td>" +
           "<td>" + fmt(s.t, 2) + "</td>" +
-          "<td>" + s.df + "</td>" +
+          "<td>" + fmt(s.df, 2) + "</td>" +
           "<td>" + fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) + "</td>" +
           "<td>" + (s.p < 0.001 ? "&lt;0.001" : fmt(s.p, 3)) + "</td></tr>";
       }

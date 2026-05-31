@@ -3,16 +3,14 @@
  * robumeta::robu(model="CORR") on the app's built-in example (5 clusters, 13
  * effects, predictors p1,p2 + intercept):
  *
- *   robu(yi~p1+p2, studynum, var.eff.size=vi, modelweights="CORR")
- *   → β = [0.76693135, -0.14444423, -0.02675033]   (matches to ~1e-7)
+ *   robu(yi~p1+p2, studynum, var.eff.size=vi, modelweights="CORR", small=TRUE)
+ *   → β = [0.76693135, -0.14444423, -0.02675033]
  *   → SE (CR2, small=TRUE) = [0.22222, 0.15533, 0.01016]
  *
- * The engine reproduces the COEFFICIENTS essentially exactly (the working-model
- * weights match robumeta), but uses a CR1 correction, so its robust SEs run
- * ~20-30% BELOW robumeta's CR2 at this small m=5 (anticonservative — documented
- * in the app footer; CR2 is roadmapped). This test pins the verified β parity and
- * asserts the SEs sit below the CR2 reference (guarding against silent drift and
- * recording the known gap).
+ * Since the 2026-05-31 CR2 upgrade the engine reproduces BOTH the coefficients
+ * and the CR2 SEs (the default is now CR2, not CR1). This is the rounded-reference
+ * smoke check; rve-meta-cr2-parity.spec.mjs holds the full-precision parity
+ * (τ², β̂, CR2 SE, Satterthwaite df ≤1e-5) across two datasets.
  */
 import { test, expect } from '@playwright/test';
 const URL = 'http://localhost:8088/rve-meta/index.html';
@@ -38,9 +36,6 @@ test('rve-meta coefficients match robumeta::robu(CORR) to ~1e-6', async ({ page 
 
   for (let i = 0; i < 3; i++) expect(r.beta[i]).toBeCloseTo(BETA[i], 6);
   expect(r.tau2).toBeLessThan(1e-6);
-  // CR1 SEs are below the CR2 reference (anticonservative at small m) — documented.
-  for (let i = 0; i < 3; i++) {
-    expect(r.se[i]).toBeLessThan(SE_CR2[i]);            // CR1 < CR2 here
-    expect(r.se[i]).toBeGreaterThan(SE_CR2[i] * 0.6);   // but within a sane band (≈0.7x)
-  }
+  // CR2 SEs now match robumeta(small=TRUE) at the rounded reference precision.
+  for (let i = 0; i < 3; i++) expect(r.se[i]).toBeCloseTo(SE_CR2[i], 4);
 });
