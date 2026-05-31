@@ -30,6 +30,11 @@ A 6-family adversarial audit (13 agents) flagged 32 candidates; verification con
   p-curve p-uniform delta is heuristic + untested numerically (low; future).
 
 ## DONE (verified, shipped)
+- **Vendor SRI (CI-green, 2026-05-31):** the xlsx `.min.js` committed as LF (sha384-vtjasyid)
+  but 3 live consumers (IPD-Submission, Pairwiseai bundle, Truthcert1 production) pinned the
+  stale CRLF hash (ZmG1) → browsers blocked it → Excel export dead + red `playwright` CI.
+  Repointed all 3 to the served LF hash; .gitattributes binary prevents recurrence. BOTH CI
+  workflows (playwright + shared-tests) now green.
 - **Correctness sweep (15+ commits):** genuine fixes in p-curve χ² tail, forest-plot &
   HTA prediction intervals (t_{k-1}), rare-events GLMM default, cumulative-subgroup
   between-group Q centre, rve-meta CR1 claim, bma-tau-priors uniform-prior weight bug,
