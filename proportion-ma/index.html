@@ -333,8 +333,11 @@
         return Object.assign({}, r, t);
       });
 
-      var effTau = (tauEst === 'FE') ? 'DL' : tauEst;
-      var pooled = pool(transformed, effTau);
+      // Pass the estimator through verbatim. pool() leaves tau2=0 for any value
+      // other than 'DL'/'PM', so 'FE' correctly yields the fixed-effect inverse-
+      // variance pool. (Previously FE was remapped to 'DL', so the "Fixed-effect"
+      // option silently returned the random-effects DL result whenever Q>df.)
+      var pooled = pool(transformed, tauEst);
 
       // Per-study CIs on proportion scale (Clopper-Pearson)
       var totalW = pooled.weights.reduce(function (a, b) { return a + b; }, 0);
