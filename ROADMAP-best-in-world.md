@@ -86,9 +86,13 @@ export their judgement state as a report — lower priority (categorical assessm
 1. **rare-events-glmm CM.AL**: implement the true conditional non-central-hypergeometric
    likelihood (currently UM.FS is the verified default; CM.AL is disclosed-anticonservative).
    Verify vs `metafor::rma.glmm(model="CM.EL"/"CM.AL")`.
-2. **rve-meta CR2**: implement the clubSandwich CR2 per-cluster bias correction +
-   Satterthwaite df (currently CR1, disclosed ~20-30% anticonservative at small m).
-   Verify vs `robumeta`/`clubSandwich`.
+2. ✅ **rve-meta CR2 (DONE 2026-05-31, `955342a`):** implemented the CR2 bias-reduced
+   sandwich + per-coefficient Satterthwaite df AND the HTJ CORR-model τ² moment estimator
+   (the old engine used plain DL, coinciding with robumeta only at τ²=0). Symmetric
+   inverse-sqrt via a new Jacobi eigensolver (CORR weights are constant-within-cluster, so
+   the annihilator block is symmetric). Verified vs `robumeta::robu(small=TRUE)` to ~1e-11
+   on τ², β̂, CR2 SE and df across homogeneous + heterogeneous datasets; `rve-meta-cr2-parity.spec.mjs`.
+   CR1 retained via `{method:"CR1"}`. (HIER working model still R-only.)
 3. **Untested-branch audit (continue):** keep spot-checking each effect-measure / sub-method
    in parity-covered apps against meta/metafor (this vein found the subgroup-Q and Harbord/
    Peters bugs). Next candidates: NMA measure branches, DTA LR/DOR edge cases, GLMM RR/RD.
