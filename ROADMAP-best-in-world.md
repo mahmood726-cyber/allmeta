@@ -66,8 +66,10 @@ RoB/screening tools (rob2, robins-i/e, amstar-2, quadas-2, prisma-*, cerqual, ci
 export their judgement state as a report — lower priority (categorical assessments).
 
 ### B. PDF everywhere + Plotly multi-format
-- Vendor `hub/shared/vendor/jspdf.min.js` and include it in the analysis apps so the
-  chart export bar shows **PDF** too (currently hidden where jsPDF is absent).
+- ✅ **PDF everywhere (DONE 2026-05-31, `be90e01`):** chart-export-auto.js now lazy-loads
+  the vendored jsPDF from its sibling vendor/ dir on the first PDF click, so every non-Plotly
+  chart (~30 apps) downloads as SVG+PNG+JPG+PDF with no per-app change. (No Plotly apps exist
+  in the suite, so the Plotly multi-format sub-item is moot.)
 - Plotly apps (HTA, bayesian-mcmc, bayesian-nma, nma-dose-response) keep their modebar;
   configure `toImageButtonOptions` + add an SVG/PDF export so they match the SVG apps'
   multi-format parity. (chart-export-auto intentionally skips Plotly.)
@@ -97,7 +99,7 @@ export their judgement state as a report — lower priority (categorical assessm
    the annihilator block is symmetric). Verified vs `robumeta::robu(small=TRUE)` to ~1e-11
    on τ², β̂, CR2 SE and df across homogeneous + heterogeneous datasets; `rve-meta-cr2-parity.spec.mjs`.
    CR1 retained via `{method:"CR1"}`. (HIER working model still R-only.)
-3. **Untested-branch audit (continue):** keep spot-checking each effect-measure / sub-method
+3. **Untested-branch audit (continue):** dta-sroc Moses-Littenberg SROC verified vs R lm()/cor() incl. zero-cell CC branch (`54ade18`, was UI-only) — no bug. Keep spot-checking each effect-measure / sub-method
    in parity-covered apps against meta/metafor (this vein found the subgroup-Q and Harbord/
    Peters bugs). Next candidates: NMA measure branches, DTA LR/DOR edge cases, GLMM RR/RD.
 4. ✅ **I²/τ² Q-profile CI extracted (DONE 2026-05-31, `aba63d5`):** `shared/heterogeneity-ci.js`
@@ -111,7 +113,8 @@ export their judgement state as a report — lower priority (categorical assessm
 ---
 
 ## NEXT — accessibility (medium priority)
-1. **nma-dose-response-app dark theme:** ~24 contrast nodes. ROOT CAUSE (diagnosed
+1. ✅ **nma-dose-response-app dark theme (DONE 2026-05-31, `ce0644a`): 22 → 0 axe contrast nodes.** Fixed by re-asserting the app's dark design tokens on html:root so the shared OS-scheme app-style.css can't clobber them (both sheets resolve dark), + light panel headings + explicit wizard-card text. Regression spec pins zero. [former root-cause note below]
+   ROOT CAUSE (diagnosed
    2026-05-30): the app has an always-dark UI **mixed with some white-background regions**,
    AND it links `hub/app-style.css` whose `body { color: var(--ink) !important }` follows the
    **OS** colour-scheme — under a LIGHT OS, `--ink` resolves to dark `#202927` and paints dark
@@ -133,9 +136,10 @@ export their judgement state as a report — lower priority (categorical assessm
   some; make it universal and round-trip: app → R script → same numbers).
 - **PRISMA-2020 + GRADE evidence-profile export** as a single bundle (the bus already moves
   pooled results to grade-sof; add a "export full SoF + PRISMA flow + forest" report).
-- **Shared numeric core**: factor the repeatedly-verified routines (PM/REML/DL τ², HKSJ,
-  Q-profile, IV pool, escalc-style measure conversions) into one tested `shared/ma-core.js`
-  so every app uses the same audited math (single source of truth, fewer untested branches).
+- ✅ **Shared numeric core (FOUNDATION DONE 2026-05-31, `4673f6f`):** `shared/ma-core.js`
+  (DL/PM/REML τ², IV random/fixed pool, HKSJ ± opt-in floor, Q, τ²-based I²) verified vs
+  metafor::rma to ≤1e-7 (PM = exact Q-root). workbench migrated as the first consumer behind
+  its 1e-6 oracle. Remaining apps can migrate incrementally behind the same parity guard.
 - **TruthCert on every export**: optionally HMAC-sign the Methods+Results report so a reader
   can verify it was produced by allmeta and not altered.
 - **Dataset interop**: import/export RevMan `.rm5`/`.rm6`, CSV templates, and Cochrane data.
