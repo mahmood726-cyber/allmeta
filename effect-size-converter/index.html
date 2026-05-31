@@ -84,6 +84,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/evalue.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -212,6 +213,18 @@
           <g id="forest-axis"></g>
         </svg>
         <p class="note">All conversions are mapped to the SMD scale for visual comparison (binary ratios converted via Cox's constant √3/π ≈ 0.5513). The plot area is always rendered so automated checks can confirm the canvas is live; the dot + whisker show each scale's estimate with its 95% CI after conversion.</p>
+      </div>
+      <div class="plot-wrap" style="margin-top:1rem">
+        <h2>E-value (sensitivity to unmeasured confounding)</h2>
+        <p class="note">VanderWeele &amp; Ding (2017): the minimum risk-ratio strength an unmeasured confounder would need with both treatment and outcome to explain away the estimate. For observational evidence only.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:end">
+          <label style="font-size:0.85rem">Measure<br><select id="ev-measure" aria-label="E-value measure"><option value="RR">RR</option><option value="OR">OR</option><option value="HR">HR</option><option value="SMD">SMD (d)</option></select></label>
+          <label style="font-size:0.85rem">Point<br><input id="ev-point" type="number" step="any" value="2.0" style="width:6rem" aria-label="Point estimate"></label>
+          <label style="font-size:0.85rem">CI low<br><input id="ev-lo" type="number" step="any" value="1.5" style="width:6rem" aria-label="CI lower"></label>
+          <label style="font-size:0.85rem">CI high<br><input id="ev-hi" type="number" step="any" value="2.7" style="width:6rem" aria-label="CI upper"></label>
+          <label style="font-size:0.85rem"><input id="ev-rare" type="checkbox"> rare outcome</label>
+        </div>
+        <p id="ev-out" style="margin-top:0.6rem;font-size:0.95rem" role="status" aria-live="polite"></p>
       </div>
       <!-- axis-controls mount: axis range for the SMD forest plot (override deferred — renders, no-op) -->
       <div id="alm-axis-mount" style="margin-top:0.75rem;"></div>
@@ -696,6 +709,28 @@
     };
 
     // Return the current conversion table rows as a results object.
+    // E-value widget (VanderWeele-Ding) — independent of the conversion table.
+    (function () {
+      function evRender() {
+        var out = document.getElementById('ev-out'); if (!out || !window.AlmEValue) return;
+        var meas = document.getElementById('ev-measure').value;
+        var pt = parseFloat(document.getElementById('ev-point').value);
+        var lo = parseFloat(document.getElementById('ev-lo').value);
+        var hi = parseFloat(document.getElementById('ev-hi').value);
+        var rare = document.getElementById('ev-rare').checked;
+        if (!isFinite(pt) || pt <= 0) { out.textContent = 'Enter a positive estimate.'; window.__almLastEValue = function () { return null; }; return; }
+        var r = window.AlmEValue.eValues(meas, pt, isFinite(lo) ? lo : null, isFinite(hi) ? hi : null, { rare: rare });
+        var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
+        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + f(r.ci) + '</strong>' +
+          (meas !== 'RR' ? ' &middot; approx RR = ' + f(r.rr.point) : '');
+        window.__almLastEValue = function () { return r; };
+      }
+      ['ev-measure', 'ev-point', 'ev-lo', 'ev-hi', 'ev-rare'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.addEventListener('input', evRender);
+      });
+      if (document.readyState !== 'loading') evRender(); else document.addEventListener('DOMContentLoaded', evRender);
+    })();
+
     window.__almResults = function () {
       var type = (document.getElementById('in-type') || {}).value || '';
       var est  = parseFloat((document.getElementById('in-est') || {}).value);
