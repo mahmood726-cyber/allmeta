@@ -47,6 +47,21 @@
     return m + Math.log(s);
   }
 
+  // log Γ (Lanczos) and log binomial coefficient — used by the CM.EL exact
+  // conditional likelihood (the noncentral hypergeometric normaliser).
+  function _lnGamma(x) {
+    var c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+      -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
+    var y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t);
+    var s = 1.000000000190015;
+    for (var j = 0; j < 6; j++) { y++; s += c[j] / y; }
+    return -t + Math.log(2.5066282746310005 * s / x);
+  }
+  function _logChoose(n, k) {
+    if (k < 0 || k > n) return -Infinity;
+    return _lnGamma(n + 1) - _lnGamma(k + 1) - _lnGamma(n - k + 1);
+  }
+
   // log P(events | total, log-odds): event log-density for binomial.
   function _logBin(events, total, logit) {
     if (events < 0 || events > total) return -Infinity;
@@ -346,9 +361,142 @@
     };
   }
 
+  // =====================================================================
+  // CONDITIONAL EXACT (CM.EL) — Fisher's noncentral hypergeometric model.
+  //
+  // The gold-standard conditional likelihood for rare-event OR (Stijnen 2010):
+  // conditioning on each study's event margin m1_i = a_i + c_i eliminates the
+  // nuisance baseline ENTIRELY (no μ_i to profile), so 0-event arms need no
+  // continuity correction at all. The treatment-arm count a_i follows the
+  // noncentral hypergeometric law with odds ratio ψ_i = exp(θ + u_i):
+  //
+  //   P(a | n1,n2,m1,ψ) = C(n1,a)C(n2,m1−a)ψ^a / Σ_x C(n1,x)C(n2,m1−x)ψ^x
+  //
+  // and the random effect u_i ~ N(0, τ²) is integrated out by ADAPTIVE
+  // Gauss-Hermite quadrature (the integrand is centred at its per-study mode
+  // and scaled by its curvature — far more accurate than fixed GH for large τ²).
+  // ML over (θ, τ²): profile θ by Newton for each τ², then golden-section on
+  // τ²≥0 (τ²=0 evaluated explicitly for the boundary). SE(θ) is the [θ,θ] entry
+  // of the inverse 2×2 observed information (reparameterisation-invariant at the
+  // MLE; θ-curvature only when τ̂²=0).
+  //
+  // Verified vs metafor::rma.glmm(measure="OR", model="CM.EL") to ~1e-7 on θ/τ²
+  // and ~1e-3 on SE; see rare-events-cmel-parity.spec.mjs. More robust than
+  // metafor's CM.EL optimiser, which fails to converge on very sparse designs
+  // (e.g. several all-zero treatment arms) where this fit still returns a sensible
+  // estimate — so do not claim metafor parity on inputs metafor cannot fit.
+
+  function _cmelPrep(r) {
+    var a = r.events_T, n1 = r.n_T, c = r.events_C, n2 = r.n_C, m1 = a + c;
+    var xlo = Math.max(0, m1 - n2), xhi = Math.min(n1, m1);
+    var xs = [], lc = [];
+    for (var x = xlo; x <= xhi; x++) { xs.push(x); lc.push(_logChoose(n1, x) + _logChoose(n2, m1 - x)); }
+    return { a: a, n1: n1, c: c, n2: n2, m1: m1, xs: xs, lc: lc, lnum: _logChoose(n1, a) + _logChoose(n2, m1 - a) };
+  }
+  function _logNCHG(st, logpsi) {
+    var t = new Array(st.xs.length);
+    for (var i = 0; i < st.xs.length; i++) t[i] = st.lc[i] + st.xs[i] * logpsi;
+    return (st.lnum + st.a * logpsi) - _logSumExp(t);
+  }
+  // Per-study marginal log-likelihood via adaptive Gauss-Hermite (10-pt).
+  function _cmelStudyLogL(st, theta, tau2) {
+    if (tau2 < 1e-10) return _logNCHG(st, theta);
+    var ltau = -0.5 * Math.log(2 * Math.PI * tau2);
+    var g = function (u) { return _logNCHG(st, theta + u) + ltau - u * u / (2 * tau2); };
+    var u = 0, h = 1e-4, it, gp, gpp, step;
+    for (it = 0; it < 60; it++) {
+      gp = (g(u + h) - g(u - h)) / (2 * h);
+      gpp = (g(u + h) - 2 * g(u) + g(u - h)) / (h * h);
+      if (!isFinite(gpp) || gpp >= 0) break;
+      step = gp / gpp; u -= step; if (Math.abs(step) < 1e-9) break;
+    }
+    gpp = (g(u + h) - 2 * g(u) + g(u - h)) / (h * h);
+    var sig = (isFinite(gpp) && gpp < 0) ? Math.sqrt(-1 / gpp) : Math.sqrt(tau2);
+    var terms = new Array(HG10_NODES.length);
+    for (var q = 0; q < HG10_NODES.length; q++) {
+      var uq = u + Math.SQRT2 * sig * HG10_NODES[q];
+      terms[q] = Math.log(HG10_WEIGHTS[q]) + HG10_NODES[q] * HG10_NODES[q] + g(uq);
+    }
+    return Math.log(Math.SQRT2 * sig) + _logSumExp(terms);
+  }
+  function _cmelTotal(sts, theta, tau2) {
+    var s = 0; for (var i = 0; i < sts.length; i++) s += _cmelStudyLogL(sts[i], theta, Math.max(0, tau2)); return s;
+  }
+  function _cmelProfileTheta(sts, tau2, th0) {
+    var th = th0 || 0, h = 1e-4, f0, fp, fm, d1, d2, step;
+    for (var it = 0; it < 80; it++) {
+      f0 = _cmelTotal(sts, th, tau2); fp = _cmelTotal(sts, th + h, tau2); fm = _cmelTotal(sts, th - h, tau2);
+      d1 = (fp - fm) / (2 * h); d2 = (fp - 2 * f0 + fm) / (h * h);
+      if (d2 >= 0) { th += (d1 > 0 ? 0.05 : -0.05); continue; }
+      step = d1 / d2; th -= step; if (Math.abs(step) < 1e-10) break;
+    }
+    return th;
+  }
+
+  function fitConditionalExact(rowsIn) {
+    var rows = (rowsIn || []).filter(function (r) {
+      return Number.isFinite(r.events_T) && Number.isFinite(r.events_C)
+          && Number.isFinite(r.n_T) && Number.isFinite(r.n_C)
+          && r.n_T > 0 && r.n_C > 0 && r.events_T >= 0 && r.events_C >= 0
+          && r.events_T <= r.n_T && r.events_C <= r.n_C;
+    });
+    if (rows.length < 2) return { ok: false, error: "need ≥ 2 valid studies", model: "CM.EL" };
+    var sts = rows.map(_cmelPrep);
+    // Studies whose margin allows no variation (m1=0, or support size 1) carry no
+    // information about ψ; drop them from the likelihood (they are constants).
+    var inf = sts.filter(function (s) { return s.xs.length > 1; });
+    if (!inf.length) return { ok: false, error: "no studies with a variable event margin", model: "CM.EL" };
+
+    var gr = (Math.sqrt(5) - 1) / 2, lo = 0, hi = 3;
+    var cc = hi - gr * (hi - lo), dd = lo + gr * (hi - lo);
+    var fc = _cmelTotal(inf, _cmelProfileTheta(inf, cc), cc);
+    var fd = _cmelTotal(inf, _cmelProfileTheta(inf, dd), dd);
+    for (var i = 0; i < 90; i++) {
+      if (fc < fd) { lo = cc; cc = dd; fc = fd; dd = lo + gr * (hi - lo); fd = _cmelTotal(inf, _cmelProfileTheta(inf, dd), dd); }
+      else { hi = dd; dd = cc; fd = fc; cc = hi - gr * (hi - lo); fc = _cmelTotal(inf, _cmelProfileTheta(inf, cc), cc); }
+      if (Math.abs(hi - lo) < 1e-7) break;
+    }
+    var tau2 = (lo + hi) / 2;
+    var thetaI = _cmelProfileTheta(inf, tau2);
+    var llBest = _cmelTotal(inf, thetaI, tau2);
+    var th0 = _cmelProfileTheta(inf, 0);
+    var ll0 = _cmelTotal(inf, th0, 0);
+    if (ll0 >= llBest) { tau2 = 0; thetaI = th0; }
+    var theta = thetaI;
+
+    // SE(θ) from the inverse 2×2 observed information.
+    var hT = 1e-4;
+    var L = function (th, t2) { return _cmelTotal(inf, th, Math.max(0, t2)); };
+    var Ltt = (L(theta + hT, tau2) - 2 * L(theta, tau2) + L(theta - hT, tau2)) / (hT * hT);
+    var se;
+    if (tau2 > 1e-7) {
+      var hV = Math.max(1e-4, tau2 * 1e-2);
+      var Lvv = (L(theta, tau2 + hV) - 2 * L(theta, tau2) + L(theta, tau2 - hV)) / (hV * hV);
+      var Ltv = (L(theta + hT, tau2 + hV) - L(theta + hT, tau2 - hV) - L(theta - hT, tau2 + hV) + L(theta - hT, tau2 - hV)) / (4 * hT * hV);
+      var Itt = -Ltt, Ivv = -Lvv, Itv = -Ltv;
+      var schur = Itt - Itv * Itv / Ivv;
+      se = schur > 0 ? Math.sqrt(1 / schur) : NaN;
+    } else {
+      se = Ltt < 0 ? Math.sqrt(1 / -Ltt) : NaN;
+    }
+    var Z975 = 1.959963984540054;
+    return {
+      ok: isFinite(theta) && isFinite(se), model: "CM.EL",
+      theta: theta, se_theta: se, tau2: tau2, tau: Math.sqrt(tau2),
+      OR: Math.exp(theta),
+      OR_lo: Math.exp(theta - Z975 * se), OR_hi: Math.exp(theta + Z975 * se),
+      k: rows.length, k_informative: inf.length,
+      n_zero_cell_studies: rows.filter(function (r) {
+        return r.events_T === 0 || r.events_T === r.n_T || r.events_C === 0 || r.events_C === r.n_C;
+      }).length,
+    };
+  }
+
   var api = {
     fit: fit,
     fitUnconditional: fitUnconditional,
+    fitConditionalExact: fitConditionalExact,
+    _logNCHG: _logNCHG,
     _logBin: _logBin,
     _logL_study: _logL_study,
     _logL_total: _logL_total,

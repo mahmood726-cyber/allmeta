@@ -77,9 +77,10 @@ Trial 8, 1, 210, 3, 215</textarea>
         <span style="font-size:0.85rem">Model</span>
         <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
           <option value="UM.FS" selected>UM.FS — unconditional, full likelihood (recommended; matches metafor)</option>
+          <option value="CM.EL">CM.EL — exact conditional (noncentral hypergeometric; matches metafor)</option>
           <option value="CM.AL">CM.AL — fast approximation (anticonservative CI — see note)</option>
         </select>
-        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS is the recommended path: it reproduces <code>metafor::rma.glmm(model="UM.FS")</code> for the point estimate, SE and 95% CI to ~1e-6 (verified — see <code>hub/shared/tests/rare-events-glmm-parity.spec.mjs</code>). CM.AL is a faster profiled approximation but its likelihood peaks more sharply in θ, so its CI is <strong>anticonservative</strong> (≈12% too narrow on the example) and does <strong>not</strong> reproduce metafor's conditional non-central-hypergeometric CI — use UM.FS (or metafor in R) for inference.</span>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS reproduces <code>metafor::rma.glmm(model="UM.FS")</code> for the point estimate, SE and 95% CI to ~1e-6 (verified — <code>rare-events-glmm-parity.spec.mjs</code>). <strong>CM.EL</strong> is the exact conditional model (Fisher's noncentral hypergeometric — the Stijnen 2010 gold standard for rare events): it conditions on each study's event margin so the baseline is eliminated and 0-event arms need no correction; verified vs <code>metafor::rma.glmm(model="CM.EL")</code> to ~1e-7 on θ/τ² (<code>rare-events-cmel-parity.spec.mjs</code>), and converges even on very sparse designs where metafor's CM.EL optimiser does not. CM.AL is a faster profiled approximation whose CI is <strong>anticonservative</strong> (≈12% too narrow) — prefer UM.FS or CM.EL for inference.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
@@ -99,7 +100,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rare-events-glmm.js</code> — 10-point Gauss-Hermite quadrature + damped Newton-Raphson. Default UM.FS = unconditional full likelihood (matches <code>metafor::rma.glmm(model="UM.FS")</code> to ~1e-6); CM.AL is a faster profiled approximation with anticonservative CIs. For complex / multi-arm rare-event NMA, use <code>metafor::rma.glmm</code> in R.
+    Engine: <code>shared/rare-events-glmm.js</code> — Gauss-Hermite quadrature + damped Newton-Raphson. UM.FS = unconditional full likelihood (matches <code>metafor::rma.glmm(model="UM.FS")</code> to ~1e-6); CM.EL = exact conditional via Fisher's noncentral hypergeometric with <strong>adaptive</strong> Gauss-Hermite (matches <code>metafor::rma.glmm(model="CM.EL")</code> to ~1e-7 on θ/τ², ~1e-3 on SE); CM.AL is a faster profiled approximation with anticonservative CIs. For complex / multi-arm rare-event NMA, use <code>metafor::rma.glmm</code> in R.
   </footer>
   <script>
   (function () {
@@ -168,9 +169,11 @@ Trial 8, 1, 210, 3, 215</textarea>
       }
       var modelEl = document.getElementById("f-model");
       var model = modelEl ? modelEl.value : "UM.FS";
-      var glmm = model === "UM.FS"
-        ? AlmRareEventsGLMM.fitUnconditional(rows)
-        : AlmRareEventsGLMM.fit(rows);
+      var glmm = model === "CM.EL"
+        ? AlmRareEventsGLMM.fitConditionalExact(rows)
+        : model === "CM.AL"
+          ? AlmRareEventsGLMM.fit(rows)
+          : AlmRareEventsGLMM.fitUnconditional(rows);
       if (!glmm.ok) {
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +
