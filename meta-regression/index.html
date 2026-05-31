@@ -75,6 +75,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <script src="../shared/permutest.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -465,7 +466,8 @@
 
     // Last-computed result cache — populated by render(), read by __almResults().
     // Exposed on window so the alm-init IIFE (separate script block) can access them.
-    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null, _lastPI = null;
+    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null, _lastPI = null, _lastPerm = null;
+    window._almLastPerm = function () { return _lastPerm; };
     window._almLastFitted  = function () { return _lastFitted; };
     window._almLastStudies = function () { return _lastStudies; };
     window._almLastHK      = function () { return _lastHK; };
@@ -496,6 +498,13 @@
         parts.push(statCard("β₀ (intercept)", fmt(f.b0,3) + " [" + fmt(f.b0 - tCrit*seB0, 3) + ", " + fmt(f.b0 + tCrit*seB0, 3) + "]"));
         parts.push(statCard("β₁ (slope)", fmt(f.b1,4) + " [" + fmt(f.b1 - tCrit*seB1, 4) + ", " + fmt(f.b1 + tCrit*seB1, 4) + "]"));
         parts.push(statCard("β₁ test", "t(" + hk.df + ") = " + fmt(tB1,2) + ", p = " + fmt(pB1,3)));
+        // Permutation test for the slope (robust when k is small). Exact enumeration
+        // for k≤7; Monte-Carlo (2000, fixed seed) above. Matches metafor::permutest.
+        const perm = (window.AlmPermTest && k >= 4)
+          ? window.AlmPermTest.permTestSlope(parsed.studies.map(s => s.est), parsed.studies.map(s => s.v), parsed.studies.map(s => s.x), { exactMax: 7, nperm: 2000 })
+          : null;
+        _lastPerm = perm;
+        if (perm && isFinite(perm.p)) parts.push(statCard("β₁ permutation p" + (perm.exact ? " (exact)" : " (MC " + perm.nperm + ")"), fmt(perm.p, 3)));
         parts.push(statCard("τ² (PM)", fmt(fitted.tau2, 4)));
         parts.push(statCard("HKSJ q", fmt(hk.q, 3) + (hk.q === 1 ? " (floored)" : "")));
         // 95% prediction interval for a new study at the mean covariate x̄ (t_{k-2},
