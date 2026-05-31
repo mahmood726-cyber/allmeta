@@ -75,6 +75,8 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/trimfill.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -316,7 +318,7 @@
       return ticks;
     }
 
-    function buildSvg(state, studies, fe, egg) {
+    function buildSvg(state, studies, fe, egg, tf) {
       const W = 720, H = 560;
       const L = 70, R = 30, T = state.title ? 60 : 40, B = 80;
       const plotW = W - L - R, plotH = H - T - B;
@@ -399,6 +401,13 @@
       for (const s of studies) {
         p.push("<circle cx=\"" + x(s.est) + "\" cy=\"" + y(s.se) + "\" r=\"4\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
       }
+      // Trim-and-fill imputed studies: hollow markers (Duval-Tweedie mirror images).
+      if (tf && tf.imputed && tf.imputed.length) {
+        for (const im of tf.imputed) {
+          const se = Math.sqrt(im.vi);
+          p.push("<circle cx=\"" + x(im.yi) + "\" cy=\"" + y(se) + "\" r=\"4\" fill=\"none\" stroke=\"#b04444\" stroke-width=\"1.4\" stroke-dasharray=\"2,1.5\"/>");
+        }
+      }
 
       // X-axis
       const axisY = T + plotH;
@@ -430,7 +439,7 @@
     function statCard(k, v) {
       return "<div class=\"stat\"><span class=\"k\">" + escapeXml(k) + "</span><span class=\"v\">" + escapeXml(v) + "</span></div>";
     }
-    function renderStats(studies, fe, egg) {
+    function renderStats(studies, fe, egg, tf) {
       const k = studies.length;
       if (!k) { statsWrap.innerHTML = ""; return; }
       const parts = [];
@@ -440,6 +449,10 @@
         parts.push(statCard("Egger intercept", fmt(egg.alpha) + " (SE " + fmt(egg.seAlpha) + ")"));
         parts.push(statCard("t(df)", fmt(egg.tAlpha, 2) + " (" + egg.df + ")"));
         parts.push(statCard("p-value", fmt(egg.p, 3)));
+      }
+      if (tf) {
+        parts.push(statCard("Trim-and-fill k₀", tf.k0 + " imputed (" + tf.side + ")"));
+        parts.push(statCard("Adjusted FE (filled)", fmt(tf.mu) + " [" + fmt(tf.ciLo) + ", " + fmt(tf.ciHi) + "]"));
       }
       statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>";
     }
@@ -458,20 +471,25 @@
 
     // Last-computed result cache — populated by render(), read by __almResults().
     // Exposed on window so the alm-init script block (separate IIFE) can access them.
-    let _lastFE = null, _lastEgg = null, _lastStudies = [];
+    let _lastFE = null, _lastEgg = null, _lastStudies = [], _lastTF = null;
     window._almLastFE = function () { return _lastFE; };
     window._almLastEgg = function () { return _lastEgg; };
     window._almLastStudies = function () { return _lastStudies; };
+    window._almLastTrimFill = function () { return _lastTF; };
 
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
       const fe = poolFE(parsed.studies);
       const egg = egger(parsed.studies);
-      _lastFE = fe; _lastEgg = egg; _lastStudies = parsed.studies;
+      // Trim-and-fill (Duval-Tweedie L0, FE) — sensitivity analysis for funnel asymmetry.
+      const tf = (window.AlmTrimFill && parsed.studies.length >= 3)
+        ? window.AlmTrimFill.trimAndFill(parsed.studies.map(s => s.est), parsed.studies.map(s => s.v), { method: "FE" })
+        : null;
+      _lastFE = fe; _lastEgg = egg; _lastStudies = parsed.studies; _lastTF = tf;
       renderWarnings(parsed.warnings);
-      renderStats(parsed.studies, fe, egg);
-      const svg = parsed.studies.length ? buildSvg(state, parsed.studies, fe, egg)
+      renderStats(parsed.studies, fe, egg, tf);
+      const svg = parsed.studies.length ? buildSvg(state, parsed.studies, fe, egg, tf)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste at least 3 study rows to render.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
