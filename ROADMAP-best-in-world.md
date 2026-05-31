@@ -15,6 +15,20 @@
 
 ---
 
+## Audit (2026-05-31) — fan-out correctness workflow
+A 6-family adversarial audit (13 agents) flagged 32 candidates; verification confirmed
+**5, filtered 25 false-positives** (the suite's math held up). All 5 fixed + tested:
+- **proportion-ma** (BUG): "Fixed-effect only" silently ran DerSimonian-Laird (`effTau =
+  tauEst==='FE'?'DL'`), so FE returned the RE result under heterogeneity. Fixed → tau2=0
+  FE pool; verified vs hand FE logit pool. `c758519`
+- **forest-plot** (BUG): exported `pool.ci_lb/ci_ub` read undefined fields (poolRE_PM
+  returns lo/hi) → report showed "95% CI: NA" + broke live R-verify. Fixed. `ddece6f`
+- **bayesian-nma** (robustness): disconnected networks threw an uncaught singular-matrix
+  error; added a connectivity guard + try/catch. `4959848`
+- **rare-events-glmm** / **gosh** (coverage): added CM.AL + DL-branch parity tests. `444a4ad`
+- Uncertain/declined: nma RE-coverage (verifier found the RE branch IS tested — false);
+  p-curve p-uniform delta is heuristic + untested numerically (low; future).
+
 ## DONE (verified, shipped)
 - **Correctness sweep (15+ commits):** genuine fixes in p-curve χ² tail, forest-plot &
   HTA prediction intervals (t_{k-1}), rare-events GLMM default, cumulative-subgroup
