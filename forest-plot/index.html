@@ -660,7 +660,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
           studies: parsed.studies,
           fe: fe,
           re: re,
-          pool: { mu: re.mu, se: re.se, ci_lb: re.ci_lb, ci_ub: re.ci_ub,
+          pool: { mu: re.mu, se: re.se, ci_lb: re.lo, ci_ub: re.hi,
                   tau2: re.tau2, I2: re.I2, k: parsed.studies.length },
           opts: { method: "PM", test: "z", title: state.title || "" },
         };
