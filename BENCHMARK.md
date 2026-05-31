@@ -21,9 +21,9 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 ## Confirmed gaps (verified absent 2026-05-31)
 | Method | In metafor/etc.? | allmeta | Priority |
 |---|---|---|---|
-| **Trim-and-fill** (Duval-Tweedie L0/R0) | `metafor::trimfill` | **MISSING** | **P0** |
-| **Selection models** (Vevea-Hedges weight-function) | `metafor::selmodel` | **MISSING** | **P0** |
-| **Meta-regression permutation test** | `metafor::permutest` | **MISSING** | **P0** |
+| **Trim-and-fill** (Duval-Tweedie L0) | `metafor::trimfill` | ✅ DONE | ~~P0~~ |
+| **Selection models** (Vevea-Hedges weight-function) | `metafor::selmodel` | ✅ DONE | ~~P0~~ |
+| **Meta-regression permutation test** | `metafor::permutest` | ✅ DONE | ~~P0~~ |
 | **RoBMA** (robust Bayesian model-averaging) | `RoBMA` pkg | **MISSING** | P1 |
 | **E-value** (unmeasured-confounding sensitivity) | `EValue` pkg | **MISSING** | P1 |
 | **Classic dose-response MA** (Greenland-Longnecker, RCS) | `dosresmeta` | **MISSING** | P1 |
@@ -31,7 +31,7 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 | **Doi plot + LFK index** (Furuya-Kanamori) | `metawho`/`MetaXL` | **MISSING** | P2 |
 | **Fragility index** for binary MA | (bespoke) | **MISSING** | P2 |
 | **RMST meta-analysis** (pool restricted-mean-survival diffs) | `survRM2`+pool | **MISSING** | P2 |
-| Meta-regression **prediction interval** (at x̄) | `metafor predict` | partial | P1 |
+| Meta-regression **prediction interval** (at x̄) | `metafor predict` | ✅ DONE | ~~P1~~ |
 
 ## Non-statistical gaps (vs RevMan / Covidence)
 - **Unified project workspace** — apps share a `ma-studies-v1` bus, but there's no single
@@ -42,14 +42,14 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 
 ## Recommended next plan (prioritised)
 
-### P0 — close the glaring *standard* gaps (every reviewer expects these)
-1. **Trim-and-fill** — Duval-Tweedie L0 & R0 estimators + imputed-study funnel overlay.
+### P0 — close the glaring *standard* gaps ✅ DONE 2026-05-31
+1. ✅ **Trim-and-fill** (`d159b9d`, shared/trimfill.js, in funnel-plot) — Duval-Tweedie L0 & R0 estimators + imputed-study funnel overlay.
    Add to `funnel-plot` (or `pubbias-tests`). Oracle: `metafor::trimfill` (installed).
    Disclose "sensitivity-only" per advanced-stats.md. *Est: 1 session.*
-2. **Vevea-Hedges selection models** — 3-parameter & step weight-function models for
+2. ✅ **Vevea-Hedges selection models** (`67b3afe`, shared/selmodel.js, in pubbias-tests) — 3-parameter & step weight-function models for
    publication bias, the modern complement to Copas/PET-PEESE. Oracle: `metafor::selmodel`.
    *Est: 1–2 sessions (likelihood + optimisation).*
-3. **Meta-regression: permutation test + PI-at-mean** — finish meta-regression: add the
+3. ✅ **Meta-regression: permutation test + PI-at-mean** (`8ed7f33`+`f02ccb5`, shared/permutest.js + ma-core PI) — finish meta-regression: add the
    `permutest`-style permutation p-value (robust to few studies) and a prediction interval
    at the mean covariate. Oracle: `metafor::rma(mods=) |> permutest()/predict()`.
    *Est: 1 session.*
