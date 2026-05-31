@@ -138,8 +138,12 @@ export their judgement state as a report — lower priority (categorical assessm
   pooled results to grade-sof; add a "export full SoF + PRISMA flow + forest" report).
 - ✅ **Shared numeric core (FOUNDATION DONE 2026-05-31, `4673f6f`):** `shared/ma-core.js`
   (DL/PM/REML τ², IV random/fixed pool, HKSJ ± opt-in floor, Q, τ²-based I²) verified vs
-  metafor::rma to ≤1e-7 (PM = exact Q-root). workbench migrated as the first consumer behind
-  its 1e-6 oracle. Remaining apps can migrate incrementally behind the same parity guard.
+  metafor::rma to ≤1e-7 (PM = exact Q-root). **Incremental migration DONE 2026-05-31
+  (`873c393`, `46d381c`):** τ² estimators in workbench, heterogeneity (DL+PM+REML),
+  cumulative-subgroup, bayesian-ma, influence (PM+REML) and forest-plot (PM) now delegate to
+  ma-core — 6 consumers, each green under its R-parity guard. nma-inconsistency (network τ²
+  via the NMA design matrix) and webr-validator (independent cross-check) are deliberately
+  excluded: ma-core's simple-IV τ² does not apply.
 - **TruthCert on every export**: optionally HMAC-sign the Methods+Results report so a reader
   can verify it was produced by allmeta and not altered.
 - **Dataset interop**: import/export RevMan `.rm5`/`.rm6`, CSV templates, and Cochrane data.
