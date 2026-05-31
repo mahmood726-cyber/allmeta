@@ -229,4 +229,32 @@ test.describe('gosh retrofit sanity', () => {
       `median_i2: ${r.median_i2} vs metafor=${expected.median_i2}`).toBeLessThan(TOL);
   });
 
+  // Audit coverage gap (2026-05-31): the DL random-effects branch was reachable from
+  // the model dropdown but never compared to metafor. metafor::gosh(rma.uni(method="DL"))
+  // on the same fixture: median 0.236650, full-k 0.225423 — DISTINCT from FE (0.2217),
+  // so this also guards against a silent FE/DL mix-up.
+  test('JS engine R-parity vs metafor::gosh (gosh-tiny DL random-effects)', async ({ page }) => {
+    const fixture = [
+      { study: 'S01', yi: 0.22, vi: 0.0064 }, { study: 'S02', yi: 0.30, vi: 0.0196 },
+      { study: 'S03', yi: 0.27, vi: 0.0081 }, { study: 'S04', yi: 0.15, vi: 0.0049 },
+      { study: 'S05', yi: 0.45, vi: 0.0324 },
+    ];
+    const expected = { n_subsets: 26, median_est: 0.2366499997536, q25_est: 0.21012887979,
+      q75_est: 0.2658956616206, min_est: 0.18, max_est: 0.3565384615385, k: 5 };
+    const TOL = 1e-4; // DL τ² per-subset; closed-form but compare at 1e-4
+    await page.goto(GOSH_URL);
+    await waitForAlm(page);
+    await page.selectOption('#model', 'DL');
+    await page.evaluate((rows) => window.__almGoshLoad(rows), fixture);
+    await page.waitForFunction(() => window._almLastGosh && window._almLastGosh() !== null, { timeout: 10_000 });
+    const r = await page.evaluate(() => window._almLastGosh());
+    expect(r.k).toBe(expected.k);
+    expect(r.n_subsets).toBe(expected.n_subsets);
+    for (const key of ['median_est', 'q25_est', 'q75_est', 'min_est', 'max_est']) {
+      expect(Math.abs(r[key] - expected[key]), `${key}: ${r[key]} vs metafor=${expected[key]}`).toBeLessThan(TOL);
+    }
+    // DL median must differ from the FE median (0.2217) — guards FE/DL not being conflated.
+    expect(Math.abs(r.median_est - 0.2217261558338), 'DL median must differ from FE').toBeGreaterThan(1e-3);
+  });
+
 });

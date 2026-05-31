@@ -59,3 +59,20 @@ test('rare-events GLMM default model is UM.FS (not the anticonservative CM.AL)',
   expect(out.OR).toBeCloseTo(META.OR, 3);
   expect(out.OR_hi).toBeCloseTo(META.OR_hi, 3);
 });
+
+test('rare-events GLMM CM.AL lands in the documented anticonservative band', async ({ page }) => {
+  // Locks the disclosed CM.AL behaviour (audit coverage gap): same point estimate as
+  // UM.FS but a strictly NARROWER CI (its profiled likelihood peaks too sharply in θ
+  // and does not reproduce metafor's conditional CI). Guards against silent drift.
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.selectOption('#f-model', 'CM.AL');
+  await page.click('#btn-run');
+  await page.waitForFunction(() => !!window.__almLastRareEventsGLMM && !!window.__almLastRareEventsGLMM().glmm.ok, { timeout: 8000 });
+  const out = await page.evaluate(() => window.__almLastRareEventsGLMM().glmm);
+  // Point estimate ~ UM.FS (the two fits nearly coincide in θ).
+  expect(out.OR).toBeCloseTo(META.OR, 2);
+  // CI strictly inside the verified UM.FS CI [0.138, 0.612] — i.e. anticonservative.
+  expect(out.OR_lo).toBeGreaterThan(META.OR_lo);
+  expect(out.OR_hi).toBeLessThan(META.OR_hi);
+  expect(out.OR_hi - out.OR_lo, 'CM.AL CI narrower than UM.FS').toBeLessThan(META.OR_hi - META.OR_lo);
+});
