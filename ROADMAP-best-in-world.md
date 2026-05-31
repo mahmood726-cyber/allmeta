@@ -83,9 +83,13 @@ export their judgement state as a report — lower priority (categorical assessm
 ---
 
 ## NEXT — correctness depth (high priority, governance-critical)
-1. **rare-events-glmm CM.AL**: implement the true conditional non-central-hypergeometric
-   likelihood (currently UM.FS is the verified default; CM.AL is disclosed-anticonservative).
-   Verify vs `metafor::rma.glmm(model="CM.EL"/"CM.AL")`.
+1. ✅ **rare-events exact conditional CM.EL (DONE 2026-05-31, `e50d6c5`):** implemented the
+   true conditional noncentral-hypergeometric likelihood (Fisher NCHG, Stijnen 2010) with
+   adaptive Gauss-Hermite + ML, verified vs `metafor::rma.glmm(model="CM.EL")` to ~1e-7 on
+   θ/τ² (~1e-3 on SE) across heterogeneous + near-homogeneous datasets. Added as a third
+   model option (UM.FS stays default); more robust than metafor's CM.EL optimiser on very
+   sparse data. The home-grown CM.AL profiled approximation is left in place (disclosed
+   anticonservative, used by 3 Python test files). `rare-events-cmel-parity.spec.mjs`.
 2. ✅ **rve-meta CR2 (DONE 2026-05-31, `955342a`):** implemented the CR2 bias-reduced
    sandwich + per-coefficient Satterthwaite df AND the HTJ CORR-model τ² moment estimator
    (the old engine used plain DL, coinciding with robumeta only at τ²=0). Symmetric
