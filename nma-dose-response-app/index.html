@@ -1763,6 +1763,13 @@
     /* Wizard cards sit on a semi-transparent overlay; muted text composites darker
        through it (~2.97:1), so give the card descriptions an explicit light colour. */
     html .wizard-option p { color: #cdd6df !important; }
+    /* Active nav tab + side toggles inherit app-style.css's accent, which under a DARK
+       OS scheme is a light teal (#6fa9a0) → white text fails (2.67:1). Pin a dark-blue
+       fill with white text (≥5:1) regardless of scheme. */
+    html .main-nav-tab.active, html .main-nav-tab[aria-selected="true"],
+    html .results-toggle, html #examplesToggle, html #resultsToggle {
+      background: #1564b8 !important; color: #ffffff !important;
+    }
   </style>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
