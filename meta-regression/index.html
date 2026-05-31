@@ -74,6 +74,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -464,12 +465,13 @@
 
     // Last-computed result cache — populated by render(), read by __almResults().
     // Exposed on window so the alm-init IIFE (separate script block) can access them.
-    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null;
+    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null, _lastPI = null;
     window._almLastFitted  = function () { return _lastFitted; };
     window._almLastStudies = function () { return _lastStudies; };
     window._almLastHK      = function () { return _lastHK; };
     window._almLastR2      = function () { return _lastR2; };
     window._almLastQE      = function () { return _lastQE; };
+    window._almLastPI      = function () { return _lastPI; };
 
     function render() {
       const state = readState();
@@ -496,6 +498,18 @@
         parts.push(statCard("β₁ test", "t(" + hk.df + ") = " + fmt(tB1,2) + ", p = " + fmt(pB1,3)));
         parts.push(statCard("τ² (PM)", fmt(fitted.tau2, 4)));
         parts.push(statCard("HKSJ q", fmt(hk.q, 3) + (hk.q === 1 ? " (floored)" : "")));
+        // 95% prediction interval for a new study at the mean covariate x̄ (t_{k-2},
+        // Cochrane v6.5): pred ± t·√(τ² + Var(pred|x̄)), Var HKSJ-scaled. Matches
+        // metafor::predict(rma(method="PM",test="knha"), newmods=mean(x)).
+        const xbar = parsed.studies.reduce((a, s) => a + s.x, 0) / k;
+        const predX = f.b0 + f.b1 * xbar;
+        const cMc = (f.swxx - 2 * xbar * f.swx + xbar * xbar * f.sw) / f.det;
+        const sePredX = Math.sqrt(Math.max(0, hk.q * cMc));
+        const pi = (window.AlmMaCore && k >= 3)
+          ? window.AlmMaCore.predictionInterval({ mu: predX, se: sePredX, tau2: fitted.tau2, k: k, df: k - 2 })
+          : null;
+        _lastPI = pi ? { xbar, pred: predX, se: sePredX, lo: pi.lo, hi: pi.hi } : null;
+        if (pi) parts.push(statCard("95% PI at x̄=" + fmt(xbar, 2), "[" + fmt(pi.lo, 3) + ", " + fmt(pi.hi, 3) + "]"));
         // V6-03: R² = proportion of between-study τ² explained by the moderator.
         // Q_E (residual heterogeneity) tests whether residual heterogeneity remains.
         const tau2Null = fitPMNull(parsed.studies);

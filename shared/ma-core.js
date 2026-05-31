@@ -121,7 +121,8 @@
   // predict() default uses z which under-covers). Pass the model SE you report (plain RE
   // or HKSJ). Undefined for k < 2. Returns { lo, hi, t, sePred } or null.
   function predictionInterval(fit, level) {
-    var k = fit.k, df = k - 1;
+    // df defaults to k-1 (simple pool); pass fit.df = k-p for meta-regression residual df.
+    var df = (typeof fit.df === "number") ? fit.df : (fit.k - 1);
     if (!(df >= 1)) return null;
     var alpha = 1 - (level || 0.95);
     var sePred = Math.sqrt((fit.tau2 || 0) + fit.se * fit.se);
