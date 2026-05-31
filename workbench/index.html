@@ -74,7 +74,8 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
-  <script src="../shared/heterogeneity-ci.js"></script>
+  <script src="../shared/ma-core.js"></script>
+<script src="../shared/heterogeneity-ci.js"></script>
 <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
@@ -220,16 +221,24 @@
     }
     function poolAll(studies) {
       if (!studies.length) return null;
-      const tau2 = tau2_PM(studies);
-      const s = wsum(studies, tau2);
-      const se = Math.sqrt(1/s.sw);
-      const k = studies.length;
-      const Q0 = wsum(studies, 0).Q;
-      const df = k-1;
-      const I2 = df > 0 ? Math.max(0, 100*(Q0-df)/Q0) : 0;
+      const k = studies.length, df = k - 1;
+      // Pool via the audited single-source core (PM τ² + IV random-effects pool,
+      // verified vs metafor::rma; I² is the τ²-based form). Falls back to the inline
+      // pooler if ma-core is unavailable.
+      let mu, se, tau2, Q0;
+      if (window.AlmMaCore) {
+        const r = window.AlmMaCore.pool(studies.map(s => s.est), studies.map(s => s.v), { method: "PM" });
+        mu = r.mu; se = r.se; tau2 = r.tau2; Q0 = r.Q;
+      } else {
+        tau2 = tau2_PM(studies); const s = wsum(studies, tau2);
+        mu = s.mu; se = Math.sqrt(1 / s.sw); Q0 = wsum(studies, 0).Q;
+      }
+      // workbench reports the Q-based I² (Higgins-Thompson original) — its oracle's
+      // convention; ma-core's pool().I2 is the τ²-based form (metafor's rma).
+      const I2 = df > 0 ? Math.max(0, 100 * (Q0 - df) / Q0) : 0;
       // Q-profile (Viechtbauer 2007) 95% CI for I²/τ² via the shared module.
       const ci = (window.AlmHetCI && df > 0) ? window.AlmHetCI.qProfileCI(studies) : null;
-      return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: Q0, I2, k,
+      return { mu, se, lo: mu-Z975 *se, hi: mu+Z975 *se, tau2, Q: Q0, I2, k,
                I2Lo: ci ? ci.I2Lo : null, I2Hi: ci ? ci.I2Hi : null,
                tau2Lo: ci ? ci.tau2Lo : null, tau2Hi: ci ? ci.tau2Hi : null };
     }
