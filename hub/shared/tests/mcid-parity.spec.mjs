@@ -19,8 +19,8 @@ const TOL = 1e-12;
 test.describe('mcid', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
     const errs = [];
-    const benign = t => t.includes('frame-ancestors') &&
-      t.includes('Content Security Policy');
+    const benign = t => (t.includes('frame-ancestors') &&
+      t.includes('Content Security Policy')) || t.includes('ERR_CONNECTION_REFUSED');
     page.on('console', m => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });

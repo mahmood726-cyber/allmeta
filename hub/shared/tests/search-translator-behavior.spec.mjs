@@ -11,8 +11,8 @@ const APP_URL = 'http://localhost:8088/search-translator/';
 test.describe('search-translator', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
     const errs = [];
-    const benign = t => t.includes('frame-ancestors') &&
-      t.includes('Content Security Policy');
+    const benign = t => (t.includes('frame-ancestors') &&
+      t.includes('Content Security Policy')) || t.includes('ERR_CONNECTION_REFUSED');
     page.on('console', m => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });

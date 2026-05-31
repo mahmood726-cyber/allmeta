@@ -25,8 +25,8 @@ const SUCRA_TOL = 0.06;   // unseeded MC (10k) + SUCRA-vs-P-score method gap
 test.describe('nma', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
     const errs = [];
-    const benign = t => t.includes('frame-ancestors') &&
-      t.includes('Content Security Policy');
+    const benign = t => (t.includes('frame-ancestors') &&
+      t.includes('Content Security Policy')) || t.includes('ERR_CONNECTION_REFUSED');
     page.on('console', m => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });

@@ -64,6 +64,7 @@ test.describe('dta-sroc retrofit sanity', () => {
         //     it is not a regression — it was present pre-retrofit and the CSP
         //     header on the HTTP response is the enforcement path.
         if (text.includes('frame-ancestors') && text.includes('Content Security Policy')) return;
+        if (text.includes('ERR_CONNECTION_REFUSED')) return; // benign: optional loopback service (e.g. local LLM) absent
         errors.push(text);
       }
     });

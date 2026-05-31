@@ -18,8 +18,8 @@ const S = (o) => ({ db: 0, reg: 0, removed: 0, screened: 0,
 test.describe('prisma-flow', () => {
   test('loads, no console errors, hook present', async ({ page }) => {
     const errs = [];
-    const benign = t => t.includes('frame-ancestors') &&
-      t.includes('Content Security Policy');
+    const benign = t => (t.includes('frame-ancestors') &&
+      t.includes('Content Security Policy')) || t.includes('ERR_CONNECTION_REFUSED');
     page.on('console', m => {
       if (m.type() === 'error' && !benign(m.text())) errs.push(m.text());
     });

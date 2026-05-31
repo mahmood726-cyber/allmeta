@@ -69,6 +69,7 @@ test.describe('pubbias-tests retrofit sanity', () => {
         const text = msg.text();
         // Filter known-benign CSP frame-ancestors informational messages
         if (text.includes('frame-ancestors') && text.includes('Content Security Policy')) return;
+        if (text.includes('ERR_CONNECTION_REFUSED')) return; // benign: optional loopback service (e.g. local LLM) absent
         errors.push(text);
       }
     });

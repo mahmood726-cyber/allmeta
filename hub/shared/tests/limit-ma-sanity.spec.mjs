@@ -67,6 +67,7 @@ test.describe('limit-ma retrofit sanity', () => {
       if (msg.type() === 'error') {
         const text = msg.text();
         if (text.includes('frame-ancestors') && text.includes('Content Security Policy')) return;
+        if (text.includes('ERR_CONNECTION_REFUSED')) return; // benign: optional loopback service (e.g. local LLM) absent
         errors.push(text);
       }
     });
