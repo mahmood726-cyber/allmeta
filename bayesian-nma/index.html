@@ -307,7 +307,27 @@ A, B, -0.32, 0.08</textarea>
         }
       }
       if (rows.length < 2) { document.getElementById("eff-body").innerHTML = `<tr><td colspan="5">Need at least 2 contrasts.</td></tr>`; return; }
-      const fit = fitNMA(rows, refTrt);
+      // Disconnected-network guard: every treatment must reach the reference through
+      // the comparison graph, else the design matrix is singular and NMA is undefined
+      // (advanced-stats.md: disconnected networks cannot be pooled). Without this the
+      // matrix inversion threw an uncaught exception, leaving the table un-rendered.
+      const adj = {};
+      rows.forEach(r => { (adj[r.A] = adj[r.A] || []).push(r.B); (adj[r.B] = adj[r.B] || []).push(r.A); });
+      const allTrts = Object.keys(adj);
+      const start = (refTrt in adj) ? refTrt : allTrts[0];
+      const seen = new Set([start]), stack = [start];
+      while (stack.length) { const t = stack.pop(); (adj[t] || []).forEach(u => { if (!seen.has(u)) { seen.add(u); stack.push(u); } }); }
+      if (seen.size < allTrts.length) {
+        const missing = allTrts.filter(t => !seen.has(t));
+        document.getElementById("eff-body").innerHTML = `<tr><td colspan="5">Network is <strong>disconnected</strong> — ${missing.join(", ")} not linked to the reference (${start}) through the comparison graph. NMA needs a single connected network; add a contrast joining the components.</td></tr>`;
+        return;
+      }
+      let fit;
+      try { fit = fitNMA(rows, refTrt); }
+      catch (e) {
+        document.getElementById("eff-body").innerHTML = `<tr><td colspan="5">Cannot estimate this network (${e.message}). The design is rank-deficient — some contrasts are not identifiable against the reference.</td></tr>`;
+        return;
+      }
       const draws = sample(fit.beta, fit.cov, 5000);
       const { sucra: sucraScores } = sucra(draws, direction);
 
