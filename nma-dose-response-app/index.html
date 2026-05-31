@@ -1738,6 +1738,32 @@
   <!-- Export utilities -->
   <script src="js/utils/exports.js"></script>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <style>
+    /* This app is an intentional dark "Glass" theme, but the shared hub/app-style.css
+       (loaded ABOVE) imposes its OWN palette: under a LIGHT OS it renders a light theme
+       (--panel/--input-bg/--panel-raised = #fff, --ink dark, --bg near-white) and — loading
+       after this app's <style> — CLOBBERS those design tokens, so app-style.css's own rules
+       (.panel{background:var(--panel)}, inputs, body{color:var(--ink)}) paint white surfaces
+       with dark text on top of the app's dark regions. The result was a battleground of ~22
+       axe contrast nodes. Fix at the ROOT: re-assert the app's dark values for the shared
+       surface/ink tokens on html:root (higher specificity than the shared :root), so BOTH
+       stylesheets' token references resolve dark and every region is coherently light-on-dark.
+       --muted is set to #a3b2c0 so 11px labels clear 4.5:1 even on the lighter --panel-strong. */
+    html:root {
+      --bg: #0f1419; --panel: #1e2a38; --panel-raised: #1e2a38; --panel-tint: #243447;
+      --ink: #e7e9ea; --muted: #a3b2c0; --border: #38444d; --input-bg: #192734;
+      --accent-soft: #243447;
+      --bg-1: #0f1419; --bg-2: #15202b; --bg-3: #192734; --panel-strong: #243447; --text: #e7e9ea;
+    }
+    html body { background: var(--bg-1) !important; color: var(--text) !important; }
+    html header.hero, html .hero { background: transparent !important; }
+    /* app-style.css colours .panel h2 with a dark teal (its light-theme primary) that
+       fails on our dark panels — use the light heading colour instead. */
+    html .panel h2, html .panel-header h2, html .wizard-header h2 { color: var(--text) !important; }
+    /* Wizard cards sit on a semi-transparent overlay; muted text composites darker
+       through it (~2.97:1), so give the card descriptions an explicit light colour. */
+    html .wizard-option p { color: #cdd6df !important; }
+  </style>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
