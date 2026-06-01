@@ -83,6 +83,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/dta-bivariate.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -161,6 +162,8 @@
 
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
+    let _lastBivar = null;
+    window.__almBivariate = function () { return _lastBivar; };
     const statsWrap = document.getElementById("stats-wrap");
 
     // Snapshot / restore helpers for reset-undo and url-state
@@ -408,6 +411,18 @@
       if (rho != null) {
         const flag = Math.abs(rho) > 0.6 ? " ⚠" : "";
         parts.push(statCard("Spearman ρ (threshold)", fmt(rho, 3) + flag));
+      }
+      // Genuine bivariate random-effects MLE (Reitsma) — pure JS, matches mada::reitsma(ml).
+      const bivar = (window.AlmDTABivariate && parsed.studies.length >= 4)
+        ? window.AlmDTABivariate.fit(parsed.studies.map(s => ({ tp: s.tp, fp: s.fp, fn: s.fn, tn: s.tn })))
+        : null;
+      _lastBivar = bivar;
+      if (bivar) {
+        parts.push(statCard("Bivariate Se (MLE)", fmt(bivar.sens, 3) + " [" + fmt(bivar.sensCI[0], 3) + ", " + fmt(bivar.sensCI[1], 3) + "]"));
+        parts.push(statCard("Bivariate Sp (MLE)", fmt(bivar.spec, 3) + " [" + fmt(bivar.specCI[0], 3) + ", " + fmt(bivar.specCI[1], 3) + "]"));
+        parts.push(statCard("LR+", fmt(bivar.lrPos, 2) + " [" + fmt(bivar.lrPosCI[0], 2) + ", " + fmt(bivar.lrPosCI[1], 2) + "]"));
+        parts.push(statCard("LR−", fmt(bivar.lrNeg, 2) + " [" + fmt(bivar.lrNegCI[0], 2) + ", " + fmt(bivar.lrNegCI[1], 2) + "]"));
+        parts.push(statCard("Diagnostic OR", fmt(bivar.dor, 1)));
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
 
