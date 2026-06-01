@@ -81,3 +81,25 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 **P0-1 Trim-and-fill** — the single most glaring standard gap (every funnel discussion
 expects it), closed-form-ish, a clean `metafor::trimfill` oracle, and a natural home in
 the existing `funnel-plot` app. Recommended as the next session's deliverable.
+
+
+## Status of the remaining hard items (2026-06-01)
+- **Classic dose-response MA (P1-6): ATTEMPTED, NOT SHIPPED.** Implemented the two-stage
+  linear Greenland-Longnecker pipeline (grl Newton reconstruction ✓ matches dosresmeta to
+  ~1e-3; per-study GLS slopes match for 4/6 alcohol_cvd studies to ~1e-5). BLOCKER: the GL
+  covariance OFF-DIAGONAL does not match `dosresmeta:::covar.logrr` — and that function's
+  actual output (S[1,2]=0.011221 on study 5) does NOT equal what its own deparsed source
+  formula produces (0.013353, =rcorr·√(vⱼvₖ) with the printed rcorr=0.388455). A hidden
+  internal step (not visible via deparse) governs the off-diagonal. Not shipped rather than
+  ship a ~6%-off pooled slope (violates the provable-correctness bar). Resolve by tracing
+  dosresmeta's actual covariance routine (likely an `approximate`/internal path) before
+  re-attempting.
+- **RoBMA (P1-4): RECOMMEND R-DEEP-LINK, not in-browser.** RoBMA model-averages over ~12-36
+  models (effect × heterogeneity × publication-bias × priors) via MCMC + bridge sampling for
+  each marginal likelihood. Faithfully reproducing its inclusion Bayes factors in browser JS
+  would require a full MCMC + bridge-sampling stack with no way to verify to metafor-grade
+  tolerance. Best served by the existing webR path + downloadable R (point users to the RoBMA
+  R package) rather than shipping an unverifiable approximation.
+- **P2 remaining:** fragility index (`fragility` pkg oracle — verifiable, moderate), RMST MA
+  (trivial ma-core pool of RMST diffs — low marginal value over workbench), Doi/LFK plot (NO
+  clean R oracle — would be the one method without metafor-grade verification), project save.
