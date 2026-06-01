@@ -32,7 +32,7 @@ const APPS = [
   'nma-inconsistency', 'nma-pro-v2', 'p-curve', 'pet-peese', 'pico', 'powerma',
   'prisma-checklist', 'prisma-flow', 'prisma-nma', 'prisma-screen',
   'proportion-ma', 'pubbias-tests', 'quadas-2', 'rct-extractor',
-  'rob-traffic-light', 'rob2', 'robma', 'robins-e', 'robins-i', 'search-translator',
+  'rob-traffic-light', 'rmst-ma', 'rob2', 'robma', 'robins-e', 'robins-i', 'search-translator',
   'thematic-synthesis', 'tsa', 'webr-pilot', 'webr-studio', 'webr-validator',
   'workbench', 'workflow',
 ];

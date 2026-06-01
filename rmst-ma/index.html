@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Meta-analysis of restricted mean survival time (RMST) differences at a common horizon, with prediction interval and forest plot.">
+  <meta name="color-scheme" content="light dark">
+  <title>RMST Meta-Analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --accent-soft:#223044; --border:#2f343a; --input-bg:#23272c; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+    * { box-sizing:border-box; } html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 .25rem; font-size:1.55rem; } header p { margin:0; color:var(--muted); font-size:.95rem; max-width:74ch; }
+    main { padding:1.5rem clamp(1rem,3vw,3rem); display:grid; gap:1.5rem; grid-template-columns:minmax(290px,23rem) 1fr; align-items:start; }
+    @media (max-width:1000px) { main { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.2rem; }
+    h2 { font-size:1.05rem; margin:0 0 .6rem; }
+    textarea { width:100%; min-height:11rem; font-family:ui-monospace,Consolas,monospace; font-size:.82rem; background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.5rem; }
+    label { display:block; font-size:.85rem; }
+    select { background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.35rem .5rem; margin-top:.3rem; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:.4rem; } th,td { text-align:left; padding:.3rem .5rem; border-bottom:1px solid var(--border); }
+    .stat { color:var(--muted); font-size:.92rem; } .note { color:var(--muted); font-size:.8rem; }
+    footer { padding:1rem clamp(1rem,3vw,3rem) 2rem; color:var(--muted); font-size:.8rem; border-top:1px solid var(--border); max-width:92ch; } a { color:var(--accent); }
+  </style>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/build-info.js"></script>
+  <script src="../hub/shared/chart-export-auto.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
+<header>
+  <h1>RMST Meta-Analysis</h1>
+  <p>Pool <strong>restricted mean survival time (RMST) differences</strong> (treatment − control, at a common horizon τ*) across trials. RMST differences are on the natural time scale — no proportional-hazards assumption — and pool additively. Pair with the KM-reconstructor to obtain per-trial RMST from published curves.</p>
+</header>
+<main id="main">
+  <section class="panel">
+    <h2>Studies</h2>
+    <label>One row per trial: <code>label, RMST difference, SE</code> (same time units, same horizon τ*).
+      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+    </label>
+    <label style="margin-top:.6rem">Model
+      <select id="f-method" aria-label="Model"><option value="REML" selected>Random-effects (REML)</option><option value="PM">Random-effects (PM)</option><option value="DL">Random-effects (DL)</option><option value="FE">Fixed-effect</option></select>
+    </label>
+    <p class="note" style="margin-top:.5rem">Inverse-variance pooling on the RMST-difference scale via the audited ma-core; 95% prediction interval (t<sub>k−1</sub>, Cochrane v6.5). State τ* (the horizon) in the report — RMST is only comparable across trials at the same τ*.</p>
+  </section>
+  <section class="panel">
+    <h2>Pooled RMST difference</h2>
+    <div id="headline" class="stat"></div>
+    <table><thead><tr><th>Trial</th><th>RMST diff</th><th>SE</th><th>95% CI</th><th>weight</th></tr></thead><tbody id="res-body"></tbody></table>
+    <h2 style="margin-top:1rem">Forest</h2>
+    <div id="forest-host"></div>
+    <div id="alm-export-mount" style="margin-top:1rem"></div>
+  </section>
+</main>
+<footer>
+  Inverse-variance random/fixed-effect pooling of RMST differences via <code>shared/ma-core.js</code> (DL/PM/REML τ², t<sub>k−1</sub> prediction interval), identical to <code>metafor::rma(yi = rmst_diff, sei)</code> (verified — <code>rmst-ma-parity.spec.mjs</code>). RMST methodology: Royston &amp; Parmar 2013, <em>BMC Med Res Methodol</em> 13:152; pooling per Weir et al. 2018, <em>Stat Med</em> 37:2105. Pool differences (not ratios); always report the horizon τ*.
+</footer>
+<script>
+  (function () {
+    "use strict";
+    var EXAMPLE = "# label, RMST difference (months), SE\nTrial A, 1.2, 0.40\nTrial B, 0.8, 0.50\nTrial C, 2.1, 0.60\nTrial D, 0.5, 0.45\nTrial E, 1.5, 0.55\nTrial F, 1.0, 0.30";
+    var Z975 = 1.959963984540054;
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+    var _last = null;
+    window._almLastRMST = function () { return _last; };
+
+    function parse(text) {
+      var rows = [];
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        var t = line.trim(); if (!t || t.charAt(0) === "#") return;
+        var p = t.split(/\s*,\s*/); if (p.length < 3) return;
+        var se = parseFloat(p[p.length - 1]), diff = parseFloat(p[p.length - 2]);
+        var label = p.slice(0, p.length - 2).join(", ") || ("Trial " + (rows.length + 1));
+        if (isFinite(diff) && isFinite(se) && se > 0) rows.push({ label: label, diff: diff, se: se, v: se * se });
+      });
+      return rows;
+    }
+
+    function run() {
+      var rows = parse(document.getElementById("f-data").value);
+      var method = document.getElementById("f-method").value;
+      var head = document.getElementById("headline"), body = document.getElementById("res-body");
+      if (rows.length < 2) { head.textContent = "Enter at least 2 trials."; body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return; }
+      var r = window.AlmMaCore.pool(rows.map(function (s) { return s.diff; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      var w = rows.map(function (s) { return 1 / (s.v + r.tau2); }), sw = w.reduce(function (a, b) { return a + b; }, 0);
+      head.innerHTML = "k = " + rows.length + " · pooled RMST difference = <strong>" + fmt(r.mu) + "</strong> [" + fmt(r.ciLo) + ", " + fmt(r.ciHi) + "]"
+        + " · τ² = " + fmt(r.tau2, 4) + " · I² = " + fmt(r.I2, 1) + "%"
+        + (r.piLo != null ? " · 95% PI [" + fmt(r.piLo) + ", " + fmt(r.piHi) + "]" : "");
+      body.innerHTML = rows.map(function (s, i) {
+        return "<tr><td>" + esc(s.label) + "</td><td>" + fmt(s.diff) + "</td><td>" + fmt(s.se) + "</td><td>[" + fmt(s.diff - Z975 * s.se) + ", " + fmt(s.diff + Z975 * s.se) + "]</td><td>" + fmt(100 * w[i] / sw, 1) + "%</td></tr>";
+      }).join("") + "<tr style='font-weight:600;background:var(--accent-soft)'><td>Pooled</td><td>" + fmt(r.mu) + "</td><td>" + fmt(r.se) + "</td><td>[" + fmt(r.ciLo) + ", " + fmt(r.ciHi) + "]</td><td>100%</td></tr>";
+      document.getElementById("forest-host").innerHTML = forest(rows, r);
+      _last = { _schema: "rmst-ma-results-v1", k: rows.length, method: method, mu: r.mu, se: r.se, ciLo: r.ciLo, ciHi: r.ciHi, tau2: r.tau2, I2: r.I2, piLo: r.piLo, piHi: r.piHi, studies: rows.map(function (s) { return { label: s.label, diff: s.diff, se: s.se }; }) };
+    }
+
+    function forest(rows, r) {
+      var W = 540, rowH = 24, H = 50 + (rows.length + 1) * rowH + 30, L = 150, R = 30, pw = W - L - R;
+      var all = rows.map(function (s) { return s.diff - Z975 * s.se; }).concat(rows.map(function (s) { return s.diff + Z975 * s.se; }), [r.ciLo, r.ciHi, 0]);
+      var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all); if (hi === lo) { hi += 1; lo -= 1; }
+      var x = function (v) { return L + (v - lo) / (hi - lo) * pw; };
+      var dark = matchMedia('(prefers-color-scheme:dark)').matches;
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
+      if (lo < 0 && hi > 0) p.push("<line x1='" + x(0) + "' y1='40' x2='" + x(0) + "' y2='" + (H - 30) + "' stroke='#888' stroke-dasharray='3,3'/>");
+      rows.forEach(function (s, i) {
+        var y = 50 + i * rowH;
+        p.push("<text x='10' y='" + (y + 4) + "' font-size='11' fill='currentColor'>" + esc(s.label) + "</text>");
+        p.push("<line x1='" + x(s.diff - Z975 * s.se) + "' y1='" + y + "' x2='" + x(s.diff + Z975 * s.se) + "' y2='" + y + "' stroke='#6aa6d4' stroke-width='1.5'/>");
+        p.push("<circle cx='" + x(s.diff) + "' cy='" + y + "' r='3.5' fill='#2c5e8a'/>");
+      });
+      var yp = 50 + rows.length * rowH;
+      p.push("<polygon points='" + x(r.ciLo) + "," + yp + " " + x(r.mu) + "," + (yp - 6) + " " + x(r.ciHi) + "," + yp + " " + x(r.mu) + "," + (yp + 6) + "' fill='#b04444'/>");
+      p.push("<text x='10' y='" + (yp + 4) + "' font-size='11' font-weight='700' fill='currentColor'>Pooled</text>");
+      p.push("</svg>"); return p.join("");
+    }
+
+    document.getElementById("f-data").value = EXAMPLE;
+    document.getElementById("f-data").addEventListener("input", run);
+    document.getElementById("f-method").addEventListener("change", run);
+    run();
+    (function () { function rdy(f) { document.readyState !== "loading" ? f() : document.addEventListener("DOMContentLoaded", f); }
+      rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "rmst-ma-results", getResults: function () { return _almLastRMST() || {}; } }); });
+    })();
+  })();
+</script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
+</body>
+</html>
