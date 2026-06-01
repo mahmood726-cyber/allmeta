@@ -146,6 +146,10 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2>ROC space + Moses SROC</h2>
       <div id="svg-host"></div>
+      <h2 style="margin-top:1rem">Fagan nomogram (bivariate LR±)</h2>
+      <div id="fagan-host"></div>
+      <h2 style="margin-top:1rem">Deeks' funnel (small-study bias)</h2>
+      <div id="deeks-host"></div>
     </section>
   </main>
 
@@ -162,8 +166,47 @@
 
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
-    let _lastBivar = null;
+    let _lastBivar = null, _lastDeeks = null;
     window.__almBivariate = function () { return _lastBivar; };
+    window.__almDeeks = function () { return _lastDeeks; };
+
+    // Fagan nomogram: pre-test prob (left axis) → LR line → post-test prob (right axis).
+    function faganSvg(b) {
+      const W = 360, H = 260, T = 24, B = 24, L = 70, R = 70, ph = H - T - B;
+      const dark = matchMedia('(prefers-color-scheme:dark)').matches, fg = dark ? "#e7e4dc" : "#15181d";
+      const pre = 0.20, fp = window.AlmDTABivariate.fagan(b.lrPos, b.lrNeg, pre);
+      const yPre = T + ph * (1 - pre);                      // pre-test on a 0..1 linear axis
+      const yPos = p => T + ph * (1 - p);
+      const p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
+      p.push("<line x1='" + L + "' y1='" + T + "' x2='" + L + "' y2='" + (T + ph) + "' stroke='" + fg + "'/>");
+      p.push("<line x1='" + (W - R) + "' y1='" + T + "' x2='" + (W - R) + "' y2='" + (T + ph) + "' stroke='" + fg + "'/>");
+      [0, 0.25, 0.5, 0.75, 1].forEach(v => { p.push("<text x='" + (L - 6) + "' y='" + (yPos(v) + 3) + "' text-anchor='end' font-size='9' fill='" + fg + "'>" + (v * 100) + "</text>"); p.push("<text x='" + (W - R + 6) + "' y='" + (yPos(v) + 3) + "' font-size='9' fill='" + fg + "'>" + (v * 100) + "</text>"); });
+      p.push("<text x='" + L + "' y='" + (T - 8) + "' text-anchor='middle' font-size='9' fill='" + fg + "'>pre-test %</text>");
+      p.push("<text x='" + (W - R) + "' y='" + (T - 8) + "' text-anchor='middle' font-size='9' fill='" + fg + "'>post-test %</text>");
+      p.push("<line x1='" + L + "' y1='" + yPre + "' x2='" + (W - R) + "' y2='" + yPos(fp.postPos) + "' stroke='#2c5e8a' stroke-width='1.6'/>");
+      p.push("<line x1='" + L + "' y1='" + yPre + "' x2='" + (W - R) + "' y2='" + yPos(fp.postNeg) + "' stroke='#b04444' stroke-width='1.6' stroke-dasharray='4,2'/>");
+      p.push("<text x='" + (W / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>pre 20% → +test " + (fp.postPos * 100).toFixed(0) + "%, −test " + (fp.postNeg * 100).toFixed(0) + "%</text>");
+      p.push("</svg>"); return p.join("");
+    }
+
+    // Deeks' funnel: lnDOR (x) vs 1/√ESS (y, inverted) with the weighted regression line.
+    function deeksSvg(d) {
+      const W = 380, H = 240, L = 54, R = 20, T = 20, B = 40, pw = W - L - R, ph = H - T - B;
+      const dark = matchMedia('(prefers-color-scheme:dark)').matches, fg = dark ? "#e7e4dc" : "#15181d";
+      const xs = d.y, ys = d.x; // x-axis = lnDOR (d.y), y-axis = 1/sqrt(ESS) (d.x)
+      let xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs); if (xhi === xlo) { xhi += 1; xlo -= 1; }
+      const yhi = Math.max.apply(null, ys), x = v => L + (v - xlo) / (xhi - xlo) * pw, y = v => T + v / yhi * ph;
+      const p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
+      // regression line: lnDOR = intercept + slope·(1/√ESS) ⇒ for y-values 0..yhi
+      p.push("<line x1='" + x(d.intercept) + "' y1='" + y(0) + "' x2='" + x(d.intercept + d.slope * yhi) + "' y2='" + y(yhi) + "' stroke='#888' stroke-dasharray='4,2'/>");
+      d.x.forEach((xi, i) => p.push("<circle cx='" + x(d.y[i]) + "' cy='" + y(xi) + "' r='3' fill='#2c5e8a'/>"));
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>ln(DOR)</text>");
+      p.push("<text x='12' y='" + (T + ph / 2) + "' transform='rotate(-90 12 " + (T + ph / 2) + ")' text-anchor='middle' font-size='10' fill='" + fg + "'>1/√ESS</text>");
+      p.push("<text x='" + (W - R) + "' y='14' text-anchor='end' font-size='10' fill='" + fg + "'>Deeks p = " + d.p.toFixed(3) + "</text>");
+      p.push("</svg>"); return p.join("");
+    }
     const statsWrap = document.getElementById("stats-wrap");
 
     // Snapshot / restore helpers for reset-undo and url-state
@@ -424,7 +467,15 @@
         parts.push(statCard("LR−", fmt(bivar.lrNeg, 2) + " [" + fmt(bivar.lrNegCI[0], 2) + ", " + fmt(bivar.lrNegCI[1], 2) + "]"));
         parts.push(statCard("Diagnostic OR", fmt(bivar.dor, 1)));
       }
+      const deeks = (window.AlmDTABivariate && parsed.studies.length >= 4)
+        ? window.AlmDTABivariate.deeksTest(parsed.studies.map(s => ({ tp: s.tp, fp: s.fp, fn: s.fn, tn: s.tn }))) : null;
+      if (deeks) parts.push(statCard("Deeks' test p", fmt(deeks.p, 3) + (deeks.p < 0.10 ? " ⚠" : "")));
+      _lastDeeks = deeks;
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+      // Fagan nomogram (pre-test 20% default) + Deeks' funnel.
+      const fh = document.getElementById("fagan-host"), dh = document.getElementById("deeks-host");
+      if (fh) fh.innerHTML = bivar ? faganSvg(bivar) : "";
+      if (dh) dh.innerHTML = deeks ? deeksSvg(deeks) : "";
 
       const extras = [];
       if (rho != null && Math.abs(rho) > 0.6) {

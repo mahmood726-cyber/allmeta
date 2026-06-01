@@ -150,7 +150,41 @@
     return (sxx > 0 && syy > 0) ? sxy / Math.sqrt(sxx * syy) : 0;
   }
 
-  var api = { fit: fit, srocCurve: srocCurve, thresholdSpearman: thresholdSpearman, _logit: _logit, _expit: _expit };
+  // Fagan nomogram: post-test probabilities from a pre-test probability + LR± (exact Bayes).
+  function fagan(lrPos, lrNeg, preProb) {
+    var preOdds = preProb / (1 - preProb);
+    var oPos = preOdds * lrPos, oNeg = preOdds * lrNeg;
+    return { preProb: preProb, postPos: oPos / (1 + oPos), postNeg: oNeg / (1 + oNeg) };
+  }
+
+  // Deeks' funnel-plot asymmetry test for DTA (Deeks et al. 2005): regress lnDOR on
+  // 1/√ESS (ESS = effective sample size = 4·n₁·n₀/(n₁+n₀)), weighted by ESS; the slope's
+  // t-test p-value flags small-study/publication bias. Pure weighted least squares.
+  function deeksTest(rows) {
+    var x = [], y = [], w = [], n = rows.length;
+    rows.forEach(function (r) {
+      var tp = r.tp, fp = r.fp, fn = r.fn, tn = r.tn;
+      if (tp === 0 || fp === 0 || fn === 0 || tn === 0) { tp += 0.5; fp += 0.5; fn += 0.5; tn += 0.5; }
+      var n1 = tp + fn, n0 = fp + tn, ess = 4 * n1 * n0 / (n1 + n0);
+      x.push(1 / Math.sqrt(ess)); y.push(Math.log((tp * tn) / (fp * fn))); w.push(ess);
+    });
+    var sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+    for (var i = 0; i < n; i++) { sw += w[i]; swx += w[i] * x[i]; swy += w[i] * y[i]; swxx += w[i] * x[i] * x[i]; swxy += w[i] * x[i] * y[i]; }
+    var det = sw * swxx - swx * swx; if (det === 0) return null;
+    var slope = (sw * swxy - swx * swy) / det, intercept = (swxx * swy - swx * swxy) / det;
+    var rss = 0; for (var j = 0; j < n; j++) { var e = y[j] - intercept - slope * x[j]; rss += w[j] * e * e; }
+    var df = n - 2; if (df <= 0) return null;
+    var sigma2 = rss / df, seSlope = Math.sqrt(sigma2 * sw / det);
+    var t = slope / seSlope, p = 2 * (1 - _tcdf(Math.abs(t), df));
+    return { slope: slope, intercept: intercept, t: t, df: df, p: p, x: x, y: y };
+  }
+  // Student-t CDF (regularised incomplete beta) for Deeks' p-value.
+  function _lnGamma(x) { var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6]; var y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); var s = 1.000000000190015; for (var j = 0; j < 6; j++) { y++; s += c[j] / y; } return -t + Math.log(2.5066282746310005 * s / x); }
+  function _betacf(a, b, x) { var F = 1e-300, c = 1, d = 1 - (a + b) * x / (a + 1); if (Math.abs(d) < F) d = F; d = 1 / d; var h = d; for (var m = 1; m <= 300; m++) { var m2 = 2 * m, aa = m * (b - m) * x / ((a - 1 + m2) * (a + m2)); d = 1 + aa * d; if (Math.abs(d) < F) d = F; c = 1 + aa / c; if (Math.abs(c) < F) c = F; d = 1 / d; h *= d * c; aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + 1 + m2)); d = 1 + aa * d; if (Math.abs(d) < F) d = F; c = 1 + aa / c; if (Math.abs(c) < F) c = F; d = 1 / d; var del = d * c; h *= del; if (Math.abs(del - 1) < 1e-14) break; } return h; }
+  function _betai(a, b, x) { if (x <= 0) return 0; if (x >= 1) return 1; var bt = Math.exp(_lnGamma(a + b) - _lnGamma(a) - _lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x)); return x < (a + 1) / (a + b + 2) ? bt * _betacf(a, b, x) / a : 1 - bt * _betacf(b, a, 1 - x) / b; }
+  function _tcdf(t, df) { var x = df / (df + t * t), ib = 0.5 * _betai(df / 2, 0.5, x); return t >= 0 ? 1 - ib : ib; }
+
+  var api = { fit: fit, srocCurve: srocCurve, thresholdSpearman: thresholdSpearman, fagan: fagan, deeksTest: deeksTest, _logit: _logit, _expit: _expit };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmDTABivariate = api;
 })(typeof window !== "undefined" ? window : globalThis);
