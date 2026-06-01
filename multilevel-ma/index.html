@@ -58,6 +58,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <script src="../shared/multilevel-reml.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
@@ -127,7 +128,7 @@
     </section>
   </main>
   <footer>
-    Variance decomposition: var(&theta;_ij) = &sigma;&sup2;_ij (within-effect sampling) + <span data-gloss="tau2">&tau;&sup2;_within</span> (within-study heterogeneity across effect sizes) + &tau;&sup2;_study (between-study). Foundational 3-level MA: Konstantopoulos S. <em>Res Synth Methods</em> 2011;2:61&ndash;76. Implementation here: iterated method-of-moments per Cheung MWL. <em>Psychol Methods</em> 2014;19:211&ndash;229 &mdash; NOT REML (previous &ldquo;REML-style&rdquo; wording was inaccurate; this is pure MoM). For robust inference with highly clustered data, RVE is the gold standard: Hedges LV, Tipton E, Johnson MC. <em>Res Synth Methods</em> 2010;1:39&ndash;65 &mdash; current pooled-CI uses 1.96 z-quantile without HK adjustment, so small-cluster Type-I error is inflated; treat the report as descriptive when number-of-clusters &lt; 10.
+    Variance decomposition: var(&theta;_ij) = &sigma;&sup2;_ij (within-effect sampling) + <span data-gloss="tau2">&tau;&sup2;_within</span> (within-study heterogeneity across effect sizes) + &tau;&sup2;_study (between-study). Foundational 3-level MA: Konstantopoulos S. <em>Res Synth Methods</em> 2011;2:61&ndash;76. Two estimators are shown: an iterated method-of-moments per Cheung MWL. <em>Psychol Methods</em> 2014;19:211&ndash;229 (MoM), and an <strong>exact REML</strong> fit (<code>shared/multilevel-reml.js</code>) that matches <code>metafor::rma.mv(yi, vi, random=~1|study/effect)</code> to ~1e-7 on μ, SE, both variance components and the log-likelihood (verified &mdash; <code>multilevel-reml-parity.spec.mjs</code>). REML is the recommended result. For robust inference with highly clustered data, RVE is the gold standard: Hedges LV, Tipton E, Johnson MC. <em>Res Synth Methods</em> 2010;1:39&ndash;65 &mdash; current pooled-CI uses 1.96 z-quantile without HK adjustment, so small-cluster Type-I error is inflated; treat the report as descriptive when number-of-clusters &lt; 10.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -284,7 +285,8 @@
     var _axisState = {};
 
     // ---- results storage for export ----
-    var _lastResults = null;
+    var _lastResults = null, _lastReml = null;
+    window.__almReml = function () { return _lastReml; };
 
     function run() {
       var rows = parse(document.getElementById('src').value);
@@ -302,6 +304,22 @@
         '<tr><td><span data-gloss="tau2">&tau;&sup2;_study</span> (between-study)</td><td colspan="2">' + fmt(f.tau2_study, 4) + ' &mdash; share ' + (f.I2_study * 100).toFixed(1) + '%</td></tr>' +
         '<tr><td><span data-gloss="tau2">&tau;&sup2;_within</span> (within-study)</td><td colspan="2">' + fmt(f.tau2_within, 4) + ' &mdash; share ' + (f.I2_within * 100).toFixed(1) + '%</td></tr>' +
         '</tbody></table>';
+
+      // Exact REML fit (matches metafor::rma.mv ~1|study/effect). Shown alongside the MoM
+      // estimates above; REML is the recommended (likelihood-based) result.
+      _lastReml = null;
+      if (window.AlmMultilevelREML) {
+        var reml = window.AlmMultilevelREML.fit(rows.map(function (r) { return { cluster: r.study, y: r.te, v: r.se * r.se }; }));
+        _lastReml = reml;
+        document.getElementById('summary').innerHTML +=
+          '<table style="margin-top:.6rem"><caption style="text-align:left;font-weight:600;font-size:.85rem;padding:.2rem 0">REML (exact &mdash; matches <code>metafor::rma.mv</code>)</caption><tbody>' +
+          '<tr><td><strong>Pooled estimate</strong></td><td><strong>' + fmt(reml.mu) + '</strong></td><td>SE = ' + fmt(reml.se) + '</td></tr>' +
+          '<tr><td>95% CI (z)</td><td colspan="2">[' + fmt(reml.ciLo) + ', ' + fmt(reml.ciHi) + ']</td></tr>' +
+          '<tr><td>&sigma;&sup2;_study (between)</td><td colspan="2">' + fmt(reml.sigma2Between, 4) + '</td></tr>' +
+          '<tr><td>&sigma;&sup2;_within</td><td colspan="2">' + fmt(reml.sigma2Within, 4) + '</td></tr>' +
+          '<tr><td>REML log-likelihood</td><td colspan="2">' + fmt(reml.logLik, 3) + '</td></tr>' +
+          '</tbody></table>';
+      }
 
       // per-row table
       var totalW = f.weights.reduce(function (a, b) { return a + b; }, 0);
