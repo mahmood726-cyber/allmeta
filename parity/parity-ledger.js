@@ -414,7 +414,7 @@ window.ALM_PARITY_LEDGER = {
         "metafor"
       ],
       "stata": "meta esize, exact / metan",
-      "tests": 5,
+      "tests": 6,
       "asserts": 12,
       "tightestDecimals": 4
     },

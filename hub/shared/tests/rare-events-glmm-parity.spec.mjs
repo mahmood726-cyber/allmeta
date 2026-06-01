@@ -97,3 +97,19 @@ test('rare-events GLMM CM.EL (exact) matches metafor::rma.glmm(model="CM.EL")', 
   expect(r.tau2).toBeCloseTo(0.03201682, 4);
   expect((r.se_theta != null ? r.se_theta : r.se)).toBeCloseTo(0.15242661, 4);
 });
+
+test('UM.RS is offered as a populated metafor R deep-link (not an in-browser fit)', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.selectOption('#f-model', 'UM.RS');
+  await page.click('#btn-run');
+  await page.waitForFunction(() => window.__almLastRareEventsGLMM && window.__almLastRareEventsGLMM().deepLink, { timeout: 8000 });
+  const out = await page.evaluate(() => window.__almLastRareEventsGLMM());
+  expect(out.model).toBe('UM.RS');
+  expect(out.rcode).toMatch(/model="UM\.RS"/);
+  expect(out.rcode).toMatch(/rma\.glmm/);
+  // the current data is populated into the script (four count vectors with numbers)
+  expect(out.rcode).toMatch(/ai <- c\([\d, ]+\)/);
+  expect(out.rcode).toMatch(/di <- c\([\d, ]+\)/);
+  expect(await page.locator('#umrs-code').count()).toBe(1);
+  expect(await page.locator('#umrs-dl').count()).toBe(1);
+});

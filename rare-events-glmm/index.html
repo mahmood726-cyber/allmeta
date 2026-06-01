@@ -79,8 +79,9 @@ Trial 8, 1, 210, 3, 215</textarea>
           <option value="UM.FS" selected>UM.FS — unconditional, full likelihood (recommended; matches metafor)</option>
           <option value="CM.EL">CM.EL — exact conditional (noncentral hypergeometric; matches metafor)</option>
           <option value="CM.AL">CM.AL — fast approximation (anticonservative CI — see note)</option>
+          <option value="UM.RS">UM.RS — unconditional, random study effects (R-only — generates a metafor script)</option>
         </select>
-        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS reproduces <code>metafor::rma.glmm(model="UM.FS")</code> for the point estimate, SE and 95% CI to ~1e-6 (verified — <code>rare-events-glmm-parity.spec.mjs</code>). <strong>CM.EL</strong> is the exact conditional model (Fisher's noncentral hypergeometric — the Stijnen 2010 gold standard for rare events): it conditions on each study's event margin so the baseline is eliminated and 0-event arms need no correction; verified vs <code>metafor::rma.glmm(model="CM.EL")</code> to ~1e-7 on θ/τ² (<code>rare-events-cmel-parity.spec.mjs</code>), and converges even on very sparse designs where metafor's CM.EL optimiser does not. CM.AL is a faster profiled approximation whose CI is <strong>anticonservative</strong> (≈12% too narrow) — prefer UM.FS or CM.EL for inference.</span>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS reproduces <code>metafor::rma.glmm(model="UM.FS")</code> for the point estimate, SE and 95% CI to ~1e-6 (verified — <code>rare-events-glmm-parity.spec.mjs</code>). <strong>CM.EL</strong> is the exact conditional model (Fisher's noncentral hypergeometric — the Stijnen 2010 gold standard for rare events): it conditions on each study's event margin so the baseline is eliminated and 0-event arms need no correction; verified vs <code>metafor::rma.glmm(model="CM.EL")</code> to ~1e-7 on θ/τ² (<code>rare-events-glmm-parity.spec.mjs</code>), and converges even on very sparse designs where metafor's CM.EL optimiser does not. CM.AL is a faster profiled approximation whose CI is <strong>anticonservative</strong> (≈12% too narrow) — prefer UM.FS or CM.EL for inference.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
@@ -169,6 +170,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       }
       var modelEl = document.getElementById("f-model");
       var model = modelEl ? modelEl.value : "UM.FS";
+      if (model === "UM.RS") { renderUMRS(rows); return; }
       var glmm = model === "CM.EL"
         ? AlmRareEventsGLMM.fitConditionalExact(rows)
         : model === "CM.AL"
@@ -196,7 +198,53 @@ Trial 8, 1, 210, 3, 215</textarea>
       window.__almLastRareEventsGLMM = function () { return { glmm: glmm, iv: iv }; };
     }
 
+    // UM.RS (random study intercepts) is fit by metafor via glmer's Laplace
+    // approximation — it cannot be reproduced in pure JS to metafor tolerance, so this
+    // model is offered as an exact, copy/run-it-yourself R deep-link rather than an
+    // unverified in-browser number (same principle as the RoBMA full-model deep-link).
+    function buildUMRSscript(rows) {
+      var ai = rows.map(function (r) { return r.events_T; }).join(", ");
+      var bi = rows.map(function (r) { return r.n_T - r.events_T; }).join(", ");
+      var ci = rows.map(function (r) { return r.events_C; }).join(", ");
+      var di = rows.map(function (r) { return r.n_C - r.events_C; }).join(", ");
+      return [
+        "# UM.RS — unconditional binomial-normal GLMM with RANDOM study intercepts.",
+        "# Run in R (needs metafor + lme4). metafor fits this via glmer (Laplace, nAGQ=1).",
+        "library(metafor)",
+        "ai <- c(" + ai + ")",
+        "bi <- c(" + bi + ")",
+        "ci <- c(" + ci + ")",
+        "di <- c(" + di + ")",
+        'res <- rma.glmm(measure="OR", ai=ai, bi=bi, ci=ci, di=di, model="UM.RS")',
+        "summary(res)                 # logOR, SE, CI, tau^2 (study-level), sigma^2",
+        'predict(res, transf=exp)     # pooled OR with 95% CI'
+      ].join("\n");
+    }
+    function renderUMRS(rows) {
+      var code = buildUMRSscript(rows);
+      var esc = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+      document.getElementById("summary").innerHTML =
+        '<div class="card" style="grid-column:1/-1">' +
+        '<span class="k">UM.RS — random study effects (R-only)</span>' +
+        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">UM.RS adds a random study intercept on top of the random treatment effect, so metafor fits it with <code>glmer</code> (Laplace approximation). That can\'t be reproduced in-browser to metafor tolerance, so allmeta gives you the exact script to run in R instead of an unverified number — use <strong>UM.FS</strong> or <strong>CM.EL</strong> (both verified) for an in-browser fit.</p>' +
+        '<textarea id="umrs-code" readonly rows="11" aria-label="UM.RS metafor R script" style="width:100%;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.5rem">' + esc(code) + '</textarea>' +
+        '<div style="margin-top:.4rem;display:flex;gap:.5rem;flex-wrap:wrap">' +
+        '<button type="button" id="umrs-copy" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Copy R script</button>' +
+        '<button type="button" id="umrs-dl" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Download .R</button></div></div>';
+      document.querySelector("#compare tbody").innerHTML =
+        '<tr><td>UM.RS</td><td colspan="3" style="color:var(--muted)">Run the R script above (random study effects — glmer/Laplace).</td></tr>';
+      var copyBtn = document.getElementById("umrs-copy");
+      copyBtn.addEventListener("click", function () { var ta = document.getElementById("umrs-code"); ta.select(); try { navigator.clipboard.writeText(ta.value); copyBtn.textContent = "Copied ✓"; } catch (e) { copyBtn.textContent = "Select + copy"; } });
+      document.getElementById("umrs-dl").addEventListener("click", function () {
+        var blob = new Blob([code], { type: "text/plain" }), url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = "rare-events-UM-RS.R"; document.body.appendChild(a); a.click();
+        setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+      });
+      window.__almLastRareEventsGLMM = function () { return { model: "UM.RS", deepLink: true, rcode: code }; };
+    }
+
     document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("f-model").addEventListener("change", run);
     run();
   })();
   </script>
