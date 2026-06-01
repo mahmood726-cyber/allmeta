@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Meta-analysis of correlation coefficients via the Fisher z-transform, back-transformed to r with a prediction interval and forest plot.">
+  <meta name="color-scheme" content="light dark">
+  <title>Correlation Meta-Analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --border:#2f343a; --input-bg:#23272c; }
+    }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem,3vw,3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem,3vw,3rem); display: grid; gap: 1.5rem; grid-template-columns: minmax(280px,22rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.2rem; }
+    h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
+    textarea { width: 100%; min-height: 11rem; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.85rem; background: var(--input-bg); color: var(--ink); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; }
+    label { display: block; font-size: 0.85rem; }
+    select { background: var(--input-bg); color: var(--ink); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.5rem; margin-top: 0.3rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.4rem; }
+    th, td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); }
+    .pooled-row { background: var(--accent-soft); font-weight: 600; }
+    .stat { color: var(--muted); font-size: 0.9rem; }
+    .note { color: var(--muted); font-size: 0.8rem; }
+    footer { padding: 1rem clamp(1rem,3vw,3rem) 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); max-width: 90ch; }
+    a { color: var(--accent); }
+  </style>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/build-info.js"></script>
+  <script src="../hub/shared/chart-export-auto.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
+<header>
+  <h1>Correlation Meta-Analysis</h1>
+  <p>Pool correlation coefficients across studies via the Fisher <em>z</em>-transform, with random-effects (DL/PM/REML) or fixed-effect pooling, a prediction interval, and back-transformation to <em>r</em>.</p>
+</header>
+<main id="main">
+  <section class="panel">
+    <h2>Studies</h2>
+    <label>One row per study: <code>label, r, n</code>
+      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+    </label>
+    <label style="margin-top:0.6rem">Heterogeneity (τ²) estimator
+      <select id="f-method" aria-label="Tau-squared estimator">
+        <option value="REML" selected>REML</option>
+        <option value="PM">Paule-Mandel</option>
+        <option value="DL">DerSimonian-Laird</option>
+        <option value="FE">Fixed-effect</option>
+      </select>
+    </label>
+    <p class="note" style="margin-top:0.5rem">Fisher z: <code>z = atanh(r)</code>, variance <code>1/(n−3)</code> (Fisher 1921). Pooling on the z-scale, back-transformed via <code>tanh</code>. Prediction interval uses t<sub>k−1</sub> (Cochrane v6.5).</p>
+  </section>
+  <section class="panel">
+    <h2>Pooled estimate</h2>
+    <div id="headline" class="stat"></div>
+    <table><thead><tr><th>Study</th><th>r</th><th>n</th><th>z</th><th>weight</th></tr></thead><tbody id="res-body"></tbody></table>
+    <h2 style="margin-top:1rem">Forest (r scale)</h2>
+    <div id="forest-host"></div>
+    <div id="alm-export-mount" style="margin-top:1rem"></div>
+  </section>
+</main>
+<footer>
+  Random-effects pooling on the Fisher <em>z</em>-scale via the audited <code>shared/ma-core.js</code> (DL/PM/REML τ², t<sub>k−1</sub> prediction interval), back-transformed to <em>r</em>. Matches <code>metafor::escalc(measure="ZCOR") |&gt; rma()</code> to ~1e-6 (verified — <code>correlation-ma-parity.spec.mjs</code>). References: Fisher RA 1921; Hedges &amp; Olkin 1985, <em>Statistical Methods for Meta-Analysis</em>.
+</footer>
+<script>
+  (function () {
+    "use strict";
+    var EXAMPLE = "# label, r, n\nStudy A, 0.45, 40\nStudy B, 0.30, 55\nStudy C, 0.55, 30\nStudy D, 0.20, 80\nStudy E, 0.38, 65\nStudy F, 0.62, 25\nStudy G, 0.28, 90\nStudy H, 0.50, 45";
+    var Z975 = 1.959963984540054;
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    var _last = null;
+    window._almLastCorrMA = function () { return _last; };
+
+    function parse(text) {
+      var rows = [];
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        var t = line.trim(); if (!t || t.charAt(0) === "#") return;
+        var p = t.split(/\s*,\s*/);
+        if (p.length < 3) return;
+        var n = parseFloat(p[p.length - 1]), r = parseFloat(p[p.length - 2]);
+        var label = p.slice(0, p.length - 2).join(", ") || ("Study " + (rows.length + 1));
+        if (!isFinite(r) || !isFinite(n) || r <= -1 || r >= 1 || n <= 3) return;
+        rows.push({ label: label, r: r, n: n, z: Math.atanh(r), v: 1 / (n - 3) });
+      });
+      return rows;
+    }
+
+    function run() {
+      var rows = parse(document.getElementById("f-data").value);
+      var method = document.getElementById("f-method").value;
+      var body = document.getElementById("res-body");
+      var head = document.getElementById("headline");
+      if (rows.length < 2) {
+        head.textContent = "Enter at least 2 studies (label, r, n).";
+        body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return;
+      }
+      var pooled = window.AlmMaCore.pool(rows.map(function (s) { return s.z; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      var w = rows.map(function (s) { return 1 / (s.v + pooled.tau2); });
+      var sw = w.reduce(function (a, b) { return a + b; }, 0);
+      var r_pool = Math.tanh(pooled.mu), r_lo = Math.tanh(pooled.ciLo), r_hi = Math.tanh(pooled.ciHi);
+      var r_piLo = pooled.piLo != null ? Math.tanh(pooled.piLo) : null, r_piHi = pooled.piHi != null ? Math.tanh(pooled.piHi) : null;
+      head.innerHTML = "k = " + rows.length + " · pooled r = <strong>" + fmt(r_pool) + "</strong> [" + fmt(r_lo) + ", " + fmt(r_hi) + "]"
+        + " · τ²(z) = " + fmt(pooled.tau2, 4) + " · I² = " + fmt(pooled.I2, 1) + "%"
+        + (r_piLo != null ? " · 95% PI [" + fmt(r_piLo) + ", " + fmt(r_piHi) + "]" : "");
+      body.innerHTML = rows.map(function (s, i) {
+        return "<tr><td>" + esc(s.label) + "</td><td>" + fmt(s.r) + "</td><td>" + s.n + "</td><td>" + fmt(s.z) + "</td><td>" + fmt(100 * w[i] / sw, 1) + "%</td></tr>";
+      }).join("") + "<tr class='pooled-row'><td>Pooled</td><td>" + fmt(r_pool) + "</td><td>—</td><td>" + fmt(pooled.mu) + "</td><td>100%</td></tr>";
+      document.getElementById("forest-host").innerHTML = forest(rows, { r: r_pool, lo: r_lo, hi: r_hi });
+      _last = {
+        _schema: "corr-ma-results-v1", k: rows.length, method: method,
+        mu_z: pooled.mu, se_z: pooled.se, tau2_z: pooled.tau2, I2: pooled.I2,
+        r: r_pool, r_lo: r_lo, r_hi: r_hi, r_pi_lo: r_piLo, r_pi_hi: r_piHi,
+        studies: rows.map(function (s) { return { label: s.label, r: s.r, n: s.n }; }),
+      };
+    }
+
+    function forest(rows, pool) {
+      var W = 560, rowH = 24, H = 50 + (rows.length + 1) * rowH + 30, L = 150, R = 30, plotW = W - L - R;
+      var lo = -1, hi = 1, x = function (v) { return L + (v - lo) / (hi - lo) * plotW; };
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (matchMedia('(prefers-color-scheme:dark)').matches ? '#1c1f23' : '#fff') + "'/>");
+      var axEl = "#888";
+      p.push("<line x1='" + x(0) + "' y1='40' x2='" + x(0) + "' y2='" + (H - 30) + "' stroke='" + axEl + "' stroke-dasharray='3,3'/>");
+      [-1, -0.5, 0, 0.5, 1].forEach(function (t) { p.push("<text x='" + x(t) + "' y='" + (H - 14) + "' text-anchor='middle' font-size='10' fill='" + axEl + "'>" + t + "</text>"); });
+      rows.forEach(function (s, i) {
+        var y = 50 + i * rowH, slo = Math.tanh(s.z - Z975 * Math.sqrt(s.v)), shi = Math.tanh(s.z + Z975 * Math.sqrt(s.v));
+        p.push("<text x='10' y='" + (y + 4) + "' font-size='11' fill='currentColor'>" + esc(s.label) + "</text>");
+        p.push("<line x1='" + x(slo) + "' y1='" + y + "' x2='" + x(shi) + "' y2='" + y + "' stroke='#6aa6d4' stroke-width='1.5'/>");
+        p.push("<circle cx='" + x(s.r) + "' cy='" + y + "' r='3.5' fill='#2c5e8a'/>");
+      });
+      var yp = 50 + rows.length * rowH;
+      p.push("<polygon points='" + x(pool.lo) + "," + yp + " " + x(pool.r) + "," + (yp - 6) + " " + x(pool.hi) + "," + yp + " " + x(pool.r) + "," + (yp + 6) + "' fill='#b04444'/>");
+      p.push("<text x='10' y='" + (yp + 4) + "' font-size='11' font-weight='700' fill='currentColor'>Pooled</text>");
+      p.push("</svg>");
+      return p.join("");
+    }
+
+    document.getElementById("f-data").value = EXAMPLE;
+    document.getElementById("f-data").addEventListener("input", run);
+    document.getElementById("f-method").addEventListener("change", run);
+    run();
+
+    function ready(fn) { if (document.readyState !== "loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
+    ready(function () {
+      if (window.alm && window.alm.resultsExport) {
+        window.alm.resultsExport({ target: "#alm-export-mount", basename: "correlation-ma-results", getResults: function () { return _almLastCorrMA() || {}; } });
+      }
+    });
+  })();
+</script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
+</body>
+</html>
