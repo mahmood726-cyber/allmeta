@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="The allmeta parity ledger: every quantitative method backed by a committed R-parity test — matching metafor/mada/dosresmeta/etc. to the decimal, fully offline, no licence.">
+  <meta name="color-scheme" content="light dark">
+  <title>Parity Ledger — allmeta vs R</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --border:#d9d5cc; --good:#1f7a4d; --chip:#e8f0f7; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --border:#2f343a; --good:#5fc78f; --chip:#223044; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+    * { box-sizing:border-box; } html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 .3rem; font-size:1.6rem; } header p { margin:0; color:var(--muted); max-width:80ch; }
+    main { padding:1.5rem clamp(1rem,3vw,3rem); max-width:74rem; }
+    .cards { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; min-width:9rem; }
+    .card .n { font-size:1.9rem; font-weight:700; color:var(--accent); } .card .l { font-size:.82rem; color:var(--muted); }
+    .controls { margin-bottom:.8rem; display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; }
+    input[type=search] { background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.45rem .7rem; min-width:16rem; font-size:.9rem; }
+    table { width:100%; border-collapse:collapse; font-size:.86rem; background:var(--panel); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    th,td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { background:var(--chip); font-size:.78rem; text-transform:uppercase; letter-spacing:.03em; cursor:pointer; user-select:none; }
+    th[aria-sort] { color:var(--accent); }
+    code { font-size:.85em; } .chip { display:inline-block; background:var(--chip); border-radius:10px; padding:1px 8px; margin:1px 2px 1px 0; font-size:.78rem; }
+    .tol { color:var(--good); font-weight:600; white-space:nowrap; }
+    footer { padding:1rem clamp(1rem,3vw,3rem) 2.5rem; color:var(--muted); font-size:.82rem; border-top:1px solid var(--border); max-width:90ch; }
+    a { color:var(--accent); }
+  </style>
+  <script src="./parity-ledger.js"></script>
+  <script src="../shared/build-info.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
+<header>
+  <h1>Parity Ledger — every number checked against R</h1>
+  <p>R, Stata, RevMan and CMA give you results. allmeta gives you results <em>and the receipt</em>: every quantitative method below is backed by a committed, version-controlled test that asserts agreement with a named R reference (metafor, mada, dosresmeta, robumeta, RoBMA, EValue, metasens…) to a stated number of decimals — re-run on every change in CI. Fully offline, single-file, no licence. This page is generated from the spec files themselves, so it cannot claim a method that isn't actually verified.</p>
+</header>
+<main id="main">
+  <div class="cards" id="cards"></div>
+  <div class="controls">
+    <label>Filter <input type="search" id="q" placeholder="method, module, or R oracle…" aria-label="Filter the parity table"></label>
+    <span class="l" id="shown" style="color:var(--muted);font-size:.82rem"></span>
+  </div>
+  <table id="tbl">
+    <thead><tr>
+      <th data-k="title" tabindex="0" role="columnheader" title="Sort by method">Method</th><th data-k="module" tabindex="0" role="columnheader" title="Sort by module">Module</th><th data-k="oracle" tabindex="0" role="columnheader" title="Sort by R oracle">R oracle</th>
+      <th data-k="tests" tabindex="0" role="columnheader" title="Sort by test count">Tests</th><th data-k="asserts" tabindex="0" role="columnheader" title="Sort by numeric checks">Numeric checks</th><th data-k="tightestDecimals" tabindex="0" role="columnheader" title="Sort by tightest tolerance">Tightest tolerance</th><th data-k="spec" tabindex="0" role="columnheader" title="Sort by spec file">Spec</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</main>
+<footer id="foot"></footer>
+<script>
+  (function () {
+    "use strict";
+    var L = window.ALM_PARITY_LEDGER || { rows: [], specCount: 0, assertionCount: 0, oracleCount: 0, generated: "" };
+    var esc = function (s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
+    var tol = function (d) { return d == null ? "—" : "≤ 10⁻" + d; };
+    var moduleCount = (function () { var s = {}; L.rows.forEach(function (r) { if (r.module) s[r.module] = 1; }); return Object.keys(s).length; })();
+    document.getElementById("cards").innerHTML =
+      [[L.specCount, "R-parity specs"], [L.assertionCount, "numeric assertions vs R"], [L.oracleCount, "distinct R oracles"], [moduleCount, "verified engines"]]
+      .map(function (c) { return "<div class='card'><div class='n'>" + c[0] + "</div><div class='l'>" + c[1] + "</div></div>"; }).join("");
+
+    var sortKey = "tightestDecimals", sortDir = -1;
+    function render() {
+      var q = document.getElementById("q").value.toLowerCase().trim();
+      var rows = L.rows.filter(function (r) {
+        return !q || (r.title + " " + (r.module || "") + " " + r.oracles.join(" ")).toLowerCase().indexOf(q) >= 0;
+      });
+      rows.sort(function (a, b) {
+        var av = a[sortKey], bv = b[sortKey];
+        if (sortKey === "oracle") { av = (a.oracles[0] || ""); bv = (b.oracles[0] || ""); }
+        if (typeof av === "string" || typeof bv === "string") return String(av).localeCompare(String(bv)) * sortDir;
+        return ((av == null ? -1 : av) - (bv == null ? -1 : bv)) * sortDir;
+      });
+      document.getElementById("rows").innerHTML = rows.map(function (r) {
+        return "<tr><td>" + esc(r.title) + "</td><td>" + (r.module ? "<code>" + esc(r.module) + "</code>" : "—") + "</td>"
+          + "<td>" + (r.oracles.length ? r.oracles.map(function (o) { return "<span class='chip'>" + esc(o) + "</span>"; }).join("") : "<span class='chip'>analytic</span>") + "</td>"
+          + "<td>" + r.tests + "</td><td>" + r.asserts + "</td><td class='tol'>" + tol(r.tightestDecimals) + "</td>"
+          + "<td><code>" + esc(r.spec) + "</code></td></tr>";
+      }).join("");
+      document.getElementById("shown").textContent = "showing " + rows.length + " of " + L.rows.length;
+    }
+    function sortBy(th) {
+      var k = th.getAttribute("data-k");
+      if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = (k === "title" || k === "module" || k === "spec" || k === "oracle") ? 1 : -1; }
+      Array.prototype.forEach.call(document.querySelectorAll("th[data-k]"), function (t) { t.removeAttribute("aria-sort"); });
+      th.setAttribute("aria-sort", sortDir > 0 ? "ascending" : "descending");
+      render();
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("th[data-k]"), function (th) {
+      th.addEventListener("click", function () { sortBy(th); });
+      th.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sortBy(th); } });
+    });
+    document.getElementById("q").addEventListener("input", render);
+    document.getElementById("foot").innerHTML = "Ledger generated " + esc(L.generated) + " by <code>scripts/build-parity-ledger.mjs</code> from <code>hub/shared/tests/*parity*.spec.mjs</code>. "
+      + "Each row's assertions run against the named R package in continuous integration; the “tightest tolerance” is the smallest decimal agreement asserted in that spec (e.g. ≤ 10⁻⁶ means the browser value matches R to six decimals). Methods with an <span class='chip'>analytic</span> oracle are checked against a closed-form value rather than an R package.";
+    render();
+  })();
+</script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

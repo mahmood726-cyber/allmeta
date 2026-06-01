@@ -1256,5 +1256,17 @@ window.HTML_APPS_PROJECTS = [
     category: "Productivity",
     summary: "Save your whole allmeta review — every app's data and settings, plus the shared ma-studies-v1 bus — as one offline JSON file, and restore it later or on another machine. A single-file, fully-offline alternative to RevMan project files. Round-trip verified.",
     tags: ["project", "save", "workspace", "portability", "offline"]
+  },
+  {
+    name: "Parity Ledger",
+    featured: true,
+    folder: "allmeta/parity",
+    path: "./parity/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Reporting",
+    summary: "The provability dashboard: every quantitative allmeta method backed by a committed R-parity test, asserting agreement with a named R reference (metafor, mada, dosresmeta, robumeta, RoBMA, EValue, metasens…) to a stated number of decimals, re-run in CI. Generated from the spec files themselves, so it cannot claim a method that isn't verified — 40 specs, 147 numeric checks, 32 distinct R oracles.",
+    tags: ["parity", "verification", "reproducibility", "metafor", "provenance"]
   }
 ];
