@@ -63,6 +63,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/fragility.js"></script>
+  <script src="../shared/diagnostic-plots.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
@@ -121,6 +122,9 @@ StudyE, 4, 600, 10, 600</textarea>
       </table>
       <h2 style="margin-top:0.5rem">Forest</h2>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of per-study and pooled effects"></svg>
+      <h2 style="margin-top:0.5rem">L'Abbé plot</h2>
+      <p style="font-size:0.8rem;color:var(--muted);margin:0 0 .3rem">Control vs treatment event rate per study (point area ∝ study size). The diagonal is no effect; the curve is the pooled effect held constant. Matches <code>metafor::labbe</code>.</p>
+      <svg id="labbe" viewBox="0 0 600 320" role="img" aria-label="L'Abbe plot of control vs treatment event rates"></svg>
 
       <!-- chart-download mount -->
       <div class="actions">
@@ -345,6 +349,7 @@ StudyE, 4, 600, 10, 600</textarea>
       perBody.innerHTML = perParts.join('');
 
       drawForest(studies, pooled, measure);
+      drawLabbe(rows, measure);
 
       // Build results for export
       var firstZ = firstPooled ? (firstPooled.logEst !== undefined ? firstPooled.logEst / firstPooled.seLog : firstPooled.est / firstPooled.se) : null;
@@ -374,6 +379,34 @@ StudyE, 4, 600, 10, 600</textarea>
       if (window.alm && window.alm.urlState) {
         window.alm.urlState.write({ src: document.getElementById('src').value, measure: measure });
       }
+    }
+
+    function drawLabbe(rows, measure) {
+      var svg = document.getElementById('labbe');
+      if (!svg || !window.AlmDiagPlots || !rows.length) { if (svg) svg.innerHTML = ''; return; }
+      var m = (measure === 'RR') ? 'RR' : 'OR';
+      var lb = window.AlmDiagPlots.labbe(rows.map(function (r) { return { ai: r.e1, bi: r.n1 - r.e1, ci: r.e2, di: r.n2 - r.e2 }; }), { measure: m, method: 'FE' });
+      window.__almLabbe = lb;
+      var W = 600, H = 320, pad = 48, pw = W - pad * 2, ph = H - pad * 2;
+      var dark = matchMedia('(prefers-color-scheme:dark)').matches;
+      var X = function (p) { return pad + p * pw; }, Y = function (p) { return pad + ph - p * ph; };
+      var maxN = Math.max.apply(null, lb.points.map(function (q) { return q.n; }), 1);
+      var s = ["<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>"];
+      s.push("<rect x='" + pad + "' y='" + pad + "' width='" + pw + "' height='" + ph + "' fill='none' stroke='currentColor' opacity='0.4'/>");
+      s.push("<line x1='" + X(0) + "' y1='" + Y(0) + "' x2='" + X(1) + "' y2='" + Y(1) + "' stroke='#888' stroke-dasharray='4 3'/>");
+      var cv = lb.curve.map(function (q, i) { return (i ? 'L' : 'M') + X(q.pc) + ',' + Y(q.pt); }).join(' ');
+      s.push("<path d='" + cv + "' fill='none' stroke='#b23a48' stroke-width='2'/>");
+      lb.points.forEach(function (q) {
+        var r = 3 + Math.sqrt(q.n / maxN) * 9;
+        s.push("<circle cx='" + X(q.pc) + "' cy='" + Y(q.pt) + "' r='" + r.toFixed(1) + "' fill='var(--accent,#2c5e8a)' fill-opacity='0.5' stroke='currentColor' stroke-width='0.6'/>");
+      });
+      [0, 0.25, 0.5, 0.75, 1].forEach(function (t) {
+        s.push("<text x='" + X(t) + "' y='" + (pad + ph + 16) + "' text-anchor='middle' font-size='10' fill='currentColor'>" + t + "</text>");
+        s.push("<text x='" + (pad - 8) + "' y='" + (Y(t) + 3) + "' text-anchor='end' font-size='10' fill='currentColor'>" + t + "</text>");
+      });
+      s.push("<text x='" + (pad + pw / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='11' fill='currentColor'>Control event rate</text>");
+      s.push("<text x='14' y='" + (pad + ph / 2) + "' transform='rotate(-90 14 " + (pad + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>Treatment event rate</text>");
+      svg.innerHTML = s.join('');
     }
 
     function drawForest(studies, pooled, measure) {

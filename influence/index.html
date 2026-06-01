@@ -70,6 +70,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <script src="../shared/diagnostic-plots.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -139,7 +140,13 @@
       <svg id="loo-plot" viewBox="0 0 600 400" role="img" aria-label="Leave-one-out pooled estimates"></svg>
       <h2 style="margin-top:0.6rem">Cook's D × Hat</h2>
       <svg id="influence-plot" viewBox="0 0 600 260" role="img" aria-label="Influence plot of Cook's distance vs hat values"></svg>
-    
+      <h2 style="margin-top:0.6rem">Baujat plot</h2>
+      <p class="hint">Horizontal: each study's contribution to heterogeneity (Q); vertical: its influence on the pooled estimate. Studies to the upper-right drive both. Matches <code>metafor::baujat</code>.</p>
+      <svg id="baujat-plot" viewBox="0 0 600 300" role="img" aria-label="Baujat plot: heterogeneity contribution vs influence on the pooled estimate"></svg>
+      <h2 style="margin-top:0.6rem">Radial (Galbraith) plot</h2>
+      <p class="hint">Precision (1/SE) vs standardised effect (effect/SE). The slope of the through-origin line is the fixed-effect estimate; points outside the ±2 band are outliers. Matches <code>metafor::radial</code>.</p>
+      <svg id="radial-plot" viewBox="0 0 600 300" role="img" aria-label="Radial Galbraith plot of precision vs standardised effect"></svg>
+
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
@@ -256,7 +263,53 @@
         __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:700"><td colspan="7">Full-sample pooled</td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td></tr>`);
         drawLOO(diag, full);
         drawInfluence(diag);
+        drawBaujat(rows);
+        drawRadial(rows);
         body.innerHTML = __bodyParts.join("");
+      }
+
+      // Baujat + radial via the R-verified shared engine (matches metafor).
+      function drawBaujat(rows) {
+        const svg = document.getElementById("baujat-plot");
+        if (!svg || !window.AlmDiagPlots) return;
+        const bj = window.AlmDiagPlots.baujat(rows.map(r => r.te), rows.map(r => r.se * r.se));
+        window.__almBaujat = bj;
+        const W = 600, H = 300, padL = 56, padR = 20, padT = 20, padB = 42, pw = W - padL - padR, ph = H - padT - padB;
+        const xMax = Math.max(...bj.x, 1e-6), yMax = Math.max(...bj.y, 1e-6);
+        const X = v => padL + v / (xMax * 1.08) * pw, Y = v => padT + ph - v / (yMax * 1.08) * ph;
+        const s = [""];
+        s.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + ph}" stroke="currentColor" opacity="0.5"/><line x1="${padL}" y1="${padT + ph}" x2="${padL + pw}" y2="${padT + ph}" stroke="currentColor" opacity="0.5"/>`);
+        bj.x.forEach((xi, i) => {
+          s.push(`<circle cx="${X(xi)}" cy="${Y(bj.y[i])}" r="4" fill="var(--accent)" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/>`);
+          s.push(`<text x="${X(xi) + 5}" y="${Y(bj.y[i]) + 3}" font-size="9" fill="currentColor" opacity="0.75">${(rows[i].label || (i + 1))}</text>`);
+        });
+        s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Contribution to Q (heterogeneity)</text>`);
+        s.push(`<text x="14" y="${padT + ph / 2}" transform="rotate(-90 14 ${padT + ph / 2})" text-anchor="middle" font-size="11" fill="currentColor">Influence on pooled estimate</text>`);
+        svg.innerHTML = s.join("");
+      }
+
+      function drawRadial(rows) {
+        const svg = document.getElementById("radial-plot");
+        if (!svg || !window.AlmDiagPlots) return;
+        const rad = window.AlmDiagPlots.radial(rows.map(r => r.te), rows.map(r => r.se * r.se));
+        window.__almRadial = rad;
+        const W = 600, H = 300, padL = 50, padR = 20, padT = 20, padB = 42, pw = W - padL - padR, ph = H - padT - padB;
+        const xMax = Math.max(...rad.x) * 1.08;
+        const zAbs = Math.max(...rad.z.map(Math.abs), rad.slope * xMax + 2, 2) * 1.05;
+        const X = v => padL + v / xMax * pw, Y = v => padT + ph / 2 - v / zAbs * (ph / 2);
+        const s = [""];
+        s.push(`<line x1="${padL}" y1="${Y(0)}" x2="${padL + pw}" y2="${Y(0)}" stroke="currentColor" opacity="0.4"/>`);
+        // slope line + ±2 band
+        s.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax)}" stroke="var(--warn)" stroke-width="1.5"/>`);
+        s.push(`<line x1="${X(0)}" y1="${Y(2)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax + 2)}" stroke="var(--warn)" stroke-dasharray="4 3" opacity="0.6"/>`);
+        s.push(`<line x1="${X(0)}" y1="${Y(-2)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax - 2)}" stroke="var(--warn)" stroke-dasharray="4 3" opacity="0.6"/>`);
+        rad.x.forEach((xi, i) => {
+          const out = Math.abs(rad.resid[i]) > 2;
+          s.push(`<circle cx="${X(xi)}" cy="${Y(rad.z[i])}" r="4" fill="${out ? 'var(--warn)' : 'var(--accent)'}" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/>`);
+        });
+        s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Precision (1/SE)</text>`);
+        s.push(`<text x="14" y="${padT + ph / 2}" transform="rotate(-90 14 ${padT + ph / 2})" text-anchor="middle" font-size="11" fill="currentColor">Standardised effect (effect/SE)</text>`);
+        svg.innerHTML = s.join("");
       }
 
       function drawLOO(diag, full) {
