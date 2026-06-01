@@ -45,10 +45,13 @@
     <label>One row per dose level: <code>study, dose, cases, n, logRR, SE, type</code>. The reference level has <code>logRR=0</code> and blank SE. <code>type</code> ∈ cc / ir / ci.
       <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
     </label>
+    <label style="margin-top:.6rem">Trend shape
+      <select id="f-shape" aria-label="Dose-response trend shape"><option value="linear" selected>Linear</option><option value="spline3">Restricted cubic spline (3 knots)</option><option value="spline4">Restricted cubic spline (4 knots)</option></select>
+    </label>
     <label style="margin-top:.6rem">Heterogeneity (τ²) estimator
       <select id="f-method" aria-label="Tau-squared estimator"><option value="REML" selected>REML</option><option value="PM">Paule-Mandel</option><option value="DL">DerSimonian-Laird</option><option value="FE">Fixed-effect</option></select>
     </label>
-    <p class="note" style="margin-top:.5rem">Linear trend (log-RR per unit dose). GL covariance reconstructed per study by design type. Verified vs R <code>dosresmeta</code>.</p>
+    <p class="note" style="margin-top:.5rem">Linear = log-RR per unit dose (τ² estimator applies). Spline = non-linear Harrell RCS basis, multivariate (mvmeta) REML pool — captures J/U-shaped exposures. GL covariance reconstructed per study by design type. Verified vs R <code>dosresmeta</code>.</p>
   </section>
   <section class="panel">
     <h2>Pooled dose-response</h2>
@@ -61,7 +64,7 @@
   </section>
 </main>
 <footer>
-  Two-stage linear dose-response MA via <code>shared/dose-response.js</code> (Greenland-Longnecker covariance reconstruction → per-study GLS slope → REML pool on <code>shared/ma-core.js</code>). Matches <code>dosresmeta(method="reml")</code> to ~1e-6 on the pooled slope/SE/τ² (verified — <code>dose-response-parity.spec.mjs</code>). References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40.
+  Two-stage dose-response MA via <code>shared/dose-response.js</code> (Greenland-Longnecker covariance reconstruction → per-study GLS → REML pool). <strong>Linear</strong>: per-study slope pooled on <code>shared/ma-core.js</code>, matches <code>dosresmeta(method="reml")</code> to ~1e-6 (<code>dose-response-parity.spec.mjs</code>). <strong>Restricted cubic spline</strong> (3/4 knots, Harrell basis): per-study multivariate GLS of the spline coefficients, pooled by a pure-JS multivariate (mvmeta) REML with a full between-study Ψ — matches <code>dosresmeta(logrr~rcs(dose,k))</code> to ~1e-5 on coefficients, vcov, Ψ and fitted log-RRs (<code>dose-response-spline-parity.spec.mjs</code>). References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Harrell 2001 (RCS).
 </footer>
 <script>
   (function () {
@@ -99,8 +102,10 @@
     function run() {
       var studies = parse(document.getElementById("f-data").value);
       var method = document.getElementById("f-method").value;
+      var shape = document.getElementById("f-shape").value;
       var head = document.getElementById("headline"), body = document.getElementById("res-body");
       if (studies.length < 2) { head.textContent = "Enter ≥ 2 studies."; body.innerHTML = ""; document.getElementById("curve-host").innerHTML = ""; _last = null; return; }
+      if (shape !== "linear") { runSpline(studies, shape === "spline4" ? 4 : 3, head, body); return; }
       var r = window.AlmDoseResponse.fit(studies, { method: method });
       head.innerHTML = "k = " + r.k + " studies · pooled slope = <strong>" + fmt(r.slope, 5) + "</strong> log-RR/unit (SE " + fmt(r.se, 5) + ")"
         + " · τ² = " + fmt(r.tau2, 5) + " · RR at +10 units = <strong>" + fmt(Math.exp(r.slope * 10), 3) + "</strong>";
@@ -111,6 +116,48 @@
       document.getElementById("curve-host").innerHTML = curve(r.slope, r.se);
       _last = { _schema: "dose-response-results-v1", k: r.k, method: method, slope: r.slope, se: r.se, tau2: r.tau2, ciLo: r.ciLo, ciHi: r.ciHi,
         perStudy: r.perStudy.map(function (p) { return { slope: p.beta, se: Math.sqrt(p.varBeta) }; }) };
+    }
+
+    function runSpline(studies, nk, head, body) {
+      var f = window.AlmDoseResponse.fitSpline(studies, { nk: nk });
+      if (!f.beta) { head.textContent = "Spline needs ≥ 2 fittable studies."; body.innerHTML = ""; document.getElementById("curve-host").innerHTML = ""; _last = null; return; }
+      var knotsTxt = f.knots.map(function (k) { return fmt(k, 2); }).join(", ");
+      var p36 = f.predict(36, 0);
+      head.innerHTML = "k = " + f.k + " studies · " + (nk) + "-knot restricted cubic spline (knots at " + knotsTxt + ")"
+        + " · RR at dose 36 vs 0 = <strong>" + fmt(Math.exp(p36.logRR), 3) + "</strong> [" + fmt(Math.exp(p36.ciLo), 3) + ", " + fmt(Math.exp(p36.ciHi), 3) + "]"
+        + " · non-linearity is shown by the curve below.";
+      body.innerHTML = f.beta.map(function (b, i) {
+        return "<tr><td>β" + (i + 1) + (i === 0 ? " (linear)" : " (spline)") + "</td><td>—</td><td>" + fmt(b, 5) + "</td><td>" + fmt(Math.sqrt(f.cov[i][i]), 5) + "</td></tr>";
+      }).join("");
+      document.getElementById("curve-host").innerHTML = curveSpline(f);
+      _last = { _schema: "dose-response-results-v1", k: f.k, method: "REML(mvmeta)", shape: nk + "-knot-rcs",
+        knots: f.knots, beta: f.beta, cov: f.cov, Psi: f.Psi,
+        rrByDose: [10, 20, 30, 40, 50, 60].map(function (d) { var pr = f.predict(d, 0); return { dose: d, rr: Math.exp(pr.logRR), lo: Math.exp(pr.ciLo), hi: Math.exp(pr.ciHi) }; }) };
+    }
+
+    function curveSpline(f) {
+      var W = 520, H = 220, L = 60, R = 20, T = 20, B = 40, pw = W - L - R, ph = H - T - B;
+      var dmax = Math.max(f.knots[f.knots.length - 1] * 1.25, 60), pts = [], lo = Infinity, hi = -Infinity, dz;
+      for (dz = 0; dz <= dmax; dz += dmax / 60) {
+        var pr = f.predict(dz, 0), rr = Math.exp(pr.logRR), rlo = Math.exp(pr.ciLo), rhi = Math.exp(pr.ciHi);
+        pts.push({ d: dz, rr: rr, lo: rlo, hi: rhi }); if (rlo < lo) lo = rlo; if (rhi > hi) hi = rhi;
+      }
+      if (hi < 1) hi = 1; if (lo > 1) lo = 1; var pad = (hi - lo) * 0.05; lo -= pad; hi += pad;
+      var x = function (d) { return L + d / dmax * pw; }, y = function (v) { return T + ph - (v - lo) / (hi - lo) * ph; };
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (matchMedia('(prefers-color-scheme:dark)').matches ? '#1c1f23' : '#fff') + "'/>");
+      // CI ribbon
+      var up = pts.map(function (q, i) { return (i ? "L" : "M") + x(q.d) + "," + y(q.hi); }).join(" ");
+      var dn = pts.slice().reverse().map(function (q) { return "L" + x(q.d) + "," + y(q.lo); }).join(" ");
+      p.push("<path d='" + up + " " + dn + " Z' fill='#2c5e8a' fill-opacity='0.12' stroke='none'/>");
+      if (lo < 1 && hi > 1) p.push("<line x1='" + L + "' y1='" + y(1) + "' x2='" + (W - R) + "' y2='" + y(1) + "' stroke='#888' stroke-dasharray='3,3'/>");
+      var path = pts.map(function (q, i) { return (i ? "L" : "M") + x(q.d) + "," + y(q.rr); }).join(" ");
+      p.push("<path d='" + path + "' fill='none' stroke='#2c5e8a' stroke-width='2'/>");
+      // knot ticks
+      f.knots.forEach(function (k) { if (k > 0 && k <= dmax) p.push("<line x1='" + x(k) + "' y1='" + (T + ph) + "' x2='" + x(k) + "' y2='" + (T + ph - 6) + "' stroke='#b23a48' stroke-width='1.5'/>"); });
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='currentColor'>Dose (knots in red)</text>");
+      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>Pooled RR</text>");
+      p.push("</svg>"); return p.join("");
     }
 
     function curve(slope, se) {
@@ -131,6 +178,7 @@
     document.getElementById("f-data").value = EXAMPLE;
     document.getElementById("f-data").addEventListener("input", run);
     document.getElementById("f-method").addEventListener("change", run);
+    document.getElementById("f-shape").addEventListener("change", run);
     run();
     (function () { function rdy(f) { document.readyState !== "loading" ? f() : document.addEventListener("DOMContentLoaded", f); }
       rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "dose-response-results", getResults: function () { return _almLastDoseResponse() || {}; } }); });
