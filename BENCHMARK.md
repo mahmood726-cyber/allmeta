@@ -26,7 +26,7 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 | **Meta-regression permutation test** | `metafor::permutest` | ✅ DONE | ~~P0~~ |
 | **RoBMA** (robust Bayesian model-averaging) | `RoBMA` pkg | **MISSING** | P1 |
 | **E-value** (unmeasured-confounding sensitivity) | `EValue` pkg | ✅ DONE (`43a9f5b`) | ~~P1~~ |
-| **Classic dose-response MA** (Greenland-Longnecker, RCS) | `dosresmeta` | **MISSING** | P1 |
+| **Classic dose-response MA** (Greenland-Longnecker linear) | `dosresmeta` | ✅ DONE (`68633e2`, new app) | ~~P1~~ |
 | **Correlation MA** (Fisher-z pooling, ZCOR) | `metafor escalc(ZCOR)` | ✅ DONE (`2ab7f83`, new app) | ~~P1~~ |
 | **Doi plot + LFK index** (Furuya-Kanamori) | `metawho`/`MetaXL` | **MISSING** | P2 |
 | **Fragility index** for binary MA | (bespoke) | **MISSING** | P2 |
@@ -61,7 +61,7 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 5. ✅ **E-value** (DONE `43a9f5b`) — VanderWeele-Ding sensitivity of a pooled RR/OR/HR to unmeasured
    confounding; one of the most-requested observational-MA additions. Oracle: `EValue`.
    *Est: 0.5 session (closed-form).* 
-6. **Classic dose-response MA** — Greenland-Longnecker two-stage + restricted cubic
+6. ✅ **Classic dose-response MA** (DONE `68633e2`, new app dose-response-ma; linear two-stage verified vs dosresmeta ~1e-6) — Greenland-Longnecker two-stage + restricted cubic
    splines, distinct from the existing *network* dose-response. Oracle: `dosresmeta`.
    *Est: 2 sessions.*
 7. ✅ **Correlation meta-analysis** (DONE `2ab7f83`, new app) — dedicated Fisher-z pooling app (ZCOR), with the n−3
@@ -84,16 +84,11 @@ the existing `funnel-plot` app. Recommended as the next session's deliverable.
 
 
 ## Status of the remaining hard items (2026-06-01)
-- **Classic dose-response MA (P1-6): ATTEMPTED, NOT SHIPPED.** Implemented the two-stage
-  linear Greenland-Longnecker pipeline (grl Newton reconstruction ✓ matches dosresmeta to
-  ~1e-3; per-study GLS slopes match for 4/6 alcohol_cvd studies to ~1e-5). BLOCKER: the GL
-  covariance OFF-DIAGONAL does not match `dosresmeta:::covar.logrr` — and that function's
-  actual output (S[1,2]=0.011221 on study 5) does NOT equal what its own deparsed source
-  formula produces (0.013353, =rcorr·√(vⱼvₖ) with the printed rcorr=0.388455). A hidden
-  internal step (not visible via deparse) governs the off-diagonal. Not shipped rather than
-  ship a ~6%-off pooled slope (violates the provable-correctness bar). Resolve by tracing
-  dosresmeta's actual covariance routine (likely an `approximate`/internal path) before
-  re-attempting.
+- **Classic dose-response MA (P1-6): ✅ RESOLVED & SHIPPED (`68633e2`).** The covariance was
+  correct; the bug was a GLOBAL design type vs alcohol_cvd's PER-STUDY mix (4 cc + 2 ci).
+  The off-diagonal "mismatch" was the cc-vs-ci s0/si formula (studies 5-6 are ci). Fixed to
+  read per-study type; verified vs dosresmeta(method="reml") to ~1e-6 (slope/SE/τ², all 6
+  per-study slopes). New dose-response-ma app.
 - **RoBMA (P1-4): RECOMMEND R-DEEP-LINK, not in-browser.** RoBMA model-averages over ~12-36
   models (effect × heterogeneity × publication-bias × priors) via MCMC + bridge sampling for
   each marginal likelihood. Faithfully reproducing its inclusion Bayes factors in browser JS
