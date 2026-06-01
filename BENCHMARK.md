@@ -29,7 +29,7 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 | **Classic dose-response MA** (Greenland-Longnecker linear) | `dosresmeta` | ✅ DONE (`68633e2`, new app) | ~~P1~~ |
 | **Correlation MA** (Fisher-z pooling, ZCOR) | `metafor escalc(ZCOR)` | ✅ DONE (`2ab7f83`, new app) | ~~P1~~ |
 | **Doi plot + LFK index** (Furuya-Kanamori) | `metawho`/`MetaXL` | **MISSING** | P2 |
-| **Fragility index** for binary MA | (bespoke) | **MISSING** | P2 |
+| **Fragility index** for binary MA | `fragility` pkg | ✅ DONE (`pending`, in mh-peto) | ~~P2~~ |
 | **RMST meta-analysis** (pool restricted-mean-survival diffs) | `survRM2`+pool | **MISSING** | P2 |
 | Meta-regression **prediction interval** (at x̄) | `metafor predict` | ✅ DONE | ~~P1~~ |
 
@@ -72,7 +72,7 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 
 ### P2 — completeness & UX
 9. **Doi plot + LFK index** (Furuya-Kanamori small-study plot) — add to `funnel-plot`.
-10. **Fragility index** for binary outcome MA (advanced-stats.md notes the one-arm rule).
+10. ✅ **Fragility index** (DONE, in mh-peto; matches fragility::frag.ma FI=13) for binary outcome MA (advanced-stats.md notes the one-arm rule).
 11. **RMST meta-analysis** — pool restricted-mean-survival-time differences (ties to
     `km-reconstructor`).
 12. **Cross-app project save/restore** — single-file workspace export across the bus.

@@ -61,6 +61,8 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/fragility.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
@@ -111,6 +113,7 @@ StudyE, 4, 600, 10, 600</textarea>
         <thead><tr><th>Method</th><th>Estimate</th><th>95% CI</th><th>z</th><th>p</th></tr></thead>
         <tbody id="pooled-body"></tbody>
       </table>
+      <p id="fragility-note" class="stat" style="margin:0.4rem 0 0;font-size:0.85rem"></p>
       <h2 style="margin-top:0.5rem">Per-study</h2>
       <table id="per-study">
         <thead><tr><th>Study</th><th>e1/n1</th><th>e2/n2</th><th>Effect</th><th>95% CI</th></tr></thead>
@@ -323,6 +326,15 @@ StudyE, 4, 600, 10, 600</textarea>
       }
       body.innerHTML = parts.join('');
 
+      // Fragility index (DL OR/RR/RD; number of event modifications to flip significance).
+      var fragNote = document.getElementById('fragility-note');
+      var frag = null;
+      if (window.AlmFragility) {
+        frag = window.AlmFragility.fragility(rows.map(function (r) { return { e1: r.e1, n1: r.n1, e0: r.e2, n0: r.n2 }; }), { measure: measure });
+        if (Number.isFinite(frag.FI)) fragNote.textContent = 'Fragility index = ' + frag.FI + ' event modification' + (frag.FI === 1 ? '' : 's') + ' to lose significance (FQ = ' + fmt(frag.FQ, 4) + ').';
+        else fragNote.textContent = 'Fragility index: ' + (frag.dir || 'not applicable') + '.';
+      }
+
       var studies = perStudy(rows, measure);
       var perBody = document.getElementById('per-body');
       var perParts = [];
@@ -345,6 +357,8 @@ StudyE, 4, 600, 10, 600</textarea>
         mh_hi:  firstPooled ? firstPooled.hi  : null,
         mh_z:   firstZ,
         mh_p:   firstZ !== null ? 2 * (1 - pnorm(Math.abs(firstZ))) : null,
+        fragility_index: frag ? frag.FI : null,
+        fragility_quotient: frag ? frag.FQ : null,
       };
       if (measure === 'OR' && pooled.length >= 2) {
         var pe2 = pooled[1];
