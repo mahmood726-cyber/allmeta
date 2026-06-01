@@ -60,7 +60,8 @@
       '.alm-xbar__lbl{color:var(--muted,#5c6470);font-weight:600;letter-spacing:.03em;margin-right:.2rem}' +
       '.alm-xbar button{padding:.22rem .5rem;margin-left:.3rem;border:1px solid var(--border,#cbd5e1);' +
       'border-radius:5px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;' +
-      'font:inherit;display:inline-block}.alm-xbar button:hover{filter:brightness(.95)}';
+      'font:inherit;display:inline-block}.alm-xbar button:hover{filter:brightness(.95)}' +
+      '@media (prefers-color-scheme:dark){.alm-xbar button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}}';
     document.head.appendChild(s);
   }
 

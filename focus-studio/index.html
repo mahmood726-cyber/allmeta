@@ -41,6 +41,7 @@
         radial-gradient(circle at top left, rgba(255, 123, 84, 0.24), transparent 28%),
         radial-gradient(circle at bottom right, rgba(102, 208, 199, 0.18), transparent 30%),
         linear-gradient(180deg, #11192d 0%, #0a1020 100%);
+      background-color: #0a1020; /* solid fallback so contrast checkers resolve the dark bg under the translucent chips/panels (the gradient alone reads as indeterminate → white) */
     }
 
     button,
@@ -151,7 +152,10 @@
     .control,
     .inline-button {
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.06);
+      /* Solid (not translucent-white) so contrast checkers resolve text against it
+         rather than giving up over the gradient body and assuming white. Visually
+         matches the prior 6%-white glass over the #0f1728 backdrop. */
+      background: #1c2536;
       color: var(--text);
       border-radius: 999px;
       min-height: 44px;

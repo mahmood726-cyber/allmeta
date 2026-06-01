@@ -1,5 +1,5 @@
 (function () {
-  const _STYLE = `.alm-export{display:inline-flex;gap:.5rem;font:13px/1.4 system-ui,sans-serif}.alm-export button{padding:.3rem .6rem;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer}`;
+  const _STYLE = `.alm-export{display:inline-flex;gap:.5rem;font:13px/1.4 system-ui,sans-serif}.alm-export button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer}@media (prefers-color-scheme:dark){.alm-export button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}}`;
   let _stylesInjected = false;
   const DANGEROUS = /^[=+@\t\r]/;
 

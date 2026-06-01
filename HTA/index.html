@@ -256,8 +256,12 @@
 
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
+            color: #fff;
         }
+        /* Tutorial buttons sit on a translucent, backdrop-blurred modal; a gradient bg is
+           indeterminate to contrast checkers there, so give them a solid primary bg that
+           resolves to white-on-#2563eb (≈5.2:1). */
+        #tutorial-modal .btn-primary { background: var(--primary); }
 
         .btn-primary:hover {
             background: linear-gradient(135deg, var(--primary-light), var(--primary));
@@ -577,8 +581,10 @@
         }
 
         @keyframes tutorialSlideIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            /* slide only — no opacity fade, which made contrast checkers sample a
+               translucent (low-contrast) frame mid-animation */
+            from { transform: translateY(-20px) scale(0.95); }
+            to { transform: translateY(0) scale(1); }
         }
 
         .tutorial-header {

@@ -1,5 +1,5 @@
 (function () {
-  const _STYLE = `.alm-axis{display:grid;gap:.5rem;font:13px/1.4 system-ui,sans-serif}.alm-axis-row{display:grid;grid-template-columns:auto auto 1fr auto 1fr auto;gap:.4rem;align-items:center}.alm-axis input[type=number]{width:6rem;padding:.25rem .4rem;border:1px solid #cbd5e1;border-radius:4px;font:inherit}.alm-axis label{font-weight:600}.alm-axis [data-error]{color:#b91c1c;font-size:12px;grid-column:1/-1;min-height:1.2em}`;
+  const _STYLE = `.alm-axis{display:grid;gap:.5rem;font:13px/1.4 system-ui,sans-serif}.alm-axis-row{display:grid;grid-template-columns:auto auto 1fr auto 1fr auto;gap:.4rem;align-items:center}.alm-axis input[type=number]{width:6rem;padding:.25rem .4rem;border:1px solid var(--border,#cbd5e1);border-radius:4px;font:inherit;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-axis label{font-weight:600}.alm-axis [data-error]{color:#b91c1c;font-size:12px;grid-column:1/-1;min-height:1.2em}@media (prefers-color-scheme:dark){.alm-axis input[type=number]{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-axis [data-error]{color:#f1a8a0}}`;
   let _stylesInjected = false;
 
   function _ensureStyle() {
