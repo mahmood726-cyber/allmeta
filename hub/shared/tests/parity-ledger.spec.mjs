@@ -44,7 +44,7 @@ test('parity dashboard renders headline cards + one row per spec', async ({ page
   await page.waitForFunction(() => window.ALM_PARITY_LEDGER && document.querySelectorAll('#rows tr').length > 0, { timeout: 10000 });
   const n = await page.evaluate(() => window.ALM_PARITY_LEDGER.specCount);
   expect(await page.locator('#rows tr').count()).toBe(n);
-  expect(await page.locator('#cards .card').count()).toBe(4);
+  expect(await page.locator('#cards .card').count()).toBe(5);
   // filtering narrows the table
   await page.fill('#q', 'metafor');
   const filtered = await page.locator('#rows tr').count();

@@ -4,6 +4,7 @@ window.ALM_PARITY_LEDGER = {
   "specCount": 42,
   "assertionCount": 164,
   "oracleCount": 32,
+  "stataCount": 26,
   "rows": [
     {
       "spec": "bayesian-ma-parity.spec.mjs",
@@ -12,6 +13,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -23,6 +25,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "analytic/conjugate (R-checked)"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -34,6 +37,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "netmeta"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -46,6 +50,7 @@ window.ALM_PARITY_LEDGER = {
         "meta::discomb",
         "netmeta::discomb"
       ],
+      "stata": "network / mvmeta (NMA)",
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -57,6 +62,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "R (formula-checked)"
       ],
+      "stata": "meta bias / estat",
       "tests": 1,
       "asserts": 0,
       "tightestDecimals": null
@@ -68,6 +74,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::escalc"
       ],
+      "stata": "meta summarize / meta esize",
       "tests": 2,
       "asserts": 7,
       "tightestDecimals": 5
@@ -81,6 +88,7 @@ window.ALM_PARITY_LEDGER = {
         "metafor::radial",
         "metafor::labbe"
       ],
+      "stata": "meta galbraith / meta labbe",
       "tests": 7,
       "asserts": 8,
       "tightestDecimals": 8
@@ -92,6 +100,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metasens::lfkindex"
       ],
+      "stata": null,
       "tests": 3,
       "asserts": 2,
       "tightestDecimals": 5
@@ -104,6 +113,7 @@ window.ALM_PARITY_LEDGER = {
         "dosresmeta(formula=logrr~dose, method=\"reml\")",
         "dosresmeta"
       ],
+      "stata": "drmeta (package)",
       "tests": 3,
       "asserts": 3,
       "tightestDecimals": 5
@@ -116,6 +126,7 @@ window.ALM_PARITY_LEDGER = {
         "dosresmeta(logrr ~ rcs(dose,3)",
         "dosresmeta"
       ],
+      "stata": "drmeta (package)",
       "tests": 5,
       "asserts": 15,
       "tightestDecimals": 6
@@ -127,6 +138,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "mada::reitsma"
       ],
+      "stata": "metandi / midas (DTA)",
       "tests": 3,
       "asserts": 7,
       "tightestDecimals": 4
@@ -138,6 +150,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "mada"
       ],
+      "stata": "metandi / midas (DTA)",
       "tests": 2,
       "asserts": 12,
       "tightestDecimals": 9
@@ -147,6 +160,7 @@ window.ALM_PARITY_LEDGER = {
       "title": "the dta-sroc Moses-Littenberg SROC regression",
       "module": null,
       "oracles": [],
+      "stata": "metandi / midas (DTA)",
       "tests": 3,
       "asserts": 6,
       "tightestDecimals": 6
@@ -158,6 +172,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "EValue"
       ],
+      "stata": "evalue (package)",
       "tests": 3,
       "asserts": 10,
       "tightestDecimals": 5
@@ -169,6 +184,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "fragility::frag"
       ],
+      "stata": null,
       "tests": 3,
       "asserts": 1,
       "tightestDecimals": 4
@@ -180,6 +196,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -191,6 +208,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "R (formula-checked)"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -202,6 +220,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metasens::limitmeta"
       ],
+      "stata": null,
       "tests": 1,
       "asserts": 0,
       "tightestDecimals": null
@@ -213,6 +232,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma"
       ],
+      "stata": "meta regress (no scale submodel in Stata)",
       "tests": 4,
       "asserts": 9,
       "tightestDecimals": 5
@@ -224,6 +244,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma"
       ],
+      "stata": "meta summarize / meta esize",
       "tests": 4,
       "asserts": 14,
       "tightestDecimals": 10
@@ -235,6 +256,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "R (base stats)"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -246,6 +268,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "R (base stats)"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -257,6 +280,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma.mv"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 11,
       "tightestDecimals": 5
@@ -268,6 +292,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma.mv"
       ],
+      "stata": "mvmeta (package)",
       "tests": 3,
       "asserts": 8,
       "tightestDecimals": 5
@@ -279,6 +304,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "netmeta"
       ],
+      "stata": "network / mvmeta (NMA)",
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -290,6 +316,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "netmeta"
       ],
+      "stata": "network / mvmeta (NMA)",
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -302,6 +329,7 @@ window.ALM_PARITY_LEDGER = {
         "meta::netmetareg",
         "netmeta::netmetareg"
       ],
+      "stata": "network / mvmeta (NMA)",
       "tests": 1,
       "asserts": 4,
       "tightestDecimals": 6
@@ -313,6 +341,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "netmeta"
       ],
+      "stata": "network / mvmeta (NMA)",
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -324,6 +353,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::blup"
       ],
+      "stata": null,
       "tests": 1,
       "asserts": 4,
       "tightestDecimals": 5
@@ -335,6 +365,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "R (base stats)"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -346,6 +377,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "meta::metabias"
       ],
+      "stata": "meta bias / estat",
       "tests": 1,
       "asserts": 2,
       "tightestDecimals": 2
@@ -357,6 +389,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma.glmm"
       ],
+      "stata": null,
       "tests": 3,
       "asserts": 3,
       "tightestDecimals": 5
@@ -368,6 +401,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor"
       ],
+      "stata": "meta esize, exact / metan",
       "tests": 4,
       "asserts": 8,
       "tightestDecimals": 4
@@ -379,6 +413,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma"
       ],
+      "stata": null,
       "tests": 2,
       "asserts": 1,
       "tightestDecimals": 5
@@ -390,6 +425,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::rma"
       ],
+      "stata": "meta summarize (RMST diffs)",
       "tests": 2,
       "asserts": 4,
       "tightestDecimals": 5
@@ -401,6 +437,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "RoBMA"
       ],
+      "stata": null,
       "tests": 3,
       "asserts": 6,
       "tightestDecimals": 9
@@ -413,6 +450,7 @@ window.ALM_PARITY_LEDGER = {
         "robumeta",
         "meta::robu"
       ],
+      "stata": "robumeta (package)",
       "tests": 3,
       "asserts": 4,
       "tightestDecimals": 6
@@ -425,6 +463,7 @@ window.ALM_PARITY_LEDGER = {
         "robumeta",
         "meta::robu"
       ],
+      "stata": "robumeta (package)",
       "tests": 1,
       "asserts": 2,
       "tightestDecimals": 6
@@ -436,6 +475,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::selmodel"
       ],
+      "stata": "meta bias / estat",
       "tests": 3,
       "asserts": 6,
       "tightestDecimals": 4
@@ -447,6 +487,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor::trimfill"
       ],
+      "stata": "meta trimfill",
       "tests": 3,
       "asserts": 7,
       "tightestDecimals": 8
@@ -458,6 +499,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "R (base stats)"
       ],
+      "stata": "metacumbounds (package)",
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
@@ -469,6 +511,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [
         "metafor"
       ],
+      "stata": "meta summarize / meta esize",
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null

@@ -46,6 +46,34 @@ function oraclesIn(doc) {
   return [...found];
 }
 
+// Stata equivalence: the estimator each method shares with Stata's `meta` suite (or a
+// well-known Stata package). Keyed by spec-name regex so one R oracle (e.g. metafor::rma)
+// can map to the right Stata command per method. Empty ⇒ no standard Stata equivalent
+// (shown as "—"). These document estimator identity, NOT a separately-run Stata check.
+const STATA_BY_SPEC = [
+  [/ma-core|workbench|correlation-ma/, 'meta summarize / meta esize'],
+  [/heterogeneity/, 'meta summarize (I²/τ², Q)'],
+  [/trimfill/, 'meta trimfill'],
+  [/meta-regression|permtest|^meta-regression-pi/, 'meta regress'],
+  [/location-scale/, 'meta regress (no scale submodel in Stata)'],
+  [/pubbias|copas|pet-peese|p-curve|selmodel/, 'meta bias / estat'],
+  [/diagnostic-plots/, 'meta galbraith / meta labbe'],
+  [/cumulative|influence/, 'meta summarize, cumulative / meta'],
+  [/dta-bivariate|dta-region|dta-sroc|hsroc/, 'metandi / midas (DTA)'],
+  [/dose-response/, 'drmeta (package)'],
+  [/\brve\b|robust/, 'robumeta (package)'],
+  [/multivariate-ma/, 'mvmeta (package)'],
+  [/rmst/, 'meta summarize (RMST diffs)'],
+  [/rare-events-glmm/, 'meta esize, exact / metan'],
+  [/evalue/, 'evalue (package)'],
+  [/tsa/, 'metacumbounds (package)'],
+  [/^nma|component-nma|inconsistency|bucher/, 'network / mvmeta (NMA)'],
+];
+function stataFor(spec) {
+  for (const [re, cmd] of STATA_BY_SPEC) if (re.test(spec)) return cmd;
+  return null;
+}
+
 const files = readdirSync(testsDir).filter(f => /parity/i.test(f) && f.endsWith('.spec.mjs') && f !== 'parity-ledger.spec.mjs').sort();
 const rows = [];
 let totalAsserts = 0;
@@ -64,6 +92,7 @@ for (const f of files) {
     title: firstSentence(doc) || f.replace(/-parity\.spec\.mjs$/, '').replace(/\.spec\.mjs$/, ''),
     module: moduleM ? moduleM[1] : null,
     oracles: oraclesIn(doc),
+    stata: stataFor(f),
     tests, asserts, tightestDecimals: tightest,
   });
 }
@@ -73,6 +102,7 @@ const ledger = {
   specCount: rows.length,
   assertionCount: totalAsserts,
   oracleCount: new Set(rows.flatMap(r => r.oracles)).size,
+  stataCount: rows.filter(r => r.stata).length,
   rows,
 };
 

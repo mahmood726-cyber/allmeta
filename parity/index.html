@@ -50,7 +50,7 @@
   <table id="tbl">
     <thead><tr>
       <th data-k="title" tabindex="0" role="columnheader" title="Sort by method">Method</th><th data-k="module" tabindex="0" role="columnheader" title="Sort by module">Module</th><th data-k="oracle" tabindex="0" role="columnheader" title="Sort by R oracle">R oracle</th>
-      <th data-k="tests" tabindex="0" role="columnheader" title="Sort by test count">Tests</th><th data-k="asserts" tabindex="0" role="columnheader" title="Sort by numeric checks">Numeric checks</th><th data-k="tightestDecimals" tabindex="0" role="columnheader" title="Sort by tightest tolerance">Tightest tolerance</th><th data-k="spec" tabindex="0" role="columnheader" title="Sort by spec file">Spec</th>
+      <th data-k="stata" tabindex="0" role="columnheader" title="Sort by Stata equivalent">Stata <code>meta</code> equiv.</th><th data-k="tests" tabindex="0" role="columnheader" title="Sort by test count">Tests</th><th data-k="asserts" tabindex="0" role="columnheader" title="Sort by numeric checks">Numeric checks</th><th data-k="tightestDecimals" tabindex="0" role="columnheader" title="Sort by tightest tolerance">Tightest tolerance</th><th data-k="spec" tabindex="0" role="columnheader" title="Sort by spec file">Spec</th>
     </tr></thead>
     <tbody id="rows"></tbody>
   </table>
@@ -64,7 +64,7 @@
     var tol = function (d) { return d == null ? "—" : "≤ 10⁻" + d; };
     var moduleCount = (function () { var s = {}; L.rows.forEach(function (r) { if (r.module) s[r.module] = 1; }); return Object.keys(s).length; })();
     document.getElementById("cards").innerHTML =
-      [[L.specCount, "R-parity specs"], [L.assertionCount, "numeric assertions vs R"], [L.oracleCount, "distinct R oracles"], [moduleCount, "verified engines"]]
+      [[L.specCount, "R-parity specs"], [L.assertionCount, "numeric assertions vs R"], [L.oracleCount, "distinct R oracles"], [moduleCount, "verified engines"], [(L.stataCount || 0), "with a Stata meta equivalent"]]
       .map(function (c) { return "<div class='card'><div class='n'>" + c[0] + "</div><div class='l'>" + c[1] + "</div></div>"; }).join("");
 
     var sortKey = "tightestDecimals", sortDir = -1;
@@ -82,6 +82,7 @@
       document.getElementById("rows").innerHTML = rows.map(function (r) {
         return "<tr><td>" + esc(r.title) + "</td><td>" + (r.module ? "<code>" + esc(r.module) + "</code>" : "—") + "</td>"
           + "<td>" + (r.oracles.length ? r.oracles.map(function (o) { return "<span class='chip'>" + esc(o) + "</span>"; }).join("") : "<span class='chip'>analytic</span>") + "</td>"
+          + "<td>" + (r.stata ? "<code>" + esc(r.stata) + "</code>" : "<span style='opacity:.6'>—</span>") + "</td>"
           + "<td>" + r.tests + "</td><td>" + r.asserts + "</td><td class='tol'>" + tol(r.tightestDecimals) + "</td>"
           + "<td><code>" + esc(r.spec) + "</code></td></tr>";
       }).join("");
@@ -100,7 +101,8 @@
     });
     document.getElementById("q").addEventListener("input", render);
     document.getElementById("foot").innerHTML = "Ledger generated " + esc(L.generated) + " by <code>scripts/build-parity-ledger.mjs</code> from <code>hub/shared/tests/*parity*.spec.mjs</code>. "
-      + "Each row's assertions run against the named R package in continuous integration; the “tightest tolerance” is the smallest decimal agreement asserted in that spec (e.g. ≤ 10⁻⁶ means the browser value matches R to six decimals). Methods with an <span class='chip'>analytic</span> oracle are checked against a closed-form value rather than an R package.";
+      + "Each row's assertions run against the named R package in continuous integration; the “tightest tolerance” is the smallest decimal agreement asserted in that spec (e.g. ≤ 10⁻⁶ means the browser value matches R to six decimals). Methods with an <span class='chip'>analytic</span> oracle are checked against a closed-form value rather than an R package. "
+      + "The <strong>Stata <code>meta</code> equiv.</strong> column names the Stata command (or well-known package) implementing the SAME estimator — since Stata's <code>meta</code> suite and metafor share these estimators, the R-parity here also certifies Stata-equivalence for those methods. It documents estimator identity, not a separately-run Stata check (“—” = no standard Stata equivalent, e.g. Bayesian/RoBMA).";
     render();
   })();
 </script>
