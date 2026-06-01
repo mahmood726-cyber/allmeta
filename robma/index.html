@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Robust Bayesian meta-analysis: model-averaging over effect and heterogeneity with inclusion Bayes factors, computed by deterministic quadrature.">
+  <meta name="color-scheme" content="light dark">
+  <title>Robust Bayesian Meta-Analysis (RoBMA-style)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --accent-soft:#223044; --border:#2f343a; --input-bg:#23272c; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+    * { box-sizing:border-box; } html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 .25rem; font-size:1.55rem; } header p { margin:0; color:var(--muted); font-size:.95rem; max-width:74ch; }
+    main { padding:1.5rem clamp(1rem,3vw,3rem); display:grid; gap:1.5rem; grid-template-columns:minmax(290px,23rem) 1fr; align-items:start; }
+    @media (max-width:1000px) { main { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.2rem; }
+    h2 { font-size:1.05rem; margin:0 0 .6rem; }
+    textarea { width:100%; min-height:11rem; font-family:ui-monospace,Consolas,monospace; font-size:.82rem; background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.5rem; }
+    label { display:block; font-size:.85rem; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:.4rem; } th,td { text-align:left; padding:.3rem .5rem; border-bottom:1px solid var(--border); }
+    .big { font-size:1.05rem; } .stat { color:var(--muted); font-size:.92rem; } .note { color:var(--muted); font-size:.8rem; }
+    .chip { display:inline-block; padding:.1rem .5rem; border-radius:10px; font-size:.78rem; font-weight:600; } .chip.y { background:#dff0d8; color:#2e6b2e; } .chip.n { background:#f3e2e2; color:#9a3b3b; }
+    @media (prefers-color-scheme:dark){ .chip.y{background:#1e3a24;color:#9ed8a6} .chip.n{background:#3a1e1e;color:#e0a0a0} }
+    button { background:#1564b8; color:#fff; border:none; border-radius:6px; padding:.45rem .8rem; cursor:pointer; font-size:.85rem; }
+    footer { padding:1rem clamp(1rem,3vw,3rem) 2rem; color:var(--muted); font-size:.8rem; border-top:1px solid var(--border); max-width:92ch; } a { color:var(--accent); }
+  </style>
+  <script src="../shared/robma.js"></script>
+  <script src="../shared/build-info.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
+<header>
+  <h1>Robust Bayesian Meta-Analysis</h1>
+  <p>Bayesian model-averaging over the presence/absence of an <strong>effect</strong> and of <strong>heterogeneity</strong>, with inclusion Bayes factors and a model-averaged estimate — computed by deterministic quadrature (no MCMC). This is the effect×heterogeneity core of RoBMA; the full publication-bias ensemble is one click away in R.</p>
+</header>
+<main id="main">
+  <section class="panel">
+    <h2>Studies</h2>
+    <label>One row per study: <code>label, effect (yi), SE</code> (effects on the analysis scale: logRR/logOR/SMD…).
+      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+    </label>
+    <p class="note" style="margin-top:.5rem">Priors: effect μ ~ Normal(0, 1), heterogeneity τ ~ Half-Normal(0, 1); four equally-weighted models (effect × heterogeneity). Marginal likelihoods by Gauss/adaptive quadrature, verified vs R <code>integrate()</code>.</p>
+    <button type="button" id="btn-r" style="margin-top:.6rem">⬇ Download full RoBMA R script</button>
+    <p class="note" id="r-note" style="margin-top:.4rem"></p>
+  </section>
+  <section class="panel">
+    <h2>Robust Bayesian evidence</h2>
+    <div id="headline" class="big"></div>
+    <table><thead><tr><th>Model</th><th>posterior prob.</th><th>marginal lik.</th></tr></thead><tbody id="model-body"></tbody></table>
+    <p class="note" style="margin-top:.6rem">Inclusion Bayes factor &gt; 3 = moderate, &gt; 10 = strong evidence (Jeffreys). The model-averaged estimate shrinks the effect toward 0 by the posterior probability that the effect is absent.</p>
+  </section>
+</main>
+<footer>
+  Robust Bayesian model-averaging via <code>shared/robma.js</code>: marginal likelihoods of the four effect×heterogeneity models by adaptive quadrature (verified vs R <code>integrate()</code> to ~1e-6 — <code>robma-parity.spec.mjs</code>). This is RoBMA's effect/heterogeneity sub-ensemble; the <strong>full RoBMA</strong> (Maier, Bartoš &amp; Wagenmakers 2023) adds publication-bias weight-function &amp; PET-PEESE models via MCMC + bridge sampling — use the downloadable R script with the <code>RoBMA</code> package for that.
+</footer>
+<script>
+  (function () {
+    "use strict";
+    var EXAMPLE = "# label, yi (effect), SE\nStudy A, 0.10, 0.20\nStudy B, 0.30, 0.25\nStudy C, 0.50, 0.18\nStudy D, 0.20, 0.30\nStudy E, 0.90, 0.22\nStudy F, 0.40, 0.28\nStudy G, 1.10, 0.35\nStudy H, 0.05, 0.15";
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
+    function bfWord(bf) { return bf > 100 ? "extreme" : bf > 10 ? "strong" : bf > 3 ? "moderate" : bf > 1 ? "weak" : "favours null"; }
+    var _last = null, _yi = [], _sei = [];
+    window._almLastRoBMA = function () { return _last; };
+
+    function parse(text) {
+      _yi = []; _sei = [];
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        var t = line.trim(); if (!t || t.charAt(0) === "#") return;
+        var p = t.split(/\s*,\s*/); if (p.length < 3) return;
+        var se = parseFloat(p[p.length - 1]), y = parseFloat(p[p.length - 2]);
+        if (isFinite(y) && isFinite(se) && se > 0) { _yi.push(y); _sei.push(se); }
+      });
+    }
+
+    function run() {
+      parse(document.getElementById("f-data").value);
+      var head = document.getElementById("headline"), body = document.getElementById("model-body");
+      if (_yi.length < 2) { head.textContent = "Enter at least 2 studies."; body.innerHTML = ""; _last = null; return; }
+      var r = window.AlmRoBMA.analysis(_yi, _sei);
+      var ce = r.bfEffect >= 1 ? "y" : "n", ch = r.bfHetero >= 1 ? "y" : "n";
+      head.innerHTML =
+        "Effect: BF<sub>10</sub> = <strong>" + fmt(r.bfEffect, 2) + "</strong> <span class='chip " + ce + "'>" + bfWord(r.bfEffect) + "</span> · P(effect) = " + fmt(r.pInclEffect, 3) + "<br>"
+        + "Heterogeneity: BF = <strong>" + fmt(r.bfHetero, 2) + "</strong> <span class='chip " + ch + "'>" + bfWord(r.bfHetero) + "</span> · P(τ&gt;0) = " + fmt(r.pInclHetero, 3) + "<br>"
+        + "<span class='stat'>Model-averaged effect = <strong>" + fmt(r.muMA, 4) + "</strong></span>";
+      var rows = [["H0 · fixed", r.postProb.H0FE, r.marginal.H0FE], ["H1 · fixed", r.postProb.H1FE, r.marginal.H1FE], ["H0 · random", r.postProb.H0RE, r.marginal.H0RE], ["H1 · random", r.postProb.H1RE, r.marginal.H1RE]];
+      body.innerHTML = rows.map(function (x) { return "<tr><td>" + x[0] + "</td><td>" + fmt(x[1], 3) + "</td><td>" + x[2].toExponential(3) + "</td></tr>"; }).join("");
+      _last = { _schema: "robma-results-v1", k: r.k, bfEffect: r.bfEffect, bfHetero: r.bfHetero, pInclEffect: r.pInclEffect, pInclHetero: r.pInclHetero, muMA: r.muMA, marginal: r.marginal, postProb: r.postProb };
+    }
+
+    document.getElementById("f-data").value = EXAMPLE;
+    document.getElementById("f-data").addEventListener("input", run);
+    document.getElementById("btn-r").addEventListener("click", function () {
+      if (_yi.length < 2) return;
+      var code = window.AlmRoBMA.buildRCode(_yi, _sei);
+      var a = document.createElement("a"); a.href = "data:text/x-r;charset=utf-8," + encodeURIComponent(code); a.download = "robma-analysis.R";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      document.getElementById("r-note").textContent = "Saved robma-analysis.R — run with the RoBMA package for the full publication-bias ensemble.";
+    });
+    run();
+  })();
+</script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
