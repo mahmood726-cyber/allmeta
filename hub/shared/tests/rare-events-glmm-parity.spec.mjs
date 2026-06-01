@@ -76,3 +76,24 @@ test('rare-events GLMM CM.AL lands in the documented anticonservative band', asy
   expect(out.OR_hi).toBeLessThan(META.OR_hi);
   expect(out.OR_hi - out.OR_lo, 'CM.AL CI narrower than UM.FS').toBeLessThan(META.OR_hi - META.OR_lo);
 });
+
+// CM.EL (conditional EXACT — Fisher's noncentral hypergeometric) vs
+// metafor::rma.glmm(measure="OR", model="CM.EL"). metafor's own CM.EL optimiser
+// fails to converge on the very sparse 8-study set above, so this locks it on a
+// moderate-count, genuinely-heterogeneous dataset where metafor converges:
+//   θ=-0.35503800 se=0.15242661 OR=0.70114680 τ²=0.03201682.
+const CMEL_ROWS = [
+  { events_T: 12, n_T: 120, events_C: 20, n_C: 118 }, { events_T: 8, n_T: 100, events_C: 15, n_C: 102 },
+  { events_T: 25, n_T: 200, events_C: 22, n_C: 198 }, { events_T: 5, n_T: 80, events_C: 12, n_C: 82 },
+  { events_T: 18, n_T: 150, events_C: 28, n_C: 148 }, { events_T: 30, n_T: 250, events_C: 26, n_C: 248 },
+  { events_T: 9, n_T: 90, events_C: 18, n_C: 92 }, { events_T: 14, n_T: 140, events_C: 20, n_C: 138 },
+];
+test('rare-events GLMM CM.EL (exact) matches metafor::rma.glmm(model="CM.EL")', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.AlmRareEventsGLMM, { timeout: 10000 });
+  const r = await page.evaluate((rows) => window.AlmRareEventsGLMM.fitConditionalExact(rows), CMEL_ROWS);
+  expect(r.theta).toBeCloseTo(-0.35503800, 4);
+  expect(r.OR).toBeCloseTo(0.70114680, 4);
+  expect(r.tau2).toBeCloseTo(0.03201682, 4);
+  expect((r.se_theta != null ? r.se_theta : r.se)).toBeCloseTo(0.15242661, 4);
+});

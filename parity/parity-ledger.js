@@ -2,7 +2,7 @@
 window.ALM_PARITY_LEDGER = {
   "generated": "2026-06-01",
   "specCount": 43,
-  "assertionCount": 169,
+  "assertionCount": 173,
   "oracleCount": 32,
   "stataCount": 26,
   "rows": [
@@ -414,8 +414,8 @@ window.ALM_PARITY_LEDGER = {
         "metafor"
       ],
       "stata": "meta esize, exact / metan",
-      "tests": 4,
-      "asserts": 8,
+      "tests": 5,
+      "asserts": 12,
       "tightestDecimals": 4
     },
     {
