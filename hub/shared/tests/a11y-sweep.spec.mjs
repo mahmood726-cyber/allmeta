@@ -23,7 +23,7 @@ const APPS = [
   'HTA', 'IPD-Meta-Pro', 'Pairwiseai', 'Truthcert1', 'amstar-2', 'bayesian-ma',
   'bayesian-mcmc', 'bayesian-nma', 'bucher', 'cerqual', 'citation-chaser',
   'citation-dedup', 'component-nma', 'copas', 'correlation-ma', 'courses', 'cumulative-subgroup',
-  'dosehtml', 'dta-sroc', 'effect-size-converter', 'evidence-board',
+  'dosehtml', 'dose-response-ma', 'dta-sroc', 'effect-size-converter', 'evidence-board',
   'evidenceos', 'focus-studio', 'forest-plot', 'funnel-plot', 'gosh',
   'gosh-metareg', 'grade-sof', 'heterogeneity', 'hsroc', 'influence',
   'kanban-lab', 'km-reconstructor', 'limit-ma', 'living-meta', 'local-ai',

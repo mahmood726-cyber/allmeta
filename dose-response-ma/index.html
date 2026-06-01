@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Two-stage linear dose-response meta-analysis (Greenland-Longnecker) pooling the log-RR trend across studies with reconstructed within-study covariance.">
+  <meta name="color-scheme" content="light dark">
+  <title>Dose-Response Meta-Analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --accent-soft:#223044; --border:#2f343a; --input-bg:#23272c; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+    * { box-sizing: border-box; } html,body { margin:0; padding:0; }
+    body { font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 .25rem; font-size:1.6rem; } header p { margin:0; color:var(--muted); font-size:.95rem; max-width:72ch; }
+    main { padding:1.5rem clamp(1rem,3vw,3rem); display:grid; gap:1.5rem; grid-template-columns:minmax(300px,24rem) 1fr; align-items:start; }
+    @media (max-width:1000px) { main { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.2rem; }
+    h2 { font-size:1.05rem; margin:0 0 .6rem; }
+    textarea { width:100%; min-height:13rem; font-family:ui-monospace,Consolas,monospace; font-size:.8rem; background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.5rem; }
+    label { display:block; font-size:.85rem; }
+    select { background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.35rem .5rem; margin-top:.3rem; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:.4rem; } th,td { text-align:left; padding:.3rem .5rem; border-bottom:1px solid var(--border); }
+    .stat { color:var(--muted); font-size:.92rem; } .note { color:var(--muted); font-size:.8rem; }
+    footer { padding:1rem clamp(1rem,3vw,3rem) 2rem; color:var(--muted); font-size:.8rem; border-top:1px solid var(--border); max-width:92ch; } a { color:var(--accent); }
+  </style>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/dose-response.js"></script>
+  <script src="../shared/build-info.js"></script>
+  <script src="../hub/shared/chart-export-auto.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
+<header>
+  <h1>Dose-Response Meta-Analysis</h1>
+  <p>Two-stage linear dose-response synthesis (Greenland-Longnecker): each study's within-dose covariance is reconstructed from the cell counts, a GLS trend is fitted per study, and the slopes are pooled by random effects. Distinct from network dose-response.</p>
+</header>
+<main id="main">
+  <section class="panel">
+    <h2>Studies</h2>
+    <label>One row per dose level: <code>study, dose, cases, n, logRR, SE, type</code>. The reference level has <code>logRR=0</code> and blank SE. <code>type</code> ∈ cc / ir / ci.
+      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+    </label>
+    <label style="margin-top:.6rem">Heterogeneity (τ²) estimator
+      <select id="f-method" aria-label="Tau-squared estimator"><option value="REML" selected>REML</option><option value="PM">Paule-Mandel</option><option value="DL">DerSimonian-Laird</option><option value="FE">Fixed-effect</option></select>
+    </label>
+    <p class="note" style="margin-top:.5rem">Linear trend (log-RR per unit dose). GL covariance reconstructed per study by design type. Verified vs R <code>dosresmeta</code>.</p>
+  </section>
+  <section class="panel">
+    <h2>Pooled dose-response</h2>
+    <div id="headline" class="stat"></div>
+    <h2 style="margin-top:1rem">Per-study slopes</h2>
+    <table><thead><tr><th>Study</th><th>type</th><th>slope (logRR/unit)</th><th>SE</th></tr></thead><tbody id="res-body"></tbody></table>
+    <h2 style="margin-top:1rem">Pooled RR by dose</h2>
+    <div id="curve-host"></div>
+    <div id="alm-export-mount" style="margin-top:1rem"></div>
+  </section>
+</main>
+<footer>
+  Two-stage linear dose-response MA via <code>shared/dose-response.js</code> (Greenland-Longnecker covariance reconstruction → per-study GLS slope → REML pool on <code>shared/ma-core.js</code>). Matches <code>dosresmeta(method="reml")</code> to ~1e-6 on the pooled slope/SE/τ² (verified — <code>dose-response-parity.spec.mjs</code>). References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40.
+</footer>
+<script>
+  (function () {
+    "use strict";
+    // Example: alcohol intake & CVD (dosresmeta::alcohol_cvd), 6 studies (4 cc, 2 ci).
+    var EXAMPLE = [
+      "# study, dose, cases, n, logRR, SE, type",
+      "1, 0, 126, 414, 0, , cc", "1, 9.06, 61, 261, -0.2231, 0.2233, cc", "1, 27, 69, 228, -0.0001, 0.2338, cc", "1, 45, 22, 44, 0.5306, 0.3765, cc", "1, 64.8, 19, 34, 0.8755, 0.4440, cc",
+      "2, 0, 77, 258, 0, , cc", "2, 16.05, 88, 413, -0.4308, 0.2213, cc", "2, 46.43, 24, 202, -1.0788, 0.2976, cc",
+      "3, 0, 32, 92, 0, , cc", "3, 5.3, 26, 91, -0.1985, 0.3091, cc", "3, 22.5, 12, 49, -0.2151, 0.3938, cc", "3, 45, 9, 38, -0.4456, 0.4543, cc",
+      "4, 0, 17, 126, 0, , cc", "4, 5.3, 32, 273, -0.3041, 0.3186, cc", "4, 15.9, 30, 274, -0.3939, 0.3209, cc", "4, 45, 8, 87, -0.5534, 0.4515, cc",
+      "5, 0, 159, 480, 0, , ci", "5, 6, 229, 975, -0.4155, 0.1442, ci", "5, 18, 38, 207, -0.6349, 0.2383, ci", "5, 28.8, 39, 133, -0.0834, 0.2739, ci",
+      "6, 0, 27, 116, 0, , ci", "6, 5.5, 86, 432, -0.40, 0.2293, ci", "6, 15.5, 35, 184, -0.288, 0.2557, ci", "6, 27, 9, 49, -0.5798, 0.3938, ci"
+    ].join("\n");
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 4 : d) : "—"; }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+    var _last = null;
+    window._almLastDoseResponse = function () { return _last; };
+
+    function parse(text) {
+      var byStudy = {};
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        var t = line.trim(); if (!t || t.charAt(0) === "#") return;
+        var p = t.split(/\s*,\s*/);
+        if (p.length < 6) return;
+        var id = p[0], dose = parseFloat(p[1]), cases = parseFloat(p[2]), n = parseFloat(p[3]),
+            logrr = parseFloat(p[4]), seRaw = p[5].trim(), type = (p[6] || "cc").trim();
+        var se = seRaw === "" ? null : parseFloat(seRaw);
+        if (!isFinite(dose) || !isFinite(cases) || !isFinite(n)) return;
+        (byStudy[id] = byStudy[id] || []).push({ dose: dose, cases: cases, n: n, logrr: isFinite(logrr) ? logrr : 0, se: se, type: type });
+      });
+      return Object.keys(byStudy).map(function (k) { return byStudy[k]; });
+    }
+
+    function run() {
+      var studies = parse(document.getElementById("f-data").value);
+      var method = document.getElementById("f-method").value;
+      var head = document.getElementById("headline"), body = document.getElementById("res-body");
+      if (studies.length < 2) { head.textContent = "Enter ≥ 2 studies."; body.innerHTML = ""; document.getElementById("curve-host").innerHTML = ""; _last = null; return; }
+      var r = window.AlmDoseResponse.fit(studies, { method: method });
+      head.innerHTML = "k = " + r.k + " studies · pooled slope = <strong>" + fmt(r.slope, 5) + "</strong> log-RR/unit (SE " + fmt(r.se, 5) + ")"
+        + " · τ² = " + fmt(r.tau2, 5) + " · RR at +10 units = <strong>" + fmt(Math.exp(r.slope * 10), 3) + "</strong>";
+      body.innerHTML = studies.map(function (rows, i) {
+        var ps = r.perStudy[i] || {}; var type = (rows[0] && rows[0].type) || "cc";
+        return "<tr><td>" + (i + 1) + "</td><td>" + esc(type) + "</td><td>" + (ps.beta != null ? fmt(ps.beta, 5) : "—") + "</td><td>" + (ps.varBeta != null ? fmt(Math.sqrt(ps.varBeta), 5) : "—") + "</td></tr>";
+      }).join("");
+      document.getElementById("curve-host").innerHTML = curve(r.slope, r.se);
+      _last = { _schema: "dose-response-results-v1", k: r.k, method: method, slope: r.slope, se: r.se, tau2: r.tau2, ciLo: r.ciLo, ciHi: r.ciHi,
+        perStudy: r.perStudy.map(function (p) { return { slope: p.beta, se: Math.sqrt(p.varBeta) }; }) };
+    }
+
+    function curve(slope, se) {
+      var W = 520, H = 220, L = 60, R = 20, T = 20, B = 40, pw = W - L - R, ph = H - T - B, dmax = 60;
+      var rrs = []; for (var dz = 0; dz <= dmax; dz += 2) rrs.push(Math.exp(slope * dz));
+      var lo = Math.min.apply(null, rrs.concat([Math.exp((slope - 1.96 * se) * dmax)])), hi = Math.max.apply(null, rrs.concat([Math.exp((slope + 1.96 * se) * dmax), 1]));
+      var x = function (d) { return L + d / dmax * pw; }, y = function (v) { return T + ph - (v - lo) / (hi - lo) * ph; };
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (matchMedia('(prefers-color-scheme:dark)').matches ? '#1c1f23' : '#fff') + "'/>");
+      if (lo < 1 && hi > 1) p.push("<line x1='" + L + "' y1='" + y(1) + "' x2='" + (W - R) + "' y2='" + y(1) + "' stroke='#888' stroke-dasharray='3,3'/>");
+      var path = rrs.map(function (v, i) { return (i ? "L" : "M") + x(i * 2) + "," + y(v); }).join(" ");
+      p.push("<path d='" + path + "' fill='none' stroke='#2c5e8a' stroke-width='2'/>");
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='currentColor'>Dose</text>");
+      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>Pooled RR</text>");
+      p.push("</svg>"); return p.join("");
+    }
+
+    document.getElementById("f-data").value = EXAMPLE;
+    document.getElementById("f-data").addEventListener("input", run);
+    document.getElementById("f-method").addEventListener("change", run);
+    run();
+    (function () { function rdy(f) { document.readyState !== "loading" ? f() : document.addEventListener("DOMContentLoaded", f); }
+      rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "dose-response-results", getResults: function () { return _almLastDoseResponse() || {}; } }); });
+    })();
+  })();
+</script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+<script src="../hub/shared/results-export.js"></script>
+</body>
+</html>
