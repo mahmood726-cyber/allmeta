@@ -28,7 +28,7 @@ const APPS = [
   'gosh-metareg', 'grade-sof', 'heterogeneity', 'hsroc', 'influence',
   'kanban-lab', 'km-reconstructor', 'limit-ma', 'living-meta', 'local-ai',
   'mcid', 'median-to-mean', 'meta-regression', 'mh-peto', 'multilevel-ma',
-  'nma', 'nma-dose-response-app', 'nma-global-inconsistency',
+  'multivariate-ma', 'nma', 'nma-dose-response-app', 'nma-global-inconsistency',
   'nma-inconsistency', 'nma-pro-v2', 'p-curve', 'pet-peese', 'pico', 'powerma',
   'parity', 'prisma-checklist', 'prisma-flow', 'prisma-nma', 'prisma-screen', 'project',
   'proportion-ma', 'pubbias-tests', 'quadas-2', 'rct-extractor',

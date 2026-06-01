@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Multivariate / multiple-outcome meta-analysis (mvmeta): jointly pool two correlated outcomes with their within-study covariance, REML between-study covariance — matches metafor::rma.mv.">
+  <meta name="color-scheme" content="light dark">
+  <title>Multivariate (Multiple-Outcome) Meta-Analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --border:#2f343a; --input-bg:#23272c; } }
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    *{box-sizing:border-box}html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:2rem clamp(1rem,3vw,3rem) 1rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .25rem;font-size:1.5rem}header p{margin:0;color:var(--muted);max-width:80ch;font-size:.95rem}
+    main{padding:1.5rem clamp(1rem,3vw,3rem);max-width:62rem}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:1.2rem}
+    h2{font-size:1.05rem;margin:0 0 .6rem}
+    textarea{width:100%;min-height:9rem;font-family:ui-monospace,Consolas,monospace;font-size:.8rem;background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.5rem}
+    input[type=text]{background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.35rem .5rem;font:inherit}
+    .stats{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.4rem}
+    .stat{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;min-width:9rem}
+    .stat .k{display:block;font-size:.72rem;color:var(--muted)}.stat .v{font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:.5rem}th,td{text-align:left;padding:.3rem .5rem;border-bottom:1px solid var(--border)}
+    .note{color:var(--muted);font-size:.82rem}code{font-size:.85em}a{color:var(--accent)}
+    svg{width:100%;height:auto;background:var(--panel);border-radius:6px;margin-top:.5rem}
+    footer{padding:1rem clamp(1rem,3vw,3rem) 2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);max-width:92ch}
+  </style>
+  <script src="../shared/multivariate-ma.js"></script>
+  <script src="../shared/build-info.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
+<header>
+  <h1>Multivariate (multiple-outcome) meta-analysis</h1>
+  <p>Jointly pool <strong>two correlated outcomes</strong> measured in the same studies, using each study's within-study covariance. The two outcome means are estimated together with an unstructured between-study covariance (REML), borrowing strength across outcomes — the mvmeta / <code>metafor::rma.mv</code> model.</p>
+</header>
+<main id="main">
+  <section class="panel">
+    <h2>Studies</h2>
+    <label class="note">One row per study: <code>label, y₁, var₁, y₂, var₂, cov₁₂</code> — the two effect sizes, their within-study variances, and their within-study covariance.
+      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+    </label>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem">
+      <label class="note">Outcome 1 name <input type="text" id="f-o1" value="Outcome 1"></label>
+      <label class="note">Outcome 2 name <input type="text" id="f-o2" value="Outcome 2"></label>
+    </div>
+  </section>
+  <section class="panel">
+    <h2>Pooled estimates</h2>
+    <div id="headline" class="note"></div>
+    <div id="stats" class="stats"></div>
+    <h2 style="margin-top:1rem">Joint outcome plot</h2>
+    <div id="plot-host"></div>
+  </section>
+</main>
+<footer>
+  Multivariate meta-analysis via <code>shared/multivariate-ma.js</code>: y<sub>i</sub> ~ N(μ, S<sub>i</sub> + G), with known within-study covariance S<sub>i</sub> and an unstructured between-study covariance G estimated by REML (μ by GLS; G by Cholesky-parameterised Nelder-Mead). Matches <code>metafor::rma.mv(yi, V, mods=~outcome-1, random=~outcome|study, struct="UN", method="REML")</code> on the Berkey&nbsp;1998 periodontal data to ~1e-7 on μ, SE, the G matrix, the between-study correlation and the REML log-likelihood (<code>multivariate-ma-parity.spec.mjs</code>). Reference: Berkey et&nbsp;al. 1998, <em>Stat Med</em> 17:2537; Jackson, Riley &amp; White 2011.
+</footer>
+<script>
+  (function () {
+    "use strict";
+    // Berkey 1998 periodontal trials: outcome 1 = PD (probing depth), 2 = AL (attachment level).
+    var EXAMPLE = [
+      "# label, y_PD, var_PD, y_AL, var_AL, cov",
+      "Trial 1, 0.47, 0.0075, -0.32, 0.0030, 0.0030",
+      "Trial 2, 0.20, 0.0057, -0.60, 0.0009, 0.0009",
+      "Trial 3, 0.40, 0.0021, -0.12, 0.0007, 0.0007",
+      "Trial 4, 0.26, 0.0029, -0.31, 0.0009, 0.0009",
+      "Trial 5, 0.56, 0.0148, -0.39, 0.0072, 0.0072"
+    ].join("\n");
+    var Z = 1.959963984540054;
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+    var _last = null;
+    window._almLastMultivariate = function () { return _last; };
+
+    function parse(text) {
+      var studies = [], labels = [];
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        var t = line.trim(); if (!t || t.charAt(0) === "#") return;
+        var p = t.split(/\s*,\s*/);
+        if (p.length < 6) return;
+        var y1 = parseFloat(p[p.length - 5]), v1 = parseFloat(p[p.length - 4]), y2 = parseFloat(p[p.length - 3]), v2 = parseFloat(p[p.length - 2]), cov = parseFloat(p[p.length - 1]);
+        if (![y1, v1, y2, v2, cov].every(isFinite) || v1 <= 0 || v2 <= 0) return;
+        labels.push(p.slice(0, p.length - 5).join(", ") || ("Study " + (studies.length + 1)));
+        studies.push({ y: [y1, y2], S: [[v1, cov], [cov, v2]] });
+      });
+      return { studies: studies, labels: labels };
+    }
+
+    function run() {
+      var parsed = parse(document.getElementById("f-data").value);
+      var o1 = document.getElementById("f-o1").value || "Outcome 1", o2 = document.getElementById("f-o2").value || "Outcome 2";
+      var head = document.getElementById("headline"), stats = document.getElementById("stats");
+      if (parsed.studies.length < 2 || !window.AlmMultivariate) { head.textContent = "Enter ≥ 2 studies."; stats.innerHTML = ""; document.getElementById("plot-host").innerHTML = ""; _last = null; return; }
+      var f = window.AlmMultivariate.fit(parsed.studies);
+      head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
+      function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }
+      stats.innerHTML =
+        card(esc(o1) + " pooled", fmt(f.mu[0]) + " [" + fmt(f.mu[0] - Z * f.muSE[0]) + ", " + fmt(f.mu[0] + Z * f.muSE[0]) + "]") +
+        card(esc(o2) + " pooled", fmt(f.mu[1]) + " [" + fmt(f.mu[1] - Z * f.muSE[1]) + ", " + fmt(f.mu[1] + Z * f.muSE[1]) + "]") +
+        card("Between-study SD " + esc(o1), fmt(Math.sqrt(f.G[0][0]), 4)) +
+        card("Between-study SD " + esc(o2), fmt(Math.sqrt(f.G[1][1]), 4)) +
+        card("Between-study ρ", fmt(f.rho, 3));
+      document.getElementById("plot-host").innerHTML = plot(parsed.studies, f, o1, o2);
+      _last = { _schema: "multivariate-ma-results-v1", k: f.k, mu: f.mu, muSE: f.muSE, G: f.G, rho: f.rho, logLik: f.logLik };
+    }
+
+    function plot(studies, f, o1, o2) {
+      var W = 560, H = 360, L = 56, R = 20, T = 20, B = 44, pw = W - L - R, ph = H - T - B;
+      var xs = studies.map(function (s) { return s.y[0]; }).concat([f.mu[0]]);
+      var ys = studies.map(function (s) { return s.y[1]; }).concat([f.mu[1]]);
+      var xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs), ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys);
+      var xpad = (xhi - xlo) * 0.15 || 0.1, ypad = (yhi - ylo) * 0.15 || 0.1; xlo -= xpad; xhi += xpad; ylo -= ypad; yhi += ypad;
+      var X = function (v) { return L + (v - xlo) / (xhi - xlo) * pw; }, Y = function (v) { return T + ph - (v - ylo) / (yhi - ylo) * ph; };
+      var dark = matchMedia('(prefers-color-scheme:dark)').matches;
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
+      p.push("<rect x='" + L + "' y='" + T + "' width='" + pw + "' height='" + ph + "' fill='none' stroke='" + (dark ? '#2f343a' : '#d9d5cc') + "'/>");
+      // study points
+      studies.forEach(function (s) { p.push("<circle cx='" + X(s.y[0]) + "' cy='" + Y(s.y[1]) + "' r='4' fill='#2c5e8a' fill-opacity='0.55' stroke='" + (dark ? '#e7e4dc' : '#15181d') + "' stroke-width='0.6'/>"); });
+      // pooled point + 95% confidence ellipse from muVcov
+      var C = f.muVcov, L00 = Math.sqrt(C[0][0]), L10 = C[1][0] / L00, L11 = Math.sqrt(Math.max(0, C[1][1] - L10 * L10)), r = 2.4477468307;
+      var ell = [];
+      for (var i = 0; i <= 80; i++) { var th = 2 * Math.PI * i / 80, a = r * Math.cos(th), b = r * Math.sin(th); ell.push(X(f.mu[0] + L00 * a) + "," + Y(f.mu[1] + L10 * a + L11 * b)); }
+      p.push("<polygon points='" + ell.join(" ") + "' fill='#b23a48' fill-opacity='0.10' stroke='#b23a48' stroke-width='1.3'/>");
+      p.push("<path d='M" + X(f.mu[0]) + " " + (Y(f.mu[1]) - 6) + "L" + (X(f.mu[0]) + 6) + " " + Y(f.mu[1]) + "L" + X(f.mu[0]) + " " + (Y(f.mu[1]) + 6) + "L" + (X(f.mu[0]) - 6) + " " + Y(f.mu[1]) + "Z' fill='#b23a48' stroke='#fff' stroke-width='1'/>");
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='currentColor'>" + esc(o1) + "</text>");
+      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>" + esc(o2) + "</text>");
+      p.push("</svg>"); return p.join("");
+    }
+
+    document.getElementById("f-data").value = EXAMPLE;
+    ["f-data", "f-o1", "f-o2"].forEach(function (id) { document.getElementById(id).addEventListener("input", run); });
+    document.getElementById("f-o1").value = "PD"; document.getElementById("f-o2").value = "AL";
+    run();
+  })();
+</script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

@@ -1258,6 +1258,17 @@ window.HTML_APPS_PROJECTS = [
     tags: ["project", "save", "workspace", "portability", "offline"]
   },
   {
+    name: "Multivariate MA",
+    folder: "allmeta/multivariate-ma",
+    path: "./multivariate-ma/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Pooling",
+    summary: "Multivariate / multiple-outcome meta-analysis (mvmeta): jointly pool two correlated outcomes using each study's within-study covariance, with an unstructured between-study covariance estimated by REML (μ by GLS; G by Cholesky-parameterised Nelder-Mead). Reports both pooled means with CIs, between-study SDs, the between-study correlation, and a joint-outcome plot with a 95% confidence ellipse. Pure-JS, matches metafor::rma.mv on Berkey 1998 to ~1e-7.",
+    tags: ["multivariate", "multiple-outcome", "mvmeta", "rma.mv", "pooling"]
+  },
+  {
     name: "Parity Ledger",
     featured: true,
     folder: "allmeta/parity",
