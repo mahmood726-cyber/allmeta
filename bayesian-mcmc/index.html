@@ -327,7 +327,7 @@
 
         const doneMsg = `Done. ${chainsN} chain(s) × ${iter} iter. Acceptance ≈ ${(chains[0].acceptance * 100).toFixed(0)}%.`;
         if (convWarn) {
-          status.innerHTML = `<span style="color:#dc2626;font-weight:700">&#9888; ${convWarn}</span> <span style="opacity:.7">${doneMsg}</span>`;
+          status.innerHTML = `<span style="color:#dc2626;font-weight:700">&#9888; ${convWarn}</span> <span>${doneMsg}</span>`;
         } else {
           status.textContent = doneMsg;
         }
