@@ -18,6 +18,7 @@ const BENIGN = [
 const APPS = [
   { path: '/focus-studio/index.html', name: 'focus-studio' },
   { path: '/kanban-lab/index.html', name: 'kanban-lab' },
+  { path: '/project/index.html', name: 'project' },
 ];
 
 for (const app of APPS) {

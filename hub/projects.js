@@ -1201,5 +1201,60 @@ window.HTML_APPS_PROJECTS = [
     summary: "Pre-MA citation screening: tag include/exclude/duplicate/maybe, Cohen's \u03ba for dual-reviewer agreement, PRISMA-shaped count roll-up, one-click push into the PRISMA Flow generator.",
     note: "Outputs feed directly into prisma-flow/index.html via the prisma-flow-v1 key.",
     tags: ["prisma", "screening", "kappa"]
+  },
+  {
+    name: "Correlation MA",
+    folder: "allmeta/correlation-ma",
+    path: "./correlation-ma/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Pooling",
+    summary: "Random-effects meta-analysis of correlation coefficients via Fisher's z transform (ZCOR), back-transformed to r with DL/PM/REML τ², HKSJ, and a t_{k-1} prediction interval. Verified against metafor::rma(measure=\"ZCOR\").",
+    tags: ["correlation", "fisher-z", "zcor", "pooling"]
+  },
+  {
+    name: "Dose-Response MA",
+    folder: "allmeta/dose-response-ma",
+    path: "./dose-response-ma/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Pooling",
+    summary: "Two-stage Greenland-Longnecker linear dose-response meta-analysis: per-study GLS slope with covariance reconstructed from the trend (case-control, incidence-rate, or cumulative-incidence designs), pooled by REML. Verified against dosresmeta(method=\"reml\").",
+    tags: ["dose-response", "greenland-longnecker", "glst", "pooling"]
+  },
+  {
+    name: "RMST Meta-Analysis",
+    folder: "allmeta/rmst-ma",
+    path: "./rmst-ma/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Pooling",
+    summary: "Pool restricted mean survival time (RMST) differences across trials at a common horizon τ*, with DL/PM/REML τ², HKSJ, and a prediction interval. Differences (not ratios) per the RMST convention. Verified against metafor::rma(REML).",
+    tags: ["rmst", "survival", "non-ph", "pooling"]
+  },
+  {
+    name: "RoBMA",
+    folder: "allmeta/robma",
+    path: "./robma/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Publication bias",
+    summary: "Robust Bayesian model-averaging over presence/absence of effect and heterogeneity (4 models), giving inclusion Bayes factors for effect and for heterogeneity via adaptive-Simpson marginal likelihoods. Core BFs verified against R integrate(); one-click deep-link to the full RoBMA R package for the publication-bias-adjusted ensemble.",
+    tags: ["bayesian", "model-averaging", "bayes-factor", "publication-bias"]
+  },
+  {
+    name: "Project Workspace",
+    folder: "allmeta/project",
+    path: "./project/index.html",
+    added: "2026-06-01",
+    collection: "new",
+    mode: "file",
+    category: "Productivity",
+    summary: "Save your whole allmeta review — every app's data and settings, plus the shared ma-studies-v1 bus — as one offline JSON file, and restore it later or on another machine. A single-file, fully-offline alternative to RevMan project files. Round-trip verified.",
+    tags: ["project", "save", "workspace", "portability", "offline"]
   }
 ];

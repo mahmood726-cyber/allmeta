@@ -30,7 +30,7 @@ const APPS = [
   'mcid', 'median-to-mean', 'meta-regression', 'mh-peto', 'multilevel-ma',
   'nma', 'nma-dose-response-app', 'nma-global-inconsistency',
   'nma-inconsistency', 'nma-pro-v2', 'p-curve', 'pet-peese', 'pico', 'powerma',
-  'prisma-checklist', 'prisma-flow', 'prisma-nma', 'prisma-screen',
+  'prisma-checklist', 'prisma-flow', 'prisma-nma', 'prisma-screen', 'project',
   'proportion-ma', 'pubbias-tests', 'quadas-2', 'rct-extractor',
   'rob-traffic-light', 'rmst-ma', 'rob2', 'robma', 'robins-e', 'robins-i', 'search-translator',
   'thematic-synthesis', 'tsa', 'webr-pilot', 'webr-studio', 'webr-validator',
