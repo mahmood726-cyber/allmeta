@@ -83,6 +83,24 @@ expects it), closed-form-ish, a clean `metafor::trimfill` oracle, and a natural 
 the existing `funnel-plot` app. Recommended as the next session's deliverable.
 
 
+## Phase 2 — exceeding the field after parity (2026-06-01)
+With every Phase-1 gap closed, the focus moved from *matching* R/Stata/CMA to *exceeding*
+them. All four selected items shipped + R-verified this session:
+1. ✅ **Restricted cubic spline dose-response** (`ec72dc3`) — non-linear (Harrell RCS, 3/4
+   knots) two-stage DR via per-study multivariate GLS + pure-JS mvmeta REML. Matches
+   `dosresmeta(logrr~rcs(dose,k))` to ~1e-5 (β, vcov, Ψ, fitted log-RRs). Beyond CMA/RevMan.
+2. ✅ **metafor diagnostic plots** (`12f5256`) — Baujat, radial/Galbraith, L'Abbé in a shared
+   engine; coordinates match `metafor::baujat/radial/labbe` to ~1e-6. Wired into influence + mh-peto.
+3. ✅ **Parity benchmark dashboard** (`42bbcba`) — `/parity`, generated FROM the spec files
+   (cannot drift ahead of evidence): 41 specs · 156 numeric checks vs R · 32 distinct R oracles.
+   The provability differentiator no incumbent has.
+4. ✅ **Location-scale meta-regression** (`3d88811`) — log τ² = α₀+α₁·x (Viechtbauer-López 2022);
+   matches `metafor::rma(scale=~x, link="log", method="ML")` to ~1e-6 incl. SEs + logLik.
+
+Also this session: bivariate DTA SROC curve + 95% confidence/prediction regions (`cc6c14b`,
+matches mada::plot.reitsma), cross-app project save (`58b2240`), webr-validator consolidated
+onto the R-parity-verified ma-core (`6c6c5f0`).
+
 ## Status of the remaining hard items (2026-06-01)
 - **Classic dose-response MA (P1-6): ✅ RESOLVED & SHIPPED (`68633e2`).** The covariance was
   correct; the bug was a GLOBAL design type vs alcohol_cvd's PER-STUDY mix (4 cc + 2 ci).
