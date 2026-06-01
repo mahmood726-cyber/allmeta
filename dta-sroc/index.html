@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Diagnostic Test Accuracy: Moses SROC curve in ROC space with threshold-effect check.">
+  <meta name="description" content="Diagnostic Test Accuracy: Moses + bivariate (Reitsma) SROC curves in ROC space, 95% confidence/prediction regions, LR±, Fagan nomogram, Deeks' test — pure-JS, matches mada::reitsma.">
   <meta name="color-scheme" content="light dark">
   <title>DTA SROC Explorer</title>
   <style>
@@ -144,7 +144,7 @@
     </section>
 
     <section class="panel preview-wrap" aria-label="Preview">
-      <h2>ROC space + Moses SROC</h2>
+      <h2>ROC space + Moses &amp; bivariate SROC</h2>
       <div id="svg-host"></div>
       <h2 style="margin-top:1rem">Fagan nomogram (bivariate LR±)</h2>
       <div id="fagan-host"></div>
@@ -153,7 +153,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Moses <abbr data-gloss="SROC">SROC</abbr>: unweighted <abbr data-gloss="OLS">OLS</abbr> of D = logit(<abbr data-gloss="Se">Se</abbr>) − logit(1−<abbr data-gloss="Sp">Sp</abbr>) on S = logit(<abbr data-gloss="Se">Se</abbr>) + logit(1−<abbr data-gloss="Sp">Sp</abbr>) (Moses et&nbsp;al., <em>Stat Med</em> 1993). The unweighted variant is the more conservative form and is what metafor::reitsma falls back to when bivariate convergence fails. Bivariate (Reitsma 2005) / HSROC (Rutter &amp; Gatsonis 2001) require iterative ML — out of scope for this app. <strong>Choosing a tool:</strong> for a pooled summary operating point with LR+/LR-/DOR, use <a href="../hsroc/">Bivariate / HSROC &rarr;</a>.</p>
+  <p class="footer-note">Moses <abbr data-gloss="SROC">SROC</abbr>: unweighted <abbr data-gloss="OLS">OLS</abbr> of D = logit(<abbr data-gloss="Se">Se</abbr>) − logit(1−<abbr data-gloss="Sp">Sp</abbr>) on S = logit(<abbr data-gloss="Se">Se</abbr>) + logit(1−<abbr data-gloss="Sp">Sp</abbr>) (Moses et&nbsp;al., <em>Stat Med</em> 1993). The unweighted variant is the more conservative form and is what metafor::reitsma falls back to when bivariate convergence fails. Overlaid in crimson is a genuine <strong>bivariate random-effects fit (Reitsma 2005)</strong> — an iterative ML fit computed in pure JavaScript (no R/WASM), matching <code>mada::reitsma(method="ml")</code>: the bivariate SROC curve, the summary operating point (♦), and the 95% <strong>confidence</strong> (solid) and <strong>prediction</strong> (dashed) regions, plus LR+/LR−/DOR and a Fagan nomogram below. <strong>Related:</strong> the <a href="../hsroc/">HSROC explorer &rarr;</a> fits the Rutter &amp; Gatsonis (2001) parameterisation.</p>
 
   <script>
   (function () {
@@ -354,7 +354,7 @@
     function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
     function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
 
-    function buildSvg(state, studies, fit) {
+    function buildSvg(state, studies, fit, bivar) {
       const W=620, H=620, L=70, R=30, T=state.title?60:40, B=70;
       const plotW=W-L-R, plotH=H-T-B;
 
@@ -398,6 +398,30 @@
         if (curvePts.length > 2) {
           p.push("<polyline points=\""+curvePts.join(" ")+"\" fill=\"none\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
         }
+      }
+
+      // Bivariate (Reitsma) overlay: 95% prediction region (behind), 95% confidence
+      // region, the bivariate SROC curve, and the summary operating point. Regions and
+      // curve match mada::plot.reitsma (see dta-region-parity.spec.mjs).
+      if (bivar && window.AlmDTABivariate) {
+        const clip = v => Math.max(0.0005, Math.min(0.9995, v));
+        const poly = (pts) => pts.map(pt => x(clip(pt.fpr)) + "," + y(clip(pt.tpr))).join(" ");
+        const pred = AlmDTABivariate.regionEllipse(bivar, "prediction", 120);
+        const conf = AlmDTABivariate.regionEllipse(bivar, "confidence", 120);
+        p.push("<polygon points=\""+poly(pred)+"\" fill=\"#b23a48\" fill-opacity=\"0.06\" stroke=\"#b23a48\" stroke-width=\"1.2\" stroke-dasharray=\"6 4\"/>");
+        p.push("<polygon points=\""+poly(conf)+"\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\" stroke-width=\"1.4\"/>");
+        const sroc = AlmDTABivariate.srocCurve(bivar, 80);
+        p.push("<polyline points=\""+poly(sroc)+"\" fill=\"none\" stroke=\"#b23a48\" stroke-width=\"2\" stroke-dasharray=\"2 0\"/>");
+        const sx = x(clip(1 - bivar.spec)), sy = y(clip(bivar.sens));
+        p.push("<path d=\"M"+sx+" "+(sy-6)+"L"+(sx+6)+" "+sy+"L"+sx+" "+(sy+6)+"L"+(sx-6)+" "+sy+"Z\" fill=\"#b23a48\" stroke=\"#fff\" stroke-width=\"1\"/>");
+        // Legend (top-right inside plot).
+        const lx = L + plotW - 168, ly = T + 12;
+        p.push("<g font-size=\"10\" fill=\"#15181d\">");
+        p.push("<rect x=\""+(lx-8)+"\" y=\""+(ly-10)+"\" width=\"168\" height=\"58\" fill=\"#fff\" fill-opacity=\"0.82\" stroke=\"#d9d5cc\" rx=\"4\"/>");
+        p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+3)+"\">Moses SROC</text>");
+        p.push("<line x1=\""+lx+"\" y1=\""+(ly+15)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+15)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+18)+"\">Bivariate SROC</text>");
+        p.push("<rect x=\""+lx+"\" y=\""+(ly+25)+"\" width=\"22\" height=\"9\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\"/><text x=\""+(lx+28)+"\" y=\""+(ly+33)+"\">95% conf / pred (dashed)</text>");
+        p.push("</g>");
       }
 
       // Points with size proportional to total N
@@ -492,7 +516,7 @@
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
 
       const svg = parsed.studies.length
-        ? buildSvg(state, parsed.studies, fit)
+        ? buildSvg(state, parsed.studies, fit, bivar)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Enter at least one study.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}

@@ -140,6 +140,32 @@
     return pts;
   }
 
+  // 95% region ellipse in ROC space, matching mada's plot.reitsma exactly:
+  //   confidence region → ellipse of covMu (vcov of the summary logit means),
+  //   prediction region → ellipse of Σ (between-study covariance),
+  // both centred at (μ_logitSe, μ_logitFPR) in logit space at radius
+  // r=√qchisq(.95,2)≈2.4477, then back-transformed by expit. kind: "confidence"
+  // (default) | "prediction". Ordering of C is [Se, FPR] (as covMu/Σ). See
+  // dta-region-parity.spec.mjs (bounding box matches mada to ~1e-4).
+  var _R95 = 2.4477468306808277; // Math.sqrt(qchisq(0.95, 2)) = sqrt(5.99146454...)
+  function regionEllipse(f, kind, n) {
+    n = n || 100;
+    var C = (kind === "prediction") ? f.Sigma : f.covMu;
+    var c0 = f.muLogitSe, c1 = f.muLogitFPR;
+    // Lower-Cholesky L of C (ordering [Se, FPR]): L L' = C.
+    var L00 = Math.sqrt(C[0][0]);
+    var L10 = C[1][0] / L00;
+    var L11 = Math.sqrt(Math.max(0, C[1][1] - L10 * L10));
+    var pts = [];
+    for (var i = 0; i <= n; i++) {
+      var th = 2 * Math.PI * i / n, a = _R95 * Math.cos(th), b = _R95 * Math.sin(th);
+      var lSe = c0 + L00 * a;            // logit-Se coordinate
+      var lFPR = c1 + L10 * a + L11 * b; // logit-FPR coordinate
+      pts.push({ fpr: _expit(lFPR), tpr: _expit(lSe) });
+    }
+    return pts;
+  }
+
   // Spearman threshold-effect correlation between logit(TPR) and logit(FPR).
   function thresholdSpearman(rows) {
     var st = _prep(rows), n = st.length;
@@ -184,7 +210,7 @@
   function _betai(a, b, x) { if (x <= 0) return 0; if (x >= 1) return 1; var bt = Math.exp(_lnGamma(a + b) - _lnGamma(a) - _lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x)); return x < (a + 1) / (a + b + 2) ? bt * _betacf(a, b, x) / a : 1 - bt * _betacf(b, a, 1 - x) / b; }
   function _tcdf(t, df) { var x = df / (df + t * t), ib = 0.5 * _betai(df / 2, 0.5, x); return t >= 0 ? 1 - ib : ib; }
 
-  var api = { fit: fit, srocCurve: srocCurve, thresholdSpearman: thresholdSpearman, fagan: fagan, deeksTest: deeksTest, _logit: _logit, _expit: _expit };
+  var api = { fit: fit, srocCurve: srocCurve, regionEllipse: regionEllipse, thresholdSpearman: thresholdSpearman, fagan: fagan, deeksTest: deeksTest, _logit: _logit, _expit: _expit };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmDTABivariate = api;
 })(typeof window !== "undefined" ? window : globalThis);
