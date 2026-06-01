@@ -76,6 +76,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/permutest.js"></script>
+  <script src="../shared/location-scale.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -125,6 +126,10 @@
           <input type="text" id="f-effectlabel" value="Effect (logOR)" aria-label="Effect label (y-axis)">
         </label>
         <div id="alm-axis-mount" style="margin-top:.5rem"></div>
+        <label style="margin-top:.5rem;display:flex;gap:.4rem;align-items:flex-start">
+          <input type="checkbox" id="f-scale" style="margin-top:.25rem">
+          <span class="lbl" style="font-weight:400">Location-scale model: also let residual heterogeneity vary with the moderator (log&thinsp;τ² = α₀ + α₁·x). Matches <code>metafor::rma(scale=~x, link="log", method="ML")</code>.</span>
+        </label>
       </fieldset>
 
       <div id="stats-wrap"></div>
@@ -466,7 +471,9 @@
 
     // Last-computed result cache — populated by render(), read by __almResults().
     // Exposed on window so the alm-init IIFE (separate script block) can access them.
-    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null, _lastPI = null, _lastPerm = null;
+    let _lastFitted = null, _lastStudies = [], _lastHK = null, _lastR2 = 0, _lastQE = null, _lastPI = null, _lastPerm = null, _lastLocScale = null;
+    function _pnorm(x){ var t=1/(1+0.2316419*Math.abs(x)); var d=0.3989422804014327*Math.exp(-x*x/2); var p=d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429)))); return x>=0?1-p:p; }
+    window.__almLocScale = function(){ return _lastLocScale; };
     window._almLastPerm = function () { return _lastPerm; };
     window._almLastFitted  = function () { return _lastFitted; };
     window._almLastStudies = function () { return _lastStudies; };
@@ -541,6 +548,23 @@
         }
       } else {
         _lastHK = null; _lastR2 = 0; _lastQE = null;
+      }
+      // Location-scale model (ML): log τ² = α₀ + α₁·x — heterogeneity varies with the moderator.
+      _lastLocScale = null;
+      var scaleOn = document.getElementById("f-scale") && document.getElementById("f-scale").checked;
+      if (scaleOn && window.AlmLocationScale && parsed.studies.length >= 4) {
+        var yi = parsed.studies.map(function (s) { return s.est; }), vi = parsed.studies.map(function (s) { return s.v; });
+        var Xd = parsed.studies.map(function (s) { return [1, s.x]; }), Zd = parsed.studies.map(function (s) { return [1, s.x]; });
+        var ls = window.AlmLocationScale.fit(yi, vi, Xd, Zd);
+        _lastLocScale = ls;
+        var z975 = 1.959963984540054;
+        parts.push(statCard("LS β₀ (location)", fmt(ls.beta[0], 3) + " [" + fmt(ls.beta[0] - z975 * ls.betaSE[0], 3) + ", " + fmt(ls.beta[0] + z975 * ls.betaSE[0], 3) + "]"));
+        parts.push(statCard("LS β₁ (location slope)", fmt(ls.beta[1], 4) + " [" + fmt(ls.beta[1] - z975 * ls.betaSE[1], 4) + ", " + fmt(ls.beta[1] + z975 * ls.betaSE[1], 4) + "]"));
+        parts.push(statCard("LS α₀ (log τ² intercept)", fmt(ls.alpha[0], 3) + " (SE " + fmt(ls.alphaSE[0], 3) + ")"));
+        var zA1 = ls.alpha[1] / ls.alphaSE[1], pA1 = 2 * (1 - _pnorm(Math.abs(zA1)));
+        parts.push(statCard("LS α₁ (log τ² slope)", fmt(ls.alpha[1], 4) + " (SE " + fmt(ls.alphaSE[1], 4) + "), p = " + fmt(pA1, 3)));
+        var tmin = Math.min.apply(null, ls.tau2), tmax = Math.max.apply(null, ls.tau2);
+        parts.push(statCard("τ² range over x", fmt(tmin, 4) + " – " + fmt(tmax, 4)));
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
 
@@ -691,6 +715,7 @@
 
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      document.getElementById("f-scale").addEventListener("change", render);
       document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
       document.getElementById("btn-png").addEventListener("click", onDownloadPng);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
