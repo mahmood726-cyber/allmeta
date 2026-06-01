@@ -14,7 +14,7 @@ CLI:
 
 The produced config is the meta-starter-kit contract; this project consumes it
 through its own pipeline (forest plot / capsule / audit). Default topics:
-malaria,cardiology -- other topics are skipped so existing flows are untouched.
+malaria,cardiology,hiv -- other topics are skipped so existing flows are untouched.
 """
 import os
 import sys
@@ -46,7 +46,7 @@ def main():
     script = os.path.join(root, "scripts", "build_metakit_config.py")
     args = sys.argv[1:]
     if not any(a == "--topics" for a in args):
-        args += ["--topics", "malaria,cardiology"]   # auto-detect, only these topics
+        args += ["--topics", "malaria,cardiology,hiv"]   # auto-detect, only these topics
     return subprocess.call([sys.executable, script] + args)
 
 
