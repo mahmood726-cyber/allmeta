@@ -25,9 +25,9 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 | **Selection models** (Vevea-Hedges weight-function) | `metafor::selmodel` | ✅ DONE | ~~P0~~ |
 | **Meta-regression permutation test** | `metafor::permutest` | ✅ DONE | ~~P0~~ |
 | **RoBMA** (robust Bayesian model-averaging) | `RoBMA` pkg | **MISSING** | P1 |
-| **E-value** (unmeasured-confounding sensitivity) | `EValue` pkg | **MISSING** | P1 |
+| **E-value** (unmeasured-confounding sensitivity) | `EValue` pkg | ✅ DONE (`43a9f5b`) | ~~P1~~ |
 | **Classic dose-response MA** (Greenland-Longnecker, RCS) | `dosresmeta` | **MISSING** | P1 |
-| **Correlation MA** (Fisher-z pooling, ZCOR) | `metafor escalc(ZCOR)` | **MISSING** | P1 |
+| **Correlation MA** (Fisher-z pooling, ZCOR) | `metafor escalc(ZCOR)` | ✅ DONE (`2ab7f83`, new app) | ~~P1~~ |
 | **Doi plot + LFK index** (Furuya-Kanamori) | `metawho`/`MetaXL` | **MISSING** | P2 |
 | **Fragility index** for binary MA | (bespoke) | **MISSING** | P2 |
 | **RMST meta-analysis** (pool restricted-mean-survival diffs) | `survRM2`+pool | **MISSING** | P2 |
@@ -37,8 +37,8 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 - **Unified project workspace** — apps share a `ma-studies-v1` bus, but there's no single
   save/restore of a whole review across apps. (Offline-first; a single-file project export
   would fit.) — P2.
-- **Downloadable reproducible `.R` script** — webR runs metafor in-browser, but there's no
-  one-click "download the R that reproduces this" artifact. — P1 (high credibility value).
+- ✅ **Downloadable reproducible `.R` script** (`9fb74cc`) — webr-runner.buildReproScript; the
+  'Verify in R' modal offers a one-click .R; round-trip-verified (runs in metafor → matches ma-core ~1e-7).
 
 ## Recommended next plan (prioritised)
 
@@ -58,16 +58,16 @@ suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covide
 4. **RoBMA** — robust Bayesian model-averaging across {effect present/absent} ×
    {homo/hetero} × {pub-bias yes/no}; reports inclusion BFs + model-averaged estimate.
    No web tool has it. Oracle: `RoBMA` R pkg (install). *Est: 2–3 sessions.*
-5. **E-value** — VanderWeele-Ding sensitivity of a pooled RR/OR/HR to unmeasured
+5. ✅ **E-value** (DONE `43a9f5b`) — VanderWeele-Ding sensitivity of a pooled RR/OR/HR to unmeasured
    confounding; one of the most-requested observational-MA additions. Oracle: `EValue`.
    *Est: 0.5 session (closed-form).* 
 6. **Classic dose-response MA** — Greenland-Longnecker two-stage + restricted cubic
    splines, distinct from the existing *network* dose-response. Oracle: `dosresmeta`.
    *Est: 2 sessions.*
-7. **Correlation meta-analysis** — dedicated Fisher-z pooling app (ZCOR), with the n−3
+7. ✅ **Correlation meta-analysis** (DONE `2ab7f83`, new app) — dedicated Fisher-z pooling app (ZCOR), with the n−3
    variance and back-transform. Oracle: `metafor escalc(measure="ZCOR") |> rma`.
    *Est: 0.5 session (reuses ma-core).*
-8. **Downloadable reproducible `.R`** — universal "Download .R" from every pooling app
+8. ✅ **Downloadable reproducible `.R`** (DONE `9fb74cc`) — universal "Download .R" from every pooling app
    (build on `webr-runner._buildRScript`), + a local round-trip verifier. *Est: 1 session.*
 
 ### P2 — completeness & UX
