@@ -258,6 +258,68 @@
     return out;
   }
 
+  /**
+   * Flatten an arm-level comparisons envelope into pairwise CONTRAST rows that
+   * the contrast-level NMA apps (bayesian-nma, nma-inconsistency, …) consume:
+   *
+   *   [{ study, treatment1, treatment2, te, se, design }, ...]
+   *
+   * `te`/`se` are on the analysis scale of `env.effectMeasure`:
+   *   OR → te = ln( (e1·(n2-e2)) / (e2·(n1-e1)) ),  se = sqrt(1/e1 + 1/(n1-e1) + 1/e2 + 1/(n2-e2))
+   *   RR → te = ln( (e1/n1) / (e2/n2) ),            se = sqrt(1/e1 - 1/n1 + 1/e2 - 1/n2)
+   * `te` is the effect of `treatment1` relative to `treatment2` (arm order in the
+   * study). A 0.5 continuity correction is applied ONLY when a study has a zero
+   * cell (per advanced-stats.md: unconditional correction biases toward 1).
+   * Multi-arm studies emit every pairwise contrast, all tagged with the same
+   * `study` id so a consumer can group them. Only OR/RR are supported: HR/RD and
+   * the continuous measures (MD/SMD) are NOT derivable from the bus here — the
+   * arm contract carries `n` for binary arms only (see ma-comparisons-v1.md),
+   * so a mean-difference SE cannot be reconstructed. Returns [] for those.
+   */
+  function toContrasts(env, opts) {
+    opts = opts || {};
+    var out = [];
+    if (!env || !Array.isArray(env.studies)) return out;
+    var measure = nonEmptyString(env.effectMeasure) ? env.effectMeasure : (opts.measure || "OR");
+    var isOR = measure === "OR", isRR = measure === "RR";
+    if (!isOR && !isRR) return out; // HR/RD/MD/SMD: not derivable from binary arm counts
+    for (var i = 0; i < env.studies.length; i++) {
+      var s = env.studies[i];
+      if (!s || !Array.isArray(s.arms) || s.arms.length < 2) continue;
+      // Decide the per-study 0.5 correction once: apply iff ANY arm in the study
+      // has a zero event or zero non-event cell.
+      var cc = 0;
+      for (var z = 0; z < s.arms.length; z++) {
+        var az = s.arms[z];
+        if (az.events === 0 || (az.n - az.events) === 0) { cc = 0.5; break; }
+      }
+      for (var a = 0; a < s.arms.length; a++) {
+        for (var b = a + 1; b < s.arms.length; b++) {
+          var x = s.arms[a], y = s.arms[b], te, se;
+          var e1 = x.events + cc, ne1 = (x.n - x.events) + cc;
+          var e2 = y.events + cc, ne2 = (y.n - y.events) + cc;
+          if (!(e1 > 0) || !(ne1 > 0) || !(e2 > 0) || !(ne2 > 0)) continue;
+          if (isOR) {
+            te = Math.log((e1 * ne2) / (e2 * ne1));
+            se = Math.sqrt(1 / e1 + 1 / ne1 + 1 / e2 + 1 / ne2);
+          } else { // RR
+            var n1 = x.n + (cc ? 2 * cc : 0), n2 = y.n + (cc ? 2 * cc : 0);
+            te = Math.log((e1 / n1) / (e2 / n2));
+            se = Math.sqrt(1 / e1 - 1 / n1 + 1 / e2 - 1 / n2);
+          }
+          if (!isFiniteNumber(te) || !isFiniteNumber(se) || !(se > 0)) continue;
+          out.push({
+            study: s.id,
+            treatment1: x.treatment, treatment2: y.treatment,
+            te: te, se: se,
+            design: x.treatment + y.treatment,
+          });
+        }
+      }
+    }
+    return out;
+  }
+
   // ----- Public API -------------------------------------------------------
 
   var api = {
@@ -274,6 +336,7 @@
     fromPairwise: fromPairwise,
     fromBinaryTriplets: fromBinaryTriplets,
     toNmaProStudies: toNmaProStudies,
+    toContrasts: toContrasts,
   };
 
   if (typeof module !== "undefined" && module.exports) {

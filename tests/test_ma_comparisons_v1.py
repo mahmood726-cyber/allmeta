@@ -269,3 +269,111 @@ def test_buildEnvelope_attaches_effectMeasure():
     """)
     assert out["em"] == "RR"
     assert out["schema"] == "ma-comparisons-v1"
+
+
+# --- toContrasts (arm-level -> pairwise contrast rows) ------------------------
+# Added 2026-06-02 for the NMA-reader bus integration. Expected te/se derived
+# independently in Python (see commit message).
+
+import math as _math
+
+
+def test_toContrasts_or_two_arm_no_zero():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "GUSTO", arms: [
+            {{ treatment: "SK",  events: 1135, n: 13780 }},
+            {{ treatment: "tPA", events: 1021, n: 13746 }}
+          ]}}
+        ], "OR");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    assert len(out) == 1
+    r = out[0]
+    assert r["treatment1"] == "SK" and r["treatment2"] == "tPA"
+    assert r["study"] == "GUSTO"
+    assert abs(r["te"] - 0.112157) < 1e-5
+    assert abs(r["se"] - 0.044924) < 1e-5
+
+
+def test_toContrasts_rr_scale():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "A", events: 1135, n: 13780 }},
+            {{ treatment: "B", events: 1021, n: 13746 }}
+          ]}}
+        ], "RR");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    assert abs(out[0]["te"] - 0.10338) < 1e-5
+    assert abs(out[0]["se"] - 0.041415) < 1e-5
+
+
+def test_toContrasts_md_not_derivable_from_bus():
+    # The arm contract carries n for BINARY arms only, so a mean-difference SE
+    # cannot be reconstructed from a continuous envelope -> [].
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "A", mean: 5.0, sd: 2.0, n: 50 }},
+            {{ treatment: "B", mean: 4.2, sd: 2.5, n: 48 }}
+          ]}}
+        ], "MD");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    assert out == []
+
+
+def test_toContrasts_zero_cell_applies_half_correction():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "Z", arms: [
+            {{ treatment: "A", events: 0,  n: 100 }},
+            {{ treatment: "B", events: 10, n: 100 }}
+          ]}}
+        ], "OR");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    # cc=0.5 applied because arm A has a zero event cell.
+    assert len(out) == 1
+    assert abs(out[0]["te"] - (-3.14933)) < 1e-4
+    assert abs(out[0]["se"] - 1.45473) < 1e-4
+
+
+def test_toContrasts_multiarm_emits_all_pairs_same_study():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "Tri", arms: [
+            {{ treatment: "A", events: 10, n: 100 }},
+            {{ treatment: "B", events: 20, n: 100 }},
+            {{ treatment: "C", events: 30, n: 100 }}
+          ]}}
+        ], "OR");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    # 3 arms -> 3 pairwise contrasts, all tagged with study "Tri".
+    assert len(out) == 3
+    assert all(r["study"] == "Tri" for r in out)
+    pairs = {(r["treatment1"], r["treatment2"]) for r in out}
+    assert pairs == {("A", "B"), ("A", "C"), ("B", "C")}
+
+
+def test_toContrasts_skips_underivable_measures():
+    # HR / SMD / RD cannot be derived from raw arm counts here -> [].
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "A", events: 10, n: 100 }},
+            {{ treatment: "B", events: 20, n: 100 }}
+          ]}}
+        ], "HR");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    assert out == []
