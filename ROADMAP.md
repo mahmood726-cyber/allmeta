@@ -69,13 +69,17 @@
 - [x] nma-pro-v2: replace `alert()` calls — 0 literal `alert(` calls remain in `nma-pro-v8.0.html` (V9-E08)
 - [ ] Add R-parity tests where missing (per triage overrides) — track to 100 %
 
-### Phase C — Interchange + receipts (the moat)
-- [ ] Define `ma-studies-v1.json` schema (effect, se, n, group labels, covariates, RoB ranks, GRADE, notes)
-- [ ] Validator in `shared/ma-studies-v1.js` (`parse` + `validate` + `serialise`)
-- [ ] Wire export button into all 30+ numerical-engine apps
-- [ ] Wire import button into all pooling apps
-- [ ] TruthCert receipt extension to every numerical app (boilerplate at `shared/truthcert.js`)
-- [ ] "Verify in R" deep-link from every pooled result → WebR Studio
+### Phase C — Interchange + receipts (the moat) — ~90% built (reconciled 2026-06-02)
+> Most of the moat already exists; checkboxes had drifted. Accurate coverage
+> matrix (catalog apps, via `/tmp/scan_bus.py`): **load=36, read=20, write=18,
+> Verify-in-R=17**. Remaining work is gap-filling, not greenfield.
+- [x] Define `ma-studies-v1` schema — `shared/ma-studies-v1.js` + `.md`, plus `ma-pooled-v1` and `ma-comparisons-v1` extensions, with fixtures under `tests/fixtures/ma-studies-v1/`
+- [x] Validator — `MaStudies.validate(p)` → `{ok, errors[]}`; `read`/`write`/`merge`/`parseCSV`/`toCSV`/`attachButtons` helpers
+- [~] Wire export into pooling apps — **18/~24 poolable apps write** (forest, funnel, heterogeneity, meta-reg, bayesian-ma/mcmc, cumulative-subgroup, tsa, workbench, influence, gosh, gosh-metareg, pet-peese, pubbias-tests, copas, limit-ma, nma-pro-v2, rct-extractor). **Gap:** `mh-peto`, `proportion-ma` (load helper, sit inert — 2×2/events input needs a producer adapter)
+- [~] Wire import into pooling apps — 20 read; `grade-sof` reads-only, `webr-validator` reads-only (correct, it's a consumer)
+- [~] TruthCert receipt extension — present on ~20 apps; not yet universal
+- [~] "Verify in R" deep-link — 17 apps; **gap:** `nma-pro-v2`, `workbench` (have pooled results, no R link)
+- [ ] **NMA cluster bus integration via `ma-comparisons-v1`** — 7 nma-* apps + `bucher`/`dta-sroc`/`hsroc` load a helper but are inert (multi-arm/2×2 shape needs the comparisons schema wired through)
 
 ### Phase D — Discoverability + ecosystem
 - [ ] Zenodo concept-DOI for repo (manual: connect GH → Zenodo, push v1.0.0 tag)
