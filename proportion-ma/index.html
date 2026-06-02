@@ -140,6 +140,13 @@
         <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
         <div id="alm-export-mount"></div>
       </div>
+
+      <!-- cross-tool bus (ma-studies-v1) producer -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Cross-tool:</span>
+        <button type="button" id="btn-bus-save" title="Send per-study logit proportions + SE (metafor PLO scale) to the shared ma-studies-v1 bus so forest-plot, funnel-plot, influence and other tools can pool them without re-typing." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">Send to bus</button>
+        <button type="button" id="btn-verify-in-r" title="Push the per-study logit proportions to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">Verify in R</button>
+      </div>
     </section>
   </main>
   <footer>
@@ -527,6 +534,27 @@
     // Expose last results for export
     window._almLastPropMA = function () { return _lastResults; };
 
+    // Cross-tool bus producer (ma-studies-v1): per-study {label, est, se} on the
+    // LOGIT scale — ln(p/(1-p)) with the Cochrane §10.4.4 / Sweeting continuity
+    // correction at extremes, i.e. metafor::escalc(measure="PLO"). This is the
+    // recommended poolable scale, emitted regardless of the on-screen display
+    // transform so the bus payload is single-scale and coherent. Recomputed from
+    // current inputs so it always matches what is on screen.
+    window.__propMaBusStudies = function () {
+      if (!window.MaStudies) return [];
+      var rows = parseTable(document.getElementById('src').value);
+      if (rows.length < 2) return [];
+      var out = [];
+      for (var i = 0; i < rows.length; i++) {
+        var t = logitTransform(rows[i].x, rows[i].n); // { y: logit(p), v: var }
+        var se = Math.sqrt(t.v);
+        if (Number.isFinite(t.y) && Number.isFinite(se) && se > 0) {
+          out.push({ label: rows[i].label || ('Study ' + (i + 1)), est: t.y, se: se });
+        }
+      }
+      return out;
+    };
+
     // ---- module init ----
 
     window.alm.csvUpload({
@@ -597,6 +625,43 @@
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       AlmAutosave.install({ appKey: 'proportion-ma' });
+    }
+  });
+})();
+</script>
+
+<script>
+// Cross-tool bus producer wiring (ma-studies-v1). proportion-ma input is
+// events/total counts, which cannot represent a {est, se} bus row directly, so
+// this app is WRITE-only (a producer). It always emits LOGIT-scale proportions
+// (metafor PLO), independent of the display transform — see __propMaBusStudies.
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (!window.MaStudies) return;
+    function notify(msg, kind) {
+      if (window.Toast && typeof Toast.show === "function") Toast.show(msg, kind || "warn");
+      else if (kind === "error") alert(msg);
+    }
+    function current() {
+      return window.__propMaBusStudies ? window.__propMaBusStudies() : [];
+    }
+    var save = document.getElementById("btn-bus-save");
+    if (save) {
+      save.addEventListener("click", function () {
+        var s = current();
+        if (!s.length) { notify("Enter at least 2 valid studies before sending to the bus.", "warn"); return; }
+        var ok = MaStudies.write(s);
+        notify(ok
+          ? ("Sent " + s.length + " per-study logit proportion" + (s.length === 1 ? "" : "s") + " to the shared bus.")
+          : "Could not save to the bus.", ok ? "warn" : "error");
+      });
+    }
+    if (typeof MaStudies.attachVerifyInRButton === "function") {
+      MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: current });
     }
   });
 })();
