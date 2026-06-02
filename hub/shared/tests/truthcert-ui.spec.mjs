@@ -89,3 +89,41 @@ test.describe('TruthCert UI (via workbench)', () => {
   });
 
 });
+
+// The TruthCert receipt button is wired identically into the flagship pairwise
+// poolers (same #f-data "label, est, se" format). Confirm each emits a valid,
+// app-named receipt of its current studies.
+const POOLERS = [
+  { name: 'forest-plot', url: 'http://localhost:8088/forest-plot/' },
+  { name: 'funnel-plot', url: 'http://localhost:8088/funnel-plot/' },
+  { name: 'heterogeneity', url: 'http://localhost:8088/heterogeneity/' },
+];
+
+for (const app of POOLERS) {
+  test.describe(`TruthCert receipt — ${app.name}`, () => {
+    test('downloads an app-named, schema-valid signed receipt of the data box', async ({ page }) => {
+      await page.goto(app.url);
+      await page.waitForFunction(
+        () => window.TruthCertUI && window.MaStudies && document.getElementById('btn-truthcert') && document.getElementById('f-data'),
+        { timeout: 10_000 }
+      );
+      await page.evaluate((k) => window.TruthCertUI.setKey(k), KEY);
+      await page.fill('#f-data', INPUT);
+
+      const [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: 10_000 }),
+        page.locator('#btn-truthcert').click(),
+      ]);
+      expect(download.suggestedFilename()).toBe(`${app.name}-truthcert.json`);
+
+      const path = await download.path();
+      const { readFileSync } = await import('node:fs');
+      const receipt = JSON.parse(readFileSync(path, 'utf-8'));
+      expect(receipt._schema).toBe('ma-studies-v1');
+      expect(receipt.alg).toBe('HMAC-SHA-256');
+      expect(receipt.studies.length).toBe(2);
+      const ok = await page.evaluate((r) => window.MaStudies.verifyTruthCert(r, { key: 'unit-test-signing-key-32bytes-min!!' }), receipt);
+      expect(ok.valid).toBe(true);
+    });
+  });
+}
