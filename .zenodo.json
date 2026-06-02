@@ -1,0 +1,36 @@
+{
+  "title": "allmeta — open browser-only tools for evidence synthesis",
+  "description": "allmeta is a browser-only catalog of evidence-synthesis tools spanning pairwise and network meta-analysis, diagnostic test accuracy, dose-response modelling, risk-of-bias assessment, GRADE, PRISMA, trial sequential analysis, individual participant data analysis, and clinical decision support. Each app is a self-contained HTML+JS+CSS bundle that runs offline; computation happens client-side and no data is uploaded. Many numerical engines are cross-checked against canonical R packages (metafor, meta, netmeta, mada). A shared ma-studies-v1 / ma-comparisons-v1 data bus carries study- and arm-level data between apps, and selected apps emit HMAC-signed TruthCert receipts so reviewers can verify that the inputs and outputs on a result page match the analysis that produced them.",
+  "upload_type": "software",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    { "name": "Ahmad, Mahmood" }
+  ],
+  "keywords": [
+    "meta-analysis",
+    "systematic-review",
+    "network-meta-analysis",
+    "diagnostic-test-accuracy",
+    "risk-of-bias",
+    "grade",
+    "prisma",
+    "trial-sequential-analysis",
+    "evidence-synthesis",
+    "reproducibility",
+    "browser-only",
+    "webr"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/mahmood726-cyber/allmeta",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://mahmood726-cyber.github.io/allmeta/",
+      "relation": "isIdenticalTo",
+      "scheme": "url"
+    }
+  ]
+}

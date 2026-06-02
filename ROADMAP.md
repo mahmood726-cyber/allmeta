@@ -89,13 +89,13 @@
   - [x] `bucher` reader — maps toContrasts into the existing `__almBucherLoad` (pools by pair, fills the AC/BC triangle from the first two arms; star networks give A-vs-B-via-control). Spec covers field prefill + indirect estimate
   - [ ] continuous (MD/SMD) contrasts — blocked: arm contract carries `n` for binary arms only (schema extension needed)
 
-### Phase D — Discoverability + ecosystem
-- [ ] Zenodo concept-DOI for repo (manual: connect GH → Zenodo, push v1.0.0 tag)
-- [ ] README badge: DOI · Pages · Playwright build · pytest count
-- [ ] Cochrane `.rm5`/`.rm6` reader → list studies in workbench
-- [ ] PROSPERO templater
-- [ ] PWA manifest + install prompt
-- [ ] Multi-language method help (Spanish, Arabic, Mandarin — start with abstracts of each method)
+### Phase D — Discoverability + ecosystem (reconciled 2026-06-02)
+- [~] Zenodo concept-DOI — repo prep done (`CITATION.cff` `identifiers` placeholder, `.zenodo.json` deposit metadata). **Manual step remains**: connect GH→Zenodo + push a `v1.0.0` tag, then fill the DOI into CITATION.cff + README badge
+- [x] README badges — Pages, shared-tests, Playwright, License (MIT) added; DOI badge pending the Zenodo deposit
+- [x] Cochrane `.rm5`/`.rm6` reader — `revman-importer` reads `.rm5`/`.rm6` (JSZip + DOMParser fallback) and writes the `ma-comparisons-v1` bus, so imported reviews flow to the NMA apps via `toContrasts`
+- [ ] PROSPERO templater — referenced in catalog/README; dedicated app not confirmed (triage)
+- [x] PWA manifest + install prompt — `manifest.json` (icons, shortcuts, categories), `<link rel=manifest>`, theme-color, apple-touch-icon, SW registration, and a `beforeinstallprompt` handler all present in root `index.html`
+- [ ] Multi-language method help (Spanish, Arabic, Mandarin) — not started (P3, ~1 week)
 
 ### Phase E — Ongoing rigor
 - [ ] Nightly hub-crawl on Pages-built artifact (GH Action)

@@ -1,5 +1,11 @@
 # allmeta
 
+[![Pages](https://github.com/mahmood726-cyber/allmeta/actions/workflows/pages.yml/badge.svg)](https://github.com/mahmood726-cyber/allmeta/actions/workflows/pages.yml)
+[![shared-tests](https://github.com/mahmood726-cyber/allmeta/actions/workflows/shared-tests.yml/badge.svg)](https://github.com/mahmood726-cyber/allmeta/actions/workflows/shared-tests.yml)
+[![Playwright](https://github.com/mahmood726-cyber/allmeta/actions/workflows/playwright.yml/badge.svg)](https://github.com/mahmood726-cyber/allmeta/actions/workflows/playwright.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<!-- DOI badge: add after the first Zenodo deposit — see RELEASING.md. -->
+
 Open, browser-only tools for evidence synthesis.
 
 **Live:** https://mahmood726-cyber.github.io/allmeta/
