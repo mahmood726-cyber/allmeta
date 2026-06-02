@@ -93,22 +93,28 @@ test.describe('TruthCert UI (via workbench)', () => {
 // The TruthCert receipt button is wired identically into the flagship pairwise
 // poolers (same #f-data "label, est, se" format). Confirm each emits a valid,
 // app-named receipt of its current studies.
+// Cover all three getStudies paths the receipt button uses:
+//  - parseStudies(#f-data)  : forest-plot (in-IIFE getStudies)
+//  - studiesFromTextarea(#f-data, "label-est-se") : meta-regression (swept)
+//  - studiesFromTextarea(#src,    "est-se-label") : pet-peese (swept)
+//  - custom producer getter : mh-peto (computes per-study effects from 2x2)
 const POOLERS = [
-  { name: 'forest-plot', url: 'http://localhost:8088/forest-plot/' },
-  { name: 'funnel-plot', url: 'http://localhost:8088/funnel-plot/' },
-  { name: 'heterogeneity', url: 'http://localhost:8088/heterogeneity/' },
+  { name: 'forest-plot',     fill: { sel: '#f-data', val: INPUT },                                count: 2 },
+  { name: 'meta-regression', fill: { sel: '#f-data', val: INPUT },                                count: 2 },
+  { name: 'pet-peese',       fill: { sel: '#src',    val: '0.25, 0.08, S1\n0.18, 0.10, S2' },     count: 2 },
+  { name: 'mh-peto',         fill: null,                                                          count: 5 }, // default 2x2 fixture
 ];
 
 for (const app of POOLERS) {
   test.describe(`TruthCert receipt — ${app.name}`, () => {
-    test('downloads an app-named, schema-valid signed receipt of the data box', async ({ page }) => {
-      await page.goto(app.url);
+    test('downloads an app-named, schema-valid signed receipt of the current studies', async ({ page }) => {
+      await page.goto(`http://localhost:8088/${app.name}/`);
       await page.waitForFunction(
-        () => window.TruthCertUI && window.MaStudies && document.getElementById('btn-truthcert') && document.getElementById('f-data'),
+        () => window.TruthCertUI && window.MaStudies && document.getElementById('btn-truthcert'),
         { timeout: 10_000 }
       );
       await page.evaluate((k) => window.TruthCertUI.setKey(k), KEY);
-      await page.fill('#f-data', INPUT);
+      if (app.fill) await page.fill(app.fill.sel, app.fill.val);
 
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 10_000 }),
@@ -121,7 +127,7 @@ for (const app of POOLERS) {
       const receipt = JSON.parse(readFileSync(path, 'utf-8'));
       expect(receipt._schema).toBe('ma-studies-v1');
       expect(receipt.alg).toBe('HMAC-SHA-256');
-      expect(receipt.studies.length).toBe(2);
+      expect(receipt.studies.length).toBe(app.count);
       const ok = await page.evaluate((r) => window.MaStudies.verifyTruthCert(r, { key: 'unit-test-signing-key-32bytes-min!!' }), receipt);
       expect(ok.valid).toBe(true);
     });

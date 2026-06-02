@@ -66,6 +66,7 @@
   <script src="../shared/diagnostic-plots.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
@@ -143,6 +144,8 @@ StudyE, 4, 600, 10, 600</textarea>
         <span style="font-size:0.8rem;color:var(--muted)">Cross-tool:</span>
         <button type="button" id="btn-bus-save" title="Send the per-study effects (log scale for OR/RR, identity for RD) to the shared ma-studies-v1 bus so forest-plot, funnel-plot, influence and other tools can pool them without re-typing." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">Send to bus</button>
         <button type="button" id="btn-verify-in-r" title="Push the per-study effects to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">Verify in R</button>
+        <button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current per-study effects — re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">TruthCert receipt</button>
+        <button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">&#128273; Key</button>
       </div>
     </section>
   </main>
@@ -623,6 +626,10 @@ StudyE, 4, 600, 10, 600</textarea>
     }
     if (typeof MaStudies.attachVerifyInRButton === "function") {
       MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: current });
+    }
+    if (window.TruthCertUI) {
+      TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "mh-peto", getStudies: current });
     }
   });
 })();

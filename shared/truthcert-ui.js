@@ -168,16 +168,29 @@
 
   function _el(x) { return typeof x === "string" ? document.querySelector(x) : x; }
 
+  // Resolve current studies from either an explicit getStudies(), or — for apps
+  // that wire MaStudies.attachButtons — a {textarea, format} pair, parsed with
+  // the same shared parser so the receipt signs exactly what the bus would.
+  function _resolveStudies(opts) {
+    if (typeof opts.getStudies === "function") {
+      try { return opts.getStudies() || []; } catch (_) { return []; }
+    }
+    if (opts.textarea && global.MaStudies && typeof global.MaStudies.studiesFromTextarea === "function") {
+      var ta = _el(opts.textarea);
+      if (ta) {
+        try { return global.MaStudies.studiesFromTextarea(ta.value, opts.format || "label-est-se") || []; }
+        catch (_) { return []; }
+      }
+    }
+    return [];
+  }
+
   function attachReceiptButton(opts) {
     if (typeof document === "undefined" || !opts || !opts.btn) return false;
     var el = _el(opts.btn);
     if (!el) return false;
     el.addEventListener("click", function () {
-      var studies = [];
-      if (typeof opts.getStudies === "function") {
-        try { studies = opts.getStudies() || []; } catch (_) { studies = []; }
-      }
-      downloadReceipt(studies, opts.basename);
+      downloadReceipt(_resolveStudies(opts), opts.basename);
     });
     return true;
   }
