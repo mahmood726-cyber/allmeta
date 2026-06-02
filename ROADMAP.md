@@ -83,7 +83,7 @@
   - [x] `nma-pro-v2` already read+write (producer of the arm-level network)
   - [x] `MaComparisons.toContrasts()` — arm-level → pairwise `{t1,t2,te,se}` (OR/RR; 0.5 CC on zero-cell). Tested (`test_ma_comparisons_v1.py`)
   - [x] `bayesian-nma`, `nma-inconsistency` wired as readers ("Load from bus" → toContrasts → run). Spec `hub/shared/tests/nma-bus-reader.spec.mjs`
-  - [ ] `nma-global-inconsistency` reader — **needs design = full arm-set per trial** (current `toContrasts.design` is per-pair `t1+t2`, correct only for 2-arm; design-by-treatment needs the multi-arm design tag)
+  - [x] `nma-global-inconsistency` reader (5-col `t1,t2,te,se,design`). Fixed `toContrasts.design` to the per-trial arm-set (sorted, ":"-joined) so multi-arm trials group as one design
   - [ ] `component-nma` reader — components are additive (`drug+exercise | control`); bus treatments need a component-combination mapping
   - [ ] `nma-dose-response-app` reader — needs per-arm `dose` (bus has the field; format is `study,treatment,dose,effect,se`)
   - [ ] `bucher` reader — 3-arm indirect-comparison slice
