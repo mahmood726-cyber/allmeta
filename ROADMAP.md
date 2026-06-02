@@ -21,16 +21,16 @@
 
 | Gap                                       | Impact | Cost   | Priority |
 | ----------------------------------------- | ------ | ------ | -------- |
-| 3 apps still load plotly/jspdf/xlsx from CDN (V9-E07) | "fully offline" claim is false on those apps | ~3 MB vendor + SRI | **P0** |
+| ~~3 apps still load plotly/jspdf/xlsx from CDN (V9-E07)~~ | ✅ Resolved (verified 2026-06-02): zero catalog entry points load anything from a CDN — static `<script src>`/`<link href>` scan and dynamic-injection scan (`.src=`/`createElement`/`importScripts`/`import()`/`fetch`) both come up empty across all `hub/projects.js` apps. `shared/vendor/` holds plotly/jspdf/html2canvas/xlsx/chart/d3/jszip/docx. The only residual CDN *strings* are dead-code paths inside vendored minified libs (jsPDF's `pdfobjectnewwindow` output mode), never invoked. | — | — |
 | No cross-tool data interchange format     | User retypes data 5× across extract → pool → influence → bias → forest | 1-2 days | **P0** |
 | ~~Multi-arm τ²/2 off-diagonal in nma-pro-v2 Bayesian path (V9-01b)~~ | ✅ Resolved 2026-05-24: `multiArmCorrection` helper adds the full multivariate Σ = V + Σ_RE (diag=τ², off=τ²/2) log-likelihood correction in the MH τ² step, AND `buildBlockPrecision` builds the full block-precision X' Σ⁻¹ X for the β posterior draw (Lu & Ades 2004). Singletons fall through to scalar weights so 2-arm networks are bit-exact. | — | — |
-| No citation infrastructure (no CITATION.cff, no DOI) | Hub uncitable in academic submissions | 1 hr | **P0** |
-| Forced-colors mode not in shared CSS (V9-A11Y-11) | Windows High Contrast users see broken contrast | half day | **P1** |
-| HKSJ in webr-validator ignores `test=knha` (V9-02) | Slight CI undercoverage | 1 hr | **P1** |
+| Citation infrastructure: DOI still pending | `CITATION.cff` ✅ present at root; Zenodo concept-DOI still open (Phase D — manual GH→Zenodo + v1.0.0 tag) | 30 min (DOI) | **P1** |
+| ~~Forced-colors mode not in shared CSS (V9-A11Y-11)~~ | ✅ Resolved: `@media (forced-colors: active)` block in `hub/styles.css:811` (WCAG 1.4.1 / 1.4.11). | — | — |
+| ~~HKSJ in webr-validator ignores `test=knha` (V9-02)~~ | ✅ Resolved: the drifting local re-impl was removed; webr-validator now delegates to `AlmMaCore.pool(yi, vi, { method, knha: test==="knha" })`. CI-green on HEAD `6abade7` (`reml-validator-parity` / `ma-core-parity`). | — | — |
 | nma-inconsistency FE-only (V9-06) | No RE option for heterogeneous inconsistency tests | half day | **P1** |
-| Multilevel I² missing σ²_typical denom (V9-03) | Off by a known factor | 1 hr | **P1** |
-| proportion-ma logit continuity correction non-standard (V9-10) | Disagrees with metafor at boundary | 1 hr | **P1** |
-| HSROC docstring drift "Univariate REML" → "DL" (V9-09) | Cosmetic | 5 min | **P2** |
+| ~~Multilevel I² missing σ²_typical denom (V9-03)~~ | ✅ Resolved (`V10-08`): `sigma2_typical` (Cheung 2014 §3.2 / Higgins-Thompson 2002) is computed from sampling weights and included in the `totalVar` denominator. CI-green on HEAD `6abade7` (`multilevel-reml-parity`). | — | — |
+| ~~proportion-ma logit continuity correction non-standard (V9-10)~~ | ✅ Resolved: `logitTransform` applies the standard *conditional* 0.5 correction only when a cell is extreme (`x===0 || x===n`, `cn=n+1`), matching `metafor::escalc(measure="PLO")` to 1e-6. CI-green on HEAD `6abade7` (`proportion-ma-ft`). | — | — |
+| ~~HSROC docstring drift "Univariate REML" → "DL" (V9-09)~~ | ✅ Resolved: no "REML" text remains in `hsroc/index.html`; method described as alternating univariate DerSimonian-Laird throughout. CI-green on HEAD `6abade7` (`hsroc-smoke`). | — | — |
 | ~~76 `alert()` calls in nma-pro-v2 (V9-E08)~~ | ✅ Resolved (prior cycle): 0 alert() calls remain in nma-pro-v8.0.html. All matches for "alert" are now CSS `.alert--{info,warning,success}` Bootstrap-style alert components — accessible. Verified 2026-05-24. | — | — |
 | No automated nightly hub-crawl on Pages-built artifact | Catches deploy-only regressions | 1 hr | **P2** |
 | No multi-language abstracts of method help | Limits global reach | 1 week | **P3** |
@@ -52,19 +52,21 @@
 
 ## Phased execution
 
-### Phase A — Reproducibility & citability (this session)
-- [ ] **CITATION.cff** at repo root + footer DOI placeholder (1 hr)
-- [ ] Vendor plotly + jspdf + html2canvas + xlsx to `shared/vendor/` with SRI (2-3 hr)
-- [ ] Forced-colors `@media` block in `hub/styles.css` + per-app overrides (2 hr)
-- [ ] HSROC docstring drift fix (5 min)
-- [ ] proportion-ma logit-CC alignment (1 hr)
-- [ ] Multilevel I² σ²_typical denominator (1 hr)
-- [ ] HKSJ knha respect in webr-validator (1 hr)
+### Phase A — Reproducibility & citability ✅ COMPLETE (reconciled 2026-06-02)
+> All items verified done on disk; checkboxes had drifted from reality.
+> Evidence: file scans + `shared-tests`/`playwright` CI both green on HEAD `6abade7`.
+- [x] **CITATION.cff** at repo root — present
+- [x] Vendor plotly + jspdf + html2canvas + xlsx to `shared/vendor/` — populated; zero catalog apps load from any CDN (static + dynamic scan clean)
+- [x] Forced-colors `@media` block in `hub/styles.css` — present
+- [x] HSROC docstring drift fix (V9-09) — no "REML" text remains
+- [x] proportion-ma logit-CC alignment (V9-10) — conditional 0.5 CC, metafor PLO parity
+- [x] Multilevel I² σ²_typical denominator (V9-03 / V10-08) — `sigma2_typical` in `totalVar`
+- [x] HKSJ knha respect in webr-validator (V9-02) — delegates to `AlmMaCore.pool({knha})`
 
 ### Phase B — Methodological depth (next session)
-- [ ] nma-pro-v2 multi-arm τ²/2 off-diagonal (V9-01)
+- [x] nma-pro-v2 multi-arm τ²/2 off-diagonal (V9-01) — `multiArmCorrection` + `buildBlockPrecision` in `nma-pro-v8.0.html`, tested in `tests/test_nma_pro.py` (see gap table above)
 - [ ] nma-inconsistency RE option with PM τ²
-- [ ] nma-pro-v2: replace `alert()` calls with `toast.js` (cuts 76 a11y traps)
+- [x] nma-pro-v2: replace `alert()` calls — 0 literal `alert(` calls remain in `nma-pro-v8.0.html` (V9-E08)
 - [ ] Add R-parity tests where missing (per triage overrides) — track to 100 %
 
 ### Phase C — Interchange + receipts (the moat)
