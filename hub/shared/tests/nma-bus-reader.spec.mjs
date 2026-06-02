@@ -149,3 +149,72 @@ test.describe('nma-global-inconsistency ← ma-comparisons-v1 reader (with desig
     expect(errors, 'console errors: ' + errors.join('; ')).toEqual([]);
   });
 });
+
+// component-nma consumes a pipe-delimited "armA | armB | te | se" format and
+// decomposes additive component treatment names (e.g. "drug+exercise") on "+".
+// The bus treatment names pass through verbatim.
+test.describe('component-nma ← ma-comparisons-v1 reader (pipe + components)', () => {
+  const URL = 'http://localhost:8088/component-nma/';
+  const CSEED = {
+    _schema: 'ma-comparisons-v1',
+    effectMeasure: 'OR',
+    studies: [
+      { id: 'S1', arms: [
+        { treatment: 'control', events: 20, n: 100 },
+        { treatment: 'drug+exercise', events: 40, n: 100 },
+      ] },
+      { id: 'S2', arms: [
+        { treatment: 'control', events: 20, n: 100 },
+        { treatment: 'drug', events: 30, n: 100 },
+      ] },
+      { id: 'S3', arms: [
+        { treatment: 'control', events: 20, n: 100 },
+        { treatment: 'exercise', events: 25, n: 100 },
+      ] },
+    ],
+  };
+
+  test('Load from bus populates pipe-delimited contrasts with component names', async ({ page }) => {
+    await page.goto(URL);
+    await waitReady(page);
+    const wrote = await page.evaluate((seed) => window.MaComparisons.write(seed), CSEED);
+    expect(wrote).toBe(true);
+
+    await page.locator('#btn-bus-load').click();
+
+    const text = await page.inputValue('#src');
+    const lines = text.trim().split('\n');
+    expect(lines.length).toBe(3);
+
+    const byArm = {};
+    for (const ln of lines) {
+      const p = ln.split('|').map(s => s.trim());
+      expect(p.length, 'expected 4 pipe-delimited fields').toBe(4);
+      expect(p[0]).toBe('control'); // treatment1 = study reference arm (entered first)
+      byArm[p[1]] = { te: parseFloat(p[2]), se: parseFloat(p[3]) };
+    }
+    expect(Object.keys(byArm).sort()).toEqual(['drug', 'drug+exercise', 'exercise']);
+    // The combination treatment name survived intact for the app to decompose.
+    expect(byArm['drug+exercise'].te).toBeCloseTo(-0.980829, 5);
+    expect(byArm['drug+exercise'].se).toBeCloseTo(0.322749, 5);
+    expect(byArm['drug'].te).toBeCloseTo(-0.538997, 5);
+    expect(byArm['exercise'].te).toBeCloseTo(-0.287682, 5);
+  });
+
+  test('no console errors during the import + run flow', async ({ page }) => {
+    const errors = [];
+    page.on('console', msg => {
+      if (msg.type() !== 'error') return;
+      const t = msg.text();
+      if (t.includes('frame-ancestors') && t.includes('Content Security Policy')) return;
+      if (t.includes('ERR_CONNECTION_REFUSED')) return;
+      errors.push(t);
+    });
+    page.on('pageerror', err => errors.push(err.message));
+    await page.goto(URL);
+    await waitReady(page);
+    await page.evaluate((seed) => window.MaComparisons.write(seed), CSEED);
+    await page.locator('#btn-bus-load').click();
+    expect(errors, 'console errors: ' + errors.join('; ')).toEqual([]);
+  });
+});

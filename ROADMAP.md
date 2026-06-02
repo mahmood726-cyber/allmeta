@@ -84,8 +84,8 @@
   - [x] `MaComparisons.toContrasts()` — arm-level → pairwise `{t1,t2,te,se}` (OR/RR; 0.5 CC on zero-cell). Tested (`test_ma_comparisons_v1.py`)
   - [x] `bayesian-nma`, `nma-inconsistency` wired as readers ("Load from bus" → toContrasts → run). Spec `hub/shared/tests/nma-bus-reader.spec.mjs`
   - [x] `nma-global-inconsistency` reader (5-col `t1,t2,te,se,design`). Fixed `toContrasts.design` to the per-trial arm-set (sorted, ":"-joined) so multi-arm trials group as one design
-  - [ ] `component-nma` reader — components are additive (`drug+exercise | control`); bus treatments need a component-combination mapping
-  - [ ] `nma-dose-response-app` reader — needs per-arm `dose` (bus has the field; format is `study,treatment,dose,effect,se`)
+  - [x] `component-nma` reader — pipe-delimited `armA | armB | te | se` via toContrasts; component treatment names (`drug+exercise`) pass through and the app decomposes them on `+`
+  - [ ] `nma-dose-response-app` reader — **deferred (poor fit)**: needs per-arm `dose` (bus data from nma-pro-v2 usually has none) AND GLST arm-vs-baseline effects where the reference-row `se` feeds shared-reference covariance (Greenland-Longnecker). Would need a dedicated `toDoseResponse` conversion + a dose-bearing bus source; not worth a guessed GLST mapping
   - [ ] `bucher` reader — 3-arm indirect-comparison slice
   - [ ] continuous (MD/SMD) contrasts — blocked: arm contract carries `n` for binary arms only (schema extension needed)
 
