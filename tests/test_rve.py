@@ -109,7 +109,10 @@ def test_summary_uses_t_quantile_for_CI():
         console.log(JSON.stringify({{ se: s.se, half: half, ratio: half / s.se, df: s.df }}));
     """)
     # df = m − p = 5 − 1 = 4; t_0.975(4) = 2.776
-    assert out["df"] == 4
+    # NB: RVE uses a Satterthwaite-type small-sample df, so the engine returns
+    # 4.000000000000001 here (floating-point noise around the exact 4) — compare
+    # with tolerance, not strict float equality.
+    assert abs(out["df"] - 4) < 1e-6
     assert abs(out["ratio"] - 2.776) < 0.02
 
 
