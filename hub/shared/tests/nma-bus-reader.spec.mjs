@@ -98,3 +98,54 @@ for (const app of APPS) {
 
   });
 }
+
+// nma-global-inconsistency consumes a 5-column "t1, t2, te, se, design" format.
+// The design tag must be the per-trial arm-set (shared across a multi-arm trial's
+// contrasts), so the design-by-treatment model groups them as ONE design.
+test.describe('nma-global-inconsistency ← ma-comparisons-v1 reader (with design)', () => {
+  const URL = 'http://localhost:8088/nma-global-inconsistency/';
+
+  test('Load from bus populates 5-column rows with the shared arm-set design', async ({ page }) => {
+    await page.goto(URL);
+    await waitReady(page);
+    const wrote = await page.evaluate((seed) => window.MaComparisons.write(seed), SEED);
+    expect(wrote).toBe(true);
+
+    await page.locator('#btn-bus-load').click();
+
+    const text = await page.inputValue('#src');
+    const lines = text.trim().split('\n');
+    expect(lines.length).toBe(3);
+
+    const byPair = {};
+    const designs = new Set();
+    for (const ln of lines) {
+      const p = ln.split(',').map(s => s.trim());
+      expect(p.length, 'expected 5 columns incl. design').toBe(5);
+      byPair[p[0] + '-' + p[1]] = { te: parseFloat(p[2]), se: parseFloat(p[3]), design: p[4] };
+      designs.add(p[4]);
+    }
+    // All three contrasts of the 3-arm trial share ONE design = the arm-set.
+    expect([...designs]).toEqual(['A:B:C']);
+    expect(byPair['A-B'].te).toBeCloseTo(-0.810930, 5);
+    expect(byPair['A-C'].te).toBeCloseTo(-1.349927, 5);
+    expect(byPair['B-C'].te).toBeCloseTo(-0.538997, 5);
+  });
+
+  test('no console errors during the import + run flow', async ({ page }) => {
+    const errors = [];
+    page.on('console', msg => {
+      if (msg.type() !== 'error') return;
+      const t = msg.text();
+      if (t.includes('frame-ancestors') && t.includes('Content Security Policy')) return;
+      if (t.includes('ERR_CONNECTION_REFUSED')) return;
+      errors.push(t);
+    });
+    page.on('pageerror', err => errors.push(err.message));
+    await page.goto(URL);
+    await waitReady(page);
+    await page.evaluate((seed) => window.MaComparisons.write(seed), SEED);
+    await page.locator('#btn-bus-load').click();
+    expect(errors, 'console errors: ' + errors.join('; ')).toEqual([]);
+  });
+});

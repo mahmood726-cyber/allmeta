@@ -362,6 +362,25 @@ def test_toContrasts_multiarm_emits_all_pairs_same_study():
     assert all(r["study"] == "Tri" for r in out)
     pairs = {(r["treatment1"], r["treatment2"]) for r in out}
     assert pairs == {("A", "B"), ("A", "C"), ("B", "C")}
+    # design-by-treatment grouping: all three share the study's full arm-set,
+    # NOT per-pair tags (which would wrongly split the multi-arm trial).
+    assert {r["design"] for r in out} == {"A:B:C"}
+
+
+def test_toContrasts_two_arm_design_is_sorted_armset():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "control", events: 20, n: 100 }},
+            {{ treatment: "drug",    events: 10, n: 100 }}
+          ]}}
+        ], "OR");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    # Multi-char treatment names: design uses a ":" separator (no collision),
+    # sorted so it is canonical regardless of arm input order.
+    assert out[0]["design"] == "control:drug"
 
 
 def test_toContrasts_skips_underivable_measures():

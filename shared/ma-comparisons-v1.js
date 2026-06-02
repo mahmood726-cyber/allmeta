@@ -271,7 +271,11 @@
    * study). A 0.5 continuity correction is applied ONLY when a study has a zero
    * cell (per advanced-stats.md: unconditional correction biases toward 1).
    * Multi-arm studies emit every pairwise contrast, all tagged with the same
-   * `study` id so a consumer can group them. Only OR/RR are supported: HR/RD and
+   * `study` id AND the same `design` — the study's full arm-set, sorted and
+   * joined by ":" (e.g. a 3-arm A/B/C trial → design "A:B:C" on all three of its
+   * contrasts). This is the design-by-treatment grouping key the global /
+   * node-split inconsistency apps need; a per-pair tag would wrongly split a
+   * multi-arm trial into separate 2-arm designs. Only OR/RR are supported: HR/RD and
    * the continuous measures (MD/SMD) are NOT derivable from the bus here — the
    * arm contract carries `n` for binary arms only (see ma-comparisons-v1.md),
    * so a mean-difference SE cannot be reconstructed. Returns [] for those.
@@ -286,6 +290,9 @@
     for (var i = 0; i < env.studies.length; i++) {
       var s = env.studies[i];
       if (!s || !Array.isArray(s.arms) || s.arms.length < 2) continue;
+      // Design = the study's full arm-set (sorted, ":"-joined), shared by every
+      // pairwise contrast of this study so multi-arm trials group correctly.
+      var design = s.arms.map(function (ar) { return ar.treatment; }).sort().join(":");
       // Decide the per-study 0.5 correction once: apply iff ANY arm in the study
       // has a zero event or zero non-event cell.
       var cc = 0;
@@ -312,7 +319,7 @@
             study: s.id,
             treatment1: x.treatment, treatment2: y.treatment,
             te: te, se: se,
-            design: x.treatment + y.treatment,
+            design: design,
           });
         }
       }
