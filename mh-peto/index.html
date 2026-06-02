@@ -137,6 +137,13 @@ StudyE, 4, 600, 10, 600</textarea>
         <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
         <div id="alm-export-mount"></div>
       </div>
+
+      <!-- cross-tool bus (ma-studies-v1) producer -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Cross-tool:</span>
+        <button type="button" id="btn-bus-save" title="Send the per-study effects (log scale for OR/RR, identity for RD) to the shared ma-studies-v1 bus so forest-plot, funnel-plot, influence and other tools can pool them without re-typing." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">Send to bus</button>
+        <button type="button" id="btn-verify-in-r" title="Push the per-study effects to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">Verify in R</button>
+      </div>
     </section>
   </main>
   <footer>
@@ -488,6 +495,26 @@ StudyE, 4, 600, 10, 600</textarea>
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
 
+    // Cross-tool bus producer (ma-studies-v1): build per-study {label, est, se}
+    // on the contract scale — log for OR/RR ratios, identity for RD. Recomputed
+    // from current inputs so it always matches the on-screen analysis. fromCI
+    // recovers the SE exactly from the per-study CI this app already builds
+    // (the CI was constructed as est ± Z975·se), so no variance is recomputed.
+    window.__mhPetoBusStudies = function () {
+      if (!window.MaStudies || typeof MaStudies.fromCI !== 'function') return [];
+      var rows = parse(document.getElementById('src').value);
+      if (rows.length < 2) return [];
+      var measure = document.getElementById('measure').value;
+      var scale = (measure === 'RD') ? 'linear' : 'ratio';
+      var ps = perStudy(rows, measure);
+      var out = [];
+      for (var i = 0; i < ps.length; i++) {
+        var c = MaStudies.fromCI(ps[i].est, ps[i].lo, ps[i].hi, scale);
+        if (c) out.push({ label: ps[i].label || ('Study ' + (i + 1)), est: c.est, se: c.se });
+      }
+      return out;
+    };
+
     // ---- module init ----
 
     window.alm.csvUpload({
@@ -559,6 +586,43 @@ StudyE, 4, 600, 10, 600</textarea>
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       AlmAutosave.install({ appKey: 'mh-peto' });
+    }
+  });
+})();
+</script>
+
+<script>
+// Cross-tool bus producer wiring (ma-studies-v1). mh-peto's input is 2x2 cell
+// counts, which cannot represent a {est, se} bus row, so this app is WRITE-only
+// (a producer) — there is no "Load from bus". See shared/ma-studies-v1.md.
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (!window.MaStudies) return;
+    function notify(msg, kind) {
+      if (window.Toast && typeof Toast.show === "function") Toast.show(msg, kind || "warn");
+      else if (kind === "error") alert(msg);
+    }
+    function current() {
+      return window.__mhPetoBusStudies ? window.__mhPetoBusStudies() : [];
+    }
+    var save = document.getElementById("btn-bus-save");
+    if (save) {
+      save.addEventListener("click", function () {
+        var s = current();
+        if (!s.length) { notify("Pool at least 2 valid studies before sending to the bus.", "warn"); return; }
+        var ok = MaStudies.write(s);
+        var measure = document.getElementById("measure").value;
+        notify(ok
+          ? ("Sent " + s.length + " per-study " + measure + " effect" + (s.length === 1 ? "" : "s") + " to the shared bus.")
+          : "Could not save to the bus.", ok ? "warn" : "error");
+      });
+    }
+    if (typeof MaStudies.attachVerifyInRButton === "function") {
+      MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: current });
     }
   });
 })();
