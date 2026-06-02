@@ -775,7 +775,15 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (window.TruthCertUI) {
         TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
         TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "forest-plot",
-          getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; } });
+          getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; },
+          // Fold the dual-engine concordance (JS vs live metafor) into the SIGNED
+          // receipt — present only after the user has run "R live". This is the
+          // "exceed metafor" play: a receipt that proves the in-app numbers were
+          // independently cross-verified against metafor, tamper-evidently.
+          getExtra: function () {
+            return (window.AlmWebR && typeof AlmWebR.lastConcordance === "function")
+              ? AlmWebR.lastConcordance() : undefined;
+          } });
       }
       document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {

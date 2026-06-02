@@ -218,6 +218,41 @@
     return runMetafor(merged);
   }
 
+  // ---- Dual-engine concordance ------------------------------------------
+
+  var _lastConcordance = null;
+
+  /**
+   * Field-by-field comparison of a JS engine result against a live-R (metafor)
+   * result. Pure + deterministic — unit-testable without WebR. Produces a block
+   * suitable for folding into a signed TruthCert receipt (opts.extra), so a
+   * reviewer can confirm the in-app numbers matched an independent R run.
+   */
+  function concordance(jsRes, rRes, opts) {
+    opts = opts || {};
+    var tol = (typeof opts.tol === "number") ? opts.tol : 1e-4;
+    var keys = opts.keys || ["mu", "se", "ci_lb", "ci_ub", "tau2", "I2"];
+    var fields = {}, maxAbs = 0, n = 0;
+    keys.forEach(function (k) {
+      var r = rRes ? rRes[k] : undefined, j = jsRes ? jsRes[k] : undefined;
+      if (typeof r === "number" && typeof j === "number" && isFinite(r) && isFinite(j)) {
+        var d = Math.abs(r - j); if (d > maxAbs) maxAbs = d;
+        fields[k] = { r: r, js: j, absDelta: d };
+        n++;
+      }
+    });
+    return {
+      engine: "metafor",
+      method: opts.method || null,
+      fields: fields,
+      maxAbsDelta: maxAbs,
+      tol: tol,
+      withinTol: n > 0 && maxAbs <= tol,
+    };
+  }
+
+  function lastConcordance() { return _lastConcordance; }
+
   // ---- Inline modal renderer (drop-in for any app) ----------------------
 
   function _modalHTML() {
@@ -286,7 +321,16 @@
             _setOutput('<strong style="color:#a00">' + (res.error || "Unknown error") + '</strong>');
             return;
           }
+          // Compute + store the concordance so the app's TruthCert receipt can
+          // fold in a signed "cross-verified vs live metafor" block.
+          var conc = concordance(jsRes, res.result, { method: opts.method || "REML", tol: opts.tol });
+          try { conc.checkedAt = new Date().toISOString(); } catch (_) {}
+          _lastConcordance = conc;
           var rows = "";
+          rows += '<div style="margin:0 0 0.6rem;padding:0.45rem 0.7rem;border-radius:6px;font-weight:600;' +
+            (conc.withinTol ? "background:#e7f6ec;color:#1f7a44" : "background:#fdeaea;color:#a02929") + '">' +
+            (conc.withinTol ? "✓ Concordant with metafor" : "✗ Divergence vs metafor") +
+            ' — max|Δ| = ' + conc.maxAbsDelta.toExponential(1) + ' (tol ' + conc.tol.toExponential(0) + ')</div>';
           var keys = ["mu", "se", "ci_lb", "ci_ub", "tau2", "I2", "k"];
           rows += "<table style=\"width:100%;border-collapse:collapse;font-size:0.85rem\">";
           rows += "<tr><th style=\"text-align:left;padding:0.25rem 0.4rem\">Field</th>" +
@@ -329,6 +373,8 @@
     runMetafor: runMetafor,
     runMetaforFromBus: runMetaforFromBus,
     attachLiveButton: attachLiveButton,
+    concordance: concordance,
+    lastConcordance: lastConcordance,
     showModal: showModal,
     buildReproScript: buildReproScript,
     downloadRScript: downloadRScript,

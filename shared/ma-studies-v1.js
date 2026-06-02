@@ -410,6 +410,11 @@
       producedBy: producedBy,
       studies: env.studies,
     };
+    // Optional caller-supplied block folded into the SIGNED message (e.g. a
+    // dual-engine concordance: JS vs live metafor). Tamper-evident — altering it
+    // after signing breaks the MAC. Only included when present, so older receipts
+    // (and verification of them) are unaffected.
+    if (opts && opts.extra !== undefined) payload.extra = opts.extra;
     var msg = JSON.stringify(_canonicalize(payload));
 
     try {
@@ -424,15 +429,16 @@
       var keyHint = _bytesToHex(khBuf).slice(0, 8);
       return {
         ok: true,
-        receipt: {
+        receipt: Object.assign({
           _schema: payload._schema,
           _signedAt: payload._signedAt,
           producedBy: payload.producedBy,
           studies: payload.studies,
+        }, (payload.extra !== undefined ? { extra: payload.extra } : {}), {
           alg: "HMAC-SHA-256",
           keyHint: keyHint,
           signature: sig,
-        },
+        }),
       };
     } catch (e) {
       return { ok: false, error: "sign failed: " + (e && e.message ? e.message : String(e)) };
@@ -475,6 +481,9 @@
       producedBy: receipt.producedBy,
       studies: receipt.studies,
     };
+    // `extra` (e.g. dual-engine concordance) is part of the signed payload when
+    // present; same backward-compat rule as producedBy.
+    if (receipt.extra !== undefined) payload.extra = receipt.extra;
     var msg = JSON.stringify(_canonicalize(payload));
 
     try {

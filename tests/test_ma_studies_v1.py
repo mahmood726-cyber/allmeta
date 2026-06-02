@@ -486,3 +486,57 @@ def test_verifyTruthCert_backward_compat_with_old_receipts_without_producedBy():
     """)
     assert out["ok"] is True
     assert out["valid"] is True, "old receipts without producedBy must still verify"
+
+
+# --- signed `extra` block (dual-engine concordance) — added 2026-06-02 --------
+
+
+def test_toTruthCert_signs_and_carries_extra():
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const conc = {{ engine: "metafor", maxAbsDelta: 3e-7, tol: 1e-4, withinTol: true }};
+          const r = await M.toTruthCert([{{ label: "A", est: 0.1, se: 0.05 }}], {{ key: "k", extra: conc }});
+          const chk = await M.verifyTruthCert(r.receipt, {{ key: "k" }});
+          console.log(JSON.stringify({{
+            hasExtra: !!r.receipt.extra,
+            within: r.receipt.extra && r.receipt.extra.withinTol,
+            valid: chk.valid
+          }}));
+        }})();
+    """)
+    assert out["hasExtra"] is True
+    assert out["within"] is True
+    assert out["valid"] is True
+
+
+def test_verifyTruthCert_rejects_tampered_extra():
+    # The concordance block is in the SIGNED payload — flipping its verdict
+    # after signing must break the MAC.
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const r = await M.toTruthCert(
+            [{{ label: "A", est: 0.1, se: 0.05 }}],
+            {{ key: "k", extra: {{ engine: "metafor", withinTol: true, maxAbsDelta: 1e-9 }} }});
+          r.receipt.extra.withinTol = false;   // tamper
+          const chk = await M.verifyTruthCert(r.receipt, {{ key: "k" }});
+          console.log(JSON.stringify(chk));
+        }})();
+    """)
+    assert out["ok"] is True
+    assert out["valid"] is False
+
+
+def test_receipt_without_extra_still_verifies():
+    # Backward-compat: no extra block -> verifies fine (no spurious field).
+    out = _run_node(f"""
+        (async () => {{
+          const M = require({json.dumps(str(MODULE))});
+          const r = await M.toTruthCert([{{ label: "A", est: 0.1, se: 0.05 }}], {{ key: "k" }});
+          const chk = await M.verifyTruthCert(r.receipt, {{ key: "k" }});
+          console.log(JSON.stringify({{ hasExtra: "extra" in r.receipt, valid: chk.valid }}));
+        }})();
+    """)
+    assert out["hasExtra"] is False
+    assert out["valid"] is True

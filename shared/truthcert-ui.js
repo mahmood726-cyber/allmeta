@@ -132,7 +132,7 @@
 
   // ----- receipt download ------------------------------------------------
 
-  async function downloadReceipt(studies, basename) {
+  async function downloadReceipt(studies, basename, extra) {
     if (!global.MaStudies || typeof global.MaStudies.toTruthCert !== "function") {
       toast("TruthCert engine not loaded.", "error");
       return false;
@@ -146,7 +146,9 @@
       toast("No studies to sign.", "warn");
       return false;
     }
-    var res = await global.MaStudies.toTruthCert(studies, { key: getKey() });
+    var signOpts = { key: getKey() };
+    if (extra !== undefined && extra !== null) signOpts.extra = extra;
+    var res = await global.MaStudies.toTruthCert(studies, signOpts);
     if (!res || !res.ok) {
       toast("Could not sign: " + (res && res.error ? res.error : "unknown error"), "error");
       return false;
@@ -190,7 +192,12 @@
     var el = _el(opts.btn);
     if (!el) return false;
     el.addEventListener("click", function () {
-      downloadReceipt(_resolveStudies(opts), opts.basename);
+      // Optional signed side-band (e.g. dual-engine concordance vs live metafor).
+      var extra;
+      if (typeof opts.getExtra === "function") {
+        try { extra = opts.getExtra(); } catch (_) { extra = undefined; }
+      }
+      downloadReceipt(_resolveStudies(opts), opts.basename, extra);
     });
     return true;
   }
