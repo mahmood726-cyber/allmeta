@@ -75,7 +75,7 @@
 > Verify-in-R=17**. Remaining work is gap-filling, not greenfield.
 - [x] Define `ma-studies-v1` schema — `shared/ma-studies-v1.js` + `.md`, plus `ma-pooled-v1` and `ma-comparisons-v1` extensions, with fixtures under `tests/fixtures/ma-studies-v1/`
 - [x] Validator — `MaStudies.validate(p)` → `{ok, errors[]}`; `read`/`write`/`merge`/`parseCSV`/`toCSV`/`attachButtons` helpers
-- [~] Wire export into pooling apps — **18/~24 poolable apps write** (forest, funnel, heterogeneity, meta-reg, bayesian-ma/mcmc, cumulative-subgroup, tsa, workbench, influence, gosh, gosh-metareg, pet-peese, pubbias-tests, copas, limit-ma, nma-pro-v2, rct-extractor). **Gap:** `mh-peto`, `proportion-ma` (load helper, sit inert — 2×2/events input needs a producer adapter)
+- [~] Wire export into pooling apps — **20/~24 poolable apps write** (forest, funnel, heterogeneity, meta-reg, bayesian-ma/mcmc, cumulative-subgroup, tsa, workbench, influence, gosh, gosh-metareg, pet-peese, pubbias-tests, copas, limit-ma, nma-pro-v2, rct-extractor, **mh-peto**, **proportion-ma**). mh-peto (2×2) + proportion-ma (events/n) wired 2026-06-02 as WRITE-only producers (log-scale OR/RR / identity RD; logit PLO respectively) — specs `hub/shared/tests/{mh-peto,proportion-ma}-bus.spec.mjs`
 - [~] Wire import into pooling apps — 20 read; `grade-sof` reads-only, `webr-validator` reads-only (correct, it's a consumer)
 - [~] TruthCert receipt extension — present on ~20 apps; not yet universal
 - [~] "Verify in R" deep-link — 17 apps; **gap:** `nma-pro-v2`, `workbench` (have pooled results, no R link)
