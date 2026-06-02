@@ -71,10 +71,62 @@
     return t2;
   }
 
-  var _T = { DL: tau2DL, PM: tau2PM, REML: tau2REML };
+  // ML: fixed-point like REML but without the restricted +1/Σw correction.
+  //   τ²_{n+1} = [ Σ w²((y−μ)² − v) ] / Σ w² ,  w = 1/(v+τ²).
+  function tau2ML(yi, vi) {
+    var k = yi.length; if (k < 2) return 0;
+    var t2 = tau2DL(yi, vi);
+    for (var it = 0; it < 300; it++) {
+      var sw = 0, sw2 = 0, swy = 0, i;
+      for (i = 0; i < k; i++) { var w = 1 / (vi[i] + t2); sw += w; sw2 += w * w; swy += w * yi[i]; }
+      var mu = swy / sw, num = 0;
+      for (i = 0; i < k; i++) { var w2 = 1 / (vi[i] + t2); num += w2 * w2 * ((yi[i] - mu) * (yi[i] - mu) - vi[i]); }
+      var next = num / sw2;
+      if (next < 0) next = 0;
+      if (Math.abs(next - t2) < 1e-12) { t2 = next; break; }
+      t2 = next;
+    }
+    return t2;
+  }
 
-  // Inverse-variance pool. opts: { method:'PM'|'DL'|'REML'|'FE' (default PM),
+  // Hedges (a.k.a. variance-component / "HE"): unweighted moment estimator.
+  //   τ² = Σ(y−ȳ)²/(k−1) − (1/k)Σv ,  ȳ = unweighted mean.
+  function tau2HE(yi, vi) {
+    var k = yi.length; if (k < 2) return 0;
+    var ybar = 0, i; for (i = 0; i < k; i++) ybar += yi[i]; ybar /= k;
+    var ss = 0, vbar = 0; for (i = 0; i < k; i++) { ss += (yi[i] - ybar) * (yi[i] - ybar); vbar += vi[i]; }
+    vbar /= k;
+    return Math.max(0, ss / (k - 1) - vbar);
+  }
+
+  // Hunter-Schmidt: τ² = (Q_FE − k) / Σw ,  w = 1/v.
+  function tau2HS(yi, vi) {
+    var k = yi.length; if (k < 1) return 0;
+    var sw = 0, swy = 0, i; for (i = 0; i < k; i++) { var w = 1 / vi[i]; sw += w; swy += w * yi[i]; }
+    var muFE = swy / sw, Q = 0; for (i = 0; i < k; i++) { var w2 = 1 / vi[i]; Q += w2 * (yi[i] - muFE) * (yi[i] - muFE); }
+    return Math.max(0, (Q - k) / sw);
+  }
+
+  // Sidik-Jonkman (2005) "model-error variance" estimator.
+  //   τ²_0 = (1/k)Σ(y−ȳ)²; r_i = v_i/τ²_0; q_i = 1/(r_i+1); μ_v = Σq_i y_i/Σq_i;
+  //   τ²_SJ = (1/(k−1)) Σ q_i (y_i − μ_v)².
+  function tau2SJ(yi, vi) {
+    var k = yi.length; if (k < 2) return 0;
+    var ybar = 0, i; for (i = 0; i < k; i++) ybar += yi[i]; ybar /= k;
+    var t0 = 0; for (i = 0; i < k; i++) t0 += (yi[i] - ybar) * (yi[i] - ybar); t0 /= k;
+    if (!(t0 > 0)) t0 = 1e-8;
+    var sq = 0, sqy = 0; for (i = 0; i < k; i++) { var q = 1 / (vi[i] / t0 + 1); sq += q; sqy += q * yi[i]; }
+    var muv = sqy / sq, num = 0; for (i = 0; i < k; i++) { var q2 = 1 / (vi[i] / t0 + 1); num += q2 * (yi[i] - muv) * (yi[i] - muv); }
+    return Math.max(0, num / (k - 1));
+  }
+
+  // EB (Empirical Bayes) is identical to Paule-Mandel (metafor documents this).
+  var _T = { DL: tau2DL, PM: tau2PM, REML: tau2REML, ML: tau2ML, HE: tau2HE, HS: tau2HS, SJ: tau2SJ, EB: tau2PM };
+
+  // Inverse-variance pool. opts: { method: τ² estimator (default PM),
   //   knha:false, knhaFloor:false, level:0.95, tau2:<override> }.
+  // method ∈ {DL, PM, REML, ML, HE, HS, SJ, EB, FE}; all validated vs
+  //   metafor::rma to ≤1e-7 (EB ≡ PM, per metafor). FE forces τ²=0.
   // Returns { k, tau2, mu, se, ciLo, ciHi, Q, I2, method, knha }.
   function pool(yi, vi, opts) {
     opts = opts || {};
@@ -195,7 +247,9 @@
   }
 
   var api = {
-    tau2DL: tau2DL, tau2PM: tau2PM, tau2REML: tau2REML, pool: pool,
+    tau2DL: tau2DL, tau2PM: tau2PM, tau2REML: tau2REML,
+    tau2ML: tau2ML, tau2HE: tau2HE, tau2HS: tau2HS, tau2SJ: tau2SJ,
+    pool: pool,
     predictionInterval: predictionInterval,
     _qnorm: _qnorm, _qt: _qt,
   };

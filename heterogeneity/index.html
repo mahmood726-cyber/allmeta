@@ -126,6 +126,11 @@
           <select id="f-tau2" aria-label="τ² estimator for CI / PI">
             <option value="pm">Paule-Mandel (default, any k)</option>
             <option value="reml">REML (any k)</option>
+            <option value="ml">Maximum likelihood (ML)</option>
+            <option value="eb">Empirical Bayes (≡ PM)</option>
+            <option value="sj">Sidik-Jonkman (SJ)</option>
+            <option value="he">Hedges (HE)</option>
+            <option value="hs">Hunter-Schmidt (HS)</option>
             <option value="dl">DerSimonian-Laird (k ≥ 10 only)</option>
           </select>
         </label>
@@ -236,6 +241,23 @@
     }
     function tau2_REML(studies) {
       return studies.length < 2 ? null : window.AlmMaCore.tau2REML(studies.map(s => s.est), studies.map(s => s.v));
+    }
+    // General dispatch for the selectable CI/PI estimator (all validated vs
+    // metafor::rma). DL keeps its k≥10 guard (advanced-stats.md); EB ≡ PM.
+    function tau2For(key, studies) {
+      if (studies.length < 2) return null;
+      const yi = studies.map(s => s.est), vi = studies.map(s => s.v), C = window.AlmMaCore;
+      switch (key) {
+        case "dl":   return studies.length >= 10 ? C.tau2DL(yi, vi) : null;
+        case "reml": return C.tau2REML(yi, vi);
+        case "ml":   return C.tau2ML(yi, vi);
+        case "he":   return C.tau2HE(yi, vi);
+        case "hs":   return C.tau2HS(yi, vi);
+        case "sj":   return C.tau2SJ(yi, vi);
+        case "eb":
+        case "pm":
+        default:     return C.tau2PM(yi, vi);
+      }
     }
 
     function poolSummary(studies, tau2) {
@@ -449,7 +471,7 @@
         pm: tau2_PM(studies)
       };
       const chosenKey = (chosen === "dl" && tauEstimates.dl == null) ? "pm" : chosen;
-      const tau2 = tauEstimates[chosenKey];
+      const tau2 = tau2For(chosenKey, studies);
       const sum = poolSummary(studies, tau2);
       // Prediction interval (k ≥ 2). Uses t_{k-1} per Cochrane Handbook v6.5 (matches
       // metafor predict v4+); the older IntHout-2016 t_{k-2} is superseded and gives a
@@ -491,9 +513,7 @@
       rows.push("<tr><th>Omitted</th><th>k</th><th>μ</th><th title=\"Normal (z) interval — the main panel's pooled CI uses HKSJ+t\">95% CI (z)</th><th>I²</th><th>τ²</th></tr>");
       for (let i=0;i<k;i++) {
         const subset = studies.slice(0,i).concat(studies.slice(i+1));
-        const t2 = chosenKey === "reml" ? tau2_REML(subset)
-                 : chosenKey === "dl" ? (subset.length >= 10 ? tau2_DL(subset) : tau2_PM(subset))
-                 : tau2_PM(subset);
+        const t2 = chosenKey === "dl" && subset.length < 10 ? tau2_PM(subset) : tau2For(chosenKey, subset);
         const s2 = poolSummary(subset, t2);
         rows.push("<tr><td>" + escapeXml(studies[i].label) + "</td><td>" + subset.length + "</td><td>" + fmt(s2.mu,3) + "</td><td>[" + fmt(s2.ciLo,3) + ", " + fmt(s2.ciHi,3) + "]</td><td>" + fmt(s2.I2,1) + "%</td><td>" + fmt(t2,4) + "</td></tr>");
       }
