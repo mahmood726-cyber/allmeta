@@ -77,8 +77,8 @@
 - [x] Validator — `MaStudies.validate(p)` → `{ok, errors[]}`; `read`/`write`/`merge`/`parseCSV`/`toCSV`/`attachButtons` helpers
 - [~] Wire export into pooling apps — **20/~24 poolable apps write** (forest, funnel, heterogeneity, meta-reg, bayesian-ma/mcmc, cumulative-subgroup, tsa, workbench, influence, gosh, gosh-metareg, pet-peese, pubbias-tests, copas, limit-ma, nma-pro-v2, rct-extractor, **mh-peto**, **proportion-ma**). mh-peto (2×2) + proportion-ma (events/n) wired 2026-06-02 as WRITE-only producers (log-scale OR/RR / identity RD; logit PLO respectively) — specs `hub/shared/tests/{mh-peto,proportion-ma}-bus.spec.mjs`
 - [~] Wire import into pooling apps — 20 read; `grade-sof` reads-only, `webr-validator` reads-only (correct, it's a consumer)
-- [~] TruthCert receipt extension — present on ~20 apps; not yet universal
-- [~] "Verify in R" deep-link — 17 apps; **gap:** `nma-pro-v2`, `workbench` (have pooled results, no R link)
+- [~] TruthCert receipt extension — `MaStudies.toTruthCert` helper exists + tested, but only ~1 catalog numeric app wires a receipt UI. Genuine remaining sweep (key mgmt + emit/download UI per app)
+- [x] "Verify in R" deep-link — pairwise bus-writers all have it; `workbench` wired 2026-06-02 (spec `hub/shared/tests/workbench-verify-in-r.spec.mjs`); `nma-pro-v2` has its own "Validate with R". NMA/DTA/RMST/p-curve apps intentionally excluded (their results don't map to webr-validator's pairwise `metafor::rma`)
 - [x] **NMA cluster bus integration via `ma-comparisons-v1`** — complete (2026-06-02): producer + all 6 readers wired
   - [x] `nma-pro-v2` already read+write (producer of the arm-level network)
   - [x] `MaComparisons.toContrasts()` — arm-level → pairwise `{t1,t2,te,se}` (OR/RR; 0.5 CC on zero-cell). Tested (`test_ma_comparisons_v1.py`)

@@ -122,6 +122,7 @@
         <button type="button" id="btn-save-bus" class="primary">↑ Save to shared bus</button>
         <button type="button" id="btn-push-grade" title="Push the headline pooled estimate (input-scale point + 95% CI) to the GRADE SoF builder via the ma-pooled-v1 bus. For ratio measures (OR/RR/HR), use Forest Plot’s exponentiated scale so GRADE gets the back-transformed value.">→ GRADE</button>
         <button type="button" id="btn-load-bus">↓ Load from bus</button>
+        <button type="button" id="btn-verify-in-r" title="Push the current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser.">Verify in R</button>
         <button type="button" id="btn-report">Download full HTML report</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
@@ -613,6 +614,12 @@
       document.getElementById("btn-save-bus").addEventListener("click", onSaveBus);
       document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
       document.getElementById("btn-load-bus").addEventListener("click", onLoadBus);
+      if (window.MaStudies && typeof MaStudies.attachVerifyInRButton === "function") {
+        MaStudies.attachVerifyInRButton({
+          btn: "#btn-verify-in-r",
+          getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; },
+        });
+      }
       document.getElementById("btn-report").addEventListener("click", onDownloadReport);
       document.getElementById("btn-example").addEventListener("click", onExample);
       document.getElementById("btn-reset").addEventListener("click", onReset);
