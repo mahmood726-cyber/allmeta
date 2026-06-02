@@ -7,13 +7,26 @@ import subprocess
 from pathlib import Path
 import pytest
 
-RSCRIPT = r"C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
+# Explicit override wins; else any R-*/bin install under the standard Windows
+# location (newest first); else PATH. Version-agnostic so the parity harnesses
+# run against whatever R is installed (4.5, 4.6, …) without per-version edits.
+import os
 
 
 def _rscript_path() -> str | None:
-    if Path(RSCRIPT).is_file():
-        return RSCRIPT
-    return shutil.which("Rscript")
+    env = os.environ.get("RSCRIPT")
+    if env and Path(env).is_file():
+        return env
+    on_path = shutil.which("Rscript")
+    if on_path:
+        return on_path
+    for base in (r"C:\Program Files\R", r"C:\Program Files\Microsoft\R Open"):
+        b = Path(base)
+        if b.is_dir():
+            cands = sorted(b.glob(r"R-*/bin/Rscript.exe"), reverse=True)
+            if cands:
+                return str(cands[0])
+    return None
 
 
 def assert_r_parity(

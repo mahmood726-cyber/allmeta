@@ -66,7 +66,12 @@ TOL_BEGG   = 1e-4   # Begg p-value is approximate (ties warning from R)
 def _rscript():
     if Path(RSCRIPT_PATH).is_file():
         return RSCRIPT_PATH
-    return shutil.which("Rscript")
+    found = shutil.which("Rscript")
+    if found:
+        return found
+    import glob as _glob
+    _c = sorted(_glob.glob("C:/Program Files/R/R-*/bin/Rscript.exe"), reverse=True)
+    return _c[0] if _c else None
 
 
 def _run_r():
