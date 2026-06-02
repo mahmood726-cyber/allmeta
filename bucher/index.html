@@ -442,5 +442,48 @@
   });
 })();
 </script>
+
+<script>
+// ma-comparisons-v1 reader: import the shared arm-level network as pairwise
+// contrasts via toContrasts (log-OR/RR), then reuse the app's existing
+// __almBucherLoad (which groups/pools by pair and fills the AC/BC triangle from
+// the first two arms). For a star network (all-vs-control), those two arms share
+// the comparator and give the natural A-vs-B-via-control indirect estimate; the
+// user can edit the four fields to pick a different triangle.
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    var runBtn = document.getElementById("btn-run");
+    if (!runBtn || !window.MaComparisons || typeof MaComparisons.toContrasts !== "function"
+        || typeof window.__almBucherLoad !== "function") return;
+    if (document.getElementById("btn-bus-load")) return; // idempotent
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "btn-bus-load";
+    btn.textContent = "Load from bus";
+    btn.title = "Import the shared ma-comparisons-v1 network (arm-level events/n), converted to contrast log-OR/RR. Fills the Bucher triangle from the first two arms sharing a comparator; edit the fields to choose a different one.";
+    btn.style.cssText = "width:100%;margin-top:0.5rem;border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit";
+    runBtn.insertAdjacentElement("afterend", btn);
+    function notify(msg) { if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn"); }
+    btn.addEventListener("click", function () {
+      var env = MaComparisons.read();
+      if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
+      var contrasts = MaComparisons.toContrasts(env);
+      if (contrasts.length < 2) { notify("Need >= 2 contrasts (OR/RR only) to form a Bucher triangle."); return; }
+      var rows = contrasts.map(function (c) {
+        return { treat1: c.treatment1, treat2: c.treatment2, TE: c.te, seTE: c.se };
+      });
+      // toContrasts emits log-scale effects for OR/RR — display back-transformed.
+      var sc = document.getElementById("scale");
+      if (sc) sc.value = "log";
+      window.__almBucherLoad(rows);
+      notify("Loaded " + rows.length + " contrasts; filled the triangle from the first two arms.");
+    });
+  });
+})();
+</script>
 </body>
 </html>

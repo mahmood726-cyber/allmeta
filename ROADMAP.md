@@ -86,7 +86,7 @@
   - [x] `nma-global-inconsistency` reader (5-col `t1,t2,te,se,design`). Fixed `toContrasts.design` to the per-trial arm-set (sorted, ":"-joined) so multi-arm trials group as one design
   - [x] `component-nma` reader — pipe-delimited `armA | armB | te | se` via toContrasts; component treatment names (`drug+exercise`) pass through and the app decomposes them on `+`
   - [ ] `nma-dose-response-app` reader — **deferred (poor fit)**: needs per-arm `dose` (bus data from nma-pro-v2 usually has none) AND GLST arm-vs-baseline effects where the reference-row `se` feeds shared-reference covariance (Greenland-Longnecker). Would need a dedicated `toDoseResponse` conversion + a dose-bearing bus source; not worth a guessed GLST mapping
-  - [ ] `bucher` reader — 3-arm indirect-comparison slice
+  - [x] `bucher` reader — maps toContrasts into the existing `__almBucherLoad` (pools by pair, fills the AC/BC triangle from the first two arms; star networks give A-vs-B-via-control). Spec covers field prefill + indirect estimate
   - [ ] continuous (MD/SMD) contrasts — blocked: arm contract carries `n` for binary arms only (schema extension needed)
 
 ### Phase D — Discoverability + ecosystem
