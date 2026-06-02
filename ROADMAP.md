@@ -79,7 +79,15 @@
 - [~] Wire import into pooling apps — 20 read; `grade-sof` reads-only, `webr-validator` reads-only (correct, it's a consumer)
 - [~] TruthCert receipt extension — present on ~20 apps; not yet universal
 - [~] "Verify in R" deep-link — 17 apps; **gap:** `nma-pro-v2`, `workbench` (have pooled results, no R link)
-- [ ] **NMA cluster bus integration via `ma-comparisons-v1`** — 7 nma-* apps + `bucher`/`dta-sroc`/`hsroc` load a helper but are inert (multi-arm/2×2 shape needs the comparisons schema wired through)
+- [~] **NMA cluster bus integration via `ma-comparisons-v1`** (started 2026-06-02)
+  - [x] `nma-pro-v2` already read+write (producer of the arm-level network)
+  - [x] `MaComparisons.toContrasts()` — arm-level → pairwise `{t1,t2,te,se}` (OR/RR; 0.5 CC on zero-cell). Tested (`test_ma_comparisons_v1.py`)
+  - [x] `bayesian-nma`, `nma-inconsistency` wired as readers ("Load from bus" → toContrasts → run). Spec `hub/shared/tests/nma-bus-reader.spec.mjs`
+  - [ ] `nma-global-inconsistency` reader — **needs design = full arm-set per trial** (current `toContrasts.design` is per-pair `t1+t2`, correct only for 2-arm; design-by-treatment needs the multi-arm design tag)
+  - [ ] `component-nma` reader — components are additive (`drug+exercise | control`); bus treatments need a component-combination mapping
+  - [ ] `nma-dose-response-app` reader — needs per-arm `dose` (bus has the field; format is `study,treatment,dose,effect,se`)
+  - [ ] `bucher` reader — 3-arm indirect-comparison slice
+  - [ ] continuous (MD/SMD) contrasts — blocked: arm contract carries `n` for binary arms only (schema extension needed)
 
 ### Phase D — Discoverability + ecosystem
 - [ ] Zenodo concept-DOI for repo (manual: connect GH → Zenodo, push v1.0.0 tag)
