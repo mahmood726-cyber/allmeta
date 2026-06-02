@@ -74,6 +74,7 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/ma-core.js"></script>
 <script src="../shared/heterogeneity-ci.js"></script>
 <script src="../shared/ma-pooled-v1.js"></script>
@@ -123,6 +124,8 @@
         <button type="button" id="btn-push-grade" title="Push the headline pooled estimate (input-scale point + 95% CI) to the GRADE SoF builder via the ma-pooled-v1 bus. For ratio measures (OR/RR/HR), use Forest Plot’s exponentiated scale so GRADE gets the back-transformed value.">→ GRADE</button>
         <button type="button" id="btn-load-bus">↓ Load from bus</button>
         <button type="button" id="btn-verify-in-r" title="Push the current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser.">Verify in R</button>
+        <button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies — a peer reviewer with your signing key can re-verify it offline.">TruthCert receipt</button>
+        <button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps).">🔑 Key</button>
         <button type="button" id="btn-report">Download full HTML report</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
@@ -617,6 +620,13 @@
       if (window.MaStudies && typeof MaStudies.attachVerifyInRButton === "function") {
         MaStudies.attachVerifyInRButton({
           btn: "#btn-verify-in-r",
+          getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; },
+        });
+      }
+      if (window.TruthCertUI) {
+        TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
+        TruthCertUI.attachReceiptButton({
+          btn: "#btn-truthcert", basename: "workbench",
           getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; },
         });
       }
