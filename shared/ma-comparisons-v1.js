@@ -327,6 +327,74 @@
     return out;
   }
 
+  /**
+   * Flatten an arm-level comparisons envelope into the per-arm dose-response rows
+   * that nma-dose-response-app consumes:
+   *
+   *   [{ study, treatment, dose, effect, se }, ...]
+   *
+   * Within each study the lowest-dose arm is the reference: it is emitted as the
+   * anchor row (effect 0, se null — the app defaults a missing/zero SE to unit
+   * weight). Every other arm is emitted as its log-effect vs that reference:
+   *   OR → effect = ln((eX·(nR-eR))/(eR·(nX-eX))), se = sqrt(1/eX+1/(nX-eX)+1/eR+1/(nR-eR))
+   *   RR → effect = ln((eX/nX)/(eR/nR)),           se = sqrt(1/eX-1/nX+1/eR-1/nR)
+   * with the per-study 0.5 continuity correction on a zero cell. Requirements:
+   *   - effectMeasure OR/RR (binary; HR/RD/MD/SMD return []);
+   *   - EVERY arm in the study carries a finite `dose` (else that study is
+   *     skipped — a dose-response fit is meaningless without doses).
+   */
+  function toDoseResponse(env, opts) {
+    opts = opts || {};
+    var out = [];
+    if (!env || !Array.isArray(env.studies)) return out;
+    var measure = nonEmptyString(env.effectMeasure) ? env.effectMeasure : (opts.measure || "OR");
+    var isOR = measure === "OR", isRR = measure === "RR";
+    if (!isOR && !isRR) return out;
+    for (var i = 0; i < env.studies.length; i++) {
+      var s = env.studies[i];
+      if (!s || !Array.isArray(s.arms) || s.arms.length < 2) continue;
+      // Require a finite dose on every arm.
+      var allDosed = true;
+      for (var d = 0; d < s.arms.length; d++) {
+        if (!isFiniteNumber(s.arms[d].dose)) { allDosed = false; break; }
+      }
+      if (!allDosed) continue;
+      // Reference = lowest-dose arm.
+      var ref = s.arms[0];
+      for (var r = 1; r < s.arms.length; r++) {
+        if (s.arms[r].dose < ref.dose) ref = s.arms[r];
+      }
+      // Per-study 0.5 correction iff any zero cell.
+      var cc = 0;
+      for (var z = 0; z < s.arms.length; z++) {
+        var az = s.arms[z];
+        if (az.events === 0 || (az.n - az.events) === 0) { cc = 0.5; break; }
+      }
+      var eR = ref.events + cc, neR = (ref.n - ref.events) + cc;
+      if (!(eR > 0) || !(neR > 0)) continue;
+      // Anchor row: reference arm at effect 0 (se null -> unit weight).
+      out.push({ study: s.id, treatment: ref.treatment, dose: ref.dose, effect: 0, se: null });
+      for (var a = 0; a < s.arms.length; a++) {
+        var x = s.arms[a];
+        if (x === ref) continue;
+        var eX = x.events + cc, neX = (x.n - x.events) + cc;
+        if (!(eX > 0) || !(neX > 0)) continue;
+        var effect, se;
+        if (isOR) {
+          effect = Math.log((eX * neR) / (eR * neX));
+          se = Math.sqrt(1 / eX + 1 / neX + 1 / eR + 1 / neR);
+        } else { // RR
+          var nX = x.n + (cc ? 2 * cc : 0), nR = ref.n + (cc ? 2 * cc : 0);
+          effect = Math.log((eX / nX) / (eR / nR));
+          se = Math.sqrt(1 / eX - 1 / nX + 1 / eR - 1 / nR);
+        }
+        if (!isFiniteNumber(effect) || !isFiniteNumber(se) || !(se > 0)) continue;
+        out.push({ study: s.id, treatment: x.treatment, dose: x.dose, effect: effect, se: se });
+      }
+    }
+    return out;
+  }
+
   // ----- Public API -------------------------------------------------------
 
   var api = {
@@ -344,6 +412,7 @@
     fromBinaryTriplets: fromBinaryTriplets,
     toNmaProStudies: toNmaProStudies,
     toContrasts: toContrasts,
+    toDoseResponse: toDoseResponse,
   };
 
   if (typeof module !== "undefined" && module.exports) {

@@ -1830,6 +1830,7 @@
         </div>
         <div class="actions" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <button id="loadSample" aria-label="Load sample dataset">Load sample</button>
+          <button class="secondary" id="btn-bus-load" aria-label="Load network from the shared ma-comparisons-v1 bus" title="Import the shared ma-comparisons-v1 network as dose-response rows (per-arm log-OR/RR vs the lowest-dose reference). Requires binary OR/RR studies whose arms carry a dose.">Load from bus</button>
           <button class="secondary" id="parseCsv" aria-label="Parse CSV data from text area">Parse CSV</button>
           <button id="runAnalysis" style="background: linear-gradient(135deg, #00ba7c, #1d9bf0); font-size: 16px; padding: 12px 24px; font-weight: 700;" aria-label="Run analysis on parsed data">▶ Run Analysis</button>
         </div>
@@ -6137,5 +6138,50 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
   </footer>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
+
+<script>
+// ma-comparisons-v1 reader: import the shared arm-level network as dose-response
+// rows via MaComparisons.toDoseResponse (per-arm log-OR/RR vs the lowest-dose
+// reference; the reference arm is the dose-0 anchor). Writes the app's CSV
+// format (study,treatment,dose,effect,se) into the data box and triggers the
+// existing Parse CSV flow. Requires binary studies whose arms carry a dose.
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    var btn = document.getElementById("btn-bus-load");
+    var ta = document.getElementById("csvInput");
+    var parseBtn = document.getElementById("parseCsv");
+    if (!btn || !ta || !parseBtn || !window.MaComparisons
+        || typeof MaComparisons.toDoseResponse !== "function") return;
+    function notify(msg) {
+      if (typeof showNotification === "function") { showNotification(msg, "info"); return; }
+      if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn");
+    }
+    btn.addEventListener("click", function () {
+      var env = MaComparisons.read();
+      if (!env || !Array.isArray(env.studies) || !env.studies.length) {
+        notify("Shared network bus is empty."); return;
+      }
+      var rows = MaComparisons.toDoseResponse(env);
+      if (!rows.length) {
+        notify("No usable rows: dose-response import needs binary (OR/RR) studies whose arms all carry a dose.");
+        return;
+      }
+      var lines = ["study,treatment,dose,effect,se"];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        lines.push([r.study, r.treatment, r.dose, r.effect, r.se == null ? "" : r.se].join(","));
+      }
+      ta.value = lines.join("\n");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      parseBtn.click(); // parse + run analysis
+      notify("Loaded " + rows.length + " dose-response rows from the shared bus.");
+    });
+  });
+})();
+</script>
 </body>
 </html>

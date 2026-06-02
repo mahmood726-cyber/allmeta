@@ -396,3 +396,68 @@ def test_toContrasts_skips_underivable_measures():
         console.log(JSON.stringify(M.toContrasts(env)));
     """)
     assert out == []
+
+
+# --- toDoseResponse (arm-level -> per-arm dose-response rows) -----------------
+# Added 2026-06-02. Reference = lowest-dose arm (effect 0, se null anchor);
+# other arms = log-effect vs reference + se. OR/RR only; every arm needs a dose.
+
+
+def test_toDoseResponse_emits_anchor_plus_dose_arms():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S1", arms: [
+            {{ treatment: "control", events: 20, n: 100, dose: 0 }},
+            {{ treatment: "drugLo",  events: 30, n: 100, dose: 10 }},
+            {{ treatment: "drugHi",  events: 45, n: 100, dose: 20 }}
+          ]}}
+        ], "OR");
+        console.log(JSON.stringify(M.toDoseResponse(env)));
+    """)
+    assert len(out) == 3
+    byT = {r["treatment"]: r for r in out}
+    # Anchor: reference (lowest dose) at effect 0, se null.
+    assert byT["control"]["dose"] == 0
+    assert byT["control"]["effect"] == 0
+    assert byT["control"]["se"] is None
+    # Dose arms: log-OR vs reference.
+    assert byT["drugLo"]["dose"] == 10
+    assert abs(byT["drugLo"]["effect"] - 0.538997) < 1e-5
+    assert abs(byT["drugLo"]["se"] - 0.331842) < 1e-5
+    assert byT["drugHi"]["dose"] == 20
+    assert abs(byT["drugHi"]["effect"] - 1.185624) < 1e-5
+    assert abs(byT["drugHi"]["se"] - 0.320787) < 1e-5
+
+
+def test_toDoseResponse_skips_studies_without_dose_on_all_arms():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "noDose", arms: [
+            {{ treatment: "control", events: 20, n: 100 }},
+            {{ treatment: "drug",    events: 30, n: 100 }}
+          ]}},
+          {{ id: "dosed", arms: [
+            {{ treatment: "control", events: 20, n: 100, dose: 0 }},
+            {{ treatment: "drug",    events: 30, n: 100, dose: 5 }}
+          ]}}
+        ], "OR");
+        console.log(JSON.stringify(M.toDoseResponse(env)));
+    """)
+    studies = {r["study"] for r in out}
+    assert studies == {"dosed"}   # noDose study skipped entirely
+
+
+def test_toDoseResponse_non_binary_returns_empty():
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "A", mean: 1.0, sd: 0.5, n: 30 }},
+            {{ treatment: "B", mean: 2.0, sd: 0.6, n: 30 }}
+          ]}}
+        ], "MD");
+        console.log(JSON.stringify(M.toDoseResponse(env)));
+    """)
+    assert out == []
