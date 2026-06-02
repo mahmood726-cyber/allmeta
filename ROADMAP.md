@@ -32,7 +32,7 @@
 | ~~proportion-ma logit continuity correction non-standard (V9-10)~~ | ✅ Resolved: `logitTransform` applies the standard *conditional* 0.5 correction only when a cell is extreme (`x===0 || x===n`, `cn=n+1`), matching `metafor::escalc(measure="PLO")` to 1e-6. CI-green on HEAD `6abade7` (`proportion-ma-ft`). | — | — |
 | ~~HSROC docstring drift "Univariate REML" → "DL" (V9-09)~~ | ✅ Resolved: no "REML" text remains in `hsroc/index.html`; method described as alternating univariate DerSimonian-Laird throughout. CI-green on HEAD `6abade7` (`hsroc-smoke`). | — | — |
 | ~~76 `alert()` calls in nma-pro-v2 (V9-E08)~~ | ✅ Resolved (prior cycle): 0 alert() calls remain in nma-pro-v8.0.html. All matches for "alert" are now CSS `.alert--{info,warning,success}` Bootstrap-style alert components — accessible. Verified 2026-05-24. | — | — |
-| No automated nightly hub-crawl on Pages-built artifact | Catches deploy-only regressions | 1 hr | **P2** |
+| ~~No automated nightly hub-crawl on Pages-built artifact~~ | ✅ Resolved 2026-06-02: `nightly-pages-crawl.yml` (cron + `workflow_dispatch`) crawls the live Pages site via `tests/playwright/pages-crawl.spec.ts`; verified green on GitHub (91/91 internal apps). | — | — |
 | No multi-language abstracts of method help | Limits global reach | 1 week | **P3** |
 | No PWA install prompt | Users can't add to home screen as installed app | 2 hr | **P3** |
 
@@ -98,7 +98,7 @@
 - [ ] Multi-language method help (Spanish, Arabic, Mandarin) — not started (P3, ~1 week)
 
 ### Phase E — Ongoing rigor
-- [ ] Nightly hub-crawl on Pages-built artifact (GH Action)
+- [x] Nightly hub-crawl on Pages-built artifact (GH Action) — `nightly-pages-crawl.yml` + `pages-crawl.spec.ts`; verified green on GitHub (91/91 deployed apps; benign-by-design assets triaged)
 - [ ] Sentinel-equivalent lint pass on every PR
 - [ ] Quarterly review cycle (v12, v13, …) keep the deferred list small
 
