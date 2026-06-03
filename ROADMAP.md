@@ -67,7 +67,7 @@
 - [x] nma-pro-v2 multi-arm τ²/2 off-diagonal (V9-01) — `multiArmCorrection` + `buildBlockPrecision` in `nma-pro-v8.0.html`, tested in `tests/test_nma_pro.py` (see gap table above)
 - [x] nma-inconsistency RE option with PM/DL τ² (V9-06) — FE/PM/DL selector + shared-τ² RE weights; generalized-DL denominator fix; netmeta(random=TRUE,DL) R-parity to ≤1e-8, PM via Q(τ²)=df moment condition. Spec `nma-inconsistency-re.spec.mjs`, oracle `inco-re-oracle.{R,json}`.
 - [x] nma-pro-v2: replace `alert()` calls — 0 literal `alert(` calls remain in `nma-pro-v8.0.html` (V9-E08)
-- [ ] Add R-parity tests where missing (per triage overrides) — track to 100 %
+- [x] Add R-parity tests where missing — **audited 2026-06-03, effectively at 100%**. Every app with a genuine numerical method has R-parity via one of: a Playwright `*-parity.spec.mjs`, a per-app `tests/test_against_<pkg>.py` (live `Rscript`, skips if R absent — confirmed PASS against R 4.6.0 for pet-peese/effect-size-converter/bucher), or the shared `ma-core-parity` engine. The lone scan flag (`nma-dose-response-app` "metafor") was a marketing string, not a parity claim — grounded in commit `17ff11b`. Note: per-app Python R-parity tests are not counted in the `/parity` dashboard (which scans only Playwright specs) — a discoverability gap, not a coverage gap.
 
 ### Phase C — Interchange + receipts (the moat) — ~90% built (reconciled 2026-06-02)
 > Most of the moat already exists; checkboxes had drifted. Accurate coverage
