@@ -6,23 +6,36 @@
  * (2) The dashboard renders the headline counts and one row per spec, no console errors.
  */
 import { test, expect } from '@playwright/test';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const URL = 'http://localhost:8088/parity/index.html';
-const BENIGN = /frame-ancestors|ERR_CONNECTION/;
+// favicon.ico 404 / "Failed to load resource" is fetched only by a full browser
+// (not the CI headless shell) and is unrelated to the dashboard.
+const BENIGN = /frame-ancestors|ERR_CONNECTION|favicon|Failed to load resource/;
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const testsDir = join(repoRoot, 'hub', 'shared', 'tests');
 
 function liveCounts() {
-  const files = readdirSync(testsDir).filter(f => /parity/i.test(f) && f.endsWith('.spec.mjs') && f !== 'parity-ledger.spec.mjs');
+  // Playwright parity specs (in this dir).
+  const specFiles = readdirSync(testsDir).filter(f => /parity/i.test(f) && f.endsWith('.spec.mjs') && f !== 'parity-ledger.spec.mjs');
   let asserts = 0;
-  for (const f of files) {
+  for (const f of specFiles) {
     const src = readFileSync(join(testsDir, f), 'utf8');
     asserts += (src.match(/toBeCloseTo\([^,]+,\s*\d+\s*\)/g) || []).length;
   }
-  return { specCount: files.length, assertionCount: asserts };
+  // Per-app Python R-parity tests (<app>/tests/test_against_<pkg>.py at repo root).
+  const pyFiles = [];
+  for (const d of readdirSync(repoRoot, { withFileTypes: true })) {
+    if (!d.isDirectory() || d.name === 'node_modules' || d.name.startsWith('.')) continue;
+    let entries;
+    try { entries = readdirSync(join(repoRoot, d.name, 'tests')); } catch (_) { continue; }
+    for (const fn of entries) {
+      if (/^test_against_[a-z0-9]+\.py$/i.test(fn)) pyFiles.push(d.name + '/tests/' + fn);
+    }
+  }
+  return { specCount: specFiles.length, assertionCount: asserts, pyCount: pyFiles.length };
 }
 
 test('committed ledger is in sync with the spec files', async () => {
@@ -30,19 +43,27 @@ test('committed ledger is in sync with the spec files', async () => {
   const json = JSON.parse(ledgerSrc.replace(/^[\s\S]*?window\.ALM_PARITY_LEDGER\s*=\s*/, '').replace(/;\s*$/, ''));
   const live = liveCounts();
   expect(json.specCount, 'specCount drift — re-run scripts/build-parity-ledger.mjs').toBe(live.specCount);
+  expect(json.pyCount, 'pyCount drift — re-run scripts/build-parity-ledger.mjs').toBe(live.pyCount);
   expect(json.assertionCount, 'assertionCount drift — re-run scripts/build-parity-ledger.mjs').toBe(live.assertionCount);
-  expect(json.rows).toHaveLength(live.specCount);
-  // every listed spec actually exists
+  expect(json.rows, 'rows = specs + python tests').toHaveLength(live.specCount + live.pyCount);
+  // every listed test actually exists: spec rows in testsDir, py rows at repo root.
   const present = new Set(readdirSync(testsDir));
-  for (const r of json.rows) expect(present.has(r.spec), `${r.spec} missing`).toBe(true);
+  for (const r of json.rows) {
+    if (r.kind === 'py') {
+      expect(existsSync(join(repoRoot, r.spec)), `${r.spec} missing`).toBe(true);
+    } else {
+      expect(present.has(r.spec), `${r.spec} missing`).toBe(true);
+    }
+  }
 });
 
-test('parity dashboard renders headline cards + one row per spec', async ({ page }) => {
+test('parity dashboard renders headline cards + one row per parity test', async ({ page }) => {
   const errs = [];
   page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
   await page.goto(URL, { waitUntil: 'load' });
   await page.waitForFunction(() => window.ALM_PARITY_LEDGER && document.querySelectorAll('#rows tr').length > 0, { timeout: 10000 });
-  const n = await page.evaluate(() => window.ALM_PARITY_LEDGER.specCount);
+  // The table renders every row — Playwright specs + Python R-parity tests.
+  const n = await page.evaluate(() => window.ALM_PARITY_LEDGER.parityTestCount || window.ALM_PARITY_LEDGER.specCount);
   expect(await page.locator('#rows tr').count()).toBe(n);
   expect(await page.locator('#cards .card').count()).toBe(5);
   // filtering narrows the table

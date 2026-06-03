@@ -2,12 +2,16 @@
 window.ALM_PARITY_LEDGER = {
   "generated": "2026-06-03",
   "specCount": 44,
+  "pyCount": 19,
+  "parityTestCount": 63,
   "assertionCount": 173,
-  "oracleCount": 32,
-  "stataCount": 27,
+  "pyAssertionCount": 77,
+  "oracleCount": 41,
+  "stataCount": 38,
   "rows": [
     {
       "spec": "bayesian-ma-parity.spec.mjs",
+      "kind": "spec",
       "title": "bayesian-ma-parity.spec.mjs — conjugate normal-normal R-parity.\r  bayesian-ma is",
       "module": null,
       "oracles": [
@@ -20,6 +24,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "bayesian-mcmc-parity.spec.mjs",
+      "kind": "spec",
       "title": "bayesian-mcmc-parity.spec.mjs — Gibbs sampler validation (done right).\r  A real ",
       "module": null,
       "oracles": [
@@ -32,6 +37,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "bayesian-nma-parity.spec.mjs",
+      "kind": "spec",
       "title": "bayesian-nma-parity.spec.mjs — approximate-Bayes NMA R-parity.\r  WLS consistency",
       "module": null,
       "oracles": [
@@ -44,6 +50,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "component-nma-parity.spec.mjs",
+      "kind": "spec",
       "title": "component-nma-parity.spec.mjs — additive CNMA R-parity vs netmeta::discomb.\r  Th",
       "module": null,
       "oracles": [
@@ -57,6 +64,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "copas-parity.spec.mjs",
+      "kind": "spec",
       "title": "copas-parity.spec.mjs — Copas & Shi (2000) profile-MLE R-parity.\r  The copas app",
       "module": null,
       "oracles": [
@@ -69,6 +77,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "correlation-ma-parity.spec.mjs",
+      "kind": "spec",
       "title": "the correlation meta-analysis app",
       "module": null,
       "oracles": [
@@ -81,6 +90,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "diagnostic-plots-parity.spec.mjs",
+      "kind": "spec",
       "title": "the three diagnostic-plot coordinate engines (shared/diagnostic-plots",
       "module": "diagnostic-plots.js",
       "oracles": [
@@ -95,6 +105,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "doi-lfk-parity.spec.mjs",
+      "kind": "spec",
       "title": "the Doi plot / LFK index (shared/doi-lfk",
       "module": "doi-lfk.js",
       "oracles": [
@@ -107,6 +118,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "dose-response-parity.spec.mjs",
+      "kind": "spec",
       "title": "two-stage linear dose-response MA (shared/dose-response",
       "module": "dose-response.js",
       "oracles": [
@@ -120,6 +132,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "dose-response-spline-parity.spec.mjs",
+      "kind": "spec",
       "title": "NON-LINEAR (restricted cubic spline) dose-response MA\r (shared/dose-response",
       "module": "dose-response.js",
       "oracles": [
@@ -133,6 +146,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "dta-bivariate-parity.spec.mjs",
+      "kind": "spec",
       "title": "the PURE-JS bivariate random-effects DTA MLE (shared/dta-bivariate",
       "module": "dta-bivariate.js",
       "oracles": [
@@ -145,6 +159,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "dta-region-parity.spec.mjs",
+      "kind": "spec",
       "title": "the bivariate DTA region ellipses (AlmDTABivariate",
       "module": null,
       "oracles": [
@@ -157,6 +172,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "dta-sroc-parity.spec.mjs",
+      "kind": "spec",
       "title": "the dta-sroc Moses-Littenberg SROC regression",
       "module": null,
       "oracles": [],
@@ -167,6 +183,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "evalue-parity.spec.mjs",
+      "kind": "spec",
       "title": "the E-value (shared/evalue",
       "module": "evalue.js",
       "oracles": [
@@ -179,6 +196,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "fragility-parity.spec.mjs",
+      "kind": "spec",
       "title": "the meta-analysis fragility index (shared/fragility",
       "module": "fragility.js",
       "oracles": [
@@ -191,6 +209,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "gosh-metareg-parity.spec.mjs",
+      "kind": "spec",
       "title": "gosh-metareg-parity.spec.mjs — meta-regression R-parity vs metafor.\r  After the ",
       "module": null,
       "oracles": [
@@ -203,6 +222,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "km-reconstructor-parity.spec.mjs",
+      "kind": "spec",
       "title": "km-reconstructor-parity.spec.mjs — KM IPD reconstruction validation.\r  The app i",
       "module": null,
       "oracles": [
@@ -215,6 +235,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "limit-ma-parity.spec.mjs",
+      "kind": "spec",
       "title": "limit-ma-parity.spec.mjs — Rücker (2011) limit meta-analysis R-parity.\r  The lim",
       "module": null,
       "oracles": [
@@ -227,6 +248,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "location-scale-parity.spec.mjs",
+      "kind": "spec",
       "title": "the location-scale meta-regression engine (shared/location-scale",
       "module": "location-scale.js",
       "oracles": [
@@ -239,6 +261,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "ma-core-parity.spec.mjs",
+      "kind": "spec",
       "title": "the audited single-source pooler shared/ma-core",
       "module": "ma-core.js",
       "oracles": [
@@ -251,6 +274,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "mcid-parity.spec.mjs",
+      "kind": "spec",
       "title": "mcid-parity.spec.mjs — MCID rule-arithmetic + exact-qnorm guard.\r  mcid is deter",
       "module": null,
       "oracles": [
@@ -263,6 +287,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "median-to-mean-parity.spec.mjs",
+      "kind": "spec",
       "title": "median-to-mean-parity.spec.mjs — Wan/Luo/Shi R-parity.\r  Oracle = the published ",
       "module": null,
       "oracles": [
@@ -275,6 +300,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "multi-outcome-ma-parity.spec.mjs",
+      "kind": "spec",
       "title": "the bivariate (multi-outcome) random-effects MA engine",
       "module": null,
       "oracles": [
@@ -287,6 +313,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "multilevel-reml-parity.spec.mjs",
+      "kind": "spec",
       "title": "the three-level (multilevel) REML engine (shared/multilevel-reml",
       "module": "multilevel-reml.js",
       "oracles": [
@@ -299,6 +326,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "multivariate-ma-parity.spec.mjs",
+      "kind": "spec",
       "title": "multivariate / multiple-outcome meta-analysis (shared/multivariate-ma",
       "module": "multivariate-ma.js",
       "oracles": [
@@ -311,6 +339,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "nma-global-inconsistency-parity.spec.mjs",
+      "kind": "spec",
       "title": "nma-global-inconsistency-parity.spec.mjs — netmeta decomp.design R-parity.\r  App",
       "module": null,
       "oracles": [
@@ -323,6 +352,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "nma-inconsistency-parity.spec.mjs",
+      "kind": "spec",
       "title": "nma-inconsistency-parity.spec.mjs — netmeta FE R-parity.\r  The app is fixed-effe",
       "module": null,
       "oracles": [
@@ -335,6 +365,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "nma-inconsistency-re-parity.spec.mjs",
+      "kind": "spec",
       "title": "nma-inconsistency-re-parity.spec.mjs — netmeta RANDOM-effects R-parity (V12).  *",
       "module": null,
       "oracles": [
@@ -347,6 +378,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "nma-meta-reg-parity.spec.mjs",
+      "kind": "spec",
       "title": "the network meta-regression engine",
       "module": null,
       "oracles": [
@@ -360,6 +392,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "nma-parity.spec.mjs",
+      "kind": "spec",
       "title": "nma-parity.spec.mjs — basic frequentist NMA R-parity vs netmeta.\r  Consistent fi",
       "module": null,
       "oracles": [
@@ -372,6 +405,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "personalised-te-parity.spec.mjs",
+      "kind": "spec",
       "title": "the personalised-TE empirical-Bayes shrinkage engine",
       "module": null,
       "oracles": [
@@ -384,6 +418,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "powerma-parity.spec.mjs",
+      "kind": "spec",
       "title": "powerma-parity.spec.mjs — pre-MA sample size / RIS R-parity.\r  Oracle = the docu",
       "module": null,
       "oracles": [
@@ -396,6 +431,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "pubbias-binary-parity.spec.mjs",
+      "kind": "spec",
       "title": "the binary small-study tests",
       "module": null,
       "oracles": [
@@ -408,6 +444,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "rare-events-cmel-parity.spec.mjs",
+      "kind": "spec",
       "title": "the CM",
       "module": null,
       "oracles": [
@@ -420,6 +457,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "rare-events-glmm-parity.spec.mjs",
+      "kind": "spec",
       "title": "the rare-events binomial-normal GLMM (UM",
       "module": null,
       "oracles": [
@@ -432,6 +470,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "reml-validator-parity.spec.mjs",
+      "kind": "spec",
       "title": "the webr-validator's browser fit (browserFit → AlmMaCore",
       "module": null,
       "oracles": [
@@ -444,6 +483,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "rmst-ma-parity.spec.mjs",
+      "kind": "spec",
       "title": "RMST meta-analysis",
       "module": null,
       "oracles": [
@@ -456,6 +496,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "robma-parity.spec.mjs",
+      "kind": "spec",
       "title": "the RoBMA-style robust Bayesian MA (shared/robma",
       "module": "robma.js",
       "oracles": [
@@ -468,6 +509,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "rve-meta-cr2-parity.spec.mjs",
+      "kind": "spec",
       "title": "the CR2 bias-reduced RVE (Tipton 2015; Pustejovsky-Tipton 2018)\r with HTJ CORR-model τ² and per-coefficient Satterthwaite df",
       "module": null,
       "oracles": [
@@ -481,6 +523,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "rve-meta-parity.spec.mjs",
+      "kind": "spec",
       "title": "the RVE (Hedges-Tipton-Johnson CORR) meta-regression engine",
       "module": null,
       "oracles": [
@@ -494,6 +537,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "selmodel-parity.spec.mjs",
+      "kind": "spec",
       "title": "the Vevea-Hedges step-function selection model (shared/selmodel",
       "module": "selmodel.js",
       "oracles": [
@@ -506,6 +550,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "trimfill-parity.spec.mjs",
+      "kind": "spec",
       "title": "Duval-Tweedie trim-and-fill (shared/trimfill",
       "module": "trimfill.js",
       "oracles": [
@@ -518,6 +563,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "tsa-parity.spec.mjs",
+      "kind": "spec",
       "title": "tsa-parity.spec.mjs — Trial Sequential Analysis R-parity.\r  Oracle = the advance",
       "module": null,
       "oracles": [
@@ -530,6 +576,7 @@ window.ALM_PARITY_LEDGER = {
     },
     {
       "spec": "workbench-parity.spec.mjs",
+      "kind": "spec",
       "title": "workbench-parity.spec.mjs — MA Workbench canonical Paule-Mandel\r random-effects ",
       "module": null,
       "oracles": [
@@ -539,6 +586,269 @@ window.ALM_PARITY_LEDGER = {
       "tests": 2,
       "asserts": 0,
       "tightestDecimals": null
+    },
+    {
+      "spec": "bucher/tests/test_against_netmeta.py",
+      "kind": "py",
+      "title": "bucher indirect comparison engine vs R (netmeta cross-check)",
+      "module": null,
+      "oracles": [
+        "netmeta",
+        "meta::netmeta",
+        "netmeta::netmeta"
+      ],
+      "stata": "network / mvmeta (NMA)",
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 14
+    },
+    {
+      "spec": "copas/tests/test_against_metasens.py",
+      "kind": "py",
+      "title": "copas metasens::copas() values",
+      "module": null,
+      "oracles": [
+        "metasens",
+        "metasens::copas"
+      ],
+      "stata": "meta bias / estat",
+      "tests": 19,
+      "asserts": 12,
+      "tightestDecimals": 9
+    },
+    {
+      "spec": "cumulative-subgroup/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "cumulative-subgroup PM engine vs metafor::cumul()",
+      "module": null,
+      "oracles": [
+        "metafor",
+        "metafor::cumul"
+      ],
+      "stata": "meta summarize, cumulative / meta",
+      "tests": 2,
+      "asserts": 2,
+      "tightestDecimals": 9
+    },
+    {
+      "spec": "dta-sroc/tests/test_against_mada.py",
+      "kind": "py",
+      "title": "dta-sroc Moses SROC and mada::reitsma values",
+      "module": null,
+      "oracles": [
+        "mada",
+        "mada::reitsma"
+      ],
+      "stata": "metandi / midas (DTA)",
+      "tests": 6,
+      "asserts": 6,
+      "tightestDecimals": 9
+    },
+    {
+      "spec": "effect-size-converter/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "effect-size-converter SMD and OR escalc values vs metafor::escalc.",
+      "module": null,
+      "oracles": [
+        "metafor",
+        "metafor::escalc"
+      ],
+      "stata": null,
+      "tests": 6,
+      "asserts": 8,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "forest-plot/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "forest-plot engine vs metafor rma.uni(method='REML').",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": null,
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "funnel-plot/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "funnel-plot vs metafor",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": null,
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "gosh/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "gosh vs metafor::gosh(rma.uni(...))",
+      "module": null,
+      "oracles": [
+        "metafor",
+        "metafor::gosh"
+      ],
+      "stata": null,
+      "tests": 20,
+      "asserts": 10,
+      "tightestDecimals": 9
+    },
+    {
+      "spec": "heterogeneity/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "heterogeneity engine vs metafor rma.uni(method='REML').",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": "meta summarize (I²/τ², Q)",
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "hsroc/tests/test_against_mada.py",
+      "kind": "py",
+      "title": "hsroc mada::reitsma values",
+      "module": null,
+      "oracles": [
+        "mada",
+        "mada::reitsma"
+      ],
+      "stata": "metandi / midas (DTA)",
+      "tests": 11,
+      "asserts": 5,
+      "tightestDecimals": 9
+    },
+    {
+      "spec": "influence/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "influence engine (REML LOO) vs metafor::leave1out(rma.uni())",
+      "module": null,
+      "oracles": [
+        "metafor",
+        "metafor::leave1out"
+      ],
+      "stata": "meta summarize, cumulative / meta",
+      "tests": 2,
+      "asserts": 2,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "limit-ma/tests/test_against_metasens.py",
+      "kind": "py",
+      "title": "s: limit-ma engine vs metasens::limitmeta()",
+      "module": null,
+      "oracles": [
+        "metasens",
+        "metasens::limitmeta"
+      ],
+      "stata": null,
+      "tests": 22,
+      "asserts": 12,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "meta-regression/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "meta-regression vs metafor",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": "meta regress",
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "mh-peto/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "mh-peto engine vs metafor rma.peto() + rma.mh()",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": null,
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "multilevel-ma/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "multilevel-ma engine vs the same iterative MoM algorithm in R",
+      "module": null,
+      "oracles": [
+        "metafor",
+        "metafor::rma.mv"
+      ],
+      "stata": null,
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "p-curve/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "p-curve engine (Fisher combined on pp = p/0.05) vs R",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": "meta bias / estat",
+      "tests": 2,
+      "asserts": 2,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "pet-peese/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "PET-PEESE engine vs metafor regtest(model='lm')",
+      "module": null,
+      "oracles": [
+        "metafor"
+      ],
+      "stata": "meta bias / estat",
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 6
+    },
+    {
+      "spec": "proportion-ma/tests/test_against_r.py",
+      "kind": "py",
+      "title": "proportion-ma logit+PM engine vs the same algorithm in R",
+      "module": null,
+      "oracles": [
+        "R (base stats)",
+        "metafor::escalc",
+        "metafor::rma"
+      ],
+      "stata": null,
+      "tests": 1,
+      "asserts": 1,
+      "tightestDecimals": 8
+    },
+    {
+      "spec": "pubbias-tests/tests/test_against_metafor.py",
+      "kind": "py",
+      "title": "s: pubbias-tests engine vs metafor",
+      "module": null,
+      "oracles": [
+        "metafor",
+        "metafor::regtest",
+        "metafor::ranktest",
+        "metafor::trimfill"
+      ],
+      "stata": "meta bias / estat",
+      "tests": 19,
+      "asserts": 9,
+      "tightestDecimals": 6
     }
   ]
 };
