@@ -1,0 +1,23 @@
+name: lint
+
+# Sentinel-equivalent pre-merge lint of the shipped browser assets: no external
+# CDN resource loads, no hardcoded local paths, no BOM, no unpopulated template
+# placeholders — across every catalog entry point (hub/projects.js) + authored
+# shared/ JS/CSS. Pure stdlib, no deps. Fails the PR on any NEW violation; a
+# documented ALLOWLIST in scripts/lint_repo.py accepts the known baseline.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Shipped-asset invariant lint
+        run: python scripts/lint_repo.py
