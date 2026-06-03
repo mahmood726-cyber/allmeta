@@ -4,7 +4,7 @@
 [![shared-tests](https://github.com/mahmood726-cyber/allmeta/actions/workflows/shared-tests.yml/badge.svg)](https://github.com/mahmood726-cyber/allmeta/actions/workflows/shared-tests.yml)
 [![Playwright](https://github.com/mahmood726-cyber/allmeta/actions/workflows/playwright.yml/badge.svg)](https://github.com/mahmood726-cyber/allmeta/actions/workflows/playwright.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-<!-- DOI badge: add after the first Zenodo deposit — see RELEASING.md. -->
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20516880.svg)](https://doi.org/10.5281/zenodo.20516880)
 
 Open, browser-only tools for evidence synthesis.
 
@@ -57,5 +57,8 @@ browser-only evidence-synthesis status.
 
 ## Cite
 
-See [`CITATION.cff`](CITATION.cff). Cite-this-repository works directly from
-the GitHub project page.
+Archived on Zenodo — concept DOI [10.5281/zenodo.20516880](https://doi.org/10.5281/zenodo.20516880)
+(version-less; always resolves to the latest release; v1.0.0 is
+[10.5281/zenodo.20516881](https://doi.org/10.5281/zenodo.20516881)). See
+[`CITATION.cff`](CITATION.cff) for full metadata — "Cite this repository" also
+works directly from the GitHub project page.
