@@ -20,6 +20,22 @@
   function isFiniteNumber(x) { return typeof x === "number" && Number.isFinite(x); }
   function nonEmptyString(x) { return typeof x === "string" && x.length > 0; }
 
+  // Lanczos log-gamma — used for the EXACT Hedges small-sample bias correction
+  // J = Γ(m/2) / (√(m/2)·Γ((m-1)/2)) in the SMD contrast (toContrasts). metafor
+  // uses the exact gamma form, not the 1−3/(4m−1) approximation; they differ at
+  // ~5e-6 in J, enough to break 1e-6 escalc parity.
+  function _lngamma(z) {
+    var g = 7, c = [0.99999999999980993, 676.5203681218851,
+      -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+      12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
+      1.5056327351493116e-7];
+    if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - _lngamma(1 - z);
+    z -= 1; var x = c[0];
+    for (var i = 1; i < g + 2; i++) x += c[i] / (z + i);
+    var t = z + g + 0.5;
+    return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+  }
+
   // ----- Validation -------------------------------------------------------
 
   function validateArm(arm, effectMeasure, prefix) {
@@ -85,6 +101,10 @@
     } else if (CONT[effectMeasure]) {
       out.mean = Number(arm.mean);
       out.sd = Number(arm.sd);
+      // n is optional in the CONT schema (validate() never requires it), but it
+      // is needed to derive an MD/SMD contrast SE — carry it through when present
+      // so toContrasts() can emit continuous contrasts.
+      if (isFiniteNumber(arm.n)) out.n = Number(arm.n);
     }
     if (isFiniteNumber(arm.dose)) out.dose = arm.dose;
     return out;
@@ -275,10 +295,17 @@
    * joined by ":" (e.g. a 3-arm A/B/C trial → design "A:B:C" on all three of its
    * contrasts). This is the design-by-treatment grouping key the global /
    * node-split inconsistency apps need; a per-pair tag would wrongly split a
-   * multi-arm trial into separate 2-arm designs. Only OR/RR are supported: HR/RD and
-   * the continuous measures (MD/SMD) are NOT derivable from the bus here — the
-   * arm contract carries `n` for binary arms only (see ma-comparisons-v1.md),
-   * so a mean-difference SE cannot be reconstructed. Returns [] for those.
+   * multi-arm trial into separate 2-arm designs.
+   *
+   * Supported scales: OR, RR (binary, from events/n) and MD, SMD (continuous,
+   * from mean/sd/n). HR/RD are NOT derivable from raw arm data here → []. The
+   * continuous contrasts match metafor::escalc to 1e-6:
+   *   MD  → te = mean1 − mean2,  se = sqrt(sd1²/n1 + sd2²/n2)
+   *   SMD → Hedges g = J·(mean1−mean2)/sp, J the EXACT gamma bias correction,
+   *         sp the pooled SD; se = sqrt(1/n1 + 1/n2 + g²/(2(n1+n2)))  (escalc LS)
+   * `n` is optional in the CONT schema, so a continuous arm pair is emitted only
+   * when BOTH arms carry a finite n>0 (else that pair is skipped, like the
+   * dose-on-every-arm rule in toDoseResponse).
    */
   function toContrasts(env, opts) {
     opts = opts || {};
@@ -286,13 +313,48 @@
     if (!env || !Array.isArray(env.studies)) return out;
     var measure = nonEmptyString(env.effectMeasure) ? env.effectMeasure : (opts.measure || "OR");
     var isOR = measure === "OR", isRR = measure === "RR";
-    if (!isOR && !isRR) return out; // HR/RD/MD/SMD: not derivable from binary arm counts
+    var isMD = measure === "MD", isSMD = measure === "SMD";
+    if (!isOR && !isRR && !isMD && !isSMD) return out; // HR/RD: not derivable here
     for (var i = 0; i < env.studies.length; i++) {
       var s = env.studies[i];
       if (!s || !Array.isArray(s.arms) || s.arms.length < 2) continue;
       // Design = the study's full arm-set (sorted, ":"-joined), shared by every
       // pairwise contrast of this study so multi-arm trials group correctly.
       var design = s.arms.map(function (ar) { return ar.treatment; }).sort().join(":");
+
+      // ---- Continuous (MD/SMD): mean/sd/n, no continuity correction ----
+      if (isMD || isSMD) {
+        for (var ca = 0; ca < s.arms.length; ca++) {
+          for (var cb = ca + 1; cb < s.arms.length; cb++) {
+            var cx = s.arms[ca], cy = s.arms[cb];
+            // n is optional in the CONT schema → derive only when both present.
+            if (!(isFiniteNumber(cx.n) && cx.n > 0 && isFiniteNumber(cy.n) && cy.n > 0)) continue;
+            var cte, cse;
+            if (isMD) {
+              cte = cx.mean - cy.mean;
+              cse = Math.sqrt((cx.sd * cx.sd) / cx.n + (cy.sd * cy.sd) / cy.n);
+            } else { // SMD — Hedges g, matching metafor::escalc(measure="SMD")
+              var dfm = cx.n + cy.n - 2;
+              var J = Math.exp(_lngamma(dfm / 2) - 0.5 * Math.log(dfm / 2) - _lngamma((dfm - 1) / 2));
+              var sp = Math.sqrt(((cx.n - 1) * cx.sd * cx.sd + (cy.n - 1) * cy.sd * cy.sd) / dfm);
+              if (!(sp > 0) || !isFiniteNumber(J) || !(J > 0)) continue;
+              var gg = J * ((cx.mean - cy.mean) / sp);
+              cte = gg;
+              cse = Math.sqrt(1 / cx.n + 1 / cy.n + (gg * gg) / (2 * (cx.n + cy.n)));
+            }
+            if (!isFiniteNumber(cte) || !isFiniteNumber(cse) || !(cse > 0)) continue;
+            out.push({
+              study: s.id,
+              treatment1: cx.treatment, treatment2: cy.treatment,
+              te: cte, se: cse,
+              design: design,
+            });
+          }
+        }
+        continue; // continuous study handled; skip the binary path below
+      }
+
+      // ---- Binary (OR/RR) ----
       // Decide the per-study 0.5 correction once: apply iff ANY arm in the study
       // has a zero event or zero non-event cell.
       var cc = 0;

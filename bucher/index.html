@@ -471,6 +471,14 @@
     btn.addEventListener("click", function () {
       var env = MaComparisons.read();
       if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
+      // Bucher here sets scale=log and back-transforms via exp() for display, so
+      // it only accepts ratio measures (OR/RR). toContrasts can also emit MD/SMD
+      // (additive) contrasts, but exponentiating a mean difference is nonsense —
+      // reject non-ratio buses explicitly rather than silently mislabel them.
+      if (env.effectMeasure !== "OR" && env.effectMeasure !== "RR") {
+        notify("Bucher import supports ratio measures (OR/RR) only; bus is " + (env.effectMeasure || "?") + ".");
+        return;
+      }
       var contrasts = MaComparisons.toContrasts(env);
       if (contrasts.length < 2) { notify("Need >= 2 contrasts (OR/RR only) to form a Bucher triangle."); return; }
       var rows = contrasts.map(function (c) {

@@ -549,7 +549,7 @@ A, D, -0.48, 0.14</textarea>
       var env = MaComparisons.read();
       if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
       var rows = MaComparisons.toContrasts(env);
-      if (!rows.length) { notify("Bus measure " + (env.effectMeasure || "?") + " can't be converted to contrasts (OR/RR only)."); return; }
+      if (!rows.length) { notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
       ta.value = rows.map(function (r) { return r.treatment1 + ", " + r.treatment2 + ", " + r.te + ", " + r.se; }).join("\n");
       ta.dispatchEvent(new Event("input", { bubbles: true }));
       runBtn.click();

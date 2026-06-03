@@ -65,6 +65,7 @@ Cochrane multi-arm correction (Σ off-diagonal = τ²/2 — see
 | `n`         | number   | OR / RR / HR / RD            | Positive integer.                                 |
 | `mean`      | number   | MD / SMD                     | Arm mean.                                         |
 | `sd`        | number   | MD / SMD                     | Arm SD, `> 0`.                                    |
+| `n`         | number   | MD / SMD *(optional)*        | Arm size. Not required by `validate()`, but `toContrasts()` needs it on both arms to derive an MD/SMD contrast SE; a CONT pair missing `n` is skipped. |
 | `dose`      | number\|null | no                       | mg dose, used for dose-response NMA.              |
 
 ## Contracts

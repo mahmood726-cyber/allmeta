@@ -10,6 +10,8 @@ Covers:
 - buildEnvelope drops studies with <2 arms or arms missing required fields
 - fromBinaryTriplets groups rows by name → multi-arm studies
 - Round-trip: fromBinaryTriplets → toNmaProStudies → fromBinaryTriplets stable
+- toContrasts: OR/RR (binary) and MD/SMD (continuous) contrasts; MD/SMD match
+  metafor::escalc to 1e-6; HR/RD return []; CONT pairs need n on both arms
 """
 from __future__ import annotations
 
@@ -312,15 +314,61 @@ def test_toContrasts_rr_scale():
     assert abs(out[0]["se"] - 0.041415) < 1e-5
 
 
-def test_toContrasts_md_not_derivable_from_bus():
-    # The arm contract carries n for BINARY arms only, so a mean-difference SE
-    # cannot be reconstructed from a continuous envelope -> [].
+def test_toContrasts_md_derives_mean_difference():
+    # Continuous MD contrast from mean/sd/n. Reference values from
+    # metafor::escalc(measure="MD", m1i=5.0, sd1i=2.0, n1i=50,
+    #                                m2i=4.2, sd2i=2.5, n2i=48) (R 4.6.0, 2026-06-03):
+    #   yi = 0.8, se = sqrt(vi) = 0.4584848234.
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
         const env = M.buildEnvelope([
           {{ id: "S", arms: [
             {{ treatment: "A", mean: 5.0, sd: 2.0, n: 50 }},
             {{ treatment: "B", mean: 4.2, sd: 2.5, n: 48 }}
+          ]}}
+        ], "MD");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    assert len(out) == 1
+    r = out[0]
+    assert r["treatment1"] == "A" and r["treatment2"] == "B"
+    assert r["design"] == "A:B"
+    assert abs(r["te"] - 0.8) < 1e-6
+    assert abs(r["se"] - 0.4584848234) < 1e-6
+
+
+def test_toContrasts_smd_matches_metafor_hedges_g():
+    # SMD = Hedges g with the EXACT gamma bias correction, matching
+    # metafor::escalc(measure="SMD", ... same fixture ...) (R 4.6.0, 2026-06-03):
+    #   yi = 0.3514161433, se = 0.2036256399.
+    # (The 1-3/(4m-1) approximation would give 0.35141735 — off at ~1e-6, so the
+    #  module uses the exact Γ-based J.)
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "A", mean: 5.0, sd: 2.0, n: 50 }},
+            {{ treatment: "B", mean: 4.2, sd: 2.5, n: 48 }}
+          ]}}
+        ], "SMD");
+        console.log(JSON.stringify(M.toContrasts(env)));
+    """)
+    assert len(out) == 1
+    r = out[0]
+    assert abs(r["te"] - 0.3514161433) < 1e-6
+    assert abs(r["se"] - 0.2036256399) < 1e-6
+
+
+def test_toContrasts_continuous_skips_pair_without_n():
+    # n is optional in the CONT schema; a continuous pair missing n on either arm
+    # cannot yield a contrast SE, so that pair is skipped (mean/sd alone survive
+    # validation but produce no contrast).
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const env = M.buildEnvelope([
+          {{ id: "S", arms: [
+            {{ treatment: "A", mean: 5.0, sd: 2.0, n: 50 }},
+            {{ treatment: "B", mean: 4.2, sd: 2.5 }}
           ]}}
         ], "MD");
         console.log(JSON.stringify(M.toContrasts(env)));
@@ -384,7 +432,9 @@ def test_toContrasts_two_arm_design_is_sorted_armset():
 
 
 def test_toContrasts_skips_underivable_measures():
-    # HR / SMD / RD cannot be derived from raw arm counts here -> [].
+    # HR / RD cannot be derived from raw arm counts here -> []. (OR/RR are binary-
+    # derivable, MD/SMD are continuous-derivable; HR needs person-time/events-at-
+    # risk and RD's bus SE is intentionally not reconstructed here.)
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
         const env = M.buildEnvelope([
