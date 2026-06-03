@@ -1,5 +1,5 @@
 /**
- * nma-inconsistency-re.spec.mjs — netmeta RANDOM-effects R-parity (V12).
+ * nma-inconsistency-re-parity.spec.mjs — netmeta RANDOM-effects R-parity (V12).
  *
  * Companion to nma-inconsistency-parity.spec.mjs (which covers the FE path).
  * The app's RE option fits contrast NMA with a shared τ² (DL or PM) and
