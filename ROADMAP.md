@@ -94,7 +94,7 @@
 - [~] Zenodo concept-DOI — repo prep done (`CITATION.cff` `identifiers` placeholder, `.zenodo.json` deposit metadata). **Manual step remains**: connect GH→Zenodo + push a `v1.0.0` tag, then fill the DOI into CITATION.cff + README badge
 - [x] README badges — Pages, shared-tests, Playwright, License (MIT) added; DOI badge pending the Zenodo deposit
 - [x] Cochrane `.rm5`/`.rm6` reader — `revman-importer` reads `.rm5`/`.rm6` (JSZip + DOMParser fallback) and writes the `ma-comparisons-v1` bus, so imported reviews flow to the NMA apps via `toContrasts`
-- [ ] PROSPERO templater — referenced in catalog/README; dedicated app not confirmed (triage)
+- [x] PROSPERO templater — **confirmed 2026-06-03**: `prospero-templater/` is a complete, catalogued 39-field PROSPERO-2022 form → live preview + Markdown export + localStorage autosave, exposing `window.__almProspero()`. Was untested and its meta-description over-claimed "47-question" (39 fields in code) — fixed the count and added `hub/shared/tests/prospero-templater-behavior.spec.mjs` (form→preview→markdown pipeline, autosave round-trip, all-39-sections; 4 tests green on Edge).
 - [x] PWA manifest + install prompt — `manifest.json` (icons, shortcuts, categories), `<link rel=manifest>`, theme-color, apple-touch-icon, SW registration, and a `beforeinstallprompt` handler all present in root `index.html`
 - [ ] Multi-language method help (Spanish, Arabic, Mandarin) — not started (P3, ~1 week)
 
