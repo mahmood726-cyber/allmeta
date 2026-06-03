@@ -27,7 +27,7 @@
 | Citation infrastructure: DOI still pending | `CITATION.cff` ✅ present at root; Zenodo concept-DOI still open (Phase D — manual GH→Zenodo + v1.0.0 tag) | 30 min (DOI) | **P1** |
 | ~~Forced-colors mode not in shared CSS (V9-A11Y-11)~~ | ✅ Resolved: `@media (forced-colors: active)` block in `hub/styles.css:811` (WCAG 1.4.1 / 1.4.11). | — | — |
 | ~~HKSJ in webr-validator ignores `test=knha` (V9-02)~~ | ✅ Resolved: the drifting local re-impl was removed; webr-validator now delegates to `AlmMaCore.pool(yi, vi, { method, knha: test==="knha" })`. CI-green on HEAD `6abade7` (`reml-validator-parity` / `ma-core-parity`). | — | — |
-| nma-inconsistency FE-only (V9-06) | No RE option for heterogeneous inconsistency tests | half day | **P1** |
+| ~~nma-inconsistency FE-only (V9-06)~~ | ✅ Resolved 2026-06-03: FE/PM/DL model selector wired; `estimateTau2` adds shared-τ² RE weights `1/(SE²+τ²)` to both consistency and inconsistency models. Verifying the math surfaced a real bug — `tau2_DL` used the intercept-only denominator `ΣW−ΣW²/ΣW`, which understated τ² by ~16 % on a multi-treatment network; fixed to the generalized DerSimonian-Kacker/Jackson denominator `tr(W)−tr((XᵀWX)⁻¹XᵀW²X)` (reduces exactly to the old form for 2-treatment networks). Shipped engine now matches `netmeta(random=TRUE, method.tau="DL")` τ²/network/netsplit to ≤1e-8 (oracle `inco-re-oracle.{R,json}` on over-dispersed `inco-het.csv`); PM validated by its `Q(τ²)=df` moment condition (netmeta has no network PM). Spec `hub/shared/tests/nma-inconsistency-re.spec.mjs`. | — | — |
 | ~~Multilevel I² missing σ²_typical denom (V9-03)~~ | ✅ Resolved (`V10-08`): `sigma2_typical` (Cheung 2014 §3.2 / Higgins-Thompson 2002) is computed from sampling weights and included in the `totalVar` denominator. CI-green on HEAD `6abade7` (`multilevel-reml-parity`). | — | — |
 | ~~proportion-ma logit continuity correction non-standard (V9-10)~~ | ✅ Resolved: `logitTransform` applies the standard *conditional* 0.5 correction only when a cell is extreme (`x===0 || x===n`, `cn=n+1`), matching `metafor::escalc(measure="PLO")` to 1e-6. CI-green on HEAD `6abade7` (`proportion-ma-ft`). | — | — |
 | ~~HSROC docstring drift "Univariate REML" → "DL" (V9-09)~~ | ✅ Resolved: no "REML" text remains in `hsroc/index.html`; method described as alternating univariate DerSimonian-Laird throughout. CI-green on HEAD `6abade7` (`hsroc-smoke`). | — | — |
@@ -65,7 +65,7 @@
 
 ### Phase B — Methodological depth (next session)
 - [x] nma-pro-v2 multi-arm τ²/2 off-diagonal (V9-01) — `multiArmCorrection` + `buildBlockPrecision` in `nma-pro-v8.0.html`, tested in `tests/test_nma_pro.py` (see gap table above)
-- [ ] nma-inconsistency RE option with PM τ²
+- [x] nma-inconsistency RE option with PM/DL τ² (V9-06) — FE/PM/DL selector + shared-τ² RE weights; generalized-DL denominator fix; netmeta(random=TRUE,DL) R-parity to ≤1e-8, PM via Q(τ²)=df moment condition. Spec `nma-inconsistency-re.spec.mjs`, oracle `inco-re-oracle.{R,json}`.
 - [x] nma-pro-v2: replace `alert()` calls — 0 literal `alert(` calls remain in `nma-pro-v8.0.html` (V9-E08)
 - [ ] Add R-parity tests where missing (per triage overrides) — track to 100 %
 

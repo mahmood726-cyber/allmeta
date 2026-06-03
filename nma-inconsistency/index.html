@@ -115,7 +115,7 @@ A, D, -0.48, 0.14</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-05-24):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. Recommended k≥5 per design.
+    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> to ≤1e-8 via the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition. Recommended k≥5 per design.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -204,9 +204,29 @@ A, D, -0.48, 0.14</textarea>
     // re-fits fitNMA with the estimated τ² to get RE-weighted estimates.
     function tau2_DL(rows) {
       const fit0 = fitNMA(rows, null, 0);
-      const sumW = fit0.w.reduce((a, b) => a + b, 0);
-      const sumW2 = fit0.w.reduce((a, b) => a + b * b, 0);
-      const denom = sumW - sumW2 / sumW;
+      if (fit0.df <= 0) return 0;
+      // Generalized DerSimonian-Laird / Jackson moment denominator for a
+      // multi-parameter WLS network model (DerSimonian & Kacker 2007;
+      // Jackson, White & Riley 2013; netmeta method.tau="DL"):
+      //   C = tr(W) − tr( (XᵀWX)⁻¹ XᵀW²X )
+      // The earlier `ΣW − ΣW²/ΣW` form is only the intercept-only
+      // (single-parameter) special case; it diverges by ~16 % once
+      // nBasic > 1 (multi-treatment network) and failed netmeta DL parity.
+      // For a 2-treatment network (nBasic=1) this reduces exactly to the
+      // old form, so 2-arm behaviour is unchanged.
+      const X = fit0.X, w = fit0.w, cov = fit0.cov, p = fit0.nBasic, n = fit0.X.length;
+      const XtW2X = zeros(p, p);
+      for (let i = 0; i < n; i++) {
+        const wi2 = w[i] * w[i];
+        for (let a = 0; a < p; a++) {
+          const xa = X[i][a]; if (xa === 0) continue;
+          for (let b = 0; b < p; b++) XtW2X[a][b] += xa * wi2 * X[i][b];
+        }
+      }
+      let trCW2 = 0;
+      for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) trCW2 += cov[a][b] * XtW2X[b][a];
+      const sumW = w.reduce((s, x) => s + x, 0);
+      const denom = sumW - trCW2;
       if (denom <= 1e-12) return 0;
       return Math.max(0, (fit0.Q - fit0.df) / denom);
     }
@@ -404,8 +424,19 @@ A, D, -0.48, 0.14</textarea>
             ? { est: 0, se: 0 }
             : { est: net.beta[i - 1], se: Math.sqrt(net.cov[i - 1][i - 1]) };
         });
+        // RE-refit network estimates under the selected τ² (== FE when τ²=0),
+        // for netmeta(random=TRUE) parity checks.
+        const netRE = fitNMA(rows, undefined, tau2);
+        const estimatesRandom = {};
+        netRE.trts.forEach((t, i) => {
+          estimatesRandom[t] = i === 0
+            ? { est: 0, se: 0 }
+            : { est: netRE.beta[i - 1], se: Math.sqrt(netRE.cov[i - 1][i - 1]) };
+        });
         _lastInco = {
           trts: net.trts, Q: net.Q, df: net.df, estimates: estimates,
+          estimatesRandom: estimatesRandom, Qrandom: netRE.Q,
+          model: method, tau2: tau2,
           nodeSplit: ns.map(r => ({
             comparison: r.comparison,
             direct: { mean: r.direct.mean, se: r.direct.se },
