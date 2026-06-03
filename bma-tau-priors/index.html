@@ -80,6 +80,7 @@ Trial 5, -0.38, 0.022</textarea>
       <div style="display:flex;gap:0.4rem;margin-top:0.5rem">
         <button type="button" id="btn-run" class="primary" style="flex:1">Run BMA</button>
         <button type="button" id="btn-bus-load" style="flex:1;background:transparent;color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.85rem;font-weight:600;cursor:pointer">Load from bus</button>
+        <button type="button" id="btn-bus-save" style="flex:1;background:transparent;color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.85rem;font-weight:600;cursor:pointer">Save to bus</button>
       </div>
       <div class="note">
         <strong>When to use:</strong> k &lt; 15, sparse outcomes, or when reviewers disagree on which τ² prior is "right". The averaged posterior automatically downweights priors that fit the data poorly (low marginal likelihood). Reference: Friede, Röver, Wandel &amp; Neuenschwander 2017, <em>Biom J</em>.
@@ -181,6 +182,25 @@ Trial 5, -0.38, 0.022</textarea>
       });
       document.getElementById("src").value = lines.join("\n");
       run();
+    });
+
+    // Bus interop: save the current studies to the shared bus. The bus stores
+    // SE, this app works in vi (variance) — convert vi → se = sqrt(vi) on write
+    // (symmetric to the se² → vi conversion on load above).
+    document.getElementById("btn-bus-save").addEventListener("click", function () {
+      if (!window.MaStudies) { alert("Bus helper not loaded"); return; }
+      var rows = parse(document.getElementById("src").value);
+      if (rows.length < 1) { alert("Nothing to save — paste label, yi, vi rows first."); return; }
+      var studies = rows.map(function (r) {
+        return { label: r.label, est: r.yi, se: Math.sqrt(r.vi) };
+      });
+      var ok = MaStudies.write(studies);
+      if (window.Toast && typeof Toast.show === "function") {
+        Toast.show(ok ? ("Saved " + studies.length + " studies to the shared bus.")
+                      : "Could not save to the bus.", ok ? "info" : "error");
+      } else if (!ok) {
+        alert("Could not save to the bus.");
+      }
     });
 
     run();
