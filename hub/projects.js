@@ -1277,7 +1277,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Reporting",
-    summary: "The provability dashboard: every quantitative allmeta method backed by a committed R-parity test, asserting agreement with a named R reference (metafor, mada, dosresmeta, robumeta, RoBMA, EValue, metasens…) to a stated number of decimals, re-run in CI. Generated from the spec files themselves, so it cannot claim a method that isn't verified — 40 specs, 147 numeric checks, 32 distinct R oracles.",
+    summary: "The provability dashboard: every quantitative allmeta method backed by a committed R-parity test, asserting agreement with a named R reference (metafor, mada, dosresmeta, robumeta, RoBMA, EValue, metasens…) to a stated number of decimals, re-run in CI. Generated from the test files themselves, so it cannot claim a method that isn't verified — 63 R-parity tests (44 Playwright specs + 19 per-app Python tests), 250 numeric assertions, 41 distinct R oracles.",
     tags: ["parity", "verification", "reproducibility", "metafor", "provenance"]
   }
 ];
