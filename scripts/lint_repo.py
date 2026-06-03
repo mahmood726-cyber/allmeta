@@ -46,12 +46,9 @@ SCRIPT_OR_STYLE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.I | re.S)
 # Accepted baseline (Sentinel-style allowlist): findings here are known and
 # tolerated, so the gate blocks only NEW violations. Each entry is
 # (relpath, rule-substring, reason). Keep this list shrinking, not growing.
-ALLOWLIST = [
-    ("focus-studio/index.html", "external CDN",
-     "utility app (focus timer), not an evidence tool — Google Fonts pending vendoring"),
-    ("kanban-lab/index.html", "external CDN",
-     "utility app (kanban board), not an evidence tool — Google Fonts pending vendoring"),
-]
+# Currently EMPTY — focus-studio / kanban-lab fonts were vendored to
+# shared/fonts/ (2026-06-03), so every catalog app is genuinely CDN-free.
+ALLOWLIST = []
 
 
 def is_allowlisted(finding: str) -> bool:
