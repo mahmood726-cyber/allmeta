@@ -885,3 +885,8 @@ END OF MANUSCRIPT
 ================================================================================
 
 Word count (main text, excluding abstract/references): approximately 4,400 words
+
+Code & Data Availability
+------------------------
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI (resolves to the latest version):
+  Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

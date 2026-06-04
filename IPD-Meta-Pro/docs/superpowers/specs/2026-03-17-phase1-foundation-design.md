@@ -323,3 +323,11 @@ const val = isFinite(parsed) ? parsed : fallback;
 | D: parseFloat/Number sweep (~60) | 6 source modules | ~60 line changes |
 | E: Pre-fix snapshot + verification | Scripts | ~50 lines |
 | **Total** | ~12 files | ~770 lines |
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

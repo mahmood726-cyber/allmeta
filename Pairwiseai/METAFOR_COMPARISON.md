@@ -220,3 +220,11 @@ cooks.distance(inf)
 
 *Comparison completed: January 12, 2026*
 *TruthCert-PairwisePro achieves 96% feature parity with R metafor*
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

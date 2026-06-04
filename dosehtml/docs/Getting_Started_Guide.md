@@ -520,3 +520,11 @@ For additional help:
 *Document Version*: 1.0
 *Last Updated*: 2025-01-15
 *Software Version*: Dose Response Pro v18.1
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

@@ -182,3 +182,11 @@ See `tests/fixtures/ma-studies-v1/`:
 - `one-study-or.json` — single OR study (log scale)
 - `mixed-scale-rejected.json` — example a writer must refuse
 - `roundtrip.json` — canonical 5-study payload used by `tests/test_ma_studies_v1.py`
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

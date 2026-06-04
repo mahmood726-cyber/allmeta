@@ -558,3 +558,11 @@ Reference: https://gist.github.com/tommyettinger/46a874533244883189143505d203312
 ---
 
 *End of Technical Documentation*
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

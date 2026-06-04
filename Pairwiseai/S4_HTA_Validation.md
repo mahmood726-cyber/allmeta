@@ -380,3 +380,11 @@ cat(sprintf("  WTP $100,000: P(CE) = %.1f%%\n", p_ce[which(wtp_range == 99000)] 
 ---
 
 *End of HTA Validation Document*
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880

@@ -666,3 +666,11 @@ No other HTA software (commercial or open-source) offers this combination of fea
 *Document Version: 1.0.0*
 *Last Updated: January 15, 2026*
 *Author: HTA Development Team*
+
+---
+
+## Code & Data Availability
+
+The allmeta evidence-synthesis toolkit described here is openly archived on Zenodo and citable via its concept DOI, which always resolves to the latest released version:
+
+> Ahmad, Mahmood. *allmeta — open browser-only tools for evidence synthesis.* Zenodo. https://doi.org/10.5281/zenodo.20516880
