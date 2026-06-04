@@ -39,9 +39,9 @@ IPD Meta-Analysis Pro achieved high internal consistency and broad functional va
 
 # INTRODUCTION
 
-IPD meta-analysis is considered a methodological gold standard for evidence synthesis when participant-level data are available, enabling consistent modeling across studies, subgroup and interaction analyses, and improved handling of time-to-event and missing-data challenges [1-4]. Despite these advantages, IPD-MA remains underused due to data access barriers and implementation burden, particularly for teams without specialist programming support [5,6].
+IPD meta-analysis is considered a methodological gold standard for evidence synthesis when participant-level data are available, enabling consistent modeling across studies, subgroup and interaction analyses, and improved handling of time-to-event and missing-data challenges [1-4]. Despite these advantages, IPD-MA remains underused due to data access barriers and implementation burden, particularly for teams without specialist programming support [5].
 
-Contemporary IPD workflows are often built in R, Stata, or SAS, which are powerful but require coding expertise, software setup, and reproducibility governance workflows that are usually engineered ad hoc [7-10]. Browser-native tools have improved accessibility for aggregate-data meta-analysis, but robust IPD-MA support with modern validation and external-review packaging remains limited.
+Contemporary IPD workflows are often built in R, Stata, or SAS, which are powerful but require coding expertise, software setup, and reproducibility governance workflows that are usually engineered ad hoc [6-8]. Browser-native tools have improved accessibility for aggregate-data meta-analysis, but robust IPD-MA support with modern validation and external-review packaging remains limited.
 
 We developed IPD Meta-Analysis Pro to address three operational gaps simultaneously: (1) advanced IPD-MA capability accessible in a no-install browser workflow; (2) explicit reproducibility and governance layers suitable for regulated or externally reviewed work; and (3) practical reporting outputs for manuscripts and independent verification.
 
@@ -261,23 +261,21 @@ No human participants were newly recruited for this software methods study. Anal
 3. Debray TPA, Moons KGM, Riley RD. Detecting small-study effects and funnel plot asymmetry in meta-analysis of survival data. Res Synth Methods. 2018;9(2):204-220.
 4. Tierney JF, Stewart LA, Ghersi D, Burdett S, Sydes MR. Practical methods for incorporating summary time-to-event data into meta-analysis. Trials. 2007;8:16.
 5. Simmonds MC, Higgins JPT, Stewart LA, Tierney JF, Clarke MJ, Thompson SG. Meta-analysis of individual patient data from randomized trials: a review of methods used in practice. Clin Trials. 2005;2(3):209-217. doi:10.1191/1740774505cn087oa
-6. Fisher DJ, et al. Meta-analysis of individual participant data by treatment-covariate interactions. Stat Med. 2017;36:331-349.
-7. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48. doi:10.18637/jss.v036.i03
-8. Schwarzer G. meta: An R package for meta-analysis. R News. 2007;7(3):40-45.
-9. White IR, et al. Meta-analysis with individual participant data. Stata J. 2017;17(3):588-605.
-10. Balduzzi S, Rücker G, Schwarzer G. How to perform a meta-analysis with R: a practical tutorial. Evid Based Ment Health. 2019;22:153-160.
-11. Hartung J, Knapp G. A refined method for the meta-analysis of controlled clinical trials with binary outcome. Stat Med. 2001;20:3875-3889.
-12. Sidik K, Jonkman JN. A simple confidence interval for meta-analysis. Stat Med. 2002;21:3153-3159.
-13. Veroniki AA, et al. Methods to estimate between-study variance and its uncertainty in meta-analysis. Res Synth Methods. 2016;7:55-79. doi:10.1002/jrsm.1164
-14. Rücker G, et al. Treatment-effect estimates adjusted for small-study effects via the limit meta-analysis. Biostatistics. 2011;12(1):122-142. doi:10.1093/biostatistics/kxq046
-15. Salanti G, Ades AE, Ioannidis JPA. Graphical methods and numerical summaries for presenting results from multiple-treatment meta-analysis. J Clin Epidemiol. 2011;64:163-171.
-16. Turner RM, et al. Predicting the extent of heterogeneity in meta-analysis using empirical data from the Cochrane Database. Int J Epidemiol. 2012;41:818-827. PMID:22461129
-17. Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21:1539-1558. doi:10.1002/sim.1186
-18. Higgins JPT, et al. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.x. Cochrane. doi:10.1002/9781119536604
-19. Riley RD, et al. Interpretation of random effects meta-analyses. BMJ. 2011;342:d549. doi:10.1136/bmj.d549
-20. Debray TPA, et al. A framework for developing, implementing, and evaluating clinical prediction models in an IPD meta-analysis context. Stat Med. 2013;32:3158-3180. doi:10.1002/sim.5732
-21. Dahabreh IJ, Hernán MA. Extending inferences from a randomized trial to a target population. Eur J Epidemiol. 2019;34(8):719-722. doi:10.1007/s10654-019-00533-2
-22. Page MJ, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71. doi:10.1136/bmj.n71
-23. Gelman A, et al. Bayesian Data Analysis. 3rd ed. CRC Press; 2013.
-24. Carpenter B, et al. Stan: A probabilistic programming language. J Stat Softw. 2017;76(1):1-32. doi:10.18637/jss.v076.i01
-25. Bucher HC, et al. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. J Clin Epidemiol. 1997;50:683-691. doi:10.1016/s0895-4356(97)00049-8
+6. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48. doi:10.18637/jss.v036.i03
+7. Schwarzer G. meta: An R package for meta-analysis. R News. 2007;7(3):40-45.
+8. Balduzzi S, Rücker G, Schwarzer G. How to perform a meta-analysis with R: a practical tutorial. Evid Based Ment Health. 2019;22:153-160.
+9. Hartung J, Knapp G. A refined method for the meta-analysis of controlled clinical trials with binary outcome. Stat Med. 2001;20:3875-3889.
+10. Sidik K, Jonkman JN. A simple confidence interval for meta-analysis. Stat Med. 2002;21:3153-3159.
+11. Veroniki AA, et al. Methods to estimate between-study variance and its uncertainty in meta-analysis. Res Synth Methods. 2016;7:55-79. doi:10.1002/jrsm.1164
+12. Rücker G, et al. Treatment-effect estimates adjusted for small-study effects via the limit meta-analysis. Biostatistics. 2011;12(1):122-142. doi:10.1093/biostatistics/kxq046
+13. Salanti G, Ades AE, Ioannidis JPA. Graphical methods and numerical summaries for presenting results from multiple-treatment meta-analysis. J Clin Epidemiol. 2011;64:163-171.
+14. Turner RM, et al. Predicting the extent of heterogeneity in meta-analysis using empirical data from the Cochrane Database. Int J Epidemiol. 2012;41:818-827. PMID:22461129
+15. Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21:1539-1558. doi:10.1002/sim.1186
+16. Higgins JPT, et al. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.x. Cochrane. doi:10.1002/9781119536604
+17. Riley RD, et al. Interpretation of random effects meta-analyses. BMJ. 2011;342:d549. doi:10.1136/bmj.d549
+18. Debray TPA, et al. A framework for developing, implementing, and evaluating clinical prediction models in an IPD meta-analysis context. Stat Med. 2013;32:3158-3180. doi:10.1002/sim.5732
+19. Dahabreh IJ, Hernán MA. Extending inferences from a randomized trial to a target population. Eur J Epidemiol. 2019;34(8):719-722. doi:10.1007/s10654-019-00533-2
+20. Page MJ, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71. doi:10.1136/bmj.n71
+21. Gelman A, et al. Bayesian Data Analysis. 3rd ed. CRC Press; 2013.
+22. Carpenter B, et al. Stan: A probabilistic programming language. J Stat Softw. 2017;76(1):1-32. doi:10.18637/jss.v076.i01
+23. Bucher HC, et al. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. J Clin Epidemiol. 1997;50:683-691. doi:10.1016/s0895-4356(97)00049-8
