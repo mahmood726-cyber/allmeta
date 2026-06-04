@@ -276,7 +276,7 @@ No human participants were newly recruited for this software methods study. Anal
 18. Higgins JPT, et al. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.x. Cochrane. doi:10.1002/9781119536604
 19. Riley RD, et al. Interpretation of random effects meta-analyses. BMJ. 2011;342:d549. doi:10.1136/bmj.d549
 20. Debray TPA, et al. A framework for developing, implementing, and evaluating clinical prediction models in an IPD meta-analysis context. Stat Med. 2013;32:3158-3180. doi:10.1002/sim.5732
-21. Dahabreh IJ, et al. Extending inferences from a randomized trial to a target population. Eur J Epidemiol. 2020;35:111-122.
+21. Dahabreh IJ, Hernán MA. Extending inferences from a randomized trial to a target population. Eur J Epidemiol. 2019;34(8):719-722. doi:10.1007/s10654-019-00533-2
 22. Page MJ, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71. doi:10.1136/bmj.n71
 23. Gelman A, et al. Bayesian Data Analysis. 3rd ed. CRC Press; 2013.
 24. Carpenter B, et al. Stan: A probabilistic programming language. J Stat Softw. 2017;76(1):1-32. doi:10.18637/jss.v076.i01

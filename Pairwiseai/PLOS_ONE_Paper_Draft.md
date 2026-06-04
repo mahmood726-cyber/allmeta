@@ -94,7 +94,7 @@ Heterogeneity is reported as τ², τ, I², H², and Q statistic with associated
 
 - **Standard**: Wald-type intervals using normal distribution
 - **HKSJ**: Hartung-Knapp-Sidik-Jonkman adjustment using t-distribution with k-1 degrees of freedom [11]
-- **Prediction intervals**: Both standard (Higgins-Thompson-Spiegelhalter) and Noma (2023) methods accounting for τ² uncertainty [12]
+- **Prediction intervals**: Both standard (Higgins-Thompson-Spiegelhalter) and Noma (2018) methods accounting for τ² uncertainty [12]
 
 #### Publication Bias Assessment
 
@@ -328,7 +328,7 @@ The platform is freely available as open-source software and requires no install
 
 11. Hartung J, Knapp G. A refined method for the meta-analysis of controlled clinical trials with binary outcome. Stat Med. 2001;20(24):3875-3889.
 
-12. Noma H, Nagashima K, Furukawa TA. Prediction intervals for random-effects meta-analysis accounting for between-study heterogeneity uncertainty. Stat Med. 2023;42(16):2837-2854.
+12. Nagashima K, Noma H, Furukawa TA. Prediction intervals for random-effects meta-analysis: a confidence distribution approach. Stat Methods Med Res. 2018;28(6):1689-1702. doi:10.1177/0962280218773520
 
 13. Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. BMJ. 1997;315(7109):629-634. doi:10.1136/bmj.315.7109.629
 
