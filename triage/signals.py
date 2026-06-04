@@ -20,7 +20,7 @@ _STUB_PATTERNS_CI = re.compile(
 )
 _STUB_PATTERNS_CS = re.compile(
     # case-sensitive (uppercase) matches: code-stub conventions
-    r"\bTODO\b|\bFIXME\b|\bXXX\b|\bHACK\b|REPLACE_ME|__PLACEHOLDER__",
+    r"\bTODO\b|\bFIXME\b|\bXXX\b|\bHACK\b|REPLACE_ME|__PLACEHOLDER__",  # sentinel:skip-line P1-unpopulated-placeholder  (stub-detector's own pattern, not an unpopulated token)
 )
 
 _SCAN_SUFFIXES = (".html", ".js", ".css", ".py")
