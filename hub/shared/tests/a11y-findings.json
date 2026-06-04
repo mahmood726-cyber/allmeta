@@ -1,17 +1,9 @@
 {
-  "generated": "2026-05-31T08:03:58.568Z",
-  "appsScanned": 69,
+  "generated": "2026-06-04T08:33:31.131Z",
+  "appsScanned": 76,
   "appsFailedToLoad": [],
-  "totalViolationInstances": 33,
+  "totalViolationInstances": 38,
   "rankedRules": [
-    {
-      "id": "color-contrast",
-      "impact": "serious",
-      "apps": 5,
-      "nodes": 29,
-      "help": "Elements must meet minimum color contrast ratio thresholds",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
-    },
     {
       "id": "scrollable-region-focusable",
       "impact": "serious",
@@ -19,6 +11,14 @@
       "nodes": 4,
       "help": "Scrollable region must have keyboard access",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/scrollable-region-focusable?application=playwright"
+    },
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "apps": 2,
+      "nodes": 9,
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
     },
     {
       "id": "nested-interactive",
@@ -39,8 +39,8 @@
     {
       "id": "region",
       "impact": "moderate",
-      "apps": 11,
-      "nodes": 39,
+      "apps": 19,
+      "nodes": 48,
       "help": "All page content should be contained by landmarks",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright"
     },
@@ -104,15 +104,8 @@
   "perApp": {
     "HTA": {
       "ok": true,
-      "count": 4,
+      "count": 3,
       "violations": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 1
-        },
         {
           "id": "nested-interactive",
           "impact": "serious",
@@ -178,16 +171,8 @@
     },
     "bayesian-mcmc": {
       "ok": true,
-      "count": 1,
-      "violations": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 1
-        }
-      ]
+      "count": 0,
+      "violations": []
     },
     "bayesian-nma": {
       "ok": true,
@@ -232,6 +217,11 @@
       "count": 0,
       "violations": []
     },
+    "correlation-ma": {
+      "ok": true,
+      "count": 0,
+      "violations": []
+    },
     "courses": {
       "ok": true,
       "count": 1,
@@ -255,10 +245,23 @@
       "count": 0,
       "violations": []
     },
-    "dta-sroc": {
+    "dose-response-ma": {
       "ok": true,
       "count": 0,
       "violations": []
+    },
+    "dta-sroc": {
+      "ok": true,
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "effect-size-converter": {
       "ok": true,
@@ -269,7 +272,7 @@
           "impact": "moderate",
           "help": "All page content should be contained by landmarks",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
-          "nodes": 1
+          "nodes": 2
         }
       ]
     },
@@ -285,16 +288,8 @@
     },
     "focus-studio": {
       "ok": true,
-      "count": 1,
-      "violations": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 8
-        }
-      ]
+      "count": 0,
+      "violations": []
     },
     "forest-plot": {
       "ok": true,
@@ -303,8 +298,16 @@
     },
     "funnel-plot": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "gosh": {
       "ok": true,
@@ -323,18 +326,42 @@
     },
     "heterogeneity": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "hsroc": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "influence": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "kanban-lab": {
       "ok": true,
@@ -425,8 +452,16 @@
     },
     "meta-regression": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "mh-peto": {
       "ok": true,
@@ -434,6 +469,11 @@
       "violations": []
     },
     "multilevel-ma": {
+      "ok": true,
+      "count": 0,
+      "violations": []
+    },
+    "multivariate-ma": {
       "ok": true,
       "count": 0,
       "violations": []
@@ -460,7 +500,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 18
+          "nodes": 7
         },
         {
           "id": "region",
@@ -532,13 +572,29 @@
     },
     "p-curve": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "pet-peese": {
       "ok": true,
-      "count": 0,
-      "violations": []
+      "count": 1,
+      "violations": [
+        {
+          "id": "region",
+          "impact": "moderate",
+          "help": "All page content should be contained by landmarks",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/region?application=playwright",
+          "nodes": 1
+        }
+      ]
     },
     "pico": {
       "ok": true,
@@ -554,6 +610,11 @@
       ]
     },
     "powerma": {
+      "ok": true,
+      "count": 0,
+      "violations": []
+    },
+    "parity": {
       "ok": true,
       "count": 0,
       "violations": []
@@ -574,6 +635,11 @@
       "violations": []
     },
     "prisma-screen": {
+      "ok": true,
+      "count": 0,
+      "violations": []
+    },
+    "project": {
       "ok": true,
       "count": 0,
       "violations": []
@@ -602,7 +668,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodes": 1
+          "nodes": 2
         },
         {
           "id": "empty-table-header",
@@ -625,7 +691,17 @@
       "count": 0,
       "violations": []
     },
+    "rmst-ma": {
+      "ok": true,
+      "count": 0,
+      "violations": []
+    },
     "rob2": {
+      "ok": true,
+      "count": 0,
+      "violations": []
+    },
+    "robma": {
       "ok": true,
       "count": 0,
       "violations": []

@@ -17,22 +17,28 @@ through its own pipeline (forest plot / capsule / audit). Default topics:
 malaria,cardiology,hiv -- other topics are skipped so existing flows are untouched.
 """
 import os
-import sys
 import subprocess
+import sys
+from pathlib import Path
 
-_CANDIDATES = [
-    os.getenv("RCT_EXTRACTOR_PATH"),
-    r"C:\Projects\rct-extractor-v2",
-    "/c/Projects/rct-extractor-v2",
-    r"F:\rct-extractor-v2",
-    os.path.expanduser("~/rct-extractor-v2"),
-]
+
+def _candidate_roots():
+    here = Path(__file__).resolve()
+    repo_root = here.parents[1]
+    configured = os.getenv("RCT_EXTRACTOR_PATH")
+    candidates = [
+        Path(configured).expanduser() if configured else None,
+        repo_root.parent / "rct-extractor-v2",
+        Path.home() / "code" / "rct-extractor-v2",
+        Path.home() / "rct-extractor-v2",
+    ]
+    return [c for c in candidates if c]
 
 
 def _find_extractor():
-    for c in _CANDIDATES:
-        if c and os.path.exists(os.path.join(c, "scripts", "build_metakit_config.py")):
-            return c
+    for c in _candidate_roots():
+        if (c / "scripts" / "build_metakit_config.py").exists():
+            return str(c)
     return None
 
 

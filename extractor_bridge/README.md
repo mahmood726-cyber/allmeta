@@ -19,7 +19,8 @@ pipeline. One JSON contract, loose coupling — no hard dependency either way.
 
 ## Use (CLI)
 ```bash
-set RCT_EXTRACTOR_PATH=C:\Projects\rct-extractor-v2      # or export on bash/mac
+# Windows PowerShell:
+$env:RCT_EXTRACTOR_PATH = "$env:USERPROFILE\code\rct-extractor-v2"
 python extractor_bridge/extract_meta.py records.json --out config.json
 ```
 `records.json`:

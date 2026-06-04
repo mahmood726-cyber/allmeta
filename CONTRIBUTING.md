@@ -99,8 +99,8 @@ Edit `shared/citation.js`:
 
 ```js
 "your-app": [
-  { vancouver: "Author A, Author B. Title. Journal. Year;vol(issue):pages. doi:10.xxxx/yyy",
-    bibtex: "@article{authorYearKey, author = {...}, title = {...}, journal = {...}, year = {...}}" },
+  { vancouver: "Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21(11):1539-1558. doi:10.1002/sim.1186",
+    bibtex: "@article{higgins2002heterogeneity, author = {Higgins, Julian P. T. and Thompson, Simon G.}, title = {Quantifying heterogeneity in a meta-analysis}, journal = {Statistics in Medicine}, year = {2002}}" },
 ],
 ```
 
