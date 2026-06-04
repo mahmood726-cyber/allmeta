@@ -550,7 +550,7 @@ downloadFile(rCode, 'dose_response_analysis.R', 'text/plain');
 
 1. **Greenland S, Longnecker MP.** (1992). Methods for trend estimation from summarized dose-response data, with applications to meta-analysis. *American Journal of Epidemiology*, 135(11), 1301-1309. doi:10.1093/oxfordjournals.aje.a116237
 
-2. **Orsini N, Bellocco R, Greenland S.** (2006). Generalized least squares for trend estimation of summarized dose-response data. *Stata Journal*, 6(1), 40-57.
+2. **Orsini N, Bellocco R, Greenland S.** (2006). Generalized least squares for trend estimation of summarized dose-response data. *Stata Journal*, 6(1), 40-57. doi:10.1177/1536867x0600600103
 
 3. **van Houwelingen HC, Arends LR, Stijnen T.** (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624. doi:10.1002/sim.1040
 
@@ -558,7 +558,7 @@ downloadFile(rCode, 'dose_response_analysis.R', 'text/plain');
 
 ### Bayesian Methods
 
-5. **Gelman A, Rubin DB.** (1992). Inference from iterative simulation using multiple sequences. *Statistical Science*, 7(4), 457-472.
+5. **Gelman A, Rubin DB.** (1992). Inference from iterative simulation using multiple sequences. *Statistical Science*, 7(4), 457-472. doi:10.1214/ss/1177011136
 
 6. **Gelman A, et al.** (2013). *Bayesian Data Analysis* (3rd ed.). CRC Press.
 

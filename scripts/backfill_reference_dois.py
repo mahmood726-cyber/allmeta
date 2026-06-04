@@ -47,6 +47,9 @@ ENTRIES = [
     (["durrleman", "cubic splines"], "doi:10.1002/sim.4780080504"),
     (["harville", "variance component"], "doi:10.1080/01621459.1977.10480998"),
     (["orsini", "2012", "linear and nonlinear"], "doi:10.1093/aje/kwr265"),
+    # Second pass (CrossRef-resolved 2026-06-04): stats-journal articles.
+    (["gelman", "rubin", "iterative simulation"], "doi:10.1214/ss/1177011136"),
+    (["orsini", "2006", "generalized least squares"], "doi:10.1177/1536867x0600600103"),
 ]
 
 # Files that citation_cascade flagged (have a References section with bare refs).

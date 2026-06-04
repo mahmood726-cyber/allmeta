@@ -245,7 +245,7 @@ Failed: 0
 
 2. van Houwelingen HC, Arends LR, Stijnen T. (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624. doi:10.1002/sim.1040
 
-3. Orsini N, et al. (2006). Generalized least squares for trend estimation of summarized dose-response data. *Stata Journal*, 6(1), 40-57.
+3. Orsini N, et al. (2006). Generalized least squares for trend estimation of summarized dose-response data. *Stata Journal*, 6(1), 40-57. doi:10.1177/1536867x0600600103
 
 4. Cochran WG. (1954). The combination of estimates from different experiments. *Biometrics*, 10(1), 101-129. doi:10.2307/3001666
 
