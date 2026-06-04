@@ -320,7 +320,7 @@ The platform is freely available as open-source software and requires no install
 
 7. Defined Health Technology Assessment Framework. NICE; 2022.
 
-8. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188.
+8. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188. doi:10.1016/0197-2456(86)90046-2
 
 9. Paule RC, Mandel J. Consensus Values and Weighting Factors. J Res Natl Bur Stand. 1982;87(5):377-385.
 

@@ -505,7 +505,7 @@ All data used in validation are from published sources cited in the references. 
 
 8. National Institute for Health and Care Excellence. NICE health technology evaluations: the manual. NICE; 2022.
 
-9. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188.
+9. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188. doi:10.1016/0197-2456(86)90046-2
 
 10. Viechtbauer W. Bias and efficiency of meta-analytic variance estimators in the random-effects model. J Educ Behav Stat. 2005;30(3):261-293.
 
@@ -535,15 +535,15 @@ All data used in validation are from published sources cited in the references. 
 
 23. Pocock SJ, Stone GW. The primary outcome is positive—is that good enough? N Engl J Med. 2016;375(10):971-979.
 
-24. Garrison LP, Towse A, Briggs A, et al. Performance-based risk-sharing arrangements—good practices for design, implementation, and evaluation: report of the ISPOR good practices for performance-based risk-sharing arrangements task force. Value Health. 2013;16(5):703-719.
+24. Garrison LP, Towse A, Briggs A, et al. Performance-based risk-sharing arrangements—good practices for design, implementation, and evaluation: report of the ISPOR good practices for performance-based risk-sharing arrangements task force. Value Health. 2013;16(5):703-719. doi:10.1016/j.jval.2013.04.011
 
-25. Colditz GA, Brewer TF, Berkey CS, et al. Efficacy of BCG vaccine in the prevention of tuberculosis. JAMA. 1994;271(9):698-702.
+25. Colditz GA, Brewer TF, Berkey CS, et al. Efficacy of BCG vaccine in the prevention of tuberculosis. JAMA. 1994;271(9):698-702. PMID:8309034
 
-26. Teo KK, Yusuf S, Collins R, et al. Effects of intravenous magnesium in suspected acute myocardial infarction. BMJ. 1991;303(6816):1499-1503.
+26. Teo KK, Yusuf S, Collins R, et al. Effects of intravenous magnesium in suspected acute myocardial infarction. BMJ. 1991;303(6816):1499-1503. doi:10.1136/bmj.303.6816.1499
 
 27. Cuijpers P, van Straten A, Andersson G, van Oppen P. Psychotherapy for depression in adults: a meta-analysis of comparative outcome studies. J Consult Clin Psychol. 2008;76(6):909-922.
 
-28. Antithrombotic Trialists' Collaboration. Aspirin in the primary and secondary prevention of vascular disease. Lancet. 2009;373(9678):1849-1860.
+28. Antithrombotic Trialists' Collaboration. Aspirin in the primary and secondary prevention of vascular disease. Lancet. 2009;373(9678):1849-1860. doi:10.1016/S0140-6736(09)60503-1
 
 29. Ettinger T. Mulberry32 PRNG. GitHub Gist. 2017. https://gist.github.com/tommyettinger/46a874533244883189143505d203312c
 

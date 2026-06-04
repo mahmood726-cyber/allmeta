@@ -429,11 +429,11 @@ The v1.0 version contains statistical errors that can lead to:
 
 ## References
 
-1. Greenland S, Longnecker MP. (1992). Methods for trend estimation from summarized dose-response data. *American Journal of Epidemiology*, 135(11), 1301-1309.
+1. Greenland S, Longnecker MP. (1992). Methods for trend estimation from summarized dose-response data. *American Journal of Epidemiology*, 135(11), 1301-1309. doi:10.1093/oxfordjournals.aje.a116237
 
-2. van Houwelingen HC, Arends LR, Stijnen T. (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624.
+2. van Houwelingen HC, Arends LR, Stijnen T. (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624. doi:10.1002/sim.1040
 
-3. Orsini N, et al. (2012). Meta-analysis for linear and nonlinear dose-response relations. *American Journal of Epidemiology*, 175(1), 66-73.
+3. Orsini N, et al. (2012). Meta-analysis for linear and nonlinear dose-response relations. *American Journal of Epidemiology*, 175(1), 66-73. doi:10.1093/aje/kwr265
 
 ---
 

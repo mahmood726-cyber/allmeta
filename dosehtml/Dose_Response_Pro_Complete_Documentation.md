@@ -548,13 +548,13 @@ downloadFile(rCode, 'dose_response_analysis.R', 'text/plain');
 
 ### Primary Methodology Papers
 
-1. **Greenland S, Longnecker MP.** (1992). Methods for trend estimation from summarized dose-response data, with applications to meta-analysis. *American Journal of Epidemiology*, 135(11), 1301-1309.
+1. **Greenland S, Longnecker MP.** (1992). Methods for trend estimation from summarized dose-response data, with applications to meta-analysis. *American Journal of Epidemiology*, 135(11), 1301-1309. doi:10.1093/oxfordjournals.aje.a116237
 
 2. **Orsini N, Bellocco R, Greenland S.** (2006). Generalized least squares for trend estimation of summarized dose-response data. *Stata Journal*, 6(1), 40-57.
 
-3. **van Houwelingen HC, Arends LR, Stijnen T.** (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624.
+3. **van Houwelingen HC, Arends LR, Stijnen T.** (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624. doi:10.1002/sim.1040
 
-4. **Orsini N, et al.** (2012). Meta-analysis for linear and nonlinear dose-response relations. *American Journal of Epidemiology*, 175(1), 66-73.
+4. **Orsini N, et al.** (2012). Meta-analysis for linear and nonlinear dose-response relations. *American Journal of Epidemiology*, 175(1), 66-73. doi:10.1093/aje/kwr265
 
 ### Bayesian Methods
 
@@ -564,9 +564,9 @@ downloadFile(rCode, 'dose_response_analysis.R', 'text/plain');
 
 ### Heterogeneity
 
-7. **Higgins JP, Thompson SG.** (2002). Quantifying heterogeneity in a meta-analysis. *Statistics in Medicine*, 21(11), 1539-1558.
+7. **Higgins JP, Thompson SG.** (2002). Quantifying heterogeneity in a meta-analysis. *Statistics in Medicine*, 21(11), 1539-1558. doi:10.1002/sim.1186
 
-8. **DerSimonian R, Laird N.** (1986). Meta-analysis in clinical trials. *Controlled Clinical Trials*, 7(3), 177-188.
+8. **DerSimonian R, Laird N.** (1986). Meta-analysis in clinical trials. *Controlled Clinical Trials*, 7(3), 177-188. doi:10.1016/0197-2456(86)90046-2
 
 ### Software
 

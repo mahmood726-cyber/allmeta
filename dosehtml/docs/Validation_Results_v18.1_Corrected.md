@@ -241,15 +241,15 @@ Failed: 0
 
 ## References
 
-1. Greenland S, Longnecker MP. (1992). Methods for trend estimation from summarized dose-response data. *American Journal of Epidemiology*, 135(11), 1301-1309.
+1. Greenland S, Longnecker MP. (1992). Methods for trend estimation from summarized dose-response data. *American Journal of Epidemiology*, 135(11), 1301-1309. doi:10.1093/oxfordjournals.aje.a116237
 
-2. van Houwelingen HC, Arends LR, Stijnen T. (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624.
+2. van Houwelingen HC, Arends LR, Stijnen T. (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. *Statistics in Medicine*, 21(4), 589-624. doi:10.1002/sim.1040
 
 3. Orsini N, et al. (2006). Generalized least squares for trend estimation of summarized dose-response data. *Stata Journal*, 6(1), 40-57.
 
-4. Cochran WG. (1954). The combination of estimates from different experiments. *Biometrics*, 10(1), 101-129.
+4. Cochran WG. (1954). The combination of estimates from different experiments. *Biometrics*, 10(1), 101-129. doi:10.2307/3001666
 
-5. Higgins JP, Thompson SG. (2002). Quantifying heterogeneity in a meta-analysis. *Statistics in Medicine*, 21(11), 1539-1558.
+5. Higgins JP, Thompson SG. (2002). Quantifying heterogeneity in a meta-analysis. *Statistics in Medicine*, 21(11), 1539-1558. doi:10.1002/sim.1186
 
 ---
 

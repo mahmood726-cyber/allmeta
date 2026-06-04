@@ -488,25 +488,25 @@ IPD Meta-Analysis Pro provides a validated, accessible browser-based tool for in
 
 2. Stewart LA, Tierney JF. To IPD or not to IPD? Advantages and disadvantages of systematic reviews using individual patient data. Eval Health Prof. 2002;25(1):76-97.
 
-3. Debray TPA, Moons KGM, van Valkenhoef G, et al. Get real in individual participant data (IPD) meta-analysis: a review of the methodology. Res Synth Methods. 2015;6(4):293-309.
+3. Debray TPA, Moons KGM, van Valkenhoef G, et al. Get real in individual participant data (IPD) meta-analysis: a review of the methodology. Res Synth Methods. 2015;6(4):293-309. doi:10.1002/jrsm.1160
 
 4. Cochrane Handbook for Systematic Reviews of Interventions. Version 6.4. Cochrane; 2023. doi:10.1002/9781119536604
 
-5. Huang Y, Tang J, Tam WWS, et al. Comparing the overall result and interaction in aggregate data meta-analysis and individual patient data meta-analysis. Medicine. 2016;95(14):e3312.
+5. Huang Y, Tang J, Tam WWS, et al. Comparing the overall result and interaction in aggregate data meta-analysis and individual patient data meta-analysis. Medicine. 2016;95(14):e3312. doi:10.1097/MD.0000000000003312
 
-6. Simmonds MC, Higgins JP, Stewart LA, et al. Meta-analysis of individual patient data from randomized trials: a review of methods used in practice. Clin Trials. 2005;2(3):209-217.
+6. Simmonds MC, Higgins JP, Stewart LA, et al. Meta-analysis of individual patient data from randomized trials: a review of methods used in practice. Clin Trials. 2005;2(3):209-217. doi:10.1191/1740774505cn087oa
 
 7. Viechtbauer W. Conducting meta-analyses in R with the metafor package. J Stat Softw. 2010;36(3):1-48. doi:10.18637/jss.v036.i03
 
 8. Fisher DJ. Two-stage individual participant data meta-analysis and generalized forest plots. Stata J. 2015;15(2):369-396.
 
-9. Van Houwelingen HC, Arends LR, Stijnen T. Advanced methods in meta-analysis: multivariate approach and meta-regression. Stat Med. 2002;21(4):589-624.
+9. Van Houwelingen HC, Arends LR, Stijnen T. Advanced methods in meta-analysis: multivariate approach and meta-regression. Stat Med. 2002;21(4):589-624. doi:10.1002/sim.1040
 
-10. Wallace BC, Lajeunesse MJ, Dietz G, et al. OpenMEE: Intuitive, open-source software for meta-analysis in ecology and evolutionary biology. Methods Ecol Evol. 2017;8(8):941-947.
+10. Wallace BC, Lajeunesse MJ, Dietz G, et al. OpenMEE: Intuitive, open-source software for meta-analysis in ecology and evolutionary biology. Methods Ecol Evol. 2017;8(8):941-947. doi:10.1111/2041-210x.12708
 
 11. Viechtbauer W. Bias and efficiency of meta-analytic variance estimators in the random-effects model. J Educ Behav Stat. 2005;30(3):261-293.
 
-12. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188.
+12. DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials. 1986;7(3):177-188. doi:10.1016/0197-2456(86)90046-2
 
 13. Raudenbush SW. Analyzing effect sizes: Random-effects models. In: Cooper H, Hedges LV, Valentine JC, eds. The Handbook of Research Synthesis and Meta-Analysis. 2nd ed. Russell Sage Foundation; 2009:295-315.
 
@@ -524,7 +524,7 @@ IPD Meta-Analysis Pro provides a validated, accessible browser-based tool for in
 
 20. Viechtbauer W. Confidence intervals for the amount of heterogeneity in meta-analysis. Stat Med. 2007;26(1):37-52.
 
-21. Higgins JP, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21(11):1539-1558.
+21. Higgins JP, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med. 2002;21(11):1539-1558. doi:10.1002/sim.1186
 
 22. IntHout J, Ioannidis JP, Rovers MM, Goeman JJ. Plea for routinely presenting prediction intervals in meta-analysis. BMJ Open. 2016;6(7):e010247.
 
@@ -532,7 +532,7 @@ IPD Meta-Analysis Pro provides a validated, accessible browser-based tool for in
 
 24. Gelman A. Prior distributions for variance parameters in hierarchical models. Bayesian Anal. 2006;1(3):515-534.
 
-25. Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. J Clin Epidemiol. 1997;50(6):683-691.
+25. Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. J Clin Epidemiol. 1997;50(6):683-691. doi:10.1016/s0895-4356(97)00049-8
 
 26. Salanti G, Ades AE, Ioannidis JP. Graphical methods and numerical summaries for presenting results from multiple-treatment meta-analysis. J Clin Epidemiol. 2011;64(2):163-171.
 
@@ -556,11 +556,11 @@ IPD Meta-Analysis Pro provides a validated, accessible browser-based tool for in
 
 36. Rubin DB. Multiple Imputation for Nonresponse in Surveys. John Wiley & Sons; 1987.
 
-37. Colditz GA, Brewer TF, Berkey CS, et al. Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. JAMA. 1994;271(9):698-702.
+37. Colditz GA, Brewer TF, Berkey CS, et al. Efficacy of BCG vaccine in the prevention of tuberculosis: Meta-analysis of the published literature. JAMA. 1994;271(9):698-702. PMID:8309034
 
-38. Antithrombotic Trialists' Collaboration. Collaborative meta-analysis of randomised trials of antiplatelet therapy for prevention of death, myocardial infarction, and stroke in high risk patients. BMJ. 2002;324(7329):71-86.
+38. Antithrombotic Trialists' Collaboration. Collaborative meta-analysis of randomised trials of antiplatelet therapy for prevention of death, myocardial infarction, and stroke in high risk patients. BMJ. 2002;324(7329):71-86. doi:10.1136/bmj.324.7329.71
 
-39. Teo KK, Yusuf S, Collins R, et al. Effects of intravenous magnesium in suspected acute myocardial infarction: overview of randomised trials. BMJ. 1991;303(6816):1499-1503.
+39. Teo KK, Yusuf S, Collins R, et al. Effects of intravenous magnesium in suspected acute myocardial infarction: overview of randomised trials. BMJ. 1991;303(6816):1499-1503. doi:10.1136/bmj.303.6816.1499
 
 ---
 

@@ -145,7 +145,7 @@ The addition of Mantel-Haenszel (standard for Cochrane reviews), Peto method (es
 
 1. Viechtbauer W. metafor: Meta-Analysis Package for R. J Stat Softw 2010;36(3):1-48
 2. Mantel N, Haenszel W. Statistical aspects of the analysis of data from retrospective studies. J Natl Cancer Inst 1959;22:719-748
-3. Yusuf S, et al. Beta blockade during and after myocardial infarction. JAMA 1985;254:1337-1343
+3. Yusuf S, et al. Beta blockade during and after myocardial infarction. JAMA 1985;254:1337-1343 doi:10.1016/s0033-0620(85)80003-7
 4. Viechtbauer W, Cheung MW. Outlier and influence diagnostics for meta-analysis. Res Synth Methods 2010;1:112-125
 5. Ioannidis JPA, Trikalinos TA. An exploratory test for an excess of significant findings. Clin Trials 2007;4:245-253
 

@@ -590,9 +590,9 @@ Potential additional enhancements identified:
 
 ## References
 
-1. **REML**: Harville DA (1977). Maximum likelihood approaches to variance component estimation. *Technometrics*, 19(4), 421-440.
+1. **REML**: Harville DA (1977). Maximum likelihood approaches to variance component estimation. *Technometrics*, 19(4), 421-440. doi:10.1080/01621459.1977.10480998
 
-2. **Restricted Cubic Splines**: Durrleman S, Simon R (1989). Flexible regression models with cubic splines. *Statistics in Medicine*, 8(3), 351-361.
+2. **Restricted Cubic Splines**: Durrleman S, Simon R (1989). Flexible regression models with cubic splines. *Statistics in Medicine*, 8(3), 351-361. doi:10.1002/sim.4780080504
 
 3. **Bootstrap CIs**: Efron B, Tibshirani RJ (1994). *An Introduction to the Bootstrap*. Chapman & Hall.
 
