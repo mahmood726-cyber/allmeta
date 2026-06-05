@@ -1,7 +1,6 @@
-import shutil
 from pathlib import Path
 import pytest
-from _r_parity import assert_r_parity, RSCRIPT
+from _r_parity import assert_r_parity, _rscript_path
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -22,7 +21,7 @@ EXACT_R_VALUES = {
 
 
 @pytest.mark.skipif(
-    not shutil.which("Rscript") and not Path(RSCRIPT).is_file(),
+    _rscript_path() is None,
     reason="Rscript not available — R-parity check requires R 4.5.x",
 )
 def test_assert_r_parity_passes_when_python_matches_r():
@@ -36,8 +35,8 @@ def test_assert_r_parity_passes_when_python_matches_r():
 
 
 def test_assert_r_parity_skips_when_no_rscript(monkeypatch, tmp_path):
-    monkeypatch.setattr("shutil.which", lambda *a, **k: None)
-    monkeypatch.setattr("_r_parity.RSCRIPT", "/does/not/exist/Rscript")
+    # Force the "no Rscript on host" branch; assert_r_parity must pytest.skip.
+    monkeypatch.setattr("_r_parity._rscript_path", lambda: None)
     with pytest.raises(pytest.skip.Exception):
         assert_r_parity(
             {"b": 0.0},
