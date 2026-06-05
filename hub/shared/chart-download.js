@@ -62,11 +62,28 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  // Optionally bind a verifiable TruthCert receipt to the exported artifact.
+  // opts.getReceiptInput() returns { studies, method, results, label } for the
+  // current analysis (or null/undefined to skip). Requires shared/ma-studies-v1.js
+  // + shared/truthcert-export.js to be loaded; if either is missing, or signing
+  // throws, the export proceeds UNSTAMPED (never blocks the download).
+  async function _stamp(svgText, getReceiptInput) {
+    if (!getReceiptInput || !window.AlmTruthCertExport) return svgText;
+    let input;
+    try { input = getReceiptInput(); } catch (e) { return svgText; }
+    if (!input) return svgText;
+    try {
+      const res = await window.AlmTruthCertExport.buildReceipt(input);
+      return window.AlmTruthCertExport.stampSVG(svgText, res);
+    } catch (e) { return svgText; }
+  }
+
   function init(opts) {
     opts = opts || {};
     const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
     if (!target) { console.warn('[alm.chartDownload] target not found'); return; }
     const getSvg = typeof opts.getSvg === 'function' ? opts.getSvg : () => null;
+    const getReceiptInput = typeof opts.getReceiptInput === 'function' ? opts.getReceiptInput : null;
     const basename = opts.basename || 'chart';
     _ensureStyle();
     target.innerHTML = `
@@ -75,15 +92,16 @@
         <button type="button" data-fmt="svg">SVG</button>
         <button type="button" data-fmt="pdf">PDF</button>
       </div>`;
-    target.querySelector('[data-fmt="svg"]').addEventListener('click', () => {
+    target.querySelector('[data-fmt="svg"]').addEventListener('click', async () => {
       const src = getSvg(); if (!src) { console.warn('[alm.chartDownload] no SVG'); return; }
       const prepared = _prepareSvg(src);
-      _download(new Blob([_serialize(prepared)], { type: 'image/svg+xml' }), basename + '.svg');
+      const svgText = await _stamp(_serialize(prepared), getReceiptInput);
+      _download(new Blob([svgText], { type: 'image/svg+xml' }), basename + '.svg');
     });
-    target.querySelector('[data-fmt="png"]').addEventListener('click', () => {
+    target.querySelector('[data-fmt="png"]').addEventListener('click', async () => {
       const src = getSvg(); if (!src) { console.warn('[alm.chartDownload] no SVG'); return; }
       const prepared = _prepareSvg(src);
-      const svgText = _serialize(prepared);
+      const svgText = await _stamp(_serialize(prepared), getReceiptInput);
       const vb = prepared.getAttribute('viewBox').split(/\s+/).map(Number);
       const [, , w, h] = vb;
       const scale = (window.devicePixelRatio || 1) * 2;
@@ -105,14 +123,14 @@
       };
       img.src = blobURL;
     });
-    target.querySelector('[data-fmt="pdf"]').addEventListener('click', () => {
+    target.querySelector('[data-fmt="pdf"]').addEventListener('click', async () => {
       const src = getSvg(); if (!src) { console.warn('[alm.chartDownload] no SVG'); return; }
       if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
         console.warn('[alm.chartDownload] jspdf not loaded; include hub/shared/vendor/jspdf.min.js before chart-download.js');
         return;
       }
       const prepared = _prepareSvg(src);
-      const svgText = _serialize(prepared);
+      const svgText = await _stamp(_serialize(prepared), getReceiptInput);
       const vb = prepared.getAttribute('viewBox').split(/\s+/).map(Number);
       const [, , w, h] = vb;
       const scale = 2;

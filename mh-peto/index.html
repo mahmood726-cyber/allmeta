@@ -66,6 +66,7 @@
   <script src="../shared/diagnostic-plots.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -539,6 +540,15 @@ StudyE, 4, 600, 10, 600</textarea>
       target: '#alm-chart-mount',
       basename: 'mhpeto-forest',
       getSvg: function () { return document.getElementById('forest'); },
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: (window.MaStudies && MaStudies.read()) || [],
+          method: 'Mantel-Haenszel / Peto fixed-effect pooling (OR/RR/RD)',
+          label: 'mhpeto-forest',
+          results: _lastResults,
+        };
+      },
     });
 
     window.alm.axisControls({

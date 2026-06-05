@@ -145,6 +145,24 @@ def test_stamp_svg_embeds_metadata_and_footer_idempotently():
     assert out["hasKeyHint"] is True
 
 
+def test_stamp_svg_handles_padded_viewbox():
+    """chart-download.js pads the viewBox to '-12 -12 w h'; the footer must
+    anchor to the padded box, not fall back to the 0-600 default."""
+    out = _run_node(f"""
+      (async () => {{
+        const res = await TX.buildReceipt({{ studies: {STUDIES}, method:'PM-RE',
+          results: {RESULTS}, key: 'unit-test-key' }});
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 424 324"><rect/></svg>';
+        const out = TX.stampSVG(svg, res);
+        const m = out.match(/data-truthcert="1" x="(-?\\d+)" y="(-?\\d+)"/);
+        console.log(JSON.stringify({{ x: m && +m[1], y: m && +m[2] }}));
+      }})();
+    """)
+    # x0=-12 → x=-6; y0=-12,h=324 → y = -12 + 324 - 4 = 308.
+    assert out["x"] == -6
+    assert out["y"] == 308
+
+
 def test_sha256hex_known_vector():
     out = _run_node("""
       (async () => {

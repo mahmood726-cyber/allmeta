@@ -64,6 +64,7 @@
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
@@ -577,6 +578,15 @@
       target: '#alm-chart-mount',
       basename: 'propma-forest',
       getSvg: function () { return document.getElementById('forest'); },
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: (window.MaStudies && MaStudies.read()) || [],
+          method: 'Proportion meta-analysis (FT/logit/raw, DL/PM random-effects)',
+          label: 'propma-forest',
+          results: _lastResults,
+        };
+      },
     });
 
     window.alm.axisControls({
