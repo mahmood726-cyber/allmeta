@@ -143,6 +143,31 @@ for (const d of readdirSync(root, { withFileTypes: true })) {
 }
 const allRows = rows.concat(pyRows);
 
+// ----- Honest coverage: numerical apps NOT (yet) R-parity verified -----
+// The ledger lists every VERIFIED method; staying silent about the rest would
+// imply 100% coverage. Disclose the numerical apps with no committed R-parity
+// test and WHY — overwhelmingly because the method is novel/bespoke and has no
+// standard R package to check against (that is the truth, not negligence). This
+// list is curated; the drift guard below auto-drops any app that has since
+// gained a spec or per-app Python R-parity test.
+const UNCOVERED_NUMERICAL = [
+  { app: 'everything-model', reason: 'Bespoke variational-EM Bayesian hierarchical model (outcome x time x RoB) — no standard R package equivalent to check against.' },
+  { app: 'cross-network', reason: 'Unified NMA + IPD + observational bias-adjustment model — bespoke; no packaged R oracle.' },
+  { app: 'cross-design', reason: 'RCT + observational power-prior / Welton design-bias synthesis — closed-form, no packaged R oracle (formula-checked only).' },
+  { app: 'sequential-ma', reason: 'Adaptive alpha-spending sequential MA — boundaries verified analytically; the tsa app IS R-parity tested for the shared TSA core.' },
+  { app: 'bma-tau-priors', reason: 'Bayesian model-averaging over tau-squared priors (Laplace + Simpson) — core Bayes factors checked vs R integrate(); the full BMA has no packaged oracle.' },
+  { app: 'nma-dose-response-app', reason: '40+ research-grade dose-response NMA methods — no established R oracle for the novel estimators.' },
+];
+const coverageBlob = (
+  rows.map(r => `${r.spec} ${r.module || ''}`).join(' ') + ' ' +
+  pyRows.map(r => r.spec).join(' ')
+).toLowerCase();
+const uncovered = UNCOVERED_NUMERICAL.filter(u => {
+  const nowCovered = coverageBlob.includes(u.app.toLowerCase());
+  if (nowCovered) console.log(`NOTE: '${u.app}' now has parity coverage — dropping from uncovered list.`);
+  return !nowCovered;
+});
+
 const ledger = {
   generated: new Date().toISOString().slice(0, 10),
   specCount: rows.length,          // Playwright *parity*.spec.mjs
@@ -152,6 +177,9 @@ const ledger = {
   pyAssertionCount: pyAsserts,     // Python numeric/parity assertions
   oracleCount: new Set(allRows.flatMap(r => r.oracles)).size,
   stataCount: allRows.filter(r => r.stata).length,
+  // Honest coverage denominator: methods verified vs numerical methods that are
+  // not (with the reason — usually "no standard R oracle for this novel method").
+  uncovered: uncovered,
   rows: allRows,
 };
 
