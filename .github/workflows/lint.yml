@@ -21,3 +21,8 @@ jobs:
           python-version: "3.12"
       - name: Shipped-asset invariant lint
         run: python scripts/lint_repo.py
+      - name: Citation grounding (offline gate)
+        # Every DOI claimed in shared/citation.js must resolve in the committed
+        # cache (shared/citations.cache.json) with a matching title. Network-free
+        # — refresh the cache with `python scripts/ground_citations.py --resolve`.
+        run: python scripts/ground_citations.py

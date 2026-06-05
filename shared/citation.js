@@ -41,8 +41,8 @@
         bibtex: '@article{friede_2017_bma,\n  author = {Friede, Tim and R\\"over, Christian and Wandel, Simon and Neuenschwander, Beat},\n  title = {Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases},\n  journal = {Biometrical Journal},\n  volume = {59},\n  number = {4},\n  pages = {658--671},\n  year = {2017},\n  doi = {10.1002/bimj.201500236}\n}' },
     ],
     "cross-design": [
-      { vancouver: "Welton NJ, Cooper NJ, Ades AE, Lu G, Sutton AJ. Mixed treatment comparison with multiple outcomes reported inconsistently across trials: evaluation of antivirals for treatment of influenza A and B. Stat Med. 2008;27(27):5620-5639. doi:10.1002/sim.3445",
-        bibtex: '@article{welton_2008_design_bias,\n  author = {Welton, Nicky J. and Cooper, Nicola J. and Ades, A. E. and Lu, Guobing and Sutton, Alex J.},\n  title = {Mixed treatment comparison with multiple outcomes reported inconsistently across trials},\n  journal = {Statistics in Medicine},\n  volume = {27},\n  pages = {5620--5639},\n  year = {2008},\n  doi = {10.1002/sim.3445}\n}' },
+      { vancouver: "Welton NJ, Cooper NJ, Ades AE, Lu G, Sutton AJ. Mixed treatment comparison with multiple outcomes reported inconsistently across trials: evaluation of antivirals for treatment of influenza A and B. Stat Med. 2008;27(27):5620-5639. doi:10.1002/sim.3377",
+        bibtex: '@article{welton_2008_design_bias,\n  author = {Welton, Nicky J. and Cooper, Nicola J. and Ades, A. E. and Lu, Guobing and Sutton, Alex J.},\n  title = {Mixed treatment comparison with multiple outcomes reported inconsistently across trials},\n  journal = {Statistics in Medicine},\n  volume = {27},\n  pages = {5620--5639},\n  year = {2008},\n  doi = {10.1002/sim.3377}\n}' },
       { vancouver: "Ibrahim JG, Chen MH. Power Prior Distributions for Regression Models. Statist Sci. 2000;15(1):46-60. doi:10.1214/ss/1009212673",
         bibtex: '@article{ibrahim_chen_2000_powerprior,\n  author = {Ibrahim, Joseph G. and Chen, Ming-Hui},\n  title = {Power Prior Distributions for Regression Models},\n  journal = {Statistical Science},\n  volume = {15},\n  number = {1},\n  pages = {46--60},\n  year = {2000},\n  doi = {10.1214/ss/1009212673}\n}' },
     ],
@@ -51,8 +51,8 @@
         bibtex: '@article{efthimiou_2017_getreal,\n  author = {Efthimiou, Orestis and Mavridis, Dimitris and Debray, Thomas P. and others},\n  title = {Combining randomized and non-randomized evidence in network meta-analysis},\n  journal = {Statistics in Medicine},\n  volume = {36},\n  number = {8},\n  pages = {1210--1226},\n  year = {2017},\n  doi = {10.1002/sim.7223}\n}' },
     ],
     "multi-outcome-ma": [
-      { vancouver: "Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. Biostatistics. 2007;8(3):441-451. doi:10.1093/biostatistics/kxl018",
-        bibtex: '@article{riley_2007_bivariate,\n  author = {Riley, Richard D. and Thompson, John R. and Abrams, Keith R.},\n  title = {An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown},\n  journal = {Biostatistics},\n  volume = {8},\n  number = {3},\n  pages = {441--451},\n  year = {2007},\n  doi = {10.1093/biostatistics/kxl018}\n}' },
+      { vancouver: "Riley RD, Thompson JR, Abrams KR. An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown. Biostatistics. 2007;8(3):441-451. doi:10.1093/biostatistics/kxm023",
+        bibtex: '@article{riley_2007_bivariate,\n  author = {Riley, Richard D. and Thompson, John R. and Abrams, Keith R.},\n  title = {An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown},\n  journal = {Biostatistics},\n  volume = {8},\n  number = {3},\n  pages = {441--451},\n  year = {2007},\n  doi = {10.1093/biostatistics/kxm023}\n}' },
     ],
     "multi-outcome-nma": [
       { vancouver: "Achana FA, Cooper NJ, Bujkiewicz S, Hubbard SJ, Kendrick D, Jones DR, Sutton AJ. Network meta-analysis of multiple outcome measures accounting for borrowing of information across outcomes. BMC Med Res Methodol. 2014;14:92. doi:10.1186/1471-2288-14-92",

@@ -1,0 +1,92 @@
+{
+  "10.1002/(SICI)1097-0258(19961230)15:24<2733::AID-SIM562>3.0.CO;2-0": {
+    "container": "Statistics in Medicine",
+    "source": "crossref",
+    "title": "BORROWING STRENGTH FROM EXTERNAL TRIALS IN A META-ANALYSIS",
+    "year": 1996
+  },
+  "10.1002/bimj.201500236": {
+    "container": "Biometrical Journal",
+    "source": "crossref",
+    "title": "Meta‐analysis of two studies in the presence of heterogeneity with applications in rare diseases",
+    "year": 2017
+  },
+  "10.1002/jrsm.5": {
+    "container": "Research Synthesis Methods",
+    "source": "crossref",
+    "title": "Robust variance estimation in meta‐regression with dependent effect size estimates",
+    "year": 2010
+  },
+  "10.1002/sim.3377": {
+    "container": "Statistics in Medicine",
+    "source": "crossref",
+    "title": "Mixed treatment comparison with multiple outcomes reported inconsistently across trials: Evaluation of antivirals for treatment of influenza A and B",
+    "year": 2008
+  },
+  "10.1002/sim.3594": {
+    "container": "Statistics in Medicine",
+    "source": "crossref",
+    "title": "Addressing between‐study heterogeneity and inconsistency in mixed treatment comparisons: Application to stroke prevention treatments in individuals with non‐rheumatic atrial fibrillation",
+    "year": 2009
+  },
+  "10.1002/sim.4040": {
+    "container": "Statistics in Medicine",
+    "source": "crossref",
+    "title": "Random effects meta-analysis of event outcome in the framework of the generalized linear mixed model with applications in sparse data",
+    "year": 2010
+  },
+  "10.1002/sim.7223": {
+    "container": "Statistics in Medicine",
+    "source": "crossref",
+    "title": "Combining randomized and non‐randomized evidence in network meta‐analysis",
+    "year": 2017
+  },
+  "10.1016/j.jclinepi.2007.03.013": {
+    "container": "Journal of Clinical Epidemiology",
+    "source": "crossref",
+    "title": "Trial sequential analysis may establish when firm evidence is reached in cumulative meta-analysis",
+    "year": 2008
+  },
+  "10.1016/j.jclinepi.2017.08.010": {
+    "container": "Journal of Clinical Epidemiology",
+    "source": "crossref",
+    "title": "Living systematic review: 1. Introduction—the why, what, when, and how",
+    "year": 2017
+  },
+  "10.1037/met0000011": {
+    "container": "Psychological Methods",
+    "source": "crossref",
+    "title": "Small sample adjustments for robust variance estimation with meta-regression.",
+    "year": 2015
+  },
+  "10.1093/biostatistics/kxm023": {
+    "container": "Biostatistics",
+    "source": "crossref",
+    "title": "An alternative model for bivariate random-effects meta-analysis when the within-study correlations are unknown",
+    "year": 2008
+  },
+  "10.1186/1471-2288-14-92": {
+    "container": "BMC Medical Research Methodology",
+    "source": "crossref",
+    "title": "Network meta-analysis of multiple outcome measures accounting for borrowing of information across outcomes",
+    "year": 2014
+  },
+  "10.1214/ss/1009212673": {
+    "container": "Statistical Science",
+    "source": "crossref",
+    "title": "Power prior distributions for regression models",
+    "year": 2000
+  },
+  "10.2307/2336502": {
+    "container": "Biometrika",
+    "source": "crossref",
+    "title": "Discrete Sequential Boundaries for Clinical Trials",
+    "year": 1983
+  },
+  "10.7326/M18-3667": {
+    "container": "Annals of Internal Medicine",
+    "source": "crossref",
+    "title": "The Predictive Approaches to Treatment effect Heterogeneity (PATH) Statement",
+    "year": 2020
+  }
+}
