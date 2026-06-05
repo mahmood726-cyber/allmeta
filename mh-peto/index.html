@@ -313,7 +313,7 @@ StudyE, 4, 600, 10, 600</textarea>
     function run() {
       var rows = parse(document.getElementById('src').value);
       var measure = document.getElementById('measure').value;
-      if (rows.length < 2) return;
+      if (rows.length < 2) { _lastResults = null; return; }
 
       var pooled = [];
       var Q = null, QEp = null;
@@ -543,7 +543,7 @@ StudyE, 4, 600, 10, 600</textarea>
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Mantel-Haenszel / Peto fixed-effect pooling (OR/RR/RD)',
           label: 'mhpeto-forest',
           results: _lastResults,

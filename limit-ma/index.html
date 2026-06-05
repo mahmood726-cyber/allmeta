@@ -266,7 +266,7 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) return;
+      if (rows.length < 3) { _lastResults = null; return; }
       var d = dl(rows);
       var fe = pool(rows, 0);
       var re = pool(rows, d.tau2);
@@ -426,7 +426,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Rucker limit meta-analysis (small-study-adjusted)',
           label: 'limit-ma-funnel',
           results: _lastResults,

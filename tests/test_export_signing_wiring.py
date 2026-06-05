@@ -24,6 +24,21 @@ def test_chart_export_apps_pass_receipt_input():
         assert "getReceiptInput" in html, f"{app} chartDownload must pass getReceiptInput"
 
 
+def test_receipt_input_does_not_bind_stale_bus():
+    """A receipt must bind the CURRENT analysis, never the (possibly stale)
+    shared bus. getReceiptInput must not read MaStudies.read() for `studies`,
+    and must guard on _lastResults so an invalid input produces no stale receipt."""
+    import re
+    for app in CHART_SIGNED:
+        html = (ROOT / app / "index.html").read_text(encoding="utf-8")
+        m = re.search(r"getReceiptInput:\s*function\s*\(\)\s*\{(.*?)\n\s{6}\}", html, re.S)
+        assert m, f"{app}: could not locate getReceiptInput body"
+        body = m.group(1)
+        assert "MaStudies.read()" not in body, \
+            f"{app}: getReceiptInput binds the stale bus (MaStudies.read()) — bind the current analysis"
+        assert "_lastResults" in body, f"{app}: getReceiptInput must guard on _lastResults"
+
+
 def test_chart_download_helper_supports_signing():
     js = (ROOT / "hub" / "shared" / "chart-download.js").read_text(encoding="utf-8")
     assert "getReceiptInput" in js, "chart-download must accept a receipt-input hook"

@@ -256,6 +256,7 @@
       var rows = parse(text);
       if (rows.length < 3 || rows.length > 100) {
         document.getElementById('m-n').textContent = '&#8212;';
+        _lastResults = null; // do not leave a stale result exportable
         return;
       }
 
@@ -274,6 +275,7 @@
 
       if (results.length === 0) {
         document.getElementById('m-n').textContent = '0';
+        _lastResults = null; // do not leave a stale result exportable
         return;
       }
 
@@ -456,7 +458,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'GOSH all-subsets meta-analysis stability',
           label: 'gosh-plot',
           results: _lastResults,

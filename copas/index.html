@@ -500,7 +500,7 @@
           warnEl.style.display = 'none';
         }
       }
-      if (rows.length < 3) return;
+      if (rows.length < 3) { _lastResults = null; return; }
 
       // Standard FE pool
       var w0 = rows.map(function (r) { return 1 / (r.se * r.se); });
@@ -701,7 +701,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Copas selection-model profile-MLE sensitivity',
           label: 'copas-sensitivity',
           results: _lastResults,

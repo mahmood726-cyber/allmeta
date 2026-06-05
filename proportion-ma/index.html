@@ -333,6 +333,7 @@
       }
       if (rows.length < 2) {
         document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
+        _lastResults = null; // do not leave a stale result exportable
         return;
       }
 
@@ -581,7 +582,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Proportion meta-analysis (FT/logit/raw, DL/PM random-effects)',
           label: 'propma-forest',
           results: _lastResults,

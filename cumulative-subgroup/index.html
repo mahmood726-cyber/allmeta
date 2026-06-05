@@ -801,7 +801,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Cumulative + subgroup meta-analysis (DL/PM, between-subgroup Q)',
           label: 'cumsub-plot',
           results: _lastResults,

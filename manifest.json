@@ -1,7 +1,7 @@
 {
   "name": "allmeta — open tools for evidence synthesis",
   "short_name": "allmeta",
-  "description": "Browser-only, offline-capable meta-analysis suite. 76+ tools across pairwise / NMA / DTA / IPD / dose-response / survival / HTA / GRADE / PRISMA / TSA. Validated against metafor / meta / netmeta / mada.",
+  "description": "Browser-only, offline-capable meta-analysis suite. 90+ tools across pairwise / NMA / DTA / IPD / dose-response / survival / HTA / GRADE / PRISMA / TSA. Validated against metafor / meta / netmeta / mada.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

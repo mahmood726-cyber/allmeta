@@ -536,6 +536,7 @@
       body.innerHTML = '';
       if (rows.length < 5) {
         body.innerHTML = '<tr><td colspan="5">Pub-bias tests have very low power below k=10. Current k = ' + rows.length + '.</td></tr>';
+        _lastResults = null; // do not leave a stale result exportable
         return;
       }
 
@@ -726,7 +727,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Publication-bias tests (Egger/Begg/Peters/Harbord) + funnel',
           label: 'pubbias-funnel',
           results: _lastResults,

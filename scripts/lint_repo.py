@@ -90,11 +90,23 @@ INLINE_META_MATH_EXEMPT = {
 }
 
 
-def inline_math_inventory(paths) -> tuple[list[str], list[str]]:
-    """Return (warn, info) findings for inline univariate τ²/I² arithmetic in
-    catalog apps. warn = no AlmMaCore + not exempt (candidate reimplementation);
-    info = has AlmMaCore alongside inline math (consolidation candidate)."""
-    warn: list[str] = []
+# Accepted baseline of inline reimplementations (Sentinel pattern): the rule
+# BLOCKS any NEW inline univariate tau2/I2, but tolerates these documented few
+# until they are migrated, so drift can no longer pass CI silently.
+INLINE_META_MATH_KNOWN = {
+    "gosh": "deprecated Q-based I2 + DL; perf-sensitive all-subset migration deferred",
+    "Truthcert1": "large bespoke flagship pairwise app; consolidation tracked",
+    "IPD-Meta-Pro": "IPD two-stage aggregate pool; bespoke engine",
+}
+
+
+def inline_math_inventory(paths):
+    """Classify inline univariate tau2/I2 arithmetic in catalog apps:
+      novel = no AlmMaCore, not exempt, not in the accepted baseline -> GATING;
+      known = in the accepted baseline (non-gating);
+      info  = inline math alongside AlmMaCore (consolidation note, non-gating)."""
+    novel: list[str] = []
+    known: list[str] = []
     info: list[str] = []
     for path in paths:
         rel = path.relative_to(ROOT).as_posix()
@@ -106,12 +118,14 @@ def inline_math_inventory(paths) -> tuple[list[str], list[str]]:
         if not m:
             continue
         ln = line_of(text, m.start())
-        uses_core = "AlmMaCore" in text
         msg = f"{rel}:{ln}  P1-inline-meta-math: inline tau2/I2 ({m.group(0)[:32]!r})"
-        (info if uses_core else warn).append(
-            msg + (" -- alongside AlmMaCore, consolidate" if uses_core
-                   else " -- no AlmMaCore; delegate or exempt with reason"))
-    return warn, info
+        if "AlmMaCore" in text:
+            info.append(msg + " -- alongside AlmMaCore, consolidate")
+        elif app_dir in INLINE_META_MATH_KNOWN:
+            known.append(msg + f" -- accepted baseline ({INLINE_META_MATH_KNOWN[app_dir]})")
+        else:
+            novel.append(msg + " -- NEW inline meta-math: delegate to shared/ma-core.js or exempt with a reason")
+    return novel, known, info
 
 
 def is_allowlisted(finding: str) -> bool:
@@ -209,14 +223,14 @@ def main() -> int:
     gating = [f for f in raw if not is_allowlisted(f)]
     allowed = [f for f in raw if is_allowlisted(f)]
 
-    # WARN-only single-source inventory (never gates; see INLINE_META_MATH).
-    im_warn, im_info = inline_math_inventory(catalog_entry_files())
-    if im_warn or im_info:
-        print(f"lint_repo: P1-inline-meta-math inventory (WARN-only, non-gating): "
-              f"{len(im_warn)} candidate(s), {len(im_info)} consolidation note(s):")
-        for f in im_warn:
-            print("  ! " + f)
-        for f in im_info:
+    # Single-source enforcement: NEW inline univariate tau2/I2 GATES; the accepted
+    # baseline (INLINE_META_MATH_KNOWN) and consolidation notes do not.
+    im_novel, im_known, im_info = inline_math_inventory(catalog_entry_files())
+    gating += im_novel
+    if im_known or im_info:
+        print(f"lint_repo: P1-inline-meta-math — {len(im_known)} accepted baseline, "
+              f"{len(im_info)} consolidation note(s) (non-gating):")
+        for f in (im_known + im_info):
             print("  ~ " + f)
         print()
 

@@ -291,7 +291,7 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) return;
+      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
@@ -465,7 +465,7 @@
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
-          studies: (window.MaStudies && MaStudies.read()) || [],
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
           method: 'Three-level (multilevel) REML meta-analysis',
           label: 'mlma-forest',
           results: _lastResults,

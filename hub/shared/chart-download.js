@@ -68,14 +68,28 @@
   // + shared/truthcert-export.js to be loaded; if either is missing, or signing
   // throws, the export proceeds UNSTAMPED (never blocks the download).
   async function _stamp(svgText, getReceiptInput) {
-    if (!getReceiptInput || !window.AlmTruthCertExport) return svgText;
+    // App did not opt into signing — legitimate; export plain, no warning.
+    if (!getReceiptInput) return svgText;
+    // Opted in but the signer module isn't loaded — a wiring bug. Fail-open keeps
+    // the download working, but NEVER silently: surface it so it can be fixed.
+    if (!window.AlmTruthCertExport) {
+      console.warn('[alm.chartDownload] truthcert-export.js not loaded — export is NOT signed. '
+        + 'Add <script src="../shared/truthcert-export.js"> before chart-download.js.');
+      return svgText;
+    }
     let input;
-    try { input = getReceiptInput(); } catch (e) { return svgText; }
+    try { input = getReceiptInput(); }
+    catch (e) { console.warn('[alm.chartDownload] getReceiptInput threw — export is NOT signed:', e); return svgText; }
+    // No current analysis to bind (e.g. invalid input cleared the result) — export
+    // plain, by design (better unstamped than a receipt for a stale/empty analysis).
     if (!input) return svgText;
     try {
       const res = await window.AlmTruthCertExport.buildReceipt(input);
       return window.AlmTruthCertExport.stampSVG(svgText, res);
-    } catch (e) { return svgText; }
+    } catch (e) {
+      console.warn('[alm.chartDownload] signing failed — export is NOT signed:', e);
+      return svgText;
+    }
   }
 
   function init(opts) {
