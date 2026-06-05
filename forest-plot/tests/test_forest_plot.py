@@ -101,3 +101,13 @@ def test_pm_estimator_is_bounded():
         "PM bracket expansion should be guarded by a finite counter"
     assert re.search(r"for \(var i = 0; i < \d+; i\+\+\)", text), \
         "PM bisection loop should run a fixed, finite number of iterations"
+
+
+def test_exports_embed_truthcert_receipt():
+    """Every downloaded artifact (SVG/PNG/JSON) must carry a verifiable receipt
+    of the exported analysis (Phase 1b: TruthCert on every export)."""
+    text = INDEX.read_text(encoding="utf-8")
+    assert "truthcert-export.js" in text, "must load the export signer module"
+    assert "buildExportReceipt" in text, "exports must build a receipt"
+    assert "AlmTruthCertExport.stampSVG" in text, "SVG/PNG must be stamped"
+    assert "out.truthcert =" in text, "JSON export must embed the receipt"

@@ -78,6 +78,7 @@
 <script src="../shared/heterogeneity-ci.js"></script>
 <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/webr-runner.js"></script>
@@ -641,23 +642,55 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (!parsed.studies.length) return null;
       const fe = poolFE(parsed.studies);
       const re = poolRE_PM(parsed.studies);
-      return { state: state, svg: buildSvg(state, parsed.studies, fe, re) };
+      return { state: state, studies: parsed.studies, fe: fe, re: re,
+               svg: buildSvg(state, parsed.studies, fe, re) };
     }
 
-    function onDownloadSvg() {
+    // ---- TruthCert on every export (shared/truthcert-export.js) ----
+    // Bind a verifiable receipt to the downloaded artifact: which studies +
+    // method + pooled results produced it, signed with the user's HMAC key and
+    // replayable against this commit. Unsigned-but-honest provenance when no key
+    // is configured (never a placeholder signature, lessons.md).
+    function exportReceiptInput(r) {
+      const ratio = (r.state.scale === "exp");
+      const tx = v => (ratio && isFinite(v)) ? Math.exp(v) : v;
+      const pool = p => (p && isFinite(p.mu))
+        ? { mu: tx(p.mu), ciLo: tx(p.lo), ciHi: tx(p.hi), se: p.se, k: p.k } : null;
+      return {
+        studies: r.studies,
+        method: "Paule-Mandel random-effects (HKSJ) + fixed-effect, inverse-variance",
+        label: r.state.title || "forest-plot",
+        results: {
+          scale: ratio ? "ratio" : "linear",
+          randomEffects: pool(r.re), fixedEffect: pool(r.fe),
+          tau2: r.re ? r.re.tau2 : null, I2: r.re ? r.re.I2 : null,
+        },
+      };
+    }
+    async function buildExportReceipt(r) {
+      if (!window.AlmTruthCertExport) return null;
+      try { return await AlmTruthCertExport.buildReceipt(exportReceiptInput(r)); }
+      catch (e) { return null; }
+    }
+
+    async function onDownloadSvg() {
       const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
-      downloadBlob(new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"}),
+      const res = await buildExportReceipt(r);
+      const svg = (res && window.AlmTruthCertExport) ? AlmTruthCertExport.stampSVG(r.svg, res) : r.svg;
+      downloadBlob(new Blob([svg], {type: "image/svg+xml;charset=utf-8"}),
                    "forest-" + slugify(r.state.title, "plot") + ".svg");
     }
 
-    function onDownloadPng() {
+    async function onDownloadPng() {
       const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
-      const m = r.svg.match(/viewBox="0 0 (\d+) (\d+)"/);
+      const res = await buildExportReceipt(r);
+      const stamped = (res && window.AlmTruthCertExport) ? AlmTruthCertExport.stampSVG(r.svg, res) : r.svg;
+      const m = stamped.match(/viewBox="0 0 (\d+) (\d+)"/);
       const W = m ? parseInt(m[1], 10) : 780;
       const H = m ? parseInt(m[2], 10) : 600;
       const scale = 2;
       const img = new Image();
-      const svgBlob = new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"});
+      const svgBlob = new Blob([stamped], {type: "image/svg+xml;charset=utf-8"});
       const url = URL.createObjectURL(svgBlob);
       img.onload = function () {
         const canvas = document.createElement("canvas");
@@ -674,9 +707,15 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       img.src = url;
     }
 
-    function onDownloadJson() {
-      const state = readState();
+    async function onDownloadJson() {
+      const r = currentSvg();
+      const state = r ? r.state : readState();
       const out = Object.assign({_schema: "forest-plot-v1", _savedAt: new Date().toISOString()}, state);
+      // Embed a verifiable provenance receipt of the exported analysis.
+      if (r) {
+        const res = await buildExportReceipt(r);
+        if (res) out.truthcert = res.signed ? res.receipt : res.manifest;
+      }
       downloadBlob(new Blob([JSON.stringify(out, null, 2)], {type: "application/json"}),
                    "forest-" + slugify(state.title, "state") + ".json");
     }
