@@ -11,7 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # Apps wired to embed a TruthCert receipt in their shared chart export.
-CHART_SIGNED = ["proportion-ma", "mh-peto", "copas"]
+CHART_SIGNED = [
+    "proportion-ma", "mh-peto", "copas",
+    "cumulative-subgroup", "gosh", "limit-ma", "multilevel-ma", "pubbias-tests",
+]
 
 
 def test_chart_export_apps_pass_receipt_input():

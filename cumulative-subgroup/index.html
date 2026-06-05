@@ -80,6 +80,7 @@
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/grade-push.js"></script>
@@ -796,6 +797,15 @@
       getSvg: function () {
         const el = document.querySelector('#svg-host svg');
         return el || null;
+      },
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: (window.MaStudies && MaStudies.read()) || [],
+          method: 'Cumulative + subgroup meta-analysis (DL/PM, between-subgroup Q)',
+          label: 'cumsub-plot',
+          results: _lastResults,
+        };
       },
     });
 

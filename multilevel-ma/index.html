@@ -61,6 +61,7 @@
   <script src="../shared/multilevel-reml.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/grade-push.js"></script>
   <script src="../shared/stats-qt.js"></script>
@@ -461,6 +462,15 @@
       target: '#alm-chart-mount',
       basename: 'mlma-forest',
       getSvg: function () { return document.getElementById('forest'); },
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: (window.MaStudies && MaStudies.read()) || [],
+          method: 'Three-level (multilevel) REML meta-analysis',
+          label: 'mlma-forest',
+          results: _lastResults,
+        };
+      },
     });
 
     window.alm.axisControls({

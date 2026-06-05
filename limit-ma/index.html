@@ -61,6 +61,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -422,6 +423,15 @@
       target: '#alm-chart-mount',
       basename: 'limit-ma-funnel',
       getSvg: function () { return document.getElementById('plot'); },
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: (window.MaStudies && MaStudies.read()) || [],
+          method: 'Rucker limit meta-analysis (small-study-adjusted)',
+          label: 'limit-ma-funnel',
+          results: _lastResults,
+        };
+      },
     });
 
     window.alm.axisControls({

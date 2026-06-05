@@ -69,6 +69,7 @@
   <script src="../shared/selmodel.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -722,6 +723,15 @@
       target: '#alm-chart-mount',
       basename: 'pubbias-funnel',
       getSvg: function () { return document.getElementById('funnel'); },
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: (window.MaStudies && MaStudies.read()) || [],
+          method: 'Publication-bias tests (Egger/Begg/Peters/Harbord) + funnel',
+          label: 'pubbias-funnel',
+          results: _lastResults,
+        };
+      },
     });
 
     window.alm.axisControls({
