@@ -88,6 +88,16 @@ def test_script_close_not_in_string():
 
 
 def test_pm_estimator_is_bounded():
-    """Read the PM iteration guard; confirms we cap iterations to avoid infinite loops."""
-    text = INDEX.read_text(encoding="utf-8")
-    assert "for (let i = 0; i < 100" in text, "PM bisection loop should have a 100-iter cap"
+    """Confirm the Paule-Mandel solver caps its iterations to avoid infinite loops.
+
+    The PM τ² core was refactored into the single-source helper
+    ``shared/ma-core.js`` (``window.AlmMaCore.tau2PM``), so the iteration guard
+    lives there, not inline in index.html. Assert both bounds are present: the
+    bracket-expansion ``guard`` and the fixed-count bisection loop.
+    """
+    core = ROOT.parent / "shared" / "ma-core.js"
+    text = core.read_text(encoding="utf-8")
+    assert re.search(r"guard\+\+\s*<\s*\d+", text), \
+        "PM bracket expansion should be guarded by a finite counter"
+    assert re.search(r"for \(var i = 0; i < \d+; i\+\+\)", text), \
+        "PM bisection loop should run a fixed, finite number of iterations"

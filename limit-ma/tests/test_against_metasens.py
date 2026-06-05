@@ -86,13 +86,19 @@ def _run_r():
     rscript = _rscript()
     if rscript is None:
         pytest.skip("Rscript not available — R-parity check requires R 4.5.x")
-    # Verify metasens is installed
-    check = subprocess.run(
-        [rscript, "--vanilla", "-e",
-         "suppressPackageStartupMessages(library(metasens)); cat('ok')"],
-        capture_output=True, text=True, encoding="utf-8",
-        errors="replace", timeout=30,
-    )
+    # Verify metasens is installed. metasens pulls in meta + metafor, whose cold
+    # load on Windows can exceed a tight timeout — give it room, and treat a
+    # timeout as a skip (slow/absent R package is a host-config gap, not a
+    # numeric regression), matching the missing-package branch below.
+    try:
+        check = subprocess.run(
+            [rscript, "--vanilla", "-e",
+             "suppressPackageStartupMessages(library(metasens)); cat('ok')"],
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.skip("metasens load timed out — R package present but too slow on this host")
     if check.returncode != 0 or "ok" not in check.stdout:
         pytest.skip("metasens not installed in R — install with install.packages('metasens')")
 

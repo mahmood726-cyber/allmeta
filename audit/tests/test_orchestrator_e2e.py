@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 
-def test_orchestrator_writes_4_artifacts_for_mini_repo(tmp_path):
+def test_orchestrator_writes_4_artifacts_for_mini_repo(tmp_path, require_playwright):
     if shutil.which("npx") is None:
         pytest.skip("npx not available")
     repo = tmp_path / "repo"

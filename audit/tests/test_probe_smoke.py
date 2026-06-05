@@ -14,7 +14,7 @@ AUDIT_DIR = Path(__file__).parent.parent
 _IS_WINDOWS = sys.platform == "win32"
 
 
-def test_probe_runs_against_a_real_app_and_writes_jsonl(tmp_path):
+def test_probe_runs_against_a_real_app_and_writes_jsonl(tmp_path, require_playwright):
     if shutil.which("npx") is None:
         import pytest
         pytest.skip("npx not available — Playwright probe smoke requires Node.js")
@@ -58,7 +58,7 @@ def test_probe_runs_against_a_real_app_and_writes_jsonl(tmp_path):
     )
 
 
-def test_probe_classifies_button_start_as_mount_present(tmp_path):
+def test_probe_classifies_button_start_as_mount_present(tmp_path, require_playwright):
     """Regression for Cycle 3.3: focus-studio-style page (Start button +
     number inputs) should be mount_found=True after the widened selectors.
 
