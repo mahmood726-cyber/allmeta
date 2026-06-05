@@ -53,6 +53,12 @@
     "title": "Living systematic review: 1. Introduction—the why, what, when, and how",
     "year": 2017
   },
+  "10.1016/j.jclinepi.2019.03.012": {
+    "container": "Journal of Clinical Epidemiology",
+    "source": "crossref",
+    "title": "The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses",
+    "year": 2019
+  },
   "10.1037/met0000011": {
     "container": "Psychological Methods",
     "source": "crossref",
@@ -82,6 +88,12 @@
     "source": "crossref",
     "title": "Discrete Sequential Boundaries for Clinical Trials",
     "year": 1983
+  },
+  "10.7326/M16-2607": {
+    "container": "Annals of Internal Medicine",
+    "source": "crossref",
+    "title": "Sensitivity Analysis in Observational Research: Introducing the E-Value",
+    "year": 2017
   },
   "10.7326/M18-3667": {
     "container": "Annals of Internal Medicine",

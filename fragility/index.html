@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Fragility index for a binary-outcome meta-analysis (Atal 2019): the fewest single-patient event changes needed to flip the pooled result's statistical significance.">
+  <meta name="color-scheme" content="light dark">
+  <title>Fragility index — meta-analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.7rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    .hint { display: block; color: var(--muted); font-size: 0.74rem; margin-top: 0.15rem; }
+    textarea { width: 100%; min-height: 9rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.85rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; resize: vertical; }
+    select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border);
+                   padding: 0.45rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td.big { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    #mods { font-size: 0.82rem; color: var(--muted); max-height: 11rem; overflow: auto; margin: 0; padding-left: 1.1rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/fragility.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Fragility index — meta-analysis</h1>
+    <p>How many single-patient event-status changes, added greedily across studies, would it take to flip the pooled result's statistical significance? A small fragility index means a "significant" meta-analysis hangs on very few events (Atal et al. 2019). Pooling matches <code>metafor</code> DL; the algorithm matches the <code>fragility</code> R package.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>2×2 studies</h2>
+      <label><span class="lbl">One study per line: <code>treatEvents, treatTotal, ctrlEvents, ctrlTotal</code></span>
+        <textarea id="data" spellcheck="false" aria-label="Study 2x2 counts, one per line"></textarea>
+        <span class="hint">Optional 5th field = study label. Lines starting with # are ignored.</span>
+      </label>
+      <label><span class="lbl">Effect measure</span>
+        <select id="measure" aria-label="Effect measure">
+          <option value="OR">Odds ratio (OR)</option>
+          <option value="RR">Risk ratio (RR)</option>
+          <option value="RD">Risk difference (RD)</option>
+        </select>
+      </label>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button type="button" id="btn-run" class="primary">Compute fragility index</button>
+        <button type="button" id="btn-example" class="ghost">Load example</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Result</h2>
+      <table>
+        <tbody id="tbody"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Modifications applied</h2>
+      <ol id="mods"></ol>
+      <div class="note"><strong>Read with care:</strong> the fragility index is a transparency metric, not a significance test. It is defined for a statistically significant pooled result (a non-significant result reports no FI here). Greedy event changes are a worst-case device — they do not represent a plausible data-generating process.</div>
+    </section>
+  </main>
+  <footer>
+    Greedy procedure matching <code>fragility::frag.ma(method="DL")</code>: each step applies the single ±1
+    event change (across any study, either arm) that pushes the watched DerSimonian-Laird 95% CI bound furthest
+    toward the null, stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
+    Zero-cell handling follows <code>metafor::escalc</code> (add ½, drop double-zero studies); the DL pool
+    delegates to the audited <code>shared/ma-core.js</code>. Reference: Atal I, Porcher R, Boutron I, Ravaud P.
+    The statistical significance of meta-analyses is frequently fragile. J Clin Epidemiol. 2019;111:58-67.
+    doi:10.1016/j.jclinepi.2019.03.012. Verified vs the <code>fragility</code> R package in
+    <code>hub/shared/tests/fragility-parity.spec.mjs</code>.
+  </footer>
+  <script>
+    var EXAMPLE = [
+      "# treatEvents, treatTotal, ctrlEvents, ctrlTotal, label",
+      "8, 100, 18, 100, Study A",
+      "5, 90, 14, 95, Study B",
+      "11, 120, 21, 118, Study C",
+      "3, 60, 9, 62, Study D",
+      "7, 110, 16, 108, Study E",
+    ].join("\n");
+
+    function parse(text) {
+      var studies = [], labels = [], errs = [];
+      text.split(/\r?\n/).forEach(function (line, i) {
+        var t = line.trim();
+        if (!t || t[0] === "#") return;
+        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        var e1 = +f[0], n1 = +f[1], e0 = +f[2], n0 = +f[3];
+        if (![e1, n1, e0, n0].every(isFinite) || n1 <= 0 || n0 <= 0 || e1 < 0 || e0 < 0 || e1 > n1 || e0 > n0) {
+          errs.push("line " + (i + 1)); return;
+        }
+        studies.push({ e1: e1, n1: n1, e0: e0, n0: n0 });
+        labels.push(f[4] || ("Study " + studies.length));
+      });
+      return { studies: studies, labels: labels, errs: errs };
+    }
+
+    function fmt(x, d) { return (x == null || !isFinite(x)) ? "—" : (+x).toFixed(d == null ? 3 : d); }
+
+    function run() {
+      var measure = document.getElementById("measure").value;
+      var p = parse(document.getElementById("data").value);
+      var tbody = document.getElementById("tbody");
+      var modsEl = document.getElementById("mods");
+      modsEl.innerHTML = "";
+      if (!p.studies.length) {
+        tbody.innerHTML = "<tr><td>Paste at least one valid 2×2 study" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</td></tr>";
+        return;
+      }
+      var r = window.AlmFragility.fragility(p.studies, { measure: measure });
+      var ratio = (measure !== "RD");
+      var tx = function (v) { return ratio ? Math.exp(v) : v; };
+      var pooled = r.pooled
+        ? "<code>" + fmt(tx(r.pooled.est)) + "</code> (95% CI <code>" + fmt(tx(r.pooled.lo)) + "</code>–<code>" + fmt(tx(r.pooled.hi)) + "</code>)"
+        : "—";
+      var fiCell = isFinite(r.FI)
+        ? "<td class='big'>" + r.FI + "</td>"
+        : "<td>n/a</td>";
+      tbody.innerHTML =
+        "<tr><th>Pooled " + measure + " (DL)</th><td>" + pooled + "</td></tr>"
+        + "<tr><th>Fragility index</th>" + fiCell + "</tr>"
+        + "<tr><th>Fragility quotient (FI ÷ N)</th><td>" + (isFinite(r.FQ) ? fmt(r.FQ, 5) : "n/a") + "</td></tr>"
+        + "<tr><th>Direction</th><td>" + r.dir + "</td></tr>"
+        + (p.errs.length ? "<tr><th>Skipped lines</th><td>" + p.errs.join(", ") + "</td></tr>" : "");
+      if (r.modifications && r.modifications.length) {
+        modsEl.innerHTML = r.modifications.map(function (m) {
+          var lbl = p.labels[m.study - 1] || ("Study " + m.study);
+          return "<li>" + lbl + " · " + m.arm + " arm · " + (m.dir > 0 ? "+1" : "−1") + " event</li>";
+        }).join("");
+      } else {
+        modsEl.innerHTML = "<li>(none — result is not significant or cannot be flipped)</li>";
+      }
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-example").addEventListener("click", function () {
+      document.getElementById("data").value = EXAMPLE; run();
+    });
+    document.getElementById("data").addEventListener("input", run);
+    document.getElementById("measure").addEventListener("change", run);
+    document.getElementById("data").value = EXAMPLE;
+    run();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

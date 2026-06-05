@@ -553,6 +553,30 @@ window.HTML_APPS_PROJECTS = [
     tags: ["mcid", "non-inferiority", "ni-margin", "responder"]
   },
   {
+    name: "E-value",
+    folder: "allmeta/evalue",
+    path: "./evalue/index.html",
+    added: "2026-06-05",
+    collection: "existing",
+    mode: "file",
+    category: "Sensitivity",
+    summary: "E-value (VanderWeele & Ding 2017): the minimum strength of unmeasured confounding — with both exposure and outcome — needed to explain away an observed association, for the point estimate and the confidence limit nearest the null. Supports RR/OR/HR/SMD.",
+    note: "For observational estimates; one sensitivity input, not a verdict. Verified vs the EValue R package.",
+    tags: ["e-value", "confounding", "sensitivity", "observational", "vanderweele"]
+  },
+  {
+    name: "Fragility index (MA)",
+    folder: "allmeta/fragility",
+    path: "./fragility/index.html",
+    added: "2026-06-05",
+    collection: "existing",
+    mode: "file",
+    category: "Sensitivity",
+    summary: "Fragility index for a binary-outcome meta-analysis (Atal 2019): the fewest single-patient event-status changes, added greedily across studies, needed to flip the pooled DL result's statistical significance. Reports FI, fragility quotient, and the modifications applied.",
+    note: "Transparency metric, not a test; defined for a significant pooled result. Matches the fragility R package.",
+    tags: ["fragility-index", "robustness", "sensitivity", "binary-outcome", "atal"]
+  },
+  {
     name: "ROBINS-I",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "allmeta/robins-i",

@@ -36,6 +36,14 @@
       { vancouver: "Tipton E. Small sample adjustments for robust variance estimation with meta-regression. Psychol Methods. 2015;20(3):375-393. doi:10.1037/met0000011",
         bibtex: '@article{tipton_2015_cr1,\n  author = {Tipton, Elizabeth},\n  title = {Small sample adjustments for robust variance estimation with meta-regression},\n  journal = {Psychological Methods},\n  volume = {20},\n  number = {3},\n  pages = {375--393},\n  year = {2015},\n  doi = {10.1037/met0000011}\n}' },
     ],
+    "evalue": [
+      { vancouver: "VanderWeele TJ, Ding P. Sensitivity Analysis in Observational Research: Introducing the E-Value. Ann Intern Med. 2017;167(4):268-274. doi:10.7326/M16-2607",
+        bibtex: '@article{vanderweele_ding_2017_evalue,\n  author = {VanderWeele, Tyler J. and Ding, Peng},\n  title = {Sensitivity Analysis in Observational Research: Introducing the E-Value},\n  journal = {Annals of Internal Medicine},\n  volume = {167},\n  number = {4},\n  pages = {268--274},\n  year = {2017},\n  doi = {10.7326/M16-2607}\n}' },
+    ],
+    "fragility": [
+      { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:58-67. doi:10.1016/j.jclinepi.2019.03.012",
+        bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {58--67},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
+    ],
     "bma-tau-priors": [
       { vancouver: "Friede T, Röver C, Wandel S, Neuenschwander B. Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases. Biom J. 2017;59(4):658-671. doi:10.1002/bimj.201500236",
         bibtex: '@article{friede_2017_bma,\n  author = {Friede, Tim and R\\"over, Christian and Wandel, Simon and Neuenschwander, Beat},\n  title = {Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases},\n  journal = {Biometrical Journal},\n  volume = {59},\n  number = {4},\n  pages = {658--671},\n  year = {2017},\n  doi = {10.1002/bimj.201500236}\n}' },

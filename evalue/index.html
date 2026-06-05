@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="E-value (VanderWeele & Ding 2017): the minimum strength of unmeasured confounding needed to explain away an observed association — point estimate and CI bound, for RR/OR/HR/SMD.">
+  <meta name="color-scheme" content="light dark">
+  <title>E-value — sensitivity to unmeasured confounding</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.7rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
+    .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+    .check input { width: auto; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    td.big { font-size: 1.35rem; font-weight: 700; color: var(--accent); }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    #interp { font-size: 0.92rem; margin: 0.4rem 0 0.8rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/evalue.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>E-value</h1>
+    <p>How strong would an unmeasured confounder have to be — with <em>both</em> the exposure and the outcome — to fully explain away an observed association? The E-value answers exactly that (VanderWeele &amp; Ding 2017), for the point estimate and for the confidence limit nearest the null. Larger E-value = more robust to unmeasured confounding.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Observed effect</h2>
+      <label><span class="lbl">Measure</span>
+        <select id="measure" aria-label="Effect measure">
+          <option value="RR">Risk ratio (RR)</option>
+          <option value="OR">Odds ratio (OR)</option>
+          <option value="HR">Hazard ratio (HR)</option>
+          <option value="SMD">Standardised mean difference (d)</option>
+        </select>
+      </label>
+      <div class="row3">
+        <label><span class="lbl">Point</span><input id="point" type="number" step="any" value="2.0"></label>
+        <label><span class="lbl">CI lower</span><input id="lo" type="number" step="any" value="1.5"></label>
+        <label><span class="lbl">CI upper</span><input id="hi" type="number" step="any" value="2.7"></label>
+      </div>
+      <label class="check"><input id="rare" type="checkbox"> Rare outcome (&lt;~15%) — affects OR/HR → RR mapping</label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.6rem">Compute E-value</button>
+      <div class="note"><strong>Scope:</strong> the E-value is for <em>observational</em> estimates where residual confounding is plausible. It says nothing about selection bias, measurement error, or model misspecification — report it as one sensitivity input, not a verdict.</div>
+    </section>
+    <section class="panel">
+      <h2>E-value</h2>
+      <table>
+        <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <p id="interp"></p>
+      <h2 style="margin-top:0.7rem">On the risk-ratio scale</h2>
+      <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio and E-value on a log scale"></svg>
+    </section>
+  </main>
+  <footer>
+    E-value(RR) = RR + √(RR·(RR−1)) for RR ≥ 1 (use 1/RR for RR &lt; 1); the CI E-value uses the
+    confidence limit nearest the null (= 1 if that limit crosses the null). Non-RR measures are mapped
+    to an approximate RR: OR → √OR (common) or OR (rare); HR via VanderWeele-Ding; d → exp(0.91·d) (Chinn 2000).
+    Reference: VanderWeele TJ, Ding P. Sensitivity Analysis in Observational Research: Introducing the
+    E-Value. Ann Intern Med. 2017;167(4):268-274. doi:10.7326/M16-2607. Computed client-side by the audited
+    <code>shared/evalue.js</code>, verified vs the <code>EValue</code> R package to ~1e-6 in
+    <code>hub/shared/tests/evalue-parity.spec.mjs</code>.
+  </footer>
+  <script>
+    function num(id) { var v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : null; }
+    function fmt(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(4).replace(/\.?0+$/, ""); }
+
+    function run() {
+      var measure = document.getElementById("measure").value;
+      var point = num("point"), lo = num("lo"), hi = num("hi");
+      var rare = document.getElementById("rare").checked;
+      var tbody = document.getElementById("tbody");
+      if (point == null || !(point > 0)) {
+        tbody.innerHTML = "<tr><td colspan='2'>Enter a positive point estimate.</td></tr>";
+        document.getElementById("interp").textContent = "";
+        document.getElementById("plot").innerHTML = "";
+        return;
+      }
+      var r = window.AlmEValue.eValues(measure, point, lo, hi, { rare: rare });
+      tbody.innerHTML =
+        "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
+        + "<tr><td>E-value (CI limit nearest null)</td><td class='big'>" + fmt(r.ci) + "</td></tr>"
+        + "<tr><td>Approx. risk ratio used</td><td><code>" + fmt(r.rr.point) + "</code>"
+        + (r.rr.lo != null ? " (CI <code>" + fmt(r.rr.lo) + "</code>–<code>" + fmt(r.rr.hi) + "</code>)" : "") + "</td></tr>";
+
+      var ciTxt = (r.ci <= 1)
+        ? "the confidence interval already includes the null, so no unmeasured confounding is required to move the bound to it (CI E-value = 1)."
+        : "a confounder associated with both exposure and outcome by a risk ratio of <strong>" + fmt(r.ci) + "</strong>-fold each (above measured covariates) could shift the CI limit nearest the null to 1.";
+      document.getElementById("interp").innerHTML =
+        "To fully explain away the point estimate, an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
+        + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
+
+      drawPlot(r);
+    }
+
+    function drawPlot(r) {
+      // Log-scale axis from RR=1 to a bit past the point E-value.
+      var maxV = Math.max(r.point, r.rr.point, 3) * 1.15;
+      var W = 600, H = 150, padL = 30, padR = 20, y = 70;
+      var x = function (v) { return padL + (Math.log(v) / Math.log(maxV)) * (W - padL - padR); };
+      var parts = [];
+      // axis
+      parts.push("<line x1='" + padL + "' y1='" + y + "' x2='" + (W - padR) + "' y2='" + y + "' stroke='var(--border)' stroke-width='1'/>");
+      [1, 2, 3, 5, 10, 20].forEach(function (t) {
+        if (t > maxV) return;
+        parts.push("<line x1='" + x(t) + "' y1='" + (y - 5) + "' x2='" + x(t) + "' y2='" + (y + 5) + "' stroke='var(--muted)' stroke-width='1'/>");
+        parts.push("<text x='" + x(t) + "' y='" + (y + 20) + "' text-anchor='middle' font-size='10' fill='var(--muted)'>" + t + "</text>");
+      });
+      // observed RR marker
+      if (r.rr.point > 0) {
+        parts.push("<circle cx='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' cy='" + y + "' r='5' fill='var(--accent)'/>");
+        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>RR</text>");
+      }
+      // E-value marker
+      parts.push("<line x1='" + x(r.point) + "' y1='" + (y - 28) + "' x2='" + x(r.point) + "' y2='" + (y + 8) + "' stroke='var(--warn)' stroke-width='2'/>");
+      parts.push("<text x='" + x(r.point) + "' y='" + (y - 32) + "' text-anchor='middle' font-size='11' font-weight='700' fill='var(--warn)'>E = " + fmt(r.point) + "</text>");
+      document.getElementById("plot").innerHTML = parts.join("");
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    ["measure", "point", "lo", "hi", "rare"].forEach(function (id) {
+      document.getElementById(id).addEventListener("input", run);
+      document.getElementById(id).addEventListener("change", run);
+    });
+    run();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
