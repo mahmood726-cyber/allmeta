@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="INSPECT-SR (Wilkinson 2025): assess the trustworthiness of RCTs in a systematic review across 21 checks in 4 domains, then re-pool the meta-analysis excluding flagged trials to see whether the result survives.">
+  <meta name="color-scheme" content="light dark">
+  <title>INSPECT-SR — RCT trustworthiness for systematic reviews</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6;
+            --green:#2e7d52; --green-soft:#e2f0e8; --amber:#b8860b; --amber-soft:#faf0d7;
+            --red:#b03a2e; --red-soft:#f7e2df; --grey:#9aa0a8; --grey-soft:#ececec; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c;
+              --green:#6cc596; --green-soft:#1e3329; --amber:#e0b84a; --amber-soft:#332c14;
+              --red:#e08a7d; --red-soft:#36211e; --grey:#6b7178; --grey-soft:#262a2f; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 78ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(340px, 30rem) 1fr; align-items: start; }
+    @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .trial-bar { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.8rem; }
+    .trial-bar select, .trial-bar input { padding: 0.3rem 0.5rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.4rem 0.85rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border);
+                   padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.82rem; cursor: pointer; }
+    fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.9rem 0.4rem; margin: 0 0 0.9rem; }
+    legend { padding: 0 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--accent); }
+    .check { font-size: 0.85rem; margin-bottom: 0.6rem; }
+    .check .q { display: block; margin-bottom: 0.25rem; }
+    .check .num { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; margin-right: 0.3rem; }
+    .opts { display: inline-flex; gap: 0.15rem; flex-wrap: wrap; }
+    .opts label { font-size: 0.76rem; padding: 0.12rem 0.45rem; border: 1px solid var(--border);
+      border-radius: 5px; cursor: pointer; background: var(--input-bg); user-select: none; }
+    .opts input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .opts input:checked + span { font-weight: 700; }
+    .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+    .dj { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.8rem; }
+    .dj select { padding: 0.2rem 0.4rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 5px; font: inherit; }
+    .suggest { color: var(--muted); font-size: 0.74rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.45rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tl { display: inline-block; width: 1.1rem; height: 1.1rem; border-radius: 50%; vertical-align: middle; }
+    .tl-no { background: var(--green); } .tl-some { background: var(--amber); }
+    .tl-serious { background: var(--red); } .tl-unset { background: var(--grey); }
+    .legend-row { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.76rem; color: var(--muted); margin-bottom: 0.8rem; }
+    .legend-row span { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .pooled td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    .eff { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+    .eff label { font-size: 0.78rem; }
+    .eff input { width: 100%; padding: 0.3rem 0.5rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>INSPECT-SR</h1>
+    <p>INveStigating ProblEmatic Clinical Trials in Systematic Reviews (Wilkinson et al. 2025, with Cochrane): assess each RCT's <em>trustworthiness</em> across 21 checks in 4 domains, reach domain-level and overall judgements, then re-pool the meta-analysis excluding flagged trials to see whether the result survives. Orthogonal to risk-of-bias and GRADE — it asks whether the data can be trusted at all.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Per-trial assessment</h2>
+      <div class="trial-bar">
+        <label class="suggest" for="trial-sel">Trial</label>
+        <select id="trial-sel" aria-label="Select trial to assess"></select>
+        <input id="trial-name" type="text" placeholder="Trial label" aria-label="Trial label" style="min-width:9rem">
+        <button type="button" id="btn-add" class="ghost">+ Add</button>
+        <button type="button" id="btn-del" class="ghost">Remove</button>
+      </div>
+      <div id="checks"></div>
+      <fieldset>
+        <legend>Effect size (optional — for the robustness re-pool)</legend>
+        <div class="eff">
+          <label>Effect (analysis scale, e.g. logOR)<input id="eff-est" type="number" step="any" placeholder="e.g. -0.35"></label>
+          <label>Standard error<input id="eff-se" type="number" step="any" placeholder="e.g. 0.12"></label>
+        </div>
+      </fieldset>
+    </section>
+    <section class="panel">
+      <h2>Trustworthiness summary</h2>
+      <div class="legend-row">
+        <span><i class="tl tl-no"></i> No concerns</span>
+        <span><i class="tl tl-some"></i> Some concerns</span>
+        <span><i class="tl tl-serious"></i> Serious concerns</span>
+        <span><i class="tl tl-unset"></i> Not set</span>
+      </div>
+      <table>
+        <thead><tr><th>Trial</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>Overall</th></tr></thead>
+        <tbody id="summary"></tbody>
+      </table>
+      <h2 style="margin-top:0.8rem">Robustness — does the pooled effect survive?</h2>
+      <p class="suggest" style="margin:0 0 0.4rem">Random-effects (Paule-Mandel) pool of trials with an entered effect + SE, under the INSPECT-SR handling rule: serious-concern trials excluded; some-concern trials tested by sensitivity analysis.</p>
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+        <label class="suggest">Display scale
+          <select id="scale" style="padding:0.2rem 0.4rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:5px">
+            <option value="linear">as entered (linear)</option>
+            <option value="exp">exponentiate (ratio)</option>
+          </select>
+        </label>
+      </div>
+      <table class="pooled">
+        <thead><tr><th>Analysis set</th><th>k</th><th>Pooled (95% CI)</th><th>I²</th></tr></thead>
+        <tbody id="pooled"></tbody>
+      </table>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.3rem">
+        <button type="button" id="btn-json" class="primary">Download JSON</button>
+        <button type="button" id="btn-reset" class="ghost">Reset all</button>
+      </div>
+      <div class="note"><strong>Not a prescriptive algorithm.</strong> INSPECT-SR guides reviewers to reach justified judgements; the suggested domain/overall ratings here are non-binding cues from the check responses — the reviewer decides. Handling per the tool: <em>serious concerns</em> → exclude; <em>some concerns</em> → sensitivity analysis; <em>no concerns</em> → standard analysis. Median assessment time ≈ 45 min/RCT.</div>
+    </section>
+  </main>
+  <footer>
+    21 checks across 4 domains (post-publication notices; conduct, governance &amp; transparency; text &amp; publication details; results in the study), each answered Yes / No / Unclear / Not&nbsp;applicable, rolled up to domain and overall judgements of No / Some / Serious concerns.
+    Reference: Wilkinson J, et al. INSPECT-SR: a tool for assessing the trustworthiness of randomised controlled trials. medRxiv 2025. doi:10.1101/2025.09.03.25334905. Developed in partnership with Cochrane. The robustness re-pool uses the audited <code>shared/ma-core.js</code> (Paule-Mandel random effects). Data stays in your browser (<code>localStorage</code>).
+  </footer>
+  <script>
+    var DOMAINS = [
+      { d: 1, title: "Post-publication notices" },
+      { d: 2, title: "Conduct, governance & transparency" },
+      { d: 3, title: "Text & publication details" },
+      { d: 4, title: "Results in the study" },
+    ];
+    var CHECKS = [
+      { id: "1.1", d: 1, q: "Does the study have an associated retraction?" },
+      { id: "1.2", d: 1, q: "Does the study have an associated expression of concern or other post-publication notice?" },
+      { id: "1.3", d: 1, q: "Do other studies by the research team highlight causes for concern?" },
+      { id: "2.1", d: 2, q: "Are there concerns relating to ethical approval?" },
+      { id: "2.2", d: 2, q: "Are there concerns relating to timing or absence of study registration?" },
+      { id: "2.3", d: 2, q: "Are there important inconsistencies between publication and registration documents?" },
+      { id: "2.4", d: 2, q: "Is the recruitment of participants implausible?" },
+      { id: "2.5", d: 2, q: "Are the reported methods implausible considering the reported resources?" },
+      { id: "3.1", d: 3, q: "Are there concerns relating to duplicated content, such as text or tables?" },
+      { id: "3.2", d: 3, q: "Is there evidence of manipulation or duplication of figures?" },
+      { id: "4.1", d: 4, q: "Are there unexplained discrepancies between reported data and eligibility criteria?" },
+      { id: "4.2", d: 4, q: "Are numbers of participants allocated to groups implausible?" },
+      { id: "4.3", d: 4, q: "Are any baseline data implausible?" },
+      { id: "4.4", d: 4, q: "Are there discrepancies between results in figures, tables, and text?" },
+      { id: "4.5", d: 4, q: "Are numbers lost to follow-up implausible?" },
+      { id: "4.6", d: 4, q: "Are there unexplained inconsistencies in participant numbers?" },
+      { id: "4.7", d: 4, q: "Are any outcome data or treatment effects implausible?" },
+      { id: "4.8", d: 4, q: "Are means and variances of integer data impossible?" },
+      { id: "4.9", d: 4, q: "Are there errors in statistical results?" },
+      { id: "4.10", d: 4, q: "Are there other contradictions implied by the data?" },
+      { id: "4.11", d: 4, q: "Are there inconsistencies across multiple publications of the study?" },
+    ];
+    var RESP = ["yes", "no", "unclear", "na"];
+    var RESP_LBL = { yes: "Yes", no: "No", unclear: "Unclear", na: "N/A" };
+    var JUDGE = ["no", "some", "serious"];
+    var JUDGE_LBL = { no: "No concerns", some: "Some concerns", serious: "Serious concerns", unset: "Not set" };
+    var KEY = "inspect-sr-v1";
+
+    function newTrial(name) {
+      return { id: "t" + Date.now() + Math.floor(Math.random() * 1e4), label: name || "", resp: {}, dj: {}, overall: "", est: "", se: "" };
+    }
+    var state = load() || { trials: [newTrial("Trial 1")], cur: 0 };
+
+    function load() {
+      try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.trials && s.trials.length) return s; } catch (e) {}
+      return null;
+    }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    function cur() { return state.trials[state.cur]; }
+
+    // Non-binding suggestion: any "yes" in a domain -> "some" (reviewer may escalate
+    // to "serious"); any "unclear" with no "yes" -> "some"; all no/na -> "no".
+    function suggestDomain(t, d) {
+      var ch = CHECKS.filter(function (c) { return c.d === d; });
+      var anyYes = false, anyUnclear = false, anyAnswered = false;
+      ch.forEach(function (c) {
+        var r = t.resp[c.id];
+        if (r === "yes") anyYes = true;
+        if (r === "unclear") anyUnclear = true;
+        if (r) anyAnswered = true;
+      });
+      if (!anyAnswered) return "unset";
+      if (anyYes || anyUnclear) return "some";
+      return "no";
+    }
+    function effectiveDomain(t, d) { return t.dj[d] || suggestDomain(t, d); }
+    function suggestOverall(t) {
+      var sev = { unset: -1, no: 0, some: 1, serious: 2 };
+      var worst = "unset";
+      DOMAINS.forEach(function (dm) { var j = effectiveDomain(t, dm.d); if (sev[j] > sev[worst]) worst = j; });
+      return worst;
+    }
+    function effectiveOverall(t) { return t.overall || suggestOverall(t); }
+
+    function renderTrialSelect() {
+      var sel = document.getElementById("trial-sel");
+      sel.innerHTML = state.trials.map(function (t, i) {
+        return "<option value='" + i + "'" + (i === state.cur ? " selected" : "") + ">" + esc(t.label || ("Trial " + (i + 1))) + "</option>";
+      }).join("");
+      document.getElementById("trial-name").value = cur().label;
+    }
+
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function renderChecks() {
+      var t = cur();
+      var html = DOMAINS.map(function (dm) {
+        var rows = CHECKS.filter(function (c) { return c.d === dm.d; }).map(function (c) {
+          var opts = RESP.map(function (r) {
+            var id = "r-" + c.id + "-" + r;
+            return "<label><input type='radio' name='resp-" + c.id + "' value='" + r + "'" + (t.resp[c.id] === r ? " checked" : "") + "><span>" + RESP_LBL[r] + "</span></label>";
+          }).join("");
+          return "<div class='check'><span class='q'><span class='num'>" + c.id + "</span>" + esc(c.q) + "</span><span class='opts'>" + opts + "</span></div>";
+        }).join("");
+        var sug = suggestDomain(t, dm.d);
+        var djOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.dj[dm.d] === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
+        return "<fieldset><legend>Domain " + dm.d + " — " + esc(dm.title) + "</legend>" + rows
+          + "<div class='dj'><label>Domain judgement <select data-dj='" + dm.d + "'><option value=''>(use suggested)</option>" + djOpts + "</select></label>"
+          + "<span class='suggest'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
+      }).join("");
+      // overall
+      var sugO = suggestOverall(t);
+      var oOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.overall === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
+      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
+      document.getElementById("checks").innerHTML = html;
+
+      // wire radios
+      CHECKS.forEach(function (c) {
+        document.getElementsByName("resp-" + c.id).forEach(function (el) {
+          el.addEventListener("change", function () { cur().resp[c.id] = el.value; commit(); });
+        });
+      });
+      document.querySelectorAll("select[data-dj]").forEach(function (el) {
+        el.addEventListener("change", function () { cur().dj[el.getAttribute("data-dj")] = el.value; commit(); });
+      });
+      document.getElementById("overall-sel").addEventListener("change", function (e) { cur().overall = e.target.value; commit(); });
+      document.getElementById("eff-est").value = t.est;
+      document.getElementById("eff-se").value = t.se;
+    }
+
+    function tlClass(j) { return "tl tl-" + (j === "unset" ? "unset" : j); }
+    function renderSummary() {
+      document.getElementById("summary").innerHTML = state.trials.map(function (t, i) {
+        var cells = DOMAINS.map(function (dm) { var j = effectiveDomain(t, dm.d); return "<td><i class='" + tlClass(j) + "' title='" + JUDGE_LBL[j] + "'></i></td>"; }).join("");
+        var o = effectiveOverall(t);
+        return "<tr><td>" + esc(t.label || ("Trial " + (i + 1))) + "</td>" + cells + "<td><i class='" + tlClass(o) + "'></i> " + JUDGE_LBL[o] + "</td></tr>";
+      }).join("");
+    }
+
+    function poolSet(trials) {
+      var yi = [], vi = [];
+      trials.forEach(function (t) {
+        var e = parseFloat(t.est), s = parseFloat(t.se);
+        if (isFinite(e) && isFinite(s) && s > 0) { yi.push(e); vi.push(s * s); }
+      });
+      if (yi.length < 1) return null;
+      if (yi.length === 1) { return { k: 1, mu: yi[0], ciLo: yi[0] - 1.96 * Math.sqrt(vi[0]), ciHi: yi[0] + 1.96 * Math.sqrt(vi[0]), I2: 0 }; }
+      return window.AlmMaCore.pool(yi, vi, { method: "PM" });
+    }
+    function renderPooled() {
+      var ratio = document.getElementById("scale").value === "exp";
+      var tx = function (v) { return ratio ? Math.exp(v) : v; };
+      var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
+      var sev = { no: 0, some: 1, serious: 2, unset: 0 };
+      var all = state.trials;
+      var noSerious = all.filter(function (t) { return effectiveOverall(t) !== "serious"; });
+      var onlyNo = all.filter(function (t) { return effectiveOverall(t) === "no" || effectiveOverall(t) === "unset"; });
+      var sets = [
+        { name: "All trials (as published)", arr: all },
+        { name: "Exclude serious concerns (INSPECT-SR rule)", arr: noSerious },
+        { name: "Sensitivity: no-concern trials only", arr: onlyNo },
+      ];
+      document.getElementById("pooled").innerHTML = sets.map(function (s) {
+        var r = poolSet(s.arr);
+        if (!r) return "<tr><td>" + esc(s.name) + "</td><td>0</td><td>—</td><td>—</td></tr>";
+        return "<tr><td>" + esc(s.name) + "</td><td>" + r.k + "</td><td><code>" + f(r.mu) + "</code> (" + f(r.ciLo) + ", " + f(r.ciHi) + ")</td><td>" + (isFinite(r.I2) ? r.I2.toFixed(0) + "%" : "—") + "</td></tr>";
+      }).join("");
+    }
+
+    function renderAll() { renderTrialSelect(); renderChecks(); renderSummary(); renderPooled(); }
+    function commit() { save(); renderSummary(); renderPooled(); }
+
+    document.getElementById("trial-sel").addEventListener("change", function (e) { state.cur = +e.target.value; save(); renderChecks(); document.getElementById("trial-name").value = cur().label; });
+    document.getElementById("trial-name").addEventListener("input", function (e) { cur().label = e.target.value; save(); renderTrialSelect(); renderSummary(); });
+    document.getElementById("btn-add").addEventListener("click", function () { state.trials.push(newTrial("Trial " + (state.trials.length + 1))); state.cur = state.trials.length - 1; save(); renderAll(); });
+    document.getElementById("btn-del").addEventListener("click", function () {
+      if (state.trials.length <= 1) { state.trials = [newTrial("Trial 1")]; } else { state.trials.splice(state.cur, 1); }
+      state.cur = Math.max(0, Math.min(state.cur, state.trials.length - 1)); save(); renderAll();
+    });
+    document.getElementById("eff-est").addEventListener("input", function (e) { cur().est = e.target.value; commit(); });
+    document.getElementById("eff-se").addEventListener("input", function (e) { cur().se = e.target.value; commit(); });
+    document.getElementById("scale").addEventListener("change", renderPooled);
+    document.getElementById("btn-reset").addEventListener("click", function () {
+      if (!confirm("Clear all trials and assessments?")) return;
+      state = { trials: [newTrial("Trial 1")], cur: 0 }; save(); renderAll();
+    });
+    document.getElementById("btn-json").addEventListener("click", function () {
+      var out = { _schema: "inspect-sr-v1", _savedAt: new Date().toISOString(),
+        trials: state.trials.map(function (t) {
+          return { label: t.label, responses: t.resp,
+            domainJudgements: DOMAINS.reduce(function (o, dm) { o[dm.d] = effectiveDomain(t, dm.d); return o; }, {}),
+            overall: effectiveOverall(t), est: t.est, se: t.se };
+        }) };
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "inspect-sr-assessment.json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    renderAll();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

@@ -44,6 +44,10 @@
       { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:58-67. doi:10.1016/j.jclinepi.2019.03.012",
         bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {58--67},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
     ],
+    "inspect-sr": [
+      { vancouver: "Wilkinson J, Heal C, Antoniou GA, et al. INSPECT-SR: a tool for assessing the trustworthiness of randomised controlled trials. medRxiv 2025. doi:10.1101/2025.09.03.25334905",
+        bibtex: '@article{wilkinson_2025_inspect_sr,\n  author = {Wilkinson, Jack and Heal, Calvin and Antoniou, George A. and others},\n  title = {INSPECT-SR: a tool for assessing the trustworthiness of randomised controlled trials},\n  journal = {medRxiv},\n  year = {2025},\n  doi = {10.1101/2025.09.03.25334905}\n}' },
+    ],
     "bma-tau-priors": [
       { vancouver: "Friede T, Röver C, Wandel S, Neuenschwander B. Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases. Biom J. 2017;59(4):658-671. doi:10.1002/bimj.201500236",
         bibtex: '@article{friede_2017_bma,\n  author = {Friede, Tim and R\\"over, Christian and Wandel, Simon and Neuenschwander, Beat},\n  title = {Meta-analysis of two studies in the presence of heterogeneity with applications in rare diseases},\n  journal = {Biometrical Journal},\n  volume = {59},\n  number = {4},\n  pages = {658--671},\n  year = {2017},\n  doi = {10.1002/bimj.201500236}\n}' },

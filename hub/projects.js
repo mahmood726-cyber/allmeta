@@ -590,6 +590,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["robins-i", "non-randomized", "risk-of-bias", "appraisal"]
   },
   {
+    name: "INSPECT-SR",
+    folder: "allmeta/inspect-sr",
+    path: "./inspect-sr/index.html",
+    added: "2026-06-05",
+    collection: "existing",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "INSPECT-SR (Wilkinson 2025, with Cochrane): assess RCT trustworthiness across 21 checks in 4 domains (post-publication notices; conduct/governance/transparency; text/figures; results), reach domain and overall judgements (No/Some/Serious concerns), and re-pool the meta-analysis excluding flagged trials to see whether the result survives.",
+    note: "Trustworthiness, not risk-of-bias — orthogonal to RoB-2/GRADE. Reviewer judgements required; not a prescriptive algorithm. Re-pool via the audited ma-core.",
+    tags: ["inspect-sr", "trustworthiness", "research-integrity", "problematic-trials", "cochrane", "wilkinson"]
+  },
+  {
     name: "QUADAS-2",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "allmeta/quadas-2",
