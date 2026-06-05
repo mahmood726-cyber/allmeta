@@ -50,6 +50,69 @@ SCRIPT_OR_STYLE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.I | re.S)
 # shared/fonts/ (2026-06-03), so every catalog app is genuinely CDN-free.
 ALLOWLIST = []
 
+# --- P1-inline-meta-math (single-source enforcement, Phase 1a) --------------
+# shared/ma-core.js (window.AlmMaCore) is the audited single source for the
+# standard univariate τ² estimators (DL/PM/REML/ML/HE/HS/SJ), inverse-variance
+# pool, I², HKSJ and prediction intervals — verified vs metafor to ≤1e-7. A
+# catalog app that recomputes those *inline* risks silent drift from the
+# audited core (e.g. gosh ships the deprecated Q-based I² 100·(Q−df)/Q, where
+# ma-core uses the τ²-based form metafor reports). This pass inventories such
+# reimplementations. It is WARN-ONLY (never gates) until a zero-false-positive
+# sweep promotes it to BLOCK — the leaked-secret precedent (lessons.md).
+#
+# Signature: the closed-form DL τ² ( (Q−df)/denom ) and the Q-based I²
+# ( 100·(Q−df)/Q ). Genuinely-different methods are NOT univariate IV and are
+# exempt by app-dir prefix with a reason.
+INLINE_META_MATH = re.compile(
+    r"100\s*\*\s*\(\s*Q\w*\s*-\s*(?:df|\(?\s*k\s*-\s*1)"          # Q-based I²
+    r"|\(\s*Q\w*\s*-\s*(?:df|\(?\s*k\s*-\s*1\s*\)?)\s*\)\s*/",    # DL τ² closed form
+)
+# app-dir → reason it legitimately does NOT delegate to ma-core's univariate IV.
+INLINE_META_MATH_EXEMPT = {
+    "nma": "NMA contrast-based pooling — not univariate inverse-variance",
+    "bayesian-nma": "NMA (Bayesian) — not univariate inverse-variance",
+    "component-nma": "additive component NMA — not univariate inverse-variance",
+    "nma-inconsistency": "NMA inconsistency model — not univariate IV",
+    "nma-global-inconsistency": "NMA design-inconsistency — not univariate IV",
+    "nma-pro-v2": "NMA workbench — contrast-based pooling",
+    "nma-dose-response-app": "dose-response NMA — bespoke",
+    "nma-meta-reg": "network meta-regression — not univariate IV",
+    "hsroc": "bivariate DTA (logit Se/Sp) — not univariate IV",
+    "dta-sroc": "Moses SROC regression — not univariate IV",
+    "limit-ma": "Rücker limit meta-analysis — bespoke base pool",
+    "multilevel-ma": "three-level σ² decomposition — not two-level IV",
+    "rve-meta": "cluster-robust variance — not standard IV",
+    "multivariate-ma": "multivariate Sigma_between -- not univariate IV",
+    "living-meta": "self-contained living bundle (vendored engine)",
+    "gosh-metareg": "meta-regression residual I2 -- distinct quantity (needs moderator design matrix)",
+    "dosehtml": "dose-response GLS slope heterogeneity -- not univariate IV",
+    "dose-response-ma": "dose-response GLS slope -- not univariate IV",
+}
+
+
+def inline_math_inventory(paths) -> tuple[list[str], list[str]]:
+    """Return (warn, info) findings for inline univariate τ²/I² arithmetic in
+    catalog apps. warn = no AlmMaCore + not exempt (candidate reimplementation);
+    info = has AlmMaCore alongside inline math (consolidation candidate)."""
+    warn: list[str] = []
+    info: list[str] = []
+    for path in paths:
+        rel = path.relative_to(ROOT).as_posix()
+        app_dir = rel.split("/", 1)[0]
+        if app_dir in INLINE_META_MATH_EXEMPT:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        m = INLINE_META_MATH.search(text)
+        if not m:
+            continue
+        ln = line_of(text, m.start())
+        uses_core = "AlmMaCore" in text
+        msg = f"{rel}:{ln}  P1-inline-meta-math: inline tau2/I2 ({m.group(0)[:32]!r})"
+        (info if uses_core else warn).append(
+            msg + (" -- alongside AlmMaCore, consolidate" if uses_core
+                   else " -- no AlmMaCore; delegate or exempt with reason"))
+    return warn, info
+
 
 def is_allowlisted(finding: str) -> bool:
     for rel, rule, _reason in ALLOWLIST:
@@ -145,6 +208,17 @@ def main() -> int:
         raw.extend(lint_file(path))
     gating = [f for f in raw if not is_allowlisted(f)]
     allowed = [f for f in raw if is_allowlisted(f)]
+
+    # WARN-only single-source inventory (never gates; see INLINE_META_MATH).
+    im_warn, im_info = inline_math_inventory(catalog_entry_files())
+    if im_warn or im_info:
+        print(f"lint_repo: P1-inline-meta-math inventory (WARN-only, non-gating): "
+              f"{len(im_warn)} candidate(s), {len(im_info)} consolidation note(s):")
+        for f in im_warn:
+            print("  ! " + f)
+        for f in im_info:
+            print("  ~ " + f)
+        print()
 
     if allowed:
         print(f"lint_repo: {len(allowed)} allowlisted finding(s) (accepted baseline):")
