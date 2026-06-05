@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Spec-collapse: multiverse / many-analyst meta-analysis done right. Run one dataset across a 36-specification grid, then compare the anti-conservative naive IV-RE pool against a coverage-calibrated weighted-likelihood interval — and see how often 'robust' collapses to fragile.">
+  <meta name="color-scheme" content="light dark">
+  <title>Spec-collapse — multiverse meta-analysis done right</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6;
+            --green:#2e7d52; --green-soft:#e2f0e8; --red:#b03a2e; --red-soft:#f7e2df; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c;
+              --green:#6cc596; --green-soft:#1e3329; --red:#e08a7d; --red-soft:#36211e; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 80ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
+    @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label .lbl { display: block; font-size: 0.85rem; margin-bottom: 0.15rem; font-weight: 500; }
+    .hint { display: block; color: var(--muted); font-size: 0.74rem; margin-top: 0.15rem; }
+    textarea { width: 100%; min-height: 9rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.85rem/1.5 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+    select { padding: 0.3rem 0.5rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border);
+                   padding: 0.45rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    .verdict-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+    @media (max-width: 720px) { .verdict-cards { grid-template-columns: 1fr; } }
+    .vc { border: 1px solid var(--border); border-radius: 9px; padding: 0.7rem 0.85rem; }
+    .vc h3 { margin: 0 0 0.2rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .vc .big { font-size: 1.05rem; font-weight: 700; }
+    .vc .ci { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .robust { color: var(--green); } .fragile { color: var(--red); }
+    .banner { padding: 0.7rem 0.9rem; border-radius: 8px; font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500; }
+    .banner.bad { background: var(--red-soft); border-left: 3px solid var(--red); }
+    .banner.ok { background: var(--green-soft); border-left: 3px solid var(--green); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { padding: 0.3rem 0.45rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    td.sig { color: var(--green); font-weight: 600; } td.nsig { color: var(--red); }
+    td code { background: var(--accent-soft); padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.76rem; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.85rem; }
+    .note strong { color: var(--warn); }
+    details { margin-top: 0.6rem; font-size: 0.82rem; } summary { cursor: pointer; color: var(--accent); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/trimfill.js"></script>
+  <script src="../shared/spec-collapse.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Spec-collapse</h1>
+    <p>A multiverse meta-analysis runs many analytic specifications on <em>one</em> dataset. The usual way to summarise the spec-curve — inverse-variance pooling the specification estimates as if independent — collapses the confidence interval by roughly the number of specs and manufactures robustness the data don't support. This tool runs your dataset across a 36-specification grid and compares that anti-conservative naive pool against a coverage-calibrated <strong>weighted-likelihood</strong> interval (never narrower than a single spec). Across 473 Cochrane reviews, 55% of "robust" conclusions collapsed to fragile under the correct method.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label><span class="lbl">One study per line: <code>effect, SE</code> (analysis scale, e.g. logOR)</span>
+        <textarea id="data" spellcheck="false" aria-label="Study effect and SE, one per line"></textarea>
+        <span class="hint">Optional 3rd field = label. Lines starting with # are ignored. k ≥ 3 required.</span>
+      </label>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem">
+        <button type="button" id="btn-run" class="primary">Run 36-spec multiverse</button>
+        <button type="button" id="btn-example" class="ghost">Example</button>
+        <label class="hint">Weights
+          <select id="scheme">
+            <option value="uniform">uniform</option>
+            <option value="reml_only">REML only</option>
+            <option value="hksj_only">HKSJ only</option>
+          </select>
+        </label>
+      </div>
+      <div class="note"><strong>The rule (advanced-stats):</strong> never IV-RE-pool many-analyst / multiverse results from one dataset — the CI collapses below truth. Under the null, the naive pool's Type-I error runs 70–81% (nominal 5%); the weighted-likelihood interval holds 94–99% coverage.</div>
+    </section>
+    <section class="panel">
+      <h2>Verdict</h2>
+      <div id="banner"></div>
+      <div class="verdict-cards" id="cards"></div>
+      <h2 style="margin-top:0.4rem">Specification curve <span id="curve-n" class="hint" style="display:inline"></span></h2>
+      <div style="max-height:20rem;overflow:auto">
+        <table>
+          <thead><tr><th>τ²</th><th>CI</th><th>Outlier rule</th><th>TF</th><th>k</th><th>Effect (95% CI)</th><th>Sig?</th></tr></thead>
+          <tbody id="specs"></tbody>
+        </table>
+      </div>
+      <details>
+        <summary>Method</summary>
+        <p>Each of the 36 specs (3 τ² estimators × 2 CI methods × 3 outlier rules × {raw, trim-and-fill}) yields a pooled effect θ̂ₛ and variance Vₛ via the audited <code>ma-core</code> / <code>trimfill</code>. The <strong>naive IV-RE pool</strong> takes variance 1/Σ(1/Vₛ) — collapsing by ~S. The <strong>weighted-likelihood</strong> summary is the mixture Σ pₛ · t-density(θ̂ₛ, Vₛ, kₛ−1); by the law of total variance its variance is mean-within + between-spec, so it is never narrower than the average single spec. Interval via numeric quantile inversion of the mixture CDF.</p>
+      </details>
+    </section>
+  </main>
+  <footer>
+    Port of the Spec-Collapse Atlas weighted-likelihood aggregator (externally validated vs metafor across 473 Cochrane reviews; Pages: <code>mahmood726-cyber.github.io/spec-collapse-atlas</code>). Method after Wagenmakers-style likelihood combination; the IV-RE-collapse caution follows the project's <code>advanced-stats</code> rule. Per-spec pooling and trim-and-fill use the audited <code>shared/ma-core.js</code> and <code>shared/trimfill.js</code>; the aggregators are in <code>shared/spec-collapse.js</code> and cross-checked against the Python engine in <code>tests/test_spec_collapse.py</code>. Computed client-side; data stays in your browser.
+  </footer>
+  <script>
+    var EXAMPLE = [
+      "# effect, SE, label  (false-robustness demo: naive pool 'robust', corrected fragile)",
+      "-0.25, 0.22, S1", "-0.15, 0.20, S2", "-0.40, 0.30, S3", "0.00, 0.18, S4",
+      "-0.30, 0.26, S5", "-0.05, 0.17, S6", "-0.45, 0.33, S7", "-0.12, 0.19, S8",
+    ].join("\n");
+
+    function parse(text) {
+      var studies = [], errs = [];
+      text.split(/\r?\n/).forEach(function (line, i) {
+        var t = line.trim(); if (!t || t[0] === "#") return;
+        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        var est = parseFloat(f[0]), se = parseFloat(f[1]);
+        if (!isFinite(est) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
+        studies.push({ est: est, se: se, label: f[2] || ("S" + (studies.length + 1)) });
+      });
+      return { studies: studies, errs: errs };
+    }
+    function f3(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(3); }
+    function vCard(title, r) {
+      var v = r.verdict;
+      var ci = (r.ciLo != null) ? f3(r.ciLo) + ", " + f3(r.ciHi) : "—";
+      var extra = (r.pctSig != null) ? r.pctSig.toFixed(0) + "% of specs significant" : ("θ = " + f3(r.theta));
+      return "<div class='vc'><h3>" + title + "</h3><div class='big " + v + "'>" + (v === "robust" ? "Robust" : "Fragile") + "</div><div class='ci'>" + extra + (r.ciLo != null ? "<br>CI: " + ci : "") + "</div></div>";
+    }
+
+    function run() {
+      var p = parse(document.getElementById("data").value);
+      var specsEl = document.getElementById("specs");
+      var banner = document.getElementById("banner");
+      if (p.studies.length < 3) {
+        banner.className = "banner bad"; banner.textContent = "Need at least 3 studies (k ≥ 3)" + (p.errs.length ? " — check " + p.errs.join(", ") : "") + ".";
+        document.getElementById("cards").innerHTML = ""; specsEl.innerHTML = ""; document.getElementById("curve-n").textContent = "";
+        return;
+      }
+      var scheme = document.getElementById("scheme").value;
+      var out = window.AlmSpecCollapse.analyze(p.studies, { scheme: scheme });
+      var conc = out.concordance, naive = out.naive, wl = out.weighted;
+
+      // false-robustness banner
+      if (naive.verdict === "robust" && wl.verdict === "fragile") {
+        banner.className = "banner bad";
+        banner.innerHTML = "⚠ <strong>False robustness.</strong> The naive IV-RE pool calls this robust, but the coverage-calibrated weighted-likelihood interval is fragile — the apparent precision is an artefact of pooling re-analyses of one dataset.";
+      } else if (wl.verdict === "robust") {
+        banner.className = "banner ok";
+        banner.innerHTML = "✓ Robust under the correct (weighted-likelihood) interval as well as the naive pool.";
+      } else {
+        banner.className = "banner bad";
+        banner.innerHTML = "Fragile: the conclusion does not hold across the specification grid under the correct interval.";
+      }
+
+      document.getElementById("cards").innerHTML =
+        vCard("Naive concordance", conc) + vCard("Naive IV-RE pool", naive) + vCard("Weighted-likelihood", wl);
+
+      document.getElementById("curve-n").textContent = "(" + out.specs.length + " specs)";
+      specsEl.innerHTML = out.specs.map(function (s) {
+        return "<tr><td>" + s.estimator + "</td><td>" + s.ci_method + "</td><td>" + s.outlier + "</td><td>"
+          + (s.trimfill ? "✓" : "·") + "</td><td>" + s.k + "</td><td><code>" + f3(s.theta) + "</code> (" + f3(s.ciLo) + ", " + f3(s.ciHi) + ")</td>"
+          + "<td class='" + (s.significant ? "sig" : "nsig") + "'>" + (s.significant ? "yes" : "no") + "</td></tr>";
+      }).join("");
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-example").addEventListener("click", function () { document.getElementById("data").value = EXAMPLE; run(); });
+    document.getElementById("scheme").addEventListener("change", run);
+    document.getElementById("data").value = EXAMPLE;
+    run();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

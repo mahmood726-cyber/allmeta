@@ -577,6 +577,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["fragility-index", "robustness", "sensitivity", "binary-outcome", "atal"]
   },
   {
+    name: "Spec-collapse",
+    folder: "allmeta/spec-collapse",
+    path: "./spec-collapse/index.html",
+    added: "2026-06-05",
+    collection: "existing",
+    mode: "file",
+    category: "Sensitivity",
+    summary: "Multiverse / many-analyst meta-analysis done right: run one dataset across a 36-specification grid (3 τ² × 2 CI × 3 outlier × raw/trim-fill) and compare the anti-conservative naive IV-RE pool against a coverage-calibrated weighted-likelihood interval. Flags 'false robustness' when the naive pool's significance is an artefact of pooling re-analyses of one dataset.",
+    note: "Port of the Spec-Collapse Atlas aggregator (validated vs metafor across 473 Cochrane reviews); JS engine cross-checked to the Python to 1e-6. Never IV-RE-pool multiverse results.",
+    tags: ["multiverse", "spec-curve", "many-analyst", "robustness", "weighted-likelihood", "false-robustness"]
+  },
+  {
     name: "ROBINS-I",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "allmeta/robins-i",
