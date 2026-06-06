@@ -44,6 +44,12 @@
       { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:58-67. doi:10.1016/j.jclinepi.2019.03.012",
         bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {58--67},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
     ],
+    "reporting-bias": [
+      { vancouver: "Page MJ, Sterne JAC, Boutron I, et al. ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis. BMJ. 2023;383:e076754. doi:10.1136/bmj-2023-076754",
+        bibtex: '@article{page_2023_robme,\n  author = {Page, Matthew J. and Sterne, Jonathan A. C. and Boutron, Isabelle and others},\n  title = {ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis},\n  journal = {BMJ},\n  volume = {383},\n  pages = {e076754},\n  year = {2023},\n  doi = {10.1136/bmj-2023-076754}\n}' },
+      { vancouver: "Egger M, Davey Smith G, Schneider M, Minder C. Bias in meta-analysis detected by a simple, graphical test. BMJ. 1997;315(7109):629-634. doi:10.1136/bmj.315.7109.629",
+        bibtex: '@article{egger_1997,\n  author = {Egger, Matthias and Davey Smith, George and Schneider, Martin and Minder, Christoph},\n  title = {Bias in meta-analysis detected by a simple, graphical test},\n  journal = {BMJ},\n  volume = {315},\n  number = {7109},\n  pages = {629--634},\n  year = {1997},\n  doi = {10.1136/bmj.315.7109.629}\n}' },
+    ],
     "inspect-sr": [
       { vancouver: "Wilkinson J, Heal C, Antoniou GA, et al. INSPECT-SR: a tool for assessing the trustworthiness of randomised controlled trials. medRxiv 2025. doi:10.1101/2025.09.03.25334905",
         bibtex: '@article{wilkinson_2025_inspect_sr,\n  author = {Wilkinson, Jack and Heal, Calvin and Antoniou, George A. and others},\n  title = {INSPECT-SR: a tool for assessing the trustworthiness of randomised controlled trials},\n  journal = {medRxiv},\n  year = {2025},\n  doi = {10.1101/2025.09.03.25334905}\n}' },

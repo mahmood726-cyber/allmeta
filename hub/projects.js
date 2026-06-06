@@ -458,6 +458,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["copas", "pub-bias", "selection-model", "sensitivity"]
   },
   {
+    name: "Reporting-bias cockpit (ROB-ME)",
+    folder: "allmeta/reporting-bias",
+    path: "./reporting-bias/index.html",
+    added: "2026-06-06",
+    collection: "existing",
+    mode: "file",
+    category: "Publication bias",
+    summary: "Missing-evidence cockpit: quantify the registered-vs-included linkage-rate denominator (~63.6% publish), the protocol-vs-paper outcome-switching diff (~24% dropped), and Egger small-study asymmetry — feeding a ROB-ME-aligned (Page 2023) risk-of-bias judgement. Turns funnel/Egger from the verdict into one input.",
+    note: "ROB-ME signalling prompts are paraphrased — see riskofbias.info for official wording/algorithm. Egger R-verified vs lm.",
+    tags: ["rob-me", "reporting-bias", "missing-evidence", "publication-bias", "outcome-switching", "egger"]
+  },
+  {
     name: "Influence Diagnostics",
     subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",

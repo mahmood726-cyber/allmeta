@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Missing-evidence cockpit: quantify the registered-vs-published denominator, the protocol-vs-paper outcome-switching diff, and small-study asymmetry — feeding a ROB-ME-aligned risk-of-bias judgement (Page 2023). Turns funnel/Egger from the verdict into one input.">
+  <meta name="color-scheme" content="light dark">
+  <title>Reporting-bias / missing-evidence cockpit (ROB-ME-aligned)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6;
+            --green:#2e7d52; --amber:#b8860b; --red:#b03a2e;
+            --green-soft:#e2f0e8; --amber-soft:#faf0d7; --red-soft:#f7e2df; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c;
+              --green:#6cc596; --amber:#e0b84a; --red:#e08a7d;
+              --green-soft:#1e3329; --amber-soft:#332c14; --red-soft:#36211e; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 80ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.25rem;
+           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
+    @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.05rem 1.2rem; margin-bottom: 1.1rem; }
+    .panel h2 { margin: 0 0 0.7rem; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.6rem; }
+    label .lbl { display: block; margin-bottom: 0.12rem; font-weight: 500; }
+    .hint { display: block; color: var(--muted); font-size: 0.74rem; margin-top: 0.12rem; }
+    input[type=number], textarea, select { width: 100%; padding: 0.32rem 0.5rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    textarea { min-height: 6rem; font: 0.82rem/1.5 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .stat { font-size: 1.7rem; font-weight: 700; }
+    .stat.lo { color: var(--green); } .stat.mid { color: var(--amber); } .stat.hi { color: var(--red); }
+    .metric { display:flex; align-items:baseline; gap:0.6rem; margin-bottom:0.3rem; flex-wrap:wrap; }
+    .bench { color: var(--muted); font-size: 0.78rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tag { display:inline-block; padding:0.05rem 0.4rem; border-radius:4px; font-size:0.74rem; }
+    .tag.drop { background: var(--red-soft); color: var(--red); }
+    .tag.add { background: var(--amber-soft); color: var(--amber); }
+    .tag.keep { background: var(--green-soft); color: var(--green); }
+    .sq { font-size: 0.84rem; margin-bottom: 0.55rem; }
+    .sq .q { display:block; margin-bottom:0.2rem; }
+    .sq .num { color: var(--muted); font-weight:600; margin-right:0.3rem; }
+    .opts { display:inline-flex; gap:0.12rem; flex-wrap:wrap; }
+    .opts label { font-size:0.72rem; padding:0.1rem 0.4rem; border:1px solid var(--border); border-radius:5px; cursor:pointer; background:var(--input-bg); margin:0; }
+    .opts input { position:absolute; opacity:0; width:0; height:0; }
+    .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); font-weight:700; }
+    .judge { display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem; font-size:0.82rem; flex-wrap:wrap; }
+    button.primary { background: var(--accent); color:#fff; border:none; padding:0.45rem 0.9rem; border-radius:6px; font-weight:600; font-size:0.85rem; cursor:pointer; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-top: 0.6rem; }
+    .note strong { color: var(--warn); }
+    .disc { background: var(--accent-soft); border-radius: 6px; padding: 0.5rem 0.7rem; font-size: 0.78rem; color: var(--ink); margin-bottom: 0.7rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/egger.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Reporting-bias / missing-evidence cockpit</h1>
+    <p>Funnel plots and Egger's test are <em>inputs</em>, not the verdict. The formal question — ROB-ME (Page et al. 2023, Cochrane Handbook §13) — is whether the synthesis is at risk of bias because evidence is <strong>missing</strong>: whole studies absent (publication bias) or results selectively unreported within studies. This cockpit quantifies the missing-evidence denominator and outcome-switching, computes small-study asymmetry, and scaffolds a ROB-ME-aligned judgement.</p>
+  </header>
+  <main>
+    <div>
+      <section class="panel">
+        <h2>1 · Missing-study denominator</h2>
+        <div class="row3">
+          <label><span class="lbl">Studies identified / registered</span><input id="n-ident" type="number" min="0" step="1" value="22"></label>
+          <label><span class="lbl">Included with usable results</span><input id="n-incl" type="number" min="0" step="1" value="14"></label>
+          <label><span class="lbl">Known but results unavailable</span><input id="n-miss" type="number" min="0" step="1" value="5"></label>
+        </div>
+        <div id="denom-out"></div>
+        <span class="hint">Across registries, only ~63.6% of registered trials publish usable results (TrialScout 2026); a synthesis of N studies often draws on a denominator of ~1.6N. Count abstracts/registrations/theses you found but could not include.</span>
+      </section>
+      <section class="panel">
+        <h2>2 · Outcome-switching diff</h2>
+        <div class="two">
+          <label><span class="lbl">Pre-specified outcomes (protocol/registry)</span><textarea id="o-proto" spellcheck="false" aria-label="Pre-specified outcomes, one per line"></textarea></label>
+          <label><span class="lbl">Reported outcomes (publication)</span><textarea id="o-pub" spellcheck="false" aria-label="Reported outcomes, one per line"></textarea></label>
+        </div>
+        <div id="oc-out"></div>
+        <span class="hint">One outcome per line; matched case-insensitively. ~24% of pre-specified outcomes are silently dropped and ~52% of trials show a protocol-vs-paper discrepancy (medRxiv 2025).</span>
+      </section>
+      <section class="panel">
+        <h2>3 · Small-study asymmetry (Egger) — an input</h2>
+        <label><span class="lbl">Study effects: <code>effect, SE</code> per line (analysis scale)</span><textarea id="eff" spellcheck="false" aria-label="Study effect and SE, one per line"></textarea></label>
+        <div id="egger-out"></div>
+        <span class="hint">Egger's regression intercept ≠ 0 signals funnel asymmetry. Low power for k&lt;10; asymmetry has many causes besides reporting bias — it is one input to the judgement, never the verdict.</span>
+      </section>
+    </div>
+    <section class="panel">
+      <h2>ROB-ME-aligned judgement</h2>
+      <div class="disc"><strong>Framework, paraphrased.</strong> These prompts follow the ROB-ME structure (4 within-study + 4 across-study signalling questions; Page et al. <em>BMJ</em> 2023;383:e076754). They are <em>summaries, not the official wording</em> — for a formal assessment use the tool and algorithm at <code>riskofbias.info/welcome/rob-me-tool</code>. Responses (ROB-ME scale): Yes&nbsp;(Y) · Probably yes&nbsp;(PY) · Probably no&nbsp;(PN) · No&nbsp;(N) · No information&nbsp;(NI) · Not applicable&nbsp;(NA). "Yes" indicates higher risk of bias.</div>
+      <div id="sq-within"></div>
+      <div id="sq-across"></div>
+      <div class="judge" style="margin-top:0.6rem">
+        <strong>Overall risk of bias due to missing evidence:</strong>
+        <select id="overall">
+          <option value="">(use suggested)</option>
+          <option value="low">Low risk of bias</option>
+          <option value="some">Some concerns</option>
+          <option value="high">High risk of bias</option>
+        </select>
+        <span id="overall-sug" class="hint"></span>
+      </div>
+      <div style="margin-top:0.6rem"><button type="button" id="btn-json" class="primary">Download JSON</button></div>
+      <div class="note"><strong>Judgement, not a score.</strong> Low = result unlikely to be biased by missing evidence; High = likely biased; Some concerns = uncertainty precludes either. The suggestion here is a non-binding cue from the data panels and your responses; the reviewer decides per the ROB-ME guidance.</div>
+    </section>
+  </main>
+  <footer>
+    ROB-ME: Page MJ, Sterne JAC, Boutron I, et al. ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis. BMJ. 2023;383:e076754. doi:10.1136/bmj-2023-076754 (Cochrane Handbook §13). Linkage benchmark: TrialScout (medRxiv 2026.03.15); outcome-switching: medRxiv 2025.11.06. Egger: Egger M, et al. BMJ 1997;315:629-634. Small-study regression uses the audited <code>shared/ma-core.js</code> t-quantile. Data stays in your browser.
+  </footer>
+  <script>
+    function num(id) { var v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : 0; }
+    function pct(x) { return (100 * x).toFixed(1) + "%"; }
+    function cls(x, lo, hi) { return x < lo ? "lo" : (x < hi ? "mid" : "hi"); }
+
+    function renderDenom() {
+      var ident = num("n-ident"), incl = num("n-incl"), miss = num("n-miss");
+      var denom = Math.max(ident, incl + miss);
+      var linkage = denom > 0 ? incl / denom : 0;
+      var missingFrac = denom > 0 ? 1 - linkage : 0;
+      // higher missing fraction => higher concern; benchmark linkage ~0.636
+      var c = cls(missingFrac, 0.15, 0.36);
+      document.getElementById("denom-out").innerHTML =
+        "<div class='metric'><span class='stat " + c + "'>" + pct(linkage) + "</span><span class='bench'>linkage rate (included ÷ denominator " + denom + ")</span></div>"
+        + "<div class='metric'><span class='bench'>" + pct(missingFrac) + " of the evidence base is missing from the synthesis · benchmark publication rate ≈ 63.6%</span></div>";
+      window.__denom = { identified: ident, included: incl, unavailable: miss, denominator: denom, linkageRate: linkage, missingFraction: missingFrac };
+      renderSuggest();
+    }
+
+    function parseLines(id) {
+      return document.getElementById(id).value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+    function norm(s) { return s.toLowerCase().replace(/\s+/g, " ").replace(/[.;,]+$/, "").trim(); }
+    function renderOutcomes() {
+      var proto = parseLines("o-proto"), pub = parseLines("o-pub");
+      var pubSet = pub.map(norm), protoSet = proto.map(norm);
+      var dropped = proto.filter(function (o) { return pubSet.indexOf(norm(o)) < 0; });
+      var added = pub.filter(function (o) { return protoSet.indexOf(norm(o)) < 0; });
+      var dropFrac = proto.length ? dropped.length / proto.length : 0;
+      var rows = "";
+      proto.forEach(function (o) { var kept = pubSet.indexOf(norm(o)) >= 0; rows += "<tr><td>" + esc(o) + "</td><td><span class='tag " + (kept ? "keep" : "drop") + "'>" + (kept ? "reported" : "DROPPED") + "</span></td></tr>"; });
+      added.forEach(function (o) { rows += "<tr><td>" + esc(o) + "</td><td><span class='tag add'>added (not pre-specified)</span></td></tr>"; });
+      var out = "";
+      if (proto.length || pub.length) {
+        var c = cls(dropFrac, 0.1, 0.25);
+        out = "<div class='metric'><span class='stat " + c + "'>" + dropped.length + "</span><span class='bench'>of " + proto.length + " pre-specified outcomes dropped (" + pct(dropFrac) + ") · " + added.length + " added · benchmark drop ≈ 24%</span></div>"
+          + "<table><thead><tr><th>Outcome</th><th>Status</th></tr></thead><tbody>" + rows + "</tbody></table>";
+      }
+      document.getElementById("oc-out").innerHTML = out;
+      window.__outcomes = { preSpecified: proto.length, reported: pub.length, dropped: dropped, added: added, droppedFraction: dropFrac };
+      renderSuggest();
+    }
+
+    // Egger's regression for funnel asymmetry — delegated to the R-verified
+    // shared/egger.js. One input to the judgement, never the verdict.
+    function renderEgger() {
+      var rows = document.getElementById("eff").value.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l && l[0] !== "#"; })
+        .map(function (l) { var f = l.split(/[,\t]/); return { y: parseFloat(f[0]), se: parseFloat(f[1]) }; });
+      var egger = window.AlmEgger.eggerTest(rows);
+      var out;
+      if (egger) {
+        var c = egger.p < 0.1 ? "hi" : "lo";
+        out = "<div class='metric'><span class='stat " + c + "'>p = " + (egger.p < 0.001 ? "<0.001" : egger.p.toFixed(3)) + "</span>"
+          + "<span class='bench'>Egger intercept = " + egger.intercept.toFixed(3) + " (SE " + egger.se.toFixed(3) + "), t<sub>" + egger.df + "</sub> = " + egger.t.toFixed(2) + ", k = " + egger.k + (egger.k < 10 ? " — low power" : "") + "</span></div>";
+      } else {
+        out = "<span class='hint'>Enter ≥3 studies to compute Egger's test.</span>";
+      }
+      document.getElementById("egger-out").innerHTML = out;
+      window.__egger = egger;
+      renderSuggest();
+    }
+
+    var SQ_WITHIN = [
+      "Are there outcomes/results that were measured in included studies but are missing from this synthesis?",
+      "Is it likely that those within-study results are missing because of their nature (e.g. non-significant or unfavourable)?",
+      "If the missing within-study results were available, could they meaningfully change the synthesis estimate?",
+      "Overall, is the synthesis result at risk of bias from selective non-reporting of results within studies?",
+    ];
+    var SQ_ACROSS = [
+      "Are there whole studies known to exist (registered, abstracts, theses) but missing from this synthesis?",
+      "Is it likely that those studies are missing because of their results (publication bias)?",
+      "Do the available data (small-study asymmetry, comparison with registered studies) suggest the effect would change if missing studies were included?",
+      "Overall, is the synthesis result at risk of bias from whole studies being missing?",
+    ];
+    var RESP = [["yes", "Y"], ["pyes", "PY"], ["pno", "PN"], ["no", "N"], ["ni", "NI"], ["na", "NA"]];
+    var resp = {};
+
+    function renderSQ(containerId, prefix, qs, title) {
+      var html = "<div style='font-size:0.78rem;font-weight:600;color:var(--accent);margin:0.3rem 0'>" + title + "</div>";
+      qs.forEach(function (q, i) {
+        var key = prefix + (i + 1);
+        var opts = RESP.map(function (r) { return "<label><input type='radio' name='" + key + "' value='" + r[0] + "'" + (resp[key] === r[0] ? " checked" : "") + ">" + r[1] + "</label>"; }).join("");
+        html += "<div class='sq'><span class='q'><span class='num'>" + (i + 1) + "</span>" + q + "</span><span class='opts'>" + opts + "</span></div>";
+      });
+      document.getElementById(containerId).innerHTML = html;
+      qs.forEach(function (q, i) {
+        var key = prefix + (i + 1);
+        document.getElementsByName(key).forEach(function (el) { el.addEventListener("change", function () { resp[key] = el.value; renderSuggest(); }); });
+      });
+    }
+
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    // Non-binding suggestion: any "yes" on a summary Q4 => high; any yes/pyes elsewhere or
+    // strong data signal (Egger p<0.1, missing>36%, dropped>24%) => some concerns; else low.
+    function suggestOverall() {
+      var yesLike = function (v) { return v === "yes" || v === "pyes"; };
+      var across4 = resp["a4"], within4 = resp["w4"];
+      if (across4 === "yes" || within4 === "yes") return "high";
+      var anyYes = Object.keys(resp).some(function (k) { return yesLike(resp[k]); });
+      var d = window.__denom || {}, o = window.__outcomes || {}, e = window.__egger;
+      var dataSignal = (d.missingFraction > 0.36) || (o.droppedFraction > 0.24) || (e && e.p < 0.1);
+      if (anyYes || dataSignal) return "some";
+      var answered = Object.keys(resp).length > 0;
+      return answered ? "low" : "";
+    }
+    function renderSuggest() {
+      var s = suggestOverall();
+      var lbl = { low: "Low risk of bias", some: "Some concerns", high: "High risk of bias", "": "answer the signalling questions" };
+      document.getElementById("overall-sug").textContent = "suggested: " + lbl[s];
+    }
+
+    document.getElementById("btn-json").addEventListener("click", function () {
+      var out = { _schema: "reporting-bias-v1", _savedAt: new Date().toISOString(),
+        denominator: window.__denom || null, outcomeSwitching: window.__outcomes || null,
+        egger: window.__egger || null, signallingResponses: resp,
+        suggestedOverall: suggestOverall(), overall: document.getElementById("overall").value || suggestOverall() };
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "reporting-bias-robme.json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    });
+
+    ["n-ident", "n-incl", "n-miss"].forEach(function (id) { document.getElementById(id).addEventListener("input", renderDenom); });
+    document.getElementById("o-proto").addEventListener("input", renderOutcomes);
+    document.getElementById("o-pub").addEventListener("input", renderOutcomes);
+    document.getElementById("eff").addEventListener("input", renderEgger);
+
+    // example data
+    document.getElementById("o-proto").value = "Mortality at 12 months\nMajor bleeding\nQuality of life (EQ-5D)\nHospitalisation";
+    document.getElementById("o-pub").value = "Mortality at 12 months\nMajor bleeding\nComposite cardiovascular endpoint";
+    document.getElementById("eff").value = "-0.42, 0.18\n-0.31, 0.20\n-0.55, 0.25\n-0.18, 0.15\n-0.62, 0.30\n-0.27, 0.17\n-0.10, 0.12";
+
+    renderSQ("sq-within", "w", SQ_WITHIN, "Non-reporting bias WITHIN studies (§13.3.3)");
+    renderSQ("sq-across", "a", SQ_ACROSS, "Non-reporting bias ACROSS studies / publication bias (§13.3.4)");
+    renderDenom(); renderOutcomes(); renderEgger();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

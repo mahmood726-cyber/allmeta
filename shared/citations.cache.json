@@ -77,6 +77,18 @@
     "title": "INSPECT-SR: a tool for assessing trustworthiness of randomised controlled trials",
     "year": 2025
   },
+  "10.1136/bmj-2023-076754": {
+    "container": "BMJ",
+    "source": "crossref",
+    "title": "ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis",
+    "year": 2023
+  },
+  "10.1136/bmj.315.7109.629": {
+    "container": "BMJ",
+    "source": "crossref",
+    "title": "Bias in meta-analysis detected by a simple, graphical test",
+    "year": 1997
+  },
   "10.1186/1471-2288-14-92": {
     "container": "BMC Medical Research Methodology",
     "source": "crossref",
