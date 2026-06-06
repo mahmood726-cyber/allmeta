@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Run a whole systematic review offline as one cryptographically-signed, tamper-evident bundle: protocol → search → screening → extraction → appraisal → synthesis → certainty → report, each stage's output chained by SHA-256 and HMAC-signed.">
+  <meta name="color-scheme" content="light dark">
+  <title>Review project — one signed, reproducible systematic review</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6;
+            --green:#2e7d52; --green-soft:#e2f0e8; --red:#b03a2e; --red-soft:#f7e2df; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c;
+              --green:#6cc596; --green-soft:#1e3329; --red:#e08a7d; --red-soft:#36211e; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 82ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.25rem;
+           grid-template-columns: 1fr minmax(280px, 22rem); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.05rem 1.2rem; }
+    .panel h2 { margin: 0 0 0.7rem; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    .stage { border: 1px solid var(--border); border-radius: 9px; padding: 0.7rem 0.85rem; margin-bottom: 0.7rem; }
+    .stage-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .stage-n { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; }
+    .stage-name { font-weight: 600; }
+    .stage-desc { color: var(--muted); font-size: 0.8rem; margin: 0.25rem 0 0.4rem; }
+    .links a { display: inline-block; font-size: 0.78rem; padding: 0.15rem 0.5rem; margin: 0 0.3rem 0.3rem 0; border: 1px solid var(--border); border-radius: 5px; text-decoration: none; color: var(--accent); background: var(--input-bg); }
+    .cap { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; margin-top: 0.3rem; }
+    .pill { font-size: 0.72rem; padding: 0.08rem 0.45rem; border-radius: 10px; }
+    .pill.have { background: var(--green-soft); color: var(--green); }
+    .pill.empty { background: var(--input-bg); color: var(--muted); border: 1px solid var(--border); }
+    input[type=text] { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; margin-bottom: 0.6rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border); padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+    .verify { margin-top: 0.6rem; padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.85rem; }
+    .verify.ok { background: var(--green-soft); border-left: 3px solid var(--green); }
+    .verify.bad { background: var(--red-soft); border-left: 3px solid var(--red); }
+    .verify .row { display: flex; gap: 0.4rem; align-items: baseline; }
+    .verify b.ok { color: var(--green); } .verify b.bad { color: var(--red); }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-top: 0.7rem; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
+  <script src="../shared/review-bundle.js"></script>
+  <script src="../shared/truthcert-ui.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Review project</h1>
+    <p>A whole systematic review as one offline, cryptographically-signed, tamper-evident file. Work each stage in its dedicated allmeta app, capture the stage's JSON output here, and the project chains every stage by SHA-256 and HMAC-signs the bundle. Re-opening verifies the chain end-to-end and pinpoints any stage that was altered — reproducible evidence synthesis in a single file, no server, no account.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Pipeline</h2>
+      <label for="proj-title" style="font-size:0.8rem;color:var(--muted)">Review title</label>
+      <input id="proj-title" type="text" placeholder="e.g. SGLT2 inhibitors for heart failure">
+      <div id="stages"></div>
+    </section>
+    <section class="panel">
+      <h2>Bundle</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.6rem">Sign with your HMAC key (set it once below); the signed bundle proves who produced it and that no stage was altered.</p>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <button type="button" id="btn-key" class="ghost">⚙ Set signing key</button>
+        <button type="button" id="btn-sign" class="primary">Sign &amp; download bundle</button>
+        <label class="ghost" style="text-align:center;cursor:pointer">Open &amp; verify a bundle
+          <input id="file-open" type="file" accept="application/json,.json" style="display:none">
+        </label>
+      </div>
+      <div id="verify-out"></div>
+      <div class="note"><strong>What's signed:</strong> the chain runs <em>output → hash → next stage</em>, so tampering with any stage breaks that stage's hash and every hash after it. The whole bundle is HMAC-SHA-256 signed (reusing the audited TruthCert signer); with no key set, the bundle still carries the tamper-evident chain but is unsigned (never a fake signature).</div>
+    </section>
+  </main>
+  <footer>
+    Provenance chain + HMAC via <code>shared/review-bundle.js</code> (SHA-256 chain) over the audited <code>shared/ma-studies-v1.js</code> TruthCert signer and <code>shared/truthcert-export.js</code> hash. Stage outputs are the JSON exports of the linked allmeta apps. Everything is client-side; the bundle never leaves your device.
+  </footer>
+  <script>
+    var STAGES = [
+      { id: "protocol", name: "Protocol", desc: "Register the question and plan.", apps: [["PROSPERO templater", "../prospero-templater/"], ["PICO", "../pico/"]] },
+      { id: "search", name: "Search", desc: "Build and translate the search strategy.", apps: [["Search translator", "../search-translator/"]] },
+      { id: "screening", name: "Screening", desc: "Title/abstract include–exclude, Cohen's κ.", apps: [["PRISMA screening", "../prisma-screen/"]] },
+      { id: "extraction", name: "Extraction", desc: "Pull study-level data.", apps: [["RCT extractor", "../rct-extractor/"], ["RevMan importer", "../revman-importer/"]] },
+      { id: "appraisal", name: "Appraisal", desc: "Risk of bias + trustworthiness.", apps: [["RoB 2", "../rob2/"], ["ROBINS-I", "../robins-i/"], ["INSPECT-SR", "../inspect-sr/"]] },
+      { id: "synthesis", name: "Synthesis", desc: "Pool the effects (verifiable).", apps: [["Forest plot", "../forest-plot/"], ["NMA Pro", "../nma-pro-v2/"], ["Workbench", "../workbench/"]] },
+      { id: "robustness", name: "Robustness & reporting bias", desc: "Spec-collapse + missing-evidence.", apps: [["Spec-collapse", "../spec-collapse/"], ["Reporting-bias", "../reporting-bias/"]] },
+      { id: "certainty", name: "Certainty", desc: "GRADE / CINeMA.", apps: [["GRADE SoF", "../grade-sof/"], ["CINeMA", "../cinema/"]] },
+      { id: "report", name: "Report", desc: "PRISMA flow + checklist.", apps: [["PRISMA flow", "../prisma-flow/"], ["PRISMA checklist", "../prisma-checklist/"]] },
+    ];
+    var KEY = "review-project-v1";
+    var state = load() || { title: "", outputs: {} };
+
+    function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") return s; } catch (e) {} return null; }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function renderStages() {
+      document.getElementById("stages").innerHTML = STAGES.map(function (st, i) {
+        var have = state.outputs[st.id] != null;
+        var links = st.apps.map(function (a) { return "<a href='" + a[1] + "' target='_blank' rel='noopener'>" + esc(a[0]) + " ↗</a>"; }).join("");
+        return "<div class='stage'><div class='stage-head'><span class='stage-n'>" + (i + 1) + "</span><span class='stage-name'>" + esc(st.name) + "</span>"
+          + "<span class='pill " + (have ? "have" : "empty") + "'>" + (have ? "captured ✓" : "no output") + "</span></div>"
+          + "<div class='stage-desc'>" + esc(st.desc) + "</div><div class='links'>" + links + "</div>"
+          + "<div class='cap'><label class='ghost' style='cursor:pointer'>Capture output JSON<input type='file' accept='application/json,.json' data-stage='" + st.id + "' style='display:none'></label>"
+          + (have ? "<button type='button' class='ghost' data-clear='" + st.id + "'>clear</button>" : "") + "</div></div>";
+      }).join("");
+      document.querySelectorAll("input[type=file][data-stage]").forEach(function (el) {
+        el.addEventListener("change", function () { captureStage(el.getAttribute("data-stage"), el.files[0]); });
+      });
+      document.querySelectorAll("button[data-clear]").forEach(function (el) {
+        el.addEventListener("click", function () { delete state.outputs[el.getAttribute("data-clear")]; save(); renderStages(); });
+      });
+    }
+
+    function captureStage(id, file) {
+      if (!file) return;
+      var r = new FileReader();
+      r.onload = function () {
+        try { state.outputs[id] = JSON.parse(r.result); save(); renderStages(); }
+        catch (e) { alert("Could not parse JSON for this stage: " + e.message); }
+      };
+      r.readAsText(file);
+    }
+
+    function currentProject() {
+      return { title: state.title, stages: STAGES.filter(function (st) { return state.outputs[st.id] != null; })
+        .map(function (st) { return { id: st.id, name: st.name, output: state.outputs[st.id] }; }) };
+    }
+
+    document.getElementById("proj-title").addEventListener("input", function (e) { state.title = e.target.value; save(); });
+
+    document.getElementById("btn-sign").addEventListener("click", async function () {
+      var proj = currentProject();
+      if (!proj.stages.length) { alert("Capture at least one stage's output first."); return; }
+      var res = await window.AlmReviewBundle.sign(proj, {});
+      if (!res.ok) { alert("Could not build bundle: " + res.error); return; }
+      var payload = res.signed ? res.receipt : res.bundle;
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+      a.download = (state.title ? state.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") : "review") + ".reviewbundle.json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      showVerify(res.signed
+        ? { ok: true, signed: true, signatureValid: true, chainValid: true, brokenStage: -1, note: "Just signed — downloaded." }
+        : { ok: true, signed: false, chainValid: true, brokenStage: -1, note: "Downloaded UNSIGNED (no key set): " + res.reason });
+    });
+
+    document.getElementById("file-open").addEventListener("change", function () {
+      var f = this.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = async function () {
+        var obj; try { obj = JSON.parse(r.result); } catch (e) { showVerify({ ok: false, error: "not JSON: " + e.message }); return; }
+        var v = await window.AlmReviewBundle.verify(obj, {});
+        showVerify(v);
+      };
+      r.readAsText(f);
+      this.value = "";
+    });
+
+    function showVerify(v) {
+      var el = document.getElementById("verify-out");
+      if (!v.ok) { el.innerHTML = "<div class='verify bad'>Could not verify: " + esc(v.error || "unknown") + "</div>"; return; }
+      var good = v.chainValid && (!v.signed || v.signatureValid);
+      var rows = "";
+      rows += "<div class='row'>Provenance chain: <b class='" + (v.chainValid ? "ok" : "bad") + "'>" + (v.chainValid ? "intact" : "BROKEN at stage " + (v.brokenStage + 1)) + "</b></div>";
+      if (v.signed) rows += "<div class='row'>Signature: <b class='" + (v.signatureValid ? "ok" : "bad") + "'>" + (v.signatureValid ? "valid (HMAC verified with your key)" : "INVALID for this key") + "</b></div>";
+      else rows += "<div class='row'>Signature: <b>unsigned bundle</b> (chain still checked)</div>";
+      if (v.note) rows += "<div class='row' style='color:var(--muted);font-size:0.8rem'>" + esc(v.note) + "</div>";
+      el.innerHTML = "<div class='verify " + (good ? "ok" : "bad") + "'>" + rows + "</div>";
+    }
+
+    if (window.TruthCertUI) TruthCertUI.attachSettingsButton({ btn: "#btn-key" });
+    document.getElementById("proj-title").value = state.title || "";
+    renderStages();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

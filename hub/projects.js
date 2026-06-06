@@ -1318,6 +1318,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["project", "save", "workspace", "portability", "offline"]
   },
   {
+    name: "Review project (signed pipeline)",
+    folder: "allmeta/review-project",
+    path: "./review-project/index.html",
+    added: "2026-06-06",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Run a whole systematic review as one offline, cryptographically-signed, tamper-evident bundle: protocol → search → screening → extraction → appraisal (RoB 2 / INSPECT-SR) → synthesis → robustness → certainty (GRADE) → report. Each stage's JSON output is chained by SHA-256 and the bundle is HMAC-signed; re-opening verifies the chain and pinpoints any altered stage.",
+    note: "Composes the existing apps over a provenance chain; reuses the audited TruthCert signer. Reproducible SR in a single file — no server, no account.",
+    tags: ["systematic-review", "pipeline", "provenance", "truthcert", "reproducible", "signed", "offline"]
+  },
+  {
     name: "Multivariate MA",
     folder: "allmeta/multivariate-ma",
     path: "./multivariate-ma/index.html",
