@@ -41,8 +41,8 @@
         bibtex: '@article{vanderweele_ding_2017_evalue,\n  author = {VanderWeele, Tyler J. and Ding, Peng},\n  title = {Sensitivity Analysis in Observational Research: Introducing the E-Value},\n  journal = {Annals of Internal Medicine},\n  volume = {167},\n  number = {4},\n  pages = {268--274},\n  year = {2017},\n  doi = {10.7326/M16-2607}\n}' },
     ],
     "fragility": [
-      { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:58-67. doi:10.1016/j.jclinepi.2019.03.012",
-        bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {58--67},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
+      { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:32-40. doi:10.1016/j.jclinepi.2019.03.012",
+        bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {32--40},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
     ],
     "reporting-bias": [
       { vancouver: "Page MJ, Sterne JAC, Boutron I, et al. ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis. BMJ. 2023;383:e076754. doi:10.1136/bmj-2023-076754",

@@ -112,8 +112,10 @@
       var point = num("point"), lo = num("lo"), hi = num("hi");
       var rare = document.getElementById("rare").checked;
       var tbody = document.getElementById("tbody");
-      if (point == null || !(point > 0)) {
-        tbody.innerHTML = "<tr><td colspan='2'>Enter a positive point estimate.</td></tr>";
+      // Ratio measures (RR/OR/HR) must be positive; SMD/d is a difference (any sign).
+      var ratio = (measure !== "SMD");
+      if (point == null || (ratio && point <= 0)) {
+        tbody.innerHTML = "<tr><td colspan='2'>Enter " + (ratio ? "a positive" : "an") + " effect estimate.</td></tr>";
         document.getElementById("interp").textContent = "";
         document.getElementById("plot").innerHTML = "";
         return;

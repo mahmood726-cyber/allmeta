@@ -29,11 +29,14 @@
   // Map any supported measure to an approximate risk ratio.
   function approxRR(measure, est, rare) {
     measure = (measure || "RR").toUpperCase();
-    if (!(est > 0)) return NaN;
+    if (!isFinite(est)) return NaN;
+    // SMD/d are on the DIFFERENCE scale — any sign is valid (negative = protective).
+    // Chinn 2000: d → exp(0.91·d). (Only valid for a STANDARDISED difference.)
+    if (measure === "SMD" || measure === "D") return Math.exp(0.91 * est);
+    if (!(est > 0)) return NaN; // ratio measures (RR/OR/HR) must be positive
     if (measure === "RR") return est;
     if (measure === "OR") return rare ? est : Math.sqrt(est);
     if (measure === "HR") return rare ? est : (1 - Math.pow(0.5, Math.sqrt(est))) / (1 - Math.pow(0.5, Math.sqrt(1 / est)));
-    if (measure === "SMD" || measure === "D" || measure === "MD") return Math.exp(0.91 * est); // Chinn 2000
     return est;
   }
 

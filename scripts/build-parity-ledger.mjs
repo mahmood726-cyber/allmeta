@@ -8,7 +8,7 @@
  * so the dashboard renders only methods that have a committed, R-referenced parity spec —
  * the ledger cannot drift ahead of the evidence. Run: node scripts/build-parity-ledger.mjs
  */
-import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -168,6 +168,16 @@ const uncovered = UNCOVERED_NUMERICAL.filter(u => {
   return !nowCovered;
 });
 
+// Repo-root parity tests that verify a method by CROSS-LANGUAGE / structural
+// agreement (not the <app>/tests R-oracle mechanism the rows above scan), so the
+// dashboard discloses them rather than under-counting what is actually tested.
+const CROSS_LANG = [
+  { test: 'tests/test_spec_collapse.py', verifies: 'spec-collapse aggregators vs the Spec-Collapse Atlas Python engine (validated vs metafor), to 1e-6' },
+  { test: 'tests/test_egger.py', verifies: "reporting-bias Egger regression vs R lm(SND ~ precision), to 1e-3" },
+  { test: 'tests/test_review_bundle.py', verifies: 'review-project signed bundle: HMAC sign/verify + tamper-location' },
+  { test: 'tests/test_truthcert_export.py', verifies: 'TruthCert export receipts: sign/verify/tamper + stamp idempotency' },
+].filter(c => existsSync(join(root, c.test)));
+
 const ledger = {
   generated: new Date().toISOString().slice(0, 10),
   specCount: rows.length,          // Playwright *parity*.spec.mjs
@@ -180,6 +190,9 @@ const ledger = {
   // Honest coverage denominator: methods verified vs numerical methods that are
   // not (with the reason — usually "no standard R oracle for this novel method").
   uncovered: uncovered,
+  // Methods verified by cross-language / structural parity at the repo root
+  // (not the <app> R-oracle mechanism) — disclosed so coverage isn't under-counted.
+  crossLang: CROSS_LANG,
   rows: allRows,
 };
 

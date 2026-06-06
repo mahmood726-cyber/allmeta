@@ -54,6 +54,11 @@
     </tr></thead>
     <tbody id="rows"></tbody>
   </table>
+  <section id="crosslang-sec" hidden style="margin-top:1.5rem">
+    <h2 style="font-size:1.05rem;margin:0 0 .4rem">Also verified by cross-language / structural parity <span id="crosslang-n" style="color:var(--muted);font-weight:400"></span></h2>
+    <p style="color:var(--muted);font-size:.86rem;margin:0 0 .6rem">These methods are checked by a committed repo-root test that asserts agreement with an external validated engine or a cryptographic property — not the per-app R-oracle mechanism the table above scans, so they would otherwise be under-counted.</p>
+    <ul id="crosslang-list" style="margin:0;padding-left:1.1rem;font-size:.86rem;line-height:1.6"></ul>
+  </section>
   <section id="uncovered-sec" hidden style="margin-top:1.5rem">
     <h2 style="font-size:1.05rem;margin:0 0 .4rem">Not yet R-parity verified <span id="uncovered-n" style="color:var(--muted);font-weight:400"></span></h2>
     <p style="color:var(--muted);font-size:.86rem;margin:0 0 .6rem">For an honest coverage denominator: these numerical apps ship a method with <strong>no committed R-parity test</strong> — almost always because the method is novel or bespoke and has <em>no standard R package</em> to check against. Listed so the table above reads as “the verified methods”, not “100% of everything”.</p>
@@ -111,6 +116,16 @@
       + "Each row's assertions run against the named R package in continuous integration; the “tightest tolerance” is the smallest decimal agreement asserted in that spec (e.g. ≤ 10⁻⁶ means the browser value matches R to six decimals). Methods with an <span class='chip'>analytic</span> oracle are checked against a closed-form value rather than an R package. "
       + "The <strong>Stata <code>meta</code> equiv.</strong> column names the Stata command (or well-known package) implementing the SAME estimator — since Stata's <code>meta</code> suite and metafor share these estimators, the R-parity here also certifies Stata-equivalence for those methods. It documents estimator identity, not a separately-run Stata check (“—” = no standard Stata equivalent, e.g. Bayesian/RoBMA).";
     render();
+
+    // Cross-language / structural parity tests (disclosed so coverage isn't under-counted).
+    var crossLang = L.crossLang || [];
+    if (crossLang.length) {
+      document.getElementById("crosslang-sec").hidden = false;
+      document.getElementById("crosslang-n").textContent = "(" + crossLang.length + ")";
+      document.getElementById("crosslang-list").innerHTML = crossLang.map(function (x) {
+        return "<li><code>" + esc(x.test) + "</code> — " + esc(x.verifies) + "</li>";
+      }).join("");
+    }
 
     // Honest coverage: name the numerical apps with no R-parity test (and why).
     var uncovered = L.uncovered || [];

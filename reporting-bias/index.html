@@ -57,6 +57,7 @@
     .opts { display:inline-flex; gap:0.12rem; flex-wrap:wrap; }
     .opts label { font-size:0.72rem; padding:0.1rem 0.4rem; border:1px solid var(--border); border-radius:5px; cursor:pointer; background:var(--input-bg); margin:0; }
     .opts input { position:absolute; opacity:0; width:0; height:0; }
+    .opts input:checked + span { font-weight:700; }
     .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); font-weight:700; }
     .judge { display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem; font-size:0.82rem; flex-wrap:wrap; }
     button.primary { background: var(--accent); color:#fff; border:none; padding:0.45rem 0.9rem; border-radius:6px; font-weight:600; font-size:0.85rem; cursor:pointer; }
@@ -208,7 +209,7 @@
       var html = "<div style='font-size:0.78rem;font-weight:600;color:var(--accent);margin:0.3rem 0'>" + title + "</div>";
       qs.forEach(function (q, i) {
         var key = prefix + (i + 1);
-        var opts = RESP.map(function (r) { return "<label><input type='radio' name='" + key + "' value='" + r[0] + "'" + (resp[key] === r[0] ? " checked" : "") + ">" + r[1] + "</label>"; }).join("");
+        var opts = RESP.map(function (r) { return "<label><input type='radio' name='" + key + "' value='" + r[0] + "'" + (resp[key] === r[0] ? " checked" : "") + "><span>" + r[1] + "</span></label>"; }).join("");
         html += "<div class='sq'><span class='q'><span class='num'>" + (i + 1) + "</span>" + q + "</span><span class='opts'>" + opts + "</span></div>";
       });
       document.getElementById(containerId).innerHTML = html;

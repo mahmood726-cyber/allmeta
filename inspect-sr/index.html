@@ -273,17 +273,19 @@
         if (isFinite(e) && isFinite(s) && s > 0) { yi.push(e); vi.push(s * s); }
       });
       if (yi.length < 1) return null;
-      if (yi.length === 1) { return { k: 1, mu: yi[0], ciLo: yi[0] - 1.96 * Math.sqrt(vi[0]), ciHi: yi[0] + 1.96 * Math.sqrt(vi[0]), I2: 0 }; }
+      if (yi.length === 1) { var z = window.AlmMaCore._qnorm(0.975); return { k: 1, mu: yi[0], ciLo: yi[0] - z * Math.sqrt(vi[0]), ciHi: yi[0] + z * Math.sqrt(vi[0]), I2: 0 }; }
       return window.AlmMaCore.pool(yi, vi, { method: "PM" });
     }
     function renderPooled() {
       var ratio = document.getElementById("scale").value === "exp";
       var tx = function (v) { return ratio ? Math.exp(v) : v; };
       var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
-      var sev = { no: 0, some: 1, serious: 2, unset: 0 };
       var all = state.trials;
+      // INSPECT-SR rule: drop serious-concern trials. Unassessed trials are kept
+      // here (permissive default) but EXCLUDED from the strict no-concern set so
+      // an un-judged trial cannot silently inflate the "survives" sensitivity pool.
       var noSerious = all.filter(function (t) { return effectiveOverall(t) !== "serious"; });
-      var onlyNo = all.filter(function (t) { return effectiveOverall(t) === "no" || effectiveOverall(t) === "unset"; });
+      var onlyNo = all.filter(function (t) { return effectiveOverall(t) === "no"; });
       var sets = [
         { name: "All trials (as published)", arr: all },
         { name: "Exclude serious concerns (INSPECT-SR rule)", arr: noSerious },

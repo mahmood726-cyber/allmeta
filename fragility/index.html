@@ -99,7 +99,7 @@
     toward the null, stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
     Zero-cell handling follows <code>metafor::escalc</code> (add ½, drop double-zero studies); the DL pool
     delegates to the audited <code>shared/ma-core.js</code>. Reference: Atal I, Porcher R, Boutron I, Ravaud P.
-    The statistical significance of meta-analyses is frequently fragile. J Clin Epidemiol. 2019;111:58-67.
+    The statistical significance of meta-analyses is frequently fragile. J Clin Epidemiol. 2019;111:32-40.
     doi:10.1016/j.jclinepi.2019.03.012. Verified vs the <code>fragility</code> R package in
     <code>hub/shared/tests/fragility-parity.spec.mjs</code>.
   </footer>
@@ -130,6 +130,7 @@
     }
 
     function fmt(x, d) { return (x == null || !isFinite(x)) ? "—" : (+x).toFixed(d == null ? 3 : d); }
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
     function run() {
       var measure = document.getElementById("measure").value;
@@ -159,7 +160,7 @@
       if (r.modifications && r.modifications.length) {
         modsEl.innerHTML = r.modifications.map(function (m) {
           var lbl = p.labels[m.study - 1] || ("Study " + m.study);
-          return "<li>" + lbl + " · " + m.arm + " arm · " + (m.dir > 0 ? "+1" : "−1") + " event</li>";
+          return "<li>" + esc(lbl) + " · " + m.arm + " arm · " + (m.dir > 0 ? "+1" : "−1") + " event</li>";
         }).join("");
       } else {
         modsEl.innerHTML = "<li>(none — result is not significant or cannot be flipped)</li>";
