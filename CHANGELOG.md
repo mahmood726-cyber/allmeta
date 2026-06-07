@@ -82,10 +82,21 @@ that keep the platform's claims honest, and an end-to-end signed review pipeline
   guard restricted to ratio measures; fragility study-label XSS escaped;
   reporting-bias radio `:has()` fallback; INSPECT-SR "unset" excluded from the
   no-concern pool.
+- Root `favicon.ico` silences the per-page `/favicon.ico` 404 console error
+  site-wide on the dev/test server (one file, no per-app edits).
 
 ### Changed
 
 - Catalog grew to 106 entries (100 repository-hosted, 6 external).
+- **Inline meta-math scope** — every `P1-inline-meta-math` site was resolved.
+  proportion-ma's τ² (DerSimonian-Laird / Paule-Mandel) now delegates to the
+  audited `shared/ma-core.js` single source (verified bit-identical, 1e-7).
+  Five legitimate divergences (gosh's DL-equivalent Q-based I² in a 2ᵏ subset
+  hot loop, Truthcert1's Python repro-code string, workbench/heterogeneity's
+  intentional Higgins-Thompson I² convention, cumulative-subgroup's
+  between-subgroup I²) and the self-contained IPD-Meta-Pro engine (10+ sites,
+  inline DL/PM verified == ma-core) are documented exemptions, not debt. The
+  accepted-baseline list is now empty.
 
 ---
 
