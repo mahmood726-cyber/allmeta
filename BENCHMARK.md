@@ -1,7 +1,10 @@
 # allmeta vs the field — capability benchmark & next plan (2026-05-31)
 
 Benchmark of allmeta (88 apps) against the tools reviewers actually use, to find the
-highest-value gaps. Companion to `ROADMAP-best-in-world.md`. Reference tools:
+highest-value gaps. Companion to `ROADMAP-best-in-world.md`. For the *validation evidence*
+behind the correctness/robustness claims (R-parity ledger, 473-review spec-collapse, signed
+provenance bundle, comparative extraction-accuracy axis) see [`VALIDATION.md`](VALIDATION.md).
+Reference tools:
 **R** metafor / meta / netmeta / dmetar / robumeta / dosresmeta / RoBMA / EValue;
 **RevMan / RevMan Web** (Cochrane); **CMA** (Comprehensive Meta-Analysis); **Stata** `meta`
 suite; **MetaInsight** (web NMA); **JASP / jamovi (MAJOR)**; **GRADEpro / Covidence**.
