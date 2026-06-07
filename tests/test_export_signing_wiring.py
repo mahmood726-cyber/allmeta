@@ -46,7 +46,7 @@ def test_chart_download_helper_supports_signing():
 
 
 # Apps with bespoke (non chart-download) export handlers that sign in-line.
-BESPOKE_SIGNED = ["forest-plot", "funnel-plot", "heterogeneity"]
+BESPOKE_SIGNED = ["forest-plot", "funnel-plot", "heterogeneity", "meta-regression"]
 
 
 def test_bespoke_export_apps_signed():

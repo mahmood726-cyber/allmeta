@@ -79,6 +79,7 @@
   <script src="../shared/location-scale.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -632,14 +633,28 @@
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 3) return null;
       const fitted = fitPM(parsed.studies);
-      return { state, svg: buildSvg(state, parsed.studies, fitted) };
+      return { state, studies: parsed.studies, fitted: fitted, svg: buildSvg(state, parsed.studies, fitted) };
     }
-    function onDownloadSvg() {
-      const r = currentSvg(); if (!r) return Toast.show("Need ≥3 studies.", "warn");
-      downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "metareg-"+slugify(r.state.title,"plot")+".svg");
+    // TruthCert on export — bound to the CURRENT studies + fitted model.
+    function exportReceiptInput(r) {
+      return { studies: r.studies, method: "Meta-regression (Paule-Mandel, Knapp-Hartung)",
+        label: r.state.title || "meta-regression",
+        results: (r.fitted && r.fitted.fit) ? { intercept: r.fitted.fit.b0, slope: r.fitted.fit.b1, tau2: r.fitted.tau2 } : null };
     }
-    function onDownloadPng() {
+    async function buildExportReceipt(r) {
+      if (!window.AlmTruthCertExport) return null;
+      try { return await AlmTruthCertExport.buildReceipt(exportReceiptInput(r)); } catch (e) { return null; }
+    }
+    async function onDownloadSvg() {
       const r = currentSvg(); if (!r) return Toast.show("Need ≥3 studies.", "warn");
+      const res = await buildExportReceipt(r);
+      const svg = (res && window.AlmTruthCertExport) ? AlmTruthCertExport.stampSVG(r.svg, res) : r.svg;
+      downloadBlob(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}), "metareg-"+slugify(r.state.title,"plot")+".svg");
+    }
+    async function onDownloadPng() {
+      const r = currentSvg(); if (!r) return Toast.show("Need ≥3 studies.", "warn");
+      const res = await buildExportReceipt(r);
+      r.svg = (res && window.AlmTruthCertExport) ? AlmTruthCertExport.stampSVG(r.svg, res) : r.svg;
       const W=720,H=520,scale=2;
       const img = new Image();
       const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
@@ -656,9 +671,11 @@
       img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "error"); };
       img.src = url;
     }
-    function onDownloadJson() {
-      const state = readState();
+    async function onDownloadJson() {
+      const r = currentSvg();
+      const state = r ? r.state : readState();
       const out = Object.assign({_schema:"meta-regression-v1", _savedAt:new Date().toISOString()}, state);
+      if (r) { const res = await buildExportReceipt(r); if (res) out.truthcert = res.signed ? res.receipt : res.manifest; }
       downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "metareg-state.json");
     }
     function onExportR() {
