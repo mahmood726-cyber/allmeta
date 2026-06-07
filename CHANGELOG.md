@@ -16,7 +16,80 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
-## [1.0.0] — Pending
+## [1.1.0] — 2026-06-07
+
+The integrity-and-enforcement release: make verifiable truth the product, not
+app count. Eight new method apps grounded in named 2024–26 papers, four CI gates
+that keep the platform's claims honest, and an end-to-end signed review pipeline.
+
+### Added — integrity & trustworthiness apps
+
+- **E-value** (`/evalue/`) and **Fragility index** (`/fragility/`) — thin apps
+  over the R-verified shared modules (sensitivity to unmeasured confounding;
+  event-count fragility).
+- **INSPECT-SR trustworthiness appraiser** (`/inspect-sr/`) — faithful
+  Wilkinson 2025: 21 checks across 4 domains plus an MA-level "would the
+  conclusion survive" re-pool via `ma-core`.
+- **Spec-collapse multiverse MA** (`/spec-collapse/`) — naive-concordance,
+  naive IV-RE-collapse, and weighted-likelihood t-mixture aggregators over a
+  36-spec grid; cross-language parity with the Python `spec-collapse-atlas`
+  engine to 1e-6.
+- **Reporting-bias / ROB-ME cockpit** (`/reporting-bias/`) — registry
+  linkage-rate denominator, outcome-switching diff, and Egger-as-input feeding
+  an 8-question ROB-ME missing-evidence judgement.
+- **POTH — precision of treatment hierarchy** (`/poth/`) — Wigle 2025; flags
+  non-informative SUCRA hierarchies (POTH < 0.5).
+- **UWLS / multiplicative-heterogeneity MA** (`/multiplicative-ma/`) —
+  Stanley & Doucouliagos 2015; inflates within-study variances by φ = Q/(k−1)
+  instead of adding τ². Recommended as the primary estimator for observational
+  syntheses.
+- **Multiplicative-heterogeneity NMA** (`/multiplicative-nma/`) — the network
+  generalisation of UWLS: fixed-effect contrast-based NMA with SEs inflated by
+  √φ, plus an additive-vs-multiplicative AIC verdict.
+- **Signed, tamper-evident review pipeline** (`/review-project/`) — a 9-stage
+  SHA-256 provenance chain (HMAC sign/verify; verification locates the first
+  tampered stage) that composes the integrity apps end-to-end.
+
+### Added — enforcement gates (CI, fail-closed)
+
+- **Single-source meta-math lint** — inventories inline τ²/I² reimplementations
+  that risk drifting from the audited `shared/ma-core.js`.
+- **TruthCert-on-export** — HMAC-signed, verifiable receipts on every SVG/PNG/
+  PDF/JSON export across the numerical apps, bound to the current results (not a
+  stale bus).
+- **DOI-grounding gate** — every citation claimed in `shared/citation.js` is
+  Crossref-resolved into a committed offline cache with a title-overlap check;
+  caught and fixed two wrong DOIs.
+- **Honest parity-coverage ledger** — generated from the actual parity specs;
+  explicitly discloses which numerical apps are *not* yet R-covered.
+- **Claim/code drift sweep** — catalog↔filesystem bijection (with reachability
+  and a documented-pilot exempt list), README/manifest declared-count
+  consistency, and parity-ledger freshness.
+
+### Added — shared engines (oracle-verified)
+
+- `shared/truthcert-export.js`, `shared/egger.js` (vs R `lm`),
+  `shared/spec-collapse.js` (vs Python), `shared/poth.js` (closed-form),
+  `shared/uwls.js` (vs R `lm`), `shared/multiplicative-nma.js` (vs an
+  independent WLS oracle / `netmeta`), `shared/review-bundle.js`.
+
+### Fixed
+
+- Export signing previously bound the stale study bus, yielding receipts that
+  did not describe the displayed result; now binds the current results only and
+  warns on fail-open.
+- Multi-persona review fixes: Atal-2019 page range corrected (Crossref); E-value
+  guard restricted to ratio measures; fragility study-label XSS escaped;
+  reporting-bias radio `:has()` fallback; INSPECT-SR "unset" excluded from the
+  no-concern pool.
+
+### Changed
+
+- Catalog grew to 106 entries (100 repository-hosted, 6 external).
+
+---
+
+## [1.0.0] — 2026-06-02
 
 First archived release. Establishes the reproducibility audit trail
 (producedBy + seed + report bundle + diff), the protocol-publishing
