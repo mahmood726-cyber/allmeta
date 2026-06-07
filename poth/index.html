@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="POTH (Precision Of Treatment Hierarchy, Wigle 2025): a single 0–1 number for how certain an NMA treatment hierarchy is, computed from the SUCRA/P-score values. A low POTH means 'ranked best' is not informative.">
+  <meta name="color-scheme" content="light dark">
+  <title>POTH — how certain is your NMA treatment hierarchy?</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6;
+            --green:#2e7d52; --amber:#b8860b; --red:#b03a2e; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c;
+              --green:#6cc596; --amber:#e0b84a; --red:#e08a7d; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 78ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.7rem; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    label .lbl { display: block; font-size: 0.85rem; margin-bottom: 0.15rem; font-weight: 500; }
+    .hint { display: block; color: var(--muted); font-size: 0.74rem; margin-top: 0.15rem; }
+    textarea { width: 100%; min-height: 9rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.85rem/1.5 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border); padding: 0.45rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    .big { font-size: 2.6rem; font-weight: 800; line-height: 1; }
+    .big.hi { color: var(--green); } .big.mid { color: var(--amber); } .big.lo { color: var(--red); }
+    .verdict { font-size: 0.95rem; margin: 0.3rem 0 0.6rem; }
+    .gauge { height: 12px; border-radius: 6px; background: linear-gradient(90deg,var(--red),var(--amber),var(--green)); position: relative; margin: 0.5rem 0 0.2rem; }
+    .gauge .mark { position: absolute; top: -3px; width: 3px; height: 18px; background: var(--ink); border-radius: 2px; }
+    .gauge .med { position: absolute; top: -1px; width: 2px; height: 14px; background: rgba(0,0,0,.4); }
+    .scale-row { display:flex; justify-content:space-between; font-size:0.7rem; color:var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-top: 0.8rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .bar { height: 0.7rem; background: var(--accent); border-radius: 3px; display: inline-block; vertical-align: middle; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-top: 0.7rem; }
+    .note strong { color: var(--warn); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/poth.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>POTH — precision of treatment hierarchy</h1>
+    <p>An NMA ranking ("X is ranked best, SUCRA 0.82") hides its own uncertainty. POTH (Wigle et al. 2025) collapses that uncertainty into one 0–1 number computed from the SUCRA / P-score values: 1 = a fully certain hierarchy, 0 = treatments indistinguishable. Report it next to any SUCRA ranking — a low POTH means the hierarchy is not informative and "ranked best" should not be claimed.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>SUCRA / P-scores</h2>
+      <label><span class="lbl">One value per line: <code>SUCRA</code> or <code>SUCRA, treatment</code></span>
+        <textarea id="data" spellcheck="false" aria-label="SUCRA or P-score values, one per line"></textarea>
+        <span class="hint">Accepts 0–1 or 0–100 (percent auto-detected). Need ≥2 treatments. SUCRAs are centred at 0.5 by construction.</span>
+      </label>
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+        <button type="button" id="btn-run" class="primary">Compute POTH</button>
+        <button type="button" id="btn-example" class="ghost">Example</button>
+      </div>
+      <div class="note"><strong>Subsets:</strong> to get POTH for, say, the top 3 treatments, paste the SUCRAs <em>recomputed within that subset</em> (re-ranked among those treatments) — not a slice of the full-network SUCRAs.</div>
+    </section>
+    <section class="panel">
+      <h2>Result</h2>
+      <div id="out"><p class="hint">Enter SUCRA values to compute POTH.</p></div>
+    </section>
+  </main>
+  <footer>
+    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in the audited <code>shared/poth.js</code> (analytically verified; mirrors the CRAN <code>poth</code> package). Computed client-side.
+  </footer>
+  <script>
+    var EXAMPLE = "0.92, Drug A\n0.74, Drug B\n0.55, Drug C\n0.41, Drug D\n0.23, Drug E\n0.15, Drug F";
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function parse(text) {
+      var rows = [], errs = [], anyPct = false;
+      text.split(/\r?\n/).forEach(function (line, i) {
+        var t = line.trim(); if (!t || t[0] === "#") return;
+        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        var v = parseFloat(f[0]);
+        if (!isFinite(v)) { errs.push("line " + (i + 1)); return; }
+        if (v > 1) anyPct = true;
+        rows.push({ v: v, label: f[1] || ("T" + (rows.length + 1)) });
+      });
+      // percent auto-detect: if any value > 1, treat all as 0–100.
+      if (anyPct) rows.forEach(function (r) { r.v = r.v / 100; });
+      rows.forEach(function (r) { r.v = Math.max(0, Math.min(1, r.v)); });
+      return { rows: rows, errs: errs, pct: anyPct };
+    }
+
+    function band(p) { return p >= 0.75 ? "hi" : (p >= 0.5 ? "mid" : "lo"); }
+    function verdictText(p, n) {
+      if (p >= 0.75) return "High certainty — the hierarchy is well-separated; a top-ranked treatment is meaningfully ahead.";
+      if (p >= 0.5) return "Moderate certainty — interpret the ranking with care; neighbouring treatments may be interchangeable.";
+      return "Low certainty — the hierarchy is largely uninformative. Do not claim a treatment is “ranked best” on these SUCRAs alone; report relative effects with credible intervals.";
+    }
+
+    function run() {
+      var p = parse(document.getElementById("data").value);
+      var out = document.getElementById("out");
+      if (p.rows.length < 2) {
+        out.innerHTML = "<p class='hint'>Enter at least 2 SUCRA values" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</p>";
+        return;
+      }
+      var r = window.AlmPOTH.poth(p.rows.map(function (x) { return x.v; }));
+      var b = band(r.poth);
+      var sorted = p.rows.slice().sort(function (a, c) { return c.v - a.v; });
+      var maxV = sorted[0].v || 1;
+      var rows = sorted.map(function (x) {
+        return "<tr><td>" + esc(x.label) + "</td><td>" + x.v.toFixed(3) + "</td><td><span class='bar' style='width:" + (Math.max(2, x.v / maxV * 120)) + "px'></span></td></tr>";
+      }).join("");
+      out.innerHTML =
+        "<div class='big " + b + "'>" + r.poth.toFixed(3) + "</div>"
+        + "<div class='verdict'>" + verdictText(r.poth, r.n) + "</div>"
+        + "<div class='gauge'><div class='med' style='left:67.1%' title='median 0.671 across 267 networks'></div><div class='mark' style='left:calc(" + (r.poth * 100).toFixed(1) + "% - 1px)'></div></div>"
+        + "<div class='scale-row'><span>0 — no hierarchy</span><span>median 0.67</span><span>1 — certain</span></div>"
+        + "<table><thead><tr><th>Treatment</th><th>SUCRA</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>"
+        + "<p class='hint' style='margin-top:0.5rem'>n = " + r.n + " treatments" + (p.pct ? " · values read as percentages (÷100)" : "") + " · mean SUCRA = " + r.meanSucra.toFixed(3) + (Math.abs(r.meanSucra - 0.5) > 0.02 ? " (SUCRAs should centre on 0.5 — check inputs)" : "") + "</p>";
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-example").addEventListener("click", function () { document.getElementById("data").value = EXAMPLE; run(); });
+    document.getElementById("data").addEventListener("input", run);
+    document.getElementById("data").value = EXAMPLE;
+    run();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

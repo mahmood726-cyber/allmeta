@@ -44,6 +44,10 @@
       { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:32-40. doi:10.1016/j.jclinepi.2019.03.012",
         bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {32--40},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
     ],
+    "poth": [
+      { vancouver: "Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: A Metric for Quantifying Certainty in Treatment Hierarchies From Network Meta-Analysis. Stat Med. 2025;44(15-17):e70176. doi:10.1002/sim.70176",
+        bibtex: '@article{wigle_2025_poth,\n  author = {Wigle, Augustine and B\\\'eliveau, Audrey and Salanti, Georgia and R\\"ucker, Gerta and Schwarzer, Guido and Mavridis, Dimitris and Nikolakopoulou, Adriani},\n  title = {Precision of Treatment Hierarchy: A Metric for Quantifying Certainty in Treatment Hierarchies From Network Meta-Analysis},\n  journal = {Statistics in Medicine},\n  volume = {44},\n  number = {15-17},\n  pages = {e70176},\n  year = {2025},\n  doi = {10.1002/sim.70176}\n}' },
+    ],
     "reporting-bias": [
       { vancouver: "Page MJ, Sterne JAC, Boutron I, et al. ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis. BMJ. 2023;383:e076754. doi:10.1136/bmj-2023-076754",
         bibtex: '@article{page_2023_robme,\n  author = {Page, Matthew J. and Sterne, Jonathan A. C. and Boutron, Isabelle and others},\n  title = {ROB-ME: a tool for assessing risk of bias due to missing evidence in systematic reviews with meta-analysis},\n  journal = {BMJ},\n  volume = {383},\n  pages = {e076754},\n  year = {2023},\n  doi = {10.1136/bmj-2023-076754}\n}' },

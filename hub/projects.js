@@ -539,6 +539,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["nma", "sucra", "consistency", "ranking"]
   },
   {
+    name: "POTH (hierarchy certainty)",
+    folder: "allmeta/poth",
+    path: "./poth/index.html",
+    added: "2026-06-07",
+    collection: "existing",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Precision Of Treatment Hierarchy (Wigle 2025): a single 0–1 number for how certain an NMA treatment hierarchy is, from the SUCRA/P-score values — POTH = [12(n−1)/(n+1)]·(1/n)Σ(SUCRA−0.5)². 1 = certain hierarchy, 0 = treatments indistinguishable (median ≈ 0.671). Report it next to any SUCRA ranking.",
+    note: "A low POTH means the hierarchy is non-informative — do not claim a treatment is 'ranked best'. Closed-form; mirrors the CRAN poth package.",
+    tags: ["nma", "poth", "sucra", "ranking", "hierarchy", "uncertainty", "wigle"]
+  },
+  {
     name: "Component NMA",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
     folder: "allmeta/component-nma",
