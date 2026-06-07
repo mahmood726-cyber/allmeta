@@ -45,7 +45,13 @@ def test_chart_download_helper_supports_signing():
     assert "AlmTruthCertExport" in js and "stampSVG" in js, "chart-download must stamp via the signer"
 
 
-def test_forest_plot_bespoke_export_signed():
-    html = (ROOT / "forest-plot" / "index.html").read_text(encoding="utf-8")
-    assert "AlmTruthCertExport.stampSVG" in html
-    assert "out.truthcert =" in html
+# Apps with bespoke (non chart-download) export handlers that sign in-line.
+BESPOKE_SIGNED = ["forest-plot", "funnel-plot", "heterogeneity"]
+
+
+def test_bespoke_export_apps_signed():
+    for app in BESPOKE_SIGNED:
+        html = (ROOT / app / "index.html").read_text(encoding="utf-8")
+        assert "truthcert-export.js" in html, f"{app} must load the export signer"
+        assert "AlmTruthCertExport.stampSVG" in html, f"{app} must stamp its SVG/PNG"
+        assert "out.truthcert =" in html, f"{app} JSON export must embed the receipt"

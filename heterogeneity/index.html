@@ -85,6 +85,7 @@
 <script src="../shared/heterogeneity-ci.js"></script>
 <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
@@ -576,20 +577,33 @@
     }
     function slugify(t, f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
 
-    function onDownloadSvg() {
+    // TruthCert on export — bind to the CURRENT studies + heterogeneity summary.
+    async function hetReceipt(studies, info) {
+      if (!window.AlmTruthCertExport) return null;
+      try {
+        return await AlmTruthCertExport.buildReceipt({ studies: studies,
+          method: "Heterogeneity: Q, I², τ², prediction interval (+ Baujat)",
+          label: "heterogeneity", results: (info && info.sum) || null });
+      } catch (e) { return null; }
+    }
+    async function onDownloadSvg() {
       const state = readState();
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
       const info = renderStats(parsed.studies, state.tau2);
-      const svg = buildSvg(parsed.studies, info.sum);
+      let svg = buildSvg(parsed.studies, info.sum);
+      const res = await hetReceipt(parsed.studies, info);
+      if (res && window.AlmTruthCertExport) svg = AlmTruthCertExport.stampSVG(svg, res);
       downloadBlob(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}), "baujat-"+slugify("","plot")+".svg");
     }
-    function onDownloadPng() {
+    async function onDownloadPng() {
       const state = readState();
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
       const info = renderStats(parsed.studies, state.tau2);
-      const svg = buildSvg(parsed.studies, info.sum);
+      let svg = buildSvg(parsed.studies, info.sum);
+      const res = await hetReceipt(parsed.studies, info);
+      if (res && window.AlmTruthCertExport) svg = AlmTruthCertExport.stampSVG(svg, res);
       const W=680, H=440, scale=2;
       const img = new Image();
       const blob = new Blob([svg],{type:"image/svg+xml;charset=utf-8"});
@@ -606,9 +620,14 @@
       img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "error"); };
       img.src = url;
     }
-    function onDownloadJson() {
+    async function onDownloadJson() {
       const state = readState();
       const out = Object.assign({_schema:"heterogeneity-v1", _savedAt:new Date().toISOString()}, state);
+      const parsed = parseStudies(state.data);
+      if (parsed.studies.length >= 2) {
+        const res = await hetReceipt(parsed.studies, renderStats(parsed.studies, state.tau2));
+        if (res) out.truthcert = res.signed ? res.receipt : res.manifest;
+      }
       downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "heterogeneity-state.json");
     }
     function onImportJson(file) {

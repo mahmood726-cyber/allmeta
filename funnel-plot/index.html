@@ -80,6 +80,7 @@
   <script src="../shared/doi-lfk.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -558,15 +559,31 @@
       if (!parsed.studies.length) return null;
       const fe = poolFE(parsed.studies);
       const egg = egger(parsed.studies);
-      return { state: state, svg: buildSvg(state, parsed.studies, fe, egg) };
+      return { state: state, studies: parsed.studies, fe: fe, egg: egg,
+               svg: buildSvg(state, parsed.studies, fe, egg) };
     }
-    function onDownloadSvg() {
+    // TruthCert on export (shared/truthcert-export.js): bind the receipt to the
+    // CURRENT parsed studies + results (never the stale bus).
+    function exportReceiptInput(r) {
+      return { studies: r.studies, method: "Funnel plot + Egger's test (fixed-effect pooling)",
+        label: r.state.title || "funnel-plot",
+        results: { fixedEffect: r.fe ? { mu: r.fe.mu, se: r.fe.se } : null, egger: r.egg || null } };
+    }
+    async function buildExportReceipt(r) {
+      if (!window.AlmTruthCertExport) return null;
+      try { return await AlmTruthCertExport.buildReceipt(exportReceiptInput(r)); } catch (e) { return null; }
+    }
+    async function onDownloadSvg() {
       const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
-      downloadBlob(new Blob([r.svg], {type: "image/svg+xml;charset=utf-8"}),
+      const res = await buildExportReceipt(r);
+      const svg = (res && window.AlmTruthCertExport) ? AlmTruthCertExport.stampSVG(r.svg, res) : r.svg;
+      downloadBlob(new Blob([svg], {type: "image/svg+xml;charset=utf-8"}),
                    "funnel-" + slugify(r.state.title, "plot") + ".svg");
     }
-    function onDownloadPng() {
+    async function onDownloadPng() {
       const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
+      const res = await buildExportReceipt(r);
+      r.svg = (res && window.AlmTruthCertExport) ? AlmTruthCertExport.stampSVG(r.svg, res) : r.svg;
       const m = r.svg.match(/viewBox="0 0 (\d+) (\d+)"/);
       const W = m ? parseInt(m[1], 10) : 720;
       const H = m ? parseInt(m[2], 10) : 560;
@@ -586,9 +603,11 @@
       img.onerror = function () { URL.revokeObjectURL(url); Toast.show("PNG render failed.", "error"); };
       img.src = url;
     }
-    function onDownloadJson() {
-      const state = readState();
+    async function onDownloadJson() {
+      const r = currentSvg();
+      const state = r ? r.state : readState();
       const out = Object.assign({_schema: "funnel-plot-v1", _savedAt: new Date().toISOString()}, state);
+      if (r) { const res = await buildExportReceipt(r); if (res) out.truthcert = res.signed ? res.receipt : res.manifest; }
       downloadBlob(new Blob([JSON.stringify(out, null, 2)], {type: "application/json"}),
                    "funnel-" + slugify(state.title, "state") + ".json");
     }
