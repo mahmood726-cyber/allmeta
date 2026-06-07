@@ -67,7 +67,9 @@ INLINE_META_MATH = re.compile(
     r"100\s*\*\s*\(\s*Q\w*\s*-\s*(?:df|\(?\s*k\s*-\s*1)"          # Q-based I²
     r"|\(\s*Q\w*\s*-\s*(?:df|\(?\s*k\s*-\s*1\s*\)?)\s*\)\s*/",    # DL τ² closed form
 )
-# app-dir → reason it legitimately does NOT delegate to ma-core's univariate IV.
+# app-dir → reason its inline tau2/I2 legitimately does NOT need to delegate to
+# ma-core's univariate inverse-variance pool: a different model, a different
+# statistic, an intentional reporting convention, or non-executed code.
 INLINE_META_MATH_EXEMPT = {
     "nma": "NMA contrast-based pooling — not univariate inverse-variance",
     "bayesian-nma": "NMA (Bayesian) — not univariate inverse-variance",
@@ -87,16 +89,36 @@ INLINE_META_MATH_EXEMPT = {
     "gosh-metareg": "meta-regression residual I2 -- distinct quantity (needs moderator design matrix)",
     "dosehtml": "dose-response GLS slope heterogeneity -- not univariate IV",
     "dose-response-ma": "dose-response GLS slope -- not univariate IV",
+    # Scoped 2026-06-07 (was KNOWN/info): each verified a legitimate divergence,
+    # not migration debt — see the inline-math scope.
+    "gosh": "GOSH all-subset plot, DL-only pool; for DL the Q-based I2=100*(Q-df)/Q "
+            "is identical to ma-core's tau2-based I2 (verified equal), and pool() runs "
+            "inside a 2^k-1 subset hot loop where an ma-core call per subset adds cost "
+            "without changing any value",
+    "Truthcert1": "the flagged (Q-df) sits inside a Python reproducibility-code STRING "
+                  "template (a numpy snippet emitted for the user to run), not executed "
+                  "app math — nothing for ma-core to replace",
+    "workbench": "reports the Higgins-Thompson Q-based I2 by design — its committed "
+                 "R-parity oracle uses that convention; delegating to ma-core's tau2-based "
+                 "I2 would break parity (PI/HKSJ already delegate to ma-core)",
+    "cumulative-subgroup": "between-subgroup I2 (Q_between) — a distinct statistic from "
+                           "ma-core's within-study I2, not a reimplementation of it",
+    "heterogeneity": "dedicated heterogeneity app: the Q-based I2 (Higgins-Thompson) is "
+                     "its primary reported quantity; PI/HKSJ/Q-profile already delegate "
+                     "to ma-core",
 }
 
 
 # Accepted baseline of inline reimplementations (Sentinel pattern): the rule
 # BLOCKS any NEW inline univariate tau2/I2, but tolerates these documented few
-# until they are migrated, so drift can no longer pass CI silently.
+# until they are migrated, so drift can no longer pass CI silently. After the
+# 2026-06-07 scope, only the genuine migrate-someday candidates remain here
+# (the justified divergences moved to INLINE_META_MATH_EXEMPT). proportion-ma's
+# inline DL/PM is tracked as a consolidation note (it already loads ma-core).
 INLINE_META_MATH_KNOWN = {
-    "gosh": "deprecated Q-based I2 + DL; perf-sensitive all-subset migration deferred",
-    "Truthcert1": "large bespoke flagship pairwise app; consolidation tracked",
-    "IPD-Meta-Pro": "IPD two-stage aggregate pool; bespoke engine",
+    "IPD-Meta-Pro": "IPD two-stage aggregate pool, inline PM in a 121K-line bespoke "
+                    "engine; migration is mechanical (2nd-stage aggregate RE) but high "
+                    "blast radius — gate on a 1e-7 ma-core PM parity check first",
 }
 
 
