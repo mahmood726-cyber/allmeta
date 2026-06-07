@@ -16,6 +16,27 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.1.1] — 2026-06-07
+
+Documentation release: consolidate the platform's existing validation evidence
+into one citable dossier. No code or app changes.
+
+### Added
+- **`VALIDATION.md`** — verification & validation dossier that assembles the
+  already-CI-gated evidence into one place: the R/Stata parity ledger (44 specs +
+  19 Python engines = 63 tests, 41 R oracles, 1e-6 tolerance) with its honest
+  6-app uncovered disclosure; the spec-collapse robustness falsification across
+  473 Cochrane meta-analyses (55% false robustness, metafor-gated); the
+  HMAC-signed Evidence Integrity Observatory bundle (54.97% FE-Wald headline,
+  tamper-detection tested); and a comparative axis against published LLM
+  data-extraction accuracy (numerical tuples ~49–75% / near-zero). Documents the
+  54.97-vs-55.0 FE-Wald-vs-RE convention difference and states boundaries
+  (parity != inferential correctness; INSPECT-SR/ROB-ME are judgement scaffolds,
+  not numerically validated; single-maintainer, not third-party audited).
+  Cross-linked from `BENCHMARK.md`.
+
+---
+
 ## [1.1.0] — 2026-06-07
 
 The integrity-and-enforcement release: make verifiable truth the product, not
