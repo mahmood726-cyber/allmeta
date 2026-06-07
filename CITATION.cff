@@ -12,8 +12,8 @@ authors:
 repository-code: "https://github.com/mahmood726-cyber/allmeta"
 url: "https://mahmood726-cyber.github.io/allmeta/"
 # Concept DOI — version-less, always resolves to the latest archived release.
-# The v1.0.0 per-release DOI is 10.5281/zenodo.20516881; the v1.1.0 per-release
-# DOI is 10.5281/zenodo.20582420.
+# Per-release DOIs: v1.0.0 = 10.5281/zenodo.20516881; v1.1.0 = 10.5281/zenodo.20582420;
+# v1.1.1 = 10.5281/zenodo.20584424.
 identifiers:
   - description: "Zenodo concept DOI (all versions)"
     type: doi
