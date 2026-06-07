@@ -3,8 +3,10 @@ name: lint
 # Sentinel-equivalent pre-merge lint of the shipped browser assets: no external
 # CDN resource loads, no hardcoded local paths, no BOM, no unpopulated template
 # placeholders — across every catalog entry point (hub/projects.js) + authored
-# shared/ JS/CSS. Pure stdlib, no deps. Fails the PR on any NEW violation; a
-# documented ALLOWLIST in scripts/lint_repo.py accepts the known baseline.
+# shared/ JS/CSS. Also grounds claimed citations and sweeps for claim/code drift
+# (catalog/count/parity). Stdlib-only except node, used to regenerate the parity
+# ledger for the freshness check. Fails the PR on any NEW violation; a documented
+# ALLOWLIST in scripts/lint_repo.py accepts the known baseline.
 
 on:
   push:
@@ -19,6 +21,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: Shipped-asset invariant lint
         run: python scripts/lint_repo.py
       - name: Citation grounding (offline gate)
@@ -26,3 +31,9 @@ jobs:
         # cache (shared/citations.cache.json) with a matching title. Network-free
         # — refresh the cache with `python scripts/ground_citations.py --resolve`.
         run: python scripts/ground_citations.py
+      - name: Claim/code drift sweep
+        # Keep human-facing claims in sync with the filesystem: catalog <->
+        # app-dir bijection (hub/projects.js), README/manifest declared counts,
+        # and parity-ledger freshness (regenerated via node, compared modulo its
+        # date stamp). Fails closed on drift.
+        run: python scripts/drift_sweep.py
