@@ -45,6 +45,23 @@ def test_chart_download_helper_supports_signing():
     assert "AlmTruthCertExport" in js and "stampSVG" in js, "chart-download must stamp via the signer"
 
 
+def test_results_export_helper_supports_signing():
+    js = (ROOT / "hub" / "shared" / "results-export.js").read_text(encoding="utf-8")
+    assert "getReceiptInput" in js, "results-export must accept a receipt-input hook"
+    assert "_truthcert" in js and "AlmTruthCertExport" in js, "results-export JSON must embed a receipt"
+
+
+# Apps that sign their JSON via the shared results-export helper (no chart export).
+RESULTS_SIGNED = ["pet-peese", "influence"]
+
+
+def test_results_export_apps_pass_receipt_input():
+    for app in RESULTS_SIGNED:
+        html = (ROOT / app / "index.html").read_text(encoding="utf-8")
+        assert "truthcert-export.js" in html, f"{app} must load the export signer"
+        assert "getReceiptInput" in html, f"{app} resultsExport must pass getReceiptInput"
+
+
 # Apps with bespoke (non chart-download) export handlers that sign in-line.
 BESPOKE_SIGNED = ["forest-plot", "funnel-plot", "heterogeneity", "meta-regression"]
 

@@ -73,6 +73,7 @@
   <script src="../shared/diagnostic-plots.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -213,11 +214,14 @@
       // Exposed for results-export + url-state
       let _lastDiag = null;
       let _lastFull = null;
+      let _lastStudies = [];
       window._almLastInfluence = function () { return _lastFull; };
       window._almLastDiag      = function () { return _lastDiag; };
+      window._almStudies       = function () { return _lastStudies; };
 
       function run() {
         const rows = parse(document.getElementById("src").value);
+        _lastStudies = rows;
         if (rows.length < 3) return;
         const full = pool(rows);
         _lastFull = full;
@@ -487,6 +491,13 @@
       target: '#alm-export-mount',
       basename: 'influence-results',
       getResults: function () { return window.__almResults(); },
+      getReceiptInput: function () {
+        var s = (window._almStudies && window._almStudies()) || [];
+        if (s.length < 3) return null;
+        return { studies: s.map(function (r) { return { est: r.te, se: r.se }; }),
+          method: "Influence diagnostics (Cook's distance, leave-one-out, DFFITS)",
+          label: "influence-results", results: window.__almResults() };
+      },
     });
 
     window.alm.urlState({ version: 1 });

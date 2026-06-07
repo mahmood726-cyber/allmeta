@@ -62,6 +62,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/canonical-datasets.js"></script>
@@ -535,6 +536,12 @@
       target: '#alm-export-mount',
       basename: 'pet-peese-results',
       getResults: function () { return window.__almResults(); },
+      getReceiptInput: function () {
+        if (!_lastRows || !_lastRows.length) return null;
+        return { studies: _lastRows.map(function (r) { return { est: r.te, se: r.se }; }),
+          method: "PET-PEESE + trim-and-fill", label: "pet-peese-results",
+          results: window.__almResults() };
+      },
     });
 
     window.alm.urlState({ version: 1 });

@@ -110,6 +110,26 @@
     if (!target) { console.warn('[alm.resultsExport] target not found'); return; }
     const basename = opts.basename || 'results';
     const getResults = typeof opts.getResults === 'function' ? opts.getResults : () => ({});
+    // Optional: bind a verifiable TruthCert receipt to the JSON export.
+    // getReceiptInput() -> { studies, method, results, label } for the current
+    // analysis (or null to skip). Needs shared/ma-studies-v1.js +
+    // shared/truthcert-export.js; degrades to an unsigned export (with a warn)
+    // if signing was requested but the signer/input is unavailable.
+    const getReceiptInput = typeof opts.getReceiptInput === 'function' ? opts.getReceiptInput : null;
+    async function _maybeSign(r) {
+      if (!getReceiptInput || !window.AlmTruthCertExport) {
+        if (getReceiptInput && !window.AlmTruthCertExport)
+          console.warn('[alm.resultsExport] truthcert-export.js not loaded — JSON export NOT signed.');
+        return r;
+      }
+      let input;
+      try { input = getReceiptInput(); } catch (e) { console.warn('[alm.resultsExport] getReceiptInput threw — JSON NOT signed:', e); return r; }
+      if (!input) return r;
+      try {
+        const res = await window.AlmTruthCertExport.buildReceipt(input);
+        return Object.assign({}, r, { _truthcert: res.signed ? res.receipt : res.manifest });
+      } catch (e) { console.warn('[alm.resultsExport] signing failed — JSON NOT signed:', e); return r; }
+    }
     _ensureStyle();
     target.innerHTML = `
       <div class="alm-export">
@@ -125,9 +145,9 @@
     target.querySelector('[data-action="report-txt"]').addEventListener('click', () => {
       _download(new Blob([_toReport(getResults(), opts, true)], { type: 'text/plain' }), basename + '-report.txt');
     });
-    target.querySelector('[data-action="json"]').addEventListener('click', () => {
-      const r = getResults();
-      _download(new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' }), basename + '.json');
+    target.querySelector('[data-action="json"]').addEventListener('click', async () => {
+      const out = await _maybeSign(getResults());
+      _download(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), basename + '.json');
     });
     target.querySelector('[data-action="csv"]').addEventListener('click', () => {
       _download(new Blob([_toCSV(getResults())], { type: 'text/csv' }), basename + '.csv');
