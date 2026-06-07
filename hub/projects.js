@@ -1286,6 +1286,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["correlation", "fisher-z", "zcor", "pooling"]
   },
   {
+    name: "UWLS (multiplicative heterogeneity)",
+    folder: "allmeta/multiplicative-ma",
+    path: "./multiplicative-ma/index.html",
+    added: "2026-06-07",
+    collection: "existing",
+    mode: "file",
+    category: "Pooling",
+    summary: "Unrestricted weighted least squares / multiplicative-heterogeneity meta-analysis (Stanley & Doucouliagos): inflate within-study variances by φ=Q/(k−1) instead of adding τ². Point = fixed-effect estimate, SE = SE_FE·√φ, t_{k−1} CI — identical to lm(yi~1, weights=1/vi). Shown side-by-side with fixed-effect and additive random-effects.",
+    note: "Recommended as the PRIMARY estimator for observational meta-analyses (IV-RE weights amplify SE-manipulation); RE as sensitivity. Verified vs R lm to 1e-8.",
+    tags: ["uwls", "multiplicative", "heterogeneity", "stanley", "observational", "pooling"]
+  },
+  {
     name: "Dose-Response MA",
     folder: "allmeta/dose-response-ma",
     path: "./dose-response-ma/index.html",

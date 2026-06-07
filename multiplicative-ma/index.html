@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="UWLS / multiplicative-heterogeneity meta-analysis (Stanley & Doucouliagos): inflate within-study variances by φ=Q/(k−1) instead of adding τ². Recommended as the primary estimator for observational meta-analyses, with inverse-variance random-effects as a sensitivity analysis.">
+  <meta name="color-scheme" content="light dark">
+  <title>UWLS — multiplicative-heterogeneity meta-analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 80ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.7rem; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    label .lbl { display: block; font-size: 0.85rem; margin-bottom: 0.15rem; font-weight: 500; }
+    .hint { display: block; color: var(--muted); font-size: 0.74rem; margin-top: 0.15rem; }
+    textarea { width: 100%; min-height: 9rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.85rem/1.5 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+    select { padding: 0.3rem 0.5rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border); padding: 0.45rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    tr.primary td { background: var(--accent-soft); font-weight: 600; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    #interp { font-size: 0.9rem; margin: 0.5rem 0 0; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/uwls.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>UWLS — multiplicative heterogeneity</h1>
+    <p>Random-effects pooling <em>adds</em> a between-study variance τ²; the multiplicative model <em>inflates</em> the within-study variances by a single factor φ = Q/(k−1). The point estimate is the fixed-effect one; the SE is the fixed-effect SE × √φ. This unrestricted weighted least squares (UWLS) estimator is recommended as the <strong>primary</strong> analysis for observational meta-analyses — where inverse-variance random-effects weights amplify standard-error manipulation by primary modellers — with random effects kept as a sensitivity analysis.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Studies</h2>
+      <label><span class="lbl">One study per line: <code>effect, SE</code> (analysis scale, e.g. logOR)</span>
+        <textarea id="data" spellcheck="false" aria-label="Study effect and SE, one per line"></textarea>
+        <span class="hint">Optional 3rd field = label. Lines starting with # are ignored. k ≥ 2.</span>
+      </label>
+      <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap">
+        <button type="button" id="btn-run" class="primary">Compare estimators</button>
+        <button type="button" id="btn-example" class="ghost">Example</button>
+        <label class="hint">Scale
+          <select id="scale"><option value="linear">as entered</option><option value="exp">exponentiate</option></select>
+        </label>
+      </div>
+      <div class="note"><strong>When to prefer which:</strong> for observational syntheses make UWLS (multiplicative) the primary estimate; for RCTs either is defensible — report both. φ ≈ 1 means the data are consistent with a common effect; φ ≫ 1 indicates over-dispersion (heterogeneity or small-study effects).</div>
+    </section>
+    <section class="panel">
+      <h2>Estimators</h2>
+      <table>
+        <thead><tr><th>Model</th><th>Estimate (95% CI)</th><th>SE</th><th>Heterogeneity</th></tr></thead>
+        <tbody id="out"></tbody>
+      </table>
+      <p id="interp"></p>
+    </section>
+  </main>
+  <footer>
+    Multiplicative / UWLS: point = inverse-variance fixed-effect estimate; φ = Q/(k−1); SE = SE<sub>FE</sub>·√φ; 95% CI uses t<sub>k−1</sub> — identical to <code>lm(yi ~ 1, weights = 1/vi)</code>. Additive random-effects uses Paule-Mandel τ² from the audited <code>shared/ma-core.js</code>. Multiplicative computation in <code>shared/uwls.js</code>, verified vs R <code>lm</code> to ~1e-8 (<code>tests/test_uwls.py</code>). References: Stanley TD, Doucouliagos H. Neither fixed nor random: weighted least squares meta-analysis. Stat Med. 2015;34(13):2116-2127. doi:10.1002/sim.6481. Computed client-side.
+  </footer>
+  <script>
+    var EXAMPLE = "0.10, 0.20\n0.30, 0.25\n0.50, 0.18\n0.20, 0.30\n0.90, 0.22\n0.40, 0.28\n1.10, 0.35\n0.05, 0.15";
+    function parse(text) {
+      var yi = [], vi = [], errs = [];
+      text.split(/\r?\n/).forEach(function (l, i) {
+        var t = l.trim(); if (!t || t[0] === "#") return;
+        var f = t.split(/[,\t]/); var y = parseFloat(f[0]), se = parseFloat(f[1]);
+        if (!isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
+        yi.push(y); vi.push(se * se);
+      });
+      return { yi: yi, vi: vi, errs: errs };
+    }
+    function run() {
+      var p = parse(document.getElementById("data").value);
+      var out = document.getElementById("out");
+      if (p.yi.length < 2) {
+        out.innerHTML = "<tr><td colspan='4'>Enter ≥2 studies" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</td></tr>";
+        document.getElementById("interp").textContent = ""; return;
+      }
+      var ratio = document.getElementById("scale").value === "exp";
+      var tx = function (v) { return ratio ? Math.exp(v) : v; };
+      var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
+      var fe = window.AlmMaCore.pool(p.yi, p.vi, { method: "FE" });
+      var re = window.AlmMaCore.pool(p.yi, p.vi, { method: "PM" });
+      var mult = window.AlmUWLS.uwls(p.yi, p.vi);
+      var row = function (name, est, lo, hi, se, het, primary) {
+        return "<tr" + (primary ? " class='primary'" : "") + "><td>" + name + "</td><td><code>" + f(est) + "</code> (" + f(lo) + ", " + f(hi) + ")</td><td>" + (se == null ? "—" : se.toFixed(4)) + "</td><td>" + het + "</td></tr>";
+      };
+      out.innerHTML =
+        row("Fixed-effect (IV)", fe.mu, fe.ciLo, fe.ciHi, fe.se, "—", false)
+        + row("Random-effects (PM, additive)", re.mu, re.ciLo, re.ciHi, re.se, "τ² = " + re.tau2.toFixed(4) + ", I² = " + re.I2.toFixed(0) + "%", false)
+        + row("Multiplicative (UWLS)", mult.mu, mult.ciLo, mult.ciHi, mult.se, "φ = " + mult.phi.toFixed(3) + " (Q/" + mult.df + ")", true);
+      var disp = mult.phi >= 1
+        ? "φ = " + mult.phi.toFixed(2) + " > 1: the data are over-dispersed relative to a common effect (heterogeneity and/or small-study effects), so UWLS widens the CI beyond fixed-effect."
+        : "φ = " + mult.phi.toFixed(2) + " < 1: less variation than a common-effect model expects; UWLS narrows the CI (some implementations floor φ at 1 — here it follows lm exactly, unfloored).";
+      document.getElementById("interp").innerHTML = "<strong>Multiplicative (UWLS) is highlighted as the primary estimate.</strong> " + disp;
+    }
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-example").addEventListener("click", function () { document.getElementById("data").value = EXAMPLE; run(); });
+    document.getElementById("data").addEventListener("input", run);
+    document.getElementById("scale").addEventListener("change", run);
+    document.getElementById("data").value = EXAMPLE;
+    run();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

@@ -44,6 +44,10 @@
       { vancouver: "Atal I, Porcher R, Boutron I, Ravaud P. The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses. J Clin Epidemiol. 2019;111:32-40. doi:10.1016/j.jclinepi.2019.03.012",
         bibtex: '@article{atal_2019_fragility_ma,\n  author = {Atal, Ignacio and Porcher, Rapha\\"el and Boutron, Isabelle and Ravaud, Philippe},\n  title = {The statistical significance of meta-analyses is frequently fragile: definition of a fragility index for meta-analyses},\n  journal = {Journal of Clinical Epidemiology},\n  volume = {111},\n  pages = {32--40},\n  year = {2019},\n  doi = {10.1016/j.jclinepi.2019.03.012}\n}' },
     ],
+    "multiplicative-ma": [
+      { vancouver: "Stanley TD, Doucouliagos H. Neither fixed nor random: weighted least squares meta-analysis. Stat Med. 2015;34(13):2116-2127. doi:10.1002/sim.6481",
+        bibtex: '@article{stanley_doucouliagos_2015_uwls,\n  author = {Stanley, T. D. and Doucouliagos, Hristos},\n  title = {Neither fixed nor random: weighted least squares meta-analysis},\n  journal = {Statistics in Medicine},\n  volume = {34},\n  number = {13},\n  pages = {2116--2127},\n  year = {2015},\n  doi = {10.1002/sim.6481}\n}' },
+    ],
     "poth": [
       { vancouver: "Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: A Metric for Quantifying Certainty in Treatment Hierarchies From Network Meta-Analysis. Stat Med. 2025;44(15-17):e70176. doi:10.1002/sim.70176",
         bibtex: '@article{wigle_2025_poth,\n  author = {Wigle, Augustine and B\\\'eliveau, Audrey and Salanti, Georgia and R\\"ucker, Gerta and Schwarzer, Guido and Mavridis, Dimitris and Nikolakopoulou, Adriani},\n  title = {Precision of Treatment Hierarchy: A Metric for Quantifying Certainty in Treatment Hierarchies From Network Meta-Analysis},\n  journal = {Statistics in Medicine},\n  volume = {44},\n  number = {15-17},\n  pages = {e70176},\n  year = {2025},\n  doi = {10.1002/sim.70176}\n}' },
