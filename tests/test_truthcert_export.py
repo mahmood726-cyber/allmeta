@@ -112,15 +112,40 @@ def test_no_key_yields_unsigned_manifest_not_fake_signature():
           hasReceipt: !!res.receipt,
           schema: res.manifest && res.manifest._schema,
           manifestStudies: res.manifest && res.manifest.studies.length,
-          hasSignatureField: res.manifest && ('signature' in res.manifest)
+          hasSignatureField: res.manifest && ('signature' in res.manifest),
+          tamperEvident: res.manifest && res.manifest.tamperEvident,
+          contentHashPrefix: res.manifest && String(res.manifest.contentHash || '').slice(0, 7)
         }}));
       }})();
     """)
     assert out["signed"] is False
     assert out["hasReceipt"] is False
-    assert out["schema"] == "truthcert-export-unsigned-v1"
+    assert out["schema"] == "truthcert-export-contenthash-v1"
     assert out["manifestStudies"] == 3
     assert out["hasSignatureField"] is False
+    # Tier-0 keyless seal: tamper-evident SHA-256 content hash, no key needed.
+    assert out["tamperEvident"] is True
+    assert out["contentHashPrefix"] == "sha256:"
+
+
+def test_content_hash_verifies_and_detects_tamper():
+    """Keyless Tier-0 seal: verifyContentHash() passes on an untouched manifest
+    and fails once any field is mutated — no key involved."""
+    out = _run_node(f"""
+      (async () => {{
+        const res = await TX.buildReceipt({{ studies: {STUDIES}, method:'PM-RE',
+          results: {RESULTS}, label:'forest' }});
+        const m = res.manifest;
+        const good = await TX.verifyContentHash(m);
+        // Mutate a field — must break the seal.
+        const tampered = JSON.parse(JSON.stringify(m));
+        tampered.extra.method = 'DL-RE';
+        const bad = await TX.verifyContentHash(tampered);
+        console.log(JSON.stringify({{ good: good, bad: bad }}));
+      }})();
+    """)
+    assert out["good"] is True
+    assert out["bad"] is False
 
 
 def test_stamp_svg_embeds_metadata_and_footer_idempotently():

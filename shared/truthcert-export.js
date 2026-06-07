@@ -10,9 +10,13 @@
  * `extra` block, so the existing MaStudies.verifyTruthCert verifies an export
  * receipt unchanged.
  *
- * Honesty (lessons.md "Cryptography / Signing"): when no HMAC key is configured
- * the export STILL proceeds, carrying an UNSIGNED provenance manifest
- * (signed:false) — never a placeholder/fake signature.
+ * Honesty (lessons.md "Cryptography / Signing"): when no signing key is
+ * configured the export STILL proceeds — never a placeholder/fake signature.
+ * Instead it carries a Tier-0 KEYLESS seal: a SHA-256 `contentHash` over the
+ * canonical manifest (signed:false, tamperEvident:true). Anyone can recompute
+ * it (verifyContentHash) to detect tampering, with no key — so publishing is
+ * never blocked. It makes NO authorship claim (anyone can produce a valid
+ * hash); for authorship use the HMAC/Ed25519 signed path.
  *
  * Browser: window.AlmTruthCertExport. Node: module.exports (Web Crypto since
  * Node 15 provides globalThis.crypto.subtle, so receipts sign + verify in CI).
@@ -33,6 +37,28 @@
       hex += (x.length === 1 ? "0" : "") + x;
     }
     return hex;
+  }
+
+  // Deterministic JSON: keys sorted recursively, so the same logical object
+  // always hashes identically regardless of insertion order.
+  function _stableStringify(v) {
+    if (v === null || typeof v !== "object") return JSON.stringify(v);
+    if (Array.isArray(v)) return "[" + v.map(_stableStringify).join(",") + "]";
+    var keys = Object.keys(v).sort();
+    return "{" + keys.map(function (k) {
+      return JSON.stringify(k) + ":" + _stableStringify(v[k]);
+    }).join(",") + "}";
+  }
+
+  // Canonical form of a manifest for hashing — excludes the seal fields it is
+  // about to (or already does) carry, so signer and verifier hash the same bytes.
+  function _canonicalManifest(m) {
+    var copy = {};
+    for (var k in m) {
+      if (Object.prototype.hasOwnProperty.call(m, k)
+          && k !== "contentHash" && k !== "tamperEvident") copy[k] = m[k];
+    }
+    return _stableStringify(copy);
   }
 
   // SHA-256 of a string | ArrayBuffer | Uint8Array → lowercase hex.
@@ -80,7 +106,7 @@
     var MaStudies = global.MaStudies;
     var extra = _extra(opts);
     if (!MaStudies || typeof MaStudies.toTruthCert !== "function") {
-      return { signed: false, reason: "MaStudies signer not loaded", manifest: _manifest(opts, extra) };
+      return await _sealManifest(opts, extra, "MaStudies signer not loaded");
     }
     var sigOpts = { extra: extra };
     if (opts.key) sigOpts.key = opts.key;
@@ -88,10 +114,10 @@
     try {
       tc = await MaStudies.toTruthCert(opts.studies || [], sigOpts);
     } catch (e) {
-      return { signed: false, reason: "sign threw: " + (e && e.message || e), manifest: _manifest(opts, extra) };
+      return await _sealManifest(opts, extra, "sign threw: " + (e && e.message || e));
     }
     if (tc && tc.ok) return { signed: true, receipt: tc.receipt };
-    return { signed: false, reason: (tc && tc.error) || "sign failed", manifest: _manifest(opts, extra) };
+    return await _sealManifest(opts, extra, (tc && tc.error) || "sign failed");
   }
 
   // Unsigned provenance manifest — same shape/fields as a receipt minus the
@@ -99,13 +125,33 @@
   // replay, and it is unambiguously marked unsigned.
   function _manifest(opts, extra) {
     return {
-      _schema: "truthcert-export-unsigned-v1",
+      _schema: "truthcert-export-contenthash-v1",
       signed: false,
       _builtAt: null, // intentionally null: no trusted clock in the unsigned path
       producedBy: _producedBy(),
       studies: opts.studies || [],
       extra: extra || _extra(opts),
     };
+  }
+
+  // Tier-0 keyless seal: attach a SHA-256 content hash so the unsigned manifest
+  // is tamper-EVIDENT without any key (publishing is never blocked). This makes
+  // NO authorship claim — anyone can recompute a valid hash — which is the
+  // honest, stated property. Returns the standard unsigned result shape.
+  async function _sealManifest(opts, extra, reason) {
+    var m = _manifest(opts, extra);
+    var h = await sha256Hex(_canonicalManifest(m));
+    if (h) { m.contentHash = "sha256:" + h; m.tamperEvident = true; }
+    else { m.contentHash = null; m.tamperEvident = false; } // no SubtleCrypto
+    return { signed: false, reason: reason || null, manifest: m };
+  }
+
+  // Recompute the Tier-0 seal and compare. Returns true iff the manifest's
+  // content is unchanged since it was sealed. Integrity only, not authorship.
+  async function verifyContentHash(manifest) {
+    if (!manifest || typeof manifest.contentHash !== "string") return false;
+    var h = await sha256Hex(_canonicalManifest(manifest));
+    return h !== null && ("sha256:" + h) === manifest.contentHash;
   }
 
   function _payload(res) { return res.signed ? res.receipt : res.manifest; }
@@ -124,9 +170,14 @@
       return "TruthCert HMAC-SHA-256 key:" + (r.keyHint || "?")
         + " sig:" + String(r.signature || "").slice(0, 12) + "… · " + by;
     }
-    var pb = res.manifest && res.manifest.producedBy;
-    return "TruthCert: UNSIGNED provenance (set an HMAC key to sign) · "
-      + (pb ? (pb.app + "@" + String(pb.sha).slice(0, 7)) : "allmeta");
+    var m = res.manifest || {};
+    var pb = m.producedBy;
+    var by = pb ? (pb.app + "@" + String(pb.sha).slice(0, 7)) : "allmeta";
+    if (m.tamperEvident && typeof m.contentHash === "string") {
+      return "TruthCert: SHA-256 content-sealed (keyless, tamper-evident) "
+        + m.contentHash.slice(0, 19) + "… · " + by;
+    }
+    return "TruthCert: UNSIGNED provenance · " + by;
   }
 
   function _xmlEscape(s) {
@@ -159,6 +210,7 @@
   var api = {
     sha256Hex: sha256Hex,
     buildReceipt: buildReceipt,
+    verifyContentHash: verifyContentHash,
     sidecarJSON: sidecarJSON,
     sidecarName: sidecarName,
     footerLine: footerLine,
