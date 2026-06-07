@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Multiplicative-heterogeneity network meta-analysis: the network generalisation of UWLS. Relative effects equal the fixed-effect (common-effect) NMA estimates; every SE is inflated by √φ where φ=Q/(n−p), instead of adding a between-study variance τ². Reported alongside additive random-effects with an AIC verdict.">
+  <meta name="color-scheme" content="light dark">
+  <title>Multiplicative-heterogeneity NMA</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c; --warn-soft:#fbeedd;
+            --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c;
+              --border:#2f343a; --input-bg:#23272c; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 80ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.7rem; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    label .lbl { display: block; font-size: 0.85rem; margin-bottom: 0.15rem; font-weight: 500; }
+    .hint { display: block; color: var(--muted); font-size: 0.74rem; margin-top: 0.15rem; }
+    textarea { width: 100%; min-height: 9rem; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.85rem/1.5 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+    select { padding: 0.3rem 0.5rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border); padding: 0.45rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 0.45rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    tr.ref td { color: var(--muted); }
+    .verdict { background: var(--accent-soft); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.9rem; margin-top: 0.6rem; }
+    .verdict strong { color: var(--accent); }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    .stat-row { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; font-size: 0.86rem; margin: 0.4rem 0 0; color: var(--muted); }
+    .stat-row b { color: var(--ink); font-weight: 600; }
+    svg text { fill: var(--ink); }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/multiplicative-nma.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+  <header>
+    <h1>Multiplicative-heterogeneity NMA</h1>
+    <p>The network generalisation of UWLS. Standard random-effects NMA <em>adds</em> a between-study variance τ²; the multiplicative model instead <em>inflates</em> every contrast variance by one factor φ = Q/(n−p). The relative-effect estimates equal the fixed-effect (common-effect) NMA estimates; each SE is the fixed-effect SE × √φ, with t<sub>n−p</sub> intervals. Fit it alongside additive random effects and prefer it when AIC favours it by ≥2 — and as the primary estimator for observational networks, where inverse-variance RE weights amplify small-study/standard-error effects.</p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Contrasts (two-arm trials)</h2>
+      <label><span class="lbl">One contrast per line: <code>trtA, trtB, effect, SE</code> (effect = trtB vs trtA, analysis scale e.g. logOR)</span>
+        <textarea id="data" spellcheck="false" aria-label="Network contrasts, one per line: trtA, trtB, effect, SE"></textarea>
+        <span class="hint">Lines starting with # are ignored. The network must be connected; ≥ (treatments − 1) contrasts.</span>
+      </label>
+      <div style="display:flex;gap:0.6rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap">
+        <button type="button" id="btn-run" class="primary">Fit network</button>
+        <button type="button" id="btn-example" class="ghost">Example</button>
+        <label class="hint">Reference
+          <select id="reference" aria-label="Reference treatment"></select>
+        </label>
+        <label class="hint">Scale
+          <select id="scale"><option value="linear">as entered</option><option value="exp">exponentiate</option></select>
+        </label>
+      </div>
+      <div class="note"><strong>Scope:</strong> contrast-based core for networks of <strong>two-arm</strong> trials (independent contrasts). Multi-arm trials induce shared-arm correlation this engine does not model — feed each multi-arm trial as a single chosen contrast, or use a full multi-arm engine. With two-arm contrasts the common-effect fit and Q match <code>netmeta</code> exactly.</div>
+    </section>
+    <section class="panel">
+      <h2>Relative effects vs reference</h2>
+      <table>
+        <thead><tr><th>Treatment</th><th>Effect (95% CI)</th><th>SE (mult.)</th><th>SE (fixed)</th></tr></thead>
+        <tbody id="out"></tbody>
+      </table>
+      <div class="stat-row" id="stats"></div>
+      <div id="forest" style="margin-top:0.8rem"></div>
+      <div class="verdict" id="verdict"></div>
+    </section>
+  </main>
+  <footer>
+    Multiplicative NMA: relative effects = common-effect contrast-based NMA (ordinary WLS on the treatment-incidence design); φ = Q/(n−p); every SE = SE<sub>fixed</sub>·√φ; 95% CI uses t<sub>n−p</sub>. Additive random-effects comparison uses Paule-Mandel τ²; the AIC verdict compares the two (prefer multiplicative when ΔAIC ≥ 2). Engine: <code>shared/multiplicative-nma.js</code>, cross-verified vs an independent WLS oracle and the committed <code>tests/parity-multiplicative-nma.R</code> against R <code>netmeta</code>. References: Stanley TD, Doucouliagos H. <em>Stat Med</em> 2015;34(13):2116-2127. doi:10.1002/sim.6481 (multiplicative model); additive-vs-multiplicative network selection per arXiv:2601.11735; contrast-based NMA: Dias et&nbsp;al. 2018 (NICE DSU TSD 2). Computed client-side.
+  </footer>
+  <script>
+    var EXAMPLE = [
+      "# trtA, trtB, effect (trtB vs trtA), SE",
+      "A, B, 0.50, 0.20",
+      "A, C, 0.80, 0.25",
+      "B, C, 0.40, 0.30",
+      "A, B, 0.65, 0.28",
+      "A, C, 0.70, 0.22"
+    ].join("\n");
+
+    function parse(text) {
+      var rows = [], order = [], seen = Object.create(null), errs = [];
+      text.split(/\r?\n/).forEach(function (l, i) {
+        var t = l.trim(); if (!t || t[0] === "#") return;
+        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        var a = f[0], b = f[1], y = parseFloat(f[2]), se = parseFloat(f[3]);
+        if (!a || !b || a === b || !isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
+        [a, b].forEach(function (tt) { if (!seen[tt]) { seen[tt] = 1; order.push(tt); } });
+        rows.push({ trtA: a, trtB: b, yi: y, sei: se });
+      });
+      return { rows: rows, treatments: order, errs: errs };
+    }
+
+    function syncReferenceOptions(treatments) {
+      var sel = document.getElementById("reference");
+      var prev = sel.value;
+      var want = treatments.join("");
+      if (sel.getAttribute("data-set") === want) return;          // unchanged — keep selection
+      sel.innerHTML = "";
+      treatments.forEach(function (t) {
+        var o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o);
+      });
+      sel.setAttribute("data-set", want);
+      if (treatments.indexOf(prev) >= 0) sel.value = prev;
+    }
+
+    function forestSVG(rows, tx, ratio) {
+      if (!rows.length) return "";
+      var W = 460, rowH = 26, padT = 14, padB = 26, padL = 96, padR = 16;
+      var H = padT + padB + rows.length * rowH;
+      var lo = Infinity, hi = -Infinity;
+      rows.forEach(function (r) { lo = Math.min(lo, r.ciLo); hi = Math.max(hi, r.ciHi); });
+      var nullV = ratio ? 1 : 0, nullRaw = ratio ? 0 : 0;       // null line in entered scale
+      lo = Math.min(lo, nullRaw); hi = Math.max(hi, nullRaw);
+      if (hi - lo < 1e-9) { hi += 1; lo -= 1; }
+      var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+      var X = function (v) { return padL + (v - lo) / (hi - lo) * (W - padL - padR); };
+      var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Forest plot of relative effects">';
+      var xNull = X(nullRaw);
+      s += '<line x1="' + xNull.toFixed(1) + '" y1="' + padT + '" x2="' + xNull.toFixed(1) + '" y2="' + (H - padB) + '" stroke="currentColor" stroke-opacity="0.35" stroke-dasharray="3 3"/>';
+      rows.forEach(function (r, i) {
+        var cy = padT + i * rowH + rowH / 2;
+        var xl = X(r.ciLo), xh = X(r.ciHi), xc = X(r.est);
+        s += '<text x="6" y="' + (cy + 3.5).toFixed(1) + '" font-size="11">' + r.label + '</text>';
+        s += '<line x1="' + xl.toFixed(1) + '" y1="' + cy + '" x2="' + xh.toFixed(1) + '" y2="' + cy + '" stroke="var(--accent)" stroke-width="1.5"/>';
+        s += '<rect x="' + (xc - 3).toFixed(1) + '" y="' + (cy - 3) + '" width="6" height="6" fill="var(--accent)"/>';
+      });
+      // axis ticks at lo, null, hi (entered scale)
+      [lo, nullRaw, hi].forEach(function (v) {
+        var x = X(v);
+        s += '<text x="' + x.toFixed(1) + '" y="' + (H - 8) + '" font-size="10" text-anchor="middle" fill="var(--muted)">' + tx(v).toFixed(2) + '</text>';
+      });
+      s += '</svg>';
+      return s;
+    }
+
+    function run() {
+      var p = parse(document.getElementById("data").value);
+      var out = document.getElementById("out");
+      var stats = document.getElementById("stats");
+      var verdict = document.getElementById("verdict");
+      var forest = document.getElementById("forest");
+      syncReferenceOptions(p.treatments);
+      if (p.treatments.length < 2 || p.rows.length < 1) {
+        out.innerHTML = "<tr><td colspan='4'>Enter a connected network of ≥2 treatments" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</td></tr>";
+        stats.textContent = ""; verdict.textContent = ""; forest.innerHTML = ""; return;
+      }
+      // Put the chosen reference first.
+      var ref = document.getElementById("reference").value || p.treatments[0];
+      var treatments = [ref].concat(p.treatments.filter(function (t) { return t !== ref; }));
+
+      var res = window.AlmMultiplicativeNMA.fit(p.rows, treatments);
+      if (!res.ok) {
+        out.innerHTML = "<tr><td colspan='4'>Could not fit: " + res.error + "</td></tr>";
+        stats.textContent = ""; verdict.textContent = ""; forest.innerHTML = ""; return;
+      }
+      var ratio = document.getElementById("scale").value === "exp";
+      var tx = function (v) { return ratio ? Math.exp(v) : v; };
+      var f = function (v) { return (v == null || !isFinite(v)) ? "—" : tx(v).toFixed(3); };
+
+      var html = "", forestRows = [];
+      treatments.forEach(function (t) {
+        var e = res.effects[t];
+        if (t === res.reference) {
+          html += "<tr class='ref'><td>" + t + " <span class='hint' style='display:inline'>(reference)</span></td><td>—</td><td>—</td><td>—</td></tr>";
+          return;
+        }
+        html += "<tr><td>" + t + "</td><td><code>" + f(e.estimate) + "</code> (" + f(e.ciLo) + ", " + f(e.ciHi) + ")</td><td>" + e.se.toFixed(4) + "</td><td>" + e.seFE.toFixed(4) + "</td></tr>";
+        forestRows.push({ label: t + " vs " + res.reference, est: e.estimate, ciLo: e.ciLo, ciHi: e.ciHi });
+      });
+      out.innerHTML = html;
+
+      stats.innerHTML =
+        "<span>Q = <b>" + res.Q.toFixed(3) + "</b> on <b>" + res.df + "</b> df</span>" +
+        "<span>φ = <b>" + res.phi.toFixed(3) + "</b></span>" +
+        "<span>I² = <b>" + (res.I2 * 100).toFixed(0) + "%</b></span>" +
+        "<span>contrasts n = <b>" + res.n + "</b>, basic params p = <b>" + res.p + "</b></span>";
+
+      forest.innerHTML = forestSVG(forestRows, tx, ratio);
+
+      var d = res.aicDiff;
+      var msg;
+      if (res.prefer === "multiplicative") msg = "<strong>Multiplicative preferred</strong> (ΔAIC = " + d.toFixed(2) + " ≥ 2 in its favour).";
+      else if (res.prefer === "additive") msg = "<strong>Additive random-effects preferred</strong> (ΔAIC = " + (-d).toFixed(2) + " ≥ 2 in its favour; τ² = " + res.additive.tau2.toFixed(4) + ").";
+      else msg = "<strong>Comparable</strong> (|ΔAIC| = " + Math.abs(d).toFixed(2) + " < 2): report both. τ² = " + res.additive.tau2.toFixed(4) + ".";
+      verdict.innerHTML = msg +
+        " &nbsp;AIC<sub>mult</sub> = " + res.multiplicative.aic.toFixed(2) +
+        ", AIC<sub>add</sub> = " + res.additive.aic.toFixed(2) +
+        ". φ " + (res.phi >= 1 ? "≥ 1 → over-dispersed (CIs widened vs fixed-effect)." : "< 1 → under-dispersed (CIs narrowed; φ is unfloored, following lm/UWLS).");
+    }
+
+    document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("btn-example").addEventListener("click", function () { document.getElementById("data").value = EXAMPLE; document.getElementById("reference").removeAttribute("data-set"); run(); });
+    document.getElementById("data").addEventListener("input", run);
+    document.getElementById("reference").addEventListener("change", run);
+    document.getElementById("scale").addEventListener("change", run);
+    document.getElementById("data").value = EXAMPLE;
+    run();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

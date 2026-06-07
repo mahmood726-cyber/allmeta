@@ -122,6 +122,8 @@ const PLOT_APPS: PlotApp[] = [
   { path: "/nma-inconsistency/", runBtn: "#btn-run", plotSelector: "svg, table tbody tr" },
   { path: "/nma-global-inconsistency/", runBtn: "#btn-run", plotSelector: "svg, table tbody tr" },
   { path: "/bucher/", runBtn: "#btn-run", plotSelector: "svg, table tbody tr" },
+  // Multiplicative-heterogeneity NMA — auto-runs on load, renders a forest SVG + table.
+  { path: "/multiplicative-nma/", runBtn: "#btn-run", plotSelector: "#forest svg, table tbody tr" },
 
   // DTA
   { path: "/dta-sroc/", runBtn: "#btn-run", plotSelector: "svg" },

@@ -1298,6 +1298,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["uwls", "multiplicative", "heterogeneity", "stanley", "observational", "pooling"]
   },
   {
+    name: "Multiplicative-heterogeneity NMA",
+    folder: "allmeta/multiplicative-nma",
+    path: "./multiplicative-nma/index.html",
+    added: "2026-06-07",
+    collection: "new",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "The network generalisation of UWLS: relative effects equal the fixed-effect (common-effect) contrast-based NMA estimates, with every SE inflated by √φ where φ=Q/(n−p), instead of adding a between-study variance τ². Reported alongside additive random-effects (Paule-Mandel τ²) with an AIC verdict — prefer multiplicative when ΔAIC≥2.",
+    note: "Two-arm contrast scope (multi-arm needs shared-arm covariance). Common-effect fit + Q match netmeta; engine cross-verified vs an independent WLS oracle. Primary estimator for observational networks.",
+    tags: ["nma", "network", "multiplicative", "uwls", "heterogeneity", "aic", "observational"]
+  },
+  {
     name: "Dose-Response MA",
     folder: "allmeta/dose-response-ma",
     path: "./dose-response-ma/index.html",
