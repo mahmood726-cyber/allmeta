@@ -106,20 +106,23 @@ INLINE_META_MATH_EXEMPT = {
     "heterogeneity": "dedicated heterogeneity app: the Q-based I2 (Higgins-Thompson) is "
                      "its primary reported quantity; PI/HKSJ/Q-profile already delegate "
                      "to ma-core",
+    "IPD-Meta-Pro": "fully self-contained 121K-line IPD two-stage engine (no external "
+                    "deps); 10+ inline DL/PM tau2 sites across main/subgroup/sensitivity/"
+                    "per-outcome analyses, verified == ma-core to 1e-7 "
+                    "(tests/test_ipd_meta_pro_tau2_parity.py). Adding a dependency + "
+                    "rewriting 10+ sites is high blast radius for a validated engine — "
+                    "exempted, not migrated (2026-06-07 scope).",
 }
 
 
 # Accepted baseline of inline reimplementations (Sentinel pattern): the rule
-# BLOCKS any NEW inline univariate tau2/I2, but tolerates these documented few
-# until they are migrated, so drift can no longer pass CI silently. After the
-# 2026-06-07 scope, only the genuine migrate-someday candidates remain here
-# (the justified divergences moved to INLINE_META_MATH_EXEMPT). proportion-ma's
-# inline DL/PM is tracked as a consolidation note (it already loads ma-core).
-INLINE_META_MATH_KNOWN = {
-    "IPD-Meta-Pro": "IPD two-stage aggregate pool, inline PM in a 121K-line bespoke "
-                    "engine; migration is mechanical (2nd-stage aggregate RE) but high "
-                    "blast radius — gate on a 1e-7 ma-core PM parity check first",
-}
+# BLOCKS any NEW inline univariate tau2/I2, but tolerates a documented few until
+# migrated, so drift can no longer pass CI silently. After the 2026-06-07 scope
+# every flagged site was resolved — the justified divergences (incl. IPD-Meta-Pro,
+# parity-verified) moved to INLINE_META_MATH_EXEMPT, and proportion-ma migrated its
+# tau2 to ma-core (only its intentional Q-based I2 remains, a non-gating info note).
+# Empty now; re-populate only if a NEW genuine migrate-someday candidate appears.
+INLINE_META_MATH_KNOWN = {}
 
 
 def inline_math_inventory(paths):

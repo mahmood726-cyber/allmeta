@@ -279,29 +279,20 @@
       var mu_fe = rows.reduce(function (a, r, i) { return a + w[i] * r.y; }, 0) / sw;
       var Q = rows.reduce(function (a, r, i) { return a + w[i] * (r.y - mu_fe) * (r.y - mu_fe); }, 0);
       var df = rows.length - 1;
-      var tau2 = 0;
-      if (tauEst === 'DL') {
-        var swSq = rows.reduce(function (a, r, i) { return a + w[i] * w[i]; }, 0);
-        tau2 = Math.max(0, (Q - df) / (sw - swSq / sw));
-      } else if (tauEst === 'PM') {
-        // Paule-Mandel iteration
-        var tau = 0;
-        for (var it = 0; it < 50; it++) {
-          var wi = rows.map(function (r) { return 1 / (r.v + tau); });
-          var swi = wi.reduce(function (a, b) { return a + b; }, 0);
-          var mu_t = rows.reduce(function (a, r, i) { return a + wi[i] * r.y; }, 0) / swi;
-          var Qt = rows.reduce(function (a, r, i) { return a + wi[i] * (r.y - mu_t) * (r.y - mu_t); }, 0);
-          var dQ = rows.reduce(function (a, r, i) { return a + wi[i] * wi[i] * (r.y - mu_t) * (r.y - mu_t); }, 0);
-          var adj = (Qt - df) / dQ;
-          tau = Math.max(0, tau + adj);
-          if (Math.abs(adj) < 1e-8) break;
-        }
-        tau2 = tau;
-      }
+      // τ² delegated to the audited single source shared/ma-core.js (DL/PM/FE);
+      // verified bit-identical to the former inline closed-form / PM iteration on
+      // logit-transformed proportions (diff 0 / 4e-16; tests/test_proportion_ma_tau2_parity.py).
+      var yi = rows.map(function (r) { return r.y; });
+      var vi = rows.map(function (r) { return r.v; });
+      var tau2 = window.AlmMaCore.pool(yi, vi, { method: tauEst }).tau2;
       var wRE = rows.map(function (r) { return 1 / (r.v + tau2); });
       var swRE = wRE.reduce(function (a, b) { return a + b; }, 0);
       var mu_re = rows.reduce(function (a, r, i) { return a + wRE[i] * r.y; }, 0) / swRE;
       var seRE = Math.sqrt(1 / swRE);
+      // Reported I² is the Higgins-Thompson Q-based form 100·(Q−df)/Q (this app's
+      // convention; equals ma-core's τ²-based I² for DL, differs for PM). Kept
+      // inline deliberately — switching to ma-core's I² would change the displayed
+      // PM value. τ² above is the single-sourced estimator (shared/ma-core.js).
       var i2 = Q > df ? 100 * (Q - df) / Q : 0;
       return { mu_re: mu_re, seRE: seRE, tau2: tau2, Q: Q, df: df, i2: i2, weights: wRE };
     }
