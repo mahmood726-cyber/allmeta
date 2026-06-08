@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.ebi.ac.uk https://api.crossref.org https://api.openalex.org https://clinicaltrials.gov https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.ebi.ac.uk https://api.crossref.org https://api.openalex.org https://clinicaltrials.gov https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <meta name="description" content="Multi-source literature search across Europe PMC, Crossref, OpenAlex and ClinicalTrials.gov — one query, cross-source dedup, and a one-click handoff into the Screen citation screener. Free, browser-only, reproducible.">
   <meta name="color-scheme" content="light dark">
@@ -176,14 +176,27 @@
     function trigrams(s) { var g = new Set(); s = " " + s + " "; for (var i = 0; i < s.length - 2; i++) g.add(s.slice(i, i + 3)); return g; }
     function jaccard(a, b) { if (!a.size || !b.size) return 0; var inter = 0; a.forEach(function (x) { if (b.has(x)) inter++; }); return inter / (a.size + b.size - inter); }
 
+    // Source preference for survivor selection (lower rank = kept). EuropePMC and
+    // Crossref carry the richest metadata (abstracts, PMIDs/DOIs), so they win ties.
+    var SRC_RANK = { "EuropePMC": 0, "Crossref": 1, "OpenAlex": 2, "CT.gov": 3 };
     function dedup(recs) {
-      var seenDoi = {}, live = [], i, j;
+      var i, j, k;
       for (i = 0; i < recs.length; i++) { recs[i].dup = false; }
-      for (i = 0; i < recs.length; i++) {
-        var d = recs[i].doi; if (!d) continue;
-        if (seenDoi[d]) recs[i].dup = true; else seenDoi[d] = 1;
+      // Process in a deterministic (source-rank, original-index) order so the kept
+      // representative is reproducible regardless of which source's fetch resolved
+      // first. Display order (recs[]) is left untouched.
+      var order = recs.map(function (r, idx) { return idx; });
+      order.sort(function (a, b) {
+        var ra = SRC_RANK[recs[a].source]; if (ra == null) ra = 99;
+        var rb = SRC_RANK[recs[b].source]; if (rb == null) rb = 99;
+        return (ra - rb) || (a - b);
+      });
+      var seenDoi = {}, live = [];
+      for (k = 0; k < order.length; k++) {
+        var r = recs[order[k]]; var d = r.doi; if (!d) continue;
+        if (seenDoi[d]) r.dup = true; else seenDoi[d] = 1;
       }
-      for (i = 0; i < recs.length; i++) if (!recs[i].dup) live.push({ r: recs[i], t: trigrams(normTitle(recs[i].title)) });
+      for (k = 0; k < order.length; k++) { var rr = recs[order[k]]; if (!rr.dup) live.push({ r: rr, t: trigrams(normTitle(rr.title)) }); }
       for (i = 0; i < live.length; i++) {
         if (live[i].r.dup) continue;
         for (j = i + 1; j < live.length; j++) {
@@ -343,7 +356,10 @@
           : (r.nct ? '<a href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">' + escapeHtml(r.nct) + "</a>"
             : (r.pmid ? "PMID:" + escapeHtml(r.pmid) : "—"));
         var meta = [r.authors.slice(0, 4).join(", "), r.journal].filter(Boolean).map(escapeHtml).join(" · ");
-        return '<tr data-i="' + i + '">' +
+        var hasAbs = !!r.abstract;
+        // Rows with an abstract are operable (click or keyboard) to reveal it.
+        var rowAttrs = hasAbs ? ' tabindex="0" role="button" aria-expanded="false" aria-label="Toggle abstract"' : "";
+        return '<tr data-i="' + i + '"' + rowAttrs + ">" +
           '<td><span class="badge' + (r.dup ? " dup" : "") + '">' + escapeHtml(r.source) + (r.dup ? " dup" : "") + "</span></td>" +
           "<td>" + escapeHtml(r.year || "") + "</td>" +
           '<td><div class="rtitle">' + escapeHtml(r.title || "(untitled)") + "</div>" +
@@ -352,14 +368,22 @@
           "<td>" + idCell + "</td></tr>";
       }).join("");
       Array.prototype.forEach.call(tb.getElementsByTagName("tr"), function (tr) {
-        tr.addEventListener("click", function (e) { if (e.target.tagName === "A") return; tr.classList.toggle("open"); });
+        function toggle() {
+          var open = tr.classList.toggle("open");
+          if (tr.hasAttribute("aria-expanded")) tr.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+        tr.addEventListener("click", function (e) { if (e.target.tagName === "A") return; toggle(); });
+        tr.addEventListener("keydown", function (e) {
+          if (!tr.hasAttribute("tabindex")) return;
+          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); toggle(); }
+        });
       });
     }
 
     // ---- exports / handoff ----
     function uniqueRecords() { return records.filter(function (r) { return !r.dup; }); }
     function downloadBlob(blob, fn) { var u = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = u; a.download = fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(u); }, 1000); }
-    function csvCell(v) { v = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+    function csvCell(v) { v = String(v == null ? "" : v); if (/^[=+@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
 
     function srEnvelope() {
       return {

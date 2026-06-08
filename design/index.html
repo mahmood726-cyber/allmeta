@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <meta name="description" content="Design a systematic review: frame the question in PICO/PECO/PICOS/PICOT, set eligibility criteria, auto-build a boolean search strategy, and hand off to multi-source Search and the Screen screener. Free, browser-only, reproducible.">
   <meta name="color-scheme" content="light dark">
@@ -98,12 +98,12 @@
 
       <section class="panel">
         <h2>Question framework</h2>
-        <div class="pico-row"><div class="tag">P</div><textarea id="p-pop" placeholder="Population — e.g. adults with chronic heart failure"></textarea></div>
-        <div class="pico-row"><div class="tag" id="tag-i">I</div><textarea id="p-int" placeholder="Intervention / Exposure — e.g. SGLT2 inhibitors, dapagliflozin, empagliflozin"></textarea></div>
-        <div class="pico-row"><div class="tag">C</div><textarea id="p-comp" placeholder="Comparator — e.g. placebo or standard care"></textarea></div>
-        <div class="pico-row"><div class="tag">O</div><textarea id="p-out" placeholder="Outcome(s) — e.g. cardiovascular death, HF hospitalization"></textarea></div>
-        <div class="pico-row" id="row-s" style="display:none"><div class="tag">S</div><textarea id="p-des" placeholder="Study design — e.g. randomized controlled trials"></textarea></div>
-        <div class="pico-row" id="row-t" style="display:none"><div class="tag">T</div><textarea id="p-time" placeholder="Timeframe — e.g. ≥12 weeks follow-up"></textarea></div>
+        <div class="pico-row"><div class="tag" aria-hidden="true">P</div><textarea id="p-pop" aria-label="Population" placeholder="Population — e.g. adults with chronic heart failure"></textarea></div>
+        <div class="pico-row"><div class="tag" id="tag-i" aria-hidden="true">I</div><textarea id="p-int" aria-label="Intervention or exposure" placeholder="Intervention / Exposure — e.g. SGLT2 inhibitors, dapagliflozin, empagliflozin"></textarea></div>
+        <div class="pico-row"><div class="tag" aria-hidden="true">C</div><textarea id="p-comp" aria-label="Comparator" placeholder="Comparator — e.g. placebo or standard care"></textarea></div>
+        <div class="pico-row"><div class="tag" aria-hidden="true">O</div><textarea id="p-out" aria-label="Outcome" placeholder="Outcome(s) — e.g. cardiovascular death, HF hospitalization"></textarea></div>
+        <div class="pico-row" id="row-s" style="display:none"><div class="tag" aria-hidden="true">S</div><textarea id="p-des" aria-label="Study design" placeholder="Study design — e.g. randomized controlled trials"></textarea></div>
+        <div class="pico-row" id="row-t" style="display:none"><div class="tag" aria-hidden="true">T</div><textarea id="p-time" aria-label="Timeframe" placeholder="Timeframe — e.g. ≥12 weeks follow-up"></textarea></div>
         <p class="hint">Separate synonyms with commas, semicolons, or new lines — they become OR-groups in the boolean search.</p>
       </section>
 

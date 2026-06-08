@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <meta name="description" content="Rayyan-class title/abstract screening, fully local: keyboard-driven cards, dual-reviewer with conflict resolution and Cohen's kappa, RIS/.nbib/CSV/JSON import, inline dedup, transparent local relevance ranking, customizable exclusion reasons and labels, and one-click PRISMA flow counts.">
   <meta name="color-scheme" content="light dark">
@@ -292,7 +292,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Fully local — records never leave your device (CSP <code>connect-src 'self'</code>). Dedup: DOI exact match + trigram-Jaccard title similarity (≥0.85), union-style first-wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: resolved &gt; agreement &gt; conflict. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact match + trigram-Jaccard title similarity (≥0.85), union-style first-wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: resolved &gt; agreement &gt; conflict. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -322,6 +322,7 @@
     var LS_KEY = "screen-v1";
     var PRISMA_FLOW_KEY = "prisma-flow-v1";
     var SR_RECORDS_KEY = "sr-records-v1";
+    var SR_PROJECT_KEY = "sr-project-v1"; // Design protocol envelope (read for screening terms)
 
     var DEFAULT_REASONS = [
       "Wrong population", "Wrong intervention", "Wrong comparator",
@@ -633,8 +634,12 @@
         var p2 = pairs.filter(function (r) { return r.r2.d === c; }).length / n;
         pe += p1 * p2;
       });
-      var kappa = (po - pe) / ((1 - pe) || 1);
-      return { n: n, agree: agree, po: po, pe: pe, kappa: kappa };
+      // When both reviewers used a single category, pe = 1 and κ = 0/0 is undefined.
+      // Reporting κ = 0 ("no agreement beyond chance") for what may be 100% agreement
+      // is misleading, so flag the degenerate case for the UI instead of forcing 0.
+      var degenerate = (1 - pe) < 1e-12;
+      var kappa = degenerate ? null : (po - pe) / (1 - pe);
+      return { n: n, agree: agree, po: po, pe: pe, kappa: kappa, degenerate: degenerate };
     }
 
     // ---- filtering / sorting ----
@@ -727,7 +732,7 @@
         html += '<div class="chips"><span class="lblk">Reason</span>';
         S.reasons.forEach(function (rs, i) {
           var on = slot.d === "exclude" && slot.reason === rs;
-          html += '<span class="chip reason' + (on ? " on" : "") + '" data-reason="' + i + '">' + escapeHtml(rs) +
+          html += '<span class="chip reason' + (on ? " on" : "") + '" data-reason="' + i + '" role="button" tabindex="0" aria-pressed="' + (on ? "true" : "false") + '">' + escapeHtml(rs) +
             (i < 9 ? '<span class="kbd">' + (i + 1) + "</span>" : "") + "</span>";
         });
         html += "</div>";
@@ -737,7 +742,7 @@
         html += '<div class="chips"><span class="lblk">Labels</span>';
         S.labels.forEach(function (lb) {
           var on = r.labels.indexOf(lb) >= 0;
-          html += '<span class="chip label' + (on ? " on" : "") + '" data-label="' + escapeHtml(lb) + '">' + escapeHtml(lb) + "</span>";
+          html += '<span class="chip label' + (on ? " on" : "") + '" data-label="' + escapeHtml(lb) + '" role="button" tabindex="0" aria-pressed="' + (on ? "true" : "false") + '">' + escapeHtml(lb) + "</span>";
         });
         html += "</div>";
       }
@@ -755,11 +760,19 @@
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-dec]"), function (b) {
         b.addEventListener("click", function () { decide(b.getAttribute("data-dec")); });
       });
+      // Enter/Space activate a focusable chip (role="button"), matching native button semantics.
+      function chipKey(handler) {
+        return function (e) { if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); handler(); } };
+      }
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-reason]"), function (b) {
-        b.addEventListener("click", function () { applyReason(parseInt(b.getAttribute("data-reason"), 10)); });
+        var act = function () { applyReason(parseInt(b.getAttribute("data-reason"), 10)); };
+        b.addEventListener("click", act);
+        b.addEventListener("keydown", chipKey(act));
       });
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-label]"), function (b) {
-        b.addEventListener("click", function () { toggleLabel(b.getAttribute("data-label")); });
+        var act = function () { toggleLabel(b.getAttribute("data-label")); };
+        b.addEventListener("click", act);
+        b.addEventListener("keydown", chipKey(act));
       });
       $("nav-prev").addEventListener("click", function () { move(-1); });
       $("nav-next").addEventListener("click", function () { move(1); });
@@ -782,9 +795,11 @@
 
       if (S.mode === "dual") {
         var k = cohensKappa(S.records);
-        kappaEl.innerHTML = k
-          ? "Cohen's κ = <strong>" + k.kappa.toFixed(3) + "</strong> over " + k.n + " dual-decided (" + (k.po * 100).toFixed(0) + "% raw agreement)."
-          : "Cohen's κ needs ≥2 records decided by both reviewers.";
+        kappaEl.innerHTML = !k
+          ? "Cohen's κ needs ≥2 records decided by both reviewers."
+          : (k.degenerate
+            ? "Cohen's κ undefined — both reviewers used a single category (" + (k.po * 100).toFixed(0) + "% raw agreement over " + k.n + ")."
+            : "Cohen's κ = <strong>" + k.kappa.toFixed(3) + "</strong> over " + k.n + " dual-decided (" + (k.po * 100).toFixed(0) + "% raw agreement).");
       } else kappaEl.innerHTML = "";
 
       // conflicts panel
@@ -932,7 +947,10 @@
     }
     function csvCell(v) {
       v = String(v == null ? "" : v);
-      if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+      // Neutralise spreadsheet formula injection. NOTE: hyphen is deliberately
+      // excluded so legitimate negative numbers (e.g. a negative term_score)
+      // are not corrupted into a text cell "'-4". See rules/lessons.md.
+      if (/^[=+@\t\r]/.test(v)) v = "'" + v;
       return '"' + v.replace(/"/g, '""') + '"';
     }
     function exportJSON() {
@@ -969,18 +987,28 @@
     }
     function pushPrisma() {
       var c = computeCounts(S.records);
+      // Records still in progress (undecided / maybe / conflict) are folded into the
+      // "excluded at screening" box so the flow numbers reconcile. That is only
+      // correct once screening is COMPLETE — make the composition explicit and warn
+      // if it is not, so undecided records are never silently reported as excluded.
+      var pending = c.maybe + c.conflict + c.undecided;
+      var breakdownBits = ["Excluded at title/abstract (n=" + c.excluded + ")"];
+      if (c.maybe) breakdownBits.push("maybe (n=" + c.maybe + ")");
+      if (c.conflict) breakdownBits.push("unresolved conflicts (n=" + c.conflict + ")");
+      if (c.undecided) breakdownBits.push("not yet screened (n=" + c.undecided + ")");
       var payload = {
         db: c.identified, reg: 0, removed: c.duplicates,
         removedBreakdown: "Duplicates flagged in Screen (n=" + c.duplicates + ")",
-        screened: c.screened, excludedScreen: c.excluded + c.maybe + c.conflict + c.undecided,
+        screened: c.screened, excludedScreen: c.excluded + pending,
         sought: c.included, notRetrieved: 0, assessed: c.included,
-        excludedEligible: 0, excludedBreakdown: "",
+        excludedEligible: 0, excludedBreakdown: breakdownBits.join("; "),
         studies: c.included, reports: c.included,
         title: (S.title || "Screen") + " (" + new Date().toISOString().slice(0, 10) + ")"
       };
       try {
         localStorage.setItem(PRISMA_FLOW_KEY, JSON.stringify(payload));
-        toast("Pushed counts to PRISMA Flow. Open ../prisma-flow/index.html to render the diagram.");
+        if (pending) toast("Pushed to PRISMA Flow — but " + pending + " record(s) are still undecided/maybe/conflict and are counted as excluded. Finish screening for accurate counts.");
+        else toast("Pushed counts to PRISMA Flow. Open ../prisma-flow/index.html to render the diagram.");
       } catch (e) { toast("Could not save: " + e.message); }
     }
 
