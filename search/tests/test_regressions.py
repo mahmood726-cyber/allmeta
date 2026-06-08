@@ -46,3 +46,30 @@ def test_api_key_not_serialized_into_handoff_envelope():
 
 def test_frame_ancestors_removed_from_meta_csp():
     assert "frame-ancestors" not in _h()
+
+
+# ---- 2026-06-08 recall upgrade guards ----
+
+def test_query_expansion_present():
+    h = _h()
+    assert "function expandQuery" in h and "var SYN" in h
+    assert 'id="btn-expand"' in h
+
+
+def test_semantic_ranking_present():
+    h = _h()
+    assert "function semanticRank" in h and "TF-IDF cosine" in h
+    assert 'value="relevance"' in h  # the Relevance sort option
+
+
+def test_snowballing_present():
+    h = _h()
+    assert "function doSnowball" in h and "oaCitingUrl" in h and "referenced_works" in h
+    assert 'id="btn-snowball"' in h
+    assert "https://api.openalex.org" in h  # allowlisted in connect-src
+
+
+def test_no_placeholder_or_hardcoded_key():
+    h = _h()
+    for bad in ("{{", "REPLACE_ME", "__PLACEHOLDER__", "sk-proj-", "sk-SECRET"):
+        assert bad not in h

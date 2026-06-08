@@ -84,6 +84,9 @@
   <div class="toolbar">
     <button type="button" id="btn-search" class="primary">Search</button>
     <button type="button" id="btn-cancel" disabled>Cancel</button>
+    <button type="button" id="btn-snowball" title="Citation chasing: pull the references and citing papers of the current results from OpenAlex">Snowball ↪</button>
+    <label class="toggle" style="margin-left:0.4rem">Sort
+      <select id="f-sort" style="width:auto"><option value="source">Source order</option><option value="relevance">Relevance ↓</option></select></label>
     <span style="flex:1"></span>
     <button type="button" id="btn-to-screen" class="primary" title="Hand off to the Screen app">→ Send to Screen</button>
     <button type="button" id="btn-ris">Export RIS</button>
@@ -102,7 +105,9 @@
         </label>
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
           <button type="button" id="btn-load-design" title="Seed the query from a Design protocol (sr-project-v1)">Load PICO from Design</button>
+          <button type="button" id="btn-expand" title="Add synonyms, abbreviations, brand/generic drug names and British/American spellings — free and deterministic, no AI">Expand query (free)</button>
         </div>
+        <div id="expand-note" class="hint" style="margin-top:0.35rem"></div>
       </section>
 
       <section class="panel">
@@ -150,7 +155,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Sources: Europe PMC (<code>resultType=core</code>, abstracts), Crossref REST, OpenAlex (abstract reconstructed from its inverted index), ClinicalTrials.gov API v2. Cross-source dedup uses DOI-exact + trigram-Jaccard title similarity (≥0.85), first-source wins. Results are capped at the per-source limit you choose — totals reflect that cap, not the full database hit count. <strong>Send to Screen</strong> writes the <code>sr-records-v1</code> envelope that the Screen app imports. Nothing is uploaded anywhere; API calls go straight from your browser to each public endpoint.</p>
+  <p class="footer-note">Sources: Europe PMC (<code>resultType=core</code>, abstracts), Crossref REST, OpenAlex (abstract reconstructed from its inverted index), ClinicalTrials.gov API v2. <strong>Expand query (free)</strong> rewrites your query with synonyms, abbreviations, brand/generic drug names and British/American spellings from a built-in dictionary — deterministic, no AI, raising recall before a single API call. The <strong>Relevance ↓</strong> sort re-ranks results by a transparent TF-IDF cosine (unigram+bigram) against your query — a reproducible "semantic-ish" ranker, not a neural embedding. <strong>Snowball ↪</strong> citation-chases the current results through OpenAlex (their references + citing papers) to recover work that keyword search alone misses. Cross-source dedup uses DOI-exact + trigram-Jaccard title similarity (≥0.85), deterministic source-rank survivor. Results are capped at the per-source limit you choose — totals reflect that cap, not the full database hit count. <strong>Send to Screen</strong> writes the <code>sr-records-v1</code> envelope that the Screen app imports. Nothing is uploaded anywhere; API calls go straight from your browser to each public endpoint.</p>
 
   <script src="../shared/toast.js"></script>
   <script>
@@ -207,6 +212,105 @@
       return recs;
     }
 
+    // ======== query expansion (free, deterministic — no AI) ========
+    // Curated synonym / abbreviation / brand-generic / spelling map. Keys are
+    // matched on word boundaries, longest-first, and each hit becomes an OR-group
+    // so a single query reaches the synonyms a keyword search would otherwise miss
+    // — the cheap, reproducible half of the recall gap vs a semantic index.
+    var SYN = {
+      "heart failure": ["cardiac failure", "HF", "congestive heart failure", "CHF"],
+      "myocardial infarction": ["heart attack", "MI", "acute myocardial infarction", "AMI"],
+      "type 2 diabetes": ["T2DM", "type II diabetes", "NIDDM", "diabetes mellitus type 2"],
+      "hypertension": ["high blood pressure", "HTN", "raised blood pressure"],
+      "chronic kidney disease": ["CKD", "chronic renal disease", "renal insufficiency"],
+      "randomized controlled trial": ["RCT", "randomised controlled trial", "randomized trial", "randomised trial"],
+      "systematic review": ["meta-analysis", "meta analysis", "evidence synthesis"],
+      "stroke": ["cerebrovascular accident", "CVA"],
+      "mortality": ["death", "survival", "fatal"],
+      "sglt2": ["SGLT-2", "sodium glucose cotransporter 2", "gliflozin", "SGLT2 inhibitor"],
+      "dapagliflozin": ["Farxiga", "Forxiga"],
+      "empagliflozin": ["Jardiance"],
+      "canagliflozin": ["Invokana"],
+      "glp-1": ["GLP1", "glucagon-like peptide 1", "incretin"],
+      "semaglutide": ["Ozempic", "Wegovy", "Rybelsus"],
+      "anticoagulant": ["blood thinner", "DOAC", "NOAC", "direct oral anticoagulant"],
+      // spelling: British <-> American (explicit pairs avoid the [ae] vowel trap)
+      "randomized": ["randomised"], "randomised": ["randomized"],
+      "tumour": ["tumor"], "tumor": ["tumour"],
+      "oedema": ["edema"], "edema": ["oedema"],
+      "anaemia": ["anemia"], "anemia": ["anaemia"],
+      "haemoglobin": ["hemoglobin"], "hemoglobin": ["haemoglobin"],
+      "paediatric": ["pediatric"], "pediatric": ["paediatric"],
+      "oesophageal": ["esophageal"], "esophageal": ["oesophageal"],
+      "ischaemia": ["ischemia"], "ischemia": ["ischaemia"]
+    };
+    var SYN_KEYS = Object.keys(SYN).sort(function (a, b) { return b.length - a.length; });
+    function reEsc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+    function quoteIfPhrase(t) { return /\s/.test(t) ? '"' + t + '"' : t; }
+    function expandQuery(raw) {
+      var qs = clean(raw, 4000);
+      if (!qs) return { query: qs, added: 0 };
+      var stash = [], added = 0;
+      SYN_KEYS.forEach(function (key) {
+        var re = new RegExp("(^|[^a-z0-9\"])(" + reEsc(key) + ")(?=[^a-z0-9\"]|$)", "ig");
+        qs = qs.replace(re, function (m, pre, term) {
+          var group = [term], lower = { }; lower[term.toLowerCase()] = 1;
+          SYN[key].forEach(function (s) { if (!lower[s.toLowerCase()]) { lower[s.toLowerCase()] = 1; group.push(s); added++; } });
+          var token = " " + stash.length + " ";
+          stash.push("(" + group.map(quoteIfPhrase).join(" OR ") + ")");
+          return pre + token;
+        });
+      });
+      qs = qs.replace(/ (\d+) /g, function (m, i) { return stash[+i]; });
+      return { query: qs, added: added };
+    }
+
+    // ======== TF-IDF cosine relevance (transparent, reproducible "semantic-ish") ========
+    // Not a neural embedding: a bag-of-words (unigram+bigram) TF-IDF cosine between
+    // each record and the query. Combined with expansion above, semantically-related
+    // records (synonyms, spelling variants) rank near the top even without an exact
+    // query-term match — a deterministic recall/ranking boost the user can audit.
+    var REL_STOP = new Set("a an the of and or to in for on with without via using study trial we our this that is are was were be as at by from into results methods background conclusion objective patients patient effect effects group groups versus compared between among also can may use based both than then there their which while not".split(/\s+/));
+    function relTokens(s) {
+      var m = String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [], uni = [], i, w;
+      for (i = 0; i < m.length; i++) { w = m[i]; if (w.length >= 3 && w.length <= 30 && !REL_STOP.has(w) && !/^\d+$/.test(w)) uni.push(w); }
+      var out = uni.slice(); for (i = 0; i + 1 < uni.length; i++) out.push(uni[i] + "_" + uni[i + 1]);
+      return out;
+    }
+    function tfMap(toks) { var t = {}; for (var i = 0; i < toks.length; i++) t[toks[i]] = (t[toks[i]] || 0) + 1; return t; }
+    function semanticRank(recs, queryText) {
+      if (!recs.length) return recs;
+      var N = recs.length, df = {}, i, k;
+      var docToks = recs.map(function (r) { return relTokens(r.title + " " + r.title + " " + r.abstract); });
+      for (i = 0; i < N; i++) { var seen = {}; docToks[i].forEach(function (w) { if (!seen[w]) { seen[w] = 1; df[w] = (df[w] || 0) + 1; } }); }
+      function idf(w) { return Math.log((N + 1) / ((df[w] || 0) + 1)) + 1; }
+      var qtf = tfMap(relTokens(queryText)), qnorm = 0, qv = {};
+      for (k in qtf) { var qw = qtf[k] * idf(k); qv[k] = qw; qnorm += qw * qw; }
+      qnorm = Math.sqrt(qnorm) || 1;
+      for (i = 0; i < N; i++) {
+        var tf = tfMap(docToks[i]), dot = 0, dn = 0;
+        for (k in tf) { var v = tf[k] * idf(k); dn += v * v; if (qv[k]) dot += v * qv[k]; }
+        dn = Math.sqrt(dn) || 1;
+        recs[i].relevance = dot / (dn * qnorm);
+      }
+      return recs;
+    }
+
+    // ======== citation chasing (snowballing) via OpenAlex ========
+    // Backward (references) + forward (citing) expansion of a seed set. Pure URL
+    // builders are unit-tested; the network calls reuse mapOpenAlex().
+    function oaCitingUrl(oaId, n) { return "https://api.openalex.org/works?filter=cites:" + encodeURIComponent(oaId) + "&per-page=" + (n || 50); }
+    function oaIdsUrl(ids, n) { return "https://api.openalex.org/works?filter=openalex_id:" + ids.map(encodeURIComponent).join("|") + "&per-page=" + (n || 50); }
+    function seedOaIds(recs, cap) {
+      var ids = [], seen = {}, i;
+      for (i = 0; i < recs.length && ids.length < (cap || 25); i++) {
+        var r = recs[i]; if (r.dup) continue;
+        var id = r.oaId || (r.source === "OpenAlex" && r.url && /openalex\.org\/(W\d+)/.exec(r.url) ? RegExp.$1 : "");
+        if (id && !seen[id]) { seen[id] = 1; ids.push(id); }
+      }
+      return ids;
+    }
+
     // ---- OpenAlex inverted-index abstract ----
     function fromInverted(inv) {
       if (!inv || typeof inv !== "object") return "";
@@ -259,24 +363,24 @@
           });
         });
     }
+    // Reusable OpenAlex work -> normalized record (used by search AND snowballing).
+    function mapOpenAlex(x) {
+      var auth = (x.authorships || []).slice(0, 12).map(function (a) { return clean(a.author && a.author.display_name, 120); }).filter(Boolean);
+      return {
+        id: freshId("oa"), source: "OpenAlex",
+        title: clean(x.display_name || x.title || ""), abstract: fromInverted(x.abstract_inverted_index),
+        authors: auth, journal: clean((x.primary_location && x.primary_location.source && x.primary_location.source.display_name) || ""),
+        year: clean(x.publication_year || "", 4), doi: normDoi(x.doi || ""),
+        pmid: clean((x.ids && x.ids.pmid ? String(x.ids.pmid).replace(/\D/g, "") : ""), 20),
+        oaId: x.id ? String(x.id).replace(/^https?:\/\/openalex\.org\//i, "") : "",
+        url: x.doi || (x.id || "")
+      };
+    }
     function fetchOpenAlex(signal) {
       var url = "https://api.openalex.org/works?per-page=" + maxN() + "&search=" + encodeURIComponent(q());
       if (email()) url += "&mailto=" + encodeURIComponent(email());
       return fetch(url, { signal: signal }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-        .then(function (j) {
-          var items = j.results || [];
-          return items.map(function (x) {
-            var auth = (x.authorships || []).slice(0, 12).map(function (a) { return clean(a.author && a.author.display_name, 120); }).filter(Boolean);
-            return {
-              id: freshId("oa"), source: "OpenAlex",
-              title: clean(x.display_name || x.title || ""), abstract: fromInverted(x.abstract_inverted_index),
-              authors: auth, journal: clean((x.primary_location && x.primary_location.source && x.primary_location.source.display_name) || ""),
-              year: clean(x.publication_year || "", 4), doi: normDoi(x.doi || ""),
-              pmid: clean((x.ids && x.ids.pmid ? String(x.ids.pmid).replace(/\D/g, "") : ""), 20),
-              url: x.doi || (x.id || "")
-            };
-          });
-        });
+        .then(function (j) { return (j.results || []).map(mapOpenAlex); });
     }
     function fetchCTgov(signal) {
       var url = "https://clinicaltrials.gov/api/v2/studies?pageSize=" + maxN() + "&query.term=" + encodeURIComponent(q());
@@ -340,7 +444,12 @@
     }
     function cancelSearch() { if (controller) controller.abort(); $("btn-cancel").disabled = true; $("btn-search").disabled = false; }
 
-    function mergeAndRender() { dedup(records); renderResults(); renderStats(); }
+    var sortMode = "source";
+    function viewRecords() {
+      if (sortMode === "relevance") return records.slice().sort(function (a, b) { return (b.relevance == null ? -1 : b.relevance) - (a.relevance == null ? -1 : a.relevance); });
+      return records;
+    }
+    function mergeAndRender() { dedup(records); semanticRank(records, q()); renderResults(); renderStats(); }
 
     function renderStats() {
       var bySource = {}; records.forEach(function (r) { bySource[r.source] = (bySource[r.source] || 0) + 1; });
@@ -351,7 +460,7 @@
 
     function renderResults() {
       var tb = $("results").getElementsByTagName("tbody")[0];
-      tb.innerHTML = records.map(function (r, i) {
+      tb.innerHTML = viewRecords().map(function (r, i) {
         var idCell = r.doi ? '<a href="https://doi.org/' + encodeURIComponent(r.doi) + '" target="_blank" rel="noopener">' + escapeHtml(r.doi) + "</a>"
           : (r.nct ? '<a href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">' + escapeHtml(r.nct) + "</a>"
             : (r.pmid ? "PMID:" + escapeHtml(r.pmid) : "—"));
@@ -359,10 +468,11 @@
         var hasAbs = !!r.abstract;
         // Rows with an abstract are operable (click or keyboard) to reveal it.
         var rowAttrs = hasAbs ? ' tabindex="0" role="button" aria-expanded="false" aria-label="Toggle abstract"' : "";
+        var relBadge = (r.relevance != null && sortMode === "relevance") ? ' <span class="badge">rel ' + Math.round(r.relevance * 100) + "%</span>" : "";
         return '<tr data-i="' + i + '"' + rowAttrs + ">" +
           '<td><span class="badge' + (r.dup ? " dup" : "") + '">' + escapeHtml(r.source) + (r.dup ? " dup" : "") + "</span></td>" +
           "<td>" + escapeHtml(r.year || "") + "</td>" +
-          '<td><div class="rtitle">' + escapeHtml(r.title || "(untitled)") + "</div>" +
+          '<td><div class="rtitle">' + escapeHtml(r.title || "(untitled)") + relBadge + "</div>" +
           (meta ? '<div class="rmeta">' + meta + "</div>" : "") +
           (r.abstract ? '<div class="rabs">' + escapeHtml(r.abstract) + "</div>" : "") + "</td>" +
           "<td>" + idCell + "</td></tr>";
@@ -443,6 +553,44 @@
       } catch (e) { toast("Could not read Design protocol: " + e.message); }
     }
 
+    // ---- free query expansion (synonyms + spelling) ----
+    function doExpand() {
+      var res = expandQuery($("f-query").value);
+      if (!res.query) { toast("Enter a query to expand."); return; }
+      $("f-query").value = res.query;
+      $("expand-note").textContent = res.added
+        ? "Added " + res.added + " synonym / spelling / brand-name variant(s). Review, then Search."
+        : "No dictionary terms matched — your query is already specific (try the AI expansion for broader coverage).";
+    }
+
+    // ---- citation chasing (snowballing) via OpenAlex ----
+    function doSnowball() {
+      var ids = seedOaIds(records, 25);
+      if (!ids.length) { toast("Snowballing needs OpenAlex records — run a search with OpenAlex enabled first."); return; }
+      var btn = $("btn-snowball"); btn.disabled = true;
+      var before = records.length;
+      toast("Snowballing " + ids.length + " seed(s): references + citing papers from OpenAlex…");
+      controller = new AbortController(); var signal = controller.signal;
+      function getJSON(url) { return fetch(url, { signal: signal }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }); }
+      getJSON(oaIdsUrl(ids, ids.length) + "&select=id,referenced_works").then(function (j) {
+        var refSet = {};
+        (j.results || []).forEach(function (w) { (w.referenced_works || []).forEach(function (rw) { refSet[String(rw).replace(/^https?:\/\/openalex\.org\//i, "")] = 1; }); });
+        var refIds = Object.keys(refSet).slice(0, 200), batches = [], i;
+        for (i = 0; i < refIds.length; i += 50) batches.push(refIds.slice(i, i + 50));
+        var jobs = batches.map(function (b) { return getJSON(oaIdsUrl(b, 50)).then(function (j2) { return (j2.results || []).map(mapOpenAlex); }).catch(function () { return []; }); });
+        // forward: citing papers for the first few seeds (caps network)
+        ids.slice(0, 6).forEach(function (id) { jobs.push(getJSON(oaCitingUrl(id, 50)).then(function (j2) { return (j2.results || []).map(mapOpenAlex); }).catch(function () { return []; })); });
+        return Promise.all(jobs);
+      }).then(function (arrs) {
+        var add = []; arrs.forEach(function (a) { add = add.concat(a); });
+        records = records.concat(add); mergeAndRender();
+        btn.disabled = false; controller = null;
+        var uniq = records.filter(function (r) { return !r.dup; }).length;
+        $("msg").innerHTML = "Snowball added <strong>" + (records.length - before) + "</strong> records · <strong>" + uniq + "</strong> unique after dedup.";
+        toast("Snowball complete: +" + (records.length - before) + " records, " + uniq + " unique.");
+      }).catch(function (e) { btn.disabled = false; controller = null; toast("Snowball error: " + e.message); });
+    }
+
     // ---- optional AI query expansion ----
     var AI = {};
     function aiPrompt() {
@@ -480,6 +628,9 @@
       $("btn-json").addEventListener("click", exportJSON);
       $("btn-clear").addEventListener("click", function () { records = []; renderResults(); renderStats(); $("msg").textContent = "Cleared."; SOURCES.forEach(function (s) { setStatus(s.id, "", ""); setCount(s.id, null); }); });
       $("btn-load-design").addEventListener("click", loadFromDesign);
+      $("btn-expand").addEventListener("click", doExpand);
+      $("btn-snowball").addEventListener("click", doSnowball);
+      $("f-sort").addEventListener("change", function () { sortMode = this.value; renderResults(); });
       $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
       $("btn-ai-export").addEventListener("click", aiExport);
       $("btn-ai-run").addEventListener("click", aiExpand);
@@ -496,7 +647,11 @@
       fromInverted: fromInverted,
       jaccard: jaccard, normTitle: normTitle, trigrams: trigrams,
       srEnvelope: function (recs) { records = recs || []; dedup(records); return srEnvelope(); },
-      aiPrompt: aiPrompt
+      aiPrompt: aiPrompt,
+      expandQuery: expandQuery,
+      semanticRank: function (recs, query) { return semanticRank(recs, query); },
+      mapOpenAlex: mapOpenAlex,
+      oaCitingUrl: oaCitingUrl, oaIdsUrl: oaIdsUrl, seedOaIds: seedOaIds
     };
 
     attach();
