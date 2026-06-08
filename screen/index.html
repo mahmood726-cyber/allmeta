@@ -1036,6 +1036,16 @@
         if (!p || !Array.isArray(p.records) || !p.records.length) { toast("sr-records-v1 has no records."); return; }
         addRecords(p.records.map(normalizeImported));
         if (p.query && !S.title) { S.title = clean(p.query, 200); $("f-title").value = S.title; save(); }
+        // Pull screening terms from the Design protocol (sr-project-v1), if present and not yet set.
+        try {
+          var proj = JSON.parse(localStorage.getItem(SR_PROJECT_KEY) || "null");
+          if (proj && proj.screenTerms) {
+            if (!S.incTerms.length && Array.isArray(proj.screenTerms.include)) { S.incTerms = proj.screenTerms.include.slice(); $("f-inc").value = S.incTerms.join(", "); }
+            if (!S.excTerms.length && Array.isArray(proj.screenTerms.exclude)) { S.excTerms = proj.screenTerms.exclude.slice(); $("f-exc").value = S.excTerms.join(", "); }
+            if (!S.title && proj.title) { S.title = clean(proj.title, 200); $("f-title").value = S.title; }
+            rescoreAll(); save(); render();
+          }
+        } catch (e2) {}
       } catch (e) { toast("Could not import from Search: " + e.message); }
     }
 

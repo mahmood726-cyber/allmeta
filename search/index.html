@@ -463,6 +463,7 @@
       var sk = aiKeyGet(); if (sk) $("ai-key").value = sk;
       $("f-query").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSearch(); } });
       renderStats();
+      try { if (/[?&]from=design/.test(location.search)) loadFromDesign(); } catch (e) {}
     }
 
     // ---- test hook ----

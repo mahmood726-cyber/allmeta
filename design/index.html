@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Design a systematic review: frame the question in PICO/PECO/PICOS/PICOT, set eligibility criteria, auto-build a boolean search strategy, and hand off to multi-source Search and the Screen screener. Free, browser-only, reproducible.">
+  <meta name="color-scheme" content="light dark">
+  <title>Design — protocol &amp; PICO builder</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262; --input-bg:#23272c;
+        --ok:#5bc47b; --ok-soft:#1e3a27;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:1.5rem clamp(1rem,3vw,3rem) 0.75rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.2rem; font-size:1.4rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.9rem; max-width:80ch; }
+    .toolbar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; padding:0.6rem clamp(1rem,3vw,3rem); background:var(--panel); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
+    .layout { display:grid; grid-template-columns:minmax(320px,28rem) 1fr; gap:1.25rem; padding:1.25rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:1rem; }
+    .panel h2 { margin:0 0 0.6rem; font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    label { display:block; margin-bottom:0.6rem; font-size:0.85rem; }
+    label .lbl { display:block; margin-bottom:0.15rem; }
+    .hint, label .hint { color:var(--muted); font-size:0.74rem; }
+    input[type="text"],textarea,select { width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.88rem; }
+    textarea { resize:vertical; min-height:3rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+    button { font:inherit; font-size:0.84rem; padding:0.42rem 0.8rem; border-radius:6px; border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .pico-row { display:grid; grid-template-columns:2.5rem 1fr; gap:0.5rem; align-items:start; margin-bottom:0.6rem; }
+    .pico-row .tag { background:var(--accent); color:#fff; border-radius:6px; text-align:center; font-weight:700; padding:0.35rem 0; font-size:0.95rem; }
+    .out { background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem 0.9rem; font-size:0.92rem; }
+    .out.q { font-size:1.05rem; line-height:1.5; }
+    pre.boolean { white-space:pre-wrap; word-break:break-word; font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:0.82rem; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem 0.9rem; margin:0; }
+    .meter { height:10px; background:var(--border); border-radius:6px; overflow:hidden; margin:0.3rem 0; }
+    .meter > i { display:block; height:100%; background:var(--ok); width:0%; }
+    .chk { display:flex; align-items:center; gap:0.4rem; font-size:0.82rem; margin-bottom:0.2rem; }
+    .chk .dot { width:0.7rem; height:0.7rem; border-radius:50%; background:var(--border-strong); flex:none; }
+    .chk.on .dot { background:var(--ok); }
+    .footer-note { margin:0; color:var(--muted); font-size:0.76rem; padding:0 clamp(1rem,3vw,3rem) 2rem; max-width:90ch; }
+    .file-input-hidden { display:none; }
+    .toggle { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.84rem; }
+    kbd { font-family:ui-monospace,monospace; background:var(--accent-soft); color:var(--accent); border:1px solid var(--border); border-radius:4px; padding:0 0.35rem; font-size:0.78rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+
+  <header>
+    <h1>Design <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· protocol &amp; PICO builder</span></h1>
+    <p>Frame the question (PICO / PECO / PICOS / PICOT), set eligibility criteria, and auto-build a boolean search strategy. Then hand off to <strong>Search</strong> (one click seeds the multi-source query) and on to <strong>Screen</strong> (your criteria become the relevance terms). Free, browser-only, fully reproducible.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-to-search" class="primary">→ Send to Search</button>
+    <span style="flex:1"></span>
+    <button type="button" id="btn-md">Export Markdown</button>
+    <button type="button" id="btn-json">Export JSON</button>
+    <button type="button" id="btn-import">Import JSON</button>
+    <button type="button" id="btn-example">Load example</button>
+    <button type="button" id="btn-reset">Reset</button>
+    <input type="file" id="file-import" class="file-input-hidden" accept=".json,application/json" aria-label="Import protocol">
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Design inputs">
+      <section class="panel">
+        <h2>Review</h2>
+        <label><span class="lbl">Working title</span><input type="text" id="f-title" placeholder="e.g. SGLT2 inhibitors for heart failure"></label>
+        <label><span class="lbl">Framework</span>
+          <select id="f-framework">
+            <option value="PICO">PICO (intervention)</option>
+            <option value="PECO">PECO (exposure)</option>
+            <option value="PICOS">PICOS (+ study design)</option>
+            <option value="PICOT">PICOT (+ timeframe)</option>
+          </select></label>
+      </section>
+
+      <section class="panel">
+        <h2>Question framework</h2>
+        <div class="pico-row"><div class="tag">P</div><textarea id="p-pop" placeholder="Population — e.g. adults with chronic heart failure"></textarea></div>
+        <div class="pico-row"><div class="tag" id="tag-i">I</div><textarea id="p-int" placeholder="Intervention / Exposure — e.g. SGLT2 inhibitors, dapagliflozin, empagliflozin"></textarea></div>
+        <div class="pico-row"><div class="tag">C</div><textarea id="p-comp" placeholder="Comparator — e.g. placebo or standard care"></textarea></div>
+        <div class="pico-row"><div class="tag">O</div><textarea id="p-out" placeholder="Outcome(s) — e.g. cardiovascular death, HF hospitalization"></textarea></div>
+        <div class="pico-row" id="row-s" style="display:none"><div class="tag">S</div><textarea id="p-des" placeholder="Study design — e.g. randomized controlled trials"></textarea></div>
+        <div class="pico-row" id="row-t" style="display:none"><div class="tag">T</div><textarea id="p-time" placeholder="Timeframe — e.g. ≥12 weeks follow-up"></textarea></div>
+        <p class="hint">Separate synonyms with commas, semicolons, or new lines — they become OR-groups in the boolean search.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Eligibility criteria</h2>
+        <label><span class="lbl">Inclusion (one per line)</span><textarea id="e-inc" placeholder="Randomized controlled trials&#10;Adults ≥18 years&#10;Reports a pre-specified outcome"></textarea></label>
+        <label><span class="lbl">Exclusion (one per line)</span><textarea id="e-exc" placeholder="Animal / in-vitro studies&#10;Conference abstracts&#10;Non-English without translation"></textarea></label>
+        <div class="row-2">
+          <label><span class="lbl">Study designs</span><input type="text" id="e-designs" placeholder="RCTs"></label>
+          <label><span class="lbl">Languages</span><input type="text" id="e-lang" placeholder="English"></label>
+        </div>
+        <div class="row-2">
+          <label><span class="lbl">Date from</span><input type="text" id="e-from" placeholder="2000"></label>
+          <label><span class="lbl">Date to</span><input type="text" id="e-to" placeholder="present"></label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Screening terms (for Screen)</h2>
+        <p class="hint" style="margin-top:0">Auto-suggested from your PICO. These pre-fill Screen's relevance ranking and highlighting. Edit freely.</p>
+        <label><span class="lbl">Include terms</span><textarea id="t-inc" placeholder="comma-separated"></textarea></label>
+        <label><span class="lbl">Exclude terms</span><textarea id="t-exc" placeholder="comma-separated"></textarea></label>
+        <button type="button" id="btn-suggest">Re-suggest from PICO</button>
+      </section>
+
+      <section class="panel">
+        <h2>AI assist (optional)</h2>
+        <label class="toggle"><input type="checkbox" id="ai-on"> Enable AI</label>
+        <div id="ai-controls" style="display:none;margin-top:0.5rem">
+          <p class="hint" style="margin-top:0">Draft eligibility criteria and a full search strategy from your PICO. Default path is free: export a task for the agent you already pay for, paste the result back.</p>
+          <button type="button" id="btn-ai-export">Export design task</button>
+          <details style="margin-top:0.5rem"><summary style="cursor:pointer;font-size:0.82rem">Bring your own key (fallback)</summary>
+            <label style="margin-top:0.4rem"><span class="lbl">Provider</span>
+              <select id="ai-provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Gemini</option></select></label>
+            <label><span class="lbl">Model (optional)</span><input type="text" id="ai-model" placeholder="gpt-4o-mini"></label>
+            <label><span class="lbl">API key (this browser only)</span><input type="text" id="ai-key" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+            <button type="button" id="btn-ai-run">Draft search strategy</button>
+          </details>
+        </div>
+      </section>
+    </aside>
+
+    <section aria-label="Outputs">
+      <section class="panel">
+        <h2>Review question</h2>
+        <div class="out q" id="out-question">—</div>
+      </section>
+
+      <section class="panel">
+        <h2>Boolean search strategy</h2>
+        <pre class="boolean" id="out-boolean">—</pre>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.6rem">
+          <button type="button" id="btn-copy-bool">Copy</button>
+          <button type="button" id="btn-use-bool">Use as search strategy</button>
+        </div>
+        <label style="margin-top:0.75rem"><span class="lbl">Search strategy (editable — sent to Search)</span>
+          <textarea id="f-strategy" style="min-height:5rem;font-family:ui-monospace,monospace;font-size:0.82rem"></textarea></label>
+      </section>
+
+      <section class="panel">
+        <h2>Protocol completeness</h2>
+        <div class="meter"><i id="meter-fill"></i></div>
+        <div id="meter-label" class="hint"></div>
+        <div id="checklist" style="margin-top:0.6rem"></div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Writes the <code>sr-project-v1</code> envelope: <strong>Send to Search</strong> seeds the multi-source query from your PICO/strategy, and Screen reads your include/exclude terms from the same envelope for relevance ranking. This is a focused design front-end; for the full 44-field PRISMA-P / PROSPERO protocol editor see the <a href="../protocols/">Protocols</a> and <a href="../prospero-templater/">PROSPERO</a> apps. Completeness is a simple section-coverage gauge, not a methodological endorsement.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LS_KEY = "design-v1";          // local autosave of the form
+    var SR_PROJECT_KEY = "sr-project-v1"; // shared envelope read by Search/Screen
+    var AI_KEY_LS = "design-ai-key";
+    var toast = function (m) { try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
+    var $ = function (id) { return document.getElementById(id); };
+
+    function clean(s, cap) { s = String(s == null ? "" : s).replace(/\s+/g, " ").trim(); cap = cap || 4000; return s.length > cap ? s.slice(0, cap) : s; }
+    function escapeHtml(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+    function splitTerms(text) { return String(text || "").split(/[\n,;]| OR /i).map(function (t) { return t.trim(); }).filter(Boolean); }
+    function splitLines(text) { return String(text || "").split(/\r?\n/).map(function (t) { return t.trim(); }).filter(Boolean); }
+
+    var F = {
+      title: "f-title", framework: "f-framework",
+      pop: "p-pop", int: "p-int", comp: "p-comp", out: "p-out", des: "p-des", time: "p-time",
+      einc: "e-inc", eexc: "e-exc", edesigns: "e-designs", elang: "e-lang", efrom: "e-from", eto: "e-to",
+      tinc: "t-inc", texc: "t-exc", strategy: "f-strategy"
+    };
+    function val(k) { var el = $(F[k]); return el ? el.value : ""; }
+    function setVal(k, v) { var el = $(F[k]); if (el) el.value = v == null ? "" : v; }
+
+    // ---- boolean strategy ----
+    function orGroup(text) {
+      var terms = splitTerms(text);
+      if (!terms.length) return "";
+      return "(" + terms.map(function (t) { return /\s/.test(t) ? '"' + t + '"' : t; }).join(" OR ") + ")";
+    }
+    function buildBoolean() {
+      var parts = [orGroup(val("pop")), orGroup(val("int")), orGroup(val("comp")), orGroup(val("out"))].filter(Boolean);
+      return parts.join("\nAND ");
+    }
+    function buildQuestion() {
+      var fw = val("framework");
+      var p = clean(val("pop")), i = clean(val("int")), c = clean(val("comp")), o = clean(val("out")),
+        s = clean(val("des")), t = clean(val("time"));
+      var iWord = (fw === "PECO") ? "exposed to" : "treated with";
+      if (!p && !i && !o) return "—";
+      var q = "In " + (p || "[population]") + ", what is the effect of " + (i || "[intervention]") +
+        (c ? " compared with " + c : "") + " on " + (o || "[outcome]") + "?";
+      if (fw === "PICOS" && s) q += " (Study designs: " + s + ".)";
+      if (fw === "PICOT" && t) q += " (Timeframe: " + t + ".)";
+      return q;
+    }
+
+    function suggestTerms() {
+      var inc = []; ["pop", "int", "out"].forEach(function (k) { splitTerms(val(k)).forEach(function (t) { if (inc.indexOf(t) < 0) inc.push(t); }); });
+      setVal("tinc", inc.join(", "));
+      // sensible default exclusions for a clinical review
+      if (!val("texc")) setVal("texc", "animal, in vitro, protocol, editorial, review, cost-effectiveness");
+      sync();
+    }
+
+    // ---- envelope ----
+    function buildProject() {
+      return {
+        _schema: SR_PROJECT_KEY, _savedAt: new Date().toISOString(),
+        title: clean(val("title"), 300), framework: val("framework"),
+        question: buildQuestion(),
+        pico: {
+          population: clean(val("pop")), intervention: clean(val("int")), comparator: clean(val("comp")),
+          outcome: clean(val("out")), studyDesign: clean(val("des")), timeframe: clean(val("time"))
+        },
+        eligibility: {
+          include: splitLines(val("einc")), exclude: splitLines(val("eexc")),
+          designs: clean(val("edesigns"), 300), languages: clean(val("elang"), 200),
+          dateFrom: clean(val("efrom"), 40), dateTo: clean(val("eto"), 40)
+        },
+        screenTerms: { include: splitTerms(val("tinc")), exclude: splitTerms(val("texc")) },
+        searchStrategy: clean(val("strategy"), 4000)
+      };
+    }
+
+    // ---- completeness ----
+    var CHECKS = [
+      ["Title", function (p) { return !!p.title; }],
+      ["Population", function (p) { return !!p.pico.population; }],
+      ["Intervention / exposure", function (p) { return !!p.pico.intervention; }],
+      ["Outcome", function (p) { return !!p.pico.outcome; }],
+      ["Inclusion criteria", function (p) { return p.eligibility.include.length > 0; }],
+      ["Exclusion criteria", function (p) { return p.eligibility.exclude.length > 0; }],
+      ["Search strategy", function (p) { return !!p.searchStrategy; }]
+    ];
+    function renderCompleteness(p) {
+      var done = 0;
+      var rows = CHECKS.map(function (c) {
+        var ok = c[1](p); if (ok) done++;
+        return '<div class="chk' + (ok ? " on" : "") + '"><span class="dot"></span>' + escapeHtml(c[0]) + "</div>";
+      }).join("");
+      var pct = Math.round(done / CHECKS.length * 100);
+      $("meter-fill").style.width = pct + "%";
+      $("meter-label").textContent = done + " of " + CHECKS.length + " sections complete (" + pct + "%)";
+      $("checklist").innerHTML = rows;
+    }
+
+    // ---- render + persist ----
+    function applyFramework() {
+      var fw = val("framework");
+      $("tag-i").textContent = (fw === "PECO") ? "E" : "I";
+      $("row-s").style.display = (fw === "PICOS") ? "" : "none";
+      $("row-t").style.display = (fw === "PICOT") ? "" : "none";
+    }
+    function sync() {
+      applyFramework();
+      $("out-question").textContent = buildQuestion();
+      $("out-boolean").textContent = buildBoolean() || "—";
+      var p = buildProject();
+      renderCompleteness(p);
+      try { localStorage.setItem(LS_KEY, JSON.stringify(collectForm())); } catch (e) {}
+    }
+    function collectForm() { var o = {}; for (var k in F) o[k] = val(k); return o; }
+    function loadForm(o) { for (var k in F) if (k in o) setVal(k, o[k]); }
+    function loadSaved() { try { var raw = localStorage.getItem(LS_KEY); if (!raw) return false; var o = JSON.parse(raw); if (o && typeof o === "object") { loadForm(o); return true; } } catch (e) {} return false; }
+
+    // ---- handoff ----
+    function sendToSearch() {
+      var p = buildProject();
+      if (!p.pico.intervention && !p.searchStrategy && !p.pico.population) { toast("Add at least a population/intervention or a search strategy first."); return; }
+      try {
+        localStorage.setItem(SR_PROJECT_KEY, JSON.stringify(p));
+        toast("Saved protocol (sr-project-v1). Opening Search…");
+        setTimeout(function () { window.location.href = "../search/index.html?from=design"; }, 500);
+      } catch (e) { toast("Could not hand off: " + e.message); }
+    }
+
+    // ---- exports ----
+    function downloadBlob(blob, fn) { var u = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = u; a.download = fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(u); }, 1000); }
+    function exportJSON() { downloadBlob(new Blob([JSON.stringify(buildProject(), null, 2)], { type: "application/json" }), "design-protocol.json"); }
+    function exportMD() {
+      var p = buildProject(), L = [];
+      L.push("# " + (p.title || "Systematic review protocol"));
+      L.push("\n## Review question\n\n" + p.question);
+      L.push("\n## " + p.framework);
+      L.push("- **Population:** " + (p.pico.population || "—"));
+      L.push("- **" + (p.framework === "PECO" ? "Exposure" : "Intervention") + ":** " + (p.pico.intervention || "—"));
+      L.push("- **Comparator:** " + (p.pico.comparator || "—"));
+      L.push("- **Outcome:** " + (p.pico.outcome || "—"));
+      if (p.pico.studyDesign) L.push("- **Study design:** " + p.pico.studyDesign);
+      if (p.pico.timeframe) L.push("- **Timeframe:** " + p.pico.timeframe);
+      L.push("\n## Eligibility criteria");
+      L.push("**Inclusion:**\n" + (p.eligibility.include.map(function (x) { return "- " + x; }).join("\n") || "- —"));
+      L.push("\n**Exclusion:**\n" + (p.eligibility.exclude.map(function (x) { return "- " + x; }).join("\n") || "- —"));
+      L.push("\n- Designs: " + (p.eligibility.designs || "—") + " · Languages: " + (p.eligibility.languages || "—") +
+        " · Dates: " + (p.eligibility.dateFrom || "—") + "–" + (p.eligibility.dateTo || "—"));
+      L.push("\n## Search strategy\n\n```\n" + (p.searchStrategy || buildBoolean() || "—") + "\n```");
+      L.push("\n## Screening terms\n- Include: " + p.screenTerms.include.join(", ") + "\n- Exclude: " + p.screenTerms.exclude.join(", "));
+      downloadBlob(new Blob([L.join("\n")], { type: "text/markdown;charset=utf-8" }), "design-protocol.md");
+    }
+    function importJSON(file) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var p = JSON.parse(rd.result);
+          var pico = p.pico || {}, el = p.eligibility || {}, st = p.screenTerms || {};
+          setVal("title", p.title); setVal("framework", p.framework || "PICO");
+          setVal("pop", pico.population); setVal("int", pico.intervention); setVal("comp", pico.comparator);
+          setVal("out", pico.outcome); setVal("des", pico.studyDesign); setVal("time", pico.timeframe);
+          setVal("einc", (el.include || []).join("\n")); setVal("eexc", (el.exclude || []).join("\n"));
+          setVal("edesigns", el.designs); setVal("elang", el.languages); setVal("efrom", el.dateFrom); setVal("eto", el.dateTo);
+          setVal("tinc", (st.include || []).join(", ")); setVal("texc", (st.exclude || []).join(", "));
+          setVal("strategy", p.searchStrategy);
+          sync(); toast("Protocol imported.");
+        } catch (e) { toast("Could not import: " + e.message); }
+      };
+      rd.readAsText(file);
+    }
+
+    // ---- example ----
+    function loadExample() {
+      setVal("title", "SGLT2 inhibitors for chronic heart failure");
+      setVal("framework", "PICOS");
+      setVal("pop", "adults with chronic heart failure");
+      setVal("int", "SGLT2 inhibitors, dapagliflozin, empagliflozin, canagliflozin");
+      setVal("comp", "placebo, standard care");
+      setVal("out", "cardiovascular death, heart failure hospitalization, all-cause mortality");
+      setVal("des", "randomized controlled trials");
+      setVal("einc", "Randomized controlled trials\nAdults ≥18 years with heart failure\nReports a pre-specified cardiovascular outcome");
+      setVal("eexc", "Animal or in-vitro studies\nConference abstracts without full text\nNon-randomized designs");
+      setVal("edesigns", "RCTs"); setVal("elang", "English"); setVal("efrom", "2000"); setVal("eto", "present");
+      suggestTerms();
+      setVal("strategy", buildBoolean());
+      sync(); toast("Example protocol loaded.");
+    }
+
+    // ---- optional AI ----
+    function aiPrompt() {
+      var p = buildProject();
+      return [
+        "# Draft a systematic-review search strategy + eligibility", "",
+        "From the PICO below, produce: (1) a comprehensive boolean PubMed search string with synonyms, MeSH-style terms, drug brand/generic names and spelling variants; (2) refined inclusion and exclusion criteria.",
+        "", "## PICO",
+        "- Population: " + (p.pico.population || "—"),
+        "- " + (p.framework === "PECO" ? "Exposure" : "Intervention") + ": " + (p.pico.intervention || "—"),
+        "- Comparator: " + (p.pico.comparator || "—"),
+        "- Outcome: " + (p.pico.outcome || "—"),
+        "", "## Output", "Return a JSON object: {\"search\":\"<boolean string>\",\"include\":[\"…\"],\"exclude\":[\"…\"]}."
+      ].join("\n");
+    }
+    function aiExport() { downloadBlob(new Blob([aiPrompt()], { type: "text/markdown;charset=utf-8" }), "design-task.md"); toast("Exported design task. Run it in your agent, then paste search/criteria back."); }
+    function aiKeyGet() { try { return localStorage.getItem(AI_KEY_LS) || ""; } catch (e) { return ""; } }
+    function aiKeySet(v) { try { if (v) localStorage.setItem(AI_KEY_LS, v); else localStorage.removeItem(AI_KEY_LS); } catch (e) {} }
+    function aiRun() {
+      var key = $("ai-key").value.trim() || aiKeyGet(); if (!key) { toast("Enter an API key, or use the export path."); return; }
+      aiKeySet(key);
+      var prov = $("ai-provider").value, model = $("ai-model").value.trim();
+      var p = buildProject();
+      var sys = "You are a systematic-review methodologist. From the PICO, return ONLY JSON {\"search\":\"boolean query\",\"include\":[..],\"exclude\":[..]} with a comprehensive boolean strategy (synonyms, brand/generic drug names, spelling variants).";
+      var user = JSON.stringify(p.pico);
+      var req;
+      if (prov === "openai") req = fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify({ model: model || "gpt-4o-mini", temperature: 0, response_format: { type: "json_object" }, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.choices[0].message.content; });
+      else if (prov === "anthropic") req = fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify({ model: model || "claude-haiku-4-5-20251001", max_tokens: 600, system: sys, messages: [{ role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.content[0].text; });
+      else req = fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model || "gemini-1.5-flash") + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: "user", parts: [{ text: user }] }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.candidates[0].content.parts[0].text; });
+      toast("Drafting…");
+      req.then(function (txt) {
+        var m = txt.match(/\{[\s\S]*\}/); var o = JSON.parse(m ? m[0] : txt);
+        if (o.search) setVal("strategy", clean(o.search, 4000));
+        if (Array.isArray(o.include)) setVal("einc", o.include.join("\n"));
+        if (Array.isArray(o.exclude)) setVal("eexc", o.exclude.join("\n"));
+        sync(); toast("Draft applied. Review before searching.");
+      }).catch(function (e) { toast("AI error: " + e.message); });
+    }
+
+    // ---- wire ----
+    function attach() {
+      for (var k in F) { var el = $(F[k]); if (el) el.addEventListener("input", sync); }
+      $("f-framework").addEventListener("change", sync);
+      $("btn-to-search").addEventListener("click", sendToSearch);
+      $("btn-md").addEventListener("click", exportMD);
+      $("btn-json").addEventListener("click", exportJSON);
+      $("btn-import").addEventListener("click", function () { $("file-import").click(); });
+      $("file-import").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) importJSON(f); e.target.value = ""; });
+      $("btn-example").addEventListener("click", loadExample);
+      $("btn-reset").addEventListener("click", function () { if (!confirm("Clear the protocol?")) return; for (var k in F) setVal(k, k === "framework" ? "PICO" : ""); sync(); });
+      $("btn-suggest").addEventListener("click", suggestTerms);
+      $("btn-copy-bool").addEventListener("click", function () { try { navigator.clipboard.writeText(buildBoolean()); toast("Boolean copied."); } catch (e) { toast("Copy not available."); } });
+      $("btn-use-bool").addEventListener("click", function () { setVal("strategy", buildBoolean()); sync(); toast("Search strategy set from boolean."); });
+      $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
+      $("btn-ai-export").addEventListener("click", aiExport);
+      $("btn-ai-run").addEventListener("click", aiRun);
+      $("ai-key").addEventListener("change", function () { aiKeySet(this.value.trim()); });
+      var sk = aiKeyGet(); if (sk) $("ai-key").value = sk;
+    }
+
+    // ---- test hook ----
+    window.__almDesign = {
+      buildQuestion: function (o) { for (var k in F) if (o && k in o) setVal(k, o[k]); return buildQuestion(); },
+      buildBoolean: function (o) { for (var k in F) if (o && k in o) setVal(k, o[k]); return buildBoolean(); },
+      buildProject: function (o) { for (var k in F) if (o && k in o) setVal(k, o[k]); return buildProject(); },
+      suggestTerms: function (o) { for (var k in F) if (o && k in o) setVal(k, o[k]); suggestTerms(); return val("tinc"); },
+      aiPrompt: aiPrompt
+    };
+
+    attach();
+    if (!loadSaved()) { /* start blank */ }
+    sync();
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

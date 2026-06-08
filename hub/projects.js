@@ -1275,6 +1275,19 @@ window.HTML_APPS_PROJECTS = [
     tags: ["prisma", "screening", "kappa"]
   },
   {
+    name: "Design",
+    subcategory: "Protocol",
+    folder: "allmeta/design",
+    path: "./design/index.html",
+    added: "2026-06-08",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Design a systematic review front-to-back: frame the question in PICO/PECO/PICOS/PICOT, set eligibility criteria, and auto-build a boolean search strategy (multi-word terms quoted, synonyms OR-grouped, PICO blocks AND-joined). One click seeds the multi-source Search query, and your include/exclude terms flow into Screen's relevance ranking — via the shared sr-project-v1 envelope. Exports Markdown/JSON; optional AI drafting via local-agent handoff or BYO-key.",
+    note: "Writes sr-project-v1 (read by search/index.html 'Load PICO from Design' and by screen for relevance terms). Focused design entry point; the full PRISMA-P/PROSPERO editors are the Protocols and PROSPERO apps. App 3/3 of the search→design→screen pipeline.",
+    tags: ["protocol", "pico", "peco", "eligibility", "search-strategy", "prisma-p", "pipeline", "local-first"]
+  },
+  {
     name: "Search",
     subcategory: "Search",
     folder: "allmeta/search",
