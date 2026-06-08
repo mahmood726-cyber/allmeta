@@ -41,3 +41,9 @@ evidenceos/data/source-cache.json
 test-results/
 playwright-report/
 benchmark/run.log
+
+# RoBBR large RoB corpora (fetch via benchmark/fetch_rob_corpus.mjs; CC-BY-NC, not redistributed in full)
+benchmark/data/rob/Main_task_Cochrane_train.json
+benchmark/data/rob/Main_task_Cochrane_test.json
+benchmark/data/rob/Main_task_Non_Cochrane_test.json
+benchmark/data/rob/Main_task_Cochrane_test_RobotReviewer_subset.json

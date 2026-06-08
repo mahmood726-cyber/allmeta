@@ -1,0 +1,151 @@
+{
+  "engine": "rob-core-v1",
+  "generated_by": "benchmark/run_rob_benchmark.mjs",
+  "head_to_head": {
+    "perDomain": {
+      "allocation": {
+        "n": 32,
+        "tp": 6,
+        "fp": 3,
+        "tn": 14,
+        "fn": 9,
+        "accuracy": 62.5,
+        "sensitivity_low": 40,
+        "specificity_low": 82.4,
+        "macroF1": 60,
+        "kappa": 0.229
+      },
+      "detection": {
+        "n": 19,
+        "tp": 1,
+        "fp": 1,
+        "tn": 10,
+        "fn": 7,
+        "accuracy": 57.9,
+        "sensitivity_low": 12.5,
+        "specificity_low": 90.9,
+        "macroF1": 45.7,
+        "kappa": 0.038
+      },
+      "performance": {
+        "n": 18,
+        "tp": 2,
+        "fp": 1,
+        "tn": 13,
+        "fn": 2,
+        "accuracy": 83.3,
+        "sensitivity_low": 50,
+        "specificity_low": 92.9,
+        "macroF1": 73.4,
+        "kappa": 0.471
+      },
+      "sequence": {
+        "n": 30,
+        "tp": 15,
+        "fp": 1,
+        "tn": 7,
+        "fn": 7,
+        "accuracy": 73.3,
+        "sensitivity_low": 68.2,
+        "specificity_low": 87.5,
+        "macroF1": 71.3,
+        "kappa": 0.45
+      }
+    },
+    "avgMacroF1": 62.6,
+    "n": 99,
+    "robotreviewer_avg": 56.7,
+    "verdict": "BEATS RobotReviewer"
+  },
+  "full_test": {
+    "perDomain": {
+      "sequence": {
+        "n": 125,
+        "tp": 59,
+        "fp": 6,
+        "tn": 37,
+        "fn": 23,
+        "accuracy": 76.8,
+        "sensitivity_low": 72,
+        "specificity_low": 86,
+        "macroF1": 76.1,
+        "kappa": 0.53,
+        "acc3way": 61.6,
+        "kappa3way": 0.321
+      },
+      "allocation": {
+        "n": 125,
+        "tp": 30,
+        "fp": 6,
+        "tn": 56,
+        "fn": 33,
+        "accuracy": 68.8,
+        "sensitivity_low": 47.6,
+        "specificity_low": 90.3,
+        "macroF1": 67.4,
+        "kappa": 0.378,
+        "acc3way": 52,
+        "kappa3way": 0.223
+      },
+      "performance": {
+        "n": 126,
+        "tp": 17,
+        "fp": 4,
+        "tn": 80,
+        "fn": 25,
+        "accuracy": 77,
+        "sensitivity_low": 40.5,
+        "specificity_low": 95.2,
+        "macroF1": 69.3,
+        "kappa": 0.408,
+        "acc3way": 51.6,
+        "kappa3way": 0.293
+      },
+      "detection": {
+        "n": 161,
+        "tp": 39,
+        "fp": 18,
+        "tn": 50,
+        "fn": 54,
+        "accuracy": 55.3,
+        "sensitivity_low": 41.9,
+        "specificity_low": 73.5,
+        "macroF1": 55.1,
+        "kappa": 0.144,
+        "acc3way": 42.2,
+        "kappa3way": 0.105
+      },
+      "attrition": {
+        "n": 137,
+        "tp": 52,
+        "fp": 21,
+        "tn": 18,
+        "fn": 46,
+        "accuracy": 51.1,
+        "sensitivity_low": 53.1,
+        "specificity_low": 46.2,
+        "macroF1": 47.9,
+        "kappa": -0.007,
+        "acc3way": 46,
+        "kappa3way": 0.02
+      },
+      "reporting": {
+        "n": 119,
+        "tp": 62,
+        "fp": 12,
+        "tn": 9,
+        "fn": 36,
+        "accuracy": 59.7,
+        "sensitivity_low": 63.3,
+        "specificity_low": 42.9,
+        "macroF1": 49.7,
+        "kappa": 0.042,
+        "acc3way": 58.8,
+        "kappa3way": 0.066
+      }
+    },
+    "avgMacroF1": 60.9,
+    "recordsUsed": 793,
+    "recordsTotal": 906
+  }
+}

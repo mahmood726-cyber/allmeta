@@ -63,6 +63,47 @@ sampling at 95 % recall (random ≈ 0; higher is better).
 
 ---
 
+## 2b. Automated risk-of-bias — the second head-to-head (vs RobotReviewer)
+
+The `/rob/` app (added 2026-06-08) auto-**suggests** per-domain RoB judgments from
+study text and was measured against the **RoBBR** gold corpus (Lou et al., EMNLP 2025;
+Cochrane review authors' RoB-1 judgments; CC-BY-NC). The decisive comparison is the
+**RobotReviewer subset** RoBBR uses in its own Table 8 — the four RR-assessable domains,
+binary judgment (low vs high/unclear), metric **Macro-F1**.
+
+| Model | Avg Macro-F1 | AllocConceal (n=32) | BlindOutcome (n=19) | BlindPart (n=18) | RandSeq (n=30) | Basis |
+| --- | --- | --- | --- | --- | --- | --- |
+| **allmeta /rob/** (free deterministic) | **62.6** | 60.0 | 45.7 | **73.4** | **71.3** | **[m]** |
+| RobotReviewer (Marshall 2016, SVM/CNN) | 56.7 ± 8.4 | **75.0** | 39.1 | 43.8 | 68.9 | [d] |
+| Logistic Regression (Dias 2025) | 53.1 ± 9.7 | 71.9 | 50.4 | 51.8 | 38.4 | [d] |
+| SVM (Dias 2025) | 44.8 ± 8.6 | 45.9 | 55.2 | 41.9 | 36.0 | [d] |
+| GPT-4o (CoT, zero-shot) | 65.6 ± 8.5 | 83.6 | 59.1 | 41.9 | 77.8 | [d] |
+| Claude Sonnet-3.5 (CoT) | 67.5 ± 8.4 | 77.0 | 82.5 | 41.9 | 68.8 | [d] |
+
+On the full 6-domain Cochrane test (793 records used): avg Macro-F1 **60.9** [m]; per-domain
+sequence 76.1, allocation 67.4, blinding-participants 69.3, blinding-outcome 55.1,
+incomplete-data 47.9, selective-reporting 49.7. The last two are genuinely hard from text
+(RobotReviewer doesn't even attempt them) and we report the weak numbers, not hide them.
+
+**Honest reading:**
+
+- allmeta **beats RobotReviewer overall (62.6 vs 56.7)** and on **3 of the 4 domains** RR
+  assesses. The RoBBR authors note these domains hinge on "superficial keywords" (e.g.
+  "opaque envelope", "random number generator") — exactly what a transparent phrase model
+  exploits, so the win is expected rather than surprising.
+- allmeta **loses allocation concealment (60 vs 75)** — RR's deep training on tens of
+  thousands of CDSR examples still wins where concealment language is subtle.
+- allmeta is **below frontier LLMs** (GPT-4o 65.6, Sonnet-3.5 67.5). A free, offline,
+  zero-cost browser engine that lands between the established ML tool and paid LLMs — and
+  never finalises a judgment without reviewer confirmation — is the honest position.
+- Rules are derived from the Cochrane Handbook, **not fitted to the test labels** (calibrated
+  on the RoBBR train split only); train→test numbers track closely, so no overfitting.
+
+> **Verdict:** on the automated-RoB head-to-head, allmeta **beats RobotReviewer and ties the
+> traditional-ML field, while trailing frontier LLMs**. Reproduce: `node benchmark/run_rob_benchmark.mjs`.
+
+---
+
 ## 3. Master capability matrix (tools as rows, criteria as columns)
 
 Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absent.
@@ -72,7 +113,7 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 
 | Tool | Search/recall | Dedup | T&A + active-learning | Full-text | Extraction | RoB | Meta-analysis | PRISMA | Collab | Scale | Cost | Privacy/local | Open-source |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **allmeta** | expansion+TF-IDF+snowball [m,t] | F1 .95 reformatted / .64 real-gold [m] | WSS .67/.41 [m] | ~ structured [o] | free deterministic + BYO-agent [m,t] | manual apps (RoB2/ROBINS/QUADAS) [o] | **88 apps, R-verified** [m] | flow+checklist apps [o] | async file-merge+κ [t] | **100k client-side ~6 s** [m] | **Free** [o] | **Fully local, no telemetry** [o] | **Yes (MIT)** [o] |
+| **allmeta** | expansion+TF-IDF+snowball [m,t] | F1 .95 reformatted / .64 real-gold [m] | WSS .67/.41 [m] | ~ structured [o] | free deterministic + BYO-agent [m,t] | **automated /rob/ (beats RobotReviewer 62.6 vs 56.7) + manual RoB2/ROBINS/QUADAS** [m] | **88 apps, R-verified** [m] | flow+checklist apps [o] | async file-merge+κ [t] | **100k client-side ~6 s** [m] | **Free** [o] | **Fully local, no telemetry** [o] | **Yes (MIT)** [o] |
 | Rayyan | keyword+AI rating [d] | Y built-in [d] | 5-star AI rating [d] | ~ [d] | N | N | N | flow export [d] | **live, blind, conflict** [d] | cloud [d] | Freemium (~$8–50/mo) [d] | Cloud [d] | No [d] |
 | Covidence | import only [d] | Y [d] | limited ML [d] | **Y, 2-reviewer** [d] | **Y (2×2, custom)** [d] | **Y (RoB form)** [d] | exports to RevMan [d] | **Y (PRISMA)** [d] | **Y, enterprise** [d] | cloud [d] | Paid (inst. $$) [d] | Cloud [d] | No [d] |
 | DistillerSR | ~ [d] | Y [d] | **Y (DAISY classifiers)** [d] | **Y** [d] | **Y, configurable** [d] | **Y** [d] | ~ export [d] | **Y, audit/21 CFR** [d] | **Y, enterprise** [d] | **cloud, very large** [d] | Paid ($$$) [d] | Cloud [d] | No [d] |
@@ -102,7 +143,7 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 
 | Tool | RoB | Extraction | Meta-analysis breadth | Reproducibility | Cost | Privacy/local | Open-source |
 |---|---|---|---|---|---|---|---|
-| **allmeta** | structured RoB2/ROBINS-I/-E/QUADAS-2 apps (**manual**) [o] | free deterministic + BYO-agent [m] | **NMA, DTA, Bayesian, dose-resp, RVE, IPD, TSA…** R-verified [m] | **R-parity tests, downloadable .R** [m] | **Free** | **Local** | **Yes** |
+| **allmeta** | **automated /rob/ — 62.6 Macro-F1, beats RobotReviewer 56.7 on RoBBR** [m] + manual RoB2/ROBINS-I/-E/QUADAS-2 apps [o] | free deterministic + BYO-agent [m] | **NMA, DTA, Bayesian, dose-resp, RVE, IPD, TSA…** R-verified [m] | **R-parity tests, downloadable .R** [m] | **Free** | **Local** | **Yes** |
 | **RobotReviewer** | **automated ML RoB from PDF** [d] | PICO extraction [d] | N | open model [d] | **Free** [d] | self-host option [d] | **Yes** [d] |
 | **Trialstreamer** | **auto RoB cue from abstracts** [d] | **auto PICO + N + design** [d] | N | open [d] | **Free** [d] | cloud/open [d] | **Yes** [d] |
 | Laser AI | ~ [d] | **AI extraction + living** [d] | ~ [d] | [?] | Paid [d] | Cloud [d] | No [d] |
@@ -152,12 +193,15 @@ WSS@95 leads, and it's also free/local); **Covidence or DistillerSR** for a larg
 needing live collaboration, mature full-text reconciliation, audit trails and
 vendor/regulatory support (DistillerSR for 21 CFR / pharma); **Elicit or Consensus** when
 you need neural semantic recall over 100M+ papers and best-effort LLM extraction;
-**RobotReviewer/Trialstreamer** when you want RoB and PICO auto-extracted rather than
-hand-entered; and **RevMan** when institutional/Cochrane familiarity and the established
-GRADE/SoF forest-plot standard matter more than method breadth. In short: **allmeta wins
-on cost, privacy, reproducibility, breadth and integration; the incumbents win on neural
-recall, automated RoB, large-team workflow, regulatory support, and the single most-
-validated active-learning engine.**
+**RobotReviewer/Trialstreamer** when you want auto PICO extraction at population scale, or
+the best available automated *allocation-concealment* call (RR still wins that one domain
+75 vs 60) — though for RoB overall allmeta's `/rob/` now beats RobotReviewer on the RoBBR
+head-to-head (62.6 vs 56.7 Macro-F1); and **RevMan** when institutional/Cochrane
+familiarity and the established GRADE/SoF forest-plot standard matter more than method
+breadth. In short: **allmeta wins on cost, privacy, reproducibility, breadth, integration
+and now automated-RoB overall; the incumbents win on neural recall, allocation-concealment
+detection, large-team workflow, regulatory support, and the single most-validated
+active-learning engine.**
 
 ---
 

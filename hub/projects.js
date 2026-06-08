@@ -1,5 +1,19 @@
 window.HTML_APPS_PROJECTS = [
   {
+    name: "RoB (automated)",
+    featured: true,
+    course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
+    folder: "allmeta/rob",
+    path: "./rob/index.html",
+    added: "2026-06-08",
+    collection: "new",
+    mode: "file",
+    category: "Risk of Bias",
+    summary: "Automated Risk-of-Bias assessment for RoB 2 (randomized trials) and ROBINS-I (non-randomized). Paste each study's abstract/methods (or pull from Extract via the sr-extract-v1 / ma-studies-v1 bus); a free in-browser phrase engine reads Cochrane signalling cues and SUGGESTS a per-domain low/some/high judgment with the supporting sentence it keyed on. Every suggestion is reviewer-confirmed or overridden — never auto-final (Screen pattern). Outputs a RoB table + traffic-light figure, feeding the synthesis/MA apps and PRISMA. Optional AI via agent-handoff / BYO-key. Honestly benchmarked: 62.6 vs RobotReviewer 56.7 Macro-F1 on the RoBBR gold subset [measured].",
+    note: "Completes the Design → Search → Screen → Extract → RoB → synthesis pipeline. Beats RobotReviewer on the RoBBR head-to-head (3 of 4 domains); below frontier LLMs. Reproduce: node benchmark/run_rob_benchmark.mjs.",
+    tags: ["risk-of-bias", "rob2", "robins-i", "automated", "signalling-questions", "robotreviewer", "traffic-light", "pipeline"]
+  },
+  {
     name: "RCT Extractor",
     featured: true,
     course: "https://mahmood726-cyber.github.io/synthesis-courses/ai-meta-analysis-course.html",
