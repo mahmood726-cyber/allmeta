@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Automated structured data extraction for systematic reviews: PICO, sample sizes, effect sizes + 95% CIs, event counts and risk-of-bias cues pulled from included records — free, deterministic, in-browser — feeding straight into meta-analysis. Optional agent/CLI handoff to the rct-extractor engine.">
+  <meta name="color-scheme" content="light dark">
+  <title>Extract — structured data extraction</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; --hl:#bff0c8;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262; --input-bg:#23272c;
+        --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; --hl:#1e5230;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:1.5rem clamp(1rem,3vw,3rem) 0.75rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.2rem; font-size:1.4rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.9rem; max-width:82ch; }
+    .toolbar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; padding:0.6rem clamp(1rem,3vw,3rem); background:var(--panel); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
+    .layout { display:grid; grid-template-columns:minmax(300px,23rem) 1fr; gap:1.25rem; padding:1.25rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:1rem; }
+    .panel h2 { margin:0 0 0.6rem; font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    label { display:block; margin-bottom:0.6rem; font-size:0.85rem; }
+    label .lbl { display:block; margin-bottom:0.15rem; }
+    .hint, label .hint { color:var(--muted); font-size:0.74rem; }
+    input[type="text"],textarea,select { width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.88rem; }
+    textarea { resize:vertical; min-height:4rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    button { font:inherit; font-size:0.84rem; padding:0.42rem 0.8rem; border-radius:6px; border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:disabled { opacity:0.5; cursor:default; }
+    button:hover:not(:disabled) { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+    th,td { padding:0.4rem 0.5rem; text-align:left; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { font-weight:600; color:var(--muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.05em; background:var(--panel); position:sticky; top:0; }
+    .table-scroll { max-height:64vh; overflow:auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); }
+    .badge { display:inline-block; padding:0.1rem 0.45rem; border-radius:10px; font-size:0.68rem; font-weight:600; background:var(--accent-soft); color:var(--accent); white-space:nowrap; margin:1px; }
+    .badge.ok { background:var(--ok-soft); color:var(--ok); }
+    .badge.warn { background:var(--warn-soft); color:var(--warn); }
+    .badge.err { background:var(--err-soft); color:var(--err); }
+    .etitle { font-weight:600; }
+    .detail { background:var(--input-bg); }
+    .detail td { padding:0.5rem 0.6rem; }
+    .field-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.5rem; }
+    .field-grid label { margin:0; font-size:0.78rem; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:0.4rem; }
+    .stat { background:var(--accent-soft); padding:0.4rem 0.6rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .stat .v { display:block; font-size:1rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    mark { background:var(--hl); color:inherit; border-radius:3px; padding:0 1px; }
+    .footer-note { margin:0; color:var(--muted); font-size:0.76rem; padding:0 clamp(1rem,3vw,3rem) 2rem; max-width:92ch; }
+    .file-input-hidden { display:none; }
+    .toggle { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.84rem; }
+    .row-click { cursor:pointer; }
+    kbd { font-family:ui-monospace,monospace; background:var(--accent-soft); color:var(--accent); border:1px solid var(--border); border-radius:4px; padding:0 0.35rem; font-size:0.78rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+
+  <header>
+    <h1>Extract <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· structured data extraction</span></h1>
+    <p>Turn included records into a structured evidence table — <strong>PICO</strong>, sample sizes, <strong>effect sizes + 95% CIs</strong>, event counts and <strong>risk-of-bias cues</strong> — with a free, deterministic in-browser engine, then feed it straight into the meta-analysis apps. Optional one-click handoff to the agent you already pay for (or the installable <code>rct-extractor</code> engine, 17 specialties) for harder full texts. This is the step Elicit meters; here it is free and reproducible.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-import" class="primary">Import records…</button>
+    <button type="button" id="btn-from-screen">Import included from Screen</button>
+    <button type="button" id="btn-example">Load example</button>
+    <button type="button" id="btn-extract" class="primary">Re-extract all</button>
+    <span style="flex:1"></span>
+    <button type="button" id="btn-to-ma" class="primary" title="Write effect sizes to the ma-studies-v1 bus">→ Send to meta-analysis</button>
+    <button type="button" id="btn-json">Export JSON</button>
+    <button type="button" id="btn-csv">Export CSV</button>
+    <button type="button" id="btn-reset">Reset</button>
+    <input type="file" id="file-import" class="file-input-hidden" accept=".ris,.txt,.nbib,.csv,.json,.bib,application/json,text/csv" aria-label="File import">
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Extraction setup">
+      <section class="panel">
+        <h2>Effect for meta-analysis</h2>
+        <label><span class="lbl">Preferred measure</span>
+          <select id="f-measure">
+            <option value="auto">Auto (first detected)</option>
+            <option value="HR">Hazard ratio (HR)</option>
+            <option value="RR">Risk / rate ratio (RR)</option>
+            <option value="OR">Odds ratio (OR)</option>
+            <option value="MD">Mean difference (MD)</option>
+            <option value="SMD">Std. mean difference (SMD)</option>
+          </select>
+          <span class="hint">Ratio measures are sent to the bus on the log scale (est = ln, SE from the CI); MD/SMD on the natural scale.</span></label>
+      </section>
+
+      <section class="panel">
+        <h2>Results</h2>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="panel">
+        <h2>AI / CLI handoff (optional)</h2>
+        <p class="hint" style="margin-top:0">The free in-browser engine reads titles + abstracts. For full texts or specialty fields, export a task for your agent (Claude&nbsp;Code / Codex / Gemini&nbsp;CLI) or the installable <code>rct-extractor</code> — run it, then re-import the JSON. Nothing is sent from here on this path.</p>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button type="button" id="btn-ai-export">Export extraction task</button>
+          <button type="button" id="btn-ai-import">Import AI results</button>
+        </div>
+        <input type="file" id="ai-file" class="file-input-hidden" accept=".json,application/json" aria-label="AI extraction results">
+        <details style="margin-top:0.6rem"><summary style="cursor:pointer;font-size:0.82rem">Bring your own key (fallback)</summary>
+          <label style="margin-top:0.4rem"><span class="lbl">Provider</span>
+            <select id="ai-provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Gemini</option></select></label>
+          <label><span class="lbl">Model (optional)</span><input type="text" id="ai-model" placeholder="gpt-4o-mini"></label>
+          <label><span class="lbl">API key (this browser only)</span><input type="text" id="ai-key" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+          <button type="button" id="btn-ai-run">Extract with my key</button>
+          <p class="hint">Key is stored only on this device and is never included in exports. Calls bill your own account.</p>
+        </details>
+      </section>
+
+      <section class="panel">
+        <h2>Pipeline</h2>
+        <p class="hint" style="margin-top:0">Search → Screen → <strong>Extract</strong> → meta-analysis. <strong>Send to meta-analysis</strong> writes the <code>ma-studies-v1</code> bus that the <a href="../forest-plot/">Forest plot</a> and other pooling apps read.</p>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button type="button" id="btn-open-forest">Open Forest plot</button>
+        </div>
+      </section>
+    </aside>
+
+    <section aria-label="Extraction table">
+      <div class="panel" style="margin-bottom:0.75rem;">
+        <div id="msg" class="hint">Import included records (or <strong>Load example</strong>), then the engine extracts a structured row per study. Click a row to review and edit the fields used for meta-analysis.</div>
+      </div>
+      <div class="table-scroll">
+        <table id="etable"><thead><tr>
+          <th>Use</th><th>Study</th><th>Design</th><th>N</th><th>Primary effect (95% CI)</th><th>Risk-of-bias cues</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <p class="footer-note">The free engine is a transparent pattern extractor over <strong>title + abstract</strong>: it finds effect sizes (HR/RR/OR/MD/SMD) with their 95% CIs, sample sizes, event counts, follow-up and risk-of-bias signals (randomisation, blinding, allocation concealment, ITT). It is a <em>first pass to review</em>, not an oracle — abstracts under-report, so confirm against full text and edit any field before pooling. Ratio effects feed the <code>ma-studies-v1</code> bus as ln(effect) with SE = (ln&nbsp;hi − ln&nbsp;lo)/(2·1.96); MD/SMD on the natural scale. Everything is local; the optional BYO-key path is the only egress.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script src="../shared/ma-studies-v1.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var SCREEN_KEY = "screen-v1";
+    var SR_RECORDS_KEY = "sr-records-v1";
+    var EXTRACT_KEY = "sr-extract-v1";
+    var AI_KEY_LS = "extract-ai-key";
+    var toast = function (m) { try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
+    var $ = function (id) { return document.getElementById(id); };
+
+    var records = [];     // [{id,title,abstract,authors,year,journal,doi,pmid}]
+    var extractions = {}; // id -> extraction object
+    var open = {};        // id -> expanded?
+
+    function clean(s, cap) { s = String(s == null ? "" : s).replace(/\s+/g, " ").trim(); cap = cap || 12000; return s.length > cap ? s.slice(0, cap) : s; }
+    function escapeHtml(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+    function num(s) { var n = parseFloat(String(s).replace(/,/g, "")); return isFinite(n) ? n : null; }
+    function splitAuthors(s) { if (!s) return []; return String(s).split(/;| and |&/).map(function (a) { return a.trim(); }).filter(Boolean); }
+
+    // ===================== deterministic extraction engine =====================
+    // Pure functions over the record text (title + abstract). Each is unit-tested
+    // via window.__almExtract. Conservative by design: it would rather leave a
+    // field empty than guess, because a wrong effect size poisons the pool.
+
+    function recordText(r) { return clean((r.title || "") + ". " + (r.abstract || ""), 16000); }
+
+    // ---- effect sizes + 95% CI ----
+    var MEASURE_CANON = {
+      "hazard ratio": "HR", "hr": "HR",
+      "risk ratio": "RR", "relative risk": "RR", "rate ratio": "RR", "rr": "RR",
+      "odds ratio": "OR", "or": "OR",
+      "mean difference": "MD", "md": "MD",
+      "standardized mean difference": "SMD", "standardised mean difference": "SMD", "smd": "SMD",
+      "incidence rate ratio": "RR", "irr": "RR"
+    };
+    // measure keyword, point, then a 95% CI with lo<sep>hi. The point and CI must be
+    // adjacent (within the same clause) so we don't pair a measure with a far-away CI.
+    var EFFECT_RE = new RegExp(
+      "(hazard ratio|relative risk|risk ratio|rate ratio|incidence rate ratio|odds ratio|standardi[sz]ed mean difference|mean difference|\\bHR\\b|\\bRR\\b|\\bOR\\b|\\bIRR\\b|\\bMD\\b|\\bSMD\\b)" +
+      "[\\s,:=]*(?:of\\s+|was\\s+|=\\s*|,\\s*)?" +
+      "(-?\\d+(?:\\.\\d+)?)" +                                  // point estimate
+      "\\s*[;,(\\[]?\\s*(?:\\d+(?:\\.\\d+)?%\\s*)?(?:CI|confidence interval)s?[\\s:,=]*\\(?\\s*" +
+      "(-?\\d+(?:\\.\\d+)?)\\s*(?:to|[-–—]|,)\\s*(-?\\d+(?:\\.\\d+)?)",
+      "gi");
+    function extractEffects(text) {
+      var out = [], m;
+      EFFECT_RE.lastIndex = 0;
+      while ((m = EFFECT_RE.exec(text)) !== null) {
+        var key = m[1].toLowerCase().replace(/\s+/g, " ");
+        var measure = MEASURE_CANON[key]; if (!measure) continue;
+        var point = num(m[2]), lo = num(m[3]), hi = num(m[4]);
+        if (point == null || lo == null || hi == null) continue;
+        if (hi < lo) { var t = lo; lo = hi; hi = t; }
+        // sanity: point should sit within (or very near) its CI
+        if (point < lo - Math.abs(lo) * 0.5 - 0.01 || point > hi + Math.abs(hi) * 0.5 + 0.01) continue;
+        out.push({ measure: measure, point: point, lo: lo, hi: hi, text: m[0].trim() });
+      }
+      return out;
+    }
+
+    // ---- sample sizes ----
+    var NEG = /(not|non|never)\s*$/i;
+    function extractSampleSizes(text) {
+      var cand = [], m, re;
+      re = /\b[nN]\s*=\s*([\d,]{2,7})/g;
+      while ((m = re.exec(text)) !== null) { var v = num(m[1]); if (v && v >= 4 && v <= 5000000) cand.push(v); }
+      re = /([\d,]{2,7})\s+(?:patients|participants|subjects|individuals|adults|men|women|people)\b/gi;
+      while ((m = re.exec(text)) !== null) {
+        var pre = text.slice(Math.max(0, m.index - 18), m.index);
+        if (NEG.test(pre)) continue;                         // skip "not randomized 1807" style traps
+        var v2 = num(m[1]); if (v2 && v2 >= 4 && v2 <= 5000000) cand.push(v2);
+      }
+      if (!cand.length) return { total: null, perArm: [] };
+      // total = the largest plausible count; per-arm = the n= list (≤ total)
+      var total = Math.max.apply(null, cand);
+      var arms = []; re = /\b[nN]\s*=\s*([\d,]{2,7})/g;
+      while ((m = re.exec(text)) !== null) { var a = num(m[1]); if (a && a < total) arms.push(a); }
+      return { total: total, perArm: arms.slice(0, 6) };
+    }
+
+    // ---- event counts (n/N) ----
+    function extractEvents(text) {
+      var out = [], m, re = /\b(\d{1,6})\s*\/\s*(\d{1,7})\b/g;
+      while ((m = re.exec(text)) !== null) {
+        var e = num(m[1]), n = num(m[2]);
+        if (e == null || n == null) continue;
+        if (e <= n && n > 0 && n <= 1000000 && !(e === 0 && n < 5)) out.push({ events: e, total: n });
+      }
+      return out.slice(0, 8);
+    }
+
+    // ---- risk-of-bias cues ----
+    function extractRoB(text) {
+      var blinding = /double[- ]?blind/i.test(text) ? "double" : /single[- ]?blind/i.test(text) ? "single" : /open[- ]?label/i.test(text) ? "open" : null;
+      return {
+        randomized: /\brandomi[sz]ed\b|\brandomly\s+(?:assigned|allocated)\b/i.test(text),
+        blinding: blinding,
+        placeboControlled: /placebo[- ]?controlled/i.test(text),
+        allocationConcealment: /allocation\s+concealment|concealed\s+allocation/i.test(text),
+        intentionToTreat: /intention[- ]to[- ]treat|intent[- ]to[- ]treat|\bITT\b/i.test(text),
+        multicentre: /multi[- ]?cent(?:re|er)/i.test(text)
+      };
+    }
+
+    // ---- follow-up duration ----
+    function extractFollowup(text) {
+      var m = /(?:median|mean)?\s*follow[- ]?up\s*(?:period\s*)?(?:of|was|:)?\s*(?:was\s*)?([\d.]+)\s*(years?|months?|weeks?|days?)/i.exec(text);
+      if (m) return { value: num(m[1]), unit: m[2].replace(/s$/, "") };
+      return null;
+    }
+
+    // ---- design ----
+    function extractDesign(text) {
+      if (/\bRCT\b|randomly\s+(?:assigned|allocated)/i.test(text)) return "RCT";
+      // "randomized, double-blind, placebo-controlled trial" — words intervene between
+      // "randomized" and "trial", so detect the two signals jointly rather than adjacently.
+      if (/randomi[sz]ed/i.test(text) && /\btrial\b/i.test(text)) return "RCT";
+      if (/systematic\s+review|meta[- ]analysis/i.test(text)) return "Systematic review";
+      if (/case[- ]control/i.test(text)) return "Case-control";
+      if (/cohort\s+study|prospective\s+cohort|retrospective\s+cohort/i.test(text)) return "Cohort";
+      if (/cross[- ]sectional/i.test(text)) return "Cross-sectional";
+      if (/cohort/i.test(text)) return "Cohort";
+      return "";
+    }
+
+    // ---- PICO (best-effort heuristic) ----
+    function firstMatch(re, text) { var m = re.exec(text); return m ? clean(m[1], 120) : ""; }
+    function extractPICO(text) {
+      var population = firstMatch(/\b(?:in|among|of)\s+((?:patients|adults|children|participants|subjects|people|women|men|individuals)\s+with\s+[^,.;:()]{3,70})/i, text)
+        || firstMatch(/\b(?:patients|adults|children|participants)\s+with\s+([^,.;:()]{3,70})/i, text);
+      var iv = "", comp = "";
+      var vm = /([A-Za-z][\w-]+(?:\s+[\w-]+){0,3})\s+(?:versus|vs\.?|compared\s+with|compared\s+to|or\s+matching)\s+([A-Za-z][\w-]+(?:\s+[\w-]+){0,3})/i.exec(text);
+      if (vm) { iv = clean(vm[1], 80); comp = clean(vm[2], 80); }
+      var outcome = firstMatch(/primary\s+(?:outcome|end[\s-]?point)\b[^.]*?(?:was|of|:|,)\s+([^.;()]{3,90})/i, text)
+        || firstMatch(/\b(?:risk|rate|incidence)\s+of\s+([^.;()]{3,70})/i, text);
+      return { population: population, intervention: iv, comparator: comp, outcome: outcome };
+    }
+
+    function extractRecord(r) {
+      var text = recordText(r);
+      return {
+        id: r.id, title: r.title, year: r.year, doi: r.doi, pmid: r.pmid,
+        design: extractDesign(text), pico: extractPICO(text),
+        sampleSizes: extractSampleSizes(text), events: extractEvents(text),
+        effects: extractEffects(text), followup: extractFollowup(text), rob: extractRoB(text),
+        // the chosen primary effect for meta-analysis (auto unless overridden)
+        chosen: null, manual: null
+      };
+    }
+
+    function preferredMeasure() { return $("f-measure").value; }
+    function pickPrimary(ex) {
+      if (ex.manual && ex.manual.point != null && ex.manual.lo != null && ex.manual.hi != null) return ex.manual;
+      var pref = preferredMeasure();
+      if (pref !== "auto") { for (var i = 0; i < ex.effects.length; i++) if (ex.effects[i].measure === pref) return ex.effects[i]; }
+      return ex.effects[0] || null;
+    }
+
+    // ---- ma-studies-v1 bus feed ----
+    function toMaStudy(ex) {
+      var eff = pickPrimary(ex); if (!eff) return null;
+      var ratio = eff.measure === "HR" || eff.measure === "RR" || eff.measure === "OR";
+      var built = MaStudies.fromCI(eff.point, eff.lo, eff.hi, ratio ? "ratio" : "linear");
+      if (!built) return null;
+      return { label: clean(ex.title, 80) || ex.id, est: built.est, se: built.se, year: num(ex.year) };
+    }
+    function busStudies() {
+      var out = [];
+      for (var i = 0; i < records.length; i++) {
+        var ex = extractions[records[i].id]; if (!ex || ex.useInMa === false) continue;
+        var s = toMaStudy(ex); if (s) out.push(s);
+      }
+      return out;
+    }
+
+    function extractAll() {
+      extractions = {};
+      records.forEach(function (r) { var ex = extractRecord(r); ex.useInMa = true; extractions[r.id] = ex; });
+      render();
+    }
+
+    // ===================== UI =====================
+    function effLabel(eff) { return eff ? (eff.measure + " " + eff.point + " (" + eff.lo + "–" + eff.hi + ")") : "—"; }
+    function robBadges(rob) {
+      var b = [];
+      if (rob.randomized) b.push('<span class="badge ok">randomized</span>');
+      if (rob.blinding) b.push('<span class="badge ' + (rob.blinding === "open" ? "warn" : "ok") + '">' + escapeHtml(rob.blinding) + "-blind</span>");
+      if (rob.placeboControlled) b.push('<span class="badge ok">placebo</span>');
+      if (rob.allocationConcealment) b.push('<span class="badge ok">concealed</span>');
+      if (rob.intentionToTreat) b.push('<span class="badge ok">ITT</span>');
+      if (rob.multicentre) b.push('<span class="badge">multicentre</span>');
+      if (!b.length) b.push('<span class="badge err">no cues</span>');
+      return b.join(" ");
+    }
+    function render() {
+      var tb = $("etable").getElementsByTagName("tbody")[0];
+      var rows = records.map(function (r) {
+        var ex = extractions[r.id]; if (!ex) return "";
+        var eff = pickPrimary(ex);
+        var n = ex.sampleSizes.total;
+        var main = '<tr class="row-click" data-id="' + escapeHtml(r.id) + '" tabindex="0" role="button" aria-expanded="' + (open[r.id] ? "true" : "false") + '">' +
+          '<td><input type="checkbox" class="use-cb" data-id="' + escapeHtml(r.id) + '"' + (ex.useInMa === false ? "" : " checked") + ' aria-label="Use in meta-analysis"></td>' +
+          '<td><div class="etitle">' + escapeHtml(clean(r.title, 160) || "(untitled)") + "</div>" +
+          '<div class="hint">' + escapeHtml([r.year, r.journal].filter(Boolean).join(" · ")) + "</div></td>" +
+          "<td>" + (ex.design ? '<span class="badge">' + escapeHtml(ex.design) + "</span>" : "—") + "</td>" +
+          "<td>" + (n == null ? "—" : n) + "</td>" +
+          "<td>" + (eff ? '<span class="badge ' + (ex.manual ? "warn" : "ok") + '">' + escapeHtml(effLabel(eff)) + "</span>" + (ex.effects.length > 1 ? ' <span class="hint">+' + (ex.effects.length - 1) + "</span>" : "") : '<span class="badge err">none found</span>') + "</td>" +
+          "<td>" + robBadges(ex.rob) + "</td></tr>";
+        if (!open[r.id]) return main;
+        return main + detailRow(r, ex);
+      });
+      tb.innerHTML = rows.join("");
+      wireRows();
+      renderStats();
+    }
+    function detailRow(r, ex) {
+      var eff = pickPrimary(ex), man = ex.manual || (eff || {});
+      var pico = ex.pico;
+      var effList = ex.effects.length ? ex.effects.map(function (e) { return escapeHtml(effLabel(e)); }).join(" · ") : "none";
+      var evts = ex.events.length ? ex.events.map(function (e) { return e.events + "/" + e.total; }).join(", ") : "none";
+      return '<tr class="detail"><td></td><td colspan="5">' +
+        '<div class="field-grid">' +
+        '<label><span class="lbl">Population</span><input type="text" data-f="population" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.population) + '"></label>' +
+        '<label><span class="lbl">Intervention</span><input type="text" data-f="intervention" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.intervention) + '"></label>' +
+        '<label><span class="lbl">Comparator</span><input type="text" data-f="comparator" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.comparator) + '"></label>' +
+        '<label><span class="lbl">Outcome</span><input type="text" data-f="outcome" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.outcome) + '"></label>' +
+        "</div>" +
+        '<p class="hint" style="margin:0.5rem 0 0.2rem">Effect for meta-analysis (edit to override the auto-pick). All detected: ' + effList + ". Event counts: " + escapeHtml(evts) + (ex.followup ? ". Follow-up: " + ex.followup.value + " " + ex.followup.unit : "") + ".</p>" +
+        '<div class="field-grid">' +
+        '<label><span class="lbl">Measure</span><select data-m="measure" data-id="' + escapeHtml(r.id) + '">' + ["HR", "RR", "OR", "MD", "SMD"].map(function (mz) { return '<option value="' + mz + '"' + (man.measure === mz ? " selected" : "") + ">" + mz + "</option>"; }).join("") + "</select></label>" +
+        '<label><span class="lbl">Point</span><input type="text" data-m="point" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(man.point == null ? "" : man.point) + '"></label>' +
+        '<label><span class="lbl">95% CI low</span><input type="text" data-m="lo" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(man.lo == null ? "" : man.lo) + '"></label>' +
+        '<label><span class="lbl">95% CI high</span><input type="text" data-m="hi" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(man.hi == null ? "" : man.hi) + '"></label>' +
+        "</div></td></tr>";
+    }
+    function wireRows() {
+      var tb = $("etable");
+      Array.prototype.forEach.call(tb.querySelectorAll(".row-click"), function (tr) {
+        function toggle() { var id = tr.getAttribute("data-id"); open[id] = !open[id]; render(); }
+        tr.addEventListener("click", function (e) { if (/^(INPUT|SELECT|LABEL)$/.test(e.target.tagName)) return; toggle(); });
+        tr.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+      });
+      Array.prototype.forEach.call(tb.querySelectorAll(".use-cb"), function (cb) {
+        cb.addEventListener("change", function () { var ex = extractions[cb.getAttribute("data-id")]; if (ex) ex.useInMa = cb.checked; renderStats(); save(); });
+      });
+      Array.prototype.forEach.call(tb.querySelectorAll("[data-f]"), function (inp) {
+        inp.addEventListener("input", function () { var ex = extractions[inp.getAttribute("data-id")]; if (ex) { ex.pico[inp.getAttribute("data-f")] = inp.value; save(); } });
+      });
+      Array.prototype.forEach.call(tb.querySelectorAll("[data-m]"), function (inp) {
+        inp.addEventListener("input", function () {
+          var ex = extractions[inp.getAttribute("data-id")]; if (!ex) return;
+          var base = ex.manual || Object.assign({}, pickPrimary(ex) || { measure: "HR", point: null, lo: null, hi: null });
+          var f = inp.getAttribute("data-m");
+          base[f] = f === "measure" ? inp.value : num(inp.value);
+          ex.manual = base; renderStats(); save();
+        });
+      });
+    }
+    function renderStats() {
+      var withEff = 0, withN = 0, busable = 0, rct = 0;
+      records.forEach(function (r) {
+        var ex = extractions[r.id]; if (!ex) return;
+        if (pickPrimary(ex)) withEff++;
+        if (ex.sampleSizes.total != null) withN++;
+        if (ex.design === "RCT") rct++;
+        if (ex.useInMa !== false && toMaStudy(ex)) busable++;
+      });
+      var cells = [["Records", records.length], ["With effect", withEff], ["With N", withN], ["RCTs", rct], ["MA-ready", busable]];
+      $("stats").innerHTML = cells.map(function (kv) { return '<div class="stat"><span class="k">' + kv[0] + '</span><span class="v">' + kv[1] + "</span></div>"; }).join("");
+      $("btn-to-ma").disabled = busable === 0;
+    }
+
+    // ===================== import =====================
+    var _id = 0; function freshId() { return "ex" + (++_id); }
+    function normRec(r) {
+      return {
+        id: (r.id && String(r.id)) || freshId(), title: clean(r.title, 600), abstract: clean(r.abstract, 16000),
+        authors: Array.isArray(r.authors) ? r.authors : splitAuthors(r.authors), journal: clean(r.journal, 300),
+        year: r.year ? (String(r.year).match(/\d{4}/) || [""])[0] : "", doi: clean(r.doi, 200), pmid: clean(r.pmid, 30)
+      };
+    }
+    function setRecords(recs) {
+      records = recs.map(normRec); _id = records.length + 1;
+      extractAll(); save();
+      $("msg").innerHTML = "Extracted <strong>" + records.length + "</strong> record(s). Click any row to review/edit; then <strong>Send to meta-analysis</strong>.";
+    }
+    function importFromScreen() {
+      try {
+        var raw = localStorage.getItem(SCREEN_KEY);
+        if (!raw) { toast("No Screen project found (screen-v1). Screen some records and mark includes first."); return; }
+        var p = JSON.parse(raw);
+        var recs = (p.records || []).filter(function (r) {
+          if (r.dup) return false;
+          var d = r.resolved || (r.r1 && r.r1.d) || ""; var d2 = (r.r2 && r.r2.d) || "";
+          return d === "include" || (d && d === d2 && d === "include") || d2 === "include";
+        });
+        if (!recs.length) { toast("No included records in the Screen project yet."); return; }
+        setRecords(recs);
+      } catch (e) { toast("Could not import from Screen: " + e.message); }
+    }
+    function importSrRecords() {
+      try { var p = JSON.parse(localStorage.getItem(SR_RECORDS_KEY) || "null"); if (p && Array.isArray(p.records) && p.records.length) { setRecords(p.records); return true; } } catch (e) {}
+      return false;
+    }
+
+    // CSV/RIS/JSON parse (compact; reuses Screen's field conventions)
+    function splitCSVLine(line) { var out = [], cur = "", q = false, i, ch; for (i = 0; i < line.length; i++) { ch = line[i]; if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; } else { if (ch === ",") { out.push(cur); cur = ""; } else if (ch === '"') q = true; else cur += ch; } } out.push(cur); return out; }
+    function parseCSV(text) {
+      var lines = String(text).split(/\r?\n/).filter(function (l) { return l.trim() !== ""; }); if (!lines.length) return [];
+      var H = splitCSVLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
+      function ix(names) { for (var i = 0; i < names.length; i++) { var j = H.indexOf(names[i]); if (j >= 0) return j; } return -1; }
+      var iT = ix(["title", "ti"]), iA = ix(["abstract", "ab"]), iAu = ix(["authors", "author"]), iY = ix(["year", "py"]), iJ = ix(["journal", "source"]), iD = ix(["doi"]), iP = ix(["pmid"]), iId = ix(["id", "record id", "record_id"]);
+      var out = [], r, c; for (r = (iT >= 0 ? 1 : 0); r < lines.length; r++) { c = splitCSVLine(lines[r]); function g(i) { return i >= 0 && i < c.length ? c[i].trim() : ""; } if (g(iT) || g(iA)) out.push({ id: g(iId), title: g(iT), abstract: g(iA), authors: g(iAu), year: g(iY), journal: g(iJ), doi: g(iD), pmid: g(iP) }); }
+      return out;
+    }
+    function parseRIS(text) {
+      var recs = [], cur = null, last = null; function flush() { if (cur && (cur.title || cur.abstract)) recs.push(cur); cur = null; }
+      String(text).split(/\r?\n/).forEach(function (line) {
+        var m = line.match(/^([A-Z][A-Z0-9])\s\s?-\s?(.*)$/);
+        if (!m) { if (cur && last && line.trim()) cur[last] += " " + line.trim(); return; }
+        var tag = m[1], val = (m[2] || "").trim(); last = null;
+        if (tag === "TY") { flush(); cur = { authors: [] }; return; } if (!cur) cur = { authors: [] };
+        if (tag === "TI" || tag === "T1") { cur.title = (cur.title || "") + " " + val; last = "title"; }
+        else if (tag === "AB" || tag === "N2") { cur.abstract = (cur.abstract || "") + " " + val; last = "abstract"; }
+        else if (tag === "AU") cur.authors.push(val);
+        else if (tag === "PY" || tag === "Y1") cur.year = (val.match(/\d{4}/) || [""])[0];
+        else if (tag === "JO" || tag === "JF" || tag === "T2") { if (!cur.journal) cur.journal = val; }
+        else if (tag === "DO") cur.doi = val;
+        else if (tag === "ER") flush();
+      });
+      flush(); return recs;
+    }
+    function detectAndParse(text, name) {
+      var t = text.replace(/^﻿/, ""), s = t.replace(/^\s+/, "");
+      if (s[0] === "{" || s[0] === "[") {
+        try {
+          var p = JSON.parse(t);
+          if (p && p._schema === EXTRACT_KEY && Array.isArray(p.records)) return p.records;
+          if (p && p._schema === "screen-v1" && Array.isArray(p.records)) return p.records;
+          if (p && p.screen && Array.isArray(p.screen.records)) return p.screen.records;
+          if (Array.isArray(p)) return p;
+          if (p && Array.isArray(p.records)) return p.records;
+        } catch (e) {}
+      }
+      if (/^\s*TY\s\s?-\s/m.test(t)) return parseRIS(t);
+      return parseCSV(t);
+    }
+    function onFile(file) { var rd = new FileReader(); rd.onload = function () { try { var recs = detectAndParse(String(rd.result), file.name); if (!recs.length) { toast("No records found in that file."); return; } setRecords(recs); } catch (e) { toast("Import failed: " + e.message); } }; rd.readAsText(file); }
+
+    // ===================== exports / bus =====================
+    function downloadBlob(blob, fn) { var u = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = u; a.download = fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(u); }, 1000); }
+    function csvCell(v) { v = String(v == null ? "" : v); if (/^[=+@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+    function envelope() {
+      return {
+        _schema: EXTRACT_KEY, _savedAt: new Date().toISOString(),
+        records: records.map(function (r) {
+          var ex = extractions[r.id] || {}; var eff = pickPrimary(ex);
+          return {
+            id: r.id, title: r.title, year: r.year, doi: r.doi, pmid: r.pmid,
+            design: ex.design || "", pico: ex.pico || {}, sampleSizes: ex.sampleSizes || {}, events: ex.events || [],
+            effects: ex.effects || [], primaryEffect: eff || null, followup: ex.followup || null, rob: ex.rob || {}, useInMa: ex.useInMa !== false
+          };
+        })
+      };
+    }
+    function exportJSON() { downloadBlob(new Blob([JSON.stringify(envelope(), null, 2)], { type: "application/json" }), "extraction.json"); }
+    function exportCSV() {
+      var header = ["id", "title", "year", "design", "n_total", "measure", "effect", "ci_low", "ci_high", "population", "intervention", "comparator", "outcome", "randomized", "blinding", "itt", "use_in_ma"];
+      var rows = records.map(function (r) {
+        var ex = extractions[r.id] || {}; var eff = pickPrimary(ex) || {}; var p = ex.pico || {}; var rob = ex.rob || {};
+        return [r.id, r.title, r.year, ex.design, (ex.sampleSizes || {}).total, eff.measure, eff.point, eff.lo, eff.hi, p.population, p.intervention, p.comparator, p.outcome, rob.randomized ? "1" : "", rob.blinding || "", rob.intentionToTreat ? "1" : "", ex.useInMa !== false ? "1" : "0"].map(csvCell).join(",");
+      });
+      downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "extraction.csv");
+    }
+    function sendToMa() {
+      var studies = busStudies();
+      if (!studies.length) { toast("No records have a usable effect + CI yet. Edit the effect fields or extract more."); return; }
+      var ok = MaStudies.write(studies);
+      toast(ok ? ("Wrote " + studies.length + " studies to ma-studies-v1. Open a meta-analysis app to pool them.") : "Could not write to the shared bus.");
+    }
+
+    // ===================== AI / CLI handoff =====================
+    function aiUndecided() { return records.filter(function (r) { var ex = extractions[r.id]; return ex && !pickPrimary(ex); }); }
+    function aiPrompt(batch) {
+      return [
+        "# Structured data extraction for a systematic review", "",
+        "For EACH record below, extract from the title + abstract (and full text if you have it): study design; PICO (population, intervention, comparator, outcome); total and per-arm sample sizes; the primary effect size with its measure (HR/RR/OR/MD/SMD), point estimate and 95% CI; event counts (n/N per arm) where reported; and risk-of-bias cues (randomisation, blinding, allocation concealment, intention-to-treat).",
+        "Leave a field null rather than guessing. This can also be produced by the installable rct-extractor engine (17 specialties).", "",
+        "## Output (STRICT) — write `extract-ai-results.json`, a JSON array, one object per record with the same `id`:", "",
+        '```json',
+        '[{"id":"<id>","design":"RCT","pico":{"population":"","intervention":"","comparator":"","outcome":""},"sampleSizes":{"total":0,"perArm":[]},"primaryEffect":{"measure":"HR","point":0.0,"lo":0.0,"hi":0.0},"events":[{"events":0,"total":0}],"rob":{"randomized":true,"blinding":"double","allocationConcealment":true,"intentionToTreat":true}}]',
+        '```', "",
+        "## Records (" + batch.length + ")", '```json',
+        JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year }; }), null, 2),
+        '```'
+      ].join("\n");
+    }
+    function aiExport() {
+      var batch = aiUndecided().length ? aiUndecided() : records;
+      if (!batch.length) { toast("Import records first."); return; }
+      downloadBlob(new Blob([aiPrompt(batch)], { type: "text/markdown;charset=utf-8" }), "extract-ai-task.md");
+      downloadBlob(new Blob([JSON.stringify({ task: "extract", records: batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year }; }) }, null, 2)], { type: "application/json" }), "extract-ai-batch.json");
+      toast("Exported " + batch.length + " records + prompt. Run it in your agent / rct-extractor, then Import AI results.");
+    }
+    function applyAiResults(arr) {
+      if (!Array.isArray(arr)) throw new Error("expected a JSON array of extraction objects");
+      var byId = {}; records.forEach(function (r) { byId[r.id] = r; }); var n = 0;
+      arr.forEach(function (o) {
+        if (!o || !o.id || !byId[o.id]) return; var ex = extractions[o.id]; if (!ex) return;
+        if (o.design) ex.design = clean(o.design, 40);
+        if (o.pico) ["population", "intervention", "comparator", "outcome"].forEach(function (k) { if (o.pico[k]) ex.pico[k] = clean(o.pico[k], 160); });
+        if (o.sampleSizes && o.sampleSizes.total) ex.sampleSizes.total = num(o.sampleSizes.total);
+        if (o.rob && typeof o.rob === "object") ex.rob = Object.assign(ex.rob, o.rob);
+        var pe = o.primaryEffect;
+        if (pe && ["HR", "RR", "OR", "MD", "SMD"].indexOf(pe.measure) >= 0 && pe.point != null && pe.lo != null && pe.hi != null) {
+          ex.manual = { measure: pe.measure, point: num(pe.point), lo: num(pe.lo), hi: num(pe.hi) };
+        }
+        n++;
+      });
+      return n;
+    }
+    function aiImport(file) { var rd = new FileReader(); rd.onload = function () { try { var n = applyAiResults(JSON.parse(rd.result)); save(); render(); toast("Imported AI extraction for " + n + " record(s). Review before pooling."); } catch (e) { toast("Could not import AI results: " + e.message); } }; rd.readAsText(file); }
+    function aiKeyGet() { try { return localStorage.getItem(AI_KEY_LS) || ""; } catch (e) { return ""; } }
+    function aiKeySet(v) { try { if (v) localStorage.setItem(AI_KEY_LS, v); else localStorage.removeItem(AI_KEY_LS); } catch (e) {} }
+    function aiRunByoKey() {
+      var key = $("ai-key").value.trim() || aiKeyGet(); if (!key) { toast("Enter an API key, or use the export path."); return; }
+      aiKeySet(key);
+      var prov = $("ai-provider").value, model = $("ai-model").value.trim();
+      var batch = (aiUndecided().length ? aiUndecided() : records).slice(0, 25);
+      if (!batch.length) { toast("Nothing to extract."); return; }
+      var sys = "You extract structured systematic-review data from title+abstract. Return ONLY a JSON array, one object per record with the same id and the schema {id,design,pico:{population,intervention,comparator,outcome},sampleSizes:{total},primaryEffect:{measure,point,lo,hi},rob:{randomized,blinding,allocationConcealment,intentionToTreat}}. Use null for unknown fields; measure is HR/RR/OR/MD/SMD.";
+      var user = JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract }; }));
+      var req;
+      if (prov === "openai") req = fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify({ model: model || "gpt-4o-mini", temperature: 0, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.choices[0].message.content; });
+      else if (prov === "anthropic") req = fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify({ model: model || "claude-haiku-4-5-20251001", max_tokens: 2000, system: sys, messages: [{ role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.content[0].text; });
+      else req = fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model || "gemini-1.5-flash") + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: "user", parts: [{ text: user }] }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.candidates[0].content.parts[0].text; });
+      toast("Extracting " + batch.length + " records…");
+      req.then(function (txt) { var m = txt.match(/\[[\s\S]*\]/); var n = applyAiResults(JSON.parse(m ? m[0] : txt)); save(); render(); toast("AI extracted " + n + " record(s). Review before pooling."); }).catch(function (e) { toast("AI error: " + e.message); });
+    }
+
+    // ===================== persistence =====================
+    function save() { try { localStorage.setItem(EXTRACT_KEY, JSON.stringify(envelope())); } catch (e) {} }
+    function load() {
+      try {
+        var p = JSON.parse(localStorage.getItem(EXTRACT_KEY) || "null");
+        if (p && p._schema === EXTRACT_KEY && Array.isArray(p.records) && p.records.length) {
+          records = p.records.map(normRec);
+          p.records.forEach(function (pr, i) {
+            var r = records[i]; var ex = { id: r.id, title: r.title, year: r.year, doi: r.doi, pmid: r.pmid, design: pr.design || "", pico: pr.pico || { population: "", intervention: "", comparator: "", outcome: "" }, sampleSizes: pr.sampleSizes || { total: null, perArm: [] }, events: pr.events || [], effects: pr.effects || [], followup: pr.followup || null, rob: pr.rob || {}, manual: (pr.primaryEffect && pr.primaryEffect.measure) ? null : null, useInMa: pr.useInMa !== false };
+            extractions[r.id] = ex;
+          });
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    // ===================== example =====================
+    function loadExample() {
+      setRecords([
+        { id: "ex1", title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction (DAPA-HF)", year: "2019", journal: "N Engl J Med", doi: "10.1056/NEJMoa1911303",
+          abstract: "In this randomized, double-blind, placebo-controlled trial, 4744 patients with heart failure and a reduced ejection fraction were randomly assigned to receive dapagliflozin (n=2373) or placebo (n=2371). Over a median follow-up of 18.2 months, the primary outcome of worsening heart failure or cardiovascular death occurred in 386/2373 patients in the dapagliflozin group and 502/2371 in the placebo group. Dapagliflozin reduced the primary outcome compared with placebo (hazard ratio 0.74; 95% CI, 0.65 to 0.85; P<0.001). Analyses were by intention-to-treat." },
+        { id: "ex2", title: "Empagliflozin in Heart Failure with a Preserved Ejection Fraction (EMPEROR-Preserved)", year: "2021", journal: "N Engl J Med", doi: "10.1056/NEJMoa2107038",
+          abstract: "This randomized, double-blind trial assigned 5988 patients with heart failure and preserved ejection fraction to empagliflozin or placebo. The primary outcome of cardiovascular death or hospitalization for heart failure occurred in fewer patients with empagliflozin (hazard ratio, 0.79; 95% CI 0.69-0.90). The trial was placebo-controlled and analysed by intention-to-treat." },
+        { id: "ex3", title: "Canagliflozin and Cardiovascular and Renal Events in Type 2 Diabetes (CANVAS)", year: "2017", journal: "N Engl J Med", doi: "10.1056/NEJMoa1611925",
+          abstract: "In a randomized controlled trial of 10142 participants with type 2 diabetes, canagliflozin versus placebo reduced the risk of the primary composite cardiovascular outcome (hazard ratio 0.86; 95% CI 0.75 to 0.97). Heart failure hospitalization was a secondary endpoint." }
+      ]);
+      $("msg").innerHTML = "Example loaded — 3 cardiology RCTs extracted. Click a row to review fields, then <strong>Send to meta-analysis</strong>.";
+    }
+
+    // ===================== wire =====================
+    function attach() {
+      $("btn-import").addEventListener("click", function () { $("file-import").click(); });
+      $("file-import").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = ""; });
+      $("btn-from-screen").addEventListener("click", importFromScreen);
+      $("btn-example").addEventListener("click", loadExample);
+      $("btn-extract").addEventListener("click", function () { if (!records.length) { toast("Import records first."); return; } extractAll(); save(); toast("Re-extracted " + records.length + " record(s)."); });
+      $("btn-to-ma").addEventListener("click", sendToMa);
+      $("btn-json").addEventListener("click", exportJSON);
+      $("btn-csv").addEventListener("click", exportCSV);
+      $("btn-reset").addEventListener("click", function () { if (!confirm("Clear all extractions?")) return; records = []; extractions = {}; open = {}; try { localStorage.removeItem(EXTRACT_KEY); } catch (e) {} render(); $("msg").textContent = "Cleared."; });
+      $("f-measure").addEventListener("change", function () { render(); save(); });
+      $("btn-ai-export").addEventListener("click", aiExport);
+      $("btn-ai-import").addEventListener("click", function () { $("ai-file").click(); });
+      $("ai-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) aiImport(f); e.target.value = ""; });
+      $("btn-ai-run").addEventListener("click", aiRunByoKey);
+      $("ai-key").addEventListener("change", function () { aiKeySet(this.value.trim()); });
+      var sk = aiKeyGet(); if (sk) $("ai-key").value = sk;
+      $("btn-open-forest").addEventListener("click", function () { var s = busStudies(); if (s.length) MaStudies.write(s); window.location.href = "../forest-plot/index.html"; });
+    }
+
+    // ===================== test hook =====================
+    window.__almExtract = {
+      extractEffects: extractEffects, extractSampleSizes: extractSampleSizes, extractEvents: extractEvents,
+      extractRoB: extractRoB, extractFollowup: extractFollowup, extractDesign: extractDesign, extractPICO: extractPICO,
+      extractRecord: function (r) { return extractRecord(normRec(r)); },
+      toMaStudy: toMaStudy, applyAiResults: applyAiResults, aiPrompt: function () { return aiPrompt(records.length ? records : [{ id: "x", title: "t", abstract: "a" }]); },
+      setRecords: function (recs) { setRecords(recs); return records.length; },
+      busStudies: busStudies, envelope: envelope,
+      pick: function (id) { return pickPrimary(extractions[id]); },
+      setMeasurePref: function (m) { $("f-measure").value = m; }
+    };
+
+    attach();
+    if (!load()) { /* blank */ }
+    render();
+    // pipeline auto-import when arriving from Screen
+    try { if (/[?&]from=screen/.test(location.search)) importFromScreen(); } catch (e) {}
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
