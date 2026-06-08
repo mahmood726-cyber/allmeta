@@ -1275,6 +1275,19 @@ window.HTML_APPS_PROJECTS = [
     tags: ["prisma", "screening", "kappa"]
   },
   {
+    name: "Screen",
+    subcategory: "Screening",
+    folder: "allmeta/screen",
+    path: "./screen/index.html",
+    added: "2026-06-08",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Rayyan-class title/abstract screening, fully local: keyboard-driven record cards, dual-reviewer with conflict resolution and Cohen's κ, RIS / PubMed .nbib / CSV / JSON import, inline dedup (DOI + trigram-Jaccard), and a free in-browser active-learning classifier (TF-IDF + logistic regression) that re-ranks records from a handful of labels — transparent, reproducible, no key. AI (NL screening rationale) is strictly optional: local-agent handoff (export a task for Claude Code/Codex/Gemini CLI, re-import JSON — zero cost) or bring-your-own-key. One-click PRISMA Flow counts. No account, no paywall, no upload.",
+    note: "Imports RIS/.nbib/CSV/JSON; pushes PRISMA counts to prisma-flow/index.html via prisma-flow-v1; exports includes as RIS for downstream extraction. Free deterministic+ML core; AI off by default. First app of the search→design→screen pipeline.",
+    tags: ["screening", "rayyan", "active-learning", "dual-reviewer", "kappa", "dedup", "prisma", "ris", "local-first", "ai-optional"]
+  },
+  {
     name: "Correlation MA",
     folder: "allmeta/correlation-ma",
     path: "./correlation-ma/index.html",

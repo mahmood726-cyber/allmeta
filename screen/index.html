@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Rayyan-class title/abstract screening, fully local: keyboard-driven cards, dual-reviewer with conflict resolution and Cohen's kappa, RIS/.nbib/CSV/JSON import, inline dedup, transparent local relevance ranking, customizable exclusion reasons and labels, and one-click PRISMA flow counts.">
+  <meta name="color-scheme" content="light dark">
+  <title>Screen — local citation screening</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294;
+      --input-bg:#fbfaf6;
+      --inc:#0d7a27; --exc:#912121; --dup:#5c6470; --maybe:#7a5a0d; --conflict:#7a2da0;
+      --inc-soft:#dff3e0; --exc-soft:#fbd2d2; --dup-soft:#e5e5e5;
+      --maybe-soft:#fff4d5; --conflict-soft:#f0e0fb;
+      --hl-inc:#bff0c8; --hl-exc:#fbcaca;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+        --input-bg:#23272c;
+        --inc:#5bc47b; --exc:#ef7373; --dup:#98a0ae; --maybe:#e0a268; --conflict:#c79be6;
+        --inc-soft:#1e3a27; --exc-soft:#3a1e1e; --dup-soft:#2f343a;
+        --maybe-soft:#3a2d1c; --conflict-soft:#2e2138;
+        --hl-inc:#1e5230; --hl-exc:#5a2020;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:1.5rem clamp(1rem,3vw,3rem) 0.75rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.2rem; font-size:1.4rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.9rem; max-width:80ch; }
+    .toolbar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;
+               padding:0.6rem clamp(1rem,3vw,3rem); background:var(--panel);
+               border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
+    .layout { display:grid; grid-template-columns:minmax(300px,24rem) 1fr;
+              gap:1.25rem; padding:1.25rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:1rem; }
+    .panel h2 { margin:0 0 0.6rem; font-size:0.78rem; font-weight:600;
+                text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    label { display:block; margin-bottom:0.6rem; font-size:0.85rem; }
+    label .lbl { display:block; margin-bottom:0.15rem; }
+    label .hint { display:block; color:var(--muted); font-size:0.72rem; margin-top:0.1rem; }
+    input[type="text"],textarea,select {
+      width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
+      border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.88rem;
+    }
+    textarea { resize:vertical; min-height:3.5rem; font-size:0.82rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+    button { font:inherit; font-size:0.84rem; padding:0.42rem 0.8rem; border-radius:6px;
+             border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); gap:0.4rem; }
+    .stat { background:var(--accent-soft); padding:0.4rem 0.6rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .stat .v { display:block; font-size:1rem; font-weight:600; font-variant-numeric:tabular-nums; }
+
+    /* card */
+    .cardwrap { min-height:60vh; }
+    .progress { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:0.6rem; flex-wrap:wrap; }
+    .progress .pos { font-size:0.82rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .bar { flex:1; height:8px; min-width:120px; background:var(--border); border-radius:5px; overflow:hidden; }
+    .bar > i { display:block; height:100%; background:var(--inc); width:0%; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.4rem; }
+    .card.is-dup { border-color:var(--dup); }
+    .card .ctitle { font-size:1.2rem; font-weight:650; line-height:1.35; margin:0 0 0.5rem; }
+    .card .cmeta { font-size:0.85rem; color:var(--muted); margin:0 0 0.4rem; }
+    .card .cmeta a { color:var(--accent); }
+    .badges { display:flex; gap:0.4rem; flex-wrap:wrap; margin:0 0 0.75rem; }
+    .badge { display:inline-block; padding:0.12rem 0.5rem; border-radius:10px; font-size:0.72rem; font-weight:600; }
+    .b-src { background:var(--accent-soft); color:var(--accent); }
+    .b-score { background:var(--maybe-soft); color:var(--maybe); }
+    .b-dup { background:var(--dup-soft); color:var(--dup); }
+    .b-sugg { background:var(--exc-soft); color:var(--exc); }
+    .b-dec-include { background:var(--inc-soft); color:var(--inc); }
+    .b-dec-exclude { background:var(--exc-soft); color:var(--exc); }
+    .b-dec-maybe { background:var(--maybe-soft); color:var(--maybe); }
+    .b-dec-conflict { background:var(--conflict-soft); color:var(--conflict); }
+    .b-dec-duplicate { background:var(--dup-soft); color:var(--dup); }
+    .b-ml { background:var(--accent-soft); color:var(--accent); }
+    .b-ai-include { background:var(--inc-soft); color:var(--inc); border:1px dashed var(--inc); }
+    .b-ai-exclude { background:var(--exc-soft); color:var(--exc); border:1px dashed var(--exc); }
+    .b-ai-maybe { background:var(--maybe-soft); color:var(--maybe); border:1px dashed var(--maybe); }
+    .ai-rationale { font-size:0.82rem; color:var(--muted); font-style:italic; margin:0 0 0.6rem; padding:0.4rem 0.6rem; border-left:3px solid var(--border-strong); background:var(--input-bg); border-radius:4px; }
+    .ml-term { display:inline-block; padding:0.1rem 0.45rem; border-radius:10px; margin:0.1rem; font-size:0.72rem; }
+    .ml-term.pos { background:var(--inc-soft); color:var(--inc); }
+    .ml-term.neg { background:var(--exc-soft); color:var(--exc); }
+    .abstract { font-size:0.95rem; line-height:1.6; margin:0.5rem 0 1rem; max-height:42vh; overflow:auto;
+                border:1px solid var(--border); border-radius:8px; padding:0.75rem 0.9rem; background:var(--input-bg); }
+    .abstract.empty { color:var(--muted); font-style:italic; }
+    mark.hl-inc { background:var(--hl-inc); color:inherit; border-radius:3px; padding:0 1px; }
+    mark.hl-exc { background:var(--hl-exc); color:inherit; border-radius:3px; padding:0 1px; }
+    .decbtns { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem; }
+    .decbtns button { font-weight:600; padding:0.5rem 1rem; }
+    .db-inc { border-color:var(--inc); color:var(--inc); }
+    .db-inc.on { background:var(--inc); color:#fff; }
+    .db-exc { border-color:var(--exc); color:var(--exc); }
+    .db-exc.on { background:var(--exc); color:#fff; }
+    .db-maybe { border-color:var(--maybe); color:var(--maybe); }
+    .db-maybe.on { background:var(--maybe); color:#fff; }
+    .db-dup { border-color:var(--dup); color:var(--dup); }
+    .db-dup.on { background:var(--dup); color:#fff; }
+    .chips { display:flex; gap:0.35rem; flex-wrap:wrap; margin-bottom:0.6rem; }
+    .chips .lblk { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; align-self:center; margin-right:0.2rem; }
+    .chip { display:inline-block; padding:0.2rem 0.55rem; border-radius:12px; font-size:0.78rem; cursor:pointer;
+            border:1px solid var(--border); background:var(--panel); color:var(--ink); }
+    .chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .chip.reason.on { background:var(--exc); border-color:var(--exc); }
+    .chip .kbd { opacity:0.6; font-size:0.68rem; margin-left:0.25rem; }
+    .nav { display:flex; gap:0.5rem; align-items:center; margin-top:0.5rem; flex-wrap:wrap; }
+    .empty-state { text-align:center; color:var(--muted); padding:3rem 1rem; }
+    .conflict-row { display:grid; grid-template-columns:1fr auto; gap:0.5rem; align-items:center;
+                    padding:0.5rem 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
+    .conflict-row .ct { overflow:hidden; text-overflow:ellipsis; }
+    kbd { font-family:ui-monospace,monospace; background:var(--accent-soft); color:var(--accent);
+          border:1px solid var(--border); border-radius:4px; padding:0 0.35rem; font-size:0.78rem; }
+    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; z-index:200;
+                align-items:center; justify-content:center; padding:1rem; }
+    .modal-bg.on { display:flex; }
+    .modal { background:var(--panel); border:1px solid var(--border-strong); border-radius:12px;
+             max-width:540px; width:100%; padding:1.25rem 1.5rem; max-height:85vh; overflow:auto; }
+    .modal h3 { margin:0 0 0.75rem; }
+    .modal table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+    .modal td { padding:0.3rem 0.4rem; border-bottom:1px solid var(--border); }
+    .footer-note { margin:0; color:var(--muted); font-size:0.76rem; padding:0 clamp(1rem,3vw,3rem) 2rem; max-width:90ch; }
+    .file-input-hidden { display:none; }
+    .toggle { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.84rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+
+  <header>
+    <h1>Screen <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· local citation screening</span></h1>
+    <p>Keyboard-driven title/abstract screening that runs entirely in your browser — no account, no upload. Import RIS / PubMed&nbsp;.nbib / CSV / JSON, screen one record at a time, run dual-reviewer with Cohen's&nbsp;&kappa; and conflict resolution, and push PRISMA counts straight into the flow generator.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-import" class="primary">Import records…</button>
+    <button type="button" id="btn-example">Load example</button>
+    <span style="flex:1"></span>
+    <button type="button" id="btn-dedup">Re-run dedup</button>
+    <button type="button" id="btn-export-json">Export JSON</button>
+    <button type="button" id="btn-export-csv">Export CSV</button>
+    <button type="button" id="btn-export-ris">Export includes (RIS)</button>
+    <button type="button" id="btn-prisma" class="primary" title="Write counts to prisma-flow-v1">→ PRISMA Flow</button>
+    <button type="button" id="btn-help" title="Keyboard shortcuts">?</button>
+    <button type="button" id="btn-reset">Reset</button>
+    <input type="file" id="file-import" class="file-input-hidden" accept=".ris,.txt,.nbib,.csv,.json,.bib,application/json,text/csv" aria-label="File import">
+  </div>
+
+  <main class="layout">
+    <!-- LEFT: project setup -->
+    <aside aria-label="Project setup">
+      <section class="panel">
+        <h2>Project</h2>
+        <label><span class="lbl">Review title</span>
+          <input type="text" id="f-title" placeholder="e.g. SGLT2i in heart failure"></label>
+        <label><span class="lbl">Include terms (relevance &amp; highlighting)</span>
+          <textarea id="f-inc" placeholder="comma- or line-separated, e.g. SGLT2, dapagliflozin, heart failure, HFpEF"></textarea>
+          <span class="hint">Boosts relevance score; highlighted green in cards.</span></label>
+        <label><span class="lbl">Exclude terms</span>
+          <textarea id="f-exc" placeholder="e.g. animal, in vitro, protocol, cost-effectiveness"></textarea>
+          <span class="hint">Penalises relevance; highlighted red. Records with a negative score get an auto-exclude suggestion.</span></label>
+      </section>
+
+      <section class="panel">
+        <h2>Reviewers</h2>
+        <label class="toggle"><input type="checkbox" id="f-dual"> Dual-reviewer mode</label>
+        <div id="dual-controls" style="display:none;margin-top:0.5rem;">
+          <label><span class="lbl">Screening as</span>
+            <select id="f-active"><option value="r1">Reviewer 1</option><option value="r2">Reviewer 2</option></select></label>
+          <label class="toggle"><input type="checkbox" id="f-blind"> Blind to other reviewer's decision</label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Exclusion reasons</h2>
+        <textarea id="f-reasons" aria-label="Exclusion reasons" placeholder="one per line"></textarea>
+        <span class="hint">Press <kbd>1</kbd>–<kbd>9</kbd> on a card to exclude with that reason.</span>
+      </section>
+
+      <section class="panel">
+        <h2>Labels (optional)</h2>
+        <textarea id="f-labels" aria-label="Labels" placeholder="one per line, e.g. RCT, key paper, ongoing trial"></textarea>
+      </section>
+
+      <section class="panel">
+        <h2>View</h2>
+        <div class="row-2">
+          <label><span class="lbl">Filter</span>
+            <select id="f-filter">
+              <option value="all">All</option>
+              <option value="undecided">Undecided</option>
+              <option value="include">Included</option>
+              <option value="exclude">Excluded</option>
+              <option value="maybe">Maybe</option>
+              <option value="conflict">Conflicts</option>
+              <option value="duplicate">Duplicates</option>
+              <option value="suggested">Auto-exclude suggested</option>
+              <option value="aisugg">Has AI suggestion</option>
+            </select></label>
+          <label><span class="lbl">Sort</span>
+            <select id="f-sort">
+              <option value="order">Import order</option>
+              <option value="ml">ML relevance ↓</option>
+              <option value="relevance">Term score ↓</option>
+              <option value="year">Year ↓</option>
+            </select></label>
+        </div>
+        <label><span class="lbl">Keyword (title/abstract contains…)</span>
+          <input type="text" id="f-kw" placeholder="filter…"></label>
+      </section>
+
+      <section class="panel">
+        <h2>Local ML ranking</h2>
+        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + logistic regression) to rank the rest by predicted relevance. 100% local, no key, reproducible.</p>
+        <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
+        <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
+        <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
+      </section>
+
+      <section class="panel">
+        <h2>AI assist (optional)</h2>
+        <label class="toggle"><input type="checkbox" id="ai-on"> Enable AI suggestions</label>
+        <div id="ai-controls" style="display:none;margin-top:0.6rem">
+          <label><span class="lbl">Mode</span>
+            <select id="ai-mode">
+              <option value="handoff">Local-agent handoff (no cost)</option>
+              <option value="byokey">Bring your own API key</option>
+            </select></label>
+          <div id="ai-handoff">
+            <p class="hint" style="margin-top:0">Export a ready-to-run task for the agent you already pay for (Claude&nbsp;Code / Codex / Gemini&nbsp;CLI). Nothing is sent from here — you run it, then re-import the JSON.</p>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+              <button type="button" id="btn-ai-export">Export AI task</button>
+              <button type="button" id="btn-ai-import">Import AI results</button>
+            </div>
+            <input type="file" id="ai-file" class="file-input-hidden" accept=".json,application/json" aria-label="AI results">
+          </div>
+          <div id="ai-byokey" style="display:none">
+            <label><span class="lbl">Provider</span>
+              <select id="ai-provider">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="gemini">Google Gemini</option>
+              </select></label>
+            <label><span class="lbl">Model (optional)</span>
+              <input type="text" id="ai-model" placeholder="e.g. gpt-4o-mini / claude-haiku-4-5-20251001"></label>
+            <label><span class="lbl">API key (this browser only)</span>
+              <input type="text" id="ai-key" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+            <button type="button" id="btn-ai-run">Run AI on undecided</button>
+            <p class="hint">Key is saved to localStorage on this device only and is <strong>never</strong> included in project exports. Calls bill your own account.</p>
+          </div>
+          <p class="hint" style="margin-top:0.5rem">AI output is a <em>suggestion</em> shown on each card — press <kbd>a</kbd> to accept it as your decision. Never auto-applied.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Progress</h2>
+        <div id="stats" class="stats"></div>
+        <div id="kappa" style="margin-top:0.6rem;font-size:0.85rem;color:var(--muted)"></div>
+      </section>
+    </aside>
+
+    <!-- RIGHT: screening surface -->
+    <section class="cardwrap" aria-label="Screening">
+      <div class="progress">
+        <span class="pos" id="pos">0 of 0</span>
+        <div class="bar"><i id="bar-fill"></i></div>
+      </div>
+      <div id="card-host" aria-live="polite"></div>
+
+      <section class="panel" id="conflict-panel" style="display:none;margin-top:1rem;">
+        <h2>Conflicts to resolve (<span id="conflict-count">0</span>)</h2>
+        <div id="conflict-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Fully local — records never leave your device (CSP <code>connect-src 'self'</code>). Dedup: DOI exact match + trigram-Jaccard title similarity (≥0.85), union-style first-wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: resolved &gt; agreement &gt; conflict. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+
+  <!-- Help modal -->
+  <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+    <div class="modal">
+      <h3>Keyboard shortcuts</h3>
+      <table>
+        <tr><td><kbd>i</kbd></td><td>Include</td></tr>
+        <tr><td><kbd>e</kbd> / <kbd>x</kbd></td><td>Exclude</td></tr>
+        <tr><td><kbd>m</kbd></td><td>Maybe</td></tr>
+        <tr><td><kbd>d</kbd></td><td>Toggle duplicate</td></tr>
+        <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Exclude with reason #n</td></tr>
+        <tr><td><kbd>u</kbd> / <kbd>Backspace</kbd></td><td>Clear decision (undo)</td></tr>
+        <tr><td><kbd>→</kbd> / <kbd>j</kbd></td><td>Next record</td></tr>
+        <tr><td><kbd>←</kbd> / <kbd>k</kbd></td><td>Previous record</td></tr>
+        <tr><td><kbd>n</kbd> / <kbd>Enter</kbd></td><td>Next undecided</td></tr>
+        <tr><td><kbd>a</kbd></td><td>Accept the AI suggestion (if any)</td></tr>
+        <tr><td><kbd>?</kbd></td><td>This help</td></tr>
+      </table>
+      <p style="margin-top:1rem;"><button type="button" id="help-close" class="primary">Close</button></p>
+    </div>
+  </div>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LS_KEY = "screen-v1";
+    var PRISMA_FLOW_KEY = "prisma-flow-v1";
+    var SR_RECORDS_KEY = "sr-records-v1";
+
+    var DEFAULT_REASONS = [
+      "Wrong population", "Wrong intervention", "Wrong comparator",
+      "Wrong outcome", "Wrong study design", "Not original research / review",
+      "Conference abstract", "Wrong language", "Full text unavailable"
+    ];
+
+    var toast = function (m) {
+      try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {}
+      try { console.log(m); } catch (e) {}
+    };
+
+    // ---- state ----
+    var S = null;
+    function blankState() {
+      return {
+        _schema: LS_KEY, title: "", incTerms: [], excTerms: [],
+        reasons: DEFAULT_REASONS.slice(), labels: [],
+        mode: "single", active: "r1", blind: false,
+        filter: "all", sort: "order", kw: "",
+        cursor: 0, records: []
+      };
+    }
+
+    // ---- text helpers ----
+    function clean(s, cap) { s = String(s == null ? "" : s).replace(/\s+/g, " ").trim(); cap = cap || 4000; return s.length > cap ? s.slice(0, cap) : s; }
+    function escapeHtml(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+    function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+    function splitTerms(text) {
+      return String(text || "").split(/[\n,;]/).map(function (t) { return t.trim(); }).filter(Boolean);
+    }
+    function splitLines(text) {
+      return String(text || "").split(/\r?\n/).map(function (t) { return t.trim(); }).filter(Boolean);
+    }
+    function splitAuthors(s) {
+      if (!s) return [];
+      return String(s).split(/;| and |&/).map(function (a) { return a.trim(); }).filter(Boolean);
+    }
+    function countOcc(hay, needle) {
+      if (!needle) return 0; var n = 0, i = 0;
+      while ((i = hay.indexOf(needle, i)) >= 0) { n++; i += needle.length; }
+      return n;
+    }
+
+    // ---- dedup math (from citation-dedup) ----
+    var STOP = new Set("a an the of and or to in for on with without via using study trial randomized randomised controlled".split(" "));
+    function normTitle(t) {
+      return String(t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/)
+        .filter(function (w) { return w && !STOP.has(w); }).join(" ").trim();
+    }
+    function trigrams(s) {
+      var g = new Set(); s = " " + s + " ";
+      for (var i = 0; i < s.length - 2; i++) g.add(s.slice(i, i + 3));
+      return g;
+    }
+    function jaccard(a, b) {
+      if (!a.size || !b.size) return 0;
+      var inter = 0; a.forEach(function (x) { if (b.has(x)) inter++; });
+      return inter / (a.size + b.size - inter);
+    }
+    function runDedup() {
+      var recs = S.records, i, j;
+      // Preserve reviewer-applied (manual) duplicate marks; only recompute automatic ones.
+      for (i = 0; i < recs.length; i++) {
+        if (recs[i].dupManual) { recs[i].dup = true; if (!recs[i].dupOf) recs[i].dupOf = "(manual)"; }
+        else { recs[i].dup = false; recs[i].dupOf = null; }
+      }
+      var seenDoi = {};
+      for (i = 0; i < recs.length; i++) {
+        if (recs[i].dup) continue;
+        var d = (recs[i].doi || "").toLowerCase();
+        if (!d) continue;
+        if (seenDoi[d]) { recs[i].dup = true; recs[i].dupOf = seenDoi[d]; }
+        else seenDoi[d] = recs[i].id;
+      }
+      var live = [];
+      for (i = 0; i < recs.length; i++) if (!recs[i].dup) live.push({ r: recs[i], t: trigrams(normTitle(recs[i].title)) });
+      for (i = 0; i < live.length; i++) {
+        if (live[i].r.dup) continue;
+        for (j = i + 1; j < live.length; j++) {
+          if (live[j].r.dup) continue;
+          if (live[i].t.size && live[j].t.size && jaccard(live[i].t, live[j].t) >= 0.85) {
+            live[j].r.dup = true; live[j].r.dupOf = live[i].r.id;
+          }
+        }
+      }
+    }
+
+    // ---- relevance score (transparent TF over user terms) ----
+    function scoreRecord(r) {
+      if (!S.incTerms.length && !S.excTerms.length) { r.score = null; return; }
+      var text = (r.title + " " + r.title + " " + r.title + " " + r.abstract + " " + (r.keywords || []).join(" ")).toLowerCase();
+      var s = 0, k;
+      for (k = 0; k < S.incTerms.length; k++) s += countOcc(text, S.incTerms[k].toLowerCase());
+      for (k = 0; k < S.excTerms.length; k++) s -= 2 * countOcc(text, S.excTerms[k].toLowerCase());
+      r.score = s;
+    }
+    function rescoreAll() { for (var i = 0; i < S.records.length; i++) scoreRecord(S.records[i]); }
+
+    // ---- highlighting ----
+    function highlight(text) {
+      var esc = escapeHtml(text);
+      var terms = [];
+      S.incTerms.forEach(function (t) { if (t.length > 1) terms.push({ t: t, c: "inc" }); });
+      S.excTerms.forEach(function (t) { if (t.length > 1) terms.push({ t: t, c: "exc" }); });
+      if (!terms.length) return esc;
+      terms.sort(function (a, b) { return b.t.length - a.t.length; });
+      var pat = terms.map(function (o) { return escapeRe(o.t); }).join("|");
+      var re;
+      try { re = new RegExp("(" + pat + ")", "gi"); } catch (e) { return esc; }
+      return esc.replace(re, function (m) {
+        var ml = m.toLowerCase(), hit = null, i;
+        for (i = 0; i < terms.length; i++) { if (terms[i].t.toLowerCase() === ml) { hit = terms[i]; break; } }
+        if (!hit) for (i = 0; i < terms.length; i++) { if (ml.indexOf(terms[i].t.toLowerCase()) >= 0) { hit = terms[i]; break; } }
+        return '<mark class="hl-' + (hit ? hit.c : "inc") + '">' + m + "</mark>";
+      });
+    }
+
+    // ---- import parsers ----
+    var _autoId = 0;
+    function freshId() { return "rec" + (++_autoId); }
+    function normalizeImported(r) {
+      var rec = {
+        id: (r.id && String(r.id).trim()) || freshId(),
+        title: clean(r.title), abstract: clean(r.abstract, 8000),
+        authors: Array.isArray(r.authors) ? r.authors.map(function (a) { return clean(a, 200); }).filter(Boolean) : splitAuthors(r.authors),
+        journal: clean(r.journal, 300),
+        year: r.year ? (String(r.year).match(/\d{4}/) || [""])[0] : "",
+        doi: clean(r.doi, 200).replace(/^https?:\/\/(dx\.)?doi\.org\//i, ""),
+        pmid: clean(r.pmid, 30),
+        keywords: Array.isArray(r.keywords) ? r.keywords.map(function (k) { return clean(k, 120); }).filter(Boolean) : [],
+        source: clean(r.source, 40) || "import",
+        r1: r.r1 && typeof r.r1 === "object" ? { d: r.r1.d || "", reason: r.r1.reason || "" } : { d: "", reason: "" },
+        r2: r.r2 && typeof r.r2 === "object" ? { d: r.r2.d || "", reason: r.r2.reason || "" } : { d: "", reason: "" },
+        resolved: r.resolved || "",
+        labels: Array.isArray(r.labels) ? r.labels.slice() : [],
+        dup: !!r.dup, dupManual: !!r.dupManual, dupOf: r.dupOf || null, score: null,
+        mlScore: null,
+        aiSuggestion: ["include", "exclude", "maybe"].indexOf(r.aiSuggestion) >= 0 ? r.aiSuggestion : "",
+        aiRationale: clean(r.aiRationale, 400),
+        aiConfidence: (typeof r.aiConfidence === "number") ? r.aiConfidence : null
+      };
+      return rec;
+    }
+
+    function splitCSVLine(line) {
+      var out = [], cur = "", q = false, i, ch;
+      for (i = 0; i < line.length; i++) {
+        ch = line[i];
+        if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+        else { if (ch === ",") { out.push(cur); cur = ""; } else if (ch === '"') q = true; else cur += ch; }
+      }
+      out.push(cur); return out;
+    }
+    function parseCSVRecords(text) {
+      var lines = String(text).split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
+      if (!lines.length) return [];
+      var header = splitCSVLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
+      function idx(names) { for (var n = 0; n < names.length; n++) { var i = header.indexOf(names[n]); if (i >= 0) return i; } return -1; }
+      var iT = idx(["title", "ti"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
+        iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication"]),
+        iD = idx(["doi"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
+      var recs = [], start = iT >= 0 ? 1 : 0, r, c;
+      for (r = start; r < lines.length; r++) {
+        c = splitCSVLine(lines[r]); if (!c.length) continue;
+        function get(i) { return i >= 0 && i < c.length ? c[i].trim() : ""; }
+        var rec;
+        if (iT >= 0) {
+          rec = {
+            id: get(iId), title: get(iT), abstract: get(iA), authors: splitAuthors(get(iAu)),
+            year: get(iY), journal: get(iJ), doi: get(iD), pmid: get(iP),
+            keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : []
+          };
+        } else {
+          rec = { id: c[0] || "", title: c[1] || "", abstract: c[2] || "" };
+        }
+        if (rec.title || rec.abstract) recs.push(rec);
+      }
+      return recs.map(normalizeImported);
+    }
+
+    function parseRIS(text) {
+      var recs = [], cur = null, last = null;
+      function flush() { if (cur && (cur.title || cur.abstract)) recs.push(cur); cur = null; last = null; }
+      var lines = String(text).split(/\r?\n/), i, m, tag, val;
+      for (i = 0; i < lines.length; i++) {
+        m = lines[i].match(/^([A-Z][A-Z0-9])\s\s?-\s?(.*)$/);
+        if (!m) { if (cur && last && lines[i].trim()) cur[last] += " " + lines[i].trim(); continue; }
+        tag = m[1]; val = (m[2] || "").trim();
+        if (tag === "TY") { flush(); cur = { authors: [], keywords: [] }; last = null; continue; }
+        if (!cur) cur = { authors: [], keywords: [] };
+        last = null;
+        switch (tag) {
+          case "TI": case "T1": cur.title = (cur.title ? cur.title + " " : "") + val; last = "title"; break;
+          case "AB": case "N2": cur.abstract = (cur.abstract ? cur.abstract + " " : "") + val; last = "abstract"; break;
+          case "AU": case "A1": case "A2": if (val) cur.authors.push(val); break;
+          case "PY": case "Y1": cur.year = (val.match(/\d{4}/) || [""])[0]; break;
+          case "JO": case "JF": case "JA": case "T2": if (!cur.journal) cur.journal = val; break;
+          case "DO": cur.doi = val; break;
+          case "KW": if (val) cur.keywords.push(val); break;
+          case "ER": flush(); break;
+          default: break;
+        }
+      }
+      flush();
+      return recs.map(normalizeImported);
+    }
+
+    function parseNbib(text) {
+      var recs = [], cur = null, last = null;
+      function flush() { if (cur && (cur.title || cur.abstract)) recs.push(cur); cur = null; last = null; }
+      var lines = String(text).split(/\r?\n/), i, m, tag, val;
+      for (i = 0; i < lines.length; i++) {
+        if (/^\s{6}\S/.test(lines[i])) { if (cur && last) cur[last] += " " + lines[i].trim(); continue; }
+        m = lines[i].match(/^([A-Z]+)\s*-\s?(.*)$/);
+        if (!m) continue;
+        tag = m[1]; val = (m[2] || "").trim(); last = null;
+        switch (tag) {
+          case "PMID": flush(); cur = { authors: [], keywords: [] }; cur.pmid = val; break;
+          case "TI": if (!cur) cur = { authors: [], keywords: [] }; cur.title = (cur.title ? cur.title + " " : "") + val; last = "title"; break;
+          case "AB": if (!cur) cur = { authors: [], keywords: [] }; cur.abstract = (cur.abstract ? cur.abstract + " " : "") + val; last = "abstract"; break;
+          case "AU": if (cur && val) cur.authors.push(val); break;
+          case "DP": if (cur) cur.year = (val.match(/\d{4}/) || [""])[0]; break;
+          case "TA": case "JT": if (cur && !cur.journal) cur.journal = val; break;
+          case "LID": case "AID": if (cur && !cur.doi && /\[doi\]/i.test(val)) { var d = val.match(/10\.\d{4,}\/[^\s\[\]]+/); if (d) cur.doi = d[0]; } break;
+          case "MH": case "OT": if (cur && val) cur.keywords.push(val.replace(/^\*/, "")); break;
+          default: break;
+        }
+      }
+      flush();
+      return recs.map(normalizeImported);
+    }
+
+    function detectAndParse(text, name) {
+      var t = text.replace(/^﻿/, ""), trimmed = t.replace(/^\s+/, "");
+      // JSON
+      if (trimmed[0] === "{" || trimmed[0] === "[") {
+        try {
+          var p = JSON.parse(t);
+          if (p && p._schema === LS_KEY && Array.isArray(p.records)) return p.records.map(normalizeImported);
+          if (Array.isArray(p)) return p.map(normalizeImported);
+          if (p && Array.isArray(p.records)) {
+            // prisma-screen-v1 style {records:[{id,title,tag1,...}]}
+            return p.records.map(function (r) { return normalizeImported({ id: r.id, title: r.title, abstract: r.abstract, doi: r.doi, year: r.year, journal: r.journal, authors: r.authors }); });
+          }
+        } catch (e) { /* fall through */ }
+      }
+      // RIS: starts with "TY  -"
+      if (/^\s*TY\s\s?-\s/m.test(t)) return parseRIS(t);
+      // nbib / MEDLINE: has "PMID-" lines
+      if (/^PMID\s*-\s/m.test(t)) return parseNbib(t);
+      // by extension
+      if (/\.ris$/i.test(name || "")) return parseRIS(t);
+      if (/\.nbib$/i.test(name || "")) return parseNbib(t);
+      // default CSV
+      return parseCSVRecords(t);
+    }
+
+    function addRecords(newRecs) {
+      if (!newRecs.length) { toast("No records found in that file."); return; }
+      // de-id-collision: ensure unique ids vs existing
+      var existing = {}; S.records.forEach(function (r) { existing[r.id] = 1; });
+      newRecs.forEach(function (r) { while (existing[r.id]) r.id = freshId(); existing[r.id] = 1; });
+      S.records = S.records.concat(newRecs);
+      runDedup(); rescoreAll();
+      var dups = S.records.filter(function (r) { return r.dup; }).length;
+      toast("Imported " + newRecs.length + " record(s). " + (dups ? dups + " duplicate(s) flagged." : "No duplicates."));
+      S.cursor = 0; save(); render();
+    }
+
+    // ---- effective decision / counts / kappa ----
+    function effDecision(r) {
+      if (r.dup) return "duplicate";
+      if (S.mode === "single") return r.r1.d || "";
+      if (r.resolved) return r.resolved;
+      var a = r.r1.d, b = r.r2.d;
+      if (a && b) return a === b ? a : "conflict";
+      return a || b || "";
+    }
+    function activeSlot(r) { return (S.mode === "dual" && S.active === "r2") ? r.r2 : r.r1; }
+    function isUndecidedForActive(r) {
+      if (r.dup) return false;
+      return !(activeSlot(r).d);
+    }
+    function computeCounts(records) {
+      var identified = records.length, duplicates = 0, included = 0, excluded = 0, maybe = 0, undecided = 0, conflict = 0;
+      for (var i = 0; i < records.length; i++) {
+        var t = effDecision(records[i]);
+        if (t === "duplicate") { duplicates++; continue; }
+        if (t === "include") included++;
+        else if (t === "exclude") excluded++;
+        else if (t === "maybe") maybe++;
+        else if (t === "conflict") conflict++;
+        else undecided++;
+      }
+      var screened = identified - duplicates;
+      return { identified: identified, duplicates: duplicates, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
+    }
+    function cohensKappa(records) {
+      var pairs = records.filter(function (r) { return !r.dup && r.r1.d && r.r2.d; });
+      var n = pairs.length;
+      if (n < 2) return null;
+      var cats = {}; pairs.forEach(function (r) { cats[r.r1.d] = 1; cats[r.r2.d] = 1; });
+      var keys = Object.keys(cats), agree = 0, i;
+      for (i = 0; i < pairs.length; i++) if (pairs[i].r1.d === pairs[i].r2.d) agree++;
+      var po = agree / n, pe = 0;
+      keys.forEach(function (c) {
+        var p1 = pairs.filter(function (r) { return r.r1.d === c; }).length / n;
+        var p2 = pairs.filter(function (r) { return r.r2.d === c; }).length / n;
+        pe += p1 * p2;
+      });
+      var kappa = (po - pe) / ((1 - pe) || 1);
+      return { n: n, agree: agree, po: po, pe: pe, kappa: kappa };
+    }
+
+    // ---- filtering / sorting ----
+    function filteredRecords() {
+      var f = S.filter, kw = (S.kw || "").toLowerCase().trim();
+      var out = S.records.filter(function (r) {
+        var t = effDecision(r);
+        if (f === "undecided" && !(t === "" && !r.dup)) return false;
+        if (f === "include" && t !== "include") return false;
+        if (f === "exclude" && t !== "exclude") return false;
+        if (f === "maybe" && t !== "maybe") return false;
+        if (f === "conflict" && t !== "conflict") return false;
+        if (f === "duplicate" && !r.dup) return false;
+        if (f === "suggested" && !(r.score != null && r.score < 0 && t === "" && !r.dup)) return false;
+        if (f === "aisugg" && !r.aiSuggestion) return false;
+        if (kw && (r.title + " " + r.abstract).toLowerCase().indexOf(kw) < 0) return false;
+        return true;
+      });
+      if (S.sort === "ml") out.sort(function (a, b) { return (b.mlScore == null ? -1 : b.mlScore) - (a.mlScore == null ? -1 : a.mlScore); });
+      else if (S.sort === "relevance") out.sort(function (a, b) { return (b.score == null ? -1e9 : b.score) - (a.score == null ? -1e9 : a.score); });
+      else if (S.sort === "year") out.sort(function (a, b) { return (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0); });
+      return out;
+    }
+
+    // ---- DOM refs ----
+    var $ = function (id) { return document.getElementById(id); };
+    var cardHost = $("card-host"), posEl = $("pos"), barFill = $("bar-fill"),
+      statsEl = $("stats"), kappaEl = $("kappa"),
+      conflictPanel = $("conflict-panel"), conflictList = $("conflict-list"), conflictCount = $("conflict-count");
+
+    var VIEW = []; // current filtered list
+
+    function currentRecord() { return VIEW[S.cursor] || null; }
+
+    function decBadge(t) {
+      if (!t) return "";
+      var lbl = t === "duplicate" ? "duplicate" : t;
+      return '<span class="badge b-dec-' + t + '">' + escapeHtml(lbl) + "</span>";
+    }
+
+    function renderCard() {
+      var r = currentRecord();
+      if (!r) {
+        cardHost.innerHTML = '<div class="card"><div class="empty-state">' +
+          (S.records.length ? "No records match this filter." : "No records yet — <strong>Import records…</strong> or <strong>Load example</strong>.") +
+          "</div></div>";
+        return;
+      }
+      var t = effDecision(r);
+      var meta = [];
+      if (r.authors && r.authors.length) meta.push(escapeHtml(r.authors.slice(0, 6).join(", ")) + (r.authors.length > 6 ? " et al." : ""));
+      var line2 = [];
+      if (r.journal) line2.push("<em>" + escapeHtml(r.journal) + "</em>");
+      if (r.year) line2.push(escapeHtml(r.year));
+      if (r.doi) line2.push('doi:' + escapeHtml(r.doi));
+      if (r.pmid) line2.push("PMID:" + escapeHtml(r.pmid));
+
+      var badges = '<span class="badge b-src">' + escapeHtml(r.source) + "</span>";
+      if (r.mlScore != null) badges += '<span class="badge b-ml">ML ' + Math.round(r.mlScore * 100) + "%</span>";
+      if (r.score != null) badges += '<span class="badge b-score">term ' + r.score + "</span>";
+      if (r.dup) badges += '<span class="badge b-dup">duplicate of ' + escapeHtml(r.dupOf || "?") + "</span>";
+      if (r.score != null && r.score < 0 && !t && !r.dup) badges += '<span class="badge b-sugg">auto-exclude suggested</span>';
+      if (r.aiSuggestion) badges += '<span class="badge b-ai-' + r.aiSuggestion + '">AI: ' + r.aiSuggestion +
+        (r.aiConfidence != null ? " " + Math.round(r.aiConfidence * 100) + "%" : "") + "</span>";
+      if (t) badges += decBadge(t);
+      if (S.mode === "dual") {
+        if (r.r1.d) badges += '<span class="badge b-dec-' + r.r1.d + '">R1: ' + r.r1.d + "</span>";
+        if (r.r2.d) badges += '<span class="badge b-dec-' + r.r2.d + '">R2: ' + r.r2.d + "</span>";
+      }
+
+      var slot = activeSlot(r);
+      var abEmpty = !r.abstract;
+      var html = '<div class="card' + (r.dup ? " is-dup" : "") + '">' +
+        '<h2 class="ctitle">' + highlight(r.title || "(no title)") + "</h2>" +
+        (meta.length ? '<p class="cmeta">' + meta.join("") + "</p>" : "") +
+        (line2.length ? '<p class="cmeta">' + line2.join(" · ") + "</p>" : "") +
+        '<div class="badges">' + badges + "</div>" +
+        '<div class="abstract' + (abEmpty ? " empty" : "") + '">' + (abEmpty ? "No abstract available." : highlight(r.abstract)) + "</div>" +
+        (r.aiRationale ? '<p class="ai-rationale">AI rationale: ' + escapeHtml(r.aiRationale) + "</p>" : "") +
+        '<div class="decbtns">' +
+        '<button type="button" class="db-inc' + (slot.d === "include" ? " on" : "") + '" data-dec="include">Include <span class="kbd">i</span></button>' +
+        '<button type="button" class="db-exc' + (slot.d === "exclude" ? " on" : "") + '" data-dec="exclude">Exclude <span class="kbd">e</span></button>' +
+        '<button type="button" class="db-maybe' + (slot.d === "maybe" ? " on" : "") + '" data-dec="maybe">Maybe <span class="kbd">m</span></button>' +
+        '<button type="button" class="db-dup' + (r.dup ? " on" : "") + '" data-dec="duplicate">Duplicate <span class="kbd">d</span></button>' +
+        (r.aiSuggestion ? '<button type="button" class="primary" id="btn-accept-ai">Accept AI: ' + r.aiSuggestion + ' <span class="kbd">a</span></button>' : "") +
+        "</div>";
+
+      // reasons
+      if (S.reasons.length) {
+        html += '<div class="chips"><span class="lblk">Reason</span>';
+        S.reasons.forEach(function (rs, i) {
+          var on = slot.d === "exclude" && slot.reason === rs;
+          html += '<span class="chip reason' + (on ? " on" : "") + '" data-reason="' + i + '">' + escapeHtml(rs) +
+            (i < 9 ? '<span class="kbd">' + (i + 1) + "</span>" : "") + "</span>";
+        });
+        html += "</div>";
+      }
+      // labels
+      if (S.labels.length) {
+        html += '<div class="chips"><span class="lblk">Labels</span>';
+        S.labels.forEach(function (lb) {
+          var on = r.labels.indexOf(lb) >= 0;
+          html += '<span class="chip label' + (on ? " on" : "") + '" data-label="' + escapeHtml(lb) + '">' + escapeHtml(lb) + "</span>";
+        });
+        html += "</div>";
+      }
+
+      html += '<div class="nav">' +
+        '<button type="button" id="nav-prev">← Prev</button>' +
+        '<button type="button" id="nav-next">Next →</button>' +
+        '<button type="button" id="nav-undec" class="primary">Next undecided</button>' +
+        '<button type="button" id="nav-clear">Clear decision</button>' +
+        "</div></div>";
+
+      cardHost.innerHTML = html;
+
+      // wire card buttons
+      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-dec]"), function (b) {
+        b.addEventListener("click", function () { decide(b.getAttribute("data-dec")); });
+      });
+      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-reason]"), function (b) {
+        b.addEventListener("click", function () { applyReason(parseInt(b.getAttribute("data-reason"), 10)); });
+      });
+      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-label]"), function (b) {
+        b.addEventListener("click", function () { toggleLabel(b.getAttribute("data-label")); });
+      });
+      $("nav-prev").addEventListener("click", function () { move(-1); });
+      $("nav-next").addEventListener("click", function () { move(1); });
+      $("nav-undec").addEventListener("click", nextUndecided);
+      $("nav-clear").addEventListener("click", clearDecision);
+      var accBtn = $("btn-accept-ai"); if (accBtn) accBtn.addEventListener("click", acceptAI);
+    }
+
+    function renderStatsAndConflicts() {
+      var c = computeCounts(S.records);
+      var cells = [
+        ["Records", c.identified], ["Duplicates", c.duplicates], ["Screened", c.screened],
+        ["Included", c.included], ["Excluded", c.excluded], ["Maybe", c.maybe]
+      ];
+      if (S.mode === "dual") cells.push(["Conflicts", c.conflict]);
+      cells.push(["Undecided", c.undecided]);
+      statsEl.innerHTML = cells.map(function (kv) {
+        return '<div class="stat"><span class="k">' + kv[0] + '</span><span class="v">' + kv[1] + "</span></div>";
+      }).join("");
+
+      if (S.mode === "dual") {
+        var k = cohensKappa(S.records);
+        kappaEl.innerHTML = k
+          ? "Cohen's κ = <strong>" + k.kappa.toFixed(3) + "</strong> over " + k.n + " dual-decided (" + (k.po * 100).toFixed(0) + "% raw agreement)."
+          : "Cohen's κ needs ≥2 records decided by both reviewers.";
+      } else kappaEl.innerHTML = "";
+
+      // conflicts panel
+      if (S.mode === "dual") {
+        var conflicts = S.records.filter(function (r) { return effDecision(r) === "conflict"; });
+        conflictPanel.style.display = conflicts.length ? "" : "none";
+        conflictCount.textContent = conflicts.length;
+        conflictList.innerHTML = conflicts.map(function (r) {
+          return '<div class="conflict-row"><div class="ct" title="' + escapeHtml(r.title) + '">' +
+            escapeHtml(r.title.slice(0, 90)) + ' <span style="color:var(--muted)">(R1 ' + r.r1.d + " / R2 " + r.r2.d + ")</span></div>" +
+            '<div><button type="button" class="db-inc" data-res-inc="' + r.id + '">Include</button> ' +
+            '<button type="button" class="db-exc" data-res-exc="' + r.id + '">Exclude</button></div></div>';
+        }).join("");
+        Array.prototype.forEach.call(conflictList.querySelectorAll("[data-res-inc]"), function (b) {
+          b.addEventListener("click", function () { resolveConflict(b.getAttribute("data-res-inc"), "include"); });
+        });
+        Array.prototype.forEach.call(conflictList.querySelectorAll("[data-res-exc]"), function (b) {
+          b.addEventListener("click", function () { resolveConflict(b.getAttribute("data-res-exc"), "exclude"); });
+        });
+      } else conflictPanel.style.display = "none";
+    }
+
+    function render() {
+      VIEW = filteredRecords();
+      if (S.cursor >= VIEW.length) S.cursor = Math.max(0, VIEW.length - 1);
+      posEl.textContent = (VIEW.length ? (S.cursor + 1) : 0) + " of " + VIEW.length + (S.records.length !== VIEW.length ? " (filtered from " + S.records.length + ")" : "");
+      barFill.style.width = VIEW.length ? ((S.cursor + 1) / VIEW.length * 100) + "%" : "0%";
+      renderCard();
+      renderStatsAndConflicts();
+    }
+
+    // ---- actions ----
+    function decide(val) {
+      var r = currentRecord(); if (!r) return;
+      if (val === "duplicate") { r.dup = !r.dup; r.dupManual = r.dup; r.dupOf = r.dup ? "(manual)" : null; }
+      else { activeSlot(r).d = val; if (val !== "exclude") activeSlot(r).reason = ""; r.dup = false; r.dupManual = false; }
+      save(); render();
+      if (val !== "duplicate") autoAdvance();
+    }
+    function applyReason(i) {
+      var r = currentRecord(); if (!r || i < 0 || i >= S.reasons.length) return;
+      var slot = activeSlot(r);
+      slot.d = "exclude"; slot.reason = S.reasons[i]; r.dup = false;
+      save(); render(); autoAdvance();
+    }
+    function toggleLabel(lb) {
+      var r = currentRecord(); if (!r) return;
+      var k = r.labels.indexOf(lb);
+      if (k >= 0) r.labels.splice(k, 1); else r.labels.push(lb);
+      save(); render();
+    }
+    function clearDecision() {
+      var r = currentRecord(); if (!r) return;
+      activeSlot(r).d = ""; activeSlot(r).reason = ""; r.resolved = "";
+      save(); render();
+    }
+    function resolveConflict(id, val) {
+      var r = null; for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) { r = S.records[i]; break; }
+      if (!r) return;
+      r.resolved = val; save(); render();
+    }
+    function move(d) {
+      if (!VIEW.length) return;
+      S.cursor = Math.min(VIEW.length - 1, Math.max(0, S.cursor + d));
+      save(); render();
+    }
+    function autoAdvance() {
+      // advance to next undecided within view; if none, just go next
+      var found = findNextUndecided();
+      if (found >= 0) { S.cursor = found; } else if (S.cursor < VIEW.length - 1) { S.cursor++; }
+      save(); render();
+    }
+    function findNextUndecided() {
+      for (var i = S.cursor + 1; i < VIEW.length; i++) if (isUndecidedForActive(VIEW[i])) return i;
+      for (var j = 0; j <= S.cursor && j < VIEW.length; j++) if (isUndecidedForActive(VIEW[j])) return j;
+      return -1;
+    }
+    function nextUndecided() {
+      var f = findNextUndecided();
+      if (f >= 0) { S.cursor = f; save(); render(); }
+      else toast("No undecided records in this view.");
+    }
+
+    // ---- persistence ----
+    function save() {
+      S._savedAt = new Date().toISOString();
+      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
+    }
+    function load() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (!raw) return false;
+        var p = JSON.parse(raw);
+        if (p && p._schema === LS_KEY && Array.isArray(p.records)) {
+          S = Object.assign(blankState(), p);
+          S.records = p.records.map(normalizeImported);
+          // preserve decisions from stored (normalizeImported keeps r1/r2/resolved/labels/dup)
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    // ---- sync setup inputs <-> state ----
+    function pullSetupToState() {
+      S.title = $("f-title").value;
+      S.incTerms = splitTerms($("f-inc").value);
+      S.excTerms = splitTerms($("f-exc").value);
+      S.reasons = splitLines($("f-reasons").value);
+      S.labels = splitLines($("f-labels").value);
+      S.mode = $("f-dual").checked ? "dual" : "single";
+      S.active = $("f-active").value;
+      S.blind = $("f-blind").checked;
+      S.filter = $("f-filter").value;
+      S.sort = $("f-sort").value;
+      S.kw = $("f-kw").value;
+      $("dual-controls").style.display = S.mode === "dual" ? "" : "none";
+    }
+    function pushStateToSetup() {
+      $("f-title").value = S.title || "";
+      $("f-inc").value = (S.incTerms || []).join(", ");
+      $("f-exc").value = (S.excTerms || []).join(", ");
+      $("f-reasons").value = (S.reasons || []).join("\n");
+      $("f-labels").value = (S.labels || []).join("\n");
+      $("f-dual").checked = S.mode === "dual";
+      $("f-active").value = S.active || "r1";
+      $("f-blind").checked = !!S.blind;
+      $("f-filter").value = S.filter || "all";
+      $("f-sort").value = S.sort || "order";
+      $("f-kw").value = S.kw || "";
+      $("dual-controls").style.display = S.mode === "dual" ? "" : "none";
+    }
+    function onSetupChange() {
+      pullSetupToState();
+      rescoreAll();
+      save(); render();
+    }
+
+    // ---- exports ----
+    function downloadBlob(blob, fn) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a"); a.href = url; a.download = fn;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+    function csvCell(v) {
+      v = String(v == null ? "" : v);
+      if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+      return '"' + v.replace(/"/g, '""') + '"';
+    }
+    function exportJSON() {
+      var out = Object.assign({}, S, { counts: computeCounts(S.records), agreement: cohensKappa(S.records) });
+      downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: "application/json" }), "screen-project.json");
+    }
+    function exportCSV() {
+      var header = ["id", "title", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate"];
+      var rows = S.records.map(function (r) {
+        return [r.id, r.title, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
+          effDecision(r), r.r1.d, r.r2.d, r.resolved, (r.r1.reason || r.r2.reason || ""),
+          (r.labels || []).join("; "), (r.score == null ? "" : r.score),
+          (r.mlScore == null ? "" : r.mlScore.toFixed(4)), r.aiSuggestion || "",
+          (r.aiConfidence == null ? "" : r.aiConfidence), r.aiRationale || "",
+          r.dup ? "1" : ""].map(csvCell).join(",");
+      });
+      downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "screen-decisions.csv");
+    }
+    function exportRIS() {
+      var inc = S.records.filter(function (r) { return effDecision(r) === "include"; });
+      if (!inc.length) { toast("No included records to export."); return; }
+      var ris = inc.map(function (r) {
+        var lines = ["TY  - JOUR"];
+        if (r.title) lines.push("TI  - " + r.title);
+        (r.authors || []).forEach(function (a) { lines.push("AU  - " + a); });
+        if (r.year) lines.push("PY  - " + r.year);
+        if (r.journal) lines.push("JO  - " + r.journal);
+        if (r.abstract) lines.push("AB  - " + r.abstract);
+        if (r.doi) lines.push("DO  - " + r.doi);
+        (r.keywords || []).forEach(function (k) { lines.push("KW  - " + k); });
+        lines.push("ER  - "); return lines.join("\n");
+      }).join("\n\n");
+      downloadBlob(new Blob([ris], { type: "application/x-research-info-systems" }), "screen-includes.ris");
+    }
+    function pushPrisma() {
+      var c = computeCounts(S.records);
+      var payload = {
+        db: c.identified, reg: 0, removed: c.duplicates,
+        removedBreakdown: "Duplicates flagged in Screen (n=" + c.duplicates + ")",
+        screened: c.screened, excludedScreen: c.excluded + c.maybe + c.conflict + c.undecided,
+        sought: c.included, notRetrieved: 0, assessed: c.included,
+        excludedEligible: 0, excludedBreakdown: "",
+        studies: c.included, reports: c.included,
+        title: (S.title || "Screen") + " (" + new Date().toISOString().slice(0, 10) + ")"
+      };
+      try {
+        localStorage.setItem(PRISMA_FLOW_KEY, JSON.stringify(payload));
+        toast("Pushed counts to PRISMA Flow. Open ../prisma-flow/index.html to render the diagram.");
+      } catch (e) { toast("Could not save: " + e.message); }
+    }
+
+    // ---- example ----
+    function loadExample() {
+      var ex = [
+        { title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction (DAPA-HF)", abstract: "In this randomized, controlled trial, patients with HFrEF received dapagliflozin or placebo. The primary outcome of worsening heart failure or cardiovascular death was reduced. SGLT2 inhibition improved outcomes regardless of diabetes status.", authors: ["McMurray JJV", "Solomon SD"], journal: "N Engl J Med", year: "2019", doi: "10.1056/NEJMoa1911303", source: "pubmed", keywords: ["heart failure", "SGLT2", "dapagliflozin"] },
+        { title: "Empagliflozin in Heart Failure with a Preserved Ejection Fraction (EMPEROR-Preserved)", abstract: "Randomized trial of empagliflozin versus placebo in patients with HFpEF. Empagliflozin reduced the combined risk of cardiovascular death or hospitalization for heart failure.", authors: ["Anker SD", "Butler J"], journal: "N Engl J Med", year: "2021", doi: "10.1056/NEJMoa2107038", source: "pubmed", keywords: ["HFpEF", "empagliflozin"] },
+        { title: "Effect of SGLT2 inhibitors on cardiac remodeling in a murine model", abstract: "We studied the effect of SGLT2 inhibition in mice subjected to transverse aortic constriction. This in vitro and animal study examined molecular signaling pathways.", authors: ["Lee K", "Park J"], journal: "J Mol Cell Cardiol", year: "2020", doi: "10.1016/j.yjmcc.2020.01.002", source: "pubmed", keywords: ["animal", "in vitro"] },
+        { title: "Cost-effectiveness analysis of dapagliflozin for heart failure", abstract: "A health-economic model estimated the cost-effectiveness of dapagliflozin in HFrEF from a payer perspective. Incremental cost-effectiveness ratios are reported.", authors: ["Smith A"], journal: "PharmacoEconomics", year: "2021", doi: "10.1007/s40273-021-01010-z", source: "embase", keywords: ["cost-effectiveness"] },
+        { title: "Dapagliflozin in patients with heart failure and reduced ejection fraction", abstract: "Duplicate import of the DAPA-HF primary results from a second database.", authors: ["McMurray JJV"], journal: "NEJM", year: "2019", doi: "10.1056/NEJMoa1911303", source: "embase", keywords: [] },
+        { title: "Canagliflozin and Cardiovascular and Renal Events in Type 2 Diabetes (CANVAS)", abstract: "Randomized trial assessing canagliflozin versus placebo for cardiovascular and renal outcomes in type 2 diabetes. Heart failure hospitalization was a secondary endpoint.", authors: ["Neal B", "Perkovic V"], journal: "N Engl J Med", year: "2017", doi: "10.1056/NEJMoa1611925", source: "pubmed", keywords: ["canagliflozin", "diabetes"] },
+        { title: "A narrative review of cardiorenal protection with SGLT2 inhibitors", abstract: "This review summarizes mechanisms of cardiorenal protection. It is not a primary study and presents no new trial data.", authors: ["Jones P"], journal: "Curr Cardiol Rep", year: "2022", doi: "", source: "pubmed", keywords: ["review"] }
+      ];
+      S = blankState();
+      S.title = "SGLT2 inhibitors in heart failure (example)";
+      S.incTerms = ["SGLT2", "dapagliflozin", "empagliflozin", "canagliflozin", "heart failure", "HFpEF", "HFrEF"];
+      S.excTerms = ["animal", "in vitro", "murine", "cost-effectiveness", "review"];
+      S.records = ex.map(normalizeImported);
+      runDedup(); rescoreAll();
+      pushStateToSetup(); save(); render();
+      toast("Example loaded: " + S.records.length + " records, duplicates flagged, relevance scored.");
+    }
+
+    // ---- keyboard ----
+    function onKey(e) {
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if ($("help-modal").classList.contains("on")) { if (e.key === "Escape") closeHelp(); return; }
+      var k = e.key;
+      if (k >= "1" && k <= "9") { applyReason(parseInt(k, 10) - 1); e.preventDefault(); return; }
+      switch (k.toLowerCase()) {
+        case "i": decide("include"); e.preventDefault(); break;
+        case "e": case "x": decide("exclude"); e.preventDefault(); break;
+        case "m": decide("maybe"); e.preventDefault(); break;
+        case "d": decide("duplicate"); e.preventDefault(); break;
+        case "u": case "backspace": clearDecision(); e.preventDefault(); break;
+        case "j": case "arrowright": move(1); e.preventDefault(); break;
+        case "k": case "arrowleft": move(-1); e.preventDefault(); break;
+        case "n": case "enter": nextUndecided(); e.preventDefault(); break;
+        case "a": acceptAI(); e.preventDefault(); break;
+        case "?": openHelp(); e.preventDefault(); break;
+      }
+    }
+    function openHelp() { $("help-modal").classList.add("on"); }
+    function closeHelp() { $("help-modal").classList.remove("on"); }
+
+    // ---- import flow ----
+    function onFile(file) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        try { addRecords(detectAndParse(String(rd.result), file.name)); }
+        catch (err) { toast("Import failed: " + err.message); }
+      };
+      rd.readAsText(file);
+    }
+
+    // ---- wire up ----
+    function attach() {
+      $("btn-import").addEventListener("click", function () { $("file-import").click(); });
+      $("file-import").addEventListener("change", function (e) {
+        var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = "";
+      });
+      $("btn-example").addEventListener("click", loadExample);
+      $("btn-dedup").addEventListener("click", function () { runDedup(); rescoreAll(); save(); render(); toast("Dedup re-run."); });
+      $("btn-export-json").addEventListener("click", exportJSON);
+      $("btn-export-csv").addEventListener("click", exportCSV);
+      $("btn-export-ris").addEventListener("click", exportRIS);
+      $("btn-prisma").addEventListener("click", pushPrisma);
+      $("btn-help").addEventListener("click", openHelp);
+      $("help-close").addEventListener("click", closeHelp);
+      $("help-modal").addEventListener("click", function (e) { if (e.target === $("help-modal")) closeHelp(); });
+      $("btn-reset").addEventListener("click", function () {
+        if (!confirm("Clear the whole project (records and decisions)?")) return;
+        S = blankState(); pushStateToSetup(); save(); render();
+      });
+      ["f-title", "f-inc", "f-exc", "f-reasons", "f-labels"].forEach(function (id) { $(id).addEventListener("input", onSetupChange); });
+      ["f-dual", "f-active", "f-blind", "f-filter", "f-sort"].forEach(function (id) { $(id).addEventListener("change", onSetupChange); });
+      $("f-kw").addEventListener("input", onSetupChange);
+
+      // ML
+      $("btn-train").addEventListener("click", onTrain);
+      // AI assist
+      $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
+      $("ai-mode").addEventListener("change", function () {
+        var byo = this.value === "byokey";
+        $("ai-handoff").style.display = byo ? "none" : "";
+        $("ai-byokey").style.display = byo ? "" : "none";
+      });
+      $("btn-ai-export").addEventListener("click", aiExportTask);
+      $("btn-ai-import").addEventListener("click", function () { $("ai-file").click(); });
+      $("ai-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) aiImportResults(f); e.target.value = ""; });
+      $("btn-ai-run").addEventListener("click", aiRunByoKey);
+      $("ai-key").addEventListener("change", function () { aiKeySet(this.value.trim()); });
+      var savedKey = aiKeyGet(); if (savedKey) $("ai-key").value = savedKey;
+
+      document.addEventListener("keydown", onKey);
+    }
+
+    // ================= local ML classifier (TF-IDF + logistic regression) =================
+    // Fully client-side active learning: the reviewer labels a handful of records with
+    // i/e, we train a transparent logistic-regression model over TF-IDF features and
+    // re-rank the rest. No backend, no key, deterministic given the same labels.
+    var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false };
+    var ML_STOP = new Set(("a an the of and or to in for on with without via using study trial we our this that these those is are was were be been being as at by from into results methods method background conclusion conclusions objective objectives aim aims patients patient effect effects group groups versus compared comparison between among also can may use used using based both than then there their which while".split(/\s+/)));
+    function mlTokenize(s) {
+      var m = String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [], out = [], i, w;
+      for (i = 0; i < m.length; i++) { w = m[i]; if (w.length >= 3 && w.length <= 30 && !ML_STOP.has(w) && !/^\d+$/.test(w)) out.push(w); }
+      return out;
+    }
+    function mlText(r) { return r.title + " " + r.title + " " + r.abstract + " " + (r.keywords || []).join(" "); }
+    function mlBuildVocab(recs) {
+      var df = {}, N = recs.length, i;
+      for (i = 0; i < N; i++) {
+        var seen = {}, toks = mlTokenize(mlText(recs[i])), j;
+        for (j = 0; j < toks.length; j++) { if (!seen[toks[j]]) { seen[toks[j]] = 1; df[toks[j]] = (df[toks[j]] || 0) + 1; } }
+      }
+      var terms = Object.keys(df).filter(function (w) { return df[w] >= 2 && df[w] <= Math.max(2, N * 0.6); });
+      terms.sort(function (a, b) { return df[b] - df[a]; });
+      terms = terms.slice(0, 1500);
+      var vocab = {}, idf = new Float64Array(terms.length);
+      for (i = 0; i < terms.length; i++) { vocab[terms[i]] = i; idf[i] = Math.log(N / df[terms[i]]) + 1; }
+      return { vocab: vocab, idf: idf, terms: terms };
+    }
+    function mlVector(r, V) {
+      var tf = {}, toks = mlTokenize(mlText(r)), i, idx, k;
+      for (i = 0; i < toks.length; i++) { idx = V.vocab[toks[i]]; if (idx == null) continue; tf[idx] = (tf[idx] || 0) + 1; }
+      var vec = [], norm = 0;
+      for (k in tf) { var v = tf[k] * V.idf[k]; vec.push([+k, v]); norm += v * v; }
+      norm = Math.sqrt(norm) || 1;
+      for (i = 0; i < vec.length; i++) vec[i][1] /= norm;
+      return vec;
+    }
+    function sigmoid(z) { return z >= 0 ? 1 / (1 + Math.exp(-z)) : (function () { var e = Math.exp(z); return e / (1 + e); })(); }
+    function mlTrain() {
+      var inc = S.records.filter(function (r) { return !r.dup && r.r1.d === "include"; });
+      var exc = S.records.filter(function (r) { return !r.dup && r.r1.d === "exclude"; });
+      if (inc.length < 2 || exc.length < 2) return { ok: false, msg: "Label at least 2 includes and 2 excludes (press i / e) to train." };
+      var V = mlBuildVocab(S.records);
+      if (!V.terms.length) return { ok: false, msg: "Not enough text to build a vocabulary." };
+      var train = inc.map(function (r) { return { x: mlVector(r, V), y: 1 }; })
+        .concat(exc.map(function (r) { return { x: mlVector(r, V), y: 0 }; }));
+      var n = V.terms.length, w = new Float64Array(n), b = 0, lr = 0.5, l2 = 1e-4, epochs = 300, e, s, j;
+      for (e = 0; e < epochs; e++) {
+        for (s = 0; s < train.length; s++) {
+          var ex = train[s], dot = b;
+          for (j = 0; j < ex.x.length; j++) dot += w[ex.x[j][0]] * ex.x[j][1];
+          var g = sigmoid(dot) - ex.y;
+          for (j = 0; j < ex.x.length; j++) { var ix = ex.x[j][0]; w[ix] -= lr * (g * ex.x[j][1] + l2 * w[ix]); }
+          b -= lr * g;
+        }
+      }
+      ML.model = { w: w, b: b }; ML.V = V; ML.trained = true;
+      var ranked = 0;
+      S.records.forEach(function (r) {
+        if (r.dup) { r.mlScore = null; return; }
+        var x = mlVector(r, V), dot = b, jj;
+        for (jj = 0; jj < x.length; jj++) dot += w[x[jj][0]] * x[jj][1];
+        r.mlScore = sigmoid(dot); ranked++;
+      });
+      var pairs = V.terms.map(function (t, i) { return [t, w[i]]; });
+      pairs.sort(function (a, b2) { return b2[1] - a[1]; });
+      ML.topPos = pairs.slice(0, 12).filter(function (p) { return p[1] > 0; });
+      ML.topNeg = pairs.slice(-12).reverse().filter(function (p) { return p[1] < 0; });
+      return { ok: true, inc: inc.length, exc: exc.length, ranked: ranked,
+        msg: "Trained on " + inc.length + " includes / " + exc.length + " excludes; ranked " + ranked + " records by predicted relevance." };
+    }
+    function onTrain() {
+      var res = mlTrain();
+      $("ml-status").innerHTML = escapeHtml(res.msg);
+      if (res.ok) {
+        var terms = "";
+        if (ML.topPos.length) terms += '<div><strong>Predicts include:</strong> ' + ML.topPos.map(function (p) { return '<span class="ml-term pos">' + escapeHtml(p[0]) + "</span>"; }).join("") + "</div>";
+        if (ML.topNeg.length) terms += '<div style="margin-top:0.3rem"><strong>Predicts exclude:</strong> ' + ML.topNeg.map(function (p) { return '<span class="ml-term neg">' + escapeHtml(p[0]) + "</span>"; }).join("") + "</div>";
+        $("ml-terms").innerHTML = terms;
+        S.sort = "ml"; $("f-sort").value = "ml"; S.cursor = 0;
+        save(); render();
+      } else { $("ml-terms").innerHTML = ""; }
+    }
+
+    // ================= optional AI assist (default OFF) =================
+    var AI_KEY_LS = "screen-ai-key";
+    function aiUndecidedBatch(cap) {
+      return S.records.filter(function (r) { return !r.dup && !r.r1.d && !r.r2.d; }).slice(0, cap || 200);
+    }
+    function aiPromptText(batch) {
+      return [
+        "# Title/abstract screening task — " + (S.title || "systematic review"),
+        "",
+        "You are a second screener for a systematic review. For EACH record below, decide from the **title and abstract only** whether it should be **included** for full-text review, **excluded**, or **maybe** (genuinely unclear).",
+        "",
+        "## Eligibility cues",
+        "- Include / relevant topics: " + (S.incTerms.join(", ") || "(not specified)"),
+        "- Exclude topics: " + (S.excTerms.join(", ") || "(not specified)"),
+        "- Common exclusion reasons: " + (S.reasons.join("; ") || "(none)"),
+        "",
+        "## Output (STRICT)",
+        "Write a file named `screen-ai-results.json` containing ONLY a JSON array — one object per record, same `id`:",
+        "",
+        '```json',
+        '[{"id":"<id>","suggestion":"include|exclude|maybe","confidence":0.0,"rationale":"one short sentence"}]',
+        '```',
+        "",
+        "Use \"maybe\" with low confidence when unsure rather than guessing. Do not invent records or data.",
+        "",
+        "## Records (" + batch.length + ")",
+        '```json',
+        JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year, journal: r.journal }; }), null, 2),
+        '```'
+      ].join("\n");
+    }
+    function aiExportTask() {
+      var batch = aiUndecidedBatch(200);
+      if (!batch.length) { toast("No undecided records to send to AI."); return; }
+      downloadBlob(new Blob([aiPromptText(batch)], { type: "text/markdown;charset=utf-8" }), "screen-ai-task.md");
+      downloadBlob(new Blob([JSON.stringify({
+        task: "screen", title: S.title, include_terms: S.incTerms, exclude_terms: S.excTerms,
+        exclusion_reasons: S.reasons, output_schema: { id: "string", suggestion: "include|exclude|maybe", confidence: "0..1", rationale: "string" },
+        records: batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year, journal: r.journal }; })
+      }, null, 2)], { type: "application/json" }), "screen-ai-batch.json");
+      toast("Exported " + batch.length + " records + prompt. Run screen-ai-task.md in your agent, then Import AI results.");
+    }
+    function applyAiResults(arr) {
+      if (!Array.isArray(arr)) throw new Error("expected a JSON array of {id, suggestion, …}");
+      var byId = {}; S.records.forEach(function (r) { byId[r.id] = r; });
+      var n = 0;
+      arr.forEach(function (o) {
+        if (!o || !o.id) return;
+        var r = byId[o.id]; if (!r) return;
+        if (["include", "exclude", "maybe"].indexOf(o.suggestion) < 0) return;
+        r.aiSuggestion = o.suggestion;
+        r.aiRationale = clean(o.rationale, 400);
+        r.aiConfidence = (typeof o.confidence === "number") ? Math.max(0, Math.min(1, o.confidence)) : null;
+        n++;
+      });
+      return n;
+    }
+    function aiImportResults(file) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var n = applyAiResults(JSON.parse(rd.result));
+          save(); render();
+          toast("Imported " + n + " AI suggestion(s). Review each card and press 'a' to accept.");
+        } catch (e) { toast("Could not import AI results: " + e.message); }
+      };
+      rd.readAsText(file);
+    }
+    function acceptAI() {
+      var r = currentRecord(); if (!r || !r.aiSuggestion) return;
+      activeSlot(r).d = r.aiSuggestion; r.dup = false; r.dupManual = false;
+      save(); render(); autoAdvance();
+    }
+    // BYO-key (fallback): calls the user's own provider account; key never leaves localStorage.
+    function aiKeyGet() { try { return localStorage.getItem(AI_KEY_LS) || ""; } catch (e) { return ""; } }
+    function aiKeySet(v) { try { if (v) localStorage.setItem(AI_KEY_LS, v); else localStorage.removeItem(AI_KEY_LS); } catch (e) {} }
+    function aiParse(text) {
+      var m = String(text || "").match(/\{[\s\S]*\}/);
+      var o = JSON.parse(m ? m[0] : text);
+      return {
+        suggestion: ["include", "exclude", "maybe"].indexOf(o.suggestion) >= 0 ? o.suggestion : "maybe",
+        confidence: (typeof o.confidence === "number") ? o.confidence : null,
+        rationale: clean(o.rationale, 400)
+      };
+    }
+    function aiCallProvider(prov, key, model, rec) {
+      var sys = "You screen records for a systematic review. Include topics: " + (S.incTerms.join(", ") || "n/a") +
+        ". Exclude topics: " + (S.excTerms.join(", ") || "n/a") +
+        ". From the title/abstract only, decide include, exclude, or maybe. Respond ONLY as JSON: {\"suggestion\":\"include|exclude|maybe\",\"confidence\":0..1,\"rationale\":\"one sentence\"}.";
+      var user = "Title: " + rec.title + "\n\nAbstract: " + (rec.abstract || "(none)");
+      if (prov === "openai") {
+        return fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+          body: JSON.stringify({ model: model || "gpt-4o-mini", temperature: 0, response_format: { type: "json_object" },
+            messages: [{ role: "system", content: sys }, { role: "user", content: user }] })
+        }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          .then(function (j) { return aiParse(j.choices[0].message.content); });
+      }
+      if (prov === "anthropic") {
+        return fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key,
+            "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: model || "claude-haiku-4-5-20251001", max_tokens: 300, system: sys,
+            messages: [{ role: "user", content: user }] })
+        }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          .then(function (j) { return aiParse(j.content[0].text); });
+      }
+      var mdl = model || "gemini-1.5-flash";
+      return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(mdl) + ":generateContent?key=" + encodeURIComponent(key), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: "user", parts: [{ text: user }] }] })
+      }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (j) { return aiParse(j.candidates[0].content.parts[0].text); });
+    }
+    function aiRunByoKey() {
+      var key = $("ai-key").value.trim() || aiKeyGet();
+      if (!key) { toast("Enter an API key first."); return; }
+      aiKeySet(key);
+      var prov = $("ai-provider").value, model = $("ai-model").value.trim();
+      var batch = S.records.filter(function (r) { return !r.dup && !r.r1.d && !r.r2.d && !r.aiSuggestion; }).slice(0, 50);
+      if (!batch.length) { toast("No undecided records without a suggestion."); return; }
+      toast("Calling " + prov + " for " + batch.length + " records…");
+      var i = 0, done = 0;
+      function step() {
+        if (i >= batch.length) { save(); render(); toast("AI done: " + done + "/" + batch.length + " records."); return; }
+        var rec = batch[i++];
+        aiCallProvider(prov, key, model, rec).then(function (res) {
+          rec.aiSuggestion = res.suggestion; rec.aiRationale = res.rationale; rec.aiConfidence = res.confidence;
+          done++; if (done % 5 === 0) { save(); render(); }
+          step();
+        }).catch(function (e) { save(); render(); toast("AI stopped at record " + i + ": " + e.message); });
+      }
+      step();
+    }
+
+    // ---- test hook (deterministic, for behavioural specs) ----
+    window.__almScreenpro = {
+      blankState: blankState,
+      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); rescoreAll(); runDedup(); },
+      counts: function () { return computeCounts(S.records); },
+      kappa: function () { return cohensKappa(S.records); },
+      effDecision: effDecision,
+      score: function (r) { var rec = normalizeImported(r); scoreRecord(rec); return rec.score; },
+      jaccard: jaccard, normTitle: normTitle, trigrams: trigrams,
+      parse: function (text, name) { return detectAndParse(text, name); },
+      dedupCount: function () { runDedup(); return S.records.filter(function (r) { return r.dup; }).length; },
+      mlTrain: function () { return mlTrain(); },
+      mlScoreOf: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i].mlScore; return null; },
+      mlTopTerms: function () { return { pos: ML.topPos, neg: ML.topNeg }; },
+      aiPrompt: function () { return aiPromptText(aiUndecidedBatch(200)); },
+      aiApply: function (arr) { var n = applyAiResults(arr); return n; },
+      recordById: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i]; return null; }
+    };
+
+    // ---- boot ----
+    if (!load()) { S = blankState(); }
+    pushStateToSetup();
+    attach();
+    render();
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
