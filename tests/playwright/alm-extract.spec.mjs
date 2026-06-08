@@ -127,6 +127,28 @@ test.describe("Extract · end-to-end + AI handoff", () => {
     expect(out.design).toBe("RCT");
   });
 
+  test("pipeline: Extract imports the INCLUDED records from a Screen project (screen-v1)", async ({ page }) => {
+    await page.goto(APP);
+    await page.waitForFunction(() => !!window.__almExtract);
+    // seed a screen-v1 project: one include (with an effect), one exclude, one dup
+    await page.evaluate(() => {
+      localStorage.setItem("screen-v1", JSON.stringify({ _schema: "screen-v1", records: [
+        { id: "s1", title: "Included trial", abstract: "randomized trial; hazard ratio 0.74; 95% CI 0.65 to 0.85", r1: { d: "include" } },
+        { id: "s2", title: "Excluded paper", abstract: "animal study", r1: { d: "exclude" } },
+        { id: "s3", title: "Dup", abstract: "x", r1: { d: "include" }, dup: true },
+      ] }));
+    });
+    await page.reload();
+    await page.waitForFunction(() => !!window.__almExtract);
+    await page.click("#btn-from-screen");
+    await page.waitForFunction(() => window.__almExtract.busStudies !== undefined);
+    const out = await page.evaluate(() => ({ env: window.__almExtract.envelope(), bus: window.__almExtract.busStudies() }));
+    // only the non-dup INCLUDE should arrive and be MA-ready
+    expect(out.env.records.length).toBe(1);
+    expect(out.env.records[0].title).toBe("Included trial");
+    expect(out.bus.length).toBe(1);
+  });
+
   test("AI results re-import overrides the chosen effect", async ({ page }) => {
     await hook(page);
     const out = await page.evaluate(() => {

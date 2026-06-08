@@ -158,6 +158,7 @@
     <button type="button" id="btn-export-json">Export JSON</button>
     <button type="button" id="btn-export-csv">Export CSV</button>
     <button type="button" id="btn-export-ris">Export includes (RIS)</button>
+    <button type="button" id="btn-to-extract" class="primary" title="Extract structured data from the included records">→ Extract</button>
     <button type="button" id="btn-prisma" class="primary" title="Write counts to prisma-flow-v1">→ PRISMA Flow</button>
     <button type="button" id="btn-help" title="Keyboard shortcuts">?</button>
     <button type="button" id="btn-reset">Reset</button>
@@ -1293,6 +1294,13 @@
       $("btn-export-csv").addEventListener("click", exportCSV);
       $("btn-export-ris").addEventListener("click", exportRIS);
       $("btn-prisma").addEventListener("click", pushPrisma);
+      $("btn-to-extract").addEventListener("click", function () {
+        var inc = S.records.filter(function (r) { return effDecision(r) === "include"; }).length;
+        if (!inc) { toast("No included records to extract yet."); return; }
+        save(); // screen-v1 is what Extract reads
+        toast("Opening Extract with " + inc + " included record(s)…");
+        setTimeout(function () { window.location.href = "../extract/index.html?from=screen"; }, 500);
+      });
       $("btn-export-rev").addEventListener("click", exportReviewerState);
       $("btn-merge-rev").addEventListener("click", function () { $("rev-file").click(); });
       $("rev-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) onMergeReviewerFile(f); e.target.value = ""; });

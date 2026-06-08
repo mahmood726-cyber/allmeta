@@ -1296,9 +1296,9 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Multi-source literature search in the browser: one query across Europe PMC (PubMed + abstracts), Crossref, OpenAlex (abstract reconstructed from its inverted index) and ClinicalTrials.gov v2, with cross-source dedup (DOI + trigram-Jaccard) and a one-click handoff into Screen via the sr-records-v1 envelope. Free, no key; optional AI query expansion via local-agent handoff or BYO-key. API calls go straight from your browser to each public endpoint.",
-    note: "Seeds queries from a Design protocol (sr-project-v1); hands off to screen/index.html via sr-records-v1. Exports RIS/CSV/JSON. App 2/3 of the search→design→screen pipeline.",
-    tags: ["search", "elicit", "europepmc", "pubmed", "crossref", "openalex", "clinicaltrials", "dedup", "local-first"]
+    summary: "Multi-source literature search in the browser: one query across Europe PMC (PubMed + abstracts), Crossref, OpenAlex and ClinicalTrials.gov v2, with cross-source dedup, free deterministic query expansion (synonyms, abbreviations, brand/generic drug names, British/American spellings), TF-IDF cosine relevance ranking, and OpenAlex citation-chasing (snowballing — references + citing papers) to lift recall toward Elicit's semantic index without a key or an account. One-click handoff into Screen via sr-records-v1. Optional AI query expansion via local-agent handoff or BYO-key; API calls go straight from your browser to each public endpoint.",
+    note: "Seeds queries from a Design protocol (sr-project-v1); hands off to screen/index.html via sr-records-v1. Exports RIS/CSV/JSON. Part of the Search→Screen→Extract→meta pipeline.",
+    tags: ["search", "elicit", "europepmc", "pubmed", "crossref", "openalex", "clinicaltrials", "dedup", "query-expansion", "semantic-ranking", "snowballing", "local-first"]
   },
   {
     name: "Screen",
@@ -1310,8 +1310,21 @@ window.HTML_APPS_PROJECTS = [
     mode: "file",
     category: "Evidence Synthesis",
     summary: "Rayyan-class title/abstract screening, fully local: keyboard-driven record cards, dual-reviewer with conflict resolution and Cohen's κ, RIS / PubMed .nbib / CSV / JSON import, inline dedup (DOI + trigram-Jaccard), and a free in-browser active-learning classifier (TF-IDF + logistic regression) that re-ranks records from a handful of labels — transparent, reproducible, no key. AI (NL screening rationale) is strictly optional: local-agent handoff (export a task for Claude Code/Codex/Gemini CLI, re-import JSON — zero cost) or bring-your-own-key. One-click PRISMA Flow counts. No account, no paywall, no upload.",
-    note: "Imports RIS/.nbib/CSV/JSON; pushes PRISMA counts to prisma-flow/index.html via prisma-flow-v1; exports includes as RIS for downstream extraction. Free deterministic+ML core; AI off by default. First app of the search→design→screen pipeline.",
-    tags: ["screening", "rayyan", "active-learning", "dual-reviewer", "kappa", "dedup", "prisma", "ris", "local-first", "ai-optional"]
+    note: "Imports RIS/.nbib/CSV/JSON; pushes PRISMA counts to prisma-flow/index.html via prisma-flow-v1; exports includes as RIS for downstream extraction. Free deterministic+ML core; AI off by default. Benchmarked on the Cohen ACE-Inhibitors TAR corpus: WSS@95=0.67. Part of the Search→Screen→Extract→meta pipeline.",
+    tags: ["screening", "rayyan", "active-learning", "dual-reviewer", "kappa", "dedup", "prisma", "ris", "local-first", "ai-optional", "collaboration", "wss95"]
+  },
+  {
+    name: "Extract",
+    subcategory: "Extraction",
+    folder: "allmeta/extract",
+    path: "./extract/index.html",
+    added: "2026-06-08",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Automated structured data extraction for systematic reviews, free and reproducible where Elicit meters it: a transparent in-browser engine pulls PICO, sample sizes (total + per-arm), effect sizes with 95% CIs (HR/RR/OR/MD/SMD), event counts and risk-of-bias cues from included records, then feeds the result straight into the meta-analysis apps via the ma-studies-v1 bus (ratio effects as ln with SE from the CI). Optional one-click handoff to your own agent (Claude Code/Codex/Gemini CLI) or the installable rct-extractor engine (17 specialties), plus BYO-key — all opt-in.",
+    note: "Imports included records from Screen (screen-v1); exports sr-extract-v1 (JSON/CSV); writes ma-studies-v1 read by forest-plot and the pooling apps. Engine reads title+abstract — a reviewable first pass, with full-text handoff for the rest. App 4 of the Search→Screen→Extract→meta-analysis pipeline.",
+    tags: ["extraction", "elicit", "pico", "effect-size", "risk-of-bias", "meta-analysis", "ma-studies-v1", "pipeline", "local-first", "ai-optional"]
   },
   {
     name: "Correlation MA",

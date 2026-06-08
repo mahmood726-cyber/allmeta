@@ -1,5 +1,12 @@
 # allmeta vs the field — capability benchmark & next plan (2026-05-31)
 
+> **SR-pipeline benchmark (2026-06-08):** for the evidence-backed comparison of the
+> **Search / Screen / Extract** apps against **Rayyan, Elicit, Covidence, ASReview and
+> DistillerSR** — measured WSS@95, dedup recall/precision, 100k-record scale, and
+> extraction yield, all driving the shipped code — see
+> [`BENCHMARK-sr-pipeline.md`](BENCHMARK-sr-pipeline.md). This file below benchmarks the
+> *statistical* breadth/correctness against R / Stata / CMA / RevMan.
+
 Benchmark of allmeta (88 apps) against the tools reviewers actually use, to find the
 highest-value gaps. Companion to `ROADMAP-best-in-world.md`. For the *validation evidence*
 behind the correctness/robustness claims (R-parity ledger, 473-review spec-collapse, signed
