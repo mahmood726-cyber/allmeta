@@ -1,0 +1,26 @@
+Headless run — 1 seed(s): 1234567
+[cohen] Cohen ACEInhibitors                N=  2544 prev= 1.6%  WSS@95 0.670 (±0.000)
+[cohen] Cohen ADHD                         N=   851 prev= 2.4%  WSS@95 0.408 (±0.000)
+[cohen] Cohen Antihistamines               N=   310 prev= 5.2%  WSS@95 -0.050 (±0.000)
+[cohen] Cohen Atypical Antipsychotics      N=  1120 prev=13.0%  WSS@95 0.138 (±0.000)
+[cohen] Cohen Beta Blockers                N=  2072 prev= 2.0%  WSS@95 0.559 (±0.000)
+[cohen] Cohen Calcium Channel Blockers     N=  1218 prev= 8.2%  WSS@95 0.203 (±0.000)
+[cohen] Cohen Estrogens                    N=   368 prev=21.7%  WSS@95 0.243 (±0.000)
+[cohen] Cohen NSAIDS                       N=   393 prev=10.4%  WSS@95 0.413 (±0.000)
+[cohen] Cohen Opiods                       N=  1915 prev= 0.8%  WSS@95 0.109 (±0.000)
+[cohen] Cohen Oral Hypoglycemics           N=   503 prev=27.0%  WSS@95 0.035 (±0.000)
+[cohen] Cohen Proton Pump Inhibitors       N=  1333 prev= 3.8%  WSS@95 0.192 (±0.000)
+[cohen] Cohen Skeletal Muscle Relaxants    N=  1643 prev= 0.5%  WSS@95 0.091 (±0.000)
+[cohen] Cohen Statins                      N=  3465 prev= 2.5%  WSS@95 0.485 (±0.000)
+[cohen] Cohen Triptans                     N=   671 prev= 3.6%  WSS@95 0.412 (±0.000)
+[cohen] Cohen Urinary Incontinence         N=   327 prev=12.2%  WSS@95 0.461 (±0.000)
+[syn  ] Appenzeller-Herzog 2020 (Wilson disease) N=  3453 prev= 0.8%  WSS@95 0.425 (±0.000)
+[syn  ] Kwok 2020 (virus metagenomics)     N=  2481 prev= 4.8%  WSS@95 0.623 (±0.000)
+[syn  ] Wolters 2018 (CHD & dementia)      N=  5019 prev= 0.4%  WSS@95 0.549 (±0.000)
+[syn  ] Bos 2018 (small-vessel disease & dementia) N=  5746 prev= 0.2%  WSS@95 0.356 (±0.000)
+
+[AGG] Cohen-15  WSS@95 mean 0.2913  median 0.2435  range -0.05–0.6705  (n=15)
+[AGG] SYNERGY   WSS@95 mean 0.4886  median 0.4874  range 0.3564–0.6231  (n=4)
+[AGG] ALL 19   WSS@95 mean 0.3329  median 0.4083  range -0.05–0.6705
+
+Wrote F:\allmeta\benchmark\results_headless.json
