@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.ebi.ac.uk https://api.crossref.org https://api.openalex.org https://clinicaltrials.gov https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Multi-source literature search across Europe PMC, Crossref, OpenAlex and ClinicalTrials.gov — one query, cross-source dedup, and a one-click handoff into the Screen citation screener. Free, browser-only, reproducible.">
+  <meta name="color-scheme" content="light dark">
+  <title>Search — multi-source literature retrieval</title>
+  <style>
+    :root {
+      --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+      --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+      --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2;
+    }
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+        --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+        --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262; --input-bg:#23272c;
+        --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e;
+      }
+    }
+    @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
+    header { padding:1.5rem clamp(1rem,3vw,3rem) 0.75rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header h1 { margin:0 0 0.2rem; font-size:1.4rem; letter-spacing:-0.01em; }
+    header p { margin:0; color:var(--muted); font-size:0.9rem; max-width:80ch; }
+    .layout { display:grid; grid-template-columns:minmax(300px,24rem) 1fr; gap:1.25rem; padding:1.25rem clamp(1rem,3vw,3rem); align-items:start; }
+    @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:1rem; }
+    .panel h2 { margin:0 0 0.6rem; font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    label { display:block; margin-bottom:0.6rem; font-size:0.85rem; }
+    label .lbl { display:block; margin-bottom:0.15rem; }
+    label .hint, .hint { color:var(--muted); font-size:0.74rem; }
+    input[type="text"],textarea,select { width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.88rem; }
+    textarea { resize:vertical; min-height:4.5rem; }
+    input:focus,textarea:focus,select:focus { outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+    button { font:inherit; font-size:0.84rem; padding:0.42rem 0.8rem; border-radius:6px; border:1px solid var(--border-strong); background:var(--panel); color:var(--ink); cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:disabled { opacity:0.5; cursor:default; }
+    button:hover:not(:disabled) { filter:brightness(0.96); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .toolbar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; padding:0.6rem clamp(1rem,3vw,3rem); background:var(--panel); border-bottom:1px solid var(--border); }
+    .src-toggle { display:flex; align-items:center; gap:0.45rem; font-size:0.86rem; padding:0.3rem 0; }
+    .src-toggle .count { margin-left:auto; font-variant-numeric:tabular-nums; color:var(--muted); font-size:0.8rem; }
+    .src-toggle .status { font-size:0.72rem; }
+    .status.ok { color:var(--ok); } .status.err { color:var(--err); } .status.run { color:var(--accent); }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:0.4rem; }
+    .stat { background:var(--accent-soft); padding:0.4rem 0.6rem; border-radius:6px; }
+    .stat .k { display:block; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .stat .v { display:block; font-size:1rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+    th,td { padding:0.4rem 0.5rem; text-align:left; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { font-weight:600; color:var(--muted); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.05em; background:var(--panel); position:sticky; top:0; }
+    .table-scroll { max-height:62vh; overflow:auto; border:1px solid var(--border); border-radius:6px; background:var(--panel); }
+    .badge { display:inline-block; padding:0.1rem 0.45rem; border-radius:10px; font-size:0.7rem; font-weight:600; background:var(--accent-soft); color:var(--accent); white-space:nowrap; }
+    .badge.dup { background:var(--err-soft); color:var(--err); }
+    .rtitle { font-weight:600; }
+    .rmeta { color:var(--muted); font-size:0.78rem; }
+    .rabs { color:var(--ink); font-size:0.8rem; margin-top:0.25rem; display:none; }
+    tr.open .rabs { display:block; }
+    a { color:var(--accent); }
+    .footer-note { margin:0; color:var(--muted); font-size:0.76rem; padding:0 clamp(1rem,3vw,3rem) 2rem; max-width:90ch; }
+    .file-input-hidden { display:none; }
+    .toggle { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.84rem; }
+    kbd { font-family:ui-monospace,monospace; background:var(--accent-soft); color:var(--accent); border:1px solid var(--border); border-radius:4px; padding:0 0.35rem; font-size:0.78rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+
+  <header>
+    <h1>Search <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· multi-source literature retrieval</span></h1>
+    <p>One query across <strong>Europe PMC</strong> (PubMed + more, with abstracts), <strong>Crossref</strong>, <strong>OpenAlex</strong> and <strong>ClinicalTrials.gov</strong>. Cross-source dedup, then a one-click handoff into <strong>Screen</strong>. Free, browser-only — queries hit the public APIs directly from your machine; results stay on your device.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-search" class="primary">Search</button>
+    <button type="button" id="btn-cancel" disabled>Cancel</button>
+    <span style="flex:1"></span>
+    <button type="button" id="btn-to-screen" class="primary" title="Hand off to the Screen app">→ Send to Screen</button>
+    <button type="button" id="btn-ris">Export RIS</button>
+    <button type="button" id="btn-csv">Export CSV</button>
+    <button type="button" id="btn-json">Export JSON</button>
+    <button type="button" id="btn-clear">Clear</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Search setup">
+      <section class="panel">
+        <h2>Query</h2>
+        <label>
+          <textarea id="f-query" placeholder="e.g. (SGLT2 OR dapagliflozin OR empagliflozin) AND &quot;heart failure&quot;"></textarea>
+          <span class="hint">Plain text or boolean. The same string is sent to every source (each maps boolean its own way).</span>
+        </label>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button type="button" id="btn-load-design" title="Seed the query from a Design protocol (sr-project-v1)">Load PICO from Design</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Sources</h2>
+        <div class="src-toggle"><input type="checkbox" id="s-epmc" checked><label for="s-epmc" style="margin:0;flex:1">Europe PMC</label><span class="count" id="c-epmc">—</span><span class="status" id="st-epmc"></span></div>
+        <div class="src-toggle"><input type="checkbox" id="s-crossref" checked><label for="s-crossref" style="margin:0;flex:1">Crossref</label><span class="count" id="c-crossref">—</span><span class="status" id="st-crossref"></span></div>
+        <div class="src-toggle"><input type="checkbox" id="s-openalex" checked><label for="s-openalex" style="margin:0;flex:1">OpenAlex</label><span class="count" id="c-openalex">—</span><span class="status" id="st-openalex"></span></div>
+        <div class="src-toggle"><input type="checkbox" id="s-ctgov" checked><label for="s-ctgov" style="margin:0;flex:1">ClinicalTrials.gov</label><span class="count" id="c-ctgov">—</span><span class="status" id="st-ctgov"></span></div>
+        <label style="margin-top:0.6rem"><span class="lbl">Max results per source</span>
+          <select id="f-max"><option>25</option><option selected>50</option><option>100</option><option>200</option></select></label>
+        <label><span class="lbl">Contact email (polite pool — optional)</span>
+          <input type="text" id="f-email" placeholder="you@example.org" autocomplete="off">
+          <span class="hint">Sent to OpenAlex/Crossref/Europe PMC for faster, friendlier rate limits. Never stored or shared elsewhere.</span></label>
+      </section>
+
+      <section class="panel">
+        <h2>Results</h2>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="panel">
+        <h2>AI query help (optional)</h2>
+        <label class="toggle"><input type="checkbox" id="ai-on"> Enable AI query expansion</label>
+        <div id="ai-controls" style="display:none;margin-top:0.5rem">
+          <p class="hint" style="margin-top:0">Turn a plain question into a synonym-rich boolean strategy. Default path costs nothing: export a prompt for the agent you already pay for, paste its query back.</p>
+          <button type="button" id="btn-ai-export">Export query-expansion task</button>
+          <details style="margin-top:0.5rem"><summary style="cursor:pointer;font-size:0.82rem">Bring your own key (fallback)</summary>
+            <label style="margin-top:0.4rem"><span class="lbl">Provider</span>
+              <select id="ai-provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Gemini</option></select></label>
+            <label><span class="lbl">Model (optional)</span><input type="text" id="ai-model" placeholder="gpt-4o-mini"></label>
+            <label><span class="lbl">API key (this browser only)</span><input type="text" id="ai-key" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+            <button type="button" id="btn-ai-run">Expand query</button>
+          </details>
+        </div>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <div class="panel" style="margin-bottom:0.75rem;">
+        <div id="msg" class="hint">Enter a query and press <strong>Search</strong>. Click any row to expand its abstract.</div>
+      </div>
+      <div class="table-scroll">
+        <table id="results"><thead><tr><th>Source</th><th>Year</th><th>Title / abstract</th><th>DOI / ID</th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <p class="footer-note">Sources: Europe PMC (<code>resultType=core</code>, abstracts), Crossref REST, OpenAlex (abstract reconstructed from its inverted index), ClinicalTrials.gov API v2. Cross-source dedup uses DOI-exact + trigram-Jaccard title similarity (≥0.85), first-source wins. Results are capped at the per-source limit you choose — totals reflect that cap, not the full database hit count. <strong>Send to Screen</strong> writes the <code>sr-records-v1</code> envelope that the Screen app imports. Nothing is uploaded anywhere; API calls go straight from your browser to each public endpoint.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var SR_RECORDS_KEY = "sr-records-v1";
+    var SR_PROJECT_KEY = "sr-project-v1";
+    var AI_KEY_LS = "search-ai-key";
+    var toast = function (m) { try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
+    var $ = function (id) { return document.getElementById(id); };
+    var records = [];
+    var controller = null;
+
+    // ---- helpers ----
+    function clean(s, cap) { s = String(s == null ? "" : s).replace(/\s+/g, " ").trim(); cap = cap || 6000; return s.length > cap ? s.slice(0, cap) : s; }
+    function escapeHtml(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+    function stripTags(s) { return clean(String(s || "").replace(/<[^>]+>/g, " ")); }
+    var _id = 0; function freshId(src) { return src + "_" + (++_id); }
+    function normDoi(d) { return clean(d, 200).toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//i, ""); }
+
+    var STOP = new Set("a an the of and or to in for on with without via using study trial randomized randomised controlled".split(" "));
+    function normTitle(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(function (w) { return w && !STOP.has(w); }).join(" ").trim(); }
+    function trigrams(s) { var g = new Set(); s = " " + s + " "; for (var i = 0; i < s.length - 2; i++) g.add(s.slice(i, i + 3)); return g; }
+    function jaccard(a, b) { if (!a.size || !b.size) return 0; var inter = 0; a.forEach(function (x) { if (b.has(x)) inter++; }); return inter / (a.size + b.size - inter); }
+
+    function dedup(recs) {
+      var seenDoi = {}, live = [], i, j;
+      for (i = 0; i < recs.length; i++) { recs[i].dup = false; }
+      for (i = 0; i < recs.length; i++) {
+        var d = recs[i].doi; if (!d) continue;
+        if (seenDoi[d]) recs[i].dup = true; else seenDoi[d] = 1;
+      }
+      for (i = 0; i < recs.length; i++) if (!recs[i].dup) live.push({ r: recs[i], t: trigrams(normTitle(recs[i].title)) });
+      for (i = 0; i < live.length; i++) {
+        if (live[i].r.dup) continue;
+        for (j = i + 1; j < live.length; j++) {
+          if (live[j].r.dup) continue;
+          if (live[i].t.size && live[j].t.size && jaccard(live[i].t, live[j].t) >= 0.85) live[j].r.dup = true;
+        }
+      }
+      return recs;
+    }
+
+    // ---- OpenAlex inverted-index abstract ----
+    function fromInverted(inv) {
+      if (!inv || typeof inv !== "object") return "";
+      var pos = [], w;
+      for (w in inv) { var arr = inv[w]; if (Array.isArray(arr)) arr.forEach(function (i) { pos[i] = w; }); }
+      return clean(pos.join(" "), 6000);
+    }
+
+    // ---- per-source fetchers (return normalized record arrays) ----
+    function q() { return clean($("f-query").value, 2000); }
+    function maxN() { return parseInt($("f-max").value, 10) || 50; }
+    function email() { return clean($("f-email").value, 120); }
+
+    function fetchEPMC(signal) {
+      var url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=" + encodeURIComponent(q()) +
+        "&resultType=core&format=json&pageSize=" + maxN();
+      if (email()) url += "&email=" + encodeURIComponent(email());
+      return fetch(url, { signal: signal }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (j) {
+          var list = (j.resultList && j.resultList.result) || [];
+          return list.map(function (x) {
+            return {
+              id: freshId("epmc"), source: "EuropePMC",
+              title: clean(x.title), abstract: clean(x.abstractText || ""),
+              authors: x.authorString ? x.authorString.split(/, ?/).map(function (a) { return clean(a, 120); }).filter(Boolean) : [],
+              journal: clean(x.journalTitle || (x.bookOrReportDetails && x.bookOrReportDetails.publisher) || ""),
+              year: clean(x.pubYear || "", 4), doi: normDoi(x.doi || ""), pmid: clean(x.pmid || "", 20),
+              url: x.doi ? "https://doi.org/" + x.doi : (x.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + x.pmid + "/" : "")
+            };
+          });
+        });
+    }
+    function fetchCrossref(signal) {
+      var url = "https://api.crossref.org/works?rows=" + maxN() + "&query=" + encodeURIComponent(q()) +
+        "&select=DOI,title,author,issued,container-title,abstract,subtitle";
+      if (email()) url += "&mailto=" + encodeURIComponent(email());
+      return fetch(url, { signal: signal }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (j) {
+          var items = (j.message && j.message.items) || [];
+          return items.map(function (x) {
+            var yr = ""; try { yr = String(x.issued["date-parts"][0][0]); } catch (e) {}
+            var auth = (x.author || []).map(function (a) { return clean(((a.family || "") + " " + (a.given || "")).trim() || a.name || "", 120); }).filter(Boolean);
+            return {
+              id: freshId("cr"), source: "Crossref",
+              title: clean((x.title && x.title[0]) || ""), abstract: stripTags(x.abstract || ""),
+              authors: auth, journal: clean((x["container-title"] && x["container-title"][0]) || ""),
+              year: yr, doi: normDoi(x.DOI || ""), pmid: "",
+              url: x.DOI ? "https://doi.org/" + x.DOI : ""
+            };
+          });
+        });
+    }
+    function fetchOpenAlex(signal) {
+      var url = "https://api.openalex.org/works?per-page=" + maxN() + "&search=" + encodeURIComponent(q());
+      if (email()) url += "&mailto=" + encodeURIComponent(email());
+      return fetch(url, { signal: signal }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (j) {
+          var items = j.results || [];
+          return items.map(function (x) {
+            var auth = (x.authorships || []).slice(0, 12).map(function (a) { return clean(a.author && a.author.display_name, 120); }).filter(Boolean);
+            return {
+              id: freshId("oa"), source: "OpenAlex",
+              title: clean(x.display_name || x.title || ""), abstract: fromInverted(x.abstract_inverted_index),
+              authors: auth, journal: clean((x.primary_location && x.primary_location.source && x.primary_location.source.display_name) || ""),
+              year: clean(x.publication_year || "", 4), doi: normDoi(x.doi || ""),
+              pmid: clean((x.ids && x.ids.pmid ? String(x.ids.pmid).replace(/\D/g, "") : ""), 20),
+              url: x.doi || (x.id || "")
+            };
+          });
+        });
+    }
+    function fetchCTgov(signal) {
+      var url = "https://clinicaltrials.gov/api/v2/studies?pageSize=" + maxN() + "&query.term=" + encodeURIComponent(q());
+      return fetch(url, { signal: signal }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (j) {
+          var studies = j.studies || [];
+          return studies.map(function (s) {
+            var ps = s.protocolSection || {}, idm = ps.identificationModule || {}, dm = ps.descriptionModule || {},
+              stm = ps.statusModule || {}, des = ps.designModule || {}, spm = ps.sponsorCollaboratorsModule || {};
+            var nct = idm.nctId || "";
+            var year = ""; try { year = String((stm.startDateStruct && stm.startDateStruct.date || "").match(/\d{4}/) || ""); } catch (e) {}
+            return {
+              id: freshId("nct"), source: "CT.gov",
+              title: clean(idm.briefTitle || idm.officialTitle || nct),
+              abstract: clean(dm.briefSummary || dm.detailedDescription || ""),
+              authors: [(spm.leadSponsor && spm.leadSponsor.name) || ""].filter(Boolean),
+              journal: clean(((des.studyType || "") + " · " + (stm.overallStatus || "")).replace(/^ · | · $/g, "")),
+              year: year, doi: "", pmid: "",
+              nct: nct, url: nct ? "https://clinicaltrials.gov/study/" + nct : ""
+            };
+          });
+        });
+    }
+
+    var SOURCES = [
+      { id: "epmc", on: "s-epmc", fetch: fetchEPMC },
+      { id: "crossref", on: "s-crossref", fetch: fetchCrossref },
+      { id: "openalex", on: "s-openalex", fetch: fetchOpenAlex },
+      { id: "ctgov", on: "s-ctgov", fetch: fetchCTgov }
+    ];
+
+    function setStatus(id, cls, txt) { var el = $("st-" + id); if (el) { el.className = "status " + cls; el.textContent = txt; } }
+    function setCount(id, n) { var el = $("c-" + id); if (el) el.textContent = (n == null ? "—" : n); }
+
+    function doSearch() {
+      if (!q()) { toast("Enter a query first."); return; }
+      var chosen = SOURCES.filter(function (s) { return $(s.on).checked; });
+      if (!chosen.length) { toast("Select at least one source."); return; }
+      $("btn-search").disabled = true; $("btn-cancel").disabled = false;
+      $("msg").textContent = "Searching " + chosen.length + " source(s)…";
+      records = []; renderResults();
+      controller = new AbortController();
+      var signal = controller.signal;
+      chosen.forEach(function (s) { setStatus(s.id, "run", "…"); setCount(s.id, null); });
+
+      Promise.all(chosen.map(function (s) {
+        return s.fetch(signal).then(function (recs) {
+          setStatus(s.id, "ok", "✓"); setCount(s.id, recs.length);
+          records = records.concat(recs); mergeAndRender();
+          return recs.length;
+        }).catch(function (e) {
+          if (e.name === "AbortError") { setStatus(s.id, "", "cancelled"); return 0; }
+          setStatus(s.id, "err", "error"); setCount(s.id, 0);
+          toast(s.id + " failed: " + e.message); return 0;
+        });
+      })).then(function () {
+        $("btn-search").disabled = false; $("btn-cancel").disabled = true; controller = null;
+        var uniq = records.filter(function (r) { return !r.dup; }).length;
+        $("msg").innerHTML = "<strong>" + records.length + "</strong> records fetched · <strong>" + uniq + "</strong> unique after dedup. Review, then <strong>Send to Screen</strong>.";
+      });
+    }
+    function cancelSearch() { if (controller) controller.abort(); $("btn-cancel").disabled = true; $("btn-search").disabled = false; }
+
+    function mergeAndRender() { dedup(records); renderResults(); renderStats(); }
+
+    function renderStats() {
+      var bySource = {}; records.forEach(function (r) { bySource[r.source] = (bySource[r.source] || 0) + 1; });
+      var uniq = records.filter(function (r) { return !r.dup; }).length;
+      var cells = [["Fetched", records.length], ["Unique", uniq], ["Duplicates", records.length - uniq]];
+      $("stats").innerHTML = cells.map(function (kv) { return '<div class="stat"><span class="k">' + kv[0] + '</span><span class="v">' + kv[1] + "</span></div>"; }).join("");
+    }
+
+    function renderResults() {
+      var tb = $("results").getElementsByTagName("tbody")[0];
+      tb.innerHTML = records.map(function (r, i) {
+        var idCell = r.doi ? '<a href="https://doi.org/' + encodeURIComponent(r.doi) + '" target="_blank" rel="noopener">' + escapeHtml(r.doi) + "</a>"
+          : (r.nct ? '<a href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener">' + escapeHtml(r.nct) + "</a>"
+            : (r.pmid ? "PMID:" + escapeHtml(r.pmid) : "—"));
+        var meta = [r.authors.slice(0, 4).join(", "), r.journal].filter(Boolean).map(escapeHtml).join(" · ");
+        return '<tr data-i="' + i + '">' +
+          '<td><span class="badge' + (r.dup ? " dup" : "") + '">' + escapeHtml(r.source) + (r.dup ? " dup" : "") + "</span></td>" +
+          "<td>" + escapeHtml(r.year || "") + "</td>" +
+          '<td><div class="rtitle">' + escapeHtml(r.title || "(untitled)") + "</div>" +
+          (meta ? '<div class="rmeta">' + meta + "</div>" : "") +
+          (r.abstract ? '<div class="rabs">' + escapeHtml(r.abstract) + "</div>" : "") + "</td>" +
+          "<td>" + idCell + "</td></tr>";
+      }).join("");
+      Array.prototype.forEach.call(tb.getElementsByTagName("tr"), function (tr) {
+        tr.addEventListener("click", function (e) { if (e.target.tagName === "A") return; tr.classList.toggle("open"); });
+      });
+    }
+
+    // ---- exports / handoff ----
+    function uniqueRecords() { return records.filter(function (r) { return !r.dup; }); }
+    function downloadBlob(blob, fn) { var u = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = u; a.download = fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(u); }, 1000); }
+    function csvCell(v) { v = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
+
+    function srEnvelope() {
+      return {
+        _schema: SR_RECORDS_KEY, _savedAt: new Date().toISOString(), query: q(),
+        records: uniqueRecords().map(function (r) {
+          return { id: r.id, title: r.title, abstract: r.abstract, authors: r.authors, journal: r.journal, year: r.year, doi: r.doi, pmid: r.pmid, source: r.source };
+        })
+      };
+    }
+    function sendToScreen() {
+      var env = srEnvelope();
+      if (!env.records.length) { toast("No unique records to send."); return; }
+      try {
+        localStorage.setItem(SR_RECORDS_KEY, JSON.stringify(env));
+        toast("Wrote " + env.records.length + " records to sr-records-v1. Opening Screen…");
+        setTimeout(function () { window.location.href = "../screen/index.html?import=sr-records-v1"; }, 600);
+      } catch (e) { toast("Could not hand off: " + e.message); }
+    }
+    function exportJSON() { downloadBlob(new Blob([JSON.stringify(srEnvelope(), null, 2)], { type: "application/json" }), "search-results.json"); }
+    function exportCSV() {
+      var header = ["id", "source", "title", "authors", "year", "journal", "doi", "pmid", "duplicate"];
+      var rows = records.map(function (r) { return [r.id, r.source, r.title, r.authors.join("; "), r.year, r.journal, r.doi, r.pmid, r.dup ? "1" : ""].map(csvCell).join(","); });
+      downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "search-results.csv");
+    }
+    function exportRIS() {
+      var ris = uniqueRecords().map(function (r) {
+        var ty = r.source === "CT.gov" ? "TY  - DATA" : "TY  - JOUR", lines = [ty];
+        if (r.title) lines.push("TI  - " + r.title);
+        r.authors.forEach(function (a) { lines.push("AU  - " + a); });
+        if (r.year) lines.push("PY  - " + r.year);
+        if (r.journal) lines.push("JO  - " + r.journal);
+        if (r.abstract) lines.push("AB  - " + r.abstract);
+        if (r.doi) lines.push("DO  - " + r.doi);
+        if (r.url) lines.push("UR  - " + r.url);
+        lines.push("ER  - "); return lines.join("\n");
+      }).join("\n\n");
+      downloadBlob(new Blob([ris], { type: "application/x-research-info-systems" }), "search-results.ris");
+    }
+
+    // ---- Design handoff (seed query from PICO) ----
+    function loadFromDesign() {
+      try {
+        var raw = localStorage.getItem(SR_PROJECT_KEY);
+        if (!raw) { toast("No Design protocol found (sr-project-v1). Build one in the Design app first."); return; }
+        var p = JSON.parse(raw);
+        var pico = p.pico || {};
+        var blocks = [];
+        ["population", "intervention", "comparator", "outcome"].forEach(function (k) {
+          var v = pico[k]; if (!v) return;
+          var terms = String(v).split(/[;,\n]| OR /i).map(function (t) { return t.trim(); }).filter(Boolean);
+          if (terms.length) blocks.push("(" + terms.map(function (t) { return /\s/.test(t) ? '"' + t + '"' : t; }).join(" OR ") + ")");
+        });
+        var query = blocks.join(" AND ");
+        if (p.searchStrategy) query = clean(p.searchStrategy, 2000) || query;
+        if (!query) { toast("Design protocol has no PICO/search terms yet."); return; }
+        $("f-query").value = query; toast("Loaded query from Design protocol.");
+      } catch (e) { toast("Could not read Design protocol: " + e.message); }
+    }
+
+    // ---- optional AI query expansion ----
+    var AI = {};
+    function aiPrompt() {
+      return [
+        "# Expand a search query for a systematic review", "",
+        "Take the question below and produce ONE comprehensive boolean search string that captures synonyms, MeSH-style concepts, drug brand/generic names, and British/American spellings, grouped with parentheses and AND/OR.",
+        "", "## Question", q() || "(enter your question)", "",
+        "## Output", "Return ONLY the boolean query string on a single line — no commentary."
+      ].join("\n");
+    }
+    function aiExport() { downloadBlob(new Blob([aiPrompt()], { type: "text/markdown;charset=utf-8" }), "search-query-task.md"); toast("Exported query-expansion task. Run it in your agent and paste the result into Query."); }
+    function aiKeyGet() { try { return localStorage.getItem(AI_KEY_LS) || ""; } catch (e) { return ""; } }
+    function aiKeySet(v) { try { if (v) localStorage.setItem(AI_KEY_LS, v); else localStorage.removeItem(AI_KEY_LS); } catch (e) {} }
+    function aiExpand() {
+      var key = $("ai-key").value.trim() || aiKeyGet(); if (!key) { toast("Enter an API key, or use the export path."); return; }
+      aiKeySet(key);
+      var prov = $("ai-provider").value, model = $("ai-model").value.trim();
+      var sys = "You expand systematic-review search queries into one comprehensive boolean string with synonyms, brand/generic drug names, and spelling variants, grouped with parentheses and AND/OR. Return ONLY the query string.";
+      var user = "Question: " + q();
+      var p;
+      if (prov === "openai") p = fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify({ model: model || "gpt-4o-mini", temperature: 0, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.choices[0].message.content; });
+      else if (prov === "anthropic") p = fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify({ model: model || "claude-haiku-4-5-20251001", max_tokens: 400, system: sys, messages: [{ role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.content[0].text; });
+      else p = fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model || "gemini-1.5-flash") + ":generateContent?key=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: "user", parts: [{ text: user }] }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.candidates[0].content.parts[0].text; });
+      toast("Expanding query…");
+      p.then(function (txt) { $("f-query").value = clean(txt, 2000); toast("Query expanded."); }).catch(function (e) { toast("AI error: " + e.message); });
+    }
+
+    // ---- wire up ----
+    function attach() {
+      $("btn-search").addEventListener("click", doSearch);
+      $("btn-cancel").addEventListener("click", cancelSearch);
+      $("btn-to-screen").addEventListener("click", sendToScreen);
+      $("btn-ris").addEventListener("click", exportRIS);
+      $("btn-csv").addEventListener("click", exportCSV);
+      $("btn-json").addEventListener("click", exportJSON);
+      $("btn-clear").addEventListener("click", function () { records = []; renderResults(); renderStats(); $("msg").textContent = "Cleared."; SOURCES.forEach(function (s) { setStatus(s.id, "", ""); setCount(s.id, null); }); });
+      $("btn-load-design").addEventListener("click", loadFromDesign);
+      $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
+      $("btn-ai-export").addEventListener("click", aiExport);
+      $("btn-ai-run").addEventListener("click", aiExpand);
+      $("ai-key").addEventListener("change", function () { aiKeySet(this.value.trim()); });
+      var sk = aiKeyGet(); if (sk) $("ai-key").value = sk;
+      $("f-query").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSearch(); } });
+      renderStats();
+    }
+
+    // ---- test hook ----
+    window.__almSearch = {
+      dedup: function (recs) { return dedup(recs); },
+      fromInverted: fromInverted,
+      jaccard: jaccard, normTitle: normTitle, trigrams: trigrams,
+      srEnvelope: function (recs) { records = recs || []; dedup(records); return srEnvelope(); },
+      aiPrompt: aiPrompt
+    };
+
+    attach();
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

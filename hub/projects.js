@@ -1275,6 +1275,19 @@ window.HTML_APPS_PROJECTS = [
     tags: ["prisma", "screening", "kappa"]
   },
   {
+    name: "Search",
+    subcategory: "Search",
+    folder: "allmeta/search",
+    path: "./search/index.html",
+    added: "2026-06-08",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Multi-source literature search in the browser: one query across Europe PMC (PubMed + abstracts), Crossref, OpenAlex (abstract reconstructed from its inverted index) and ClinicalTrials.gov v2, with cross-source dedup (DOI + trigram-Jaccard) and a one-click handoff into Screen via the sr-records-v1 envelope. Free, no key; optional AI query expansion via local-agent handoff or BYO-key. API calls go straight from your browser to each public endpoint.",
+    note: "Seeds queries from a Design protocol (sr-project-v1); hands off to screen/index.html via sr-records-v1. Exports RIS/CSV/JSON. App 2/3 of the search→design→screen pipeline.",
+    tags: ["search", "elicit", "europepmc", "pubmed", "crossref", "openalex", "clinicaltrials", "dedup", "local-first"]
+  },
+  {
     name: "Screen",
     subcategory: "Screening",
     folder: "allmeta/screen",

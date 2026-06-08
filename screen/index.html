@@ -151,6 +151,7 @@
 
   <div class="toolbar">
     <button type="button" id="btn-import" class="primary">Import records…</button>
+    <button type="button" id="btn-from-search">Import from Search</button>
     <button type="button" id="btn-example">Load example</button>
     <span style="flex:1"></span>
     <button type="button" id="btn-dedup">Re-run dedup</button>
@@ -1026,6 +1027,18 @@
     function openHelp() { $("help-modal").classList.add("on"); }
     function closeHelp() { $("help-modal").classList.remove("on"); }
 
+    // ---- pipeline bridge: import from the Search app via sr-records-v1 ----
+    function importFromSearch() {
+      try {
+        var raw = localStorage.getItem(SR_RECORDS_KEY);
+        if (!raw) { toast("No Search results found (sr-records-v1). Run the Search app and 'Send to Screen'."); return; }
+        var p = JSON.parse(raw);
+        if (!p || !Array.isArray(p.records) || !p.records.length) { toast("sr-records-v1 has no records."); return; }
+        addRecords(p.records.map(normalizeImported));
+        if (p.query && !S.title) { S.title = clean(p.query, 200); $("f-title").value = S.title; save(); }
+      } catch (e) { toast("Could not import from Search: " + e.message); }
+    }
+
     // ---- import flow ----
     function onFile(file) {
       var rd = new FileReader();
@@ -1042,6 +1055,7 @@
       $("file-import").addEventListener("change", function (e) {
         var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = "";
       });
+      $("btn-from-search").addEventListener("click", importFromSearch);
       $("btn-example").addEventListener("click", loadExample);
       $("btn-dedup").addEventListener("click", function () { runDedup(); rescoreAll(); save(); render(); toast("Dedup re-run."); });
       $("btn-export-json").addEventListener("click", exportJSON);
@@ -1318,6 +1332,7 @@
     pushStateToSetup();
     attach();
     render();
+    try { if (/[?&]import=sr-records-v1/.test(location.search)) importFromSearch(); } catch (e) {}
   })();
   </script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
