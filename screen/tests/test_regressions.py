@@ -67,3 +67,42 @@ def test_no_hardcoded_api_key():
 def test_frame_ancestors_removed_from_meta_csp():
     # frame-ancestors is ignored in <meta> delivery and emitted a console error.
     assert "frame-ancestors" not in _h()
+
+
+# ---- 2026-06-08 upgrade guards (scale, classifier, collaboration) ----
+
+def test_dedup_is_blocked_not_quadratic():
+    # PERF-1: the O(n^2) title pass is replaced by blocking + sorted-neighbourhood.
+    h = _h()
+    assert "dedupCore" in h
+    assert "sorted-neighbourhood" in h or "SN_WINDOW" in h
+    assert "DEDUP_T_ASSIST" in h  # multi-field relaxed-threshold assist (M-4)
+
+
+def test_classifier_uses_both_reviewers_and_bigrams():
+    # M-5: dual-reviewer labels + bigram features + cross-validated AUC.
+    h = _h()
+    assert "mlLabelDefault" in h and "both reviewers" in h
+    assert "function mlTokenize" in h and "bigram" in h.lower()
+    assert "mlCrossVal" in h and "aucScore" in h
+
+
+def test_active_learning_simulation_hook_present():
+    # Benchmark drives the shipped simulateActiveLearning over a labelled corpus.
+    h = _h()
+    assert "simulateActiveLearning" in h
+    assert "wss95" in h  # work-saved-over-sampling at 95% recall
+
+
+def test_collaboration_merge_present():
+    # Serverless reviewer exchange: export + match-and-merge with conflict flagging.
+    h = _h()
+    assert "mergeReviewerState" in h
+    assert "sr-reviewer-v1" in h and "sr-bundle-v1" in h
+    assert 'id="btn-merge-rev"' in h and 'id="btn-export-rev"' in h
+
+
+def test_no_placeholder_or_hardcoded_key():
+    h = _h()
+    for bad in ("{{", "REPLACE_ME", "__PLACEHOLDER__", "sk-proj-", "sk-SECRET"):
+        assert bad not in h

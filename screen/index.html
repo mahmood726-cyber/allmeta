@@ -190,6 +190,22 @@
       </section>
 
       <section class="panel">
+        <h2>Collaborate (serverless)</h2>
+        <p class="hint" style="margin-top:0">No backend needed: each reviewer screens locally and exchanges a small decisions file. Merging matches records by id → DOI → PMID → title, fills the other reviewer's column, and flags every disagreement as a conflict.</p>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button type="button" id="btn-export-rev">Export my decisions</button>
+          <button type="button" id="btn-merge-rev">Merge a reviewer file…</button>
+        </div>
+        <label style="margin-top:0.5rem"><span class="lbl">Merge incoming into</span>
+          <select id="f-merge-into"><option value="auto">Auto (the other reviewer)</option><option value="r1">Reviewer 1</option><option value="r2">Reviewer 2</option></select></label>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.3rem">
+          <button type="button" id="btn-export-bundle" class="primary">Export shareable bundle</button>
+        </div>
+        <div id="merge-status" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
+        <input type="file" id="rev-file" class="file-input-hidden" accept=".json,application/json" aria-label="Reviewer decisions file">
+      </section>
+
+      <section class="panel">
         <h2>Exclusion reasons</h2>
         <textarea id="f-reasons" aria-label="Exclusion reasons" placeholder="one per line"></textarea>
         <span class="hint">Press <kbd>1</kbd>–<kbd>9</kbd> on a card to exclude with that reason.</span>
@@ -233,6 +249,8 @@
         <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
         <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
         <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
+        <div id="ml-perf" style="margin-top:0.4rem;font-size:0.76rem;color:var(--muted)"></div>
+        <p class="hint" style="margin-top:0.5rem">Features: unigrams + bigrams + MeSH/keywords. In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping signal tracks the irrelevant run length in rank order.</p>
       </section>
 
       <section class="panel">
@@ -292,7 +310,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact match + trigram-Jaccard title similarity (≥0.85), union-style first-wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: resolved &gt; agreement &gt; conflict. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact + trigram-Jaccard title similarity (≥0.85), with a multi-field assist (relaxed title threshold when first-author surname AND year both match) that catches reformatted titles and same-work/different-DOI duplicates. Candidate pairs come from blocking + a sorted-neighbourhood window, so it stays fast into the 100k-record range instead of the old O(n²) pass; earliest-imported record wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: resolved &gt; agreement &gt; conflict. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -383,13 +401,38 @@
       var inter = 0; a.forEach(function (x) { if (b.has(x)) inter++; });
       return inter / (a.size + b.size - inter);
     }
-    function runDedup() {
-      var recs = S.records, i, j;
-      // Preserve reviewer-applied (manual) duplicate marks; only recompute automatic ones.
+    // First-author surname proxy: the longest alphabetic token in the first
+    // author string (initials are short; this is format-agnostic for both
+    // "McMurray JJV" and "P Nazzaro" orderings). Used only for the multi-field
+    // recall assist, never on its own.
+    function firstAuthorKey(r) {
+      var a = (r.authors && r.authors.length) ? String(r.authors[0]) : "";
+      var toks = a.toLowerCase().match(/[a-z]{2,}/g) || [];
+      var best = "";
+      for (var i = 0; i < toks.length; i++) if (toks[i].length > best.length) best = toks[i];
+      return best.length >= 3 ? best : "";
+    }
+
+    // Blocked + multi-field dedup. DOI-exact is O(n). The fuzzy title pass used
+    // to be O(n^2) on the main thread (frozen tab beyond ~50k records, PERF-1).
+    // It now generates candidate pairs by BLOCKING — buckets keyed by the first,
+    // last and longest title token plus an (author,year) key — and a
+    // sorted-neighbourhood window over normalised titles. Each candidate pair is
+    // visited once, in (survivor-index, other-index) order, so the survivor is
+    // the earliest-imported record exactly as the brute-force loop chose it.
+    // Multi-field assist (M-4): a slightly relaxed title threshold is accepted
+    // when first-author surname AND year both match, catching reformatted titles
+    // and same-work-different-DOI duplicates that the title-only 0.85 rule misses.
+    var DEDUP_T_STRICT = 0.85, DEDUP_T_ASSIST = 0.72, SN_WINDOW = 8;
+    function dedupCore(recs, opts) {
+      opts = opts || {};
+      var bruteOnly = !!opts.brute;       // reference O(n^2), strict-threshold only
+      var i, j, info = { comparisons: 0, merges: 0 };
       for (i = 0; i < recs.length; i++) {
         if (recs[i].dupManual) { recs[i].dup = true; if (!recs[i].dupOf) recs[i].dupOf = "(manual)"; }
         else { recs[i].dup = false; recs[i].dupOf = null; }
       }
+      // DOI exact
       var seenDoi = {};
       for (i = 0; i < recs.length; i++) {
         if (recs[i].dup) continue;
@@ -398,18 +441,79 @@
         if (seenDoi[d]) { recs[i].dup = true; recs[i].dupOf = seenDoi[d]; }
         else seenDoi[d] = recs[i].id;
       }
+      // live entries keep their ORIGINAL record index (oi) for survivor choice
       var live = [];
-      for (i = 0; i < recs.length; i++) if (!recs[i].dup) live.push({ r: recs[i], t: trigrams(normTitle(recs[i].title)) });
-      for (i = 0; i < live.length; i++) {
-        if (live[i].r.dup) continue;
-        for (j = i + 1; j < live.length; j++) {
-          if (live[j].r.dup) continue;
-          if (live[i].t.size && live[j].t.size && jaccard(live[i].t, live[j].t) >= 0.85) {
-            live[j].r.dup = true; live[j].r.dupOf = live[i].r.id;
-          }
-        }
+      for (i = 0; i < recs.length; i++) if (!recs[i].dup) {
+        var nt = normTitle(recs[i].title);
+        live.push({ r: recs[i], oi: i, nt: nt, t: trigrams(nt), toks: nt ? nt.split(" ") : [] });
       }
+      function tryMerge(a, b) {
+        info.comparisons++;
+        if (a.r.dup || b.r.dup) return;
+        if (!a.t.size || !b.t.size) return;
+        var jac = jaccard(a.t, b.t), merge = false;
+        if (jac >= DEDUP_T_STRICT) merge = true;
+        else if (!bruteOnly && jac >= DEDUP_T_ASSIST) {
+          var ka = firstAuthorKey(a.r), kb = firstAuthorKey(b.r);
+          if (ka && ka === kb && a.r.year && a.r.year === b.r.year) merge = true;
+        }
+        if (!merge) return;
+        var keep = a.oi <= b.oi ? a : b, drop = a.oi <= b.oi ? b : a;
+        drop.r.dup = true; drop.r.dupOf = keep.r.id; info.merges++;
+      }
+      if (bruteOnly || live.length <= 60) {
+        // Exact pass for small sets (keeps unit-test parity) or when explicitly
+        // requested as the reference.
+        for (i = 0; i < live.length; i++) {
+          if (live[i].r.dup) continue;
+          for (j = i + 1; j < live.length; j++) tryMerge(live[i], live[j]);
+        }
+        return info;
+      }
+      // Candidate generation via blocking
+      var pairSeen = {}, pairs = [];
+      function addPair(x, y) {
+        if (x === y) return;
+        var lo = x < y ? x : y, hi = x < y ? y : x, pk = lo + "|" + hi;
+        if (pairSeen[pk]) return; pairSeen[pk] = 1; pairs.push([lo, hi]);
+      }
+      var buckets = {};
+      function bucket(key, idx) { if (!key) return; (buckets[key] || (buckets[key] = [])).push(idx); }
+      for (i = 0; i < live.length; i++) {
+        var tk = live[i].toks;
+        if (tk.length) {
+          bucket("f:" + tk[0], i);
+          bucket("l:" + tk[tk.length - 1], i);
+          var lng = tk[0];
+          for (var z = 1; z < tk.length; z++) if (tk[z].length > lng.length) lng = tk[z];
+          bucket("m:" + lng, i);
+        }
+        var au = firstAuthorKey(live[i].r), yr = live[i].r.year || "";
+        if (au && yr) bucket("ay:" + au + ":" + yr, i);
+      }
+      var bk;
+      for (bk in buckets) {
+        var grp = buckets[bk];
+        // Skip pathological mega-buckets (a stop-token slipping through) to stay
+        // near-linear; sorted-neighbourhood still covers those records.
+        if (grp.length > 400) continue;
+        for (i = 0; i < grp.length; i++) for (j = i + 1; j < grp.length; j++) addPair(grp[i], grp[j]);
+      }
+      // sorted-neighbourhood over normalised titles
+      var order = live.map(function (_, k) { return k; });
+      order.sort(function (a, b) { return live[a].nt < live[b].nt ? -1 : live[a].nt > live[b].nt ? 1 : a - b; });
+      for (i = 0; i < order.length; i++)
+        for (j = i + 1; j < Math.min(order.length, i + SN_WINDOW); j++) addPair(order[i], order[j]);
+      // Process in (survivor-oi, other-oi) order so chains resolve deterministically.
+      pairs.sort(function (p, q) {
+        var pa = Math.min(live[p[0]].oi, live[p[1]].oi), qa = Math.min(live[q[0]].oi, live[q[1]].oi);
+        if (pa !== qa) return pa - qa;
+        return Math.max(live[p[0]].oi, live[p[1]].oi) - Math.max(live[q[0]].oi, live[q[1]].oi);
+      });
+      for (i = 0; i < pairs.length; i++) tryMerge(live[pairs[i][0]], live[pairs[i][1]]);
+      return info;
     }
+    function runDedup() { return dedupCore(S.records, {}); }
 
     // ---- relevance score (transparent TF over user terms) ----
     function scoreRecord(r) {
@@ -563,6 +667,8 @@
         try {
           var p = JSON.parse(t);
           if (p && p._schema === LS_KEY && Array.isArray(p.records)) return p.records.map(normalizeImported);
+          // Shareable bundle (sr-bundle-v1): pull its screen records (decisions preserved).
+          if (p && p._schema === "sr-bundle-v1" && p.screen && Array.isArray(p.screen.records)) return p.screen.records.map(normalizeImported);
           if (Array.isArray(p)) return p.map(normalizeImported);
           if (p && Array.isArray(p.records)) {
             // prisma-screen-v1 style {records:[{id,title,tag1,...}]}
@@ -1012,6 +1118,93 @@
       } catch (e) { toast("Could not save: " + e.message); }
     }
 
+    // ================= collaboration (serverless reviewer exchange) =================
+    function reviewerSlotName() { return (S.mode === "dual" && S.active === "r2") ? "r2" : "r1"; }
+    function exportReviewerState() {
+      var who = reviewerSlotName();
+      var decisions = S.records.filter(function (r) { return !r.dup; }).map(function (r) {
+        var slot = who === "r2" ? r.r2 : r.r1;
+        return { id: r.id, doi: r.doi, pmid: r.pmid, title: r.title, d: slot.d, reason: slot.reason, labels: (r.labels || []).slice() };
+      }).filter(function (d) { return d.d; });
+      if (!decisions.length) { toast("No decisions to export yet — screen a few records first."); return; }
+      var env = { _schema: "sr-reviewer-v1", _savedAt: new Date().toISOString(), reviewer: who, project: S.title || "", count: decisions.length, decisions: decisions };
+      downloadBlob(new Blob([JSON.stringify(env, null, 2)], { type: "application/json" }), "screen-reviewer-" + who + ".json");
+      toast("Exported " + decisions.length + " " + who.toUpperCase() + " decision(s). Share this file; your collaborator merges it.");
+    }
+    function buildMatchIndex() {
+      var ix = { byId: {}, byDoi: {}, byPmid: {}, byTitle: {} };
+      S.records.forEach(function (r) {
+        ix.byId[r.id] = r;
+        var d = (r.doi || "").toLowerCase(); if (d && !ix.byDoi[d]) ix.byDoi[d] = r;
+        if (r.pmid && !ix.byPmid[String(r.pmid)]) ix.byPmid[String(r.pmid)] = r;
+        var nt = normTitle(r.title); if (nt && !ix.byTitle[nt]) ix.byTitle[nt] = r;
+      });
+      return ix;
+    }
+    function matchIncoming(d, ix) {
+      if (d.id && ix.byId[d.id]) return ix.byId[d.id];
+      var doi = (d.doi || "").toLowerCase(); if (doi && ix.byDoi[doi]) return ix.byDoi[doi];
+      if (d.pmid && ix.byPmid[String(d.pmid)]) return ix.byPmid[String(d.pmid)];
+      var nt = normTitle(d.title || ""); if (nt && ix.byTitle[nt]) return ix.byTitle[nt];
+      return null;
+    }
+    // Pure, testable merge of an incoming sr-reviewer-v1 payload into the project.
+    function mergeReviewerState(payload, into) {
+      if (!payload || !Array.isArray(payload.decisions)) throw new Error("not a reviewer file (missing decisions[])");
+      var slotName = into;
+      if (!slotName || slotName === "auto") {
+        // Honour the file's declared reviewer (these ARE that reviewer's decisions);
+        // if undeclared, drop them into whichever slot the local reviewer is NOT using.
+        slotName = (payload.reviewer === "r1" || payload.reviewer === "r2") ? payload.reviewer : (S.active === "r1" ? "r2" : "r1");
+      }
+      if (slotName !== "r1" && slotName !== "r2") slotName = "r2";
+      var ix = buildMatchIndex();
+      var res = { slot: slotName, incoming: payload.decisions.length, matched: 0, unmatched: 0, filled: 0, conflicts: 0 };
+      payload.decisions.forEach(function (d) {
+        if (!d) return;
+        var r = matchIncoming(d, ix);
+        if (!r) { res.unmatched++; return; }
+        res.matched++;
+        if (["include", "exclude", "maybe"].indexOf(d.d) < 0) return;
+        var slot = slotName === "r2" ? r.r2 : r.r1;
+        var other = slotName === "r2" ? r.r1 : r.r2;
+        slot.d = d.d; slot.reason = clean(d.reason, 200) || "";
+        if (Array.isArray(d.labels)) d.labels.forEach(function (lb) { lb = clean(lb, 120); if (lb && r.labels.indexOf(lb) < 0) r.labels.push(lb); });
+        res.filled++;
+        if (other.d && other.d !== slot.d) res.conflicts++;
+      });
+      S.mode = "dual"; // an incoming second opinion makes this a dual-reviewer project
+      return res;
+    }
+    function onMergeReviewerFile(file) {
+      var rd = new FileReader();
+      rd.onload = function () {
+        try {
+          var payload = JSON.parse(rd.result);
+          if (payload && payload._schema === "sr-bundle-v1" && payload.screen) {
+            toast("That's a full bundle — use Import records to load it."); return;
+          }
+          var res = mergeReviewerState(payload, $("f-merge-into").value);
+          runDedup(); rescoreAll();
+          pushStateToSetup(); save(); render();
+          var msg = "Merged into " + res.slot.toUpperCase() + ": " + res.filled + " decision(s) across " + res.matched + " matched record(s)" +
+            (res.unmatched ? ", " + res.unmatched + " unmatched" : "") + (res.conflicts ? " — " + res.conflicts + " conflict(s) to resolve." : ".");
+          $("merge-status").textContent = msg; toast(msg);
+        } catch (e) { var em = "Merge failed: " + e.message; $("merge-status").textContent = em; toast(em); }
+      };
+      rd.readAsText(file);
+    }
+    function exportBundle() {
+      var proj = null; try { proj = JSON.parse(localStorage.getItem(SR_PROJECT_KEY) || "null"); } catch (e) {}
+      var bundle = {
+        _schema: "sr-bundle-v1", _savedAt: new Date().toISOString(),
+        protocol: proj,
+        screen: Object.assign({}, S, { counts: computeCounts(S.records), agreement: cohensKappa(S.records) })
+      };
+      downloadBlob(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }), "screen-bundle.json");
+      toast("Exported shareable bundle (protocol + records + both reviewers + counts + κ).");
+    }
+
     // ---- example ----
     function loadExample() {
       var ex = [
@@ -1100,6 +1293,10 @@
       $("btn-export-csv").addEventListener("click", exportCSV);
       $("btn-export-ris").addEventListener("click", exportRIS);
       $("btn-prisma").addEventListener("click", pushPrisma);
+      $("btn-export-rev").addEventListener("click", exportReviewerState);
+      $("btn-merge-rev").addEventListener("click", function () { $("rev-file").click(); });
+      $("rev-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) onMergeReviewerFile(f); e.target.value = ""; });
+      $("btn-export-bundle").addEventListener("click", exportBundle);
       $("btn-help").addEventListener("click", openHelp);
       $("help-close").addEventListener("click", closeHelp);
       $("help-modal").addEventListener("click", function (e) { if (e.target === $("help-modal")) closeHelp(); });
@@ -1131,14 +1328,25 @@
     }
 
     // ================= local ML classifier (TF-IDF + logistic regression) =================
-    // Fully client-side active learning: the reviewer labels a handful of records with
-    // i/e, we train a transparent logistic-regression model over TF-IDF features and
-    // re-rank the rest. No backend, no key, deterministic given the same labels.
-    var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false };
+    // Fully client-side active learning: the reviewer labels records with i/e, we
+    // train a transparent logistic-regression model over TF-IDF features (unigrams
+    // + bigrams + MeSH keywords) and re-rank the rest. No backend, no key,
+    // deterministic given the same labels. In dual-reviewer mode BOTH reviewers'
+    // labels are used (was R1-only before). 5-fold cross-validated AUC and a
+    // data-driven stopping signal are surfaced so quality is measurable, not asserted.
+    var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false, cv: null };
     var ML_STOP = new Set(("a an the of and or to in for on with without via using study trial we our this that these those is are was were be been being as at by from into results methods method background conclusion conclusions objective objectives aim aims patients patient effect effects group groups versus compared comparison between among also can may use used using based both than then there their which while".split(/\s+/)));
-    function mlTokenize(s) {
+    function mlUnigrams(s) {
       var m = String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [], out = [], i, w;
       for (i = 0; i < m.length; i++) { w = m[i]; if (w.length >= 3 && w.length <= 30 && !ML_STOP.has(w) && !/^\d+$/.test(w)) out.push(w); }
+      return out;
+    }
+    // Tokens = unigrams + adjacent bigrams (over the unfiltered stream so phrases
+    // like "heart failure" survive even though neither word is a stopword). Bigrams
+    // are marked with a "_" join and add local context the bag-of-words misses.
+    function mlTokenize(s) {
+      var uni = mlUnigrams(s), out = uni.slice(), i;
+      for (i = 0; i + 1 < uni.length; i++) out.push(uni[i] + "_" + uni[i + 1]);
       return out;
     }
     function mlText(r) { return r.title + " " + r.title + " " + r.abstract + " " + (r.keywords || []).join(" "); }
@@ -1149,8 +1357,8 @@
         for (j = 0; j < toks.length; j++) { if (!seen[toks[j]]) { seen[toks[j]] = 1; df[toks[j]] = (df[toks[j]] || 0) + 1; } }
       }
       var terms = Object.keys(df).filter(function (w) { return df[w] >= 2 && df[w] <= Math.max(2, N * 0.6); });
-      terms.sort(function (a, b) { return df[b] - df[a]; });
-      terms = terms.slice(0, 1500);
+      terms.sort(function (a, b) { return (df[b] - df[a]) || (a < b ? -1 : 1); });
+      terms = terms.slice(0, 4000);
       var vocab = {}, idf = new Float64Array(terms.length);
       for (i = 0; i < terms.length; i++) { vocab[terms[i]] = i; idf[i] = Math.log(N / df[terms[i]]) + 1; }
       return { vocab: vocab, idf: idf, terms: terms };
@@ -1165,38 +1373,135 @@
       return vec;
     }
     function sigmoid(z) { return z >= 0 ? 1 / (1 + Math.exp(-z)) : (function () { var e = Math.exp(z); return e / (1 + e); })(); }
-    function mlTrain() {
-      var inc = S.records.filter(function (r) { return !r.dup && r.r1.d === "include"; });
-      var exc = S.records.filter(function (r) { return !r.dup && r.r1.d === "exclude"; });
-      if (inc.length < 2 || exc.length < 2) return { ok: false, msg: "Label at least 2 includes and 2 excludes (press i / e) to train." };
-      var V = mlBuildVocab(S.records);
-      if (!V.terms.length) return { ok: false, msg: "Not enough text to build a vocabulary." };
-      var train = inc.map(function (r) { return { x: mlVector(r, V), y: 1 }; })
-        .concat(exc.map(function (r) { return { x: mlVector(r, V), y: 0 }; }));
+    // Pure logistic-regression fit over pre-vectorised labelled rows. Zero-init,
+    // fixed lr / l2 / epochs → deterministic. Class-weighted so the rare-positive
+    // screening setting (≈1–5 % relevant) does not collapse to all-negative.
+    function mlFit(labelled, V) {
+      var nPos = 0, i; for (i = 0; i < labelled.length; i++) if (labelled[i][1] === 1) nPos++;
+      var nNeg = labelled.length - nPos;
+      var wPos = nPos ? labelled.length / (2 * nPos) : 1, wNeg = nNeg ? labelled.length / (2 * nNeg) : 1;
+      var train = labelled.map(function (p) { return { x: mlVector(p[0], V), y: p[1], cw: p[1] === 1 ? wPos : wNeg }; });
       var n = V.terms.length, w = new Float64Array(n), b = 0, lr = 0.5, l2 = 1e-4, epochs = 300, e, s, j;
       for (e = 0; e < epochs; e++) {
         for (s = 0; s < train.length; s++) {
           var ex = train[s], dot = b;
           for (j = 0; j < ex.x.length; j++) dot += w[ex.x[j][0]] * ex.x[j][1];
-          var g = sigmoid(dot) - ex.y;
+          var g = (sigmoid(dot) - ex.y) * ex.cw;
           for (j = 0; j < ex.x.length; j++) { var ix = ex.x[j][0]; w[ix] -= lr * (g * ex.x[j][1] + l2 * w[ix]); }
           b -= lr * g;
         }
       }
-      ML.model = { w: w, b: b }; ML.V = V; ML.trained = true;
+      return { w: w, b: b };
+    }
+    function mlPredict(r, model, V) {
+      var x = mlVector(r, V), dot = model.b, j;
+      for (j = 0; j < x.length; j++) dot += model.w[x[j][0]] * x[j][1];
+      return sigmoid(dot);
+    }
+    // Effective training label using BOTH reviewers (M-5 fix): resolved > agreement
+    // > single decisive label. Conflicts and maybe/undecided contribute no label.
+    function mlLabelDefault(r) {
+      if (r.dup) return null;
+      if (S.mode !== "dual") return r.r1.d === "include" ? 1 : r.r1.d === "exclude" ? 0 : null;
+      if (r.resolved === "include") return 1;
+      if (r.resolved === "exclude") return 0;
+      var a = r.r1.d, b = r.r2.d;
+      if (a === "include" && b === "include") return 1;
+      if (a === "exclude" && b === "exclude") return 0;
+      if (a && b && a !== b) return null;        // unresolved conflict → no signal
+      var one = a || b; return one === "include" ? 1 : one === "exclude" ? 0 : null;
+    }
+    function mlCollectLabelled(recs, labelOf) {
+      var out = [], i, l;
+      for (i = 0; i < recs.length; i++) { if (recs[i].dup) continue; l = labelOf(recs[i]); if (l === 1 || l === 0) out.push([recs[i], l]); }
+      return out;
+    }
+    // Shared trainer used by BOTH the UI and the benchmark simulation, so the
+    // measured numbers describe the shipped code path exactly.
+    function mlTrainOn(recs, labelOf, opts) {
+      opts = opts || {};
+      var labelled = mlCollectLabelled(recs, labelOf);
+      var nPos = labelled.filter(function (p) { return p[1] === 1; }).length, nNeg = labelled.length - nPos;
+      if (nPos < 2 || nNeg < 2) return { ok: false, msg: "Label at least 2 includes and 2 excludes (press i / e) to train." };
+      var V = opts.vocab || mlBuildVocab(recs);
+      if (!V.terms.length) return { ok: false, msg: "Not enough text to build a vocabulary." };
+      return { ok: true, V: V, model: mlFit(labelled, V), pos: nPos, neg: nNeg, labelled: labelled };
+    }
+    // Rank-AUC (Mann–Whitney U with tie-averaged ranks).
+    function aucScore(scores, labels) {
+      var idx = scores.map(function (_, i) { return i; }).sort(function (a, b) { return scores[a] - scores[b]; });
+      var rank = new Array(scores.length), i = 0;
+      while (i < idx.length) {
+        var j = i; while (j + 1 < idx.length && scores[idx[j + 1]] === scores[idx[i]]) j++;
+        var avg = (i + j) / 2 + 1; for (var t = i; t <= j; t++) rank[idx[t]] = avg; i = j + 1;
+      }
+      var sumPos = 0, nPos = 0, nNeg = 0;
+      for (i = 0; i < labels.length; i++) { if (labels[i] === 1) { sumPos += rank[i]; nPos++; } else nNeg++; }
+      if (!nPos || !nNeg) return 0.5;
+      return (sumPos - nPos * (nPos + 1) / 2) / (nPos * nNeg);
+    }
+    // Stratified, deterministic k-fold CV (folds by within-class position, no RNG).
+    // Vocab is built once over the full corpus (transductive, matching the live
+    // ranker); only the labels are held out, so the reported AUC reflects the
+    // classifier's generalisation on THIS review's records.
+    function mlCrossVal(recs, labelOf, k) {
+      var labelled = mlCollectLabelled(recs, labelOf);
+      var pos = labelled.filter(function (p) { return p[1] === 1; });
+      var neg = labelled.filter(function (p) { return p[1] === 0; });
+      if (pos.length < 2 || neg.length < 2) return null;
+      k = Math.max(2, Math.min(k || 5, pos.length, neg.length));
+      var V = mlBuildVocab(recs);
+      if (!V.terms.length) return null;
+      function fold(arr) { var f = [], t; for (t = 0; t < arr.length; t++) { (f[t % k] || (f[t % k] = [])).push(arr[t]); } return f; }
+      var pf = fold(pos), nf = fold(neg), scores = [], labels = [], fi, i;
+      for (fi = 0; fi < k; fi++) {
+        var tr = [], te = [];
+        for (i = 0; i < k; i++) { var src = (pf[i] || []).concat(nf[i] || []); if (i === fi) te = te.concat(src); else tr = tr.concat(src); }
+        if (!tr.length || !te.length) continue;
+        if (!tr.some(function (p) { return p[1] === 1; }) || !tr.some(function (p) { return p[1] === 0; })) continue;
+        var m = mlFit(tr, V);
+        for (i = 0; i < te.length; i++) { scores.push(mlPredict(te[i][0], m, V)); labels.push(te[i][1]); }
+      }
+      if (!scores.length) return null;
+      return { auc: aucScore(scores, labels), n: labelled.length, folds: k, pos: pos.length, neg: neg.length };
+    }
+    // Live data-driven stopping signal over the ML-ranked order: how many records
+    // the reviewer has screened, how many relevant were found, and the run of
+    // consecutive non-relevant decisions since the last include (ASReview-style:
+    // a long irrelevant run high in the ranking ⇒ safe to stop near 95 % recall).
+    function mlStopping() {
+      var scored = S.records.filter(function (r) { return !r.dup && r.mlScore != null; });
+      scored.sort(function (a, b) { return b.mlScore - a.mlScore; });
+      var screened = 0, found = 0, since = 0, last = 0, i;
+      for (i = 0; i < scored.length; i++) {
+        var d = effDecision(scored[i]);
+        if (d === "include" || d === "exclude" || d === "maybe") {
+          screened++;
+          if (d === "include") { found++; last = screened; since = 0; } else since++;
+        }
+      }
+      return { total: scored.length, screened: screened, found: found, since: since, lastIncludeAt: last };
+    }
+    function mlTrain() {
+      var res = mlTrainOn(S.records, mlLabelDefault, {});
+      if (!res.ok) return res;
+      ML.model = res.model; ML.V = res.V; ML.trained = true;
       var ranked = 0;
       S.records.forEach(function (r) {
         if (r.dup) { r.mlScore = null; return; }
-        var x = mlVector(r, V), dot = b, jj;
-        for (jj = 0; jj < x.length; jj++) dot += w[x[jj][0]] * x[jj][1];
-        r.mlScore = sigmoid(dot); ranked++;
+        r.mlScore = mlPredict(r, res.model, res.V); ranked++;
       });
-      var pairs = V.terms.map(function (t, i) { return [t, w[i]]; });
+      var pairs = res.V.terms.map(function (t, i) { return [t.replace(/_/g, " "), res.model.w[i]]; });
       pairs.sort(function (a, b2) { return b2[1] - a[1]; });
       ML.topPos = pairs.slice(0, 12).filter(function (p) { return p[1] > 0; });
       ML.topNeg = pairs.slice(-12).reverse().filter(function (p) { return p[1] < 0; });
-      return { ok: true, inc: inc.length, exc: exc.length, ranked: ranked,
-        msg: "Trained on " + inc.length + " includes / " + exc.length + " excludes; ranked " + ranked + " records by predicted relevance." };
+      ML.cv = mlCrossVal(S.records, mlLabelDefault, 5);
+      return {
+        ok: true, inc: res.pos, exc: res.neg, ranked: ranked, cv: ML.cv,
+        msg: "Trained on " + res.pos + " includes / " + res.neg + " excludes (" +
+          (S.mode === "dual" ? "both reviewers" : "R1") + "); ranked " + ranked + " records" +
+          (ML.cv ? "; 5-fold CV AUC " + ML.cv.auc.toFixed(2) : "") + "."
+      };
     }
     function onTrain() {
       var res = mlTrain();
@@ -1208,7 +1513,80 @@
         $("ml-terms").innerHTML = terms;
         S.sort = "ml"; $("f-sort").value = "ml"; S.cursor = 0;
         save(); render();
-      } else { $("ml-terms").innerHTML = ""; }
+        renderMlPerf();
+      } else { $("ml-terms").innerHTML = ""; $("ml-perf").innerHTML = ""; }
+    }
+    function renderMlPerf() {
+      var el = $("ml-perf"); if (!el) return;
+      if (!ML.trained) { el.innerHTML = ""; return; }
+      var bits = [];
+      if (ML.cv) bits.push('Held-out quality: <strong>5-fold CV AUC ' + ML.cv.auc.toFixed(2) + '</strong> (' + ML.cv.pos + ' incl / ' + ML.cv.neg + ' excl labelled). 1.0 = perfect ranking, 0.5 = chance.');
+      var st = mlStopping();
+      if (st.screened > 0) {
+        bits.push('Stopping signal: screened <strong>' + st.screened + '/' + st.total + '</strong> in rank order, found <strong>' + st.found + '</strong> relevant; <strong>' + st.since + '</strong> screened since the last include' +
+          (st.since >= 50 && st.found > 0 ? ' — a long irrelevant run, likely near ≥95% recall.' : '.'));
+      } else {
+        bits.push('Stopping signal: screen down the ML ranking; this panel shows the relevant-found curve and the irrelevant run length so you can stop near 95% recall.');
+      }
+      el.innerHTML = bits.map(function (b) { return '<div style="margin-top:0.35rem">' + b + '</div>'; }).join("");
+    }
+    // ---- deterministic active-learning simulation (benchmark harness) ----
+    // Drives the SHIPPED mlBuildVocab / mlFit / mlPredict over a gold-labelled
+    // corpus, mimicking a reviewer who screens the top-ranked batch, reveals the
+    // truth, retrains, and repeats. Returns the recall curve + WSS@95 so the
+    // "matches/beats Rayyan-class tools" claim can be measured, not asserted.
+    function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function simulateActiveLearning(opts) {
+      opts = opts || {};
+      var src = opts.records || [];
+      var recs = src.map(function (r) { var rec = normalizeImported(r); rec._gold = r.gold ? 1 : 0; return rec; });
+      var N = recs.length;
+      if (!N) return { ok: false, msg: "no records" };
+      var totalPos = recs.reduce(function (a, r) { return a + r._gold; }, 0);
+      if (totalPos < 2) return { ok: false, msg: "need >=2 relevant" };
+      var batch = opts.batch || 100, seedN = opts.seed || 10, target = opts.target || 0.95;
+      var V = mlBuildVocab(recs);
+      var rng = mulberry32(opts.rngSeed || 1234567);
+      // initial seed: random draw, then force >=1 pos and >=1 neg present.
+      var idx = recs.map(function (_, i) { return i; });
+      for (var s = idx.length - 1; s > 0; s--) { var j = Math.floor(rng() * (s + 1)); var tmp = idx[s]; idx[s] = idx[j]; idx[j] = tmp; }
+      var labelledSet = {}, labelled = [], found = 0, screened = 0;
+      function reveal(i) { if (labelledSet[i]) return; labelledSet[i] = 1; labelled.push([recs[i], recs[i]._gold]); screened++; if (recs[i]._gold) found++; }
+      var k = 0; for (k = 0; k < idx.length && Object.keys(labelledSet).length < seedN; k++) reveal(idx[k]);
+      // ensure both classes
+      if (!labelled.some(function (p) { return p[1] === 1; })) { for (k = 0; k < N; k++) if (recs[k]._gold) { reveal(k); break; } }
+      if (!labelled.some(function (p) { return p[1] === 0; })) { for (k = 0; k < N; k++) if (!recs[k]._gold) { reveal(k); break; } }
+      var curve = [{ screened: screened, found: found }];
+      var guard = 0;
+      while (screened < N && found < totalPos && guard++ < N + 10) {
+        var nPos = labelled.filter(function (p) { return p[1] === 1; }).length;
+        var nNeg = labelled.length - nPos, rest = [], i;
+        for (i = 0; i < N; i++) if (!labelledSet[i]) rest.push(i);
+        if (nPos >= 1 && nNeg >= 2) {
+          var m = mlFit(labelled, V);
+          rest.sort(function (a, b) { return mlPredict(recs[b], m, V) - mlPredict(recs[a], m, V); });
+        } // else: keep random shuffle order in `rest`
+        for (i = 0; i < batch && i < rest.length; i++) reveal(rest[i]);
+        curve.push({ screened: screened, found: found });
+      }
+      // metrics
+      function screenedAtRecall(rec) {
+        var need = Math.ceil(rec * totalPos);
+        for (var c = 0; c < curve.length; c++) if (curve[c].found >= need) return curve[c].screened;
+        return N;
+      }
+      var s95 = screenedAtRecall(0.95), s100 = screenedAtRecall(1.0);
+      function recallAt(frac) {
+        var lim = Math.ceil(frac * N), best = 0;
+        for (var c = 0; c < curve.length; c++) if (curve[c].screened <= lim) best = curve[c].found;
+        return totalPos ? best / totalPos : 0;
+      }
+      return {
+        ok: true, N: N, totalPos: totalPos, prevalence: totalPos / N, batch: batch, seed: seedN, curve: curve,
+        screenedAt95: s95, screenedAt100: s100,
+        wss95: 0.95 - s95 / N, wss100: 1 - s100 / N,
+        recallAt10pct: recallAt(0.10), recallAt20pct: recallAt(0.20), recallAt50pct: recallAt(0.50)
+      };
     }
 
     // ================= optional AI assist (default OFF) =================
@@ -1360,6 +1738,20 @@
       mlTrain: function () { return mlTrain(); },
       mlScoreOf: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i].mlScore; return null; },
       mlTopTerms: function () { return { pos: ML.topPos, neg: ML.topNeg }; },
+      mlCrossVal: function () { return mlCrossVal(S.records, mlLabelDefault, 5); },
+      mlStopping: function () { return mlStopping(); },
+      simulateActiveLearning: function (opts) { return simulateActiveLearning(opts); },
+      // dedup measurement: blocked vs brute, and candidate-comparison counts.
+      dedupBlocked: function () { return dedupCore(S.records, {}); },
+      dedupBrute: function () { return dedupCore(S.records, { brute: true }); },
+      dupIds: function () { return S.records.filter(function (r) { return r.dup; }).map(function (r) { return r.id; }); },
+      // collaboration: merge an incoming reviewer payload; export current reviewer.
+      mergeReviewer: function (payload, into) { var res = mergeReviewerState(payload, into); runDedup(); return res; },
+      reviewerExport: function () {
+        var who = reviewerSlotName();
+        return { _schema: "sr-reviewer-v1", reviewer: who, decisions: S.records.filter(function (r) { return !r.dup; }).map(function (r) { var s = who === "r2" ? r.r2 : r.r1; return { id: r.id, doi: r.doi, pmid: r.pmid, title: r.title, d: s.d, reason: s.reason, labels: r.labels }; }).filter(function (d) { return d.d; }) };
+      },
+      setMode: function (m, active) { S.mode = m; if (active) S.active = active; },
       aiPrompt: function () { return aiPromptText(aiUndecidedBatch(200)); },
       aiApply: function (arr) { var n = applyAiResults(arr); return n; },
       recordById: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i]; return null; }

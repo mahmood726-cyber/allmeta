@@ -1,0 +1,100 @@
+{
+  "generatedNote": "Drives shipped /screen/index.html via window.__almScreenpro",
+  "classifier": {
+    "cohen_ace_inhibitors.csv": {
+      "label": "Cohen ACE-Inhibitors",
+      "N": 2544,
+      "relevant": 41,
+      "prevalence": 0.0161,
+      "batch": 100,
+      "seed": 10,
+      "WSS_at_95": 0.6705,
+      "WSS_at_100": 0.0523,
+      "recall_at_10pct": 0.6098,
+      "recall_at_20pct": 0.8537,
+      "recall_at_50pct": 0.9512,
+      "screened_to_95pct_recall": 711,
+      "screened_to_100pct_recall": 2411,
+      "random_baseline_WSS_at_95": 0
+    },
+    "cohen_triptans.csv": {
+      "label": "Cohen Triptans",
+      "N": 671,
+      "relevant": 24,
+      "prevalence": 0.0358,
+      "batch": 50,
+      "seed": 10,
+      "WSS_at_95": 0.412,
+      "WSS_at_100": 0.313,
+      "recall_at_10pct": 0.2917,
+      "recall_at_20pct": 0.6667,
+      "recall_at_50pct": 0.875,
+      "screened_to_95pct_recall": 361,
+      "screened_to_100pct_recall": 461,
+      "random_baseline_WSS_at_95": 0
+    }
+  },
+  "dedup": {
+    "nagtegaal_gold": {
+      "records": 2019,
+      "gold_duplicate_copies": 11,
+      "detected": 7,
+      "recall": 0.6364,
+      "total_flagged": 17,
+      "flagged_not_in_gold": 10,
+      "note": "Corpus already deduplicated by authors; 'flagged_not_in_gold' are extra near-duplicate titles the title pass caught, not necessarily errors."
+    },
+    "cohen_perturbation": {
+      "originals": 1170,
+      "injected_reformatted_duplicates": 200,
+      "detected": 183,
+      "missed": 17,
+      "recall": 0.915,
+      "total_flagged": 186,
+      "false_positives": 3,
+      "precision": 0.9839,
+      "f1": 0.9482,
+      "protocol": "200 random Cohen ACE records re-imported with DOI dropped + title lowercased/de-punctuated/truncated; tests the title pass on reformatted, different-DOI duplicates."
+    },
+    "blocked_vs_brute_parity": {
+      "blocked": 12,
+      "brute": 12,
+      "inBoth": 12,
+      "blockedOnly": 0,
+      "bruteOnly": 0,
+      "brute_recovered_by_blocked": 1
+    }
+  },
+  "perf": {
+    "dedup": [
+      {
+        "n": 2000,
+        "blocked_ms": 62,
+        "blocked_comparisons": 14540,
+        "blocked_merges": 181,
+        "brute_ms": 2984
+      },
+      {
+        "n": 10000,
+        "blocked_ms": 347,
+        "blocked_comparisons": 84092,
+        "blocked_merges": 909,
+        "brute_ms": 77959
+      },
+      {
+        "n": 50000,
+        "blocked_ms": 3400,
+        "blocked_comparisons": 724102,
+        "blocked_merges": 4545,
+        "brute_ms": null
+      },
+      {
+        "n": 100000,
+        "blocked_ms": 5820,
+        "blocked_comparisons": 916991,
+        "blocked_merges": 9090,
+        "brute_ms": null
+      }
+    ]
+  }
+}
