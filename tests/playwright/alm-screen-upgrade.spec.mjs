@@ -69,15 +69,27 @@ test.describe("Screen · blocked dedup", () => {
 });
 
 test.describe("Screen · classifier quality", () => {
+  // Two cleanly separable classes (cardiology vs molecular-biology vocabulary), 8 docs
+  // each. Vocabulary is rotated so no single signature term appears in >40% of the 16
+  // docs — otherwise the shipped max-df=0.4 cut (correct on real hundred/thousand-doc
+  // corpora) would filter the discriminative terms out of this toy fixture.
   const SEP = [
-    { id: "i1", title: "cardiac heart failure outcomes", abstract: "ejection fraction reduced hospitalization mortality cardiovascular", r1: { d: "include" } },
-    { id: "i2", title: "heart failure ejection fraction", abstract: "cardiac hospitalization mortality cardiovascular outcomes", r1: { d: "include" } },
-    { id: "i3", title: "cardiac failure outcomes", abstract: "ejection reduced cardiovascular mortality hospitalization", r1: { d: "include" } },
-    { id: "i4", title: "heart failure cardiovascular", abstract: "ejection fraction reduced mortality hospitalization cardiac", r1: { d: "include" } },
-    { id: "e1", title: "molecular murine signaling", abstract: "vitro pathway cellular receptor expression", r1: { d: "exclude" } },
-    { id: "e2", title: "murine signaling pathway", abstract: "molecular cellular receptor expression vitro", r1: { d: "exclude" } },
-    { id: "e3", title: "molecular pathway cellular", abstract: "murine receptor expression vitro signaling", r1: { d: "exclude" } },
-    { id: "e4", title: "cellular receptor expression", abstract: "molecular murine vitro signaling pathway", r1: { d: "exclude" } },
+    { id: "i1", title: "cardiac heart failure mortality", abstract: "ejection fraction reduced hospitalization", r1: { d: "include" } },
+    { id: "i2", title: "heart failure ejection outcomes", abstract: "cardiac ventricular mortality reduced", r1: { d: "include" } },
+    { id: "i3", title: "myocardial infarction coronary disease", abstract: "cardiovascular mortality hospitalization outcomes", r1: { d: "include" } },
+    { id: "i4", title: "ventricular dysfunction cardiac", abstract: "ejection fraction myocardial reduced", r1: { d: "include" } },
+    { id: "i5", title: "coronary artery disease prognosis", abstract: "cardiovascular heart mortality hospitalization", r1: { d: "include" } },
+    { id: "i6", title: "dilated cardiomyopathy heart", abstract: "ventricular ejection hospitalization outcomes", r1: { d: "include" } },
+    { id: "i7", title: "cardiovascular outcomes mortality", abstract: "coronary myocardial reduced fraction", r1: { d: "include" } },
+    { id: "i8", title: "heart failure hospitalization", abstract: "cardiac mortality ejection ventricular", r1: { d: "include" } },
+    { id: "e1", title: "molecular murine signaling", abstract: "vitro pathway cellular receptor", r1: { d: "exclude" } },
+    { id: "e2", title: "murine signaling pathway kinase", abstract: "molecular cellular receptor expression", r1: { d: "exclude" } },
+    { id: "e3", title: "protein kinase assay", abstract: "murine receptor expression vitro", r1: { d: "exclude" } },
+    { id: "e4", title: "cellular receptor expression", abstract: "molecular protein signaling pathway", r1: { d: "exclude" } },
+    { id: "e5", title: "gene expression profiling murine", abstract: "cellular kinase assay vitro", r1: { d: "exclude" } },
+    { id: "e6", title: "vitro cellular assay", abstract: "protein receptor signaling molecular", r1: { d: "exclude" } },
+    { id: "e7", title: "signaling pathway kinase", abstract: "gene murine expression cellular", r1: { d: "exclude" } },
+    { id: "e8", title: "molecular biology protein assay", abstract: "kinase receptor expression vitro", r1: { d: "exclude" } },
   ];
 
   test("training reports a 5-fold cross-validated AUC", async ({ page }) => {
@@ -117,7 +129,10 @@ test.describe("Screen · classifier quality", () => {
     expect(out.dualExc).toBe(2);
   });
 
-  test("bigram features are learnable (phrase 'heart failure' carries signal)", async ({ page }) => {
+  test("unigram features are learnable (distinctive words carry signal)", async ({ page }) => {
+    // Shipped default is unigrams (ML_NGRAM_MAX=1, matching ASReview) — the
+    // 2026-06-09 kaizen ablation found bigrams add no measured WSS@95 here. This
+    // verifies the unigram ranker surfaces the distinctive include-class vocabulary.
     await hook(page);
     const terms = await page.evaluate((recs) => {
       window.__almScreenpro.setState({ records: recs });
@@ -125,8 +140,9 @@ test.describe("Screen · classifier quality", () => {
       return window.__almScreenpro.mlTopTerms();
     }, SEP);
     const allPos = terms.pos.map((p) => p[0]);
-    // at least one multi-word (bigram) feature surfaces among the explanations
-    expect(allPos.some((t) => /\s/.test(t)) || terms.neg.some((p) => /\s/.test(p[0]))).toBe(true);
+    // at least one informative include-predicting term surfaces among the explanations
+    expect(allPos.length).toBeGreaterThan(0);
+    expect(allPos.some((t) => /heart|failure|cardiac|ejection|fraction/i.test(t))).toBe(true);
   });
 });
 

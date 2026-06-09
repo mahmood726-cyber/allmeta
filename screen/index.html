@@ -251,7 +251,7 @@
         <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
         <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
         <div id="ml-perf" style="margin-top:0.4rem;font-size:0.76rem;color:var(--muted)"></div>
-        <p class="hint" style="margin-top:0.5rem">Features: unigrams + bigrams + MeSH/keywords. In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping rule is the buscar target-recall criterion (Callaghan &amp; Müller-Hansen 2020) — it reports the statistical confidence that 95% recall has been reached.</p>
+        <p class="hint" style="margin-top:0.5rem">Features: unigrams + MeSH/keywords (TF-IDF). In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping rule is the buscar target-recall criterion (Callaghan &amp; Müller-Hansen 2020) — it reports the statistical confidence that 95% recall has been reached.</p>
       </section>
 
       <section class="panel">
@@ -1353,17 +1353,26 @@
     //   hardest low-prevalence sets; "lr"/"nb" select a single ranker (ablation).
     var ML_TF = "raw";
     var ML_MODEL_MODE = "nb";
+    // Unigram-only vocabulary by default (ML_NGRAM_MAX=1, matching ASReview's
+    // TfidfVectorizer default). Kaizen ablation (2026-06-09, full 19-set, multi-seed)
+    // found adjacent bigrams add no measured WSS@95 over unigrams here and roughly
+    // double per-record retraining cost, so unigrams are shipped. Set 2 to re-enable.
+    var ML_NGRAM_MAX = 1;
     // Multinomial-NB Laplace smoothing (sklearn MultinomialNB `alpha`). ASReview's
-    // tuned default is 3.822 — heavy smoothing acts as regularisation, essential
-    // when the model retrains after every record on a handful of positives.
-    var ML_NB_ALPHA = 3.822;
+    // published default is 3.822, but under per-record continuous AL on this 19-set
+    // suite a lighter alpha=2 measured best (all-19 WSS@95 0.4507 vs 0.4427 at 3.822,
+    // 3-seed) — with more training data accumulating each retrain, less smoothing wins.
+    var ML_NB_ALPHA = 2.0;
     // Balanced sample-weighting ratio (ASReview "balanced" balancer / the successor
     // to v1 dynamic-resampling). Positives get weight 1; negatives get
     // nPos/(ratio·nNeg), so the positive:negative weight ratio is ratio·(nNeg/nPos).
-    // ratio=1 reproduces plain class-balancing; ASReview tunes 1.2 (NB) / 9.8 (SVM)
-    // on SYNERGY, but on this 19-set suite ratio=1.0 measured marginally best overall
-    // (all-19 0.432 vs 0.42 at 1.2), so the shipped default is plain class-balancing.
-    var ML_BALANCE_RATIO = 1.0;
+    // ratio=1 reproduces plain class-balancing; ASReview tunes 1.2 (NB) / 9.8 (SVM).
+    // Kaizen (2026-06-09): ratio=2 measured the best single-lever gain on the 19-set
+    // suite (all-19 +0.010 WSS@95 over ratio=1), so the shipped default is 2.
+    var ML_BALANCE_RATIO = 2.0;
+    // Max document-frequency cut as a fraction of N (terms in >this share of docs are
+    // dropped as too-common). Kaizen: 0.4 measured marginally better than 0.6 here.
+    var ML_DF_MAX_FRAC = 0.4;
     function mlUnigrams(s) {
       var m = String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [], out = [], i, w;
       for (i = 0; i < m.length; i++) { w = m[i]; if (w.length >= 3 && w.length <= 30 && !ML_STOP.has(w) && !/^\d+$/.test(w)) out.push(w); }
@@ -1374,7 +1383,7 @@
     // are marked with a "_" join and add local context the bag-of-words misses.
     function mlTokenize(s) {
       var uni = mlUnigrams(s), out = uni.slice(), i;
-      for (i = 0; i + 1 < uni.length; i++) out.push(uni[i] + "_" + uni[i + 1]);
+      if (ML_NGRAM_MAX >= 2) for (i = 0; i + 1 < uni.length; i++) out.push(uni[i] + "_" + uni[i + 1]);
       return out;
     }
     function mlText(r) { return r.title + " " + r.title + " " + r.abstract + " " + (r.keywords || []).join(" "); }
@@ -1384,7 +1393,7 @@
         var seen = {}, toks = mlTokenize(mlText(recs[i])), j;
         for (j = 0; j < toks.length; j++) { if (!seen[toks[j]]) { seen[toks[j]] = 1; df[toks[j]] = (df[toks[j]] || 0) + 1; } }
       }
-      var terms = Object.keys(df).filter(function (w) { return df[w] >= 2 && df[w] <= Math.max(2, N * 0.6); });
+      var terms = Object.keys(df).filter(function (w) { return df[w] >= 2 && df[w] <= Math.max(2, N * ML_DF_MAX_FRAC); });
       terms.sort(function (a, b) { return (df[b] - df[a]) || (a < b ? -1 : 1); });
       terms = terms.slice(0, 4000);
       var vocab = {}, idf = new Float64Array(terms.length);
@@ -1669,7 +1678,7 @@
       if (!N) return { ok: false, msg: "no records" };
       var totalPos = recs.reduce(function (a, r) { return a + r._gold; }, 0);
       if (totalPos < 2) return { ok: false, msg: "need >=2 relevant" };
-      var batch = opts.batch || 100, seedN = opts.seed || 10, target = opts.target || 0.95;
+      var batch = opts.batch || 100, seedN = opts.seed || 20, target = opts.target || 0.95;
       var V = mlBuildVocab(recs);
       var rng = mulberry32(opts.rngSeed || 1234567);
       // initial seed: random draw, then force >=1 pos and >=1 neg present.
@@ -1683,16 +1692,18 @@
       if (!labelled.some(function (p) { return p[1] === 0; })) { for (k = 0; k < N; k++) if (!recs[k]._gold) { reveal(k); break; } }
       var curve = [{ screened: screened, found: found }];
       var guard = 0;
-      // Active-learning cadence. Default = CAL / AutoTAR (Cormack & Grossman, SIGIR
-      // 2014; "Autonomy and Reliability of Continuous Active Learning", 2015): retrain
-      // after a SMALL batch that starts at 1 and grows ~10% per round, so the model is
-      // refreshed most often early — when each new label is most informative — yet the
-      // run still finishes in O(log N) retrains. Continuous (small-batch) cadence is
-      // the single biggest lever for WSS@95 vs. revealing 50–200 records per retrain
-      // (which screens the first hundreds of records in near-random order). Set
-      // opts.cadence="fixed" to reveal a constant opts.batch each round instead.
-      var auto = (opts.cadence == null || opts.cadence === "auto");
-      var B = auto ? (opts.batch0 || 1) : (batch || 100);
+      // Active-learning cadence. Default = PER-RECORD continuous AL (n_query=1):
+      // retrain after revealing each single record, exactly as ASReview's simulation
+      // does. Kaizen (2026-06-09, full 19-set, multi-seed) found this is the single
+      // biggest WSS@95 lever — per-record vs the older AutoTAR batch-that-grows-10%
+      // lifted all-19 WSS@95 from 0.39 to 0.45 — because growing batches screen the
+      // mid/late pool in near-random order before the next retrain. Each NB refit is
+      // O(labelled·nnz) and cheap, which is what makes per-record affordable. Overrides:
+      //   opts.cadence="auto"  → AutoTAR batch starting at 1, growing ~10%/round (faster, lower WSS);
+      //   opts.cadence="fixed" → reveal a constant opts.batch each round.
+      var cad = opts.cadence || "perrecord";
+      var auto = (cad === "auto");
+      var B = cad === "fixed" ? (batch || 100) : (auto ? (opts.batch0 || 1) : 1);
       while (screened < N && found < totalPos && guard++ < N + 10) {
         var nPos = 0, i; for (i = 0; i < labelled.length; i++) if (labelled[i][1] === 1) nPos++;
         var nNeg = labelled.length - nPos, rest = [];

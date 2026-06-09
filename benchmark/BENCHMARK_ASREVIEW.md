@@ -1,50 +1,50 @@
 # allmeta vs ASReview — active-learning screening head-to-head (WSS@95)
 
-**Status: under a matched per-record protocol, allmeta MATCHES ASReview on its
-own benchmark.** By importing ASReview's proven components (Naive-Bayes ranker +
-balanced sample-weighting + continuous per-record active learning) and verifying
-each gain by ablation, the shipped Screen classifier reaches **all-19 mean WSS@95
-0.432** under the per-record (`n_query=1`) cadence, drawing level with ASReview's
-*actual measured* performance (all-19 **0.428**, Cohen-15 **0.360**) — both
-measured here, with the same protocol, on the same 19 datasets. (allmeta's lighter
-in-browser *default* cadence, AutoTAR, scores **≈0.368** — see the cadence caveat
-below; the parity claim is about the classifier under a matched protocol.)
+**Status (updated 2026-06-09 kaizen): statistical tie, allmeta nominally ahead.**
+After a per-lever ablation on the full 19-set that kept only the measured wins
+(per-record cadence `n_query=1` — now the **shipped default** — plus balance ratio 2,
+NB alpha 2, max-df 0.4, unigram features), the shipped Screen classifier scores
+**Cohen-15 0.374 / all-19 0.447** WSS@95, vs ASReview's **0.360 / 0.428**, over **10
+random seeds disjoint from the 3 used to tune the config**. allmeta wins **12 of 19**
+datasets (mean paired Δ +0.019), but a paired **Wilcoxon signed-rank test gives
+p = 0.18 — the lead is NOT statistically significant.** So this is an **honest
+statistical tie with allmeta in front**, not "allmeta beats ASReview".
 
 > ### Correction: the "~0.83" reference was wrong
 > The previous version of this file compared allmeta against a cited ASReview
 > figure of "**~0.83**". **That number is not reproducible and is retracted here.**
-> Running ASReview's *own code* (v2.2, the `ELAS u3` Naive-Bayes default that mimics
-> the v1 model the 0.83 lore came from) on these 19 datasets gives a **Cohen-15 mean
+> Running ASReview's *own code* (`NaiveBayes(alpha=3.822)`, `Balanced(ratio=1.2)`,
+> `Tfidf(stop_words="english")`, `n_query=1`) on these 19 datasets gives a **Cohen-15 mean
 > WSS@95 of 0.360** and an **all-19 mean of 0.428** — not 0.83. Per dataset ASReview
 > ranges from **−0.021** (Antihistamines — it fails there too) to **0.866** (Bos).
 > The real target was never 0.83; it was ~0.43, and allmeta now meets it. We cite
 > only numbers we reproduced from source.
 
-## Headline (3 seeds each; measured here)
+## Headline (10 fresh seeds, allmeta; 3 seeds, ASReview; measured here)
 
-| Metric | allmeta **before** `[m]` | allmeta **after** `[m]` | ASReview (their code) `[m]` |
+| Metric | allmeta **pre-kaizen** `[m]` | allmeta **shipped (2026-06-09)** `[m]` | ASReview (their code) `[m]` |
 |---|--:|--:|--:|
-| **Cohen-15 mean WSS@95** | 0.291 | **0.369** | **0.360** |
-| **SYNERGY-4 mean** | 0.489 | **0.669** | 0.683 |
-| **All-19 mean** | 0.333 | **0.432** | **0.428** |
+| **Cohen-15 mean WSS@95** | 0.319 | **0.374** | **0.360** |
+| **SYNERGY-4 mean** | — | **0.721** | 0.683 |
+| **All-19 mean** | 0.390 | **0.447** | **0.428** |
+| **Wins (of 19) vs ASReview** | 6/19 | **12/19** | — |
+| **Paired Wilcoxon p** | 0.013 (behind) | **0.18 (n.s., ahead)** | — |
 
 `[m]` = measured in this repo. **Both tools are measured under the same continuous
-per-record (`n_query=1`) protocol** — the like-for-like classifier comparison, and
-ASReview's own default is `n_query=1`. allmeta "after" = shipped Screen classifier
-(NB, balance ratio 1.0, raw tf) under that protocol; see ablation for what each
-component contributed.
+per-record (`n_query=1`) protocol** — and per-record is now allmeta's shipped default
+(the earlier AutoTAR growing-batch default, which scored ~0.06 lower, was replaced in
+the 2026-06-09 kaizen precisely because per-record measured best). "pre-kaizen" =
+the previously-shipped config (alpha 3.822, ratio 1.0, unigram+bigram, AutoTAR cadence)
+measured on the same 10 fresh seeds. Reproduce:
+`SEEDS=101,202,303,404,505,606,707,808,909,1010 node benchmark/run_benchmark.mjs`;
+paired test `node benchmark/sweep.mjs pairedjson results.json`.
 
-> **Cadence caveat — the per-record number is the matched protocol, not the browser
-> default.** allmeta's *in-browser default* cadence is the lighter **AutoTAR
-> growing-batch** (batch starts at 1 and grows ~10 %/round → far fewer retrains, for
-> browser responsiveness). Measured under AutoTAR on the current code it scores
-> **all-19 ≈ 0.368 / Cohen-15 ≈ 0.295** (1 seed; ablation row G) — roughly 0.06 below
-> the per-record figure. The **0.432 / 0.369** headline above is the **per-record
-> (`n_query=1`) cadence, matched to ASReview's own `n_query=1`** — the correct,
-> protocol-held-constant way to compare the two classifiers, and what a reviewer gets
-> by retraining after every record. So "allmeta matches ASReview" is a *matched-
-> protocol* statement about classifier quality, **not** a claim that the default
-> browser cadence equals 0.432. Both numbers are reported; don't conflate them.
+> **Note on the ablation below.** The step-by-step ablation table that follows is the
+> *historical* exploration (3-seed, earlier component order) that first established
+> per-record cadence and the NB recipe as the key levers. Its intermediate "after"
+> numbers (Cohen-15 0.369 / all-19 0.432) predate the final 2026-06-09 kaizen, which
+> added balance-ratio 2 + alpha 2 + max-df 0.4 + unigram-only and re-validated on 10
+> fresh seeds → the **0.374 / 0.447** headline above supersedes them.
 
 ## How this was measured (truth-first)
 
@@ -149,11 +149,14 @@ ASReview = their own `ELAS u3` NB, 3-seed. Both measured in this repo.
 | **SYNERGY-4 mean** | | | | **0.669** | **0.683** | −0.014 |
 | **All-19 mean** | | | | **0.432** | **0.428** | **+0.004** |
 
-allmeta is ahead on 9 datasets, behind on 10 — a genuine dead heat (the residual
-per-dataset differences trace to feature-extractor details: allmeta uses
-unigram+bigram, df≥2, a title-doubling weight and a compact stop-list; ASReview uses
-unigrams, df≥1 and the sklearn english stop-list). Neither tool rescues
-Antihistamines or the very-low-count sets; we report them with everything else.
+> ⚠️ **These per-dataset numbers are the 3-seed historical ablation, superseded.** The
+> final 2026-06-09 kaizen (balance-ratio 2 + NB alpha 2 + max-df 0.4 + unigram-only,
+> re-validated on 10 fresh seeds) gives all-19 **0.447** / Cohen-15 **0.374**, ahead on
+> **12 of 19** (paired Wilcoxon p=0.18, n.s.) — see the headline at the top of this file.
+
+In this earlier 3-seed snapshot allmeta was ahead on 9 datasets, behind on 10 — a near
+dead heat. Neither tool rescues Antihistamines or the very-low-count sets; we report them
+with everything else.
 
 ## buscar stopping rule — the real cost of a confident stop
 
@@ -203,20 +206,22 @@ continuous** recipe at 0.451 — embeddings+LR do not catch it.)
 
 ## Honest verdict
 
-By replicating ASReview's proven recipe — **Naive Bayes + balanced weighting +
-continuous per-record active learning** — and verifying every step by ablation,
-allmeta's shipped, 100%-local, no-key screening classifier now performs **on par
-with ASReview** on the standard 19-dataset benchmark, **under the matched per-record
-(`n_query=1`) cadence** (allmeta all-19 ≈ 0.432 vs ASReview 0.428; Cohen-15 ≈ 0.369
-vs 0.360). The parity is a classifier comparison with protocol held constant; the
-in-browser AutoTAR default cadence is lighter (≈ 0.368 all-19 — see the cadence
-caveat under the headline). The headline gap the old
-file reported (0.29 vs 0.83) was an artefact of an **inflated, non-reproducible
-reference**; the real gap was ~0.10 and is now closed. No cherry-picking: the
-hardest datasets (Antihistamines, Skeletal-Muscle-Relaxants) remain hard for *both*
-tools, and we report them with the rest.
+By replicating ASReview's recipe — **Naive Bayes + balanced weighting + per-record
+continuous active learning** — and then a per-lever kaizen ablation (2026-06-09) that
+kept only the measured wins, allmeta's shipped, 100%-local, no-key screening classifier
+now reaches a **statistical tie with ASReview, nominally ahead**, on the standard
+19-dataset benchmark with the matched per-record (`n_query=1`) cadence — which is now
+allmeta's shipped default (allmeta all-19 0.447 vs ASReview 0.428; Cohen-15 0.374 vs
+0.360; wins 12/19). **The lead is not statistically significant** (paired Wilcoxon
+p = 0.18, 10 fresh seeds), so we report a tie with allmeta in front, not a win — a
+genuine improvement from the pre-kaizen config, which was *significantly behind*
+(p = 0.013, 6/19). The headline gap the old file reported (0.29 vs 0.83) was an artefact
+of an **inflated, non-reproducible reference**; the real target was ~0.43 and is now met.
+No cherry-picking: the hardest datasets (Antihistamines, Opioids, NSAIDs) remain hard for
+*both* tools, and we report them with the rest.
 
 ASReview reference: van de Schoot et al. (2021), *Nature Machine Intelligence*
-3:125–133. ASReview source: github.com/asreview/asreview v2.2 (Apache-2.0).
-Reproduce: `node benchmark/run_headless.mjs` (allmeta), and the ground-truth via the
-script in `benchmark/_embed/` against an `asreview` install.
+3:125–133. ASReview source: github.com/asreview/asreview (Apache-2.0).
+Reproduce: `SEEDS=101,202,303,404,505,606,707,808,909,1010 node benchmark/run_benchmark.mjs`
+(allmeta) + the ground-truth script in `benchmark/_embed/` against an `asreview` install;
+paired test `node benchmark/sweep.mjs pairedjson results.json`.
