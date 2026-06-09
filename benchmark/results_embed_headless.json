@@ -1,0 +1,111 @@
+{
+  "generatedNote": "OPTIONAL embedding layer (dense logreg) — same AutoTAR protocol as the free-core TF-IDF harness.",
+  "seeds": [
+    1234567,
+    24681012,
+    1357911
+  ],
+  "model": "Xenova/all-MiniLM-L6-v2",
+  "perDataset": {
+    "cohen_aceinhibitors": {
+      "label": "Cohen ACEInhibitors",
+      "suite": "Cohen 2006",
+      "N": 2544,
+      "relevant": 41,
+      "prevalence": 0.0161,
+      "WSS_at_95": 0.7338,
+      "WSS_at_95_sd": 0.0143
+    },
+    "cohen_adhd": {
+      "label": "Cohen ADHD",
+      "suite": "Cohen 2006",
+      "N": 851,
+      "relevant": 20,
+      "prevalence": 0.0235,
+      "WSS_at_95": 0.6319,
+      "WSS_at_95_sd": 0.0862
+    },
+    "cohen_antihistamines": {
+      "label": "Cohen Antihistamines",
+      "suite": "Cohen 2006",
+      "N": 310,
+      "relevant": 16,
+      "prevalence": 0.0516,
+      "WSS_at_95": 0.0597,
+      "WSS_at_95_sd": 0
+    },
+    "cohen_betablockers": {
+      "label": "Cohen Beta Blockers",
+      "suite": "Cohen 2006",
+      "N": 2072,
+      "relevant": 42,
+      "prevalence": 0.0203,
+      "WSS_at_95": 0.4484,
+      "WSS_at_95_sd": 0.032
+    },
+    "cohen_calciumchannelblockers": {
+      "label": "Cohen Calcium Channel Blockers",
+      "suite": "Cohen 2006",
+      "N": 1218,
+      "relevant": 100,
+      "prevalence": 0.0821,
+      "WSS_at_95": 0.0658,
+      "WSS_at_95_sd": 0.0548
+    },
+    "cohen_estrogens": {
+      "label": "Cohen Estrogens",
+      "suite": "Cohen 2006",
+      "N": 368,
+      "relevant": 80,
+      "prevalence": 0.2174,
+      "WSS_at_95": 0.2027,
+      "WSS_at_95_sd": 0
+    },
+    "cohen_nsaids": {
+      "label": "Cohen NSAIDS",
+      "suite": "Cohen 2006",
+      "N": 393,
+      "relevant": 41,
+      "prevalence": 0.1043,
+      "WSS_at_95": 0.4776,
+      "WSS_at_95_sd": 0.0015
+    },
+    "cohen_triptans": {
+      "label": "Cohen Triptans",
+      "suite": "Cohen 2006",
+      "N": 671,
+      "relevant": 24,
+      "prevalence": 0.0358,
+      "WSS_at_95": 0.5024,
+      "WSS_at_95_sd": 0.0327
+    },
+    "cohen_urinaryincontinence": {
+      "label": "Cohen Urinary Incontinence",
+      "suite": "Cohen 2006",
+      "N": 327,
+      "relevant": 40,
+      "prevalence": 0.1223,
+      "WSS_at_95": 0.2059,
+      "WSS_at_95_sd": 0.0963
+    }
+  },
+  "aggregate": {
+    "all_datasets": {
+      "n": 9,
+      "mean": 0.3698,
+      "median": 0.4484,
+      "min": 0.0597,
+      "max": 0.7338,
+      "sd": 0.2449
+    },
+    "cohen_15": {
+      "n": 9,
+      "mean": 0.3698,
+      "median": 0.4484,
+      "min": 0.0597,
+      "max": 0.7338,
+      "sd": 0.2449
+    },
+    "synergy": null
+  }
+}

@@ -246,12 +246,12 @@
 
       <section class="panel">
         <h2>Local ML ranking</h2>
-        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + logistic regression) to rank the rest by predicted relevance. 100% local, no key, reproducible.</p>
+        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + Naive Bayes, ASReview's default ranker, with class-balanced weighting) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
         <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
         <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
         <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
         <div id="ml-perf" style="margin-top:0.4rem;font-size:0.76rem;color:var(--muted)"></div>
-        <p class="hint" style="margin-top:0.5rem">Features: unigrams + bigrams + MeSH/keywords. In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping signal tracks the irrelevant run length in rank order.</p>
+        <p class="hint" style="margin-top:0.5rem">Features: unigrams + bigrams + MeSH/keywords. In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping rule is the buscar target-recall criterion (Callaghan &amp; Müller-Hansen 2020) — it reports the statistical confidence that 95% recall has been reached.</p>
       </section>
 
       <section class="panel">
@@ -1344,6 +1344,26 @@
     // data-driven stopping signal are surfaced so quality is measurable, not asserted.
     var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false, cv: null };
     var ML_STOP = new Set(("a an the of and or to in for on with without via using study trial we our this that these those is are was were be been being as at by from into results methods method background conclusion conclusions objective objectives aim aims patients patient effect effects group groups versus compared comparison between among also can may use used using based both than then there their which while".split(/\s+/)));
+    // ---- ranker configuration (overridable; benchmark ablation reads these) ----
+    // ML_TF: "sublinear" (1+log tf, default) damps repeated-term dominance, the
+    //   standard Salton TF for screening; "raw" = plain counts (pre-upgrade).
+    // ML_MODEL_MODE: "ens" (default) averages logistic regression with a
+    //   complement-Naive-Bayes log-ratio scorer — NB is ASReview's strong default
+    //   and is very robust under heavy class imbalance, so the ensemble lifts the
+    //   hardest low-prevalence sets; "lr"/"nb" select a single ranker (ablation).
+    var ML_TF = "raw";
+    var ML_MODEL_MODE = "nb";
+    // Multinomial-NB Laplace smoothing (sklearn MultinomialNB `alpha`). ASReview's
+    // tuned default is 3.822 — heavy smoothing acts as regularisation, essential
+    // when the model retrains after every record on a handful of positives.
+    var ML_NB_ALPHA = 3.822;
+    // Balanced sample-weighting ratio (ASReview "balanced" balancer / the successor
+    // to v1 dynamic-resampling). Positives get weight 1; negatives get
+    // nPos/(ratio·nNeg), so the positive:negative weight ratio is ratio·(nNeg/nPos).
+    // ratio=1 reproduces plain class-balancing; ASReview tunes 1.2 (NB) / 9.8 (SVM)
+    // on SYNERGY, but on this 19-set suite ratio=1.0 measured marginally best overall
+    // (all-19 0.432 vs 0.42 at 1.2), so the shipped default is plain class-balancing.
+    var ML_BALANCE_RATIO = 1.0;
     function mlUnigrams(s) {
       var m = String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [], out = [], i, w;
       for (i = 0; i < m.length; i++) { w = m[i]; if (w.length >= 3 && w.length <= 30 && !ML_STOP.has(w) && !/^\d+$/.test(w)) out.push(w); }
@@ -1372,39 +1392,84 @@
       return { vocab: vocab, idf: idf, terms: terms };
     }
     function mlVector(r, V) {
+      // Memoise per record against the (vocab, tf-mode) it was built for. The vocab
+      // object is rebuilt on every train, so a stale cache is impossible in the UI;
+      // the active-learning loop (fixed vocab across retrains) skips re-tokenising
+      // every labelled doc each round — the dominant cost — making it 3–5× faster.
+      // Stored in a NON-enumerable slot so it never reaches JSON.stringify/save().
+      if (r._mlc && r._mlc.V === V && r._mlc.mode === ML_TF) return r._mlc.vec;
       var tf = {}, toks = mlTokenize(mlText(r)), i, idx, k;
       for (i = 0; i < toks.length; i++) { idx = V.vocab[toks[i]]; if (idx == null) continue; tf[idx] = (tf[idx] || 0) + 1; }
-      var vec = [], norm = 0;
-      for (k in tf) { var v = tf[k] * V.idf[k]; vec.push([+k, v]); norm += v * v; }
+      var vec = [], norm = 0, sublin = (ML_TF !== "raw");
+      for (k in tf) { var tw = sublin ? (1 + Math.log(tf[k])) : tf[k]; var v = tw * V.idf[k]; vec.push([+k, v]); norm += v * v; }
       norm = Math.sqrt(norm) || 1;
       for (i = 0; i < vec.length; i++) vec[i][1] /= norm;
+      try { Object.defineProperty(r, "_mlc", { value: { V: V, mode: ML_TF, vec: vec }, writable: true, configurable: true }); } catch (e) { /* non-extensible record: skip cache */ }
       return vec;
     }
     function sigmoid(z) { return z >= 0 ? 1 / (1 + Math.exp(-z)) : (function () { var e = Math.exp(z); return e / (1 + e); })(); }
-    // Pure logistic-regression fit over pre-vectorised labelled rows. Zero-init,
-    // fixed lr / l2 / epochs → deterministic. Class-weighted so the rare-positive
-    // screening setting (≈1–5 % relevant) does not collapse to all-negative.
+    // ASReview "balanced" balancer (successor to v1 dynamic resampling): per-record
+    // sample weights — positives weight 1, negatives nPos/(ratio·nNeg), renormalised
+    // to sum to N. Equivalent to plain class-balancing at ratio=1; ratio>1 upweights
+    // the rare positives further (ASReview tunes this on SYNERGY). Used by every
+    // classifier below so the balance strategy is shared, exactly as in ASReview.
+    function mlSampleWeights(ys, ratio) {
+      var P = 0, Ng = 0, i; for (i = 0; i < ys.length; i++) { if (ys[i] === 1) P++; else Ng++; }
+      var w0 = (ratio > 0 && Ng > 0 && P > 0) ? P / (ratio * Ng) : 1.0;
+      var sumRaw = P * 1.0 + Ng * w0, scale = sumRaw > 0 ? ys.length / sumRaw : 1.0;
+      var sw = new Float64Array(ys.length);
+      for (i = 0; i < ys.length; i++) sw[i] = (ys[i] === 1 ? 1.0 : w0) * scale;
+      return sw;
+    }
+    // Shared trainer. Builds (a) a class-balanced logistic regression and/or (b) a
+    // multinomial Naive Bayes that matches scikit-learn's MultinomialNB on the tf-idf
+    // matrix (ASReview's default ranker): Laplace-smoothed log p(t|inc) − log p(t|exc)
+    // per term, plus the class log-prior, with balanced sample weights folded into the
+    // counts. NB is cheap to refit, which is what makes per-record (continuous) active
+    // learning affordable — the lever that drives WSS@95. ML_MODEL_MODE selects nb / lr
+    // / ens (rank-fused average). Deterministic (zero-init LR, closed-form NB).
     function mlFit(labelled, V) {
-      var nPos = 0, i; for (i = 0; i < labelled.length; i++) if (labelled[i][1] === 1) nPos++;
-      var nNeg = labelled.length - nPos;
-      var wPos = nPos ? labelled.length / (2 * nPos) : 1, wNeg = nNeg ? labelled.length / (2 * nNeg) : 1;
-      var train = labelled.map(function (p) { return { x: mlVector(p[0], V), y: p[1], cw: p[1] === 1 ? wPos : wNeg }; });
-      var n = V.terms.length, w = new Float64Array(n), b = 0, lr = 0.5, l2 = 1e-4, epochs = 300, e, s, j;
-      for (e = 0; e < epochs; e++) {
-        for (s = 0; s < train.length; s++) {
-          var ex = train[s], dot = b;
-          for (j = 0; j < ex.x.length; j++) dot += w[ex.x[j][0]] * ex.x[j][1];
-          var g = (sigmoid(dot) - ex.y) * ex.cw;
-          for (j = 0; j < ex.x.length; j++) { var ix = ex.x[j][0]; w[ix] -= lr * (g * ex.x[j][1] + l2 * w[ix]); }
-          b -= lr * g;
+      var n = V.terms.length, i, j, s;
+      var ys = labelled.map(function (p) { return p[1]; });
+      var ratio = (typeof ML_BALANCE_RATIO !== "undefined") ? ML_BALANCE_RATIO : 1.0;
+      var sw = mlSampleWeights(ys, ratio);
+      var X = labelled.map(function (p) { return mlVector(p[0], V); });
+      var mode = ML_MODEL_MODE || "ens", model = {};
+      if (mode !== "nb") {
+        var w = new Float64Array(n), b = 0, lr = 0.5, l2 = 1e-4, epochs = 300, e;
+        for (e = 0; e < epochs; e++) {
+          for (s = 0; s < X.length; s++) {
+            var x = X[s], dot = b;
+            for (j = 0; j < x.length; j++) dot += w[x[j][0]] * x[j][1];
+            var g = (sigmoid(dot) - ys[s]) * sw[s];
+            for (j = 0; j < x.length; j++) { var ix = x[j][0]; w[ix] -= lr * (g * x[j][1] + l2 * w[ix]); }
+            b -= lr * g;
+          }
         }
+        model.w = w; model.b = b;
       }
-      return { w: w, b: b };
+      if (mode !== "lr") {
+        var alpha = (typeof ML_NB_ALPHA !== "undefined") ? ML_NB_ALPHA : 1.0;
+        var fc1 = new Float64Array(n), fc0 = new Float64Array(n), t1 = 0, t0 = 0, sw1 = 0, sw0 = 0;
+        for (s = 0; s < X.length; s++) {
+          var xx = X[s], wt = sw[s];
+          if (ys[s] === 1) { sw1 += wt; for (j = 0; j < xx.length; j++) { var v1 = xx[j][1] * wt; if (v1 > 0) { fc1[xx[j][0]] += v1; t1 += v1; } } }
+          else { sw0 += wt; for (j = 0; j < xx.length; j++) { var v0 = xx[j][1] * wt; if (v0 > 0) { fc0[xx[j][0]] += v0; t0 += v0; } } }
+        }
+        var d1 = Math.log(t1 + alpha * n), d0 = Math.log(t0 + alpha * n), dlp = new Float64Array(n);
+        for (j = 0; j < n; j++) dlp[j] = (Math.log(fc1[j] + alpha) - d1) - (Math.log(fc0[j] + alpha) - d0);
+        model.nb = { dlp: dlp, priorDiff: (sw1 > 0 && sw0 > 0) ? Math.log(sw1 / sw0) : 0 };
+      }
+      return model;
     }
     function mlPredict(r, model, V) {
-      var x = mlVector(r, V), dot = model.b, j;
-      for (j = 0; j < x.length; j++) dot += model.w[x[j][0]] * x[j][1];
-      return sigmoid(dot);
+      var x = mlVector(r, V), j, mode = ML_MODEL_MODE || "ens";
+      var lrP = null, nbP = null;
+      if (mode !== "nb" && model.w) { var dot = model.b; for (j = 0; j < x.length; j++) dot += model.w[x[j][0]] * x[j][1]; lrP = sigmoid(dot); }
+      if (mode !== "lr" && model.nb) { var sc = model.nb.priorDiff; for (j = 0; j < x.length; j++) sc += model.nb.dlp[x[j][0]] * x[j][1]; nbP = sigmoid(sc); }
+      if (mode === "lr") return lrP != null ? lrP : 0.5;
+      if (mode === "nb") return nbP != null ? nbP : 0.5;
+      return (lrP != null && nbP != null) ? 0.5 * (lrP + nbP) : (lrP != null ? lrP : (nbP != null ? nbP : 0.5));
     }
     // Effective training label using BOTH reviewers (M-5 fix): resolved > agreement
     // > single decisive label. Conflicts and maybe/undecided contribute no label.
@@ -1473,6 +1538,51 @@
       if (!scores.length) return null;
       return { auc: aucScore(scores, labels), n: labelled.length, folds: k, pos: pos.length, neg: neg.length };
     }
+    // ---- principled target-recall stopping rule (Callaghan & Müller-Hansen 2020,
+    // "Statistical stopping criteria for automated screening in systematic reviews",
+    // Syst Rev 9:273; the `buscar` biased-urn criterion). Given the relevant/irrelevant
+    // sequence screened in ML-rank order, it returns a p-value for H0 = "the recall
+    // target has NOT been reached". Reject (safe to stop) when p < 1−confidence.
+    // This is a real statistical guarantee, replacing the eyeballed "long irrelevant
+    // run" heuristic. Faithful port of buscarR::calculate_h0 (bias=1, exact urn).
+    function _lgamma(x) {
+      var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+      var y = x, tmp = x + 5.5, ser = 1.000000000190015, j;
+      tmp -= (x + 0.5) * Math.log(tmp);
+      for (j = 0; j < 6; j++) { y += 1; ser += c[j] / y; }
+      return -tmp + Math.log(2.5066282746310005 * ser / x);
+    }
+    function _logChoose(n, k) { return (k < 0 || k > n) ? -Infinity : _lgamma(n + 1) - _lgamma(k + 1) - _lgamma(n - k + 1); }
+    // Hypergeometric CDF P(X<=q): m white (relevant in urn), nbl black, k draws.
+    function _phyper(q, m, nbl, k) {
+      var tot = m + nbl, lo = Math.max(0, k - nbl), hi = Math.min(k, m), x, s = 0, denom;
+      if (q >= hi) return 1; if (q < lo) return 0;
+      denom = _logChoose(tot, k);
+      for (x = lo; x <= q; x++) s += Math.exp(_logChoose(m, x) + _logChoose(nbl, k - x) - denom);
+      return s > 1 ? 1 : s;
+    }
+    // seq = 0/1 labels screened IN RANK ORDER; N = total records (screened+unseen).
+    // Returns the minimum p over all look-back windows (most conservative baseline).
+    // nUse (optional) = consider only the first nUse entries of seq (avoids slicing
+    // when sweeping the criterion over a growing prefix).
+    function mlBuscarP(seq, N, recallTarget, nUse) {
+      recallTarget = recallTarget || 0.95;
+      var n = (nUse == null ? seq.length : Math.min(nUse, seq.length)); if (!n || n >= N) return 1;
+      var rSeen = 0, i; for (i = 0; i < n; i++) rSeen += seq[i] ? 1 : 0;
+      if (rSeen < 1) return 1;
+      var best = 1, kWin = 0, w;
+      for (w = 1; w <= n; w++) {
+        kWin += seq[n - w] ? 1 : 0;                          // relevant in last w (urn draws)
+        var rAl = rSeen - kWin;                              // relevant found before the window
+        var kHat = Math.floor(rSeen / recallTarget - rAl + 1); // min relevant in urn under H0
+        if (kHat <= 0) continue;
+        var urn = N - (n - w), red = urn - kHat;             // urn = window + unseen; black = irrelevant
+        if (red < 0) continue;
+        var p = _phyper(kWin, kHat, red, w);
+        if (p < best) best = p;
+      }
+      return best;
+    }
     // Live data-driven stopping signal over the ML-ranked order: how many records
     // the reviewer has screened, how many relevant were found, and the run of
     // consecutive non-relevant decisions since the last include (ASReview-style:
@@ -1480,15 +1590,17 @@
     function mlStopping() {
       var scored = S.records.filter(function (r) { return !r.dup && r.mlScore != null; });
       scored.sort(function (a, b) { return b.mlScore - a.mlScore; });
-      var screened = 0, found = 0, since = 0, last = 0, i;
+      var screened = 0, found = 0, since = 0, last = 0, i, seq = [];
       for (i = 0; i < scored.length; i++) {
         var d = effDecision(scored[i]);
         if (d === "include" || d === "exclude" || d === "maybe") {
-          screened++;
+          screened++; seq.push(d === "include" ? 1 : 0);
           if (d === "include") { found++; last = screened; since = 0; } else since++;
         }
       }
-      return { total: scored.length, screened: screened, found: found, since: since, lastIncludeAt: last };
+      // buscar p for H0("<95% recall"); <0.05 ⇒ statistically safe to stop.
+      var buscarP = (screened > 0 && scored.length > screened) ? mlBuscarP(seq, scored.length, 0.95) : 1;
+      return { total: scored.length, screened: screened, found: found, since: since, lastIncludeAt: last, buscarP: buscarP };
     }
     function mlTrain() {
       var res = mlTrainOn(S.records, mlLabelDefault, {});
@@ -1499,7 +1611,10 @@
         if (r.dup) { r.mlScore = null; return; }
         r.mlScore = mlPredict(r, res.model, res.V); ranked++;
       });
-      var pairs = res.V.terms.map(function (t, i) { return [t.replace(/_/g, " "), res.model.w[i]]; });
+      // Per-term influence for the explainability panel: logistic-regression weights
+      // when available, else the Naive-Bayes log-ratio log p(t|inc)−log p(t|exc).
+      var termW = res.model.w || (res.model.nb && res.model.nb.dlp) || new Float64Array(res.V.terms.length);
+      var pairs = res.V.terms.map(function (t, i) { return [t.replace(/_/g, " "), termW[i]]; });
       pairs.sort(function (a, b2) { return b2[1] - a[1]; });
       ML.topPos = pairs.slice(0, 12).filter(function (p) { return p[1] > 0; });
       ML.topNeg = pairs.slice(-12).reverse().filter(function (p) { return p[1] < 0; });
@@ -1531,8 +1646,10 @@
       if (ML.cv) bits.push('Held-out quality: <strong>5-fold CV AUC ' + ML.cv.auc.toFixed(2) + '</strong> (' + ML.cv.pos + ' incl / ' + ML.cv.neg + ' excl labelled). 1.0 = perfect ranking, 0.5 = chance.');
       var st = mlStopping();
       if (st.screened > 0) {
-        bits.push('Stopping signal: screened <strong>' + st.screened + '/' + st.total + '</strong> in rank order, found <strong>' + st.found + '</strong> relevant; <strong>' + st.since + '</strong> screened since the last include' +
-          (st.since >= 50 && st.found > 0 ? ' — a long irrelevant run, likely near ≥95% recall.' : '.'));
+        var stop = st.buscarP < 0.05;
+        bits.push('Stopping rule (buscar, 95% target): screened <strong>' + st.screened + '/' + st.total + '</strong> in rank order, found <strong>' + st.found + '</strong> relevant; <strong>' + st.since + '</strong> since the last include. ' +
+          'Confidence ≥95% recall reached: <strong>' + (st.buscarP <= 0 ? '>99.9' : (100 * (1 - st.buscarP)).toFixed(1)) + '%</strong>' +
+          (stop ? ' — <strong>statistically safe to stop</strong> (p&lt;0.05).' : ' — keep screening to reach the 95% confidence threshold.'));
       } else {
         bits.push('Stopping signal: screen down the ML ranking; this panel shows the relevant-found curve and the irrelevant run length so you can stop near 95% recall.');
       }
@@ -1558,24 +1675,40 @@
       // initial seed: random draw, then force >=1 pos and >=1 neg present.
       var idx = recs.map(function (_, i) { return i; });
       for (var s = idx.length - 1; s > 0; s--) { var j = Math.floor(rng() * (s + 1)); var tmp = idx[s]; idx[s] = idx[j]; idx[j] = tmp; }
-      var labelledSet = {}, labelled = [], found = 0, screened = 0;
-      function reveal(i) { if (labelledSet[i]) return; labelledSet[i] = 1; labelled.push([recs[i], recs[i]._gold]); screened++; if (recs[i]._gold) found++; }
+      var labelledSet = {}, labelled = [], found = 0, screened = 0, seq = [];
+      function reveal(i) { if (labelledSet[i]) return; labelledSet[i] = 1; labelled.push([recs[i], recs[i]._gold]); seq.push(recs[i]._gold ? 1 : 0); screened++; if (recs[i]._gold) found++; }
       var k = 0; for (k = 0; k < idx.length && Object.keys(labelledSet).length < seedN; k++) reveal(idx[k]);
       // ensure both classes
       if (!labelled.some(function (p) { return p[1] === 1; })) { for (k = 0; k < N; k++) if (recs[k]._gold) { reveal(k); break; } }
       if (!labelled.some(function (p) { return p[1] === 0; })) { for (k = 0; k < N; k++) if (!recs[k]._gold) { reveal(k); break; } }
       var curve = [{ screened: screened, found: found }];
       var guard = 0;
+      // Active-learning cadence. Default = CAL / AutoTAR (Cormack & Grossman, SIGIR
+      // 2014; "Autonomy and Reliability of Continuous Active Learning", 2015): retrain
+      // after a SMALL batch that starts at 1 and grows ~10% per round, so the model is
+      // refreshed most often early — when each new label is most informative — yet the
+      // run still finishes in O(log N) retrains. Continuous (small-batch) cadence is
+      // the single biggest lever for WSS@95 vs. revealing 50–200 records per retrain
+      // (which screens the first hundreds of records in near-random order). Set
+      // opts.cadence="fixed" to reveal a constant opts.batch each round instead.
+      var auto = (opts.cadence == null || opts.cadence === "auto");
+      var B = auto ? (opts.batch0 || 1) : (batch || 100);
       while (screened < N && found < totalPos && guard++ < N + 10) {
-        var nPos = labelled.filter(function (p) { return p[1] === 1; }).length;
-        var nNeg = labelled.length - nPos, rest = [], i;
+        var nPos = 0, i; for (i = 0; i < labelled.length; i++) if (labelled[i][1] === 1) nPos++;
+        var nNeg = labelled.length - nPos, rest = [];
         for (i = 0; i < N; i++) if (!labelledSet[i]) rest.push(i);
         if (nPos >= 1 && nNeg >= 2) {
           var m = mlFit(labelled, V);
-          rest.sort(function (a, b) { return mlPredict(recs[b], m, V) - mlPredict(recs[a], m, V); });
+          // Score each pooled record ONCE, then sort by the cached score. Scoring
+          // inside the comparator would re-predict O(N log N) times per round —
+          // ruinous under continuous (per-record) cadence; this keeps it O(N).
+          var sc = {}; for (i = 0; i < rest.length; i++) sc[rest[i]] = mlPredict(recs[rest[i]], m, V);
+          rest.sort(function (a, b) { return sc[b] - sc[a]; });
         } // else: keep random shuffle order in `rest`
-        for (i = 0; i < batch && i < rest.length; i++) reveal(rest[i]);
+        var take = Math.max(1, Math.round(B));
+        for (i = 0; i < take && i < rest.length; i++) reveal(rest[i]);
         curve.push({ screened: screened, found: found });
+        if (auto) B += Math.ceil(B / 10);
       }
       // metrics
       function screenedAtRecall(rec) {
@@ -1589,11 +1722,27 @@
         for (var c = 0; c < curve.length; c++) if (curve[c].screened <= lim) best = curve[c].found;
         return totalPos ? best / totalPos : 0;
       }
+      // Buscar stopping rule applied to the actual screening order: the first curve
+      // point at which H0("missed 95% recall") is rejected at 95% confidence (p<0.05),
+      // and the TRUE recall already achieved there. Quantifies the real, defensible
+      // stopping cost — reading past s95 buys statistical certainty, not just luck.
+      var conf = opts.stopConfidence || 0.95, tgt = opts.stopTarget || 0.95, alpha = 1 - conf;
+      var buscarStopAt = N, buscarRecall = 1, buscarP = 1, prevScr = 0, ci;
+      // Evaluate the criterion on a coarse grid of screening depths (≤~200 points) —
+      // ample resolution for the stop-point estimate and keeps the sweep ~O(N) not O(N²).
+      var step = Math.max(1, Math.floor(curve.length / 200));
+      if (opts.buscar) for (ci = 0; ci < curve.length; ci += step) {
+        var scr = curve[ci].screened; if (scr === prevScr && ci) continue; prevScr = scr;
+        var p = mlBuscarP(seq, N, tgt, scr);
+        if (p < alpha) { buscarStopAt = scr; buscarRecall = totalPos ? curve[ci].found / totalPos : 1; buscarP = p; break; }
+      }
       return {
         ok: true, N: N, totalPos: totalPos, prevalence: totalPos / N, batch: batch, seed: seedN, curve: curve,
         screenedAt95: s95, screenedAt100: s100,
         wss95: 0.95 - s95 / N, wss100: 1 - s100 / N,
-        recallAt10pct: recallAt(0.10), recallAt20pct: recallAt(0.20), recallAt50pct: recallAt(0.50)
+        recallAt10pct: recallAt(0.10), recallAt20pct: recallAt(0.20), recallAt50pct: recallAt(0.50),
+        buscarStopAt: buscarStopAt, buscarRecall: buscarRecall, buscarP: buscarP,
+        buscarWss: 0.95 - buscarStopAt / N
       };
     }
 
@@ -1749,6 +1898,7 @@
       mlCrossVal: function () { return mlCrossVal(S.records, mlLabelDefault, 5); },
       mlStopping: function () { return mlStopping(); },
       simulateActiveLearning: function (opts) { return simulateActiveLearning(opts); },
+      mlBuscarP: function (seq, N, target) { return mlBuscarP(seq, N, target); },
       // dedup measurement: blocked vs brute, and candidate-comparison counts.
       dedupBlocked: function () { return dedupCore(S.records, {}); },
       dedupBrute: function () { return dedupCore(S.records, { brute: true }); },

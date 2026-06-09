@@ -47,3 +47,15 @@ benchmark/data/rob/Main_task_Cochrane_train.json
 benchmark/data/rob/Main_task_Cochrane_test.json
 benchmark/data/rob/Main_task_Non_Cochrane_test.json
 benchmark/data/rob/Main_task_Cochrane_test_RobotReviewer_subset.json
+
+# Embedding experiment — keep the repro scripts, ignore heavy deps + model cache
+benchmark/_embed/node_modules/
+benchmark/_embed/.cache/
+benchmark/_embed/package-lock.json
+benchmark/data/embeddings/
+# Benchmark scratch (ad-hoc run scripts, notes, logs)
+benchmark/_*.sh
+benchmark/_research_notes.md
+benchmark/*.log
+# Claude Code local session config
+.claude/

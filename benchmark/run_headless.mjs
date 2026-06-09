@@ -62,9 +62,11 @@ function extractVarStmt(src, name) {
 const FUNCS = [
   "clean", "splitAuthors", "freshId", "normalizeImported",
   "mlUnigrams", "mlTokenize", "mlText", "mlBuildVocab", "mlVector",
-  "sigmoid", "mlFit", "mlPredict", "mulberry32", "simulateActiveLearning",
+  "sigmoid", "mlSampleWeights", "mlFit", "mlPredict",
+  "_lgamma", "_logChoose", "_phyper", "mlBuscarP",
+  "mulberry32", "simulateActiveLearning",
 ];
-const VARS = ["_autoId", "ML_STOP"];
+const VARS = ["_autoId", "ML_STOP", "ML_TF", "ML_MODEL_MODE", "ML_NB_ALPHA", "ML_BALANCE_RATIO"];
 
 let assembled = "'use strict';\n";
 for (const v of VARS) assembled += extractVarStmt(SRC, v) + "\n";
@@ -76,6 +78,13 @@ vm.createContext(sandbox);
 vm.runInContext(assembled, sandbox, { filename: "alm_screen_extracted.js" });
 const { simulateActiveLearning } = sandbox.module.exports;
 if (typeof simulateActiveLearning !== "function") throw new Error("extraction failed: simulateActiveLearning not a function");
+// Ablation overrides of the shipped ranker config (defaults: sublinear tf-idf + LR/NB ensemble).
+//   TF=raw       → plain term counts (pre-upgrade features)
+//   MODEL=lr|nb  → single ranker instead of the ensemble
+if (process.env.TF) sandbox.ML_TF = process.env.TF;
+if (process.env.MODEL) sandbox.ML_MODEL_MODE = process.env.MODEL;
+if (process.env.ALPHA) sandbox.ML_NB_ALPHA = Number(process.env.ALPHA);
+if (process.env.RATIO) sandbox.ML_BALANCE_RATIO = Number(process.env.RATIO);
 
 // ---------- CSV ----------
 function parseCSV(text) {
@@ -106,18 +115,28 @@ const SEEDS = process.env.SEEDS ? process.env.SEEDS.split(",").map(Number) : [12
 // BATCH=<n> to force a fixed finer active-learning cadence for a like-for-like
 // sensitivity pass against ASReview's per-record (batch≈1) retraining protocol.
 const FIXED_BATCH = process.env.BATCH ? Number(process.env.BATCH) : null;
-const batchFor = (n) => FIXED_BATCH != null ? FIXED_BATCH : (n >= 4000 ? 200 : n >= 1000 ? 100 : 50);
+// Cadence (default = continuous, n_query=1 — the headline protocol, matching
+// ASReview). CADENCE=auto = CAL/AutoTAR growing batch; CADENCE=coarse (or BATCH=n)
+// = a fixed batch each round, reproducing the pre-upgrade coarse baseline for ablation.
+const CADENCE = process.env.CADENCE || (FIXED_BATCH != null ? "fixed" : "continuous");
+const batchFor = (n) => CADENCE === "continuous" ? 1
+  : (FIXED_BATCH != null ? FIXED_BATCH : (n >= 4000 ? 200 : n >= 1000 ? 100 : 50));
 
 const manifest = JSON.parse(readFileSync(join(__dirname, "data", "corpora", "manifest.json"), "utf8"));
 const results = {
   generatedNote: "HEADLESS (no browser/server). Shipped Screen classifier extracted verbatim from screen/index.html and run in a Node vm.",
   extractedFunctions: FUNCS, seeds: SEEDS,
+  config: { cadence: CADENCE, tf: sandbox.ML_TF, model: sandbox.ML_MODEL_MODE, fixedBatch: FIXED_BATCH },
   perDataset: {}, aggregate: {},
 };
 const suiteWss95 = [], cohenWss95 = [], synergyWss95 = [];
 
-console.log(`Headless run — ${SEEDS.length} seed(s): ${SEEDS.join(", ")}`);
+// ONLY=id1,id2 restricts the run to a subset of datasets (fast spot-checks).
+const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
+const CAD_LABEL = CADENCE === "continuous" ? "continuous(nq=1)" : CADENCE === "auto" ? "autotar" : `${CADENCE}${FIXED_BATCH != null ? "(" + FIXED_BATCH + ")" : ""}`;
+console.log(`Headless run — ${SEEDS.length} seed(s): ${SEEDS.join(", ")} | cadence=${CAD_LABEL} tf=${sandbox.ML_TF} model=${sandbox.ML_MODEL_MODE} alpha=${sandbox.ML_NB_ALPHA} ratio=${sandbox.ML_BALANCE_RATIO}`);
 for (const d of manifest.datasets) {
+  if (ONLY && !ONLY.has(d.id)) continue;
   const gzf = d.id + ".csv.gz";
   if (!existsSync(join(__dirname, "data", "corpora", gzf))) { console.log(`  (skip ${d.id}: not fetched)`); continue; }
   const recs = loadGz(gzf).map((r, i) => ({
@@ -127,7 +146,7 @@ for (const d of manifest.datasets) {
   const batch = batchFor(recs.length);
   const runs = [];
   for (const rngSeed of SEEDS) {
-    const out = simulateActiveLearning({ records: recs, batch, rngSeed });
+    const out = simulateActiveLearning({ records: recs, batch, rngSeed, cadence: CADENCE, buscar: !!process.env.BUSCAR });
     if (out && out.ok) runs.push(out);
   }
   if (!runs.length) { console.log(`  (skip ${d.id}: no usable run)`); continue; }
@@ -143,6 +162,13 @@ for (const d of manifest.datasets) {
     recall_at_10pct: recAvg("recallAt10pct"), recall_at_20pct: recAvg("recallAt20pct"), recall_at_50pct: recAvg("recallAt50pct"),
     screened_to_95pct_recall: Math.round(mean(pick("screenedAt95"))),
   };
+  if (process.env.BUSCAR) {
+    // buscar stopping rule: where p<0.05 (95% confidence) "≥95% recall reached" fires,
+    // and the TRUE recall already attained there — the real cost of a defensible stop.
+    row.buscar_stop_at = Math.round(mean(pick("buscarStopAt")));
+    row.buscar_recall = round(mean(pick("buscarRecall")));
+    row.buscar_wss = round(mean(pick("buscarWss")));
+  }
   results.perDataset[d.id] = row;
   suiteWss95.push(row.WSS_at_95);
   if (d.suite === "Cohen 2006") cohenWss95.push(row.WSS_at_95);
@@ -155,9 +181,16 @@ results.aggregate = {
   note: "Per-dataset WSS@95 averaged over seeds, then aggregated across datasets. WSS@95 = workload saved at 95% recall vs reading every record; 0 = no better than random screening order.",
   all_datasets: agg(suiteWss95), cohen_15: agg(cohenWss95), synergy: synergyWss95.length ? agg(synergyWss95) : null,
 };
+if (process.env.BUSCAR) {
+  const br = Object.values(results.perDataset).map((r) => r.buscar_recall).filter((x) => x != null);
+  const bw = Object.values(results.perDataset).map((r) => r.buscar_wss).filter((x) => x != null);
+  results.aggregate.buscar = { mean_recall_at_stop: round(mean(br)), min_recall_at_stop: round(Math.min(...br)), mean_wss_at_stop: round(mean(bw)),
+    note: "bias=1 (exact urn, conservative). Recall actually achieved when the rule first certifies ≥95% recall at 95% confidence; mean_wss_at_stop is workload saved at that defensible stop." };
+  console.log(`[AGG] BUSCAR    mean recall@stop ${results.aggregate.buscar.mean_recall_at_stop} (min ${results.aggregate.buscar.min_recall_at_stop}), mean WSS@stop ${results.aggregate.buscar.mean_wss_at_stop}`);
+}
 console.log(`\n[AGG] Cohen-15  WSS@95 mean ${results.aggregate.cohen_15.mean}  median ${results.aggregate.cohen_15.median}  range ${results.aggregate.cohen_15.min}–${results.aggregate.cohen_15.max}  (n=${results.aggregate.cohen_15.n})`);
 if (results.aggregate.synergy) console.log(`[AGG] SYNERGY   WSS@95 mean ${results.aggregate.synergy.mean}  median ${results.aggregate.synergy.median}  range ${results.aggregate.synergy.min}–${results.aggregate.synergy.max}  (n=${results.aggregate.synergy.n})`);
 console.log(`[AGG] ALL ${suiteWss95.length}   WSS@95 mean ${results.aggregate.all_datasets.mean}  median ${results.aggregate.all_datasets.median}  range ${results.aggregate.all_datasets.min}–${results.aggregate.all_datasets.max}`);
 
-writeFileSync(join(__dirname, "results_headless.json"), JSON.stringify(results, null, 2));
+writeFileSync(join(__dirname, process.env.OUT || "results_headless.json"), JSON.stringify(results, null, 2));
 console.log(`\nWrote ${join(__dirname, "results_headless.json")}`);
