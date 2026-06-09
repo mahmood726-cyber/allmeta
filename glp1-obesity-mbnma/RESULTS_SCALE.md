@@ -18,24 +18,32 @@ Pipeline: `discovery.py` -> `extract_full.py` -> `fit_network.py` (all reproduci
 
 **≥40-RCT, all-post-2010, all-CT.gov dose-response NMA: achieved (57 trials).**
 
-## Treatment hierarchy (rank by predicted % weight loss at max studied dose)
+## Treatment hierarchy — REFINED (2026-06-09)
 
-| rank | node | trials | pred loss @ max dose | SUCRA |
-|---|---|---|---|---|
-| 1 | mazdutide | 1 | 22.1 pp | 0.932 |
-| 2 | retatrutide | 1 | 22.0 pp | 0.917 |
-| 3 | tirzepatide | 4 | 15.4 pp | 0.755 |
-| 4 | semaglutide-oral | 11 | 13.3 pp | 0.612 |
-| 5 | semaglutide-sc | 17 | 10.8 pp | 0.424 |
-| 6 | survodutide | 2 | 9.9 pp | 0.400 |
-| 7 | danuglipron | 1 | 9.6 pp | 0.272 |
-| 8 | orforglipron | 2 | 8.8 pp | 0.154 |
-| 9 | cagrilintide | 1 | 7.5 pp | 0.034 |
+Refinements applied after the first scale run:
+- **Node-split semaglutide** by route+schedule: oral / SC-weekly (product) / SC-daily (phase-2).
+- **Timepoint landmark >=36 wk** (drops immature 2-34 wk arms; 54/84 contrasts retained).
+- **Ranking on OBSERVED IVW effect at each node's max studied dose** (no Emax extrapolation),
+  robust to Emax non-identifiability. Emax curve kept as supplementary shape only.
 
-**POTH = 0.899** (n=9) — cross-checked EXACTLY against allmeta `shared/poth.js` (CRAN-verified).
-POTH ≫ 0.67 (published median) ⇒ the hierarchy is genuinely informative. The ordering matches
-clinical expectation: triple/dual agonists (retatrutide, tirzepatide) and high-dose oral
-semaglutide rank top; the amylin agonist cagrilintide (monotherapy) lowest.
+| rank | node | trials | observed loss @ max dose | SUCRA | published check |
+|---|---|---|---|---|---|
+| 1 | mazdutide | 1 | 22.3 pp | 0.919 | ~22% phase-2 ✓ |
+| 2 | retatrutide | 1 | 22.1 pp | 0.914 | ~22-24% ✓ |
+| 3 | tirzepatide | 4 | 16.1 pp | 0.665 | SURMOUNT ✓ |
+| 4 | semaglutide-oral | 5 | 13.6 pp | 0.389 | OASIS 50 mg ✓ |
+| 5 | semaglutide-sc-weekly | 15 | 13.3 pp | 0.340 | STEP ✓ |
+| 6 | orforglipron | 2 | 12.4 pp | 0.197 | ~12-15% ✓ |
+| 7 | semaglutide-sc-daily | 1 | 11.6 pp | 0.075 | — |
+
+**POTH = 0.880** (n=7) — cross-checked EXACTLY against allmeta `shared/poth.js` (CRAN-verified).
+POTH ≫ 0.67 (published median) ⇒ hierarchy genuinely informative. **Every node's value now matches
+the published headline weight loss**, and oral semaglutide's Emax is honestly flagged
+"UNIDENTIFIED (still-rising)" rather than emitting a degenerate asymptote.
+
+> First (unrefined) run for the record: 9 nodes, POTH 0.899, but semaglutide-sc 10.8 pp (daily/weekly
+> mixed) and implausible Emax asymptotes (mazdutide 49 pp) — fixed by the three refinements above.
+> The >=36 wk filter drops survodutide/danuglipron/cagrilintide (immature 20-32 wk only) -> 7 mature nodes.
 
 ## Validation vs published (held-out, registry-ipd discipline)
 - SURMOUNT-1 (tirzepatide 5/10/15): extracted -16.0/-21.4/-22.5 = published efficacy estimand EXACT.
@@ -43,18 +51,19 @@ semaglutide rank top; the amylin agonist cagrilintide (monotherapy) lowest.
 - semaglutide-SC 2.4 mg node: 10.8 pp ↔ STEP ~12-15 pp (node pools phase-2 daily arms, see caveat).
 
 ## Honest caveats (the real methodological boundary)
-1. **Single-trial Emax is unreliable.** mazdutide (Emax 49 pp) and survodutide (41.6 pp) have
-   implausible asymptotes — extrapolation from sparse low doses in 1-2 trials. The RANKING uses
-   predicted loss at the **max studied dose** (within observed range), which is trustworthy; the
-   Emax *asymptote* is not. Top-2 ranks rest on single phase-2 trials → low evidence, wide CIs.
-2. **Route/schedule node-splitting matters.** Naive pooling put semaglutide LAST (artifact of mixing
-   oral 3-50 mg, weekly-SC 2.4 mg, daily-SC 0.05-0.4 mg). Splitting oral vs SC fixed it. A further
-   split of SC daily-vs-weekly would tighten the SC node (currently 10.8 pp vs STEP's ~15 pp).
-3. **Timepoint heterogeneity** — 24-72 wk mixed; not yet harmonized to a common landmark.
-4. **6 trials dropped** (active-comparator-only arm labels / non-% outcome) — reported, not hidden.
-5. **Two-stage, not one-step Bayesian MBNMA.** allmeta has dose-response and network as separate
+1. **Top-2 ranks rest on single phase-2 trials.** mazdutide & retatrutide (1 trial each) → low
+   evidence despite plausible point values. Ranking now uses the **observed** max-dose effect (not an
+   Emax extrapolation), so the degenerate-asymptote problem of the first run is gone; but single-trial
+   nodes still carry wide uncertainty. FIXED vs first run: Emax non-identifiability is flagged, not hidden.
+2. **Route/schedule node-splitting — DONE.** semaglutide now 3 nodes (oral / SC-weekly / SC-daily);
+   each matches its published value. (First run mixed them and mis-ranked semaglutide last.)
+3. **Timepoint harmonization — DONE (≥36 wk landmark).** Drops immature 2-34 wk arms. Trade-off:
+   removes survodutide/danuglipron/cagrilintide (only 20-32 wk data) → 7 mature nodes. Full-timepoint
+   run (9 nodes) retained as sensitivity.
+4. **6 trials dropped at extraction** (active-comparator-only labels / non-% outcome) — reported, not hidden.
+5. **Two-stage, not one-step Bayesian MBNMA.** allmeta keeps dose-response and network as separate
    modules; this uses the defensible two-stage (Pedder 'split') approach. A one-step Bayesian MBNMA
-   (mbnma R pkg) would propagate uncertainty better — future work.
+   (mbnma R pkg) would propagate uncertainty better — the main remaining future-work item.
 
 ## Verdict
 A 57-trial, 9-node, fully post-2010, fully CT.gov-sourced dose-response NMA with a POTH-quantified,

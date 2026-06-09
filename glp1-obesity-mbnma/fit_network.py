@@ -17,6 +17,13 @@ from scipy.optimize import curve_fit
 
 ROOT = r'C:/Projects/glp1-doseresp-nma/glp1-obesity-mbnma'
 RNG = np.random.default_rng(20260609)
+MIN_WEEK = 36   # primary landmark: keep mature weight-loss timepoints, drop immature <36wk
+
+
+def week_of(tf):
+    import re
+    m = re.findall(r'week\s*(\d+)', str(tf).lower())
+    return max(int(x) for x in m) if m else -1
 
 
 def emax(d, Emax, ED50):
@@ -29,11 +36,17 @@ def node_of(agent, dose_mg, schedule):
     bioavailability -> cannot share a dose axis. Fit each node on its NATIVE mg
     dose (Emax ED50 is per-node, so absolute units are internal to the node)."""
     if agent == 'semaglutide':
-        return 'semaglutide-oral' if dose_mg >= 3.0 else 'semaglutide-sc'
+        if schedule == 'weekly':
+            return 'semaglutide-sc-weekly'      # the marketed obesity product (Wegovy)
+        if dose_mg >= 3.0:
+            return 'semaglutide-oral'           # oral daily high-dose (Rybelsus/OASIS)
+        return 'semaglutide-sc-daily'           # phase-2 daily SC low-dose
     return agent
 
 
-def contrasts(df):
+def contrasts(df, min_week=0):
+    df = df.copy()
+    df['wk'] = df['timepoint'].map(week_of)
     rows = []
     for nct, g in df.groupby('nct'):
         pl = g[g.agent == 'placebo']
@@ -45,9 +58,11 @@ def contrasts(df):
         for _, r in g[g.agent != 'placebo'].iterrows():
             if pd.isna(r['var_of_mean']):
                 continue
+            if r['wk'] >= 0 and r['wk'] < min_week:   # timepoint harmonization
+                continue
             rows.append({'nct': nct, 'agent': node_of(r['agent'], r['dose_mg'], r['schedule']),
                          'dose_wk': r['dose_mg'], 'dose_mg': r['dose_mg'], 'schedule': r['schedule'],
-                         'loss': pmean - r['mean_pct'], 'var': r['var_of_mean'] + pvar})
+                         'week': int(r['wk']), 'loss': pmean - r['mean_pct'], 'var': r['var_of_mean'] + pvar})
     return pd.DataFrame(rows)
 
 
@@ -62,39 +77,39 @@ def fit_agent(sub):
 
 def main():
     df = pd.read_csv(f'{ROOT}/arms_full.csv')
-    cdf = contrasts(df)
+    cdf = contrasts(df, min_week=MIN_WEEK)
     cdf.to_csv(f'{ROOT}/contrasts_full.csv', index=False)
     n_trials = df['nct'].nunique()
     n_pl = df[df.agent == 'placebo']['nct'].nunique()
+    cdf_all = contrasts(df, min_week=0)
     print(f'cohort: {n_trials} trials, {len(df)} arms; {n_pl} have a placebo arm (connectable).')
-    print(f'contrasts: {len(cdf)} active-vs-placebo, agents={sorted(cdf.agent.unique())}\n')
+    print(f'timepoint landmark: >={MIN_WEEK} wk -> {len(cdf)}/{len(cdf_all)} contrasts retained '
+          f'(weeks {sorted(cdf.week.unique())})')
+    print(f'nodes (semaglutide split oral/sc-weekly/sc-daily): {sorted(cdf.agent.unique())}\n')
 
     agents, samples = [], {}
-    print('=== per-agent dose-response (Emax, weekly-equiv dose) ===')
+    print('=== per-node: observed effect at max dose (ranking metric) + Emax curve (shape) ===')
     for agent, sub in cdf.groupby('agent'):
         doses = sorted(sub['dose_wk'].unique())
         maxd = max(doses)
+        # RANKING METRIC: IVW-pooled OBSERVED contrast at the node's max studied dose
+        # (no model extrapolation -> robust to Emax non-identifiability).
+        top = sub[sub['dose_wk'] == maxd]
+        w = 1.0 / top['var'].values
+        m = float(np.sum(top['loss'].values * w) / np.sum(w)); se = float(np.sqrt(1.0 / np.sum(w)))
+        samples[agent] = RNG.normal(m, se, size=8000)
+        agents.append(agent)
+        # Emax curve (shape only); flag degenerate fits
+        curve = ''
         if len(doses) >= 2:
             try:
-                popt, pcov = fit_agent(sub)
-                Emax, ED50 = popt
-                # MC predicted loss at max studied dose, propagating covariance
-                draws = RNG.multivariate_normal(popt, pcov, size=8000)
-                draws[:, 0] = np.clip(draws[:, 0], 0, None); draws[:, 1] = np.clip(draws[:, 1], 1e-3, None)
-                pred = emax(maxd, draws[:, 0], draws[:, 1])
-                samples[agent] = pred
-                print(f'{agent:13s} Emax={Emax:5.1f}pp ED50={ED50:6.2f}  doses_wk={doses}  '
-                      f'pred@{maxd:g}mg/wk={pred.mean():5.1f}pp (95% {np.percentile(pred,2.5):.1f},{np.percentile(pred,97.5):.1f})  '
-                      f'[{sub.nct.nunique()} trials]')
+                (Em, ED50), _ = fit_agent(sub)
+                degen = Em >= 999 or ED50 >= 9999
+                curve = (f'  Emax-curve: {"UNIDENTIFIED (still-rising)" if degen else f"Emax={Em:.1f}pp ED50={ED50:.2f}"}')
             except Exception as e:
-                print(f'{agent:13s} fit failed: {e}')
-        else:
-            # single dose: point effect with SE from contrast variance (IVW if repeated)
-            w = 1 / sub['var'].values
-            m = float(np.sum(sub['loss'] * w) / np.sum(w)); se = float(np.sqrt(1 / np.sum(w)))
-            samples[agent] = RNG.normal(m, se, size=8000)
-            print(f'{agent:13s} single dose {maxd:g}mg/wk: loss={m:5.1f}pp (SE {se:.2f})  [{sub.nct.nunique()} trials] (no curve)')
-        agents.append(agent)
+                curve = f'  Emax fit failed: {e}'
+        print(f'{agent:22s} max {maxd:g}mg: observed loss={m:5.1f}pp (SE {se:.2f})  '
+              f'doses={[round(d,2) for d in doses]}  [{sub.nct.nunique()} trials]{curve}')
 
     # Ranking: higher loss = better. SUCRA from MC rank distribution.
     A = [a for a in agents if a in samples]
