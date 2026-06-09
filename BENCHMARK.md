@@ -4,8 +4,13 @@
 > **Search / Screen / Extract** apps against **Rayyan, Elicit, Covidence, ASReview and
 > DistillerSR** — measured WSS@95, dedup recall/precision, 100k-record scale, and
 > extraction yield, all driving the shipped code — see
-> [`BENCHMARK-sr-pipeline.md`](BENCHMARK-sr-pipeline.md). This file below benchmarks the
-> *statistical* breadth/correctness against R / Stata / CMA / RevMan.
+> [`BENCHMARK-sr-pipeline.md`](BENCHMARK-sr-pipeline.md). For the **like-for-like
+> active-learning head-to-head vs ASReview's own code** on 19 datasets (allmeta
+> WSS@95 0.447 vs ASReview 0.428 all-19 over 10 fresh seeds — a measured *statistical
+> tie* with allmeta nominally ahead, winning 12/19 but paired Wilcoxon p=0.18, n.s.;
+> the previously-cited ASReview "~0.83" is retracted as unreproducible), see
+> [`benchmark/BENCHMARK_ASREVIEW.md`](benchmark/BENCHMARK_ASREVIEW.md). This file below
+> benchmarks the *statistical* breadth/correctness against R / Stata / CMA / RevMan.
 
 Benchmark of allmeta (88 apps) against the tools reviewers actually use, to find the
 highest-value gaps. Companion to `ROADMAP-best-in-world.md`. For the *validation evidence*

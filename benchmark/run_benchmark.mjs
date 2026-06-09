@@ -8,7 +8,8 @@
 // Run:  node benchmark/run_benchmark.mjs   (from repo root; needs tests/playwright deps)
 // Writes benchmark/results.json and prints a summary table.
 import { createServer } from "http";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { gunzipSync } from "zlib";
 import { fileURLToPath } from "url";
 import { dirname, join, extname } from "path";
 import { createRequire } from "module";
@@ -55,6 +56,10 @@ function parseCSV(text) {
   return rows.filter((r) => r.length > 1).map((r) => { const o = {}; header.forEach((h, i) => (o[h] = r[i] ?? "")); return o; });
 }
 const load = (f) => parseCSV(readFileSync(join(__dirname, "data", f), "utf8"));
+const loadGz = (f) => parseCSV(gunzipSync(readFileSync(join(__dirname, "data", "corpora", f))).toString("utf8"));
+function mean(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
+function median(a) { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+function sd(a) { if (a.length < 2) return 0; const m = mean(a); return Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / (a.length - 1)); }
 
 // ---------- deterministic PRNG (Node side, for perturbation selection) ----------
 function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -68,28 +73,58 @@ async function main() {
   await page.goto(`http://127.0.0.1:${PORT}/screen/index.html`);
   await page.waitForFunction(() => !!window.__almScreenpro);
 
-  const results = { generatedNote: "Drives shipped /screen/index.html via window.__almScreenpro", classifier: {}, dedup: {}, perf: {} };
+  const results = { generatedNote: "Drives shipped /screen/index.html via window.__almScreenpro", classifierSuite: {}, classifierAggregate: {}, dedup: {}, perf: {} };
 
   const PERF_ONLY = !!process.env.PERF_ONLY;
-  // ===== 1. Active-learning recall / WSS@95 on Cohen TAR corpora =====
-  for (const [name, file, batch] of (PERF_ONLY ? [] : [["Cohen ACE-Inhibitors", "cohen_ace_inhibitors.csv", 100], ["Cohen Triptans", "cohen_triptans.csv", 50]])) {
-    const recs = load(file).map((r, i) => ({
-      id: "r" + i, title: r.title || "", abstract: r.abstract || "", keywords: [],
-      gold: String(r.label_included).trim() === "1" ? 1 : 0,
-    }));
-    const out = await page.evaluate(({ recs, batch }) => window.__almScreenpro.simulateActiveLearning({ records: recs, batch }), { recs, batch });
-    const randomWss = 0; // random screening yields WSS@95 ≈ 0 by definition
-    results.classifier[file] = {
-      label: name, N: out.N, relevant: out.totalPos, prevalence: round(out.prevalence),
-      batch: out.batch, seed: out.seed,
-      WSS_at_95: round(out.wss95), WSS_at_100: round(out.wss100),
-      recall_at_10pct: round(out.recallAt10pct), recall_at_20pct: round(out.recallAt20pct), recall_at_50pct: round(out.recallAt50pct),
-      screened_to_95pct_recall: out.screenedAt95, screened_to_100pct_recall: out.screenedAt100,
-      random_baseline_WSS_at_95: randomWss,
+  const SEEDS = process.env.SEEDS ? process.env.SEEDS.split(",").map(Number) : [1234567, 24681012, 1357911];
+  // batch size policy: keep ACE (N=2544) at 100 so it stays comparable to the
+  // originally-published 0.67; bound iteration count on the big sets.
+  const batchFor = (n) => (n >= 4000 ? 200 : n >= 1000 ? 100 : 50);
+  // ===== 1. Active-learning recall / WSS@95 across the FULL labelled suite =====
+  // Each dataset is run over multiple random seeds (different initial seed set +
+  // tie-breaking) and averaged, so the headline number is not a lucky-seed pick.
+  if (!PERF_ONLY) {
+    const manifest = JSON.parse(readFileSync(join(__dirname, "data", "corpora", "manifest.json"), "utf8"));
+    const suiteWss95 = [], suiteWss100 = [], cohenWss95 = [];
+    for (const d of manifest.datasets) {
+      const gzf = d.id + ".csv.gz";
+      if (!existsSync(join(__dirname, "data", "corpora", gzf))) { console.log(`  (skip ${d.id}: not fetched)`); continue; }
+      const recs = loadGz(gzf).map((r, i) => ({
+        id: "r" + i, title: r.title || "", abstract: r.abstract || "", keywords: [],
+        gold: String(r.label_included).trim() === "1" ? 1 : 0,
+      }));
+      const batch = batchFor(recs.length);
+      const runs = [];
+      for (const rngSeed of SEEDS) {
+        const out = await page.evaluate(({ recs, batch, rngSeed }) => window.__almScreenpro.simulateActiveLearning({ records: recs, batch, rngSeed }), { recs, batch, rngSeed });
+        if (out && out.ok) runs.push(out);
+      }
+      if (!runs.length) { console.log(`  (skip ${d.id}: simulation returned no usable run)`); continue; }
+      const pick = (k) => runs.map((o) => o[k]);
+      const wss95s = pick("wss95"), rec = (k) => round(mean(pick(k)));
+      const row = {
+        label: d.label, suite: d.suite, topic: d.topic, N: runs[0].N, relevant: runs[0].totalPos,
+        prevalence: round(runs[0].prevalence), batch, seeds: SEEDS.length,
+        WSS_at_95: round(mean(wss95s)), WSS_at_95_sd: round(sd(wss95s)),
+        WSS_at_95_min: round(Math.min(...wss95s)), WSS_at_95_max: round(Math.max(...wss95s)),
+        WSS_at_100: round(mean(pick("wss100"))),
+        recall_at_10pct: rec("recallAt10pct"), recall_at_20pct: rec("recallAt20pct"), recall_at_50pct: rec("recallAt50pct"),
+        screened_to_95pct_recall: Math.round(mean(pick("screenedAt95"))),
+        random_baseline_WSS_at_95: 0,
+      };
+      results.classifierSuite[d.id] = row;
+      suiteWss95.push(row.WSS_at_95); suiteWss100.push(row.WSS_at_100);
+      if (d.suite === "Cohen 2006") cohenWss95.push(row.WSS_at_95);
+      console.log(`[clf] ${d.label}: N=${row.N}, prev=${(row.prevalence * 100).toFixed(1)}%, WSS@95 ${row.WSS_at_95} (±${row.WSS_at_95_sd}, ${row.WSS_at_95_min}–${row.WSS_at_95_max})`);
+    }
+    const agg = (arr) => ({ n: arr.length, mean: round(mean(arr)), median: round(median(arr)), min: round(Math.min(...arr)), max: round(Math.max(...arr)), sd: round(sd(arr)) });
+    results.classifierAggregate = {
+      seeds: SEEDS, note: "Per-dataset WSS@95 averaged over seeds, then aggregated across datasets. WSS@95 = workload saved at 95% recall vs reading every record; 0 = no better than random screening order.",
+      all_datasets: agg(suiteWss95), cohen_15: agg(cohenWss95),
+      WSS_at_100_all: agg(suiteWss100),
     };
-    console.log(`\n[classifier] ${name}: N=${out.N}, relevant=${out.totalPos} (${(out.prevalence * 100).toFixed(1)}%)`);
-    console.log(`  WSS@95 = ${round(out.wss95)}  (screened ${out.screenedAt95}/${out.N} to reach 95% recall)`);
-    console.log(`  recall@10% = ${round(out.recallAt10pct)}, recall@20% = ${round(out.recallAt20pct)}`);
+    console.log(`\n[AGGREGATE] Cohen-15 WSS@95: mean ${results.classifierAggregate.cohen_15.mean}, median ${results.classifierAggregate.cohen_15.median}, range ${results.classifierAggregate.cohen_15.min}–${results.classifierAggregate.cohen_15.max}`);
+    console.log(`[AGGREGATE] All ${suiteWss95.length} datasets WSS@95: mean ${results.classifierAggregate.all_datasets.mean}, median ${results.classifierAggregate.all_datasets.median}, range ${results.classifierAggregate.all_datasets.min}–${results.classifierAggregate.all_datasets.max}`);
   }
 
   // ===== 2a. Dedup recall on Nagtegaal author-labelled duplicates =====
@@ -208,8 +243,9 @@ async function main() {
   }
 
   if (!PERF_ONLY) {
-    writeFileSync(join(__dirname, "results.json"), JSON.stringify(results, null, 2));
-    console.log(`\nWrote ${join(__dirname, "results.json")}`);
+    const outName = process.env.OUT_FILE || "results.json";
+    writeFileSync(join(__dirname, outName), JSON.stringify(results, null, 2));
+    console.log(`\nWrote ${join(__dirname, outName)}`);
   }
   await browser.close();
   srv.close();

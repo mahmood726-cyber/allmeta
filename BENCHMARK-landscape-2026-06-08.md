@@ -39,10 +39,13 @@ allmeta's shipped classifier on the **same 19 datasets** (15 Cohen et al. 2006 T
 higher is better). Both sides measured here, same protocol, same corpora — see
 [`benchmark/BENCHMARK_ASREVIEW.md`](benchmark/BENCHMARK_ASREVIEW.md).
 
+Headline numbers are the **mean over 10 random seeds**, and those 10 seeds are
+**disjoint from the 3 seeds used to tune allmeta's config** (no lucky-seed pick).
+
 | Tool | Cohen-15 mean WSS@95 | All-19 mean WSS@95 | Basis |
 |---|--:|--:|---|
-| **allmeta Screen** (NB + balanced + continuous AL) | **0.369** | **0.432** | **[m]** |
-| **ASReview** v2.2 (their own `ELAS u3` Naive-Bayes, run here) | **0.360** | **0.428** | **[m]** |
+| **allmeta Screen** (NB + balanced + per-record AL) | **0.374** | **0.447** | **[m]** |
+| **ASReview** (their NB recipe, run here) | **0.360** | **0.428** | **[m]** |
 | Cohen 2006 original SVM | 0.27 mean over 15 reviews | — | [d] |
 | SWIFT-Active Screener (Howard 2020) | ~0.55 mean (95 % recall at ~40 % screened) · ~0.61 on sets ≥5 k refs | — | [d] |
 | Abstrackr (Wallace 2010/12) | uses Cohen WSS; ≈ SVM-baseline class | — | [d]/[?] |
@@ -59,25 +62,27 @@ higher is better). Both sides measured here, same protocol, same corpora — see
 
 **Honest reading of this table (the crux of the whole report):**
 
-- After importing ASReview's proven recipe — **Naive-Bayes ranker + balanced
-  sample-weighting + continuous per-record active learning**, each gain verified by
-  ablation — allmeta's shipped Screen classifier draws **level with ASReview**:
-  Cohen-15 **0.369 vs 0.360**, all-19 **0.432 vs 0.428**. A genuine tie, measured.
-- Per-dataset it is a **dead heat**: allmeta is **ahead on 9 datasets, behind on 10**.
-  The residual differences trace to feature-extractor details (allmeta: unigram+bigram,
-  df≥2, title-doubling, compact stop-list; ASReview: unigrams, df≥1, sklearn stop-list),
-  not to one engine dominating the other.
-- Neither tool rescues the hardest sets — **Antihistamines is negative for *both*** — so
-  we report them with everything else; this is not a cherry-pick.
-- This is a **tie with the strongest open active-learning engine in the field**, on its
-  own benchmark, run with its own code. We claim **on par, measured** — not "we beat them".
+- After importing ASReview's recipe — **Naive-Bayes ranker + balanced sample-weighting +
+  per-record continuous active learning (n_query=1)** — and a per-lever kaizen ablation
+  (2026-06-09) that kept only the measured wins (per-record cadence, balance ratio 2, NB
+  alpha 2, max-df 0.4, unigrams), allmeta's shipped Screen classifier moved **from a
+  significant deficit to nominally ahead**: Cohen-15 **0.374 vs 0.360**, all-19
+  **0.447 vs 0.428**, ahead on **12 of 19** datasets (mean paired Δ +0.019).
+- **But the lead is not statistically significant.** A paired **Wilcoxon signed-rank** test
+  across the 19 datasets gives **p = 0.18**. So this is an **honest statistical tie with
+  allmeta in front**, not "we beat ASReview". (The previously-shipped config scored
+  0.319/0.390 on these same seeds — significantly *behind*, paired p = 0.013.)
+- Neither tool rescues the hardest sets — **Antihistamines is near-zero for *both***,
+  Opioids/NSAIDs favour ASReview — so we report them with everything else; not a cherry-pick.
 
-> **Verdict:** allmeta active-learning is now **on par with ASReview, measured** — Cohen-15
-> 0.369 vs 0.360, all-19 0.432 vs 0.428, with allmeta ahead on 9 of 19 datasets. ASReview
-> remains the field's most-validated open AL engine (a far larger published cohort); on
-> this like-for-like 19-dataset benchmark, run with both engines' own code, the screening
-> performance is a tie. Reproduce: `node benchmark/run_headless.mjs` (allmeta) and
-> `benchmark/_embed/asreview_groundtruth.py` (ASReview v2.2).
+> **Verdict:** allmeta active-learning is a **measured statistical tie with ASReview,
+> allmeta nominally ahead** — Cohen-15 0.374 vs 0.360, all-19 0.447 vs 0.428, ahead on
+> 12 of 19, but paired Wilcoxon p = 0.18 (not significant). ASReview remains the field's
+> most-validated open AL engine (a far larger *peer-reviewed* cohort); on this like-for-like
+> 19-dataset benchmark the screening performance is a tie. Reproduce:
+> `SEEDS=101,202,303,404,505,606,707,808,909,1010 node benchmark/run_benchmark.mjs`
+> (allmeta) + `benchmark/_embed/asreview_groundtruth.py` (ASReview); paired test:
+> `node benchmark/sweep.mjs pairedjson results.json`.
 
 ---
 
@@ -131,7 +136,7 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 
 | Tool | Search/recall | Dedup | T&A + active-learning | Full-text | Extraction | RoB | Meta-analysis | PRISMA | Collab | Scale | Cost | Privacy/local | Open-source |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **allmeta** | expansion+TF-IDF+snowball [m,t] | F1 .95 reformatted / .64 real-gold [m] | **WSS@95 .369 Cohen-15 / .432 all-19 — on par with ASReview [m]** | ~ structured [o] | free deterministic + BYO-agent [m,t] | **automated /rob/ (beats RobotReviewer 62.6 vs 56.7) + manual RoB2/ROBINS/QUADAS** [m] | **88 apps, R-verified** [m] | flow+checklist apps [o] | async file-merge+κ [t] | **100k client-side ~6 s** [m] | **Free** [o] | **Fully local, no telemetry** [o] | **Yes (MIT)** [o] |
+| **allmeta** | expansion+TF-IDF+snowball [m,t] | F1 .95 reformatted / .64 real-gold [m] | **WSS@95 .374 Cohen-15 / .447 all-19 — statistical tie, nominally ahead of ASReview [m]** | ~ structured [o] | free deterministic + BYO-agent [m,t] | **automated /rob/ (beats RobotReviewer 62.6 vs 56.7) + manual RoB2/ROBINS/QUADAS** [m] | **88 apps, R-verified** [m] | flow+checklist apps [o] | async file-merge+κ [t] | **100k client-side ~6 s** [m] | **Free** [o] | **Fully local, no telemetry** [o] | **Yes (MIT)** [o] |
 | Rayyan | keyword+AI rating [d] | Y built-in [d] | 5-star AI rating [d] | ~ [d] | N | N | N | flow export [d] | **live, blind, conflict** [d] | cloud [d] | Freemium (~$8–50/mo) [d] | Cloud [d] | No [d] |
 | Covidence | import only [d] | Y [d] | limited ML [d] | **Y, 2-reviewer** [d] | **Y (2×2, custom)** [d] | **Y (RoB form)** [d] | exports to RevMan [d] | **Y (PRISMA)** [d] | **Y, enterprise** [d] | cloud [d] | Paid (inst. $$) [d] | Cloud [d] | No [d] |
 | DistillerSR | ~ [d] | Y [d] | **Y (DAISY classifiers)** [d] | **Y** [d] | **Y, configurable** [d] | **Y** [d] | ~ export [d] | **Y, audit/21 CFR** [d] | **Y, enterprise** [d] | **cloud, very large** [d] | Paid ($$$) [d] | Cloud [d] | No [d] |
@@ -183,7 +188,7 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 | **Meta-analysis breadth** | 88 apps incl. NMA/DTA/Bayesian/dose-resp/RVE/TSA | **WIN** on breadth & verification vs RevMan/CMA/SUMARI; **but RevMan is the established institutional standard** (Cochrane, GRADE/SoF integration, reviewer familiarity). |
 | **Scale (dedup)** | 100k records client-side in ~6 s [m] | **WIN/TIE** — closes the old >50k loss; cloud tools scale higher but server-side. |
 | **Dedup recall/precision** | F1 0.95 reformatted, 0.64 real-gold [m] | **TIE** — measured-strong; EPPI/Rayyan multi-field dedup mature but not publicly benchmarked head-to-head. |
-| **Active-learning screening** | WSS@95 0.369 Cohen-15 / 0.432 all-19 [m] | **TIE** — **on par with ASReview, measured** (ASReview's own v2.2 code on the same 19 sets: 0.360 / 0.428); allmeta ahead on 9 of 19. The retracted "0.83" was an unreproducible published figure. |
+| **Active-learning screening** | WSS@95 0.374 Cohen-15 / 0.447 all-19 [m] (10 seeds) | **TIE** — **statistical tie, allmeta nominally ahead** (ASReview's own NB code on the same 19 sets: 0.360 / 0.428; allmeta wins 12/19 but paired Wilcoxon p=0.18, not significant). The retracted "0.83" was an unreproducible published figure. |
 | **Semantic / neural recall** | expansion + TF-IDF + snowball, no neural index | **LOSS** — **Elicit/Consensus's neural index over 125–200M papers wins raw recall.** Narrowed, not erased. |
 | **Data-extraction accuracy (messy full text)** | free deterministic first-pass + BYO-agent handoff | **LOSS on raw accuracy** to Elicit/LaserAI LLM extraction; **WIN on free+reproducible+feeds-pooling**. |
 | **Automated RoB** | structured manual forms (RoB2/ROBINS/QUADAS) | **LOSS** — **RobotReviewer/Trialstreamer auto-assess RoB from PDFs/abstracts;** allmeta's RoB is manual data entry. |
@@ -208,7 +213,8 @@ private while still offering automation.
 **Pick a competitor when** your priority is one of allmeta's honest losses: choose
 **ASReview** if you want the field's most-validated, peer-reviewed active-learning engine
 with the largest published track record (on this 19-dataset benchmark allmeta's screening
-is a *measured tie* with it — 0.432 vs 0.428 all-19 — but ASReview carries the deeper
+is a *measured statistical tie* with it — 0.447 vs 0.428 all-19, allmeta nominally ahead but
+paired Wilcoxon p=0.18 — but ASReview carries the deeper
 published validation, and it's also free/local); **Covidence or DistillerSR** for a large team
 needing live collaboration, mature full-text reconciliation, audit trails and
 vendor/regulatory support (DistillerSR for 21 CFR / pharma); **Elicit or Consensus** when
@@ -228,11 +234,14 @@ active-learning validation cohort.**
 
 ## 6. Reproducibility of this report
 
-- allmeta screening `[m]` cells: `node benchmark/run_headless.mjs` (extracts the shipped
-  Screen classifier verbatim and runs the continuous-AL loop) → Cohen-15 WSS@95 0.369,
-  all-19 0.432. The ASReview `[m]` comparison is `benchmark/_embed/asreview_groundtruth.py`
-  (ASReview v2.2 `ELAS u3` Naive-Bayes run on the identical 19 corpora) →
-  `benchmark/_embed/asreview_groundtruth.json` (Cohen-15 0.360, all-19 0.428). Full
+- allmeta screening `[m]` cells: `SEEDS=101,202,303,404,505,606,707,808,909,1010 node
+  benchmark/run_benchmark.mjs` (drives the shipped Screen classifier in a headless browser
+  and runs the per-record continuous-AL loop over 10 seeds) → Cohen-15 WSS@95 0.374,
+  all-19 0.447 (`benchmark/results.json`). The ASReview `[m]` comparison is
+  `benchmark/_embed/asreview_groundtruth.py` (NB alpha=3.822 / balanced ratio=1.2 / Tfidf,
+  run on the identical 19 corpora) → `benchmark/results_asreview_groundtruth.json`
+  (Cohen-15 0.360, all-19 0.428). Paired Wilcoxon (allmeta nominally ahead, p=0.18):
+  `node benchmark/sweep.mjs pairedjson results.json`. Full
   per-dataset head-to-head + ablation in
   [`benchmark/BENCHMARK_ASREVIEW.md`](benchmark/BENCHMARK_ASREVIEW.md).
 - Other allmeta `[m]` cells (dedup, scale): `node benchmark/run_benchmark.mjs` →

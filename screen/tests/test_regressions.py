@@ -79,11 +79,14 @@ def test_dedup_is_blocked_not_quadratic():
     assert "DEDUP_T_ASSIST" in h  # multi-field relaxed-threshold assist (M-4)
 
 
-def test_classifier_uses_both_reviewers_and_bigrams():
-    # M-5: dual-reviewer labels + bigram features + cross-validated AUC.
+def test_classifier_uses_both_reviewers_and_cv():
+    # M-5: dual-reviewer labels + cross-validated AUC. Default features are unigrams
+    # (ML_NGRAM_MAX=1, matching ASReview) after the 2026-06-09 kaizen ablation found
+    # bigrams add no measured WSS@95 here; bigrams remain opt-in via ML_NGRAM_MAX>=2.
     h = _h()
     assert "mlLabelDefault" in h and "both reviewers" in h
-    assert "function mlTokenize" in h and "bigram" in h.lower()
+    assert "function mlTokenize" in h and "ML_NGRAM_MAX" in h
+    assert "var ML_NGRAM_MAX = 1" in h  # unigram default is the shipped, measured-best config
     assert "mlCrossVal" in h and "aucScore" in h
 
 
