@@ -1,0 +1,151 @@
+nct,agent,dose_mg,schedule,dose_wk,n,mean_pct,var_of_mean,timepoint
+NCT02453711,placebo,0.0,placebo,0.0,123.0,-2.29,0.5476,"Week 0, Week 52"
+NCT02453711,semaglutide,0.4,daily,2.8000000000000003,100.0,-13.84,0.6889,"Week 0, Week 52"
+NCT02453711,semaglutide,0.1,daily,0.7000000000000001,96.0,-8.62,0.7055999999999999,"Week 0, Week 52"
+NCT02453711,semaglutide,0.3,daily,2.1,95.0,-11.17,0.7224999999999999,"Week 0, Week 52"
+NCT02453711,semaglutide,0.2,daily,1.4000000000000001,94.0,-11.6,0.7224999999999999,"Week 0, Week 52"
+NCT02453711,semaglutide,0.05,daily,0.35000000000000003,92.0,-5.99,0.7224999999999999,"Week 0, Week 52"
+NCT02607865,semaglutide,3.0,daily,21.0,466.0,-1.23,0.02734957081545064,"Week 0, week 26, week 52, week 78"
+NCT02607865,semaglutide,7.0,daily,49.0,465.0,-2.36,0.03597440860215053,"Week 0, week 26, week 52, week 78"
+NCT02607865,semaglutide,14.0,daily,98.0,465.0,-3.44,0.038116344086021506,"Week 0, week 26, week 52, week 78"
+NCT02827708,placebo,0.0,placebo,0.0,155.0,-0.92,0.0632058064516129,"Week 0, week 26"
+NCT02827708,semaglutide,14.0,daily,98.0,154.0,-3.75,0.10915584415584415,"Week 0, week 26"
+NCT02863328,semaglutide,14.0,daily,98.0,411.0,-4.34,0.04948929440389294,"Week 0, week 26, week 52"
+NCT02863419,placebo,0.0,placebo,0.0,142.0,-0.6,0.0785605633802817,"Week 0, Week 26, Week 52"
+NCT02863419,semaglutide,14.0,daily,98.0,285.0,-4.89,0.08597368421052633,"Week 0, Week 26, Week 52"
+NCT02906930,placebo,0.0,placebo,0.0,168.0,-1.37,0.07628809523809524,"Week 0, week 26"
+NCT02906930,semaglutide,3.0,daily,21.0,168.0,-1.67,0.09908571428571429,"Week 0, week 26"
+NCT02906930,semaglutide,7.0,daily,49.0,160.0,-2.85,0.130530625,"Week 0, week 26"
+NCT02906930,semaglutide,14.0,daily,98.0,160.0,-4.71,0.15625,"Week 0, week 26"
+NCT03015220,semaglutide,3.0,daily,21.0,131.0,-0.28,0.0594206106870229,"Week 0, week 26, week 52"
+NCT03015220,semaglutide,7.0,daily,49.0,132.0,-1.49,0.13683712121212122,"Week 0, week 26, week 52"
+NCT03015220,semaglutide,14.0,daily,98.0,130.0,-3.21,0.14355692307692308,"Week 0, week 26, week 52"
+NCT03018028,placebo,0.0,placebo,0.0,49.0,-1.58,0.10516122448979591,"Week 0, week 26 and week 52"
+NCT03018028,semaglutide,3.0,daily,21.0,49.0,-0.64,0.14331632653061224,"Week 0, week 26 and week 52"
+NCT03018028,semaglutide,7.0,daily,49.0,49.0,-1.63,0.1577224489795918,"Week 0, week 26 and week 52"
+NCT03018028,semaglutide,14.0,daily,98.0,48.0,-3.54,0.3906020833333333,"Week 0, week 26 and week 52"
+NCT03021187,placebo,0.0,placebo,0.0,184.0,-0.47,0.04956739130434783,"Week 0, week 26, week 52"
+NCT03021187,semaglutide,3.0,daily,21.0,184.0,-1.73,0.060628260869565215,"Week 0, week 26, week 52"
+NCT03021187,semaglutide,14.0,daily,98.0,181.0,-4.3,0.11538618784530388,"Week 0, week 26, week 52"
+NCT03021187,semaglutide,7.0,daily,49.0,182.0,-3.11,0.17601978021978024,"Week 0, week 26, week 52"
+NCT03086330,placebo,0.0,placebo,0.0,151.0,-1.0,0.06364238410596028,"Week 0, week 30"
+NCT03086330,semaglutide,1.0,weekly,1.0,151.0,-5.4,0.15258278145695364,"Week 0, week 30"
+NCT03191396,semaglutide,1.0,weekly,1.0,290.0,-6.1,0.08279310344827588,"Week 0, week 30"
+NCT03548935,placebo,0.0,placebo,0.0,655.0,-3.1,0.06253435114503818,Baseline (week 0) to week 68
+NCT03548935,semaglutide,2.4,weekly,2.4,1306.0,-16.9,0.06765696784073508,Baseline (week 0) to week 68
+NCT03548987,semaglutide,2.4,weekly,2.4,535.0,-8.8,0.11371962616822429,Randomisation (week 20) to week 68
+NCT03548987,placebo,0.0,placebo,0.0,268.0,6.5,0.2212313432835821,Randomisation (week 20) to week 68
+NCT03552757,placebo,0.0,placebo,0.0,403.0,-3.1,0.0670967741935484,Baseline (week 0) to week 68
+NCT03552757,semaglutide,2.4,weekly,2.4,404.0,-10.7,0.1505940594059406,Baseline (week 0) to week 68
+NCT03574597,placebo,0.0,placebo,0.0,7378.0,-0.87,0.00501035510978585,"Week 0, week 104"
+NCT03611582,semaglutide,2.4,weekly,2.4,407.0,-17.6,0.22643734643734642,Baseline (week 0) to week 68
+NCT03611582,placebo,0.0,placebo,0.0,204.0,-6.1,0.2831372549019608,Baseline (week 0) to week 68
+NCT03693430,placebo,0.0,placebo,0.0,128.0,-2.0,0.5778125,From Baseline (Week 0) to Week 104
+NCT03693430,semaglutide,2.4,weekly,2.4,144.0,-17.3,0.9834027777777778,From Baseline (Week 0) to Week 104
+NCT03811574,placebo,0.0,placebo,0.0,100.0,-1.9,0.3481,"Baseline (week 0), week 68"
+NCT03811574,semaglutide,2.4,weekly,2.4,193.0,-13.4,0.38321243523316056,"Baseline (week 0), week 68"
+NCT03811574,semaglutide,1.7,weekly,1.7,98.0,-9.9,0.6208163265306123,"Baseline (week 0), week 68"
+NCT03856047,cagrilintide,0.3,weekly,0.3,96.0,-6.1,0.15843749999999998,From baseline (week 0) to week 26
+NCT03856047,placebo,0.0,placebo,0.0,95.0,-3.0,0.28463157894736846,From baseline (week 0) to week 26
+NCT03856047,cagrilintide,1.2,weekly,1.2,98.0,-8.5,0.2975510204081633,From baseline (week 0) to week 26
+NCT03856047,cagrilintide,0.6,weekly,0.6,97.0,-6.9,0.300618556701031,From baseline (week 0) to week 26
+NCT03856047,cagrilintide,4.5,weekly,4.5,97.0,-10.8,0.3118556701030928,From baseline (week 0) to week 26
+NCT03856047,cagrilintide,2.4,weekly,2.4,99.0,-9.5,0.38828282828282834,From baseline (week 0) to week 26
+NCT03987451,semaglutide,2.4,weekly,2.4,47.0,-8.83,1.1777361702127662,"Baseline (week 0), Week 48"
+NCT03987451,placebo,0.0,placebo,0.0,24.0,-0.09,2.3064000000000004,"Baseline (week 0), Week 48"
+NCT04017832,semaglutide,3.0,daily,21.0,322.0,-2.0,0.049689440993788817,From baseline to week 26
+NCT04017832,semaglutide,7.0,daily,49.0,319.0,-4.0,0.050156739811912224,From baseline to week 26
+NCT04017832,semaglutide,14.0,daily,98.0,300.0,-5.0,0.08333333333333333,From baseline to week 26
+NCT04074161,semaglutide,2.4,weekly,2.4,117.0,-16.4,0.9423076923076923,"Baseline (week 0), week 68"
+NCT04102189,semaglutide,2.4,weekly,2.4,131.0,-14.8,1.3300763358778624,"Baseline (week 0), week 68"
+NCT04102189,placebo,0.0,placebo,0.0,62.0,2.3,1.3356451612903224,"Baseline (week 0), week 68"
+NCT04109547,placebo,0.0,placebo,0.0,106.0,-1.0,0.08490566037735849,"Baseline (Week 0), Week 26"
+NCT04109547,semaglutide,7.0,daily,49.0,119.0,-3.0,0.13445378151260504,"Baseline (Week 0), Week 26"
+NCT04109547,semaglutide,3.0,daily,21.0,115.0,-1.0,0.1391304347826087,"Baseline (Week 0), Week 26"
+NCT04109547,semaglutide,14.0,daily,98.0,116.0,-4.0,0.21551724137931033,"Baseline (Week 0), Week 26"
+NCT04153929,survodutide,0.3,weekly,0.3,41.0,-1.86,0.20653902439024394,At baseline and at Week 17 (16 weeks after treatment start ).
+NCT04153929,placebo,0.0,placebo,0.0,49.0,-1.2,0.25286530612244895,At baseline and at Week 17 (16 weeks after treatment start ).
+NCT04153929,survodutide,0.9,weekly,0.9,46.0,-4.43,0.3340521739130434,At baseline and at Week 17 (16 weeks after treatment start ).
+NCT04153929,survodutide,2.7,weekly,2.7,33.0,-6.68,0.49704545454545457,At baseline and at Week 17 (16 weeks after treatment start ).
+NCT04153929,survodutide,1.8,weekly,1.8,36.0,-6.63,0.731025,At baseline and at Week 17 (16 weeks after treatment start ).
+NCT04184622,tirzepatide,10.0,weekly,10.0,260.0,-19.9,0.5184,"Baseline, Week 176"
+NCT04184622,tirzepatide,15.0,weekly,15.0,249.0,-22.9,0.5328999999999999,"Baseline, Week 176"
+NCT04184622,tirzepatide,5.0,weekly,5.0,245.0,-15.4,0.5476,"Baseline, Week 176"
+NCT04184622,placebo,0.0,placebo,0.0,264.0,-2.1,0.6084,"Baseline, Week 176"
+NCT04251156,semaglutide,2.4,weekly,2.4,238.0,-12.5,0.2300840336134454,"Baseline (week 0), week 44"
+NCT04251156,placebo,0.0,placebo,0.0,116.0,-3.6,0.30008620689655174,"Baseline (week 0), week 44"
+NCT04515849,placebo,0.0,placebo,0.0,35.0,-1.61,0.43560000000000004,Baseline to end of 14 weeks of dosing
+NCT04657003,tirzepatide,10.0,weekly,10.0,309.0,-13.4,0.2304,"Baseline, Week 72"
+NCT04657003,placebo,0.0,placebo,0.0,311.0,-3.3,0.24009999999999998,"Baseline, Week 72"
+NCT04657003,tirzepatide,15.0,weekly,15.0,309.0,-15.7,0.24009999999999998,"Baseline, Week 72"
+NCT04657016,placebo,0.0,placebo,0.0,291.0,3.3,0.36,"Baseline, 72 Weeks"
+NCT04660643,placebo,0.0,placebo,0.0,329.0,14.8,0.28090000000000004,"Randomization (Week 36), Week 88"
+NCT04667377,survodutide,2.4,weekly,2.4,78.0,-12.51,1.0201,"Baseline, Week 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, and 46."
+NCT04667377,survodutide,4.8,weekly,4.8,76.0,-14.94,1.0201,"Baseline, Week 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, and 46."
+NCT04667377,survodutide,3.6,weekly,3.6,76.0,-13.22,1.0816000000000001,"Baseline, Week 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, and 46."
+NCT04667377,placebo,0.0,placebo,0.0,77.0,-2.82,1.1236000000000002,"Baseline, Week 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, and 46."
+NCT04667377,survodutide,0.6,weekly,0.6,76.0,-6.19,1.1449,"Baseline, Week 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, and 46."
+NCT04707313,placebo,0.0,placebo,0.0,71.0,0.17,6.4e-05,"Baseline, Week 26"
+NCT04707313,danuglipron,40.0,daily,280.0,62.0,-5.43,8.099999999999999e-05,"Baseline, Week 26"
+NCT04707313,danuglipron,80.0,daily,560.0,63.0,-4.83,8.099999999999999e-05,"Baseline, Week 26"
+NCT04707313,danuglipron,120.0,daily,840.0,64.0,-8.94,8.099999999999999e-05,"Baseline, Week 26"
+NCT04707313,danuglipron,160.0,daily,1120.0,63.0,-9.36,0.0001,"Baseline, Week 26"
+NCT04707313,danuglipron,200.0,daily,1400.0,63.0,-8.96,0.00012099999999999999,"Baseline, Week 26"
+NCT04707469,semaglutide,14.0,daily,98.0,495.0,-4.7,0.06335353535353534,"Baseline (week 0), week 68"
+NCT04707469,semaglutide,25.0,daily,175.0,477.0,-7.2,0.10568134171907756,"Baseline (week 0), week 68"
+NCT04707469,semaglutide,50.0,daily,350.0,495.0,-8.4,0.11977777777777779,"Baseline (week 0), week 68"
+NCT04779697,placebo,0.0,placebo,0.0,43.0,-0.17,0.3739558139534883,Average Weight Change from baseline week 0 to end of treatment week 12 (Week 12 - week 0)
+NCT04788511,placebo,0.0,placebo,0.0,242.0,-2.5,0.12958677685950412,From baseline (week 0) to end of treatment (week 52)
+NCT04788511,semaglutide,2.4,weekly,2.4,246.0,-13.9,0.26670731707317075,From baseline (week 0) to end of treatment (week 52)
+NCT04844918,tirzepatide,15.0,weekly,15.0,65.0,-22.7,0.81,"Baseline, 72 Weeks"
+NCT04844918,placebo,0.0,placebo,0.0,66.0,-1.7,0.81,"Baseline, 72 Weeks"
+NCT04844918,tirzepatide,10.0,weekly,10.0,59.0,-17.8,0.8835999999999999,"Baseline, 72 Weeks"
+NCT04847557,placebo,0.0,placebo,0.0,333.0,-2.24,0.2116,"Baseline, Week 52"
+NCT04881760,placebo,0.0,placebo,0.0,68.0,-2.11,0.5328999999999999,"Baseline, Week 48"
+NCT04881760,retatrutide,1.0,weekly,1.0,69.0,-8.67,0.9025,"Baseline, Week 48"
+NCT04881760,retatrutide,12.0,weekly,12.0,62.0,-24.22,1.5376,"Baseline, Week 48"
+NCT04881760,retatrutide,8.0,weekly,8.0,35.0,-21.72,1.9880999999999998,"Baseline, Week 48"
+NCT04881760,retatrutide,4.0,weekly,4.0,33.0,-17.83,2.3409,"Baseline, Week 48"
+NCT04969939,semaglutide,2.4,weekly,2.4,44.0,-5.55,0.35820227272727273,"Part 2: Randomisation (week 32), end of treatment (week 48)"
+NCT04982575,semaglutide,2.4,weekly,2.4,30.0,-5.0,0.5333333333333333,"Week 0, Week 32"
+NCT04998136,placebo,0.0,placebo,0.0,48.0,-2.6,0.7008333333333333,"Baseline (week 0), end of treatment (week 44)"
+NCT05024032,tirzepatide,10.0,weekly,10.0,70.0,-14.4,0.9603999999999999,"Baseline, Week 52"
+NCT05024032,placebo,0.0,placebo,0.0,68.0,-2.4,1.0,"Baseline, Week 52"
+NCT05024032,tirzepatide,15.0,weekly,15.0,68.0,-19.9,1.0201,"Baseline, Week 52"
+NCT05035095,placebo,0.0,placebo,0.0,295.0,-2.2,0.17572881355932204,"Baseline (week 0), end-of-treatment (week 68)"
+NCT05035095,semaglutide,50.0,daily,350.0,317.0,-15.8,0.3346687697160884,"Baseline (week 0), end-of-treatment (week 68)"
+NCT05040971,placebo,0.0,placebo,0.0,66.0,-2.7,0.28015151515151515,From randomisation (week 0) to end of treatment (week 52)
+NCT05040971,semaglutide,2.4,weekly,2.4,129.0,-14.4,0.48379844961240315,From randomisation (week 0) to end of treatment (week 52)
+NCT05051579,orforglipron,45.0,daily,315.0,57.0,-14.7,0.8835999999999999,"Baseline, Week 36"
+NCT05051579,orforglipron,36.0,daily,252.0,56.0,-13.5,0.9025,"Baseline, Week 36"
+NCT05051579,placebo,0.0,placebo,0.0,48.0,-2.3,1.0,"Baseline, Week 36"
+NCT05051579,orforglipron,24.0,daily,168.0,51.0,-12.5,1.0201,"Baseline, Week 36"
+NCT05051579,orforglipron,12.0,daily,84.0,44.0,-9.4,1.1025,"Baseline, Week 36"
+NCT05064735,placebo,0.0,placebo,0.0,120.0,-2.5,0.2613333333333333,"Baseline (week 0), end of treatment (week 68)"
+NCT05064735,semaglutide,2.4,weekly,2.4,253.0,-14.2,0.2923320158102767,"Baseline (week 0), end of treatment (week 68)"
+NCT05144984,semaglutide,21.6,weekly,21.6,65.0,-13.0,0.4486153846153847,"Baseline (week 0), (week 34)"
+NCT05144984,placebo,0.0,placebo,0.0,37.0,-2.7,0.4543243243243243,"Baseline (week 0), (week 34)"
+NCT05144984,semaglutide,12.0,weekly,12.0,65.0,-11.0,0.5175384615384615,"Baseline (week 0), (week 34)"
+NCT05144984,semaglutide,2.4,weekly,2.4,61.0,-9.3,0.5514754098360656,"Baseline (week 0), (week 34)"
+NCT05144984,semaglutide,7.2,weekly,7.2,60.0,-13.0,0.8881666666666667,"Baseline (week 0), (week 34)"
+NCT05412004,placebo,0.0,placebo,0.0,87.0,-1.56,0.4624000000000001,"Baseline, Week 52"
+NCT05564117,semaglutide,25.0,daily,175.0,192.0,-14.4,0.57421875,"Baseline (week 0), end of treatment (week 64)"
+NCT05564117,placebo,0.0,placebo,0.0,90.0,-2.5,0.6934444444444445,"Baseline (week 0), end of treatment (week 64)"
+NCT05579249,semaglutide,2.4,weekly,2.4,207.0,-13.6,0.3656521739130434,"Baseline (week 0), end of treatment (week 52)"
+NCT05646706,semaglutide,7.2,weekly,7.2,950.0,-19.5,0.11827368421052631,"Baseline (week 0), End of treatment (week 72)"
+NCT05646706,placebo,0.0,placebo,0.0,171.0,-3.8,0.2947953216374269,"Baseline (week 0), End of treatment (week 72)"
+NCT05649137,semaglutide,7.2,weekly,7.2,291.0,-13.5,0.2601030927835051,"Baseline (week 0), End of treatment (week 72)"
+NCT05649137,placebo,0.0,placebo,0.0,95.0,-4.0,0.40463157894736845,"Baseline (week 0), End of treatment (week 72)"
+NCT05649137,semaglutide,2.4,weekly,2.4,97.0,-10.7,0.6763917525773195,"Baseline (week 0), End of treatment (week 72)"
+NCT05822830,tirzepatide,15.0,weekly,15.0,318.0,-20.2,0.34809999999999997,"Baseline, Week 72"
+NCT05822830,semaglutide,2.4,weekly,2.4,318.0,-13.7,0.34809999999999997,"Baseline, Week 72"
+NCT05971940,placebo,0.0,placebo,0.0,138.0,-1.6,0.18489999999999998,"Baseline, Week 40"
+NCT05971940,orforglipron,3.0,daily,21.0,143.0,-4.7,0.22089999999999999,"Baseline, Week 40"
+NCT05971940,orforglipron,12.0,daily,84.0,137.0,-6.1,0.30250000000000005,"Baseline, Week 40"
+NCT05971940,orforglipron,36.0,daily,252.0,141.0,-7.9,0.3364,"Baseline, Week 40"
+NCT06041217,placebo,0.0,placebo,0.0,78.0,-2.2,0.3738461538461539,"Baseline (week 0), end of treatment (week 44)"
+NCT06041217,semaglutide,2.4,weekly,2.4,159.0,-12.2,0.42289308176100626,"Baseline (week 0), end of treatment (week 44)"
+NCT06124807,placebo,0.0,placebo,0.0,48.0,-0.047,1.121481,"Baseline, Week 48"
+NCT06124807,mazdutide,10.0,weekly,10.0,48.0,-19.2,1.1577760000000001,"Baseline, Week 48"
+NCT06124807,mazdutide,16.0,weekly,16.0,51.0,-22.3,2.027776,"Baseline, Week 48"
+NCT06124807,mazdutide,6.0,weekly,6.0,32.0,-10.54,2.244004,"Baseline, Week 48"

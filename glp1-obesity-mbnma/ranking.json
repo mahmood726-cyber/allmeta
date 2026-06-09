@@ -1,0 +1,36 @@
+{
+  "agents": [
+    "cagrilintide",
+    "danuglipron",
+    "mazdutide",
+    "orforglipron",
+    "retatrutide",
+    "semaglutide-oral",
+    "semaglutide-sc",
+    "survodutide",
+    "tirzepatide"
+  ],
+  "sucra": [
+    0.034125,
+    0.271796875,
+    0.9315625,
+    0.154046875,
+    0.91684375,
+    0.61240625,
+    0.423640625,
+    0.40025,
+    0.755328125
+  ],
+  "poth": 0.8985739552083332,
+  "order": [
+    "mazdutide",
+    "retatrutide",
+    "tirzepatide",
+    "semaglutide-oral",
+    "semaglutide-sc",
+    "survodutide",
+    "danuglipron",
+    "orforglipron",
+    "cagrilintide"
+  ]
+}
