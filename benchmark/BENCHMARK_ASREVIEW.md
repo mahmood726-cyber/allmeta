@@ -1,11 +1,14 @@
 # allmeta vs ASReview — active-learning screening head-to-head (WSS@95)
 
-**Status: allmeta now MATCHES ASReview on its own benchmark.** By importing
-ASReview's proven components (Naive-Bayes ranker + balanced sample-weighting +
-continuous per-record active learning) and verifying each gain by ablation, the
-shipped Screen classifier went from **all-19 mean WSS@95 0.333 → 0.42**, drawing
-level with ASReview's *actual measured* performance (all-19 **0.428**, Cohen-15
-**0.360**) — both measured here, with the same protocol, on the same 19 datasets.
+**Status: under a matched per-record protocol, allmeta MATCHES ASReview on its
+own benchmark.** By importing ASReview's proven components (Naive-Bayes ranker +
+balanced sample-weighting + continuous per-record active learning) and verifying
+each gain by ablation, the shipped Screen classifier reaches **all-19 mean WSS@95
+0.432** under the per-record (`n_query=1`) cadence, drawing level with ASReview's
+*actual measured* performance (all-19 **0.428**, Cohen-15 **0.360**) — both
+measured here, with the same protocol, on the same 19 datasets. (allmeta's lighter
+in-browser *default* cadence, AutoTAR, scores **≈0.368** — see the cadence caveat
+below; the parity claim is about the classifier under a matched protocol.)
 
 > ### Correction: the "~0.83" reference was wrong
 > The previous version of this file compared allmeta against a cited ASReview
@@ -25,8 +28,23 @@ level with ASReview's *actual measured* performance (all-19 **0.428**, Cohen-15
 | **SYNERGY-4 mean** | 0.489 | **0.669** | 0.683 |
 | **All-19 mean** | 0.333 | **0.432** | **0.428** |
 
-`[m]` = measured in this repo. allmeta "after" = shipped Screen classifier under the
-continuous (per-record) protocol; see ablation for what each component contributed.
+`[m]` = measured in this repo. **Both tools are measured under the same continuous
+per-record (`n_query=1`) protocol** — the like-for-like classifier comparison, and
+ASReview's own default is `n_query=1`. allmeta "after" = shipped Screen classifier
+(NB, balance ratio 1.0, raw tf) under that protocol; see ablation for what each
+component contributed.
+
+> **Cadence caveat — the per-record number is the matched protocol, not the browser
+> default.** allmeta's *in-browser default* cadence is the lighter **AutoTAR
+> growing-batch** (batch starts at 1 and grows ~10 %/round → far fewer retrains, for
+> browser responsiveness). Measured under AutoTAR on the current code it scores
+> **all-19 ≈ 0.368 / Cohen-15 ≈ 0.295** (1 seed; ablation row G) — roughly 0.06 below
+> the per-record figure. The **0.432 / 0.369** headline above is the **per-record
+> (`n_query=1`) cadence, matched to ASReview's own `n_query=1`** — the correct,
+> protocol-held-constant way to compare the two classifiers, and what a reviewer gets
+> by retraining after every record. So "allmeta matches ASReview" is a *matched-
+> protocol* statement about classifier quality, **not** a claim that the default
+> browser cadence equals 0.432. Both numbers are reported; don't conflate them.
 
 ## How this was measured (truth-first)
 
@@ -188,8 +206,11 @@ continuous** recipe at 0.451 — embeddings+LR do not catch it.)
 By replicating ASReview's proven recipe — **Naive Bayes + balanced weighting +
 continuous per-record active learning** — and verifying every step by ablation,
 allmeta's shipped, 100%-local, no-key screening classifier now performs **on par
-with ASReview** on the standard 19-dataset benchmark (allmeta all-19 ≈ 0.432
-vs ASReview 0.428; Cohen-15 ≈ 0.369 vs 0.360). The headline gap the old
+with ASReview** on the standard 19-dataset benchmark, **under the matched per-record
+(`n_query=1`) cadence** (allmeta all-19 ≈ 0.432 vs ASReview 0.428; Cohen-15 ≈ 0.369
+vs 0.360). The parity is a classifier comparison with protocol held constant; the
+in-browser AutoTAR default cadence is lighter (≈ 0.368 all-19 — see the cadence
+caveat under the headline). The headline gap the old
 file reported (0.29 vs 0.83) was an artefact of an **inflated, non-reproducible
 reference**; the real gap was ~0.10 and is now closed. No cherry-picking: the
 hardest datasets (Antihistamines, Skeletal-Muscle-Relaxants) remain hard for *both*
