@@ -1,0 +1,10 @@
+[
+  {"name":"cnb_a1_r2",        "cfg":{"mode":"cnb","alpha":1.0,"ratio":2.0}},
+  {"name":"cnb_a2_r2",        "cfg":{"mode":"cnb","alpha":2.0,"ratio":2.0}},
+  {"name":"cnb_a0.5_r2",      "cfg":{"mode":"cnb","alpha":0.5,"ratio":2.0}},
+  {"name":"cnb_a3.822_r1.2",  "cfg":{"mode":"cnb","alpha":3.822,"ratio":1.2}},
+  {"name":"cnb_a1_r1",        "cfg":{"mode":"cnb","alpha":1.0,"ratio":1.0}},
+  {"name":"rocchio_b1_g0.25", "cfg":{"mode":"rocchio","rocchioBeta":1.0,"rocchioGamma":0.25}},
+  {"name":"rocchio_b1_g0.75", "cfg":{"mode":"rocchio","rocchioBeta":1.0,"rocchioGamma":0.75}},
+  {"name":"rocchio_b1_g0.15", "cfg":{"mode":"rocchio","rocchioBeta":1.0,"rocchioGamma":0.15}}
+]

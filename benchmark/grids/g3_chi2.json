@@ -1,0 +1,5 @@
+[
+  {"name":"nb_chi2_2000", "cfg":{"mode":"nb","chi2K":2000}},
+  {"name":"nb_chi2_1000", "cfg":{"mode":"nb","chi2K":1000}},
+  {"name":"nb_chi2_500",  "cfg":{"mode":"nb","chi2K":500}}
+]

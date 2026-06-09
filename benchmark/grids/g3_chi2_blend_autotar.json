@@ -1,0 +1,10 @@
+[
+  {"name":"nb_chi2_2000",        "cfg":{"mode":"nb","chi2K":2000}},
+  {"name":"nb_chi2_1000",        "cfg":{"mode":"nb","chi2K":1000}},
+  {"name":"nb_chi2_500",         "cfg":{"mode":"nb","chi2K":500}},
+  {"name":"nbsvm_w0.5_C0.5",     "cfg":{"mode":"nbsvm","blendW":0.5,"C":0.5,"svmLoss":"squared_hinge","ratio":2.0}},
+  {"name":"nbsvm_w0.7_C0.5",     "cfg":{"mode":"nbsvm","blendW":0.7,"C":0.5,"svmLoss":"squared_hinge","ratio":2.0}},
+  {"name":"nbsvm_w0.3_C0.5",     "cfg":{"mode":"nbsvm","blendW":0.3,"C":0.5,"svmLoss":"squared_hinge","ratio":2.0}},
+  {"name":"lr_autotar_synth100", "cfg":{"mode":"lr","cadence":"auto","syntheticNeg":100,"ratio":1.0}},
+  {"name":"lr_perrec_synth100",  "cfg":{"mode":"lr","syntheticNeg":100,"ratio":1.0}}
+]

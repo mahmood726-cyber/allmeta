@@ -1,0 +1,4 @@
+[
+  {"name":"svm_asr_u4_faithful_e15", "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":0.11,"ratio":9.8,"tf":"sublinear","ngramMax":2,"dfMin":1,"dfMaxFrac":0.95,"svmEpochs":15}},
+  {"name":"svm_C0.11_r9.8_ours_e15", "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":0.11,"ratio":9.8,"svmEpochs":15}}
+]

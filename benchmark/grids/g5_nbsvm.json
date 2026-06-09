@@ -1,0 +1,4 @@
+[
+  {"name":"nbsvm_w0.5_C0.5_e15", "cfg":{"mode":"nbsvm","blendW":0.5,"C":0.5,"svmLoss":"squared_hinge","ratio":2.0,"svmEpochs":15}},
+  {"name":"nbsvm_w0.7_C0.5_e15", "cfg":{"mode":"nbsvm","blendW":0.7,"C":0.5,"svmLoss":"squared_hinge","ratio":2.0,"svmEpochs":15}}
+]

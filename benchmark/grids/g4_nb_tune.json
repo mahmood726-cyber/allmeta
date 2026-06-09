@@ -1,0 +1,10 @@
+[
+  {"name":"nb_a1.5_r2",   "cfg":{"mode":"nb","alpha":1.5,"ratio":2.0}},
+  {"name":"nb_a1_r2",     "cfg":{"mode":"nb","alpha":1.0,"ratio":2.0}},
+  {"name":"nb_a3_r2",     "cfg":{"mode":"nb","alpha":3.0,"ratio":2.0}},
+  {"name":"nb_a3.822_r2", "cfg":{"mode":"nb","alpha":3.822,"ratio":2.0}},
+  {"name":"nb_a2_r1.5",   "cfg":{"mode":"nb","alpha":2.0,"ratio":1.5}},
+  {"name":"nb_a2_r3",     "cfg":{"mode":"nb","alpha":2.0,"ratio":3.0}},
+  {"name":"nb_a2_r1.2",   "cfg":{"mode":"nb","alpha":2.0,"ratio":1.2}},
+  {"name":"nb_a1.5_r1.5", "cfg":{"mode":"nb","alpha":1.5,"ratio":1.5}}
+]

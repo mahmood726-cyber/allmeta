@@ -1,0 +1,10 @@
+[
+  {"name":"svm_ours_C1_r2_sqh",        "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":1.0,"ratio":2.0}},
+  {"name":"svm_ours_C0.5_r2_sqh",      "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":0.5,"ratio":2.0}},
+  {"name":"svm_ours_C0.11_r2_sqh",     "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":0.11,"ratio":2.0}},
+  {"name":"svm_ours_C0.11_r9.8_sqh",   "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":0.11,"ratio":9.8}},
+  {"name":"svm_ours_C1_r9.8_hinge",    "cfg":{"mode":"svm","svmLoss":"hinge","C":1.0,"ratio":9.8}},
+  {"name":"svm_asr_u4_full",           "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":0.11,"ratio":9.8,"tf":"sublinear","ngramMax":2,"dfMin":1,"dfMaxFrac":0.95}},
+  {"name":"svm_ours_C2_r2_sqh",        "cfg":{"mode":"svm","svmLoss":"squared_hinge","C":2.0,"ratio":2.0}},
+  {"name":"svm_ours_C5_r1_hinge",      "cfg":{"mode":"svm","svmLoss":"hinge","C":5.0,"ratio":1.0}}
+]

@@ -1,0 +1,5 @@
+[
+  {"name":"nb_a3_r2",  "cfg":{"mode":"nb","alpha":3.0,"ratio":2.0}},
+  {"name":"nb_a2_r3",  "cfg":{"mode":"nb","alpha":2.0,"ratio":3.0}},
+  {"name":"nb_a3_r2.5","cfg":{"mode":"nb","alpha":3.0,"ratio":2.5}}
+]

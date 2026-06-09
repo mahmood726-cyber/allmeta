@@ -8,7 +8,11 @@ NB alpha 2, max-df 0.4, unigram features), the shipped Screen classifier scores
 random seeds disjoint from the 3 used to tune the config**. allmeta wins **12 of 19**
 datasets (mean paired Δ +0.019), but a paired **Wilcoxon signed-rank test gives
 p = 0.18 — the lead is NOT statistically significant.** So this is an **honest
-statistical tie with allmeta in front**, not "allmeta beats ASReview".
+statistical tie with allmeta in front**, not "allmeta beats ASReview". A **second
+lever pass (2026-06-09, "Pass 2" below)** tried six more literature techniques (linear
+SVM, ComplementNB, Rocchio, χ² feature selection, NB+SVM blend, AutoTAR-faithful LR) to
+break the tie; **none beat the shipped per-record NB**, so the config is unchanged and
+the tie stands.
 
 > ### Correction: the "~0.83" reference was wrong
 > The previous version of this file compared allmeta against a cited ASReview
@@ -203,6 +207,43 @@ that TF-IDF is a very strong baseline on these datasets, and it is exactly why t
 here: on this benchmark it is a wash-to-slightly-negative, and we report that
 plainly. (Best of all on these 9 sets is still the shipped **TF-IDF + NB +
 continuous** recipe at 0.451 — embeddings+LR do not catch it.)
+
+## Pass 2 (2026-06-09): six more levers tested to break the tie — all negative
+
+After the kaizen tie above, a second pass tried six additional levers drawn from the
+TAR / CLEF / ASReview literature, to see if any could push allmeta past ASReview to a
+*statistically significant* lead. Each was ablated on the **full 19-set** with a fast,
+parity-verified harness (`benchmark/levers.mjs`, which reproduces the shipped ranker to
+Δ=0 — see `levers.mjs parity`). Selection used seeds **disjoint** from the 10 validation
+seeds; the shipped per-record NB is the bar to beat (1-seed screen all-19 **0.443**;
+3-seed confirm **0.451**).
+
+| Lever (best of the variants tried) | source | all-19 WSS@95 | Δ vs shipped NB | verdict |
+|---|---|--:|--:|---|
+| **Shipped per-record NB** (α=2, ratio=2, unigram) | — | **0.443** | — | **best** |
+| Linear SVM, SGD, balanced (best: C=1, squared-hinge) | Cormack-Grossman; ASReview ELAS u4 | 0.382 | −0.061 | discard |
+| Linear SVM, ASReview-u4-faithful (C=0.11, ratio 9.8, sublinear+bigram) | ASReview u4 | 0.201 | −0.242 *(p=0.0002 worse)* | discard |
+| ComplementNB (best: α=2, ratio=2) | Rennie 2003 | 0.434 | −0.009 | discard |
+| Rocchio relevance feedback (best: β=1, γ=0.75) | Rocchio 1971 | 0.422 | −0.022 | discard |
+| χ² feature selection on NB (best: top-2000) | Yang & Pedersen 1997 | 0.431 | −0.013 | discard |
+| NB + SVM probability blend (w=0.5) | stacking | 0.435 | −0.008 | discard |
+| AutoTAR-faithful LR + synthetic negatives | Cormack-Grossman SIGIR 2014 | 0.288 | −0.155 *(p=0.002 worse)* | discard |
+| NB α/ratio retune (8 configs; e.g. α=3 r=2) | — | 0.440 | −0.003 | discard |
+
+**Every lever tied-low or lost; several lost significantly.** Three findings worth
+recording so they are not re-litigated a third time: (i) **linear SVM is not competitive**
+here — allmeta's from-scratch SGD margin-ranker is far behind NB at every C/ratio tried
+(this is allmeta's SVM, not a claim about ASReview's calibrated `liblinear` SVM; but it
+matches Ferdinands et al. 2020, who find TF-IDF+NB among the strongest simple combos on
+exactly these Cohen sets). (ii) **ComplementNB does not beat MultinomialNB** on this
+benchmark, despite being designed for class imbalance — the balanced sample-weighting NB
+already gets the imbalance benefit. (iii) **No NB α/ratio retune beats the shipped α=2,
+ratio=2**; a 3-seed confirmation of the closest contenders puts shipped first (0.4507 vs
+nb_a3_r2 0.4458 / nb_a2_r3 0.4409), so the shipped recipe is not an over-fit of the
+earlier tuning pass. **Nothing was shipped from this pass** — the shipped config is
+unchanged, and the allmeta-vs-ASReview result remains the **honest statistical tie**
+(allmeta nominally ahead, p≈0.18) reported above. Reproduce:
+`SEEDS=1234567 node benchmark/levers.mjs grid benchmark/grids/<grid>.json`.
 
 ## Honest verdict
 

@@ -1,0 +1,5 @@
+[
+  {"name":"lr_autotar_synth100_r1", "cfg":{"mode":"lr","cadence":"auto","syntheticNeg":100,"ratio":1.0}},
+  {"name":"lr_autotar_synth200_r1", "cfg":{"mode":"lr","cadence":"auto","syntheticNeg":200,"ratio":1.0}},
+  {"name":"lr_autotar_nosynth_r1",  "cfg":{"mode":"lr","cadence":"auto","ratio":1.0}}
+]

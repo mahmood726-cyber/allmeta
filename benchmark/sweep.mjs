@@ -11,7 +11,7 @@
 //
 // Run:  node benchmark/sweep.mjs <command> [args]
 // ---------------------------------------------------------------------------
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, realpathSync } from "fs";
 import { gunzipSync } from "zlib";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -325,7 +325,12 @@ function wilcoxonSignedRank(a, b) {
 function normCdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
 function erf(x) { const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; }
 
-const cmd = process.argv[2] || "baseline";
+// Main-guard: only run the CLI dispatch when sweep.mjs is the entry module.
+// When imported (e.g. by levers.mjs), cmd stays null so none of the command
+// blocks fire — importing this file must have no side effects.
+let _isMain = false;
+try { _isMain = process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch (e) { _isMain = false; }
+const cmd = _isMain ? (process.argv[2] || "baseline") : null;
 
 if (cmd === "baseline") {
   const seeds = process.argv[3] ? process.argv[3].split(",").map(Number) : SEEDS_DEFAULT;
