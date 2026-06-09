@@ -10,13 +10,27 @@ async function hook(page) {
 
 // A linearly separable labelled set: cardiology (include) vs molecular/animal
 // (exclude), plus two unlabelled probes that should rank on the right side.
+// 8 docs per class with rotated vocabulary so no signature term appears in >40%
+// of the 18 docs — otherwise the shipped max-df=0.4 cut (correct on real
+// hundred/thousand-doc corpora) would filter the discriminative terms out of this
+// toy fixture and collapse separation to a near-tie.
 const SEP = [
-  { id: "i1", title: "cardiac heart failure outcomes", abstract: "ejection fraction reduced hospitalization mortality cardiovascular", r1: { d: "include" } },
-  { id: "i2", title: "heart failure ejection fraction", abstract: "cardiac hospitalization mortality cardiovascular outcomes", r1: { d: "include" } },
-  { id: "i3", title: "cardiac failure outcomes", abstract: "ejection reduced cardiovascular mortality hospitalization", r1: { d: "include" } },
-  { id: "e1", title: "molecular murine signaling", abstract: "vitro pathway cellular receptor expression", r1: { d: "exclude" } },
-  { id: "e2", title: "murine signaling pathway", abstract: "molecular cellular receptor expression vitro", r1: { d: "exclude" } },
-  { id: "e3", title: "molecular pathway cellular", abstract: "murine receptor expression vitro signaling", r1: { d: "exclude" } },
+  { id: "i1", title: "cardiac heart failure mortality", abstract: "ejection fraction reduced hospitalization", r1: { d: "include" } },
+  { id: "i2", title: "heart failure ejection outcomes", abstract: "cardiac ventricular mortality reduced", r1: { d: "include" } },
+  { id: "i3", title: "myocardial infarction coronary disease", abstract: "cardiovascular mortality hospitalization outcomes", r1: { d: "include" } },
+  { id: "i4", title: "ventricular dysfunction cardiac", abstract: "ejection fraction myocardial reduced", r1: { d: "include" } },
+  { id: "i5", title: "coronary artery disease prognosis", abstract: "cardiovascular heart mortality hospitalization", r1: { d: "include" } },
+  { id: "i6", title: "dilated cardiomyopathy heart", abstract: "ventricular ejection hospitalization outcomes", r1: { d: "include" } },
+  { id: "i7", title: "cardiovascular outcomes mortality", abstract: "coronary myocardial reduced fraction", r1: { d: "include" } },
+  { id: "i8", title: "heart failure hospitalization", abstract: "cardiac mortality ejection ventricular", r1: { d: "include" } },
+  { id: "e1", title: "molecular murine signaling", abstract: "vitro pathway cellular receptor", r1: { d: "exclude" } },
+  { id: "e2", title: "murine signaling pathway kinase", abstract: "molecular cellular receptor expression", r1: { d: "exclude" } },
+  { id: "e3", title: "protein kinase assay", abstract: "murine receptor expression vitro", r1: { d: "exclude" } },
+  { id: "e4", title: "cellular receptor expression", abstract: "molecular protein signaling pathway", r1: { d: "exclude" } },
+  { id: "e5", title: "gene expression profiling murine", abstract: "cellular kinase assay vitro", r1: { d: "exclude" } },
+  { id: "e6", title: "vitro cellular assay", abstract: "protein receptor signaling molecular", r1: { d: "exclude" } },
+  { id: "e7", title: "signaling pathway kinase", abstract: "gene murine expression cellular", r1: { d: "exclude" } },
+  { id: "e8", title: "molecular biology protein assay", abstract: "kinase receptor expression vitro", r1: { d: "exclude" } },
   { id: "u_inc", title: "cardiac heart failure", abstract: "ejection fraction cardiovascular mortality hospitalization" },
   { id: "u_exc", title: "molecular murine pathway", abstract: "cellular receptor vitro signaling expression" },
 ];
@@ -36,9 +50,9 @@ test("trains and separates: unlabelled cardiac probe ranks above molecular probe
     };
   }, SEP);
   expect(out.res.ok).toBe(true);
-  expect(out.res.inc).toBe(3);
-  expect(out.res.exc).toBe(3);
-  expect(out.res.ranked).toBe(8); // all 8 non-dup records scored
+  expect(out.res.inc).toBe(8);
+  expect(out.res.exc).toBe(8);
+  expect(out.res.ranked).toBe(18); // all 18 non-dup records scored (16 labelled + 2 probes)
   // scores are valid probabilities
   for (const s of [out.uInc, out.uExc, out.i1, out.e1]) {
     expect(s).toBeGreaterThanOrEqual(0);
