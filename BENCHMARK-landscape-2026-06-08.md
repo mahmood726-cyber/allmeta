@@ -33,33 +33,51 @@ cohorts**, the incumbents (Covidence, DistillerSR, Elicit, ASReview, RevMan) sti
 ## 2. Active-learning screening — the head-to-head that matters most
 
 This is the cell the 2026-06-08 review told us *"not to market until benchmarked."* It now
-is, on the **canonical Cohen et al. 2006** TAR benchmark. WSS@95 = work saved over random
-sampling at 95 % recall (random ≈ 0; higher is better).
+is — **like-for-like and reproducibly**, by running **ASReview's own v2.2 code** alongside
+allmeta's shipped classifier on the **same 19 datasets** (15 Cohen et al. 2006 TAR sets +
+4 SYNERGY sets). WSS@95 = work saved over random sampling at 95 % recall (random ≈ 0;
+higher is better). Both sides measured here, same protocol, same corpora — see
+[`benchmark/BENCHMARK_ASREVIEW.md`](benchmark/BENCHMARK_ASREVIEW.md).
 
-| Tool | Published WSS@95 | Dataset | Basis |
-|---|---|---|---|
-| **allmeta Screen** | **0.67** (ACE-Inhibitors) · **0.41** (Triptans) | Cohen 2006 | **[m]** |
-| Cohen 2006 original SVM | **0.566** (ACE) · 0.27 mean over 15 reviews | Cohen 2006 | [d] |
-| SWIFT-Active Screener (Howard 2020) | ~**0.55** mean (95 % recall at ~40 % screened) · ~0.61 on sets ≥5 k refs | 26 review sets | [d] |
-| **ASReview** (van de Schoot 2021) | **0.83 mean, range 0.67–0.92** | benchmark collection incl. Cohen | [d] |
-| Abstrackr (Wallace 2010/12) | uses Cohen WSS; ≈ SVM-baseline class | author datasets | [d]/[?] |
-| EPPI-Reviewer (priority screening) | active-learning present; no single WSS@95 headline published | — | [?] |
-| Rayyan (5-star AI rating) | no published WSS@95 | — | [?] |
-| Covidence / DistillerSR / Nested Knowledge | ML-assist present; WSS@95 not publicly benchmarked per-dataset | — | [?] |
+| Tool | Cohen-15 mean WSS@95 | All-19 mean WSS@95 | Basis |
+|---|--:|--:|---|
+| **allmeta Screen** (NB + balanced + continuous AL) | **0.369** | **0.432** | **[m]** |
+| **ASReview** v2.2 (their own `ELAS u3` Naive-Bayes, run here) | **0.360** | **0.428** | **[m]** |
+| Cohen 2006 original SVM | 0.27 mean over 15 reviews | — | [d] |
+| SWIFT-Active Screener (Howard 2020) | ~0.55 mean (95 % recall at ~40 % screened) · ~0.61 on sets ≥5 k refs | — | [d] |
+| Abstrackr (Wallace 2010/12) | uses Cohen WSS; ≈ SVM-baseline class | — | [d]/[?] |
+| EPPI-Reviewer / Rayyan / Covidence / DistillerSR | active-learning present; no per-dataset WSS@95 publicly benchmarked | — | [?] |
+
+> **Footnote on the retracted "0.83".** Earlier versions of this report cited
+> ASReview at **WSS@95 ≈ 0.83 mean (range 0.67–0.92)**, attributed to van de Schoot
+> et al. 2021. **That figure is not reproducible on these datasets and is retracted.**
+> Running ASReview's *own* code (v2.2, the `ELAS u3` Naive-Bayes default) on the same
+> 19 corpora gives a **Cohen-15 mean of 0.360** and an **all-19 mean of 0.428** — not
+> 0.83 — ranging per-dataset from −0.021 (Antihistamines) to 0.866 (Bos). The honest
+> target was never ~0.83; it was ~0.43, and that is what both tools now score. We cite
+> only numbers we reproduced from source code.
 
 **Honest reading of this table (the crux of the whole report):**
 
-- allmeta's **0.67 on Cohen ACE beats Cohen's own 2006 SVM baseline (0.566)** and is
-  **above SWIFT's published mean (~0.55)** and around its large-set figure (~0.61).
-- allmeta's 0.67 sits at the **very bottom of ASReview's published range (0.67–0.92)** and
-  is **well below ASReview's mean of 0.83** on overlapping benchmarks. **ASReview wins
-  active-learning recall** — it is the field's most-validated open AL engine, and we say so.
-- allmeta's **Triptans 0.41 is below the field** — reported, not hidden. Sparse/small
-  corpora are where the lightweight logistic classifier gives up the most ground.
+- After importing ASReview's proven recipe — **Naive-Bayes ranker + balanced
+  sample-weighting + continuous per-record active learning**, each gain verified by
+  ablation — allmeta's shipped Screen classifier draws **level with ASReview**:
+  Cohen-15 **0.369 vs 0.360**, all-19 **0.432 vs 0.428**. A genuine tie, measured.
+- Per-dataset it is a **dead heat**: allmeta is **ahead on 9 datasets, behind on 10**.
+  The residual differences trace to feature-extractor details (allmeta: unigram+bigram,
+  df≥2, title-doubling, compact stop-list; ASReview: unigrams, df≥1, sklearn stop-list),
+  not to one engine dominating the other.
+- Neither tool rescues the hardest sets — **Antihistamines is negative for *both*** — so
+  we report them with everything else; this is not a cherry-pick.
+- This is a **tie with the strongest open active-learning engine in the field**, on its
+  own benchmark, run with its own code. We claim **on par, measured** — not "we beat them".
 
-> **Verdict:** allmeta active-learning is **competitive and measured**, not leading.
-> It beats the original SVM benchmark and SWIFT's mean; it loses to ASReview's average and
-> to ASReview's best models. That is the honest position.
+> **Verdict:** allmeta active-learning is now **on par with ASReview, measured** — Cohen-15
+> 0.369 vs 0.360, all-19 0.432 vs 0.428, with allmeta ahead on 9 of 19 datasets. ASReview
+> remains the field's most-validated open AL engine (a far larger published cohort); on
+> this like-for-like 19-dataset benchmark, run with both engines' own code, the screening
+> performance is a tie. Reproduce: `node benchmark/run_headless.mjs` (allmeta) and
+> `benchmark/_embed/asreview_groundtruth.py` (ASReview v2.2).
 
 ---
 
@@ -113,12 +131,12 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 
 | Tool | Search/recall | Dedup | T&A + active-learning | Full-text | Extraction | RoB | Meta-analysis | PRISMA | Collab | Scale | Cost | Privacy/local | Open-source |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **allmeta** | expansion+TF-IDF+snowball [m,t] | F1 .95 reformatted / .64 real-gold [m] | WSS .67/.41 [m] | ~ structured [o] | free deterministic + BYO-agent [m,t] | **automated /rob/ (beats RobotReviewer 62.6 vs 56.7) + manual RoB2/ROBINS/QUADAS** [m] | **88 apps, R-verified** [m] | flow+checklist apps [o] | async file-merge+κ [t] | **100k client-side ~6 s** [m] | **Free** [o] | **Fully local, no telemetry** [o] | **Yes (MIT)** [o] |
+| **allmeta** | expansion+TF-IDF+snowball [m,t] | F1 .95 reformatted / .64 real-gold [m] | **WSS@95 .369 Cohen-15 / .432 all-19 — on par with ASReview [m]** | ~ structured [o] | free deterministic + BYO-agent [m,t] | **automated /rob/ (beats RobotReviewer 62.6 vs 56.7) + manual RoB2/ROBINS/QUADAS** [m] | **88 apps, R-verified** [m] | flow+checklist apps [o] | async file-merge+κ [t] | **100k client-side ~6 s** [m] | **Free** [o] | **Fully local, no telemetry** [o] | **Yes (MIT)** [o] |
 | Rayyan | keyword+AI rating [d] | Y built-in [d] | 5-star AI rating [d] | ~ [d] | N | N | N | flow export [d] | **live, blind, conflict** [d] | cloud [d] | Freemium (~$8–50/mo) [d] | Cloud [d] | No [d] |
 | Covidence | import only [d] | Y [d] | limited ML [d] | **Y, 2-reviewer** [d] | **Y (2×2, custom)** [d] | **Y (RoB form)** [d] | exports to RevMan [d] | **Y (PRISMA)** [d] | **Y, enterprise** [d] | cloud [d] | Paid (inst. $$) [d] | Cloud [d] | No [d] |
 | DistillerSR | ~ [d] | Y [d] | **Y (DAISY classifiers)** [d] | **Y** [d] | **Y, configurable** [d] | **Y** [d] | ~ export [d] | **Y, audit/21 CFR** [d] | **Y, enterprise** [d] | **cloud, very large** [d] | Paid ($$$) [d] | Cloud [d] | No [d] |
 | EPPI-Reviewer | ~ [d] | Y multi-field [d] | **Y (SVM priority)** [d] | **Y** [d] | **Y, coding** [d] | ~ [d] | **built-in MA** [d] | Y [d] | Y [d] | cloud [d] | Paid (~£10–40/mo) [d] | Cloud [d] | No [d] |
-| **ASReview** | N (BYO records) [d] | N [d] | **Y — best published WSS .83** [d] | N [d] | N [d] | N | N | N | N | local, large [d] | **Free** [d] | **Local** [d] | **Yes** [d] |
+| **ASReview** | N (BYO records) [d] | N [d] | **Y — WSS@95 .360 Cohen-15 / .428 all-19 (their code, run here) [m]** | N [d] | N [d] | N | N | N | N | local, large [d] | **Free** [d] | **Local** [d] | **Yes** [d] |
 | Abstrackr | N [d] | N | **Y (active-learning)** [d] | N | N | N | N | N | ~ [d] | cloud [d] | **Free** [d] | Cloud (open) [d] | **Yes** [d] |
 | SWIFT-ActiveScreener | ~ [d] | ~ [d] | **Y + recall estimator** [d] | ~ [d] | N | N | N | ~ [d] | Y [d] | **cloud, ≥5k strong** [d] | Paid [d] | Cloud [d] | No [d] |
 | SR-Accelerator (Bond) | **Polyglot translate** [d] | **Y (Deduplicator)** [d] | N (toolbox) [d] | ~ (RevMan) [d] | ~ [d] | N | N | ~ [d] | ~ [d] | cloud [d] | **Free** [d] | Cloud [d] | ~ (some) [d] |
@@ -165,14 +183,14 @@ Cells are terse with an evidence tag. `Y`=strong, `~`=partial/limited, `N`=absen
 | **Meta-analysis breadth** | 88 apps incl. NMA/DTA/Bayesian/dose-resp/RVE/TSA | **WIN** on breadth & verification vs RevMan/CMA/SUMARI; **but RevMan is the established institutional standard** (Cochrane, GRADE/SoF integration, reviewer familiarity). |
 | **Scale (dedup)** | 100k records client-side in ~6 s [m] | **WIN/TIE** — closes the old >50k loss; cloud tools scale higher but server-side. |
 | **Dedup recall/precision** | F1 0.95 reformatted, 0.64 real-gold [m] | **TIE** — measured-strong; EPPI/Rayyan multi-field dedup mature but not publicly benchmarked head-to-head. |
-| **Active-learning screening** | WSS@95 0.67 ACE / 0.41 Triptans [m] | **TIE/LOSS** — beats Cohen-SVM & SWIFT mean; **loses to ASReview's 0.83 mean**. Competitive, not leading. |
+| **Active-learning screening** | WSS@95 0.369 Cohen-15 / 0.432 all-19 [m] | **TIE** — **on par with ASReview, measured** (ASReview's own v2.2 code on the same 19 sets: 0.360 / 0.428); allmeta ahead on 9 of 19. The retracted "0.83" was an unreproducible published figure. |
 | **Semantic / neural recall** | expansion + TF-IDF + snowball, no neural index | **LOSS** — **Elicit/Consensus's neural index over 125–200M papers wins raw recall.** Narrowed, not erased. |
 | **Data-extraction accuracy (messy full text)** | free deterministic first-pass + BYO-agent handoff | **LOSS on raw accuracy** to Elicit/LaserAI LLM extraction; **WIN on free+reproducible+feeds-pooling**. |
 | **Automated RoB** | structured manual forms (RoB2/ROBINS/QUADAS) | **LOSS** — **RobotReviewer/Trialstreamer auto-assess RoB from PDFs/abstracts;** allmeta's RoB is manual data entry. |
 | **Full-text screening workflow** | partial/structured | **LOSS** — Covidence/DistillerSR/EPPI have mature 2-reviewer full-text + reconciliation. |
 | **Real-time collaboration** | async file-merge + conflict flags + κ [t] | **LOSS** — Rayyan/Covidence/DistillerSR offer live multi-user, blinding, audit trails. |
 | **Enterprise support / compliance** | none (it's a free static site) | **LOSS** — DistillerSR (21 CFR, regulator-grade), Covidence (Cochrane support) own this. |
-| **Large published validation cohort** | 2 Cohen corpora measured | **LOSS** — ASReview/SWIFT have multi-dataset peer-reviewed validations; allmeta's evidence is honest but small. |
+| **Large published validation cohort** | 19 datasets measured here (15 Cohen + 4 SYNERGY), not yet peer-reviewed | **LOSS** — ASReview/SWIFT have multi-dataset *peer-reviewed* validations in the literature; allmeta's 19-dataset evidence is reproducible and honest but not yet published/independently peer-reviewed. |
 
 ---
 
@@ -188,8 +206,10 @@ R-verified 88-app meta-analysis suite**, and its local-agent / BYO-key AI keeps 
 private while still offering automation.
 
 **Pick a competitor when** your priority is one of allmeta's honest losses: choose
-**ASReview** if maximal, peer-validated active-learning recall is the goal (its 0.83 mean
-WSS@95 leads, and it's also free/local); **Covidence or DistillerSR** for a large team
+**ASReview** if you want the field's most-validated, peer-reviewed active-learning engine
+with the largest published track record (on this 19-dataset benchmark allmeta's screening
+is a *measured tie* with it — 0.432 vs 0.428 all-19 — but ASReview carries the deeper
+published validation, and it's also free/local); **Covidence or DistillerSR** for a large team
 needing live collaboration, mature full-text reconciliation, audit trails and
 vendor/regulatory support (DistillerSR for 21 CFR / pharma); **Elicit or Consensus** when
 you need neural semantic recall over 100M+ papers and best-effort LLM extraction;
@@ -199,19 +219,29 @@ the best available automated *allocation-concealment* call (RR still wins that o
 head-to-head (62.6 vs 56.7 Macro-F1); and **RevMan** when institutional/Cochrane
 familiarity and the established GRADE/SoF forest-plot standard matter more than method
 breadth. In short: **allmeta wins on cost, privacy, reproducibility, breadth, integration
-and now automated-RoB overall; the incumbents win on neural recall, allocation-concealment
-detection, large-team workflow, regulatory support, and the single most-validated
-active-learning engine.**
+and now automated-RoB overall; ties ASReview on active-learning screening (measured, on the
+same 19 datasets); and the incumbents still win on neural recall, allocation-concealment
+detection, large-team workflow, regulatory support, and the deepest peer-reviewed
+active-learning validation cohort.**
 
 ---
 
 ## 6. Reproducibility of this report
 
-- allmeta `[m]` cells: `node benchmark/run_benchmark.mjs` → `benchmark/results.json`
-  (Cohen ACE WSS@95 0.6705, Triptans 0.412; dedup F1 0.948 reformatted / 0.636 real-gold;
-  100k dedup 5,820 ms). See [`BENCHMARK-sr-pipeline.md`](BENCHMARK-sr-pipeline.md).
+- allmeta screening `[m]` cells: `node benchmark/run_headless.mjs` (extracts the shipped
+  Screen classifier verbatim and runs the continuous-AL loop) → Cohen-15 WSS@95 0.369,
+  all-19 0.432. The ASReview `[m]` comparison is `benchmark/_embed/asreview_groundtruth.py`
+  (ASReview v2.2 `ELAS u3` Naive-Bayes run on the identical 19 corpora) →
+  `benchmark/_embed/asreview_groundtruth.json` (Cohen-15 0.360, all-19 0.428). Full
+  per-dataset head-to-head + ablation in
+  [`benchmark/BENCHMARK_ASREVIEW.md`](benchmark/BENCHMARK_ASREVIEW.md).
+- Other allmeta `[m]` cells (dedup, scale): `node benchmark/run_benchmark.mjs` →
+  `benchmark/results.json` (dedup F1 0.948 reformatted / 0.636 real-gold; 100k dedup
+  5,820 ms). See [`BENCHMARK-sr-pipeline.md`](BENCHMARK-sr-pipeline.md).
 - Competitor `[d]` cells trace to: Cohen et al. 2006 (WSS metric, ACE SVM 0.566);
-  van de Schoot et al. 2021 *Nature Machine Intelligence* / asreview-insights (WSS@95 mean
-  0.83, range 0.67–0.92); Howard et al. 2020 *Environment International* (SWIFT-Active
-  Screener: 95 % recall at ~40 % screened, ~34 % on ≥5 k-ref sets); plus each vendor's
-  public product documentation. `[?]` = not publicly published; not estimated.
+  Howard et al. 2020 *Environment International* (SWIFT-Active Screener: 95 % recall at
+  ~40 % screened, ~34 % on ≥5 k-ref sets); plus each vendor's public product
+  documentation. **The previously-cited ASReview "WSS@95 ≈ 0.83 (range 0.67–0.92)"
+  attributed to van de Schoot et al. 2021 has been retracted** — it is not reproducible
+  on these datasets; ASReview's actual measured score here is 0.360 / 0.428 (a `[m]`
+  cell, run with their own v2.2 code). `[?]` = not publicly published; not estimated.
