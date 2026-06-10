@@ -89,3 +89,25 @@ MAP; a transported effect would need IPD (see hard constraint above).
 Source: NHANES 2017-March 2020 prepandemic, CDC/NCHS — Obesity & Severe Obesity Prevalence (DB508);
 NHANES prepandemic file development (NBK606854). Obesity prevalence 41.9%; adult diabetes 14.8%
 (higher in the obese subset).
+
+## Workstream B result — sensitivity transport (labelled, not primary)
+`workstream_B_transport.py`. Transport each node's effect to the NHANES US obese-adult target on the
+DIABETES modifier (the biggest representativeness gap + a known strong modifier). Diabetes-attenuation
+slope beta = 3.4 pp per 100% diabetes (literature-anchored to the STEP-1 obesity ~15% vs STEP-2 T2D ~10%
+difference; the within-agent split could not be computed here because AACT HbA1c tagging was too sparse).
+
+| node | trial effect | transported (NHANES 26% diabetes) | shift |
+|---|---|---|---|
+| mazdutide | 22.3 | 21.4 | -0.9 |
+| retatrutide | 22.1 | 21.2 | -0.9 |
+| tirzepatide | 15.3 | 14.4 | -0.9 |
+| semaglutide-oral | 13.6 | 12.7 | -0.9 |
+| semaglutide-sc-weekly | 13.3 | 12.4 | -0.9 |
+
+**Read (SENSITIVITY only):** transporting to a more-diabetic real-world population reduces weight loss a
+modest ~0.9 pp across nodes — small but in the expected direction, consistent with the +14.5 pp residual
+diabetes gap. EXPLICIT caveats: not a primary effect (no IPD; ML-NMR/MAIC need it); one modifier only;
+the uniform shift reflects that obesity nodes' max-dose arms carry ~0% trial diabetes (so the transport
+is ~beta x 0.26); joint-distribution and unmeasured-modifier effects not captured. This is the honest
+ceiling of transport with aggregate registry data — a labelled sensitivity, framed exactly so as not to
+invite the ecological-fallacy criticism.

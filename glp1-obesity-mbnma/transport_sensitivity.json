@@ -1,0 +1,57 @@
+{
+ "beta_diabetes_pp": 3.4,
+ "beta_se": 1.5,
+ "target_diabetes": 0.26,
+ "nodes": [
+  {
+   "node": "mazdutide",
+   "trial_effect": 22.3,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 21.4,
+   "shift_pp": -0.9
+  },
+  {
+   "node": "orforglipron",
+   "trial_effect": 12.4,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 11.5,
+   "shift_pp": -0.9
+  },
+  {
+   "node": "retatrutide",
+   "trial_effect": 22.1,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 21.2,
+   "shift_pp": -0.9
+  },
+  {
+   "node": "semaglutide-oral",
+   "trial_effect": 13.6,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 12.7,
+   "shift_pp": -0.9
+  },
+  {
+   "node": "semaglutide-sc-daily",
+   "trial_effect": 11.6,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 10.7,
+   "shift_pp": -0.9
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "trial_effect": 13.3,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 12.4,
+   "shift_pp": -0.9
+  },
+  {
+   "node": "tirzepatide",
+   "trial_effect": 15.3,
+   "p_diabetes_trial": 0.0,
+   "transported_effect": 14.4,
+   "shift_pp": -0.9
+  }
+ ],
+ "framing": "external-validity SENSITIVITY analysis; not a primary effect; no IPD"
+}
