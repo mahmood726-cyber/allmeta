@@ -23,3 +23,14 @@ def test_back_to_hub_navigation():
     html = INDEX.read_text(encoding="utf-8")
     has_hub_back = 'id="hub-back"' in html or 'href="../"' in html or 'href="..\"' in html
     assert has_hub_back, "no back-to-hub navigation found"
+
+
+def test_integrity_panel_wired():
+    """P2: integrity-by-default panel auto-runs the frontier methods in the
+    certainty step, reusing the audited shared engines."""
+    html = INDEX.read_text(encoding="utf-8")
+    assert "../shared/integrity-panel-v1.js" in html
+    for dep in ("spec-collapse.js", "egger.js", "evalue.js", "ma-core.js", "trimfill.js", "ma-studies-v1.js"):
+        assert f"../shared/{dep}" in html, f"integrity dependency not loaded: {dep}"
+    assert 'id="btn-integrity"' in html and 'id="integrity-host"' in html
+    assert "AlmIntegrityPanel.assess" in html and "function runIntegrity" in html
