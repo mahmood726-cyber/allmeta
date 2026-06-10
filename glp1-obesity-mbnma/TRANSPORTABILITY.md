@@ -64,3 +64,28 @@ Transportability here is a legitimate, valuable EXTERNAL-VALIDITY layer — but 
 rigorous form is a **representativeness assessment + a clearly-labelled sensitivity analysis**, not a
 primary real-world effect. Claiming more without IPD is exactly what would draw criticism. Framed this
 way it strengthens the work; framed as a definitive real-world estimate it would weaken it.
+
+## Workstream I result — representativeness map (US / NHANES 2017-2020)
+`workstream_I_representativeness.py`. Trial-eligible population (AACT placebo-arm baselines) vs US
+adults-with-obesity (NHANES 2017-2020, CDC NCHS). Descriptive only — NO transport estimator.
+
+| modifier | trial (n) | NHANES target | diff |
+|---|---|---|---|
+| mean age (yr) | 51.8 (52) | 49.5 | +2.3 |
+| % female | 55.8 (57) | 52.0 | +3.8 |
+| mean BMI | 37.2 (2) | 36.0 | +1.2 |
+| baseline weight (kg) | 104.8 (10) | 102.0 | +2.8 |
+| **% with diabetes (proxy)** | **15.8** | **26.0** | **-10.2** |
+
+**Headline (valid, criticism-proof):** incretin obesity trials are reasonably representative of US
+obese adults on age, BMI, weight, and sex (all within ~4 of target), but **UNDER-represent diabetes
+(~16% vs ~26%)** because obesity-primary trials exclude it — and the **registry-native capture of the
+T2D-secondary trials partially restores that missing stratum**, tying transportability to the
+registry-native advantage. Coverage caveat: AACT baseline reporting is sparse (BMI n=2, weight n=10);
+%female (n=57) and age (n=52) are solid; diabetes is an HbA1c/population proxy. A fuller positivity
+check would abstract-supplement baselines (PubMed abstracts, allowed). This is a representativeness
+MAP; a transported effect would need IPD (see hard constraint above).
+
+Source: NHANES 2017-March 2020 prepandemic, CDC/NCHS — Obesity & Severe Obesity Prevalence (DB508);
+NHANES prepandemic file development (NBK606854). Obesity prevalence 41.9%; adult diabetes 14.8%
+(higher in the obese subset).

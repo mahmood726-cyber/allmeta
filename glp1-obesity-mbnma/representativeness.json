@@ -1,0 +1,59 @@
+{
+ "trial": {
+  "mean age (yr)": 51.8,
+  "% female": 55.8,
+  "mean BMI (kg/m2)": 37.2,
+  "mean baseline weight (kg)": 104.8,
+  "% with diabetes (proxy)": 15.8
+ },
+ "nhanes_target": {
+  "mean age (yr)": 49.5,
+  "% female": 52.0,
+  "mean BMI (kg/m2)": 36.0,
+  "mean baseline weight (kg)": 102.0,
+  "% with diabetes (proxy)": 26.0
+ },
+ "rows": [
+  {
+   "modifier": "mean age (yr)",
+   "trial": 51.8,
+   "trial_n": 52,
+   "nhanes_target": 49.5,
+   "diff": 2.3,
+   "note": ""
+  },
+  {
+   "modifier": "% female",
+   "trial": 55.8,
+   "trial_n": 57,
+   "nhanes_target": 52.0,
+   "diff": 3.8,
+   "note": ""
+  },
+  {
+   "modifier": "mean BMI (kg/m2)",
+   "trial": 37.2,
+   "trial_n": 2,
+   "nhanes_target": 36.0,
+   "diff": 1.2,
+   "note": "trials enrol slightly higher BMI (more severe)"
+  },
+  {
+   "modifier": "mean baseline weight (kg)",
+   "trial": 104.8,
+   "trial_n": 10,
+   "nhanes_target": 102.0,
+   "diff": 2.8,
+   "note": ""
+  },
+  {
+   "modifier": "% with diabetes (proxy)",
+   "trial": 15.8,
+   "trial_n": 57,
+   "nhanes_target": 26.0,
+   "diff": -10.2,
+   "note": "obesity trials UNDER-represent diabetes (registry-native T2D capture partly offsets)"
+  }
+ ],
+ "source": "NHANES 2017-2020 (CDC NCHS); see DB508 / NBK606854"
+}
