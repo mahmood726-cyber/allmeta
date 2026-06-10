@@ -155,3 +155,31 @@ spread across obese-subset targets (Africa 9.5% -> MENA 32.6%) = 18.1 -> 16.8 pp
 deepen attenuation for high-burden regions vs the general-adult proxy (MENA 17.7 general -> 16.8 obese),
 which is more realistic. Sources: NHANES (CDC), Health Survey for England 2024 (NHS Digital), IDF Diabetes
 Atlas 2021 (NBK581940). transport_atlas_obese.json.
+
+## FIX — real NHANES microdata replaces hardcoded marginals (requirement-3 closed)
+`nhanes_microdata.py`. Downloaded NHANES 2017-2020 public microdata (CDC), built the obese-adult subset
+(BMI>=30, age>=18; n=3,688; survey-weighted WTMECPRP) and computed the JOINT distribution + marginals of
+the effect modifiers. **This closes the gap between the stated framework (req-3: joint microdata) and the
+earlier hardcoded summary stats.**
+| modifier | microdata | was hardcoded | diff |
+|---|---|---|---|
+| mean age | 48.1 | 49.5 | -1.4 |
+| % female | 52.3 | 52.0 | +0.3 |
+| mean BMI | 36.4 | 36.0 | +0.4 |
+| mean weight (kg) | 103.1 | 102.0 | +1.1 |
+| **% diabetes** | **20.6** | **26.0** | **-5.4 (the hardcoded value was too high)** |
+
+The diabetes target is corrected from 26% to **20.6%** (HbA1c>=6.5% OR self-report, survey-weighted). Joint
+correlations now empirical (age-HbA1c 0.29, BMI-HbA1c 0.07), not assumed-independent. Corrected transport to
+the microdata target: tirzepatide 18.7->17.5, sema-sc-weekly 15.8->14.6, retatrutide 21.5->20.3 (each ~-1.2 pp;
+slightly less attenuation than the over-high 26% gave). Conclusions hold; the values are now microdata-exact.
+For the binary-diabetes transport only the diabetes marginal is binding; the joint is available for any future
+multi-continuous-modifier transport. nhanes_target.json, nhanes_obese_microdata.csv.
+
+## EXTENSION — time-to-event (CV/renal) outcomes via the survival arm
+`build_survival.py` + registry-ipd. 9 incretin trials carry a HARD-outcome (CV/MACE/HF/renal/death) HR in
+AACT (67 HR rows). Registry-native survival signal by agent: semaglutide median HR 0.77 (SELECT 0.76,
+SUSTAIN-6 0.74), liraglutide 0.91 (LEADER 0.87), dulaglutide 0.91 (REWIND 0.76), tirzepatide HF 0.62 -
+recovering the known CV-benefit hierarchy from the registry. 7/9 post curve-like data (registry-ipd
+reconstruction candidates for RMST/time-varying-HR/calibrated CrI). Joint view: the top weight-loss agents
+also carry cardiovascular benefit. survival_hrs.csv, survival_summary.json.
