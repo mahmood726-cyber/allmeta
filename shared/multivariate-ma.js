@@ -83,6 +83,13 @@
 
   function fit(studies, opts) {
     opts = opts || {};
+    // Fail closed: with k<2 the between-study covariance G is unidentifiable
+    // (ybar≡y, so the warm-start divides by k-1=0 → NaN that silently
+    // propagates to mu=[null,null]). Throw rather than return a degenerate
+    // but schema-valid result a caller can't distinguish from a real fit.
+    if (!Array.isArray(studies) || studies.length < 2) {
+      throw new Error("multivariate MA requires k>=2 studies (between-study covariance G is unidentifiable with k<2)");
+    }
     var k = studies.length, m = studies[0].y.length, i, a, b;
     // warm-start G: diag = max(0, between-study var − mean within var), off-diag 0.
     var ybar = new Array(m).fill(0); studies.forEach(function (s) { for (a = 0; a < m; a++) ybar[a] += s.y[a] / k; });

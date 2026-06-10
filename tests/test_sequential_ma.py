@@ -126,6 +126,44 @@ def test_computeBoundary_futility_path():
     assert all(b is not None for b in out["futility_boundaries"])
 
 
+def test_futility_not_fired_on_first_look_for_positive_trend():
+    # Regression: the old qnorm(1-incrBeta) inner boundary declared futility
+    # on an ordinary positive-trend z at the very first look. The drift-anchored
+    # boundary l_k = θ√t_k - qnorm(1-incrBeta) must NOT do that.
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const r = M.computeBoundary(
+          [{{ t: 0.40, z: 1.0 }}],
+          {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true }});
+        console.log(JSON.stringify({{
+          decision: r.looks[0].decision,
+          fb: r.looks[0].futility_boundary,
+          drift: r.drift,
+        }}));
+    """)
+    assert out["decision"] != "futility"
+    # boundary is below the observed |z|, and the design drift is reported
+    assert out["fb"] < 1.0
+    assert out["drift"] > 0
+
+
+def test_futility_boundary_rises_with_information():
+    # The drift-anchored inner boundary must rise from very negative early (no
+    # early futility) across the interior looks (the closing wedge). The final
+    # t=1 look is excluded: its increment shrinks under the single-look
+    # incremental approximation (same artifact the alpha boundary has).
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const r = M.computeBoundary(
+          [{{t:0.1,z:0}},{{t:0.3,z:0}},{{t:0.5,z:0}},{{t:0.7,z:0}},{{t:0.9,z:0}}],
+          {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true }});
+        console.log(JSON.stringify(r.looks.map(l => l.futility_boundary)));
+    """)
+    assert out[0] < -1.0, f"first-look boundary should be very negative: {out}"
+    for a, b in zip(out, out[1:]):
+        assert b >= a - 1e-9, f"non-monotonic interior futility boundary: {out}"
+
+
 def test_looksFromRows_n_cum_mode():
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});

@@ -17,12 +17,22 @@
  * is z_k = Φ⁻¹(1 − a(t_k)/2 + a(t_{k-1})/2 / […])  — i.e. spend the
  * incremental α between look k-1 and k.
  *
- * Optional futility: β-spending mirror with the same families, computed
- * as `inner_boundary`. Cross the inner boundary → stop for futility.
+ * Optional futility: a β-spending INNER (lower) boundary anchored on the
+ * alternative hypothesis. A valid futility boundary must reference the design
+ * drift θ (without it, you cannot say what "unlikely to reach significance"
+ * means). Under the canonical statistic Z_k ~ N(θ√t_k, 1), spending incremental
+ * β_k at look k gives P_{H1}(Z_k ≤ l_k) = β_k, i.e.
+ *     l_k = θ·√t_k − Φ⁻¹(1 − β_k),     θ = Φ⁻¹(1−α/sided) + Φ⁻¹(1−β).
+ * This rises monotonically from very negative early (no early futility — the
+ * inner/outer boundaries form a wedge that closes toward t=1) up to ≈ the
+ * efficacy boundary at t=1. Stop for futility when |z_k| < l_k. (The previous
+ * implementation used Φ⁻¹(1−β_k) with NO drift term, which is non-monotonic and
+ * declares futility on a positive-trend z at the very first look — fixed.)
  *
  * Reference: Lan KK, DeMets DL 1983 (Biometrika 70(3):659-663) on α-
  * spending; O'Brien-Fleming 1979 (Biometrics 35:549-556); Wetterslev,
- * Thorlund, Brok, Gluud 2008 (Clin Epidemiol 1:215-242) on TSA.
+ * Thorlund, Brok, Gluud 2008 (Clin Epidemiol 1:215-242) on TSA;
+ * Pampallona & Tsiatis 1994 (J Stat Plan Inf 42:19-35) on β-spending.
  */
 (function (global) {
   "use strict";
@@ -34,7 +44,11 @@
     if (p >= 1) return Infinity;
     var q = p - 0.5;
     if (Math.abs(q) <= 0.425) {
-      var r = q * q;
+      // AS241 central region: r = 0.180625 − q² (0.180625 = 0.425²). The prior
+      // r = q² returned wrong central quantiles (e.g. qnorm(0.90)=1.025 vs
+      // 1.281552), which corrupted the β-spend boundary for β in the central
+      // range (β=0.20 → qnorm(0.90)). Tails (incl. 0.975→1.96) were unaffected.
+      var r = 0.180625 - q * q;
       return q * (((((((2509.0809287301226727 * r + 33430.575583588128105) * r + 67265.770927008700853) * r + 45921.953931549871457) * r + 13731.693765509461125) * r + 1971.5909503065514427) * r + 133.14166789178437745) * r + 3.387132872796366608)
         / (((((((5226.495278852854561 * r + 28729.085735721942674) * r + 39307.89580009271061) * r + 21213.794301586595867) * r + 5394.1960214247511077) * r + 687.1870074920579083) * r + 42.313330701600911252) * r + 1);
     }
@@ -94,6 +108,12 @@
     var sided = opts.sided || 2;   // two-sided by default
     var includeFutility = !!opts.futility;
     var futilityFamily = opts.futilityFamily || family;
+    // Design drift θ under H1: the standardised effect the trial is powered to
+    // detect at the final look. Caller may override; default = the value that
+    // gives power 1−β against the two-/one-sided efficacy boundary at t=1.
+    var drift = isFinite(opts.drift)
+      ? opts.drift
+      : qnorm(1 - alpha / (sided === 1 ? 1 : 2)) + qnorm(1 - beta);
 
     if (!Array.isArray(looks) || !looks.length) {
       throw new Error("looks must be a non-empty array");
@@ -120,8 +140,11 @@
       if (includeFutility) {
         var bCum = _spend(futilityFamily, beta, tk);
         var incrBeta = Math.max(0, bCum - prevBeta);
-        // Inner boundary: if |z| < z_{β-spend}, declare futility.
-        bBoundary = qnorm(1 - incrBeta);
+        // β-spending inner boundary anchored on the H1 drift (see header):
+        //   l_k = θ·√t_k − Φ⁻¹(1 − β_k).  Stop for futility when |z| < l_k.
+        // incrBeta==0 ⇒ Φ⁻¹(1)=+∞ ⇒ l_k=−∞ ⇒ never futile (correct: nothing was
+        // spent this look). Rises monotonically toward the efficacy boundary.
+        bBoundary = drift * Math.sqrt(tk) - qnorm(1 - incrBeta);
         prevBeta = bCum;
       }
       prevAlpha = aCum;
@@ -146,7 +169,7 @@
         decision: decision,
       });
     }
-    return { alpha: alpha, beta: beta, family: family, sided: sided, looks: out, decision: decisionTaken || "continue" };
+    return { alpha: alpha, beta: beta, family: family, sided: sided, drift: includeFutility ? drift : null, looks: out, decision: decisionTaken || "continue" };
   }
 
   // ---- Convenience: build looks from a list of cumulative pooled effects -
