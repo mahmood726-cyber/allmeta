@@ -1,0 +1,79 @@
+{
+ "ratio": 1.8,
+ "gamma": 5.8,
+ "targets_obese_subset": {
+  "Africa (IDF x1.8)": 0.095,
+  "England (HSE 2024 direct)": 0.13,
+  "Global (IDF x1.8)": 0.189,
+  "W.Pacific/China (IDF x1.8)": 0.205,
+  "US obese (NHANES direct)": 0.26,
+  "N.Am+Carib (IDF x1.8)": 0.27,
+  "MENA/Gulf (IDF x1.8)": 0.326
+ },
+ "atlas": {
+  "mazdutide": {
+   "Africa (IDF x1.8)": 21.9,
+   "England (HSE 2024 direct)": 21.7,
+   "Global (IDF x1.8)": 21.4,
+   "W.Pacific/China (IDF x1.8)": 21.3,
+   "US obese (NHANES direct)": 21.0,
+   "N.Am+Carib (IDF x1.8)": 20.9,
+   "MENA/Gulf (IDF x1.8)": 20.6
+  },
+  "retatrutide": {
+   "Africa (IDF x1.8)": 20.8,
+   "England (HSE 2024 direct)": 20.6,
+   "Global (IDF x1.8)": 20.3,
+   "W.Pacific/China (IDF x1.8)": 20.2,
+   "US obese (NHANES direct)": 19.9,
+   "N.Am+Carib (IDF x1.8)": 19.8,
+   "MENA/Gulf (IDF x1.8)": 19.5
+  },
+  "tirzepatide": {
+   "Africa (IDF x1.8)": 18.1,
+   "England (HSE 2024 direct)": 17.9,
+   "Global (IDF x1.8)": 17.6,
+   "W.Pacific/China (IDF x1.8)": 17.5,
+   "US obese (NHANES direct)": 17.2,
+   "N.Am+Carib (IDF x1.8)": 17.1,
+   "MENA/Gulf (IDF x1.8)": 16.8
+  },
+  "semaglutide-sc-weekly": {
+   "Africa (IDF x1.8)": 15.2,
+   "England (HSE 2024 direct)": 15.0,
+   "Global (IDF x1.8)": 14.7,
+   "W.Pacific/China (IDF x1.8)": 14.6,
+   "US obese (NHANES direct)": 14.3,
+   "N.Am+Carib (IDF x1.8)": 14.2,
+   "MENA/Gulf (IDF x1.8)": 13.9
+  },
+  "orforglipron": {
+   "Africa (IDF x1.8)": 10.8,
+   "England (HSE 2024 direct)": 10.6,
+   "Global (IDF x1.8)": 10.3,
+   "W.Pacific/China (IDF x1.8)": 10.2,
+   "US obese (NHANES direct)": 9.9,
+   "N.Am+Carib (IDF x1.8)": 9.8,
+   "MENA/Gulf (IDF x1.8)": 9.5
+  },
+  "semaglutide-oral": {
+   "Africa (IDF x1.8)": 10.3,
+   "England (HSE 2024 direct)": 10.1,
+   "Global (IDF x1.8)": 9.8,
+   "W.Pacific/China (IDF x1.8)": 9.7,
+   "US obese (NHANES direct)": 9.4,
+   "N.Am+Carib (IDF x1.8)": 9.3,
+   "MENA/Gulf (IDF x1.8)": 9.0
+  },
+  "semaglutide-sc-daily": {
+   "Africa (IDF x1.8)": 9.1,
+   "England (HSE 2024 direct)": 8.9,
+   "Global (IDF x1.8)": 8.6,
+   "W.Pacific/China (IDF x1.8)": 8.5,
+   "US obese (NHANES direct)": 8.2,
+   "N.Am+Carib (IDF x1.8)": 8.1,
+   "MENA/Gulf (IDF x1.8)": 7.8
+  }
+ },
+ "sources": "NHANES 2017-2020 (CDC); Health Survey for England 2024 (NHS Digital); IDF Diabetes Atlas 2021 (NBK581940)"
+}

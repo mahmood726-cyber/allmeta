@@ -141,3 +141,17 @@ subpopulation has higher diabetes (US 14.8%→26%), so the IDF-region targets sl
 loss for the obese population — US-obese (NHANES) is the matched anchor; region-specific obese-subset
 prevalences would lower those further. Sources: IDF Diabetes Atlas 2021 (NCBI NBK581940); NHANES
 2017-2020 (CDC NCHS).
+
+## Region-specific OBESE-SUBSET diabetes targets (replaces general-adult proxy)
+`workstream_obese_subset.py`. Direct obese-subset diabetes prevalence from national surveys where
+published, IDF regions scaled by the empirical obese/general ratio (1.8; US 14.8->26%=1.76, UK 7->13%=1.86):
+- DIRECT: US obese 26% (NHANES 2017-2020); England obese 13% (Health Survey for England 2024).
+- Scaled (IDF x1.8): Africa 9.5%, Global 18.9%, W.Pacific/China 20.5%, N.America+Caribbean 27.0%, MENA/Gulf 32.6%.
+- Consistency check: IDF N.America 15.0% x1.8 = 27% ~ US-obese direct 26% (ratio validated). England direct
+  (13%) is used over IDF-Europe-scaled (~18.5%) because UK general diabetes (~7%) < IDF-Europe (10.3%).
+
+Transport (Bayesian gamma=5.8): tirzepatide obesity 18.7 -> England 17.9 -> US-obese 17.2 -> MENA-obese 16.8;
+spread across obese-subset targets (Africa 9.5% -> MENA 32.6%) = 18.1 -> 16.8 pp. The obese-subset targets
+deepen attenuation for high-burden regions vs the general-adult proxy (MENA 17.7 general -> 16.8 obese),
+which is more realistic. Sources: NHANES (CDC), Health Survey for England 2024 (NHS Digital), IDF Diabetes
+Atlas 2021 (NBK581940). transport_atlas_obese.json.
