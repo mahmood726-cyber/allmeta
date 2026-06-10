@@ -35,3 +35,24 @@ high-confidence candidates pending that second pass.
 - The publishable claim becomes the **registry-native-vs-literature DELTA**: does including the 6
   ghosts (and any unlinked trials a literature search would miss) change the pooled effect / ranks /
   POTH vs Xie 2024 — and do ghost trials show systematically smaller effects (the reporting-bias signal)?
+
+## Workstream A result — registry-vs-literature DELTA + reporting-bias (2026-06-10)
+`workstream_A_delta.py`. Of the 6 confirmed ghosts, 3 have a placebo arm (analysable);
+they cluster in the semaglutide 2.4 mg node.
+
+**Reporting-bias probe (semaglutide 2.4 mg vs placebo):**
+- Published trials (k=13): pooled **11.7 pp** (SE 0.19)
+- Ghost trials (k=2): pooled **8.5 pp** (SE 0.67)
+- **Ghosts 3.2 pp SMALLER — the reporting-bias direction.** Small k (signal, not proof), but it
+  points the predicted way; a literature-only meta cannot see it. (One ghost, NCT04969939,
+  reports semaglutide 2.4 mg at only -5.55% — a notably attenuated effect.)
+
+**Network delta (WITH vs WITHOUT ghosts):** ranking UNCHANGED (ghosts are all semaglutide, an
+already-saturated node); the semaglutide-sc node shifts -0.07 pp (>=36wk) / -0.24 pp (all-timepoint).
+So excluding unpublished evidence biases the semaglutide estimate slightly UPWARD.
+
+**ROB-ME reading:** missing evidence exists, is non-trivial in volume (6 trials / ~2,500 pts), and
+the analysable subset differs in the bias-consistent direction — a documented reporting-bias concern,
+not a clean bill of health. The contribution is detecting and quantifying it registry-natively;
+the honest conclusion is "modest upward bias in the semaglutide node from non-publication," not a
+changed hierarchy.
