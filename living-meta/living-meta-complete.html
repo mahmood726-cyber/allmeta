@@ -58,6 +58,9 @@ STATISTICAL METHODS (with references):
   <title>Living Meta-Analysis | CT.gov Evidence Synthesis</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
 
+  <!-- Signed living-review audit trail (SHA-256 chain + optional HMAC) -->
+  <script src="../shared/living-monitor-v1.js"></script>
+
   <!-- Google Fonts -->
   <style>
     /* ==================================================================
@@ -408,6 +411,8 @@ STATISTICAL METHODS (with references):
             </div>
             <div class="flex items-center space-x-4">
               <div id="sync-status" class="text-sm text-gray-500" aria-live="polite"></div>
+              <button id="sign-key-btn" class="btn btn-ghost btn-sm" title="Set the HMAC signing key for the update audit trail">🔑 Key</button>
+              <button id="verify-provenance-btn" class="btn btn-ghost btn-sm" title="Verify the living-review update history (SHA-256 chain + signature)">🔒 Verify history</button>
               <button id="keyboard-help-btn" class="btn btn-ghost btn-sm" aria-label="Keyboard shortcuts help" title="Press ? for shortcuts">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1205,10 +1210,62 @@ window.LMA = window.LMA || {};
       I2: analysisResult.I2,
       notes
     };
-    history.push(version);
+    // Seal this version into the tamper-evident provenance chain: each version's
+    // hash binds to the previous seal, so re-pooling the living review leaves a
+    // verifiable audit trail. With a key the chain head is HMAC-signed.
+    let sealed = version;
+    try {
+      if (window.LivingMonitor) {
+        const prevSeal = history.length ? history[history.length - 1]._seal : null;
+        sealed = await window.LivingMonitor.sealVersion(prevSeal, version, LMA.getSignKey());
+      }
+    } catch (e) { /* fall back to unsealed rather than block the update */ }
+    history.push(sealed);
     await LMA.db.appState.put({ id: `history_${projectId}`, updates: history });
-    return version;
+    LMA._updateProvenanceStatus(history);
+    return sealed;
   };
+
+  // ---- signed-audit-trail key + verification (router-independent) ----
+  const SIGN_KEY_LS = 'living-meta-sign-key';
+  LMA.getSignKey = function() { try { return localStorage.getItem(SIGN_KEY_LS) || ''; } catch (e) { return ''; } };
+  LMA.setSignKey = function(k) { try { if (k) localStorage.setItem(SIGN_KEY_LS, k); else localStorage.removeItem(SIGN_KEY_LS); } catch (e) {} };
+  LMA.verifyVersionHistory = async function(projectId) {
+    const history = await LMA.getUpdateHistory(projectId);
+    if (!window.LivingMonitor) return { valid: false, reason: 'verifier unavailable' };
+    if (!history.length) return { valid: true, brokenAt: -1, signed: false, count: 0, empty: true };
+    return window.LivingMonitor.verifyHistory(history, LMA.getSignKey());
+  };
+  LMA._updateProvenanceStatus = function(history) {
+    const el = document.getElementById('sync-status'); if (!el) return;
+    const n = history.length;
+    const signed = history.some(v => v && v._seal && v._seal.signed);
+    el.textContent = '🔒 update history ' + (signed ? 'signed' : 'chained') + ' · ' + n + ' version' + (n === 1 ? '' : 's');
+  };
+  // Verify the CURRENT project's audit trail (from the app store).
+  LMA.verifyCurrentProvenance = async function() {
+    const el = document.getElementById('sync-status');
+    const proj = LMA.store && LMA.store.getState && LMA.store.getState().currentProject;
+    if (!proj) { if (el) el.textContent = 'Open a project to verify its update history.'; return null; }
+    const v = await LMA.verifyVersionHistory(proj.id);
+    if (el) {
+      if (v.empty) el.textContent = '🔒 no recorded updates yet for this project.';
+      else if (v.valid) el.textContent = '🔒 update history VERIFIED · ' + (v.signed ? 'signature valid' : 'chain intact (unsigned)') + ' · ' + v.count + ' versions';
+      else el.textContent = '⚠ update history TAMPERED at version ' + ((v.brokenAt|0) + 1) + ' (' + (v.reason || 'invalid') + ')';
+    }
+    return v;
+  };
+
+  // test hook (drives the real data layer for the browser test)
+  if (typeof window !== 'undefined') {
+    window.__almLiving = {
+      record: (pid, res, notes) => LMA.recordAnalysisVersion(pid, res, notes),
+      history: (pid) => LMA.getUpdateHistory(pid),
+      verify: (pid) => LMA.verifyVersionHistory(pid),
+      setKey: (k) => LMA.setSignKey(k),
+      tamper: async (pid, idx, field, val) => { const h = await LMA.getUpdateHistory(pid); h[idx][field] = val; await LMA.db.appState.put({ id: `history_${pid}`, updates: h }); return true; }
+    };
+  }
 
   /**
    * Compare two analysis versions
@@ -2945,6 +3002,15 @@ window.LMA = window.LMA || {};
       LMA.initKeyboardNavigation();
 
       document.getElementById('new-project-btn')?.addEventListener('click', LMA.showNewProjectModal);
+      document.getElementById('verify-provenance-btn')?.addEventListener('click', () => LMA.verifyCurrentProvenance());
+      document.getElementById('sign-key-btn')?.addEventListener('click', () => {
+        const cur = LMA.getSignKey();
+        const k = window.prompt('HMAC signing key for the update audit trail (blank = unsigned, hash-chain only):', cur);
+        if (k === null) return;
+        LMA.setSignKey(k.trim());
+        const el = document.getElementById('sync-status');
+        if (el) el.textContent = k.trim() ? '🔑 signing key set — future updates are HMAC-signed.' : 'Signing key cleared — updates use the hash chain only.';
+      });
       window.addEventListener('online', () => LMA.showToast({ type: 'success', message: 'Back online' }));
       window.addEventListener('offline', () => LMA.showToast({ type: 'warning', message: 'You are offline' }));
 
