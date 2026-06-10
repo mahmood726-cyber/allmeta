@@ -6,3 +6,4 @@ __pycache__/
 # generated RapidMeta dashboard + copied engine (reproducible from rapidmeta_config.json + clone.py)
 assets/
 incretin_obesity_dashboard.html
+_shot_*.png
