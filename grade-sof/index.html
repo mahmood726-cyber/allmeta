@@ -119,6 +119,14 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/ma-pooled-v1.js"></script>
+  <!-- integrity-by-default panel: auto-run spec-collapse / Egger / E-value -->
+  <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/trimfill.js"></script>
+  <script src="../shared/spec-collapse.js"></script>
+  <script src="../shared/egger.js"></script>
+  <script src="../shared/evalue.js"></script>
+  <script src="../shared/integrity-panel-v1.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -165,6 +173,7 @@
       <div class="actions">
         <button type="button" id="btn-add" class="primary">+ Add outcome</button>
         <button type="button" id="btn-load-pooled" title="Load a pooled effect (point estimate + 95% CI, exactly as computed) from another allmeta tool via the ma-pooled-v1 bus — e.g. Forest Plot’s “→ GRADE” button — as a new outcome row.">↓ Load pooled</button>
+        <button type="button" id="btn-integrity" title="Auto-run allmeta's integrity methods (multiverse robustness, small-study/Egger, E-value) on the study-level effects and pooled result currently on the bus.">🔬 Check integrity</button>
         <button type="button" id="btn-html">Download HTML</button>
         <button type="button" id="btn-json">Download JSON</button>
         <button type="button" id="btn-import">Import JSON</button>
@@ -177,6 +186,12 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2>Preview</h2>
       <div id="sof-host"></div>
+    </section>
+
+    <section class="panel" aria-label="Integrity">
+      <h2>Trustworthiness (integrity-by-default)</h2>
+      <p class="hint" style="margin-top:0">Auto-runs allmeta's frontier integrity methods on the study-level effects (<code>ma-studies-v1</code>) and pooled result (<code>ma-pooled-v1</code>) already on the bus — so the certainty step ships with a one-click trustworthiness read. Reuses the audited engines; nothing is recomputed here.</p>
+      <div id="integrity-host" role="status" aria-live="polite"></div>
     </section>
   </main>
 
@@ -826,6 +841,42 @@
       render();
     }
 
+    // ---- integrity-by-default panel ----
+    function readStudiesForIntegrity() {
+      try { return (window.MaStudies && MaStudies.read && MaStudies.read()) || []; } catch (e) { return []; }
+    }
+    function readLastPooled() {
+      try { var l = (window.MaPooled && MaPooled.read && MaPooled.read()) || []; return l.length ? l[l.length - 1] : null; } catch (e) { return null; }
+    }
+    function integrityBadge(status) {
+      var map = { ok: ["✓", "#0d7a27", "#dff3e0"], warn: ["!", "#b05a1c", "#fbeedd"], flag: ["⚠", "#912121", "#fbd2d2"], na: ["–", "#5c6470", "rgba(127,127,127,.15)"] };
+      var m = map[status] || map.na;
+      return '<span style="display:inline-block;min-width:1.3rem;text-align:center;border-radius:10px;font-weight:700;padding:0 .4rem;color:' + m[1] + ';background:' + m[2] + '">' + m[0] + "</span>";
+    }
+    function runIntegrity() {
+      var host = document.getElementById("integrity-host"); if (!host) return;
+      if (!window.AlmIntegrityPanel) { host.textContent = "Integrity engines not loaded."; return; }
+      var studies = readStudiesForIntegrity().map(function (s) { return { est: s.est, se: s.se, label: s.label }; });
+      var pooled = readLastPooled();
+      if (!studies.length && !pooled) {
+        host.innerHTML = '<p class="hint">No study-level effects or pooled result on the bus yet — run a meta-analysis (e.g. Forest plot) and send it here first.</p>';
+        return;
+      }
+      var res = AlmIntegrityPanel.assess({ studies: studies, pooled: pooled });
+      var rows = res.checks.map(function (c) {
+        return '<div style="display:flex;gap:.5rem;align-items:flex-start;padding:.45rem 0;border-bottom:1px solid rgba(127,127,127,.2)">'
+          + integrityBadge(c.status)
+          + "<div><strong>" + escapeHtml(c.label) + "</strong> — " + escapeHtml(c.verdict)
+          + (c.detail ? '<br><span class="hint">' + escapeHtml(c.detail) + "</span>" : "")
+          + ' <a href="' + escapeHtml(c.app) + '" target="_blank" rel="noopener" class="hint">open ↗</a></div></div>';
+      }).join("");
+      var ptr = res.pointers.map(function (p) { return '<a href="' + escapeHtml(p.app) + '" target="_blank" rel="noopener" class="hint" title="' + escapeHtml(p.note) + '">' + escapeHtml(p.label) + " ↗</a>"; }).join(" · ");
+      var sev = res.summary.flags ? "flag" : "ok";
+      host.innerHTML = '<div style="margin-bottom:.5rem">' + integrityBadge(sev) + " <strong>" + escapeHtml(res.summary.verdict) + '</strong> <span class="hint">(k=' + res.summary.k + ", " + res.summary.ran + " checks run)</span></div>"
+        + rows
+        + '<p class="hint" style="margin-top:.6rem">Checklist methods needing reviewer input: ' + ptr + "</p>";
+    }
+
     function attach() {
       for (const id of Object.values(HEADER_FIELDS)) {
         const el = document.getElementById(id);
@@ -833,6 +884,7 @@
       }
       document.getElementById("btn-add").addEventListener("click", onAdd);
       document.getElementById("btn-load-pooled").addEventListener("click", onLoadPooled);
+      document.getElementById("btn-integrity").addEventListener("click", runIntegrity);
       document.getElementById("btn-html").addEventListener("click", onDownloadHtml);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-reset").addEventListener("click", onReset);
@@ -844,8 +896,9 @@
       });
       // Live badge: refresh on load and whenever another tab writes the pooled bus.
       updateLoadBadge();
+      runIntegrity();
       window.addEventListener("storage", function (e) {
-        if (!e.key || e.key === "ma-pooled-v1") updateLoadBadge();
+        if (!e.key || e.key === "ma-pooled-v1" || e.key === "ma-studies-v1") { updateLoadBadge(); runIntegrity(); }
       });
     }
 
@@ -861,6 +914,11 @@
     // certainty: start High[RCT]/Low[obs], downgrade rob/inc/ind/imp/pub,
     // upgrade only for observational with zero downgrades).
     window.__almGrade = function (g) { return gradeCompute(g); };
+    window.__almIntegrity = function () {
+      return window.AlmIntegrityPanel
+        ? AlmIntegrityPanel.assess({ studies: readStudiesForIntegrity().map(function (s) { return { est: s.est, se: s.se }; }), pooled: readLastPooled() })
+        : null;
+    };
 
     attach();
     render();
