@@ -48,3 +48,16 @@ discovery + the modifier/target choices are topic-specific.
 ## Provenance & limits
 Single pinned AACT snapshot (2026-06-01); PubMed abstracts only; no IPD; not a systematic review without the
 human-attested layer. See `PAPER.md` §Limitations and `ROBUSTNESS_FIXES.md`.
+
+## Extension — time-to-event outcomes (registry-ipd)
+The continuous (weight) pipeline above is complemented by a parallel **time-to-event** track via
+`registry-ipd` (C:\Projects\registry-ipd), a registry-native KM->pseudo-IPD survival engine with
+calibrated-uncertainty ensembles. Same AACT source, same reproducibility discipline.
+| stage | does | engine |
+|---|---|---|
+| S1 harvest | pull KM curves for incretin CVOT/renal trials (20 HR-trials in AACT) | registry-ipd `harvest/` |
+| S2 reconstruct | KM -> pseudo-IPD Cox HR / RMST / median (+95% calibrated CrI) | registry-ipd `src/engine.js` |
+| S3 survival NMA | pool reconstructed HRs across the incretin network | (next-phase) |
+| S4 joint view | weight loss (MBNMA) × hard outcomes (CV/renal) benefit-risk | benefit_risk + survival |
+This is the clinically decisive axis (MACE/CV-death/kidney), recovered registry-natively. See
+`INTEGRATION_registry_ipd.md`. Capability + target established; the full survival NMA is a bounded next build.
