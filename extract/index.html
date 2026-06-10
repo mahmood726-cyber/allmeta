@@ -157,6 +157,7 @@
 
   <script src="../shared/toast.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/sr-records-v1.js"></script>
   <script>
   (function () {
     "use strict";
@@ -458,7 +459,18 @@
       } catch (e) { toast("Could not import from Screen: " + e.message); }
     }
     function importSrRecords() {
-      try { var p = JSON.parse(localStorage.getItem(SR_RECORDS_KEY) || "null"); if (p && Array.isArray(p.records) && p.records.length) { setRecords(p.records); return true; } } catch (e) {}
+      try {
+        // Phase 4: delegate to the canonical shared/sr-records-v1 module when
+        // present (normalised records are a superset of what extract reads);
+        // fall back to the inline read so the app still works standalone.
+        if (window.SrRecords && SrRecords.read) {
+          var recs = SrRecords.read();
+          if (recs && recs.length) { setRecords(recs); return true; }
+          return false;
+        }
+        var p = JSON.parse(localStorage.getItem(SR_RECORDS_KEY) || "null");
+        if (p && Array.isArray(p.records) && p.records.length) { setRecords(p.records); return true; }
+      } catch (e) {}
       return false;
     }
 
