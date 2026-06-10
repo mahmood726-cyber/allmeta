@@ -13,6 +13,10 @@
 shared/vendor/*.js binary
 hub/shared/vendor/*.js binary
 
+# Binary fixtures (e.g. test PDFs) must never get CRLF conversion, which would
+# corrupt the byte offsets / xref table and make the file unreadable on clone.
+*.pdf binary
+
 # Source files should keep platform-default line endings.
 *.html text
 *.css text
