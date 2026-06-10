@@ -1,0 +1,82 @@
+[
+ {
+  "node": "cagrilintide",
+  "k": 1,
+  "age": 52.28,
+  "bmi": NaN,
+  "baseline_wt": NaN,
+  "hba1c": NaN
+ },
+ {
+  "node": "danuglipron",
+  "k": 1,
+  "age": 29.81,
+  "bmi": NaN,
+  "baseline_wt": NaN,
+  "hba1c": NaN
+ },
+ {
+  "node": "mazdutide",
+  "k": 1,
+  "age": 47.74,
+  "bmi": NaN,
+  "baseline_wt": 107.74,
+  "hba1c": NaN
+ },
+ {
+  "node": "orforglipron",
+  "k": 2,
+  "age": 53.82,
+  "bmi": NaN,
+  "baseline_wt": 108.56,
+  "hba1c": 7.99
+ },
+ {
+  "node": "retatrutide",
+  "k": 1,
+  "age": 48.12,
+  "bmi": 37.32,
+  "baseline_wt": 107.68,
+  "hba1c": NaN
+ },
+ {
+  "node": "semaglutide-oral",
+  "k": 13,
+  "age": 56.67,
+  "bmi": NaN,
+  "baseline_wt": NaN,
+  "hba1c": 8.13
+ },
+ {
+  "node": "semaglutide-sc-daily",
+  "k": 1,
+  "age": 46.64,
+  "bmi": NaN,
+  "baseline_wt": 111.39,
+  "hba1c": 5.49
+ },
+ {
+  "node": "semaglutide-sc-weekly",
+  "k": 23,
+  "age": 48.17,
+  "bmi": NaN,
+  "baseline_wt": NaN,
+  "hba1c": 8.03
+ },
+ {
+  "node": "survodutide",
+  "k": 2,
+  "age": 53.19,
+  "bmi": NaN,
+  "baseline_wt": 105.68,
+  "hba1c": 8.07
+ },
+ {
+  "node": "tirzepatide",
+  "k": 4,
+  "age": 46.5,
+  "bmi": NaN,
+  "baseline_wt": 99.11,
+  "hba1c": NaN
+ }
+]
