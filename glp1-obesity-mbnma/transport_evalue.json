@@ -1,0 +1,7 @@
+{
+ "measured_diabetes_shift_pp": -1.2,
+ "nullify_threshold_pp": 1.2,
+ "min_adjacent_gap_pp": 0.5,
+ "benchmark": "diabetes delta=5.9pp, Delta=0.21 -> product 1.2pp = the adjustment",
+ "conclusion": "unmeasured modifier must match diabetes strength+imbalance to nullify, or exceed 1.3pp differential agent-interaction to reorder -> implausible; ranking robust"
+}

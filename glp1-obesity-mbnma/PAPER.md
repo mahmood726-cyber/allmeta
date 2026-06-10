@@ -103,15 +103,33 @@ the completeness⊕transportability unification and its registry-native, IPD-fre
 statistical components (MBNMA, POTH, network meta-regression, NUTS) are existing methods; the contribution
 is their integration and the framework, not a new estimator.
 
+## 4b. Transportability & time-to-event (final state)
+- **Target = real NHANES microdata.** Replaced the hardcoded marginals with NHANES 2017-2020 public
+  microdata (obese subset n=3,688, survey-weighted); the joint distribution is now empirical (requirement-3
+  closed), and the diabetes target is corrected 26%→**20.6%** (HbA1c≥6.5% OR self-report).
+- **Transport consumes it, with uncertainty.** `pymc_transport_v2.py` reads the microdata target as a
+  stochastic node (P_diab ~ N(0.206, SE 0.010)), propagating target-prevalence uncertainty into the
+  transported CrIs; Rhat 1.0000, ESS 3326. **POTH 0.898 → 0.898: the ranking survives transport.** k=1 nodes
+  tagged INSUFFICIENT.
+- **Ethnicity modelled, not flagged.** NHANES obese-diabetes by ethnicity (NHAsian 24.5% > NHWhite 20.3%)
+  replaces the 1.8 scalar for Asian-population regions.
+- **Unmeasured-modifier sensitivity (E-value-style).** Nullifying the transport needs an unmeasured modifier
+  as strong+imbalanced as diabetes; the top ranks (gaps 2.7-4.3 pp) are robust, the smallest gap (0.5 pp,
+  orforglipron vs oral-sema) is not. Diabetes + BMI (the measured modifiers) cover the material axes.
+- **Time-to-event arm (registry-ipd).** registry-ipd's `harvest_trial()` pulled the incretin CVOT HRs from
+  AACT; pooled survival NMA: semaglutide HR 0.81 (k=5), tirzepatide 0.62 — the top weight-loss agents also
+  carry CV benefit (joint view). registry-ipd's pseudo-IPD *reconstruction* requires posted KM curves, which
+  these trials don't post in AACT (km_points=[0,0]) — wired and waiting, blocked by the registry posting gap.
+
 ## 5. Limitations
 No IPD → the rigorous transport estimators (ML-NMR/MAIC) are out of reach; transport is binary-modifier
-standardization, valid here only because the modifier is binary with pure strata. Common γ across agents is
-an approximation (agent-specific γ is the next step). It is **not a systematic review** without
+standardization, valid here only because the modifier is binary with pure strata (agent-specific γ fit:
+between-agent sd only 1.3 pp, so common-γ is justified). It is **not a systematic review** without
 human-attested dual-screening, RoB-2, and GRADE. Star network → no consistency test. Single phase-2 trials
-at the apex (flagged, not interpreted). AACT baseline reporting is sparse for continuous covariates;
-PubMed-abstract supplementation is partial. The obese/general diabetes ratio for non-US/UK regions assumes
-an ethnicity-invariant obesity–diabetes association (flagged). Registry sourcing carries its own
-results-posting selection, partly characterized here but not fully corrected (no formal ROB-ME).
+at the apex (flagged k=1). The obese/general diabetes ratio for non-US regions and the use of US-resident
+NHANES ethnicity strata as regional proxies are flagged assumptions. Registry sourcing carries its own
+results-posting selection (quantified — 6 ghosts, 89% broad-search recovery — but no formal ROB-ME).
+Survival reconstruction blocked by the AACT KM-posting gap (HR pooling used instead).
 
 ## 6. Conclusion
 A reproducible, registry-native dose-response NMA that recovers evidence a literature search misses and —
