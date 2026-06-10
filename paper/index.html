@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Paper Studio — turn an allmeta review into a manuscript. PICO, included studies, pooled results and PRISMA counts are auto-filled from your review (the sr-records / ma-studies / ma-pooled buses); you write the interpretation. Deterministic references from the included studies — no hallucinated citations. Fully offline.">
+  <title>Paper Studio — allmeta</title>
+  <link rel="stylesheet" href="../hub/styles.css">
+  <link rel="stylesheet" href="./assets/css/paper-studio.css">
+  <style>
+    /* This page hosts ONE Paper Studio tab standalone (no RapidMeta chrome), so
+       show the panel that the original markup kept hidden behind a tab, and let
+       it fill the page. The 3 Tailwind utilities on the source wrapper are
+       replaced here so the app stays CDN-free. */
+    .paper-studio-page { display: block; height: auto; min-height: 100vh; overflow-y: auto; }
+    .alm-paper-top { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 1rem; }
+    .alm-paper-top .hub-back { text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#paperCanvas">Skip to the paper</a>
+  <div class="alm-paper-top no-print">
+    <a class="hub-back" href="../" aria-label="Back to allmeta hub">← allmeta</a>
+    <a class="hub-back" href="../workflow/" aria-label="Back to the review workflow">← review workflow</a>
+  </div>
+  <main>
+    <section id="tab-paper" class="paper-studio-page" role="region" aria-label="Paper Studio">
+
+      <div class="paper-toolbar no-print">
+        <span class="ps-title">Evidence Paper Studio</span>
+        <span class="ps-provenance" role="note">Numbers &amp; figures are auto-filled from your analysis</span>
+        <button id="btnWriteMode" title="Editing view: shows prompts, tips and tools.">Write</button>
+        <button id="btnCheckPaper" title="Check what is still missing before you export.">Check paper</button>
+        <button id="btnFocusMode" type="button" aria-pressed="false" title="Hide the surrounding bars for a distraction-free, full-screen writing space. Press Esc to exit.">⛶ Focus mode</button>
+        <button id="btnDownloadCleanPdf" class="primary" title="Your finished paper — THIS is the file you hand in. It opens your device’s “Save as PDF”. Unlocks when every section is written.">⬇ Download my paper (PDF)</button>
+        <details class="toolbar-more"><summary title="Other tools and formats">More ▾</summary>
+          <div class="toolbar-more-body">
+            <button id="btnPreviewMode" title="See the paper as it will print, with prompts and tips hidden.">Preview finished paper</button>
+            <button id="btnDownloadWorkingPdf" title="PDF that KEEPS the prompts and tips — good for a tutor to mark.">Version with tips (for my tutor)</button>
+            <button id="btnRefreshFigures" title="Pull the latest plots and tables from your analysis into the paper.">Refresh figures</button>
+            <button id="btnToggleTips" title="Show or hide the extra notes and examples. The short how-to under each box always stays.">Hide examples &amp; notes</button>
+            <button id="btnStartGuide" title="Reopen the “New to writing a paper? Start here” guide.">Start-here guide</button>
+            <button id="btnWorkedExample" title="See a complete, finished example paper to learn from. Read-only — it does not change your work.">Show worked example</button>
+            <button id="btnDownloadJson" title="Save your paper as a JSON file">Save data</button>
+            <button id="btnUploadJson" title="Load a previously saved paper">Load data</button>
+            <button id="btnResetPaper" class="danger" title="Clear your written text (keeps evidence)">Reset text</button>
+            <button id="btnClearAll" class="danger" title="Remove ALL your writing from this computer — use before leaving a shared/public machine.">Clear all (shared PC)</button>
+          </div>
+        </details>
+        <details class="download-menu"><summary title="Advanced formats: Word, text, figures, supplementary, transparency">Advanced formats ▾</summary>
+            <div class="download-menu-body">
+                <strong>One combined file (PDF is the blue button above)</strong>
+                <button type="button" data-export="word">Word (.doc)</button>
+                <button type="button" data-export="html">HTML (.html)</button>
+                <button type="button" data-export="md">Markdown (.md)</button>
+                <button type="button" data-export="txt">Plain text (.txt)</button>
+                <hr>
+                <strong>Text separate from figures</strong>
+                <label class="fig-fmt">Figure format
+                    <select id="figFormatSelect"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="svg">SVG</option><option value="tiff">TIFF</option></select>
+                </label>
+                <button type="button" data-export="bundle">Manuscript + figures (.zip)</button>
+                <button type="button" data-export="figures">Figures only (.zip)</button>
+                <hr>
+                <strong>Supplementary (submittable)</strong>
+                <button type="button" data-export="prisma">PRISMA 2020 checklist</button>
+                <button type="button" data-export="amstar">AMSTAR-2 appraisal</button>
+                <button type="button" data-export="search">Search strategy</button>
+                <hr>
+                <strong>Full transparency</strong>
+                <button type="button" data-export="transparency" title="Everything the review produced: all charts, full results, every record with abstract + link.">Transparency appendix (.zip)</button>
+            </div>
+        </details>
+        <span id="paperSaveStatus" class="ps-save-status">Saved</span>
+        <input id="paperJsonInput" type="file" accept="application/json" hidden>
+      </div>
+
+      <div class="paper-studio-layout">
+        <aside class="paper-sidebar no-print">
+            <section id="paperNavPanel" class="paper-nav-panel"></section>
+            <section class="paper-mission-panel">
+                <h4>Your job</h4>
+                <p class="paper-mission"><strong>allmeta calculates the evidence.</strong> Your job is to explain what it means, what it does not mean, and why it matters. A clean PDF unlocks once the required interpretation fields are complete.</p>
+            </section>
+            <section id="evidenceChipsPanel"></section>
+            <section id="paperChecklistPanel"></section>
+        </aside>
+
+        <article id="paperCanvas" class="paper-canvas paper-mode-write" tabindex="-1">
+            <p style="color:#667085">Loading your evidence paper…</p>
+        </article>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Cross-tool buses first: the bridge reads them to build window.RapidMeta.state. -->
+  <script src="../shared/ma-studies-v1.js" defer></script>
+  <script src="../shared/ma-pooled-v1.js" defer></script>
+  <script src="../shared/ma-core.js" defer></script>
+  <!-- allmeta → Paper Studio bridge: assembles RapidMeta.state (activeTab:"paper"
+       makes paper-studio.js auto-boot on DOMContentLoaded). -->
+  <script src="./assets/js/alm-paper-bridge.js" defer></script>
+  <!-- Paper Studio modules (load order from the source build). -->
+  <script src="./assets/js/paper-learning-links.js" defer></script>
+  <script src="./assets/js/paper-readiness-checks.js" defer></script>
+  <script src="./assets/js/paper-figures.js" defer></script>
+  <script src="./assets/js/paper-formats.js" defer></script>
+  <script src="./assets/js/paper-supplementary.js" defer></script>
+  <script src="./assets/js/paper-export.js" defer></script>
+  <script src="./assets/js/paper-studio.js" defer></script>
+</body>
+</html>

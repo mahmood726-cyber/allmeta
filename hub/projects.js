@@ -1341,6 +1341,19 @@ window.HTML_APPS_PROJECTS = [
     tags: ["extraction", "elicit", "pico", "effect-size", "risk-of-bias", "meta-analysis", "ma-studies-v1", "pipeline", "local-first", "ai-optional"]
   },
   {
+    name: "Paper Studio",
+    subcategory: "Reporting",
+    folder: "allmeta/paper",
+    path: "./paper/index.html",
+    added: "2026-06-10",
+    collection: "new",
+    mode: "file",
+    category: "Reporting",
+    summary: "Turn a finished review into a manuscript, offline. PICO, included studies, pooled results and PRISMA counts are auto-filled from your review via the cross-tool buses (sr-project-v1 / sr-records-v1 / ma-studies-v1 / ma-pooled-v1); you write the interpretation in guided sections with worked examples and readiness checks. References are built deterministically from the included studies — no hallucinated citations. Exports a clean PDF, Word/HTML/Markdown, a figures bundle, and submittable supplementary (PRISMA 2020 checklist, AMSTAR-2, search strategy). The report stage of the Design→Search→Screen→Extract→synthesis pipeline.",
+    note: "Reads the buses through alm-paper-bridge (assembles the host state); the deterministic Paper Studio engine is ported from RapidMeta. 100% browser-side; nothing is uploaded.",
+    tags: ["paper", "manuscript", "reporting", "write-up", "prisma", "references", "pipeline", "student", "ma-pooled-v1", "local-first"]
+  },
+  {
     name: "Correlation MA",
     folder: "allmeta/correlation-ma",
     path: "./correlation-ma/index.html",
