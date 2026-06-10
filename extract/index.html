@@ -77,11 +77,12 @@
 
   <header>
     <h1>Extract <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· structured data extraction</span></h1>
-    <p>Turn included records into a structured evidence table — <strong>PICO</strong>, sample sizes, <strong>effect sizes + 95% CIs</strong>, event counts and <strong>risk-of-bias cues</strong> — with a free, deterministic in-browser engine, then feed it straight into the meta-analysis apps. Optional one-click handoff to the agent you already pay for (or the installable <code>rct-extractor</code> engine, 17 specialties) for harder full texts. This is the step Elicit meters; here it is free and reproducible.</p>
+    <p>Turn included records — or <strong>uploaded PDFs</strong> — into a structured evidence table: <strong>PICO</strong>, sample sizes, <strong>effect sizes + 95% CIs</strong>, event counts and <strong>risk-of-bias cues</strong>, with a free, deterministic in-browser engine, then feed it straight into the meta-analysis apps. Every extracted value shows its <strong>grounded source sentence</strong>, and any AI-proposed value whose supporting quote isn't found in the text is flagged — so extraction stays auditable. PDFs are read entirely on your device (no upload). This is the step Elicit meters; here it is free, offline and reproducible.</p>
   </header>
 
   <div class="toolbar">
     <button type="button" id="btn-import" class="primary">Import records…</button>
+    <button type="button" id="btn-import-pdf" class="primary">Import PDF(s)…</button>
     <button type="button" id="btn-from-screen">Import included from Screen</button>
     <button type="button" id="btn-example">Load example</button>
     <button type="button" id="btn-extract" class="primary">Re-extract all</button>
@@ -91,6 +92,7 @@
     <button type="button" id="btn-csv">Export CSV</button>
     <button type="button" id="btn-reset">Reset</button>
     <input type="file" id="file-import" class="file-input-hidden" accept=".ris,.txt,.nbib,.csv,.json,.bib,application/json,text/csv" aria-label="File import">
+    <input type="file" id="file-pdf" class="file-input-hidden" accept=".pdf,application/pdf" multiple aria-label="PDF import">
   </div>
 
   <main class="layout">
@@ -153,11 +155,14 @@
     </section>
   </main>
 
-  <p class="footer-note">The free engine is a transparent pattern extractor over <strong>title + abstract</strong>: it finds effect sizes (HR/RR/OR/MD/SMD) with their 95% CIs, sample sizes, event counts, follow-up and risk-of-bias signals (randomisation, blinding, allocation concealment, ITT). It is a <em>first pass to review</em>, not an oracle — abstracts under-report, so confirm against full text and edit any field before pooling. Ratio effects feed the <code>ma-studies-v1</code> bus as ln(effect) with SE = (ln&nbsp;hi − ln&nbsp;lo)/(2·1.96); MD/SMD on the natural scale. Everything is local; the optional BYO-key path is the only egress.</p>
+  <p class="footer-note">The free engine is a transparent pattern extractor over <strong>title + abstract + any imported PDF full text</strong>: it finds effect sizes (HR/RR/OR/MD/SMD) with their 95% CIs, sample sizes, event counts, follow-up and risk-of-bias signals (randomisation, blinding, allocation concealment, ITT), and shows the <strong>source sentence</strong> each value was grounded in. PDF text is extracted locally via a vendored, offline build of Mozilla's pdf.js (Apache-2.0) — image-only/scanned PDFs need OCR first and won't yield text. PDF full text is held in memory only (never written to storage or exports). It is a <em>first pass to review</em>, not an oracle — confirm against the paper and edit any field before pooling. Ratio effects feed the <code>ma-studies-v1</code> bus as ln(effect) with SE = (ln&nbsp;hi − ln&nbsp;lo)/(2·1.96); MD/SMD on the natural scale. Everything is local; the optional BYO-key path is the only egress.</p>
 
   <script src="../shared/toast.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/sr-records-v1.js"></script>
+  <script src="../shared/extract-grounding-v1.js"></script>
+  <script src="../shared/vendor/pdfjs/pdf.min.js"></script>
+  <script src="../shared/pdf-extract-v1.js"></script>
   <script>
   (function () {
     "use strict";
@@ -182,7 +187,9 @@
     // via window.__almExtract. Conservative by design: it would rather leave a
     // field empty than guess, because a wrong effect size poisons the pool.
 
-    function recordText(r) { return clean((r.title || "") + ". " + (r.abstract || ""), 16000); }
+    // Title + abstract, plus any PDF full text (so the deterministic engine and
+    // the grounding both see the richer source when a PDF was imported).
+    function recordText(r) { return clean((r.title || "") + ". " + (r.abstract || "") + (r.fullText ? " " + r.fullText : ""), 200000); }
 
     // ---- effect sizes + 95% CI ----
     var MEASURE_CANON = {
@@ -373,12 +380,29 @@
       wireRows();
       renderStats();
     }
+    // Show where the primary effect came from: an LLM value carries its own
+    // (apply-time validated) quote; a deterministic value is located in the
+    // source text. Ungrounded LLM values are flagged, never silently trusted.
+    function groundingLine(r, ex, eff) {
+      if (!window.SrGrounding) return "";
+      if (ex.manual && ex.manualQuote) {
+        return ex.manualGrounded
+          ? '<p class="hint" style="margin:0.35rem 0 0"><span class="badge ok">grounded ✓</span> AI source: “' + escapeHtml(clean(ex.manualQuote, 240)) + '”</p>'
+          : '<p class="hint" style="margin:0.35rem 0 0"><span class="badge err">ungrounded ⚠</span> the AI\'s quote was not found in the source — verify against the paper before pooling.</p>';
+      }
+      if (eff && eff.text) {
+        var loc = SrGrounding.locate(recordText(r), eff.text);
+        if (loc.found) return '<p class="hint" style="margin:0.35rem 0 0"><span class="badge ok">grounded ✓</span> source: “' + escapeHtml(clean(loc.sentence, 240)) + '”</p>';
+      }
+      return "";
+    }
     function detailRow(r, ex) {
       var eff = pickPrimary(ex), man = ex.manual || (eff || {});
       var pico = ex.pico;
       var effList = ex.effects.length ? ex.effects.map(function (e) { return escapeHtml(effLabel(e)); }).join(" · ") : "none";
       var evts = ex.events.length ? ex.events.map(function (e) { return e.events + "/" + e.total; }).join(", ") : "none";
       return '<tr class="detail"><td></td><td colspan="5">' +
+        groundingLine(r, ex, eff) +
         '<div class="field-grid">' +
         '<label><span class="lbl">Population</span><input type="text" data-f="population" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.population) + '"></label>' +
         '<label><span class="lbl">Intervention</span><input type="text" data-f="intervention" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.intervention) + '"></label>' +
@@ -436,7 +460,10 @@
       return {
         id: (r.id && String(r.id)) || freshId(), title: clean(r.title, 600), abstract: clean(r.abstract, 16000),
         authors: Array.isArray(r.authors) ? r.authors : splitAuthors(r.authors), journal: clean(r.journal, 300),
-        year: r.year ? (String(r.year).match(/\d{4}/) || [""])[0] : "", doi: clean(r.doi, 200), pmid: clean(r.pmid, 30)
+        year: r.year ? (String(r.year).match(/\d{4}/) || [""])[0] : "", doi: clean(r.doi, 200), pmid: clean(r.pmid, 30),
+        // PDF full text is kept in-memory only (never persisted to localStorage
+        // or exports — too large, and re-importable). Source tag for the UI.
+        fullText: clean(r.fullText, 200000), source: clean(r.source, 20)
       };
     }
     function setRecords(recs) {
@@ -518,6 +545,34 @@
     }
     function onFile(file) { var rd = new FileReader(); rd.onload = function () { try { var recs = detectAndParse(String(rd.result), file.name); if (!recs.length) { toast("No records found in that file."); return; } setRecords(recs); } catch (e) { toast("Import failed: " + e.message); } }; rd.readAsText(file); }
 
+    // Append (don't replace) normalised records + run extraction over them.
+    function appendRecords(recs) {
+      var add = recs.map(normRec);
+      records = records.concat(add);
+      add.forEach(function (r) { var ex = extractRecord(r); ex.useInMa = true; extractions[r.id] = ex; });
+      save(); render();
+      return add.length;
+    }
+    // ---- PDF ingestion (offline, via vendored pdf.js) ----
+    function onPdfFiles(files) {
+      if (!window.SrPdf || !SrPdf.available()) { toast("PDF support didn't load — use a Chromium browser, or import RIS/CSV/JSON."); return; }
+      var arr = Array.prototype.slice.call(files); if (!arr.length) return;
+      toast("Reading " + arr.length + " PDF(s)…");
+      var newRecs = [], chain = Promise.resolve();
+      arr.forEach(function (f) {
+        chain = chain.then(function () {
+          return SrPdf.extractFile(f).then(function (res) {
+            if (res.text) newRecs.push({ title: f.name.replace(/\.pdf$/i, ""), abstract: "", fullText: res.text, source: "pdf", year: (res.text.match(/\b(?:19|20)\d{2}\b/) || [""])[0] });
+          }).catch(function (e) { toast("Could not read " + f.name + ": " + e.message); });
+        });
+      });
+      chain.then(function () {
+        if (!newRecs.length) { toast("No text layer found (scanned image PDFs need OCR first)."); return; }
+        var n = appendRecords(newRecs);
+        $("msg").innerHTML = "Added <strong>" + n + "</strong> PDF(s) and extracted full-text fields. Click a row to review — extracted values show their <strong>grounded source sentence</strong>.";
+      });
+    }
+
     // ===================== exports / bus =====================
     function downloadBlob(blob, fn) { var u = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = u; a.download = fn; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(u); }, 1000); }
     function csvCell(v) { v = String(v == null ? "" : v); if (/^[=+@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }
@@ -557,12 +612,13 @@
         "# Structured data extraction for a systematic review", "",
         "For EACH record below, extract from the title + abstract (and full text if you have it): study design; PICO (population, intervention, comparator, outcome); total and per-arm sample sizes; the primary effect size with its measure (HR/RR/OR/MD/SMD), point estimate and 95% CI; event counts (n/N per arm) where reported; and risk-of-bias cues (randomisation, blinding, allocation concealment, intention-to-treat).",
         "Leave a field null rather than guessing. This can also be produced by the installable rct-extractor engine (17 specialties).", "",
+        "For `primaryEffect`, include a `quote`: the VERBATIM sentence from the source `text` below that reports that effect (copied exactly, so it can be verified). Do not paraphrase the quote.", "",
         "## Output (STRICT) — write `extract-ai-results.json`, a JSON array, one object per record with the same `id`:", "",
         '```json',
-        '[{"id":"<id>","design":"RCT","pico":{"population":"","intervention":"","comparator":"","outcome":""},"sampleSizes":{"total":0,"perArm":[]},"primaryEffect":{"measure":"HR","point":0.0,"lo":0.0,"hi":0.0},"events":[{"events":0,"total":0}],"rob":{"randomized":true,"blinding":"double","allocationConcealment":true,"intentionToTreat":true}}]',
+        '[{"id":"<id>","design":"RCT","pico":{"population":"","intervention":"","comparator":"","outcome":""},"sampleSizes":{"total":0,"perArm":[]},"primaryEffect":{"measure":"HR","point":0.0,"lo":0.0,"hi":0.0,"quote":"<verbatim supporting sentence>"},"events":[{"events":0,"total":0}],"rob":{"randomized":true,"blinding":"double","allocationConcealment":true,"intentionToTreat":true}}]',
         '```', "",
         "## Records (" + batch.length + ")", '```json',
-        JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year }; }), null, 2),
+        JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, text: clean(recordText(r), 12000), year: r.year }; }), null, 2),
         '```'
       ].join("\n");
     }
@@ -585,6 +641,12 @@
         var pe = o.primaryEffect;
         if (pe && ["HR", "RR", "OR", "MD", "SMD"].indexOf(pe.measure) >= 0 && pe.point != null && pe.lo != null && pe.hi != null) {
           ex.manual = { measure: pe.measure, point: num(pe.point), lo: num(pe.lo), hi: num(pe.hi) };
+          // span-grounding: validate the model's supporting quote against the
+          // record's source text; an unverifiable quote is flagged, not trusted.
+          if (window.SrGrounding) {
+            var v = SrGrounding.validateQuote(recordText(byId[o.id]), pe.quote || "");
+            ex.manualQuote = v.quote; ex.manualGrounded = v.grounded;
+          }
         }
         n++;
       });
@@ -599,8 +661,8 @@
       var prov = $("ai-provider").value, model = $("ai-model").value.trim();
       var batch = (aiUndecided().length ? aiUndecided() : records).slice(0, 25);
       if (!batch.length) { toast("Nothing to extract."); return; }
-      var sys = "You extract structured systematic-review data from title+abstract. Return ONLY a JSON array, one object per record with the same id and the schema {id,design,pico:{population,intervention,comparator,outcome},sampleSizes:{total},primaryEffect:{measure,point,lo,hi},rob:{randomized,blinding,allocationConcealment,intentionToTreat}}. Use null for unknown fields; measure is HR/RR/OR/MD/SMD.";
-      var user = JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract }; }));
+      var sys = "You extract structured systematic-review data from the provided source text. Return ONLY a JSON array, one object per record with the same id and the schema {id,design,pico:{population,intervention,comparator,outcome},sampleSizes:{total},primaryEffect:{measure,point,lo,hi,quote},rob:{randomized,blinding,allocationConcealment,intentionToTreat}}. Use null for unknown fields; measure is HR/RR/OR/MD/SMD. `quote` MUST be the verbatim sentence from the source text that reports primaryEffect (copied exactly, not paraphrased) so it can be verified; if you cannot find such a sentence, set primaryEffect to null.";
+      var user = JSON.stringify(batch.map(function (r) { return { id: r.id, title: r.title, text: clean(recordText(r), 12000) }; }));
       var req;
       if (prov === "openai") req = fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify({ model: model || "gpt-4o-mini", temperature: 0, messages: [{ role: "system", content: sys }, { role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.choices[0].message.content; });
       else if (prov === "anthropic") req = fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify({ model: model || "claude-haiku-4-5-20251001", max_tokens: 2000, system: sys, messages: [{ role: "user", content: user }] }) }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) { return j.content[0].text; });
@@ -643,6 +705,8 @@
     function attach() {
       $("btn-import").addEventListener("click", function () { $("file-import").click(); });
       $("file-import").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = ""; });
+      $("btn-import-pdf").addEventListener("click", function () { $("file-pdf").click(); });
+      $("file-pdf").addEventListener("change", function (e) { if (e.target.files && e.target.files.length) onPdfFiles(e.target.files); e.target.value = ""; });
       $("btn-from-screen").addEventListener("click", importFromScreen);
       $("btn-example").addEventListener("click", loadExample);
       $("btn-extract").addEventListener("click", function () { if (!records.length) { toast("Import records first."); return; } extractAll(); save(); toast("Re-extracted " + records.length + " record(s)."); });
@@ -667,12 +731,17 @@
       extractRecord: function (r) { return extractRecord(normRec(r)); },
       toMaStudy: toMaStudy, applyAiResults: applyAiResults, aiPrompt: function () { return aiPrompt(records.length ? records : [{ id: "x", title: "t", abstract: "a" }]); },
       setRecords: function (recs) { setRecords(recs); return records.length; },
+      appendRecords: function (recs) { return appendRecords(recs); },
       busStudies: busStudies, envelope: envelope,
       pick: function (id) { return pickPrimary(extractions[id]); },
+      recordText: function (id) { var r = records.filter(function (x) { return x.id === id; })[0]; return r ? recordText(r) : ""; },
+      applyAndRender: function (arr) { var n = applyAiResults(arr); render(); return n; },
+      grounding: function (id) { var ex = extractions[id]; return ex ? { quote: ex.manualQuote || "", grounded: !!ex.manualGrounded } : null; },
       setMeasurePref: function (m) { $("f-measure").value = m; }
     };
 
     attach();
+    if (window.SrPdf && SrPdf.available()) SrPdf.configure();
     if (!load()) { /* blank */ }
     render();
     // pipeline auto-import when arriving from Screen
