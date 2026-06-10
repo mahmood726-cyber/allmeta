@@ -1,0 +1,77 @@
+{
+ "sampler": "NUTS one-step NMR + internal transport",
+ "gamma_median": 5.8,
+ "gamma_cri": [
+  3.4,
+  8.0
+ ],
+ "P_gamma_gt0": 1.0,
+ "rhat_max": 1.01,
+ "ess_min": 1075.0,
+ "target_diabetes": 0.26,
+ "nodes": [
+  {
+   "node": "mazdutide",
+   "eff_obesity": 22.5,
+   "eff_target": 21.1,
+   "target_cri": [
+    15.6,
+    26.6
+   ]
+  },
+  {
+   "node": "retatrutide",
+   "eff_obesity": 21.4,
+   "eff_target": 19.8,
+   "target_cri": [
+    16.1,
+    24.1
+   ]
+  },
+  {
+   "node": "tirzepatide",
+   "eff_obesity": 18.7,
+   "eff_target": 17.1,
+   "target_cri": [
+    14.5,
+    19.6
+   ]
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "eff_obesity": 15.8,
+   "eff_target": 14.3,
+   "target_cri": [
+    12.4,
+    16.2
+   ]
+  },
+  {
+   "node": "orforglipron",
+   "eff_obesity": 11.4,
+   "eff_target": 9.9,
+   "target_cri": [
+    6.2,
+    13.1
+   ]
+  },
+  {
+   "node": "semaglutide-oral",
+   "eff_obesity": 10.9,
+   "eff_target": 9.4,
+   "target_cri": [
+    7.2,
+    11.6
+   ]
+  },
+  {
+   "node": "semaglutide-sc-daily",
+   "eff_obesity": 9.7,
+   "eff_target": 8.1,
+   "target_cri": [
+    5.2,
+    11.8
+   ]
+  }
+ ]
+}

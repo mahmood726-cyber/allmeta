@@ -60,11 +60,15 @@ real obese population. We address both from the registry.
 - **Representativeness (NHANES):** trials ≈ target on age/BMI/sex/weight; under-represent diabetes
   (16% vs 26%); literature-only is 0% diabetes.
 - **Synthesis:** registry-native recovery of the 9 missed T2D trials closes the diabetes gap +26→+14.5 pp.
-- **Transport (β=3.8 pp data-derived, obesity 12.0 vs T2D 8.2; binary pure-strata → individual-level,
-  NOT ecological):** node-specific standardization to the NHANES target. Pure-obesity nodes shift down
-  ~1 pp (mazdutide 22.3→21.3); nodes whose max-dose evidence is diabetes-heavy shift up toward the
-  obesity target (semaglutide-sc-weekly +0.5; **tirzepatide 15.3→16.6, landing on the published SURMOUNT
-  obesity value 16.5 — a transport validation signal**). Supersedes the earlier uniform sensitivity.
+- **Transport — TRUE Bayesian one-step NMR with internal transport** (`pymc_bayesian_transport.py`):
+  one hierarchical model jointly estimates the dose-response, the multi-arm structure, and a diabetes
+  effect-modifier γ, deriving the transported effect as a posterior with full uncertainty propagation.
+  γ = 5.8 pp (95% CrI 3.4–8.0, P>0 = 1.00). Transported obesity→NHANES(26% diabetes) per node: tirzepatide
+  18.7→17.1, mazdutide 22.5→21.1, semaglutide-sc-weekly 15.8→14.3 (each ~−1.5 pp; γ-uncertainty widens the
+  target CrIs). Valid IPD-free because diabetes is **binary with pure strata** (study-level covariate =
+  individual-level), so γ is a genuine interaction, NOT ecological. Rhat 1.010 / ESS 1075 (near-converged).
+- **BMI second modifier (abstract-supplemented, n=2→17):** trial BMI 35.8 ≈ NHANES 36.0; slope ecological
+  and ~0 → transport robust to it; diabetes is the sole material, valid modifier.
 
 ## 4. Discussion — the unification
 Reporting-completeness and population-transportability are not two add-ons but one mechanism: the evidence
