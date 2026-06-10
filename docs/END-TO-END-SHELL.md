@@ -65,17 +65,26 @@ as the primary fast path (R-validated to ≤1e-7 on the core methods); make
 embeds real metafor/netmeta/mada — match on core, exceed on workflow/offline/
 reproducibility/UX, not on raw method breadth.
 
-## Re-sequenced execution
+## Re-sequenced execution — ALL PHASES SHIPPED (2026-06-10)
 
-- **Phase 1 (next) — port Paper Studio as the `report` stage.** Additive, the
-  user's explicit priority, fills the one true pipeline hole. Reads existing bus
-  state; emits via `report-bundle.js` + TruthCert. Ship with a smoke test.
-- **Phase 2 — extend `design/` into the full stateful shell** (status per stage,
-  opens each app pre-loaded, all stages incl. the new Report).
-- **Phase 3 — Google Drive collaboration** (folder-of-files + per-reviewer
-  merge UI + Drive API/sign-in).
-- **Phase 4 — shared `sr-records-v1` module + contract test** (drift guard);
-  opt-in WebR verify button on numerical stages.
+- **Phase 1 — port Paper Studio as the `report` stage. ✅ DONE** (PR #5).
+  Ported verbatim over a bus bridge; browser-verified; catalogued.
+- **Phase 2 — full stateful shell. ✅ DONE** (PR #7). The shell's home was the
+  EXISTING `review-project/` orchestrator, not `design/` (anti-duplication):
+  per-stage LIVE detectors read the shared buses, show live/in-bundle/no-output
+  status, link to the current pipeline apps incl. the new Report stage, and
+  fold live bus state into the signed bundle in one click.
+- **Phase 3 — team collaboration. ✅ DONE** (PR #8). Built as serverless
+  **folder-of-files via the File System Access API** (the user's own Drive /
+  Dropbox / OneDrive desktop client does the sync), NOT browser Drive OAuth —
+  that would need an external GIS script + a registered client-id, breaking the
+  offline/CDN-free build. `shared/sr-collab-v1.js` (pure N-file union merge +
+  folder adapter) + a Connect/Publish/Pull panel in `screen/`. Browser-OAuth
+  Drive is deferred as a per-deployment opt-in.
+- **Phase 4 — shared `sr-records-v1` module + contract test. ✅ DONE** (PR #9).
+  `shared/sr-records-v1.js` canonical schema (mirrors screen's normalizeImported)
+  + cross-app drift guard; adopted by `extract/` first. WebR opt-in verify
+  button remains a future enhancement (unchanged decision below).
 
 ## Lessons recorded
 - My first gap audit under-scanned (checked old apps, missed the `sr-*` family)
