@@ -37,3 +37,12 @@ def test_live_bus_detection():
     assert "sr-records-v1" in html and "sr-project-v1" in html
     assert "function refreshLive" in html and "function captureLive" in html
     assert 'id="btn-refresh"' in html and 'id="btn-capture-all"' in html
+
+
+def test_honest_status_signals():
+    # consensus (not provisional single-reviewer) screening counts via SrCollab,
+    # and stale captured stages are surfaced rather than masked.
+    html = INDEX.read_text(encoding="utf-8")
+    assert "../shared/sr-collab-v1.js" in html, "collab summarizer not loaded"
+    assert "consensus-included" in html
+    assert "stale" in html and "differs from current workspace" in html

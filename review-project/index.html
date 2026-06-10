@@ -40,9 +40,11 @@
     .pill { font-size: 0.72rem; padding: 0.08rem 0.45rem; border-radius: 10px; }
     .pill.have { background: var(--green-soft); color: var(--green); }
     .pill.live { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+    .pill.stale { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); }
     .pill.empty { background: var(--input-bg); color: var(--muted); border: 1px solid var(--border); }
     .stage-sum { font-size: 0.78rem; color: var(--accent); margin: 0.35rem 0 0.1rem; font-weight: 500; }
     .stage-sum.captured { color: var(--green); }
+    .stage-sum.stale { color: var(--warn); font-weight: 600; }
     .shell-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 0.8rem; }
     input[type=text] { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; margin-bottom: 0.6rem; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
@@ -64,6 +66,7 @@
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/review-bundle.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
+  <script src="../shared/sr-collab-v1.js"></script>
   <script src="../shared/toast.js"></script>
 </head>
 <body>
@@ -152,7 +155,16 @@
         if (!recs || !recs.length) return null;
         var decided = recs.filter(function (r) { return (r.r1 && r.r1.d) || (r.r2 && r.r2.d) || r.resolved; }).length;
         if (!decided) return null;
-        return { summary: includedRecords(recs).length + " included · " + decided + " screened of " + recs.length, value: { records: recs } };
+        // Report CONSENSUS includes (resolved / both-agree), not provisional
+        // single-reviewer ticks, and surface unreconciled conflicts — so the
+        // status doesn't overstate how far dual screening has progressed.
+        var sum = (window.SrCollab && SrCollab.summarize) ? SrCollab.summarize(recs) : null;
+        var summary = sum
+          ? (sum.consensusIncluded + " consensus-included"
+             + (sum.conflicts ? " · " + sum.conflicts + " conflict" + (sum.conflicts === 1 ? "" : "s") : "")
+             + " · " + decided + " screened of " + recs.length)
+          : (includedRecords(recs).length + " included · " + decided + " screened of " + recs.length);
+        return { summary: summary, value: { records: recs } };
       },
       extraction: function () {
         var st = readStudies(); if (!st.length) return null;
@@ -168,7 +180,17 @@
         var pl = readPooled(); if (!pl.length) return null;
         var p = pl[pl.length - 1];
         var est = p.pointEstimate != null ? p.pointEstimate : (p.estimate != null ? p.estimate : null);
-        var s = est != null ? ("pooled " + (p.measure || "effect") + " = " + (+est).toPrecision(4)) : "pooled result present";
+        var s;
+        if (est == null) {
+          s = "pooled result present";
+        } else {
+          var m = String(p.measure || "").toUpperCase();
+          var ratio = (m === "OR" || m === "RR" || m === "HR" || m === "IRR");
+          // ma-pooled-v1 stores the back-transformed natural-scale point; a
+          // ratio measure must be > 0, so flag (don't render) an impossible value.
+          if (ratio && !(est > 0)) s = "pooled " + m + " present (check measure/scale)";
+          else s = "pooled " + (p.measure || "effect") + " = " + (+est).toPrecision(4) + (ratio ? " (natural scale)" : "");
+        }
         return { summary: s, value: p };
       },
       certainty: function () {
@@ -180,9 +202,11 @@
       },
       report: function () {
         var pl = readPooled(); var e = lsGet("sr-records-v1");
-        var inc = e && Array.isArray(e.records) ? includedRecords(e.records).length : 0;
-        if (!pl.length && !inc) return null;
-        return { summary: "draft-ready · " + (inc || "—") + " included, " + (pl.length ? "pooled" : "no pool yet"), value: null, readyOnly: true };
+        var recs = e && Array.isArray(e.records) ? e.records : [];
+        if (!pl.length && !recs.length) return null;
+        var sum = (window.SrCollab && SrCollab.summarize) ? SrCollab.summarize(recs) : null;
+        var inc = sum ? sum.consensusIncluded : (recs.length ? includedRecords(recs).length : 0);
+        return { summary: "draft-ready · " + (inc || "—") + " consensus-included, " + (pl.length ? "pooled" : "no pool yet"), value: null, readyOnly: true };
       }
     };
 
@@ -194,15 +218,22 @@
       document.getElementById("stages").innerHTML = STAGES.map(function (st, i) {
         var captured = state.outputs[st.id] != null;
         var live = liveCache[st.id] || null;
+        // A captured stage is "stale" when the live workspace has changed since
+        // capture — otherwise "in bundle ✓" would mask a divergence.
+        var stale = false;
+        if (captured && live && !live.readyOnly && live.value != null) {
+          try { stale = JSON.stringify(state.outputs[st.id]) !== JSON.stringify(live.value); } catch (e) { stale = false; }
+        }
         var links = st.apps.map(function (a) { return "<a href='" + a[1] + "' target='_blank' rel='noopener'>" + esc(a[0]) + " ↗</a>"; }).join("");
         var pill, sum = "";
-        if (captured) { pill = "<span class='pill have'>in bundle ✓</span>"; }
+        if (captured) { pill = stale ? "<span class='pill stale'>in bundle ⚠</span>" : "<span class='pill have'>in bundle ✓</span>"; }
         else if (live) { pill = "<span class='pill live'>live ✓</span>"; }
         else { pill = "<span class='pill empty'>no output</span>"; }
-        if (captured) sum = "<div class='stage-sum captured'>captured into bundle</div>";
+        if (captured && stale) sum = "<div class='stage-sum stale'>captured copy differs from current workspace — re-capture to update</div><div class='stage-sum'>now: " + esc(live.summary) + "</div>";
+        else if (captured) sum = "<div class='stage-sum captured'>captured into bundle</div>";
         else if (live) sum = "<div class='stage-sum'>" + esc(live.summary) + "</div>";
         var actions = "";
-        if (live && !live.readyOnly && !captured) actions += "<button type='button' class='ghost' data-use='" + st.id + "'>⤓ Use workspace data</button>";
+        if (live && !live.readyOnly && (!captured || stale)) actions += "<button type='button' class='ghost' data-use='" + st.id + "'>⤓ " + (stale ? "Re-capture workspace data" : "Use workspace data") + "</button>";
         actions += "<label class='ghost' style='cursor:pointer'>Capture file JSON<input type='file' accept='application/json,.json' data-stage='" + st.id + "' style='display:none'></label>";
         if (captured) actions += "<button type='button' class='ghost' data-clear='" + st.id + "'>clear</button>";
         return "<div class='stage'><div class='stage-head'><span class='stage-n'>" + (i + 1) + "</span><span class='stage-name'>" + esc(st.name) + "</span>"
@@ -230,11 +261,14 @@
       var n = 0;
       STAGES.forEach(function (st) {
         var live = liveCache[st.id];
-        if (live && !live.readyOnly && live.value != null && state.outputs[st.id] == null) { state.outputs[st.id] = live.value; n++; }
+        if (!live || live.readyOnly || live.value == null) return;
+        var cur = state.outputs[st.id], differs = (cur == null);
+        if (!differs) { try { differs = JSON.stringify(cur) !== JSON.stringify(live.value); } catch (e) { differs = false; } }
+        if (differs) { state.outputs[st.id] = live.value; n++; }  // captures new + refreshes stale
       });
       save(); renderStages();
-      var msg = n ? ("Captured " + n + " live stage" + (n === 1 ? "" : "s") + " into the bundle.") : "No new live stages to capture.";
-      try { if (window.AlmToast && AlmToast.show) AlmToast.show(msg); } catch (e) {}
+      var msg = n ? ("Captured " + n + " live stage" + (n === 1 ? "" : "s") + " into the bundle.") : "Bundle already matches the workspace — nothing to capture.";
+      try { if (window.Toast && Toast.show) Toast.show(msg); } catch (e) {}
     }
 
     function captureStage(id, file) {

@@ -61,12 +61,18 @@
   function slotEnsure(r, slot) { if (!r[slot] || typeof r[slot] !== "object") r[slot] = { d: "", reason: "" }; return r[slot]; }
 
   // Decide which slot a reviewer file fills:
-  //  - honour the file's declared reviewer when it is r1/r2;
-  //  - otherwise assign the next free slot among r1, r2 (deterministic).
+  //  - honour the file's declared reviewer when it is r1/r2 (a re-submitted
+  //    file for the same reviewer legitimately updates that slot);
+  //  - otherwise assign the next free slot among r1, r2;
+  //  - return null when an UNDECLARED file arrives with both slots already
+  //    taken — the sr-records-v1 schema has only r1/r2, so rather than silently
+  //    clobber an existing reviewer we drop the overflow file (see merge below).
   function slotFor(payload, taken) {
     var declared = payload && payload.reviewer;
     if (declared === "r1" || declared === "r2") return declared;
-    return taken.indexOf("r1") < 0 ? "r1" : "r2";
+    if (taken.indexOf("r1") < 0) return "r1";
+    if (taken.indexOf("r2") < 0) return "r2";
+    return null;
   }
 
   // PURE: merge one or more sr-reviewer-v1 payloads into `records` (mutates
@@ -83,6 +89,7 @@
       var rep = { reviewer: (payload && payload.reviewer) || null, slot: null, incoming: 0, matched: 0, unmatched: 0, filled: 0 };
       if (!payload || !Array.isArray(payload.decisions)) { rep.error = "not a reviewer file (missing decisions[])"; return rep; }
       var slot = slotFor(payload, taken);
+      if (!slot) { rep.error = "no free reviewer slot (sr-records-v1 supports r1/r2 only; file dropped)"; return rep; }
       if (taken.indexOf(slot) < 0) taken.push(slot);
       rep.slot = slot;
       rep.incoming = payload.decisions.length;

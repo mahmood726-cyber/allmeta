@@ -202,16 +202,16 @@
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.3rem">
           <button type="button" id="btn-export-bundle" class="primary">Export shareable bundle</button>
         </div>
-        <div id="merge-status" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
+        <div id="merge-status" role="status" aria-live="polite" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
         <input type="file" id="rev-file" class="file-input-hidden" accept=".json,application/json" aria-label="Reviewer decisions file">
         <div id="team-folder" style="margin-top:0.6rem;border-top:1px solid var(--border);padding-top:0.5rem">
-          <p class="hint" style="margin-top:0">Or sync through one shared folder — your Google&nbsp;Drive / Dropbox / OneDrive <em>desktop</em> app does the upload, so there's still no account or server here. Each reviewer publishes their file; <strong>Pull &amp; merge</strong> unions everyone's decisions.</p>
+          <p class="hint" style="margin-top:0">Or sync through one shared folder — if that folder lives inside your Google&nbsp;Drive / Dropbox / OneDrive folder, your <em>desktop</em> sync app does the upload, so there's still no account or server here. Each reviewer publishes their file; <strong>Pull &amp; merge</strong> unions everyone's decisions. <em>(Chrome / Edge only; on Firefox / Safari use Export / Merge above.)</em></p>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
             <button type="button" id="btn-folder-connect">Connect shared folder…</button>
             <button type="button" id="btn-folder-publish" disabled>Publish my decisions</button>
             <button type="button" id="btn-folder-pull" disabled>Pull &amp; merge all</button>
           </div>
-          <div id="folder-status" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
+          <div id="folder-status" role="status" aria-live="polite" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
         </div>
       </section>
 
@@ -1239,7 +1239,7 @@
       var env = SrCollab.buildReviewerEnvelope(who, S.records, S.title, new Date().toISOString());
       if (!env.count) { folderStatus("No decisions yet — screen a few records first."); return; }
       SrCollab.publishReviewer(folderHandle, env).then(function (name) {
-        folderStatus("Published " + env.count + " " + who.toUpperCase() + " decision(s) to " + name + " — your sync client uploads it.");
+        folderStatus("Published " + env.count + " " + who.toUpperCase() + " decision(s) to " + name + " — if this folder is synced, your desktop client uploads it.");
         toast("Published to shared folder.");
       }).catch(function (e) { folderStatus("Publish failed: " + e.message); });
     }
