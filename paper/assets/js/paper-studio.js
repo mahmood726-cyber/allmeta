@@ -428,6 +428,8 @@
     html += box("studentText.abstractObjective", "Objective", "This short review aimed to assess whether...", "1 sentence",
       "State the question in one sentence: did the intervention help, for this outcome, in this population?",
       "This short review aimed to assess whether the intervention improves the main outcome compared with the comparator in this population.");
+    html += example("We assessed whether finerenone reduces cardiovascular events compared with placebo in adults with CKD and type 2 diabetes.",
+      "We looked at whether the drug works.");
     html += '<p><strong>Methods.</strong> A rapid systematic review and ' + esc(a.model).toLowerCase() +
       ' meta-analysis combined ' + auto("analysis.kStudies") + ' studies (' + auto("analysis.totalParticipants") + ' participants) for ' + auto("pico.primaryOutcome", "the primary outcome") + '.</p>';
     html += '<p><strong>Results.</strong> ' + abstractResultsProse() + '</p>';
@@ -448,6 +450,8 @@
     html += box("studentText.introductionInterventionRationale", "Why this intervention might help", auto("pico.intervention", "[Intervention]") + " may improve outcomes by... However, uncertainty remained because...", "~2-3 sentences",
       "Say how the treatment could work, then note what was still unknown before this review.",
       "The intervention may improve outcomes by acting on a mechanism relevant to this condition. Before this review, however, it was unclear how large and how reliable that benefit was across different patients.");
+    html += example("Finerenone blocks mineralocorticoid receptors, which may reduce the inflammation and scarring that drive heart and kidney damage; how much that helps across trials was unclear before this review.",
+      "The drug might help the heart.");
     html += box("studentText.introductionWhyReviewNeeded", "Why combining studies is useful here", "Combining studies is useful here because... Therefore, this short paper asks whether...", "~2-3 sentences",
       "Explain that combining trials gives a more precise answer than any single trial, then state your question.",
       "Combining the available studies is useful here because each single study on its own is too small to give a precise answer. Pooling them gives a clearer estimate, so this short paper asks whether the intervention improves the main outcome.");
@@ -561,12 +565,18 @@
     html += box("studentText.discussionClinicalMeaning", "Clinical meaning", "This would matter clinically if... For a doctor or patient it would / might / would not change practice because...", "~2-3 sentences",
       "This matters only if the effect is real and big enough. Look at the estimate AND the certainty, then say whether it would change what a doctor or patient does.",
       "This would matter clinically only if the effect is both real and large enough to notice. Considering the estimate together with the certainty, it may or may not be enough to change what a doctor or patient decides.");
+    html += example("If the benefit is real, preventing cardiovascular events in such high-risk patients would matter to doctors and patients; but the moderate certainty means it should inform practice rather than dictate it.",
+      "This could be useful for patients.");
     html += box("studentText.discussionComparison", "Comparison with other evidence", "These findings are consistent with / differ from...", "1-2 sentences",
       "Do your results agree with guidelines or other reviews you know of? Say so.",
       "These findings appear broadly consistent with what other reviews and guidelines report, although direct comparison is limited by differences in the patients and outcomes studied.");
+    html += example("These results agree with the direction of the individual trial reports and current guideline signals for this drug class.",
+      "Other studies found similar things.");
     html += box("studentText.discussionStrengths", "Strengths", "A strength of this review is...", "1-2 sentences",
       "What did this review do well — e.g. combining all major trials, large total sample, consistent results?",
       "A strength of this review is that it brings together the main available trials into a single estimate, giving a clearer overall picture than any one study alone.");
+    html += example("A strength is that the review pools the major randomised trials into one estimate, giving more precision than any single trial alone.",
+      "This review has several strengths.");
     html += box("studentText.discussionLimitations", "Main limitation", "The main limitation is...", "~3-4 sentences",
       "Be honest about the biggest weakness (few studies, risk of bias, short follow-up, indirect population) and how it affects trust in the result.",
       "The main limitation is that only a small number of trials contributed, so the pooled estimate is imprecise and the confidence interval is fairly wide. The included trials may also differ from everyday patients in important ways, which limits how widely the result applies. Finally, as a rapid review the search was lighter than a full systematic review, so a relevant study could have been missed.");
@@ -586,9 +596,13 @@
     html += box("studentText.reflectionLearning", "The most important thing I learned", "The most important thing I learned was...", "1-2 sentences",
       "Write one thing you understand now that you did not before you started.",
       "The most important thing I learned was how much the certainty of the evidence matters, not just the size of the effect, when deciding how strongly to state a conclusion.");
+    html += example("I learned that the certainty rating, not just the effect size, decides how strongly I can word a conclusion.",
+      "I learned a lot about meta-analysis.");
     html += box("studentText.reflectionMostTrusted", "The evidence I trust most", "The part of the evidence I trust most is...", "1-2 sentences",
       "Name the part of your evidence you believe most, and say why (e.g. many studies, consistent results, low risk of bias).",
       "The part of the evidence I trust most is the pooled estimate for the main outcome, because it draws on the largest trials and their results pointed in a similar direction.");
+    html += example("I trust the pooled primary-outcome estimate most, because it draws on the largest trials and they pointed the same way.",
+      "I trust the results.");
     html += box("studentText.reflectionLeastConfident", "Where I am least confident", "The part I am least confident about is...", "1-2 sentences",
       "Naming what you are unsure about is a sign of good scientific judgement — it is required, and it is one of the most valuable lines you will write.",
       "The part I am least confident about is whether the result applies to patients who were underrepresented in the trials, because there were few of them and the follow-up was relatively short.");
@@ -916,7 +930,11 @@
       : PS.cloneVisual("#prismaFlowContainer", "#prismaPaperSlot", "prisma", 760, 520);
     // Forest + funnel: render OUR OWN legible plots (with prediction interval +
     // x-range) from the computed results, instead of cloning the dark host images.
-    var res = (window.RapidMeta && RapidMeta.state) ? RapidMeta.state.results : null;
+    // The host nulls state.results when you leave the Analysis tab, so cache the last good
+    // one — keeps the paper's figures stable regardless of the host's scoping lifecycle.
+    var liveRes = (window.RapidMeta && RapidMeta.state) ? RapidMeta.state.results : null;
+    if (liveRes && liveRes.plotData) PS._lastResults = liveRes;
+    var res = (liveRes && liveRes.plotData) ? liveRes : (PS._lastResults || liveRes);
     var primaryLabel = (PS.state.pico && PS.state.pico.primaryOutcome) || "primary outcome";
     var forestOk = PS.renderOwnFig("forest", "forestPlotPaperSlot", res, primaryLabel);
     if (!forestOk) ensurePlaceholder("#forestPlotPaperSlot", "forestPlot", "The forest plot appears here once your analysis has results. Open the Analysis Suite, then click “Refresh figures”.");
@@ -986,7 +1004,17 @@
   }
   // Auto-update: re-clone the figures from the host's (re-computed) results WITHOUT re-running
   // the engines — used when the host analysis is re-run externally (the "living" data changes).
-  PS.__softRefresh = function () { try { clonePass(); PS.updateChecklist(); } catch (e) {} };
+  PS.__softRefresh = function () {
+    try {
+      var ae = document.activeElement;
+      var typing = ae && ae.closest && ae.closest('#paperCanvas [contenteditable="true"]');
+      PS.loadRapidMetaData();          // refresh the auto-filled numbers from the new analysis
+      if (!typing) PS.render();         // re-render the body (skipped mid-typing to keep focus)
+      clonePass();                      // re-render the figures
+      PS.updateChecklist();
+      PS.toast("Updated from your latest analysis.");
+    } catch (e) {}
+  };
   // Wrap the host's AnalysisEngine.run ONCE so an external re-run refreshes Paper Studio while
   // it is open. Our own runs set PS.__selfRun, so this never recurses.
   PS.hookLiveUpdate = function () {
@@ -1551,6 +1579,15 @@
   // restore, or keyboard nav — and safe if those fire together.
   PS.onShow = function () {
     if (!booted) { PS.restore(); booted = true; }
+    PS.hookLiveUpdate();
+    // Compute the analysis BEFORE autofill so the numbers (effect, CI, I², GRADE) populate too,
+    // not just the plots — without needing the Analysis tab visit or the extraction tick.
+    PS.ensureAnalysisReady();
+    if (!(window.RapidMeta && RapidMeta.state && RapidMeta.state.results)) {
+      PS.__selfRun = true;
+      try { if (window.AnalysisEngine && AnalysisEngine.run) AnalysisEngine.run(); } catch (e) {}
+      PS.__selfRun = false;
+    }
     PS.loadRapidMetaData();
     seedDemoOutcomes();     // demo only: illustrative secondary outcomes
     PS.render();            // re-render canvas content
@@ -1560,6 +1597,7 @@
     var tipsOff = false; try { tipsOff = localStorage.getItem("rapidmeta.paperTips") === "off"; } catch (e) {}
     document.body.classList.toggle("tips-hidden", tipsOff);
     var tb = document.getElementById("btnToggleTips"); if (tb) tb.textContent = tipsOff ? "Show examples & notes" : "Hide examples & notes";
+    PS.hookLiveUpdate();   // refresh figures if the host analysis is re-run while open
     PS.embedFigures();
     PS.updateChecklist();
     PS.updateWordCounts();
