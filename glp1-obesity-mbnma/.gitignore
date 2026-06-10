@@ -3,3 +3,6 @@ _explore.py
 err.log
 __pycache__/
 *.pyc
+# generated RapidMeta dashboard + copied engine (reproducible from rapidmeta_config.json + clone.py)
+assets/
+incretin_obesity_dashboard.html

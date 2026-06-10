@@ -1,0 +1,1415 @@
+{
+ "drug": "Incretin receptor agonists",
+ "drug_lower": "incretin receptor agonists",
+ "slug": "incretin_obesity_dr_nma",
+ "condition": "obesity",
+ "comparator": "Placebo",
+ "title": "Incretin receptor agonists for obesity - dose-response network meta-analysis",
+ "hero_h2": "Dose-response NMA of GLP-1 / GIP / glucagon agonists for weight loss in obesity",
+ "nyt_headline": "Newer obesity drugs ranked by dose and weight loss",
+ "pico": {
+  "pop": "Adults with obesity or overweight",
+  "int": "GLP-1, GIP and glucagon receptor agonists (dose-ranging)",
+  "comp": "Placebo",
+  "out": "Percent change in body weight",
+  "subgroup": "By agent and by dose"
+ },
+ "acronyms": {
+  "NCT02453711": "Investigation of Safety and Efficacy of Once-d...",
+  "NCT02827708": "PIONEER 5",
+  "NCT02863419": "PIONEER 4",
+  "NCT02906930": "PIONEER 1",
+  "NCT03018028": "PIONEER 9",
+  "NCT03021187": "PIONEER 8",
+  "NCT03086330": "SUSTAIN 9",
+  "NCT03548935": "STEP 1",
+  "NCT03548987": "STEP 4",
+  "NCT03552757": "STEP 2",
+  "NCT03611582": "STEP 3",
+  "NCT03693430": "STEP 5",
+  "NCT03811574": "STEP 6",
+  "NCT03856047": "Research Study Investigating How Well NNC0174-...",
+  "NCT03987451": "A Research Study on How Semaglutide Works in P...",
+  "NCT04102189": "A Research Study on How Well Semaglutide Works...",
+  "NCT04109547": "PIONEER 11",
+  "NCT04153929": "A Study to Test Whether Different Doses of BI ...",
+  "NCT04184622": "SURMOUNT-1",
+  "NCT04251156": "STEP7",
+  "NCT04657003": "SURMOUNT-2",
+  "NCT04667377": "A Study to Test Whether Different Doses of BI ...",
+  "NCT04707313": "A Study to Evaluate the Efficacy and Safety of...",
+  "NCT04788511": "STEP-HFpEF",
+  "NCT04844918": "SURMOUNT-J",
+  "NCT04881760": "A Study of LY3437943 in Participants Who Have ...",
+  "NCT05024032": "SURMOUNT-CN",
+  "NCT05035095": "OASIS 1",
+  "NCT05040971": "STEP 10",
+  "NCT05051579": "A Study of LY3502970 in Participants With Obes...",
+  "NCT05064735": "Research Study Looking at How Well Semaglutide...",
+  "NCT05144984": "A Research Study Looking at How Well a Combina...",
+  "NCT05564117": "OASIS 4",
+  "NCT05646706": "STEP UP",
+  "NCT05649137": "A Research Study to See How Semaglutide Helps ...",
+  "NCT05971940": "ACHIEVE-1",
+  "NCT06041217": "STEP12",
+  "NCT06124807": "A Study of LY3305677 Compared With Placebo in ..."
+ },
+ "trials": [
+  {
+   "nct": "NCT02453711",
+   "name": "Investigation of Safety and Efficacy of Once-d...",
+   "phase": "2",
+   "year": 2015,
+   "tN": 123,
+   "cN": 123,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 0.05 mg",
+     "title": "% body-weight change: semaglutide 0.05 mg vs placebo",
+     "type": "continuous",
+     "md": -3.7,
+     "se": 1.127,
+     "estimandType": "0.05 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 0.1 mg",
+     "title": "% body-weight change: semaglutide 0.1 mg vs placebo",
+     "type": "continuous",
+     "md": -6.33,
+     "se": 1.119,
+     "estimandType": "0.1 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 0.2 mg",
+     "title": "% body-weight change: semaglutide 0.2 mg vs placebo",
+     "type": "continuous",
+     "md": -9.31,
+     "se": 1.127,
+     "estimandType": "0.2 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 0.3 mg",
+     "title": "% body-weight change: semaglutide 0.3 mg vs placebo",
+     "type": "continuous",
+     "md": -8.88,
+     "se": 1.127,
+     "estimandType": "0.3 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 0.4 mg",
+     "title": "% body-weight change: semaglutide 0.4 mg vs placebo",
+     "type": "continuous",
+     "md": -11.55,
+     "se": 1.112,
+     "estimandType": "0.4 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02827708",
+   "name": "PIONEER 5",
+   "phase": "3",
+   "year": 2016,
+   "tN": 155,
+   "cN": 155,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 14 mg",
+     "title": "% body-weight change: semaglutide 14 mg vs placebo",
+     "type": "continuous",
+     "md": -2.83,
+     "se": 0.415,
+     "estimandType": "14 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02863419",
+   "name": "PIONEER 4",
+   "phase": "3",
+   "year": 2016,
+   "tN": 285,
+   "cN": 142,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 14 mg",
+     "title": "% body-weight change: semaglutide 14 mg vs placebo",
+     "type": "continuous",
+     "md": -4.29,
+     "se": 0.406,
+     "estimandType": "14 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02906930",
+   "name": "PIONEER 1",
+   "phase": "3",
+   "year": 2016,
+   "tN": 168,
+   "cN": 168,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 3 mg",
+     "title": "% body-weight change: semaglutide 3 mg vs placebo",
+     "type": "continuous",
+     "md": -0.3,
+     "se": 0.419,
+     "estimandType": "3 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 7 mg",
+     "title": "% body-weight change: semaglutide 7 mg vs placebo",
+     "type": "continuous",
+     "md": -1.48,
+     "se": 0.455,
+     "estimandType": "7 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 14 mg",
+     "title": "% body-weight change: semaglutide 14 mg vs placebo",
+     "type": "continuous",
+     "md": -3.34,
+     "se": 0.482,
+     "estimandType": "14 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03018028",
+   "name": "PIONEER 9",
+   "phase": "3",
+   "year": 2017,
+   "tN": 49,
+   "cN": 49,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 3 mg",
+     "title": "% body-weight change: semaglutide 3 mg vs placebo",
+     "type": "continuous",
+     "md": 0.94,
+     "se": 0.498,
+     "estimandType": "3 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 7 mg",
+     "title": "% body-weight change: semaglutide 7 mg vs placebo",
+     "type": "continuous",
+     "md": -0.05,
+     "se": 0.513,
+     "estimandType": "7 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 14 mg",
+     "title": "% body-weight change: semaglutide 14 mg vs placebo",
+     "type": "continuous",
+     "md": -1.96,
+     "se": 0.704,
+     "estimandType": "14 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03021187",
+   "name": "PIONEER 8",
+   "phase": "3",
+   "year": 2017,
+   "tN": 184,
+   "cN": 184,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 3 mg",
+     "title": "% body-weight change: semaglutide 3 mg vs placebo",
+     "type": "continuous",
+     "md": -1.26,
+     "se": 0.332,
+     "estimandType": "3 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 7 mg",
+     "title": "% body-weight change: semaglutide 7 mg vs placebo",
+     "type": "continuous",
+     "md": -2.64,
+     "se": 0.475,
+     "estimandType": "7 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 14 mg",
+     "title": "% body-weight change: semaglutide 14 mg vs placebo",
+     "type": "continuous",
+     "md": -3.83,
+     "se": 0.406,
+     "estimandType": "14 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03086330",
+   "name": "SUSTAIN 9",
+   "phase": "3",
+   "year": 2017,
+   "tN": 151,
+   "cN": 151,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 1 mg",
+     "title": "% body-weight change: semaglutide 1 mg vs placebo",
+     "type": "continuous",
+     "md": -4.4,
+     "se": 0.465,
+     "estimandType": "1 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03548935",
+   "name": "STEP 1",
+   "phase": "3",
+   "year": 2018,
+   "tN": 1306,
+   "cN": 655,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -13.8,
+     "se": 0.361,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03548987",
+   "name": "STEP 4",
+   "phase": "3",
+   "year": 2018,
+   "tN": 535,
+   "cN": 268,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -15.3,
+     "se": 0.579,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03552757",
+   "name": "STEP 2",
+   "phase": "3",
+   "year": 2018,
+   "tN": 404,
+   "cN": 403,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -7.6,
+     "se": 0.467,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03611582",
+   "name": "STEP 3",
+   "phase": "3",
+   "year": 2018,
+   "tN": 407,
+   "cN": 204,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -11.5,
+     "se": 0.714,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03693430",
+   "name": "STEP 5",
+   "phase": "3",
+   "year": 2018,
+   "tN": 144,
+   "cN": 128,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -15.3,
+     "se": 1.249,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03811574",
+   "name": "STEP 6",
+   "phase": "3",
+   "year": 2019,
+   "tN": 193,
+   "cN": 100,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 1.7 mg",
+     "title": "% body-weight change: semaglutide 1.7 mg vs placebo",
+     "type": "continuous",
+     "md": -8.0,
+     "se": 0.984,
+     "estimandType": "1.7 mg weekly"
+    },
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -11.5,
+     "se": 0.855,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03856047",
+   "name": "Research Study Investigating How Well NNC0174-...",
+   "phase": "2",
+   "year": 2019,
+   "tN": 99,
+   "cN": 95,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "cagrilintide 0.3 mg",
+     "title": "% body-weight change: cagrilintide 0.3 mg vs placebo",
+     "type": "continuous",
+     "md": -3.1,
+     "se": 0.666,
+     "estimandType": "0.3 mg weekly"
+    },
+    {
+     "shortLabel": "cagrilintide 0.6 mg",
+     "title": "% body-weight change: cagrilintide 0.6 mg vs placebo",
+     "type": "continuous",
+     "md": -3.9,
+     "se": 0.765,
+     "estimandType": "0.6 mg weekly"
+    },
+    {
+     "shortLabel": "cagrilintide 1.2 mg",
+     "title": "% body-weight change: cagrilintide 1.2 mg vs placebo",
+     "type": "continuous",
+     "md": -5.5,
+     "se": 0.763,
+     "estimandType": "1.2 mg weekly"
+    },
+    {
+     "shortLabel": "cagrilintide 2.4 mg",
+     "title": "% body-weight change: cagrilintide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -6.5,
+     "se": 0.82,
+     "estimandType": "2.4 mg weekly"
+    },
+    {
+     "shortLabel": "cagrilintide 4.5 mg",
+     "title": "% body-weight change: cagrilintide 4.5 mg vs placebo",
+     "type": "continuous",
+     "md": -7.8,
+     "se": 0.772,
+     "estimandType": "4.5 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03987451",
+   "name": "A Research Study on How Semaglutide Works in P...",
+   "phase": "2",
+   "year": 2019,
+   "tN": 47,
+   "cN": 24,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -8.74,
+     "se": 1.867,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04102189",
+   "name": "A Research Study on How Well Semaglutide Works...",
+   "phase": "3",
+   "year": 2019,
+   "tN": 131,
+   "cN": 62,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -17.1,
+     "se": 1.633,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04109547",
+   "name": "PIONEER 11",
+   "phase": "3",
+   "year": 2019,
+   "tN": 119,
+   "cN": 106,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 3 mg",
+     "title": "% body-weight change: semaglutide 3 mg vs placebo",
+     "type": "continuous",
+     "md": 0.0,
+     "se": 0.473,
+     "estimandType": "3 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 7 mg",
+     "title": "% body-weight change: semaglutide 7 mg vs placebo",
+     "type": "continuous",
+     "md": -2.0,
+     "se": 0.468,
+     "estimandType": "7 mg daily"
+    },
+    {
+     "shortLabel": "semaglutide 14 mg",
+     "title": "% body-weight change: semaglutide 14 mg vs placebo",
+     "type": "continuous",
+     "md": -3.0,
+     "se": 0.548,
+     "estimandType": "14 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04153929",
+   "name": "A Study to Test Whether Different Doses of BI ...",
+   "phase": "2",
+   "year": 2020,
+   "tN": 49,
+   "cN": 49,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "survodutide 0.3 mg",
+     "title": "% body-weight change: survodutide 0.3 mg vs placebo",
+     "type": "continuous",
+     "md": -0.66,
+     "se": 0.678,
+     "estimandType": "0.3 mg weekly"
+    },
+    {
+     "shortLabel": "survodutide 0.9 mg",
+     "title": "% body-weight change: survodutide 0.9 mg vs placebo",
+     "type": "continuous",
+     "md": -3.23,
+     "se": 0.766,
+     "estimandType": "0.9 mg weekly"
+    },
+    {
+     "shortLabel": "survodutide 1.8 mg",
+     "title": "% body-weight change: survodutide 1.8 mg vs placebo",
+     "type": "continuous",
+     "md": -5.43,
+     "se": 0.992,
+     "estimandType": "1.8 mg weekly"
+    },
+    {
+     "shortLabel": "survodutide 2.7 mg",
+     "title": "% body-weight change: survodutide 2.7 mg vs placebo",
+     "type": "continuous",
+     "md": -5.48,
+     "se": 0.866,
+     "estimandType": "2.7 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04184622",
+   "name": "SURMOUNT-1",
+   "phase": "3",
+   "year": 2019,
+   "tN": 264,
+   "cN": 264,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "tirzepatide 5 mg",
+     "title": "% body-weight change: tirzepatide 5 mg vs placebo",
+     "type": "continuous",
+     "md": -13.3,
+     "se": 1.075,
+     "estimandType": "5 mg weekly"
+    },
+    {
+     "shortLabel": "tirzepatide 10 mg",
+     "title": "% body-weight change: tirzepatide 10 mg vs placebo",
+     "type": "continuous",
+     "md": -17.8,
+     "se": 1.062,
+     "estimandType": "10 mg weekly"
+    },
+    {
+     "shortLabel": "tirzepatide 15 mg",
+     "title": "% body-weight change: tirzepatide 15 mg vs placebo",
+     "type": "continuous",
+     "md": -20.8,
+     "se": 1.068,
+     "estimandType": "15 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04251156",
+   "name": "STEP7",
+   "phase": "3",
+   "year": 2020,
+   "tN": 238,
+   "cN": 116,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -8.9,
+     "se": 0.728,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04657003",
+   "name": "SURMOUNT-2",
+   "phase": "3",
+   "year": 2021,
+   "tN": 311,
+   "cN": 311,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "tirzepatide 10 mg",
+     "title": "% body-weight change: tirzepatide 10 mg vs placebo",
+     "type": "continuous",
+     "md": -10.1,
+     "se": 0.686,
+     "estimandType": "10 mg weekly"
+    },
+    {
+     "shortLabel": "tirzepatide 15 mg",
+     "title": "% body-weight change: tirzepatide 15 mg vs placebo",
+     "type": "continuous",
+     "md": -12.4,
+     "se": 0.693,
+     "estimandType": "15 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04667377",
+   "name": "A Study to Test Whether Different Doses of BI ...",
+   "phase": "2",
+   "year": 2021,
+   "tN": 78,
+   "cN": 77,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "survodutide 0.6 mg",
+     "title": "% body-weight change: survodutide 0.6 mg vs placebo",
+     "type": "continuous",
+     "md": -3.37,
+     "se": 1.506,
+     "estimandType": "0.6 mg weekly"
+    },
+    {
+     "shortLabel": "survodutide 2.4 mg",
+     "title": "% body-weight change: survodutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -9.69,
+     "se": 1.464,
+     "estimandType": "2.4 mg weekly"
+    },
+    {
+     "shortLabel": "survodutide 3.6 mg",
+     "title": "% body-weight change: survodutide 3.6 mg vs placebo",
+     "type": "continuous",
+     "md": -10.4,
+     "se": 1.485,
+     "estimandType": "3.6 mg weekly"
+    },
+    {
+     "shortLabel": "survodutide 4.8 mg",
+     "title": "% body-weight change: survodutide 4.8 mg vs placebo",
+     "type": "continuous",
+     "md": -12.12,
+     "se": 1.464,
+     "estimandType": "4.8 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04707313",
+   "name": "A Study to Evaluate the Efficacy and Safety of...",
+   "phase": "2",
+   "year": 2021,
+   "tN": 71,
+   "cN": 71,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "danuglipron 40 mg",
+     "title": "% body-weight change: danuglipron 40 mg vs placebo",
+     "type": "continuous",
+     "md": -5.6,
+     "se": 0.012,
+     "estimandType": "40 mg daily"
+    },
+    {
+     "shortLabel": "danuglipron 80 mg",
+     "title": "% body-weight change: danuglipron 80 mg vs placebo",
+     "type": "continuous",
+     "md": -5.0,
+     "se": 0.012,
+     "estimandType": "80 mg daily"
+    },
+    {
+     "shortLabel": "danuglipron 120 mg",
+     "title": "% body-weight change: danuglipron 120 mg vs placebo",
+     "type": "continuous",
+     "md": -9.11,
+     "se": 0.012,
+     "estimandType": "120 mg daily"
+    },
+    {
+     "shortLabel": "danuglipron 160 mg",
+     "title": "% body-weight change: danuglipron 160 mg vs placebo",
+     "type": "continuous",
+     "md": -9.53,
+     "se": 0.013,
+     "estimandType": "160 mg daily"
+    },
+    {
+     "shortLabel": "danuglipron 200 mg",
+     "title": "% body-weight change: danuglipron 200 mg vs placebo",
+     "type": "continuous",
+     "md": -9.13,
+     "se": 0.014,
+     "estimandType": "200 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04788511",
+   "name": "STEP-HFpEF",
+   "phase": "3",
+   "year": 2021,
+   "tN": 246,
+   "cN": 242,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -11.4,
+     "se": 0.63,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04844918",
+   "name": "SURMOUNT-J",
+   "phase": "3",
+   "year": 2021,
+   "tN": 66,
+   "cN": 66,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "tirzepatide 10 mg",
+     "title": "% body-weight change: tirzepatide 10 mg vs placebo",
+     "type": "continuous",
+     "md": -16.1,
+     "se": 1.301,
+     "estimandType": "10 mg weekly"
+    },
+    {
+     "shortLabel": "tirzepatide 15 mg",
+     "title": "% body-weight change: tirzepatide 15 mg vs placebo",
+     "type": "continuous",
+     "md": -21.0,
+     "se": 1.273,
+     "estimandType": "15 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04881760",
+   "name": "A Study of LY3437943 in Participants Who Have ...",
+   "phase": "2",
+   "year": 2021,
+   "tN": 69,
+   "cN": 68,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "retatrutide 1 mg",
+     "title": "% body-weight change: retatrutide 1 mg vs placebo",
+     "type": "continuous",
+     "md": -6.56,
+     "se": 1.198,
+     "estimandType": "1 mg weekly"
+    },
+    {
+     "shortLabel": "retatrutide 4 mg",
+     "title": "% body-weight change: retatrutide 4 mg vs placebo",
+     "type": "continuous",
+     "md": -15.72,
+     "se": 1.695,
+     "estimandType": "4 mg weekly"
+    },
+    {
+     "shortLabel": "retatrutide 8 mg",
+     "title": "% body-weight change: retatrutide 8 mg vs placebo",
+     "type": "continuous",
+     "md": -19.61,
+     "se": 1.588,
+     "estimandType": "8 mg weekly"
+    },
+    {
+     "shortLabel": "retatrutide 12 mg",
+     "title": "% body-weight change: retatrutide 12 mg vs placebo",
+     "type": "continuous",
+     "md": -22.11,
+     "se": 1.439,
+     "estimandType": "12 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05024032",
+   "name": "SURMOUNT-CN",
+   "phase": "3",
+   "year": 2021,
+   "tN": 70,
+   "cN": 68,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "tirzepatide 10 mg",
+     "title": "% body-weight change: tirzepatide 10 mg vs placebo",
+     "type": "continuous",
+     "md": -12.0,
+     "se": 1.4,
+     "estimandType": "10 mg weekly"
+    },
+    {
+     "shortLabel": "tirzepatide 15 mg",
+     "title": "% body-weight change: tirzepatide 15 mg vs placebo",
+     "type": "continuous",
+     "md": -17.5,
+     "se": 1.421,
+     "estimandType": "15 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05035095",
+   "name": "OASIS 1",
+   "phase": "3",
+   "year": 2021,
+   "tN": 317,
+   "cN": 295,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 50 mg",
+     "title": "% body-weight change: semaglutide 50 mg vs placebo",
+     "type": "continuous",
+     "md": -13.6,
+     "se": 0.714,
+     "estimandType": "50 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05040971",
+   "name": "STEP 10",
+   "phase": "3",
+   "year": 2021,
+   "tN": 129,
+   "cN": 66,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -11.7,
+     "se": 0.874,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05051579",
+   "name": "A Study of LY3502970 in Participants With Obes...",
+   "phase": "2",
+   "year": 2021,
+   "tN": 57,
+   "cN": 48,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "orforglipron 12 mg",
+     "title": "% body-weight change: orforglipron 12 mg vs placebo",
+     "type": "continuous",
+     "md": -7.1,
+     "se": 1.45,
+     "estimandType": "12 mg daily"
+    },
+    {
+     "shortLabel": "orforglipron 24 mg",
+     "title": "% body-weight change: orforglipron 24 mg vs placebo",
+     "type": "continuous",
+     "md": -10.2,
+     "se": 1.421,
+     "estimandType": "24 mg daily"
+    },
+    {
+     "shortLabel": "orforglipron 36 mg",
+     "title": "% body-weight change: orforglipron 36 mg vs placebo",
+     "type": "continuous",
+     "md": -11.2,
+     "se": 1.379,
+     "estimandType": "36 mg daily"
+    },
+    {
+     "shortLabel": "orforglipron 45 mg",
+     "title": "% body-weight change: orforglipron 45 mg vs placebo",
+     "type": "continuous",
+     "md": -12.4,
+     "se": 1.372,
+     "estimandType": "45 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05064735",
+   "name": "Research Study Looking at How Well Semaglutide...",
+   "phase": "3",
+   "year": 2021,
+   "tN": 253,
+   "cN": 120,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -11.7,
+     "se": 0.744,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05144984",
+   "name": "A Research Study Looking at How Well a Combina...",
+   "phase": "2",
+   "year": 2021,
+   "tN": 65,
+   "cN": 37,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -6.6,
+     "se": 1.003,
+     "estimandType": "2.4 mg weekly"
+    },
+    {
+     "shortLabel": "semaglutide 7.2 mg",
+     "title": "% body-weight change: semaglutide 7.2 mg vs placebo",
+     "type": "continuous",
+     "md": -10.3,
+     "se": 1.159,
+     "estimandType": "7.2 mg weekly"
+    },
+    {
+     "shortLabel": "semaglutide 12 mg",
+     "title": "% body-weight change: semaglutide 12 mg vs placebo",
+     "type": "continuous",
+     "md": -8.3,
+     "se": 0.986,
+     "estimandType": "12 mg weekly"
+    },
+    {
+     "shortLabel": "semaglutide 21.6 mg",
+     "title": "% body-weight change: semaglutide 21.6 mg vs placebo",
+     "type": "continuous",
+     "md": -10.3,
+     "se": 0.95,
+     "estimandType": "21.6 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05564117",
+   "name": "OASIS 4",
+   "phase": "3",
+   "year": 2022,
+   "tN": 192,
+   "cN": 90,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 25 mg",
+     "title": "% body-weight change: semaglutide 25 mg vs placebo",
+     "type": "continuous",
+     "md": -11.9,
+     "se": 1.126,
+     "estimandType": "25 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05646706",
+   "name": "STEP UP",
+   "phase": "3",
+   "year": 2023,
+   "tN": 950,
+   "cN": 171,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 7.2 mg",
+     "title": "% body-weight change: semaglutide 7.2 mg vs placebo",
+     "type": "continuous",
+     "md": -15.7,
+     "se": 0.643,
+     "estimandType": "7.2 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05649137",
+   "name": "A Research Study to See How Semaglutide Helps ...",
+   "phase": "3",
+   "year": 2023,
+   "tN": 291,
+   "cN": 95,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -6.7,
+     "se": 1.04,
+     "estimandType": "2.4 mg weekly"
+    },
+    {
+     "shortLabel": "semaglutide 7.2 mg",
+     "title": "% body-weight change: semaglutide 7.2 mg vs placebo",
+     "type": "continuous",
+     "md": -9.5,
+     "se": 0.815,
+     "estimandType": "7.2 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05971940",
+   "name": "ACHIEVE-1",
+   "phase": "3",
+   "year": 2023,
+   "tN": 143,
+   "cN": 138,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "orforglipron 3 mg",
+     "title": "% body-weight change: orforglipron 3 mg vs placebo",
+     "type": "continuous",
+     "md": -3.1,
+     "se": 0.637,
+     "estimandType": "3 mg daily"
+    },
+    {
+     "shortLabel": "orforglipron 12 mg",
+     "title": "% body-weight change: orforglipron 12 mg vs placebo",
+     "type": "continuous",
+     "md": -4.5,
+     "se": 0.698,
+     "estimandType": "12 mg daily"
+    },
+    {
+     "shortLabel": "orforglipron 36 mg",
+     "title": "% body-weight change: orforglipron 36 mg vs placebo",
+     "type": "continuous",
+     "md": -6.3,
+     "se": 0.722,
+     "estimandType": "36 mg daily"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT06041217",
+   "name": "STEP12",
+   "phase": "3",
+   "year": 2023,
+   "tN": 159,
+   "cN": 78,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "semaglutide 2.4 mg",
+     "title": "% body-weight change: semaglutide 2.4 mg vs placebo",
+     "type": "continuous",
+     "md": -10.0,
+     "se": 0.893,
+     "estimandType": "2.4 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT06124807",
+   "name": "A Study of LY3305677 Compared With Placebo in ...",
+   "phase": "2",
+   "year": 2023,
+   "tN": 51,
+   "cN": 48,
+   "group": "Incretin agonist vs placebo",
+   "allOutcomes": [
+    {
+     "shortLabel": "mazdutide 6 mg",
+     "title": "% body-weight change: mazdutide 6 mg vs placebo",
+     "type": "continuous",
+     "md": -10.49,
+     "se": 1.835,
+     "estimandType": "6 mg weekly"
+    },
+    {
+     "shortLabel": "mazdutide 10 mg",
+     "title": "% body-weight change: mazdutide 10 mg vs placebo",
+     "type": "continuous",
+     "md": -19.15,
+     "se": 1.51,
+     "estimandType": "10 mg weekly"
+    },
+    {
+     "shortLabel": "mazdutide 16 mg",
+     "title": "% body-weight change: mazdutide 16 mg vs placebo",
+     "type": "continuous",
+     "md": -22.25,
+     "se": 1.775,
+     "estimandType": "16 mg weekly"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  }
+ ]
+}

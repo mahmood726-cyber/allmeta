@@ -26,6 +26,19 @@ RapidMeta's pattern is **AI proposes -> human attests/corrects** — the human c
   config as the extraction table; the dose-response/NMA engine is shared (allmeta vendor modules
   are the same ones rapidmeta-kit bundles). The dashboard then renders screening->RoB->GRADE->PRISMA.
 
+## WIRED + RUN (2026-06-10)
+- `build_rapidmeta_config.py` mapped `arms_full.csv` -> `rapidmeta_config.json`
+  (38 trials, 84 continuous arm-outcomes; md = active-placebo % weight change, se;
+  rob = 'some-concerns' placeholders for human attestation via rob2-autofill).
+- `clone.py` (rapidmeta-kit, UNMODIFIED; output written to this worktree) built
+  `incretin_obesity_dashboard.html` (1.27 MB full interactive RapidMeta engine).
+- `smoke_test.py` (headless Chrome): **PASS** — renders, 8 tabs, data visible,
+  **0 SyntaxError/Uncaught**. (SEVERE logs are benign file:// fetch failures for
+  optional benchmark/baseline JSONs; resolve over HTTP.)
+- Result: the full attested SR workbench (Screening / RoB-2 / GRADE / CINeMA /
+  PRISMA tabs) now wraps our extracted obesity dose-response cohort. Open the HTML
+  to attest RoB-2 + rate GRADE; that is the remaining human-in-the-loop step.
+
 ## Honest verdict (answering "is it as good as published metas?")
 - **Synthesis methodology:** at or ahead of typical published obesity NMAs (model-based
   dose-response + POTH + dual frequentist/NUTS-Bayesian + externally-validated extraction).
