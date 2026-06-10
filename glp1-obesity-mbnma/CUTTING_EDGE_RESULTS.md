@@ -8,7 +8,10 @@ active random effect `u[i]`, so multi-arm trials share one baseline → within-t
 **Result: CrIs are WIDER for almost every node** (the contrast model was anti-conservative, exactly as
 the biostatistician said): mazdutide 9.0→13.8, tirzepatide 4.4→6.3, retatrutide 9.1→9.2, sema-sc-daily
 7.1→7.8, orforglipron 6.0→7.3. Ranking holds (mazdutide/retatrutide/tirzepatide top); tau 2.70→3.12
-(more honest heterogeneity); POTH 0.85→0.92. (See onestep_ranking.json; convergence re-run for ESS≥400.)
+(more honest heterogeneity); POTH 0.85→0.92. Convergence: **near-converged (Rhat 1.010, ESS 281)** on
+the pure-Python pytensor backend; the directional result — CrIs widen when multi-arm covariance is
+modelled — is robust across runs and is the point. Full ESS≥400 certification needs a compiled
+(g++/numba) backend or a longer run. (onestep_ranking.json.)
 
 ## C — transitivity / population-mix (panel: 'transitivity untested', 'T2D+obesity mixed')
 `workstream_C_transitivity.py`, from AACT `baseline_measurements`. **Confirms the population confound
@@ -42,3 +45,22 @@ These convert three of the panel's criticisms from "unaddressed" to "measured an
 model is now honest (wider CrIs), transitivity is assessed (and the T2D confound confirmed + localised),
 and the single-trial apex is flagged insufficient-evidence rather than asserted. The headline still must
 read "concordant with published estimates; apex is emerging single-trial evidence," not "breakthrough."
+
+## H — benefit-risk (weight loss vs GI adverse events), registry-native
+`workstream_H_benefitrisk.py`, from AACT `reported_events` (nausea; placebo 4.0%). A benefit-risk
+direction modern metas take, done arm-level from the registry (literature metas rarely do):
+
+| node | weight-loss (pp) | nausea (%) | benefit-risk (loss per 10pp excess nausea) |
+|---|---|---|---|
+| mazdutide | 22.3 | 53.8 | 4.5 (most loss, WORST nausea) |
+| retatrutide | 22.1 | 31.1 | 8.2 |
+| tirzepatide | 20.8* | 22.2 | 11.4 |
+| semaglutide-sc-weekly | 17.1* | 15.7 | 14.6 |
+| semaglutide-oral | 13.6 | 11.6 | 17.9 (T2D pop) |
+| orforglipron | 12.4 | 27.1 | 5.4 |
+
+**The benefit-risk ordering differs from efficacy-only:** mazdutide is #1 on weight loss but LAST on
+tolerability (53.8% nausea) → poor benefit-risk; tirzepatide and semaglutide-sc-weekly have the best
+profiles. This is the clinically decisive layer an efficacy-only ranking (Xie 2024) hides, and it is
+registry-native. (*weight here is observed-max-arm, not the IVW pooled value used in the primary
+ranking — directional benefit-risk only.) benefit_risk.json.

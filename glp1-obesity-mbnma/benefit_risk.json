@@ -1,0 +1,59 @@
+{
+ "placebo_nausea_pct": 4.0,
+ "nodes": [
+  {
+   "node": "cagrilintide",
+   "weight_loss_pp": null,
+   "nausea_pct": 32.2,
+   "nausea_excess_pp": 28.2
+  },
+  {
+   "node": "danuglipron",
+   "weight_loss_pp": null,
+   "nausea_pct": 28.9,
+   "nausea_excess_pp": 24.9
+  },
+  {
+   "node": "mazdutide",
+   "weight_loss_pp": 22.3,
+   "nausea_pct": 53.8,
+   "nausea_excess_pp": 49.8
+  },
+  {
+   "node": "orforglipron",
+   "weight_loss_pp": 12.4,
+   "nausea_pct": 27.1,
+   "nausea_excess_pp": 23.1
+  },
+  {
+   "node": "retatrutide",
+   "weight_loss_pp": 22.1,
+   "nausea_pct": 31.1,
+   "nausea_excess_pp": 27.1
+  },
+  {
+   "node": "semaglutide-oral",
+   "weight_loss_pp": 13.6,
+   "nausea_pct": 11.6,
+   "nausea_excess_pp": 7.6
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "weight_loss_pp": 17.1,
+   "nausea_pct": 15.7,
+   "nausea_excess_pp": 11.7
+  },
+  {
+   "node": "survodutide",
+   "weight_loss_pp": null,
+   "nausea_pct": 30.8,
+   "nausea_excess_pp": 26.8
+  },
+  {
+   "node": "tirzepatide",
+   "weight_loss_pp": 20.8,
+   "nausea_pct": 22.2,
+   "nausea_excess_pp": 18.2
+  }
+ ]
+}
