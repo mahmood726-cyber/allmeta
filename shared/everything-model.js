@@ -174,7 +174,9 @@
       prevLL = ll;
     }
 
-    // Posterior SE for μ_o: 1 / Σ_{i in o} (1 / v_i + 1 / τ²) approx.
+    // Posterior SE for μ_o: sqrt(1 / Σ_{i in o} 1/(v_i + τ²)) — the random-effects
+    // inverse-variance precision sum (weights w_i = 1/(v_i+τ²)). NB: the inner
+    // term is 1/(v_i+τ²), NOT (1/v_i + 1/τ²); do not "simplify" it.
     var Z975 = 1.959963984540054;
     var muSummary = Object.create(null);
     for (var oo = 0; oo < outcomes.length; oo++) {

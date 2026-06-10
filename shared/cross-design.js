@@ -52,6 +52,10 @@
       var w = 1 / (vi[i] + tau2);
       sw += w; swy += w * yi[i];
     }
+    // Guard: empty input or all-zero weights leave sw=0, which yields
+    // mu = 0/0 = NaN and se = sqrt(1/0) = Infinity. Return a defined
+    // sentinel rather than letting NaN/Infinity propagate silently.
+    if (!(sw > 0)) return { mu: null, se: null, warning: "no poolable studies (empty input or all weights zero)" };
     return { mu: swy / sw, se: Math.sqrt(1 / sw) };
   }
 
@@ -63,13 +67,20 @@
     var tau2 = _tau2_DL(yi, vi);
     var p = _ivPool(yi, vi, tau2);
     var Z975 = 1.959963984540054;
+    var k_rct = rows.filter(function (r) { return r.design === "rct"; }).length;
+    var k_obs = rows.filter(function (r) { return r.design === "obs"; }).length;
+    if (p.mu === null) {
+      return {
+        method: "NAIVE_POOL",
+        mu: null, sePost: null, ci_lo: null, ci_hi: null,
+        tau2: tau2, k_rct: k_rct, k_obs: k_obs, warning: p.warning,
+      };
+    }
     return {
       method: "NAIVE_POOL",
       mu: p.mu, sePost: p.se,
       ci_lo: p.mu - Z975 * p.se, ci_hi: p.mu + Z975 * p.se,
-      tau2: tau2,
-      k_rct: rows.filter(function (r) { return r.design === "rct"; }).length,
-      k_obs: rows.filter(function (r) { return r.design === "obs"; }).length,
+      tau2: tau2, k_rct: k_rct, k_obs: k_obs,
     };
   }
 
@@ -90,15 +101,24 @@
       var w = mult / (vi[i] + tau2);
       sw += w; swy += w * yi[i];
     }
-    var mu = swy / sw, se = Math.sqrt(1 / sw);
     var Z975 = 1.959963984540054;
+    var k_rct = rows.filter(function (r) { return r.design === "rct"; }).length;
+    var k_obs = rows.filter(function (r) { return r.design === "obs"; }).length;
+    // Guard: sw=0 (empty input, or all-obs with alpha=0) → mu=NaN, se=Infinity.
+    if (!(sw > 0)) {
+      return {
+        method: "POWER_PRIOR",
+        mu: null, sePost: null, ci_lo: null, ci_hi: null,
+        tau2: tau2, alpha: alpha, k_rct: k_rct, k_obs: k_obs,
+        warning: "no poolable studies (empty input or all weights zero; e.g. all-observational with alpha=0)",
+      };
+    }
+    var mu = swy / sw, se = Math.sqrt(1 / sw);
     return {
       method: "POWER_PRIOR",
       mu: mu, sePost: se,
       ci_lo: mu - Z975 * se, ci_hi: mu + Z975 * se,
-      tau2: tau2, alpha: alpha,
-      k_rct: rows.filter(function (r) { return r.design === "rct"; }).length,
-      k_obs: rows.filter(function (r) { return r.design === "obs"; }).length,
+      tau2: tau2, alpha: alpha, k_rct: k_rct, k_obs: k_obs,
     };
   }
 

@@ -57,6 +57,11 @@
     var sx = 0, sy = 0, sxx = 0, sxy = 0;
     for (var i = 0; i < n; i++) { sx += x[i]; sy += y[i]; sxx += x[i] * x[i]; sxy += x[i] * y[i]; }
     var det = n * sxx - sx * sx;
+    // Degenerate design (all-equal se => all x identical => det=0): regression
+    // of y on x is singular. R's lm() drops the collinear term; we fail closed
+    // to the documented `null` sentinel so callers' `result===null` check fires
+    // instead of receiving a NaN-poisoned object (silent "no asymmetry").
+    if (!(det > 0)) return null;
     var b1 = (n * sxy - sx * sy) / det;        // slope
     var b0 = (sy - b1 * sx) / n;               // intercept = bias coefficient
     var rss = 0;
@@ -64,6 +69,9 @@
     var df = n - 2;
     var s2 = rss / df;
     var seB0 = Math.sqrt(s2 * sxx / det);
+    // Perfect/near-perfect fit (rss=0 => s2=0 => seB0=0) makes t=b0/0 undefined.
+    // Return the documented null sentinel rather than a NaN-filled object.
+    if (!(seB0 > 0)) return null;
     var t = b0 / seB0;
     var p = 2 * (1 - _tcdf(Math.abs(t), df));
     return { intercept: b0, se: seB0, t: t, df: df, p: p, k: n };

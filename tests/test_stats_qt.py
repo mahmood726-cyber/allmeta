@@ -54,6 +54,27 @@ def test_qnorm_0025_negative():
     assert abs(out + 1.959963984540054) < 1e-12
 
 
+@pytest.mark.parametrize("p,expected", [
+    # CENTRAL region |p-0.5|<=0.425 — the AS241 branch that had r=q*q instead of
+    # 0.180625-q*q. Old code returned wrong values here while the tails (0.975)
+    # stayed correct, masking the bug. R qnorm():
+    (0.55, 0.1256613),
+    (0.60, 0.2533471),
+    (0.70, 0.5244005),
+    (0.75, 0.6744898),
+    (0.80, 0.8416212),
+    (0.90, 1.2815516),   # was 1.025 before the fix
+    (0.20, -0.8416212),
+    (0.10, -1.2815516),
+])
+def test_qnorm_central_region_matches_r(p, expected):
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        console.log(JSON.stringify(M.qnorm({p})));
+    """)
+    assert abs(out - expected) < 1e-6, f"qnorm({p}) = {out}, expected {expected}"
+
+
 # --- qt (Hill 1970) — these are the table values; webr-validator HKSJ uses qt ---
 
 
