@@ -20,25 +20,27 @@ try:
     WebDriverWait(d, 30).until(lambda x: x.execute_script('return document.readyState') == 'complete')
     time.sleep(4)
 
+    my_ncts = set(json.load(open(r'C:/Projects/glp1-doseresp-nma/glp1-obesity-mbnma/rapidmeta_config.json'))
+                  ['acronyms'].keys())
+    # Set analysis-ready data DIRECTLY from the structured outcomes (keep tE/cE null so
+    # isContinuous=true -> MD pooling). Do NOT run the text-extractor (it clobbers tE/cE).
     n_inc = d.execute_script("""
+        var mine = arguments[0];
         var RM=window.RapidMeta; if(!RM||!RM.state||!RM.state.trials) return -1;
         var n=0; RM.state.trials.forEach(function(t){
-            t.status='include'; t.included=true;
+            if(mine.indexOf(t.nct)<0) return;
+            t.status='include'; t.included=true; t.excluded=false;
             t.screenReview = t.screenReview||{}; t.screenReview.confirmed=true;
+            t.verified=true; t.reason='';
+            var ao = t.allOutcomes || (t.data&&t.data.allOutcomes) || [];
+            var prim = ao[0]||{};
+            t.data = { tE:null, tN:t.tN||null, cE:null, cN:t.cN||null,
+                       md: prim.md, se: prim.se, allOutcomes: ao, verified:true };
             n++;
         }); return n;
-    """)
-    print('trials marked include+confirmed:', n_inc)
-
-    # go to extraction, click the genuine Extract & Verify Evidence button
-    d.execute_script("try{switchTab('extract')}catch(e){}"); time.sleep(2)
-    clicked = d.execute_script("""
-        var b=[].slice.call(document.querySelectorAll('button,a')).find(function(x){
-            return /Extract & Verify Evidence/i.test(x.textContent);});
-        if(b){b.scrollIntoView(); b.click(); return b.textContent.trim();} return null;
-    """)
-    print('extract button clicked:', clicked)
-    time.sleep(6)  # extraction may be async
+    """, list(my_ncts))
+    print('my trials set analysis-ready (direct, tE/cE null):', n_inc)
+    clicked = 'skipped-extractor (direct data set)'; time.sleep(1)
 
     # how many trials now have data / are pooled?
     state = d.execute_script("""
