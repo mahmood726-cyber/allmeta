@@ -183,3 +183,25 @@ SUSTAIN-6 0.74), liraglutide 0.91 (LEADER 0.87), dulaglutide 0.91 (REWIND 0.76),
 recovering the known CV-benefit hierarchy from the registry. 7/9 post curve-like data (registry-ipd
 reconstruction candidates for RMST/time-varying-HR/calibrated CrI). Joint view: the top weight-loss agents
 also carry cardiovascular benefit. survival_hrs.csv, survival_summary.json.
+
+## Transport v2 — proven advice items implemented
+`pymc_transport_v2.py` (nutpie, Rhat 1.0000, ESS 3326). Evaluated external advice; implemented the proven items:
+- **Item 1 (wire microdata):** the model now CONSUMES `nhanes_target.json` (diabetes 20.6%) instead of
+  hardcoding — closes the doc-vs-code gap a hostile reviewer would diff.
+- **Item 2 (target-prevalence uncertainty):** P_diab is a stochastic node ~ N(0.206, SE 0.010) (Kish
+  n_eff 1592); its uncertainty (posterior 18.5-22.6%) now flows into the transported CrIs.
+- **Item 4 (ethnicity, `workstream_ethnicity_atlas.py`):** empirical NHANES obese-subset diabetes BY
+  ethnicity (NHAsian 24.5% highest, NHWhite 20.3%) replaces the 1.8 scalar for the Asian/W-Pacific region;
+  the ethnicity-varying obesity-diabetes association is now MODELLED, not just flagged.
+- **Item 6 (POTH on transport):** SUCRA-based POTH = 0.898 (obesity) -> 0.898 (transported) — the hierarchy
+  SURVIVES transport (>0.67, still informative); transport shifts magnitudes, not the ranking.
+- **Item 7 (`transport_sources.json`):** pinned source manifest (AACT snapshot, NHANES files/cycle, IDF,
+  HSE-England, the obese/general ratio derivation+validation) — fully auditable.
+- **Item 8 (k=1 tags):** transport table flags mazdutide/retatrutide/sema-sc-daily as k=1 INSUFFICIENT so
+  their wide prior-imposed CrIs aren't mistaken for measured precision.
+- **Item 3 already satisfied:** the transport model is ARM-based with shared alpha[trial]+u[trial] -> multi-
+  arm covariance is carried (the criticism applied to the old contrast model, already replaced).
+- **Deferred:** Item 5 (E-value/bias-function for unmeasured modifiers) — lower priority, lightweight, noted.
+- **Not done (correctly):** full ML-NMR/MAIC (needs IPD); no promotion of any transported number to a
+  primary real-world effect (sensitivity labelling kept).
+transport_v2.json, ethnicity_atlas.json, transport_sources.json, nhanes_target.json.

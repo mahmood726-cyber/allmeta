@@ -1,0 +1,36 @@
+{
+ "gamma": 5.9,
+ "diabetes_by_ethnicity_pct": {
+  "MexicanAmerican": 20.7,
+  "NHAsian": 24.5,
+  "NHBlack": 22.4,
+  "NHWhite": 20.3,
+  "OtherHispanic": 18.1,
+  "OtherMixed": 20.6
+ },
+ "ethnicity_region_map": {
+  "NHAsian": "Western-Pacific/China (NHANES Asian-obese)",
+  "NHWhite": "US/Europe White (NHANES)",
+  "NHBlack": "US Black (NHANES)",
+  "MexicanAmerican": "Latin America proxy (NHANES Mexican-American)",
+  "OtherHispanic": "Hispanic (NHANES)"
+ },
+ "transported": {
+  "tirzepatide": {
+   "OtherHispanic": 17.6,
+   "NHWhite": 17.5,
+   "OtherMixed": 17.5,
+   "MexicanAmerican": 17.5,
+   "NHBlack": 17.4,
+   "NHAsian": 17.3
+  },
+  "semaglutide-sc-weekly": {
+   "OtherHispanic": 14.7,
+   "NHWhite": 14.6,
+   "OtherMixed": 14.6,
+   "MexicanAmerican": 14.6,
+   "NHBlack": 14.5,
+   "NHAsian": 14.4
+  }
+ }
+}

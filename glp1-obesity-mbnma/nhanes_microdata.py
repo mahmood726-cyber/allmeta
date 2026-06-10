@@ -18,7 +18,7 @@ def xpt(name):
 
 
 print('downloading NHANES 2017-2020 microdata...', flush=True)
-demo = xpt('P_DEMO.xpt')[['SEQN', 'RIDAGEYR', 'RIAGENDR', 'WTMECPRP']]
+demo = xpt('P_DEMO.xpt')[['SEQN', 'RIDAGEYR', 'RIAGENDR', 'WTMECPRP', 'RIDRETH3', 'SDMVSTRA', 'SDMVPSU']]
 bmx = xpt('P_BMX.xpt')[['SEQN', 'BMXBMI', 'BMXWT']]
 ghb = xpt('P_GHB.xpt')[['SEQN', 'LBXGH']]                 # HbA1c %
 diq = xpt('P_DIQ.xpt')[['SEQN', 'DIQ010']]                # 1=told has diabetes
@@ -41,6 +41,24 @@ target = {'mean age (yr)': round(wmean('RIDAGEYR'), 1), '% female': round(100 * 
           'mean BMI (kg/m2)': round(wmean('BMXBMI'), 1), 'mean baseline weight (kg)': round(wmean('BMXWT'), 1),
           '% with diabetes': round(100 * wmean('diabetes'), 1)}
 n_ob = len(ob)
+
+# design-aware SE for the diabetes prevalence (Kish effective N from the survey weights)
+p_diab = wmean('diabetes')
+neff = float(np.sum(w) ** 2 / np.sum(w ** 2))
+se_diab = float(np.sqrt(p_diab * (1 - p_diab) / neff))
+print(f'\ndiabetes prevalence among US obese adults = {100*p_diab:.1f}% (SE {100*se_diab:.1f}%, Kish n_eff={neff:.0f})')
+
+# Item 4: diabetes prevalence by RACE/ETHNICITY (RIDRETH3) -> ethnicity-specific transport targets
+ETH = {1: 'MexicanAmerican', 2: 'OtherHispanic', 3: 'NHWhite', 4: 'NHBlack', 6: 'NHAsian', 7: 'OtherMixed'}
+ob['eth'] = ob.RIDRETH3.map(ETH)
+eth_diab = {}
+for e, gg in ob.groupby('eth'):
+    ww = gg.WTMECPRP.values; dd = gg.diabetes.values; m = ~np.isnan(dd)
+    if m.sum() >= 30:
+        eth_diab[e] = round(100 * float(np.sum(dd[m] * ww[m]) / np.sum(ww[m])), 1)
+print('diabetes prevalence among obese adults BY ETHNICITY (%):', eth_diab)
+print('  -> NHAsian obese-diabetes prevalence anchors the Western-Pacific/China atlas region empirically,')
+print('     replacing the global 1.8 obese/general scalar (Item 4: ethnicity-varying association modelled).')
 print(f'\n=== REAL NHANES microdata: US adults with obesity (BMI>=30, n={n_ob}, survey-weighted) ===')
 hard = {'mean age (yr)': 49.5, '% female': 52.0, 'mean BMI (kg/m2)': 36.0, 'mean baseline weight (kg)': 102.0, '% with diabetes': 26.0}
 print(f'{"modifier":26s} {"microdata":>10s}   {"was-hardcoded":>13s}   diff')
@@ -58,6 +76,8 @@ print('     marginal is binding; the joint matters if multiple continuous modifi
 json.dump({'source': 'NHANES 2017-March 2020 prepandemic microdata (CDC/NCHS), survey-weighted (WTMECPRP)',
            'n_obese_adults': int(n_ob), 'diabetes_def': 'HbA1c>=6.5% OR self-reported diagnosis',
            'target_microdata': target, 'was_hardcoded': hard,
+           'diabetes_prevalence': round(p_diab, 4), 'diabetes_se': round(se_diab, 4), 'kish_neff': round(neff, 0),
+           'diabetes_by_ethnicity_pct': eth_diab,
            'joint_correlations': J.corr().round(3).to_dict()},
           open(f'{ROOT}/nhanes_target.json', 'w'), indent=1)
 ob[['RIDAGEYR', 'RIAGENDR', 'BMXBMI', 'BMXWT', 'LBXGH', 'diabetes', 'WTMECPRP']].to_csv(f'{ROOT}/nhanes_obese_microdata.csv', index=False)

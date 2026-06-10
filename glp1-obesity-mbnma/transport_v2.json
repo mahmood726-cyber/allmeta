@@ -1,0 +1,90 @@
+{
+ "nhanes_target_consumed": {
+  "diabetes": 0.2056,
+  "se": 0.0101
+ },
+ "rhat_max": 1.0,
+ "ess_min": 3009.0,
+ "P_diab_posterior_pct": 20.6,
+ "poth_obesity": 0.898,
+ "poth_transported": 0.898,
+ "nodes": [
+  {
+   "node": "mazdutide",
+   "k": 1,
+   "k1_insufficient": true,
+   "eff_obesity": 22.5,
+   "eff_target": 21.3,
+   "target_cri": [
+    16.0,
+    26.8
+   ]
+  },
+  {
+   "node": "retatrutide",
+   "k": 1,
+   "k1_insufficient": true,
+   "eff_obesity": 21.4,
+   "eff_target": 20.2,
+   "target_cri": [
+    16.2,
+    24.3
+   ]
+  },
+  {
+   "node": "tirzepatide",
+   "k": 4,
+   "k1_insufficient": false,
+   "eff_obesity": 18.7,
+   "eff_target": 17.5,
+   "target_cri": [
+    15.0,
+    19.9
+   ]
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "k": 15,
+   "k1_insufficient": false,
+   "eff_obesity": 15.8,
+   "eff_target": 14.6,
+   "target_cri": [
+    12.8,
+    16.5
+   ]
+  },
+  {
+   "node": "orforglipron",
+   "k": 2,
+   "k1_insufficient": false,
+   "eff_obesity": 11.5,
+   "eff_target": 10.3,
+   "target_cri": [
+    6.7,
+    13.6
+   ]
+  },
+  {
+   "node": "semaglutide-oral",
+   "k": 5,
+   "k1_insufficient": false,
+   "eff_obesity": 11.0,
+   "eff_target": 9.8,
+   "target_cri": [
+    7.5,
+    12.0
+   ]
+  },
+  {
+   "node": "semaglutide-sc-daily",
+   "k": 1,
+   "k1_insufficient": true,
+   "eff_obesity": 9.6,
+   "eff_target": 8.4,
+   "target_cri": [
+    5.6,
+    12.0
+   ]
+  }
+ ]
+}

@@ -16,6 +16,17 @@
   "mean baseline weight (kg)": 102.0,
   "% with diabetes": 26.0
  },
+ "diabetes_prevalence": 0.2056,
+ "diabetes_se": 0.0101,
+ "kish_neff": 1592.0,
+ "diabetes_by_ethnicity_pct": {
+  "MexicanAmerican": 20.7,
+  "NHAsian": 24.5,
+  "NHBlack": 22.4,
+  "NHWhite": 20.3,
+  "OtherHispanic": 18.1,
+  "OtherMixed": 20.6
+ },
  "joint_correlations": {
   "age": {
    "age": 1.0,
