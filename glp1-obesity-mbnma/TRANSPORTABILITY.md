@@ -120,3 +120,24 @@ ECOLOGICAL (continuous covariate, unlike binary-pure-strata diabetes) -> transpo
 **Adding BMI does not change the transport conclusion.** The transport is driven entirely by DIABETES
 (the one axis with a large gap AND a valid individual-level slope); BMI/age/sex are near-target and
 contribute ~0. The conclusion is robust to the second, weaker modifier - reassuring, not a weakness.
+
+## Multi-target transport ATLAS (other authoritative sources, not just NHANES)
+`workstream_transport_atlas.py`. Transport each node's obesity-population effect to several
+authoritative target populations using the Bayesian diabetes modifier (gamma = 5.8 pp):
+eff_target = eff_obesity - gamma*P_diabetes. Target diabetes prevalence:
+IDF Diabetes Atlas 2021 (age-adjusted, adults 20-79): Africa 5.3%, Europe/S&C-America 10.3%, Global
+10.5%, Western Pacific 11.4%, N.America+Caribbean 15.0%, MENA/Gulf 18.1%; NHANES US obese-adults 26%.
+
+| node | obesity | Africa | Global | MENA | US-obese |
+|---|---|---|---|---|---|
+| mazdutide | 22.5 | 22.2 | 21.9 | 21.5 | 21.0 |
+| retatrutide | 21.4 | 21.1 | 20.8 | 20.4 | 19.9 |
+| tirzepatide | 18.7 | 18.4 | 18.1 | 17.7 | 17.2 |
+| semaglutide-sc-weekly | 15.8 | 15.5 | 15.2 | 14.8 | 14.3 |
+
+Effect varies by target diabetes burden (~1.5 pp obesity→US-obese span). tirzepatide→US-obese 17.2 pp
+(gamma-band 16.6-17.8). HONEST CAVEAT: IDF figures are GENERAL-adult diabetes prevalence; the obese
+subpopulation has higher diabetes (US 14.8%→26%), so the IDF-region targets slightly OVERSTATE weight
+loss for the obese population — US-obese (NHANES) is the matched anchor; region-specific obese-subset
+prevalences would lower those further. Sources: IDF Diabetes Atlas 2021 (NCBI NBK581940); NHANES
+2017-2020 (CDC NCHS).

@@ -1,0 +1,82 @@
+{
+ "gamma": 5.8,
+ "gamma_cri": [
+  3.4,
+  8.0
+ ],
+ "targets": {
+  "Africa (IDF)": 0.053,
+  "Europe (IDF)": 0.103,
+  "Global (IDF)": 0.105,
+  "Western Pacific (IDF)": 0.114,
+  "N.America+Caribbean (IDF)": 0.15,
+  "MENA/Gulf (IDF)": 0.181,
+  "US obese adults (NHANES)": 0.26
+ },
+ "atlas": {
+  "mazdutide": {
+   "Africa (IDF)": 22.2,
+   "Europe (IDF)": 21.9,
+   "Global (IDF)": 21.9,
+   "Western Pacific (IDF)": 21.8,
+   "N.America+Caribbean (IDF)": 21.6,
+   "MENA/Gulf (IDF)": 21.5,
+   "US obese adults (NHANES)": 21.0
+  },
+  "retatrutide": {
+   "Africa (IDF)": 21.1,
+   "Europe (IDF)": 20.8,
+   "Global (IDF)": 20.8,
+   "Western Pacific (IDF)": 20.7,
+   "N.America+Caribbean (IDF)": 20.5,
+   "MENA/Gulf (IDF)": 20.4,
+   "US obese adults (NHANES)": 19.9
+  },
+  "tirzepatide": {
+   "Africa (IDF)": 18.4,
+   "Europe (IDF)": 18.1,
+   "Global (IDF)": 18.1,
+   "Western Pacific (IDF)": 18.0,
+   "N.America+Caribbean (IDF)": 17.8,
+   "MENA/Gulf (IDF)": 17.7,
+   "US obese adults (NHANES)": 17.2
+  },
+  "semaglutide-sc-weekly": {
+   "Africa (IDF)": 15.5,
+   "Europe (IDF)": 15.2,
+   "Global (IDF)": 15.2,
+   "Western Pacific (IDF)": 15.1,
+   "N.America+Caribbean (IDF)": 14.9,
+   "MENA/Gulf (IDF)": 14.8,
+   "US obese adults (NHANES)": 14.3
+  },
+  "orforglipron": {
+   "Africa (IDF)": 11.1,
+   "Europe (IDF)": 10.8,
+   "Global (IDF)": 10.8,
+   "Western Pacific (IDF)": 10.7,
+   "N.America+Caribbean (IDF)": 10.5,
+   "MENA/Gulf (IDF)": 10.4,
+   "US obese adults (NHANES)": 9.9
+  },
+  "semaglutide-oral": {
+   "Africa (IDF)": 10.6,
+   "Europe (IDF)": 10.3,
+   "Global (IDF)": 10.3,
+   "Western Pacific (IDF)": 10.2,
+   "N.America+Caribbean (IDF)": 10.0,
+   "MENA/Gulf (IDF)": 9.9,
+   "US obese adults (NHANES)": 9.4
+  },
+  "semaglutide-sc-daily": {
+   "Africa (IDF)": 9.4,
+   "Europe (IDF)": 9.1,
+   "Global (IDF)": 9.1,
+   "Western Pacific (IDF)": 9.0,
+   "N.America+Caribbean (IDF)": 8.8,
+   "MENA/Gulf (IDF)": 8.7,
+   "US obese adults (NHANES)": 8.2
+  }
+ },
+ "sources": "IDF Diabetes Atlas 2021 (NBK581940); NHANES 2017-2020 (CDC)"
+}
