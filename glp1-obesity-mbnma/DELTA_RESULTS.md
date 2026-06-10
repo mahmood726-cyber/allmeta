@@ -47,3 +47,21 @@ not (oral-sema −9.8 pp), and (iii) surfaces reporting bias (ghosts −3.2 pp) 
 automation paper: *"how much does registry-native vs literature sourcing change a dose-response NMA,
 and what does it reveal."* Caveat: S2 emulates a literature search from registry data, not a real
 independent Medline/Embase search — the genuine paper would run both arms prospectively.
+
+## Finding 4 — REAL MEDLINE search (not emulated): 43% miss rate
+`run_medline_compare.py`. Ran an actual PubMed/MEDLINE search (incretin OR-list AND obesity/overweight
+AND body-weight/weight-loss AND RCT[pt], post-2010) = **200 publications**, mapped to NCTs via AACT
+study_references, vs the 63-trial registry cohort:
+- MEDLINE **finds 36/63 (57%)**; **misses 27/63 (43%)**.
+- The miss breakdown: **6 unpublished ghosts** + **20 published-but-not-found** (their paper exists but
+  isn't indexed under obesity+weight+RCT — the PIONEER/T2D trials indexed under *diabetes*, weight a
+  secondary outcome) + 1 unlinked.
+- Of the 57 trials actually in the analysis, MEDLINE misses **22 (39%)**.
+
+**This is the real, non-emulated registry-native advantage:** a focused obesity-weight MEDLINE search
+captures only ~57% of the registry trials. The bulk of the gap (20/27) is *published-but-mis-indexed*
+diabetes trials with secondary weight data — which obesity-focused SRs (e.g. Xie 2024) typically screen
+OUT — plus the 6 unpublished ghosts. The registry-native pipeline captures all of them automatically.
+Honest caveat: a comprehensive multi-database SR (Embase+Cochrane + diabetes terms + hand-search) would
+recover some of the 20; the point is the registry approach finds them without the analyst having to
+think to add diabetes terms, and includes the secondary-outcome evidence obesity SRs exclude by design.
