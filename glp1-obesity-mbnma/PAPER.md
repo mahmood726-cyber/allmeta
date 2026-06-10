@@ -121,6 +121,20 @@ is their integration and the framework, not a new estimator.
   carry CV benefit (joint view). registry-ipd's pseudo-IPD *reconstruction* requires posted KM curves, which
   these trials don't post in AACT (km_points=[0,0]) — wired and waiting, blocked by the registry posting gap.
 
+## 4c. HTA decision layer — the integrator (network MCDA + value of information)
+The five analyses (efficacy MBNMA, survival HR, benefit–risk, transportability, completeness) are inputs
+to one coverage decision; HTA is where they unify. Reusing the portfolio's validated 41-engine `allmeta/HTA`
+platform (benchmarked vs TreeAge) and the `hta-transportability` engine, we drive our **transported**
+posteriors into a **Network MCDA** (`hta_mcda.py`, ISPOR good-practice): fusing transported weight loss + CV
+HR + nausea, tirzepatide leads (value 0.764, P(best) 0.92) over semaglutide (0.582); agents without a posted
+CV outcome (retatrutide/mazdutide) score lower on a reduced criterion set — an honest registry data gap, not
+a clinical verdict. A **value-of-information** proxy (EVPPI direction) shows the decision hinges on the
+**cardiovascular** evidence (resolving CV uncertainty moves P(best) 0.92→1.00; efficacy/safety Δ=0), i.e.
+the under-posted KM-gap stratum is where more research is most valuable. Monetary cost-effectiveness
+(ICER/QALY/CEAC) requires drug price + health-state utilities, which are **not in AACT/CT.gov/PubMed**; the
+wiring to `allmeta/HTA`'s `markovCohort`/`partitionedSurvival`/`evppi.js` is specified but cost/utility
+inputs are **deferred, not fabricated** (the defensible boundary). See `HTA_INTEGRATION.md`.
+
 ## 5. Limitations
 No IPD → the rigorous transport estimators (ML-NMR/MAIC) are out of reach; transport is binary-modifier
 standardization, valid here only because the modifier is binary with pure strata (agent-specific γ fit:
