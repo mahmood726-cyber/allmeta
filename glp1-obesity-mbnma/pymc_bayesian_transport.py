@@ -60,7 +60,8 @@ with pm.Model() as m:
     base = Emax * maxd / (ED50 + maxd)                    # obesity-population effect
     pm.Deterministic('eff_obesity', base)
     pm.Deterministic('eff_target', base - gamma * P_TARGET)
-    idata = pm.sample(1500, tune=1500, chains=2, cores=1, target_accept=0.95,
+    # compiled nutpie (numba) backend: fast + better mixing -> certify Rhat<1.01 with 4 chains
+    idata = pm.sample(2000, tune=2000, chains=4, nuts_sampler='nutpie', target_accept=0.95,
                       random_seed=20260610, progressbar=False, compute_convergence_checks=False)
 
 su = az.summary(idata, var_names=['gamma', 'eff_obesity', 'eff_target', 'tau'])

@@ -66,9 +66,14 @@ real obese population. We address both from the registry.
   γ = 5.8 pp (95% CrI 3.4–8.0, P>0 = 1.00). Transported obesity→NHANES(26% diabetes) per node: tirzepatide
   18.7→17.1, mazdutide 22.5→21.1, semaglutide-sc-weekly 15.8→14.3 (each ~−1.5 pp; γ-uncertainty widens the
   target CrIs). Valid IPD-free because diabetes is **binary with pure strata** (study-level covariate =
-  individual-level), so γ is a genuine interaction, NOT ecological. Rhat 1.010 / ESS 1075 (near-converged).
+  individual-level), so γ is a genuine interaction, NOT ecological. **CONVERGENCE-CERTIFIED via the
+  compiled nutpie/numba backend: max Rhat 1.0000, min ESS 3354** (γ 5.9 pp, identical to the pure-Python
+  near-converged run).
 - **BMI second modifier (abstract-supplemented, n=2→17):** trial BMI 35.8 ≈ NHANES 36.0; slope ecological
   and ~0 → transport robust to it; diabetes is the sole material, valid modifier.
+- **Multi-target transport atlas (obese-subset):** transported to authoritative real-world targets using
+  obese-subset diabetes prevalence — direct (US NHANES 26%, England HSE 13%) + IDF regions ×1.8 (Africa
+  9.5%→MENA 32.6%). tirzepatide obesity 18.7 → England 17.9 → US-obese 17.2 → MENA-obese 16.8 pp.
 
 ## 4. Discussion — the unification
 Reporting-completeness and population-transportability are not two add-ons but one mechanism: the evidence
