@@ -75,75 +75,78 @@ def fit_agent(sub):
     return popt, pcov
 
 
-def main():
-    df = pd.read_csv(f'{ROOT}/arms_full.csv')
-    cdf = contrasts(df, min_week=MIN_WEEK)
-    cdf.to_csv(f'{ROOT}/contrasts_full.csv', index=False)
-    n_trials = df['nct'].nunique()
-    n_pl = df[df.agent == 'placebo']['nct'].nunique()
-    cdf_all = contrasts(df, min_week=0)
-    print(f'cohort: {n_trials} trials, {len(df)} arms; {n_pl} have a placebo arm (connectable).')
-    print(f'timepoint landmark: >={MIN_WEEK} wk -> {len(cdf)}/{len(cdf_all)} contrasts retained '
-          f'(weeks {sorted(cdf.week.unique())})')
-    print(f'nodes (semaglutide split oral/sc-weekly/sc-daily): {sorted(cdf.agent.unique())}\n')
+def poth_of(sucra):
+    s = np.asarray(sucra); n = len(s)
+    return float(np.mean((s - 0.5) ** 2) / ((n + 1) / (12 * (n - 1))))
 
-    agents, samples = [], {}
+
+def poth_js(sucra):
+    try:
+        js = ('const {poth}=require("C:/Projects/allmeta/shared/poth.js");'
+              f'console.log(JSON.stringify(poth({json.dumps(list(sucra))})));')
+        out = subprocess.run(['node', '-e', js], capture_output=True, text=True, timeout=30)
+        if out.stdout.strip():
+            return json.loads(out.stdout)['poth']
+    except Exception:
+        return None
+
+
+def analyze(cdf, label, out_json=None):
+    print(f'\n########## {label}: {cdf.agent.nunique()} nodes ##########')
     print('=== per-node: observed effect at max dose (ranking metric) + Emax curve (shape) ===')
+    agents, samples = [], {}
     for agent, sub in cdf.groupby('agent'):
-        doses = sorted(sub['dose_wk'].unique())
-        maxd = max(doses)
-        # RANKING METRIC: IVW-pooled OBSERVED contrast at the node's max studied dose
-        # (no model extrapolation -> robust to Emax non-identifiability).
+        doses = sorted(sub['dose_wk'].unique()); maxd = max(doses)
         top = sub[sub['dose_wk'] == maxd]
         w = 1.0 / top['var'].values
         m = float(np.sum(top['loss'].values * w) / np.sum(w)); se = float(np.sqrt(1.0 / np.sum(w)))
-        samples[agent] = RNG.normal(m, se, size=8000)
-        agents.append(agent)
-        # Emax curve (shape only); flag degenerate fits
+        samples[agent] = RNG.normal(m, se, size=8000); agents.append(agent)
         curve = ''
         if len(doses) >= 2:
             try:
                 (Em, ED50), _ = fit_agent(sub)
                 degen = Em >= 999 or ED50 >= 9999
-                curve = (f'  Emax-curve: {"UNIDENTIFIED (still-rising)" if degen else f"Emax={Em:.1f}pp ED50={ED50:.2f}"}')
+                curve = '  Emax-curve: ' + ('UNIDENTIFIED (still-rising)' if degen else f'Emax={Em:.1f}pp ED50={ED50:.2f}')
             except Exception as e:
                 curve = f'  Emax fit failed: {e}'
         print(f'{agent:22s} max {maxd:g}mg: observed loss={m:5.1f}pp (SE {se:.2f})  '
               f'doses={[round(d,2) for d in doses]}  [{sub.nct.nunique()} trials]{curve}')
-
-    # Ranking: higher loss = better. SUCRA from MC rank distribution.
-    A = [a for a in agents if a in samples]
-    M = np.vstack([samples[a] for a in A])         # n_agents x n_draws
-    ranks = (-M).argsort(axis=0).argsort(axis=0) + 1   # rank 1 = most loss
+    A = list(samples)
+    M = np.vstack([samples[a] for a in A])
+    ranks = (-M).argsort(axis=0).argsort(axis=0) + 1
     n = len(A)
     sucra = np.array([np.mean((n - ranks[i]) / (n - 1)) for i in range(n)])
     order = np.argsort(-sucra)
-    print('\n=== treatment hierarchy (rank by predicted weight loss at max studied dose) ===')
+    print(f'--- hierarchy ({label}) ---')
     for rk, i in enumerate(order, 1):
-        meff = samples[A[i]].mean()
-        print(f'  {rk}. {A[i]:13s} SUCRA={sucra[i]:.3f}  mean loss={meff:5.1f}pp')
-
-    # POTH (python) + allmeta poth.js cross-check
-    s = sucra; n2 = len(s)
-    s2 = np.mean((s - 0.5) ** 2); s2max = (n2 + 1) / (12 * (n2 - 1))
-    poth_py = s2 / s2max
-    print(f'\nPOTH = {poth_py:.3f}  (n={n2}; median across published networks ~0.67)')
-    try:
-        js = ('const {poth}=require("C:/Projects/allmeta/shared/poth.js");'
-              f'console.log(JSON.stringify(poth({json.dumps(s.tolist())})));')
-        out = subprocess.run(['node', '-e', js], capture_output=True, text=True, timeout=30)
-        if out.stdout.strip():
-            r = json.loads(out.stdout)
-            print(f'allmeta poth.js cross-check: POTH={r["poth"]:.3f}  (match: {abs(r["poth"]-poth_py)<1e-6})')
-    except Exception as e:
-        print(f'poth.js cross-check skipped: {e}')
-
-    if poth_py < 0.5:
-        print('NOTE: POTH < 0.5 -> hierarchy non-informative; do NOT claim a single best agent.')
-    json.dump({'agents': A, 'sucra': s.tolist(), 'poth': poth_py,
-               'order': [A[i] for i in order]}, open(f'{ROOT}/ranking.json', 'w'), indent=2)
-    print('\nwrote contrasts_full.csv, ranking.json')
+        print(f'  {rk}. {A[i]:22s} SUCRA={sucra[i]:.3f}  obs loss={samples[A[i]].mean():5.1f}pp')
+    p_py = poth_of(sucra); p_js = poth_js(sucra)
+    match = (p_js is not None and abs(p_js - p_py) < 1e-6)
+    print(f'POTH = {p_py:.3f} (n={n}); allmeta poth.js={p_js} (match: {match})')
+    if p_py < 0.5:
+        print('NOTE: POTH < 0.5 -> hierarchy non-informative.')
+    if out_json:
+        json.dump({'label': label, 'agents': A, 'sucra': sucra.tolist(),
+                   'poth': p_py, 'order': [A[i] for i in order]}, open(out_json, 'w'), indent=2)
+    return sucra, order, A
 
 
-if __name__ == '__main__':
+def main():
+    df = pd.read_csv(f'{ROOT}/arms_full.csv')
+    cdf = contrasts(df, min_week=MIN_WEEK)
+    cdf.to_csv(f'{ROOT}/contrasts_full.csv', index=False)
+    cdf_all = contrasts(df, min_week=0)
+    n_trials = df['nct'].nunique()
+    n_pl = df[df.agent == 'placebo']['nct'].nunique()
+    print(f'cohort: {n_trials} trials, {len(df)} arms; {n_pl} have a placebo arm (connectable).')
+    print(f'timepoint landmark: >={MIN_WEEK}wk -> {len(cdf)}/{len(cdf_all)} contrasts retained')
+
+    analyze(cdf, f'PRIMARY (>={MIN_WEEK}wk landmark)', out_json=f'{ROOT}/ranking.json')
+    analyze(cdf_all, 'SENSITIVITY (all timepoints, dropped agents restored)',
+            out_json=f'{ROOT}/ranking_sensitivity.json')
+    print('\nwrote contrasts_full.csv, ranking.json, ranking_sensitivity.json')
+
+
+
+if __name__ == "__main__":
     main()
