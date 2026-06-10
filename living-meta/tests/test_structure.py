@@ -10,6 +10,7 @@ on a redirect stub)."""
 from pathlib import Path
 
 INDEX = Path(__file__).parent.parent / "index.html"
+APP = Path(__file__).parent.parent / "living-meta-complete.html"
 
 
 def test_has_csp_meta():
@@ -23,3 +24,15 @@ def test_redirects_to_real_app():
     html = INDEX.read_text(encoding="utf-8")
     assert "living-meta-complete.html" in html, "redirect target missing"
     assert 'http-equiv="refresh"' in html or "location.replace" in html, "no redirect mechanism"
+
+
+def test_signed_audit_trail_wired():
+    """P1: the living-review version timeline is sealed into a signed,
+    tamper-evident provenance chain."""
+    h = APP.read_text(encoding="utf-8")
+    assert "../shared/living-monitor-v1.js" in h, "signing engine not loaded"
+    assert "LivingMonitor.sealVersion" in h, "versions are not sealed on record"
+    assert "LMA.verifyVersionHistory" in h and "verifyCurrentProvenance" in h
+    assert 'id="verify-provenance-btn"' in h and 'id="sign-key-btn"' in h
+    # honest: unsigned still hash-chains; signing is HMAC with the reviewer's key
+    assert "getSignKey" in h and "setSignKey" in h
