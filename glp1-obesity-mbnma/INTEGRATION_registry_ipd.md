@@ -42,3 +42,15 @@ registry-ipd is integrated as the **time-to-event component** of the registry-na
 (SYSTEM.md stage set extended). It does not improve the continuous transport (correctly — that's already
 valid), but it makes the system span the outcomes that matter clinically, reusing the same registry-native,
 reproducible, calibrated-uncertainty philosophy.
+
+## Concrete result — registry-ipd code USED; reconstruction blocked by the posting gap (not accuracy)
+`survival_nma.py`. registry-ipd's `harvest_trial()` (Python, reads AACT via aact_kit) was run on the
+incretin CVOTs and pulled their HRs cleanly: SUSTAIN-6 0.74, SELECT 0.76, LEADER 0.87, REWIND 0.88.
+**But km_points=[0,0] for all** — these trials post the HR in `outcome_analyses` but NOT the KM curve in
+AACT's structured `outcome_measurements` (the curve is in the journal figure). So registry-ipd's validated
+RECONSTRUCTION (curve-only HR ~11% err, calibrated CrI 14/14 — VALIDATION.md) **has no curve to run on here.**
+- **Honest conclusion:** the limiting factor is the REGISTRY POSTING GAP, not registry-ipd accuracy. We used
+  the harvester (HR extraction) and pooled the reported HRs into a registry-native survival NMA by agent
+  (semaglutide 0.81 k=5, tirzepatide 0.62, dulaglutide 0.88). Joint weight+outcome view: the top weight-loss
+  agents also carry CV benefit. registry-ipd reconstruction stays wired and would activate for any trial that
+  posts a structured KM curve (most AACT trials don't; per registry-ipd's own cohort, ~30/595 do). survival_nma.json.

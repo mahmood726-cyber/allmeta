@@ -1,0 +1,42 @@
+{
+ "survival_nma_by_agent": [
+  {
+   "agent": "dulaglutide",
+   "pooled_hr": 0.88,
+   "ci": [
+    0.79,
+    0.99
+   ],
+   "k": 1
+  },
+  {
+   "agent": "liraglutide",
+   "pooled_hr": 1.01,
+   "ci": [
+    0.96,
+    1.06
+   ],
+   "k": 2
+  },
+  {
+   "agent": "semaglutide",
+   "pooled_hr": 0.81,
+   "ci": [
+    0.76,
+    0.86
+   ],
+   "k": 5
+  },
+  {
+   "agent": "tirzepatide",
+   "pooled_hr": 0.62,
+   "ci": [
+    0.41,
+    0.94
+   ],
+   "k": 1
+  }
+ ],
+ "n_trials": 9,
+ "registry_ipd": "harvest used; reconstruction needs KM curves (absent for incretin CVOTs in AACT) -> HR pooling"
+}
