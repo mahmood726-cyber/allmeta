@@ -39,7 +39,11 @@
     .cap { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; margin-top: 0.3rem; }
     .pill { font-size: 0.72rem; padding: 0.08rem 0.45rem; border-radius: 10px; }
     .pill.have { background: var(--green-soft); color: var(--green); }
+    .pill.live { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
     .pill.empty { background: var(--input-bg); color: var(--muted); border: 1px solid var(--border); }
+    .stage-sum { font-size: 0.78rem; color: var(--accent); margin: 0.35rem 0 0.1rem; font-weight: 500; }
+    .stage-sum.captured { color: var(--green); }
+    .shell-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 0.8rem; }
     input[type=text] { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; margin-bottom: 0.6rem; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 0.9rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
     button.ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--border); padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
@@ -56,21 +60,27 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/review-bundle.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
+  <script src="../shared/toast.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Review project</h1>
-    <p>A whole systematic review as one offline, cryptographically-signed, tamper-evident file. Work each stage in its dedicated allmeta app, capture the stage's JSON output here, and the project chains every stage by SHA-256 and HMAC-signs the bundle. Re-opening verifies the chain end-to-end and pinpoints any stage that was altered — reproducible evidence synthesis in a single file, no server, no account.</p>
+    <p>A whole systematic review as one offline, cryptographically-signed, tamper-evident file. This shell watches your live allmeta workspace: each pipeline stage shows its current status from the shared buses, opens its dedicated app pre-loaded, and folds its output into a SHA-256-chained, HMAC-signed bundle in one click. Re-opening verifies the chain end-to-end and pinpoints any stage that was altered — reproducible evidence synthesis in a single file, no server, no account.</p>
   </header>
   <main>
     <section class="panel">
       <h2>Pipeline</h2>
       <label for="proj-title" style="font-size:0.8rem;color:var(--muted)">Review title</label>
       <input id="proj-title" type="text" placeholder="e.g. SGLT2 inhibitors for heart failure">
+      <div class="shell-bar">
+        <button type="button" id="btn-refresh" class="ghost">↻ Refresh from workspace</button>
+        <button type="button" id="btn-capture-all" class="ghost">⤓ Capture all live stages</button>
+      </div>
       <div id="stages"></div>
     </section>
     <section class="panel">
@@ -92,32 +102,113 @@
   </footer>
   <script>
     var STAGES = [
-      { id: "protocol", name: "Protocol", desc: "Register the question and plan.", apps: [["PROSPERO templater", "../prospero-templater/"], ["PICO", "../pico/"]] },
-      { id: "search", name: "Search", desc: "Build and translate the search strategy.", apps: [["Search translator", "../search-translator/"]] },
-      { id: "screening", name: "Screening", desc: "Title/abstract include–exclude, Cohen's κ.", apps: [["PRISMA screening", "../prisma-screen/"]] },
-      { id: "extraction", name: "Extraction", desc: "Pull study-level data.", apps: [["RCT extractor", "../rct-extractor/"], ["RevMan importer", "../revman-importer/"]] },
-      { id: "appraisal", name: "Appraisal", desc: "Risk of bias + trustworthiness.", apps: [["RoB 2", "../rob2/"], ["ROBINS-I", "../robins-i/"], ["INSPECT-SR", "../inspect-sr/"]] },
-      { id: "synthesis", name: "Synthesis", desc: "Pool the effects (verifiable).", apps: [["Forest plot", "../forest-plot/"], ["NMA Pro", "../nma-pro-v2/"], ["Workbench", "../workbench/"]] },
+      { id: "protocol", name: "Protocol", desc: "Frame the question (PICO) and plan.", apps: [["Design", "../design/"], ["PROSPERO templater", "../prospero-templater/"], ["PICO", "../pico/"]] },
+      { id: "search", name: "Search", desc: "Build, translate and import the search.", apps: [["Search", "../search/"], ["Search translator", "../search-translator/"]] },
+      { id: "screening", name: "Screening", desc: "Dual-reviewer title/abstract include–exclude.", apps: [["Screen", "../screen/"], ["PRISMA screening", "../prisma-screen/"]] },
+      { id: "extraction", name: "Extraction", desc: "Pull study-level effect data.", apps: [["Extract", "../extract/"], ["RCT extractor", "../rct-extractor/"], ["RevMan importer", "../revman-importer/"]] },
+      { id: "appraisal", name: "Appraisal", desc: "Risk of bias + trustworthiness.", apps: [["RoB", "../rob/"], ["RoB 2", "../rob2/"], ["INSPECT-SR", "../inspect-sr/"]] },
+      { id: "synthesis", name: "Synthesis", desc: "Pool the effects (verifiable).", apps: [["Forest plot", "../forest-plot/"], ["Workbench", "../workbench/"], ["NMA Pro", "../nma-pro-v2/"]] },
       { id: "robustness", name: "Robustness & reporting bias", desc: "Spec-collapse + missing-evidence.", apps: [["Spec-collapse", "../spec-collapse/"], ["Reporting-bias", "../reporting-bias/"]] },
       { id: "certainty", name: "Certainty", desc: "GRADE / CINeMA.", apps: [["GRADE SoF", "../grade-sof/"], ["CINeMA", "../cinema/"]] },
-      { id: "report", name: "Report", desc: "PRISMA flow + checklist.", apps: [["PRISMA flow", "../prisma-flow/"], ["PRISMA checklist", "../prisma-checklist/"]] },
+      { id: "report", name: "Report", desc: "Draft the manuscript from the pipeline.", apps: [["Paper Studio", "../paper/"], ["PRISMA flow", "../prisma-flow/"]] },
     ];
     var KEY = "review-project-v1";
     var state = load() || { title: "", outputs: {} };
+    var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
 
     function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") return s; } catch (e) {} return null; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function lsGet(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+
+    // Consensus-included, non-duplicate records (matches the paper bridge's sr-records-v1 logic).
+    function includedRecords(recs) {
+      return (recs || []).filter(function (r) {
+        if (!r || r.dup) return false;
+        var d1 = r.r1 && r.r1.d, d2 = r.r2 && r.r2.d, res = r.resolved;
+        if (res) return res === "include";
+        if (d1 && d2) return d1 === "include" && d2 === "include";
+        return (d1 || d2) === "include";
+      });
+    }
+    function readStudies() { try { return (window.MaStudies && MaStudies.read && MaStudies.read()) || []; } catch (e) { return []; } }
+    function readPooled() { try { return (window.MaPooled && MaPooled.read && MaPooled.read()) || []; } catch (e) { return []; } }
+
+    // Per-stage live detectors: read the shared buses and summarise current workspace state.
+    // Return null when the stage has no live data (so the UI honestly shows "no output yet").
+    var LIVE = {
+      protocol: function () {
+        var p = lsGet("sr-project-v1"); var pico = p && p.pico; if (!p || !pico) return null;
+        var bits = [pico.population || pico.pop, pico.intervention || pico.int].filter(Boolean).join(" · ");
+        return { summary: (p.title ? p.title + " — " : "") + (bits || "PICO framed"), value: p };
+      },
+      search: function () {
+        var e = lsGet("sr-records-v1"); var recs = e && Array.isArray(e.records) ? e.records : null;
+        if (!recs || !recs.length) return null;
+        return { summary: recs.length + " records imported", value: e };
+      },
+      screening: function () {
+        var e = lsGet("sr-records-v1"); var recs = e && Array.isArray(e.records) ? e.records : null;
+        if (!recs || !recs.length) return null;
+        var decided = recs.filter(function (r) { return (r.r1 && r.r1.d) || (r.r2 && r.r2.d) || r.resolved; }).length;
+        if (!decided) return null;
+        return { summary: includedRecords(recs).length + " included · " + decided + " screened of " + recs.length, value: { records: recs } };
+      },
+      extraction: function () {
+        var st = readStudies(); if (!st.length) return null;
+        return { summary: st.length + " studies extracted", value: { studies: st } };
+      },
+      appraisal: function () {
+        var r = lsGet("rob-assessments-v1"); if (!r) return null;
+        var n = Array.isArray(r) ? r.length : (typeof r === "object" ? Object.keys(r).length : 0);
+        if (!n) return null;
+        return { summary: n + " risk-of-bias assessment" + (n === 1 ? "" : "s"), value: r };
+      },
+      synthesis: function () {
+        var pl = readPooled(); if (!pl.length) return null;
+        var p = pl[pl.length - 1];
+        var est = p.pointEstimate != null ? p.pointEstimate : (p.estimate != null ? p.estimate : null);
+        var s = est != null ? ("pooled " + (p.measure || "effect") + " = " + (+est).toPrecision(4)) : "pooled result present";
+        return { summary: s, value: p };
+      },
+      certainty: function () {
+        var g = lsGet("grade-sof-v1"); if (!g) return null;
+        var rows = g.rows || g.outcomes || (Array.isArray(g) ? g : null);
+        var n = rows ? rows.length : (typeof g === "object" ? Object.keys(g).length : 0);
+        if (!n) return null;
+        return { summary: "GRADE summary-of-findings present", value: g };
+      },
+      report: function () {
+        var pl = readPooled(); var e = lsGet("sr-records-v1");
+        var inc = e && Array.isArray(e.records) ? includedRecords(e.records).length : 0;
+        if (!pl.length && !inc) return null;
+        return { summary: "draft-ready · " + (inc || "—") + " included, " + (pl.length ? "pooled" : "no pool yet"), value: null, readyOnly: true };
+      }
+    };
+
+    function refreshLive() {
+      STAGES.forEach(function (st) { try { liveCache[st.id] = LIVE[st.id] ? LIVE[st.id]() : null; } catch (e) { liveCache[st.id] = null; } });
+    }
 
     function renderStages() {
       document.getElementById("stages").innerHTML = STAGES.map(function (st, i) {
-        var have = state.outputs[st.id] != null;
+        var captured = state.outputs[st.id] != null;
+        var live = liveCache[st.id] || null;
         var links = st.apps.map(function (a) { return "<a href='" + a[1] + "' target='_blank' rel='noopener'>" + esc(a[0]) + " ↗</a>"; }).join("");
+        var pill, sum = "";
+        if (captured) { pill = "<span class='pill have'>in bundle ✓</span>"; }
+        else if (live) { pill = "<span class='pill live'>live ✓</span>"; }
+        else { pill = "<span class='pill empty'>no output</span>"; }
+        if (captured) sum = "<div class='stage-sum captured'>captured into bundle</div>";
+        else if (live) sum = "<div class='stage-sum'>" + esc(live.summary) + "</div>";
+        var actions = "";
+        if (live && !live.readyOnly && !captured) actions += "<button type='button' class='ghost' data-use='" + st.id + "'>⤓ Use workspace data</button>";
+        actions += "<label class='ghost' style='cursor:pointer'>Capture file JSON<input type='file' accept='application/json,.json' data-stage='" + st.id + "' style='display:none'></label>";
+        if (captured) actions += "<button type='button' class='ghost' data-clear='" + st.id + "'>clear</button>";
         return "<div class='stage'><div class='stage-head'><span class='stage-n'>" + (i + 1) + "</span><span class='stage-name'>" + esc(st.name) + "</span>"
-          + "<span class='pill " + (have ? "have" : "empty") + "'>" + (have ? "captured ✓" : "no output") + "</span></div>"
-          + "<div class='stage-desc'>" + esc(st.desc) + "</div><div class='links'>" + links + "</div>"
-          + "<div class='cap'><label class='ghost' style='cursor:pointer'>Capture output JSON<input type='file' accept='application/json,.json' data-stage='" + st.id + "' style='display:none'></label>"
-          + (have ? "<button type='button' class='ghost' data-clear='" + st.id + "'>clear</button>" : "") + "</div></div>";
+          + pill + "</div>"
+          + "<div class='stage-desc'>" + esc(st.desc) + "</div>" + sum + "<div class='links'>" + links + "</div>"
+          + "<div class='cap'>" + actions + "</div></div>";
       }).join("");
       document.querySelectorAll("input[type=file][data-stage]").forEach(function (el) {
         el.addEventListener("change", function () { captureStage(el.getAttribute("data-stage"), el.files[0]); });
@@ -125,6 +216,25 @@
       document.querySelectorAll("button[data-clear]").forEach(function (el) {
         el.addEventListener("click", function () { delete state.outputs[el.getAttribute("data-clear")]; save(); renderStages(); });
       });
+      document.querySelectorAll("button[data-use]").forEach(function (el) {
+        el.addEventListener("click", function () { captureLive(el.getAttribute("data-use")); });
+      });
+    }
+
+    function captureLive(id) {
+      var live = liveCache[id];
+      if (!live || live.readyOnly || live.value == null) return;
+      state.outputs[id] = live.value; save(); renderStages();
+    }
+    function captureAllLive() {
+      var n = 0;
+      STAGES.forEach(function (st) {
+        var live = liveCache[st.id];
+        if (live && !live.readyOnly && live.value != null && state.outputs[st.id] == null) { state.outputs[st.id] = live.value; n++; }
+      });
+      save(); renderStages();
+      var msg = n ? ("Captured " + n + " live stage" + (n === 1 ? "" : "s") + " into the bundle.") : "No new live stages to capture.";
+      try { if (window.AlmToast && AlmToast.show) AlmToast.show(msg); } catch (e) {}
     }
 
     function captureStage(id, file) {
@@ -184,8 +294,12 @@
       el.innerHTML = "<div class='verify " + (good ? "ok" : "bad") + "'>" + rows + "</div>";
     }
 
+    document.getElementById("btn-refresh").addEventListener("click", function () { refreshLive(); renderStages(); });
+    document.getElementById("btn-capture-all").addEventListener("click", captureAllLive);
+
     if (window.TruthCertUI) TruthCertUI.attachSettingsButton({ btn: "#btn-key" });
     document.getElementById("proj-title").value = state.title || "";
+    refreshLive();
     renderStages();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
