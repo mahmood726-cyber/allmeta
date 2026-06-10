@@ -1,0 +1,85 @@
+{
+ "beta": 3.8,
+ "beta_se": 0.6,
+ "target_diabetes": 0.26,
+ "method": "binary-modifier ML-NMR-consistent standardization (pure strata)",
+ "nodes": [
+  {
+   "node": "mazdutide",
+   "trial_effect": 22.3,
+   "p_diabetes_trial": 0.0,
+   "transported": 21.3,
+   "shift": -1.0,
+   "cri": [
+    17.8,
+    24.8
+   ]
+  },
+  {
+   "node": "orforglipron",
+   "trial_effect": 12.4,
+   "p_diabetes_trial": 0.0,
+   "transported": 11.4,
+   "shift": -1.0,
+   "cri": [
+    8.7,
+    14.1
+   ]
+  },
+  {
+   "node": "retatrutide",
+   "trial_effect": 22.1,
+   "p_diabetes_trial": 0.0,
+   "transported": 21.1,
+   "shift": -1.0,
+   "cri": [
+    18.3,
+    24.0
+   ]
+  },
+  {
+   "node": "semaglutide-oral",
+   "trial_effect": 13.6,
+   "p_diabetes_trial": 0.0,
+   "transported": 12.6,
+   "shift": -1.0,
+   "cri": [
+    11.2,
+    14.0
+   ]
+  },
+  {
+   "node": "semaglutide-sc-daily",
+   "trial_effect": 11.6,
+   "p_diabetes_trial": 0.0,
+   "transported": 10.6,
+   "shift": -1.0,
+   "cri": [
+    8.4,
+    12.8
+   ]
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "trial_effect": 13.3,
+   "p_diabetes_trial": 0.38,
+   "transported": 13.8,
+   "shift": 0.5,
+   "cri": [
+    12.8,
+    14.8
+   ]
+  },
+  {
+   "node": "tirzepatide",
+   "trial_effect": 15.3,
+   "p_diabetes_trial": 0.6,
+   "transported": 16.6,
+   "shift": 1.3,
+   "cri": [
+    15.4,
+    17.7
+   ]
+  }
+ ]
+}
