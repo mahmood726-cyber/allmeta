@@ -111,3 +111,12 @@ the uniform shift reflects that obesity nodes' max-dose arms carry ~0% trial dia
 is ~beta x 0.26); joint-distribution and unmeasured-modifier effects not captured. This is the honest
 ceiling of transport with aggregate registry data — a labelled sensitivity, framed exactly so as not to
 invite the ecological-fallacy criticism.
+
+## BMI second modifier (abstract-supplemented) — robustness check
+`workstream_bmi.py`. Baseline BMI extracted from PubMed abstracts (efetch/WebFetch) lifted coverage
+from n=2 (AACT) to 17 trials, and CORRECTED the sparse estimate: trial mean BMI 35.8 ≈ NHANES 36.0
+(gap -0.2). The BMI modifier slope (semaglutide 2.4 mg, across-trial) is -0.04 pp/BMI-unit and
+ECOLOGICAL (continuous covariate, unlike binary-pure-strata diabetes) -> transport contribution -0.01 pp.
+**Adding BMI does not change the transport conclusion.** The transport is driven entirely by DIABETES
+(the one axis with a large gap AND a valid individual-level slope); BMI/age/sex are near-target and
+contribute ~0. The conclusion is robust to the second, weaker modifier - reassuring, not a weakness.
