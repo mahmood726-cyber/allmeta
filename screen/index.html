@@ -91,6 +91,7 @@
     .b-dec-conflict { background:var(--conflict-soft); color:var(--conflict); }
     .b-dec-duplicate { background:var(--dup-soft); color:var(--dup); }
     .b-ml { background:var(--accent-soft); color:var(--accent); }
+    .b-rct { background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent); }
     .b-ai-include { background:var(--inc-soft); color:var(--inc); border:1px dashed var(--inc); }
     .b-ai-exclude { background:var(--exc-soft); color:var(--exc); border:1px dashed var(--exc); }
     .b-ai-maybe { background:var(--maybe-soft); color:var(--maybe); border:1px dashed var(--maybe); }
@@ -246,11 +247,17 @@
               <option value="order">Import order</option>
               <option value="ml">ML relevance ↓</option>
               <option value="relevance">Term score ↓</option>
+              <option value="rct">RCT likelihood ↓</option>
               <option value="year">Year ↓</option>
             </select></label>
         </div>
         <label><span class="lbl">Keyword (title/abstract contains…)</span>
           <input type="text" id="f-kw" placeholder="filter…"></label>
+      </section>
+
+      <section class="panel">
+        <h2>Cold-start RCT classifier</h2>
+        <p class="hint" style="margin-top:0">Every card shows a <strong>RCT&nbsp;%</strong> badge — a study-design likelihood from an offline, transparent bag-of-words logistic model trained on real PubMed abstracts (labelled by Publication Type). It needs <em>no</em> labels from you, so it helps from record&nbsp;one; sort by <em>RCT likelihood</em> to triage trials first. <span id="rct-meta"></span></p>
       </section>
 
       <section class="panel">
@@ -345,6 +352,8 @@
 
   <script src="../shared/toast.js"></script>
   <script src="../shared/sr-collab-v1.js"></script>
+  <script src="../shared/rct-classifier-v1.js"></script>
+  <script src="assets/rct-classifier-weights-v1.js"></script>
   <script>
   (function () {
     "use strict";
@@ -536,6 +545,16 @@
       r.score = s;
     }
     function rescoreAll() { for (var i = 0; i < S.records.length; i++) scoreRecord(S.records[i]); }
+
+    // ---- cold-start RCT likelihood (offline classifier; complements buscar) ----
+    // Lazy + cached on the record: title/abstract don't change after import, and
+    // it gives a useful study-design signal BEFORE any screening decisions exist.
+    function rctScore(r) {
+      if (r._rct !== undefined) return r._rct;
+      r._rct = (window.SrRctClassifier && SrRctClassifier.available())
+        ? SrRctClassifier.score((r.title || "") + ". " + (r.abstract || "")) : null;
+      return r._rct;
+    }
 
     // ---- highlighting ----
     function highlight(text) {
@@ -777,6 +796,7 @@
       });
       if (S.sort === "ml") out.sort(function (a, b) { return (b.mlScore == null ? -1 : b.mlScore) - (a.mlScore == null ? -1 : a.mlScore); });
       else if (S.sort === "relevance") out.sort(function (a, b) { return (b.score == null ? -1e9 : b.score) - (a.score == null ? -1e9 : a.score); });
+      else if (S.sort === "rct") out.sort(function (a, b) { var ra = rctScore(a), rb = rctScore(b); return (rb == null ? -1 : rb) - (ra == null ? -1 : ra); });
       else if (S.sort === "year") out.sort(function (a, b) { return (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0); });
       return out;
     }
@@ -816,6 +836,8 @@
 
       var badges = '<span class="badge b-src">' + escapeHtml(r.source) + "</span>";
       if (r.mlScore != null) badges += '<span class="badge b-ml">ML ' + Math.round(r.mlScore * 100) + "%</span>";
+      var rct = rctScore(r);
+      if (rct != null) badges += '<span class="badge b-rct" title="Cold-start RCT likelihood from the offline classifier — a study-design signal before any screening decisions">RCT ' + Math.round(rct * 100) + "%</span>";
       if (r.score != null) badges += '<span class="badge b-score">term ' + r.score + "</span>";
       if (r.dup) badges += '<span class="badge b-dup">duplicate of ' + escapeHtml(r.dupOf || "?") + "</span>";
       if (r.score != null && r.score < 0 && !t && !r.dup) badges += '<span class="badge b-sugg">auto-exclude suggested</span>';
@@ -1075,12 +1097,13 @@
       downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: "application/json" }), "screen-project.json");
     }
     function exportCSV() {
-      var header = ["id", "title", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate"];
+      var header = ["id", "title", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate"];
       var rows = S.records.map(function (r) {
+        var rct = rctScore(r);
         return [r.id, r.title, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
           effDecision(r), r.r1.d, r.r2.d, r.resolved, (r.r1.reason || r.r2.reason || ""),
           (r.labels || []).join("; "), (r.score == null ? "" : r.score),
-          (r.mlScore == null ? "" : r.mlScore.toFixed(4)), r.aiSuggestion || "",
+          (r.mlScore == null ? "" : r.mlScore.toFixed(4)), (rct == null ? "" : rct.toFixed(4)), r.aiSuggestion || "",
           (r.aiConfidence == null ? "" : r.aiConfidence), r.aiRationale || "",
           r.dup ? "1" : ""].map(csvCell).join(",");
       });
@@ -1951,7 +1974,7 @@
     // ---- test hook (deterministic, for behavioural specs) ----
     window.__almScreenpro = {
       blankState: blankState,
-      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); rescoreAll(); runDedup(); },
+      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); rescoreAll(); runDedup(); render(); },
       counts: function () { return computeCounts(S.records); },
       kappa: function () { return cohensKappa(S.records); },
       effDecision: effDecision,
@@ -1961,6 +1984,7 @@
       dedupCount: function () { runDedup(); return S.records.filter(function (r) { return r.dup; }).length; },
       mlTrain: function () { return mlTrain(); },
       mlScoreOf: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i].mlScore; return null; },
+      rctScoreOf: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return rctScore(S.records[i]); return null; },
       mlTopTerms: function () { return { pos: ML.topPos, neg: ML.topNeg }; },
       mlCrossVal: function () { return mlCrossVal(S.records, mlLabelDefault, 5); },
       mlStopping: function () { return mlStopping(); },
@@ -1987,6 +2011,12 @@
     pushStateToSetup();
     attach();
     render();
+    // honest provenance line for the RCT classifier (real held-out metrics)
+    try {
+      var rm = window.SrRctClassifier && SrRctClassifier.meta && SrRctClassifier.meta();
+      var rmEl = $("rct-meta");
+      if (rm && rmEl) rmEl.textContent = "Held-out AUC " + rm.auc + " · sensitivity " + rm.sensitivity + " · specificity " + rm.specificity + " (n=" + (rm.n_train + rm.n_test) + ", " + rm.n_terms + " terms). Offline, transparent weights.";
+    } catch (e) {}
     try { if (/[?&]import=sr-records-v1/.test(location.search)) importFromSearch(); } catch (e) {}
   })();
   </script>
