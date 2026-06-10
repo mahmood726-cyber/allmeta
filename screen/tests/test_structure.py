@@ -41,6 +41,30 @@ def test_local_first_connect():
     assert "connect-src 'self'" in _h()
 
 
+def test_rct_classifier_wired():
+    # P1: offline cold-start RCT classifier surfaced in screening.
+    h = _h()
+    assert "../shared/rct-classifier-v1.js" in h, "classifier module not loaded"
+    assert "assets/rct-classifier-weights-v1.js" in h, "trained weights not loaded"
+    assert "function rctScore" in h and "SrRctClassifier" in h
+    assert 'class="badge b-rct"' in h               # per-card RCT% badge
+    assert 'value="rct"' in h                        # sortable by RCT likelihood
+    # honest provenance surfaced from real held-out metrics (not hardcoded)
+    assert 'id="rct-meta"' in h and "Held-out AUC" in h
+
+
+def test_rct_weights_are_real_trained_artifact():
+    from pathlib import Path
+    import json
+    p = Path(__file__).parent.parent / "assets" / "rct-classifier-weights-v1.js"
+    assert p.is_file(), "trained weights missing"
+    s = p.read_text(encoding="utf-8")
+    j = json.loads(s[s.index("{"): s.rindex("}") + 1])
+    assert j["_schema"] == "rct-classifier-v1"
+    assert j["meta"]["auc"] >= 0.85 and j["meta"]["n_train"] > 1000   # honest, non-trivial
+    assert len(j["vocab"]) > 200 and "reference_scores" in j
+
+
 def test_team_folder_collaboration():
     # Phase 3: serverless shared-folder collaboration via sr-collab-v1.
     h = _h()
