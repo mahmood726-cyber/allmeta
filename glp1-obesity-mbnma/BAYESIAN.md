@@ -1,8 +1,33 @@
-# Bayesian hierarchical MBNMA — supporting consistency analysis
+# Bayesian hierarchical MBNMA
 
-`bayes_mbnma.py`. One-step Bayesian hierarchical Emax dose-response NMA on the PRIMARY
-network (7 nodes, 54 contrasts, ≥36 wk landmark). **Supporting analysis** — the frequentist
-two-stage MBNMA (`fit_network.py`, RESULTS_SCALE.md) remains the PRIMARY result.
+Two implementations of the same one-step hierarchical Emax dose-response NMA on the PRIMARY
+network (7 nodes, 54 contrasts, ≥36 wk landmark):
+- **`pymc_mbnma.py` — NUTS (PyMC), CONVERGENCE-CERTIFIED.** ← use this one.
+- `bayes_mbnma.py` — emcee ensemble (kept for the record; could only reach Rhat≈1.08).
+
+## NUTS result (pymc_mbnma.py) — CERTIFIED
+**max Rhat = 1.0000, min ESS = 603** (rules: Rhat<1.01, ESS≥400) → **CONVERGED.** 2 chains ×
+1000 draws, sequential (`cores=1` to avoid the Windows multiprocessing-spawn hang); 52 s.
+Here the between-agent shrinkage variances are ESTIMATED (NUTS clears the funnel emcee couldn't).
+
+| node | trials | pred % loss @ max dose (95% CrI) | SUCRA |
+|---|---|---|---|
+| retatrutide | 1 | 20.4 (16.0, 25.1) | 0.931 |
+| mazdutide | 1 | 19.1 (14.9, 23.9) | 0.862 |
+| tirzepatide | 4 | 16.6 (14.5, 18.9) | 0.680 |
+| semaglutide-sc-weekly | 15 | 14.6 (11.5, 17.6) | 0.494 |
+| semaglutide-sc-daily | 1 | 11.2 (7.5, 14.6) | 0.185 |
+| semaglutide-oral | 5 | 11.2 (7.8, 14.9) | 0.182 |
+| orforglipron | 2 | 11.1 (8.0, 14.0) | 0.167 |
+
+tau = 2.70 pp (95% CrI 2.14, 3.52). **POTH = 0.850** — allmeta poth.js EXACT.
+
+**Three independent methods agree** (frequentist MC, emcee, NUTS): same top-4 ordering, POTH
+0.880 / 0.863 / 0.850. The NUTS fit is the certified primary Bayesian result.
+
+---
+## (record) emcee ensemble — `bayes_mbnma.py`
+**Supporting/legacy.** One-step Bayesian hierarchical Emax on the PRIMARY network.
 
 ## Model
 `loss_k ~ Normal(Emax_a · d/(ED50_a+d), var_k + tau²)`, with partial pooling
