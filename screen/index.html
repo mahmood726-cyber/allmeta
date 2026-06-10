@@ -204,6 +204,15 @@
         </div>
         <div id="merge-status" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
         <input type="file" id="rev-file" class="file-input-hidden" accept=".json,application/json" aria-label="Reviewer decisions file">
+        <div id="team-folder" style="margin-top:0.6rem;border-top:1px solid var(--border);padding-top:0.5rem">
+          <p class="hint" style="margin-top:0">Or sync through one shared folder — your Google&nbsp;Drive / Dropbox / OneDrive <em>desktop</em> app does the upload, so there's still no account or server here. Each reviewer publishes their file; <strong>Pull &amp; merge</strong> unions everyone's decisions.</p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+            <button type="button" id="btn-folder-connect">Connect shared folder…</button>
+            <button type="button" id="btn-folder-publish" disabled>Publish my decisions</button>
+            <button type="button" id="btn-folder-pull" disabled>Pull &amp; merge all</button>
+          </div>
+          <div id="folder-status" style="margin-top:0.4rem;font-size:0.78rem;color:var(--muted)"></div>
+        </div>
       </section>
 
       <section class="panel">
@@ -335,6 +344,7 @@
   </div>
 
   <script src="../shared/toast.js"></script>
+  <script src="../shared/sr-collab-v1.js"></script>
   <script>
   (function () {
     "use strict";
@@ -1206,6 +1216,48 @@
       toast("Exported shareable bundle (protocol + records + both reviewers + counts + κ).");
     }
 
+    // ---- shared-folder collaboration (File System Access; the OS sync client does the network) ----
+    var folderHandle = null;
+    function folderStatus(msg) { var el = $("folder-status"); if (el) el.textContent = msg; }
+    function initFolderUI() {
+      if (!window.SrCollab || !SrCollab.supportsFolder()) {
+        ["btn-folder-connect", "btn-folder-publish", "btn-folder-pull"].forEach(function (id) { var b = $(id); if (b) b.disabled = true; });
+        folderStatus("Shared-folder sync needs a Chromium browser (Chrome / Edge). On others, use Export my decisions + Merge a reviewer file.");
+      }
+    }
+    function connectFolder() {
+      SrCollab.pickFolder().then(function (h) {
+        folderHandle = h;
+        $("btn-folder-publish").disabled = false;
+        $("btn-folder-pull").disabled = false;
+        folderStatus("Connected to “" + (h.name || "folder") + "”. Publish your decisions, then Pull & merge to bring in collaborators.");
+      }).catch(function (e) { if (e && e.name === "AbortError") return; folderStatus("Could not open folder: " + e.message); });
+    }
+    function publishToFolder() {
+      if (!folderHandle) return;
+      var who = reviewerSlotName();
+      var env = SrCollab.buildReviewerEnvelope(who, S.records, S.title, new Date().toISOString());
+      if (!env.count) { folderStatus("No decisions yet — screen a few records first."); return; }
+      SrCollab.publishReviewer(folderHandle, env).then(function (name) {
+        folderStatus("Published " + env.count + " " + who.toUpperCase() + " decision(s) to " + name + " — your sync client uploads it.");
+        toast("Published to shared folder.");
+      }).catch(function (e) { folderStatus("Publish failed: " + e.message); });
+    }
+    function pullFromFolder() {
+      if (!folderHandle) return;
+      SrCollab.pullFolder(folderHandle).then(function (payloads) {
+        if (!payloads.length) { folderStatus("No reviewer files in the folder yet — ask a collaborator to publish."); return; }
+        var totFilled = 0, slots = [];
+        payloads.forEach(function (p) {
+          try { var res = mergeReviewerState(p, p.reviewer || "auto"); totFilled += res.filled; if (slots.indexOf(res.slot) < 0) slots.push(res.slot); } catch (e) {}
+        });
+        runDedup(); rescoreAll(); pushStateToSetup(); save(); render();
+        var sum = SrCollab.summarize(S.records);
+        var msg = "Merged " + payloads.length + " reviewer file(s) [" + slots.map(function (s) { return s.toUpperCase(); }).join(", ") + "]: " + totFilled + " decision(s) filled; " + sum.consensusIncluded + " consensus include(s)" + (sum.conflicts ? ", " + sum.conflicts + " conflict(s) to resolve." : ".");
+        folderStatus(msg); toast(msg);
+      }).catch(function (e) { folderStatus("Pull failed: " + e.message); });
+    }
+
     // ---- example ----
     function loadExample() {
       var ex = [
@@ -1303,6 +1355,10 @@
       });
       $("btn-export-rev").addEventListener("click", exportReviewerState);
       $("btn-merge-rev").addEventListener("click", function () { $("rev-file").click(); });
+      $("btn-folder-connect").addEventListener("click", connectFolder);
+      $("btn-folder-publish").addEventListener("click", publishToFolder);
+      $("btn-folder-pull").addEventListener("click", pullFromFolder);
+      initFolderUI();
       $("rev-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) onMergeReviewerFile(f); e.target.value = ""; });
       $("btn-export-bundle").addEventListener("click", exportBundle);
       $("btn-help").addEventListener("click", openHelp);
