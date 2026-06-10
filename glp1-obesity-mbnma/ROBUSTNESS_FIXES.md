@@ -39,3 +39,13 @@ The three kill shots are neutralised: the registry advantage is correctly scoped
 indexing, not a strawman 43%), the transport is multiply validated out-of-sample, and the transported
 estimate is robust to the joint assumption set with the residual flagged. The work is now at "accept with
 minor revisions" methods-paper standard on these axes.
+
+## System improvement — agent-specific (hierarchical) gamma
+`pymc_agent_gamma.py` (nutpie, Rhat 1.0000, ESS 3529). Replaces the common diabetes modifier with a
+hierarchical agent-specific gamma_agent ~ Normal(gamma_mu, gamma_sd). Result: gamma_mu = 5.5 pp,
+**gamma_sd = 1.3 pp (small)** — agents' diabetes attenuation is similar when properly pooled
+(orforglipron 5.5, tirzepatide 5.7, semaglutide 6.0; mazdutide/retatrutide partial-pooled ~5.6).
+So Fix-2's raw +2.6..+7.2 spread was largely single-dose-pair noise; the common-gamma was a reasonable
+approximation, and the transport is ROBUST to the common-vs-agent-specific choice (transported effects
+essentially unchanged: tirzepatide 17.2, sema-sc-weekly 14.3). The agent x diabetes interaction is now
+properly modelled and shown to be modest. agent_gamma_transport.json.
