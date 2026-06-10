@@ -47,7 +47,7 @@ second, weaker record bus would only cause drift. Reverted (was never pushed).
    "shell" — but it's an *extension of design/*, not a greenfield build.
 3. **Google Drive collaboration.** The per-reviewer export/merge (`sr-reviewer-v1`,
    `mergeReviewerState`) ALREADY exists — so team dual-screening works by file
-   exchange today. Make it seamless: store the review as a **folder of small
+   exchange today. Streamline it: store the review as a **folder of small
    files** in a shared Drive (one `sr-reviewer-<id>` log per reviewer + per-stage
    outputs), browser-side Drive API + Google sign-in (a free OAuth client-id,
    **no allmeta server**). Per-reviewer files merge by union — conflict-free and

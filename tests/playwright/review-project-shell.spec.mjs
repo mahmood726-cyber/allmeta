@@ -35,7 +35,7 @@ test("review-project reflects live bus state and captures it into the bundle", a
   // live summaries from each bus
   await expect(stages).toContainText("Test SR");                  // protocol
   await expect(stages).toContainText("3 records imported");        // search
-  await expect(stages).toContainText("2 included · 3 screened of 3"); // screening
+  await expect(stages).toContainText("2 consensus-included · 3 screened of 3"); // screening (consensus, not provisional)
   await expect(stages).toContainText("3 studies extracted");       // extraction
   await expect(stages).toContainText("pooled HR =");               // synthesis (fromEstSE back-transforms log→ratio)
   await expect(stages).toContainText("draft-ready");               // report (readyOnly)
@@ -53,5 +53,20 @@ test("review-project reflects live bus state and captures it into the bundle", a
 
   // capture survives a fresh refresh (persisted to review-project-v1)
   await page.click("#btn-refresh");
+  await expect(page.locator("#stages .pill.have")).toHaveCount(5);
+
+  // staleness: change the workspace after capture -> the captured synthesis
+  // stage must flag stale, not keep masking it as "in bundle ✓".
+  await page.evaluate(() => {
+    window.MaPooled.write(window.MaPooled.fromEstSE(1.20, 0.04, { scale: "ratio", measure: "HR", k: 4 }));
+  });
+  await page.click("#btn-refresh");
+  await expect(page.locator("#stages .pill.stale")).toHaveCount(1);
+  await expect(page.locator("#stages .pill.have")).toHaveCount(4);
+  await expect(stages).toContainText("differs from current workspace");
+
+  // re-capture clears the stale flag
+  await page.click("#btn-capture-all");
+  await expect(page.locator("#stages .pill.stale")).toHaveCount(0);
   await expect(page.locator("#stages .pill.have")).toHaveCount(5);
 });

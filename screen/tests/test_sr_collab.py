@@ -77,6 +77,40 @@ def test_undeclared_reviewer_assigned_to_free_slot_deterministically():
     assert o == ["r1", "r2"]
 
 
+def test_third_undeclared_file_is_dropped_not_silently_overwriting_r2():
+    # The schema has only r1/r2. A 3rd UNDECLARED reviewer file must fail closed
+    # (error + dropped), never clobber whoever already holds r2.
+    o = _run(
+        f"const recs={RECORDS};"
+        "const a={_schema:'sr-reviewer-v1',decisions:[{id:'1',d:'include'}]};"
+        "const b={_schema:'sr-reviewer-v1',decisions:[{id:'1',d:'exclude'}]};"
+        "const c={_schema:'sr-reviewer-v1',decisions:[{id:'1',d:'maybe'}]};"
+        "const res=C.mergeReviewerFiles(recs,[a,b,c]);"
+        "console.log(JSON.stringify({"
+        " slots:res.perReviewer.map(p=>p.slot),"
+        " err3:!!res.perReviewer[2].error,"
+        " filled3:res.perReviewer[2].filled,"
+        " r2:recs[0].r2.d}));"  # must remain b's 'exclude', not c's 'maybe'
+    )
+    assert o["slots"] == ["r1", "r2", None]
+    assert o["err3"] is True and o["filled3"] == 0
+    assert o["r2"] == "exclude"   # reviewer 2 was NOT clobbered by the overflow file
+
+
+def test_declared_resubmission_updates_same_slot():
+    # A re-submitted file for the SAME declared reviewer legitimately overwrites
+    # that slot (it's an update, not a third reviewer).
+    o = _run(
+        f"const recs={RECORDS};"
+        "const v1={_schema:'sr-reviewer-v1',reviewer:'r1',decisions:[{id:'1',d:'include'}]};"
+        "const v2={_schema:'sr-reviewer-v1',reviewer:'r1',decisions:[{id:'1',d:'exclude'}]};"
+        "const res=C.mergeReviewerFiles(recs,[v1,v2]);"
+        "console.log(JSON.stringify({slots:res.perReviewer.map(p=>p.slot),r1:recs[0].r1.d}));"
+    )
+    assert o["slots"] == ["r1", "r1"]
+    assert o["r1"] == "exclude"   # the update took
+
+
 def test_bad_payload_reports_error_without_throwing():
     o = _run(
         f"const recs={RECORDS};"
