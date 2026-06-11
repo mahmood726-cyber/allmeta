@@ -484,6 +484,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["rob-me", "reporting-bias", "missing-evidence", "publication-bias", "outcome-switching", "egger"]
   },
   {
+    name: "Registry publication bias",
+    folder: "allmeta/registry-pubbias",
+    path: "./registry-pubbias/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Publication bias",
+    summary: "Turn reporting bias from an INFERENCE problem into a MEASUREMENT one: the registry observes the posted-but-unpublished 'ghost' trials, so the bias is measured directly (published-only pool vs registry-complete pool) and that ground truth disambiguates Egger funnel asymmetry — classifying it as measured-bias, spurious-asymmetry (Egger flags but the observed ghosts barely move it → don't trim-and-fill), no-bias, or inference-only.",
+    note: "Reuses the audited ma-core (PM pool) + egger engines. Only measures trials that posted data; truly dark trials stay unmeasured. Complements ROB-ME / Copas / trim-fill. Idea integrated from the glp1-obesity-mbnma registry-pubbias arm.",
+    tags: ["registry", "publication-bias", "ghost-trials", "egger", "trim-fill", "missing-evidence", "measurement", "ct.gov"]
+  },
+  {
     name: "Influence Diagnostics",
     subcategory: "Heterogeneity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/advanced-meta-analysis-course.html",
