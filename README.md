@@ -24,7 +24,7 @@ Open http://localhost:8080.
 
 ## What's inside
 
-The hub lists 113 catalog entries — 107 repository-hosted browser apps (including the R/Shinylive pilot exports from the legacy Shiny portfolio) and 6 externally hosted apps.
+The hub lists 114 catalog entries — 108 repository-hosted browser apps (including the R/Shinylive pilot exports from the legacy Shiny portfolio) and 6 externally hosted apps.
 
 ## Cross-tool study bus — `ma-studies-v1`
 

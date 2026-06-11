@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Probabilistic benefit-risk multi-criteria decision analysis (MCDA) + value of information: partial value functions, SMAA rank-acceptability (P best), and EVPI, propagating each treatment's effect uncertainty. Free, offline, in-browser.">
+  <meta name="color-scheme" content="light dark">
+  <title>Benefit-risk MCDA — rank treatments with value of information</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --bar:#2c5e8a; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --bar:#6aa6d4; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,27rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    label{display:block;margin-bottom:.6rem;font-size:.85rem}.lbl{display:block;margin-bottom:.15rem}
+    .hint{color:var(--muted);font-size:.74rem}
+    input[type=text],input[type=number],textarea,select{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:inherit;font-size:.88rem}
+    textarea{resize:vertical;min-height:6rem;font-family:ui-monospace,Menlo,monospace;font-size:.78rem}
+    input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .big{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .out{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.75rem .9rem;margin-bottom:.6rem}
+    .badge{display:inline-block;padding:.1rem .5rem;border-radius:10px;font-size:.72rem;font-weight:600;background:var(--accent-soft);color:var(--accent)}
+    .badge.ok{background:var(--ok-soft);color:var(--ok)}
+    .bar-row{display:grid;grid-template-columns:9rem 1fr 4rem;gap:.4rem;align-items:center;font-size:.82rem;margin:.2rem 0}
+    .bar{height:.85rem;background:var(--bar);border-radius:3px;min-width:1px}
+    .bar-bg{background:var(--accent-soft);border-radius:3px}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/benefit-risk-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Benefit-risk MCDA <span style="font-size:.8rem;color:var(--muted);font-weight:400">· rank treatments under uncertainty</span></h1>
+    <p>Combine multiple benefits and harms into a defensible ranking. Each criterion is mapped to a 0–1 partial value, weighted, and summed; then <strong>SMAA</strong> propagates each treatment's effect uncertainty (mean ± SE) by Monte&nbsp;Carlo to give <strong>rank-acceptability</strong> (P&nbsp;best), and <strong>EVPI</strong> quantifies the value of resolving the remaining decision uncertainty — i.e. whether more research is worth it. Standard ISPOR / Tervonen-SMAA framework, free and offline.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Run analysis</button>
+    <button type="button" id="btn-example">Load example</button>
+    <label style="display:inline-flex;align-items:center;gap:.3rem;margin:0"><span class="hint">iterations</span><input type="number" id="f-iters" value="10000" min="1000" step="1000" style="width:6rem"></label>
+    <label style="display:inline-flex;align-items:center;gap:.3rem;margin:0"><span class="hint">seed</span><input type="number" id="f-seed" value="12345" style="width:5rem"></label>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Criteria</h2>
+        <label class="hint" style="margin:0 0 .3rem">One per line: <code>id, name, benefit|harm, weight</code></label>
+        <textarea id="f-criteria" aria-label="Criteria"></textarea>
+      </section>
+      <section class="panel">
+        <h2>Performance</h2>
+        <label class="hint" style="margin:0 0 .3rem">One per line: <code>treatment, criterion-id, mean, SE</code> (SE optional → no uncertainty for that cell)</label>
+        <textarea id="f-perf" aria-label="Performance" style="min-height:9rem"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Decision summary</h2>
+        <div id="summary"><p class="hint">Enter criteria + performance, then <strong>Run analysis</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Rank-acceptability — P(best) per treatment (SMAA)</h2>
+        <div id="smaa-bars"></div>
+      </section>
+      <section class="panel">
+        <h2>Deterministic value (at the mean performance)</h2>
+        <div id="det-bars"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats (read before deciding)</h2>
+        <div class="assum"><strong>MCDA is a structured value judgement, not a fact.</strong> The <em>weights</em> encode whose preferences matter and should be elicited/varied, not guessed. The partial value functions are <em>linear</em> over the observed range (a simplification). SMAA propagates the <em>statistical</em> uncertainty in each effect (mean ± SE) but not structural/model uncertainty. EVPI is on the 0–1 value scale; multiply by the affected population and decision horizon for a population EVPI. Vary the weights and re-run before acting.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Method: linear partial value functions v(x)∈[0,1] (benefit: higher better; harm: lower better) over each criterion's range; total value = Σ&nbsp;wⱼ·vⱼ. SMAA (Tervonen &amp; Lahdelma 2007) samples each treatment×criterion ~ N(mean, SE) and tallies the argmax to get rank-acceptability; EVPI = E[maxₜ Vₜ] − maxₜ E[Vₜ] from the same draws. Deterministic (seeded PRNG) so runs reproduce. Idea integrated from the glp1-obesity-mbnma benefit-risk arm; generalised to full MCDA + VOI. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function parseCriteria(text) {
+      var out = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var c = ln.split(",").map(function (s) { return s.trim(); });
+        if (c.length < 4) return;
+        var type = /harm/i.test(c[2]) ? "harm" : "benefit";
+        var w = parseFloat(c[3]);
+        out.push({ id: c[0], name: c[1], type: type, weight: isFinite(w) ? w : 1 });
+      });
+      return out;
+    }
+    function parsePerf(text, criteria) {
+      var tmap = {}, order = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var c = ln.split(",").map(function (s) { return s.trim(); });
+        if (c.length < 3) return;
+        var tname = c[0], cid = c[1], mean = parseFloat(c[2]), se = parseFloat(c[3]);
+        if (!isFinite(mean)) return;
+        if (!tmap[tname]) { tmap[tname] = { id: tname, name: tname, perf: {} }; order.push(tname); }
+        tmap[tname].perf[cid] = isFinite(se) && se > 0 ? { mean: mean, se: se } : { mean: mean };
+      });
+      return order.map(function (t) { return tmap[t]; });
+    }
+
+    function bar(label, frac, valStr, cls) {
+      var pct = Math.max(0, Math.min(100, frac * 100));
+      return '<div class="bar-row"><span>' + esc(label) + '</span><span class="bar-bg"><span class="bar ' + (cls || "") + '" style="width:' + pct.toFixed(1) + '%"></span></span><span style="text-align:right">' + valStr + "</span></div>";
+    }
+
+    function run() {
+      window.__lastBR = null;
+      var criteria = parseCriteria($("f-criteria").value);
+      var treatments = parsePerf($("f-perf").value, criteria);
+      var iters = parseInt($("f-iters").value, 10) || 10000;
+      var seed = parseInt($("f-seed").value, 10); if (!isFinite(seed)) seed = 12345;
+      if (criteria.length < 1 || treatments.length < 2) {
+        $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">Need ≥1 criterion and ≥2 treatments.</p>';
+        $("smaa-bars").innerHTML = ""; $("det-bars").innerHTML = ""; return;
+      }
+      var r = window.AlmBenefitRisk.analyze({ criteria: criteria, treatments: treatments, iterations: iters, seed: seed });
+      if (!r.ok) { $("summary").innerHTML = '<p class="badge" style="background:var(--warn-soft);color:var(--warn)">' + esc(r.error) + "</p>"; return; }
+      window.__lastBR = r;
+
+      var top = r.smaa[0];
+      var second = r.smaa[1];
+      var close = second && (top.pBest - second.pBest) < 0.15;
+      $("summary").innerHTML =
+        '<div class="out"><div class="hint">Most likely best (SMAA)</div><div class="big">' + esc(top.name) + ' <span class="badge ok">P(best) ' + (top.pBest * 100).toFixed(0) + "%</span></div>"
+        + '<div class="hint">EVPI = <strong>' + r.evpi.toFixed(4) + "</strong> (value scale, 0–1) · " + r.iterations.toLocaleString() + " iterations · seed " + r.seed + "</div></div>"
+        + "<p class=\"hint\">" + (r.evpi < 0.01
+            ? "Low EVPI — the decision is fairly robust to the remaining uncertainty; more research is unlikely to change the choice."
+            : "Non-trivial EVPI — the decision is uncertain" + (close ? " (the top two are close)" : "") + "; resolving the effect uncertainty could change the ranking. Consider whether more evidence is worth its cost.") + "</p>";
+
+      $("smaa-bars").innerHTML = r.smaa.map(function (s) {
+        return bar(s.name, s.pBest, (s.pBest * 100).toFixed(0) + "%", "ok");
+      }).join("");
+      var maxV = Math.max.apply(null, r.deterministic.map(function (d) { return d.value; })) || 1;
+      $("det-bars").innerHTML = r.deterministic.map(function (d) {
+        return bar(d.name + " (#" + d.rank + ")", d.value / maxV, d.value.toFixed(3));
+      }).join("");
+    }
+
+    function loadExample() {
+      // GLP-1 receptor agonists for obesity — weight loss (benefit) vs nausea
+      // (harm). Illustrative; adapted from the glp1-obesity-mbnma benefit-risk arm.
+      $("f-criteria").value = "# id, name, benefit|harm, weight\n"
+        + "wl, Weight loss (pp vs placebo), benefit, 0.6\n"
+        + "na, Nausea incidence (%), harm, 0.4";
+      $("f-perf").value = "# treatment, criterion-id, mean, SE\n"
+        + "Tirzepatide, wl, 17.8, 0.7\nTirzepatide, na, 24, 2\n"
+        + "Semaglutide, wl, 12.4, 0.6\nSemaglutide, na, 20, 2\n"
+        + "Liraglutide, wl, 5.4, 0.5\nLiraglutide, na, 18, 2";
+      run();
+      toast("Example loaded — GLP-1 weight loss vs nausea (SMAA + EVPI).");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    ["f-criteria", "f-perf"].forEach(function (id) { $(id).addEventListener("input", run); });
+    ["f-iters", "f-seed"].forEach(function (id) { $(id).addEventListener("change", run); });
+
+    window.__almBenefitRisk = { run: function () { run(); return window.__lastBR || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
