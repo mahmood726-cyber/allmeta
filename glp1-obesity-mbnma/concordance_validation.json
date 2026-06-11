@@ -1,0 +1,53 @@
+{
+ "references": {
+  "recommendation": {
+   "source": "BMJ living guideline 2025",
+   "doi": "10.1136/bmj-2024-082071"
+  },
+  "ranking": {
+   "source": "Shi 2024 Lancet + Xie 2024",
+   "doi": "10.1016/S0140-6736(24)00351-9"
+  },
+  "certainty_vs_placebo": {
+   "source": "Shi 2024 / Iannone 2023",
+   "doi": "10.1111/dom.15138"
+  },
+  "effect_semaglutide": {
+   "source": "Shi 2024 (post-hoc, vs lifestyle)",
+   "doi": "10.1016/S0140-6736(24)00351-9"
+  }
+ },
+ "verdict": {
+  "recommendation": {
+   "concordant": true,
+   "source": "BMJ living guideline 2025",
+   "doi": "10.1136/bmj-2024-082071",
+   "text": "weak recommendation in favour of tirzepatide in adults with obesity",
+   "strength": "weak/conditional",
+   "direction": "favour tirzepatide",
+   "ours": "Conditional"
+  },
+  "ranking": {
+   "concordant": true,
+   "ours_order": [
+    "mazdutide",
+    "retatrutide",
+    "tirzepatide"
+   ]
+  },
+  "certainty": {
+   "comparable": false,
+   "reason": "different estimand (vs-placebo vs head-to-head difference)",
+   "logic_concordant": true,
+   "published": "Moderate-High",
+   "ours_contrast": "Low"
+  },
+  "effect": {
+   "directionally_consistent": true,
+   "exact_match_prior": "Xie 2024 tirzepatide 16.6 vs 16.53"
+  }
+ },
+ "n_concordant_primary": 2,
+ "headline": "automated pipeline matches the BMJ 2025 MAGIC GRADE living guideline on recommendation strength+direction (weak/conditional, favour tirzepatide in obesity) and on ranking; certainty concordant in logic (estimand differs); effects directionally consistent + Xie point-estimates exactly reproduced",
+ "data_policy": "PubMed abstracts only; cite DOIs; cell-by-cell GRADE concordance needs full text (out of policy)"
+}

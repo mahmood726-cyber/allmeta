@@ -56,6 +56,7 @@ STAGES = [
     ('G3 GRADEpro/SoF export', 'grade_export.py',             HERE, 'grade_export.html',        False),
     ('G4 league export',      'nma_league_export.py',         HERE, 'nma_league.html',          False),
     ('G4b decision sensitivity', 'decision_sensitivity.py',   HERE, 'decision_sensitivity.json', False),
+    ('G4c concordance valid', 'concordance_validation.py',    HERE, 'concordance_validation.json', False),
     ('G5 guideline dashboard', 'dashboard.py',                HERE, 'dashboard.html',           False),
 ]
 

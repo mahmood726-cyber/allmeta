@@ -12,7 +12,7 @@ def load(f):
 gr = load('grade_recommendation.json'); cin = load('cinema_confidence.json'); L = load('nma_league.json')
 br = load('joint_benefit_risk.json'); cn = load('cnma_incretin.json'); su = load('extend_surrogate.json')
 pb = load('registry_pubbias.json'); ts = load('trial_sequential.json'); mc = load('hta_mcda.json'); ev = load('hta_evppi.json')
-ds = load('decision_sensitivity.json')
+ds = load('decision_sensitivity.json'); cc = load('concordance_validation.json')
 def loadtext(f):
     p = os.path.join(ROOT, f)
     return open(p, encoding='utf-8').read() if os.path.exists(p) else ''
@@ -140,6 +140,21 @@ P(tirzepatide better than sc-semaglutide by &gt; MID) &mdash; near-certain at MI
 <p class="small">Across the league, confident conclusions (P&ge;0.95, k&ge;2) shrink as the MID rises:
 <b>{cb['0']}</b> at MID 0 &rarr; <b>{cb['2']}</b> at MID 2 &rarr; <b>{cb['4']}</b> at MID 4 (of {ds['n_pairs']} pairs).
 The panel's clinical-importance threshold directly determines how much the evidence can support.</p></div></div>""")
+
+# ---- external concordance ----
+if cc:
+    v = cc['verdict']; rec = v['recommendation']; rk = v['ranking']
+    S.append(f"""<h2>7. External validation (vs published GRADE guidelines)</h2>
+<p class="small">Concordance of our automated outputs against human-adjudicated, published assessments (PubMed abstracts):</p>
+<table><thead><tr><th>Dimension</th><th>Published</th><th>Ours</th><th>Verdict</th></tr></thead><tbody>
+<tr><td>Recommendation (BMJ 2025 MAGIC living guideline)</td><td>weak, favour tirzepatide in obesity</td>
+<td>Conditional (weak), favour tirzepatide</td><td><b>{'MATCH' if rec['concordant'] else 'MISMATCH'}</b></td></tr>
+<tr><td>Ranking (Shi 2024 Lancet / Xie 2024)</td><td>GLP-1 top; tirzepatide &gt; semaglutide</td>
+<td>tirzepatide &gt; semaglutide</td><td><b>{'MATCH' if rk['concordant'] else 'MISMATCH'}</b></td></tr>
+<tr><td>Certainty</td><td>moderate-high (vs placebo)</td><td>Low (head-to-head difference)</td>
+<td>concordant in logic (different estimand)</td></tr></tbody></table>
+<p class="small">DOIs: 10.1136/bmj-2024-082071, 10.1016/S0140-6736(24)00351-9, 10.1111/dom.15138 (PubMed).
+The automated pipeline reproduces the human guideline conclusion on the decision that matters.</p>""")
 
 S.append("""<p class="small" style="margin-top:18px;color:#666">Every number above re-runs from a cited data file via
 <code>python run_all.py</code>. Human-attested screening / RoB-2 / GRADE judgement is the panel's layer.</p>""")

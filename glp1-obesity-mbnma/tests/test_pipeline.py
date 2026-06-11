@@ -125,5 +125,16 @@ def test_pcsk9_generality():
     assert 'discriminat' in d['surrogate_note'].lower() or 'consistent' in d['surrogate_note'].lower()
 
 
+# ---------- 6. external concordance (validation keystone) ----------
+def test_concordance_with_published_guidelines():
+    d = load('concordance_validation.json'); v = d['verdict']
+    assert v['recommendation']['concordant'] is True, 'recommendation must match the MAGIC GRADE guideline (weak/conditional, favour tirzepatide)'
+    assert v['ranking']['concordant'] is True, 'ranking must match published (tirzepatide > semaglutide)'
+    assert v['certainty']['logic_concordant'] is True
+    # DOIs present for attribution
+    dois = [r.get('doi') for r in d['references'].values()]
+    assert '10.1136/bmj-2024-082071' in dois
+
+
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__, '-q']))
