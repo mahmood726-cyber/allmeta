@@ -1,0 +1,7 @@
+id,nct_id,title,param_type,units
+228373788,NCT03914326,Change From Baseline in Body Weight,MEAN,Kilograms
+227829676,NCT01720446,Change From Baseline to Last Assessment in the Trial in Other Treatment Outcomes: Body Weight,LEAST_SQUARES_MEAN,kg
+228399227,NCT02692716,Change in Body Weight,MEAN,Kg
+228401250,NCT04847557,Percent Change From Baseline in Body Weight,LEAST_SQUARES_MEAN,Percent change
+227864031,NCT03819153,Change From Baseline in Body Weight at Week 104,MEAN,Kilograms
+227799476,NCT03574597,Change in Body Weight,MEAN,percentage change in body weight
