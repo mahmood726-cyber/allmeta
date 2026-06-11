@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Quantile meta-analysis: pool the quantile treatment effect (QTE) at each quantile across trials and test whether the QTE profile is flat (Wald χ²) — detecting heterogeneous treatment effects across the outcome distribution. Free, offline.">
+  <meta name="color-scheme" content="light dark">
+  <title>Quantile meta-analysis — heterogeneous treatment effects</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,27rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    input[type=text],textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.78rem}
+    textarea{resize:vertical;min-height:8rem} input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .verdict{padding:.6rem .85rem;border-radius:6px;font-size:.86rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.flag{background:var(--err-soft)}
+    table{width:100%;border-collapse:collapse;font-size:.82rem} td,th{padding:.3rem .5rem;text-align:left;border-bottom:1px solid var(--border)}
+    th{color:var(--muted);font-size:.68rem;text-transform:uppercase}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    svg{max-width:100%;height:auto}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/quantile-ma-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Quantile meta-analysis <span style="font-size:.8rem;color:var(--muted);font-weight:400">· heterogeneous treatment effects</span></h1>
+    <p>A single pooled effect hides WHO benefits. Quantile meta-analysis pools the <strong>quantile treatment effect</strong> (the treatment effect at each quantile of the outcome distribution, from per-trial quantile regression) across trials, and tests whether the <strong>QTE profile is flat</strong> with a multivariate Wald test — detecting heterogeneous treatment effects across the outcome distribution (e.g. larger benefit in more-severe patients). Random-effects per quantile + Wald χ². Free, offline.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Analyse</button>
+    <button type="button" id="btn-example">Load example</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Quantiles</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">Comma-separated τ in (0,1):</label>
+        <input type="text" id="f-quantiles" aria-label="Quantiles" value="0.25, 0.5, 0.75">
+      </section>
+      <section class="panel">
+        <h2>Per-study QTE</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">One study per line: <code>label, est, SE, est, SE, …</code> — an (est, SE) pair per quantile, in the same order.</label>
+        <textarea id="f-data" aria-label="Per-study quantile treatment effects"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>QTE profile &amp; HTE test</h2>
+        <div id="result" role="status" aria-live="polite"><p class="hint">Enter quantiles + per-study QTEs, then <strong>Analyse</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Profile</h2>
+        <div id="plot"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats</h2>
+        <div class="assum"><strong>Stage 1 (the per-trial QTE) must come from quantile regression on each trial's data — not from the marginal effect.</strong> The Wald test here uses a <em>diagonal</em> cross-quantile covariance (an aggregate tool can't see the IPD correlation between quantiles); since adjacent quantiles are usually positively correlated this OVER-states the contrast variance, so the test is <strong>conservative</strong> — a significant non-flat result is robust, but a null doesn't prove a constant effect. A sloped profile signals effect modification by baseline severity; confirm with a pre-specified subgroup/interaction analysis.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Stage 2: DerSimonian-Laird random-effects pooling (audited <code>shared/ma-core.js</code>) of the QTE at each quantile; multivariate Wald test on adjacent-difference contrasts of the pooled QTE vector, χ²<sub>q−1</sub> under H0 (flat profile). Cross-language validated against numpy/scipy. Method integrated from the IPD-QMA project. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function num(v) { var n = parseFloat(v); return isFinite(n) ? n : null; }
+
+    function parseQuantiles() { return ($("f-quantiles").value || "").split(/[,;\s]+/).map(num).filter(function (x) { return x != null && x > 0 && x < 1; }); }
+    function parseStudies(nQ) {
+      var out = [];
+      String($("f-data").value || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var c = ln.split(",").map(function (s) { return s.trim(); });
+        if (c.length < 1 + 2 * nQ) return;
+        var est = [], se = [];
+        for (var j = 0; j < nQ; j++) { est.push(num(c[1 + 2 * j])); se.push(num(c[2 + 2 * j])); }
+        out.push({ label: c[0], est: est, se: se });
+      });
+      return out;
+    }
+
+    function run() {
+      window.__lastQMA = null;
+      var qs = parseQuantiles();
+      var host = $("result");
+      if (qs.length < 2) { host.innerHTML = '<p class="hint">Enter ≥2 quantiles.</p>'; $("plot").innerHTML = ""; return; }
+      var studies = parseStudies(qs.length);
+      if (studies.length < 2) { host.innerHTML = '<p class="hint">Enter ≥2 studies, each with an (est, SE) pair per quantile.</p>'; $("plot").innerHTML = ""; return; }
+      var r = window.AlmQuantileMA.analyze({ quantiles: qs, studies: studies });
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      window.__lastQMA = r;
+      var cls = r.hte ? "flag" : "ok";
+      host.innerHTML = '<div class="verdict ' + cls + '">' + esc(r.verdict) + "</div>"
+        + "<table><tr><th>Quantile</th><th>Pooled QTE</th><th>95% CI</th><th>τ²</th><th>I²</th><th>k</th></tr>"
+        + r.profile.map(function (p) {
+          if (p.est == null) return "<tr><td>" + p.q + '</td><td colspan="5"><span class="hint">no data</span></td></tr>';
+          return "<tr><td>" + p.q + "</td><td>" + p.est.toFixed(3) + "</td><td>" + p.ciLo.toFixed(3) + ", " + p.ciHi.toFixed(3) + "</td><td>" + p.tau2.toFixed(3) + "</td><td>" + (p.i2 * 100).toFixed(0) + "%</td><td>" + p.k + "</td></tr>";
+        }).join("") + "</table>";
+      drawProfile(r.profile);
+    }
+
+    function drawProfile(profile) {
+      var pts = profile.filter(function (p) { return p.est != null; });
+      if (pts.length < 2) { $("plot").innerHTML = ""; return; }
+      var W = 520, H = 280, m = { l: 48, r: 14, t: 14, b: 36 };
+      var ys = pts.map(function (p) { return p.est; }).concat(pts.map(function (p) { return p.ciLo; })).concat(pts.map(function (p) { return p.ciHi; }));
+      var ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys), py = (ymax - ymin) || 1; ymin -= py * 0.1; ymax += py * 0.1;
+      if (ymin > 0) ymin = 0; if (ymax < 0) ymax = 0;
+      var xmin = pts[0].q, xmax = pts[pts.length - 1].q, px = (xmax - xmin) || 1; xmin -= px * 0.1; xmax += px * 0.1;
+      function X(q) { return m.l + (q - xmin) / (xmax - xmin) * (W - m.l - m.r); }
+      function Y(v) { return H - m.b - (v - ymin) / (ymax - ymin) * (H - m.t - m.b); }
+      var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Pooled QTE by quantile with 95% CIs">';
+      s += '<line x1="' + m.l + '" y1="' + Y(0) + '" x2="' + (W - m.r) + '" y2="' + Y(0) + '" stroke="var(--border-strong)" stroke-dasharray="3 3"/>';
+      s += '<line x1="' + m.l + '" y1="' + m.t + '" x2="' + m.l + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      s += '<line x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      var line = pts.map(function (p, i) { return (i ? "L" : "M") + X(p.q).toFixed(1) + "," + Y(p.est).toFixed(1); }).join(" ");
+      s += '<path d="' + line + '" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+      pts.forEach(function (p) {
+        s += '<line x1="' + X(p.q) + '" y1="' + Y(p.ciLo) + '" x2="' + X(p.q) + '" y2="' + Y(p.ciHi) + '" stroke="var(--accent)" stroke-width="1.4"/>';
+        s += '<circle cx="' + X(p.q).toFixed(1) + '" cy="' + Y(p.est).toFixed(1) + '" r="4" fill="var(--accent)"/>';
+        s += '<text x="' + X(p.q).toFixed(1) + '" y="' + (H - m.b + 14) + '" font-size="10" text-anchor="middle" fill="var(--muted)">' + p.q + "</text>";
+      });
+      s += '<text x="' + (m.l + (W - m.l - m.r) / 2) + '" y="' + (H - 2) + '" font-size="11" text-anchor="middle" fill="var(--muted)">outcome quantile τ</text></svg>';
+      $("plot").innerHTML = s;
+    }
+
+    function loadExample() {
+      // Illustrative: weight-loss QTE bigger in higher-BMI quantiles (HTE).
+      $("f-quantiles").value = "0.1, 0.25, 0.5, 0.75, 0.9";
+      $("f-data").value = "# label, est, SE per quantile (0.1,0.25,0.5,0.75,0.9)\n"
+        + "Trial A, -3.0, 0.8, -5.0, 0.7, -7.5, 0.6, -10.0, 0.7, -12.5, 0.9\n"
+        + "Trial B, -2.5, 0.9, -4.5, 0.8, -7.0, 0.7, -9.5, 0.8, -12.0, 1.0\n"
+        + "Trial C, -3.5, 1.0, -5.5, 0.9, -8.0, 0.8, -10.5, 0.9, -13.0, 1.1\n"
+        + "Trial D, -2.0, 1.1, -4.0, 1.0, -6.5, 0.9, -9.0, 1.0, -11.5, 1.2";
+      run();
+      toast("Illustrative example — weight-loss QTE grows across quantiles (HTE).");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    ["f-quantiles", "f-data"].forEach(function (id) { $(id).addEventListener("input", run); });
+
+    window.__almQuantileMA = { run: function () { run(); return window.__lastQMA || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

@@ -675,6 +675,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["umbrella-review", "overlap", "cca", "corrected-covered-area", "pieper", "non-independence", "review-of-reviews"]
   },
   {
+    name: "Quantile meta-analysis",
+    folder: "allmeta/quantile-ma",
+    path: "./quantile-ma/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Heterogeneity",
+    summary: "Detect heterogeneous treatment effects across the OUTCOME distribution: random-effects pool the quantile treatment effect (QTE) at each quantile across trials, then a multivariate Wald test on adjacent-difference contrasts asks whether the QTE profile is flat (χ²_{q−1}). A sloped profile means the effect differs at the low vs high end (who benefits more) — which a single pooled effect hides.",
+    note: "Stage-1 QTE must come from per-trial quantile regression, not the marginal effect. Wald uses a diagonal cross-quantile covariance → conservative (positive result robust, null not definitive). Reuses ma-core DL; cross-language validated vs numpy/scipy. From the IPD-QMA project.",
+    tags: ["quantile", "qte", "heterogeneous-treatment-effects", "hte", "wald", "ipd", "effect-modification", "distribution"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
