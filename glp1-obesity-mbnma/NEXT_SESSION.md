@@ -124,6 +124,16 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    transport/dashboard fast). They skip-on-output like every other stage; smoke-tested by deleting one fast
    output and confirming the orchestrator regenerates it. They are no longer standalone.
 
+   **CLASS-LEVEL EXTERNAL VALIDATION (DONE this session):** `class_concordance.py` → `class_concordance.json`
+   (+ `COMPARISON_PUBLISHED_CLASSES.md`) compares each of the 5 generality classes to a **PubMed-verified
+   published NMA** (every DOI resolved 2026-06-11): PCSK9 = Jiang 2025 *Front Cardiovasc Med*; SGLT2 = Tsapas
+   2020 *Ann Intern Med*; psoriasis = Sbidian 2022 *Cochrane*; asthma = Menzies-Gow 2022 *J Med Econ*; RA =
+   Singh 2017 *Cochrane*. **5/5 concordant.** Engine lead/ranking is read programmatically from each league JSON
+   (pinned: the concordance lead must equal the league JSON lead). Notably the engine's *self-flagging* is
+   validated — in asthma and RA the published NMAs independently reach the same "no clean winner" hesitation
+   (Menzies-Gow "no significant difference"; Singh "downgraded for inconsistency"). Wired into `run_all.py`
+   (stage G4e). Pinned by `test_class_concordance_published`. Suite now **63 green**.
+
    Next depth idea: a 6th outcome family (e.g. proportion / single-arm incidence, or DTA Se/Sp), or give the
    RA league a true placebo-anchored ordinal NMA (needs per-arm responder counts → currently AACT posts %s).
 

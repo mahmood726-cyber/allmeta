@@ -410,5 +410,23 @@ def test_certainty_counts_not_double_counted(f):
         f'{f}: certainty_counts sum {sum(d["certainty_counts"].values())} != {len(d["comparisons"])} unique comparisons'
 
 
+def test_class_concordance_published():
+    # class-level external validation: each generality class vs a PubMed-verified published NMA
+    d = load('class_concordance.json')
+    assert d['n_classes'] == 5 and d['n_concordant'] == 5, 'all five class repoints should be concordant'
+    assert d['all_references_doi_resolved'] is True
+    leads = {'class2_pcsk9/pcsk9_league.json': 'pcsk9', 'class3_sglt2/sglt2_league.json': 'sglt2',
+             'class4_psoriasis/psoriasis_league.json': 'psoriasis', 'class5_asthma/asthma_league.json': 'asthma',
+             'class6_ra/ra_league.json': 'ra'}
+    for e in d['entries']:
+        # every entry carries a real DOI + PMID and a stated honest boundary
+        assert e['reference']['doi'] and e['reference']['pmid']
+        assert e['concordance']['honest_note'], 'each comparison must record its boundary'
+        # 'ours' must match the live engine output, not a hardcoded copy
+        if e['our_source'] in leads:
+            assert e['our_lead'] == _classfile(e['our_source'])['lead'], \
+                f"{e['our_source']}: concordance lead drifted from the league JSON"
+
+
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__, '-q']))

@@ -60,6 +60,7 @@ STAGES = [
     ('G4b decision sensitivity', 'decision_sensitivity.py',   HERE, 'decision_sensitivity.json', False),
     ('G4c concordance valid', 'concordance_validation.py',    HERE, 'concordance_validation.json', False),
     ('G4d concordance battery', 'concordance_battery.py',   HERE, 'concordance_battery.json', False),
+    ('G4e class concordance',  'class_concordance.py',       HERE, 'class_concordance.json',   False),
     ('G5 guideline dashboard', 'dashboard.py',                HERE, 'dashboard.html',           False),
     # --- generality depth: per-class full-depth leagues (Bayesian draw matrix) + transport + offline dashboard.
     #     Each spans a distinct OUTCOME TYPE; league stages load AACT + NUTS (slow), transport/dashboard read
