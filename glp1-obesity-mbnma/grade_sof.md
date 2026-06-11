@@ -15,7 +15,7 @@ Certainty (GRADE): **Low** ⊕⊕○○ | Network confidence (CINeMA): **Low** |
 | Criterion | Judgement | Source |
 |---|---|---|
 | Problem / priority | Obesity pharmacotherapy selection between two incretins | computed/established |
-| Desirable effects | tirzepatide ~+2.9 pp more weight loss; both on the benefit-risk frontier (true) | fit_network/joint_benefit_risk.json |
+| Desirable effects | tirzepatide ~+2.94 pp more weight loss (P(superior)=0.97); both on the benefit-risk frontier (true) | nma_contrast/joint_benefit_risk.json |
 | Undesirable effects | tirzepatide more nausea (22% vs 16%); ~2.19 pp nausea per extra pp weight loss | joint_benefit_risk.json |
 | Certainty of evidence | Low (imprecision binding; difference uncertain) | this profile |
 | Values / preferences | PANEL INPUT: patients weight maximal loss vs GI tolerability differently | human |

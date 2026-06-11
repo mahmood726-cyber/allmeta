@@ -40,8 +40,8 @@
   },
   {
    "criterion": "Desirable effects",
-   "judgement": "tirzepatide ~+2.9 pp more weight loss; both on the benefit-risk frontier (true)",
-   "source": "fit_network/joint_benefit_risk.json"
+   "judgement": "tirzepatide ~+2.94 pp more weight loss (P(superior)=0.97); both on the benefit-risk frontier (true)",
+   "source": "nma_contrast/joint_benefit_risk.json"
   },
   {
    "criterion": "Undesirable effects",

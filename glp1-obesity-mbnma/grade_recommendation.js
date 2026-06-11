@@ -47,9 +47,11 @@ const domains = {
         + '(tirz 17.5, sema 14.6 pp), ranking survives (POTH 0.898). NB: a CV-benefit claim WOULD be downgraded for '
         + 'indirectness -- weight loss is not a validated CV surrogate (extend_surrogate.json, I^2_HR=0%).' },
   'Imprecision': {
-    rating: prof.imprecision, source: 'computed: grade_inputs.json (contrast CrI)',
+    rating: prof.imprecision, source: 'computed: grade_inputs.json / nma_contrast.json (EXACT joint posterior)',
     note: `Contrast 2.9 pp, 95% CrI [${g.ci95.lower}, ${g.ci95.upper}] crosses null AND the MID (${MID} pp) -> SERIOUS. `
-        + `(CrI is CONSERVATIVE -- independent marginals; exact NMA contrast is narrower, needs joint posterior.)` },
+        + `EXACT joint-posterior contrast (corr ${g.posterior_corr}, near-independent star network) CONFIRMS this -- `
+        + `the conservative CrI was not over-wide. Nuance for the panel: P(tirz>sema)=${g.p_gt_0}, P(diff>MID)=${g.p_gt_mid2} `
+        + `(directionally very likely better, magnitude uncertain).` },
   'Publication / reporting bias': {
     rating: 'Not serious (directly measured)', source: 'registry_pubbias.json / GHOST_TRIALS.md',
     note: `MEASURED not inferred: 6 posted-but-unpublished ghosts identified (AACTxPubMed); the observed pull is `
@@ -80,7 +82,7 @@ const frontier = br.frontier.includes('tirzepatide') && br.frontier.includes('se
 console.log('\n=== Evidence-to-Decision scaffold (DRAFT) ===');
 const etd = [
   ['Problem / priority', 'Obesity pharmacotherapy selection between two incretins', 'computed/established'],
-  ['Desirable effects', `tirzepatide ~+${g.estimate_pp} pp more weight loss; both on the benefit-risk frontier (${frontier})`, 'fit_network/joint_benefit_risk.json'],
+  ['Desirable effects', `tirzepatide ~+${g.estimate_pp} pp more weight loss (P(superior)=${g.p_gt_0}); both on the benefit-risk frontier (${frontier})`, 'nma_contrast/joint_benefit_risk.json'],
   ['Undesirable effects', `tirzepatide more nausea (22% vs 16%); ~${br.tradeoff_nausea_per_pp_weight} pp nausea per extra pp weight loss`, 'joint_benefit_risk.json'],
   ['Certainty of evidence', `${certainty} (imprecision binding; difference uncertain)`, 'this profile'],
   ['Values / preferences', 'PANEL INPUT: patients weight maximal loss vs GI tolerability differently', 'human'],

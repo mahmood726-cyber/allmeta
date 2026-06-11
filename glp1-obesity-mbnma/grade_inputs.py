@@ -10,10 +10,24 @@ ROOT = r'C:/Projects/glp1-doseresp-nma/glp1-obesity-mbnma'
 v2 = {n['node']: n for n in json.load(open(f'{ROOT}/transport_v2.json'))['nodes']}
 T, S = v2['tirzepatide'], v2['semaglutide-sc-weekly']
 def se_from_cri(cri): return (cri[1] - cri[0]) / 3.92
-seT, seS = se_from_cri(T['target_cri']), se_from_cri(S['target_cri'])
-diff = T['eff_target'] - S['eff_target']
-se_diff = float(np.hypot(seT, seS))                  # conservative (independent marginals)
-ci = [round(diff - 1.96 * se_diff, 2), round(diff + 1.96 * se_diff, 2)]
+# prefer the EXACT joint-posterior contrast (nma_contrast.py); fall back to conservative marginals
+import os
+exact = None
+if os.path.exists(f'{ROOT}/nma_contrast.json'):
+    nc = json.load(open(f'{ROOT}/nma_contrast.json'))['target']
+    exact = nc
+if exact:
+    diff = exact['median']; ci = exact['cri']; se_diff = exact['sd_exact']
+    p_gt_0, p_gt_mid, rho = exact['p_gt_0'], exact['p_gt_mid2'], exact['rho']
+    ci_note = (f'EXACT joint-posterior NMA contrast (nma_contrast.py); posterior corr(tirz,sema)={rho} '
+               f'(star network -> near-independent); P(tirz>sema)={p_gt_0}, P(diff>2pp)={p_gt_mid}. '
+               'Conservative marginal approximation was confirmed (essentially identical).')
+else:
+    seT, seS = se_from_cri(T['target_cri']), se_from_cri(S['target_cri'])
+    diff = T['eff_target'] - S['eff_target']; se_diff = float(np.hypot(seT, seS))
+    ci = [round(diff - 1.96 * se_diff, 2), round(diff + 1.96 * se_diff, 2)]
+    p_gt_0 = p_gt_mid = rho = None
+    ci_note = 'CONSERVATIVE: independent marginal CrIs; exact NMA contrast needs the joint posterior.'
 
 # per-node heterogeneity (I^2) from the arm-level data
 d = pd.read_csv(f'{ROOT}/contrasts_full.csv')
@@ -32,7 +46,8 @@ i2_tirz, k_tirz = i2('tirzepatide')
 out = {
     'comparison': 'tirzepatide vs subcutaneous semaglutide (weight loss, obesity)',
     'estimate_pp': round(diff, 2), 'ci95': {'lower': ci[0], 'upper': ci[1]}, 'se': round(se_diff, 3),
-    'ci_note': 'CONSERVATIVE: from independent marginal CrIs; the true NMA contrast (shared placebo reference) is narrower. Exact contrast needs the joint posterior.',
+    'p_gt_0': p_gt_0, 'p_gt_mid2': p_gt_mid, 'posterior_corr': rho, 'contrast_source': 'exact' if exact else 'conservative',
+    'ci_note': ci_note,
     'tirz': {'eff_target': T['eff_target'], 'cri': T['target_cri'], 'k': int(T['k'])},
     'sema': {'eff_target': S['eff_target'], 'cri': S['target_cri'], 'k': int(S['k'])},
     'i2_sema_pct': round(i2_sema, 1) if i2_sema is not None else None,

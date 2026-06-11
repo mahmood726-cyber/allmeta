@@ -88,10 +88,21 @@ The MACE row is the discipline in action: the system **refuses to manufacture a 
 from weight loss, and says so on the face of the table. GRADE certainty (Low) and CINeMA confidence (Low)
 print in the header; the recommendation is Conditional; the guardrails travel with the export.
 
+## Imprecision resolved against the exact joint posterior (`nma_contrast.py`)
+The binding domain was imprecision, flagged as resting on a *conservative* (independent-marginals) contrast
+CrI. I re-fit the full Bayesian NMA (NUTS/nutpie, Rhat 1.0000) and computed the **exact joint-posterior**
+tirzepatide−semaglutide contrast: **+2.9 pp (95% CrI −0.14 to +5.98)** — essentially identical to the
+conservative one. The posterior correlation between the two node effects is only **+0.08** (obesity) /
+**+0.02** (target): in a star network with *disjoint* trials, the two placebo-anchored effects are
+empirically near-independent, so hierarchical pooling barely narrows the contrast. **Imprecision is real,
+not an approximation artifact — Low certainty stands.** This is an integrity check that passed: the shortcut
+had not inflated the uncertainty. A useful nuance now carried to the panel: **P(tirzepatide > semaglutide) =
+0.97**, P(difference > 2 pp MID) = 0.73 — directionally very likely better, magnitude genuinely uncertain.
+
 ## Honest scope
 - This is a **decision-support scaffold**, not a guideline. The MID, the RoB, and all judgement domains are
-  the panel's; the contrast CrI here is conservative (independent marginals — the exact NMA contrast needs
-  the joint posterior and is narrower). k and single-class limits apply as everywhere in this project.
+  the panel's. The contrast is now the **exact joint-posterior** estimate (verified ≈ the conservative one);
+  k and single-class limits apply as everywhere in this project.
 - CINeMA's full 6-domain network confidence (`allmeta/cinema`) and a GRADEpro/EtD export
   (`gradepro`, `grade-sof-generator`) are the natural next integrations; this PoC reuses the validated
   `GRADEAutomationEngine` and demonstrates the principle end-to-end.

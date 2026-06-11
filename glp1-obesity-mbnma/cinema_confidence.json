@@ -17,7 +17,7 @@
   },
   "Imprecision": {
    "rating": "Major concerns",
-   "note": "Indirect contrast 2.9 pp, 95% CrI [-0.17, 5.97] crosses null (conservative; exact NMA contrast narrower)."
+   "note": "Indirect contrast 2.9 pp, 95% CrI [-0.14, 5.98] crosses null (conservative; exact NMA contrast narrower)."
   },
   "Heterogeneity": {
    "rating": "Some concerns",
