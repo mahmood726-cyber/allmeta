@@ -12,6 +12,11 @@ def load(f):
 gr = load('grade_recommendation.json'); cin = load('cinema_confidence.json'); L = load('nma_league.json')
 br = load('joint_benefit_risk.json'); cn = load('cnma_incretin.json'); su = load('extend_surrogate.json')
 pb = load('registry_pubbias.json'); ts = load('trial_sequential.json'); mc = load('hta_mcda.json'); ev = load('hta_evppi.json')
+ds = load('decision_sensitivity.json')
+def loadtext(f):
+    p = os.path.join(ROOT, f)
+    return open(p, encoding='utf-8').read() if os.path.exists(p) else ''
+ds_svg = loadtext('decision_sensitivity.svg')
 SYM = {'High': '⊕⊕⊕⊕', 'Moderate': '⊕⊕⊕○', 'Low': '⊕⊕○○', 'Very low': '⊕○○○'}
 COL = {'High': '#bfe3bf', 'Moderate': '#dff0d0', 'Low': '#fdebc0', 'Very low': '#f6c6c6'}
 def esc(x): return html.escape(str(x))
@@ -119,6 +124,22 @@ if ev:
 if cards:
     cc = ''.join(f"<div class='card'><h3>{t}</h3><p>{b}</p></div>" for t, b in cards)
     S.append(f"""<h2>5. Wide-gap methods (things ordinary MA cannot do)</h2><div class="cards">{cc}</div>""")
+
+# ---- decision sensitivity (values/MID dependence) ----
+if ds:
+    h = ds['headline']; pm = h['p_by_mid']
+    prow = ''.join(f"<td>{pm[str(m)]:.2f}</td>" for m in [0, 1, 2, 3, 4])
+    cb = ds['confident_by_mid']
+    S.append(f"""<h2>6. Decision sensitivity (the panel's MID, made transparent)</h2>
+<p class="small">GRADE leaves the minimal important difference (MID) to the panel. This shows, from the joint posterior,
+P(tirzepatide better than sc-semaglutide by &gt; MID) &mdash; near-certain at MID 0, uncertain by MID 3.</p>
+<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+<div>{ds_svg}</div>
+<div><table><thead><tr><th>Panel MID (pp)</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+<tbody><tr><td>P(tirz better by &gt; MID)</td>{prow}</tr></tbody></table>
+<p class="small">Across the league, confident conclusions (P&ge;0.95, k&ge;2) shrink as the MID rises:
+<b>{cb['0']}</b> at MID 0 &rarr; <b>{cb['2']}</b> at MID 2 &rarr; <b>{cb['4']}</b> at MID 4 (of {ds['n_pairs']} pairs).
+The panel's clinical-importance threshold directly determines how much the evidence can support.</p></div></div>""")
 
 S.append("""<p class="small" style="margin-top:18px;color:#666">Every number above re-runs from a cited data file via
 <code>python run_all.py</code>. Human-attested screening / RoB-2 / GRADE judgement is the panel's layer.</p>""")
