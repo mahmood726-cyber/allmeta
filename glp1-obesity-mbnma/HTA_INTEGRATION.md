@@ -65,13 +65,25 @@ KM-gap stratum from the survival arm) is where the value of information sits. Fu
 units is `allmeta/HTA`'s `evppi.js` / `evsi.js` (Strong–Oakley GAM / Heath regression) — the proxy here
 gives the same direction registry-natively.
 
-### 3. (Boundary, honest) Full cost-effectiveness — needs external data, not faked
-ICER / net-monetary-benefit / CEAC require **drug price + health-state utilities (QALYs)**, which are
-**not in AACT/CT.gov/PubMed** and are explicitly outside the data policy. The wiring is specified —
-our transported efficacy + survival HR are exactly the effectiveness inputs a `markovCohort` /
-`partitionedSurvival` run consumes — but we **do not fabricate cost/utility values**. This is the
-correct defensible boundary: MCDA + VOI we deliver registry-natively; CEA is a one-config step in the
-validated engine once a jurisdiction's price/utility inputs are supplied.
+### 3. Monetary EVPPI — engine handoff demonstrated  ✅ run through allmeta/HTA evppi.js
+`hta_evppi_handoff.js` drives the **validated, TreeAge-benchmarked** `evppi.js` (Strong–Oakley GAM) with
+our posteriors via a minimal lifetime CEA PSA (tirzepatide vs semaglutide, N=4000). **Every cost/utility
+coefficient is a transparent PLACEHOLDER** (prices chosen so the better agent carries a premium → ICER
+near the NICE threshold, the only regime where EVPPI is informative). Result:
+```
+WTP £20,000/QALY:  total EVPI £10/pt   EVPPI(cv) £8 = 81% of EVPI  >  efficacy 0%  >  nausea 0%
+WTP £30,000/QALY:  total EVPI £53/pt   EVPPI(cv) £36 = 67%  >  efficacy £13 = 24%  >  nausea 0%
+```
+**The validated CEA engine independently reproduces the registry-native VOI direction in monetary units:
+cardiovascular evidence dominates the decision uncertainty, efficacy second, nausea negligible.** Two
+independent methods (our MCDA proxy + Strong–Oakley GAM EVPPI) agree on where research is worth most.
+This is a *handoff demonstration*, not a real CEA — the cost/utility inputs are placeholders.
+
+### 3b. (Boundary, honest) A *real* cost-effectiveness verdict still needs external data
+A reportable ICER/CEAC requires **actual drug price + health-state utilities (QALYs)**, which are **not in
+AACT/CT.gov/PubMed**. Section 3 demonstrates the wiring works end-to-end; it does **not** fabricate a real
+CEA. Swapping the placeholder block for a jurisdiction's published price/utility inputs turns the same
+script into a real analysis — a one-config step, by design.
 
 ## The end-to-end pipeline (registry → decision)
 ```

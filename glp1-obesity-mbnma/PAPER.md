@@ -130,10 +130,13 @@ HR + nausea, tirzepatide leads (value 0.764, P(best) 0.92) over semaglutide (0.5
 CV outcome (retatrutide/mazdutide) score lower on a reduced criterion set — an honest registry data gap, not
 a clinical verdict. A **value-of-information** proxy (EVPPI direction) shows the decision hinges on the
 **cardiovascular** evidence (resolving CV uncertainty moves P(best) 0.92→1.00; efficacy/safety Δ=0), i.e.
-the under-posted KM-gap stratum is where more research is most valuable. Monetary cost-effectiveness
-(ICER/QALY/CEAC) requires drug price + health-state utilities, which are **not in AACT/CT.gov/PubMed**; the
-wiring to `allmeta/HTA`'s `markovCohort`/`partitionedSurvival`/`evppi.js` is specified but cost/utility
-inputs are **deferred, not fabricated** (the defensible boundary). See `HTA_INTEGRATION.md`.
+the under-posted KM-gap stratum is where more research is most valuable. Driving the **validated, TreeAge-benchmarked**
+`allmeta/HTA` `evppi.js` (Strong–Oakley GAM) with our posteriors through a minimal PSA (placeholder UK
+price/utility) **independently reproduces this VOI direction in monetary units**: at WTP £20–30k/QALY,
+EVPPI(CV) is 67–81% of total EVPI, efficacy 0–24%, nausea ~0 — two independent methods agree CV evidence is
+the decision driver. A *reportable* ICER/CEAC still needs real drug price + health-state utilities, which are
+**not in AACT/CT.gov/PubMed**; the engine handoff is demonstrated end-to-end but cost/utility inputs are
+**placeholder, not fabricated as evidence** (the defensible boundary). See `HTA_INTEGRATION.md`.
 
 ## 5. Limitations
 No IPD → the rigorous transport estimators (ML-NMR/MAIC) are out of reach; transport is binary-modifier

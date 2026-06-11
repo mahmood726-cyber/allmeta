@@ -1,0 +1,48 @@
+{
+ "incremental": {
+  "dQALY": 0.056,
+  "dCost": 4453
+ },
+ "wtp": {
+  "20000": {
+   "totalEVPI": 10,
+   "parameters": [
+    {
+     "parameter": "cv",
+     "evppi": 8,
+     "percentOfEVPI": 81
+    },
+    {
+     "parameter": "efficacy",
+     "evppi": 0,
+     "percentOfEVPI": 0
+    },
+    {
+     "parameter": "nausea",
+     "evppi": 0,
+     "percentOfEVPI": 0
+    }
+   ]
+  },
+  "30000": {
+   "totalEVPI": 53,
+   "parameters": [
+    {
+     "parameter": "cv",
+     "evppi": 36,
+     "percentOfEVPI": 67
+    },
+    {
+     "parameter": "efficacy",
+     "evppi": 13,
+     "percentOfEVPI": 24
+    },
+    {
+     "parameter": "nausea",
+     "evppi": 0,
+     "percentOfEVPI": 0
+    }
+   ]
+  }
+ }
+}
