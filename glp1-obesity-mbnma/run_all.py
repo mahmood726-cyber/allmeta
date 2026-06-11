@@ -50,6 +50,8 @@ STAGES = [
     ('N1 exact contrast',     'nma_contrast.py',              HERE, 'nma_contrast.json',        True),
     ('N2 league table',       'nma_league.py',                HERE, 'nma_league.json',          True),
     # --- guideline chain (GRADE -> CINeMA -> exports) ---
+    ('I1 Benford integrity',  'benford_integrity.py',         AACT, 'benford_integrity.json',   True),
+    ('I2 entropy transport',  'entropy_transport.py',         HERE, 'entropy_transport.json',   False),
     ('G0 GRADE inputs',       'grade_inputs.py',              HERE, 'grade_inputs.json',        False),
     ('G1 GRADE certainty',    'grade_recommendation.js',      HERE, 'grade_recommendation.json', False),
     ('G2 CINeMA confidence',  'cinema_confidence.py',         HERE, 'cinema_confidence.json',   False),
