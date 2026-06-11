@@ -603,6 +603,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["e-value", "confounding", "sensitivity", "observational", "vanderweele"]
   },
   {
+    name: "Transportability",
+    folder: "allmeta/transportability",
+    path: "./transportability/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Transport a meta-analytic effect to YOUR target population via effect-modifier standardisation: a random-effects meta-regression (Paule-Mandel τ², Knapp-Hartung CIs) predicting the mean effect at the target's modifier value, with an unmeasured-modifier sensitivity. The aggregate, IPD-free sibling of ML-NMR / one-step network meta-regression — a generalisability estimand no mainstream SR tool offers.",
+    note: "Assumption-laden (measured dominant modifier, no unmeasured modifier, linear model, no far extrapolation) — assumptions surfaced in-app. Cross-language validated against SciPy.",
+    tags: ["transportability", "generalisability", "meta-regression", "ml-nmr", "effect-modifier", "standardisation", "external-validity"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
