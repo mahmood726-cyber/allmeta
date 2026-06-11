@@ -699,6 +699,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["benford", "data-integrity", "nigrini", "mad", "forensics", "fabrication", "first-digit", "anomaly"]
   },
   {
+    name: "Transported NMA",
+    folder: "allmeta/transported-nma",
+    path: "./transported-nma/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Transport a network meta-analysis to a TARGET population: entropy-balance each study so the network's weighted effect-modifier means match a target profile (Hainmueller), refit the random-effects NMA on the reweighted variances, and compare the source vs target league table and P-score ranking — with the Kish effective sample size that quantifies how much information the transport costs and whether the answer is interpolation or extrapolation.",
+    note: "Corrects only for the MEASURED modifiers supplied; unmeasured modifiers / interactions are not fixed. Entropy balancing matches target moments exactly inside the covariate hull, extrapolates outside it (watch the ESS ratio + achieved-vs-target gap). Variance-inflation reweighting is an aggregate-data approximation to IPD network meta-regression. Reuses the audited WLS NMA solver + ma-core; entropy weights cross-validated vs numpy Newton. From the nmatransport project.",
+    tags: ["nma", "transportability", "generalizability", "entropy-balancing", "hainmueller", "target-population", "effect-modifier", "p-score", "external-validity"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",

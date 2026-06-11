@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Population-transported network meta-analysis: entropy-balance the network to a target population's effect-modifier profile, refit the random-effects NMA, and compare the source vs target league table and P-score ranking with the effective-sample-size loss. Free, offline.">
+  <meta name="color-scheme" content="light dark">
+  <title>Transported NMA — population-relevant network meta-analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:90ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,26rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1040px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .55rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    label.fld{display:block;margin:0 0 .25rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.76rem;resize:vertical}
+    textarea#f-contrasts{min-height:9rem} textarea#f-cov{min-height:6.5rem}
+    input[type=text],select{font:inherit;font-size:.82rem;padding:.32rem .5rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink)}
+    input[type=text]{width:100%;font-family:ui-monospace,Menlo,monospace}
+    textarea:focus,input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:end;margin-top:.5rem}
+    .row > div{flex:1;min-width:8rem}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    table{border-collapse:collapse;width:100%;font-size:.8rem;margin:.3rem 0 .2rem}
+    th,td{border:1px solid var(--border);padding:.3rem .45rem;text-align:right;font-variant-numeric:tabular-nums}
+    th:first-child,td:first-child{text-align:left}
+    thead th{background:var(--accent-soft);font-weight:600}
+    td.up{color:var(--ok);font-weight:600} td.down{color:var(--err);font-weight:600}
+    .verdict{padding:.6rem .85rem;border-radius:6px;font-size:.86rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.warn{background:var(--warn-soft)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:94ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/multiplicative-nma.js"></script>
+  <script src="../shared/transported-nma-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Transported NMA <span style="font-size:.8rem;color:var(--muted);font-weight:400">· population-relevant network meta-analysis</span></h1>
+    <p>A standard NMA ranks treatments in the <strong>source network's</strong> case-mix. If your <strong>target population</strong> has a different distribution of effect modifiers, that ranking may not transport. This <strong>entropy-balances</strong> each study so the network's weighted modifier means match a target profile (Hainmueller), reweights the random-effects NMA, and shows the source vs target league and P-score ranking — plus the <strong>effective sample size</strong> the transport costs, which tells you whether the answer is interpolation or extrapolation.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Transport &amp; rank</button>
+    <button type="button" id="btn-example">Load example</button>
+    <label style="font-size:.8rem;margin-left:.5rem"><input type="checkbox" id="f-higher" checked> higher effect = better</label>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Network contrasts</h2>
+        <label class="fld" for="f-contrasts">study, trtA, trtB, effect, SE — one per line</label>
+        <textarea id="f-contrasts" spellcheck="false" aria-label="Network contrasts: study, trtA, trtB, effect, SE"></textarea>
+        <p class="hint">Effect is trtB vs trtA on your scale (log OR/RR/HR or MD). SE is its standard error.</p>
+      </section>
+      <section class="panel">
+        <h2>Study covariates</h2>
+        <label class="fld" for="f-cov">header row: <code>study, &lt;modifier…&gt;</code>, then one row per study</label>
+        <textarea id="f-cov" spellcheck="false" aria-label="Study covariates: header then one row per study"></textarea>
+        <div class="row">
+          <div>
+            <label class="fld" for="f-target">Target population profile</label>
+            <input type="text" id="f-target" aria-label="Target population profile, e.g. age=72, female=0.55" placeholder="age=72, female=0.55">
+          </div>
+          <div style="flex:0 0 auto">
+            <label class="fld" for="f-ref">Reference</label>
+            <select id="f-ref" aria-label="Reference treatment"></select>
+          </div>
+        </div>
+        <p class="hint">Modifier names must match the covariate header. Effects are reported vs the reference (P-score 0 = worst, 1 = best).</p>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Transport diagnostics</h2>
+        <div id="result" role="status" aria-live="polite"><p class="hint">Enter a network, covariates and a target profile, then <strong>Transport &amp; rank</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel" id="rank-panel" hidden>
+        <h2>Ranking: source vs target population (P-score)</h2>
+        <div id="ranks"></div>
+      </section>
+      <section class="panel" id="league-panel" hidden>
+        <h2>Transported league (effect vs reference, 95% CI)</h2>
+        <div id="league"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats — what transport does and does not fix</h2>
+        <div class="assum"><strong>Transport corrects only for the modifiers you supply.</strong> Unmeasured effect modifiers and modifier × treatment interactions are not corrected. Entropy balancing matches the target moments <em>exactly</em> when the target lies inside the studies' covariate range; outside it, it <strong>extrapolates</strong> — watch the effective sample size (ESS) and the achieved-vs-target gap. The variance-inflation reweighting is an aggregate-data approximation to a full IPD network meta-regression (conservative for down-weighted studies). A reordered ranking is a hypothesis about the target population, not a definitive result — read the source league alongside it.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Entropy balancing: Hainmueller (2012) — weights closest to uniform whose weighted covariate means equal the target. Reweighted random-effects NMA reuses the audited WLS network solver (Paule–Mandel τ²); P-scores: Rücker &amp; Schwarzer (2015). ESS = Kish 1/Σwᵢ². Method integrated from the nmatransport project. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function fmt(x, d) { return Number.isFinite(x) ? x.toFixed(d == null ? 3 : d) : "—"; }
+
+    function parseContrasts(text) {
+      var rows = [], labels = [], idx = Object.create(null), trtSet = Object.create(null), errs = [];
+      String(text || "").split(/\r?\n/).forEach(function (l, i) {
+        var t = l.trim(); if (!t || t[0] === "#") return;
+        var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        if (f.length < 5) { errs.push("line " + (i + 1) + ": need study, trtA, trtB, effect, SE"); return; }
+        var study = f[0], a = f[1], b = f[2], yi = parseFloat(f[3]), sei = parseFloat(f[4]);
+        if (!study || !a || !b) { errs.push("line " + (i + 1) + ": missing label"); return; }
+        if (!Number.isFinite(yi) || !Number.isFinite(sei) || sei <= 0) { errs.push("line " + (i + 1) + ": bad effect/SE"); return; }
+        if (idx[study] == null) { idx[study] = labels.length; labels.push(study); }
+        trtSet[a] = trtSet[b] = true;
+        rows.push({ trtA: a, trtB: b, yi: yi, sei: sei, study: idx[study], _label: study });
+      });
+      return { rows: rows, labels: labels, idx: idx, treatments: Object.keys(trtSet), errors: errs };
+    }
+
+    function parseCov(text, idx) {
+      var lines = String(text || "").split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s && s[0] !== "#"; });
+      if (lines.length < 2) return { studies: null, errors: ["covariates: need a header row and ≥1 study row"], names: [] };
+      var head = lines[0].split(/[,\t]/).map(function (s) { return s.trim(); });
+      var names = head.slice(1);
+      var studies = [], errs = [];
+      var byLabel = Object.create(null);
+      for (var i = 1; i < lines.length; i++) {
+        var f = lines[i].split(/[,\t]/).map(function (s) { return s.trim(); });
+        var lab = f[0], cov = {};
+        for (var j = 0; j < names.length; j++) { var v = parseFloat(f[j + 1]); if (Number.isFinite(v)) cov[names[j]] = v; }
+        byLabel[lab] = cov;
+      }
+      // align to the contrast study order
+      var order = Object.keys(idx).sort(function (a, b) { return idx[a] - idx[b]; });
+      order.forEach(function (lab) {
+        if (!byLabel[lab]) errs.push("no covariate row for study '" + lab + "'");
+        studies.push({ label: lab, cov: byLabel[lab] || {} });
+      });
+      return { studies: studies, errors: errs, names: names };
+    }
+
+    function parseTarget(text) {
+      var t = {};
+      String(text || "").split(/[,;]/).forEach(function (p) {
+        var m = p.split(/[=:]/); if (m.length === 2) { var k = m[0].trim(), v = parseFloat(m[1]); if (k && Number.isFinite(v)) t[k] = v; }
+      });
+      return t;
+    }
+
+    function syncRef(treatments) {
+      var sel = $("f-ref"), prev = sel.value;
+      sel.innerHTML = "";
+      treatments.forEach(function (t) { var o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o); });
+      if (treatments.indexOf(prev) >= 0) sel.value = prev;
+    }
+
+    function run() {
+      window.__lastTNMA = null;
+      var pc = parseContrasts($("f-contrasts").value);
+      var host = $("result");
+      $("rank-panel").hidden = true; $("league-panel").hidden = true;
+      if (pc.errors.length) { host.innerHTML = '<p class="hint">' + pc.errors.map(esc).join("<br>") + "</p>"; return; }
+      if (pc.treatments.length < 2) { host.innerHTML = '<p class="hint">Need ≥2 treatments.</p>'; return; }
+      syncRef(pc.treatments);
+
+      var pcov = parseCov($("f-cov").value, pc.idx);
+      if (!pcov.studies || pcov.errors.length) { host.innerHTML = '<p class="hint">' + (pcov.errors || ["covariate error"]).map(esc).join("<br>") + "</p>"; return; }
+      var target = parseTarget($("f-target").value);
+      if (!Object.keys(target).length) { host.innerHTML = '<p class="hint">Enter a target profile, e.g. <code>age=72</code>.</p>'; return; }
+
+      // order treatments with the chosen reference first
+      var ref = $("f-ref").value || pc.treatments[0];
+      var trts = [ref].concat(pc.treatments.filter(function (t) { return t !== ref; }));
+
+      var r = window.AlmTransportedNMA.run({
+        studies: pcov.studies, rows: pc.rows, treatments: trts, target: target,
+        higherIsBetter: $("f-higher").checked
+      });
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      window.__lastTNMA = r;
+
+      var cls = r.caution ? "warn" : "ok";
+      var ach = r.transport.covariates.map(function (c) { return esc(c) + " " + fmt(r.transport.achieved[c], 2) + "→" + fmt(r.transport.target[c], 2); }).join(", ");
+      host.innerHTML = '<div class="verdict ' + cls + '">' + esc(r.verdict) + "</div>"
+        + '<p class="hint">Effective sample size <strong>' + fmt(r.transport.ess, 1) + " / " + r.transport.n + "</strong> (" + fmt(100 * r.transport.essRatio, 0) + "%). "
+        + "τ² source " + fmt(r.source.tau2, 4) + " → target " + fmt(r.transported.tau2, 4) + ". Achieved vs target: " + ach + ".</p>";
+
+      // ranking table
+      var rows = r.shifts.slice().sort(function (a, b) { return b.target - a.target; });
+      var rh = '<table><thead><tr><th>Treatment</th><th>Source P-score</th><th>Target P-score</th><th>Δ</th></tr></thead><tbody>';
+      rows.forEach(function (s) {
+        var dc = s.delta > 0.005 ? "up" : (s.delta < -0.005 ? "down" : "");
+        rh += "<tr><td>" + esc(s.treatment) + "</td><td>" + fmt(s.source) + "</td><td>" + fmt(s.target) + '</td><td class="' + dc + '">' + (s.delta >= 0 ? "+" : "") + fmt(s.delta) + "</td></tr>";
+      });
+      rh += "</tbody></table><p class=\"hint\">P-score 1 = best, 0 = worst, for the chosen direction. Δ = target − source; a large Δ means the ranking is population-sensitive.</p>";
+      $("ranks").innerHTML = rh; $("rank-panel").hidden = false;
+
+      // transported league vs reference
+      var eff = r.transported.effects;
+      var lh = '<table><thead><tr><th>vs ' + esc(ref) + "</th><th>Effect</th><th>95% CI</th></tr></thead><tbody>";
+      trts.forEach(function (t) {
+        var e = eff[t];
+        lh += "<tr><td>" + esc(t) + "</td><td>" + fmt(e.estimate) + "</td><td>" + (t === ref ? "—" : fmt(e.ciLo) + " to " + fmt(e.ciHi)) + "</td></tr>";
+      });
+      lh += "</tbody></table>";
+      $("league").innerHTML = lh; $("league-panel").hidden = false;
+    }
+
+    var EX_CONTRASTS = [
+      "S1, A, B, 0.20, 0.10",
+      "S2, A, C, 0.55, 0.12",
+      "S3, B, C, 0.30, 0.11",
+      "S4, A, C, 0.62, 0.13",
+      "S5, B, C, 0.18, 0.12",
+      "S6, A, B, 0.34, 0.10"
+    ].join("\n");
+    var EX_COV = [
+      "study, age",
+      "S1, 52",
+      "S2, 55",
+      "S3, 58",
+      "S4, 71",
+      "S5, 74",
+      "S6, 76"
+    ].join("\n");
+
+    function loadExample() {
+      $("f-contrasts").value = EX_CONTRASTS;
+      $("f-cov").value = EX_COV;
+      $("f-target").value = "age=72";
+      $("f-higher").checked = true;
+      run();
+      toast("Example — 6 studies, 3 treatments, modifier 'age'; transported to a target age of 72.");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    $("f-higher").addEventListener("change", run);
+    $("f-ref").addEventListener("change", run);
+
+    window.__almTransportedNMA = { run: function () { run(); return window.__lastTNMA || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
