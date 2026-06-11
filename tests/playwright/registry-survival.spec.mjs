@@ -1,0 +1,28 @@
+// New differentiator (from registry-ipd): registry-native pseudo-IPD —
+// reconstruct survival IPD from CT.gov/AACT tables, no figure, tiered + fail-closed.
+import { test, expect } from "@playwright/test";
+
+test("registry-native survival reconstructs tiers and fails closed at Tier C", async ({ page }) => {
+  await page.goto("/registry-survival/index.html");
+  const ready = await page.evaluate(() => ({
+    eng: !!(window.RIPD && window.RIPD.reconstruct),
+    ex: !!(window.RIPD_EXAMPLES && window.RIPD_EXAMPLES.tierA),
+  }));
+  expect(ready).toEqual({ eng: true, ex: true });
+
+  // Tier A → exportable pseudo-IPD + a reconstructed KM curve
+  await page.click("#btn-ex-a");
+  const a = await page.evaluate(() => window.__almRegistryIpd.run());
+  expect(a.tier).toBe("A");
+  expect(a.exportable).toBe(true);
+  expect(a.arms.length).toBeGreaterThanOrEqual(2);
+  await expect(page.locator("#verdict-box")).toContainText("Tier A");
+  await expect(page.locator("#km svg").first()).toBeVisible();
+
+  // Tier C → refused, fail-closed (no fabricated IPD)
+  await page.click("#btn-ex-c");
+  const c = await page.evaluate(() => window.__almRegistryIpd.run());
+  expect(c.tier).toBe("C");
+  expect(c.exportable).toBe(false);
+  await expect(page.locator("#verdict-box")).toContainText(/Refused|insufficient/i);
+});

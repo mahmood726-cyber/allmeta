@@ -863,6 +863,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["kaplan-meier", "ipd", "survival", "guyot", "nar-fusion", "registry-native", "ct.gov", "aact"]
   },
   {
+    name: "Registry-native survival IPD",
+    folder: "allmeta/registry-survival",
+    path: "./registry-survival/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Reconstruct pseudo individual-patient survival data from ClinicalTrials.gov / AACT structured tables (KM-estimate points + number-at-risk + events) with NO Kaplan-Meier figure digitization — exact registry anchors, zero pixel error. Richness-aware tiers: A (Guyot / anchor-exact / QP, best-of by 1-Wasserstein), B (parametric + bootstrap), C (HR-only → refused, never fabricated).",
+    note: "Pseudo-IPD, never true IPD; fails closed at Tier C. Engine vendored verbatim (MIT) from the registry-ipd project; complements the figure-based K-M reconstructor (and its NAR-fusion mode).",
+    tags: ["registry-native", "pseudo-ipd", "survival", "kaplan-meier", "ct.gov", "aact", "guyot", "tiered", "fail-closed"]
+  },
+  {
     name: "Citation Dedup",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-sprint-course.html",
     folder: "allmeta/citation-dedup",

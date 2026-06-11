@@ -11,6 +11,7 @@
 
 # Same defence for other CDN-fetched bundles we vendor.
 shared/vendor/*.js binary
+shared/vendor/**/*.js binary
 hub/shared/vendor/*.js binary
 
 # Binary fixtures (e.g. test PDFs) must never get CRLF conversion, which would
