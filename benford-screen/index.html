@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Benford first-digit integrity screen: leading-digit distribution vs Benford's law with the Nigrini MAD conformity class and a chi-square test — a forensic data-anomaly screen for extracted meta-analytic values. Free, offline.">
+  <meta name="color-scheme" content="light dark">
+  <title>Benford screen — first-digit data integrity</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; --bar:#2c5e8a; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; --bar:#6aa6d4; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(280px,24rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.78rem;resize:vertical;min-height:13rem}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.5rem;margin-bottom:.6rem}
+    .stat{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem}
+    .stat .k{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    .stat .v{display:block;font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .verdict{padding:.6rem .85rem;border-radius:6px;font-size:.86rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.flag{background:var(--err-soft)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    svg{max-width:100%;height:auto}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/benford-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Benford screen <span style="font-size:.8rem;color:var(--muted);font-weight:400">· first-digit data integrity</span></h1>
+    <p>Numbers that span several orders of magnitude have leading digits that follow <strong>Benford's law</strong> (1 ≈ 30%, 9 ≈ 4.6%). A large deviation can flag fabricated, altered or heavily-rounded data. This screens your values' first-digit distribution against Benford with the <strong>Nigrini MAD</strong> conformity class and a χ²(8) test — a forensic anomaly screen that complements the integrity apps (spec-collapse, INSPECT-SR, reporting-bias). It is a prompt to look, <strong>never proof</strong> of fabrication.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Screen</button>
+    <button type="button" id="btn-example">Load example</button>
+    <button type="button" id="btn-example-anom">Load anomalous example</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Values</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">Paste numbers (any separator). Use a quantity that spans orders of magnitude — sample sizes, event counts, totals — <strong>not</strong> bounded values.</label>
+        <textarea id="f-data" aria-label="Numeric values to screen"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Conformity</h2>
+        <div id="result" role="status" aria-live="polite"><p class="hint">Paste a column of numbers, then <strong>Screen</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>First-digit distribution (observed bars vs Benford ○)</h2>
+        <div id="plot"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats — when Benford does NOT apply</h2>
+        <div class="assum"><strong>Benford is only valid for unbounded quantities spanning ≥2 orders of magnitude.</strong> It does <em>not</em> apply to bounded or narrow-range values — proportions/percentages, p-values, standardised effect sizes (SMD), I², or assigned ids — which fail Benford for legitimate reasons. Screen sample sizes, event counts, totals, costs. Need ≥100 values for reliability (≥30 minimum). A flag means "investigate" — confirm the quantity should follow Benford before reading it as a fabrication signal; conversely, conformity is not a clean bill of health.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Expected P(first digit = d) = log₁₀(1 + 1/d). Nigrini (2012) first-digit MAD classes: &lt;0.006 close, &lt;0.012 acceptable, &lt;0.015 marginal, ≥0.015 nonconformity; χ²(8) goodness-of-fit (validated vs scipy). Method integrated from the BenfordMA project. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function parse(text) {
+      return (String(text || "").match(/-?\d[\d.,eE+\-]*/g) || [])
+        .map(function (s) { return parseFloat(s.replace(/,(?=\d{3}\b)/g, "")); })
+        .filter(function (x) { return isFinite(x); });
+    }
+    function stat(k, v) { return '<div class="stat"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + "</span></div>"; }
+
+    function run() {
+      window.__lastBenford = null;
+      var vals = parse($("f-data").value);
+      var host = $("result");
+      var r = window.AlmBenford.analyze(vals);
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; $("plot").innerHTML = ""; return; }
+      window.__lastBenford = r;
+      var cls = r.anomalous ? "flag" : "ok";
+      host.innerHTML = '<div class="verdict ' + cls + '">' + esc(r.verdict) + "</div>"
+        + '<div class="stats">'
+        + stat("N", r.n) + stat("First-digit MAD", r.mad.toFixed(4))
+        + stat("Nigrini class", r.madClass) + stat("χ²(8)", r.chi2.toFixed(1))
+        + stat("p", r.chi2p < 1e-4 ? r.chi2p.toExponential(1) : r.chi2p.toFixed(4))
+        + "</div>";
+      drawBars(r);
+    }
+
+    function drawBars(r) {
+      var W = 540, H = 280, m = { l: 40, r: 14, t: 14, b: 30 };
+      var ymax = Math.max.apply(null, r.observed.concat(r.expected)) * 1.15;
+      var bw = (W - m.l - m.r) / 9;
+      function Y(p) { return H - m.b - (p / ymax) * (H - m.t - m.b); }
+      var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Observed first-digit proportions vs Benford expected">';
+      s += '<line x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      for (var i = 0; i < 9; i++) {
+        var x = m.l + i * bw, ob = r.observed[i], ex = r.expected[i];
+        var dev = Math.abs(ob - ex) > 0.02;
+        s += '<rect x="' + (x + bw * 0.18).toFixed(1) + '" y="' + Y(ob).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + (H - m.b - Y(ob)).toFixed(1) + '" fill="' + (dev ? "var(--warn)" : "var(--bar)") + '"/>';
+        s += '<circle cx="' + (x + bw / 2).toFixed(1) + '" cy="' + Y(ex).toFixed(1) + '" r="3.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/>';
+        s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - m.b + 14) + '" font-size="11" text-anchor="middle" fill="var(--muted)">' + (i + 1) + "</text>";
+      }
+      s += '<text x="' + (m.l + (W - m.l - m.r) / 2) + '" y="' + (H - 1) + '" font-size="10" text-anchor="middle" fill="var(--muted)">leading digit</text></svg>';
+      $("plot").innerHTML = s;
+    }
+
+    function loadExample() {
+      // event counts spanning orders of magnitude (Benford-conforming).
+      var v = [];
+      var seed = 7;
+      function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+      for (var i = 0; i < 400; i++) v.push(Math.round(Math.pow(10, rnd() * 4 + 0.3)));
+      $("f-data").value = v.join(", ");
+      run();
+      toast("Example — 400 event-count-like values spanning orders of magnitude.");
+    }
+    function loadAnom() {
+      // fabricated-looking: roughly uniform first digits.
+      var v = [];
+      for (var d = 1; d <= 9; d++) for (var i = 0; i < 45; i++) v.push(d * 100 + i);
+      $("f-data").value = v.join(", ");
+      run();
+      toast("Anomalous example — near-uniform first digits (a fabrication-like pattern).");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    $("btn-example-anom").addEventListener("click", loadAnom);
+    $("f-data").addEventListener("input", run);
+
+    window.__almBenford = { run: function () { run(); return window.__lastBenford || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
