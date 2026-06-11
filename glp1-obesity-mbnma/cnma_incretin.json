@@ -1,0 +1,23 @@
+{
+ "validated_vs_discomb": true,
+ "components": {
+  "GLP1": {
+   "est_pp": 13.1,
+   "se": 0.61
+  },
+  "GIP": {
+   "est_pp": 4.8,
+   "se": 1.29
+  },
+  "GCG": {
+   "est_pp": 5.6,
+   "se": 1.84
+  }
+ },
+ "Q": 20.3,
+ "df": 4,
+ "triple_additive_pred_pp": 23.5,
+ "triple_observed_pp": 21.4,
+ "predicted_GIP_GCG_no_GLP1_pp": 10.4,
+ "caveat": "common-component assumption across molecules is approximate (high Q); GIP/GCG k small"
+}
