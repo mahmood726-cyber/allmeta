@@ -136,6 +136,28 @@ def test_concordance_with_published_guidelines():
     assert '10.1136/bmj-2024-082071' in dois
 
 
+def _classfile(rel):
+    p = os.path.join(ROOT, rel)
+    if not os.path.exists(p):
+        pytest.skip(f'{rel} not generated')
+    return json.load(open(p))
+
+def test_generality_class2_pcsk9():
+    d = _classfile('class2_pcsk9/pcsk9_results.json')
+    assert d['ranking'][0] == 'bococizumab' and 'evolocumab' in d['ranking']
+    assert 'discriminat' in d['surrogate_note'].lower() or 'consistent' in d['surrogate_note'].lower()
+
+def test_generality_class3_sglt2_flags_heterogeneity():
+    d = _classfile('class3_sglt2/sglt2_results.json')
+    assert d['cross_agent_I2'] >= 50, 'SGLT2 composite pooling should surface (and flag) high heterogeneity'
+    assert 'artifact' in d['caveat'].lower() or 'endpoint' in d['caveat'].lower()
+
+def test_generality_class4_psoriasis_hierarchy():
+    d = _classfile('class4_psoriasis/psoriasis_results.json')
+    assert d['hierarchy_reproduced'] is True, 'should reproduce IL-17/IL-23 > TNF'
+    assert d['il17_23_mean_pct'] > d['tnf_mean_pct']
+
+
 def test_concordance_battery_multireview():
     d = load('concordance_battery.json')
     assert d['n_reviews'] >= 6, 'battery should score against several published reviews'

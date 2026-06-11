@@ -22,7 +22,7 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   papering over it.
 
 ## Honest scope
-- Classes 2–3 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
+- Classes 2–4 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
   the 40-stage incretin pipeline. Transport, league, HTA, and GRADE would repoint identically (same AACT
   fields + engines) but were not rebuilt per class — the point is class-generality and method-discrimination,
   which hold.
