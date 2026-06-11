@@ -1,0 +1,71 @@
+{
+ "class": "psoriasis biologics",
+ "outcome": "PASI-90 responder %",
+ "agents": [
+  {
+   "agent": "bimekizumab",
+   "class": "IL-17/23",
+   "pasi90_pct": 85.0,
+   "n_arms": 136
+  },
+  {
+   "agent": "risankizumab",
+   "class": "IL-23",
+   "pasi90_pct": 74.7,
+   "n_arms": 48
+  },
+  {
+   "agent": "ixekizumab",
+   "class": "IL-17",
+   "pasi90_pct": 68.7,
+   "n_arms": 28
+  },
+  {
+   "agent": "brodalumab",
+   "class": "IL-17",
+   "pasi90_pct": 66.7,
+   "n_arms": 35
+  },
+  {
+   "agent": "ustekinumab",
+   "class": "IL-12/23",
+   "pasi90_pct": 63.6,
+   "n_arms": 75
+  },
+  {
+   "agent": "guselkumab",
+   "class": "IL-23",
+   "pasi90_pct": 53.8,
+   "n_arms": 324
+  },
+  {
+   "agent": "secukinumab",
+   "class": "IL-17",
+   "pasi90_pct": 50.0,
+   "n_arms": 201
+  },
+  {
+   "agent": "adalimumab",
+   "class": "TNF",
+   "pasi90_pct": 43.2,
+   "n_arms": 177
+  },
+  {
+   "agent": "tildrakizumab",
+   "class": "IL-23",
+   "pasi90_pct": 40.5,
+   "n_arms": 50
+  },
+  {
+   "agent": "etanercept",
+   "class": "TNF",
+   "pasi90_pct": 23.3,
+   "n_arms": 72
+  }
+ ],
+ "hierarchy_reproduced": true,
+ "il17_23_mean_pct": 63.0,
+ "tnf_mean_pct": 33.0,
+ "generality": "repointed to a binary/responder outcome (proportion/OR-NMA path); reproduced the IL-17/IL-23 > TNF hierarchy. Fourth outcome type -> engine spans continuous weight/LDL + hard-outcome HR + binary responder.",
+ "caveat": "PASI-90 responder % pooled by agent across doses/timepoints (not a placebo-anchored OR NMA); demonstration of repoint, not a full psoriasis systematic review"
+}

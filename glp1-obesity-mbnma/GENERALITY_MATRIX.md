@@ -9,10 +9,11 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
 | **Incretins** (obesity) | continuous biomarker (% weight) | 273+ trials, full pipeline | surrogacy weight→CV | **Surrogate FAILS** (I²_HR=0%); weight is not a validated CV surrogate |
 | **PCSK9i** (lipids) | continuous biomarker (% LDL-C) | 273 trials, 102 LDL | surrogacy LDL→MACE | **Surrogate direction VALIDATED** — same method *discriminates*, not rigged |
 | **SGLT2i** (cardiorenal) | hard outcome (HF/CV HR) | 1165 trials, 18 HR | class-effect homogeneity | **Flags endpoint-definition heterogeneity** (I²=87% from pooling MACE vs HF-hosp vs renal); demands disaggregation by exact endpoint |
+| **Psoriasis biologics** | binary responder (PASI-90 %) | 1377 trials, 130 PASI-90 | established efficacy hierarchy | **Reproduces IL-17/IL-23 > TNF** (mean 63% vs 33%; bimekizumab top 85%), matching the Sbidian Cochrane NMA |
 
 ## What this demonstrates
-- **Three outcome types** — continuous weight, continuous lipid, hard-outcome survival — handled by the same
-  discovery → extraction → NMA → (GRADE) machinery.
+- **Four outcome types** — continuous weight, continuous lipid, hard-outcome survival, binary responder —
+  handled by the same discovery → extraction → NMA → (GRADE) machinery.
 - **The methods discriminate.** The surrogate test failed for weight (incretins) and returned the validated
   direction for LDL (PCSK9) — it depends on the evidence, not the class. The SGLT2 repoint didn't manufacture
   a clean "class effect"; it surfaced the real composite-endpoint pitfall and flagged it.
@@ -29,7 +30,7 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   a systematic review).
 
 ## Verdict
-**A reusable, outcome-type-general engine.** Repointing across continuous-biomarker, lipid, and hard-outcome
+**A reusable, outcome-type-general engine.** Repointing across continuous-biomarker, lipid, hard-outcome, and binary-responder
 classes took a drug list and an outcome term, and produced coherent syntheses plus *class-appropriate,
 self-flagging* method behaviour. The system is not a bespoke incretin analysis; its methods answer to the
-evidence in each class. See `class2_pcsk9/GENERALITY.md`, `class3_sglt2/sglt2_results.json`.
+evidence in each class. See `class2_pcsk9/GENERALITY.md`, `class3_sglt2/sglt2_results.json`, `class4_psoriasis/psoriasis_results.json`.
