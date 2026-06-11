@@ -197,6 +197,24 @@
     .dropped-warn { margin:.1rem 0 .5rem; padding:.5rem .7rem; font-size:.78rem; line-height:1.5; border-radius:0 10px 10px 0;
       border-left:3px solid var(--amber,#fbbf24); background:rgba(251,191,36,.08); color:#fde68a; }
     .dropped-warn b { color:#fbbf24; }
+    /* "What does this mean?" plain-language summary (glp1 review steal) */
+    .what-means { margin:.2rem 0 .8rem; padding:.7rem .95rem; border-left:3px solid var(--green,#34d399); background:linear-gradient(90deg, rgba(52,211,153,.09), transparent); border-radius:0 12px 12px 0; }
+    .what-means h4 { margin:0 0 .35rem; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--green,#34d399); font-weight:800; }
+    .what-means .wm-sentence { margin:0; font-size:.9rem; line-height:1.55; color:var(--ink,#e6eefc); }
+    .what-means .wm-caveat { margin:.4rem 0 0; font-size:.72rem; line-height:1.5; color:var(--muted); }
+    /* Quality-assurance checks panel (RapidMeta substantive gate + glp1 N-checks) */
+    .qa-checks { margin:.2rem 0 .9rem; }
+    .qa-head { font-size:.82rem; margin-bottom:.4rem; color:var(--ink,#e6eefc); }
+    .qa-head .qa-fail { color:#f87171; font-weight:700; } .qa-head .qa-warn { color:#fbbf24; font-weight:700; }
+    .qa-rows { display:grid; gap:.2rem; }
+    .qa-row { display:flex; align-items:baseline; gap:.5rem; font-size:.8rem; padding:.18rem .3rem; border-radius:6px; }
+    .qa-row .qa-sym { width:1em; font-weight:800; text-align:center; }
+    .qa-row .qa-detail { color:var(--muted); font-size:.74rem; margin-left:auto; }
+    .qa-pass .qa-sym { color:#34d399; } .qa-pass .qa-label { color:var(--ink,#e6eefc); }
+    .qa-warn { background:rgba(251,191,36,.06); } .qa-warn .qa-sym { color:#fbbf24; }
+    .qa-fail { background:rgba(248,113,113,.08); } .qa-fail .qa-sym { color:#f87171; }
+    .qa-na .qa-sym { color:var(--faint); } .qa-na .qa-label { color:var(--muted); }
+    .qa-block { margin-top:.5rem; padding:.5rem .7rem; font-size:.78rem; line-height:1.5; border-left:3px solid #f87171; background:rgba(248,113,113,.08); border-radius:0 10px 10px 0; color:#fecaca; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
@@ -244,6 +262,7 @@
         <p class="s-desc">Your review at a glance — the PRISMA flow and headline result, read live from the shared workspace bus as you work each stage.</p>
         <div id="story-intro" class="story-intro" style="display:none"></div>
         <div id="ov-cards" class="ov-cards"></div>
+        <div id="what-this-means" class="what-means" style="display:none"></div>
         <h4 style="margin:.4rem 0 .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700">PRISMA flow</h4>
         <div id="funnel" class="funnel"></div>
         <div id="evmap-wrap" style="display:none;margin-top:1rem">
@@ -261,6 +280,7 @@
       <div class="card">
         <div class="s-head"><span class="s-n" style="background:var(--green-soft);color:var(--green)">✓</span><span class="s-name">Bundle &amp; sign</span></div>
         <p class="s-desc">Fold every captured stage into one SHA-256-chained, HMAC-signed file. The chain runs <em>output → hash → next stage</em>, so altering any stage breaks that stage's hash and every hash after it. Re-opening a bundle verifies the whole chain and pinpoints any altered stage.</p>
+        <div id="qa-checks" class="qa-checks" aria-live="polite"></div>
         <div class="sign-actions">
           <button type="button" id="btn-key" class="ghost">⚙ Set signing key</button>
           <button type="button" id="btn-sign" class="primary">Sign &amp; download bundle</button>
@@ -673,6 +693,87 @@
       }).join("");
       renderEvidenceMap();
       renderStoryIntro();
+      renderWhatThisMeans();
+    }
+
+    // ---- "What does this mean?" — a plain-language summary of the pooled result,
+    // generated deterministically from the bus (no LLM), in the spirit of the glp1
+    // RA-review's patient summary. Honest about direction vs the no-effect line. ----
+    function renderWhatThisMeans() {
+      var el = document.getElementById("what-this-means"); if (!el) return;
+      var pl = readPooled(); var p = pl.length ? pl[pl.length - 1] : null;
+      if (!p || p.pointEstimate == null || !isFinite(p.pointEstimate)) { el.style.display = "none"; el.innerHTML = ""; return; }
+      var d = funnelData();
+      var measure = p.measure || "effect", ratio = p.scale === "ratio", nullv = ratio ? 1 : 0;
+      var pt = p.pointEstimate, lo = p.ciLo, hi = p.ciHi, crosses = (lo < nullv && hi > nullv);
+      var k = (p.k != null) ? p.k : d.studies;
+      var g = lsGet("grade-sof-v1"), cert = (g && Array.isArray(g.outcomes) && g.outcomes[0]) ? g.outcomes[0].certainty : null;
+      var CL = { high: "high", moderate: "moderate", low: "low", verylow: "very low" };
+      var confPart = cert ? ", at " + (CL[cert] || cert) + "-certainty evidence" : "";
+      var incPart = d.included ? " (" + d.included + " included records)" : "";
+      var stem = "Across " + k + " stud" + (k === 1 ? "y" : "ies") + incPart + ", the pooled " + esc(measure)
+        + " was " + fnum(pt) + " (95% CI " + fnum(lo) + " to " + fnum(hi) + ")";
+      var sentence = crosses
+        ? stem + ". Because that interval crosses the no-effect line (" + nullv + "), the combined evidence does not show a clear difference" + confPart + "."
+        : stem + ", sitting entirely " + (pt < nullv ? "below" : "above") + " the no-effect line — a clear effect on current evidence" + confPart
+          + ". Whether it is large enough to change care depends on the outcome and an agreed clinical threshold.";
+      el.style.display = "";
+      el.innerHTML = "<h4>What does this mean?</h4><p class='wm-sentence'>" + sentence + "</p>"
+        + "<p class='wm-caveat'>Generated from your pooled result — it describes the combined estimate, not any individual patient. Read it alongside the certainty rating and the robustness checks.</p>";
+    }
+
+    // ---- Quality-assurance checks before signing (RapidMeta substantive gate +
+    // the glp1 review's "N checks" panel). Each check reads the live bus. ----
+    function runChecks() {
+      var checks = [];
+      function add(label, status, detail) { checks.push({ label: label, status: status, detail: detail || "" }); }
+      var pico = (function () { var p = lsGet("sr-project-v1"); return p && p.pico; })();
+      add("Protocol (PICO) framed", pico ? "pass" : "warn", pico ? "" : "no PICO on the bus");
+      var e = lsGet("sr-records-v1"); var recs = e && Array.isArray(e.records) ? e.records : [];
+      add("Records imported", recs.length ? "pass" : "warn", recs.length ? recs.length + " records" : "none");
+      var sum = (window.SrCollab && SrCollab.summarize) ? SrCollab.summarize(recs) : null;
+      var conflicts = sum ? (sum.conflicts || 0) : 0;
+      add("Screening conflicts resolved", recs.length ? (conflicts ? "warn" : "pass") : "na", conflicts ? conflicts + " unresolved" : "");
+      var studies = readStudies();
+      add("Studies extracted", studies.length ? "pass" : "warn", studies.length ? studies.length + " on the bus" : "none");
+      var inc = sum ? sum.consensusIncluded : includedRecords(recs).length;
+      var poolable = studies.filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; }).length;
+      add("All included records pooled", (inc > 0 && inc > poolable) ? "warn" : "pass", (inc > poolable) ? (inc - poolable) + " included without effect data" : "");
+      var pl = readPooled(); var pooled = pl.length ? pl[pl.length - 1] : null;
+      add("Pooled result present", pooled ? "pass" : "fail", pooled ? "" : "synthesis not captured");
+      if (pooled) {
+        var ratio = pooled.scale === "ratio";
+        var valid = isFinite(pooled.pointEstimate) && isFinite(pooled.ciLo) && isFinite(pooled.ciHi)
+          && pooled.ciLo <= pooled.ciHi && (!ratio || pooled.pointEstimate > 0);
+        add("Pooled estimate is valid", valid ? "pass" : "fail", valid ? "" : "non-finite / inverted CI / non-positive ratio");
+      }
+      var a = robAssessments();
+      add("Risk of bias assessed", a ? "pass" : "warn", a ? a.length + " assessments" : "none");
+      var g = lsGet("grade-sof-v1"); var hasG = g && Array.isArray(g.outcomes) && g.outcomes.length;
+      add("Certainty (GRADE) recorded", hasG ? "pass" : "warn", hasG ? "" : "none");
+      var capturable = STAGES.filter(function (s) { return !s.draftOnly; }).length;
+      var done = STAGES.filter(function (s) { return state.outputs[s.id] != null; }).length;
+      add("Stages captured into bundle", done ? (done >= capturable ? "pass" : "warn") : "fail", done + " of " + capturable);
+      return checks;
+    }
+    function renderQAChecks() {
+      var el = document.getElementById("qa-checks"); if (!el) return;
+      var checks = runChecks();
+      var pass = checks.filter(function (c) { return c.status === "pass"; }).length;
+      var fails = checks.filter(function (c) { return c.status === "fail"; }).length;
+      var warns = checks.filter(function (c) { return c.status === "warn"; }).length;
+      var total = checks.filter(function (c) { return c.status !== "na"; }).length;
+      var SYM = { pass: "✓", warn: "⚠", fail: "✗", na: "–" };
+      var head = "<div class='qa-head'><b>Quality assurance</b> &mdash; " + pass + " of " + total + " checks pass"
+        + (fails ? " &middot; <span class='qa-fail'>" + fails + " blocking</span>" : "")
+        + (warns ? " &middot; <span class='qa-warn'>" + warns + " advisory</span>" : "") + "</div>";
+      var rows = checks.map(function (c) {
+        return "<div class='qa-row qa-" + c.status + "'><span class='qa-sym'>" + SYM[c.status] + "</span><span class='qa-label'>"
+          + esc(c.label) + "</span>" + (c.detail ? "<span class='qa-detail'>" + esc(c.detail) + "</span>" : "") + "</div>";
+      }).join("");
+      el.innerHTML = head + "<div class='qa-rows'>" + rows + "</div>"
+        + (fails ? "<div class='qa-block'>Resolve the blocking check" + (fails === 1 ? "" : "s") + " above before signing &mdash; a bundle without a valid pooled result is not a complete review.</div>" : "");
+      el.setAttribute("data-fails", String(fails));
     }
 
     // ---- Nested-Knowledge-style interactive evidence map: each study placed by
@@ -1033,6 +1134,7 @@
         el.addEventListener("click", function () { switchTab(el.getAttribute("data-tab")); });
       });
       renderOverview();
+      renderQAChecks();
     }
 
     function switchTab(id, keepScroll) {
@@ -1091,6 +1193,11 @@
     document.getElementById("btn-sign").addEventListener("click", async function () {
       var proj = currentProject();
       if (!proj.stages.length) { alert("Capture at least one stage's output first."); return; }
+      // QA gate: blocking checks (no/invalid pooled result, nothing captured) require
+      // an explicit acknowledgement before the bundle is signed.
+      var qa = document.getElementById("qa-checks");
+      var fails = qa ? parseInt(qa.getAttribute("data-fails") || "0", 10) : 0;
+      if (fails > 0 && !window.confirm(fails + " blocking quality check" + (fails === 1 ? "" : "s") + " failed (see the Quality assurance panel). Sign and download anyway?")) return;
       var res = await window.AlmReviewBundle.sign(proj, {});
       if (!res.ok) { alert("Could not build bundle: " + res.error); return; }
       var payload = res.signed ? res.receipt : res.bundle;
