@@ -80,3 +80,34 @@ test("review-project surfaces the portfolio-integration tools in their stages", 
   await expect(stages.locator("a", { hasText: "Transported NMA" })).toHaveAttribute("href", "../transported-nma/");
   await expect(stages.locator("a", { hasText: "Umbrella overlap" })).toHaveAttribute("href", "../umbrella-overlap/");
 });
+
+test("review-project is a usable tabbed SPA on a phone viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });   // iPhone 12/13/14 logical px
+  await page.goto("/review-project/index.html");
+
+  // exactly one stage panel visible at a time (tabbed, not a long scroll)
+  await expect(page.locator(".stage-panel.active")).toHaveCount(1);
+  await expect(page.locator('.stage-panel.active[data-tab="protocol"]')).toBeVisible();
+
+  // the tab bar holds all 9 stages + Bundle and scrolls horizontally (no wrap/clip)
+  expect(await page.locator("#tabnav .tab").count()).toBe(10);
+  const overflow = await page.evaluate(() => {
+    const n = document.getElementById("tabnav");
+    return { scrollable: n.scrollWidth > n.clientWidth + 2, bodyOverflow: document.documentElement.scrollWidth - window.innerWidth };
+  });
+  expect(overflow.scrollable).toBe(true);          // tabs scroll, not squashed
+  expect(overflow.bodyOverflow).toBeLessThanOrEqual(2);   // no horizontal page overflow
+
+  // tapping a tab switches the visible panel
+  await page.locator('#tab-btn-synthesis').click();
+  await expect(page.locator('.stage-panel.active[data-tab="synthesis"]')).toBeVisible();
+  await expect(page.locator('.stage-panel[data-tab="protocol"]')).toBeHidden();
+
+  // the in-panel "next" stepper advances the workflow
+  await page.locator('.stage-panel.active [data-go="robustness"]').click();
+  await expect(page.locator('.stage-panel.active[data-tab="robustness"]')).toBeVisible();
+
+  // Bundle tab reachable and shows the sign action
+  await page.locator('#tab-btn-bundle').click();
+  await expect(page.locator('#btn-sign')).toBeVisible();
+});
