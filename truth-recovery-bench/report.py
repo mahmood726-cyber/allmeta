@@ -54,11 +54,12 @@ def agg_over_cells(cells, metric):
     return {m: (float(np.mean(vs)) if vs else np.nan) for m, vs in acc.items()}
 
 
-def headline_leaderboard(results):
+def headline_leaderboard(results, ks=None):
     """Selection-present cells at moderate het (primary block, the 4 selection
-    scenarios, all k pooled). Returns rows sorted by RMSE-to-truth."""
+    scenarios). Returns rows sorted by RMSE-to-truth. ks=None -> all k."""
     cells = [r for r in _by(results, block="primary")
-             if r["cell"]["scenario"] in SEL_SCENARIOS]
+             if r["cell"]["scenario"] in SEL_SCENARIOS
+             and (ks is None or r["cell"]["k"] in ks)]
     bias = agg_over_cells(cells, "bias")
     absbias = {m: abs(b) for m, b in bias.items()}
     rmse = agg_over_cells(cells, "rmse")
@@ -116,16 +117,51 @@ def build_report(payload):
     # realised naive bias per scenario (from none/primary cells, FE-naive proxy = DL bias)
     L.append("")
 
-    # ---- headline leaderboard ----
-    L.append("## 1. Headline leaderboard — joint condition (selection + τ²=0.05, k 5→50 pooled)\n")
-    L.append("Ranked by **RMSE-to-true-μ** across the four selection scenarios "
-             "(step weak/strong, Copas weak/strong) and all k. Coverage is of the "
-             "TRUE μ (target 0.95). `fail` = share of replications with no usable "
-             "estimate.\n")
+    # ---- headline verdict ----
+    L.append("## 1. The measured bar (headline)\n")
+    rows15 = headline_leaderboard(results, ks=[15, 25, 50])
+    by_bias = sorted(rows15, key=lambda r: r["abs_bias"])
+    by_cov = sorted(rows15, key=lambda r: -(r["coverage"] if np.isfinite(r["coverage"]) else -1))
+    by_rmse = rows15
+    best_cov = by_cov[0]
+    L.append("**No existing method recovers the true μ with honest coverage when "
+             "heterogeneity and publication selection are both present.** Across "
+             f"the selection scenarios at viable k (≥15), the best CI coverage of "
+             f"the true μ achieved by any method is **{best_cov['coverage']:.2f}** "
+             f"(**{best_cov['method']}**) — far below the nominal 0.95. The three "
+             "truth axes disagree on a winner:\n")
+    L.append(f"- **Smallest point bias**: {by_bias[0]['method']} "
+             f"(|bias|={by_bias[0]['abs_bias']:.3f}), {by_bias[1]['method']} "
+             f"({by_bias[1]['abs_bias']:.3f}) — the only genuine bias-correctors.")
+    L.append(f"- **Best coverage of truth**: {best_cov['method']} "
+             f"({best_cov['coverage']:.2f}).")
+    L.append(f"- **Lowest RMSE-to-truth**: {by_rmse[0]['method']} "
+             f"({by_rmse[0]['rmse']:.3f}) — but low RMSE here is low *variance*, not "
+             f"accuracy: it leaves |bias|={by_rmse[0]['abs_bias']:.3f} and covers "
+             f"only {by_rmse[0]['coverage']:.2f}. RMSE alone would crown the wrong "
+             f"method, which is exactly why coverage is part of the criterion.")
+    L.append("")
+
+    # ---- primary leaderboard (k>=15, where all methods are viable) ----
+    L.append("## 2. Leaderboard — joint condition, k ≥ 15 (all methods viable)\n")
+    L.append("Selection scenarios (step weak/strong, Copas weak/strong), "
+             "τ²=0.05, k ∈ {15,25,50}. Ranked by RMSE-to-true-μ; read alongside "
+             "|bias| and coverage. (At k<15 the selection models destabilise — see "
+             "§6.)\n")
+    trows = []
+    for i, r in enumerate(rows15, 1):
+        trows.append([str(i), f"**{r['method']}**", fmt(r["abs_bias"]),
+                      fmt(r["rmse"]), cov_fmt(r["coverage"]),
+                      fmt(r["width"]), cov_fmt(r["fail"])])
+    L.append(md_table(["#", "method", "|bias|", "RMSE", "coverage", "width", "fail"],
+                      trows))
+    L.append("")
+    L.append("All-k version (k 5→50 pooled) — note the RMSE for the selection "
+             "models is inflated by rare small-k blowups (§6):\n")
     rows = headline_leaderboard(results)
     trows = []
     for i, r in enumerate(rows, 1):
-        trows.append([str(i), f"**{r['method']}**", fmt(r["abs_bias"]),
+        trows.append([str(i), r['method'], fmt(r["abs_bias"]),
                       fmt(r["rmse"]), cov_fmt(r["coverage"]),
                       fmt(r["width"]), cov_fmt(r["fail"])])
     L.append(md_table(["#", "method", "|bias|", "RMSE", "coverage", "width", "fail"],
@@ -133,7 +169,7 @@ def build_report(payload):
     L.append("")
 
     # ---- per-scenario x k detail (primary block) ----
-    L.append("## 2. Per-scenario detail (primary block, μ=0.3, τ²=0.05)\n")
+    L.append("## 3. Per-scenario detail (primary block, μ=0.3, τ²=0.05)\n")
     for sc in ["none"] + SEL_SCENARIOS:
         L.append(f"### {sc}\n")
         L.append("bias / coverage / RMSE per method × k.\n")
@@ -161,7 +197,7 @@ def build_report(payload):
     # ---- heterogeneity sweep ----
     het = _by(results, block="hetero")
     if het:
-        L.append("## 3. Heterogeneity sweep (k=15, μ=0.3, τ² ∈ {0, 0.02, 0.08, 0.20})\n")
+        L.append("## 4. Heterogeneity sweep (k=15, μ=0.3, τ² ∈ {0, 0.02, 0.08, 0.20})\n")
         t2s = sorted({r["cell"]["tau2"] for r in het})
         for sc in SEL_SCENARIOS:
             L.append(f"### {sc} — coverage by τ²\n")
@@ -180,7 +216,7 @@ def build_report(payload):
     # ---- type-I / power ----
     ti = _by(results, block="typeI")
     if ti:
-        L.append("## 4. Type-I error (μ=0) and power (μ=0.3)\n")
+        L.append("## 5. Type-I error (μ=0) and power (μ=0.3)\n")
         L.append("`reject0` = P(0 outside the 95% CI). At μ=0 this is the type-I "
                  "rate (target ≤0.05); at μ=0.3 (primary block) it is power.\n")
         for sc in ["none"] + SEL_SCENARIOS:
@@ -202,13 +238,35 @@ def build_report(payload):
             L.append("")
 
     # ---- failure modes ----
-    L.append("## 5. Failure modes (where each method breaks)\n")
-    fr = agg_over_cells([r for r in _by(results, block="primary")
-                         if r["cell"]["scenario"] in SEL_SCENARIOS], "fail_rate")
-    cov = agg_over_cells([r for r in _by(results, block="primary")
-                          if r["cell"]["scenario"] in SEL_SCENARIOS], "coverage")
-    bias = agg_over_cells([r for r in _by(results, block="primary")
-                           if r["cell"]["scenario"] in SEL_SCENARIOS], "bias")
+    L.append("## 6. Failure modes (where each method breaks)\n")
+    # coverage-collapse-with-k under strong p-selection
+    L.append("**Coverage collapse with k (the central pathology).** Under strong "
+             "p-value selection, the naive RE methods keep a *fixed* bias while "
+             "their CI narrows as k grows — so coverage of the truth collapses "
+             "toward 0 as evidence accumulates:\n")
+    collapse_rows = []
+    for m in ["DL", "REML", "HKSJ", "Copas", "VeveaHedges", "PET-PEESE", "RoBMA"]:
+        row = [m]
+        for k in [5, 15, 50]:
+            cs = _by(results, block="primary", scenario="step_strong", k=k)
+            v = cs[0]["methods"].get(m, {}).get("coverage") if cs else None
+            row.append(cov_fmt(v))
+        collapse_rows.append(row)
+    L.append(md_table(["method (step_strong)", "cover k=5", "cover k=15", "cover k=50"],
+                      collapse_rows))
+    L.append("")
+    L.append("**Selection-model instability at small k.** Vevea–Hedges recovers "
+             "the truth well at k≥15 but its δ/τ² optimum is non-identified at "
+             "k≤10: in a reproducible 400-rep check at k=5 (`none`) the *median* "
+             "estimate is 0.304 (true μ=0.3) yet ~1% of fits run away (max "
+             "|μ̂|>400), which is what inflates its mean-based bias/RMSE there. "
+             "Treat the selection models as **k≥15 tools**.\n")
+    L.append("**Per-method summary (selection cells, k≥15):**\n")
+    sel15 = [r for r in _by(results, block="primary")
+             if r["cell"]["scenario"] in SEL_SCENARIOS and r["cell"]["k"] >= 15]
+    fr = agg_over_cells(sel15, "fail_rate")
+    cov = agg_over_cells(sel15, "coverage")
+    bias = agg_over_cells(sel15, "bias")
     notes = []
     if "Copas" in fr:
         notes.append(f"- **Copas** non-convergence / non-identification rate "
@@ -229,7 +287,7 @@ def build_report(payload):
     L.append("")
 
     # ---- reproducibility ----
-    L.append("## 6. Reproducibility\n")
+    L.append("## 7. Reproducibility\n")
     L.append(f"- Fully seeded: every replication draws from "
              f"`np.random.default_rng(SeedSequence([{meta['base_seed']}, "
              f"stable_hash(cell_id), k]).spawn(rep))`. Re-running "

@@ -6,3 +6,5 @@ PROGRESS.md
 results_smoke.json
 REPORT_smoke.md
 .pytest_cache/
+
+run_full.err
