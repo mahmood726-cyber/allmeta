@@ -152,6 +152,45 @@ def test_generality_class3_sglt2_flags_heterogeneity():
     assert d['cross_agent_I2'] >= 50, 'SGLT2 composite pooling should surface (and flag) high heterogeneity'
     assert 'artifact' in d['caveat'].lower() or 'endpoint' in d['caveat'].lower()
 
+def test_pcsk9_league_bayesian_parity():
+    # PCSK9 Bayesian draw-matrix league (parity with SGLT2/flagship), alongside the frequentist one
+    d = _classfile('class2_pcsk9/pcsk9_league_bayes.json')
+    assert 'bayesian' in d['inference'].lower() and 'draw' in d['inference'].lower()
+    assert d['rhat'] <= 1.01 and d['lead'] == 'bococizumab'
+    # same ranking as the frequentist league (the parity claim)
+    fz = _classfile('class2_pcsk9/pcsk9_league.json')
+    assert d['ranking'] == fz['ranking']
+    c0 = d['comparisons'][0]
+    assert 'cri' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
+
+def test_asthma_league_bayesian_depth():
+    # 3rd full-depth class: Bayesian count/rate (exacerbation IRR) league
+    d = _classfile('class5_asthma/asthma_league.json')
+    assert d['outcome_type'] == 'count/rate' and 'bayesian' in d['inference'].lower()
+    assert d['rhat'] <= 1.01 and d['lead'] == 'tezepelumab'
+    assert all(v < 1.0 for v in d['median_irr'].values()), 'all biologics reduce the exacerbation rate'
+    c0 = d['comparisons'][0]
+    assert 'cri_logrr' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
+
+def test_asthma_transport_averted_depth():
+    d = _classfile('class5_asthma/asthma_transport.json')
+    sc = d['scenarios']
+    assert len(sc) >= 3
+    av = [s['averted_per_yr'] for s in sc]
+    assert av == sorted(av), 'absolute exacerbations averted should rise with baseline rate'
+    assert av[-1] / av[0] >= 3, 'absolute benefit should swing several-fold across severity targets'
+    assert any(s['primary'] for s in sc) and 'reference' in d['baseline_source'].lower()
+
+def test_asthma_dashboard_offline():
+    p = os.path.join(ROOT, 'class5_asthma', 'asthma_dashboard.html')
+    if not os.path.exists(p):
+        pytest.skip('asthma_dashboard.html not built')
+    h = open(p, encoding='utf-8').read()
+    assert 'http://' not in h and 'https://wwwn' not in h and 'C:/' not in h and 'C:\\' not in h
+    import re as _re
+    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>')
+    assert 'averted' in h and 'GRADE' in h and 'Bayesian' in h
+
 def test_sglt2_league_bayesian_depth():
     # 2nd full-depth class + Bayesian draw matrix: single-endpoint HF-hosp league with CrI/P(sup)
     d = _classfile('class3_sglt2/sglt2_league.json')

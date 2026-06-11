@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asthma biologics - Bayesian exacerbation-rate league, GRADE certainty &amp; transported exacerbations averted</title>
+<meta property="og:title" content="Asthma biologics Bayesian exacerbation-IRR league, GRADE certainty & transported absolute benefit">
+<meta property="og:description" content="Registry-native (AACT) asthma-biologic annualised-exacerbation rate-ratio league from a Bayesian draw matrix, with GRADE certainty and IRR-to-absolute-averted transport across severity targets. Decision-support DRAFT.">
+<meta property="og:type" content="website">
+<style>
+:root{--bg:#0f1419;--card:#1a2029;--ink:#e6edf3;--mut:#9aa7b4;--line:#2a323d;--acc:#4da3ff}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:21px;margin:0 0 4px} h2{font-size:17px;margin:0 0 10px;color:var(--acc)}
+.sub{color:var(--mut);margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+.rowh,.colh{background:#222b36;font-weight:600} .rowh{text-align:left}
+.diag{background:#11161d;font-weight:700} .k{color:var(--mut);font-weight:400;font-size:12px}
+.eff{color:var(--mut)}
+.cert.high{background:#0e3a1e} .cert.mod{background:#3a360e} .cert.low{background:#3a1f0e} .cert.vlow{background:#3a0e12}
+td.ag{text-align:left;font-weight:600}
+.note{color:var(--mut);font-size:13px;border-left:3px solid var(--line);padding:4px 0 4px 12px;margin:10px 0}
+.flag{color:#ffb454} .legend span{display:inline-block;margin-right:14px;font-size:12px;color:var(--mut)}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin-right:4px}
+footer{color:var(--mut);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Asthma biologics &mdash; Bayesian exacerbation-rate league, GRADE certainty &amp; transported benefit</h1>
+<p class="sub">Registry-native (AACT) generality repoint &middot; <b>third full-depth class</b> (count/rate path) &middot; <b>decision-support DRAFT</b> &mdash; RoB &amp; values stay with the panel. League fit by hierarchical Bayesian RE on log-rate-ratio (nutpie, R&#770;=1.000); contrasts from posterior draws.</p>
+
+<div class="card">
+<h2>Annualised-exacerbation IRR league &amp; per-comparison certainty</h2>
+<p class="sub">Lower triangle = rate-ratio (row vs column). Upper triangle = computable GRADE/CINeMA certainty (indirect-star baseline + imprecision when the contrast CrI crosses the null + k=1 INSUFFICIENT) &mdash; identical domains to <code>nma_league.py</code>; hover a cell for P(superiority). Diagonal = posterior median IRR (k trials).</p>
+<table>
+<thead><tr><th></th><th class="colh">tezepelumab</th><th class="colh">reslizumab</th><th class="colh">benralizumab</th><th class="colh">mepolizumab</th></tr></thead>
+<tbody>
+<tr><th class="rowh">tezepelumab</th><td class="diag">0.48<br><span class="k">k=4</span></td><td class="cert low" title="P(sup)=0.82">Low</td><td class="cert low" title="P(sup)=0.93">Low</td><td class="cert low" title="P(sup)=0.94">Low</td></tr>
+<tr><th class="rowh">reslizumab</th><td class="eff">0.79</td><td class="diag">0.61<br><span class="k">k=4</span></td><td class="cert low" title="P(sup)=0.65">Low</td><td class="cert low" title="P(sup)=0.69">Low</td></tr>
+<tr><th class="rowh">benralizumab</th><td class="eff">0.72</td><td class="eff">0.91</td><td class="diag">0.67<br><span class="k">k=9</span></td><td class="cert low" title="P(sup)=0.54">Low</td></tr>
+<tr><th class="rowh">mepolizumab</th><td class="eff">0.71</td><td class="eff">0.90</td><td class="eff">0.98</td><td class="diag">0.68<br><span class="k">k=9</span></td></tr>
+</tbody>
+</table>
+<p class="legend"><span><i class="sw" style="background:#3a360e"></i>Moderate</span><span><i class="sw" style="background:#3a1f0e"></i>Low</span><span><i class="sw" style="background:#3a0e12"></i>Very low</span></p>
+<p class="note">Across 12 ordered comparisons: <b>Low: 12</b>. Lead <b>tezepelumab</b> (IRR 0.48); all agents reduce the exacerbation rate (class IRR 0.61). <span class="flag">The cross-agent ranking is confounded by baseline-rate / eosinophil effect modification</span> &mdash; not a clean &ldquo;best biologic&rdquo;; the transport below makes the baseline-rate dependence explicit.</p>
+</div>
+
+<div class="card">
+<h2>Transported absolute benefit &mdash; IRR &rarr; exacerbations averted per patient-year</h2>
+<p class="sub">A rate ratio is not a transportable decision quantity; the absolute benefit depends on the target's baseline exacerbation rate. Class IRR draws (median 0.61) &times; documented baseline annual rates by severity, full posterior credible intervals.</p>
+<table>
+<thead><tr><th class="colh">Target population</th><th class="colh">Baseline rate</th><th class="colh">Exacerbations averted/yr (95% CrI)</th></tr></thead>
+<tbody>
+<tr><td class="ag">moderate asthma (lower-rate target)</td><td>0.8/yr</td><td><b>0.32</b> (0.23, 0.39)</td></tr>
+<tr><td class="ag">severe eosinophilic asthma (reference) &#9733;</td><td>1.8/yr</td><td><b>0.71</b> (0.53, 0.87)</td></tr>
+<tr><td class="ag">frequent-exacerbator / very severe</td><td>3.5/yr</td><td><b>1.38</b> (1.03, 1.69)</td></tr>
+</tbody>
+</table>
+<p class="note flag">The same class IRR averts ~0.32/yr (moderate) vs ~1.38/yr (frequent-exacerbator) &mdash; a ~4&times; spread. For asthma the baseline rate IS the effect-modifier the league caveat flagged (severity / eosinophil enrichment), so transport makes the confounder explicit. Baseline rates are reference-distribution values; this is exacerbation-rate benefit, not a mortality/hospitalisation claim.</p>
+</div>
+
+<div class="card">
+<h2>Honest scope</h2>
+<p class="sub">Asthma is the <b>third full-depth</b> generality class (after PCSK9 continuous-biomarker and SGLT2 survival/HR), on the <b>count/rate</b> path: Bayesian IRR league + GRADE certainty + IRR&rarr;averted transport + this offline dashboard. Star network (each agent vs placebo &rarr; indirect contrasts). Registry-native (AACT); baseline rates are an authoritative reference distribution; no IPD, no full text.</p>
+</div>
+
+<footer>Generated by <code>class5_asthma/asthma_dashboard.py</code> from <code>asthma_league.json</code> + <code>asthma_transport.json</code>. Fully offline &middot; no external assets. Decision-support DRAFT, not a guideline.</footer>
+</div>
+</body>
+</html>

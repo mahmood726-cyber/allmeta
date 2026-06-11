@@ -10,10 +10,11 @@ Registry-native synthesis → HTA → 6 wide-gap methods → GRADE/CINeMA guidel
 posterior contrast → certainty league table → decision-sensitivity → external validation (**n=7** published
 NMAs/guidelines concordant) → 2 portfolio-method integrations (Benford integrity, entropy-balancing
 transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = continuous-weight / continuous-
-LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **two full-depth classes** — PCSK9
-(continuous-biomarker) and **SGLT2 (hard-outcome, Bayesian-draw league)** — each carrying league + GRADE +
-transport + offline dashboard, plus **complementary methods** (UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`).
-One-command reproducible (`python run_all.py`), **42-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **three full-depth classes** — PCSK9
+(continuous), SGLT2 (survival/HR), asthma (count/rate) — each carrying a **Bayesian-draw league** (CrI +
+P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus **complementary methods**
+(UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`). One-command reproducible (`python run_all.py`), **46-test**
+self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
 1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
@@ -64,8 +65,23 @@ One-command reproducible (`python run_all.py`), **42-test** self-verifying. Key 
      Pinned by `test_sglt2_transport_nnt_depth`.
    - **dashboard** — `sglt2_dashboard.py` → `sglt2_dashboard.html` (offline). Pinned by `test_sglt2_dashboard_offline`.
    Note: `sglt2_results.json` (composite, flags heterogeneity) is KEPT as the core repoint; the Bayesian
-   single-endpoint league is the depth promotion that *fixes* it. Suite now **42 green**. Next depth idea:
-   give PCSK9 a Bayesian draw matrix too (parity), or promote a 3rd class (psoriasis binary / asthma rate).
+   single-endpoint league is the depth promotion that *fixes* it.
+
+   **PCSK9 Bayesian-league parity + asthma = THIRD full-depth class (both DONE this session):**
+   - **PCSK9 Bayesian league** — `class2_pcsk9/pcsk9_league_bayes.py` → `pcsk9_league_bayes.json` (+ npz,
+     gitignored): hierarchical one-way RE on per-trial %LDL with **heteroscedastic per-agent SD** (nutpie,
+     R̂=1.00); draws → CrI + P(superiority). Same ranking as the frequentist league (bococizumab lead) but
+     more conservative (10 Low / 2 Moderate) — it propagates the real cross-trial heterogeneity. The
+     frequentist `pcsk9_league.json` is kept alongside. Pinned by `test_pcsk9_league_bayesian_parity`.
+   - **Asthma full-depth (3rd class, count/rate)** — `class5_asthma/asthma_league_bayes.py` →
+     `asthma_league.json` (Bayesian IRR league, nutpie R̂=1.00, tezepelumab 0.48 lead, class IRR 0.61),
+     `asthma_transport.py` → `asthma_transport.json` (IRR → exacerbations averted/yr: ~0.32 moderate → ~1.38
+     frequent-exacerbator — baseline rate IS the class-5 effect-modifier, made explicit), `asthma_dashboard.py`
+     → `asthma_dashboard.html` (offline). `asthma_results.json` kept as the core repoint. Pinned by
+     `test_asthma_league_bayesian_depth` / `_transport_averted_depth` / `_dashboard_offline`.
+   Suite now **46 green**. Three full-depth classes now span continuous + survival + count/rate, each with a
+   Bayesian-draw league. Next depth idea: promote class 4 (psoriasis, binary-responder) to full depth for the
+   4th outcome type, or wire the class leagues into `run_all.py` (currently standalone, like all class scripts).
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.

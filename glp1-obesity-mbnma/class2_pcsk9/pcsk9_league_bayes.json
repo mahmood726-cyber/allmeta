@@ -1,0 +1,105 @@
+{
+ "class": "PCSK9 inhibitors",
+ "outcome": "% LDL-C change",
+ "inference": "Bayesian hierarchical one-way RE on per-trial %LDL (nutpie); pairwise contrasts from posterior draws",
+ "ranking": [
+  "bococizumab",
+  "evolocumab",
+  "alirocumab",
+  "inclisiran"
+ ],
+ "kper": {
+  "alirocumab": 23,
+  "bococizumab": 4,
+  "evolocumab": 20,
+  "inclisiran": 8
+ },
+ "median_ldl_pct": {
+  "alirocumab": -58.8,
+  "bococizumab": -75.3,
+  "evolocumab": -61.1,
+  "inclisiran": -58.6
+ },
+ "rhat": 1.0,
+ "comparisons": [
+  {
+   "a": "bococizumab",
+   "b": "evolocumab",
+   "diff": -14.0,
+   "cri": [
+    -30.3,
+    3.8
+   ],
+   "p_superiority": 0.949,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "bococizumab",
+   "b": "alirocumab",
+   "diff": -16.4,
+   "cri": [
+    -30.2,
+    -0.3
+   ],
+   "p_superiority": 0.977,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bococizumab",
+   "b": "inclisiran",
+   "diff": -16.5,
+   "cri": [
+    -34.0,
+    2.7
+   ],
+   "p_superiority": 0.958,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "evolocumab",
+   "b": "alirocumab",
+   "diff": -2.3,
+   "cri": [
+    -15.4,
+    11.0
+   ],
+   "p_superiority": 0.641,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "evolocumab",
+   "b": "inclisiran",
+   "diff": -2.5,
+   "cri": [
+    -20.0,
+    15.2
+   ],
+   "p_superiority": 0.618,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "alirocumab",
+   "b": "inclisiran",
+   "diff": -0.3,
+   "cri": [
+    -15.1,
+    14.7
+   ],
+   "p_superiority": 0.516,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  }
+ ],
+ "certainty_counts": {
+  "Low": 10,
+  "Moderate": 2
+ },
+ "k1_insufficient": [],
+ "lead": "bococizumab",
+ "depth_note": "Bayesian draw-matrix league for PCSK9 (CrI + P(superiority)) in parity with the SGLT2 Bayesian league and the incretin flagship; heteroscedastic per-agent residual SD because AACT posts no per-trial LDL sampling SE (each agent k>=4 so sigma[agent] is estimable). Same ranking as the frequentist pcsk9_league.json (bococizumab lead) but more conservative on certainty -- it propagates real cross-trial heterogeneity. Complements, does not replace, the frequentist league. No IPD."
+}
