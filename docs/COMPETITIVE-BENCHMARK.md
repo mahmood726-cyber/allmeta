@@ -7,7 +7,7 @@
 
 ## 1. What allmeta is today
 
-105 internal browser-only apps. Category weight (from `hub/projects.js`):
+113 internal browser-only apps (see `hub/projects.js` for the live count). Category weight:
 
 | Area | Apps | Notes |
 | --- | --- | --- |

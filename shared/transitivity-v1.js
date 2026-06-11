@@ -46,11 +46,17 @@
       var ms = Object.keys(nodeMeans).map(function (n) { return nodeMeans[n]; });
       if (ms.length < 2) return { id: mod.id, name: mod.name, nodeMeans: nodeMeans, nNodes: ms.length, status: "na", note: "<2 nodes with data" };
       var mn = Math.min.apply(null, ms), mx = Math.max.apply(null, ms), overall = mean(ms), spread = sd(ms);
-      var cv = overall !== 0 ? spread / Math.abs(overall) : (spread > 0 ? Infinity : 0);
+      // CV (spread/|mean|) is only meaningful on a strictly-positive ratio scale.
+      // For modifiers that cross/sit near zero (mean-centred, standardised, log/
+      // logit, change scores) CV explodes regardless of the real spread, so we do
+      // NOT flag on it — we report the range and ask the reviewer to judge.
+      var positiveScale = mn > 0;
+      var cv = positiveScale ? spread / overall : null;
       return {
         id: mod.id, name: mod.name, nodeMeans: nodeMeans, nNodes: ms.length,
         min: mn, max: mx, range: mx - mn, overallMean: overall, spread: spread, cv: cv,
-        status: cv > thr ? "flag" : "ok"
+        status: positiveScale ? (cv > thr ? "flag" : "ok") : "na",
+        note: positiveScale ? undefined : "modifier not strictly positive — CV undefined; inspect the range (" + (mx - mn).toFixed(3) + ") manually"
       };
     });
     var flags = rows.filter(function (r) { return r.status === "flag"; }).length;
@@ -80,10 +86,15 @@
       var sdRef = isNum(gv.sd) && gv.sd > 0 ? gv.sd : (isNum(tv.sd) && tv.sd > 0 ? tv.sd : null);
       var stdDiff = sdRef ? diff / sdRef : null;
       var relDiff = gv.mean !== 0 ? diff / Math.abs(gv.mean) : null;
+      var scalable = stdDiff != null || relDiff != null;
       var big = stdDiff != null ? Math.abs(stdDiff) > z : (relDiff != null ? Math.abs(relDiff) > rel : false);
+      // A real difference that can't be scaled (no SD and target mean 0) must not
+      // be silently reported "ok" — flag it as unassessable instead.
+      var status = !scalable ? (diff !== 0 ? "na" : "ok") : (big ? "flag" : "ok");
       return {
         id: mod.id, name: mod.name, trialMean: tv.mean, targetMean: gv.mean, diff: diff,
-        stdDiff: stdDiff, relDiff: relDiff, direction: diff > 0 ? "over" : "under", status: big ? "flag" : "ok"
+        stdDiff: stdDiff, relDiff: relDiff, direction: diff > 0 ? "over" : "under", status: status,
+        note: (!scalable && diff !== 0) ? "difference present but no SD/relative scale to assess" : undefined
       };
     });
     var flags = rows.filter(function (r) { return r.status === "flag"; }).length;

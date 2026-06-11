@@ -57,6 +57,22 @@ def test_reorder_breaks_the_chain_link():
     assert o["valid"] is False and o["reason"] == "chain link broken"
 
 
+def test_signed_chain_with_no_key_is_not_reported_verified():
+    # SECURITY: a signed chain verified with no key must NOT report signed/verified
+    # (the SHA-256 chain alone isn't authenticated against a re-sealing attacker).
+    o = _run(SEED + "const v=await L.verifyHistory([s1,s2],'');"
+                    "console.log(JSON.stringify({valid:v.valid,signed:v.signed,sealed:v.sealedSigned,ver:v.signaturesVerified}));")
+    assert o["valid"] is True            # chain links are intact
+    assert o["signed"] is False          # but signatures were NOT checked
+    assert o["sealed"] is True and o["ver"] is False
+
+
+def test_signed_chain_with_key_reports_verified():
+    o = _run(SEED + "const v=await L.verifyHistory([s1,s2],'KEY');"
+                    "console.log(JSON.stringify({signed:v.signed,ver:v.signaturesVerified}));")
+    assert o["signed"] is True and o["ver"] is True
+
+
 def test_unsigned_chain_still_tamper_evident():
     # no key: the hash chain is still tamper-evident, just not authenticated
     o = _run("const a=await L.sealVersion(null,{version:1,estimate:0.1},null);"

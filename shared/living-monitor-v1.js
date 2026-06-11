@@ -66,11 +66,14 @@
   // brokenAt is the 0-based index of the first tampered/re-ordered version.
   function verifyHistory(versions, key) {
     versions = versions || [];
-    var prevChain = "", i = 0;
+    var prevChain = "", i = 0, sigChecked = false;
     function step() {
       if (i >= versions.length) {
-        var anySigned = versions.some(function (v) { return v._seal && v._seal.signed; });
-        return Promise.resolve({ valid: true, brokenAt: -1, signed: anySigned, count: versions.length });
+        // `signed` means signatures were ACTUALLY verified — not merely present.
+        // The SHA-256 chain alone is not tamper-evident against a re-sealing
+        // attacker, so a signed chain verified with no key is NOT authenticated.
+        var sealedSigned = versions.some(function (v) { return v._seal && v._seal.signed; });
+        return Promise.resolve({ valid: true, brokenAt: -1, signed: sigChecked, sealedSigned: sealedSigned, signaturesVerified: sigChecked, count: versions.length });
       }
       var v = versions[i], seal = v && v._seal;
       if (!seal) return Promise.resolve({ valid: false, brokenAt: i, reason: "unsealed version" });
@@ -82,7 +85,7 @@
           if (key && seal.signed) {
             return hmacHex(key, chain).then(function (sig) {
               if (sig !== seal.sig) return { valid: false, brokenAt: i, reason: "signature invalid", signed: true };
-              prevChain = seal.chainHash; i++; return step();
+              sigChecked = true; prevChain = seal.chainHash; i++; return step();
             });
           }
           prevChain = seal.chainHash; i++; return step();
