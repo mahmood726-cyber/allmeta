@@ -529,6 +529,14 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await expect(mv).toContainText("verdict");
   await expect(mv).toContainText("Naïve");
   await expect(mv.locator("table tbody tr")).toHaveCount(7);
+
+  // publication-bias signals panel (browser subset of MAFI): Egger + precision-effect
+  const bias = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Publication-bias signals" });
+  await expect(bias).toHaveCount(1);
+  await expect(bias).toContainText("Egger");
+  await expect(bias).toContainText("Precision");
+  await expect(bias).toContainText("no clear asymmetry");   // fixture Egger p≈0.68
+  await expect(bias).toContainText("MAFI");
 });
 
 test("Stages carry good-vs-weak writing teaching cards", async ({ page }) => {
