@@ -12,7 +12,7 @@ def load(f):
 gr = load('grade_recommendation.json'); cin = load('cinema_confidence.json'); L = load('nma_league.json')
 br = load('joint_benefit_risk.json'); cn = load('cnma_incretin.json'); su = load('extend_surrogate.json')
 pb = load('registry_pubbias.json'); ts = load('trial_sequential.json'); mc = load('hta_mcda.json'); ev = load('hta_evppi.json')
-ds = load('decision_sensitivity.json'); cc = load('concordance_validation.json')
+ds = load('decision_sensitivity.json'); conc = load('concordance_validation.json')
 def loadtext(f):
     p = os.path.join(ROOT, f)
     return open(p, encoding='utf-8').read() if os.path.exists(p) else ''
@@ -142,8 +142,8 @@ P(tirzepatide better than sc-semaglutide by &gt; MID) &mdash; near-certain at MI
 The panel's clinical-importance threshold directly determines how much the evidence can support.</p></div></div>""")
 
 # ---- external concordance ----
-if cc:
-    v = cc['verdict']; rec = v['recommendation']; rk = v['ranking']
+if conc:
+    v = conc['verdict']; rec = v['recommendation']; rk = v['ranking']
     S.append(f"""<h2>7. External validation (vs published GRADE guidelines)</h2>
 <p class="small">Concordance of our automated outputs against human-adjudicated, published assessments (PubMed abstracts):</p>
 <table><thead><tr><th>Dimension</th><th>Published</th><th>Ours</th><th>Verdict</th></tr></thead><tbody>

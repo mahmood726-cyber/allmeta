@@ -116,6 +116,24 @@ Certainty across 42 comparisons: 8 Moderate, 24 Low, 10 Very low. No comparison 
 star network, no incoherence check). This is the discipline of GRADE/CINeMA applied to *every* cell, not
 just the headline contrast — telling a panel precisely which of the league-table claims it can lean on.
 
+## External validation — concordance with published GRADE guidelines (`concordance_validation.py`)
+The keystone question: does the automated, transparent pipeline **agree with human-adjudicated GRADE
+panels**? Checked against published assessments (PubMed abstracts; data-policy compliant):
+
+| Dimension | Published | Ours | Verdict |
+|---|---|---|---|
+| **Recommendation** (BMJ 2025 MAGIC living guideline, DOI 10.1136/bmj-2024-082071) | *weak recommendation in favour of tirzepatide in obesity* | Conditional (weak), favour tirzepatide | **MATCH** |
+| **Ranking** (Shi 2024 Lancet 10.1016/S0140-6736(24)00351-9 / Xie 2024) | GLP-1 top; tirzepatide > semaglutide | tirzepatide > semaglutide | **MATCH** |
+| **Certainty** (Shi 2024 / Iannone 2023, 10.1111/dom.15138) | moderate–high (vs placebo) | Low (head-to-head *difference*) | concordant in *logic* — different estimand |
+| **Effect** | semaglutide −11.4% vs lifestyle | order-of-magnitude consistent; Xie tirzepatide 16.6 reproduced **exactly** | consistent |
+
+**The automated pipeline reproduced the human guideline conclusion on the decision that matters** — a
+weak/conditional recommendation favouring tirzepatide in obesity, matching a Guyatt/Vandvik/MAGIC GRADE
+guideline. The certainty rows are *not* the same estimand (published rate each drug vs placebo; ours rates
+the harder head-to-head *difference*), so they're concordant in logic, not cell-by-cell — an honesty the
+abstract-only data policy enforces. This is genuine external validation: the transparent automation lands
+where the experts did. *(Attribution: According to PubMed; DOIs above.)*
+
 ## One-command regeneration + dashboard
 The entire chain — registry → NMA → wide-gap methods → HTA → exact contrast → league → GRADE/CINeMA →
 exports — regenerates from the pinned AACT snapshot via **`python run_all.py`** (38 dependency-ordered
