@@ -1,0 +1,9 @@
+nct,agent,dweight_pct,unit,baseline_kg,hr,logHR,se_logHR,mace_title
+NCT03574597,semaglutide,-8.52,pct,92.0,0.8,-0.2231,0.0541,Participants From Time of Randomization to First O
+NCT03914326,semaglutide,-3.18,kg,92.0,0.86,-0.1508,0.0563,Number of Participants From Randomization to First
+NCT02465515,albiglutide,-0.99,kg,92.0,0.78,-0.2485,0.0678,Time to First Occurrence of MACE or Urgent Revascu
+NCT01720446,semaglutide,-4.63,kg,92.1,0.74,-0.3011,0.0922,Time From Randomisation to First Occurrence of an 
+NCT02692716,semaglutide,-3.7,kg,92.0,0.82,-0.1985,0.1504,Time From Randomisation to First Occurrence of an 
+NCT04847557,tirzepatide,-11.61,pct,92.0,0.62,-0.478,0.2144,First Occurrence of the Composite Endpoint of Hear
+NCT03819153,semaglutide,-4.47,kg,92.0,0.76,-0.2744,0.0734,Number of Participants From Time of Randomization 
+NCT04660643,tirzepatide,-29.62,pct,107.3,0.013,-4.3428,0.6231,Time to First Occurrence of Participants Returning

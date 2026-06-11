@@ -29,7 +29,16 @@ it**, and a **validated method + portfolio engine**. Status = what is actually d
   Within semaglutide r=+0.22; weighted trial-level R²=0.19; the raw +0.79 is leveraged entirely by
   tirzepatide. SELECT (−8.5% weight, HR 0.80) vs SUSTAIN-6 (−4.6%, HR 0.74) = *more* weight loss, *less*
   CV benefit → a weight-**independent** GLP-1 CV effect. **Clinical message: weight loss cannot substitute
-  for hard-outcome trials.** *(k=6, semaglutide-dominated — hypothesis-strength; full-class is the real test.)*
+  for hard-outcome trials.**
+- **Extended to the class (`extend_surrogate.py`, k=7, 3 agents incl. albiglutide & tirzepatide):** the
+  signal *sharpens* — albiglutide loses only **−1.0%** weight yet cuts MACE (HR 0.78) as much as high-dose
+  semaglutide. Pearson +0.71 is a pure tirzepatide-leverage artifact (drop it → r=+0.07). Decisively,
+  **I²(logHR)=0%**: the CVOTs cluster so tightly (HR 0.62–0.86) that there is essentially *no between-trial
+  variation in CV benefit to explain* — the class delivers a uniform MACE reduction across 1%→12% weight
+  loss. The surrogate fails not by low R² but by a near-constant outcome. **Verified data-policy boundary:**
+  the 5 older CVOTs (LEADER/REWIND/EXSCEL/ELIXA/AMPLITUDE-O) post 0 structured weight in AACT *and* 0
+  between-group weight in their abstracts → unrecoverable without full text; class surrogacy is
+  policy-bounded to the 3 posted-weight agents (a finding, not a hidden gap).
 
 ### 3. Multivariate / joint efficacy + safety NMA   ✅ DEMONSTRATED (`joint_benefit_risk.py`)
 - **Patient question:** *Show me the benefit and the harms together — for the side-effect I care about.*

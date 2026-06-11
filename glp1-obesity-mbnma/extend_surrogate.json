@@ -1,0 +1,76 @@
+{
+ "k": 7,
+ "n_agents": 3,
+ "agents": [
+  "albiglutide",
+  "semaglutide",
+  "tirzepatide"
+ ],
+ "pairs": [
+  {
+   "nct": "NCT03574597",
+   "agent": "semaglutide",
+   "dweight_pct": -8.52,
+   "hr": 0.8,
+   "se_logHR": 0.0541
+  },
+  {
+   "nct": "NCT03914326",
+   "agent": "semaglutide",
+   "dweight_pct": -3.18,
+   "hr": 0.86,
+   "se_logHR": 0.0563
+  },
+  {
+   "nct": "NCT02465515",
+   "agent": "albiglutide",
+   "dweight_pct": -0.99,
+   "hr": 0.78,
+   "se_logHR": 0.0678
+  },
+  {
+   "nct": "NCT01720446",
+   "agent": "semaglutide",
+   "dweight_pct": -4.63,
+   "hr": 0.74,
+   "se_logHR": 0.0922
+  },
+  {
+   "nct": "NCT02692716",
+   "agent": "semaglutide",
+   "dweight_pct": -3.7,
+   "hr": 0.82,
+   "se_logHR": 0.1504
+  },
+  {
+   "nct": "NCT04847557",
+   "agent": "tirzepatide",
+   "dweight_pct": -11.61,
+   "hr": 0.62,
+   "se_logHR": 0.2144
+  },
+  {
+   "nct": "NCT03819153",
+   "agent": "semaglutide",
+   "dweight_pct": -4.47,
+   "hr": 0.76,
+   "se_logHR": 0.0734
+  }
+ ],
+ "r2_naive_weighted": 0.06,
+ "r2_error_adjusted": "degenerate/undefined",
+ "I2_logHR": 0.0,
+ "pearson_r": 0.71,
+ "pearson_drop_tirzepatide": 0.07,
+ "within_semaglutide_r": 0.22,
+ "ste_pct": null,
+ "unrecoverable_agents": [
+  "liraglutide",
+  "dulaglutide",
+  "exenatide",
+  "lixisenatide",
+  "efpeglenatide"
+ ],
+ "boundary": "verified 0 AACT weight outcomes + 0 abstract weight for the 5 older CVOTs -> policy-bounded to posted-weight agents",
+ "finding": "weight loss NOT a validated trial-level CV surrogate; error-adjusted R2 low; albiglutide (minimal weight, strong CV benefit) sharpens the weight-independent signal; hard-outcome trials remain necessary"
+}
