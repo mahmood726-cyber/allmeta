@@ -1,0 +1,16 @@
+{
+ "_note": "Pinned headline results for regression protection. Stochastic (NUTS) values carry generous tolerances per the Monte-Carlo testing rule; deterministic/categorical are exact. Update ONLY with a recorded reason.",
+ "transport": {"tirzepatide_eff_target": 17.5, "semaglutide_eff_target": 14.6, "tol_pp": 0.6},
+ "contrast": {"median": 2.94, "cri": [-0.14, 5.98], "p_gt_0": 0.97, "tol_pp": 0.6, "tol_p": 0.05},
+ "grade_certainty": "Low",
+ "cinema_confidence": "Low",
+ "cnma": {"validated_vs_discomb": true, "GLP1": 13.1, "GIP": 4.8, "GCG": 5.6, "glucagon_gt_gip": true, "tol_pp": 0.8},
+ "surrogate": {"I2_logHR": 0.0, "r2_error_adjusted": "degenerate/undefined", "verdict_contains": "NOT a validated"},
+ "league": {"k1_insufficient": ["mazdutide", "retatrutide", "semaglutide-sc-daily"], "moderate_min": 4, "very_low_min": 6},
+ "benefit_risk": {"dominated_includes": "orforglipron"},
+ "pubbias": {"measured_bias_negligible": true},
+ "tsa": {"conclusive": true, "ongoing_trials_min": 200},
+ "decision_sensitivity": {"p_mid0_min": 0.9, "p_mid3_max": 0.6},
+ "hta_mcda": {"tirzepatide_pbest_min": 0.8},
+ "pcsk9": {"ranking_top": "bococizumab", "ranking_includes": ["evolocumab", "alirocumab", "inclisiran"], "surrogate_discriminates": true}
+}

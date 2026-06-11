@@ -4,7 +4,7 @@ stages run from the aact-kit dir; Bayesian stages use the compiled nutpie backen
 
 Usage: python run_all.py [--force] [--fast]   (--fast skips the slow Bayesian/AACT-load stages)
 """
-import sys, subprocess, time, os
+import sys, subprocess, time, os, re
 
 HERE = r'C:/Projects/glp1-doseresp-nma/glp1-obesity-mbnma'
 AACT = r'C:/Projects/aact-kit'
@@ -83,4 +83,15 @@ for name, script, cwd, out, slow in STAGES:
         print(f'  [{name:22s}] FAIL ({dt:.0f}s): {(r.stderr or "")[-160:].strip()}'); fail += 1
 
 print(f'\nstages: {ok} ran, {skip} cached/skipped, {fail} failed')
+
+# --- self-verification: pin the headline results (skip with --no-verify) ---
+if '--no-verify' not in sys.argv:
+    print('\nverifying headline results (pytest tests)...')
+    v = subprocess.run([sys.executable, '-m', 'pytest', 'tests', '--tb=line', '-rN'], cwd=HERE,
+                       capture_output=True, text=True, timeout=300)
+    lines = (v.stdout or v.stderr or '').strip().splitlines()
+    summary = next((l for l in reversed(lines) if re.search(r'passed|failed|error', l)), lines[-1] if lines else 'no output')
+    print('  ' + summary.strip())
+    if v.returncode != 0:
+        print('  VERIFICATION FAILED — a headline result drifted from its pinned baseline. Investigate before citing.')
 print('Human-attested layer (screening / RoB-2 / GRADE) runs in the RapidMeta dashboard (stage 12, GAP_CLOSURE.md).')
