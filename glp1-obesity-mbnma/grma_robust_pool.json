@@ -1,0 +1,45 @@
+{
+ "method": "GRMA (Grey Relational Meta-Analysis)",
+ "role": "robust-pooling sensitivity check (pair to the IV/DL pool)",
+ "node": "semaglutide 2.4 mg vs placebo (%TBWL)",
+ "k": 15,
+ "iv": {
+  "mu": 11.47,
+  "se": 0.18
+ },
+ "grma": {
+  "mu": 11.27,
+  "boot_se": 0.94,
+  "ci": [
+   8.92,
+   12.52
+  ],
+  "n_eff": 13.6
+ },
+ "grma_minus_iv_pp": -0.2,
+ "conclusion_robust_to_pooling": true,
+ "most_downweighted": [
+  {
+   "nct": "NCT04102189",
+   "yi": 17.1,
+   "iv_w": 0.012,
+   "grma_w": 0.032,
+   "ghost": false
+  },
+  {
+   "nct": "NCT05144984",
+   "yi": 6.6,
+   "iv_w": 0.033,
+   "grma_w": 0.038,
+   "ghost": true
+  },
+  {
+   "nct": "NCT05649137",
+   "yi": 6.7,
+   "iv_w": 0.03,
+   "grma_w": 0.038,
+   "ghost": false
+  }
+ ],
+ "scope_note": "robust-pooling SENSITIVITY pair to the IV/DL pool; faithful Python port of grma_meta.R (R unavailable; no metafor 1e-6 cross-validation possible since GRMA is not in metafor); GRMA does not estimate tau^2; IV/DL/REML stays primary. AACT contrasts; no IPD."
+}

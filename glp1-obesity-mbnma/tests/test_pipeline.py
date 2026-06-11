@@ -202,6 +202,26 @@ def test_generality_class5_asthma_rate():
     assert 'effect modification' in d['caveat'].lower() or 'transitivity' in d['caveat'].lower()
 
 
+def test_ubcma_reporting_bias_inferential_pair():
+    # frontier 4 method 1: UBCMA = inferential pair to the registry-native ghost-measurement
+    d = _classfile('ubcma_reporting_bias.json')
+    assert d['k_published'] == 13 and d['k_ghost'] == 2
+    # the directly-observed reporting-bias direction: ghost pool < published pool
+    assert d['observed']['ghost_iv'] < d['observed']['published_iv']
+    # UBCMA, fit blind to the ghosts, infers a correction in the SAME direction the ghosts reveal
+    assert d['same_direction_as_ghost_truth'] is True
+    assert 10.5 <= d['ubcma']['mu'] <= 12.5, 'UBCMA mu should sit just below the naive published pool'
+    assert 'pair' in d['role'].lower()
+
+def test_grma_robust_pool_sensitivity():
+    # frontier 4 method 2: GRMA = robust-pooling sensitivity pair to the IV pool
+    d = _classfile('grma_robust_pool.json')
+    assert d['k'] == 15
+    assert abs(d['grma_minus_iv_pp']) < 1.5 and d['conclusion_robust_to_pooling'] is True
+    assert 11.0 <= d['grma']['mu'] <= 12.0 and 11.0 <= d['iv']['mu'] <= 12.0
+    assert 'sensitivity' in d['role'].lower()
+
+
 def test_concordance_battery_multireview():
     d = load('concordance_battery.json')
     assert d['n_reviews'] >= 6, 'battery should score against several published reviews'

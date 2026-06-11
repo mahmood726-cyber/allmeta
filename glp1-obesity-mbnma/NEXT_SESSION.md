@@ -11,7 +11,8 @@ posterior contrast → certainty league table → decision-sensitivity → exter
 NMAs/guidelines concordant) → 2 portfolio-method integrations (Benford integrity, entropy-balancing
 transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = continuous-weight / continuous-
 LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **PCSK9 promoted to full depth** (league +
-GRADE + transport + offline dashboard). One-command reproducible (`python run_all.py`), **37-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+GRADE + transport + offline dashboard) and **complementary methods** (UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`).
+One-command reproducible (`python run_all.py`), **39-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
 1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
@@ -36,13 +37,25 @@ GRADE + transport + offline dashboard). One-command reproducible (`python run_al
 3. **Data-policy-blocked methods (activate only if scope changes):** quantile MA (`ipd-qma`, needs IPD);
    umbrella CCA (`umbrellareview`, needs each review's included-study list) — would let the concordance
    battery test whether the 7 validators are *independent* or recycle trials.
-4. **Complementary methods (optional):** UBCMA (`ubcma`) as the inferential pair to the ghost-measurement;
-   grey relational MA (`grma`) as a robust-pooling sensitivity check. (Dissonance Field Synthesis: keep OUT
-   of the guideline layer — novel/unvalidated.)
+4. ~~**Complementary methods (optional):** UBCMA + grey-relational MA~~ **DONE** (see
+   `COMPLEMENTARY_METHODS.md`), both on the semaglutide-2.4mg node, both honest sensitivity/corroboration
+   pairs (headline ranking unchanged):
+   - **UBCMA** (`ubcma_reporting_bias.py` → `ubcma_reporting_bias.json`) = inferential pair to the
+     ghost-measurement. Fit blind to the ghosts on the visible 13, infers μ 11.30 (vs DL 11.60) — a downward
+     correction in the *same direction* the ghosts directly reveal. Pinned by
+     `test_ubcma_reporting_bias_inferential_pair`. Deterministic (`restart_seed`); imports the portfolio
+     package via `sys.path` to `C:/Projects/ubcma/src`.
+   - **GRMA** (`grma_robust_pool.py` → `grma_robust_pool.json`) = robust-pooling sensitivity. μ 11.27 vs IV
+     11.47 (Δ −0.20) → robust to the pooling rule. Pinned by `test_grma_robust_pool_sensitivity`. Faithful
+     **Python port** of `C:/Projects/grma/grma_meta.R` (R unavailable; NOT in metafor so no 1e-6 cross-check —
+     stated openly). Dissonance Field Synthesis kept OUT of the guideline layer (novel/unvalidated).
+   Suite now **39 green**.
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.
 - No CV-benefit claim from weight loss (not a validated surrogate). k=1 apex agents = INSUFFICIENT.
-- Classes 2–4 are *core repoints*, not full pipelines — state that. Concordance is logic-level (abstracts).
+- Classes 3–5 are *core repoints*, not full pipelines — state that (PCSK9/class 2 is the full-depth
+  exception). Concordance is logic-level (abstracts). Complementary methods (UBCMA/GRMA) are sensitivity
+  pairs, not headline claims; GRMA has no metafor cross-check (not in metafor).
 - Run `python run_all.py` (self-verifies) before citing any headline number; update `tests/baselines.json`
   only with a recorded reason.
