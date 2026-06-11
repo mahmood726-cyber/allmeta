@@ -19,8 +19,13 @@ LDL / hard-outcome-HR / binary-responder / count-rate-IRR). One-command reproduc
    the rate (class IRR 0.70); engine flags the raw cross-agent ranking as baseline-rate/eosinophil effect
    modification (I²=96%), not a clean winner. Pinned by `test_generality_class5_asthma_rate`. Next count/rate
    extension if wanted: registry-ipd KM reconstruction on a class that *does* post KM curves.
-2. **Promote one class to the full 40-stage pipeline** — e.g., PCSK9: transport (LDL to a target lipid
-   population) + league + GRADE + dashboard, not just the core repoint. Proves full-depth generality.
+2. **Promote one class to the full 40-stage pipeline** — PCSK9: **league + GRADE DONE**
+   (`class2_pcsk9/pcsk9_league.py` → `pcsk9_league.json`): full pairwise LDL league with per-comparison
+   GRADE/CINeMA certainty using the *same* computable domains as the incretin flagship `nma_league.py`
+   (6 Moderate / 6 Low across 12 comparisons, bococizumab lead, no k=1). Pinned by `test_pcsk9_league_depth`.
+   **Remaining depth:** transport (LDL → a target lipid population — needs a target lipid distribution not
+   held registry-natively) + HTML dashboard. Those repoint identically (same AACT fields/engines) but were
+   not rebuilt; the PCSK9 league uses the frequentist normal contrast (no Bayesian draw matrix for this class).
 3. **Data-policy-blocked methods (activate only if scope changes):** quantile MA (`ipd-qma`, needs IPD);
    umbrella CCA (`umbrellareview`, needs each review's included-study list) — would let the concordance
    battery test whether the 7 validators are *independent* or recycle trials.

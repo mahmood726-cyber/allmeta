@@ -157,6 +157,17 @@ def test_generality_class4_psoriasis_hierarchy():
     assert d['hierarchy_reproduced'] is True, 'should reproduce IL-17/IL-23 > TNF'
     assert d['il17_23_mean_pct'] > d['tnf_mean_pct']
 
+def test_pcsk9_league_depth():
+    # frontier 2: PCSK9 promoted beyond a core repoint -> full league + per-pair GRADE certainty
+    d = _classfile('class2_pcsk9/pcsk9_league.json')
+    assert d['lead'] == 'bococizumab' and d['ranking'][0] == 'bococizumab'
+    assert sum(d['certainty_counts'].values()) == 12, 'all ordered pairwise comparisons should be graded'
+    # same GRADE domains as the incretin flagship: bococizumab clearly best -> its contrasts clear the null (Moderate)
+    assert d['lead_vs_second']['certainty'] == 'Moderate'
+    assert d['k1_insufficient'] == [], 'every PCSK9 agent has k>=4; no INSUFFICIENT node'
+    # honest depth boundary recorded (not the full 40-stage run)
+    assert 'transport' in d['depth_note'].lower()
+
 def test_generality_class5_asthma_rate():
     d = _classfile('class5_asthma/asthma_results.json')
     # 5th outcome TYPE: count/rate (annualised exacerbation incidence-rate ratio)

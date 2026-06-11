@@ -25,10 +25,15 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   by baseline rate / eosinophil enrichment (asthma). The engine names each rather than papering over it.
 
 ## Honest scope
-- Classes 2–5 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
+- Classes 3–5 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
   the 40-stage incretin pipeline. Transport, league, HTA, and GRADE would repoint identically (same AACT
   fields + engines) but were not rebuilt per class — the point is class-generality and method-discrimination,
   which hold.
+- **Class 2 (PCSK9) goes deeper:** it now also carries the **league + GRADE depth stages** — a full pairwise
+  LDL league with per-comparison GRADE/CINeMA certainty (`class2_pcsk9/pcsk9_league.json`) using the *same*
+  computable domains as the incretin flagship `nma_league.py` (6 Moderate / 6 Low across 12 comparisons,
+  bococizumab lead). Remaining depth (transport to a target lipid population; HTML dashboard) repoints
+  identically but is not rebuilt. This proves the depth stages port, not just the core analysis.
 - Every class result is registry-native (AACT) and honestly bounded (small k where noted; demonstration, not
   a systematic review).
 

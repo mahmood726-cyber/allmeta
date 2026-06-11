@@ -47,13 +47,33 @@ validate** the LDL surrogate (k=2 is not a surrogacy). The defensible conclusion
 data supported it (incretins) and a direction consistent with the established surrogate where the data was
 thin (PCSK9).** It discriminates; it is not rigged.
 
+## Result 3 — DEPTH: the league + GRADE stages repoint too (`pcsk9_league.py`)
+Beyond the single lead head-to-head, the **full pairwise league table** now repoints to PCSK9, using the
+*identical* computable certainty domains as the incretin flagship `nma_league.py` — indirect star-network
+baseline (−1), imprecision when the contrast CI crosses the null (−1), and a k=1 INSUFFICIENT flag (−1):
+
+|  | bococizumab | evolocumab | alirocumab | inclisiran |
+|---|---|---|---|---|
+| **bococizumab** (−76.6%) | — | Moderate | Moderate | Moderate |
+| **evolocumab** (−61.3%) | +15.2 | — | Low | Low |
+| **alirocumab** (−58.8%) | +17.8 | +2.6 | — | Low |
+| **inclisiran** (−58.4%) | +18.2 | +2.9 | +0.4 | — |
+
+(lower triangle = %LDL-C difference; upper = certainty.) Across the 12 ordered comparisons: **6 Moderate, 6
+Low**, no INSUFFICIENT node (every agent k≥4). bococizumab's contrasts all clear the null → Moderate; the
+evolocumab/alirocumab/inclisiran cluster is mutually indistinguishable (CIs cross null) → Low — the same
+honest read as the lead head-to-head, now for every cell. This promotes PCSK9 from a *core repoint* to a
+**league + GRADE depth** proof.
+
 ## Scope (honest)
-This demonstrates generality across the **core** of the pipeline (discovery → extraction → NMA → GRADE +
-the surrogate method), not a re-run of all 39 incretin stages for PCSK9. Transport, benefit-risk, the full
-league table, and the dashboard would repoint the same way (same AACT fields, same engines) but were not
-rebuilt here — the point was to prove the engine is class-general and the methods discriminate, which it is
-and they do. The LDL per-trial variance uses a between-trial-spread proxy (CIs approximate); a full repoint
-would harvest dispersion as in the incretin extractor.
+This now demonstrates generality across the pipeline core **plus the league + GRADE depth stages**
+(discovery → extraction → NMA → full league + per-comparison GRADE/CINeMA certainty + the surrogate method),
+still not a re-run of all 39 incretin stages for PCSK9. The remaining depth — **transport** (LDL → a target
+lipid population needs a target lipid distribution we do not hold registry-natively) and the **HTML
+dashboard** — repoints the same way (same AACT fields, same engines) but was not rebuilt here. The PCSK9
+league uses the frequentist normal contrast (this class has no Bayesian draw matrix, unlike the incretin
+flagship — an honest difference). The LDL per-trial variance uses a between-trial-spread proxy (CIs
+approximate); a full repoint would harvest dispersion as in the incretin extractor.
 
 ## Verdict
 **It is a reusable engine.** Repointing to PCSK9 inhibitors — a class with a different outcome type and the
