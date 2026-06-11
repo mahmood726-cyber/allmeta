@@ -639,6 +639,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["transitivity", "representativeness", "nma", "effect-modifier", "exchangeability", "generalisability", "external-validity"]
   },
   {
+    name: "Surrogate validation",
+    folder: "allmeta/surrogate-validation",
+    path: "./surrogate-validation/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Trial-level surrogate validation: regress the final-outcome effects on the surrogate effects across trials and report the naive R², the estimation-error-adjusted R² (Daniels-Hughes / van Houwelingen), leave-one-out robustness, and a surrogate threshold effect — refusing the adjusted R² when the final effects don't vary enough to estimate it (the trap a naive R² hides).",
+    note: "Trial-level ≠ individual-level surrogacy; high R² is necessary but not sufficient; needs adequate k + between-trial signal. Cross-language validated vs numpy. Idea integrated from the glp1-obesity-mbnma surrogate arm.",
+    tags: ["surrogate", "surrogacy", "trial-level", "daniels-hughes", "validation", "ste", "r-squared", "biomarker"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
