@@ -164,8 +164,11 @@ test("review-project Overview funnel and inline stage previews render from the b
   // inline previews per stage (read from the bus)
   await expect(page.locator('#panel-protocol .preview')).toContainText("adults with HF");
   await expect(page.locator('#panel-extraction .preview table tbody tr')).toHaveCount(3);
-  // fromEstSE treats 0.86 as a log-HR on the ratio scale, so the natural-scale point is exp(0.86) ≈ 2.36
-  await expect(page.locator('#panel-synthesis .preview .result-card .big')).toContainText("2.36");
+  // the result card now shows the LIVE recompute of the 3 studies on the bus (RE-REML default),
+  // not the canonical bus value: pooling est=[-.15,-.10,-.20] gives μ≈-0.146 → exp≈0.86 on the ratio scale.
+  await expect(page.locator('#panel-synthesis .preview .result-card .big')).toContainText("0.86");
+  // the canonical ma-pooled-v1 result exp(0.86)≈2.36 is kept as the one-line cross-reference
+  await expect(page.locator('#panel-synthesis .preview .synth-xref')).toContainText("2.36");
   await expect(page.locator('#panel-synthesis .preview svg.mini-forest')).toHaveCount(1);  // hidden panel: assert presence, not visibility
   await expect(page.locator('#panel-synthesis .preview svg.mini-forest polygon')).toHaveCount(1);  // pooled diamond drawn
   // RoB traffic-lights: domain D1 override=low (green), D2 override=high (red),
@@ -175,4 +178,80 @@ test("review-project Overview funnel and inline stage previews render from the b
   await expect(page.locator('#panel-appraisal .preview .rl.overall.rl-high')).toHaveCount(1);
   // GRADE SoF certainty pill
   await expect(page.locator('#panel-certainty .preview .sof-moderate')).toContainText("Moderate");
+});
+
+test("synthesis preview re-pools the studies bus live under the chosen model (JASP-style)", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await page.evaluate(() => {
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "Trial A", est: -0.15, se: 0.05 }, { label: "Trial B", est: -0.10, se: 0.06 },
+      { label: "Trial C", est: -0.20, se: 0.07 }, { label: "Trial D", est: 0.02, se: 0.09 }
+    ] }));
+    // canonical pooled result fixes the analysis scale (ratio) for the live recompute
+    window.MaPooled.write(window.MaPooled.fromEstSE(0.86, 0.05, { scale: "ratio", measure: "HR", k: 4, model: "RE-DL" }));
+  });
+  await page.click("#btn-refresh");
+  await page.locator('#tab-btn-synthesis').click();
+
+  const pane = page.locator('#panel-synthesis .preview');
+  // controls render and default to REML, KNHA off
+  await expect(pane.locator("select[data-synth='method']")).toHaveValue("REML");
+  await expect(pane.locator("input[data-synth='knha']")).not.toBeChecked();
+  // live heterogeneity stats + diamond render, plus the canonical cross-reference line
+  await expect(pane.locator(".synth-live")).toContainText("τ²");
+  await expect(pane.locator(".synth-live")).toContainText("I²");
+  await expect(pane.locator("svg.mini-forest polygon")).toHaveCount(1);
+  await expect(pane.locator(".synth-xref")).toContainText("Canonical bus");
+  // default RE-REML label is shown on the live result card
+  await expect(pane.locator(".result-card .meta")).toContainText("RE-REML");
+
+  // switch to fixed-effect: label updates live and KNHA becomes inapplicable (disabled)
+  await page.selectOption("#panel-synthesis select[data-synth='method']", "FE");
+  await expect(page.locator("#panel-synthesis .result-card .meta")).toContainText("fixed-effect");
+  await expect(page.locator("#panel-synthesis input[data-synth='knha']")).toBeDisabled();
+
+  // RE + Knapp–Hartung widens the model: the label carries it through
+  await page.selectOption("#panel-synthesis select[data-synth='method']", "DL");
+  await page.check("#panel-synthesis input[data-synth='knha']");
+  await expect(page.locator("#panel-synthesis .result-card .meta")).toContainText("Knapp–Hartung");
+
+  // the live recompute matches AlmMaCore directly (same engine the app uses), on the natural scale
+  const { ui, ref } = await page.evaluate(() => {
+    const studies = window.MaStudies.read();
+    const yi = studies.map(s => s.est), vi = studies.map(s => s.se * s.se);
+    const r = window.AlmMaCore.pool(yi, vi, { method: "DL", knha: true, knhaFloor: true });
+    const big = document.querySelector("#panel-synthesis .result-card .big").textContent.trim();
+    return { ui: big, ref: Math.exp(r.mu) };
+  });
+  expect(Math.abs(parseFloat(ui) - ref)).toBeLessThan(0.005);
+});
+
+test("Overview evidence map plots the studies bus and is interactive", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await page.evaluate(() => {
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "Trial A", est: -0.15, se: 0.05, group: "Europe", year: 2019 },
+      { label: "Trial B", est: -0.10, se: 0.06, group: "Asia" },
+      { label: "Trial C", est: -0.20, se: 0.07, group: "Europe" }
+    ] }));
+    window.MaPooled.write(window.MaPooled.fromEstSE(0.86, 0.05, { scale: "ratio", measure: "HR", k: 3 }));
+  });
+  await page.click("#btn-refresh");
+
+  // Overview is the landing panel; the map unhides and plots one bubble per study
+  await expect(page.locator("#evmap-wrap")).toBeVisible();
+  await expect(page.locator("#evmap .evpt")).toHaveCount(3);
+  // two groups -> a legend is drawn
+  await expect(page.locator("#evmap text", { hasText: "Europe" })).toHaveCount(1);
+
+  // clicking a point selects it and writes its detail into the caption
+  await page.locator("#evmap .evpt").first().click();
+  await expect(page.locator("#evmap .evpt.sel")).toHaveCount(1);
+  await expect(page.locator("#evmap-cap")).toContainText("Trial A");
+  await expect(page.locator("#evmap-cap")).toContainText("group Europe");
+
+  // with no studies on the bus the map stays hidden (honest empty state)
+  await page.evaluate(() => localStorage.removeItem("ma-studies-v1"));
+  await page.click("#btn-refresh");
+  await expect(page.locator("#evmap-wrap")).toBeHidden();
 });
