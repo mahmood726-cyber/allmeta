@@ -194,6 +194,9 @@
     .story-beat.voice .story-refrain { color:var(--green,#34d399); }
     .story-data { margin-top:.55rem; }
     .story-cite { margin:.45rem 0 0; font-size:.72rem; line-height:1.5; color:#b8c4d6; }
+    .dropped-warn { margin:.1rem 0 .5rem; padding:.5rem .7rem; font-size:.78rem; line-height:1.5; border-radius:0 10px 10px 0;
+      border-left:3px solid var(--amber,#fbbf24); background:rgba(251,191,36,.08); color:#fde68a; }
+    .dropped-warn b { color:#fbbf24; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
@@ -278,9 +281,9 @@
   <script>
     var STAGES = [
       { id: "protocol", name: "Protocol", desc: "Frame the question (PICO) and plan.", feeds: ["search", "screening"], apps: [["Design", "../design/"], ["PROSPERO templater", "../prospero-templater/"], ["PICO", "../pico/"]] },
-      { id: "search", name: "Search", desc: "Build, translate and import the search.", feeds: ["screening"], apps: [["Search", "../search/"], ["Search translator", "../search-translator/"]] },
+      { id: "search", name: "Search", desc: "Build and translate the search (PubMed + Embase) and import records.", feeds: ["screening"], apps: [["Search", "../search/"], ["Search translator", "../search-translator/"]] },
       { id: "screening", name: "Screening", desc: "Dual-reviewer title/abstract include–exclude.", feeds: ["extraction"], apps: [["Screen", "../screen/"], ["PRISMA screening", "../prisma-screen/"]] },
-      { id: "extraction", name: "Extraction", desc: "Pull study-level effect data.", feeds: ["synthesis", "appraisal", "robustness"], apps: [["Extract", "../extract/"], ["RCT extractor", "../rct-extractor/"], ["RevMan importer", "../revman-importer/"]] },
+      { id: "extraction", name: "Extraction", desc: "Pull study-level effect data from PDFs or the registry.", feeds: ["synthesis", "appraisal", "robustness"], apps: [["Extract", "../extract/"], ["RCT extractor (PDF)", "../rct-extractor/"], ["RevMan importer", "../revman-importer/"]] },
       { id: "appraisal", name: "Appraisal", desc: "Risk of bias + trustworthiness.", feeds: ["certainty", "report"], apps: [["RoB", "../rob/"], ["RoB 2", "../rob2/"], ["INSPECT-SR", "../inspect-sr/"], ["Benford screen", "../benford-screen/"]] },
       { id: "synthesis", name: "Synthesis", desc: "Pool the effects (verifiable).", feeds: ["robustness", "certainty", "report"], apps: [["Forest plot", "../forest-plot/"], ["Workbench", "../workbench/"], ["NMA Pro", "../nma-pro-v2/"], ["Quantile MA", "../quantile-ma/"], ["Transported NMA", "../transported-nma/"]] },
       { id: "robustness", name: "Robustness", desc: "Spec-collapse, reporting bias + review overlap.", feeds: ["certainty", "report"], apps: [["Spec-collapse", "../spec-collapse/"], ["Reporting-bias", "../reporting-bias/"], ["Umbrella overlap", "../umbrella-overlap/"]] },
@@ -521,7 +524,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + liveBlock + xref);
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref);
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -573,6 +576,25 @@
         pointEstimate: tx(r.mu), ciLo: tx(r.ciLo), ciHi: tx(r.ciHi),
         piLo: tx(r.piLo), piHi: tx(r.piHi)
       };
+    }
+
+    // HONESTY CHECK (ported from RapidMeta Paper Studio): if studies on the bus were
+    // NOT carried into the pool (missing/non-finite effect or SE — e.g. an HR with no
+    // usable variance), say so and name them, so the pooled k never silently understates
+    // the included set. Advisory, not blocking — there can be a valid reason to exclude.
+    function droppedWarn(studies, live) {
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; }).length;
+      // How many records did screening consensus-INCLUDE? (the honest denominator)
+      var e = lsGet("sr-records-v1"); var recs = e && Array.isArray(e.records) ? e.records : [];
+      if (!recs.length) return "";
+      var sum = (window.SrCollab && SrCollab.summarize) ? SrCollab.summarize(recs) : null;
+      var inc = sum ? sum.consensusIncluded : includedRecords(recs).length;
+      var dropped = inc - poolable;
+      if (!(inc > 0 && dropped > 0)) return "";
+      var k = live ? live.k : poolable;
+      return "<div class='dropped-warn'>&#9888; <b>" + dropped + " of " + inc
+        + " screening-included records carry no pooled effect data</b> &mdash; only " + poolable
+        + " studies reached synthesis (pooled k=" + k + "). Extract their effect data, or record why they were not pooled.</div>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled

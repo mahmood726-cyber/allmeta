@@ -407,3 +407,41 @@ test("Story mode loads a clear-benefit real Cochrane case (CD000028 antihyperten
   expect(or).toBeLessThan(0.95);
   await expect(page.locator("#panel-synthesis .story-beat")).toContainText("0.89");
 });
+
+test("Synthesis flags screening-included records that carry no pooled effect data (honesty check)", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await page.evaluate(() => {
+    // 5 consensus-included records, but only 3 studies reach the bus -> 2 dropped
+    localStorage.setItem("sr-records-v1", JSON.stringify({ records: [
+      { title: "A", r1: { d: "include" }, r2: { d: "include" } },
+      { title: "B", r1: { d: "include" }, r2: { d: "include" } },
+      { title: "C", r1: { d: "include" }, r2: { d: "include" } },
+      { title: "D", r1: { d: "include" }, r2: { d: "include" } },
+      { title: "E", r1: { d: "include" }, r2: { d: "include" } }
+    ] }));
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "A", est: -0.15, se: 0.05 }, { label: "B", est: -0.10, se: 0.06 }, { label: "C", est: -0.20, se: 0.07 }
+    ] }));
+    window.MaPooled.write(window.MaPooled.fromEstSE(0.86, 0.05, { scale: "ratio", measure: "HR", k: 3 }));
+  });
+  await page.click("#btn-refresh");
+  await page.locator("#tab-btn-synthesis").click();
+  await expect(page.locator("#panel-synthesis .dropped-warn")).toContainText("2 of 5");
+  await expect(page.locator("#panel-synthesis .dropped-warn")).toContainText("no pooled effect data");
+
+  // when every included record is pooled, the warning disappears
+  await page.evaluate(() => localStorage.setItem("sr-records-v1", JSON.stringify({ records: [
+    { title: "A", r1: { d: "include" }, r2: { d: "include" } },
+    { title: "B", r1: { d: "include" }, r2: { d: "include" } },
+    { title: "C", r1: { d: "include" }, r2: { d: "include" } }
+  ] })));
+  await page.click("#btn-refresh");
+  await expect(page.locator("#panel-synthesis .dropped-warn")).toHaveCount(0);
+});
+
+test("Search and Extraction stages surface the Embase + PDF workflow", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await expect(page.locator("#panel-search .s-desc")).toContainText("Embase");
+  await expect(page.locator("#panel-extraction .s-desc")).toContainText("PDF");
+  await expect(page.locator("#panel-extraction a", { hasText: "RCT extractor (PDF)" })).toHaveAttribute("href", "../rct-extractor/");
+});
