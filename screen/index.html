@@ -74,6 +74,20 @@
     .progress .pos { font-size:0.82rem; color:var(--muted); font-variant-numeric:tabular-nums; }
     .bar { flex:1; height:8px; min-width:120px; background:var(--border); border-radius:5px; overflow:hidden; }
     .bar > i { display:block; height:100%; background:var(--inc); width:0%; }
+    .focus-toggle { font:inherit; font-size:0.78rem; padding:0.3rem 0.6rem; border:1px solid var(--border); border-radius:7px; background:var(--panel); color:var(--ink); cursor:pointer; white-space:nowrap; }
+    .focus-toggle[aria-pressed="true"] { background:var(--inc-soft); color:var(--inc); border-color:var(--inc); }
+    .focus-legend { display:none; gap:0.4rem 0.9rem; flex-wrap:wrap; margin:0 0 0.7rem; font-size:0.76rem; color:var(--muted); }
+    .focus-legend kbd { font:inherit; font-size:0.72rem; background:var(--border); border-radius:4px; padding:0.05rem 0.32rem; }
+    /* ---- Rayyan-style immersive Focus mode: one big card, no sidebar ---- */
+    body.focus-mode .layout { grid-template-columns:1fr; max-width:860px; margin:0 auto; }
+    body.focus-mode aside[aria-label="Project setup"] { display:none; }
+    body.focus-mode .focus-legend { display:flex; }
+    body.focus-mode .cardwrap { min-height:auto; }
+    body.focus-mode .progress { position:sticky; top:0; z-index:5; background:var(--bg); padding:0.5rem 0; border-bottom:1px solid var(--border); margin-bottom:0.9rem; }
+    body.focus-mode .card { padding:1.8rem 2rem; box-shadow:0 6px 24px rgba(0,0,0,0.10); }
+    body.focus-mode .card .ctitle { font-size:1.45rem; }
+    body.focus-mode .card .abstract { font-size:1.02rem; line-height:1.65; max-height:60vh; }
+    body.focus-mode footer, body.focus-mode #conflict-panel { display:none; }
     .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.4rem; }
     .card.is-dup { border-color:var(--dup); }
     .card .ctitle { font-size:1.2rem; font-weight:650; line-height:1.35; margin:0 0 0.5rem; }
@@ -317,6 +331,12 @@
       <div class="progress">
         <span class="pos" id="pos">0 of 0</span>
         <div class="bar"><i id="bar-fill"></i></div>
+        <button type="button" id="btn-focus" class="focus-toggle" aria-pressed="false" title="Focus mode — distraction-free rapid screening (f)">⤢ Focus</button>
+      </div>
+      <div class="focus-legend" id="focus-legend" aria-hidden="true">
+        <span><kbd>i</kbd> include</span><span><kbd>e</kbd>/<kbd>x</kbd> exclude</span><span><kbd>m</kbd> maybe</span>
+        <span><kbd>1</kbd>–<kbd>9</kbd> reason</span><span><kbd>n</kbd> next undecided</span><span><kbd>j</kbd>/<kbd>k</kbd> move</span>
+        <span><kbd>u</kbd> undo</span><span><kbd>f</kbd> exit</span>
       </div>
       <div id="card-host" aria-live="polite"></div>
 
@@ -344,6 +364,7 @@
         <tr><td><kbd>←</kbd> / <kbd>k</kbd></td><td>Previous record</td></tr>
         <tr><td><kbd>n</kbd> / <kbd>Enter</kbd></td><td>Next undecided</td></tr>
         <tr><td><kbd>a</kbd></td><td>Accept the AI suggestion (if any)</td></tr>
+        <tr><td><kbd>f</kbd></td><td>Focus mode (immersive rapid screening)</td></tr>
         <tr><td><kbd>?</kbd></td><td>This help</td></tr>
       </table>
       <p style="margin-top:1rem;"><button type="button" id="help-close" class="primary">Close</button></p>
@@ -1321,11 +1342,24 @@
         case "k": case "arrowleft": move(-1); e.preventDefault(); break;
         case "n": case "enter": nextUndecided(); e.preventDefault(); break;
         case "a": acceptAI(); e.preventDefault(); break;
+        case "f": toggleFocus(); e.preventDefault(); break;
         case "?": openHelp(); e.preventDefault(); break;
       }
     }
     function openHelp() { $("help-modal").classList.add("on"); }
     function closeHelp() { $("help-modal").classList.remove("on"); }
+
+    // ---- Rayyan-style Focus mode (immersive single-card rapid screening) ----
+    var FOCUS_KEY = "screen-focus-v1";
+    function setFocus(on) {
+      document.body.classList.toggle("focus-mode", on);
+      var b = $("btn-focus");
+      if (b) { b.setAttribute("aria-pressed", on ? "true" : "false"); b.textContent = on ? "⤡ Exit focus" : "⤢ Focus"; }
+      var lg = $("focus-legend"); if (lg) lg.setAttribute("aria-hidden", on ? "false" : "true");
+      try { localStorage.setItem(FOCUS_KEY, on ? "1" : "0"); } catch (e) {}
+      if (on) { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }
+    }
+    function toggleFocus() { setFocus(!document.body.classList.contains("focus-mode")); }
 
     // ---- pipeline bridge: import from the Search app via sr-records-v1 ----
     function importFromSearch() {
@@ -1388,6 +1422,8 @@
       $("rev-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) onMergeReviewerFile(f); e.target.value = ""; });
       $("btn-export-bundle").addEventListener("click", exportBundle);
       $("btn-help").addEventListener("click", openHelp);
+      $("btn-focus").addEventListener("click", toggleFocus);
+      try { if (localStorage.getItem(FOCUS_KEY) === "1") setFocus(true); } catch (e) {}
       $("help-close").addEventListener("click", closeHelp);
       $("help-modal").addEventListener("click", function (e) { if (e.target === $("help-modal")) closeHelp(); });
       $("btn-reset").addEventListener("click", function () {
