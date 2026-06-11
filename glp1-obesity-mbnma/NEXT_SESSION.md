@@ -9,13 +9,16 @@ distributions only; no IPD, no full text. rapidmeta repos untouched.
 Registry-native synthesis → HTA → 6 wide-gap methods → GRADE/CINeMA guideline scaffold → exact joint-
 posterior contrast → certainty league table → decision-sensitivity → external validation (**n=7** published
 NMAs/guidelines concordant) → 2 portfolio-method integrations (Benford integrity, entropy-balancing
-transport) → **4-class generality** (incretin/PCSK9/SGLT2/psoriasis = continuous-weight / continuous-LDL /
-hard-outcome-HR / binary-responder). One-command reproducible (`python run_all.py`), **33-test** self-
-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = continuous-weight / continuous-
+LDL / hard-outcome-HR / binary-responder / count-rate-IRR). One-command reproducible (`python run_all.py`),
+**34-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
-1. **5th outcome type** — count/rate (e.g., exacerbation rate-ratio, IRR-NMA) or activate registry-ipd KM
-   reconstruction on a class that *does* post KM curves (incretin CVOTs don't; find one that does).
+1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
+   asthma anti-eosinophil/anti-TSLP biologics, annualised-exacerbation IRR. All 4 agents significantly reduce
+   the rate (class IRR 0.70); engine flags the raw cross-agent ranking as baseline-rate/eosinophil effect
+   modification (I²=96%), not a clean winner. Pinned by `test_generality_class5_asthma_rate`. Next count/rate
+   extension if wanted: registry-ipd KM reconstruction on a class that *does* post KM curves.
 2. **Promote one class to the full 40-stage pipeline** — e.g., PCSK9: transport (LDL to a target lipid
    population) + league + GRADE + dashboard, not just the core repoint. Proves full-depth generality.
 3. **Data-policy-blocked methods (activate only if scope changes):** quantile MA (`ipd-qma`, needs IPD);

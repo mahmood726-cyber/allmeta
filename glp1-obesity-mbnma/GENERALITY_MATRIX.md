@@ -10,19 +10,22 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
 | **PCSK9i** (lipids) | continuous biomarker (% LDL-C) | 273 trials, 102 LDL | surrogacy LDL→MACE | **Surrogate direction VALIDATED** — same method *discriminates*, not rigged |
 | **SGLT2i** (cardiorenal) | hard outcome (HF/CV HR) | 1165 trials, 18 HR | class-effect homogeneity | **Flags endpoint-definition heterogeneity** (I²=87% from pooling MACE vs HF-hosp vs renal); demands disaggregation by exact endpoint |
 | **Psoriasis biologics** | binary responder (PASI-90 %) | 1377 trials, 130 PASI-90 | established efficacy hierarchy | **Reproduces IL-17/IL-23 > TNF** (mean 63% vs 33%; bimekizumab top 85%), matching the Sbidian Cochrane NMA |
+| **Asthma biologics** | count/rate (annualised exacerbation IRR) | 640 trials, 26 with a rate ratio | rate-NMA + transitivity on baseline rate | **All 4 agents significantly reduce the exacerbation rate** (class IRR 0.70); but **flags** the raw cross-agent ranking (tezepelumab 0.47 > reslizumab 0.58 > benralizumab 0.74 > mepolizumab 0.80, I²=96%) as **effect modification** by baseline-rate / eosinophil enrichment — not a clean "best biologic" |
 
 ## What this demonstrates
-- **Four outcome types** — continuous weight, continuous lipid, hard-outcome survival, binary responder —
-  handled by the same discovery → extraction → NMA → (GRADE) machinery.
+- **Five outcome types** — continuous weight, continuous lipid, hard-outcome survival, binary responder, and
+  count/rate (incidence-rate ratio) — handled by the same discovery → extraction → NMA → (GRADE) machinery.
 - **The methods discriminate.** The surrogate test failed for weight (incretins) and returned the validated
   direction for LDL (PCSK9) — it depends on the evidence, not the class. The SGLT2 repoint didn't manufacture
-  a clean "class effect"; it surfaced the real composite-endpoint pitfall and flagged it.
+  a clean "class effect"; it surfaced the real composite-endpoint pitfall and flagged it. The asthma repoint
+  found a real, significant rate reduction for every agent yet refused to read a "best biologic" off a league
+  confounded by baseline-rate effect modification.
 - **Each class exposes a distinctive, honest caveat** — surrogate validity (incretin), registry posting gap
-  (PCSK9 FOURIER LDL not posted), outcome-definition heterogeneity (SGLT2). The engine names each rather than
-  papering over it.
+  (PCSK9 FOURIER LDL not posted), outcome-definition heterogeneity (SGLT2), and rate-ratio effect modification
+  by baseline rate / eosinophil enrichment (asthma). The engine names each rather than papering over it.
 
 ## Honest scope
-- Classes 2–4 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
+- Classes 2–5 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
   the 40-stage incretin pipeline. Transport, league, HTA, and GRADE would repoint identically (same AACT
   fields + engines) but were not rebuilt per class — the point is class-generality and method-discrimination,
   which hold.
@@ -30,7 +33,8 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   a systematic review).
 
 ## Verdict
-**A reusable, outcome-type-general engine.** Repointing across continuous-biomarker, lipid, hard-outcome, and binary-responder
-classes took a drug list and an outcome term, and produced coherent syntheses plus *class-appropriate,
-self-flagging* method behaviour. The system is not a bespoke incretin analysis; its methods answer to the
-evidence in each class. See `class2_pcsk9/GENERALITY.md`, `class3_sglt2/sglt2_results.json`, `class4_psoriasis/psoriasis_results.json`.
+**A reusable, outcome-type-general engine.** Repointing across continuous-biomarker, lipid, hard-outcome,
+binary-responder, and count/rate classes took a drug list and an outcome term, and produced coherent syntheses
+plus *class-appropriate, self-flagging* method behaviour. The system is not a bespoke incretin analysis; its
+methods answer to the evidence in each class. See `class2_pcsk9/GENERALITY.md`, `class3_sglt2/sglt2_results.json`,
+`class4_psoriasis/psoriasis_results.json`, `class5_asthma/asthma_results.json`.

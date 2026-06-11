@@ -157,6 +157,16 @@ def test_generality_class4_psoriasis_hierarchy():
     assert d['hierarchy_reproduced'] is True, 'should reproduce IL-17/IL-23 > TNF'
     assert d['il17_23_mean_pct'] > d['tnf_mean_pct']
 
+def test_generality_class5_asthma_rate():
+    d = _classfile('class5_asthma/asthma_results.json')
+    # 5th outcome TYPE: count/rate (annualised exacerbation incidence-rate ratio)
+    assert d['outcome_type'] == 'count/rate'
+    assert d['all_agents_reduce_rate'] is True, 'every biologic CI should sit below IRR=1 (significant rate reduction)'
+    assert 0.5 <= d['class_pooled_irr'] <= 0.9, 'class-pooled exacerbation IRR should land in the published ~0.6-0.8 band'
+    # method discriminates honestly: high cross-agent I2 flagged as effect modification, not a clean winner
+    assert d['cross_agent_I2'] >= 50
+    assert 'effect modification' in d['caveat'].lower() or 'transitivity' in d['caveat'].lower()
+
 
 def test_concordance_battery_multireview():
     d = load('concordance_battery.json')

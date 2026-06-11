@@ -1,0 +1,62 @@
+{
+ "class": "asthma biologics",
+ "outcome": "annualised exacerbation rate ratio (incidence-rate ratio / IRR)",
+ "outcome_type": "count/rate",
+ "agents": [
+  {
+   "agent": "tezepelumab",
+   "irr": 0.47,
+   "ci": [
+    0.42,
+    0.53
+   ],
+   "k": 4,
+   "lrr": -0.7515088943986022,
+   "se": 0.05679310139841779
+  },
+  {
+   "agent": "reslizumab",
+   "irr": 0.58,
+   "ci": [
+    0.48,
+    0.69
+   ],
+   "k": 4,
+   "lrr": -0.5532979253741798,
+   "se": 0.09087269709945234
+  },
+  {
+   "agent": "benralizumab",
+   "irr": 0.74,
+   "ci": [
+    0.68,
+    0.81
+   ],
+   "k": 9,
+   "lrr": -0.29766548255892805,
+   "se": 0.043932927540721624
+  },
+  {
+   "agent": "mepolizumab",
+   "irr": 0.8,
+   "ci": [
+    0.74,
+    0.85
+   ],
+   "k": 9,
+   "lrr": -0.22878954275414962,
+   "se": 0.034992106360551056
+  }
+ ],
+ "ranking": [
+  "tezepelumab",
+  "reslizumab",
+  "benralizumab",
+  "mepolizumab"
+ ],
+ "class_pooled_irr": 0.7,
+ "cross_agent_I2": 96.0,
+ "all_agents_reduce_rate": true,
+ "generality": "repointed to a count/rate class (annualised exacerbation IRR), exercising the rate-NMA path -- the 5th outcome TYPE after continuous weight/LDL, hard-outcome HR, and binary responder. Pooled 4 anti-eosinophil/anti-TSLP biologics on the log-rate scale (class IRR ~0.70), found ALL significantly reduce the rate, and flagged that the cross-agent ranking is confounded by baseline-rate / eosinophil effect modification. Engine generalises across outcome TYPES and stays honest about each class pitfall.",
+ "caveat": "high cross-agent I2 is largely EFFECT MODIFICATION: a rate ratio depends on the trial baseline exacerbation rate and biomarker (eosinophil/FeNO) enrichment, so the naive IRR ranking is a transitivity-violated comparison -> needs meta-regression on baseline rate / eosinophil stratum or single-population restriction. This is a repoint demonstration, not a full asthma-biologic systematic review."
+}
