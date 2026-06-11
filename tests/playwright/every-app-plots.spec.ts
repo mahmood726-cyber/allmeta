@@ -132,6 +132,12 @@ const PLOT_APPS: PlotApp[] = [
   // Cross-design synthesis app — auto-runs on load + renders a 3-method forest
   { path: "/cross-design/", runBtn: "#btn-run", plotSelector: "#forest-host svg" },
 
+  // Portfolio integrations (2026-06-11): each renders on the example click.
+  { path: "/umbrella-overlap/", setup: async (page) => { await page.click("#btn-example"); }, plotSelector: "#matrix table tbody tr, #matrix table tr" },
+  { path: "/quantile-ma/", setup: async (page) => { await page.click("#btn-example"); }, plotSelector: "#plot svg" },
+  { path: "/benford-screen/", setup: async (page) => { await page.click("#btn-example"); }, plotSelector: "#plot svg" },
+  { path: "/transported-nma/", setup: async (page) => { await page.click("#btn-example"); }, plotSelector: "#ranks table tbody tr, #ranks table tr" },
+
   // Network meta-regression + Living-RoB pool — both auto-run on load + render
   { path: "/nma-meta-reg/", runBtn: "#btn-run", plotSelector: "#plot-host" },
   { path: "/living-rob-pool/", runBtn: "#btn-run", plotSelector: "#plot-host" },
