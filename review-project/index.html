@@ -177,6 +177,21 @@
     #evmap .evpt.sel { stroke:var(--green,#34d399); stroke-width:2; }
     .evmap-cap { font-size:.74rem; color:var(--muted); margin-top:.4rem; min-height:1.1em; }
     .evmap-cap b { color:var(--ink,#e6eefc); }
+    /* Story mode — narrative beats woven into each stage (Quranic narrative craft, secular) */
+    #btn-story[aria-pressed="true"] { background:var(--accent-soft,rgba(94,169,255,.16)); color:var(--accent,#5ea9ff); border-color:var(--accent,#5ea9ff); }
+    #story-case { background:var(--panel,#0f1830); color:var(--ink,#e6eefc); border:1px solid var(--border2,#27344a); border-radius:8px; padding:.2rem .45rem; font:inherit; font-size:.78rem; }
+    .story-intro { margin:.2rem 0 .8rem; }
+    .story-hook { border-left:3px solid var(--accent,#5ea9ff); background:linear-gradient(90deg, rgba(94,169,255,.10), transparent); padding:.6rem .9rem; border-radius:0 12px 12px 0; }
+    .story-kicker { font-size:.6rem; text-transform:uppercase; letter-spacing:.14em; color:var(--accent,#5ea9ff); font-weight:800; }
+    .story-hook h3 { margin:.25rem 0 .3rem; font-size:1rem; color:var(--ink,#e6eefc); }
+    .story-hook p { margin:0; color:var(--muted); font-size:.85rem; line-height:1.55; }
+    .story-beat { margin:.5rem 0 .7rem; padding:.55rem .85rem; border-left:3px solid var(--border2,#27344a); background:rgba(148,163,184,.05); border-radius:0 12px 12px 0; }
+    .story-beat.voice { border-left-color:var(--green,#34d399); background:linear-gradient(90deg, rgba(52,211,153,.09), transparent); }
+    .story-year { display:inline-block; font:800 .62rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.08em; color:var(--accent,#5ea9ff); background:rgba(94,169,255,.12); padding:.2rem .42rem; border-radius:6px; margin-bottom:.35rem; }
+    .story-beat.voice .story-year { color:var(--green,#34d399); background:rgba(52,211,153,.14); }
+    .story-scene { margin:.1rem 0 .4rem; font-size:.85rem; line-height:1.58; color:var(--ink,#e6eefc); }
+    .story-refrain { margin:0; font-style:italic; font-size:.8rem; color:#b8c4d6; }
+    .story-beat.voice .story-refrain { color:var(--green,#34d399); }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
@@ -202,6 +217,12 @@
       <input id="proj-title" type="text" placeholder="Review title — e.g. SGLT2 inhibitors for heart failure" aria-label="Review title">
       <button type="button" id="btn-refresh" class="ghost">↻ Refresh</button>
       <button type="button" id="btn-capture-all" class="ghost">⤓ Capture all live</button>
+      <button type="button" id="btn-story" class="ghost" aria-pressed="false">▶ Story mode</button>
+      <select id="story-case" aria-label="Story case" style="display:none">
+        <option value="cortico">Corticosteroids — the line no one drew</option>
+        <option value="strepto">Streptokinase — proof in '73, practice in '86</option>
+        <option value="magnesium">Magnesium — the chorus and the mirage</option>
+      </select>
       <span class="progress" id="progress" aria-live="polite"></span>
     </div>
   </div>
@@ -213,6 +234,7 @@
       <div class="card">
         <div class="s-head"><span class="s-n" style="background:var(--accent-soft);color:var(--accent)">◎</span><span class="s-name">Overview</span></div>
         <p class="s-desc">Your review at a glance — the PRISMA flow and headline result, read live from the shared workspace bus as you work each stage.</p>
+        <div id="story-intro" class="story-intro" style="display:none"></div>
         <div id="ov-cards" class="ov-cards"></div>
         <h4 style="margin:.4rem 0 .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700">PRISMA flow</h4>
         <div id="funnel" class="funnel"></div>
@@ -267,6 +289,7 @@
     var KEY = "review-project-v1";
     var state = load() || { title: "", outputs: {}, activeTab: "overview" };
     if (!state.activeTab) state.activeTab = "overview";
+    if (!state.story || typeof state.story !== "object") state.story = { on: false, case: "cortico" };
     var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
     var synthOpts = { method: "REML", knha: false }; // JASP-style live synthesis controls (not persisted; exploratory)
 
@@ -622,6 +645,7 @@
         return "<div class='ov-card'><div class='k'>" + esc(c[0]) + "</div><div class='v'>" + c[1] + "</div></div>";
       }).join("");
       renderEvidenceMap();
+      renderStoryIntro();
     }
 
     // ---- Nested-Knowledge-style interactive evidence map: each study placed by
@@ -685,6 +709,97 @@
       });
     }
 
+    // ---- Story mode -------------------------------------------------------
+    // Three true meta-analysis histories, woven stage-by-stage into the pipeline.
+    // The storytelling borrows classical devices of Arabic / Qur'anic rhetoric,
+    // used here purely as secular narrative craft and with respect for their
+    // origin — no scripture is quoted or reproduced; only the FORM is borrowed:
+    //   qaṣaṣ   — every beat lands on the method lesson, never decoration;
+    //   iltifāt — the voice shifts from "they, then" to "you, now" (voice:true);
+    //   refrain — a line returns each stage with one clause moving (the recurring
+    //             fāṣilah cadence of Sūrat Ar-Raḥmān); here it is then deliberately
+    //             BROKEN at the synthesis/robustness turn to mark the reveal — the
+    //             break is this app's adaptation, not a feature of the sūrah;
+    //   mathal  — the abstract statistic carried by a concrete image;
+    //   ijmāl→tafṣīl — the pooled magnitude withheld until it is earned.
+    var STORIES = {
+      cortico: {
+        name: "Antenatal corticosteroids — the line no one drew",
+        hook: "Walk the pipeline as a true story. By 1972 the answer already existed; it took eighteen years for anyone to draw the line that showed it — and preterm babies died in the interval.",
+        beats: {
+          protocol: { y: "1969", s: "Liggins, infusing steroids into pregnant sheep, sees lambs breathe that are far too premature to have working lungs. A question forms: can one injection to the mother ready a human baby's lungs before birth?", r: "The answer is not yet drawn." },
+          search: { y: "1972", s: "Liggins & Howie publish the first randomised trial in Auckland: betamethasone before preterm delivery, fewer newborns dying of immature lungs. Over the next eighteen years, trial after trial repeats the result.", r: "Each trial agrees. The line is not yet drawn." },
+          screening: { y: "the 1980s", s: "Seven randomised trials now exist, scattered across journals and countries. Each alone is too small to compel a sceptic; together they are never gathered onto one page.", r: "Seven voices, never assembled. The line is not yet drawn." },
+          extraction: { y: "", s: "Lay each trial's deaths and survivors side by side — the simple act no one had performed. Every row points the same way: fewer deaths with treatment.", r: "The data sits ready. The line is not yet drawn." },
+          appraisal: { y: "", s: "The trials are randomised, allocation concealed; the evidence is not fragile. Nothing in their quality excused the waiting.", r: "The proof is sound. The line is not yet drawn." },
+          synthesis: { y: "1990", s: "Crowley pools them at last. The diamond falls hard to the left — roughly a third fewer newborn deaths. Drawn onto one chart, that forest plot became the emblem of evidence synthesis itself.", r: "The line is drawn. The diamond falls left." },
+          robustness: { y: "", s: "It holds. No single trial drives it, the funnel is even. This was never a fragile finding awaiting nuance — it was a settled one awaiting a reader.", r: "Robust then, robust now — only unread." },
+          certainty: { y: "", s: "High certainty: consistent, direct, precise. The quiet tragedy is that the same certainty was earnable a full decade before anyone claimed it.", r: "Certain for years. Acted on late." },
+          report: { y: "now", s: "Count the babies born between 1972 and 1990 whose mothers were never offered the injection. That interval is the price of evidence left unsynthesised. Draw your line while it can still change an outcome.", r: "You hold the pen now. Draw the line.", voice: true }
+        }
+      },
+      strepto: {
+        name: "Streptokinase for heart attack — proof in '73, practice in '86",
+        hook: "A clot-dissolving drug, proven to save lives by 1973, was still called experimental in textbooks until 1986. Follow the running total the field forgot to keep, and recovered only in hindsight.",
+        beats: {
+          protocol: { y: "1959", s: "Streptokinase can dissolve the clot that is starving a heart of blood. The question sharpens: does dissolving it save the patient, or only re-open the artery?", r: "The proof has not yet arrived." },
+          search: { y: "1959–1988", s: "Across three decades, trials of intravenous thrombolysis for myocardial infarction accumulate — most small, each underpowered on its own.", r: "Trial by trial, the proof gathers." },
+          screening: { y: "", s: "Sift the thrombolysis trials from the noise of every other heart-attack therapy; keep the randomised, mortality-reporting ones. The signal is buried in sheer volume.", r: "The proof is present — and unread." },
+          extraction: { y: "", s: "Lay deaths against survivors for each trial in order of publication date. Not pooled once, but re-pooled after every new trial lands — a running total.", r: "Stack them by year. Watch the proof build." },
+          appraisal: { y: "", s: "The trials are sound. The question is no longer whether the evidence is good — it is whether anyone is keeping the tally.", r: "Good evidence. No one keeping the tally." },
+          synthesis: { y: "1973", s: "Pool cumulatively. By 1973 — eight trials, 2,432 patients — the combined effect crosses into significance: thrombolysis saves lives. The line was crossed thirteen years before the field conceded it.", r: "The proof arrived in 1973." },
+          robustness: { y: "", s: "Add every later mega-trial — GISSI, ISIS-2, tens of thousands of patients. The estimate barely shifts. The 1973 signal was real, not a small-study mirage.", r: "Every later trial only confirmed 1973." },
+          certainty: { y: "1986", s: "Only after GISSI-1 and ISIS-2 do reviewers and textbooks finally call it certain — a certainty the cumulative plot had reached thirteen years earlier.", r: "Certain in 1973. Declared in 1986." },
+          report: { y: "the gap", s: "Lau named the cost: thirteen years in which a proven therapy was labelled experimental, and patients went without. You shorten that gap by keeping the total live as each trial arrives.", r: "Keep your running total. Close the gap.", voice: true }
+        }
+      },
+      magnesium: {
+        name: "Magnesium for heart attack — the chorus and the mirage",
+        hook: "Seven small trials sang in unison that magnesium saves hearts; a meta-analysis halved mortality. Then 58,050 patients fell silent. A caution in the same pipeline — synthesis must also distrust a popular answer.",
+        beats: {
+          protocol: { y: "the 1980s", s: "Magnesium is cheap, safe and biologically plausible — it might steady an injured heart after infarction. The question: does plausibility survive a large, fair test?", r: "The chorus has not yet been checked." },
+          search: { y: "1984–1991", s: "Seven small trials of intravenous magnesium report, most favourable. A meta-analysis (Teo, 1991) pools them and mortality looks roughly halved. The result dazzles.", r: "Small trials sing in unison." },
+          screening: { y: "", s: "The included trials are small — dozens to a few hundred patients each. Smallness is not yet read as a warning; the harmony is taken at face value.", r: "Harmony — and every singer is small." },
+          extraction: { y: "1992", s: "LIMIT-2 adds 2,316 patients, still positive. The pooled benefit looks settled; extract it and the diamond sits confidently left of no-effect.", r: "The chorus swells. No one checks who is missing." },
+          appraisal: { y: "", s: "Each trial passes routine risk-of-bias checks. The danger lives not in any single trial but in what small, preferentially-published positive trials do together.", r: "Clean trials — and a suspicious silence around them." },
+          synthesis: { y: "1993", s: "Pooled: about a 50% cut in death, p vanishingly small. By the very logic that crowned corticosteroids, magnesium should now be standard care. The diamond is emphatic.", r: "The song says: treat everyone." },
+          robustness: { y: "1995", s: "Then ISIS-4 tests it in 58,050 patients — larger than every prior trial combined. Magnesium does nothing. The small trials had sung a publication-bias mirage; the funnel was asymmetric all along. You very nearly trusted the chorus.", r: "The large trial falls silent. The mirage breaks.", voice: true },
+          certainty: { y: "", s: "Here, certainty ran opposite to the count: the more you weighted the agreeable small trials, the more wrong you became. Funnel asymmetry and spec-collapse were the only honest witnesses in the room.", r: "The crowd was confident. The crowd was wrong." },
+          report: { y: "the lesson", s: "Corticosteroids show synthesis rescuing a buried truth; magnesium shows it must also doubt a popular one. Run the robustness screens before you believe the song.", r: "Pool the evidence — then doubt it well.", voice: true }
+        }
+      }
+    };
+
+    function storyBeatHtml(stageId) {
+      if (!state.story || !state.story.on) return "";
+      var sc = STORIES[state.story.case]; if (!sc) return "";
+      var b = sc.beats[stageId]; if (!b) return "";
+      return "<div class='story-beat" + (b.voice ? " voice" : "") + "'>"
+        + (b.y ? "<span class='story-year'>" + esc(b.y) + "</span>" : "")
+        + "<p class='story-scene'>" + esc(b.s) + "</p>"
+        + "<p class='story-refrain'>" + esc(b.r) + "</p>"
+        + "</div>";
+    }
+    function renderStoryIntro() {
+      var el = document.getElementById("story-intro"); if (!el) return;
+      var sc = state.story && state.story.on ? STORIES[state.story.case] : null;
+      if (!sc) { el.style.display = "none"; el.innerHTML = ""; return; }
+      el.style.display = "";
+      el.innerHTML = "<div class='story-hook'><span class='story-kicker'>Story mode · true case</span>"
+        + "<h3>" + esc(sc.name) + "</h3><p>" + esc(sc.hook) + "</p></div>";
+    }
+    function syncStoryControls() {
+      // Coerce a stale/invalid persisted case back to a real one so the <select>
+      // never desyncs into a blank selection (e.g. a case removed in a later build).
+      if (state.story && !STORIES[state.story.case]) { state.story.case = "cortico"; save(); }
+      var btn = document.getElementById("btn-story"), sel = document.getElementById("story-case");
+      var on = !!(state.story && state.story.on);
+      // Keep a STABLE accessible name ("Story mode") and let aria-pressed carry the
+      // on/off state; the visible glyph/label still flips for sighted users.
+      if (btn) { btn.setAttribute("aria-pressed", on ? "true" : "false"); btn.setAttribute("aria-label", "Story mode"); btn.textContent = on ? "■ Story mode" : "▶ Story mode"; }
+      if (sel) { sel.style.display = on ? "" : "none"; if (state.story) sel.value = state.story.case; }
+    }
+
     function renderStages() {
       document.getElementById("stages").innerHTML = STAGES.map(function (st, i) {
         var s = statusOf(st), captured = s.captured, live = s.live, stale = s.stale;
@@ -708,6 +823,7 @@
         return "<section class='stage-panel' id='panel-" + st.id + "' data-tab='" + st.id + "' role='tabpanel' aria-labelledby='tab-btn-" + st.id + "'><div class='card'>"
           + "<div class='s-head'><span class='s-n'>" + (i + 1) + "</span><span class='s-name'>" + esc(st.name) + "</span>" + pill + "</div>"
           + "<div class='s-desc'>" + esc(st.desc) + "</div>"
+          + storyBeatHtml(st.id)
           + flowHtml(st)
           + sum
           + previewHtml(st)
@@ -855,6 +971,17 @@
     document.getElementById("btn-refresh").addEventListener("click", function () { refreshLive(); renderStages(); renderNav(); switchTab(state.activeTab, true); });
     document.getElementById("btn-capture-all").addEventListener("click", captureAllLive);
 
+    // Story mode: toggle the woven narrative beats on/off; the case picker swaps
+    // which true history is told. Persisted in state so it survives a refresh.
+    document.getElementById("btn-story").addEventListener("click", function () {
+      state.story.on = !state.story.on; save(); syncStoryControls();
+      renderStages(); renderNav(); switchTab(state.activeTab, true);
+    });
+    document.getElementById("story-case").addEventListener("change", function (e) {
+      state.story.case = e.target.value; save();
+      renderStages(); renderNav(); switchTab(state.activeTab, true);
+    });
+
     // JASP-style synthesis controls: #stages is the static container (its innerHTML
     // is replaced each render, but this delegated listener on the container survives),
     // so [data-synth] changes update synthOpts and re-render the live pool in place.
@@ -879,6 +1006,7 @@
 
     if (window.TruthCertUI) TruthCertUI.attachSettingsButton({ btn: "#btn-key" });
     document.getElementById("proj-title").value = state.title || "";
+    syncStoryControls();
     refreshLive();
     renderNav();
     renderStages();

@@ -255,3 +255,53 @@ test("Overview evidence map plots the studies bus and is interactive", async ({ 
   await page.click("#btn-refresh");
   await expect(page.locator("#evmap-wrap")).toBeHidden();
 });
+
+test("Story mode weaves a true-case narrative beat into every stage, with a refrain that breaks", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+
+  // off by default: no beats, intro hidden, the working studio is untouched
+  await expect(page.locator("#stages .story-beat")).toHaveCount(0);
+  await expect(page.locator("#story-intro")).toBeHidden();
+
+  // turn it on
+  await page.click("#btn-story");
+  await expect(page.locator("#btn-story")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#story-intro")).toBeVisible();
+  await expect(page.locator("#story-intro")).toContainText("the line no one drew");   // default case = corticosteroids
+  await expect(page.locator("#story-case")).toBeVisible();
+
+  // one beat per stage (9 stages), each carrying a scene + a refrain line
+  await expect(page.locator("#stages .story-beat")).toHaveCount(9);
+  await expect(page.locator("#stages .story-beat .story-refrain")).toHaveCount(9);
+
+  // the refrain returns "not yet drawn" through the early stages, then BREAKS at synthesis
+  await expect(page.locator("#panel-protocol .story-beat")).toContainText("not yet drawn");
+  await expect(page.locator("#panel-extraction .story-beat")).toContainText("not yet drawn");
+  await expect(page.locator("#panel-synthesis .story-beat")).toContainText("The line is drawn");   // resolution
+  await expect(page.locator("#panel-synthesis .story-beat")).toContainText("diamond falls left");
+  // fact-check fixes are locked: Crowley's overview was 1990 (not 1991), and the
+  // self-referential "the reason this studio exists" tic was removed from the report beat.
+  await expect(page.locator("#panel-synthesis .story-year")).toHaveText("1990");
+  await expect(page.locator("#panel-report .story-beat")).not.toContainText("studio exists");
+  // iltifāt: the closing report beat shifts to second-person voice
+  await expect(page.locator("#panel-report .story-beat.voice")).toHaveCount(1);
+
+  // swap the case live — the cautionary magnesium/ISIS-4 story, whose turn lands at Robustness
+  await page.selectOption("#story-case", "magnesium");
+  await expect(page.locator("#story-intro")).toContainText("the chorus and the mirage");
+  await expect(page.locator("#panel-synthesis .story-beat")).toContainText("treat everyone");
+  await expect(page.locator("#panel-robustness .story-beat")).toContainText("58,050");
+  await expect(page.locator("#panel-robustness .story-beat.voice")).toHaveCount(1);   // the mirage-breaks turn is second-person
+
+  // streptokinase case carries its real cumulative landmark
+  await page.selectOption("#story-case", "strepto");
+  await expect(page.locator("#panel-synthesis .story-beat")).toContainText("2,432 patients");
+
+  // state persists across a reload, and toggling off removes every beat
+  await page.reload();
+  await expect(page.locator("#stages .story-beat")).toHaveCount(9);
+  await expect(page.locator("#story-case")).toHaveValue("strepto");
+  await page.click("#btn-story");
+  await expect(page.locator("#stages .story-beat")).toHaveCount(0);
+  await expect(page.locator("#story-intro")).toBeHidden();
+});
