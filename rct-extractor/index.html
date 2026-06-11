@@ -135,6 +135,17 @@
       <div id="live-banner" role="status" aria-live="polite">
         <strong>Demo mode active.</strong> Results are sample data, not real extractions. <button type="button" id="btn-exit-demo" class="secondary" style="margin-left:0.5rem">Switch back to live backend</button>
       </div>
+      <details class="ctgov-import" style="margin-top:0.8rem">
+        <summary style="cursor:pointer; font-size:0.9rem; font-weight:600">Import ClinicalTrials.gov results (JSON, offline)</summary>
+        <p class="hint" style="margin:0.4rem 0">Download a study's results from <code>clinicaltrials.gov/api/v2/studies/&lt;NCT&gt;?format=json</code>, then paste or upload it here. Parsed entirely offline — no network call is made.</p>
+        <textarea id="ctgov-json" placeholder="Paste the ClinicalTrials.gov API v2 study JSON here…" aria-label="ClinicalTrials.gov results JSON" style="min-height:90px"></textarea>
+        <div style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center">
+          <button type="button" id="btn-ctgov" class="secondary">Parse CT.gov JSON</button>
+          <label class="use-llm-label" style="gap:0.35rem; font-size:0.82rem; margin:0; cursor:pointer">
+            <input id="ctgov-file" type="file" accept="application/json,.json" aria-label="Upload ClinicalTrials.gov JSON file"> or upload a .json file
+          </label>
+        </div>
+      </details>
     </section>
 
     <section class="panel">
@@ -151,6 +162,7 @@
         <button type="button" id="btn-send-forest" class="secondary">Send to Forest Plot</button>
         <button type="button" id="btn-export-csv" class="secondary">Export CSV</button>
       </div>
+      <div id="ctgov-out" role="region" aria-label="ClinicalTrials.gov posted results" aria-live="polite"></div>
       <h2 style="margin-top:0.8rem" id="consensus-heading">Consensus vs local LLM</h2>
       <div id="consensus-wrap" role="region" aria-labelledby="consensus-heading" aria-live="polite">
         <p style="color:var(--muted); font-size:0.84rem; margin:0">Enable "local LLM consensus" above to compare the regex extractor against a local model. Disagreements are highlighted red.</p>
@@ -168,6 +180,8 @@
   <!-- Browser-native offline extractor: a JS port of the rct-extractor-v2 pattern
        families, so extraction works with no Python backend (Pages / file://). -->
   <script src="../shared/rct-regex-extract.js"></script>
+  <!-- Offline parser for ClinicalTrials.gov API v2 results JSON (vendored from ctgov-v2-extractor). -->
+  <script src="../shared/ctgov-extract.js"></script>
   <!-- PDF.js for browser-side text extraction (self-hosted for SRI / offline / strict CSP) -->
   <script type="module">
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -580,6 +594,40 @@
 
     document.getElementById("btn-run").addEventListener("click", run);
     apiUrlEl.addEventListener("change", probeAPI);
+
+    // ── ClinicalTrials.gov results import (offline, vendored ctgov-extract.js) ──
+    const ctgovOut = document.getElementById("ctgov-out");
+    function renderCtgov(res) {
+      if (!res) { ctgovOut.innerHTML = ""; return; }
+      if (res.error) { ctgovOut.innerHTML = `<p style="color:var(--err); font-size:0.84rem">${esc(res.error)}</p>`; return; }
+      const head = `<h2 style="margin-top:0.8rem">ClinicalTrials.gov results${res.nctId ? " — " + esc(res.nctId) : ""}</h2>`;
+      if (!res.outcomes || !res.outcomes.length) {
+        ctgovOut.innerHTML = head + `<p style="color:var(--muted); font-size:0.84rem">${esc(res.note || "No posted outcome measures in this record.")}</p>`;
+        return;
+      }
+      const blocks = res.outcomes.map(o => {
+        const rows = (o.groups || []).map(g => `<tr><td>${esc(g.group)}</td><td>${esc(g.value ?? "—")}</td><td>${g.lower != null || g.upper != null ? esc((g.lower ?? "?") + " to " + (g.upper ?? "?")) : "—"}</td></tr>`).join("");
+        const meta = [o.type, o.paramType, o.unit, o.timeFrame].filter(Boolean).map(esc).join(" · ");
+        return `<div style="margin:0.5rem 0"><strong>${esc(o.title)}</strong>${meta ? ` <span style="color:var(--muted); font-size:0.76rem">${meta}</span>` : ""}` +
+          `<table style="margin-top:0.3rem"><thead><tr><th>Arm</th><th>Value</th><th>CI</th></tr></thead><tbody>${rows || `<tr><td colspan="3" style="color:var(--muted)">no per-arm measurements</td></tr>`}</tbody></table></div>`;
+      }).join("");
+      ctgovOut.innerHTML = head + blocks;
+    }
+    function parseCtgovText() {
+      const raw = document.getElementById("ctgov-json").value.trim();
+      if (!raw) { renderCtgov({ error: "Paste or upload a ClinicalTrials.gov results JSON first." }); return; }
+      let json;
+      try { json = JSON.parse(raw); } catch (e) { renderCtgov({ error: "Not valid JSON: " + e.message }); return; }
+      renderCtgov(window.CtgovExtract ? CtgovExtract.parseResults(json) : { error: "Parser unavailable." });
+    }
+    document.getElementById("btn-ctgov").addEventListener("click", parseCtgovText);
+    document.getElementById("ctgov-file").addEventListener("change", function () {
+      const f = this.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { document.getElementById("ctgov-json").value = r.result; parseCtgovText(); };
+      r.readAsText(f);
+      this.value = "";
+    });
 
     // Scale-aware bus push. Ratio types (HR, OR, RR, IRR) go on the log scale; linear types
     // (MD, SMD, RD) stay on the raw scale. Each row carries its scale + source metadata so
