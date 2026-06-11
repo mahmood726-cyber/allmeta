@@ -1,0 +1,30 @@
+{
+ "comparison": "tirzepatide vs subcutaneous semaglutide (weight loss, obesity)",
+ "estimate_pp": 2.9,
+ "ci95": {
+  "lower": -0.17,
+  "upper": 5.97
+ },
+ "se": 1.566,
+ "ci_note": "CONSERVATIVE: from independent marginal CrIs; the true NMA contrast (shared placebo reference) is narrower. Exact contrast needs the joint posterior.",
+ "tirz": {
+  "eff_target": 17.5,
+  "cri": [
+   15.0,
+   19.9
+  ],
+  "k": 4
+ },
+ "sema": {
+  "eff_target": 14.6,
+  "cri": [
+   12.8,
+   16.5
+  ],
+  "k": 15
+ },
+ "i2_sema_pct": 93.9,
+ "i2_tirz_pct": 93.9,
+ "k_studies": 19,
+ "network": "star (placebo-anchored) -> incoherence NOT assessable"
+}
