@@ -495,7 +495,7 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await page.click("#btn-refresh");
   await page.locator("#tab-btn-synthesis").click();
 
-  const card = page.locator("#panel-synthesis .exp-methods");
+  const card = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Experimental methods" });
   await expect(card).toHaveCount(1);
   await expect(card.locator(".exp-tag")).toHaveText("experimental");          // explicit label
   await expect(card).toContainText("GRMA");
@@ -520,6 +520,15 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
     return Math.exp(g.estimate);
   });
   expect(Math.abs(grma - 0.879682)).toBeLessThan(1e-4);
+
+  // multiverse / spec-collapse panel: pools under a 7-spec estimator grid and shows
+  // the honest combined CI beside the naïve (collapsing) pool
+  const mv = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Multiverse" });
+  await expect(mv).toHaveCount(1);
+  await expect(mv).toContainText("spec-collapse");
+  await expect(mv).toContainText("verdict");
+  await expect(mv).toContainText("Naïve");
+  await expect(mv.locator("table tbody tr")).toHaveCount(7);
 });
 
 test("Stages carry good-vs-weak writing teaching cards", async ({ page }) => {
