@@ -1,0 +1,67 @@
+{
+ "class": "SGLT2 inhibitors",
+ "stage": "transport (HF-hosp HR -> ARR + NNT in a target)",
+ "class_pooled_hr": 0.72,
+ "lead": "canagliflozin",
+ "lead_hr": 0.67,
+ "scenarios": [
+  {
+   "population": "T2D primary prevention (DECLARE/CANVAS-like)",
+   "baseline_annual_risk": 0.015,
+   "arr_pct_yr": 0.41,
+   "arr_cri": [
+    0.31,
+    0.5
+   ],
+   "nnt_yr": 242.0,
+   "nnt_cri": [
+    321.0,
+    199.0
+   ],
+   "primary": false
+  },
+  {
+   "population": "broad T2D + CKD / mixed CV risk (reference)",
+   "baseline_annual_risk": 0.03,
+   "arr_pct_yr": 0.83,
+   "arr_cri": [
+    0.62,
+    1.01
+   ],
+   "nnt_yr": 121.0,
+   "nnt_cri": [
+    160.0,
+    99.0
+   ],
+   "primary": true
+  },
+  {
+   "population": "HFrEF / HFpEF (DAPA-HF/EMPEROR-like)",
+   "baseline_annual_risk": 0.08,
+   "arr_pct_yr": 2.2,
+   "arr_cri": [
+    1.66,
+    2.69
+   ],
+   "nnt_yr": 45.0,
+   "nnt_cri": [
+    60.0,
+    37.0
+   ],
+   "primary": false
+  }
+ ],
+ "primary_scenario": "broad T2D + CKD / mixed CV risk (reference)",
+ "lead_at_primary": {
+  "population": "broad T2D + CKD / mixed CV risk (reference)",
+  "baseline_annual_risk": 0.03,
+  "arr_pct_yr": 0.99,
+  "nnt_yr": 101.0,
+  "nnt_cri": [
+   187.0,
+   74.0
+  ]
+ },
+ "baseline_source": "reference-distribution annual HF-hospitalisation placebo risks from the major SGLT2 trial populations (authoritative reference, NOT registry-extracted event counts)",
+ "depth_note": "hard-outcome/absolute-risk transport: per-agent Bayesian HR draws -> ARR + NNT with full posterior CrI across documented baseline-risk targets. Key honest message = baseline-risk dependence (NNT swings ~5x primary-prevention vs HFrEF), so an HR alone is not transportable. SGLT2 now a SECOND full-depth class (survival path, distinct from PCSK9 continuous biomarker). Baseline rates are reference values; CV/HF benefit stays with each trial, GRADE-downgraded for indirectness. No IPD."
+}

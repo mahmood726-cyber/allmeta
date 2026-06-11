@@ -152,6 +152,42 @@ def test_generality_class3_sglt2_flags_heterogeneity():
     assert d['cross_agent_I2'] >= 50, 'SGLT2 composite pooling should surface (and flag) high heterogeneity'
     assert 'artifact' in d['caveat'].lower() or 'endpoint' in d['caveat'].lower()
 
+def test_sglt2_league_bayesian_depth():
+    # 2nd full-depth class + Bayesian draw matrix: single-endpoint HF-hosp league with CrI/P(sup)
+    d = _classfile('class3_sglt2/sglt2_league.json')
+    assert 'bayesian' in d['inference'].lower() and 'draw' in d['inference'].lower()
+    assert d['rhat'] <= 1.01, 'Bayesian league must have converged'
+    assert d['lead'] == 'canagliflozin' and d['ranking'][0] == 'canagliflozin'
+    assert all(v <= 1.0 for v in d['median_hr'].values()), 'all SGLT2 agents reduce HF hospitalisation'
+    assert 'ertugliflozin' in d['k1_insufficient'], 'k=1 ertugliflozin must be flagged INSUFFICIENT'
+    # contrasts come from draws -> carry CrI + P(superiority)
+    c0 = d['comparisons'][0]
+    assert 'cri_loghr' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
+    # single-endpoint resolves the I2=87% composite artifact (no heterogeneity flag needed here)
+    assert 'hospitalisation for heart failure' in d['outcome'].lower() or 'heart failure' in d['outcome'].lower()
+
+def test_sglt2_transport_nnt_depth():
+    d = _classfile('class3_sglt2/sglt2_transport.json')
+    sc = d['scenarios']
+    assert len(sc) >= 3
+    # ARR rises and NNT falls monotonically with baseline risk (the honest transport message)
+    arrs = [s['arr_pct_yr'] for s in sc]; nnts = [s['nnt_yr'] for s in sc]
+    assert arrs == sorted(arrs) and nnts == sorted(nnts, reverse=True)
+    assert any(s['primary'] for s in sc)
+    assert 'reference' in d['baseline_source'].lower()
+    assert nnts[0] / nnts[-1] >= 3, 'NNT should swing several-fold across baseline-risk targets'
+
+def test_sglt2_dashboard_offline():
+    p = os.path.join(ROOT, 'class3_sglt2', 'sglt2_dashboard.html')
+    if not os.path.exists(p):
+        pytest.skip('sglt2_dashboard.html not built')
+    h = open(p, encoding='utf-8').read()
+    assert 'http://' not in h and 'https://wwwn' not in h, 'dashboard must be fully offline'
+    assert 'C:/' not in h and 'C:\\' not in h, 'no hardcoded local paths'
+    import re as _re
+    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
+    assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h
+
 def test_generality_class4_psoriasis_hierarchy():
     d = _classfile('class4_psoriasis/psoriasis_results.json')
     assert d['hierarchy_reproduced'] is True, 'should reproduce IL-17/IL-23 > TNF'

@@ -10,9 +10,10 @@ Registry-native synthesis → HTA → 6 wide-gap methods → GRADE/CINeMA guidel
 posterior contrast → certainty league table → decision-sensitivity → external validation (**n=7** published
 NMAs/guidelines concordant) → 2 portfolio-method integrations (Benford integrity, entropy-balancing
 transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = continuous-weight / continuous-
-LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **PCSK9 promoted to full depth** (league +
-GRADE + transport + offline dashboard) and **complementary methods** (UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`).
-One-command reproducible (`python run_all.py`), **39-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **two full-depth classes** — PCSK9
+(continuous-biomarker) and **SGLT2 (hard-outcome, Bayesian-draw league)** — each carrying league + GRADE +
+transport + offline dashboard, plus **complementary methods** (UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`).
+One-command reproducible (`python run_all.py`), **42-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
 1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
@@ -50,6 +51,21 @@ One-command reproducible (`python run_all.py`), **39-test** self-verifying. Key 
      **Python port** of `C:/Projects/grma/grma_meta.R` (R unavailable; NOT in metafor so no 1e-6 cross-check —
      stated openly). Dissonance Field Synthesis kept OUT of the guideline layer (novel/unvalidated).
    Suite now **39 green**.
+
+   **SECOND full-depth class — SGLT2 (`class3_sglt2/`), with a Bayesian-draw league:**
+   - **league** — `sglt2_league_bayes.py` → `sglt2_league.json` + `sglt2_hf_draws.npz`: hierarchical RE on
+     log-HR (nutpie, R̂=1.00), every pairwise contrast from a **posterior draw matrix** (CrI + P(superiority)),
+     same GRADE/CINeMA domains as `nma_league.py`. Restricted to the **single HF-hospitalisation endpoint**,
+     which *resolves the I²=87% composite artifact* the class-3 core repoint flagged. canagliflozin 0.67 lead;
+     ertugliflozin k=1 → INSUFFICIENT; dapagliflozin drops out (posts only the CV-death/HF composite). Pinned
+     by `test_sglt2_league_bayesian_depth`. (This is the answered "give the league a Bayesian draw" request.)
+   - **transport** — `sglt2_transport.py` → `sglt2_transport.json`: HR draws → **ARR + NNT** across baseline-
+     risk targets (NNT ~242 primary-prevention → ~45 HFrEF). Baseline rates are a reference distribution.
+     Pinned by `test_sglt2_transport_nnt_depth`.
+   - **dashboard** — `sglt2_dashboard.py` → `sglt2_dashboard.html` (offline). Pinned by `test_sglt2_dashboard_offline`.
+   Note: `sglt2_results.json` (composite, flags heterogeneity) is KEPT as the core repoint; the Bayesian
+   single-endpoint league is the depth promotion that *fixes* it. Suite now **42 green**. Next depth idea:
+   give PCSK9 a Bayesian draw matrix too (parity), or promote a 3rd class (psoriasis binary / asthma rate).
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.

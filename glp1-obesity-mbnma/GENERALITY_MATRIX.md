@@ -25,20 +25,26 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   by baseline rate / eosinophil enrichment (asthma). The engine names each rather than papering over it.
 
 ## Honest scope
-- Classes 3–5 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
+- Classes 4–5 are **core repoints** (discovery + extraction + the distinctive analysis), not full re-runs of
   the 40-stage incretin pipeline. Transport, league, HTA, and GRADE would repoint identically (same AACT
   fields + engines) but were not rebuilt per class — the point is class-generality and method-discrimination,
   which hold.
-- **Class 2 (PCSK9) is the full-depth proof:** it now carries all **four named depth stages** — (1) a full
-  pairwise LDL **league** with per-comparison **GRADE/CINeMA certainty** (`pcsk9_league.json`, same computable
-  domains as the incretin flagship `nma_league.py`: 6 Moderate / 6 Low across 12 comparisons, bococizumab
-  lead); (2) **transport** (`pcsk9_transport.json`) mapping registry % LDL reduction → decision-relevant
-  **absolute** lowering (mmol/L) in a real NHANES elevated-LDL US target (baseline 132 mg/dL; bococizumab
-  −2.61 → inclisiran −1.99 mmol/L), using the *same* authoritative NHANES reference source as the incretin
-  transport; and (3) a single-file **offline dashboard** (`pcsk9_dashboard.html`) rendering them. This proves
-  the depth stages port end-to-end, not just the core analysis. Honest bound: the PCSK9 league uses the
-  frequentist normal contrast (no Bayesian draw matrix for this class), and transport assumes the % reduction
-  is approximately population-transportable (carried modifier = target baseline LDL, not the percentage).
+- **Two classes are now full-depth proofs** (league + GRADE + transport + offline dashboard):
+  - **Class 2 (PCSK9), continuous-biomarker path** — (1) full pairwise LDL **league** with **GRADE/CINeMA
+    certainty** (`pcsk9_league.json`, same domains as `nma_league.py`: 6 Moderate / 6 Low / 12 comparisons,
+    bococizumab lead); (2) **transport** (`pcsk9_transport.json`) mapping % LDL reduction → **absolute**
+    lowering (mmol/L) in a real NHANES elevated-LDL target (baseline 132 mg/dL; bococizumab −2.61 → inclisiran
+    −1.99 mmol/L); (3) **offline dashboard** (`pcsk9_dashboard.html`). Honest bound: frequentist normal
+    contrast (no Bayesian draws for this class); transport assumes the % reduction is population-transportable.
+  - **Class 3 (SGLT2), hard-outcome / survival path** — (1) a **Bayesian** HF-hospitalisation **league**
+    (`sglt2_league.json`): hierarchical RE on log-HR (nutpie, R̂=1.00) with every contrast from a **posterior
+    draw matrix** (CrI + P(superiority)), restricted to the **single HF-hospitalisation endpoint** which
+    *resolves the I²=87% composite artifact* the class-3 core repoint flagged (canagliflozin 0.67 lead;
+    ertugliflozin k=1 → INSUFFICIENT); (2) **transport** (`sglt2_transport.json`) HR → **ARR + NNT** across
+    baseline-risk targets (NNT swings ~242 primary-prevention → ~45 HFrEF, the baseline-risk message); (3)
+    **offline dashboard** (`sglt2_dashboard.html`). This proves the depth stages port across *outcome types*
+    (continuous biomarker **and** survival/absolute-risk), and that the league upgrades to a real Bayesian
+    draw matrix.
 - Every class result is registry-native (AACT) and honestly bounded (small k where noted; demonstration, not
   a systematic review).
 
@@ -46,5 +52,9 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
 **A reusable, outcome-type-general engine.** Repointing across continuous-biomarker, lipid, hard-outcome,
 binary-responder, and count/rate classes took a drug list and an outcome term, and produced coherent syntheses
 plus *class-appropriate, self-flagging* method behaviour. The system is not a bespoke incretin analysis; its
-methods answer to the evidence in each class. See `class2_pcsk9/GENERALITY.md`, `class3_sglt2/sglt2_results.json`,
-`class4_psoriasis/psoriasis_results.json`, `class5_asthma/asthma_results.json`.
+methods answer to the evidence in each class — and the depth stages (league + GRADE + transport + dashboard)
+port end-to-end across **two** classes spanning a continuous-biomarker and a survival/absolute-risk outcome,
+with the SGLT2 league running on a real Bayesian draw matrix. See `class2_pcsk9/GENERALITY.md` (+ `pcsk9_league`,
+`pcsk9_transport`, `pcsk9_dashboard.html`), `class3_sglt2/` (`sglt2_results.json` core + `sglt2_league.json`
+Bayesian depth + `sglt2_transport.json` + `sglt2_dashboard.html`), `class4_psoriasis/psoriasis_results.json`,
+`class5_asthma/asthma_results.json`.

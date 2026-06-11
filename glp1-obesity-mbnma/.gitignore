@@ -8,3 +8,4 @@ assets/
 incretin_obesity_dashboard.html
 _shot_*.png
 nma_draws.npz
+class3_sglt2/sglt2_hf_draws.npz

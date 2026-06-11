@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SGLT2 inhibitors - Bayesian HF-hospitalisation league, GRADE certainty &amp; transported NNT</title>
+<meta property="og:title" content="SGLT2i Bayesian HF-hospitalisation league, GRADE certainty & transported NNT">
+<meta property="og:description" content="Registry-native (AACT) SGLT2 inhibitor heart-failure-hospitalisation league from a Bayesian draw matrix, with per-comparison GRADE certainty and HR-to-NNT transport across baseline-risk targets. Decision-support DRAFT.">
+<meta property="og:type" content="website">
+<style>
+:root{--bg:#0f1419;--card:#1a2029;--ink:#e6edf3;--mut:#9aa7b4;--line:#2a323d;--acc:#4da3ff}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:22px;margin:0 0 4px} h2{font-size:17px;margin:0 0 10px;color:var(--acc)}
+.sub{color:var(--mut);margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+.rowh,.colh{background:#222b36;font-weight:600} .rowh{text-align:left}
+.diag{background:#11161d;font-weight:700} .k{color:var(--mut);font-weight:400;font-size:12px}
+.eff{color:var(--mut)}
+.cert.high{background:#0e3a1e} .cert.mod{background:#3a360e} .cert.low{background:#3a1f0e} .cert.vlow{background:#3a0e12}
+td.ag{text-align:left;font-weight:600}
+.note{color:var(--mut);font-size:13px;border-left:3px solid var(--line);padding:4px 0 4px 12px;margin:10px 0}
+.flag{color:#ffb454} .legend span{display:inline-block;margin-right:14px;font-size:12px;color:var(--mut)}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin-right:4px}
+footer{color:var(--mut);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>SGLT2 inhibitors &mdash; Bayesian HF-hospitalisation league, GRADE certainty &amp; transported NNT</h1>
+<p class="sub">Registry-native (AACT) generality repoint &middot; <b>second full-depth class</b> (hard-outcome / survival path) &middot; <b>decision-support DRAFT</b> &mdash; RoB &amp; values stay with the panel. League fit by hierarchical Bayesian RE on log-HR (nutpie, R&#770;=1.000); contrasts from posterior draws.</p>
+
+<div class="card">
+<h2>HF-hospitalisation league (one exact endpoint) &amp; per-comparison certainty</h2>
+<p class="sub">Lower triangle = HR ratio (row vs column). Upper triangle = computable GRADE/CINeMA certainty (indirect-star baseline + imprecision when the contrast CrI crosses the null + k=1 INSUFFICIENT) &mdash; identical domains to <code>nma_league.py</code>; hover a cell for P(superiority). Diagonal = posterior median HR (k trials). Restricting to the <b>single HF-hospitalisation endpoint</b> resolves the I&sup2;=87% composite-pooling artifact the class-3 repoint flagged.</p>
+<table>
+<thead><tr><th></th><th class="colh">canagliflozin</th><th class="colh">sotagliflozin</th><th class="colh">empagliflozin</th><th class="colh">ertugliflozin</th></tr></thead>
+<tbody>
+<tr><th class="rowh">canagliflozin</th><td class="diag">0.67<br><span class="k">k=2</span></td><td class="cert low" title="P(sup)=0.70">Low</td><td class="cert low" title="P(sup)=0.94">Low</td><td class="cert vlow" title="P(sup)=0.97">Very low</td></tr>
+<tr><th class="rowh">sotagliflozin</th><td class="eff">0.93</td><td class="diag">0.72<br><span class="k">k=2</span></td><td class="cert low" title="P(sup)=0.85">Low</td><td class="cert vlow" title="P(sup)=0.95">Very low</td></tr>
+<tr><th class="rowh">empagliflozin</th><td class="eff">0.85</td><td class="eff">0.91</td><td class="diag">0.79<br><span class="k">k=5</span></td><td class="cert vlow" title="P(sup)=0.85">Very low</td></tr>
+<tr><th class="rowh">ertugliflozin</th><td class="eff">0.76</td><td class="eff">0.82</td><td class="eff">0.90</td><td class="diag">0.88<br><span class="k">k=1</span></td></tr>
+</tbody>
+</table>
+<p class="legend"><span><i class="sw" style="background:#3a1f0e"></i>Low</span><span><i class="sw" style="background:#3a0e12"></i>Very low</span></p>
+<p class="note">Across 12 ordered comparisons: <b>Low: 6, Very low: 6</b>. Lead <b>canagliflozin</b> (HR 0.67); all agents reduce HF hospitalisation. <span class="flag">ertugliflozin (k=1) is correctly flagged INSUFFICIENT</span> &rarr; every comparison involving it is Very low. dapagliflozin posts only the CV-death/HF composite, so the strict single-endpoint filter drops it (conservative).</p>
+</div>
+
+<div class="card">
+<h2>Transported absolute benefit &mdash; HR &rarr; ARR &amp; NNT by target baseline risk</h2>
+<p class="sub">An HR is not a transportable decision quantity; the NNT depends on the target's baseline risk. Class-pooled HR draws (k&ge;2 agents, median 0.72) &times; documented baseline annual HF-hospitalisation risks, full posterior credible intervals.</p>
+<table>
+<thead><tr><th class="colh">Target population</th><th class="colh">Baseline risk</th><th class="colh">ARR %/yr (95% CrI)</th><th class="colh">NNT/yr (95% CrI)</th></tr></thead>
+<tbody>
+<tr><td class="ag">T2D primary prevention (DECLARE/CANVAS-like)</td><td>1.5%/yr</td><td>0.41 (0.31, 0.50)</td><td><b>242</b> (321&ndash;199)</td></tr>
+<tr><td class="ag">broad T2D + CKD / mixed CV risk (reference) &#9733;</td><td>3.0%/yr</td><td>0.83 (0.62, 1.01)</td><td><b>121</b> (160&ndash;99)</td></tr>
+<tr><td class="ag">HFrEF / HFpEF (DAPA-HF/EMPEROR-like)</td><td>8.0%/yr</td><td>2.20 (1.66, 2.69)</td><td><b>45</b> (60&ndash;37)</td></tr>
+</tbody>
+</table>
+<p class="note flag">The same class HR gives an NNT swinging from ~242 (primary prevention) to ~45 (HFrEF/HFpEF) &mdash; a ~5&times; spread. Baseline rates are reference-distribution values from the major SGLT2 trial placebo arms (not registry-extracted event counts). This transports the HF-hospitalisation effect; CV/HF benefit claims stay with each trial and are GRADE-downgraded for indirectness.</p>
+</div>
+
+<div class="card">
+<h2>Honest scope</h2>
+<p class="sub">SGLT2 is the <b>second full-depth</b> generality class (after PCSK9), and the first on the <b>hard-outcome / survival</b> path: Bayesian single-endpoint league + GRADE certainty + HR&rarr;NNT transport + this offline dashboard. The league is a star network (each agent vs placebo), so contrasts are indirect. Registry-native (AACT); baseline risks are an authoritative reference distribution; no IPD, no full text.</p>
+</div>
+
+<footer>Generated by <code>class3_sglt2/sglt2_dashboard.py</code> from <code>sglt2_league.json</code> + <code>sglt2_transport.json</code>. Fully offline &middot; no external assets. Decision-support DRAFT, not a guideline.</footer>
+</div>
+</body>
+</html>
