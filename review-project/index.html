@@ -225,6 +225,7 @@
         <option value="strepto">Streptokinase — proof in '73, practice in '86</option>
         <option value="magnesium">Magnesium — the chorus and the mirage</option>
         <option value="antidep">Antidepressants — the curated shelf</option>
+        <option value="cortico_repeat">Repeat corticosteroids — real Cochrane data (CD004661)</option>
       </select>
       <span class="progress" id="progress" aria-live="polite"></span>
     </div>
@@ -809,6 +810,29 @@
           robustness: { y: "the turn", s: "Now pool the full FDA set: g = 0.31 [0.27–0.35]. The published literature overstated efficacy by roughly a third — for citalopram by nearly 70%. The funnel was asymmetric because the missing trials were the unflattering ones. You had been reading a curated shelf.", r: "The registry tells another. The third that vanished was the third that disappointed.", voice: true },
           certainty: { y: "", s: "A reporting-bias downgrade is not optional here: the same drugs read as high-certainty from the journals and merely moderate from the registry. Which denominator you trust decides the verdict.", r: "Certain on the shelf. Less so in the registry." },
           report: { y: "the lesson", s: "Every one of the twelve drugs was inflated upward; not one was deflated. Selective publication does not add noise — it adds a direction. Read the registry before you trust the library.", r: "Count the trials that never reached print — then synthesise.", voice: true }
+        }
+      },
+      cortico_repeat: {
+        name: "Repeat antenatal corticosteroids — does more help? (Cochrane CD004661)",
+        hook: "A single antenatal corticosteroid course saves preterm lives. So if some is good, are repeat courses better for women who stay at risk? This is real per-trial Cochrane data, lifted from the Pairwise70 corpus — load it and test the tempting inference yourself.",
+        data: { measure: "OR", scale: "ratio", cite: "Cochrane CD004661.pub4 — repeat antenatal corticosteroids, outcome “Death (fetal, neonatal, or up to 2 years' corrected age)”, 6 trials. Real per-trial 2×2 counts from the Pairwise70 Cochrane corpus (data/CD004661_pub4_data.rda); this is the repeat-dose review, distinct from the single-course Cochrane-logo meta-analysis", trials: [
+          { label: "Mittendorf", year: 2002, group: "repeat-dose", eT: 2, nT: 30, eC: 1, nC: 29 },
+          { label: "Crowther (ACTORDS)", year: 2003, group: "repeat-dose", eT: 87, nT: 629, eC: 107, nC: 626 },
+          { label: "Marret", year: 2006, group: "repeat-dose", eT: 34, nT: 352, eC: 38, nC: 336 },
+          { label: "Rouse (MFMU)", year: 2008, group: "repeat-dose", eT: 103, nT: 1188, eC: 96, nC: 1256 },
+          { label: "Wolf", year: 2020, group: "repeat-dose", eT: 22, nT: 343, eC: 24, nC: 337 },
+          { label: "Crowther", year: 2023, group: "repeat-dose", eT: 12, nT: 837, eC: 7, nC: 796 }
+        ] },
+        beats: {
+          protocol: { y: "the question", s: "The single course is settled science. The new question is narrower and seductive: for a woman still undelivered and still at risk days later, does a repeat course further cut death and serious morbidity?", r: "More felt like it should mean better." },
+          search: { y: "2002–2023", s: "Six randomised trials of repeat antenatal corticosteroids accumulate — Mittendorf, Crowther's ACTORDS, Marret, Rouse's MFMU, Wolf and Crowther 2023 — together several thousand infants.", r: "Six trials gather to test 'more'." },
+          screening: { y: "", s: "Keep the randomised trials reporting death up to two years' corrected age: the outcome that matters most and the one most resistant to optimistic spin.", r: "Six trials, one hard outcome — death." },
+          extraction: { y: "", s: "Pull each trial's deaths and totals straight from the Cochrane record — the real two-by-two tables, loadable here onto the workspace bus.", r: "Real counts, not a remembered impression." },
+          appraisal: { y: "", s: "The trials are large and randomised; the question is not their quality but whether repeating a good thing keeps paying off.", r: "Good trials. An honest test of 'more'." },
+          synthesis: { y: "", s: "Pool the six: a fixed-effect odds ratio for death of 0.96 (95% CI 0.80 to 1.15). The diamond straddles the line of no effect — no clear mortality benefit from repeating the course.", r: "The diamond sits on the line." },
+          robustness: { y: "", s: "The result is steady across trials, and the largest (Rouse, Crowther) sit nearest the null. Whatever repeat doses do for short-term breathing, they do not visibly move death.", r: "Steady — and steadily null." },
+          certainty: { y: "", s: "Certainty for mortality is moderate at best, and repeat doses carry their own trade-offs, including lower birthweight, so 'more' is not a free lever.", r: "More was not better. It was just more." },
+          report: { y: "the lesson", s: "The single course is one of evidence synthesis's triumphs; repeating it shows a real benefit need not extend indefinitely. Test 'more' against the real trials before you assume it.", r: "Prove 'more' helps — never assume it.", voice: true }
         }
       }
     };

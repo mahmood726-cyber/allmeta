@@ -359,3 +359,28 @@ test("Story mode includes the Turner publication-bias case driving the Robustnes
   await expect(page.locator("#panel-robustness .story-beat.voice")).toHaveCount(1);
   await expect(page.locator("#panel-robustness .story-beat")).toContainText("g = 0.31");
 });
+
+test("Story mode loads REAL Cochrane data (CD004661) lifted from the Pairwise70 corpus", async ({ page }) => {
+  page.on("dialog", d => d.accept());
+  await page.goto("/review-project/index.html");
+  await page.click("#btn-story");
+  await page.selectOption("#story-case", "cortico_repeat");
+
+  // provenance is explicit: the real Cochrane review + its source corpus
+  await expect(page.locator("#story-intro .story-cite")).toContainText("CD004661");
+  await expect(page.locator("#story-intro .story-cite")).toContainText("Pairwise70 Cochrane corpus");
+  await expect(page.locator("#story-intro [data-load-case]")).toContainText("Load these 6 real trials");
+
+  // load the real per-trial data onto the bus
+  await page.click("#story-intro [data-load-case]");
+  await expect(page.locator("#evmap .evpt")).toHaveCount(6);
+  expect(await page.evaluate(() => window.MaStudies.read().length)).toBe(6);
+
+  // fixed-effect pool of the real Cochrane trials is the near-null death OR (~0.96) the beat states
+  await page.locator("#tab-btn-synthesis").click();
+  await page.selectOption("#panel-synthesis select[data-synth='method']", "FE");
+  const or = parseFloat(await page.locator("#panel-synthesis .result-card .big").textContent());
+  expect(or).toBeGreaterThan(0.88);
+  expect(or).toBeLessThan(1.05);
+  await expect(page.locator("#panel-synthesis .story-beat")).toContainText("0.96");
+});
