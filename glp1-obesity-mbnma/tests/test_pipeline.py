@@ -410,6 +410,25 @@ def test_certainty_counts_not_double_counted(f):
         f'{f}: certainty_counts sum {sum(d["certainty_counts"].values())} != {len(d["comparisons"])} unique comparisons'
 
 
+def test_ra_rapidmeta_conversion():
+    # RA class wrapped in the RapidMeta workbench: per-trial ACR responder table + kit config
+    tr = _classfile('class6_ra/ra_trials.json')
+    trials = tr['trials']
+    assert len(trials) >= 30, 'RA RapidMeta cohort should have a substantial trial table'
+    for t in trials:
+        assert t['nct'].startswith('NCT') and t['name']
+        # derived responder events must be valid counts within arm N
+        assert 0 <= t['tE'] <= t['tN'] and 0 <= t['cE'] <= t['cN'], f"{t['nct']}: events outside [0,N]"
+        assert t['allOutcomes'], 'each trial lists at least one ACR outcome'
+    s = tr['screening']
+    assert s['search_hits'] >= s['acr_reporting'] >= s['included'], 'screening funnel must be monotone'
+    # the kit config is well-formed against the rapidmeta-kit schema essentials
+    cfg = _classfile('class6_ra/ra_rapidmeta_config.json')
+    for k in ('drug', 'slug', 'condition', 'title', 'pico', 'trials'):
+        assert k in cfg and cfg[k], f'config missing {k}'
+    assert cfg['slug'] == 'ra_biologics_acr_nma' and len(cfg['trials']) == len(trials)
+    assert all('_agent' not in t for t in cfg['trials']), 'private bookkeeping keys must be stripped from the config'
+
 def test_class_concordance_published():
     # class-level external validation: each generality class vs a PubMed-verified published NMA
     d = load('class_concordance.json')

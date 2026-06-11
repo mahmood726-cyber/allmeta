@@ -134,6 +134,18 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    (Menzies-Gow "no significant difference"; Singh "downgraded for inconsistency"). Wired into `run_all.py`
    (stage G4e). Pinned by `test_class_concordance_published`. Suite now **63 green**.
 
+   **RAPIDMETA CONVERSION — RA pilot DONE (this session):** wrapped the RA class in the full RapidMeta workbench
+   (protocol→search→screen→extract→synthesis→paper) so every stage is auditable like the incretin flagship.
+   `class6_ra/ra_rapidmeta_harvest.py` → `ra_trials.json` (per-trial ACR responder table from AACT: 4346 search
+   → 207 ACR-reporting → **66 trials** with active-vs-control events `= round(ACR%×N)`, all 12 agents);
+   `build_ra_rapidmeta_config.py` → `ra_rapidmeta_config.json` (kit config: PICO, 66 trials tE/tN/cE/cN, honest
+   AACT-provenance note); then `python clone.py class6_ra/ra_rapidmeta_config.json --out ra_review.html` in
+   `C:/Projects/rapidmeta-kit` → 1.24 MB workbench (all 7 tabs, 0 placeholder tokens). HTML+assets gitignored
+   (CDN/regenerable, like `incretin_obesity_dashboard.html`); source committed + pinned by
+   `test_ra_rapidmeta_conversion`. Wired run_all C6d/C6e. See `RAPIDMETA_CONVERSION.md`. **Roll out next:** same
+   3 steps (harvester + config builder + clone) for psoriasis (PASI-90 %×N, identical to RA), PCSK9 (continuous
+   md/se), SGLT2 (HR/events), asthma (IRR). Suite now **64 green**.
+
    Next depth idea: a 6th outcome family (e.g. proportion / single-arm incidence, or DTA Se/Sp), or give the
    RA league a true placebo-anchored ordinal NMA (needs per-arm responder counts → currently AACT posts %s).
 

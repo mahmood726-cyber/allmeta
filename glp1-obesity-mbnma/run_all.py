@@ -81,6 +81,11 @@ STAGES = [
     ('C6a RA league (Bayes)',  'class6_ra/ra_league_bayes.py',           HERE, 'class6_ra/ra_league.json',              True),
     ('C6b RA transport',       'class6_ra/ra_transport.py',              HERE, 'class6_ra/ra_transport.json',           False),
     ('C6c RA dashboard',       'class6_ra/ra_dashboard.py',              HERE, 'class6_ra/ra_dashboard.html',           False),
+    # RA RapidMeta conversion (pilot): per-trial ACR responder harvest + kit config. The 1.2MB workbench HTML
+    # is generated OUT-OF-BAND by rapidmeta-kit (`python clone.py class6_ra/ra_rapidmeta_config.json
+    # --out class6_ra/ra_review.html`) -- external dependency, not a run_all stage.
+    ('C6d RA RM trial harvest', 'class6_ra/ra_rapidmeta_harvest.py',     HERE, 'class6_ra/ra_trials.json',              True),
+    ('C6e RA RM config',       'class6_ra/build_ra_rapidmeta_config.py', HERE, 'class6_ra/ra_rapidmeta_config.json',    False),
 ]
 
 print('Registry-native synthesis system — orchestrator')
