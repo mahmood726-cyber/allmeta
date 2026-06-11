@@ -439,6 +439,49 @@ test("Synthesis flags screening-included records that carry no pooled effect dat
   await expect(page.locator("#panel-synthesis .dropped-warn")).toHaveCount(0);
 });
 
+test("Bundle stage runs quality-assurance checks and gates signing on blocking fails", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  // empty workspace: no pooled result -> a blocking 'fail' check, sign is gated
+  await page.locator("#tab-btn-bundle").click();
+  await expect(page.locator("#qa-checks .qa-head")).toContainText("checks pass");
+  await expect(page.locator("#qa-checks .qa-row.qa-fail")).not.toHaveCount(0);   // 'Pooled result present' fails
+  await expect(page.locator("#qa-checks")).toHaveAttribute("data-fails", /[1-9]/);
+  await expect(page.locator("#qa-checks .qa-block")).toBeVisible();
+
+  // seed a full, valid workspace -> the blocking checks clear
+  await page.evaluate(() => {
+    localStorage.setItem("sr-project-v1", JSON.stringify({ pico: { population: "adults", intervention: "drug" } }));
+    localStorage.setItem("sr-records-v1", JSON.stringify({ records: [
+      { title: "A", r1: { d: "include" }, r2: { d: "include" } }, { title: "B", r1: { d: "include" }, r2: { d: "include" } }
+    ] }));
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "A", est: -0.15, se: 0.05 }, { label: "B", est: -0.10, se: 0.06 }
+    ] }));
+    window.MaPooled.write(window.MaPooled.fromEstSE(0.86, 0.05, { scale: "ratio", measure: "HR", k: 2 }));
+  });
+  await page.click("#btn-refresh");
+  await page.click("#btn-capture-all");   // fold the live stages into the bundle
+  await page.locator("#tab-btn-bundle").click();
+  await expect(page.locator("#qa-checks .qa-row.qa-fail")).toHaveCount(0);
+  await expect(page.locator("#qa-checks")).toHaveAttribute("data-fails", "0");
+});
+
+test("Overview shows a plain-language 'What does this mean?' summary from the pooled result", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await expect(page.locator("#what-this-means")).toBeHidden();   // nothing pooled yet
+  await page.evaluate(() => {
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "A", est: -0.15, se: 0.05 }, { label: "B", est: -0.10, se: 0.06 }
+    ] }));
+    // a ratio HR of 0.70 with a CI entirely below 1 -> "a clear effect"
+    window.MaPooled.write(window.MaPooled.fromEstSE(Math.log(0.70), (Math.log(0.85)-Math.log(0.58))/(2*1.959963984540054), { scale: "ratio", measure: "HR", k: 2 }));
+  });
+  await page.click("#btn-refresh");
+  await expect(page.locator("#what-this-means")).toBeVisible();
+  await expect(page.locator("#what-this-means")).toContainText("pooled HR was");
+  await expect(page.locator("#what-this-means .wm-sentence")).toContainText("no-effect line");
+});
+
 test("Search and Extraction stages surface the Embase + PDF workflow", async ({ page }) => {
   await page.goto("/review-project/index.html");
   await expect(page.locator("#panel-search .s-desc")).toContainText("Embase");
