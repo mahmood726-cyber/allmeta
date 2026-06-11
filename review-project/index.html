@@ -163,11 +163,26 @@
     .sof-low { background:#3a2c12; color:#fbbf24; border:1px solid #fbbf24; }
     .sof-verylow { background:#3a1d1d; color:#f87171; border:1px solid #f87171; }
     .mini-forest text { fill:var(--muted); }
+    /* JASP-style live synthesis controls */
+    .synth-opts { display:flex; flex-wrap:wrap; gap:.5rem .9rem; align-items:center; margin:.1rem 0 .6rem; font-size:.78rem; }
+    .synth-opts label { display:inline-flex; align-items:center; gap:.35rem; color:var(--muted); cursor:pointer; }
+    .synth-opts select { background:var(--panel,#0f1830); color:var(--ink,#e6eefc); border:1px solid var(--border2,#27344a); border-radius:8px; padding:.18rem .4rem; font:inherit; }
+    .synth-live { font-size:.74rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:.2rem .8rem; margin:.1rem 0 .3rem; }
+    .synth-live b { color:var(--ink,#e6eefc); }
+    .synth-xref { font-size:.7rem; color:var(--faint); margin-top:.2rem; }
+    /* Nested-Knowledge-style evidence map */
+    #evmap { width:100%; height:auto; max-width:100%; }
+    #evmap .evpt { cursor:pointer; }
+    #evmap .evpt:hover { stroke:var(--ink,#e6eefc); stroke-width:1.2; }
+    #evmap .evpt.sel { stroke:var(--green,#34d399); stroke-width:2; }
+    .evmap-cap { font-size:.74rem; color:var(--muted); margin-top:.4rem; min-height:1.1em; }
+    .evmap-cap b { color:var(--ink,#e6eefc); }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/rob-core.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/review-bundle.js"></script>
@@ -201,6 +216,11 @@
         <div id="ov-cards" class="ov-cards"></div>
         <h4 style="margin:.4rem 0 .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700">PRISMA flow</h4>
         <div id="funnel" class="funnel"></div>
+        <div id="evmap-wrap" style="display:none;margin-top:1rem">
+          <h4 style="margin:.4rem 0 .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700">Evidence map <small style="text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400">— each study placed by effect (x) and precision (y); bubble ∝ weight, colour by group. Click a point for detail.</small></h4>
+          <svg id="evmap" role="img" aria-label="Evidence map: studies plotted by effect against precision"></svg>
+          <div id="evmap-cap" class="evmap-cap">Click any study to inspect it.</div>
+        </div>
       </div>
     </section>
 
@@ -248,6 +268,7 @@
     var state = load() || { title: "", outputs: {}, activeTab: "overview" };
     if (!state.activeTab) state.activeTab = "overview";
     var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
+    var synthOpts = { method: "REML", knha: false }; // JASP-style live synthesis controls (not persisted; exploratory)
 
     function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") return s; } catch (e) {} return null; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -448,12 +469,31 @@
         var pl = readPooled(); var pooled = pl.length ? pl[pl.length - 1] : null;
         var studies2 = readStudies();
         if (!pooled && !studies2.length) return "";
-        var card = "";
-        if (pooled) {
-          card = "<div class='result-card'><span class='big'>" + fnum(pooled.pointEstimate) + "</span><span class='ci'>95% CI " + fnum(pooled.ciLo) + " to " + fnum(pooled.ciHi) + "</span>"
-            + "<span class='meta'>" + esc(pooled.measure || "effect") + " · k=" + pooled.k + (pooled.model ? " · " + esc(pooled.model) : "") + (pooled.label ? " · " + esc(pooled.label) : "") + "</span></div>";
+        // scale comes from the canonical pooled result if present, else linear.
+        var scale = pooled && pooled.scale ? pooled.scale : "linear";
+        var live = livePool(studies2, scale);   // re-pool the bus live under synthOpts
+        var liveBlock;
+        if (live) {
+          var meas = (pooled && pooled.measure) ? pooled.measure : (live.ratio ? "ratio" : "effect");
+          liveBlock = "<div class='result-card'><span class='big'>" + fnum(live.pointEstimate)
+              + "</span><span class='ci'>95% CI " + fnum(live.ciLo) + " to " + fnum(live.ciHi) + "</span>"
+              + "<span class='meta'>" + esc(meas) + " · " + esc(methodLabel(live.method, live.knha)) + " · k=" + live.k + "</span></div>"
+            + "<div class='synth-live'>"
+              + "<span>&tau;&sup2; = <b>" + fnum(live.tau2) + "</b></span>"
+              + "<span>I&sup2; = <b>" + (isFinite(live.I2) ? live.I2.toFixed(0) + "%" : "&mdash;") + "</b></span>"
+              + "<span>Q = <b>" + fnum(live.Q) + "</b></span>"
+              + (live.piLo != null ? "<span>95% PI <b>" + fnum(live.piLo) + " to " + fnum(live.piHi) + "</b></span>" : "")
+            + "</div>"
+            + drawMiniForest(studies2, { scale: scale, pointEstimate: live.pointEstimate, ciLo: live.ciLo, ciHi: live.ciHi, k: live.k });
+        } else {
+          liveBlock = "<div class='synth-live'>Need &ge;2 studies on the bus to pool live (" + studies2.length + " present).</div>"
+            + drawMiniForest(studies2, null);
         }
-        return wrapPrev("Pooled result", card + drawMiniForest(studies2, pooled));
+        var xref = pooled
+          ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
+              + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
+          : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + liveBlock + xref);
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -465,6 +505,46 @@
         return body2 ? wrapPrev("GRADE certainty", "<table class='ptable'><thead><tr><th>Outcome</th><th>Certainty</th></tr></thead><tbody>" + body2 + "</tbody></table>") : "";
       }
       return "";
+    }
+
+    // ---- JASP-style live synthesis: re-pool the studies bus under the user's
+    // model/Knapp-Hartung choice via the audited AlmMaCore, alongside the
+    // canonical ma-pooled-v1 result (kept as a one-line cross-reference). ----
+    function methodLabel(m, knha) {
+      var base = m === "FE" ? "fixed-effect" : "RE-" + m;
+      return base + (knha ? " + Knapp–Hartung" : "");
+    }
+    function synthControls() {
+      var methods = [["FE", "Fixed effect"], ["DL", "RE · DerSimonian–Laird"], ["PM", "RE · Paule–Mandel"], ["REML", "RE · REML"]];
+      var opts = methods.map(function (m) {
+        return "<option value='" + m[0] + "'" + (synthOpts.method === m[0] ? " selected" : "") + ">" + esc(m[1]) + "</option>";
+      }).join("");
+      var knhaOff = synthOpts.method === "FE";
+      return "<div class='synth-opts'>"
+        + "<label>Model <select data-synth='method' aria-label='Pooling model'>" + opts + "</select></label>"
+        + "<label><input type='checkbox' data-synth='knha'" + (synthOpts.knha ? " checked" : "") + (knhaOff ? " disabled" : "") + "> Knapp–Hartung</label>"
+        + "</div>";
+    }
+    // Re-pool the studies bus under synthOpts. Returns natural-scale point/CI/PI
+    // (back-transformed when the canonical result is on a ratio scale) plus the
+    // heterogeneity stats, or null when fewer than 2 poolable studies are present.
+    function livePool(studies, scale) {
+      if (!(window.AlmMaCore && AlmMaCore.pool)) return null;
+      var yi = [], vi = [];
+      (studies || []).forEach(function (s) {
+        if (isFinite(s.est) && isFinite(s.se) && s.se > 0) { yi.push(s.est); vi.push(s.se * s.se); }
+      });
+      if (yi.length < 2) return null;   // pool needs >=2 studies
+      var r;
+      try { r = AlmMaCore.pool(yi, vi, { method: synthOpts.method, knha: synthOpts.knha, knhaFloor: true, pi: synthOpts.method !== "FE" }); }
+      catch (e) { return null; }
+      var ratio = scale === "ratio";
+      var tx = function (x) { return (x == null) ? null : (ratio ? Math.exp(x) : x); };
+      return {
+        ratio: ratio, k: r.k, tau2: r.tau2, I2: r.I2, Q: r.Q, method: r.method, knha: r.knha,
+        pointEstimate: tx(r.mu), ciLo: tx(r.ciLo), ciHi: tx(r.ciHi),
+        piLo: tx(r.piLo), piHi: tx(r.piHi)
+      };
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled
@@ -541,6 +621,68 @@
       document.getElementById("ov-cards").innerHTML = cards.map(function (c) {
         return "<div class='ov-card'><div class='k'>" + esc(c[0]) + "</div><div class='v'>" + c[1] + "</div></div>";
       }).join("");
+      renderEvidenceMap();
+    }
+
+    // ---- Nested-Knowledge-style interactive evidence map: each study placed by
+    // effect (x) vs precision 1/SE (y), bubble area ∝ inverse-variance weight,
+    // colour by group; click a point to inspect it. Reads the studies bus live. ----
+    function renderEvidenceMap() {
+      var wrap = document.getElementById("evmap-wrap"), svg = document.getElementById("evmap"), cap = document.getElementById("evmap-cap");
+      if (!wrap || !svg) return;
+      var studies = readStudies().filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (!studies.length) { wrap.style.display = "none"; svg.innerHTML = ""; return; }
+      wrap.style.display = "";
+      var pl = readPooled(); var pooled = pl.length ? pl[pl.length - 1] : null;
+      var ratio = !!(pooled && pooled.scale === "ratio");
+      var W = 600, H = 320, L = 48, R = 16, T = 14, B = 40;
+      var xs = studies.map(function (s) { return ratio ? Math.exp(s.est) : s.est; });
+      var prec = studies.map(function (s) { return 1 / s.se; });
+      var wts = studies.map(function (s) { return 1 / (s.se * s.se); });
+      var nullv = ratio ? 1 : 0;
+      var xlo = Math.min.apply(null, xs.concat([nullv])), xhi = Math.max.apply(null, xs.concat([nullv]));
+      if (xlo === xhi) { xlo -= 1; xhi += 1; }
+      var xpad = (xhi - xlo) * 0.1; xlo -= xpad; xhi += xpad;
+      var phi = Math.max.apply(null, prec); if (!(phi > 0)) phi = 1; phi *= 1.12;
+      var wmax = Math.max.apply(null, wts) || 1;
+      function X(v) { return L + (v - xlo) / (xhi - xlo) * (W - L - R); }
+      function Y(v) { return H - B - (v / phi) * (H - T - B); }
+      function rad(w) { return 4 + Math.sqrt(w / wmax) * 14; }
+      var palette = ["#5ea9ff", "#34d399", "#fbbf24", "#f87171", "#c084fc", "#22d3ee", "#fb923c", "#a3e635"];
+      var groups = []; studies.forEach(function (s) { var g = s.group || "—"; if (groups.indexOf(g) < 0) groups.push(g); });
+      function colour(g) { return palette[groups.indexOf(g || "—") % palette.length]; }
+      var p = [];
+      p.push("<line x1='" + L + "' y1='" + (H - B) + "' x2='" + (W - R) + "' y2='" + (H - B) + "' stroke='var(--border2,#27344a)'/>");
+      p.push("<line x1='" + L + "' y1='" + T + "' x2='" + L + "' y2='" + (H - B) + "' stroke='var(--border2,#27344a)'/>");
+      p.push("<line x1='" + X(nullv).toFixed(1) + "' y1='" + T + "' x2='" + X(nullv).toFixed(1) + "' y2='" + (H - B) + "' stroke='var(--border2,#27344a)' stroke-dasharray='3 3'/>");
+      p.push("<text x='" + ((L + W - R) / 2).toFixed(0) + "' y='" + (H - 6) + "' font-size='10' fill='var(--faint,#7b8aa6)' text-anchor='middle'>effect (" + (ratio ? "ratio scale, null = 1" : "linear scale, null = 0") + ")</text>");
+      var ymid = ((T + H - B) / 2).toFixed(0);
+      p.push("<text x='12' y='" + ymid + "' font-size='10' fill='var(--faint,#7b8aa6)' text-anchor='middle' transform='rotate(-90 12 " + ymid + ")'>precision (1/SE)</text>");
+      studies.forEach(function (s, i) {
+        p.push("<circle class='evpt' data-i='" + i + "' cx='" + X(xs[i]).toFixed(1) + "' cy='" + Y(prec[i]).toFixed(1) + "' r='" + rad(wts[i]).toFixed(1)
+          + "' fill='" + colour(s.group) + "' fill-opacity='0.55' stroke='" + colour(s.group) + "'><title>" + esc(s.label) + "</title></circle>");
+      });
+      if (groups.length > 1) {
+        var lx = W - R - 116, ly = T + 6;
+        groups.slice(0, 6).forEach(function (g, gi) {
+          p.push("<circle cx='" + lx + "' cy='" + (ly + gi * 14) + "' r='4' fill='" + colour(g) + "'/>");
+          p.push("<text x='" + (lx + 9) + "' y='" + (ly + gi * 14 + 3) + "' font-size='9' fill='var(--muted,#9fb0cc)'>" + esc(String(g).slice(0, 16)) + "</text>");
+        });
+      }
+      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      svg.innerHTML = p.join("");
+      svg.querySelectorAll(".evpt").forEach(function (el) {
+        el.addEventListener("click", function () {
+          svg.querySelectorAll(".evpt.sel").forEach(function (q) { q.classList.remove("sel"); });
+          el.classList.add("sel");
+          var s = studies[+el.getAttribute("data-i")];
+          var pt = ratio ? Math.exp(s.est) : s.est;
+          var lo = ratio ? Math.exp(s.est - 1.959964 * s.se) : s.est - 1.959964 * s.se;
+          var hi = ratio ? Math.exp(s.est + 1.959964 * s.se) : s.est + 1.959964 * s.se;
+          if (cap) cap.innerHTML = "<b>" + esc(s.label) + "</b> — effect " + fnum(pt) + " [" + fnum(lo) + ", " + fnum(hi) + "]"
+            + " · SE " + fnum(s.se) + " · weight " + fnum(1 / (s.se * s.se)) + (s.group ? " · group " + esc(s.group) : "") + (s.year ? " · " + esc(String(s.year)) : "");
+        });
+      });
     }
 
     function renderStages() {
@@ -712,6 +854,18 @@
 
     document.getElementById("btn-refresh").addEventListener("click", function () { refreshLive(); renderStages(); renderNav(); switchTab(state.activeTab, true); });
     document.getElementById("btn-capture-all").addEventListener("click", captureAllLive);
+
+    // JASP-style synthesis controls: #stages is the static container (its innerHTML
+    // is replaced each render, but this delegated listener on the container survives),
+    // so [data-synth] changes update synthOpts and re-render the live pool in place.
+    document.getElementById("stages").addEventListener("change", function (e) {
+      var el = e.target.closest ? e.target.closest("[data-synth]") : null;
+      if (!el) return;
+      var key = el.getAttribute("data-synth");
+      if (key === "method") synthOpts.method = el.value;
+      else if (key === "knha") synthOpts.knha = !!el.checked;
+      renderStages();   // re-renders #stages and keeps the active (synthesis) panel via switchTab
+    });
 
     // keyboard arrows move between tabs (RapidMeta-style)
     document.getElementById("tabnav").addEventListener("keydown", function (e) {
