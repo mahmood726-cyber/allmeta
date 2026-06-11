@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+run_full.log
+nohup.out
+PROGRESS.md
+results_smoke.json
+REPORT_smoke.md
+.pytest_cache/
