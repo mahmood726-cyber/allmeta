@@ -834,9 +834,9 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Evidence Synthesis",
-    summary: "Reconstruct individual patient data (event times + censoring) from a digitized Kaplan-Meier curve plus at-risk table. Guyot 2012 algorithm. Exports IPD CSV and overlays the fit.",
-    note: "Use WebPlotDigitizer to get curve points from published figures.",
-    tags: ["kaplan-meier", "ipd", "survival", "guyot"]
+    summary: "Reconstruct individual patient data (event times + censoring) from a Kaplan-Meier curve plus at-risk table (Guyot 2012). NAR fusion: combine EXACT CT.gov/AACT registry KM anchors (zero digitization error) with the at-risk table — the strongest input regime, with a provenance-aware reliability tier. Exports IPD CSV and overlays the fit.",
+    note: "Use WebPlotDigitizer for figure curves, or paste exact registry KM-estimate anchors and fuse. Fusion finding integrated from the registry-ipd project (within-20% HR recovery ~59-85% figure-only -> ~69-92% fused on its 42 true-IPD benchmark).",
+    tags: ["kaplan-meier", "ipd", "survival", "guyot", "nar-fusion", "registry-native", "ct.gov", "aact"]
   },
   {
     name: "Citation Dedup",
