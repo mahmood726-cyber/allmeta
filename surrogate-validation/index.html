@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Trial-level surrogate validation: is a treatment's effect on a surrogate outcome a valid stand-in for its effect on the final outcome? Estimation-error-adjusted R² (Daniels-Hughes), leave-one-out, surrogate threshold effect, with a degeneracy guard. Free, offline.">
+  <meta name="color-scheme" content="light dark">
+  <title>Surrogate validation — trial-level surrogacy R²</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,26rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.78rem;resize:vertical;min-height:9rem}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.5rem;margin-bottom:.6rem}
+    .stat{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem}
+    .stat .k{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    .stat .v{display:block;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .verdict{padding:.55rem .8rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.warn{background:var(--warn-soft)} .verdict.bad{background:var(--err-soft)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    svg{max-width:100%;height:auto}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/surrogate-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Surrogate validation <span style="font-size:.8rem;color:var(--muted);font-weight:400">· trial-level surrogacy</span></h1>
+    <p>Is a treatment's effect on a <strong>surrogate</strong> outcome (weight loss, HbA1c, LDL…) a valid stand-in for its effect on the <strong>final</strong> outcome (MACE, mortality)? Trial-level surrogacy regresses the final-outcome effects on the surrogate effects across trials. This reports the naive R², the <strong>estimation-error-adjusted R²</strong> (Daniels-Hughes — strips the within-trial noise off the final side), leave-one-out robustness, and a surrogate threshold effect — and <strong>refuses</strong> the adjusted R² when the final effects don't vary enough to estimate it (the trap a naive R² hides).</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Validate</button>
+    <button type="button" id="btn-example">Load example</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Trials</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">One per line: <code>label, surrogate effect, final effect (e.g. log HR), SE(final)</code></label>
+        <textarea id="f-data" aria-label="Trial surrogate/final pairs"></textarea>
+        <p class="hint" style="margin:.4rem 0 0">Use the same effect metric per column across trials. Final effect on the analysis scale (log for ratios).</p>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Surrogacy</h2>
+        <div id="result"><p class="hint">Enter trials, then <strong>Validate</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Surrogate vs final effect</h2>
+        <div id="plot"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats</h2>
+        <div class="assum"><strong>Trial-level surrogacy ≠ individual-level surrogacy, and a high R² is necessary but not sufficient.</strong> It needs enough trials with real between-trial variation in BOTH effects; with small k or clustered final effects the adjusted R² is unstable (flagged here). The surrogate threshold effect is a point estimate (predicted-null crossing), not a licensing threshold. Validate the slope is stable (leave-one-out) and confirm biological plausibility before treating a surrogate as a substitute endpoint.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Weighted regression of the final effects on the surrogate effects (weights 1/SE²); naive R² = weighted R². Adjusted R² (Daniels-Hughes / van&nbsp;Houwelingen) = cov(s,f)² / (var(s)·(var(f)−mean SE²)), clipped to 1, and refused when Q≤k−1 or the adjusted final variance ≤ 25% of observed (too little signal). I²(final) shows the between-trial signal; STE = −intercept/slope. Cross-language validated against numpy. Idea integrated from the glp1-obesity-mbnma surrogate arm. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function num(v) { var n = parseFloat(v); return isFinite(n) ? n : null; }
+
+    function parse(text) {
+      var pairs = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var c = ln.split(",").map(function (x) { return x.trim(); });
+        if (c.length < 4) return;
+        var s = num(c[1]), f = num(c[2]), e = num(c[3]);
+        if (s != null && f != null && e != null && e > 0) pairs.push({ label: c[0], s: s, f: f, seF: e });
+      });
+      return pairs;
+    }
+    function stat(k, v) { return '<div class="stat"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + "</span></div>"; }
+
+    function drawScatter(pairs, r) {
+      var W = 520, H = 300, m = { l: 48, r: 14, t: 12, b: 36 };
+      var xs = pairs.map(function (p) { return p.s; }), ys = pairs.map(function (p) { return p.f; });
+      var xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs), ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+      var px = (xmax - xmin) || 1, py = (ymax - ymin) || 1; xmin -= px * 0.08; xmax += px * 0.08; ymin -= py * 0.12; ymax += py * 0.12;
+      if (ymin > 0) ymin = 0; if (ymax < 0) ymax = 0;
+      function X(v) { return m.l + (v - xmin) / (xmax - xmin) * (W - m.l - m.r); }
+      function Y(v) { return H - m.b - (v - ymin) / (ymax - ymin) * (H - m.t - m.b); }
+      var svg = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Surrogate vs final-outcome effect with regression line">';
+      svg += '<line x1="' + m.l + '" y1="' + Y(0) + '" x2="' + (W - m.r) + '" y2="' + Y(0) + '" stroke="var(--border-strong)" stroke-dasharray="3 3"/>';
+      svg += '<line x1="' + m.l + '" y1="' + m.t + '" x2="' + m.l + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      svg += '<line x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      if (r.slope != null) {
+        var x1 = xmin, x2 = xmax, fy1 = r.intercept + r.slope * x1, fy2 = r.intercept + r.slope * x2;
+        svg += '<line x1="' + X(x1) + '" y1="' + Y(fy1) + '" x2="' + X(x2) + '" y2="' + Y(fy2) + '" stroke="var(--accent)" stroke-width="2"/>';
+      }
+      pairs.forEach(function (p) {
+        var rr = Math.max(3, Math.min(10, 1.0 / p.seF));
+        svg += '<circle cx="' + X(p.s).toFixed(1) + '" cy="' + Y(p.f).toFixed(1) + '" r="' + rr.toFixed(1) + '" fill="var(--accent-soft)" stroke="var(--accent)"/>';
+      });
+      svg += '<text x="' + (m.l) + '" y="' + (H - 6) + '" font-size="11" fill="var(--muted)">surrogate effect → ; final effect ↑</text></svg>';
+      return svg;
+    }
+
+    function run() {
+      window.__lastSurrogate = null;
+      var pairs = parse($("f-data").value);
+      var host = $("result");
+      if (pairs.length < 3) { host.innerHTML = '<p class="hint">Need ≥3 trials with (surrogate, final, SE).</p>'; $("plot").innerHTML = ""; return; }
+      var r = window.AlmSurrogate.analyze({ pairs: pairs });
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      window.__lastSurrogate = r;
+      var cls = r.adj_degenerate ? "bad" : (r.r2_adj >= 0.7 ? "ok" : "warn");
+      host.innerHTML = '<div class="verdict ' + cls + '">' + esc(r.verdict) + "</div>"
+        + '<div class="stats">'
+        + stat("Adjusted R²", r.r2_adj != null ? r.r2_adj.toFixed(2) : "refused")
+        + stat("Naive R²", r.r2_naive != null ? r.r2_naive.toFixed(2) : "—")
+        + stat("Pearson r", r.pearson.toFixed(2))
+        + stat("I² (final)", (r.i2 * 100).toFixed(0) + "%")
+        + stat("Slope", r.slope != null ? r.slope.toFixed(3) : "—")
+        + stat("STE", r.ste != null ? r.ste.toFixed(2) : "—")
+        + "</div>"
+        + '<p class="hint">Leave-one-out naive R²: ' + (r.loo_min != null ? r.loo_min.toFixed(2) + "–" + r.loo_max.toFixed(2) : "—") + " (k=" + r.k + ")"
+        + (r.adj_reason ? '<br><span style="color:var(--warn)">' + esc(r.adj_reason) + "</span>" : "") + "</p>";
+      $("plot").innerHTML = drawScatter(pairs, r);
+    }
+
+    function loadExample() {
+      // GLP-1 class: weight loss (surrogate, % vs placebo) vs MACE (final, log HR).
+      $("f-data").value = "# label, weight-loss % (surrogate), log HR MACE (final), SE(logHR)\n"
+        + "SELECT semaglutide, -9.4, -0.21, 0.06\n"
+        + "SUSTAIN-6 semaglutide, -4.3, -0.26, 0.11\n"
+        + "STEP-HFpEF, -8.7, -0.30, 0.18\n"
+        + "SURPASS-CVOT tirzepatide, -7.0, -0.18, 0.09\n"
+        + "Tirzepatide pooled, -11.0, -0.34, 0.14\n"
+        + "Liraglutide LEADER, -2.3, -0.13, 0.07";
+      run();
+      toast("Example loaded — GLP-1 weight loss vs MACE trial-level surrogacy.");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    $("f-data").addEventListener("input", run);
+
+    window.__almSurrogate = { run: function () { run(); return window.__lastSurrogate || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
