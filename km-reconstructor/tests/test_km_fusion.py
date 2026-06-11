@@ -46,6 +46,20 @@ def test_fusion_enforces_monotone_survival():
     assert all(o[i] <= o[i - 1] + 1e-12 for i in range(1, len(o)))            # non-increasing
 
 
+def test_anchor_is_never_pulled_below_a_noisy_earlier_digitized_point():
+    # a digitized point just below a later anchor must NOT lower the exact anchor
+    o = _run(
+        "const fz=F.fuseCurve(F.parsePoints('3,0.40'),F.parsePoints('0,1.00\\n4,0.42'));"
+        "const at4=fz.curve.find(p=>Math.abs(p.t-4)<1e-9);"
+        "const at3=fz.curve.find(p=>Math.abs(p.t-3)<1e-9);"
+        "console.log(JSON.stringify({at4s:at4.s,at4src:at4.src,at3s:at3.s,"
+        "mono:fz.curve.every((p,i,a)=>i===0||p.s<=a[i-1].s+1e-12)}));"
+    )
+    assert abs(o["at4s"] - 0.42) < 1e-9 and o["at4src"] == "anchor"   # anchor preserved
+    assert o["at3s"] >= 0.42 - 1e-9                                    # digitized clamped UP to the anchor
+    assert o["mono"] is True                                          # still monotone
+
+
 def test_survival_percent_is_normalised():
     o = _run("console.log(JSON.stringify(F.parsePoints('0,100\\n6,88')));")
     assert o[0]["s"] == 1.0 and abs(o[1]["s"] - 0.88) < 1e-9

@@ -578,6 +578,9 @@
     // ---- import parsers ----
     var _autoId = 0;
     function freshId() { return "rec" + (++_autoId); }
+    // Decisions are a closed set — whitelist on import so a crafted reviewer file
+    // can't inject markup through r1.d/r2.d/resolved (rendered into class+text).
+    function dec(d) { return (["include", "exclude", "maybe"].indexOf(d) >= 0) ? d : ""; }
     function normalizeImported(r) {
       var rec = {
         id: (r.id && String(r.id).trim()) || freshId(),
@@ -589,9 +592,9 @@
         pmid: clean(r.pmid, 30),
         keywords: Array.isArray(r.keywords) ? r.keywords.map(function (k) { return clean(k, 120); }).filter(Boolean) : [],
         source: clean(r.source, 40) || "import",
-        r1: r.r1 && typeof r.r1 === "object" ? { d: r.r1.d || "", reason: r.r1.reason || "" } : { d: "", reason: "" },
-        r2: r.r2 && typeof r.r2 === "object" ? { d: r.r2.d || "", reason: r.r2.reason || "" } : { d: "", reason: "" },
-        resolved: r.resolved || "",
+        r1: r.r1 && typeof r.r1 === "object" ? { d: dec(r.r1.d), reason: r.r1.reason || "" } : { d: "", reason: "" },
+        r2: r.r2 && typeof r.r2 === "object" ? { d: dec(r.r2.d), reason: r.r2.reason || "" } : { d: "", reason: "" },
+        resolved: dec(r.resolved),
         labels: Array.isArray(r.labels) ? r.labels.slice() : [],
         dup: !!r.dup, dupManual: !!r.dupManual, dupOf: r.dupOf || null, score: null,
         mlScore: null,
@@ -948,9 +951,9 @@
         conflictCount.textContent = conflicts.length;
         conflictList.innerHTML = conflicts.map(function (r) {
           return '<div class="conflict-row"><div class="ct" title="' + escapeHtml(r.title) + '">' +
-            escapeHtml(r.title.slice(0, 90)) + ' <span style="color:var(--muted)">(R1 ' + r.r1.d + " / R2 " + r.r2.d + ")</span></div>" +
-            '<div><button type="button" class="db-inc" data-res-inc="' + r.id + '">Include</button> ' +
-            '<button type="button" class="db-exc" data-res-exc="' + r.id + '">Exclude</button></div></div>';
+            escapeHtml(r.title.slice(0, 90)) + ' <span style="color:var(--muted)">(R1 ' + escapeHtml(r.r1.d) + " / R2 " + escapeHtml(r.r2.d) + ")</span></div>" +
+            '<div><button type="button" class="db-inc" data-res-inc="' + escapeHtml(r.id) + '">Include</button> ' +
+            '<button type="button" class="db-exc" data-res-exc="' + escapeHtml(r.id) + '">Exclude</button></div></div>';
         }).join("");
         Array.prototype.forEach.call(conflictList.querySelectorAll("[data-res-inc]"), function (b) {
           b.addEventListener("click", function () { resolveConflict(b.getAttribute("data-res-inc"), "include"); });

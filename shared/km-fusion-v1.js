@@ -44,7 +44,21 @@
     var merged = anc.map(function (p) { return { t: p.t, s: p.s, src: "anchor" }; });
     dig.forEach(function (p) { if (!nearAnchor(p.t)) merged.push({ t: p.t, s: p.s, src: "digitized" }); });
     merged.sort(function (a, b) { return a.t - b.t; });
-    for (var i = 1; i < merged.length; i++) if (merged[i].s > merged[i - 1].s) merged[i].s = merged[i - 1].s;
+    // Enforce monotone non-increasing survival, ANCHOR-AWARE: anchors are exact
+    // (zero digitization error) and must never be pulled down to a noisy earlier
+    // digitized point — instead clamp the preceding digitized point(s) DOWN to
+    // the anchor. Forward pass clamps digitized; a backward pass forces any
+    // digitized point above a later anchor down to it.
+    var i;
+    for (i = 1; i < merged.length; i++) {
+      if (merged[i].s > merged[i - 1].s) {
+        if (merged[i].src === "anchor") { /* keep the anchor; fix predecessors below */ }
+        else merged[i].s = merged[i - 1].s;
+      }
+    }
+    for (i = merged.length - 2; i >= 0; i--) {
+      if (merged[i].src !== "anchor" && merged[i].s < merged[i + 1].s) merged[i].s = merged[i + 1].s;
+    }
     return { curve: merged, nAnchors: anc.length, nDigitized: dig.length, nFused: merged.length };
   }
 

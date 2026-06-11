@@ -72,7 +72,7 @@
     <section aria-label="Results">
       <section class="panel">
         <h2>Surrogacy</h2>
-        <div id="result"><p class="hint">Enter trials, then <strong>Validate</strong> — or <strong>Load example</strong>.</p></div>
+        <div id="result" role="status" aria-live="polite"><p class="hint">Enter trials, then <strong>Validate</strong> — or <strong>Load example</strong>.</p></div>
       </section>
       <section class="panel">
         <h2>Surrogate vs final effect</h2>
@@ -157,16 +157,18 @@
     }
 
     function loadExample() {
-      // GLP-1 class: weight loss (surrogate, % vs placebo) vs MACE (final, log HR).
-      $("f-data").value = "# label, weight-loss % (surrogate), log HR MACE (final), SE(logHR)\n"
-        + "SELECT semaglutide, -9.4, -0.21, 0.06\n"
-        + "SUSTAIN-6 semaglutide, -4.3, -0.26, 0.11\n"
-        + "STEP-HFpEF, -8.7, -0.30, 0.18\n"
-        + "SURPASS-CVOT tirzepatide, -7.0, -0.18, 0.09\n"
-        + "Tirzepatide pooled, -11.0, -0.34, 0.14\n"
-        + "Liraglutide LEADER, -2.3, -0.13, 0.07";
+      // ILLUSTRATIVE — SYNTHETIC effects on GENERIC labels, NOT published estimates
+      // and NOT evidence that weight loss is a validated MACE surrogate. A teaching
+      // example of how the engine computes trial-level surrogacy; do not over-read.
+      $("f-data").value = "# label, weight-loss % (surrogate), log HR MACE (final), SE(logHR)  — illustrative/synthetic\n"
+        + "Trial A, -9.4, -0.21, 0.06\n"
+        + "Trial B, -4.3, -0.26, 0.11\n"
+        + "Trial C, -8.7, -0.30, 0.18\n"
+        + "Trial D, -7.0, -0.18, 0.09\n"
+        + "Trial E, -11.0, -0.34, 0.14\n"
+        + "Trial F, -2.3, -0.13, 0.07";
       run();
-      toast("Example loaded — GLP-1 weight loss vs MACE trial-level surrogacy.");
+      toast("Illustrative example (synthetic data) — shows how trial-level surrogacy is computed; not evidence of a validated surrogate.");
     }
 
     $("btn-run").addEventListener("click", run);

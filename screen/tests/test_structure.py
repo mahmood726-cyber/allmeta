@@ -65,6 +65,15 @@ def test_rct_weights_are_real_trained_artifact():
     assert len(j["vocab"]) > 200 and "reference_scores" in j
 
 
+def test_imported_decisions_whitelisted_and_id_escaped():
+    # XSS guard: decisions are a closed set (whitelisted on import) and the
+    # arbitrary record id is escaped where it lands in the conflict-panel markup.
+    h = _h()
+    assert "function dec(d)" in h and '["include", "exclude", "maybe"]' in h
+    assert "d: dec(r.r1.d)" in h and "d: dec(r.r2.d)" in h and "resolved: dec(" in h
+    assert 'data-res-inc="\' + escapeHtml(r.id)' in h and 'data-res-exc="\' + escapeHtml(r.id)' in h
+
+
 def test_team_folder_collaboration():
     # Phase 3: serverless shared-folder collaboration via sr-collab-v1.
     h = _h()

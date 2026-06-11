@@ -50,6 +50,26 @@ def test_transitivity_na_when_under_two_nodes_have_data():
     assert o["status"] == "na" and o["assessed"] == 0
 
 
+def test_cv_not_applied_to_non_positive_modifiers():
+    # mean-centred / negative modifiers: CV would explode → must NOT auto-flag
+    o = _run(
+        "const trials=[{node:'a',mods:{x:-0.1}},{node:'b',mods:{x:0.05}},{node:'c',mods:{x:0.15}}];"
+        "const r=T.assessTransitivity({trials,modifiers:[{id:'x',name:'X'}]});"
+        "console.log(JSON.stringify({status:r.modifiers[0].status,cv:r.modifiers[0].cv,flags:r.flags}));"
+    )
+    assert o["status"] == "na"            # not a spurious flag
+    assert o["cv"] is None and o["flags"] == 0
+
+
+def test_representativeness_unscalable_difference_is_na_not_ok():
+    o = _run(
+        "const r=T.assessRepresentativeness({modifiers:[{id:'m',name:'M'}],"
+        "trial:{m:{mean:0.5}},target:{m:{mean:0}}});"   # diff 0.5, target 0, no SD → unscalable
+        "console.log(JSON.stringify({status:r.modifiers[0].status}));"
+    )
+    assert o["status"] == "na"            # a real difference that can't be scaled is NOT 'ok'
+
+
 def test_representativeness_standardised_diff_and_direction():
     o = _run(
         "const mods=[{id:'bmi',name:'BMI'},{id:'age',name:'Age'}];"

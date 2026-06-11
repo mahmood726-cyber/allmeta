@@ -81,7 +81,7 @@
     <section aria-label="Results">
       <section class="panel">
         <h2>Decision summary</h2>
-        <div id="summary"><p class="hint">Enter criteria + performance, then <strong>Run analysis</strong> — or <strong>Load example</strong>.</p></div>
+        <div id="summary" role="status" aria-live="polite"><p class="hint">Enter criteria + performance, then <strong>Run analysis</strong> — or <strong>Load example</strong>.</p></div>
       </section>
       <section class="panel">
         <h2>Rank-acceptability — P(best) per treatment (SMAA)</h2>
@@ -98,7 +98,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Method: linear partial value functions v(x)∈[0,1] (benefit: higher better; harm: lower better) over each criterion's range; total value = Σ&nbsp;wⱼ·vⱼ. SMAA (Tervonen &amp; Lahdelma 2007) samples each treatment×criterion ~ N(mean, SE) and tallies the argmax to get rank-acceptability; EVPI = E[maxₜ Vₜ] − maxₜ E[Vₜ] from the same draws. Deterministic (seeded PRNG) so runs reproduce. Idea integrated from the glp1-obesity-mbnma benefit-risk arm; generalised to full MCDA + VOI. Everything runs on your device.</p>
+  <p class="footer-note">Method: linear partial value functions v(x)∈[0,1] (benefit: higher better; harm: lower better) over each criterion's range; total value = Σ&nbsp;wⱼ·vⱼ. SMAA (Tervonen &amp; Lahdelma 2007) samples each treatment×criterion ~ N(mean, SE) and tallies the argmax to get rank-acceptability; EVPI = E[maxₜ Vₜ] − maxₜ E[Vₜ] from the same draws. Deterministic (seeded PRNG) so runs reproduce. Idea integrated from the glp1-obesity-mbnma benefit-risk arm; generalised to a standard MCDA + VOI workflow (linear value functions, statistical-uncertainty SMAA). Everything runs on your device.</p>
 
   <script src="../shared/toast.js"></script>
   <script>

@@ -1250,7 +1250,9 @@ window.LMA = window.LMA || {};
     const v = await LMA.verifyVersionHistory(proj.id);
     if (el) {
       if (v.empty) el.textContent = '🔒 no recorded updates yet for this project.';
-      else if (v.valid) el.textContent = '🔒 update history VERIFIED · ' + (v.signed ? 'signature valid' : 'chain intact (unsigned)') + ' · ' + v.count + ' versions';
+      else if (v.valid && v.signed) el.textContent = '🔒 update history VERIFIED · signature valid · ' + v.count + ' versions';
+      else if (v.valid && v.sealedSigned) el.textContent = '⚠ chain intact but signatures NOT verified — set the signing key (🔑) to authenticate · ' + v.count + ' versions';
+      else if (v.valid) el.textContent = '🔒 update history chain intact (unsigned) · ' + v.count + ' versions';
       else el.textContent = '⚠ update history TAMPERED at version ' + ((v.brokenAt|0) + 1) + ' (' + (v.reason || 'invalid') + ')';
     }
     return v;

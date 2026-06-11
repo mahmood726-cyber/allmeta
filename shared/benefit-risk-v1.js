@@ -78,7 +78,7 @@
     input = input || {};
     var criteria = input.criteria || [];
     var treatments = input.treatments || [];
-    var iters = input.iterations || 10000;
+    var iters = (input.iterations != null && input.iterations >= 1) ? input.iterations : 10000;
     var seed = input.seed != null ? input.seed : 12345;
     if (criteria.length < 1 || treatments.length < 2) return { ok: false, error: "need ≥1 criterion and ≥2 treatments" };
 
