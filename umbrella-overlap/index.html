@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Umbrella-review overlap: Corrected Covered Area (CCA, Pieper 2014) from the study×review citation matrix, with Pieper grooves, a pairwise overlap matrix, and the most-shared primary studies — so you don't double-count evidence across overlapping reviews. Free, offline.">
+  <meta name="color-scheme" content="light dark">
+  <title>Umbrella overlap — Corrected Covered Area (CCA)</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,27rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.78rem;resize:vertical;min-height:11rem}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .big{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+    .out{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.7rem .9rem;margin-bottom:.6rem}
+    .badge{display:inline-block;padding:.1rem .55rem;border-radius:10px;font-size:.72rem;font-weight:700}
+    .g-Slight{background:var(--ok-soft);color:var(--ok)} .g-Moderate{background:var(--accent-soft);color:var(--accent)}
+    .g-High{background:var(--warn-soft);color:var(--warn)} .g-Very{background:var(--err-soft);color:var(--err)}
+    .verdict{padding:.55rem .8rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem}
+    table{border-collapse:collapse;font-size:.78rem;margin-top:.3rem} td,th{padding:.25rem .45rem;text-align:center;border:1px solid var(--border)}
+    th{color:var(--muted);font-size:.66rem}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/umbrella-overlap-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Umbrella overlap <span style="font-size:.8rem;color:var(--muted);font-weight:400">· Corrected Covered Area</span></h1>
+    <p>In an umbrella review (a review of reviews), the same primary studies often appear in several of the included reviews — so naively pooling across them <strong>double-counts evidence</strong>. The <strong>Corrected Covered Area</strong> (CCA; Pieper et al. 2014) measures that overlap from the study×review citation matrix, with Pieper's grooves (slight / moderate / high / very high), a pairwise overlap matrix, and the most-shared studies. Free, offline.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Compute CCA</button>
+    <button type="button" id="btn-example">Load example</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Reviews × primary studies</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">One review per line: <code>Review label: studyId, studyId, …</code> (study ids: PMIDs, NCTs, or any stable token shared across reviews).</label>
+        <textarea id="f-data" aria-label="Reviews and their cited studies"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Overlap</h2>
+        <div id="result" role="status" aria-live="polite"><p class="hint">Enter reviews + their study ids, then <strong>Compute CCA</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Pairwise shared studies</h2>
+        <div id="matrix"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats</h2>
+        <div class="assum"><strong>CCA needs the FULL list of primary studies each review cites</strong> (matched on a consistent id), not just counts — a missed match understates overlap. CCA is for the whole umbrella; per-outcome overlap can differ. High overlap doesn't invalidate the umbrella — it means any quantitative pool across the reviews must use a non-overlapping subset (or a citation-matrix correction), and the narrative should note the shared evidence base.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">CCA = (N − r) / (r·c − r) where N = total citations across reviews, r = unique primary studies, c = reviews (Pieper et&nbsp;al., <em>J Clin Epidemiol</em> 2014). Grooves: &lt;5% slight, &lt;10% moderate, &lt;15% high, ≥15% very high. Method integrated from the UmbrellaEngine project. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function parse(text) {
+      var out = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var idx = ln.indexOf(":");
+        var label = idx >= 0 ? ln.slice(0, idx).trim() : "";
+        var rest = idx >= 0 ? ln.slice(idx + 1) : ln;
+        var ids = rest.split(/[,;\s]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+        if (ids.length) out.push({ label: label, study_ids: ids });
+      });
+      return out;
+    }
+    function grooveClass(g) { return "g-" + (g === "Very High" ? "Very" : g); }
+
+    function run() {
+      window.__lastUmbrella = null;
+      var revs = parse($("f-data").value);
+      var host = $("result");
+      if (revs.length < 2) { host.innerHTML = '<p class="hint">Add ≥2 reviews (each with its cited study ids).</p>'; $("matrix").innerHTML = ""; return; }
+      var r = window.AlmUmbrellaOverlap.overlap(revs);
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      window.__lastUmbrella = r;
+      host.innerHTML = '<div class="out"><div class="big">' + (r.cca * 100).toFixed(1) + "% <span class=\"badge " + grooveClass(r.groove) + '">' + esc(r.groove) + " overlap</span></div>"
+        + '<div class="hint">' + r.nReviews + " reviews · " + r.nUnique + " unique studies · " + r.nTotal + " citations · " + r.sharedCount + " studies cited by &gt;1 review</div></div>"
+        + '<div class="verdict">' + esc(r.verdict) + "</div>"
+        + (r.mostShared.length ? '<p class="hint">Most-shared studies: ' + r.mostShared.map(function (id) { return esc(id) + " (" + r.frequency[id] + ")"; }).join(", ") + "</p>" : "");
+      // pairwise matrix
+      var head = "<tr><th></th>" + r.labels.map(function (l, i) { return "<th>" + (i + 1) + "</th>"; }).join("") + "</tr>";
+      var rows = r.matrix.map(function (row, i) {
+        return "<tr><th style=\"text-align:left\">" + (i + 1) + ". " + esc(r.labels[i].slice(0, 22)) + "</th>"
+          + row.map(function (v, j) {
+            var bg = i === j ? "var(--accent-soft)" : (v > 0 ? "rgba(176,90,28," + Math.min(0.5, v / 6) + ")" : "transparent");
+            return '<td style="background:' + bg + '">' + v + "</td>";
+          }).join("") + "</tr>";
+      }).join("");
+      $("matrix").innerHTML = "<table>" + head + rows + "</table><p class=\"hint\">Diagonal = studies per review; off-diagonal = studies shared between the two reviews.</p>";
+    }
+
+    function loadExample() {
+      // 4 overlapping reviews of the same intervention (illustrative ids).
+      $("f-data").value = "# Review label: study ids (PMIDs etc.)\n"
+        + "Review A (2019): 101, 102, 103, 104, 105\n"
+        + "Review B (2021): 103, 104, 105, 106, 107\n"
+        + "Review C (2022): 104, 105, 106, 108\n"
+        + "Review D (2023): 105, 106, 107, 108, 109, 110";
+      run();
+      toast("Example loaded — 4 overlapping reviews; CCA quantifies the double-counting.");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    $("f-data").addEventListener("input", run);
+
+    window.__almUmbrellaOverlap = { run: function () { run(); return window.__lastUmbrella || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
