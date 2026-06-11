@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Transport a meta-analytic effect to YOUR target population via effect-modifier standardisation: random-effects meta-regression (Paule-Mandel τ², Knapp-Hartung CIs) predicting the mean effect at the target's modifier value, with an unmeasured-modifier sensitivity. Free, offline, in-browser.">
+  <meta name="color-scheme" content="light dark">
+  <title>Transportability — generalise an effect to your population</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,26rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    label{display:block;margin-bottom:.6rem;font-size:.85rem}.lbl{display:block;margin-bottom:.15rem}
+    .hint{color:var(--muted);font-size:.74rem}
+    input[type=text],textarea,select{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:inherit;font-size:.88rem}
+    textarea{resize:vertical;min-height:9rem;font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
+    input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)}
+    button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .big{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .out{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.75rem .9rem;margin-bottom:.6rem}
+    .badge{display:inline-block;padding:.1rem .5rem;border-radius:10px;font-size:.72rem;font-weight:600}
+    .badge.ok{background:var(--ok-soft);color:var(--ok)} .badge.warn{background:var(--warn-soft);color:var(--warn)}
+    .badge.flag{background:var(--err-soft);color:var(--err)} .badge.muted{background:var(--accent-soft);color:var(--accent)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+    svg{max-width:100%;height:auto}
+    table{width:100%;border-collapse:collapse;font-size:.82rem} td,th{padding:.3rem .5rem;text-align:left;border-bottom:1px solid var(--border)}
+    th{color:var(--muted);font-size:.7rem;text-transform:uppercase}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/transportability-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Transportability <span style="font-size:.8rem;color:var(--muted);font-weight:400">· generalise an effect to your population</span></h1>
+    <p>Standard meta-analysis gives the <em>average effect across the trials</em>. This estimates the effect <strong>in your target population</strong> when an effect modifier (baseline risk, mean age, % with diabetes, BMI…) differs from the trials: a random-effects meta-regression on the modifier, predicting the mean effect at your population's modifier value, with a Knapp-Hartung CI and an unmeasured-modifier sensitivity. An aggregate, IPD-free transport (one-step-NMR idea). It is assumption-laden — read the assumptions panel before trusting it.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Transport</button>
+    <button type="button" id="btn-example">Load example</button>
+    <span style="flex:1"></span>
+    <span class="hint">Effects on the analysis scale; for ratios use log(effect) and tick “log-scale”.</span>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Trials (one per line)</h2>
+        <label class="hint" style="margin:0 0 .3rem">CSV: <code>label, effect, SE, modifier</code> — lines starting with <code>#</code> are ignored.</label>
+        <textarea id="f-data" aria-label="Trial data (label, effect, SE, modifier)"></textarea>
+        <label class="toggle" style="margin-top:.5rem"><input type="checkbox" id="f-log"> Effects are log-scale ratios (display back-transformed)</label>
+      </section>
+      <section class="panel">
+        <h2>Target population</h2>
+        <div class="row-2">
+          <label><span class="lbl">Modifier value (x*)</span><input type="text" id="f-target" placeholder="e.g. 30"></label>
+          <label><span class="lbl">Modifier name</span><input type="text" id="f-modname" placeholder="e.g. baseline LVEF %"></label>
+        </div>
+        <p class="hint" style="margin:0">The modifier value you expect in your population (the same units as the trials' modifier column).</p>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel" id="result-panel">
+        <h2>Transported effect</h2>
+        <div id="result"><p class="hint">Enter trials + a target modifier value, then <strong>Transport</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Effect-modifier plot</h2>
+        <div id="plot"></div>
+      </section>
+      <section class="panel">
+        <h2>Assumptions (read before using)</h2>
+        <div class="assum">
+          <strong>Transport is valid only if:</strong> (1) the modifier you entered is the (dominant) effect modifier and is measured on the same scale in trials and target; (2) no <em>unmeasured</em> effect modifier also differs between trials and target; (3) the linear meta-regression is a reasonable model over the modifier range; (4) you are not extrapolating far beyond the trials' modifier range. The sensitivity below quantifies how much an unmeasured shift would nullify the result, but cannot prove there isn't one.
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Method: random-effects meta-regression (Paule-Mandel τ²; Knapp-Hartung t<sub>k−2</sub> with the HKSJ <code>q = max(1, RSS/(k−2))</code> floor) fitted on the modifier, then the mean effect predicted at the target modifier value with the regression covariance. Cross-language validated against SciPy (<code>transportability/tests/</code>). This is an aggregate, IPD-free transport — the one-covariate sibling of ML-NMR / one-step network meta-regression; population-mean transport (the prediction-interval variant for a single new trial adds τ² and is wider). Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) return Toast.show(m); } catch (e) {} };
+
+    function parseData(text) {
+      var rows = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var c = ln.split(",").map(function (s) { return s.trim(); });
+        if (c.length < 4) return;
+        var est = parseFloat(c[1]), se = parseFloat(c[2]), x = parseFloat(c[3]);
+        if (isFinite(est) && isFinite(se) && se > 0 && isFinite(x)) rows.push({ label: c[0], est: est, se: se, x: x });
+      });
+      return rows;
+    }
+    function fmt(v, log) { return log ? Math.exp(v).toFixed(3) : v.toFixed(3); }
+
+    function run() {
+      window.__lastTransport = null;   // cleared unless this run succeeds (test hook reads it)
+      var rows = parseData($("f-data").value);
+      var target = parseFloat($("f-target").value);
+      var log = $("f-log").checked;
+      var modname = ($("f-modname").value || "modifier").trim();
+      var host = $("result");
+      if (rows.length < 3) { host.innerHTML = '<p class="badge flag">Need ≥3 trials with a modifier value.</p>'; $("plot").innerHTML = ""; return; }
+      if (!isFinite(target)) { host.innerHTML = '<p class="badge flag">Enter the target modifier value (x*).</p>'; return; }
+      var r = window.AlmTransport.transport({ studies: rows, target: target });
+      if (!r.ok) { host.innerHTML = '<p class="badge flag">' + r.error + "</p>"; $("plot").innerHTML = ""; return; }
+      window.__lastTransport = r;
+
+      var unit = log ? "" : "";
+      var slopeSig = r.slope.p < 0.05;
+      var transSig = (r.transported.ciLo > 0 || r.transported.ciHi < 0);
+      var html = "";
+      html += '<div class="out"><div class="hint">Transported to ' + esc(modname) + " = " + target + "</div>"
+        + '<div class="big">' + fmt(r.transported.est, log) + "</div>"
+        + '<div class="hint">95% CI ' + fmt(r.transported.ciLo, log) + " to " + fmt(r.transported.ciHi, log)
+        + " &nbsp;·&nbsp; " + (transSig ? '<span class="badge ok">excludes the null</span>' : '<span class="badge warn">includes the null</span>') + "</div></div>";
+      html += '<table><tr><th>Quantity</th><th>Value</th></tr>'
+        + row("Effect at the trials' mean modifier (" + r.trialMean.toFixed(1) + ")", fmt(r.atTrialMean.est, log) + " [" + fmt(r.atTrialMean.ciLo, log) + ", " + fmt(r.atTrialMean.ciHi, log) + "]")
+        + row("Transport shift (modifier effect)", (log ? "×" + Math.exp(r.shift).toFixed(3) : (r.shift >= 0 ? "+" : "") + r.shift.toFixed(3)))
+        + row("Effect-modification slope (per unit " + esc(modname) + ")", r.slope.est.toFixed(4) + " (p=" + r.slope.p.toFixed(3) + ") " + (slopeSig ? '<span class="badge ok">modifier</span>' : '<span class="badge muted">weak/none</span>'))
+        + row("Residual heterogeneity τ²", r.tau2.toFixed(4) + " · HKSJ q=" + r.q.toFixed(2) + " · k=" + r.k)
+        + row("Unmeasured-modifier sensitivity", r.sensitivity.significant
+            ? ("an unmeasured shift of " + r.sensitivity.biasToNull.toFixed(3) + " (analysis scale) would move the CI to the null")
+            : "transported CI already includes the null")
+        + "</table>";
+      if (!slopeSig) html += '<p class="hint" style="margin-top:.5rem">⚠ The modifier shows weak/no effect modification here — transport then barely differs from the ordinary pooled effect, and the model is doing little work.</p>';
+      host.innerHTML = html;
+      drawPlot(rows, r, target, log, modname);
+    }
+    function row(k, v) { return "<tr><td>" + k + "</td><td>" + v + "</td></tr>"; }
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function drawPlot(rows, r, target, log, modname) {
+      var W = 520, H = 300, m = { l: 48, r: 16, t: 14, b: 40 };
+      var xs = rows.map(function (d) { return d.x; }).concat([target]);
+      var ys = rows.map(function (d) { return d.est; });
+      var xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
+      var ymin = Math.min.apply(null, ys.concat([r.transported.ciLo])), ymax = Math.max.apply(null, ys.concat([r.transported.ciHi]));
+      var px = xmax - xmin || 1, py = ymax - ymin || 1; xmin -= px * 0.06; xmax += px * 0.06; ymin -= py * 0.1; ymax += py * 0.1;
+      function X(v) { return m.l + (v - xmin) / (xmax - xmin) * (W - m.l - m.r); }
+      function Y(v) { return H - m.b - (v - ymin) / (ymax - ymin) * (H - m.t - m.b); }
+      var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Effect vs modifier with fitted line and target marker">';
+      // axes
+      s += '<line x1="' + m.l + '" y1="' + Y(0) + '" x2="' + (W - m.r) + '" y2="' + Y(0) + '" stroke="var(--border-strong)" stroke-dasharray="3 3"/>';
+      s += '<line x1="' + m.l + '" y1="' + m.t + '" x2="' + m.l + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      s += '<line x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      // fitted line
+      var b0 = r.atTrialMean.est - r.slope.est * r.trialMean; // intercept on raw scale
+      s += '<line x1="' + X(xmin) + '" y1="' + Y(b0 + r.slope.est * xmin) + '" x2="' + X(xmax) + '" y2="' + Y(b0 + r.slope.est * xmax) + '" stroke="var(--accent)" stroke-width="2"/>';
+      // points (size ~ 1/se)
+      rows.forEach(function (d) {
+        var rr = Math.max(3, Math.min(11, 1.2 / d.se));
+        s += '<circle cx="' + X(d.x) + '" cy="' + Y(d.est) + '" r="' + rr.toFixed(1) + '" fill="var(--accent-soft)" stroke="var(--accent)"/>';
+      });
+      // target marker + transported CI
+      s += '<line x1="' + X(target) + '" y1="' + m.t + '" x2="' + X(target) + '" y2="' + (H - m.b) + '" stroke="var(--warn)" stroke-dasharray="4 3"/>';
+      s += '<line x1="' + X(target) + '" y1="' + Y(r.transported.ciLo) + '" x2="' + X(target) + '" y2="' + Y(r.transported.ciHi) + '" stroke="var(--warn)" stroke-width="3"/>';
+      s += '<circle cx="' + X(target) + '" cy="' + Y(r.transported.est) + '" r="5" fill="var(--warn)"/>';
+      s += '<text x="' + (m.l) + '" y="' + (H - 6) + '" font-size="11" fill="var(--muted)">' + esc(modname) + ' → (target ' + target + ' in orange)</text>';
+      s += "</svg>";
+      $("plot").innerHTML = s;
+    }
+
+    function loadExample() {
+      // GLP-1 receptor agonists for weight loss, by baseline BMI (illustrative,
+      // aggregate; adapted from the glp1-obesity-mbnma workbook). Effect = mean
+      // %-weight-change difference vs placebo (linear scale, more negative = better).
+      $("f-data").value = "# label, effect (% weight change vs placebo), SE, baseline BMI\n"
+        + "STEP-1 semaglutide, -12.4, 0.6, 37.9\n"
+        + "STEP-3 semaglutide, -10.3, 0.9, 38.0\n"
+        + "SURMOUNT-1 tirzepatide, -17.8, 0.7, 38.0\n"
+        + "SCALE liraglutide, -5.4, 0.5, 38.3\n"
+        + "PIONEER oral-sema, -4.2, 0.6, 32.9\n"
+        + "AWARD dulaglutide, -3.0, 0.7, 33.5\n"
+        + "Pilot low-BMI cohort, -2.1, 1.0, 30.5\n"
+        + "Trial high-dose, -15.0, 1.1, 41.0";
+      $("f-modname").value = "baseline BMI";
+      $("f-target").value = "31";
+      $("f-log").checked = false;
+      run();
+      toast("Example loaded — transporting GLP-1 weight loss to a lower-BMI (31) population.");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    ["f-data", "f-target", "f-modname"].forEach(function (id) { $(id).addEventListener("input", run); });
+    $("f-log").addEventListener("change", run);
+
+    // test hook
+    window.__almTransport = { run: function () { run(); return window.__lastTransport || null; }, parse: parseData };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
