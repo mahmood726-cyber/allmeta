@@ -45,5 +45,13 @@ def test_vendored_engine_present_with_notice():
     assert "MIT" in notice and "registry-ipd" in notice
 
 
+def test_survival_summary_from_pseudo_ipd():
+    # registry-ipd engine primitives surfaced: RMST + median + RMST difference
+    h = _h()
+    assert 'id="surv-summary"' in h and "function renderSurvivalSummary" in h
+    assert "RMST" in h and "RMST difference" in h
+    assert "RIPD._" in h and ".rmst" in h and ".kmFromIPD" in h
+
+
 def test_test_hook_present():
     assert "__almRegistryIpd" in _h()

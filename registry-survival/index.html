@@ -82,6 +82,10 @@
         <div id="km" class="km"></div>
       </section>
       <section class="panel">
+        <h2>Survival summary (from the pseudo-IPD)</h2>
+        <div id="surv-summary"><p class="hint">RMST and median per arm — and the RMST difference, a non-proportional-hazards-robust effect — appear here once a Tier A/B reconstruction is produced.</p></div>
+      </section>
+      <section class="panel">
         <h2>Honest scope</h2>
         <div class="assum"><strong>Pseudo-IPD, never true IPD.</strong> AACT posts no figure and no real patient data — only summary tables. The edge over figure-digitization tools (IPDfromKM, KM-GPT) is <em>exact registry anchors + zero digitization error + full provenance</em> on trials with rich registry survival data — not universal superiority: a dense digitized curve carries more between-anchor shape than sparse anchors. Where the registry is sparse the engine <strong>degrades explicitly</strong> (Tier B parametric, Tier C refused) rather than fabricating. For trials with both a registry curve AND a published figure, the at-risk table is the binding constraint — see the <a href="../km-reconstructor/">K-M reconstructor</a>'s NAR-fusion mode.</div>
       </section>
@@ -154,6 +158,39 @@
           return "<div>" + drawArm(arm, src.km_points, tmax || 1) + "</div>";
         }).join("");
       } else { kmHost.innerHTML = '<p class="hint">No reconstructed curve at this tier.</p>'; }
+
+      renderSurvivalSummary(r, trial);
+    }
+
+    // RMST + median per arm, and the RMST difference (a non-PH-robust effect),
+    // computed from the reconstructed pseudo-IPD via the engine's OWN primitives.
+    function renderSurvivalSummary(r, trial) {
+      var host = document.getElementById("surv-summary"); if (!host) return;
+      var E = window.RIPD && RIPD._;
+      if (!r.exportable || !r.arms || !r.arms.length || !E || !E.kmFromIPD || !E.rmst) {
+        host.innerHTML = '<p class="hint">No survival summary at this tier.</p>'; return;
+      }
+      // common horizon tau = smallest last registry-anchor time across arms (no extrapolation)
+      var taus = trial.arms.map(function (a) { var pts = (a.km_points || []).map(function (p) { return p.t; }); return pts.length ? Math.max.apply(null, pts) : (a.follow_up_max || 0); }).filter(function (x) { return x > 0; });
+      var tau = taus.length ? Math.min.apply(null, taus) : 0;
+      if (!(tau > 0)) { host.innerHTML = '<p class="hint">No survival summary (no horizon).</p>'; return; }
+      var rows = r.arms.map(function (arm) {
+        var km = E.kmFromIPD(arm.ipd);
+        var med = E.medianFromKM(km);
+        var rm = E.rmst(km, tau);
+        return { label: arm.label || arm.arm_id, role: arm.role, median: med, rmst: rm };
+      });
+      var exp = rows.filter(function (x) { return x.role === "experimental"; })[0];
+      var ctl = rows.filter(function (x) { return x.role === "comparator"; })[0];
+      var unit = (trial.time_unit || "").replace(/s$/, "");
+      var tbl = "<table><tr><th>Arm</th><th>Median</th><th>RMST(τ=" + tau + (unit ? " " + esc(unit) : "") + ")</th></tr>"
+        + rows.map(function (x) { return "<tr><td>" + esc(x.label) + "</td><td>" + (x.median != null ? x.median.toFixed(1) : "not reached") + "</td><td>" + x.rmst.toFixed(2) + "</td></tr>"; }).join("") + "</table>";
+      var diff = "";
+      if (exp && ctl) {
+        var d = exp.rmst - ctl.rmst;
+        diff = '<p class="hint" style="margin-top:.4rem"><strong>RMST difference</strong> (experimental − comparator) = ' + (d > 0 ? "+" : "") + d.toFixed(2) + (unit ? " " + esc(unit) : "") + ' over τ=' + tau + " — a non-proportional-hazards-robust effect; report τ alongside it.</p>";
+      }
+      host.innerHTML = tbl + diff + '<p class="hint">Round-trip-consistent with the registry anchors (registry-ipd validation: RMST ~0.19% median round-trip) — this is internal consistency, not external accuracy.</p>';
     }
 
     function loadExample(tier) {

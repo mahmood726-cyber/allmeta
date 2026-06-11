@@ -18,6 +18,9 @@ test("registry-native survival reconstructs tiers and fails closed at Tier C", a
   expect(a.arms.length).toBeGreaterThanOrEqual(2);
   await expect(page.locator("#verdict-box")).toContainText("Tier A");
   await expect(page.locator("#km svg").first()).toBeVisible();
+  // survival summary (RMST + median + RMST difference) from the pseudo-IPD
+  await expect(page.locator("#surv-summary")).toContainText(/RMST/);
+  await expect(page.locator("#surv-summary")).toContainText(/RMST difference/);
 
   // Tier C → refused, fail-closed (no fabricated IPD)
   await page.click("#btn-ex-c");
