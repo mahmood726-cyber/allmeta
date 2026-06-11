@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Registry-native pseudo-IPD: reconstruct individual-patient survival data from ClinicalTrials.gov / AACT structured tables (KM-estimate points + number-at-risk + events), with NO Kaplan-Meier figure digitization. Tiered, fail-closed, offline.">
+  <meta name="color-scheme" content="light dark">
+  <title>Registry-native survival IPD — reconstruct from CT.gov/AACT tables</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; --orig:#b05a1c; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; --orig:#e0a268; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,28rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.75rem;resize:vertical;min-height:16rem}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .tierwrap{display:flex;align-items:center;gap:14px;margin-bottom:.4rem;flex-wrap:wrap}
+    .tier{font-size:1.8rem;font-weight:800;margin:0}
+    .badge{display:inline-block;padding:.1rem .55rem;border-radius:10px;font-size:.72rem;font-weight:700}
+    .badge.gold{background:#f6e7a8;color:#7a5a00} .badge.silver{background:#dfe3e8;color:#4a5260} .badge.bronze{background:#e8cfa8;color:#7a4e1c} .badge.none{background:var(--err-soft);color:var(--err)}
+    .verdict{padding:.55rem .8rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.bad{background:var(--err-soft)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    svg{max-width:100%;height:auto} .km{display:grid;grid-template-columns:1fr 1fr;gap:.8rem} @media(max-width:700px){.km{grid-template-columns:1fr}}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/vendor/registry-ipd/engine.js"></script>
+  <script src="../shared/vendor/registry-ipd/examples.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Registry-native survival IPD <span style="font-size:.8rem;color:var(--muted);font-weight:400">· no figure digitization</span></h1>
+    <p>Reconstruct pseudo individual-patient time-to-event data from <strong>ClinicalTrials.gov / AACT structured tables</strong> — posted KM-estimate points, number-at-risk, and event counts — with <strong>zero pixel error</strong> because there is no figure to digitize. Richness-aware tiers: <strong>A</strong> (KM points + at-risk → Guyot / anchor-exact / QP), <strong>B</strong> (median + HR → parametric), <strong>C</strong> (HR only → <strong>refused</strong>, never fabricated). Output is always <em>pseudo</em>-IPD. Engine vendored from the registry-ipd project (MIT); runs offline.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Reconstruct</button>
+    <button type="button" id="btn-ex-a">Example: Tier A</button>
+    <button type="button" id="btn-ex-b">Example: Tier B</button>
+    <button type="button" id="btn-ex-c">Example: Tier C</button>
+    <button type="button" id="btn-export">Download pseudo-IPD CSV</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Trial input">
+      <section class="panel">
+        <h2>Registry trial (JSON, AACT-structured)</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">Per arm: <code>km_points</code> [{t,S}], <code>number_at_risk</code> [{t,n}], <code>total_events</code>, <code>median</code>, <code>hr</code>. Load an example to see the shape.</label>
+        <textarea id="f-trial" aria-label="Registry trial JSON"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Reconstruction verdict</h2>
+        <div id="verdict-box"><p class="hint">Load an example (Tier A / B / C) or paste a registry trial, then <strong>Reconstruct</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Reconstructed survival (registry anchors ○ vs reconstructed —)</h2>
+        <div id="km" class="km"></div>
+      </section>
+      <section class="panel">
+        <h2>Honest scope</h2>
+        <div class="assum"><strong>Pseudo-IPD, never true IPD.</strong> AACT posts no figure and no real patient data — only summary tables. The edge over figure-digitization tools (IPDfromKM, KM-GPT) is <em>exact registry anchors + zero digitization error + full provenance</em> on trials with rich registry survival data — not universal superiority: a dense digitized curve carries more between-anchor shape than sparse anchors. Where the registry is sparse the engine <strong>degrades explicitly</strong> (Tier B parametric, Tier C refused) rather than fabricating. For trials with both a registry curve AND a published figure, the at-risk table is the binding constraint — see the <a href="../km-reconstructor/">K-M reconstructor</a>'s NAR-fusion mode.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Engine: <code>RIPD.reconstruct</code> vendored verbatim from the registry-ipd project (MIT; see <code>shared/vendor/registry-ipd/NOTICE.md</code>). Tier A picks the best of Guyot inverse-KM / censoring-informed anchor-exact / QP by minimum 1-Wasserstein to the registry anchors; Tier B is parametric with a seeded bootstrap envelope; Tier C fails closed. Provenance: registry-posted structured tables, not figure-digitized coordinates. Always verify total events / median / reported HR against the registry record before use. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    var lastResult = null;
+
+    function kmFromIPD(ipd) {
+      var rows = ipd.slice().sort(function (a, b) { return a.time - b.time; });
+      var n = rows.length, atRisk = n, s = 1, steps = [{ t: 0, s: 1 }], i = 0;
+      while (i < rows.length) {
+        var t = rows[i].time, ev = 0, cen = 0;
+        while (i < rows.length && rows[i].time === t) { if (rows[i].status === 1) ev++; else cen++; i++; }
+        if (atRisk > 0 && ev > 0) { s *= (atRisk - ev) / atRisk; steps.push({ t: t, s: s }); }
+        atRisk -= (ev + cen);
+      }
+      return steps;
+    }
+    function drawArm(arm, anchors, tmax) {
+      var W = 360, H = 230, m = { l: 38, r: 10, t: 12, b: 28 };
+      var steps = kmFromIPD(arm.ipd);
+      function X(t) { return m.l + (t / tmax) * (W - m.l - m.r); }
+      function Y(s) { return H - m.b - s * (H - m.t - m.b); }
+      var path = "", px = X(0), py = Y(1);
+      steps.forEach(function (p) { var x = X(p.t), y = Y(p.s); path += "L" + x.toFixed(1) + "," + py.toFixed(1) + " L" + x.toFixed(1) + "," + y.toFixed(1) + " "; py = y; px = x; });
+      var svg = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Reconstructed survival for ' + esc(arm.label || arm.arm_id) + '">';
+      svg += '<line x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      svg += '<line x1="' + m.l + '" y1="' + m.t + '" x2="' + m.l + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      svg += '<path d="M' + X(0) + "," + Y(1) + " " + path + '" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+      (anchors || []).forEach(function (a) { svg += '<circle cx="' + X(a.t).toFixed(1) + '" cy="' + Y(a.S).toFixed(1) + '" r="3.2" fill="none" stroke="var(--orig)" stroke-width="1.6"/>'; });
+      svg += '<text x="' + m.l + '" y="' + (H - 8) + '" font-size="10" fill="var(--muted)">' + esc(arm.label || arm.arm_id) + " · time →</text></svg>";
+      return svg;
+    }
+
+    function parseTrial() { try { return JSON.parse($("f-trial").value); } catch (e) { return null; } }
+
+    function run() {
+      lastResult = null;
+      var trial = parseTrial();
+      var vb = $("verdict-box");
+      if (!trial || !trial.arms) { vb.innerHTML = '<p class="badge none">Invalid trial JSON — load an example to see the shape.</p>'; $("km").innerHTML = ""; return; }
+      if (!window.RIPD) { vb.innerHTML = '<p class="badge none">Engine not loaded.</p>'; return; }
+      var r;
+      try { r = RIPD.reconstruct(trial, { bootstrap: 200 }); } catch (e) { vb.innerHTML = '<p class="badge none">Reconstruction error: ' + esc(e.message) + "</p>"; return; }
+      lastResult = r;
+      var badge = (r.audit && r.audit.badge) || "none";
+      var refused = r.tier === "C" || !r.exportable;
+      var head = '<div class="tierwrap"><span class="tier">Tier ' + esc(r.tier) + '</span><span class="badge ' + badge + '">' + badge + ' assurance</span>'
+        + (r.method ? '<span class="hint">method: ' + esc(r.method) + (r.wasserstein_to_anchors != null ? " · 1-Wasserstein " + r.wasserstein_to_anchors.toFixed(3) : "") + "</span>" : "") + "</div>";
+      var verdict = refused
+        ? '<div class="verdict bad"><strong>Refused / not exportable.</strong> ' + esc(r.verdict || "insufficient registry data") + ' — only ' + ((r.available || []).join(", ") || "summary") + " available; the engine fails closed rather than fabricate IPD.</div>"
+        : '<div class="verdict ok"><strong>Pseudo-IPD reconstructed</strong> for ' + (r.arms ? r.arms.length : 0) + " arm(s)" + (r.envelope ? " (with bootstrap envelope)" : "") + ". Verify total events / median / HR against the registry record before use.</div>";
+      vb.innerHTML = head + verdict + (r.flags && r.flags.length ? '<p class="hint">flags: ' + esc(r.flags.join(", ")) + "</p>" : "");
+
+      var kmHost = $("km");
+      if (r.arms && r.arms.length && r.exportable) {
+        var tmax = Math.max.apply(null, trial.arms.map(function (a) { return a.follow_up_max || Math.max.apply(null, (a.km_points || [{ t: 1 }]).map(function (p) { return p.t; })); }));
+        kmHost.innerHTML = r.arms.map(function (arm, i) {
+          var src = trial.arms.filter(function (a) { return a.arm_id === arm.arm_id; })[0] || trial.arms[i] || {};
+          return "<div>" + drawArm(arm, src.km_points, tmax || 1) + "</div>";
+        }).join("");
+      } else { kmHost.innerHTML = '<p class="hint">No reconstructed curve at this tier.</p>'; }
+    }
+
+    function loadExample(tier) {
+      var EX = window.RIPD_EXAMPLES || {};
+      var ex = EX["tier" + tier];
+      if (!ex) { toast("Example not available."); return; }
+      $("f-trial").value = JSON.stringify(ex.trial || ex, null, 2);
+      run();
+      toast("Loaded Tier " + tier + " example.");
+    }
+    function exportCSV() {
+      if (!lastResult || !lastResult.exportable || !lastResult.arms) { toast("Nothing exportable — reconstruct a Tier A/B trial first."); return; }
+      var lines = ["arm_id,label,time,status"];
+      lastResult.arms.forEach(function (arm) {
+        arm.ipd.forEach(function (r) { lines.push([arm.arm_id, '"' + String(arm.label || "").replace(/"/g, '""') + '"', r.time, r.status].join(",")); });
+      });
+      var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "registry_pseudo_ipd.csv";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-ex-a").addEventListener("click", function () { loadExample("A"); });
+    $("btn-ex-b").addEventListener("click", function () { loadExample("B"); });
+    $("btn-ex-c").addEventListener("click", function () { loadExample("C"); });
+    $("btn-export").addEventListener("click", exportCSV);
+    $("f-trial").addEventListener("input", run);
+
+    window.__almRegistryIpd = { run: function () { run(); return lastResult; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
