@@ -572,7 +572,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale));
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -712,6 +712,24 @@
         + fnum(tx(nMu)) + " [" + fnum(tx(nMu - Z * nSe)) + ", " + fnum(tx(nMu + Z * nSe)) + "].</div>"
         + "<table class='ptable'><thead><tr><th>Spec</th><th>est</th><th>95% CI</th></tr></thead><tbody>" + rows + "</tbody></table>"
         + "<p class='exp-caveat'>spec-collapse aggregator from the author's spec-collapse-atlas — the mixture interval (law of total variance) is never narrower than a single spec; the naïve pool is shown to illustrate the collapse it avoids. <b>Experimental</b>; not for decision-making.</p></div></details>";
+    }
+
+    // Publication-bias signals — the browser-computable subset of the author's MAFI
+    // scorecard (the asymmetry cluster: Egger + precision-effect correlation). The full
+    // calibrated MAFI ensemble (selection models, trained cluster weights) lives in R.
+    function biasCard(studies) {
+      if (!(window.ExperimentalMA && ExperimentalMA.egger)) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 4) return "";
+      var yi = poolable.map(function (s) { return s.est; }), sei = poolable.map(function (s) { return s.se; });
+      var e = ExperimentalMA.egger(yi, sei); if (!e) return "";
+      var pec = ExperimentalMA.precisionEffectCor(yi, sei), k = poolable.length;
+      var flag = e.p < 0.05 ? ["strong", "#f87171"] : (e.p < 0.10 ? ["suggestive", "#fbbf24"] : ["no clear", "#34d399"]);
+      var power = k < 10 ? " <span class='exp-sub'>(low power at k=" + k + "; Egger needs ~10+ studies)</span>" : "";
+      return "<details class='exp-methods'><summary>&#128300; Publication-bias signals <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
+        + "<div class='exp-row'>Egger small-study asymmetry: intercept <b>" + fnum(e.intercept) + "</b> (SE " + fnum(e.se) + "), p = <b>" + fnum(e.p) + "</b> &mdash; <b style='color:" + flag[1] + "'>" + flag[0] + " asymmetry</b>" + power + "</div>"
+        + "<div class='exp-row'>Precision&ndash;effect correlation: <b>" + fnum(pec) + "</b></div>"
+        + "<p class='exp-caveat'>Browser-computable subset of the author's MAFI scorecard (the asymmetry-cluster signals). The full calibrated MAFI ensemble &mdash; selection models (3PSM), excess-significance and gradient-boosted cluster weights trained across Cochrane domains &mdash; runs in the MAFI R package. <b>Experimental</b>; bias tests have low power below ~10 studies.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled

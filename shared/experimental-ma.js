@@ -163,7 +163,33 @@
       ciLo: lo, ciHi: hi, verdict: (lo > 0 || hi < 0) ? "robust" : "fragile", k: n };
   }
 
-  var api = { grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, tcdf: tcdf, _quantile: quantile };
+  // ---- Bias signals (browser-computable subset of MAFI's asymmetry cluster) ----
+  // Classic Egger (1997): OLS of the standard normal deviate (yi/sei) on precision
+  // (1/sei); the intercept's t-test (df=k-2) is the small-study-asymmetry test.
+  function egger(yi, sei) {
+    var k = yi.length; if (k < 3) return null;
+    var x = sei.map(function (s) { return 1 / s; });       // precision
+    var y = yi.map(function (v, i) { return v / sei[i]; }); // SND
+    var sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (var i = 0; i < k; i++) { sx += x[i]; sy += y[i]; sxx += x[i] * x[i]; sxy += x[i] * y[i]; }
+    var denom = k * sxx - sx * sx; if (Math.abs(denom) < 1e-300) return null;
+    var b1 = (k * sxy - sx * sy) / denom, b0 = (sy - b1 * sx) / k;
+    var sse = 0; for (i = 0; i < k; i++) { var r = y[i] - (b0 + b1 * x[i]); sse += r * r; }
+    var df = k - 2, mse = sse / df, se0 = Math.sqrt(mse * sxx / denom);
+    var t = b0 / se0, p = 2 * (1 - tcdf(Math.abs(t), df));
+    return { intercept: b0, se: se0, t: t, df: df, p: p };
+  }
+  // Precision–effect correlation: corr(yi, 1/sei).
+  function precisionEffectCor(yi, sei) {
+    var k = yi.length, x = sei.map(function (s) { return 1 / s; });
+    var mx = 0, my = 0; for (var i = 0; i < k; i++) { mx += x[i]; my += yi[i]; } mx /= k; my /= k;
+    var sxy = 0, sxx = 0, syy = 0;
+    for (i = 0; i < k; i++) { var dx = x[i] - mx, dy = yi[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+    if (sxx < 1e-300 || syy < 1e-300) return 0;
+    return sxy / Math.sqrt(sxx * syy);
+  }
+
+  var api = { grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, egger: egger, precisionEffectCor: precisionEffectCor, tcdf: tcdf, _quantile: quantile };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ExperimentalMA = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
