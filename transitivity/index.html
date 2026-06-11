@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Screen the NMA transitivity assumption (effect-modifier distributions across the network) and map trial representativeness vs a target population. Free, offline, in-browser.">
+  <meta name="color-scheme" content="light dark">
+  <title>Transitivity &amp; representativeness — NMA assumption screening</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,27rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    label{display:block;margin-bottom:.6rem;font-size:.85rem}
+    .hint{color:var(--muted);font-size:.74rem}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.78rem;resize:vertical;min-height:7rem}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:.3rem} td,th{padding:.3rem .5rem;text-align:left;border-bottom:1px solid var(--border)}
+    th{color:var(--muted);font-size:.68rem;text-transform:uppercase}
+    .badge{display:inline-block;padding:.05rem .45rem;border-radius:10px;font-size:.7rem;font-weight:600}
+    .badge.ok{background:var(--ok-soft);color:var(--ok)} .badge.flag{background:var(--err-soft);color:var(--err)} .badge.na{background:var(--accent-soft);color:var(--muted)}
+    .verdict{padding:.55rem .8rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.flag{background:var(--err-soft)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/transitivity-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Transitivity &amp; representativeness <span style="font-size:.8rem;color:var(--muted);font-weight:400">· NMA assumption screening</span></h1>
+    <p>Two generalisability checks that network meta-analyses usually leave to prose. <strong>Transitivity</strong> screens whether effect modifiers are distributed similarly across the network's comparisons (the core NMA validity assumption — if a modifier differs across comparisons they aren't exchangeable). <strong>Representativeness</strong> compares the trial population to a target population per modifier, making external validity explicit. A screen for the reviewer to judge, not a hypothesis test.</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Run screening</button>
+    <button type="button" id="btn-example">Load example</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Transitivity — covariates by node</h2>
+        <label class="hint" style="margin:0 0 .3rem">First non-# row is the header: <code>trial, node, &lt;modifier1&gt;, &lt;modifier2&gt;, …</code>; then one row per trial.</label>
+        <textarea id="f-transit" aria-label="Transitivity covariates"></textarea>
+      </section>
+      <section class="panel">
+        <h2>Representativeness — vs target</h2>
+        <label class="hint" style="margin:0 0 .3rem">One per line: <code>modifier, trial mean, target mean, target SD (optional)</code></label>
+        <textarea id="f-rep" aria-label="Representativeness"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Transitivity screen</h2>
+        <div id="transit-out"><p class="hint">Enter covariates by node, then <strong>Run screening</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Representativeness map</h2>
+        <div id="rep-out"></div>
+      </section>
+      <section class="panel">
+        <h2>How to read this</h2>
+        <div class="assum"><strong>This screens; it does not decide.</strong> Transitivity uses the relative spread (coefficient of variation) of each modifier's node means — a flag means "inspect this", not "transitivity is violated"; CV is scale-relative, so judge clinical importance (a small CV can still be a clinically large gap, e.g. HbA1c). Unmeasured modifiers may still differ. Representativeness uses the standardised difference vs the target; a flag means the evidence may not transport without adjustment (see the <a href="../transportability/">Transportability</a> app).</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">Transitivity: per modifier, the distribution of node means across the network; flag when CV &gt; 0.15. Representativeness: per modifier, the standardised difference (Δ/target&nbsp;SD, or relative Δ when no SD); flag when |std&nbsp;diff| &gt; 0.5 (or |relΔ| &gt; 0.15). Idea integrated from the glp1-obesity-mbnma transitivity + representativeness workstreams. Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function num(v) { var n = parseFloat(v); return isFinite(n) ? n : null; }
+
+    function parseTransit(text) {
+      var lines = String(text || "").split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l && l[0] !== "#"; });
+      if (lines.length < 2) return { trials: [], modifiers: [] };
+      var head = lines[0].split(",").map(function (s) { return s.trim(); });
+      var modCols = head.slice(2);
+      var modifiers = modCols.map(function (n, i) { return { id: "m" + i, name: n }; });
+      var trials = [];
+      lines.slice(1).forEach(function (ln) {
+        var c = ln.split(",").map(function (s) { return s.trim(); });
+        if (c.length < 3) return;
+        var mods = {};
+        modCols.forEach(function (mc, i) { var v = num(c[2 + i]); if (v != null) mods["m" + i] = v; });
+        trials.push({ trial: c[0], node: c[1], mods: mods });
+      });
+      return { trials: trials, modifiers: modifiers };
+    }
+    function parseRep(text) {
+      var modifiers = [], trial = {}, target = {};
+      String(text || "").split(/\r?\n/).forEach(function (ln, i) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var c = ln.split(",").map(function (s) { return s.trim(); });
+        if (c.length < 3) return;
+        var id = "r" + i, tm = num(c[1]), gm = num(c[2]), gsd = num(c[3]);
+        if (tm == null || gm == null) return;
+        modifiers.push({ id: id, name: c[0] });
+        trial[id] = { mean: tm };
+        target[id] = gsd != null ? { mean: gm, sd: gsd } : { mean: gm };
+      });
+      return { modifiers: modifiers, trial: trial, target: target };
+    }
+
+    function sev(status) { return status === "flag" ? "flag" : status === "na" ? "na" : "ok"; }
+
+    function run() {
+      window.__lastTransit = null;
+      var tin = parseTransit($("f-transit").value);
+      var tHost = $("transit-out");
+      if (tin.trials.length && tin.modifiers.length) {
+        var tr = window.AlmTransitivity.assessTransitivity(tin);
+        var nodes = tr.nodes;
+        var rows = tr.modifiers.map(function (m) {
+          var cells = nodes.map(function (n) { return "<td>" + (m.nodeMeans && m.nodeMeans[n] != null ? m.nodeMeans[n].toFixed(2) : "—") + "</td>"; }).join("");
+          var metric = m.status === "na" ? "—" : ("CV " + (m.cv != null ? m.cv.toFixed(3) : "—") + " · range " + (m.range != null ? m.range.toFixed(2) : "—"));
+          return "<tr><td>" + esc(m.name) + "</td>" + cells + "<td>" + metric + '</td><td><span class="badge ' + sev(m.status) + '">' + m.status + "</span></td></tr>";
+        }).join("");
+        tHost.innerHTML = '<div class="verdict ' + (tr.flags ? "flag" : "ok") + '">' + esc(tr.verdict) + "</div>"
+          + "<table><tr><th>Modifier</th>" + nodes.map(function (n) { return "<th>" + esc(n) + "</th>"; }).join("") + "<th>spread</th><th></th></tr>" + rows + "</table>";
+        window.__lastTransit = tr;
+      } else { tHost.innerHTML = '<p class="hint">Provide a header row + ≥2 trials.</p>'; }
+
+      var rin = parseRep($("f-rep").value);
+      var rHost = $("rep-out");
+      if (rin.modifiers.length) {
+        var rep = window.AlmTransitivity.assessRepresentativeness(rin);
+        var rrows = rep.modifiers.map(function (m) {
+          if (m.status === "na") return "<tr><td>" + esc(m.name) + '</td><td colspan="4"><span class="badge na">missing</span></td></tr>';
+          var std = m.stdDiff != null ? m.stdDiff.toFixed(2) : (m.relDiff != null ? (m.relDiff * 100).toFixed(0) + "%" : "—");
+          return "<tr><td>" + esc(m.name) + "</td><td>" + m.trialMean + "</td><td>" + m.targetMean + "</td><td>" + (m.diff > 0 ? "+" : "") + m.diff.toFixed(2) + " (" + m.direction + ", " + std + ')</td><td><span class="badge ' + sev(m.status) + '">' + m.status + "</span></td></tr>";
+        }).join("");
+        rHost.innerHTML = '<div class="verdict ' + (rep.flags ? "flag" : "ok") + '">' + esc(rep.verdict) + "</div>"
+          + "<table><tr><th>Modifier</th><th>Trial</th><th>Target</th><th>Δ (dir, std)</th><th></th></tr>" + rrows + "</table>";
+        window.__lastRep = rep;
+      } else { rHost.innerHTML = '<p class="hint">Add modifier rows to map representativeness.</p>'; }
+    }
+
+    function loadExample() {
+      // GLP-1 obesity network — BMI balanced; HbA1c flags the obesity-vs-T2D
+      // population mixing at the oral-semaglutide node (glp1-obesity-mbnma WS-C).
+      $("f-transit").value = "trial, node, Baseline BMI, HbA1c (%), Mean age\n"
+        + "STEP-1, semaglutide-wk, 37.9, 5.7, 46\n"
+        + "STEP-3, semaglutide-wk, 38.0, 5.8, 46\n"
+        + "SURMOUNT-1, tirzepatide, 38.0, 5.7, 45\n"
+        + "SURMOUNT-2, tirzepatide, 38.0, 5.9, 46\n"
+        + "PIONEER-obese, semaglutide-oral, 33.0, 7.8, 57\n"
+        + "PIONEER-T2D, semaglutide-oral, 32.0, 8.1, 58";
+      $("f-rep").value = "# modifier, trial mean, target mean, target SD\n"
+        + "Mean age (yr), 49, 49.5, 12\n"
+        + "Mean BMI (kg/m2), 36.5, 36.0, 5\n"
+        + "% with diabetes, 20, 26, 12\n"
+        + "% female, 70, 52, 8";
+      run();
+      toast("Example loaded — GLP-1 obesity network (HbA1c flags T2D/obesity mixing).");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    ["f-transit", "f-rep"].forEach(function (id) { $(id).addEventListener("input", run); });
+
+    window.__almTransitivity = { run: function () { run(); return { transit: window.__lastTransit || null, rep: window.__lastRep || null }; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>
