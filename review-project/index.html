@@ -572,7 +572,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale));
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -679,6 +679,39 @@
       return "<details class='exp-methods'><summary>&#128300; Experimental methods <span class='exp-tag'>experimental</span></summary>"
         + "<div class='exp-body'>" + rows
         + "<p class='exp-caveat'>Research estimators from the author's own work (GRMA, conformal-MA, GWAM), ported and shown for exploration &mdash; <b>not validated for decision-making</b> and not a substitute for the pooled estimate above.</p></div></details>";
+    }
+
+    // Multiverse / spec-collapse (author's spec-collapse-atlas): pool the studies under
+    // a GRID of estimator specifications and combine them honestly (mixture-t, law of
+    // total variance) so the CI is never narrower than a single spec — shown beside the
+    // naïve inverse-variance pool of the specs, which collapses the CI by ~S.
+    function multiverseCard(studies, scale) {
+      if (!(window.ExperimentalMA && ExperimentalMA.specCollapse && window.AlmMaCore)) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 2) return "";
+      var yi = poolable.map(function (s) { return s.est; }), vi = poolable.map(function (s) { return s.se * s.se; });
+      var grid = [["FE", false], ["DL", false], ["DL", true], ["PM", false], ["PM", true], ["REML", false], ["REML", true]];
+      var Z = 1.959963984540054, specs = [];
+      grid.forEach(function (g) {
+        try { var r = AlmMaCore.pool(yi, vi, { method: g[0], knha: g[1], knhaFloor: true }); specs.push({ theta: r.mu, "var": r.se * r.se, k: r.k, label: g[0] + (g[1] ? "+HK" : "") }); } catch (e) {}
+      });
+      if (specs.length < 2) return "";
+      var sc = ExperimentalMA.specCollapse(specs);
+      if (!sc) return "";
+      var ratio = scale === "ratio", tx = function (x) { return ratio ? Math.exp(x) : x; };
+      var sinv = 0, swt = 0; specs.forEach(function (s) { var w = 1 / s["var"]; sinv += w; swt += w * s.theta; });
+      var nMu = swt / sinv, nSe = Math.sqrt(1 / sinv);
+      var rows = specs.map(function (s) {
+        var sd = Math.sqrt(s["var"]);
+        return "<tr><td>" + esc(s.label) + "</td><td>" + fnum(tx(s.theta)) + "</td><td>" + fnum(tx(s.theta - Z * sd)) + " to " + fnum(tx(s.theta + Z * sd)) + "</td></tr>";
+      }).join("");
+      return "<details class='exp-methods'><summary>&#128300; Multiverse — spec-collapse <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
+        + "<div class='exp-row'>Across " + specs.length + " estimator specifications, the honest combined estimate is <b>" + fnum(tx(sc.theta))
+        + "</b> (95% CI " + fnum(tx(sc.ciLo)) + " to " + fnum(tx(sc.ciHi)) + ") — verdict <b>" + esc(sc.verdict) + "</b>.</div>"
+        + "<div class='exp-row exp-na'>Naïve inverse-variance pool of the specs (anti-conservative — collapses the CI ~" + specs.length + "×): "
+        + fnum(tx(nMu)) + " [" + fnum(tx(nMu - Z * nSe)) + ", " + fnum(tx(nMu + Z * nSe)) + "].</div>"
+        + "<table class='ptable'><thead><tr><th>Spec</th><th>est</th><th>95% CI</th></tr></thead><tbody>" + rows + "</tbody></table>"
+        + "<p class='exp-caveat'>spec-collapse aggregator from the author's spec-collapse-atlas — the mixture interval (law of total variance) is never narrower than a single spec; the naïve pool is shown to illustrate the collapse it avoids. <b>Experimental</b>; not for decision-making.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled
