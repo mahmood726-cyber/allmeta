@@ -70,3 +70,13 @@ test("review-project reflects live bus state and captures it into the bundle", a
   await expect(page.locator("#stages .pill.stale")).toHaveCount(0);
   await expect(page.locator("#stages .pill.have")).toHaveCount(5);
 });
+
+test("review-project surfaces the portfolio-integration tools in their stages", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  const stages = page.locator("#stages");
+  // the 4 integrations must be reachable as stage launch links
+  await expect(stages.locator("a", { hasText: "Benford screen" })).toHaveAttribute("href", "../benford-screen/");
+  await expect(stages.locator("a", { hasText: "Quantile MA" })).toHaveAttribute("href", "../quantile-ma/");
+  await expect(stages.locator("a", { hasText: "Transported NMA" })).toHaveAttribute("href", "../transported-nma/");
+  await expect(stages.locator("a", { hasText: "Umbrella overlap" })).toHaveAttribute("href", "../umbrella-overlap/");
+});
