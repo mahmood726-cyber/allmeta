@@ -627,6 +627,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["benefit-risk", "mcda", "smaa", "evpi", "value-of-information", "decision-analysis", "ispor", "rank-acceptability"]
   },
   {
+    name: "Transitivity & representativeness",
+    folder: "allmeta/transitivity",
+    path: "./transitivity/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Network Meta-Analysis",
+    summary: "Screen the NMA transitivity assumption — the distribution of each effect modifier across the network's nodes/comparisons, flagging modifiers that vary substantially (those comparisons aren't exchangeable) — and map trial representativeness vs a target population per modifier (standardised difference). Two generalisability checks NMAs usually leave to prose.",
+    note: "A reviewer-judged screen, not a hypothesis test; CV is scale-relative (a small CV can be a clinically large gap). Pairs with the Transportability app. Idea integrated from the glp1-obesity-mbnma transitivity + representativeness workstreams.",
+    tags: ["transitivity", "representativeness", "nma", "effect-modifier", "exchangeability", "generalisability", "external-validity"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
