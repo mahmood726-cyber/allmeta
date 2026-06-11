@@ -23,3 +23,14 @@ def test_back_to_hub_navigation():
     html = INDEX.read_text(encoding="utf-8")
     has_hub_back = 'id="hub-back"' in html or 'href="../"' in html or 'href="..\"' in html
     assert has_hub_back, "no back-to-hub navigation found"
+
+
+def test_nar_fusion_wired():
+    """NAR fusion (from registry-ipd): exact registry anchors + at-risk table,
+    with a provenance-aware reliability tier."""
+    html = INDEX.read_text(encoding="utf-8")
+    assert "../shared/km-fusion-v1.js" in html
+    assert 'id="curve-source"' in html and 'id="anchors"' in html and 'id="km-tier"' in html
+    assert "AlmKmFusion" in html and "fuseCurve" in html and "effectiveCurve" in html
+    for opt in ('value="digitized"', 'value="registry"', 'value="fusion"'):
+        assert opt in html, f"curve-source option missing: {opt}"

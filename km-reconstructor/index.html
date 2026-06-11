@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Guyot 2012 Kaplan-Meier IPD reconstruction from digitized survival curve points and at-risk tables.">
+  <meta name="description" content="Guyot 2012 Kaplan-Meier IPD reconstruction from digitized survival curve points and at-risk tables — with NAR fusion: combine exact CT.gov/AACT registry KM anchors with the at-risk table for the strongest input regime.">
   <meta name="color-scheme" content="light dark">
   <title>K-M IPD Reconstructor</title>
   <style>
@@ -68,6 +68,15 @@
     <section class="panel">
       <h2>Input</h2>
       <label>
+        <span>Curve source</span>
+        <select id="curve-source" aria-label="Curve source">
+          <option value="digitized">Digitized figure (WebPlotDigitizer)</option>
+          <option value="registry">Registry anchors only (CT.gov/AACT, exact)</option>
+          <option value="fusion">Fusion — registry anchors + digitized figure</option>
+        </select>
+        <span class="hint">Registry KM-estimate timepoints are <strong>exact</strong> (zero digitization error). Fusing them with the digitized curve + at-risk table is the strongest input regime (registry-IPD NAR-fusion finding).</span>
+      </label>
+      <label>
         <span>Digitized curve — <code>time, survival</code> (survival in 0..1 or 0..100)</span>
         <textarea id="curve" aria-label="Input">0, 1.00
 3, 0.95
@@ -82,6 +91,16 @@
 36, 0.35</textarea>
         <span class="hint">More points = smoother reconstruction. Use a graph digitizer (WebPlotDigitizer) to get these.</span>
       </label>
+      <label id="anchors-wrap" style="display:none">
+        <span>Registry anchors — <code>time, survival</code> (exact CT.gov/AACT KM-estimate timepoints)</span>
+        <textarea id="anchors" aria-label="Registry anchors">0, 1.00
+6, 0.88
+12, 0.75
+24, 0.50
+36, 0.35</textarea>
+        <span class="hint">Posted KM-estimate values from the registry — used verbatim (no pixel error). In fusion mode these override the digitized curve at matching times.</span>
+      </label>
+      <div id="km-tier" class="note" style="display:none"></div>
       <label>
         <span>At-risk table — <code>time, n_at_risk</code></span>
         <textarea id="risk" aria-label="Risk">0, 200
@@ -117,6 +136,7 @@
   <footer>
     Guyot P, Ades AE, Ouwens MJNM, Welton NJ. Enhanced secondary analysis of survival data: reconstructing the data from published Kaplan-Meier survival curves. BMC Med Res Methodol 2012;12:9. <strong>Validation:</strong> the reconstructed K-M tracks the digitized input to &lt;0.02 survival; total events hits the reported value; median &amp; events fall within a documented heuristic band of R <code>IPDfromKM</code>'s full Guyot reconstruction — explicitly NOT IPD-level parity (<code>hub/shared/tests/km-reconstructor-parity.spec.mjs</code>).
   </footer>
+  <script src="../shared/km-fusion-v1.js"></script>
   <script>
     let IPD = [];
 
@@ -243,10 +263,29 @@
       return NaN;
     }
 
+    // Resolve the curve per the selected source: digitized figure, exact
+    // registry anchors, or the fusion of both (anchors authoritative).
+    function effectiveCurve() {
+      const src = (document.getElementById("curve-source") || {}).value || "digitized";
+      const digitized = parseCurve(document.getElementById("curve").value);
+      const anchors = window.AlmKmFusion ? AlmKmFusion.parsePoints(document.getElementById("anchors").value) : [];
+      if (src === "registry") return { curve: anchors, src: "registry" };
+      if (src === "fusion" && window.AlmKmFusion) return { curve: AlmKmFusion.fuseCurve(digitized, anchors).curve, src: "fusion" };
+      return { curve: digitized, src: "digitized" };
+    }
+    function renderTier(src, hasAtRisk) {
+      const el = document.getElementById("km-tier"); if (!el || !window.AlmKmFusion) return;
+      const t = AlmKmFusion.tier({ curveSource: src, hasAtRisk: hasAtRisk });
+      el.style.display = "";
+      el.style.borderLeftColor = t.severity === "flag" ? "var(--err, #912121)" : t.severity === "warn" ? "var(--warn, #b05a1c)" : "var(--ok, #0d7a27)";
+      el.innerHTML = "<strong>Reconstruction tier " + t.tier + " — " + t.label + ":</strong> " + t.verdict;
+    }
     function run() {
-      const curve = parseCurve(document.getElementById("curve").value);
+      const eff = effectiveCurve();
+      const curve = eff.curve.map(p => ({ t: p.t, s: p.s }));
       const risk = parseRisk(document.getElementById("risk").value);
       const te = parseInt(document.getElementById("tot-events").value, 10);
+      renderTier(eff.src, risk.length >= 2);
       if (curve.length < 2 || risk.length < 1) return;
       const { ipd, stages } = reconstruct(curve, risk, Number.isFinite(te) ? te : NaN);
       IPD = ipd;
@@ -255,9 +294,11 @@
       const km = kmFromIPD(ipd);
       document.getElementById("c-median").textContent = fmt(medianSurvival(km), 1);
       drawKM(curve, km);
+      const tierInfo = window.AlmKmFusion ? AlmKmFusion.tier({ curveSource: eff.src, hasAtRisk: risk.length >= 2 }) : null;
       _lastKM = { _schema: "km-reconstructor-results-v1", n_reconstructed: ipd.length,
         n_events: ipd.filter(r => r.event === 1).length,
-        median_survival: medianSurvival(km), n_risk_intervals: risk.length };
+        median_survival: medianSurvival(km), n_risk_intervals: risk.length,
+        curve_source: eff.src, reconstruction_tier: tierInfo ? tierInfo.tier : null };
     }
     var _lastKM = null;
     window.__almLastKM = function () { return _lastKM; };
@@ -336,6 +377,11 @@
     };
 
     document.getElementById("btn-run").addEventListener("click", run);
+    document.getElementById("curve-source").addEventListener("change", function () {
+      document.getElementById("anchors-wrap").style.display = (this.value === "digitized") ? "none" : "";
+      run();
+    });
+    document.getElementById("anchors").addEventListener("input", run);
     document.getElementById("btn-export").addEventListener("click", () => {
       const csv = ["time,event", ...IPD.map(r => `${r.time},${r.event}`)].join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
