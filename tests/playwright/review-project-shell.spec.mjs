@@ -482,6 +482,36 @@ test("Overview shows a plain-language 'What does this mean?' summary from the po
   await expect(page.locator("#what-this-means .wm-sentence")).toContainText("no-effect line");
 });
 
+test("Synthesis offers the author's experimental estimators, clearly labelled", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await page.evaluate(() => {
+    // the verified 6-study fixture (>=4 so the conformal PI is defined)
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "A", est: -0.15, se: 0.05 }, { label: "B", est: -0.10, se: 0.06 }, { label: "C", est: -0.20, se: 0.07 },
+      { label: "D", est: 0.02, se: 0.09 }, { label: "E", est: -0.30, se: 0.08 }, { label: "F", est: -0.05, se: 0.10 }
+    ] }));
+    window.MaPooled.write(window.MaPooled.fromEstSE(0.86, 0.05, { scale: "ratio", measure: "HR", k: 6 }));
+  });
+  await page.click("#btn-refresh");
+  await page.locator("#tab-btn-synthesis").click();
+
+  const card = page.locator("#panel-synthesis .exp-methods");
+  await expect(card).toHaveCount(1);
+  await expect(card.locator(".exp-tag")).toHaveText("experimental");          // explicit label
+  await expect(card).toContainText("GRMA");
+  await expect(card).toContainText("Conformal");
+  await expect(card).toContainText("not validated for decision-making");
+
+  // the JS port equals the Python reference: GRMA on these (back-transformed to ratio)
+  // is exp(-0.12826963) ≈ 0.880
+  const grma = await page.evaluate(() => {
+    const s = window.MaStudies.read();
+    const g = window.ExperimentalMA.grma(s.map(x => x.est), s.map(x => x.se * x.se));
+    return Math.exp(g.estimate);
+  });
+  expect(Math.abs(grma - 0.879682)).toBeLessThan(1e-4);
+});
+
 test("Stages carry good-vs-weak writing teaching cards", async ({ page }) => {
   await page.goto("/review-project/index.html");
   const card = page.locator("#panel-synthesis .teach-card");

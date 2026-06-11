@@ -215,6 +215,15 @@
     .qa-fail { background:rgba(248,113,113,.08); } .qa-fail .qa-sym { color:#f87171; }
     .qa-na .qa-sym { color:var(--faint); } .qa-na .qa-label { color:var(--muted); }
     .qa-block { margin-top:.5rem; padding:.5rem .7rem; font-size:.78rem; line-height:1.5; border-left:3px solid #f87171; background:rgba(248,113,113,.08); border-radius:0 10px 10px 0; color:#fecaca; }
+    /* Experimental estimators (author's own methods) */
+    .exp-methods { margin:.5rem 0 .2rem; border:1px dashed var(--accent,#5ea9ff); border-radius:10px; background:rgba(94,169,255,.05); }
+    .exp-methods > summary { cursor:pointer; padding:.45rem .7rem; font-size:.8rem; font-weight:600; color:var(--accent,#5ea9ff); }
+    .exp-tag { font-size:.58rem; text-transform:uppercase; letter-spacing:.1em; font-weight:800; color:#0b1220; background:var(--accent,#5ea9ff); padding:.1rem .4rem; border-radius:999px; margin-left:.3rem; vertical-align:middle; }
+    .exp-body { padding:.2rem .8rem .6rem; }
+    .exp-row { font-size:.82rem; line-height:1.55; margin:.3rem 0; color:var(--ink,#e6eefc); }
+    .exp-row .exp-name { font-weight:700; color:var(--accent,#5ea9ff); }
+    .exp-row.exp-na { color:var(--muted); }
+    .exp-caveat { margin:.45rem 0 0; font-size:.72rem; line-height:1.5; color:var(--muted); }
     /* Good-vs-weak teaching cards (RapidMeta Paper Studio steal) */
     .teach-card { margin:.5rem 0 .2rem; border:1px solid var(--border2,#27344a); border-radius:10px; background:rgba(148,163,184,.04); }
     .teach-card > summary { cursor:pointer; padding:.45rem .7rem; font-size:.78rem; font-weight:600; color:var(--muted); }
@@ -233,6 +242,8 @@
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <!-- EXPERIMENTAL estimators ported from the author's method repos (GRMA, conformal-MA). -->
+  <script src="../shared/experimental-ma.js"></script>
   <script src="../shared/rob-core.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/review-bundle.js"></script>
@@ -558,7 +569,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref);
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -629,6 +640,31 @@
       return "<div class='dropped-warn'>&#9888; <b>" + dropped + " of " + inc
         + " screening-included records carry no pooled effect data</b> &mdash; only " + poolable
         + " studies reached synthesis (pooled k=" + k + "). Extract their effect data, or record why they were not pooled.</div>";
+    }
+
+    // EXPERIMENTAL estimators from the author's own method repos (GRMA robust pool,
+    // conformal prediction interval), surfaced behind an explicit "experimental" label —
+    // shown for exploration, never as a substitute for the validated pooled estimate.
+    function experimentalCard(studies, scale) {
+      if (!window.ExperimentalMA) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 2) return "";
+      var yi = poolable.map(function (s) { return s.est; });
+      var vi = poolable.map(function (s) { return s.se * s.se; });
+      var sei = poolable.map(function (s) { return s.se; });
+      var ratio = scale === "ratio", tx = function (x) { return ratio ? Math.exp(x) : x; };
+      var rows = "";
+      try { var g = ExperimentalMA.grma(yi, vi); if (g) rows += "<div class='exp-row'><span class='exp-name'>GRMA</span> robust pool, outlier-downweighted: <b>" + fnum(tx(g.estimate)) + "</b></div>"; } catch (e) {}
+      try {
+        var c = ExperimentalMA.conformalPI(yi, sei);
+        rows += c
+          ? "<div class='exp-row'><span class='exp-name'>Conformal</span> 95% prediction interval, distribution-free: <b>" + fnum(tx(c.lo)) + " to " + fnum(tx(c.hi)) + "</b></div>"
+          : "<div class='exp-row exp-na'>Conformal prediction interval needs k&ge;4 studies (" + poolable.length + " present).</div>";
+      } catch (e) {}
+      if (!rows) return "";
+      return "<details class='exp-methods'><summary>&#128300; Experimental methods <span class='exp-tag'>experimental</span></summary>"
+        + "<div class='exp-body'>" + rows
+        + "<p class='exp-caveat'>Research estimators from the author's own work (GRMA, conformal-MA), ported and shown for exploration &mdash; <b>not validated for decision-making</b> and not a substitute for the pooled estimate above.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled
