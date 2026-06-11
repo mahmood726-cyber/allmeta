@@ -226,6 +226,7 @@
         <option value="magnesium">Magnesium — the chorus and the mirage</option>
         <option value="antidep">Antidepressants — the curated shelf</option>
         <option value="cortico_repeat">Repeat corticosteroids — real Cochrane data (CD004661)</option>
+        <option value="htn_elderly">Blood pressure in older adults — real Cochrane data (CD000028)</option>
       </select>
       <span class="progress" id="progress" aria-live="polite"></span>
     </div>
@@ -833,6 +834,36 @@
           robustness: { y: "", s: "The result is steady across trials, and the largest (Rouse, Crowther) sit nearest the null. Whatever repeat doses do for short-term breathing, they do not visibly move death.", r: "Steady — and steadily null." },
           certainty: { y: "", s: "Certainty for mortality is moderate at best, and repeat doses carry their own trade-offs, including lower birthweight, so 'more' is not a free lever.", r: "More was not better. It was just more." },
           report: { y: "the lesson", s: "The single course is one of evidence synthesis's triumphs; repeating it shows a real benefit need not extend indefinitely. Test 'more' against the real trials before you assume it.", r: "Prove 'more' helps — never assume it.", voice: true }
+        }
+      },
+      htn_elderly: {
+        name: "Treating high blood pressure in older adults — a real Cochrane benefit (CD000028)",
+        hook: "Should we treat raised blood pressure in people over sixty, or leave well alone at that age? Thirteen randomised trials settle it — real per-trial Cochrane data, loadable here from the Pairwise70 corpus, and a clean contrast to the magnesium mirage.",
+        data: { measure: "OR", scale: "ratio", cite: "Cochrane CD000028.pub4 — pharmacotherapy for hypertension in older adults, outcome “All-cause mortality”, 13 trials. Real per-trial 2×2 counts from the Pairwise70 Cochrane corpus (data/CD000028_pub4_data.rda)", trials: [
+          { label: "Carter 1970", group: "elderly HTN", eT: 7, nT: 22, eC: 9, nC: 26 },
+          { label: "Sprackling 1981", group: "elderly HTN", eT: 48, nT: 61, eC: 44, nC: 62 },
+          { label: "Kuramoto 1981", group: "elderly HTN", eT: 7, nT: 44, eC: 7, nC: 47 },
+          { label: "MRC-TMH 1985", group: "elderly HTN", eT: 74, nT: 1415, eC: 75, nC: 1398 },
+          { label: "Coope 1986", group: "elderly HTN", eT: 60, nT: 419, eC: 69, nC: 465 },
+          { label: "SHEP-P 1989", group: "elderly HTN", eT: 32, nT: 443, eC: 7, nC: 108 },
+          { label: "EWPHBPE 1989", group: "elderly HTN", eT: 135, nT: 416, eC: 149, nC: 424 },
+          { label: "SHEP 1991", group: "elderly HTN", eT: 213, nT: 2365, eC: 242, nC: 2371 },
+          { label: "STOP 1991", group: "elderly HTN", eT: 36, nT: 812, eC: 63, nC: 815 },
+          { label: "MRC-O 1992", group: "elderly HTN", eT: 301, nT: 2183, eC: 315, nC: 2213 },
+          { label: "Syst-Eur 1991", group: "elderly HTN", eT: 123, nT: 2398, eC: 137, nC: 2297 },
+          { label: "HYVET-P 2003", group: "elderly HTN", eT: 58, nT: 857, eC: 24, nC: 426 },
+          { label: "HYVET 2008", group: "elderly HTN", eT: 196, nT: 1933, eC: 235, nC: 1912 }
+        ] },
+        beats: {
+          protocol: { y: "the question", s: "For decades, lowering blood pressure in older adults was thought either pointless or hazardous. The trial-able question: does antihypertensive treatment in people aged sixty and over reduce death?", r: "Does treating the old actually help?" },
+          search: { y: "1970–2008", s: "Thirteen randomised trials accumulate across four decades — Carter, the MRC and SHEP programmes, STOP-Hypertension, Syst-Eur and finally HYVET in the very elderly — together about twenty-five thousand participants.", r: "Thirteen trials, four decades." },
+          screening: { y: "", s: "Keep the randomised, placebo- or no-treatment-controlled trials reporting all-cause mortality in older adults; this is the outcome no one can wave away.", r: "One outcome that cannot be spun: death." },
+          extraction: { y: "", s: "Pull each trial's deaths and totals straight from the Cochrane record — the real two-by-two tables, loadable onto the workspace bus.", r: "Real counts, every trial." },
+          appraisal: { y: "", s: "The trials are large, randomised and consistent in direction; this is a body of evidence built to be trusted, not rescued.", r: "Sound trials, pointing one way." },
+          synthesis: { y: "", s: "Pool the thirteen: a fixed-effect odds ratio for death of 0.89 (95% CI 0.82 to 0.97). The diamond sits clearly left of the line — treating blood pressure in older adults saves lives.", r: "The diamond falls left, and stays." },
+          robustness: { y: "", s: "No single trial drives it; the large SHEP, MRC and HYVET trials all point the same way, and HYVET confirmed benefit even past eighty.", r: "Every big trial agrees." },
+          certainty: { y: "", s: "Consistent, direct, precise — high certainty for a clinically meaningful reduction in death, the kind of settled answer synthesis exists to produce.", r: "Certain — and earned." },
+          report: { y: "the lesson", s: "Set this beside the magnesium mirage and the repeat-steroid null: a real benefit is consistent across large trials, survives the mega-trials, and does not depend on which estimator you pick. That is what genuine evidence looks like.", r: "This is what a real benefit looks like.", voice: true }
         }
       }
     };

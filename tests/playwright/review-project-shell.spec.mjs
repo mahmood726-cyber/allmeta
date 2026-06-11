@@ -384,3 +384,26 @@ test("Story mode loads REAL Cochrane data (CD004661) lifted from the Pairwise70 
   expect(or).toBeLessThan(1.05);
   await expect(page.locator("#panel-synthesis .story-beat")).toContainText("0.96");
 });
+
+test("Story mode loads a clear-benefit real Cochrane case (CD000028 antihypertensives)", async ({ page }) => {
+  page.on("dialog", d => d.accept());
+  await page.goto("/review-project/index.html");
+  await page.click("#btn-story");
+  await page.selectOption("#story-case", "htn_elderly");
+
+  await expect(page.locator("#story-intro .story-cite")).toContainText("CD000028");
+  await expect(page.locator("#story-intro .story-cite")).toContainText("Pairwise70 Cochrane corpus");
+  await expect(page.locator("#story-intro [data-load-case]")).toContainText("Load these 13 real trials");
+
+  await page.click("#story-intro [data-load-case]");
+  await expect(page.locator("#evmap .evpt")).toHaveCount(13);
+  expect(await page.evaluate(() => window.MaStudies.read().length)).toBe(13);
+
+  // fixed-effect pool of the real trials is a clear mortality benefit (~0.89, CI excludes 1)
+  await page.locator("#tab-btn-synthesis").click();
+  await page.selectOption("#panel-synthesis select[data-synth='method']", "FE");
+  const or = parseFloat(await page.locator("#panel-synthesis .result-card .big").textContent());
+  expect(or).toBeGreaterThan(0.82);
+  expect(or).toBeLessThan(0.95);
+  await expect(page.locator("#panel-synthesis .story-beat")).toContainText("0.89");
+});
