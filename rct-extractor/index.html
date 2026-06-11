@@ -90,7 +90,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>RCT Extractor <span id="demo-badge" role="status" aria-live="polite">DEMO</span></h1>
-    <p>Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications using your locally-running <code>rct-extractor-v2</code> API. Optional: run a local LLM alongside as a cross-check. Consensus and disagreements are highlighted.</p>
+    <p>Extract effect estimates (HR, OR, RR, MD, SMD, IRR, RD) from RCT publications. Works fully offline in the browser (a JS port of the <code>rct-extractor-v2</code> patterns), or against your locally-running <code>rct-extractor-v2</code> API for the full 180+ pattern engine. Optional: run a local LLM alongside as a cross-check. Consensus and disagreements are highlighted.</p>
     <div class="status-row" role="status" aria-live="polite" aria-atomic="true">
       <span class="status-pill" id="api-status">checking rct-extractor…</span>
       <span class="status-pill" id="llm-status">checking local LLM…</span>
@@ -119,12 +119,15 @@
         <label class="use-llm-label" style="gap:0.35rem; font-size:0.82rem; margin:0">
           <input id="use-llm" type="checkbox" style="min-width:18px; min-height:18px" aria-label="Use llm"> Also run local LLM (consensus)
         </label>
+        <label class="use-llm-label" style="gap:0.35rem; font-size:0.82rem; margin:0">
+          <input id="use-native" type="checkbox" style="min-width:18px; min-height:18px" aria-label="Use browser-native extractor"> Browser-native (offline, no backend)
+        </label>
       </div>
       <div class="note" id="hint-note">
         <strong>First time?</strong> In a terminal: <code>cd C:\Projects\rct-extractor-v2 && pip install fastapi uvicorn python-multipart && uvicorn src.api.main:app --port 8000</code>. Then come back and click Extract.
       </div>
       <div id="demo-banner" role="alert" aria-live="polite">
-        <strong>Live backend offline</strong> — switch to Demo mode to try the app with 3 sample extractions (HR, OR, RR) covering the main effect families. CSV export and Workbench push all work in demo mode.
+        <strong>Live backend offline</strong> — just click <strong>Extract</strong>: the browser-native extractor runs your real text offline (no backend), or switch to Demo mode for 3 sample extractions. CSV export and Workbench push work either way.
         <div class="demo-actions">
           <button type="button" id="btn-enter-demo" class="primary">Switch to Demo mode</button>
         </div>
@@ -136,6 +139,9 @@
 
     <section class="panel">
       <h2>Extractions</h2>
+      <div id="native-note" role="status" style="display:none; margin-bottom:0.6rem; padding:0.5rem 0.7rem; border-left:3px solid var(--ok,#34d399); background:rgba(52,211,153,0.08); border-radius:0 8px 8px 0; font-size:0.8rem; color:#a7f3d0">
+        <strong>Browser-native extraction</strong> — these rows were extracted offline in your browser (a JS port of the <code>rct-extractor-v2</code> pattern families), no Python backend needed. Rows are tagged <code>browser-regex</code>.
+      </div>
       <table id="res-table">
         <thead><tr><th>Source</th><th>Type</th><th>Estimate</th><th>95% CI</th><th>p</th><th>Conf</th><th></th></tr></thead>
         <tbody id="res-body"><tr><td colspan="7" style="color:var(--muted)">No extractions yet.</td></tr></tbody>
@@ -159,6 +165,9 @@
   </footer>
 
   <script src="../shared/localllm.js"></script>
+  <!-- Browser-native offline extractor: a JS port of the rct-extractor-v2 pattern
+       families, so extraction works with no Python backend (Pages / file://). -->
+  <script src="../shared/rct-regex-extract.js"></script>
   <!-- PDF.js for browser-side text extraction (self-hosted for SRI / offline / strict CSP) -->
   <script type="module">
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -175,6 +184,7 @@
     const apiStatus = document.getElementById("api-status");
     const llmStatus = document.getElementById("llm-status");
     const resBody = document.getElementById("res-body");
+    const nativeNote = document.getElementById("native-note");
     const sendActions = document.getElementById("send-actions");
     const consensusWrap = document.getElementById("consensus-wrap");
 
@@ -527,20 +537,38 @@
         }
         if (!text) { resBody.innerHTML = `<tr><td colspan="7">Need some text.</td></tr>`; return; }
 
-        const [apiRes, llmRes] = await Promise.all([
-          callExtractor(text).catch(e => ({ error: e.message, extractions: [] })),
-          callLLM(text).catch(e => ({ error: e.message })),
-        ]);
+        // Browser-native extraction (offline): a JS port of rct-extractor-v2's pattern
+        // families. Used when explicitly chosen, OR automatically when the Python API
+        // is unreachable — so the extractor produces REAL results offline, not just demo.
+        const nativeExt = (window.RctRegexExtract && RctRegexExtract.extract) ? RctRegexExtract.extract(text) : [];
+        const forceNative = document.getElementById("use-native").checked;
 
-        const ext = apiRes.extractions || [];
+        let ext, llmRes = null, usedNative = false, apiErr = null;
+        if (forceNative) {
+          ext = nativeExt; usedNative = true;
+          llmRes = await callLLM(text).catch(e => ({ error: e.message }));
+        } else {
+          const [apiRes, _llm] = await Promise.all([
+            callExtractor(text).catch(e => ({ error: e.message, extractions: [] })),
+            callLLM(text).catch(e => ({ error: e.message })),
+          ]);
+          llmRes = _llm; apiErr = apiRes.error;
+          ext = apiRes.extractions || [];
+          // Auto-fallback: API offline or returned nothing, but the browser found effects.
+          if ((apiErr || !ext.length) && nativeExt.length) { ext = nativeExt; usedNative = true; apiErr = null; }
+        }
+
         LAST_EXTRACTIONS = ext;
         window.LAST_EXTRACTIONS = ext;
         renderRegexRows(ext);
         renderConsensus(ext, llmRes && !llmRes.error ? llmRes : null);
         drawConfidenceBar(ext);
 
-        if (apiRes.error) {
-          resBody.innerHTML = `<tr><td colspan="7" style="color:var(--err)">Extractor error: ${esc(apiRes.error)}</td></tr>`;
+        if (usedNative) {
+          nativeNote.style.display = "block";
+        } else {
+          nativeNote.style.display = "none";
+          if (apiErr) resBody.innerHTML = `<tr><td colspan="7" style="color:var(--err)">Extractor error: ${esc(apiErr)}</td></tr>`;
         }
       } catch (err) {
         resBody.innerHTML = `<tr><td colspan="7" style="color:var(--err)">Error: ${esc(err.message)}</td></tr>`;
