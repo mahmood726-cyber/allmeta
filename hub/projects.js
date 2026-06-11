@@ -615,6 +615,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["transportability", "generalisability", "meta-regression", "ml-nmr", "effect-modifier", "standardisation", "external-validity"]
   },
   {
+    name: "Benefit-risk MCDA",
+    folder: "allmeta/benefit-risk",
+    path: "./benefit-risk/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Probabilistic benefit-risk multi-criteria decision analysis: linear partial value functions over benefits + harms, SMAA rank-acceptability (P best) propagating each treatment's effect uncertainty by Monte Carlo, and EVPI — the value of resolving the remaining decision uncertainty (is more research worth it?). Standard ISPOR / Tervonen-SMAA framework, no SR tool ships it.",
+    note: "Weights are value judgements (elicit + vary them); value functions are linear; EVPI is on the 0–1 value scale. Deterministic (seeded). Idea integrated from the glp1-obesity-mbnma benefit-risk arm.",
+    tags: ["benefit-risk", "mcda", "smaa", "evpi", "value-of-information", "decision-analysis", "ispor", "rank-acceptability"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
