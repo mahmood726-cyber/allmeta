@@ -99,6 +99,23 @@ not an approximation artifact — Low certainty stands.** This is an integrity c
 had not inflated the uncertainty. A useful nuance now carried to the panel: **P(tirzepatide > semaglutide) =
 0.97**, P(difference > 2 pp MID) = 0.73 — directionally very likely better, magnitude genuinely uncertain.
 
+## Full league table with per-comparison certainty (`nma_league.py` / `nma_league_export.py`)
+The single recommendation generalises to the whole network: one NUTS re-fit saves the joint posterior
+(`nma_draws.npz`), every pairwise contrast gets a proper CrI + P(superiority), and each cell carries a
+computable certainty (imprecision from the contrast CrI + k=1 INSUFFICIENT flag + an indirect-star-network
+baseline). 7 nodes, 42 ordered comparisons → `nma_league.html` (offline, colour-coded) + `.md` + `.json`.
+
+**The headline the certainty layer exposes — and a naked SUCRA ranking hides:** the highest-*ranked* agents
+(**mazdutide 21.3, retatrutide 20.2 pp**) have the **weakest** evidence (k=1, every comparison Very low /
+Low). The **only Moderate-certainty conclusions in the entire network** are that the established injectables
+beat the oral/weaker agents:
+- tirzepatide > orforglipron +7.3 pp (P=1.00), > oral-semaglutide +7.8 (P=1.00)
+- sc-semaglutide > orforglipron +4.4 (P=0.99), > oral-semaglutide +4.8 (P=1.00)
+
+Certainty across 42 comparisons: 8 Moderate, 24 Low, 10 Very low. No comparison reaches High (indirect
+star network, no incoherence check). This is the discipline of GRADE/CINeMA applied to *every* cell, not
+just the headline contrast — telling a panel precisely which of the league-table claims it can lean on.
+
 ## Honest scope
 - This is a **decision-support scaffold**, not a guideline. The MID, the RoB, and all judgement domains are
   the panel's. The contrast is now the **exact joint-posterior** estimate (verified ≈ the conservative one);

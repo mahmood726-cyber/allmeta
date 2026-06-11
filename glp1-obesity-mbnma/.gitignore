@@ -7,3 +7,4 @@ __pycache__/
 assets/
 incretin_obesity_dashboard.html
 _shot_*.png
+nma_draws.npz
