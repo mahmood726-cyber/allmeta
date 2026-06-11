@@ -13,8 +13,11 @@ transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = c
 LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **three full-depth classes** — PCSK9
 (continuous), SGLT2 (survival/HR), asthma (count/rate) — each carrying a **Bayesian-draw league** (CrI +
 P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus **complementary methods**
-(UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`). One-command reproducible (`python run_all.py`), **46-test**
-self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+(UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`). **All four binary/continuous/survival/count-rate outcome types now
+have a full-depth class** — PCSK9 (continuous), SGLT2 (survival/HR), asthma (count/rate), and **psoriasis
+(binary/responder, PASI-90)** — each with a Bayesian-draw league + GRADE + transport + offline dashboard.
+One-command reproducible (`python run_all.py`), **49-test** self-verifying. Key docs: `PAPER.md`,
+`GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
 1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
@@ -80,8 +83,25 @@ self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.
      → `asthma_dashboard.html` (offline). `asthma_results.json` kept as the core repoint. Pinned by
      `test_asthma_league_bayesian_depth` / `_transport_averted_depth` / `_dashboard_offline`.
    Suite now **46 green**. Three full-depth classes now span continuous + survival + count/rate, each with a
-   Bayesian-draw league. Next depth idea: promote class 4 (psoriasis, binary-responder) to full depth for the
-   4th outcome type, or wire the class leagues into `run_all.py` (currently standalone, like all class scripts).
+   Bayesian-draw league.
+
+   **FOURTH full-depth class — psoriasis (`class4_psoriasis/`), binary/responder path (DONE this session):**
+   - **league** — `psoriasis_league_bayes.py` → `psoriasis_league.json` (+ `psoriasis_pasi_draws.npz`,
+     gitignored): hierarchical Bayesian RE on the **logit of per-arm PASI-90 response** (nutpie, R̂=1.0000),
+     per-agent mean + heteroscedastic per-agent SD; draws → response% with CrI, **risk-difference (pp)**
+     contrasts + P(superiority), same GRADE/CINeMA domains as `nma_league.py` (58 Moderate / 32 Low over 90
+     ordered comps). Lead **bimekizumab 89%**; reproduces the established **IL-17/IL-23 > TNF** hierarchy with
+     posterior probability (57% vs 31%, **P=1.000**). Pinned by `test_psoriasis_league_bayesian_depth`.
+   - **transport** — `psoriasis_transport.py` → `psoriasis_transport.json`: response draws → **responders
+     gained/100 + NNT** vs placebo across documented placebo backgrounds (2/4/7%). Honest contrast with
+     SGLT2/asthma: PASI-90 placebo is low/stable, so NNT is dominated by the large active response, not the
+     baseline (lead NNT ~1.18; per-agent table NNT 1.18→5.94). Pinned by `test_psoriasis_transport_nnt_depth`.
+   - **dashboard** — `psoriasis_dashboard.py` → `psoriasis_dashboard.html` (single-file, fully offline).
+     Pinned by `test_psoriasis_dashboard_offline`.
+   `psoriasis_results.json` kept as the core repoint. Logit hierarchical-means form (AACT posts the response %,
+   not per-arm responder counts here; per-agent SD absorbs arm-size + between-arm spread). Star network.
+   Suite now **49 green**. **All four outcome types now have a full-depth class.** Next depth idea: wire the
+   class leagues into `run_all.py` (currently standalone, like all class scripts), or add a 5th outcome family.
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Psoriasis biologics - Bayesian PASI-90 responder league, GRADE certainty &amp; transported NNT</title>
+<meta property="og:title" content="Psoriasis biologics Bayesian PASI-90 responder league, GRADE certainty & transported absolute benefit">
+<meta property="og:description" content="Registry-native (AACT) psoriasis-biologic PASI-90 responder league from a Bayesian draw matrix, with GRADE certainty and response-to-responders-gained/NNT transport across placebo backgrounds. Decision-support DRAFT.">
+<meta property="og:type" content="website">
+<style>
+:root{--bg:#0f1419;--card:#1a2029;--ink:#e6edf3;--mut:#9aa7b4;--line:#2a323d;--acc:#4da3ff}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:21px;margin:0 0 4px} h2{font-size:17px;margin:0 0 10px;color:var(--acc)}
+.sub{color:var(--mut);margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+.rowh,.colh{background:#222b36;font-weight:600} .rowh{text-align:left}
+.diag{background:#11161d;font-weight:700} .k{color:var(--mut);font-weight:400;font-size:12px}
+.eff{color:var(--mut)}
+.cert.high{background:#0e3a1e} .cert.mod{background:#3a360e} .cert.low{background:#3a1f0e} .cert.vlow{background:#3a0e12}
+td.ag{text-align:left;font-weight:600}
+.note{color:var(--mut);font-size:13px;border-left:3px solid var(--line);padding:4px 0 4px 12px;margin:10px 0}
+.flag{color:#ffb454} .legend span{display:inline-block;margin-right:14px;font-size:12px;color:var(--mut)}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin-right:4px}
+footer{color:var(--mut);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Psoriasis biologics &mdash; Bayesian PASI-90 responder league, GRADE certainty &amp; transported benefit</h1>
+<p class="sub">Registry-native (AACT) generality repoint &middot; <b>fourth full-depth class</b> (binary/responder path) &middot; <b>decision-support DRAFT</b> &mdash; RoB &amp; values stay with the panel. League fit by hierarchical Bayesian RE on the logit of the per-arm PASI-90 response (nutpie, R&#770;=1.000); contrasts from posterior draws.</p>
+
+<div class="card">
+<h2>PASI-90 responder league &amp; per-comparison certainty</h2>
+<p class="sub">Diagonal = posterior median PASI-90 response% (drug class &middot; k arms). Lower triangle = response-point difference, row minus column (negative: row responds less). Upper triangle = computable GRADE/CINeMA certainty (indirect-star baseline + imprecision when the contrast CrI crosses the null + k=1 INSUFFICIENT) &mdash; identical domains to <code>nma_league.py</code>; hover a cell for P(superiority).</p>
+<table>
+<thead><tr><th></th><th class="colh">bimekizumab</th><th class="colh">risankizumab</th><th class="colh">ustekinumab</th><th class="colh">ixekizumab</th><th class="colh">brodalumab</th><th class="colh">guselkumab</th><th class="colh">secukinumab</th><th class="colh">adalimumab</th><th class="colh">tildrakizumab</th><th class="colh">etanercept</th></tr></thead>
+<tbody>
+<tr><th class="rowh">bimekizumab</th><td class="diag">89%<br><span class="k">IL-17/23 &middot; k=136</span></td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">risankizumab</th><td class="eff">-15</td><td class="diag">74%<br><span class="k">IL-23 &middot; k=48</span></td><td class="cert low" title="P(sup)=0.94">Low</td><td class="cert low" title="P(sup)=0.95">Low</td><td class="cert mod" title="P(sup)=0.99">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">ustekinumab</th><td class="eff">-24</td><td class="eff">-9</td><td class="diag">65%<br><span class="k">IL-12/23 &middot; k=75</span></td><td class="cert low" title="P(sup)=0.54">Low</td><td class="cert low" title="P(sup)=0.93">Low</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">ixekizumab</th><td class="eff">-24</td><td class="eff">-10</td><td class="eff">-0</td><td class="diag">65%<br><span class="k">IL-17 &middot; k=28</span></td><td class="cert low" title="P(sup)=0.91">Low</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">brodalumab</th><td class="eff">-36</td><td class="eff">-21</td><td class="eff">-12</td><td class="eff">-12</td><td class="diag">53%<br><span class="k">IL-17 &middot; k=35</span></td><td class="cert low" title="P(sup)=0.85">Low</td><td class="cert low" title="P(sup)=0.84">Low</td><td class="cert low" title="P(sup)=0.90">Low</td><td class="cert low" title="P(sup)=0.95">Low</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">guselkumab</th><td class="eff">-45</td><td class="eff">-30</td><td class="eff">-21</td><td class="eff">-21</td><td class="eff">-9</td><td class="diag">44%<br><span class="k">IL-23 &middot; k=324</span></td><td class="cert low" title="P(sup)=0.51">Low</td><td class="cert low" title="P(sup)=0.70">Low</td><td class="cert low" title="P(sup)=0.88">Low</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">secukinumab</th><td class="eff">-45</td><td class="eff">-30</td><td class="eff">-21</td><td class="eff">-21</td><td class="eff">-9</td><td class="eff">-0</td><td class="diag">44%<br><span class="k">IL-17 &middot; k=201</span></td><td class="cert low" title="P(sup)=0.68">Low</td><td class="cert low" title="P(sup)=0.86">Low</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">adalimumab</th><td class="eff">-48</td><td class="eff">-33</td><td class="eff">-24</td><td class="eff">-24</td><td class="eff">-12</td><td class="eff">-3</td><td class="eff">-3</td><td class="diag">41%<br><span class="k">TNF &middot; k=177</span></td><td class="cert low" title="P(sup)=0.79">Low</td><td class="cert mod" title="P(sup)=1.00">Moderate</td></tr>
+<tr><th class="rowh">tildrakizumab</th><td class="eff">-55</td><td class="eff">-40</td><td class="eff">-31</td><td class="eff">-31</td><td class="eff">-18</td><td class="eff">-10</td><td class="eff">-10</td><td class="eff">-7</td><td class="diag">34%<br><span class="k">IL-23 &middot; k=50</span></td><td class="cert low" title="P(sup)=0.93">Low</td></tr>
+<tr><th class="rowh">etanercept</th><td class="eff">-68</td><td class="eff">-53</td><td class="eff">-44</td><td class="eff">-44</td><td class="eff">-32</td><td class="eff">-23</td><td class="eff">-23</td><td class="eff">-20</td><td class="eff">-13</td><td class="diag">21%<br><span class="k">TNF &middot; k=72</span></td></tr>
+</tbody>
+</table>
+<p class="legend"><span><i class="sw" style="background:#0e3a1e"></i>High</span><span><i class="sw" style="background:#3a360e"></i>Moderate</span><span><i class="sw" style="background:#3a1f0e"></i>Low</span><span><i class="sw" style="background:#3a0e12"></i>Very low</span></p>
+<p class="note">Across 90 ordered comparisons: <b>Moderate: 58, Low: 32</b>. Lead <b>bimekizumab</b> (89% PASI-90). The established <b>IL-17/IL-23 &gt; TNF</b> hierarchy is reproduced with posterior probability: IL-17/23 mean 57% vs TNF mean 31% &rarr; P(IL-17/23 &gt; TNF) = 1.000.</p>
+</div>
+
+<div class="card">
+<h2>Transported absolute benefit &mdash; response &rarr; responders gained per 100 &amp; NNT vs placebo</h2>
+<p class="sub">A response rate alone is not a decision quantity; the absolute benefit and NNT depend on the target's placebo (background) PASI-90 rate. Lead <b>bimekizumab</b> response draws (89%) &times; documented placebo backgrounds, full posterior credible intervals.</p>
+<table>
+<thead><tr><th class="colh">Placebo background</th><th class="colh">Placebo PASI-90</th><th class="colh">Responders gained/100 (95% CrI)</th><th class="colh">NNT (95% CrI)</th></tr></thead>
+<tbody>
+<tr><td class="ag">low placebo background (~2%)</td><td>2%</td><td><b>87</b> (82, 91)</td><td>1.15 (1.23, 1.10)</td></tr>
+<tr><td class="ag">typical phase-3 placebo (~4%, reference) &#9733;</td><td>4%</td><td><b>85</b> (80, 89)</td><td>1.18 (1.26, 1.13)</td></tr>
+<tr><td class="ag">higher placebo (~7%)</td><td>7%</td><td><b>82</b> (76, 86)</td><td>1.22 (1.31, 1.17)</td></tr>
+</tbody>
+</table>
+<p class="note flag">Honest contrast with SGLT2/asthma: PASI-90 placebo response is low and stable (~2&ndash;7%), so the NNT is dominated by the (very high) active response, not the baseline &mdash; the top biologics gain tens of responders/100 at an NNT near 1&ndash;2. Placebo rates are reference-distribution values; this is PASI-90 response benefit only, not a comorbidity/safety claim.</p>
+<h2 style="margin-top:18px">Per-agent NNT at the reference placebo (4%)</h2>
+<table>
+<thead><tr><th class="colh">Agent</th><th class="colh">Response%</th><th class="colh">Gained/100</th><th class="colh">NNT (95% CrI)</th></tr></thead>
+<tbody>
+<tr><td class="ag">bimekizumab</td><td>89%</td><td>85</td><td><b>1.18</b> (1.26, 1.13)</td></tr>
+<tr><td class="ag">risankizumab</td><td>74%</td><td>70</td><td><b>1.42</b> (1.64, 1.28)</td></tr>
+<tr><td class="ag">ustekinumab</td><td>65%</td><td>61</td><td><b>1.63</b> (1.86, 1.47)</td></tr>
+<tr><td class="ag">ixekizumab</td><td>65%</td><td>61</td><td><b>1.65</b> (1.89, 1.48)</td></tr>
+<tr><td class="ag">brodalumab</td><td>53%</td><td>49</td><td><b>2.05</b> (3.03, 1.57)</td></tr>
+<tr><td class="ag">guselkumab</td><td>44%</td><td>40</td><td><b>2.51</b> (3.01, 2.14)</td></tr>
+<tr><td class="ag">secukinumab</td><td>44%</td><td>40</td><td><b>2.52</b> (3.16, 2.08)</td></tr>
+<tr><td class="ag">adalimumab</td><td>41%</td><td>37</td><td><b>2.71</b> (3.50, 2.18)</td></tr>
+<tr><td class="ag">tildrakizumab</td><td>34%</td><td>30</td><td><b>3.34</b> (5.87, 2.18)</td></tr>
+<tr><td class="ag">etanercept</td><td>21%</td><td>17</td><td><b>5.94</b> (10.84, 3.62)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>Honest scope</h2>
+<p class="sub">Psoriasis is the <b>fourth full-depth</b> generality class (after PCSK9 continuous-biomarker, SGLT2 survival/HR, and asthma count/rate), on the <b>binary/responder</b> path: Bayesian PASI-90 league + GRADE certainty + response&rarr;NNT transport + this offline dashboard. Logit hierarchical-means model (AACT posts the response %, not per-arm responder counts here; per-agent SD absorbs arm-size + between-arm spread). Star network (each agent vs placebo &rarr; indirect contrasts). Registry-native (AACT); placebo rates are an authoritative reference distribution; no IPD, no full text.</p>
+</div>
+
+<footer>Generated by <code>class4_psoriasis/psoriasis_dashboard.py</code> from <code>psoriasis_league.json</code> + <code>psoriasis_transport.json</code>. Fully offline &middot; no external assets. Decision-support DRAFT, not a guideline.</footer>
+</div>
+</body>
+</html>

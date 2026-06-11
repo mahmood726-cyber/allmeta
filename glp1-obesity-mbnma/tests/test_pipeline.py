@@ -232,6 +232,44 @@ def test_generality_class4_psoriasis_hierarchy():
     assert d['hierarchy_reproduced'] is True, 'should reproduce IL-17/IL-23 > TNF'
     assert d['il17_23_mean_pct'] > d['tnf_mean_pct']
 
+def test_psoriasis_league_bayesian_depth():
+    # 4th full-depth class: Bayesian binary/responder (PASI-90) draw-matrix league with CrI/P(sup)
+    d = _classfile('class4_psoriasis/psoriasis_league.json')
+    assert d['outcome_type'] == 'binary/responder' and 'bayesian' in d['inference'].lower()
+    assert d['rhat'] <= 1.01, 'Bayesian league must have converged'
+    # established hierarchy reproduced with posterior probability
+    ivt = d['il17_23_vs_tnf']
+    assert ivt['il_median_pct'] > ivt['tnf_median_pct']
+    assert ivt['p_il_gt_tnf'] >= 0.9, 'IL-17/IL-23 > TNF should be near-certain in the draws'
+    assert d['lead'] == d['ranking'][0]
+    # contrasts come from draws -> carry CrI + P(superiority), on the risk-difference (pp) scale
+    c0 = d['comparisons'][0]
+    assert 'cri_pp' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
+
+def test_psoriasis_transport_nnt_depth():
+    d = _classfile('class4_psoriasis/psoriasis_transport.json')
+    sc = d['placebo_scenarios']
+    assert len(sc) >= 3
+    # responders gained falls and NNT rises as the placebo background rises (gained = response - placebo)
+    gained = [s['responders_gained_per100'] for s in sc]
+    nnts = [s['nnt'] for s in sc]
+    assert gained == sorted(gained, reverse=True) and nnts == sorted(nnts)
+    assert any(s['primary'] for s in sc) and 'reference' in d['baseline_source'].lower()
+    # per-agent decision table present; top biologic NNT is small (active response dominates)
+    pa = d['per_agent_nnt_at_reference']
+    assert len(pa) >= 5 and pa[0]['nnt'] < 3, 'lead biologic NNT should be tiny vs placebo'
+
+def test_psoriasis_dashboard_offline():
+    p = os.path.join(ROOT, 'class4_psoriasis', 'psoriasis_dashboard.html')
+    if not os.path.exists(p):
+        pytest.skip('psoriasis_dashboard.html not built')
+    h = open(p, encoding='utf-8').read()
+    assert 'http://' not in h and 'https://wwwn' not in h, 'dashboard must be fully offline'
+    assert 'C:/' not in h and 'C:\\' not in h, 'no hardcoded local paths'
+    import re as _re
+    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
+    assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h and 'PASI-90' in h
+
 def test_pcsk9_league_depth():
     # frontier 2: PCSK9 promoted beyond a core repoint -> full league + per-pair GRADE certainty
     d = _classfile('class2_pcsk9/pcsk9_league.json')

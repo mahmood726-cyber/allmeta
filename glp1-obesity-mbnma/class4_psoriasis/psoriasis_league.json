@@ -1,0 +1,609 @@
+{
+ "class": "psoriasis biologics",
+ "outcome": "PASI-90 responder %",
+ "outcome_type": "binary/responder",
+ "inference": "Bayesian hierarchical RE on logit(PASI-90 response) (nutpie); pairwise contrasts (risk difference) from posterior draws",
+ "ranking": [
+  "bimekizumab",
+  "risankizumab",
+  "ustekinumab",
+  "ixekizumab",
+  "brodalumab",
+  "guselkumab",
+  "secukinumab",
+  "adalimumab",
+  "tildrakizumab",
+  "etanercept"
+ ],
+ "kper_arms": {
+  "adalimumab": 177,
+  "bimekizumab": 136,
+  "brodalumab": 35,
+  "etanercept": 72,
+  "guselkumab": 324,
+  "ixekizumab": 28,
+  "risankizumab": 48,
+  "secukinumab": 201,
+  "tildrakizumab": 50,
+  "ustekinumab": 75
+ },
+ "median_response_pct": {
+  "adalimumab": 40.9,
+  "bimekizumab": 89.0,
+  "brodalumab": 52.8,
+  "etanercept": 20.8,
+  "guselkumab": 43.9,
+  "ixekizumab": 64.7,
+  "risankizumab": 74.3,
+  "secukinumab": 43.7,
+  "tildrakizumab": 33.9,
+  "ustekinumab": 65.2
+ },
+ "agent_class": {
+  "adalimumab": "TNF",
+  "bimekizumab": "IL-17/23",
+  "brodalumab": "IL-17",
+  "etanercept": "TNF",
+  "guselkumab": "IL-23",
+  "ixekizumab": "IL-17",
+  "risankizumab": "IL-23",
+  "secukinumab": "IL-17",
+  "tildrakizumab": "IL-23",
+  "ustekinumab": "IL-12/23"
+ },
+ "il17_23_vs_tnf": {
+  "il_median_pct": 57.0,
+  "tnf_median_pct": 31.0,
+  "p_il_gt_tnf": 1.0
+ },
+ "rhat": 1.0,
+ "lead": "bimekizumab",
+ "comparisons": [
+  {
+   "a": "bimekizumab",
+   "b": "risankizumab",
+   "rd_pp": 14.6,
+   "cri_pp": [
+    5.4,
+    24.5
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "ustekinumab",
+   "rd_pp": 23.7,
+   "cri_pp": [
+    15.2,
+    32.2
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "ixekizumab",
+   "rd_pp": 24.2,
+   "cri_pp": [
+    15.5,
+    33.0
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "brodalumab",
+   "rd_pp": 35.9,
+   "cri_pp": [
+    20.3,
+    52.4
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "guselkumab",
+   "rd_pp": 44.9,
+   "cri_pp": [
+    36.5,
+    52.7
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "secukinumab",
+   "rd_pp": 45.1,
+   "cri_pp": [
+    35.3,
+    54.1
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "adalimumab",
+   "rd_pp": 47.8,
+   "cri_pp": [
+    37.6,
+    57.2
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "tildrakizumab",
+   "rd_pp": 54.8,
+   "cri_pp": [
+    37.8,
+    68.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bimekizumab",
+   "b": "etanercept",
+   "rd_pp": 67.9,
+   "cri_pp": [
+    56.4,
+    76.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "risankizumab",
+   "b": "ustekinumab",
+   "rd_pp": 9.0,
+   "cri_pp": [
+    -2.4,
+    20.0
+   ],
+   "p_superiority": 0.943,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "risankizumab",
+   "b": "ixekizumab",
+   "rd_pp": 9.6,
+   "cri_pp": [
+    -2.0,
+    20.5
+   ],
+   "p_superiority": 0.946,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "risankizumab",
+   "b": "brodalumab",
+   "rd_pp": 21.3,
+   "cri_pp": [
+    4.0,
+    38.8
+   ],
+   "p_superiority": 0.993,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "risankizumab",
+   "b": "guselkumab",
+   "rd_pp": 30.3,
+   "cri_pp": [
+    19.4,
+    40.4
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "risankizumab",
+   "b": "secukinumab",
+   "rd_pp": 30.5,
+   "cri_pp": [
+    17.9,
+    41.5
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "risankizumab",
+   "b": "adalimumab",
+   "rd_pp": 33.2,
+   "cri_pp": [
+    20.5,
+    44.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "risankizumab",
+   "b": "tildrakizumab",
+   "rd_pp": 40.1,
+   "cri_pp": [
+    21.6,
+    55.5
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "risankizumab",
+   "b": "etanercept",
+   "rd_pp": 53.2,
+   "cri_pp": [
+    39.3,
+    64.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "ixekizumab",
+   "rd_pp": 0.5,
+   "cri_pp": [
+    -9.6,
+    10.8
+   ],
+   "p_superiority": 0.539,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "brodalumab",
+   "rd_pp": 12.4,
+   "cri_pp": [
+    -4.5,
+    29.7
+   ],
+   "p_superiority": 0.925,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "guselkumab",
+   "rd_pp": 21.3,
+   "cri_pp": [
+    11.2,
+    31.0
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "secukinumab",
+   "rd_pp": 21.4,
+   "cri_pp": [
+    10.3,
+    31.9
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "adalimumab",
+   "rd_pp": 24.2,
+   "cri_pp": [
+    12.4,
+    35.2
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "tildrakizumab",
+   "rd_pp": 31.0,
+   "cri_pp": [
+    13.7,
+    45.8
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ustekinumab",
+   "b": "etanercept",
+   "rd_pp": 44.2,
+   "cri_pp": [
+    31.1,
+    54.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ixekizumab",
+   "b": "brodalumab",
+   "rd_pp": 11.8,
+   "cri_pp": [
+    -5.1,
+    29.3
+   ],
+   "p_superiority": 0.912,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "ixekizumab",
+   "b": "guselkumab",
+   "rd_pp": 20.8,
+   "cri_pp": [
+    10.5,
+    30.3
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ixekizumab",
+   "b": "secukinumab",
+   "rd_pp": 20.9,
+   "cri_pp": [
+    9.7,
+    31.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ixekizumab",
+   "b": "adalimumab",
+   "rd_pp": 23.6,
+   "cri_pp": [
+    12.0,
+    34.6
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ixekizumab",
+   "b": "tildrakizumab",
+   "rd_pp": 30.6,
+   "cri_pp": [
+    13.0,
+    45.3
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "ixekizumab",
+   "b": "etanercept",
+   "rd_pp": 43.7,
+   "cri_pp": [
+    30.8,
+    54.5
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "brodalumab",
+   "b": "guselkumab",
+   "rd_pp": 9.0,
+   "cri_pp": [
+    -8.1,
+    25.4
+   ],
+   "p_superiority": 0.847,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "brodalumab",
+   "b": "secukinumab",
+   "rd_pp": 8.9,
+   "cri_pp": [
+    -8.5,
+    26.2
+   ],
+   "p_superiority": 0.84,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "brodalumab",
+   "b": "adalimumab",
+   "rd_pp": 11.8,
+   "cri_pp": [
+    -6.0,
+    29.0
+   ],
+   "p_superiority": 0.901,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "brodalumab",
+   "b": "tildrakizumab",
+   "rd_pp": 18.4,
+   "cri_pp": [
+    -3.8,
+    38.6
+   ],
+   "p_superiority": 0.95,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "brodalumab",
+   "b": "etanercept",
+   "rd_pp": 31.6,
+   "cri_pp": [
+    13.0,
+    48.5
+   ],
+   "p_superiority": 0.999,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "guselkumab",
+   "b": "secukinumab",
+   "rd_pp": 0.1,
+   "cri_pp": [
+    -10.4,
+    10.6
+   ],
+   "p_superiority": 0.506,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "guselkumab",
+   "b": "adalimumab",
+   "rd_pp": 3.0,
+   "cri_pp": [
+    -8.1,
+    14.0
+   ],
+   "p_superiority": 0.7,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "guselkumab",
+   "b": "tildrakizumab",
+   "rd_pp": 9.9,
+   "cri_pp": [
+    -7.3,
+    24.8
+   ],
+   "p_superiority": 0.876,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "guselkumab",
+   "b": "etanercept",
+   "rd_pp": 22.9,
+   "cri_pp": [
+    10.4,
+    33.2
+   ],
+   "p_superiority": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "secukinumab",
+   "b": "adalimumab",
+   "rd_pp": 2.8,
+   "cri_pp": [
+    -9.2,
+    14.5
+   ],
+   "p_superiority": 0.679,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "secukinumab",
+   "b": "tildrakizumab",
+   "rd_pp": 9.8,
+   "cri_pp": [
+    -8.1,
+    25.4
+   ],
+   "p_superiority": 0.859,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "secukinumab",
+   "b": "etanercept",
+   "rd_pp": 22.7,
+   "cri_pp": [
+    9.5,
+    34.4
+   ],
+   "p_superiority": 0.999,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "adalimumab",
+   "b": "tildrakizumab",
+   "rd_pp": 7.1,
+   "cri_pp": [
+    -10.9,
+    22.7
+   ],
+   "p_superiority": 0.787,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "adalimumab",
+   "b": "etanercept",
+   "rd_pp": 20.0,
+   "cri_pp": [
+    6.7,
+    31.9
+   ],
+   "p_superiority": 0.997,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "tildrakizumab",
+   "b": "etanercept",
+   "rd_pp": 12.8,
+   "cri_pp": [
+    -3.7,
+    31.3
+   ],
+   "p_superiority": 0.934,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  }
+ ],
+ "certainty_counts": {
+  "Moderate": 58,
+  "Low": 32
+ },
+ "k1_insufficient": [],
+ "depth_note": "FOURTH full-depth class: Bayesian draw-matrix league on a binary/responder outcome (PASI-90), logit hierarchical RE -> response% CrI + risk-difference contrasts + P(superiority), same GRADE/CINeMA domains as nma_league.py. Reproduces IL-17/IL-23 > TNF with posterior probability. Logit hierarchical-means form (AACT posts response %, not per-arm responder counts here; sigma absorbs arm-size + between-arm spread). Star network (indirect). No IPD."
+}
