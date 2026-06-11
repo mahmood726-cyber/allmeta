@@ -85,12 +85,12 @@ test("review-project is a usable tabbed SPA on a phone viewport", async ({ page 
   await page.setViewportSize({ width: 390, height: 844 });   // iPhone 12/13/14 logical px
   await page.goto("/review-project/index.html");
 
-  // exactly one stage panel visible at a time (tabbed, not a long scroll)
+  // exactly one panel visible at a time (tabbed, not a long scroll); Overview is the landing
   await expect(page.locator(".stage-panel.active")).toHaveCount(1);
-  await expect(page.locator('.stage-panel.active[data-tab="protocol"]')).toBeVisible();
+  await expect(page.locator('.stage-panel.active[data-tab="overview"]')).toBeVisible();
 
-  // the tab bar holds all 9 stages + Bundle and scrolls horizontally (no wrap/clip)
-  expect(await page.locator("#tabnav .tab").count()).toBe(10);
+  // the tab bar holds Overview + 9 stages + Bundle and scrolls horizontally (no wrap/clip)
+  expect(await page.locator("#tabnav .tab").count()).toBe(11);
   const overflow = await page.evaluate(() => {
     const n = document.getElementById("tabnav");
     return { scrollable: n.scrollWidth > n.clientWidth + 2, bodyOverflow: document.documentElement.scrollWidth - window.innerWidth };
@@ -101,7 +101,7 @@ test("review-project is a usable tabbed SPA on a phone viewport", async ({ page 
   // tapping a tab switches the visible panel
   await page.locator('#tab-btn-synthesis').click();
   await expect(page.locator('.stage-panel.active[data-tab="synthesis"]')).toBeVisible();
-  await expect(page.locator('.stage-panel[data-tab="protocol"]')).toBeHidden();
+  await expect(page.locator('.stage-panel[data-tab="overview"]')).toBeHidden();
 
   // the in-panel "next" stepper advances the workflow
   await page.locator('.stage-panel.active [data-go="robustness"]').click();
@@ -125,7 +125,7 @@ test("review-project tabs are correctly ARIA-wired and the progress counter is h
       tabindex: t.getAttribute('tabindex'),
     }));
   });
-  expect(wiring.length).toBe(10);
+  expect(wiring.length).toBe(11);
   expect(wiring.every(w => w.ok)).toBe(true);                       // all aria-controls resolve
   // roving tabindex: exactly one tab is focusable (tabindex=0) and aria-selected=true
   expect(wiring.filter(w => w.tabindex === "0").length).toBe(1);
@@ -133,4 +133,46 @@ test("review-project tabs are correctly ARIA-wired and the progress counter is h
 
   // Report is draft-only, so the denominator excludes it (8, not 9) — never an unreachable count
   await expect(page.locator("#progress")).toContainText("of 8 stages captured");
+});
+
+test("review-project Overview funnel and inline stage previews render from the bus", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await page.evaluate(() => {
+    localStorage.setItem("sr-project-v1", JSON.stringify({ title: "Test SR", pico: { population: "adults with HF", intervention: "drug X", outcome: "mortality" } }));
+    localStorage.setItem("sr-records-v1", JSON.stringify({ records: [
+      { title: "A", r1: { d: "include" }, r2: { d: "include" } },
+      { title: "B", r1: { d: "exclude" }, r2: { d: "exclude" } },
+      { title: "C", r1: { d: "include" }, r2: { d: "include" } }
+    ] }));
+    localStorage.setItem("ma-studies-v1", JSON.stringify({ _schema: "ma-studies-v1", studies: [
+      { label: "Trial A", est: -0.15, se: 0.05 }, { label: "Trial B", est: -0.10, se: 0.06 }, { label: "Trial C", est: -0.20, se: 0.07 }
+    ] }));
+    // RoB app state (key rob-assess-v1, the real key) with explicit overrides
+    localStorage.setItem("rob-assess-v1", JSON.stringify({ studies: [
+      { label: "Trial A", framework: "RoB 2", domains: [{ id: "D1" }, { id: "D2" }], override: { D1: "low", D2: "high" }, suggestion: { verdicts: { D1: "low", D2: "high" } } }
+    ] }));
+    localStorage.setItem("grade-sof-v1", JSON.stringify({ outcomes: [{ outcome: "All-cause mortality", certainty: "moderate" }] }));
+    window.MaPooled.write(window.MaPooled.fromEstSE(0.86, 0.05, { scale: "ratio", measure: "HR", k: 3 }));
+  });
+  await page.click("#btn-refresh");
+
+  // Overview funnel: 6 rows, imported=3, included=2 (consensus), studies=3, pooled k=3
+  await expect(page.locator("#funnel .frow")).toHaveCount(6);
+  await expect(page.locator("#funnel")).toContainText("Records imported");
+  await expect(page.locator("#ov-cards")).toContainText("Included studies");
+
+  // inline previews per stage (read from the bus)
+  await expect(page.locator('#panel-protocol .preview')).toContainText("adults with HF");
+  await expect(page.locator('#panel-extraction .preview table tbody tr')).toHaveCount(3);
+  // fromEstSE treats 0.86 as a log-HR on the ratio scale, so the natural-scale point is exp(0.86) ≈ 2.36
+  await expect(page.locator('#panel-synthesis .preview .result-card .big')).toContainText("2.36");
+  await expect(page.locator('#panel-synthesis .preview svg.mini-forest')).toHaveCount(1);  // hidden panel: assert presence, not visibility
+  await expect(page.locator('#panel-synthesis .preview svg.mini-forest polygon')).toHaveCount(1);  // pooled diamond drawn
+  // RoB traffic-lights: domain D1 override=low (green), D2 override=high (red),
+  // and the overall verdict is high (RoB2: any high domain -> high overall).
+  await expect(page.locator('#panel-appraisal .preview .rl:not(.overall).rl-low')).toHaveCount(1);
+  await expect(page.locator('#panel-appraisal .preview .rl:not(.overall).rl-high')).toHaveCount(1);
+  await expect(page.locator('#panel-appraisal .preview .rl.overall.rl-high')).toHaveCount(1);
+  // GRADE SoF certainty pill
+  await expect(page.locator('#panel-certainty .preview .sof-moderate')).toContainText("Moderate");
 });
