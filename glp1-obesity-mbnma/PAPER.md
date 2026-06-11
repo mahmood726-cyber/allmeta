@@ -138,6 +138,30 @@ the decision driver. A *reportable* ICER/CEAC still needs real drug price + heal
 **not in AACT/CT.gov/PubMed**; the engine handoff is demonstrated end-to-end but cost/utility inputs are
 **placeholder, not fabricated as evidence** (the defensible boundary). See `HTA_INTEGRATION.md`.
 
+## 4d. From synthesis to a transparent guideline scaffold (wide-gap methods, certainty, validation)
+Five capabilities that the registry's structured fields enable but published effect sizes cannot support
+were added and each honestly bounded: **component NMA** (validated to 1e-9 vs `netmeta::discomb`; receptor
+decomposition GLP-1 +13.1 / GIP +4.8 / glucagon +5.6 pp, triple agonism sub-additive); **trial-level
+surrogacy** (weight loss is *not* a validated CV surrogate — I²_HR=0% across the class — while the same
+method returns the expected validated direction for LDL→MACE on a PCSK9-inhibitor repoint, i.e. it
+discriminates); **joint benefit–risk** (weight–nausea frontier, orforglipron dominated); **registry-aware
+publication bias** (the 6 observed ghosts show an Egger asymmetry that is heterogeneity, not suppression —
+a trim-and-fill "correction" would be spurious); and **trial-sequential analysis** (semaglutide MACE crosses
+the O'Brien–Fleming boundary while 386 trials still enrol ~172k patients). These feed a transparent
+**GRADE + CINeMA** scaffold: the tirzepatide-vs-semaglutide contrast — verified against the exact
+joint-posterior (+2.9 pp, 95% CrI −0.14 to 5.98; posterior correlation +0.08, so the conservative CrI was
+not over-wide) — is rated **Low certainty** by both frameworks, yielding a *conditional* draft
+recommendation that **matches a MAGIC GRADE living guideline** (weak, favour tirzepatide in obesity;
+DOI 10.1136/bmj-2024-082071) and a published ranking (Shi 2024). The computable domains are pre-filled and
+traceable; judgement domains (risk of bias, values) remain the panel's. Two portfolio integrity methods
+were folded in: a **Benford digit screen** (applied to enrolment, not bounded percentages; the marginal
+deviation is the benign round-target signature) joining ghost-detection and INSPECT-SR, and **entropy
+balancing** (`nmatransport`), which is *infeasible* network-wide here because every trial is pure-obesity
+or pure-T2D — the very **binary-pure-strata structure that makes the γ-transport's extrapolation valid**, a
+duality that vindicates the transport while making its extrapolation assumption explicit for the indirectness
+domain. The whole chain is one-command reproducible and self-verifying (29-test numerical-baseline contract).
+See `WIDE_GAP_METHODS.md`, `GUIDELINE_SUPPORT.md`, `class2_pcsk9/GENERALITY.md`.
+
 ## 5. Limitations
 No IPD → the rigorous transport estimators (ML-NMR/MAIC) are out of reach; transport is binary-modifier
 standardization, valid here only because the modifier is binary with pure strata (agent-specific γ fit:
