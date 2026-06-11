@@ -116,6 +116,16 @@ Certainty across 42 comparisons: 8 Moderate, 24 Low, 10 Very low. No comparison 
 star network, no incoherence check). This is the discipline of GRADE/CINeMA applied to *every* cell, not
 just the headline contrast — telling a panel precisely which of the league-table claims it can lean on.
 
+## One-command regeneration + dashboard
+The entire chain — registry → NMA → wide-gap methods → HTA → exact contrast → league → GRADE/CINeMA →
+exports — regenerates from the pinned AACT snapshot via **`python run_all.py`** (38 dependency-ordered
+stages, output-cached; `--fast` skips the slow Bayesian/AACT-load stages; `--force` re-runs all; the runner
+is interpreter-aware, using `node` for the `.js` stages). The final stage builds **`dashboard.html`** — a
+single self-contained, fully-offline page that stitches the draft recommendation, Summary of Findings,
+Evidence-to-Decision, the colour-coded league table, and the seven wide-gap/HTA result cards into one
+panel-openable view. Every number on it re-runs from a cited data file, so a guideline writer can audit and
+reproduce the whole assessment from one command.
+
 ## Honest scope
 - This is a **decision-support scaffold**, not a guideline. The MID, the RoB, and all judgement domains are
   the panel's. The contrast is now the **exact joint-posterior** estimate (verified ≈ the conservative one);

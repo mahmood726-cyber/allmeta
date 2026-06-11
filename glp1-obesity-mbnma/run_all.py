@@ -32,6 +32,30 @@ STAGES = [
     ('9b joint sensitivity',  'fix3_joint_sensitivity.py',    HERE, 'transport_joint_sensitivity.json', False),
     ('10 synthesis',          'workstream_synthesis.py',      AACT, 'synthesis.json',           True),
     ('11 report',             'build_continuous_report.py',   HERE, 'continuous_report.html',   False),
+    # --- transport (needed by HTA/CNMA/GRADE) ---
+    ('8f transport v2 (NUTS)', 'pymc_transport_v2.py',        HERE, 'transport_v2.json',        True),
+    # --- wide-gap, clinician-facing methods ---
+    ('W1 component NMA',      'cnma_incretin.py',             HERE, 'cnma_incretin.json',       False),
+    ('W3 joint benefit-risk', 'joint_benefit_risk.py',        HERE, 'joint_benefit_risk.json',  False),
+    ('W4 registry pub-bias',  'registry_pubbias.py',          HERE, 'registry_pubbias.json',    False),
+    ('W2a harvest CVOT wt',   'harvest_cvot_weight.py',       AACT, 'cvot_weight_outcomes.csv',  True),
+    ('W2b surrogate (k=6)',   'surrogate_validation.py',      AACT, 'surrogate_validation.json', True),
+    ('W2c harvest class wt',  'harvest_class_weight.py',      AACT, 'class_surrogate_pairs.csv', True),
+    ('W2d surrogate (class)', 'extend_surrogate.py',          HERE, 'extend_surrogate.json',    False),
+    ('W5 TSA + pipeline',     'trial_sequential.py',          AACT, 'trial_sequential.json',     True),
+    # --- HTA integrator ---
+    ('H1 HTA network MCDA',   'hta_mcda.py',                  HERE, 'hta_mcda.json',            False),
+    ('H2 HTA EVPPI handoff',  'hta_evppi_handoff.js',         HERE, 'hta_evppi.json',           False),
+    # --- exact contrast + league (NUTS; league reuses nma_draws.npz) ---
+    ('N1 exact contrast',     'nma_contrast.py',              HERE, 'nma_contrast.json',        True),
+    ('N2 league table',       'nma_league.py',                HERE, 'nma_league.json',          True),
+    # --- guideline chain (GRADE -> CINeMA -> exports) ---
+    ('G0 GRADE inputs',       'grade_inputs.py',              HERE, 'grade_inputs.json',        False),
+    ('G1 GRADE certainty',    'grade_recommendation.js',      HERE, 'grade_recommendation.json', False),
+    ('G2 CINeMA confidence',  'cinema_confidence.py',         HERE, 'cinema_confidence.json',   False),
+    ('G3 GRADEpro/SoF export', 'grade_export.py',             HERE, 'grade_export.html',        False),
+    ('G4 league export',      'nma_league_export.py',         HERE, 'nma_league.html',          False),
+    ('G5 guideline dashboard', 'dashboard.py',                HERE, 'dashboard.html',           False),
 ]
 
 print('Registry-native synthesis system — orchestrator')
@@ -48,7 +72,8 @@ for name, script, cwd, out, slow in STAGES:
     if os.path.exists(outpath) and not FORCE:
         print(f'  [{name:22s}] cached -> {out}'); skip += 1; continue
     t0 = time.time()
-    r = subprocess.run([sys.executable, os.path.join(HERE, script)], cwd=cwd,
+    interp = ['node'] if script.endswith('.js') else [sys.executable]
+    r = subprocess.run(interp + [os.path.join(HERE, script)], cwd=cwd,
                        capture_output=True, text=True, timeout=900)
     dt = time.time() - t0
     if r.returncode == 0 and os.path.exists(outpath):
