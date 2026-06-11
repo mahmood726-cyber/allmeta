@@ -270,6 +270,49 @@ def test_psoriasis_dashboard_offline():
     assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
     assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h and 'PASI-90' in h
 
+def test_ra_league_bayesian_depth():
+    # 5th full-depth class + 5th outcome TYPE: ordinal ACR ladder, proportional-odds graded-response
+    d = _classfile('class6_ra/ra_league.json')
+    assert d['outcome_type'] == 'ordinal/ordered-categorical'
+    assert 'bayesian' in d['inference'].lower() and 'proportional-odds' in d['inference'].lower()
+    assert d['rhat'] <= 1.01, 'Bayesian league must have converged'
+    # ordered cutpoints by construction: tau_20 <= tau_50 <= tau_70 (the ACR difficulty ladder)
+    cut = d['cutpoints_logit']
+    assert cut['tau_20'] <= cut['tau_50'] <= cut['tau_70']
+    # class-level signal: advanced-MoA (IL-6/JAK) at least matches TNF on the latent scale
+    avt = d['adv_vs_tnf']
+    assert avt['adv_median_theta'] > avt['tnf_median_theta']
+    # honesty: arm-level heterogeneity is flagged (large proportional-odds residual), not a clean winner
+    assert d['heterogeneity_flag'] is True and d['proportional_odds_rmse_logit'] > 0
+    assert d['lead'] == d['ranking'][0]
+    # contrasts come from the latent draw matrix -> carry CrI + P(superiority)
+    c0 = d['comparisons'][0]
+    assert 'cri_logor' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
+
+def test_ra_transport_nnt_depth():
+    d = _classfile('class6_ra/ra_transport.json')
+    assert d['threshold'] == 'ACR50'
+    sc = d['placebo_scenarios']
+    assert len(sc) >= 3
+    # responders gained falls and NNT rises as the placebo ACR50 background rises
+    gained = [s['responders_gained_per100'] for s in sc]
+    nnts = [s['nnt'] for s in sc]
+    assert gained == sorted(gained, reverse=True) and nnts == sorted(nnts)
+    assert any(s['primary'] for s in sc) and 'reference' in d['baseline_source'].lower()
+    pa = d['per_agent_nnt_at_reference']
+    assert len(pa) >= 10 and pa[0]['nnt'] < 5, 'lead-agent ACR50 NNT should be single-digit vs placebo'
+
+def test_ra_dashboard_offline():
+    p = os.path.join(ROOT, 'class6_ra', 'ra_dashboard.html')
+    if not os.path.exists(p):
+        pytest.skip('ra_dashboard.html not built')
+    h = open(p, encoding='utf-8').read()
+    assert 'http://' not in h and 'https://wwwn' not in h, 'dashboard must be fully offline'
+    assert 'C:/' not in h and 'C:\\' not in h, 'no hardcoded local paths'
+    import re as _re
+    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
+    assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h and 'ACR' in h
+
 def test_pcsk9_league_depth():
     # frontier 2: PCSK9 promoted beyond a core repoint -> full league + per-pair GRADE certainty
     d = _classfile('class2_pcsk9/pcsk9_league.json')

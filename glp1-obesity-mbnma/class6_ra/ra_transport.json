@@ -1,0 +1,181 @@
+{
+ "class": "rheumatoid-arthritis biologics/JAK",
+ "stage": "transport (predicted ACR50 -> responders gained/100 + NNT vs placebo)",
+ "outcome_type": "ordinal/ordered-categorical",
+ "threshold": "ACR50",
+ "lead": "etanercept",
+ "lead_acr50_pct": 79.1,
+ "placebo_scenarios": [
+  {
+   "placebo_background": "low placebo ACR50 (~5%, monotherapy)",
+   "placebo_pct": 5.0,
+   "responders_gained_per100": 74.1,
+   "gained_cri": [
+    70.5,
+    77.3
+   ],
+   "nnt": 1.35,
+   "nnt_cri": [
+    1.29,
+    1.42
+   ],
+   "primary": false
+  },
+  {
+   "placebo_background": "typical placebo ACR50 (~10%, +MTX, reference)",
+   "placebo_pct": 10.0,
+   "responders_gained_per100": 69.1,
+   "gained_cri": [
+    65.5,
+    72.3
+   ],
+   "nnt": 1.45,
+   "nnt_cri": [
+    1.38,
+    1.53
+   ],
+   "primary": true
+  },
+  {
+   "placebo_background": "higher placebo ACR50 (~15%)",
+   "placebo_pct": 15.0,
+   "responders_gained_per100": 64.1,
+   "gained_cri": [
+    60.5,
+    67.3
+   ],
+   "nnt": 1.56,
+   "nnt_cri": [
+    1.49,
+    1.65
+   ],
+   "primary": false
+  }
+ ],
+ "primary_scenario": "typical placebo ACR50 (~10%, +MTX, reference)",
+ "reference_placebo_pct": 10.0,
+ "per_agent_nnt_at_reference": [
+  {
+   "agent": "etanercept",
+   "acr50_pct": 79.1,
+   "gained_per100": 69.1,
+   "nnt": 1.45,
+   "nnt_cri": [
+    1.38,
+    1.53
+   ]
+  },
+  {
+   "agent": "upadacitinib",
+   "acr50_pct": 71.4,
+   "gained_per100": 61.4,
+   "nnt": 1.63,
+   "nnt_cri": [
+    1.53,
+    1.77
+   ]
+  },
+  {
+   "agent": "tofacitinib",
+   "acr50_pct": 61.2,
+   "gained_per100": 51.2,
+   "nnt": 1.95,
+   "nnt_cri": [
+    1.8,
+    2.13
+   ]
+  },
+  {
+   "agent": "certolizumab",
+   "acr50_pct": 57.7,
+   "gained_per100": 47.7,
+   "nnt": 2.1,
+   "nnt_cri": [
+    1.74,
+    2.68
+   ]
+  },
+  {
+   "agent": "baricitinib",
+   "acr50_pct": 57.5,
+   "gained_per100": 47.5,
+   "nnt": 2.1,
+   "nnt_cri": [
+    1.81,
+    2.57
+   ]
+  },
+  {
+   "agent": "infliximab",
+   "acr50_pct": 48.7,
+   "gained_per100": 38.7,
+   "nnt": 2.59,
+   "nnt_cri": [
+    1.96,
+    3.71
+   ]
+  },
+  {
+   "agent": "sarilumab",
+   "acr50_pct": 42.7,
+   "gained_per100": 32.7,
+   "nnt": 3.06,
+   "nnt_cri": [
+    1.96,
+    6.25
+   ]
+  },
+  {
+   "agent": "rituximab",
+   "acr50_pct": 41.2,
+   "gained_per100": 31.2,
+   "nnt": 3.21,
+   "nnt_cri": [
+    2.69,
+    3.9
+   ]
+  },
+  {
+   "agent": "tocilizumab",
+   "acr50_pct": 40.8,
+   "gained_per100": 30.8,
+   "nnt": 3.25,
+   "nnt_cri": [
+    2.91,
+    3.66
+   ]
+  },
+  {
+   "agent": "adalimumab",
+   "acr50_pct": 37.0,
+   "gained_per100": 27.0,
+   "nnt": 3.7,
+   "nnt_cri": [
+    3.26,
+    4.24
+   ]
+  },
+  {
+   "agent": "abatacept",
+   "acr50_pct": 29.6,
+   "gained_per100": 19.6,
+   "nnt": 5.1,
+   "nnt_cri": [
+    4.39,
+    6.04
+   ]
+  },
+  {
+   "agent": "golimumab",
+   "acr50_pct": 28.0,
+   "gained_per100": 18.0,
+   "nnt": 5.56,
+   "nnt_cri": [
+    3.07,
+    14.67
+   ]
+  }
+ ],
+ "baseline_source": "reference-distribution ACR50 placebo response rates from the major RA-biologic/JAK trial placebo arms (authoritative reference, NOT registry-extracted counts)",
+ "depth_note": "ordinal absolute transport: per-agent predicted-ACR50 Bayesian draws -> responders gained/100 + NNT vs placebo across placebo-background (MTX-dependent) scenarios, with posterior CrI. RA placebo ACR50 is non-trivial so the baseline moves the NNT (the ordinal echo of the SGLT2/asthma baseline-risk story), unlike psoriasis. RA = FIFTH full-depth class (ordinal), after PCSK9 (continuous) + SGLT2 (survival) + asthma (count/rate) + psoriasis (binary). Placebo rates are reference values; ACR50 response benefit only. No IPD."
+}

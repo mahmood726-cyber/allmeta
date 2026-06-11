@@ -13,11 +13,12 @@ transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = c
 LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **three full-depth classes** — PCSK9
 (continuous), SGLT2 (survival/HR), asthma (count/rate) — each carrying a **Bayesian-draw league** (CrI +
 P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus **complementary methods**
-(UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`). **All four binary/continuous/survival/count-rate outcome types now
-have a full-depth class** — PCSK9 (continuous), SGLT2 (survival/HR), asthma (count/rate), and **psoriasis
-(binary/responder, PASI-90)** — each with a Bayesian-draw league + GRADE + transport + offline dashboard.
-One-command reproducible (`python run_all.py`), **49-test** self-verifying. Key docs: `PAPER.md`,
-`GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+(UBCMA + GRMA, `COMPLEMENTARY_METHODS.md`). **All FIVE outcome types now have a full-depth class** — PCSK9
+(continuous), SGLT2 (survival/HR), asthma (count/rate), psoriasis (binary/responder, PASI-90), and **RA
+(ordinal, ACR20>50>70 ladder)** — each with a Bayesian-draw league + GRADE + transport + offline dashboard, and
+**all five are now wired into `run_all.py`** (stages C2–C6, no longer standalone). One-command reproducible
+(`python run_all.py`), **52-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`,
+`WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
 1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
@@ -100,8 +101,31 @@ One-command reproducible (`python run_all.py`), **49-test** self-verifying. Key 
      Pinned by `test_psoriasis_dashboard_offline`.
    `psoriasis_results.json` kept as the core repoint. Logit hierarchical-means form (AACT posts the response %,
    not per-arm responder counts here; per-agent SD absorbs arm-size + between-arm spread). Star network.
-   Suite now **49 green**. **All four outcome types now have a full-depth class.** Next depth idea: wire the
-   class leagues into `run_all.py` (currently standalone, like all class scripts), or add a 5th outcome family.
+   Suite now **49 green**.
+
+   **FIFTH outcome type + FIFTH full-depth class — RA ordinal (`class6_ra/`), DONE this session:**
+   - **league** — `ra_league_bayes.py` → `ra_league.json` (+ `ra_acr_draws.npz`, gitignored): the new outcome
+     type is **ordinal / ordered-categorical** (the ACR20>ACR50>ACR70 response ladder). Honest model = a
+     **Bayesian proportional-odds graded-response**: one latent efficacy θ_a per agent + three SHARED ordered
+     cutpoints (logit P[reach L] = θ_a − τ_L), nutpie **R̂=1.0000**, 12 agents × 3 thresholds = 4275 arm-rows.
+     Latent draw matrix → **log-OR** contrasts + P(superiority) + predicted ACR50%, same GRADE/CINeMA domains.
+     Class-level advanced-MoA ≥ TNF holds (P(IL-6/JAK>TNF)=0.91) but the engine **flags** the cross-agent
+     ranking as arm-level heterogeneity — proportional-odds residual RMSE=2.0, a TNF agent (etanercept) leads
+     while the class-mean favours advanced-MoA → not a clean winner (the ordinal echo of the asthma I²=96%
+     flag). `heterogeneity_flag=true` in the JSON. Pinned by `test_ra_league_bayesian_depth`.
+   - **transport** — `ra_transport.py` → `ra_transport.json`: predicted-ACR50 draws → **responders gained/100
+     + NNT** vs placebo across MTX-dependent placebo backgrounds (~5/10/15%). Unlike psoriasis, RA placebo
+     ACR50 is non-trivial so the baseline moves the NNT. Pinned by `test_ra_transport_nnt_depth`.
+   - **dashboard** — `ra_dashboard.py` → `ra_dashboard.html` (offline). Pinned by `test_ra_dashboard_offline`.
+   `ra_results.json` written as the core repoint. Suite now **52 green**.
+
+   **WIRING — class leagues into `run_all.py` (DONE this session):** all five classes' league + transport +
+   dashboard are now STAGES `C2a…C6c` (17 new stages) in `run_all.py` (league stages slow=AACT/NUTS,
+   transport/dashboard fast). They skip-on-output like every other stage; smoke-tested by deleting one fast
+   output and confirming the orchestrator regenerates it. They are no longer standalone.
+
+   Next depth idea: a 6th outcome family (e.g. proportion / single-arm incidence, or DTA Se/Sp), or give the
+   RA league a true placebo-anchored ordinal NMA (needs per-arm responder counts → currently AACT posts %s).
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.

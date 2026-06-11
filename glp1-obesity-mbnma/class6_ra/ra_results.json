@@ -1,0 +1,98 @@
+{
+ "class": "rheumatoid-arthritis biologics/JAK",
+ "outcome": "ACR20/50/70 ordered response ladder",
+ "outcome_type": "ordinal/ordered-categorical",
+ "agents": [
+  {
+   "agent": "etanercept",
+   "class": "TNF",
+   "theta": 1.349,
+   "acr50_pct": 79.1,
+   "k_rows": 421
+  },
+  {
+   "agent": "upadacitinib",
+   "class": "JAK",
+   "theta": 0.936,
+   "acr50_pct": 71.4,
+   "k_rows": 340
+  },
+  {
+   "agent": "tofacitinib",
+   "class": "JAK",
+   "theta": 0.477,
+   "acr50_pct": 61.2,
+   "k_rows": 507
+  },
+  {
+   "agent": "certolizumab",
+   "class": "TNF",
+   "theta": 0.331,
+   "acr50_pct": 57.7,
+   "k_rows": 88
+  },
+  {
+   "agent": "baricitinib",
+   "class": "JAK",
+   "theta": 0.323,
+   "acr50_pct": 57.5,
+   "k_rows": 143
+  },
+  {
+   "agent": "infliximab",
+   "class": "TNF",
+   "theta": -0.032,
+   "acr50_pct": 48.7,
+   "k_rows": 68
+  },
+  {
+   "agent": "sarilumab",
+   "class": "IL-6",
+   "theta": -0.273,
+   "acr50_pct": 42.7,
+   "k_rows": 26
+  },
+  {
+   "agent": "rituximab",
+   "class": "B-cell",
+   "theta": -0.337,
+   "acr50_pct": 41.2,
+   "k_rows": 301
+  },
+  {
+   "agent": "tocilizumab",
+   "class": "IL-6",
+   "theta": -0.353,
+   "acr50_pct": 40.8,
+   "k_rows": 799
+  },
+  {
+   "agent": "adalimumab",
+   "class": "TNF",
+   "theta": -0.512,
+   "acr50_pct": 37.0,
+   "k_rows": 759
+  },
+  {
+   "agent": "abatacept",
+   "class": "T-cell",
+   "theta": -0.847,
+   "acr50_pct": 29.6,
+   "k_rows": 788
+  },
+  {
+   "agent": "golimumab",
+   "class": "TNF",
+   "theta": -0.927,
+   "acr50_pct": 28.0,
+   "k_rows": 35
+  }
+ ],
+ "hierarchy_reproduced": true,
+ "adv_mean_theta": 0.222,
+ "tnf_mean_theta": 0.043,
+ "proportional_odds_rmse_logit": 2.035,
+ "heterogeneity_flag": true,
+ "generality": "repointed to an ORDINAL/ordered-categorical outcome (ACR20>50>70 ladder, proportional-odds graded-response). Fifth outcome type -> engine spans continuous + survival + count/rate + binary + ordinal.",
+ "caveat": "ACR thresholds pooled per agent across doses/timepoints (not a placebo-anchored ordinal NMA); proportional-odds single-theta assumption recorded by residual RMSE; demonstration of repoint, not a full RA systematic review"
+}

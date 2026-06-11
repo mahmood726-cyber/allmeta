@@ -61,6 +61,25 @@ STAGES = [
     ('G4c concordance valid', 'concordance_validation.py',    HERE, 'concordance_validation.json', False),
     ('G4d concordance battery', 'concordance_battery.py',   HERE, 'concordance_battery.json', False),
     ('G5 guideline dashboard', 'dashboard.py',                HERE, 'dashboard.html',           False),
+    # --- generality depth: per-class full-depth leagues (Bayesian draw matrix) + transport + offline dashboard.
+    #     Each spans a distinct OUTCOME TYPE; league stages load AACT + NUTS (slow), transport/dashboard read
+    #     the class's cached draws/JSON (fast). All scripts use absolute paths, so cwd is irrelevant. ---
+    ('C2a PCSK9 league (freq)', 'class2_pcsk9/pcsk9_league.py',          HERE, 'class2_pcsk9/pcsk9_league.json',        True),
+    ('C2b PCSK9 league (Bayes)', 'class2_pcsk9/pcsk9_league_bayes.py',   HERE, 'class2_pcsk9/pcsk9_league_bayes.json',  True),
+    ('C2c PCSK9 transport',    'class2_pcsk9/pcsk9_transport.py',        HERE, 'class2_pcsk9/pcsk9_transport.json',     False),
+    ('C2d PCSK9 dashboard',    'class2_pcsk9/pcsk9_dashboard.py',        HERE, 'class2_pcsk9/pcsk9_dashboard.html',     False),
+    ('C3a SGLT2 league (Bayes)', 'class3_sglt2/sglt2_league_bayes.py',   HERE, 'class3_sglt2/sglt2_league.json',        True),
+    ('C3b SGLT2 transport',    'class3_sglt2/sglt2_transport.py',        HERE, 'class3_sglt2/sglt2_transport.json',     False),
+    ('C3c SGLT2 dashboard',    'class3_sglt2/sglt2_dashboard.py',        HERE, 'class3_sglt2/sglt2_dashboard.html',     False),
+    ('C4a psoriasis league (Bayes)', 'class4_psoriasis/psoriasis_league_bayes.py', HERE, 'class4_psoriasis/psoriasis_league.json', True),
+    ('C4b psoriasis transport', 'class4_psoriasis/psoriasis_transport.py', HERE, 'class4_psoriasis/psoriasis_transport.json', False),
+    ('C4c psoriasis dashboard', 'class4_psoriasis/psoriasis_dashboard.py', HERE, 'class4_psoriasis/psoriasis_dashboard.html', False),
+    ('C5a asthma league (Bayes)', 'class5_asthma/asthma_league_bayes.py', HERE, 'class5_asthma/asthma_league.json',      True),
+    ('C5b asthma transport',   'class5_asthma/asthma_transport.py',      HERE, 'class5_asthma/asthma_transport.json',   False),
+    ('C5c asthma dashboard',   'class5_asthma/asthma_dashboard.py',      HERE, 'class5_asthma/asthma_dashboard.html',   False),
+    ('C6a RA league (Bayes)',  'class6_ra/ra_league_bayes.py',           HERE, 'class6_ra/ra_league.json',              True),
+    ('C6b RA transport',       'class6_ra/ra_transport.py',              HERE, 'class6_ra/ra_transport.json',           False),
+    ('C6c RA dashboard',       'class6_ra/ra_dashboard.py',              HERE, 'class6_ra/ra_dashboard.html',           False),
 ]
 
 print('Registry-native synthesis system — orchestrator')
