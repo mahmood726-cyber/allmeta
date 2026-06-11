@@ -1,0 +1,66 @@
+{
+ "class": "SGLT2 inhibitors",
+ "outcome": "HF/CV composite HR",
+ "agents": [
+  {
+   "agent": "canagliflozin",
+   "hr": 0.79,
+   "ci": [
+    0.71,
+    0.87
+   ],
+   "k": 4,
+   "lhr": -0.2357901475509301,
+   "se": 0.0520549348825384
+  },
+  {
+   "agent": "dapagliflozin",
+   "hr": 0.81,
+   "ci": [
+    0.76,
+    0.86
+   ],
+   "k": 4,
+   "lhr": -0.212086752907591,
+   "se": 0.0316319225910461
+  },
+  {
+   "agent": "empagliflozin",
+   "hr": 0.93,
+   "ci": [
+    0.9,
+    0.97
+   ],
+   "k": 7,
+   "lhr": -0.06809779495809544,
+   "se": 0.01831021978777706
+  },
+  {
+   "agent": "ertugliflozin",
+   "hr": 0.92,
+   "ci": [
+    0.82,
+    1.03
+   ],
+   "k": 1,
+   "lhr": -0.08338160893905101,
+   "se": 0.05920896073824933
+  },
+  {
+   "agent": "sotagliflozin",
+   "hr": 0.72,
+   "ci": [
+    0.62,
+    0.82
+   ],
+   "k": 2,
+   "lhr": -0.3325317116048546,
+   "se": 0.07049843922084938
+  }
+ ],
+ "class_pooled_hr": 0.88,
+ "cross_agent_I2": 87.0,
+ "class_effect_naive_homogeneous": false,
+ "generality": "repointed to a hard-outcome class (survival/HR-NMA path); pooled 5 agents AND flagged that naive composite-outcome pooling conflates endpoint definitions (I2=87%) -> must disaggregate by exact endpoint (HF hospitalisation ~0.68-0.79 = the real class effect). Engine generalises across outcome TYPES and stays honest about each class pitfall.",
+ "caveat": "high cross-agent I2 is an OUTCOME-DEFINITION artifact (MACE vs HF-hosp vs renal pooled); a proper class-effect test restricts to one endpoint; this is a repoint demonstration, not a full SGLT2 systematic review"
+}
