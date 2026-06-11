@@ -663,6 +663,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["surrogate", "surrogacy", "trial-level", "daniels-hughes", "validation", "ste", "r-squared", "biomarker"]
   },
   {
+    name: "Umbrella overlap (CCA)",
+    folder: "allmeta/umbrella-overlap",
+    path: "./umbrella-overlap/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Quantify primary-study overlap across the reviews in an umbrella review (review of reviews) via the Corrected Covered Area (CCA = (N−r)/(r·c−r); Pieper 2014), with Pieper's grooves (slight/moderate/high/very high), a pairwise shared-study matrix, and the most-shared studies — so a pool across overlapping reviews doesn't double-count evidence.",
+    note: "Needs the full cited-study list per review (matched on a consistent id). CCA is whole-umbrella; per-outcome overlap can differ. Method integrated from the UmbrellaEngine project.",
+    tags: ["umbrella-review", "overlap", "cca", "corrected-covered-area", "pieper", "non-independence", "review-of-reviews"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
