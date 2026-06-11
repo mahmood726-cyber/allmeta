@@ -53,5 +53,13 @@ def test_survival_summary_from_pseudo_ipd():
     assert "RIPD._" in h and ".rmst" in h and ".kmFromIPD" in h
 
 
+def test_competing_risks_mode():
+    # Aalen-Johansen CIF surfaced (auto-detected from competing_events)
+    h = _h()
+    assert 'id="cif-panel"' in h and "function renderCIF" in h
+    assert "reconstructCompetingRisks" in h and "Aalen-Johansen" in h
+    assert "competing_events" in h and "overestimate" in h.lower()
+
+
 def test_test_hook_present():
     assert "__almRegistryIpd" in _h()

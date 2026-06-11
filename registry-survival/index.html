@@ -60,6 +60,7 @@
     <button type="button" id="btn-ex-a">Example: Tier A</button>
     <button type="button" id="btn-ex-b">Example: Tier B</button>
     <button type="button" id="btn-ex-c">Example: Tier C</button>
+    <button type="button" id="btn-ex-cr">Example: Competing risks</button>
     <button type="button" id="btn-export">Download pseudo-IPD CSV</button>
   </div>
 
@@ -84,6 +85,10 @@
       <section class="panel">
         <h2>Survival summary (from the pseudo-IPD)</h2>
         <div id="surv-summary"><p class="hint">RMST and median per arm — and the RMST difference, a non-proportional-hazards-robust effect — appear here once a Tier A/B reconstruction is produced.</p></div>
+      </section>
+      <section class="panel" id="cif-panel" style="display:none">
+        <h2>Competing risks (Aalen-Johansen CIF vs naive 1−KM)</h2>
+        <div id="cif"></div>
       </section>
       <section class="panel">
         <h2>Honest scope</h2>
@@ -138,8 +143,11 @@
       var vb = $("verdict-box");
       if (!trial || !trial.arms) { vb.innerHTML = '<p class="badge none">Invalid trial JSON — load an example to see the shape.</p>'; $("km").innerHTML = ""; return; }
       if (!window.RIPD) { vb.innerHTML = '<p class="badge none">Engine not loaded.</p>'; return; }
+      // competing-risks mode is auto-detected from a per-arm `competing_events` count
+      var hasCR = (trial.arms || []).some(function (a) { return a && a.competing_events > 0; });
       var r;
-      try { r = RIPD.reconstruct(trial, { bootstrap: 200 }); } catch (e) { vb.innerHTML = '<p class="badge none">Reconstruction error: ' + esc(e.message) + "</p>"; return; }
+      try { r = (hasCR && RIPD.reconstructCompetingRisks) ? RIPD.reconstructCompetingRisks(trial, { bootstrap: 200 }) : RIPD.reconstruct(trial, { bootstrap: 200 }); }
+      catch (e) { vb.innerHTML = '<p class="badge none">Reconstruction error: ' + esc(e.message) + "</p>"; return; }
       lastResult = r;
       var badge = (r.audit && r.audit.badge) || "none";
       var refused = r.tier === "C" || !r.exportable;
@@ -160,6 +168,51 @@
       } else { kmHost.innerHTML = '<p class="hint">No reconstructed curve at this tier.</p>'; }
 
       renderSurvivalSummary(r, trial);
+      renderCIF(r, trial);
+    }
+
+    // Aalen-Johansen CIF (event of interest, competing-risks-correct) vs the
+    // naive 1−KM (which OVERESTIMATES cumulative incidence under competing risks).
+    function renderCIF(r, trial) {
+      var panel = document.getElementById("cif-panel"), host = document.getElementById("cif");
+      if (!panel || !host) return;
+      if (!r.competing_risks || !r.arms) { panel.style.display = "none"; return; }
+      var E = window.RIPD && RIPD._;
+      panel.style.display = "";
+      var rows = r.arms.map(function (arm) {
+        var cif = arm.cif || [];
+        var last = cif.length ? cif[cif.length - 1] : null;
+        var ajCIF = last ? last.cif1 : null;                       // competing-risks-correct
+        var km = E && E.kmFromIPD ? E.kmFromIPD(arm.ipd) : null;
+        var tau = last ? last.t : 0;
+        var naive = (E && km) ? (1 - E.evalKM(km, tau)) : null;    // overestimate
+        return { label: arm.label || arm.arm_id, aj: ajCIF, naive: naive, tau: tau, svg: drawCIF(arm.cif, km, E) };
+      });
+      var unit = (trial.time_unit || "").replace(/s$/, "");
+      host.innerHTML = '<div class="km">' + rows.map(function (x) { return "<div>" + x.svg + "</div>"; }).join("") + "</div>"
+        + "<table><tr><th>Arm</th><th>Aalen-Johansen CIF</th><th>naive 1−KM</th><th>over-estimate</th></tr>"
+        + rows.map(function (x) {
+          var over = (x.aj != null && x.naive != null) ? (x.naive - x.aj) : null;
+          return "<tr><td>" + esc(x.label) + " (τ=" + x.tau.toFixed(0) + (unit ? " " + esc(unit) : "") + ")</td><td>" + (x.aj != null ? x.aj.toFixed(3) : "—") + "</td><td>" + (x.naive != null ? x.naive.toFixed(3) : "—") + "</td><td>" + (over != null ? "+" + over.toFixed(3) : "—") + "</td></tr>";
+        }).join("") + "</table>"
+        + '<p class="hint">With competing events, 1−KM treats competing events as censoring and <strong>overestimates</strong> the cumulative incidence of the event of interest; the Aalen-Johansen CIF is the competing-risks-correct estimator. Solid = CIF (event), dashed = naive 1−KM.</p>';
+    }
+    function drawCIF(cif, km, E) {
+      var W = 360, H = 210, m = { l: 36, r: 10, t: 12, b: 26 };
+      cif = cif || []; if (!cif.length) return "";
+      var tmax = cif[cif.length - 1].t || 1, ymax = Math.max(0.1, cif[cif.length - 1].cif1 * 1.2, (E && km) ? (1 - E.evalKM(km, tmax)) * 1.2 : 0.1);
+      function X(t) { return m.l + (t / tmax) * (W - m.l - m.r); }
+      function Y(v) { return H - m.b - (v / ymax) * (H - m.t - m.b); }
+      var aj = "M" + X(0) + "," + Y(0), py = Y(0);
+      cif.forEach(function (p) { var x = X(p.t), y = Y(p.cif1); aj += " L" + x.toFixed(1) + "," + py.toFixed(1) + " L" + x.toFixed(1) + "," + y.toFixed(1); py = y; });
+      var naivePath = "";
+      if (E && km) { var pny = Y(0); naivePath = "M" + X(0) + "," + Y(0); for (var t = 0; t <= tmax; t += tmax / 40) { var x = X(t), y = Y(1 - E.evalKM(km, t)); naivePath += " L" + x.toFixed(1) + "," + pny.toFixed(1) + " L" + x.toFixed(1) + "," + y.toFixed(1); pny = y; } }
+      var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Cumulative incidence: Aalen-Johansen vs naive 1-KM">';
+      s += '<line x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      s += '<line x1="' + m.l + '" y1="' + m.t + '" x2="' + m.l + '" y2="' + (H - m.b) + '" stroke="var(--border)"/>';
+      if (naivePath) s += '<path d="' + naivePath + '" fill="none" stroke="var(--orig)" stroke-width="1.4" stroke-dasharray="4 3"/>';
+      s += '<path d="' + aj + '" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+      s += "</svg>"; return s;
     }
 
     // RMST + median per arm, and the RMST difference (a non-PH-robust effect),
@@ -216,6 +269,17 @@
     $("btn-ex-a").addEventListener("click", function () { loadExample("A"); });
     $("btn-ex-b").addEventListener("click", function () { loadExample("B"); });
     $("btn-ex-c").addEventListener("click", function () { loadExample("C"); });
+    $("btn-ex-cr").addEventListener("click", function () {
+      // Tier A trial that also posts a competing-event count per arm (e.g. deaths
+      // from other causes) — triggers the Aalen-Johansen CIF mode.
+      var t = {
+        nct_id: "EXAMPLE-CR", time_unit: "months", arms: [
+          { arm_id: "e", label: "Drug", role: "experimental", N: 200, total_events: 131, competing_events: 55, follow_up_max: 24, km_points: [{ t: 0, S: 1 }, { t: 4, S: 0.905 }, { t: 8, S: 0.81 }, { t: 12, S: 0.69 }, { t: 16, S: 0.59 }, { t: 20, S: 0.505 }], number_at_risk: [{ t: 0, n: 200 }, { t: 8, n: 150 }, { t: 16, n: 95 }, { t: 24, n: 40 }] },
+          { arm_id: "c", label: "Placebo", role: "comparator", N: 200, total_events: 150, competing_events: 48, follow_up_max: 24, km_points: [{ t: 0, S: 1 }, { t: 4, S: 0.86 }, { t: 8, S: 0.71 }, { t: 12, S: 0.55 }, { t: 16, S: 0.43 }, { t: 20, S: 0.33 }], number_at_risk: [{ t: 0, n: 200 }, { t: 8, n: 135 }, { t: 16, n: 78 }, { t: 24, n: 28 }] }
+        ]
+      };
+      $("f-trial").value = JSON.stringify(t, null, 2); run(); toast("Loaded a competing-risks example (per-arm competing_events).");
+    });
     $("btn-export").addEventListener("click", exportCSV);
     $("f-trial").addEventListener("input", run);
 
