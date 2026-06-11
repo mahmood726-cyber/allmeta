@@ -687,6 +687,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["quantile", "qte", "heterogeneous-treatment-effects", "hte", "wald", "ipd", "effect-modification", "distribution"]
   },
   {
+    name: "Benford screen",
+    folder: "allmeta/benford-screen",
+    path: "./benford-screen/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Integrity",
+    summary: "Forensic first-digit screen: test whether a column of extracted values (sample sizes, event counts, totals) follows Benford's law P(d)=log₁₀(1+1/d) via the Nigrini mean-absolute-deviation conformity class and a χ²(8) goodness-of-fit test, with an observed-vs-Benford first-digit chart. A large deviation can flag fabricated, altered or heavily-rounded data — complementing the integrity suite (spec-collapse, INSPECT-SR, reporting-bias).",
+    note: "CRITICAL: Benford is valid only for unbounded quantities spanning ≥2 orders of magnitude — NOT proportions, p-values, percentages or standardised effects (SMD/I²), which fail Benford legitimately. ≥100 values recommended (≥30 minimum). A flag is a prompt to investigate, never proof of fabrication; conformity is not a clean bill of health. χ² validated vs scipy. Method integrated from the BenfordMA project.",
+    tags: ["benford", "data-integrity", "nigrini", "mad", "forensics", "fabrication", "first-digit", "anomaly"]
+  },
+  {
     name: "Fragility index (MA)",
     folder: "allmeta/fragility",
     path: "./fragility/index.html",
