@@ -500,7 +500,17 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await expect(card.locator(".exp-tag")).toHaveText("experimental");          // explicit label
   await expect(card).toContainText("GRMA");
   await expect(card).toContainText("Conformal");
+  await expect(card).toContainText("GWAM");
   await expect(card).toContainText("not validated for decision-making");
+
+  // GWAM defaults to λ=0.64 and shows λ·mu_pub back-transformed (REML pool shrunk to null)
+  await expect(card.locator("input[data-gwam='lambda']")).toHaveValue("0.64");
+  const expectedGwam = await page.evaluate(() => {
+    const s = window.MaStudies.read();
+    const rp = window.AlmMaCore.pool(s.map(x => x.est), s.map(x => x.se * x.se), { method: "REML" });
+    return (Math.exp(0.64 * rp.mu)).toPrecision(3);
+  });
+  await expect(card).toContainText(expectedGwam);
 
   // the JS port equals the Python reference: GRMA on these (back-transformed to ratio)
   // is exp(-0.12826963) ≈ 0.880
