@@ -215,6 +215,18 @@
     .qa-fail { background:rgba(248,113,113,.08); } .qa-fail .qa-sym { color:#f87171; }
     .qa-na .qa-sym { color:var(--faint); } .qa-na .qa-label { color:var(--muted); }
     .qa-block { margin-top:.5rem; padding:.5rem .7rem; font-size:.78rem; line-height:1.5; border-left:3px solid #f87171; background:rgba(248,113,113,.08); border-radius:0 10px 10px 0; color:#fecaca; }
+    /* Good-vs-weak teaching cards (RapidMeta Paper Studio steal) */
+    .teach-card { margin:.5rem 0 .2rem; border:1px solid var(--border2,#27344a); border-radius:10px; background:rgba(148,163,184,.04); }
+    .teach-card > summary { cursor:pointer; padding:.45rem .7rem; font-size:.78rem; font-weight:600; color:var(--muted); }
+    .teach-card .teach-body { padding:.2rem .8rem .6rem; }
+    .teach-card p { margin:.35rem 0; font-size:.82rem; line-height:1.55; }
+    .teach-card .ex-good { color:#bbf7d0; } .teach-card .ex-good b { color:#34d399; }
+    .teach-card .ex-weak { color:#fecaca; } .teach-card .ex-weak b { color:#f87171; }
+    /* Focus mode (RapidMeta CSS-only steal): hide chrome, keep the tab bar for nav */
+    #focus-exit { display:none; }
+    body.focus-mode .topbar, body.focus-mode footer { display:none !important; }
+    body.focus-mode #focus-exit { display:block; position:fixed; bottom:14px; right:14px; z-index:99999; padding:7px 13px; background:rgba(15,23,42,0.92); color:#cfe6f6; border-radius:14px; font:600 12px/1 system-ui,sans-serif; border:1px solid var(--accent,#5ea9ff); cursor:pointer; }
+    body.focus-mode main { padding-top:.4rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
@@ -230,6 +242,7 @@
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:10px;z-index:99999;padding:6px 12px;background:rgba(15,23,42,0.9);color:#cfe6f6;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;border:1px solid #27344a">← allmeta</a>
+<button type="button" id="focus-exit" aria-label="Exit focus mode">⛶ Exit focus</button>
 
   <div class="topbar">
     <div class="brand">
@@ -240,6 +253,7 @@
       <input id="proj-title" type="text" placeholder="Review title — e.g. SGLT2 inhibitors for heart failure" aria-label="Review title">
       <button type="button" id="btn-refresh" class="ghost">↻ Refresh</button>
       <button type="button" id="btn-capture-all" class="ghost">⤓ Capture all live</button>
+      <button type="button" id="btn-focus" class="ghost" aria-label="Enter focus mode">⛶ Focus</button>
       <button type="button" id="btn-story" class="ghost" aria-pressed="false">▶ Story mode</button>
       <select id="story-case" aria-label="Story case" style="display:none">
         <option value="cortico">Corticosteroids — the line no one drew</option>
@@ -1061,6 +1075,22 @@
       if (sel) { sel.style.display = on ? "" : "none"; if (state.story) sel.value = state.story.case; }
     }
 
+    // Good-vs-weak writing examples per stage (RapidMeta Paper Studio steal): teach by
+    // contrast, using neutral publication-grade "good" lines. Collapsible; advisory.
+    var STAGE_TEACH = {
+      protocol: { good: "We included randomised controlled trials of drug X versus placebo in adults with condition Y that reported all-cause mortality; we excluded non-randomised studies and trials without that outcome.", weak: "We included all the relevant studies about the drug." },
+      screening: { good: "Two reviewers independently screened each title and abstract; disagreements were resolved by discussion, with a third reviewer arbitrating when needed.", weak: "We screened the studies and picked the relevant ones." },
+      synthesis: { good: "The pooled estimate lies to one side of the no-effect line; whether its confidence interval crosses that line decides how confident the direction is, and whether the effect is large enough to change care is a separate clinical judgement.", weak: "The treatment works because the result was statistically significant." },
+      certainty: { good: "Certainty was rated moderate, downgraded for imprecision because few trials contributed; the conclusion is therefore worded cautiously rather than definitively.", weak: "The evidence is strong and proves the treatment is effective." },
+      report: { good: "After combining the studies, the intervention appeared to change the main outcome compared with the comparator; the size and certainty of that change are reported alongside.", weak: "Our review proves the treatment is the best option." }
+    };
+    function teachCard(stageId) {
+      var t = STAGE_TEACH[stageId]; if (!t) return "";
+      return "<details class='teach-card'><summary>How to write this stage — good vs weak</summary>"
+        + "<div class='teach-body'><p class='ex-good'><b>✓ Good:</b> " + esc(t.good) + "</p>"
+        + "<p class='ex-weak'><b>✗ Too vague:</b> " + esc(t.weak) + "</p></div></details>";
+    }
+
     function renderStages() {
       document.getElementById("stages").innerHTML = STAGES.map(function (st, i) {
         var s = statusOf(st), captured = s.captured, live = s.live, stale = s.stale;
@@ -1088,6 +1118,7 @@
           + flowHtml(st)
           + sum
           + previewHtml(st)
+          + teachCard(st.id)
           + "<div class='tool-label'>Open a tool for this stage</div><div class='links'>" + links + "</div>"
           + "<div class='cap'>" + actions + "</div>"
           + stepnav
@@ -1237,6 +1268,15 @@
 
     document.getElementById("btn-refresh").addEventListener("click", function () { refreshLive(); renderStages(); renderNav(); switchTab(state.activeTab, true); });
     document.getElementById("btn-capture-all").addEventListener("click", captureAllLive);
+
+    // Focus mode: hide the topbar + footer chrome for a distraction-free view (the tab
+    // bar stays for navigation). Toggle from the topbar; exit via the floating button or Esc.
+    function setFocus(on) { document.body.classList.toggle("focus-mode", on); }
+    document.getElementById("btn-focus").addEventListener("click", function () { setFocus(true); });
+    document.getElementById("focus-exit").addEventListener("click", function () { setFocus(false); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && document.body.classList.contains("focus-mode")) setFocus(false);
+    });
 
     // Story mode: toggle the woven narrative beats on/off; the case picker swaps
     // which true history is told. Persisted in state so it survives a refresh.

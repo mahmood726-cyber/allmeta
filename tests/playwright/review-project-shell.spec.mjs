@@ -482,6 +482,37 @@ test("Overview shows a plain-language 'What does this mean?' summary from the po
   await expect(page.locator("#what-this-means .wm-sentence")).toContainText("no-effect line");
 });
 
+test("Stages carry good-vs-weak writing teaching cards", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  const card = page.locator("#panel-synthesis .teach-card");
+  await expect(card).toHaveCount(1);
+  await expect(card.locator(".ex-good")).toContainText("Good");
+  await expect(card.locator(".ex-weak")).toContainText("Too vague");
+  await expect(card.locator(".ex-weak")).toContainText("statistically significant");
+  // a stage without a teaching pair has none
+  await expect(page.locator("#panel-robustness .teach-card")).toHaveCount(0);
+});
+
+test("Focus mode hides the chrome and exits via the floating button and Esc", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await expect(page.locator(".topbar")).toBeVisible();
+  await expect(page.locator("#focus-exit")).toBeHidden();
+
+  await page.click("#btn-focus");
+  await expect(page.locator(".topbar")).toBeHidden();
+  await expect(page.locator("#focus-exit")).toBeVisible();
+  await expect(page.locator("#tabnav")).toBeVisible();   // tabs stay for navigation
+
+  await page.click("#focus-exit");
+  await expect(page.locator(".topbar")).toBeVisible();
+
+  // Esc also exits
+  await page.click("#btn-focus");
+  await expect(page.locator(".topbar")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".topbar")).toBeVisible();
+});
+
 test("Search and Extraction stages surface the Embase + PDF workflow", async ({ page }) => {
   await page.goto("/review-project/index.html");
   await expect(page.locator("#panel-search .s-desc")).toContainText("Embase");
