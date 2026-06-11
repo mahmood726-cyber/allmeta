@@ -113,11 +113,62 @@
     .sign-actions { display:flex; flex-direction:column; gap:.55rem; max-width:24rem; }
     footer { padding:1rem clamp(.7rem,3vw,2rem) calc(env(safe-area-inset-bottom) + 1.4rem); color:var(--faint); font-size:.76rem; }
     footer code { background:var(--accent-soft); color:var(--accent); padding:.1rem .35rem; border-radius:4px; }
+
+    /* ---- Overview dashboard: live PRISMA funnel + cards (Covidence/Nested Knowledge steal) ---- */
+    .ov-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.7rem; margin:.2rem 0 1.1rem; }
+    .ov-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:.75rem .9rem; }
+    .ov-card .k { font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--faint); font-weight:700; }
+    .ov-card .v { font-size:1.5rem; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.15; }
+    .ov-card .v small { font-size:.8rem; font-weight:600; color:var(--muted); }
+    .funnel { display:flex; flex-direction:column; gap:.4rem; }
+    .frow { display:grid; grid-template-columns:minmax(8.5rem,12rem) 1fr; align-items:center; gap:.7rem; }
+    .frow .flabel { font-size:.82rem; color:var(--ink); }
+    .frow .flabel small { color:var(--faint); display:block; font-size:.72rem; }
+    .fbar-wrap { position:relative; background:var(--input-bg); border-radius:8px; overflow:hidden; height:2.1rem; border:1px solid var(--border); }
+    .fbar { height:100%; background:linear-gradient(90deg,var(--accent-soft),var(--accent)); display:flex; align-items:center;
+        padding:0 .6rem; color:#04121f; font-weight:800; font-size:.86rem; min-width:2.4rem; border-radius:8px 0 0 8px; transition:width .35s ease; }
+    @media (prefers-reduced-motion:reduce){ .fbar { transition:none; } }
+    .fbar.muted { background:var(--border2); color:var(--ink); }
+    .fdrop { font-size:.72rem; color:var(--faint); margin-left:.5rem; white-space:nowrap; }
+
+    /* ---- per-stage live preview pane (JASP/MetaInsight live-results steal) ---- */
+    .preview { margin:.2rem 0 .9rem; padding:.7rem .8rem; border:1px dashed var(--border2); border-radius:11px; background:var(--bg2); }
+    .preview h4 { margin:0 0 .5rem; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:700; }
+    .chips { display:flex; gap:.35rem; flex-wrap:wrap; }
+    .chip { font-size:.76rem; padding:.22rem .55rem; border-radius:999px; background:var(--accent-soft); color:var(--accent); border:1px solid var(--border2); }
+    .chip b { color:var(--ink); font-weight:700; }
+    .ptable { width:100%; border-collapse:collapse; font-size:.78rem; }
+    .ptable th, .ptable td { border-bottom:1px solid var(--border); padding:.28rem .4rem; text-align:right; font-variant-numeric:tabular-nums; }
+    .ptable th:first-child, .ptable td:first-child { text-align:left; }
+    .ptable th { color:var(--faint); font-weight:700; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; }
+    .result-card { display:flex; align-items:baseline; gap:.5rem; flex-wrap:wrap; }
+    .result-card .big { font-size:1.6rem; font-weight:800; font-variant-numeric:tabular-nums; }
+    .result-card .ci { color:var(--muted); font-size:.9rem; }
+    .result-card .meta { color:var(--faint); font-size:.78rem; }
+    .consensus-bar { display:flex; height:1.5rem; border-radius:8px; overflow:hidden; border:1px solid var(--border); font-size:.7rem; font-weight:700; }
+    .consensus-bar span { display:flex; align-items:center; justify-content:center; color:#04121f; min-width:1.6rem; }
+    .cb-inc { background:var(--green); } .cb-exc { background:var(--border2); color:var(--ink); } .cb-con { background:var(--warn); }
+    /* RoB traffic-light grid (RevMan steal) — reuses the RoB app's own verdicts */
+    .rob-grid { display:flex; flex-direction:column; gap:.3rem; }
+    .rob-row { display:flex; align-items:center; gap:.3rem; flex-wrap:wrap; }
+    .rob-row .rl-label { font-size:.78rem; flex:1 1 8rem; min-width:6rem; }
+    .rl { width:1.25rem; height:1.25rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+        font-size:.62rem; font-weight:800; color:#04121f; border:1px solid rgba(0,0,0,.25); }
+    .rl-low { background:#34d399; } .rl-some, .rl-moderate { background:#fbbf24; } .rl-high, .rl-serious { background:#f87171; }
+    .rl-ni { background:#94a3b8; } .rl-crit, .rl-critical { background:#b91c1c; color:#fff; }
+    .rl.overall { border:2px solid var(--ink); }
+    .sof-pill { font-size:.72rem; padding:.1rem .5rem; border-radius:999px; font-weight:700; }
+    .sof-high { background:#0f2e25; color:#34d399; border:1px solid #34d399; }
+    .sof-moderate { background:#13322f; color:#5eead4; border:1px solid #5eead4; }
+    .sof-low { background:#3a2c12; color:#fbbf24; border:1px solid #fbbf24; }
+    .sof-verylow { background:#3a1d1d; color:#f87171; border:1px solid #f87171; }
+    .mini-forest text { fill:var(--muted); }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-pooled-v1.js"></script>
+  <script src="../shared/rob-core.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/review-bundle.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
@@ -143,7 +194,17 @@
   <nav class="tabs" id="tabnav" role="tablist" aria-label="Review stages"></nav>
 
   <main>
-    <!-- stage panels are rendered here; bundle panel is static below -->
+    <section id="panel-overview" class="stage-panel" data-tab="overview" role="tabpanel" aria-labelledby="tab-btn-overview">
+      <div class="card">
+        <div class="s-head"><span class="s-n" style="background:var(--accent-soft);color:var(--accent)">◎</span><span class="s-name">Overview</span></div>
+        <p class="s-desc">Your review at a glance — the PRISMA flow and headline result, read live from the shared workspace bus as you work each stage.</p>
+        <div id="ov-cards" class="ov-cards"></div>
+        <h4 style="margin:.4rem 0 .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700">PRISMA flow</h4>
+        <div id="funnel" class="funnel"></div>
+      </div>
+    </section>
+
+    <!-- stage panels are rendered here; overview + bundle panels are static -->
     <div id="stages"></div>
 
     <section id="panel-bundle" class="stage-panel" data-tab="bundle" role="tabpanel" aria-labelledby="tab-btn-bundle">
@@ -184,14 +245,15 @@
     function upstreamOf(id) { return STAGES.filter(function (s) { return s.feeds.indexOf(id) >= 0; }).map(function (s) { return s.id; }); }
 
     var KEY = "review-project-v1";
-    var state = load() || { title: "", outputs: {}, activeTab: "protocol" };
-    if (!state.activeTab) state.activeTab = "protocol";
+    var state = load() || { title: "", outputs: {}, activeTab: "overview" };
+    if (!state.activeTab) state.activeTab = "overview";
     var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
 
     function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") return s; } catch (e) {} return null; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
     function lsGet(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+    function fnum(x, d) { return (typeof x === "number" && isFinite(x)) ? (Math.abs(x) >= 1000 ? x.toFixed(0) : x.toPrecision(d || 3)) : "—"; }
 
     // Consensus-included, non-duplicate records (matches the paper bridge's sr-records-v1 logic).
     function includedRecords(recs) {
@@ -205,6 +267,34 @@
     }
     function readStudies() { try { return (window.MaStudies && MaStudies.read && MaStudies.read()) || []; } catch (e) { return []; } }
     function readPooled() { try { return (window.MaPooled && MaPooled.read && MaPooled.read()) || []; } catch (e) { return []; } }
+
+    // ---- RoB: read the RoB app's own state (key rob-assess-v1) and reproduce
+    // its verdict logic VERBATIM (domVerdict = override else suggestion;
+    // overall via RobCore) so the traffic-light grid matches the app exactly.
+    function robDomVerdict(st, id) {
+      if (st.override && st.override[id]) return st.override[id];
+      return st.suggestion && st.suggestion.verdicts ? st.suggestion.verdicts[id] : null;
+    }
+    function robOverall(st) {
+      var doms = st.domains || [];
+      if (st.framework === "ROBINS-I") {
+        var order = { low: 0, moderate: 1, serious: 2, critical: 3 }, worst = "low";
+        doms.forEach(function (d) { var v = robDomVerdict(st, d.id); if (v && order[v] > order[worst]) worst = v; });
+        return worst;
+      }
+      var v = {}; doms.forEach(function (d) { v[d.id] = robDomVerdict(st, d.id); });
+      return (window.RobCore && RobCore.overallRoB2) ? RobCore.overallRoB2(v) : null;
+    }
+    function robAssessments() {
+      var s = lsGet("rob-assess-v1"); var studies = s && Array.isArray(s.studies) ? s.studies : null;
+      if (!studies || !studies.length) return null;
+      return studies.map(function (st, i) {
+        return { label: st.label || ("Study " + (i + 1)), framework: st.framework || "RoB 2", domains: st.domains || [],
+          cells: (st.domains || []).map(function (d) { return { id: d.id, verdict: robDomVerdict(st, d.id) }; }),
+          overall: robOverall(st) };
+      });
+    }
+    var ROB_LABEL = { low: "low", some: "some-concerns", moderate: "moderate", high: "high", serious: "serious", critical: "critical", ni: "no info" };
 
     // Per-stage live detectors: read the shared buses and summarise current workspace state.
     // Return null when the stage has no live data (so the UI honestly shows "no output yet").
@@ -240,10 +330,11 @@
         return { summary: st.length + " studies extracted", value: { studies: st } };
       },
       appraisal: function () {
-        var r = lsGet("rob-assessments-v1"); if (!r) return null;
-        var n = Array.isArray(r) ? r.length : (typeof r === "object" ? Object.keys(r).length : 0);
-        if (!n) return null;
-        return { summary: n + " risk-of-bias assessment" + (n === 1 ? "" : "s"), value: r };
+        // NB: the RoB app writes key "rob-assess-v1" (not "rob-assessments-v1").
+        var a = robAssessments(); if (!a) return null;
+        var dist = {}; a.forEach(function (x) { var o = x.overall || "ni"; dist[o] = (dist[o] || 0) + 1; });
+        var parts = Object.keys(dist).map(function (k) { return dist[k] + " " + (ROB_LABEL[k] || k); }).join(" · ");
+        return { summary: a.length + " RoB assessment" + (a.length === 1 ? "" : "s") + (parts ? " — " + parts : ""), value: lsGet("rob-assess-v1") };
       },
       synthesis: function () {
         var pl = readPooled(); if (!pl.length) return null;
@@ -310,6 +401,148 @@
         + "<div class='rail out'><h4>Feeds into</h4>" + outHtml + "</div></div>";
     }
 
+    function wrapPrev(title, body) { return "<div class='preview'><h4>" + esc(title) + "</h4>" + body + "</div>"; }
+
+    // Inline live result pane per stage, read straight from the bus (JASP/MetaInsight steal).
+    function previewHtml(st) {
+      var id = st.id;
+      if (id === "protocol") {
+        var p = lsGet("sr-project-v1"); var pico = p && p.pico; if (!pico) return "";
+        var rows = [["P", pico.population || pico.pop], ["I", pico.intervention || pico.int], ["C", pico.comparator || pico.comp], ["O", pico.outcome || pico.out]];
+        var chips = rows.filter(function (r) { return r[1]; }).map(function (r) { return "<span class='chip'><b>" + r[0] + "</b> " + esc(r[1]) + "</span>"; }).join("");
+        return chips ? wrapPrev("PICO on the bus", "<div class='chips'>" + chips + "</div>") : "";
+      }
+      if (id === "search") {
+        var e = lsGet("sr-records-v1"); var recs = e && Array.isArray(e.records) ? e.records : null; if (!recs || !recs.length) return "";
+        var dup = recs.filter(function (r) { return r && r.dup; }).length, uniq = recs.length - dup;
+        return wrapPrev("Imported records", "<div class='chips'><span class='chip'><b>" + recs.length + "</b> imported</span><span class='chip'><b>" + uniq + "</b> after dedup</span>" + (dup ? "<span class='chip'><b>" + dup + "</b> duplicates</span>" : "") + "</div>");
+      }
+      if (id === "screening") {
+        var e2 = lsGet("sr-records-v1"); var recs2 = e2 && Array.isArray(e2.records) ? e2.records : null; if (!recs2 || !recs2.length) return "";
+        var sum = (window.SrCollab && SrCollab.summarize) ? SrCollab.summarize(recs2) : null;
+        var inc = sum ? sum.consensusIncluded : includedRecords(recs2).length, conf = sum ? (sum.conflicts || 0) : 0;
+        var decided = recs2.filter(function (r) { return (r.r1 && r.r1.d) || (r.r2 && r.r2.d) || r.resolved; }).length;
+        var exc = Math.max(0, decided - inc - conf);
+        function seg(n, cls, lab) { return n ? "<span class='" + cls + "' style='flex:" + n + "'>" + n + " " + lab + "</span>" : ""; }
+        if (!(inc + exc + conf)) return "";
+        return wrapPrev("Screening consensus (" + decided + " of " + recs2.length + " decided)",
+          "<div class='consensus-bar'>" + seg(inc, "cb-inc", "incl") + seg(exc, "cb-exc", "excl") + seg(conf, "cb-con", "conflict") + "</div>");
+      }
+      if (id === "extraction") {
+        var studies = readStudies(); if (!studies.length) return "";
+        var body = studies.slice(0, 6).map(function (s) { return "<tr><td>" + esc(s.label) + "</td><td>" + fnum(s.est) + "</td><td>" + fnum(s.se) + "</td></tr>"; }).join("");
+        var more = studies.length > 6 ? "<tr><td colspan='3' style='text-align:center;color:var(--faint)'>+" + (studies.length - 6) + " more</td></tr>" : "";
+        return wrapPrev(studies.length + " studies on the bus (analysis scale)", "<table class='ptable'><thead><tr><th>Study</th><th>est</th><th>SE</th></tr></thead><tbody>" + body + more + "</tbody></table>");
+      }
+      if (id === "appraisal") {
+        var a = robAssessments(); if (!a) return "";
+        var rows2 = a.slice(0, 8).map(function (x) {
+          var cells = x.cells.map(function (c) { var v = c.verdict || "ni"; return "<span class='rl rl-" + v + "' title='" + esc(c.id + ": " + (ROB_LABEL[v] || v)) + "'>" + String(c.id || "").replace(/[^0-9]/g, "").slice(0, 2) + "</span>"; }).join("");
+          var ov = x.overall || "ni";
+          return "<div class='rob-row'><span class='rl-label'>" + esc(x.label) + "</span>" + cells + "<span class='rl overall rl-" + ov + "' title='overall: " + esc(ROB_LABEL[ov] || ov) + "'>!</span></div>";
+        }).join("");
+        var more2 = a.length > 8 ? "<div style='color:var(--faint);font-size:.72rem'>+" + (a.length - 8) + " more</div>" : "";
+        return wrapPrev("Risk-of-bias traffic lights (as recorded in the RoB app)", "<div class='rob-grid'>" + rows2 + more2 + "</div>");
+      }
+      if (id === "synthesis") {
+        var pl = readPooled(); var pooled = pl.length ? pl[pl.length - 1] : null;
+        var studies2 = readStudies();
+        if (!pooled && !studies2.length) return "";
+        var card = "";
+        if (pooled) {
+          card = "<div class='result-card'><span class='big'>" + fnum(pooled.pointEstimate) + "</span><span class='ci'>95% CI " + fnum(pooled.ciLo) + " to " + fnum(pooled.ciHi) + "</span>"
+            + "<span class='meta'>" + esc(pooled.measure || "effect") + " · k=" + pooled.k + (pooled.model ? " · " + esc(pooled.model) : "") + (pooled.label ? " · " + esc(pooled.label) : "") + "</span></div>";
+        }
+        return wrapPrev("Pooled result", card + drawMiniForest(studies2, pooled));
+      }
+      if (id === "certainty") {
+        var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
+        var CL = { high: "High", moderate: "Moderate", low: "Low", verylow: "Very low" };
+        var body2 = outs.slice(0, 6).filter(function (o) { return o && (o.outcome || o.certainty); }).map(function (o) {
+          var c = o.certainty || "moderate";
+          return "<tr><td>" + esc(o.outcome || "(unnamed)") + "</td><td><span class='sof-pill sof-" + c + "'>" + (CL[c] || esc(c)) + "</span></td></tr>";
+        }).join("");
+        return body2 ? wrapPrev("GRADE certainty", "<table class='ptable'><thead><tr><th>Outcome</th><th>Certainty</th></tr></thead><tbody>" + body2 + "</tbody></table>") : "";
+      }
+      return "";
+    }
+
+    // Compact forest: study estimates + pooled diamond, transformed to the pooled
+    // result's natural scale so both are comparable (CMA/MetaInsight steal).
+    function drawMiniForest(studies, pooled) {
+      var ratio = pooled ? pooled.scale === "ratio" : false;
+      var pts = (studies || []).slice(0, 10).map(function (s) {
+        if (!(isFinite(s.est) && isFinite(s.se) && s.se > 0)) return null;
+        var lo = s.est - 1.959964 * s.se, hi = s.est + 1.959964 * s.se;
+        return { label: s.label, p: ratio ? Math.exp(s.est) : s.est, lo: ratio ? Math.exp(lo) : lo, hi: ratio ? Math.exp(hi) : hi };
+      }).filter(Boolean);
+      if (!pts.length && !pooled) return "";
+      var nullv = ratio ? 1 : 0, all = [nullv];
+      pts.forEach(function (p) { all.push(p.lo, p.hi); });
+      if (pooled) all.push(pooled.ciLo, pooled.ciHi);
+      var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all); if (lo === hi) { lo -= 1; hi += 1; }
+      var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+      var W = 460, rowH = 18, top = 6, L = 120, R = 10, H = top + (pts.length + (pooled ? 1 : 0)) * rowH + 16;
+      function X(v) { return L + (v - lo) / (hi - lo) * (W - L - R); }
+      var s = "<svg class='mini-forest' viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Mini forest of study estimates with the pooled effect'>";
+      s += "<line x1='" + X(nullv).toFixed(1) + "' y1='" + top + "' x2='" + X(nullv).toFixed(1) + "' y2='" + (H - 12) + "' stroke='var(--border2)' stroke-dasharray='3 3'/>";
+      pts.forEach(function (p, i) {
+        var y = top + i * rowH + rowH / 2;
+        s += "<text x='4' y='" + (y + 3) + "' font-size='9'>" + esc(String(p.label).slice(0, 18)) + "</text>";
+        s += "<line x1='" + X(p.lo).toFixed(1) + "' y1='" + y + "' x2='" + X(p.hi).toFixed(1) + "' y2='" + y + "' stroke='var(--accent)' stroke-width='1.3'/>";
+        s += "<rect x='" + (X(p.p) - 2.5).toFixed(1) + "' y='" + (y - 2.5) + "' width='5' height='5' fill='var(--accent)'/>";
+      });
+      if (pooled) {
+        var yp = top + pts.length * rowH + rowH / 2, cx = X(pooled.pointEstimate);
+        s += "<text x='4' y='" + (yp + 3) + "' font-size='9' font-weight='700' fill='var(--ink)'>Pooled</text>";
+        s += "<polygon points='" + X(pooled.ciLo).toFixed(1) + "," + yp + " " + cx.toFixed(1) + "," + (yp - 4) + " " + X(pooled.ciHi).toFixed(1) + "," + yp + " " + cx.toFixed(1) + "," + (yp + 4) + "' fill='var(--green)'/>";
+      }
+      s += "<text x='" + L + "' y='" + (H - 2) + "' font-size='8' fill='var(--faint)'>" + (ratio ? "ratio scale, null = 1" : "linear scale, null = 0") + "</text></svg>";
+      return s;
+    }
+
+    // ---- Overview dashboard: live PRISMA funnel + headline cards ----
+    function funnelData() {
+      var e = lsGet("sr-records-v1"); var recs = e && Array.isArray(e.records) ? e.records : [];
+      var imported = recs.length, dup = recs.filter(function (r) { return r && r.dup; }).length, uniq = imported - dup;
+      var decided = recs.filter(function (r) { return (r.r1 && r.r1.d) || (r.r2 && r.r2.d) || r.resolved; }).length;
+      var sum = (window.SrCollab && SrCollab.summarize) ? SrCollab.summarize(recs) : null;
+      var included = sum ? sum.consensusIncluded : includedRecords(recs).length;
+      var studies = readStudies().length;
+      var pl = readPooled(); var pooled = pl.length ? pl[pl.length - 1] : null;
+      return {
+        pooled: pooled, included: included, studies: studies,
+        rows: [
+          { label: "Records imported", sub: "search", n: imported },
+          { label: "After de-duplication", sub: dup ? dup + " removed" : "", n: uniq },
+          { label: "Screened", sub: "of " + imported, n: decided },
+          { label: "Included", sub: "consensus", n: included },
+          { label: "Studies extracted", sub: "on the bus", n: studies },
+          { label: "Pooled", sub: pooled ? (pooled.measure || "effect") + " k=" + pooled.k : "no pool yet", n: pooled ? pooled.k : 0 }
+        ]
+      };
+    }
+    function renderOverview() {
+      var d = funnelData();
+      var max = Math.max.apply(null, d.rows.map(function (r) { return r.n; }).concat([1]));
+      var prev = null;
+      document.getElementById("funnel").innerHTML = d.rows.map(function (r) {
+        var w = Math.max(2, (r.n / max) * 100);
+        var drop = (prev != null && prev >= r.n && prev > 0 && r.n < prev) ? (prev - r.n) : null;
+        var dropTxt = drop ? "<span class='fdrop'>−" + drop + "</span>" : "";
+        prev = r.n;
+        return "<div class='frow'><div class='flabel'>" + esc(r.label) + (r.sub ? "<small>" + esc(r.sub) + "</small>" : "") + "</div>"
+          + "<div style='display:flex;align-items:center'><div class='fbar-wrap'><div class='fbar" + (r.n === 0 ? " muted" : "") + "' style='width:" + w + "%'>" + r.n + "</div></div>" + dropTxt + "</div></div>";
+      }).join("");
+      var done = STAGES.filter(function (s) { return state.outputs[s.id] != null; }).length;
+      var cap = STAGES.filter(function (s) { return !s.draftOnly; }).length;
+      var head = d.pooled ? (fnum(d.pooled.pointEstimate) + " <small>" + esc(d.pooled.measure || "") + "</small>") : "—";
+      var cards = [["Included studies", d.included], ["Extracted", d.studies], ["Headline effect", head], ["Stages captured", done + " <small>/ " + cap + "</small>"]];
+      document.getElementById("ov-cards").innerHTML = cards.map(function (c) {
+        return "<div class='ov-card'><div class='k'>" + esc(c[0]) + "</div><div class='v'>" + c[1] + "</div></div>";
+      }).join("");
+    }
+
     function renderStages() {
       document.getElementById("stages").innerHTML = STAGES.map(function (st, i) {
         var s = statusOf(st), captured = s.captured, live = s.live, stale = s.stale;
@@ -335,6 +568,7 @@
           + "<div class='s-desc'>" + esc(st.desc) + "</div>"
           + flowHtml(st)
           + sum
+          + previewHtml(st)
           + "<div class='tool-label'>Open a tool for this stage</div><div class='links'>" + links + "</div>"
           + "<div class='cap'>" + actions + "</div>"
           + stepnav
@@ -358,7 +592,10 @@
 
     function renderNav() {
       var on = state.activeTab;
-      var html = STAGES.map(function (st, i) {
+      var html = "<button type='button' class='tab' role='tab' id='tab-btn-overview' data-tab='overview' aria-controls='panel-overview'"
+        + " aria-selected='" + (on === "overview") + "' tabindex='" + (on === "overview" ? "0" : "-1") + "'>"
+        + "<span class='tnum'>◎</span><span class='tlabel'>Overview</span></button>";
+      html += STAGES.map(function (st, i) {
         var cls = statusOf(st).cls;
         return "<button type='button' class='tab' role='tab' id='tab-btn-" + st.id + "' data-tab='" + st.id + "'"
           + " aria-controls='panel-" + st.id + "' aria-selected='" + (st.id === on) + "' tabindex='" + (st.id === on ? "0" : "-1") + "'>"
@@ -377,6 +614,7 @@
       document.querySelectorAll("#tabnav .tab").forEach(function (el) {
         el.addEventListener("click", function () { switchTab(el.getAttribute("data-tab")); });
       });
+      renderOverview();
     }
 
     function switchTab(id, keepScroll) {
@@ -478,7 +716,7 @@
     // keyboard arrows move between tabs (RapidMeta-style)
     document.getElementById("tabnav").addEventListener("keydown", function (e) {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      var order = STAGES.map(function (s) { return s.id; }).concat(["bundle"]);
+      var order = ["overview"].concat(STAGES.map(function (s) { return s.id; })).concat(["bundle"]);
       var i = order.indexOf(state.activeTab); if (i < 0) return;
       var ni = e.key === "ArrowRight" ? Math.min(order.length - 1, i + 1) : Math.max(0, i - 1);
       switchTab(order[ni]); var btn = document.getElementById("tab-btn-" + order[ni]); if (btn) btn.focus();
