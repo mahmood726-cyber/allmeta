@@ -47,9 +47,12 @@
     .tab[aria-selected="true"] .tnum { color:var(--accent); }
     .tab.bundle[aria-selected="true"] { border-bottom-color:var(--green); }
     .tab.bundle .tnum { color:var(--green); }
-    .tdot { width:8px; height:8px; border-radius:50%; background:var(--faint); flex:0 0 auto; }
-    .tdot.live { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
-    .tdot.have { background:var(--green); } .tdot.stale { background:var(--warn); } .tdot.empty { background:var(--border2); }
+    /* border (not just fill) so the status stays visible under Windows high-contrast / forced-colors */
+    .tdot { width:8px; height:8px; border-radius:50%; background:var(--faint); border:1px solid var(--faint); flex:0 0 auto; }
+    .tdot.live { background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+    .tdot.have { background:var(--green); border-color:var(--green); }
+    .tdot.stale { background:var(--warn); border-color:var(--warn); }
+    .tdot.empty { background:var(--border2); border-color:var(--border2); }
 
     /* --- content --- */
     main { flex:1; padding: clamp(.8rem,3vw,1.6rem) clamp(.7rem,3vw,2rem) 2rem; max-width:1100px; width:100%; margin:0 auto; }
@@ -174,7 +177,7 @@
       { id: "synthesis", name: "Synthesis", desc: "Pool the effects (verifiable).", feeds: ["robustness", "certainty", "report"], apps: [["Forest plot", "../forest-plot/"], ["Workbench", "../workbench/"], ["NMA Pro", "../nma-pro-v2/"], ["Quantile MA", "../quantile-ma/"], ["Transported NMA", "../transported-nma/"]] },
       { id: "robustness", name: "Robustness", desc: "Spec-collapse, reporting bias + review overlap.", feeds: ["certainty", "report"], apps: [["Spec-collapse", "../spec-collapse/"], ["Reporting-bias", "../reporting-bias/"], ["Umbrella overlap", "../umbrella-overlap/"]] },
       { id: "certainty", name: "Certainty", desc: "GRADE / CINeMA.", feeds: ["report"], apps: [["GRADE SoF", "../grade-sof/"], ["CINeMA", "../cinema/"]] },
-      { id: "report", name: "Report", desc: "Draft the manuscript from the pipeline.", feeds: [], apps: [["Paper Studio", "../paper/"], ["PRISMA flow", "../prisma-flow/"]] },
+      { id: "report", name: "Report", desc: "Draft the manuscript from the pipeline.", feeds: [], draftOnly: true, apps: [["Paper Studio", "../paper/"], ["PRISMA flow", "../prisma-flow/"]] },
     ];
     var STAGE_BY = {}; STAGES.forEach(function (s) { STAGE_BY[s.id] = s; });
     function nameOf(id) { return (STAGE_BY[id] && STAGE_BY[id].name) || id; }
@@ -327,7 +330,7 @@
           + (prev ? "<button type='button' class='ghost' data-go='" + prev.id + "'>← " + esc(prev.name) + "</button>" : "<span></span>")
           + (next ? "<button type='button' class='ghost' data-go='" + next.id + "'>" + esc(next.name) + " →</button>" : "<button type='button' class='ghost' data-go='bundle'>Bundle &amp; sign →</button>")
           + "</div>";
-        return "<section class='stage-panel' data-tab='" + st.id + "' role='tabpanel' aria-labelledby='tab-btn-" + st.id + "'><div class='card'>"
+        return "<section class='stage-panel' id='panel-" + st.id + "' data-tab='" + st.id + "' role='tabpanel' aria-labelledby='tab-btn-" + st.id + "'><div class='card'>"
           + "<div class='s-head'><span class='s-n'>" + (i + 1) + "</span><span class='s-name'>" + esc(st.name) + "</span>" + pill + "</div>"
           + "<div class='s-desc'>" + esc(st.desc) + "</div>"
           + flowHtml(st)
@@ -354,26 +357,32 @@
     }
 
     function renderNav() {
+      var on = state.activeTab;
       var html = STAGES.map(function (st, i) {
         var cls = statusOf(st).cls;
         return "<button type='button' class='tab' role='tab' id='tab-btn-" + st.id + "' data-tab='" + st.id + "'"
-          + " aria-controls='panel-" + st.id + "' aria-selected='false'>"
+          + " aria-controls='panel-" + st.id + "' aria-selected='" + (st.id === on) + "' tabindex='" + (st.id === on ? "0" : "-1") + "'>"
           + "<span class='tnum'>" + (i + 1) + "</span><span class='tlabel'>" + esc(st.name) + "</span>"
           + "<span class='tdot " + cls + "'></span></button>";
       }).join("");
-      var capturable = STAGES.filter(function (s) { var l = liveCache[s.id]; return l && !l.readyOnly; }).length;
+      // Report is a draft-only stage (never folded into the bundle), so the
+      // denominator is the capturable stages — otherwise "N of 9" never completes.
+      var cap = STAGES.filter(function (s) { return !s.draftOnly; }).length;
       var done = STAGES.filter(function (s) { return state.outputs[s.id] != null; }).length;
-      html += "<button type='button' class='tab bundle' role='tab' id='tab-btn-bundle' data-tab='bundle' aria-controls='panel-bundle' aria-selected='false'>"
+      html += "<button type='button' class='tab bundle' role='tab' id='tab-btn-bundle' data-tab='bundle' aria-controls='panel-bundle'"
+        + " aria-selected='" + (on === "bundle") + "' tabindex='" + (on === "bundle" ? "0" : "-1") + "'>"
         + "<span class='tnum'>✓</span><span class='tlabel'>Bundle</span></button>";
       document.getElementById("tabnav").innerHTML = html;
-      document.getElementById("progress").textContent = done + " of " + STAGES.length + " stages captured";
+      document.getElementById("progress").textContent = done + " of " + cap + " stages captured";
       document.querySelectorAll("#tabnav .tab").forEach(function (el) {
         el.addEventListener("click", function () { switchTab(el.getAttribute("data-tab")); });
       });
     }
 
     function switchTab(id, keepScroll) {
-      if (!id) id = "protocol";
+      // fall back to the first stage if the id is missing or points to no panel
+      // (e.g. a stale activeTab persisted from an older build).
+      if (!id || !document.querySelector(".stage-panel[data-tab='" + id + "']")) id = "protocol";
       state.activeTab = id; save();
       document.querySelectorAll(".stage-panel").forEach(function (p) {
         p.classList.toggle("active", p.getAttribute("data-tab") === id);
@@ -381,6 +390,7 @@
       document.querySelectorAll("#tabnav .tab").forEach(function (b) {
         var on = b.getAttribute("data-tab") === id;
         b.setAttribute("aria-selected", on ? "true" : "false");
+        b.setAttribute("tabindex", on ? "0" : "-1");   // roving tabindex (ARIA tabs pattern)
         if (on && !keepScroll) { try { b.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); } catch (e) {} }
       });
       if (!keepScroll) { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { window.scrollTo(0, 0); } }
