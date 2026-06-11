@@ -17,34 +17,29 @@
  "acronyms": {
   "NCT02629159": "SELECT-COMPARE",
   "NCT00717236": "REALISTIC",
-  "NCT00565409": "PRESERVE",
   "NCT01710358": "RA-BEAM",
-  "NCT01519791": "C-early",
+  "NCT00195663": "PREMIER",
   "NCT03104400": "SELECT - PsA 1",
   "NCT02889796": "FINCH 1",
-  "NCT00106535": "A Study to Assess the Effect of Tocilizumab + ...",
   "NCT01232569": "A Study of RoActemra/Actemra (Tocilizumab) Giv...",
-  "NCT01004432": "Golimumab in Rheumatoid Arthritis Participants...",
+  "NCT02706873": "SELECT-EARLY",
   "NCT00531817": "ROSE",
-  "NCT01007435": "A Study of Tocilizumab as Monotherapy and in C...",
-  "NCT00810199": "A Study of Tocilizumab and Methotrexate Treatm...",
+  "NCT02376790": "Etanercept and Methotrexate in Combination or ...",
   "NCT03970837": "contRAst 2",
-  "NCT03980483": "contRAst 1",
-  "NCT00299104": "IMAGE",
+  "NCT00195702": "Efficacy and Safety of Adalimumab in Patients ...",
   "NCT02181673": "A Study of Golimumab in Participants With Acti...",
-  "NCT00266227": "SUNRISE",
   "NCT01721057": "RA-BUILD",
   "NCT02675426": "SELECT-NEXT",
+  "NCT02706951": "A Study Comparing Upadacitinib (ABT-494) Monot...",
   "NCT03104374": "SELECT - PsA 2",
-  "NCT02151851": "RAPID-C",
   "NCT01860976": "ASTRAEA",
-  "NCT00195702": "Efficacy and Safety of Adalimumab in Patients ...",
   "NCT00048581": "Phase III Study of BMS-188667 (CTLA4Ig) in Pat...",
+  "NCT01711359": "RA-BEGIN",
+  "NCT00445770": "Study Evaluating the Efficacy and Safety of Et...",
   "NCT01709578": "To Evaluate The Effect Of SAR153191 (REGN88) A...",
-  "NCT00538902": "Safety and Efficacy Study of Adalimumab in Adu...",
   "NCT01721044": "RA-BEACON",
-  "NCT00299130": "SERENE",
   "NCT02955212": "A Study With Upadacitinib (ABT-494) in Subject...",
+  "NCT00870467": "A Study of Adalimumab in Japanese Subjects Wit...",
   "NCT02706847": "SELECT-BEYOND",
   "NCT01578850": "Study Conducted in Subjects With Rheumatoid Ar...",
   "NCT02308163": "A Study to Evaluate Safety and Efficacy of ASP...",
@@ -52,14 +47,10 @@
   "NCT01350804": "NURTURE 1",
   "NCT01882439": "OPAL BEYOND",
   "NCT04134728": "contRAst 3",
-  "NCT00162266": "Abatacept With Methotrexate- Phase IIB",
-  "NCT00264550": "GO-FORWARD",
-  "NCT01877668": "OPAL BROADEN",
   "NCT00773461": "A Study of Tocilizumab in Combination With DMA...",
   "NCT01695239": "SPIRIT-P1",
-  "NCT03486457": "Efficacy And Safety Of Tofacitinib In Chinese ...",
   "NCT00674362": "CERTAIN",
-  "NCT00870467": "A Study of Adalimumab in Japanese Subjects Wit...",
+  "NCT00538902": "Safety and Efficacy Study of Adalimumab in Adu...",
   "NCT03773978": "JUVE-BASIS",
   "NCT02293902": "A Study Assessing the Efficacy and Safety of S...",
   "NCT00595413": "AUGUST II",
@@ -73,14 +64,11 @@
   "NCT02066389": "A Study Investigating the Efficacy and Safety ...",
   "NCT02349451": "A Phase 2 Study to Investigate the Safety, Tol...",
   "NCT00534313": "Safety and Efficacy of Abatacept Versus Placeb...",
-  "NCT00048542": "Study of Human Anti-TNF Monoclonal Antibody Ad...",
   "NCT01162421": "RADAR",
-  "NCT00207714": "An Efficacy and Safety Study of CNTO 148 Subcu...",
+  "NCT01164579": "Effects of Tofacitinib (CP-690,550) on Magneti...",
+  "NCT00048542": "Study of Human Anti-TNF Monoclonal Antibody Ad...",
   "NCT01313520": "A Study to Evaluate the Effectiveness of Infli...",
-  "NCT00298272": "Safety and Tolerability of Rituxan With Methot...",
-  "NCT01235598": "MARVELOUS",
-  "NCT00664521": "August III",
-  "NCT00796705": "Switching Anti-TNF-Alpha Agents in Rheumatoid ..."
+  "NCT00298272": "Safety and Tolerability of Rituxan With Methot..."
  },
  "trials": [
   {
@@ -124,8 +112,8 @@
    "year": 2008,
    "phase": "3",
    "group": "certolizumab (TNF) vs control",
-   "tE": 334,
-   "tN": 954,
+   "tE": 226,
+   "tN": 851,
    "cE": 21,
    "cN": 212,
    "allOutcomes": [
@@ -154,49 +142,14 @@
    ]
   },
   {
-   "nct": "NCT00565409",
-   "name": "PRESERVE",
-   "year": 2008,
-   "phase": "4",
-   "group": "etanercept (TNF) vs control",
-   "tE": 93,
-   "tN": 824,
-   "cE": 146,
-   "cN": 197,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: etanercept vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT01710358",
    "name": "RA-BEAM",
    "year": 2012,
    "phase": "3",
    "group": "baricitinib (JAK) vs control",
-   "tE": 219,
+   "tE": 92,
    "tN": 487,
-   "cE": 82,
+   "cE": 23,
    "cN": 488,
    "allOutcomes": [
     {
@@ -219,29 +172,29 @@
    ]
   },
   {
-   "nct": "NCT01519791",
-   "name": "C-early",
-   "year": 2012,
+   "nct": "NCT00195663",
+   "name": "PREMIER",
+   "year": 2000,
    "phase": "3",
-   "group": "certolizumab (TNF) vs control",
-   "tE": 405,
-   "tN": 655,
-   "cE": 112,
-   "cN": 213,
+   "group": "adalimumab (TNF) vs control",
+   "tE": 269,
+   "tN": 687,
+   "cE": 118,
+   "cN": 257,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: certolizumab vs control",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR50",
-     "title": "ACR50 response: certolizumab vs control",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR70",
-     "title": "ACR70 response: certolizumab vs control",
+     "title": "ACR70 response: adalimumab vs control",
      "type": "binary"
     }
    ],
@@ -324,41 +277,6 @@
    ]
   },
   {
-   "nct": "NCT00106535",
-   "name": "A Study to Assess the Effect of Tocilizumab + ...",
-   "year": 2005,
-   "phase": "3",
-   "group": "tocilizumab (IL-6) vs control",
-   "tE": 100,
-   "tN": 399,
-   "cE": 38,
-   "cN": 393,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tocilizumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tocilizumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: tocilizumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT01232569",
    "name": "A Study of RoActemra/Actemra (Tocilizumab) Giv...",
    "year": 2011,
@@ -389,19 +307,29 @@
    ]
   },
   {
-   "nct": "NCT01004432",
-   "name": "Golimumab in Rheumatoid Arthritis Participants...",
-   "year": 2009,
+   "nct": "NCT02706873",
+   "name": "SELECT-EARLY",
+   "year": 2016,
    "phase": "3",
-   "group": "golimumab (TNF) vs control",
-   "tE": 106,
-   "tN": 433,
-   "cE": 17,
-   "cN": 184,
+   "group": "upadacitinib (JAK) vs control",
+   "tE": 165,
+   "tN": 317,
+   "cE": 89,
+   "cN": 314,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: golimumab vs control",
+     "title": "ACR20 response: upadacitinib vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR70",
+     "title": "ACR70 response: upadacitinib vs control",
      "type": "binary"
     }
    ],
@@ -444,54 +372,29 @@
    ]
   },
   {
-   "nct": "NCT01007435",
-   "name": "A Study of Tocilizumab as Monotherapy and in C...",
-   "year": 2009,
+   "nct": "NCT02376790",
+   "name": "Etanercept and Methotrexate in Combination or ...",
+   "year": 2015,
    "phase": "3",
-   "group": "tocilizumab (IL-6) vs control",
-   "tE": 216,
-   "tN": 290,
-   "cE": 205,
-   "cN": 292,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tocilizumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT00810199",
-   "name": "A Study of Tocilizumab and Methotrexate Treatm...",
-   "year": 2009,
-   "phase": "3",
-   "group": "tocilizumab (IL-6) vs control",
+   "group": "etanercept (TNF) vs control",
    "tE": 126,
-   "tN": 277,
-   "cE": 111,
-   "cN": 276,
+   "tN": 284,
+   "cE": 43,
+   "cN": 284,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: tocilizumab vs control",
+     "title": "ACR20 response: etanercept vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR50",
-     "title": "ACR50 response: tocilizumab vs control",
+     "title": "ACR50 response: etanercept vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR70",
-     "title": "ACR70 response: tocilizumab vs control",
+     "title": "ACR70 response: etanercept vs control",
      "type": "binary"
     }
    ],
@@ -534,59 +437,29 @@
    ]
   },
   {
-   "nct": "NCT03980483",
-   "name": "contRAst 1",
-   "year": 2019,
+   "nct": "NCT00195702",
+   "name": "Efficacy and Safety of Adalimumab in Patients ...",
+   "year": 2000,
    "phase": "3",
-   "group": "tofacitinib (JAK) vs control",
-   "tE": 196,
-   "tN": 258,
-   "cE": 31,
-   "cN": 256,
+   "group": "adalimumab (TNF) vs control",
+   "tE": 153,
+   "tN": 290,
+   "cE": 6,
+   "cN": 200,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: tofacitinib vs control",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR50",
-     "title": "ACR50 response: tofacitinib vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT00299104",
-   "name": "IMAGE",
-   "year": 2006,
-   "phase": "3",
-   "group": "rituximab (B-cell) vs control",
-   "tE": 162,
-   "tN": 250,
-   "cE": 104,
-   "cN": 249,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: rituximab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: rituximab vs control",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR70",
-     "title": "ACR70 response: rituximab vs control",
+     "title": "ACR70 response: adalimumab vs control",
      "type": "binary"
     }
    ],
@@ -612,31 +485,6 @@
     {
      "shortLabel": "ACR50",
      "title": "ACR50 response: golimumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT00266227",
-   "name": "SUNRISE",
-   "year": 2006,
-   "phase": "3",
-   "group": "rituximab (B-cell) vs control",
-   "tE": 293,
-   "tN": 318,
-   "cE": 64,
-   "cN": 157,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: rituximab vs control",
      "type": "binary"
     }
    ],
@@ -719,15 +567,15 @@
    ]
   },
   {
-   "nct": "NCT03104374",
-   "name": "SELECT - PsA 2",
-   "year": 2017,
+   "nct": "NCT02706951",
+   "name": "A Study Comparing Upadacitinib (ABT-494) Monot...",
+   "year": 2016,
    "phase": "3",
    "group": "upadacitinib (JAK) vs control",
-   "tE": 82,
-   "tN": 218,
-   "cE": 10,
-   "cN": 212,
+   "tE": 91,
+   "tN": 217,
+   "cE": 33,
+   "cN": 216,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
@@ -754,29 +602,29 @@
    ]
   },
   {
-   "nct": "NCT02151851",
-   "name": "RAPID-C",
-   "year": 2014,
+   "nct": "NCT03104374",
+   "name": "SELECT - PsA 2",
+   "year": 2017,
    "phase": "3",
-   "group": "certolizumab (TNF) vs control",
-   "tE": 114,
-   "tN": 312,
-   "cE": 8,
-   "cN": 113,
+   "group": "upadacitinib (JAK) vs control",
+   "tE": 82,
+   "tN": 218,
+   "cE": 10,
+   "cN": 212,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: certolizumab vs control",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR50",
-     "title": "ACR50 response: certolizumab vs control",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
      "shortLabel": "ACR70",
-     "title": "ACR70 response: certolizumab vs control",
+     "title": "ACR70 response: upadacitinib vs control",
      "type": "binary"
     }
    ],
@@ -819,29 +667,19 @@
    ]
   },
   {
-   "nct": "NCT00195702",
-   "name": "Efficacy and Safety of Adalimumab in Patients ...",
-   "year": 2000,
+   "nct": "NCT00048581",
+   "name": "Phase III Study of BMS-188667 (CTLA4Ig) in Pat...",
+   "year": 2002,
    "phase": "3",
-   "group": "adalimumab (TNF) vs control",
-   "tE": 55,
-   "tN": 212,
-   "cE": 12,
-   "cN": 200,
+   "group": "abatacept (T-cell) vs control",
+   "tE": 45,
+   "tN": 256,
+   "cE": 7,
+   "cN": 133,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: adalimumab vs control",
+     "title": "ACR20 response: abatacept vs control",
      "type": "binary"
     }
    ],
@@ -854,19 +692,64 @@
    ]
   },
   {
-   "nct": "NCT00048581",
-   "name": "Phase III Study of BMS-188667 (CTLA4Ig) in Pat...",
-   "year": 2002,
+   "nct": "NCT01711359",
+   "name": "RA-BEGIN",
+   "year": 2012,
    "phase": "3",
-   "group": "abatacept (T-cell) vs control",
-   "tE": 115,
-   "tN": 256,
-   "cE": 9,
-   "cN": 133,
+   "group": "baricitinib (JAK) vs control",
+   "tE": 87,
+   "tN": 159,
+   "cE": 69,
+   "cN": 210,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: abatacept vs control",
+     "title": "ACR20 response: baricitinib vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: baricitinib vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR70",
+     "title": "ACR70 response: baricitinib vs control",
+     "type": "binary"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00445770",
+   "name": "Study Evaluating the Efficacy and Safety of Et...",
+   "year": 2006,
+   "phase": "3",
+   "group": "etanercept (TNF) vs control",
+   "tE": 114,
+   "tN": 192,
+   "cE": 65,
+   "cN": 176,
+   "allOutcomes": [
+    {
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: etanercept vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: etanercept vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR70",
+     "title": "ACR70 response: etanercept vs control",
      "type": "binary"
     }
    ],
@@ -914,41 +797,6 @@
    ]
   },
   {
-   "nct": "NCT00538902",
-   "name": "Safety and Efficacy Study of Adalimumab in Adu...",
-   "year": 2007,
-   "phase": "2/3",
-   "group": "adalimumab (TNF) vs control",
-   "tE": 218,
-   "tN": 294,
-   "cE": 5,
-   "cN": 60,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: adalimumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT01721044",
    "name": "RA-BEACON",
    "year": 2013,
@@ -984,36 +832,6 @@
    ]
   },
   {
-   "nct": "NCT00299130",
-   "name": "SERENE",
-   "year": 2005,
-   "phase": "3",
-   "group": "rituximab (B-cell) vs control",
-   "tE": 58,
-   "tN": 170,
-   "cE": 16,
-   "cN": 172,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: rituximab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: rituximab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT02955212",
    "name": "A Study With Upadacitinib (ABT-494) in Subject...",
    "year": 2018,
@@ -1037,6 +855,41 @@
     {
      "shortLabel": "ACR70",
      "title": "ACR70 response: upadacitinib vs control",
+     "type": "binary"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00870467",
+   "name": "A Study of Adalimumab in Japanese Subjects Wit...",
+   "year": 2009,
+   "phase": "3",
+   "group": "adalimumab (TNF) vs control",
+   "tE": 110,
+   "tN": 171,
+   "cE": 63,
+   "cN": 163,
+   "allOutcomes": [
+    {
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR70",
+     "title": "ACR70 response: adalimumab vs control",
      "type": "binary"
     }
    ],
@@ -1269,101 +1122,6 @@
    ]
   },
   {
-   "nct": "NCT00162266",
-   "name": "Abatacept With Methotrexate- Phase IIB",
-   "year": 2000,
-   "phase": "2",
-   "group": "abatacept (T-cell) vs control",
-   "tE": 44,
-   "tN": 115,
-   "cE": 18,
-   "cN": 119,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: abatacept vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: abatacept vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: abatacept vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT00264550",
-   "name": "GO-FORWARD",
-   "year": 2005,
-   "phase": "3",
-   "group": "golimumab (TNF) vs control",
-   "tE": 47,
-   "tN": 89,
-   "cE": 49,
-   "cN": 133,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: golimumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT01877668",
-   "name": "OPAL BROADEN",
-   "year": 2014,
-   "phase": "3",
-   "group": "tofacitinib (JAK) vs control",
-   "tE": 7,
-   "tN": 107,
-   "cE": 100,
-   "cN": 105,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tofacitinib vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tofacitinib vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: tofacitinib vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT00773461",
    "name": "A Study of Tocilizumab in Combination With DMA...",
    "year": 2008,
@@ -1429,41 +1187,6 @@
    ]
   },
   {
-   "nct": "NCT03486457",
-   "name": "Efficacy And Safety Of Tofacitinib In Chinese ...",
-   "year": 2018,
-   "phase": "3",
-   "group": "tofacitinib (JAK) vs control",
-   "tE": 52,
-   "tN": 136,
-   "cE": 4,
-   "cN": 68,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tofacitinib vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tofacitinib vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: tofacitinib vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT00674362",
    "name": "CERTAIN",
    "year": 2008,
@@ -1499,15 +1222,15 @@
    ]
   },
   {
-   "nct": "NCT00870467",
-   "name": "A Study of Adalimumab in Japanese Subjects Wit...",
-   "year": 2009,
-   "phase": "3",
+   "nct": "NCT00538902",
+   "name": "Safety and Efficacy Study of Adalimumab in Adu...",
+   "year": 2007,
+   "phase": "2/3",
    "group": "adalimumab (TNF) vs control",
-   "tE": 0,
-   "tN": 5,
-   "cE": 103,
-   "cN": 163,
+   "tE": 29,
+   "tN": 121,
+   "cE": 9,
+   "cN": 60,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
@@ -1629,9 +1352,9 @@
    "year": 2008,
    "phase": "2",
    "group": "etanercept (TNF) vs control",
-   "tE": 26,
+   "tE": 35,
    "tN": 75,
-   "cE": 4,
+   "cE": 6,
    "cN": 65,
    "allOutcomes": [
     {
@@ -1664,9 +1387,9 @@
    "year": 2007,
    "phase": "2",
    "group": "etanercept (TNF) vs control",
-   "tE": 19,
+   "tE": 30,
    "tN": 64,
-   "cE": 7,
+   "cE": 11,
    "cN": 65,
    "allOutcomes": [
     {
@@ -1949,36 +1672,6 @@
    ]
   },
   {
-   "nct": "NCT00048542",
-   "name": "Study of Human Anti-TNF Monoclonal Antibody Ad...",
-   "year": 2002,
-   "phase": "3",
-   "group": "adalimumab (TNF) vs control",
-   "tE": 9,
-   "tN": 38,
-   "cE": 5,
-   "cN": 37,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: adalimumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
    "nct": "NCT01162421",
    "name": "RADAR",
    "year": 2010,
@@ -2014,19 +1707,59 @@
    ]
   },
   {
-   "nct": "NCT00207714",
-   "name": "An Efficacy and Safety Study of CNTO 148 Subcu...",
-   "year": 2003,
+   "nct": "NCT01164579",
+   "name": "Effects of Tofacitinib (CP-690,550) on Magneti...",
+   "year": 2010,
    "phase": "2",
-   "group": "golimumab (TNF) vs control",
-   "tE": 7,
-   "tN": 35,
-   "cE": 5,
-   "cN": 35,
+   "group": "tofacitinib (JAK) vs control",
+   "tE": 8,
+   "tN": 36,
+   "cE": 1,
+   "cN": 37,
    "allOutcomes": [
     {
      "shortLabel": "ACR20",
-     "title": "ACR20 response: golimumab vs control",
+     "title": "ACR20 response: tofacitinib vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tofacitinib vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR70",
+     "title": "ACR70 response: tofacitinib vs control",
+     "type": "binary"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00048542",
+   "name": "Study of Human Anti-TNF Monoclonal Antibody Ad...",
+   "year": 2002,
+   "phase": "3",
+   "group": "adalimumab (TNF) vs control",
+   "tE": 16,
+   "tN": 30,
+   "cE": 14,
+   "cN": 37,
+   "allOutcomes": [
+    {
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
+     "type": "binary"
+    },
+    {
+     "shortLabel": "ACR70",
+     "title": "ACR70 response: adalimumab vs control",
      "type": "binary"
     }
    ],
@@ -2102,102 +1835,7 @@
     "some-concerns",
     "some-concerns"
    ]
-  },
-  {
-   "nct": "NCT01235598",
-   "name": "MARVELOUS",
-   "year": 2010,
-   "phase": "3",
-   "group": "certolizumab (TNF) vs control",
-   "tE": 15,
-   "tN": 22,
-   "cE": 7,
-   "cN": 12,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: certolizumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: certolizumab vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: certolizumab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT00664521",
-   "name": "August III",
-   "year": 2008,
-   "phase": "2",
-   "group": "rituximab (B-cell) vs control",
-   "tE": 6,
-   "tN": 18,
-   "cE": 2,
-   "cN": 9,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: rituximab vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
-  },
-  {
-   "nct": "NCT00796705",
-   "name": "Switching Anti-TNF-Alpha Agents in Rheumatoid ...",
-   "year": 2008,
-   "phase": "4",
-   "group": "etanercept (TNF) vs control",
-   "tE": 0,
-   "tN": 4,
-   "cE": 0,
-   "cN": 3,
-   "allOutcomes": [
-    {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
-     "type": "binary"
-    },
-    {
-     "shortLabel": "ACR70",
-     "title": "ACR70 response: etanercept vs control",
-     "type": "binary"
-    }
-   ],
-   "rob": [
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns",
-    "some-concerns"
-   ]
   }
  ],
- "provenance_note": "Registry-native cohort: AACT search returned 4346 RA drug records; 207 trials posted an ACR20/50/70 result; 66 had a usable active-vs-control responder pair (with per-arm N). This is an AACT-results-posted cohort, NOT a dual-screened full systematic review; responder counts are derived events = round(ACR% * N). Synthesis hierarchy: ordinal proportional-odds Bayesian league (ra_league.json), advanced-MoA >= TNF with heterogeneity flagged."
+ "provenance_note": "Registry-native cohort: AACT search returned 4346 RA drug records; 207 trials posted an ACR20/50/70 result; 54 had a usable active-vs-control responder pair (with per-arm N). This is an AACT-results-posted cohort, NOT a dual-screened full systematic review; responder counts are derived events = round(ACR% * N). Synthesis hierarchy: ordinal proportional-odds Bayesian league (ra_league.json), advanced-MoA >= TNF with heterogeneity flagged."
 }

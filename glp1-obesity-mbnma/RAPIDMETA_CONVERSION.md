@@ -11,10 +11,14 @@ RoB-2 autofill, GRADE SoF, CINeMA, and the Evidence Paper Studio. We only ever w
 
 ## Pilot — RA (class6_ra), DONE
 Reproducible source (committed):
-1. `ra_rapidmeta_harvest.py` → `ra_trials.json` — per-trial ACR responder table from AACT. For each trial it
-   finds a control arm (placebo/control) and the primary active arm, reads ACR50 (fallback ACR20/70) % and per-arm
-   N (from `outcome_counts`), and derives responder events `= round(ACR% × N)`. **Funnel: 4346 search hits → 207
-   ACR-reporting trials → 66 with a usable active-vs-control pair** (all 12 agents represented).
+1. `ra_rapidmeta_harvest.py` → `ra_trials.json` — per-trial ACR responder table from AACT (**v2, hardened after a
+   multi-person review found 4 data bugs in v1**): it picks the **latest placebo-controlled timepoint** (AACT posts
+   one row per timepoint; v1 took an arbitrary one → wrong endpoint for 34/66 trials), is **unit-aware** (ACR is
+   posted as a percentage OR a participant count; v1 multiplied counts as %), excludes **open-label/crossover** arms,
+   requires control to be **drug-free**, and **fails closed** on implausible cells (control rate >20pp above active,
+   arm N<10, events outside [0,N]). **Funnel reconciles: 4346 search → 207 ACR-reporting → 54 included** (153 excluded
+   into named buckets), all 12 agents. Example fix: NCT00870467 went from a garbage 0/5-vs-103/163 to the correct
+   adalimumab 110/171 (64%) vs placebo 63/163 (39%).
 2. `build_ra_rapidmeta_config.py` → `ra_rapidmeta_config.json` — assembles the kit config (drug, condition,
    comparator, PICO, acronyms, 66 trials with tE/tN/cE/cN + ACR `allOutcomes`) + an honest provenance note.
 3. `python clone.py class6_ra/ra_rapidmeta_config.json --out class6_ra/ra_review.html` (run in rapidmeta-kit) →

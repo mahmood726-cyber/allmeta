@@ -1,14 +1,13 @@
-"""Assemble the rapidmeta-kit config for the RA class from the harvested per-trial ACR table (ra_trials.json)
-+ the synthesis core (ra_results.json) + the PubMed-verified concordance reference. Writes
-ra_rapidmeta_config.json, ready for `python clone.py ra_rapidmeta_config.json` in rapidmeta-kit. Registry-native
-(AACT); the protocol/search/screen/extract framing reflects the AACT-native provenance, NOT a fabricated
-dual-screen systematic review."""
+"""Assemble the rapidmeta-kit config for the RA class from the harvested per-trial ACR table (ra_trials.json).
+Writes ra_rapidmeta_config.json, ready for `python clone.py ra_rapidmeta_config.json` in rapidmeta-kit.
+Registry-native (AACT); the protocol/search/screen/extract framing reflects the AACT-native provenance, NOT a
+fabricated dual-screen systematic review. (The harvester already enforces plausibility — control rate not >20pp
+above active, arm N >= 10, events in [0,N] — so the config carries clean 2x2 cells.)"""
 import io, sys, os, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 HERE = r'C:/Projects/glp1-doseresp-nma/glp1-obesity-mbnma/class6_ra'
 th = json.load(open(f'{HERE}/ra_trials.json', encoding='utf-8'))
-res = json.load(open(f'{HERE}/ra_results.json', encoding='utf-8'))
 trials_raw = th['trials']
 scr = th['screening']
 

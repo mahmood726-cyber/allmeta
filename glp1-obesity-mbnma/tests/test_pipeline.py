@@ -419,9 +419,15 @@ def test_ra_rapidmeta_conversion():
         assert t['nct'].startswith('NCT') and t['name']
         # derived responder events must be valid counts within arm N
         assert 0 <= t['tE'] <= t['tN'] and 0 <= t['cE'] <= t['cN'], f"{t['nct']}: events outside [0,N]"
+        # v2 plausibility (multi-person review): no arm-swapped/tiny cells
+        assert min(t['tN'], t['cN']) >= 10, f"{t['nct']}: arm N < 10"
+        assert (t['cE'] / t['cN']) - (t['tE'] / t['tN']) <= 0.20, f"{t['nct']}: control implausibly beats active"
         assert t['allOutcomes'], 'each trial lists at least one ACR outcome'
     s = tr['screening']
     assert s['search_hits'] >= s['acr_reporting'] >= s['included'], 'screening funnel must be monotone'
+    # v2: PRISMA funnel must reconcile (every ACR-reporting trial accounted for)
+    assert s['funnel_reconciles'] is True, 'screening funnel must reconcile to acr_reporting'
+    assert s['included'] + sum(s['excluded'].values()) == s['acr_reporting']
     # the kit config is well-formed against the rapidmeta-kit schema essentials
     cfg = _classfile('class6_ra/ra_rapidmeta_config.json')
     for k in ('drug', 'slug', 'condition', 'title', 'pico', 'trials'):
