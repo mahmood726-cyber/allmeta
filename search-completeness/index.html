@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Search completeness: quantify how many registered trials a literature-only search misses (unpublished ghosts, papers indexed elsewhere), the trial-to-publication linkage rate, and the denominator-bias factor. Free, offline, in-browser.">
+  <meta name="color-scheme" content="light dark">
+  <title>Search completeness — registry vs literature miss rate</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7;
+      --warn:#b05a1c; --warn-soft:#fbeedd; --border:#d9d5cc; --border-strong:#7a8294; --input-bg:#fbfaf6;
+      --ok:#0d7a27; --ok-soft:#dff3e0; --err:#912121; --err-soft:#fbd2d2; --bar:#2c5e8a; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+      --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268; --warn-soft:#3a2d1c; --border:#2f343a; --border-strong:#495262;
+      --input-bg:#23272c; --ok:#5bc47b; --ok-soft:#1e3a27; --err:#ef7373; --err-soft:#3a1e1e; --bar:#6aa6d4; } }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5}
+    header{padding:1.5rem clamp(1rem,3vw,3rem) .75rem;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{margin:0 0 .2rem;font-size:1.4rem;letter-spacing:-.01em}
+    header p{margin:0;color:var(--muted);font-size:.9rem;max-width:84ch}
+    .toolbar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;padding:.6rem clamp(1rem,3vw,3rem);background:var(--panel);border-bottom:1px solid var(--border)}
+    .layout{display:grid;grid-template-columns:minmax(300px,27rem) 1fr;gap:1.25rem;padding:1.25rem clamp(1rem,3vw,3rem);align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .6rem;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hint{color:var(--muted);font-size:.74rem}
+    textarea{width:100%;padding:.4rem .55rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);font:ui-monospace,Menlo,monospace;font-size:.78rem;resize:vertical;min-height:6rem}
+    textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+    button{font:inherit;font-size:.84rem;padding:.42rem .8rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    button:hover{filter:brightness(.96)} button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.5rem;margin-bottom:.6rem}
+    .stat{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem}
+    .stat .k{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    .stat .v{display:block;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .verdict{padding:.55rem .8rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem}
+    .verdict.ok{background:var(--ok-soft)} .verdict.flag{background:var(--err-soft)}
+    table{width:100%;border-collapse:collapse;font-size:.82rem} td,th{padding:.3rem .5rem;text-align:left;border-bottom:1px solid var(--border)}
+    th{color:var(--muted);font-size:.68rem;text-transform:uppercase}
+    .badge{display:inline-block;padding:.05rem .45rem;border-radius:10px;font-size:.7rem;font-weight:600}
+    .badge.found{background:var(--ok-soft);color:var(--ok)} .badge.ghost{background:var(--err-soft);color:var(--err)}
+    .badge.pnf{background:var(--warn-soft);color:var(--warn)} .badge.nolink{background:var(--accent-soft);color:var(--muted)}
+    .assum{background:var(--warn-soft);border-left:3px solid var(--warn);padding:.6rem .8rem;border-radius:4px;font-size:.82rem}
+    .assum strong{color:var(--warn)}
+    .footer-note{margin:0;color:var(--muted);font-size:.76rem;padding:0 clamp(1rem,3vw,3rem) 2rem;max-width:92ch}
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/search-completeness-v1.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18)">← allmeta</a>
+
+  <header>
+    <h1>Search completeness <span style="font-size:.8rem;color:var(--muted);font-weight:400">· registry vs literature miss rate</span></h1>
+    <p>A literature-only search systematically <strong>misses registered trials</strong> — they were never published (ghosts), or their paper is indexed under a different condition (a T2D trial not found under "obesity"). Against a registry cohort (CT.gov NCT IDs) + the trial→publication linkage, this quantifies how many your search <strong>missed</strong>, the trial-to-publication <strong>linkage rate</strong> (~63.6% baseline), and the <strong>denominator-bias factor</strong>. Report it so a review of N publications isn't mistaken for "all trials".</p>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" id="btn-run" class="primary">Assess</button>
+    <button type="button" id="btn-example">Load example</button>
+  </div>
+
+  <main class="layout">
+    <aside aria-label="Inputs">
+      <section class="panel">
+        <h2>Registry cohort + linkage</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">One per line: <code>NCT id, pmid pmid …</code> (a trial with no PMIDs = unlinked).</label>
+        <textarea id="f-cohort" aria-label="Registry cohort and linkage" style="min-height:9rem"></textarea>
+      </section>
+      <section class="panel">
+        <h2>Literature search hits (PMIDs)</h2>
+        <label class="hint" style="display:block;margin:0 0 .3rem">The PMIDs your MEDLINE/Embase search returned (any separator).</label>
+        <textarea id="f-hits" aria-label="Search hit PMIDs"></textarea>
+      </section>
+      <section class="panel">
+        <h2>Known-unpublished (ghost) NCTs <span class="hint">— optional</span></h2>
+        <textarea id="f-ghosts" aria-label="Ghost NCTs" style="min-height:3.5rem"></textarea>
+      </section>
+    </aside>
+
+    <section aria-label="Results">
+      <section class="panel">
+        <h2>Completeness</h2>
+        <div id="result"><p class="hint">Enter a cohort + search hits, then <strong>Assess</strong> — or <strong>Load example</strong>.</p></div>
+      </section>
+      <section class="panel">
+        <h2>Per-trial</h2>
+        <div id="per-trial"></div>
+      </section>
+      <section class="panel">
+        <h2>Caveats</h2>
+        <div class="assum"><strong>This measures retrieval completeness against the registry, not absolute truth.</strong> The registry cohort itself may be incomplete (not all trials register); "ghost" requires knowing a trial is truly unpublished (registration ≠ completion); and linkage depends on the registry's recorded publications (AACT <code>study_references</code>), which lag. Use the miss rate + denominator factor as an explicit missing-evidence term — it complements ROB-ME / reporting-bias, it doesn't replace them.</div>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">A registered trial counts as "found" if any of its linked PMIDs is in your search hits. <code>sensitivity</code> = found / cohort; <code>denominator factor</code> = 1/sensitivity (a search of N papers ≈ N/sensitivity registered trials); <code>linkage rate</code> = trials with ≥1 linked publication / cohort. Misses are categorised: unpublished ghost, published-but-not-retrieved, or no publication link. Idea integrated from the glp1-obesity-mbnma literature arm (registry-vs-MEDLINE). Everything runs on your device.</p>
+
+  <script src="../shared/toast.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var $ = function (id) { return document.getElementById(id); };
+    var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
+    function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function parseCohort(text) {
+      var cohort = [], linkage = {};
+      String(text || "").split(/\r?\n/).forEach(function (ln) {
+        ln = ln.trim(); if (!ln || ln[0] === "#") return;
+        var parts = ln.split(",");
+        var nct = parts[0].trim(); if (!nct) return;
+        var pmids = (parts.slice(1).join(" ").match(/\d{5,9}/g)) || [];
+        cohort.push(nct); linkage[nct] = pmids;
+      });
+      return { cohort: cohort, linkage: linkage };
+    }
+    function parseIds(text, re) { return (String(text || "").match(re) || []); }
+
+    var BADGE = { found: "found", ghost: "ghost", "published-not-found": "pnf", "no-link": "nolink" };
+    var LABEL = { found: "found", ghost: "ghost (unpublished)", "published-not-found": "published, not retrieved", "no-link": "no publication link" };
+
+    function run() {
+      window.__lastSC = null;
+      var cl = parseCohort($("f-cohort").value);
+      var hits = parseIds($("f-hits").value, /\d{5,9}/g);
+      var ghosts = parseIds($("f-ghosts").value, /NCT\d{8}/gi);
+      var host = $("result");
+      if (!cl.cohort.length) { host.innerHTML = '<p class="hint">Add at least one registry trial (NCT id).</p>'; $("per-trial").innerHTML = ""; return; }
+      var r = window.AlmSearchCompleteness.assess({ cohort: cl.cohort, searchHits: hits, linkage: cl.linkage, ghosts: ghosts });
+      if (!r.ok) { host.innerHTML = '<p class="hint">' + esc(r.error) + "</p>"; return; }
+      window.__lastSC = r;
+
+      host.innerHTML = '<div class="verdict ' + (r.missed ? "flag" : "ok") + '">' + esc(r.verdict) + "</div>"
+        + '<div class="stats">'
+        + stat("Cohort", r.n) + stat("Found", r.found) + stat("Missed", r.missed)
+        + stat("Sensitivity", (r.sensitivity * 100).toFixed(0) + "%")
+        + stat("Linkage rate", (r.linkageRate * 100).toFixed(0) + "%")
+        + stat("Denominator ×", r.denominatorFactor != null ? r.denominatorFactor.toFixed(2) : "—")
+        + "</div>"
+        + '<p class="hint">Misses: ' + r.breakdown.ghost + " ghost · " + r.breakdown.publishedNotFound + " published-not-retrieved · " + r.breakdown.noLink + " no-link</p>";
+
+      $("per-trial").innerHTML = "<table><tr><th>Trial</th><th>Linked PMIDs</th><th>Status</th></tr>"
+        + r.perTrial.map(function (t) {
+          return "<tr><td>" + esc(t.nct) + "</td><td>" + t.linkedPmids + '</td><td><span class="badge ' + BADGE[t.category] + '">' + esc(LABEL[t.category]) + "</span></td></tr>";
+        }).join("") + "</table>";
+    }
+    function stat(k, v) { return '<div class="stat"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + "</span></div>"; }
+
+    function loadExample() {
+      // Illustrative GLP-1/obesity registry cohort vs a MEDLINE search.
+      $("f-cohort").value = "# NCT id, linked PMIDs\n"
+        + "NCT03548935, 33567185\n"        // STEP-1, in search
+        + "NCT04184622, 35658024\n"        // SURMOUNT-1, in search
+        + "NCT03611582, 38078870\n"        // in search
+        + "NCT04657003, 30122305\n"        // published but the paper isn't in the obesity search hits
+        + "NCT05144984\n"                  // no AACT publication link
+        + "NCT06041217";                   // unpublished ghost (no paper)
+      $("f-hits").value = "33567185 35658024 38078870 37385275 36322838 40353578";
+      $("f-ghosts").value = "NCT06041217";
+      run();
+      toast("Example loaded — a MEDLINE search vs a GLP-1/obesity registry cohort.");
+    }
+
+    $("btn-run").addEventListener("click", run);
+    $("btn-example").addEventListener("click", loadExample);
+    ["f-cohort", "f-hits", "f-ghosts"].forEach(function (id) { $(id).addEventListener("input", run); });
+
+    window.__almSearchCompleteness = { run: function () { run(); return window.__lastSC || null; } };
+  })();
+  </script>
+  <script src="../hub/shared/a11y-landmarks.js"></script>
+</body>
+</html>

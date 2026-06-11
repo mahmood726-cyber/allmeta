@@ -793,6 +793,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["search", "pubmed", "embase", "central", "translation"]
   },
   {
+    name: "Search completeness",
+    folder: "allmeta/search-completeness",
+    path: "./search-completeness/",
+    added: "2026-06-11",
+    collection: "new",
+    mode: "file",
+    category: "Search",
+    summary: "Quantify how many registered trials a literature-only search MISSES: against a registry cohort (CT.gov NCT ids) + the trial→publication linkage, it reports the miss rate, the trial-to-publication linkage rate (~63.6% literature baseline), the denominator-bias factor (a search of N papers ≈ N/sensitivity registered trials), and categorises each miss (unpublished ghost / published-but-not-retrieved / no link).",
+    note: "Retrieval-completeness vs the registry, not absolute truth; complements ROB-ME / reporting-bias as an explicit missing-evidence term. Idea integrated from the glp1-obesity-mbnma registry-vs-MEDLINE arm.",
+    tags: ["search-completeness", "registry", "ghost-trials", "publication-bias", "linkage", "ct.gov", "missing-evidence", "denominator-bias"]
+  },
+  {
     name: "Median → Mean/SD",
     subcategory: "Effect-size tools",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/meta-analysis-methods-course.html",
