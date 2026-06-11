@@ -29,11 +29,16 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   the 40-stage incretin pipeline. Transport, league, HTA, and GRADE would repoint identically (same AACT
   fields + engines) but were not rebuilt per class — the point is class-generality and method-discrimination,
   which hold.
-- **Class 2 (PCSK9) goes deeper:** it now also carries the **league + GRADE depth stages** — a full pairwise
-  LDL league with per-comparison GRADE/CINeMA certainty (`class2_pcsk9/pcsk9_league.json`) using the *same*
-  computable domains as the incretin flagship `nma_league.py` (6 Moderate / 6 Low across 12 comparisons,
-  bococizumab lead). Remaining depth (transport to a target lipid population; HTML dashboard) repoints
-  identically but is not rebuilt. This proves the depth stages port, not just the core analysis.
+- **Class 2 (PCSK9) is the full-depth proof:** it now carries all **four named depth stages** — (1) a full
+  pairwise LDL **league** with per-comparison **GRADE/CINeMA certainty** (`pcsk9_league.json`, same computable
+  domains as the incretin flagship `nma_league.py`: 6 Moderate / 6 Low across 12 comparisons, bococizumab
+  lead); (2) **transport** (`pcsk9_transport.json`) mapping registry % LDL reduction → decision-relevant
+  **absolute** lowering (mmol/L) in a real NHANES elevated-LDL US target (baseline 132 mg/dL; bococizumab
+  −2.61 → inclisiran −1.99 mmol/L), using the *same* authoritative NHANES reference source as the incretin
+  transport; and (3) a single-file **offline dashboard** (`pcsk9_dashboard.html`) rendering them. This proves
+  the depth stages port end-to-end, not just the core analysis. Honest bound: the PCSK9 league uses the
+  frequentist normal contrast (no Bayesian draw matrix for this class), and transport assumes the % reduction
+  is approximately population-transportable (carried modifier = target baseline LDL, not the percentage).
 - Every class result is registry-native (AACT) and honestly bounded (small k where noted; demonstration, not
   a systematic review).
 

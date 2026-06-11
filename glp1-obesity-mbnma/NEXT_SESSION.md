@@ -10,8 +10,8 @@ Registry-native synthesis → HTA → 6 wide-gap methods → GRADE/CINeMA guidel
 posterior contrast → certainty league table → decision-sensitivity → external validation (**n=7** published
 NMAs/guidelines concordant) → 2 portfolio-method integrations (Benford integrity, entropy-balancing
 transport) → **5-class generality** (incretin/PCSK9/SGLT2/psoriasis/asthma = continuous-weight / continuous-
-LDL / hard-outcome-HR / binary-responder / count-rate-IRR). One-command reproducible (`python run_all.py`),
-**34-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
+LDL / hard-outcome-HR / binary-responder / count-rate-IRR), with **PCSK9 promoted to full depth** (league +
+GRADE + transport + offline dashboard). One-command reproducible (`python run_all.py`), **37-test** self-verifying. Key docs: `PAPER.md`, `GUIDELINE_SUPPORT.md`, `WIDE_GAP_METHODS.md`, `GENERALITY_MATRIX.md`.
 
 ## Remaining frontiers (pick up here)
 1. ~~**5th outcome type** — count/rate (exacerbation rate-ratio, IRR-NMA)~~ **DONE** (`class5_asthma/`):
@@ -19,13 +19,20 @@ LDL / hard-outcome-HR / binary-responder / count-rate-IRR). One-command reproduc
    the rate (class IRR 0.70); engine flags the raw cross-agent ranking as baseline-rate/eosinophil effect
    modification (I²=96%), not a clean winner. Pinned by `test_generality_class5_asthma_rate`. Next count/rate
    extension if wanted: registry-ipd KM reconstruction on a class that *does* post KM curves.
-2. **Promote one class to the full 40-stage pipeline** — PCSK9: **league + GRADE DONE**
-   (`class2_pcsk9/pcsk9_league.py` → `pcsk9_league.json`): full pairwise LDL league with per-comparison
-   GRADE/CINeMA certainty using the *same* computable domains as the incretin flagship `nma_league.py`
-   (6 Moderate / 6 Low across 12 comparisons, bococizumab lead, no k=1). Pinned by `test_pcsk9_league_depth`.
-   **Remaining depth:** transport (LDL → a target lipid population — needs a target lipid distribution not
-   held registry-natively) + HTML dashboard. Those repoint identically (same AACT fields/engines) but were
-   not rebuilt; the PCSK9 league uses the frequentist normal contrast (no Bayesian draw matrix for this class).
+2. ~~**Promote one class to the full 40-stage pipeline** — PCSK9~~ **DONE (all 4 named depth stages)**:
+   - **league + GRADE** — `class2_pcsk9/pcsk9_league.py` → `pcsk9_league.json`: full pairwise LDL league with
+     per-comparison GRADE/CINeMA certainty, *same* domains as `nma_league.py` (6 Moderate / 6 Low / 12 comps,
+     bococizumab lead, no k=1). Pinned by `test_pcsk9_league_depth`.
+   - **transport** — `pcsk9_transport.py` → `pcsk9_transport.json`: % LDL → absolute mg/dL & mmol/L in a real
+     NHANES elevated-LDL US target (baseline 132 mg/dL; bococizumab −2.61 → inclisiran −1.99 mmol/L), *same*
+     NHANES reference source as the incretin transport. Pinned by `test_pcsk9_transport_depth`. (Transport is
+     of the LDL **surrogate**, explicitly NOT a CV claim.)
+   - **dashboard** — `pcsk9_dashboard.py` → `pcsk9_dashboard.html`: single-file, fully-offline render of
+     league + GRADE + transport. Pinned by `test_pcsk9_dashboard_offline`.
+   Honest bounds: PCSK9 league uses the frequentist normal contrast (no Bayesian draw matrix for this class);
+   transport assumes the % reduction is approximately population-transportable (carried modifier = target
+   baseline LDL, not the %). Suite now **37 green**. Next depth idea if wanted: promote a *second* class, or
+   give PCSK9 a Bayesian draw matrix for CrI-based contrasts.
 3. **Data-policy-blocked methods (activate only if scope changes):** quantile MA (`ipd-qma`, needs IPD);
    umbrella CCA (`umbrellareview`, needs each review's included-study list) — would let the concordance
    battery test whether the 7 validators are *independent* or recycle trials.

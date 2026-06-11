@@ -65,15 +65,34 @@ evolocumab/alirocumab/inclisiran cluster is mutually indistinguishable (CIs cros
 honest read as the lead head-to-head, now for every cell. This promotes PCSK9 from a *core repoint* to a
 **league + GRADE depth** proof.
 
+## Result 4 — DEPTH: transport + dashboard repoint too (`pcsk9_transport.py`, `pcsk9_dashboard.py`)
+The **transport** stage now repoints with the *same authoritative reference source* as the incretin pipeline
+(NHANES 2017–March 2020 survey-weighted microdata). Where incretins transport a % weight effect onto a US
+target via diabetes prevalence, PCSK9 transports each agent's % LDL-C reduction onto the **decision-relevant
+absolute** LDL-C lowering in a real target — **US adults with LDL-C ≥ 100 mg/dL** (n=2,262, Kish n_eff≈954,
+survey-weighted baseline **132 mg/dL = 3.41 mmol/L**):
+
+| Agent | % reduction | Absolute (mg/dL, 95% CI) | Absolute (mmol/L) |
+|---|---|---|---|
+| bococizumab | −76.6% | −101.1 (89, 113) | −2.61 |
+| evolocumab | −61.3% | −80.9 (66, 96) | −2.09 |
+| alirocumab | −58.8% | −77.6 (68, 87) | −2.01 |
+| inclisiran | −58.4% | −77.1 (61, 93) | −1.99 |
+
+CTT shows CV risk tracks the **absolute (mmol/L)** lowering, so this is the right scale. **This is a transport
+of the LDL surrogate, NOT a CV-outcome claim** — the ~22%-RR-per-mmol/L CTT figure is illustrative context
+only; CV benefit must come from each agent's own CVOT and is downgraded for indirectness as the GRADE layer
+does. A single-file, fully-offline **dashboard** (`pcsk9_dashboard.html`) renders the league + GRADE + transport.
+
 ## Scope (honest)
-This now demonstrates generality across the pipeline core **plus the league + GRADE depth stages**
-(discovery → extraction → NMA → full league + per-comparison GRADE/CINeMA certainty + the surrogate method),
-still not a re-run of all 39 incretin stages for PCSK9. The remaining depth — **transport** (LDL → a target
-lipid population needs a target lipid distribution we do not hold registry-natively) and the **HTML
-dashboard** — repoints the same way (same AACT fields, same engines) but was not rebuilt here. The PCSK9
-league uses the frequentist normal contrast (this class has no Bayesian draw matrix, unlike the incretin
-flagship — an honest difference). The LDL per-trial variance uses a between-trial-spread proxy (CIs
-approximate); a full repoint would harvest dispersion as in the incretin extractor.
+PCSK9 is now the **full-depth** generality proof: it carries the core (discovery → extraction → NMA +
+surrogate) **plus all four named depth stages** — full league, per-comparison GRADE/CINeMA certainty,
+transport, and an offline dashboard — still not a re-run of every incretin stage, but the depth stages are
+demonstrated to port end-to-end. Honest differences from the incretin flagship: the PCSK9 league uses the
+frequentist normal contrast (this class has no Bayesian draw matrix); transport assumes the % reduction is
+approximately population-transportable (the carried modifier is the target baseline LDL, not the percentage).
+The LDL per-trial variance uses a between-trial-spread proxy (CIs approximate); a full repoint would harvest
+dispersion as in the incretin extractor.
 
 ## Verdict
 **It is a reusable engine.** Repointing to PCSK9 inhibitors — a class with a different outcome type and the

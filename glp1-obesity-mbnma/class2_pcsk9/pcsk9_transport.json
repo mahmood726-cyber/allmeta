@@ -1,0 +1,57 @@
+{
+ "class": "PCSK9 inhibitors",
+ "stage": "transport (% LDL -> absolute LDL lowering in a target)",
+ "target": {
+  "definition": "US adults with LDL-C >= 100 mg/dL",
+  "source": "NHANES 2017-March 2020 prepandemic fasting microdata (CDC/NCHS), survey-weighted WTSAFPRP",
+  "n": 2262,
+  "kish_neff": 954.0,
+  "baseline_ldl_mg_dl": 132.0,
+  "baseline_ldl_se": 0.87,
+  "baseline_ldl_mmol_l": 3.41
+ },
+ "transported": [
+  {
+   "agent": "bococizumab",
+   "pct_reduction": -76.6,
+   "abs_mg_dl": 101.1,
+   "abs_ci_mg_dl": [
+    88.7,
+    113.4
+   ],
+   "abs_mmol_l": 2.61
+  },
+  {
+   "agent": "evolocumab",
+   "pct_reduction": -61.3,
+   "abs_mg_dl": 80.9,
+   "abs_ci_mg_dl": [
+    66.1,
+    95.8
+   ],
+   "abs_mmol_l": 2.09
+  },
+  {
+   "agent": "alirocumab",
+   "pct_reduction": -58.8,
+   "abs_mg_dl": 77.6,
+   "abs_ci_mg_dl": [
+    68.4,
+    86.8
+   ],
+   "abs_mmol_l": 2.01
+  },
+  {
+   "agent": "inclisiran",
+   "pct_reduction": -58.4,
+   "abs_mg_dl": 77.1,
+   "abs_ci_mg_dl": [
+    60.7,
+    93.4
+   ],
+   "abs_mmol_l": 1.99
+  }
+ ],
+ "ctt_context": "illustrative only: ~22% RR in major vascular events per 1 mmol/L absolute LDL lowering (CTT Lancet 2010 376:1670); transporting the surrogate is NOT a CV-outcome claim",
+ "depth_note": "transport stage repointed with the SAME authoritative NHANES reference source as the incretin transport; maps registry % LDL reduction to decision-relevant ABSOLUTE (mmol/L) lowering in a real elevated-LDL US target. Assumes % reduction is approximately population-transportable (modifier carried = target baseline LDL, not the percentage). PCSK9 now spans 3 of 4 named depth stages (league + GRADE + transport); dashboard renders them. No IPD, no full text."
+}

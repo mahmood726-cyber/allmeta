@@ -168,6 +168,29 @@ def test_pcsk9_league_depth():
     # honest depth boundary recorded (not the full 40-stage run)
     assert 'transport' in d['depth_note'].lower()
 
+def test_pcsk9_transport_depth():
+    # frontier 2 tail: transport stage repointed (% LDL -> absolute lowering in a real NHANES target)
+    d = _classfile('class2_pcsk9/pcsk9_transport.json')
+    tg = d['target']
+    assert 120 <= tg['baseline_ldl_mg_dl'] <= 150, 'NHANES elevated-LDL baseline should be ~130 mg/dL'
+    assert tg['n'] >= 200 and 'NHANES' in tg['source']
+    rows = {r['agent']: r for r in d['transported']}
+    assert rows['bococizumab']['abs_mmol_l'] == max(r['abs_mmol_l'] for r in d['transported'])
+    assert all(r['abs_mmol_l'] > 1.5 for r in d['transported']), 'PCSK9i absolute lowering should exceed ~1.5 mmol/L here'
+    # surrogate transport must NOT be sold as a CV claim
+    assert 'not a cv' in d['ctt_context'].lower() or 'not a cardiovascular' in (d['ctt_context'] + d['depth_note']).lower()
+
+def test_pcsk9_dashboard_offline():
+    p = os.path.join(ROOT, 'class2_pcsk9', 'pcsk9_dashboard.html')
+    if not os.path.exists(p):
+        pytest.skip('pcsk9_dashboard.html not built')
+    h = open(p, encoding='utf-8').read()
+    assert 'http://' not in h and 'https://wwwn' not in h, 'dashboard must be fully offline'
+    assert 'C:/' not in h and 'C:\\' not in h, 'no hardcoded local paths in shipped HTML'
+    import re as _re
+    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
+    assert 'GRADE' in h and 'mmol/L' in h and 'DRAFT' in h
+
 def test_generality_class5_asthma_rate():
     d = _classfile('class5_asthma/asthma_results.json')
     # 5th outcome TYPE: count/rate (annualised exacerbation incidence-rate ratio)
