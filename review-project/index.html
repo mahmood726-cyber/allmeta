@@ -223,6 +223,8 @@
     .exp-row { font-size:.82rem; line-height:1.55; margin:.3rem 0; color:var(--ink,#e6eefc); }
     .exp-row .exp-name { font-weight:700; color:var(--accent,#5ea9ff); }
     .exp-row.exp-na { color:var(--muted); }
+    .exp-row .exp-sub { color:var(--faint); font-size:.72rem; }
+    .exp-lambda { width:4.2em; background:var(--panel,#0f1830); color:var(--ink,#e6eefc); border:1px solid var(--border2,#27344a); border-radius:6px; padding:.05rem .25rem; font:inherit; font-size:.78rem; }
     .exp-caveat { margin:.45rem 0 0; font-size:.72rem; line-height:1.5; color:var(--muted); }
     /* Good-vs-weak teaching cards (RapidMeta Paper Studio steal) */
     .teach-card { margin:.5rem 0 .2rem; border:1px solid var(--border2,#27344a); border-radius:10px; background:rgba(148,163,184,.04); }
@@ -345,6 +347,7 @@
     if (!state.story || typeof state.story !== "object") state.story = { on: false, case: "cortico" };
     var liveCache = {}; // stage id -> { summary, value, readyOnly } | null, refreshed from buses
     var synthOpts = { method: "REML", knha: false }; // JASP-style live synthesis controls (not persisted; exploratory)
+    var gwamLambda = 0.64; // GWAM integrity ratio λ (published share of evidence); ~0.64 ≈ trial-to-publication linkage rate
 
     function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") return s; } catch (e) {} return null; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -655,6 +658,17 @@
       var ratio = scale === "ratio", tx = function (x) { return ratio ? Math.exp(x) : x; };
       var rows = "";
       try { var g = ExperimentalMA.grma(yi, vi); if (g) rows += "<div class='exp-row'><span class='exp-name'>GRMA</span> robust pool, outlier-downweighted: <b>" + fnum(tx(g.estimate)) + "</b></div>"; } catch (e) {}
+      // GWAM: shrink the RE pool toward the null by the integrity ratio λ (published
+      // share of evidence; ghost/unpublished trials assumed null). mu_gwam = λ·mu_pub.
+      try {
+        if (AlmMaCore && AlmMaCore.pool && poolable.length >= 2) {
+          var rp = AlmMaCore.pool(yi, vi, { method: "REML" });
+          var muG = gwamLambda * rp.mu;
+          rows += "<div class='exp-row'><span class='exp-name'>GWAM</span> publication-bias-adjusted "
+            + "(λ=<input type='number' data-gwam='lambda' min='0.05' max='1' step='0.01' value='" + gwamLambda + "' class='exp-lambda' aria-label='GWAM integrity ratio lambda'>): <b>" + fnum(tx(muG)) + "</b>"
+            + "<span class='exp-sub'> — λ is the published share of evidence; unpublished trials assumed null</span></div>";
+        }
+      } catch (e) {}
       try {
         var c = ExperimentalMA.conformalPI(yi, sei);
         rows += c
@@ -664,7 +678,7 @@
       if (!rows) return "";
       return "<details class='exp-methods'><summary>&#128300; Experimental methods <span class='exp-tag'>experimental</span></summary>"
         + "<div class='exp-body'>" + rows
-        + "<p class='exp-caveat'>Research estimators from the author's own work (GRMA, conformal-MA), ported and shown for exploration &mdash; <b>not validated for decision-making</b> and not a substitute for the pooled estimate above.</p></div></details>";
+        + "<p class='exp-caveat'>Research estimators from the author's own work (GRMA, conformal-MA, GWAM), ported and shown for exploration &mdash; <b>not validated for decision-making</b> and not a substitute for the pooled estimate above.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled
@@ -1334,11 +1348,12 @@
     // is replaced each render, but this delegated listener on the container survives),
     // so [data-synth] changes update synthOpts and re-render the live pool in place.
     document.getElementById("stages").addEventListener("change", function (e) {
-      var el = e.target.closest ? e.target.closest("[data-synth]") : null;
+      var el = e.target.closest ? (e.target.closest("[data-synth]") || e.target.closest("[data-gwam]")) : null;
       if (!el) return;
       var key = el.getAttribute("data-synth");
       if (key === "method") synthOpts.method = el.value;
       else if (key === "knha") synthOpts.knha = !!el.checked;
+      else if (el.getAttribute("data-gwam") === "lambda") { var v = parseFloat(el.value); if (isFinite(v) && v > 0 && v <= 1) gwamLambda = v; }
       renderStages();   // re-renders #stages and keeps the active (synthesis) panel via switchTab
     });
 
