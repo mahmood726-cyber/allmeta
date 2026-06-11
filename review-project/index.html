@@ -192,6 +192,8 @@
     .story-scene { margin:.1rem 0 .4rem; font-size:.85rem; line-height:1.58; color:var(--ink,#e6eefc); }
     .story-refrain { margin:0; font-style:italic; font-size:.8rem; color:#b8c4d6; }
     .story-beat.voice .story-refrain { color:var(--green,#34d399); }
+    .story-data { margin-top:.55rem; }
+    .story-cite { margin:.45rem 0 0; font-size:.72rem; line-height:1.5; color:#b8c4d6; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
@@ -222,6 +224,7 @@
         <option value="cortico">Corticosteroids — the line no one drew</option>
         <option value="strepto">Streptokinase — proof in '73, practice in '86</option>
         <option value="magnesium">Magnesium — the chorus and the mirage</option>
+        <option value="antidep">Antidepressants — the curated shelf</option>
       </select>
       <span class="progress" id="progress" aria-live="polite"></span>
     </div>
@@ -726,6 +729,7 @@
       cortico: {
         name: "Antenatal corticosteroids — the line no one drew",
         hook: "Walk the pipeline as a true story. By 1972 the answer already existed; it took eighteen years for anyone to draw the line that showed it — and preterm babies died in the interval.",
+        dataNote: "The per-trial neonatal-death counts behind the Cochrane-logo forest plot live in Cochrane review CD004454 / Crowley 1995 (AJOG), behind a paywall — so they are not embedded here (no fabricated numbers). Primary source Liggins & Howie 1972 reported early neonatal mortality 3.2% with steroids vs 15% control.",
         beats: {
           protocol: { y: "1969", s: "Liggins, infusing steroids into pregnant sheep, sees lambs breathe that are far too premature to have working lungs. A question forms: can one injection to the mother ready a human baby's lungs before birth?", r: "The answer is not yet drawn." },
           search: { y: "1972", s: "Liggins & Howie publish the first randomised trial in Auckland: betamethasone before preterm delivery, fewer newborns dying of immature lungs. Over the next eighteen years, trial after trial repeats the result.", r: "Each trial agrees. The line is not yet drawn." },
@@ -741,6 +745,18 @@
       strepto: {
         name: "Streptokinase for heart attack — proof in '73, practice in '86",
         hook: "A clot-dissolving drug, proven to save lives by 1973, was still called experimental in textbooks until 1986. Follow the running total the field forgot to keep, and recovered only in hindsight.",
+        data: { measure: "OR", scale: "ratio", cite: "Lau et al., NEJM 1992 (per-trial 2×2 via metadat::dat.lau1992); GISSI-1 & ISIS-2 from the primary trials", trials: [
+          { label: "Fletcher", year: 1959, group: "by 1973", eT: 1, nT: 12, eC: 4, nC: 11 },
+          { label: "Dewar", year: 1963, group: "by 1973", eT: 4, nT: 21, eC: 7, nC: 21 },
+          { label: "Eur. Working Party 1", year: 1969, group: "by 1973", eT: 20, nT: 83, eC: 15, nC: 84 },
+          { label: "Eur. Working Party 2", year: 1971, group: "by 1973", eT: 69, nT: 373, eC: 94, nC: 357 },
+          { label: "Heikinheimo", year: 1971, group: "by 1973", eT: 22, nT: 219, eC: 17, nC: 207 },
+          { label: "Italian (Dioguardi)", year: 1971, group: "by 1973", eT: 19, nT: 164, eC: 18, nC: 157 },
+          { label: "Australian 1", year: 1973, group: "by 1973", eT: 26, nT: 264, eC: 32, nC: 253 },
+          { label: "Frankfurt 2", year: 1973, group: "by 1973", eT: 13, nT: 102, eC: 29, nC: 104 },
+          { label: "GISSI-1", year: 1986, group: "mega-trial", eT: 628, nT: 5860, eC: 758, nC: 5852 },
+          { label: "ISIS-2 (SK arm)", year: 1988, group: "mega-trial", eT: 791, nT: 8592, eC: 1029, nC: 8595 }
+        ] },
         beats: {
           protocol: { y: "1959", s: "Streptokinase can dissolve the clot that is starving a heart of blood. The question sharpens: does dissolving it save the patient, or only re-open the artery?", r: "The proof has not yet arrived." },
           search: { y: "1959–1988", s: "Across three decades, trials of intravenous thrombolysis for myocardial infarction accumulate — most small, each underpowered on its own.", r: "Trial by trial, the proof gathers." },
@@ -756,6 +772,17 @@
       magnesium: {
         name: "Magnesium for heart attack — the chorus and the mirage",
         hook: "Seven small trials sang in unison that magnesium saves hearts; a meta-analysis halved mortality. Then 58,050 patients fell silent. A caution in the same pipeline — synthesis must also distrust a popular answer.",
+        data: { measure: "OR", scale: "ratio", cite: "Teo et al., BMJ 1991; LIMIT-2 (Woods), Lancet 1992; ISIS-4, Lancet 1995 (2×2 via metadat::dat.egger2001; the seven Teo trials sum-check to 25/657 vs 53/644). Note: loading includes ISIS-4, so the pooled result collapses toward null — that is the lesson.", trials: [
+          { label: "Morton", year: 1984, group: "small trial", eT: 1, nT: 40, eC: 2, nC: 36 },
+          { label: "Rasmussen", year: 1986, group: "small trial", eT: 9, nT: 135, eC: 23, nC: 135 },
+          { label: "Smith", year: 1986, group: "small trial", eT: 2, nT: 200, eC: 7, nC: 200 },
+          { label: "Abraham", year: 1987, group: "small trial", eT: 1, nT: 48, eC: 1, nC: 46 },
+          { label: "Feldstedt", year: 1988, group: "small trial", eT: 10, nT: 150, eC: 8, nC: 148 },
+          { label: "Shechter", year: 1989, group: "small trial", eT: 1, nT: 59, eC: 9, nC: 56 },
+          { label: "Ceremuzynski", year: 1989, group: "small trial", eT: 1, nT: 25, eC: 3, nC: 23 },
+          { label: "LIMIT-2", year: 1992, group: "LIMIT-2", eT: 90, nT: 1159, eC: 118, nC: 1157 },
+          { label: "ISIS-4", year: 1995, group: "ISIS-4 (58,050)", eT: 2216, nT: 29011, eC: 2103, nC: 29039 }
+        ] },
         beats: {
           protocol: { y: "the 1980s", s: "Magnesium is cheap, safe and biologically plausible — it might steady an injured heart after infarction. The question: does plausibility survive a large, fair test?", r: "The chorus has not yet been checked." },
           search: { y: "1984–1991", s: "Seven small trials of intravenous magnesium report, most favourable. A meta-analysis (Teo, 1991) pools them and mortality looks roughly halved. The result dazzles.", r: "Small trials sing in unison." },
@@ -766,6 +793,22 @@
           robustness: { y: "1995", s: "Then ISIS-4 tests it in 58,050 patients — larger than every prior trial combined. Magnesium does nothing. The small trials had sung a publication-bias mirage; the funnel was asymmetric all along. You very nearly trusted the chorus.", r: "The large trial falls silent. The mirage breaks.", voice: true },
           certainty: { y: "", s: "Here, certainty ran opposite to the count: the more you weighted the agreeable small trials, the more wrong you became. Funnel asymmetry and spec-collapse were the only honest witnesses in the room.", r: "The crowd was confident. The crowd was wrong." },
           report: { y: "the lesson", s: "Corticosteroids show synthesis rescuing a buried truth; magnesium shows it must also doubt a popular one. Run the robustness screens before you believe the song.", r: "Pool the evidence — then doubt it well.", voice: true }
+        }
+      },
+      antidep: {
+        name: "Antidepressants — the curated shelf (Turner 2008)",
+        hook: "Twelve antidepressants looked almost uniformly effective in the journals. Then Turner compared the published papers with the 74 trials the FDA actually reviewed — and a third of the apparent benefit vanished. A publication-bias story for the Robustness stage.",
+        dataNote: "Headline figures verified from Turner et al., NEJM 2008;358:252-260: pooled Hedges g = 0.41 (95% CI 0.36–0.45) from the journal-published trials vs g = 0.31 (0.27–0.35) from the full FDA-registered set — about 32% inflation; 74 trials (38 positive, 36 not-positive), 23 never published, 11 negative trials published as if positive. Per-drug effect sizes live in the NEJM supplementary appendix (image-only) and are not embedded here.",
+        beats: {
+          protocol: { y: "2008", s: "Twelve antidepressants, all licensed, all apparently effective in the published literature. Turner asked a plain question: does the journal record match the 74 trials the FDA actually reviewed before approval?", r: "The journals tell a clean story." },
+          search: { y: "the literature", s: "Search the published papers and the drugs look almost uniformly effective — 48 of 51 published trials read as positive. Pooled from journals alone, the effect is Hedges g = 0.41.", r: "The journals tell a clean story." },
+          screening: { y: "", s: "Screen against the FDA registry instead of the journals: 74 registered trials, and by the agency's own verdict only 38 were positive. The denominator the journals never showed you is 74, not 51.", r: "A clean story — minus the trials never printed." },
+          extraction: { y: "", s: "Extract every registered trial, published or not. Twenty-three never reached print; eleven negative trials were written up as if positive. Pull them all and the picture dims.", r: "Twenty-three trials extracted from a drawer." },
+          appraisal: { y: "", s: "Each individual trial is sound. The bias lives not inside any trial but in which trials reached print — trustworthiness here is a property of the SET, not the study.", r: "Clean trials. A filtered library." },
+          synthesis: { y: "", s: "Pool the journal-published set and you get g = 0.41 [0.36–0.45]. By the published record alone, every drug clearly works.", r: "Pooled from the journals: g = 0.41." },
+          robustness: { y: "the turn", s: "Now pool the full FDA set: g = 0.31 [0.27–0.35]. The published literature overstated efficacy by roughly a third — for citalopram by nearly 70%. The funnel was asymmetric because the missing trials were the unflattering ones. You had been reading a curated shelf.", r: "The registry tells another. The third that vanished was the third that disappointed.", voice: true },
+          certainty: { y: "", s: "A reporting-bias downgrade is not optional here: the same drugs read as high-certainty from the journals and merely moderate from the registry. Which denominator you trust decides the verdict.", r: "Certain on the shelf. Less so in the registry." },
+          report: { y: "the lesson", s: "Every one of the twelve drugs was inflated upward; not one was deflated. Selective publication does not add noise — it adds a direction. Read the registry before you trust the library.", r: "Count the trials that never reached print — then synthesise.", voice: true }
         }
       }
     };
@@ -785,8 +828,48 @@
       var sc = state.story && state.story.on ? STORIES[state.story.case] : null;
       if (!sc) { el.style.display = "none"; el.innerHTML = ""; return; }
       el.style.display = "";
+      // Real-data tie: cases with verified per-trial 2×2 data get a one-click loader
+      // that writes the actual trials onto the workspace bus; cases whose source data
+      // is paywalled / image-only get an honest provenance note instead (no fabrication).
+      var extra = "";
+      if (sc.data && sc.data.trials && sc.data.trials.length) {
+        extra = "<div class='story-data'>"
+          + "<button type='button' class='primary' data-load-case>⤓ Load these " + sc.data.trials.length + " real trials onto the workspace</button>"
+          + "<p class='story-cite'>Real per-trial data: " + esc(sc.data.cite) + " — loading replaces the studies bus and re-pools, so the evidence map and synthesis pane then show these actual trials.</p>"
+          + "</div>";
+      } else if (sc.dataNote) {
+        extra = "<p class='story-cite'>" + esc(sc.dataNote) + "</p>";
+      }
       el.innerHTML = "<div class='story-hook'><span class='story-kicker'>Story mode · true case</span>"
-        + "<h3>" + esc(sc.name) + "</h3><p>" + esc(sc.hook) + "</p></div>";
+        + "<h3>" + esc(sc.name) + "</h3><p>" + esc(sc.hook) + "</p>" + extra + "</div>";
+    }
+    // OR + SE from a 2×2 table (log scale). 0.5 continuity correction ONLY when a
+    // cell is zero (advanced-stats.md), so non-sparse tables are unbiased.
+    function orFrom2x2(t) {
+      var a = t.eT, b = t.nT - t.eT, c = t.eC, d = t.nC - t.eC;
+      if (a === 0 || b === 0 || c === 0 || d === 0) { a += 0.5; b += 0.5; c += 0.5; d += 0.5; }
+      return { est: Math.log((a / b) / (c / d)), se: Math.sqrt(1 / a + 1 / b + 1 / c + 1 / d) };
+    }
+    function loadCaseData() {
+      var sc = STORIES[state.story.case]; var d = sc && sc.data;
+      if (!d || !d.trials) return;
+      var existing = readStudies();
+      if (existing.length && !window.confirm("Replace the " + existing.length + " studies on your workspace bus with " + d.trials.length + " real trials from this case?")) return;
+      var studies = d.trials.map(function (t) {
+        var r = orFrom2x2(t);
+        return { label: t.label + (t.year ? " " + t.year : ""), est: r.est, se: r.se, group: t.group || null, year: t.year || null };
+      });
+      try { if (window.MaStudies && MaStudies.write) MaStudies.write(studies); } catch (e) {}
+      // Pool (RE-DL) onto the canonical bus so the synthesis cross-reference + funnel populate too.
+      try {
+        if (window.AlmMaCore && AlmMaCore.pool && window.MaPooled && MaPooled.fromEstSE && studies.length >= 2) {
+          var yi = studies.map(function (s) { return s.est; }), vi = studies.map(function (s) { return s.se * s.se; });
+          var p = AlmMaCore.pool(yi, vi, { method: "DL" });
+          MaPooled.write(MaPooled.fromEstSE(p.mu, p.se, { scale: d.scale, measure: d.measure, k: p.k, model: "RE-DL (loaded from case)" }));
+        }
+      } catch (e) {}
+      refreshLive(); renderNav(); renderStages(); switchTab(state.activeTab, true);
+      try { if (window.Toast && Toast.show) Toast.show("Loaded " + studies.length + " real trials onto the workspace bus."); } catch (e) {}
     }
     function syncStoryControls() {
       // Coerce a stale/invalid persisted case back to a real one so the <select>
@@ -980,6 +1063,11 @@
     document.getElementById("story-case").addEventListener("change", function (e) {
       state.story.case = e.target.value; save();
       renderStages(); renderNav(); switchTab(state.activeTab, true);
+    });
+    // #story-intro is a static element (only its innerHTML is replaced), so this
+    // delegated click survives every re-render of the load button.
+    document.getElementById("story-intro").addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("[data-load-case]")) loadCaseData();
     });
 
     // JASP-style synthesis controls: #stages is the static container (its innerHTML

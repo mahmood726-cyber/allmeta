@@ -305,3 +305,57 @@ test("Story mode weaves a true-case narrative beat into every stage, with a refr
   await expect(page.locator("#stages .story-beat")).toHaveCount(0);
   await expect(page.locator("#story-intro")).toBeHidden();
 });
+
+test("Story mode loads a case's real trials onto the bus, flowing to the live tools", async ({ page }) => {
+  page.on("dialog", d => d.accept());   // auto-accept the replace-existing-studies confirm
+  await page.goto("/review-project/index.html");
+  await page.click("#btn-story");
+
+  // corticosteroids: per-trial counts are paywalled -> honest provenance note, no loader
+  await expect(page.locator("#story-intro [data-load-case]")).toHaveCount(0);
+  await expect(page.locator("#story-intro .story-cite")).toContainText("CD004454");
+
+  // streptokinase: 10 verified real trials, loadable in one click
+  await page.selectOption("#story-case", "strepto");
+  await expect(page.locator("#story-intro [data-load-case]")).toContainText("Load these 10 real trials");
+  await expect(page.locator("#story-intro .story-cite")).toContainText("dat.lau1992");
+  await page.click("#story-intro [data-load-case]");
+
+  // the evidence map now plots the 10 real trials, on the shared bus (not just drawn)
+  await expect(page.locator("#evmap-wrap")).toBeVisible();
+  await expect(page.locator("#evmap .evpt")).toHaveCount(10);
+  const onBus = await page.evaluate(() => window.MaStudies.read().length);
+  expect(onBus).toBe(10);
+
+  // fixed-effect pool of the real trials shows a clear mortality benefit (OR < 1)
+  await page.locator("#tab-btn-synthesis").click();
+  await page.selectOption("#panel-synthesis select[data-synth='method']", "FE");
+  const big = await page.locator("#panel-synthesis .result-card .big").textContent();
+  expect(parseFloat(big)).toBeGreaterThan(0.5);
+  expect(parseFloat(big)).toBeLessThan(0.95);
+
+  // magnesium: 9 trials incl. the giant near-null ISIS-4 — the FE pool collapses toward 1
+  // (synthOpts persists as FE in this session), which is the spec-collapse lesson.
+  await page.locator("#tab-btn-overview").click();
+  await page.selectOption("#story-case", "magnesium");
+  await page.click("#story-intro [data-load-case]");
+  await expect(page.locator("#evmap .evpt")).toHaveCount(9);
+  await page.locator("#tab-btn-synthesis").click();
+  const mg = await page.locator("#panel-synthesis .result-card .big").textContent();
+  expect(parseFloat(mg)).toBeGreaterThan(0.95);   // with ISIS-4 in, the fixed-effect benefit vanishes
+});
+
+test("Story mode includes the Turner publication-bias case driving the Robustness stage", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+  await page.click("#btn-story");
+  await page.selectOption("#story-case", "antidep");
+
+  await expect(page.locator("#story-intro")).toContainText("curated shelf");
+  await expect(page.locator("#story-intro .story-cite")).toContainText("0.41");   // verified headline g
+  await expect(page.locator("#story-intro [data-load-case]")).toHaveCount(0);     // SMD pub-bias, no 2×2 to load
+
+  // 9 woven beats; the turn lands at Robustness in second-person voice with the verified inflation
+  await expect(page.locator("#stages .story-beat")).toHaveCount(9);
+  await expect(page.locator("#panel-robustness .story-beat.voice")).toHaveCount(1);
+  await expect(page.locator("#panel-robustness .story-beat")).toContainText("g = 0.31");
+});
