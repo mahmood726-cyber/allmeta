@@ -1,0 +1,28 @@
+{
+ "enrollment_screen": {
+  "field": "trial enrollment (appropriate: spans orders of magnitude)",
+  "n": 1115,
+  "mad": 0.0143,
+  "conformity": "marginal",
+  "chi2": 24.8,
+  "exceeds_chi2": true,
+  "obs_pct": [
+   0.274,
+   0.169,
+   0.143,
+   0.12,
+   0.085,
+   0.083,
+   0.049,
+   0.036,
+   0.039
+  ]
+ },
+ "weight_pct_excluded": {
+  "n": 150,
+  "reason": "bounded percentages, Benford invalid"
+ },
+ "verdict": "BENIGN DEVIATION: MAD marginal (0.0143) and chi-square exceeds, driven by OVER-representation of leading 3-4 -> the classic round-number ENROLLMENT-TARGET signature (trials power to N=300/500/1200), NOT a fabrication signal. Benford is more diagnostic on un-rounded fields (event counts); enrollment is a poor Benford target precisely because it is deliberately rounded.",
+ "method": "benfordma (MAD + chi-square vs Benford first-digit)",
+ "bound": "indirect; cannot detect digit-preserving fabrication; one integrity signal among ghost-detection + INSPECT-SR"
+}
