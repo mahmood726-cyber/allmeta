@@ -111,3 +111,26 @@ test("review-project is a usable tabbed SPA on a phone viewport", async ({ page 
   await page.locator('#tab-btn-bundle').click();
   await expect(page.locator('#btn-sign')).toBeVisible();
 });
+
+test("review-project tabs are correctly ARIA-wired and the progress counter is honest", async ({ page }) => {
+  await page.goto("/review-project/index.html");
+
+  // every tab's aria-controls must resolve to a real panel id (no dangling refs)
+  const wiring = await page.evaluate(() => {
+    const tabs = [...document.querySelectorAll('#tabnav .tab')];
+    return tabs.map(t => ({
+      controls: t.getAttribute('aria-controls'),
+      ok: !!document.getElementById(t.getAttribute('aria-controls')),
+      selected: t.getAttribute('aria-selected'),
+      tabindex: t.getAttribute('tabindex'),
+    }));
+  });
+  expect(wiring.length).toBe(10);
+  expect(wiring.every(w => w.ok)).toBe(true);                       // all aria-controls resolve
+  // roving tabindex: exactly one tab is focusable (tabindex=0) and aria-selected=true
+  expect(wiring.filter(w => w.tabindex === "0").length).toBe(1);
+  expect(wiring.filter(w => w.selected === "true").length).toBe(1);
+
+  // Report is draft-only, so the denominator excludes it (8, not 9) — never an unreachable count
+  await expect(page.locator("#progress")).toContainText("of 8 stages captured");
+});
