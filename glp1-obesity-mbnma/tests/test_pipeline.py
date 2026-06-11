@@ -440,6 +440,53 @@ def test_rapidmeta_conversion(trials_f, cfg_f, slug):
     assert cfg['slug'] == slug and len(cfg['trials']) == len(trials)
     assert all('_agent' not in t for t in cfg['trials']), 'private bookkeeping keys must be stripped'
 
+
+# RapidMeta conversion of the NON-binary classes: continuous (PCSK9 md/se), survival (SGLT2 HR),
+# count/rate (asthma IRR). Each has a type-specific harvester; the kit carries continuous in allOutcomes
+# and ratio measures in the publishedHR/hrLCI/hrUCI slots (IRR labelled as IRR, not a hazard).
+_RM_RATIO_CONT = [
+    # (trials_file, config_file, slug, kind, funnel_report_key, ratio_lo, ratio_hi)
+    ('class2_pcsk9/pcsk9_trials.json', 'class2_pcsk9/pcsk9_rapidmeta_config.json',
+     'pcsk9_ldl_md_nma', 'continuous', 'ldl_reporting', None, None),
+    ('class3_sglt2/sglt2_trials.json', 'class3_sglt2/sglt2_rapidmeta_config.json',
+     'sglt2_hf_hr_nma', 'survival', 'hr_reporting', 0.3, 1.3),
+    ('class5_asthma/asthma_trials.json', 'class5_asthma/asthma_rapidmeta_config.json',
+     'asthma_biologics_exac_irr_nma', 'rate', 'irr_reporting', 0.1, 2.0),
+]
+@pytest.mark.parametrize('trials_f,cfg_f,slug,kind,rep_key,rlo,rhi', _RM_RATIO_CONT)
+def test_rapidmeta_ratio_continuous_conversion(trials_f, cfg_f, slug, kind, rep_key, rlo, rhi):
+    tr = _classfile(trials_f)
+    trials = tr['trials']
+    assert len(trials) >= 10, f'{trials_f}: ratio/continuous cohort should be non-trivial'
+    for t in trials:
+        assert t['nct'].startswith('NCT') and t['name']
+        assert t['allOutcomes'], 'each trial lists at least one outcome'
+        if kind == 'continuous':
+            o = t['allOutcomes'][0]
+            md, se = o.get('md'), o.get('se')
+            assert isinstance(md, (int, float)) and isinstance(se, (int, float)), f"{t['nct']}: md/se must be numeric"
+            assert se > 0, f"{t['nct']}: SE must be positive"
+            assert -90 <= md <= 5, f"{t['nct']}: LDL md outside plausible range"
+        else:  # survival HR or rate IRR -> ratio in the publishedHR slot
+            hr, lo, hi = t.get('publishedHR'), t.get('hrLCI'), t.get('hrUCI')
+            assert all(isinstance(x, (int, float)) for x in (hr, lo, hi)), f"{t['nct']}: ratio + CI must be numeric"
+            assert 0 < lo < hr < hi, f"{t['nct']}: ratio CI must bracket the estimate (lo<hr<hi, lo>0)"
+            assert rlo <= hr <= rhi, f"{t['nct']}: ratio {hr} outside plausible [{rlo},{rhi}]"
+    s = tr['screening']
+    assert s['search_hits'] >= s[rep_key] >= s['included'], 'screening funnel must be monotone'
+    assert s['funnel_reconciles'] is True
+    assert s['included'] + sum(s['excluded'].values()) == s[rep_key]
+    cfg = _classfile(cfg_f)
+    for k in ('drug', 'slug', 'condition', 'title', 'pico', 'trials', 'provenance_note'):
+        assert k in cfg and cfg[k], f'{cfg_f} missing {k}'
+    assert cfg['slug'] == slug and len(cfg['trials']) == len(trials)
+    assert all('_agent' not in t and '_md' not in t and '_measure' not in t for t in cfg['trials']), \
+        'private bookkeeping keys must be stripped'
+    if kind == 'rate':
+        # IRR must never be mislabelled as a hazard ratio anywhere in the config copy
+        assert 'IRR' in cfg['pico']['out'] and 'NOT a hazard' in cfg['pico']['out']
+
+
 def test_class_concordance_published():
     # class-level external validation: each generality class vs a PubMed-verified published NMA
     d = load('class_concordance.json')

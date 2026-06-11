@@ -37,11 +37,32 @@ synthesis hierarchy shown is the ordinal proportional-odds Bayesian league (`ra_
 with heterogeneity explicitly flagged. The RapidMeta RoB-2 / GRADE panels are for **human attestation**, not
 auto-asserted.
 
-## Rollout to the other four classes (next)
-Each is the same three steps with a class-specific harvester:
-- **PCSK9** (continuous %LDL) — reuse the incretin continuous-outcome harvest shape (md/se), control = placebo/statin.
-- **SGLT2** (survival/HR) — per-trial HF-hosp events or published HR; the kit's `publishedHR`/`kmAnchors` slots fit.
-- **Psoriasis** (binary PASI-90) — identical to RA: derive responder events from PASI-90 % × N.
-- **Asthma** (count/rate IRR) — exacerbation rate-ratio; map to the kit's binary/continuous slot or carry the IRR.
+## All five classes converted (DONE)
+Each is the same three steps with a class-specific harvester. **All five outcome types now have a RapidMeta
+workbench**, spanning binary / ordinal-responder, continuous, survival, and count/rate:
 
-Pattern is proven; rolling out is mechanical (one harvester per class + one config builder), then `clone.py` each.
+| Class | Outcome type | Harvester | Kit slot | Trials | Funnel (search → reporting → included) |
+|---|---|---|---|---|---|
+| RA (class6) | binary ACR ladder | `ra_rapidmeta_harvest.py` (shared `rm_harvest_binary`) | tE/tN/cE/cN | 54 | 4346 → 207 → 54 |
+| Psoriasis (class4) | binary PASI ladder | `psoriasis_rapidmeta_harvest.py` (shared `rm_harvest_binary`) | tE/tN/cE/cN | ≥30 | — |
+| **PCSK9 (class2)** | **continuous %LDL** | `pcsk9_rapidmeta_harvest.py` | `allOutcomes` md/se | 52 | 273 → 102 → 52 |
+| **SGLT2 (class3)** | **survival / HR** | `sglt2_rapidmeta_harvest.py` | publishedHR/hrLCI/hrUCI | 18 | 1165 → 18 → 18 |
+| **Asthma (class5)** | **count/rate IRR** | `asthma_rapidmeta_harvest.py` | publishedHR slots (labelled IRR) | 26 | 640 → 26 → 26 |
+
+The three non-binary harvesters are NOT thin wrappers over `rm_harvest_binary` (that module is responder-only);
+each is a dedicated, type-aware harvester:
+- **PCSK9** (continuous) mirrors the incretin flagship's md/se shape: active-minus-control LDL-C % change with
+  `se = sqrt(se_active² + se_control²)`, per-arm SE read from the posted dispersion (Standard Error directly,
+  or SD/√N, or CI-width/2·1.96). Fail-closed on missing SE or implausible md.
+- **SGLT2** (survival) takes the most-precise published HF/CV-composite HR + 95% CI per trial → the kit's native
+  survival forest slots. Fail-closed on implausible HR or degenerate CI.
+- **Asthma** (count/rate) takes the published annualised-exacerbation IRR + CI per trial. The IRR is a
+  ratio-of-rates and shares the log-ratio forest math with an HR, so it is carried in the `publishedHR` slots —
+  but it is **labelled an IRR everywhere** (titles, group, PICO `out`, provenance note explicitly say "NOT a
+  hazard ratio"). A test asserts the IRR labelling so it can't silently drift to "HR".
+
+Each conversion is pinned: binary classes by `test_rapidmeta_conversion`, the three non-binary classes by
+`test_rapidmeta_ratio_continuous_conversion`. Harvest + config are committed `run_all.py` stages (PCSK9 C2e-f,
+SGLT2 C3d-e, asthma C5d-e); the 1.2 MB workbench HTML is the out-of-band `clone.py` command, gitignored exactly
+like RA/psoriasis. Validated builds: each review is ~1.19–1.22 MB with 0 unfilled placeholder tokens and no
+`dupilumab`/`COPD` base-template leftovers.

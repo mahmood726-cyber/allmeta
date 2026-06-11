@@ -69,9 +69,13 @@ STAGES = [
     ('C2b PCSK9 league (Bayes)', 'class2_pcsk9/pcsk9_league_bayes.py',   HERE, 'class2_pcsk9/pcsk9_league_bayes.json',  True),
     ('C2c PCSK9 transport',    'class2_pcsk9/pcsk9_transport.py',        HERE, 'class2_pcsk9/pcsk9_transport.json',     False),
     ('C2d PCSK9 dashboard',    'class2_pcsk9/pcsk9_dashboard.py',        HERE, 'class2_pcsk9/pcsk9_dashboard.html',     False),
+    ('C2e PCSK9 RM harvest',   'class2_pcsk9/pcsk9_rapidmeta_harvest.py', HERE, 'class2_pcsk9/pcsk9_trials.json',       True),
+    ('C2f PCSK9 RM config',    'class2_pcsk9/build_pcsk9_rapidmeta_config.py', HERE, 'class2_pcsk9/pcsk9_rapidmeta_config.json', False),
     ('C3a SGLT2 league (Bayes)', 'class3_sglt2/sglt2_league_bayes.py',   HERE, 'class3_sglt2/sglt2_league.json',        True),
     ('C3b SGLT2 transport',    'class3_sglt2/sglt2_transport.py',        HERE, 'class3_sglt2/sglt2_transport.json',     False),
     ('C3c SGLT2 dashboard',    'class3_sglt2/sglt2_dashboard.py',        HERE, 'class3_sglt2/sglt2_dashboard.html',     False),
+    ('C3d SGLT2 RM harvest',   'class3_sglt2/sglt2_rapidmeta_harvest.py', HERE, 'class3_sglt2/sglt2_trials.json',       True),
+    ('C3e SGLT2 RM config',    'class3_sglt2/build_sglt2_rapidmeta_config.py', HERE, 'class3_sglt2/sglt2_rapidmeta_config.json', False),
     ('C4a psoriasis league (Bayes)', 'class4_psoriasis/psoriasis_league_bayes.py', HERE, 'class4_psoriasis/psoriasis_league.json', True),
     ('C4b psoriasis transport', 'class4_psoriasis/psoriasis_transport.py', HERE, 'class4_psoriasis/psoriasis_transport.json', False),
     ('C4c psoriasis dashboard', 'class4_psoriasis/psoriasis_dashboard.py', HERE, 'class4_psoriasis/psoriasis_dashboard.html', False),
@@ -80,12 +84,16 @@ STAGES = [
     ('C5a asthma league (Bayes)', 'class5_asthma/asthma_league_bayes.py', HERE, 'class5_asthma/asthma_league.json',      True),
     ('C5b asthma transport',   'class5_asthma/asthma_transport.py',      HERE, 'class5_asthma/asthma_transport.json',   False),
     ('C5c asthma dashboard',   'class5_asthma/asthma_dashboard.py',      HERE, 'class5_asthma/asthma_dashboard.html',   False),
+    ('C5d asthma RM harvest',  'class5_asthma/asthma_rapidmeta_harvest.py', HERE, 'class5_asthma/asthma_trials.json',    True),
+    ('C5e asthma RM config',   'class5_asthma/build_asthma_rapidmeta_config.py', HERE, 'class5_asthma/asthma_rapidmeta_config.json', False),
     ('C6a RA league (Bayes)',  'class6_ra/ra_league_bayes.py',           HERE, 'class6_ra/ra_league.json',              True),
     ('C6b RA transport',       'class6_ra/ra_transport.py',              HERE, 'class6_ra/ra_transport.json',           False),
     ('C6c RA dashboard',       'class6_ra/ra_dashboard.py',              HERE, 'class6_ra/ra_dashboard.html',           False),
-    # RA RapidMeta conversion (pilot): per-trial ACR responder harvest + kit config. The 1.2MB workbench HTML
-    # is generated OUT-OF-BAND by rapidmeta-kit (`python clone.py class6_ra/ra_rapidmeta_config.json
-    # --out class6_ra/ra_review.html`) -- external dependency, not a run_all stage.
+    # RA RapidMeta conversion: per-trial ACR responder harvest + kit config. All FIVE classes are now wrapped
+    # in the RapidMeta workbench (PCSK9 continuous md/se C2e-f, SGLT2 survival HR C3d-e, asthma rate IRR C5d-e,
+    # psoriasis PASI responder C4d-e, RA ACR responder C6d-e). Each 1.2MB workbench HTML is generated OUT-OF-BAND
+    # by rapidmeta-kit (`python clone.py <class>_rapidmeta_config.json --out <class>_review.html`) -- external
+    # dependency, not a run_all stage. Harvest + config are the committed, tested in-pipeline stages.
     ('C6d RA RM trial harvest', 'class6_ra/ra_rapidmeta_harvest.py',     HERE, 'class6_ra/ra_trials.json',              True),
     ('C6e RA RM config',       'class6_ra/build_ra_rapidmeta_config.py', HERE, 'class6_ra/ra_rapidmeta_config.json',    False),
 ]

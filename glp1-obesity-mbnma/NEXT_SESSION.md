@@ -146,8 +146,25 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    3 steps (harvester + config builder + clone) for psoriasis (PASI-90 %×N, identical to RA), PCSK9 (continuous
    md/se), SGLT2 (HR/events), asthma (IRR). Suite now **64 green**.
 
+   **RAPIDMETA CONVERSION — ALL FIVE CLASSES DONE (this session):** psoriasis was already converted; this
+   session added the three non-binary classes with dedicated type-aware harvesters (NOT wrappers over
+   `rm_harvest_binary`, which is responder-only). See the table in `RAPIDMETA_CONVERSION.md`:
+   - **PCSK9 (continuous)** — `class2_pcsk9/pcsk9_rapidmeta_harvest.py` (+ `build_pcsk9_rapidmeta_config.py`):
+     active-minus-control LDL-C % change md with `se=sqrt(se_a²+se_c²)`, per-arm SE from posted dispersion
+     (SE / SD÷√N / CI-width). 273 search → 102 LDL%-reporting → **52 included**, all 4 agents, funnel reconciles.
+     md/se carried in `allOutcomes` (kit continuous slot, like incretin).
+   - **SGLT2 (survival/HR)** — `class3_sglt2/sglt2_rapidmeta_harvest.py` (+ builder): most-precise published
+     HF/CV-composite HR + CI per trial → kit `publishedHR/hrLCI/hrUCI`. 1165 → 18 → **18**, all 5 agents.
+   - **Asthma (count/rate IRR)** — `class5_asthma/asthma_rapidmeta_harvest.py` (+ builder): published annualised-
+     exacerbation IRR + CI per trial, carried in the ratio slots but **labelled IRR everywhere** ("NOT a hazard
+     ratio" asserted by test). 640 → 26 → **26**, 4 agents.
+   All three pinned by `test_rapidmeta_ratio_continuous_conversion`; wired into `run_all.py` as C2e-f / C3d-e /
+   C5d-e (harvest slow=AACT, config fast); clone is out-of-band, review.html + assets gitignored. Each built
+   review is ~1.19–1.22 MB, 0 placeholder tokens, no dupilumab/COPD leftovers. Suite now **68 green**.
+
    Next depth idea: a 6th outcome family (e.g. proportion / single-arm incidence, or DTA Se/Sp), or give the
    RA league a true placebo-anchored ordinal NMA (needs per-arm responder counts → currently AACT posts %s).
+   Optional polish: merge kit branch `forest-plot-dynamic-height` (plot-density fix) then re-clone all 5 reviews.
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.

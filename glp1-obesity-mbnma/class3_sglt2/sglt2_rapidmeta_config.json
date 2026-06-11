@@ -1,0 +1,526 @@
+{
+ "drug": "SGLT2 inhibitors",
+ "drug_lower": "SGLT2 inhibitors",
+ "slug": "sglt2_hf_hr_nma",
+ "condition": "heart failure and cardiovascular risk",
+ "comparator": "Placebo",
+ "title": "SGLT2 inhibitors for heart-failure outcomes - hazard-ratio network meta-analysis",
+ "hero_h2": "Registry-native survival NMA of SGLT2 inhibitors for the HF-hospitalisation / CV-death composite",
+ "nyt_headline": "Which SGLT2 inhibitors cut heart-failure hospitalisation the most?",
+ "pico": {
+  "pop": "Adults at cardiovascular or heart-failure risk (CVOT / HF populations)",
+  "int": "SGLT2 inhibitors (empagliflozin, dapagliflozin, canagliflozin, ertugliflozin, sotagliflozin)",
+  "comp": "Placebo",
+  "out": "HF-hospitalisation / CV-death composite hazard ratio (time-to-event)",
+  "subgroup": "By agent"
+ },
+ "acronyms": {
+  "NCT03436693": "Efficacy and Safety of Canagliflozin (TA-7284)...",
+  "NCT03036150": "Dapa-CKD",
+  "NCT03521934": "Effect of Sotagliflozin on Cardiovascular Even...",
+  "NCT01989754": "CANVAS-R",
+  "NCT02065791": "CREDENCE",
+  "NCT03036124": "DAPA-HF",
+  "NCT03315143": "SCORED",
+  "NCT03057977": "EMPagliflozin outcomE tRial in Patients With c...",
+  "NCT03817463": "A Study to Observe the Effectiveness of Empagl...",
+  "NCT03057951": "EMPagliflozin outcomE tRial in Patients With c...",
+  "NCT03619213": "DELIVER",
+  "NCT03594110": "EMPA-KIDNEY (The Study of Heart and Kidney Pro...",
+  "NCT01032629": "CANVAS",
+  "NCT04509674": "EMPACT-MI: A Study to Test Whether Empaglifloz...",
+  "NCT01986881": "Cardiovascular Outcomes Following Ertugliflozi...",
+  "NCT01730534": "DECLARE-TIMI58",
+  "NCT05465317": "Evaluating Comparative Effectiveness of Empagl...",
+  "NCT03993132": "A Study Using Medical Records of Danish People..."
+ },
+ "trials": [
+  {
+   "nct": "NCT03436693",
+   "name": "Efficacy and Safety of Canagliflozin (TA-7284)...",
+   "year": 2018,
+   "phase": "3",
+   "group": "canagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.6,
+   "hrLCI": 0.23,
+   "hrUCI": 1.55,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: canagliflozin vs placebo",
+     "publishedHR": 0.6,
+     "hrLCI": 0.23,
+     "hrUCI": 1.55
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03036150",
+   "name": "Dapa-CKD",
+   "year": 2017,
+   "phase": "3",
+   "group": "dapagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.61,
+   "hrLCI": 0.51,
+   "hrUCI": 0.72,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: dapagliflozin vs placebo",
+     "publishedHR": 0.61,
+     "hrLCI": 0.51,
+     "hrUCI": 0.72
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03521934",
+   "name": "Effect of Sotagliflozin on Cardiovascular Even...",
+   "year": 2018,
+   "phase": "3",
+   "group": "sotagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.67,
+   "hrLCI": 0.52,
+   "hrUCI": 0.85,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: sotagliflozin vs placebo",
+     "publishedHR": 0.67,
+     "hrLCI": 0.52,
+     "hrUCI": 0.85
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01989754",
+   "name": "CANVAS-R",
+   "year": 2014,
+   "phase": "4",
+   "group": "canagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.72,
+   "hrLCI": 0.55,
+   "hrUCI": 0.94,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: canagliflozin vs placebo",
+     "publishedHR": 0.72,
+     "hrLCI": 0.55,
+     "hrUCI": 0.94
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02065791",
+   "name": "CREDENCE",
+   "year": 2014,
+   "phase": "3",
+   "group": "canagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.74,
+   "hrLCI": 0.63,
+   "hrUCI": 0.86,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: canagliflozin vs placebo",
+     "publishedHR": 0.74,
+     "hrLCI": 0.63,
+     "hrUCI": 0.86
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03036124",
+   "name": "DAPA-HF",
+   "year": 2017,
+   "phase": "3",
+   "group": "dapagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.74,
+   "hrLCI": 0.65,
+   "hrUCI": 0.85,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: dapagliflozin vs placebo",
+     "publishedHR": 0.74,
+     "hrLCI": 0.65,
+     "hrUCI": 0.85
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03315143",
+   "name": "SCORED",
+   "year": 2017,
+   "phase": "3",
+   "group": "sotagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.74,
+   "hrLCI": 0.63,
+   "hrUCI": 0.88,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: sotagliflozin vs placebo",
+     "publishedHR": 0.74,
+     "hrLCI": 0.63,
+     "hrUCI": 0.88
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03057977",
+   "name": "EMPagliflozin outcomE tRial in Patients With c...",
+   "year": 2017,
+   "phase": "3",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.75,
+   "hrLCI": 0.65,
+   "hrUCI": 0.86,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 0.75,
+     "hrLCI": 0.65,
+     "hrUCI": 0.86
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03817463",
+   "name": "A Study to Observe the Effectiveness of Empagl...",
+   "year": 2019,
+   "phase": "nan",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.75,
+   "hrLCI": 0.69,
+   "hrUCI": 0.81,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 0.75,
+     "hrLCI": 0.69,
+     "hrUCI": 0.81
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03057951",
+   "name": "EMPagliflozin outcomE tRial in Patients With c...",
+   "year": 2017,
+   "phase": "3",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.79,
+   "hrLCI": 0.69,
+   "hrUCI": 0.9,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 0.79,
+     "hrLCI": 0.69,
+     "hrUCI": 0.9
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03619213",
+   "name": "DELIVER",
+   "year": 2018,
+   "phase": "3",
+   "group": "dapagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.82,
+   "hrLCI": 0.73,
+   "hrUCI": 0.92,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: dapagliflozin vs placebo",
+     "publishedHR": 0.82,
+     "hrLCI": 0.73,
+     "hrUCI": 0.92
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03594110",
+   "name": "EMPA-KIDNEY (The Study of Heart and Kidney Pro...",
+   "year": 2019,
+   "phase": "3",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.84,
+   "hrLCI": 0.63,
+   "hrUCI": 1.12,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 0.84,
+     "hrLCI": 0.63,
+     "hrUCI": 1.12
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01032629",
+   "name": "CANVAS",
+   "year": 2009,
+   "phase": "3",
+   "group": "canagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.88,
+   "hrLCI": 0.75,
+   "hrUCI": 1.03,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: canagliflozin vs placebo",
+     "publishedHR": 0.88,
+     "hrLCI": 0.75,
+     "hrUCI": 1.03
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04509674",
+   "name": "EMPACT-MI: A Study to Test Whether Empaglifloz...",
+   "year": 2020,
+   "phase": "3",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.9,
+   "hrLCI": 0.76,
+   "hrUCI": 1.06,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 0.9,
+     "hrLCI": 0.76,
+     "hrUCI": 1.06
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01986881",
+   "name": "Cardiovascular Outcomes Following Ertugliflozi...",
+   "year": 2013,
+   "phase": "3",
+   "group": "ertugliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.92,
+   "hrLCI": 0.823,
+   "hrUCI": 1.038,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: ertugliflozin vs placebo",
+     "publishedHR": 0.92,
+     "hrLCI": 0.823,
+     "hrUCI": 1.038
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01730534",
+   "name": "DECLARE-TIMI58",
+   "year": 2013,
+   "phase": "3",
+   "group": "dapagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 0.93,
+   "hrLCI": 0.84,
+   "hrUCI": 1.03,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: dapagliflozin vs placebo",
+     "publishedHR": 0.93,
+     "hrLCI": 0.84,
+     "hrUCI": 1.03
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT05465317",
+   "name": "Evaluating Comparative Effectiveness of Empagl...",
+   "year": 2022,
+   "phase": "nan",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 1.03,
+   "hrLCI": 0.95,
+   "hrUCI": 1.12,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 1.03,
+     "hrLCI": 0.95,
+     "hrUCI": 1.12
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03993132",
+   "name": "A Study Using Medical Records of Danish People...",
+   "year": 2018,
+   "phase": "nan",
+   "group": "empagliflozin (SGLT2i) vs placebo",
+   "publishedHR": 1.07,
+   "hrLCI": 1.01,
+   "hrUCI": 1.13,
+   "allOutcomes": [
+    {
+     "shortLabel": "HF/CV",
+     "type": "survival",
+     "title": "HF-hospitalisation / CV-death composite HR: empagliflozin vs placebo",
+     "publishedHR": 1.07,
+     "hrLCI": 1.01,
+     "hrUCI": 1.13
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  }
+ ],
+ "provenance_note": "Registry-native cohort: AACT search returned 1165 SGLT2-inhibitor drug records; 18 trials posted a HF/CV-composite hazard ratio; 18 had a usable HR + 95% CI (most-precise per trial, fail-closed on implausible HR or degenerate CI). AACT-results-posted cohort, NOT a dual-screened systematic review; the HR is the published time-to-event estimate. Synthesis hierarchy: single-endpoint Bayesian HF league (sglt2_league.json), canagliflozin lead; ertugliflozin k=1 -> INSUFFICIENT. This is a HF/surrogate-composite ranking, not a mortality claim."
+}
