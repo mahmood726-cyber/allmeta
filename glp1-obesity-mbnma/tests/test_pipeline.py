@@ -136,5 +136,12 @@ def test_concordance_with_published_guidelines():
     assert '10.1136/bmj-2024-082071' in dois
 
 
+def test_concordance_battery_multireview():
+    d = load('concordance_battery.json')
+    assert d['n_reviews'] >= 6, 'battery should score against several published reviews'
+    assert d['n_concordant'] == d['n_reviews'], 'all reviews should concur incretins lead on weight loss'
+    assert d['n_concordant'] >= 6, 'concordance must be multi-review (not n=1)'
+
+
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__, '-q']))
