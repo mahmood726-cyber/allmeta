@@ -70,9 +70,9 @@ for a in range(N):
     print(row[:170])
 
 from collections import Counter
-cnt = Counter(v['certainty'] for v in cells.values())
+cnt = Counter(_v['certainty'] for _v in {frozenset(_k): _w for _k, _w in cells.items()}.values())  # unique undirected pairs (certainty is sign-symmetric)
 k1 = [a for a in agents if kper[a] == 1]
-print(f'\ncertainty across {len(cells)} ordered comparisons: {dict(cnt)}')
+print(f'\ncertainty across {sum(cnt.values())} ordered comparisons: {dict(cnt)}')
 print(f'k=1 INSUFFICIENT nodes: {k1 or "none (every agent has k>=4)"}')
 print(f'lead: {agents[0]} (LDL {eff[agents[0]]:.1f}%); top vs 2nd ({agents[0]} vs {agents[1]}): '
       f'{cells[(agents[0], agents[1])]["diff"]:+.1f}pp, certainty {cells[(agents[0], agents[1])]["certainty"]}')

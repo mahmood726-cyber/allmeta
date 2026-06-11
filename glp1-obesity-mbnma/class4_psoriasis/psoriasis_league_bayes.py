@@ -92,7 +92,7 @@ for a in range(A):
     cl = CLASS.get(agents[i], '?')
     print(f'  {agents[i][:13]:13s}[{cl:8s}] {med[i]:5.1f}%  (k_arms={kper[agents[i]]})')
 from collections import Counter
-cnt = Counter(v['certainty'] for v in cells.values())
+cnt = Counter(_v['certainty'] for _v in {frozenset(_k): _w for _k, _w in cells.items()}.values())  # unique undirected pairs (certainty is sign-symmetric)
 # tier means (draws) -> IL-17/IL-23 vs TNF, the established hierarchy
 def tier(a): c = CLASS.get(a, '?'); return 0 if c in ('IL-17', 'IL-23', 'IL-17/23') else (1 if c == 'IL-12/23' else 2)
 il_idx = [ai[a] for a in agents if tier(a) == 0]; tnf_idx = [ai[a] for a in agents if tier(a) == 2]
@@ -100,7 +100,7 @@ il_draws = pct[il_idx].mean(axis=0); tnf_draws = pct[tnf_idx].mean(axis=0)
 p_il_gt_tnf = float(np.mean(il_draws > tnf_draws))
 print(f'\nIL-17/IL-23 mean {np.median(il_draws):.0f}% vs TNF mean {np.median(tnf_draws):.0f}%  '
       f'-> P(IL-17/23 > TNF) = {p_il_gt_tnf:.3f}')
-print(f'certainty across {len(cells)} ordered comparisons: {dict(cnt)}  |  Rhat={rhat:.4f}')
+print(f'certainty across {sum(cnt.values())} ordered comparisons: {dict(cnt)}  |  Rhat={rhat:.4f}')
 print(f'lead: {agents[order[0]]} ({med[order[0]]:.0f}% PASI-90)')
 
 print('\n=== depth verdict (psoriasis -- FOURTH full-depth class) ===')

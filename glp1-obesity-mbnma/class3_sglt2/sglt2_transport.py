@@ -48,17 +48,17 @@ for name, base in SCEN:
     arr, arrci, nnt, nntci = arr_nnt(class_draws, base)
     star = ' *' if name == PRIMARY else '  '
     print(f'{star}{name:46s} {base*100:4.1f}%/yr  {arr:5.2f} ({arrci[0]:.2f},{arrci[1]:.2f})   '
-          f'{nnt:5.0f} ({nntci[1]:.0f},{nntci[0]:.0f})')
+          f'{nnt:5.0f} ({nntci[0]:.0f},{nntci[1]:.0f})')
     scen_out.append({'population': name, 'baseline_annual_risk': base,
                      'arr_pct_yr': round(arr, 2), 'arr_cri': [round(x, 2) for x in arrci],
-                     'nnt_yr': round(nnt, 0), 'nnt_cri': [round(nntci[1], 0), round(nntci[0], 0)],
+                     'nnt_yr': round(nnt, 0), 'nnt_cri': [round(nntci[0], 0), round(nntci[1], 0)],
                      'primary': name == PRIMARY})
 
 # lead agent at the primary scenario
 base0 = dict(SCEN)[PRIMARY]
 larr, larrci, lnnt, lnntci = arr_nnt(lead_draws, base0)
 print(f'\n  lead agent {lead} at the primary baseline ({base0*100:.1f}%/yr): '
-      f'ARR {larr:.2f}%/yr, NNT {lnnt:.0f} (95% CrI {lnntci[1]:.0f} to {lnntci[0]:.0f})')
+      f'ARR {larr:.2f}%/yr, NNT {lnnt:.0f} (95% CrI {lnntci[0]:.0f} to {lnntci[1]:.0f})')
 
 print('\n=== transport depth verdict (SGLT2) ===')
 print('  The transport stage repoints to the HARD-OUTCOME / absolute-risk path: HF-hospitalisation HR draws ->')
@@ -75,7 +75,7 @@ json.dump({'class': 'SGLT2 inhibitors', 'stage': 'transport (HF-hosp HR -> ARR +
            'scenarios': scen_out, 'primary_scenario': PRIMARY,
            'lead_at_primary': {'population': PRIMARY, 'baseline_annual_risk': base0,
                                'arr_pct_yr': round(larr, 2), 'nnt_yr': round(lnnt, 0),
-                               'nnt_cri': [round(lnntci[1], 0), round(lnntci[0], 0)]},
+                               'nnt_cri': [round(lnntci[0], 0), round(lnntci[1], 0)]},
            'baseline_source': 'reference-distribution annual HF-hospitalisation placebo risks from the major SGLT2 trial populations (authoritative reference, NOT registry-extracted event counts)',
            'depth_note': 'hard-outcome/absolute-risk transport: per-agent Bayesian HR draws -> ARR + NNT with full posterior CrI across documented baseline-risk targets. Key honest message = baseline-risk dependence (NNT swings ~5x primary-prevention vs HFrEF), so an HR alone is not transportable. SGLT2 now a SECOND full-depth class (survival path, distinct from PCSK9 continuous biomarker). Baseline rates are reference values; CV/HF benefit stays with each trial, GRADE-downgraded for indirectness. No IPD.'},
           open(f'{HERE}/sglt2_transport.json', 'w'), indent=1)

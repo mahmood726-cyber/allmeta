@@ -6,7 +6,7 @@
  "cinema_confidence": "Low",
  "cnma": {"validated_vs_discomb": true, "GLP1": 13.1, "GIP": 4.8, "GCG": 5.6, "glucagon_gt_gip": true, "tol_pp": 0.8},
  "surrogate": {"I2_logHR": 0.0, "r2_error_adjusted": "degenerate/undefined", "verdict_contains": "NOT a validated"},
- "league": {"k1_insufficient": ["mazdutide", "retatrutide", "semaglutide-sc-daily"], "moderate_min": 4, "very_low_min": 6},
+ "league": {"k1_insufficient": ["mazdutide", "retatrutide", "semaglutide-sc-daily"], "moderate_min": 4, "very_low_min": 5, "_certainty_counts_note": "very_low_min lowered 6->5 on 2026-06-11: certainty_counts was double-counting directed pairs; nma_league now reports unique a<b counts (Moderate 4 / Low 12 / Very low 5, sum 21 == len(comparisons))"},
  "benefit_risk": {"dominated_includes": "orforglipron"},
  "pubbias": {"measured_bias_negligible": true},
  "tsa": {"conclusive": true, "ongoing_trials_min": 200},

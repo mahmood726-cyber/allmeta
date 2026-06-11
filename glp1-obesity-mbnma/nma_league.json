@@ -290,9 +290,9 @@
   }
  ],
  "certainty_counts": {
-  "Very low": 10,
-  "Low": 24,
-  "Moderate": 8
+  "Very low": 5,
+  "Low": 12,
+  "Moderate": 4
  },
  "k1_insufficient": [
   "mazdutide",

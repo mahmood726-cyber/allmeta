@@ -883,8 +883,8 @@
   }
  ],
  "certainty_counts": {
-  "Moderate": 82,
-  "Low": 50
+  "Moderate": 41,
+  "Low": 25
  },
  "k1_insufficient": [],
  "depth_note": "FIFTH full-depth class and FIFTH outcome TYPE: ordered-categorical ACR ladder. Proportional-odds graded-response model (one latent efficacy theta per agent + three shared ordered cutpoints tau_20<tau_50<tau_70: logit P[reach L] = theta_a - tau_L), nutpie. Latent draw matrix -> log-OR contrasts + P(superiority) + predicted ACR50%, same GRADE/CINeMA domains as nma_league.py. Honest caveat: the single-theta proportional-odds assumption is recorded by its residual RMSE; AACT posts threshold %s pooled per agent across doses/timepoints, not per-arm responder counts. Star network (indirect). No IPD."

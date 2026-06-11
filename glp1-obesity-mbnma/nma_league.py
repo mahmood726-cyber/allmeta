@@ -105,8 +105,8 @@ for a in range(N):
 
 # per-comparison certainty summary
 from collections import Counter
-cnt = Counter(v['certainty'] for v in cells.values())
-print(f'\ncertainty across {len(cells)} ordered comparisons: {dict(cnt)}')
+cnt = Counter(_v['certainty'] for _v in {frozenset(_k): _w for _k, _w in cells.items()}.values())  # unique undirected pairs (certainty is sign-symmetric)
+print(f'\ncertainty across {sum(cnt.values())} ordered comparisons: {dict(cnt)}')
 k1 = [n for n in nodes if kper[n] == 1]
 print(f'k=1 INSUFFICIENT nodes (any comparison involving them is downgraded): {k1}')
 

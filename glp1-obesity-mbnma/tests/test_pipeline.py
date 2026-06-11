@@ -317,7 +317,7 @@ def test_pcsk9_league_depth():
     # frontier 2: PCSK9 promoted beyond a core repoint -> full league + per-pair GRADE certainty
     d = _classfile('class2_pcsk9/pcsk9_league.json')
     assert d['lead'] == 'bococizumab' and d['ranking'][0] == 'bococizumab'
-    assert sum(d['certainty_counts'].values()) == 12, 'all ordered pairwise comparisons should be graded'
+    assert sum(d['certainty_counts'].values()) == 6, 'all unique pairwise comparisons graded (6 for 4 agents)'
     # same GRADE domains as the incretin flagship: bococizumab clearly best -> its contrasts clear the null (Moderate)
     assert d['lead_vs_second']['certainty'] == 'Moderate'
     assert d['k1_insufficient'] == [], 'every PCSK9 agent has k>=4; no INSUFFICIENT node'
@@ -383,6 +383,31 @@ def test_concordance_battery_multireview():
     assert d['n_reviews'] >= 6, 'battery should score against several published reviews'
     assert d['n_concordant'] == d['n_reviews'], 'all reviews should concur incretins lead on weight loss'
     assert d['n_concordant'] >= 6, 'concordance must be multi-review (not n=1)'
+
+
+# ---------- cross-class convention regression guards (added 2026-06-11 after multi-person review) ----------
+_TRANSPORTS = [
+    ('class3_sglt2/sglt2_transport.json', 'scenarios'),
+    ('class4_psoriasis/psoriasis_transport.json', 'placebo_scenarios'),
+    ('class6_ra/ra_transport.json', 'placebo_scenarios'),
+]
+@pytest.mark.parametrize('f,key', _TRANSPORTS)
+def test_nnt_cri_ascending(f, key):
+    # every NNT credible interval must be stored [lower, upper] across ALL classes (no reversed bounds)
+    d = _classfile(f)
+    rows = list(d.get(key, [])) + list(d.get('per_agent_nnt_at_reference', []))
+    bad = [r['nnt_cri'] for r in rows if 'nnt_cri' in r and r['nnt_cri'][0] > r['nnt_cri'][1]]
+    assert not bad, f'{f}: NNT CrI stored descending (lower>upper): {bad}'
+
+_LEAGUES = ['nma_league.json', 'class2_pcsk9/pcsk9_league.json', 'class2_pcsk9/pcsk9_league_bayes.json',
+            'class3_sglt2/sglt2_league.json', 'class4_psoriasis/psoriasis_league.json',
+            'class5_asthma/asthma_league.json', 'class6_ra/ra_league.json']
+@pytest.mark.parametrize('f', _LEAGUES)
+def test_certainty_counts_not_double_counted(f):
+    # certainty_counts must tally UNIQUE pairwise contrasts, not directed cells (which double-counts)
+    d = _classfile(f)
+    assert sum(d['certainty_counts'].values()) == len(d['comparisons']), \
+        f'{f}: certainty_counts sum {sum(d["certainty_counts"].values())} != {len(d["comparisons"])} unique comparisons'
 
 
 if __name__ == '__main__':

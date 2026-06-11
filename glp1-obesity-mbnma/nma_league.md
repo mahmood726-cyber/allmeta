@@ -21,6 +21,6 @@
 ## INSUFFICIENT evidence (k=1 — any comparison involving these is downgraded)
 - mazdutide, retatrutide, semaglutide-sc-daily
 
-**Certainty across 42 ordered comparisons:** Very low 10, Low 24, Moderate 8.
+**Certainty across 21 ordered comparisons:** Very low 5, Low 12, Moderate 4.
 
 > Headline: the highest-*ranked* agents (mazdutide, retatrutide) have the **weakest** evidence (k=1); the only Moderate-certainty conclusions are that the established injectables (tirzepatide, sc-semaglutide) beat the oral/weaker agents. A naked ranking hides exactly this.

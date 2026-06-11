@@ -59,7 +59,7 @@ baseline (−1), imprecision when the contrast CI crosses the null (−1), and a
 | **alirocumab** (−58.8%) | +17.8 | +2.6 | — | Low |
 | **inclisiran** (−58.4%) | +18.2 | +2.9 | +0.4 | — |
 
-(lower triangle = %LDL-C difference; upper = certainty.) Across the 12 ordered comparisons: **6 Moderate, 6
+(lower triangle = %LDL-C difference; upper = certainty.) Across the 6 ordered comparisons: **3 Moderate, 3
 Low**, no INSUFFICIENT node (every agent k≥4). bococizumab's contrasts all clear the null → Moderate; the
 evolocumab/alirocumab/inclisiran cluster is mutually indistinguishable (CIs cross null) → Low — the same
 honest read as the lead head-to-head, now for every cell. This promotes PCSK9 from a *core repoint* to a

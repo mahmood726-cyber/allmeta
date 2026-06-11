@@ -15,8 +15,8 @@
    ],
    "nnt_yr": 242.0,
    "nnt_cri": [
-    321.0,
-    199.0
+    199.0,
+    321.0
    ],
    "primary": false
   },
@@ -30,8 +30,8 @@
    ],
    "nnt_yr": 121.0,
    "nnt_cri": [
-    160.0,
-    99.0
+    99.0,
+    160.0
    ],
    "primary": true
   },
@@ -45,8 +45,8 @@
    ],
    "nnt_yr": 45.0,
    "nnt_cri": [
-    60.0,
-    37.0
+    37.0,
+    60.0
    ],
    "primary": false
   }
@@ -58,8 +58,8 @@
   "arr_pct_yr": 0.99,
   "nnt_yr": 101.0,
   "nnt_cri": [
-   187.0,
-   74.0
+   74.0,
+   187.0
   ]
  },
  "baseline_source": "reference-distribution annual HF-hospitalisation placebo risks from the major SGLT2 trial populations (authoritative reference, NOT registry-extracted event counts)",

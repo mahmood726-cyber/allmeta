@@ -114,7 +114,7 @@ for a in range(A):
     i = order[a]
     print(f'  {agents[i][:13]:13s}[{CLASS.get(agents[i], "?"):7s}] theta {med_theta[i]:+.2f}  ACR50~{med50[i]:4.0f}%  (k={kper[agents[i]]})')
 from collections import Counter
-cnt = Counter(v['certainty'] for v in cells.values())
+cnt = Counter(_v['certainty'] for _v in {frozenset(_k): _w for _k, _w in cells.items()}.values())  # unique undirected pairs (certainty is sign-symmetric)
 # class tiers: advanced-MoA (IL-6/JAK) vs TNF anchor -- the established RA efficacy contrast
 adv = [ai[a] for a in agents if CLASS.get(a) in ('IL-6', 'JAK')]
 tnf = [ai[a] for a in agents if CLASS.get(a) == 'TNF']
@@ -130,7 +130,7 @@ flag_note = ('cross-agent ranking is confounded by ARM-LEVEL heterogeneity (ACR 
              '-> not a clean "best agent", same self-flagging behaviour as the asthma class (I2=96%)')
 if het_flag:
     print(f'  *** HETEROGENEITY FLAG: {flag_note}')
-print(f'certainty across {len(cells)} ordered comparisons: {dict(cnt)}  |  Rhat={rhat:.4f}')
+print(f'certainty across {sum(cnt.values())} ordered comparisons: {dict(cnt)}  |  Rhat={rhat:.4f}')
 print(f'lead: {agents[order[0]]} (theta {med_theta[order[0]]:+.2f}, ACR50~{med50[order[0]]:.0f}%)')
 
 print('\n=== depth verdict (RA -- FIFTH full-depth class, ORDINAL) ===')

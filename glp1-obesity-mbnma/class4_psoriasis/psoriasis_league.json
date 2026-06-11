@@ -601,8 +601,8 @@
   }
  ],
  "certainty_counts": {
-  "Moderate": 58,
-  "Low": 32
+  "Moderate": 29,
+  "Low": 16
  },
  "k1_insufficient": [],
  "depth_note": "FOURTH full-depth class: Bayesian draw-matrix league on a binary/responder outcome (PASI-90), logit hierarchical RE -> response% CrI + risk-difference contrasts + P(superiority), same GRADE/CINeMA domains as nma_league.py. Reproduces IL-17/IL-23 > TNF with posterior probability. Logit hierarchical-means form (AACT posts response %, not per-arm responder counts here; sigma absorbs arm-size + between-arm spread). Star network (indirect). No IPD."

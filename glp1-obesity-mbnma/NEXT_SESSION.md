@@ -28,7 +28,7 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    extension if wanted: registry-ipd KM reconstruction on a class that *does* post KM curves.
 2. ~~**Promote one class to the full 40-stage pipeline** — PCSK9~~ **DONE (all 4 named depth stages)**:
    - **league + GRADE** — `class2_pcsk9/pcsk9_league.py` → `pcsk9_league.json`: full pairwise LDL league with
-     per-comparison GRADE/CINeMA certainty, *same* domains as `nma_league.py` (6 Moderate / 6 Low / 12 comps,
+     per-comparison GRADE/CINeMA certainty, *same* domains as `nma_league.py` (3 Moderate / 3 Low / 6 comps,
      bococizumab lead, no k=1). Pinned by `test_pcsk9_league_depth`.
    - **transport** — `pcsk9_transport.py` → `pcsk9_transport.json`: % LDL → absolute mg/dL & mmol/L in a real
      NHANES elevated-LDL US target (baseline 132 mg/dL; bococizumab −2.61 → inclisiran −1.99 mmol/L), *same*
@@ -75,7 +75,7 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    - **PCSK9 Bayesian league** — `class2_pcsk9/pcsk9_league_bayes.py` → `pcsk9_league_bayes.json` (+ npz,
      gitignored): hierarchical one-way RE on per-trial %LDL with **heteroscedastic per-agent SD** (nutpie,
      R̂=1.00); draws → CrI + P(superiority). Same ranking as the frequentist league (bococizumab lead) but
-     more conservative (10 Low / 2 Moderate) — it propagates the real cross-trial heterogeneity. The
+     more conservative (5 Low / 1 Moderate) — it propagates the real cross-trial heterogeneity. The
      frequentist `pcsk9_league.json` is kept alongside. Pinned by `test_pcsk9_league_bayesian_parity`.
    - **Asthma full-depth (3rd class, count/rate)** — `class5_asthma/asthma_league_bayes.py` →
      `asthma_league.json` (Bayesian IRR league, nutpie R̂=1.00, tezepelumab 0.48 lead, class IRR 0.61),
@@ -90,7 +90,7 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    - **league** — `psoriasis_league_bayes.py` → `psoriasis_league.json` (+ `psoriasis_pasi_draws.npz`,
      gitignored): hierarchical Bayesian RE on the **logit of per-arm PASI-90 response** (nutpie, R̂=1.0000),
      per-agent mean + heteroscedastic per-agent SD; draws → response% with CrI, **risk-difference (pp)**
-     contrasts + P(superiority), same GRADE/CINeMA domains as `nma_league.py` (58 Moderate / 32 Low over 90
+     contrasts + P(superiority), same GRADE/CINeMA domains as `nma_league.py` (29 Moderate / 16 Low over 45
      ordered comps). Lead **bimekizumab 89%**; reproduces the established **IL-17/IL-23 > TNF** hierarchy with
      posterior probability (57% vs 31%, **P=1.000**). Pinned by `test_psoriasis_league_bayesian_depth`.
    - **transport** — `psoriasis_transport.py` → `psoriasis_transport.json`: response draws → **responders

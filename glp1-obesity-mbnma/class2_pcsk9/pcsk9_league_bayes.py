@@ -79,9 +79,9 @@ for a in range(A):
     print(row[:170])
 
 from collections import Counter
-cnt = Counter(v['certainty'] for v in cells.values())
+cnt = Counter(_v['certainty'] for _v in {frozenset(_k): _w for _k, _w in cells.items()}.values())  # unique undirected pairs (certainty is sign-symmetric)
 k1 = [a for a in agents if kper[a] == 1]
-print(f'\ncertainty across {len(cells)} ordered comparisons: {dict(cnt)}  |  Rhat={rhat:.4f}')
+print(f'\ncertainty across {sum(cnt.values())} ordered comparisons: {dict(cnt)}  |  Rhat={rhat:.4f}')
 print(f'lead: {agents[order[0]]} (LDL {med[order[0]]:.1f}%); k=1 INSUFFICIENT: {k1 or "none"}')
 
 # parity check vs the frequentist league

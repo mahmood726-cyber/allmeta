@@ -43,10 +43,10 @@ scen_out = []
 for name, pbo in SCEN:
     rd, rdci, nnt, nntci = gained_nnt(pct[order[0]], pbo)
     star = ' *' if name == PRIMARY else '  '
-    print(f'{star}{name:42s} {pbo:4.1f}   {rd:5.1f} ({rdci[0]:.1f}, {rdci[1]:.1f})    {nnt:4.2f} ({nntci[1]:.2f}, {nntci[0]:.2f})')
+    print(f'{star}{name:42s} {pbo:4.1f}   {rd:5.1f} ({rdci[0]:.1f}, {rdci[1]:.1f})    {nnt:4.2f} ({nntci[0]:.2f}, {nntci[1]:.2f})')
     scen_out.append({'placebo_background': name, 'placebo_pct': pbo,
                      'responders_gained_per100': round(rd, 1), 'gained_cri': [round(x, 1) for x in rdci],
-                     'nnt': round(nnt, 2), 'nnt_cri': [round(nntci[1], 2), round(nntci[0], 2)],
+                     'nnt': round(nnt, 2), 'nnt_cri': [round(nntci[0], 2), round(nntci[1], 2)],
                      'primary': name == PRIMARY})
 
 # per-agent NNT at the primary placebo rate (decision table)
@@ -54,9 +54,9 @@ print(f'\n=== per-agent NNT at the reference placebo ({pbo0:.0f}%) ===')
 agent_nnt = []
 for i in order:
     rd, _, nnt, nntci = gained_nnt(pct[i], pbo0)
-    print(f'  {agents[i]:14s} {med[i]:5.1f}% response -> {rd:5.1f} gained/100, NNT {nnt:.2f} (95% CrI {nntci[1]:.2f} to {nntci[0]:.2f})')
+    print(f'  {agents[i]:14s} {med[i]:5.1f}% response -> {rd:5.1f} gained/100, NNT {nnt:.2f} (95% CrI {nntci[0]:.2f} to {nntci[1]:.2f})')
     agent_nnt.append({'agent': agents[i], 'response_pct': round(float(med[i]), 1),
-                      'gained_per100': round(rd, 1), 'nnt': round(nnt, 2), 'nnt_cri': [round(nntci[1], 2), round(nntci[0], 2)]})
+                      'gained_per100': round(rd, 1), 'nnt': round(nnt, 2), 'nnt_cri': [round(nntci[0], 2), round(nntci[1], 2)]})
 
 print('\n=== transport depth verdict (psoriasis) ===')
 print('  The transport repoints to the BINARY/RESPONDER absolute scale: response draws -> responders gained')

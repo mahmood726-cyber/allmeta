@@ -9,7 +9,7 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
 | **Incretins** (obesity) | continuous biomarker (% weight) | 273+ trials, full pipeline | surrogacy weight→CV | **Surrogate FAILS** (I²_HR=0%); weight is not a validated CV surrogate |
 | **PCSK9i** (lipids) | continuous biomarker (% LDL-C) | 273 trials, 102 LDL | surrogacy LDL→MACE | **Surrogate direction VALIDATED** — same method *discriminates*, not rigged |
 | **SGLT2i** (cardiorenal) | hard outcome (HF/CV HR) | 1165 trials, 18 HR | class-effect homogeneity | **Flags endpoint-definition heterogeneity** (I²=87% from pooling MACE vs HF-hosp vs renal); demands disaggregation by exact endpoint |
-| **Psoriasis biologics** | binary responder (PASI-90 %) | 1377 trials, 130 PASI-90 | established efficacy hierarchy | **Reproduces IL-17/IL-23 > TNF** (mean 63% vs 33%; bimekizumab top 85%), matching the Sbidian Cochrane NMA — now **full-depth** (Bayesian PASI-90 league R̂=1.0000, P(IL-17/23>TNF)=1.000 + responders-gained/NNT transport + offline dashboard) |
+| **Psoriasis biologics** | binary responder (PASI-90 %) | 1377 trials, 130 PASI-90 | established efficacy hierarchy | **Reproduces IL-17/IL-23 > TNF** (core repoint: mean 63% vs 33%, bimekizumab 85%), matching the Sbidian Cochrane NMA — now **full-depth**: Bayesian PASI-90 league (bimekizumab 89%, IL-17/23 57% vs TNF 31%, R̂=1.0000, P(IL-17/23>TNF)=1.000) + responders-gained/NNT transport + offline dashboard |
 | **Asthma biologics** | count/rate (annualised exacerbation IRR) | 640 trials, 26 with a rate ratio | rate-NMA + transitivity on baseline rate | **All 4 agents significantly reduce the exacerbation rate** (class IRR 0.70); but **flags** the raw cross-agent ranking (tezepelumab 0.47 > reslizumab 0.58 > benralizumab 0.74 > mepolizumab 0.80, I²=96%) as **effect modification** by baseline-rate / eosinophil enrichment — not a clean "best biologic" |
 | **RA biologics/JAK** | ordinal / ordered-categorical (ACR20>50>70 ladder) | 171/157/145 trials (ACR20/50/70), 4275 arm×threshold rows | proportional-odds graded-response on the ordered ladder | **Fits the ordered ladder** with one latent efficacy per agent + shared ordered cutpoints (nutpie R̂=1.0000); class-level advanced-MoA ≥ TNF holds (P(IL-6/JAK>TNF)=0.91) but **flags** the cross-agent ranking as arm-level heterogeneity (proportional-odds residual RMSE=2.0; a TNF agent leads while the class-mean favours advanced-MoA) — not a clean "best agent", the ordinal echo of the asthma flag. Full-depth (Bayesian ACR league + ACR50 responders-gained/NNT transport + offline dashboard) |
 
@@ -30,7 +30,7 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   five outcome types** (continuous biomarker, survival/absolute-risk, count/rate, binary/responder, ordinal),
   and the league runs on a real **Bayesian draw matrix** (CrI + P(superiority)) in each:
   - **Class 2 (PCSK9), continuous-biomarker path** — (1) full pairwise LDL **league** with **GRADE/CINeMA
-    certainty**, in **both** a frequentist form (`pcsk9_league.json`: 6 Moderate / 6 Low) and a **Bayesian
+    certainty**, in **both** a frequentist form (`pcsk9_league.json`: 3 Moderate / 3 Low) and a **Bayesian
     draw-matrix** form (`pcsk9_league_bayes.json`: nutpie, R̂=1.00, heteroscedastic per-agent SD — same
     bococizumab ranking, more conservative certainty as it propagates real cross-trial heterogeneity); (2)
     **transport** (`pcsk9_transport.json`) % LDL → **absolute** lowering (mmol/L) in a NHANES elevated-LDL
