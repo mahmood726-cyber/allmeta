@@ -49,6 +49,27 @@ weight loss is prioritised, but the additional benefit is uncertain; choice shou
 3. **k=1 apex agents (mazdutide, retatrutide) are INSUFFICIENT** for any recommendation (flagged upstream).
 4. **Every rating re-runs from its cited data file** — the guideline writer checks, doesn't trust.
 
+## Network-confidence layer — CINeMA (`cinema_confidence.py`)
+GRADE rates a pairwise body of evidence; **CINeMA** (Nikolakopoulou/Salanti 2020) rates confidence in a
+**network** estimate across six domains, and exposes what GRADE alone hides here: tirzepatide-vs-semaglutide
+has **no head-to-head trial** — it is an *indirect* comparison anchored on placebo (≈50% tirz-vs-placebo +
+50% sema-vs-placebo). Consequences CINeMA makes explicit:
+
+| CINeMA domain | Rating | Basis |
+|---|---|---|
+| Within-study bias | Some (PANEL) | contribution-weighted RoB-2 — panel input |
+| Reporting bias | **No concerns** | directly measured (6 ghosts, pull −0.12 pp) — our strongest domain |
+| Indirectness | Some | population transported (POTH 0.898), but transitivity **incomplete** (baseline weight + HbA1c not posted for one node) |
+| Imprecision | **Major** | indirect contrast CrI [−0.17, 5.97] crosses null |
+| Heterogeneity | Some | I²≈94% but largely *explained* by follow-up (not downgraded to major) |
+| Incoherence | **Not assessable** | star network — no direct evidence, no closed loop to test direct-vs-indirect agreement |
+
+**CINeMA confidence: Low — consistent with the GRADE Low.** Two independent frameworks agree, and CINeMA
+adds the decisive network message: **the evidence cannot self-check (no incoherence test) and rests on an
+indirect, partially-unverifiable transitivity assumption → a head-to-head trial (e.g. SURMOUNT-5) is the
+single highest-value evidence gap.** That is a concrete, defensible research-prioritisation output a
+guideline panel can act on.
+
 ## Honest scope
 - This is a **decision-support scaffold**, not a guideline. The MID, the RoB, and all judgement domains are
   the panel's; the contrast CrI here is conservative (independent marginals — the exact NMA contrast needs
