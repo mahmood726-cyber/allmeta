@@ -70,6 +70,24 @@ indirect, partially-unverifiable transitivity assumption → a head-to-head tria
 single highest-value evidence gap.** That is a concrete, defensible research-prioritisation output a
 guideline panel can act on.
 
+## Panel-ready export — GRADEpro/iEtD (`grade_export.py`)
+The assessment exports into a guideline panel's existing workflow as a standard **Summary of Findings**
+table + **Evidence-to-Decision** framework, in three formats:
+- `grade_sof.md` — Markdown SoF + EtD (drops into a protocol/manuscript).
+- `grade_export.html` — self-contained, **fully offline** (0 external refs), panel-openable.
+- `grade_export.json` — machine-readable, GRADEpro/iEtD-style.
+
+The SoF carries **three outcomes** with their certainty, modelling the real decision:
+| Outcome | Certainty | Effect |
+|---|---|---|
+| Body-weight % change (≥36 wk), CRITICAL | Low ⊕⊕○○ | tirzepatide MD +2.9 pp [−0.2, 6.0] |
+| MACE, CRITICAL | **Not estimable (contrast)** | no head-to-head; weight is not a CV surrogate → no inference |
+| Nausea, IMPORTANT (harm) | Low ⊕⊕○○ | 16% → 22% (+6 pp with tirzepatide) |
+
+The MACE row is the discipline in action: the system **refuses to manufacture a between-drug CV estimate**
+from weight loss, and says so on the face of the table. GRADE certainty (Low) and CINeMA confidence (Low)
+print in the header; the recommendation is Conditional; the guardrails travel with the export.
+
 ## Honest scope
 - This is a **decision-support scaffold**, not a guideline. The MID, the RoB, and all judgement domains are
   the panel's; the contrast CrI here is conservative (independent marginals — the exact NMA contrast needs
