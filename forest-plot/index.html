@@ -37,6 +37,23 @@
     .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
     .panel h2 { margin: 0 0 0.75rem; font-size: 0.9rem; font-weight: 600;
                 text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    button.ghost { font: inherit; font-size: 0.84rem; padding: 0.45rem 0.85rem; border: 1px solid var(--border-strong);
+                border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; }
+    button.ghost:hover { border-color: var(--accent); }
+    .hint { color: var(--muted); font-size: 0.8rem; }
+    /* ---- Leave-one-out (CMA-style) ---- */
+    .loo-summary { display: flex; gap: 0.6rem 1.2rem; flex-wrap: wrap; align-items: baseline; margin-bottom: 0.7rem; font-size: 0.86rem; }
+    .loo-summary .b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .loo-summary .delta.up { color: var(--warn); } .loo-summary .delta.flat { color: var(--muted); }
+    .loo-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .loo-table th, .loo-table td { border-bottom: 1px solid var(--border); padding: 0.32rem 0.45rem; text-align: right; font-variant-numeric: tabular-nums; }
+    .loo-table th:first-child, .loo-table td:first-child { text-align: left; }
+    .loo-table th { color: var(--muted); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .loo-table tr.study { cursor: pointer; }
+    .loo-table tr.study:hover td { background: var(--accent-soft); }
+    .loo-table tr.dropped td { opacity: 0.5; text-decoration: line-through; }
+    .loo-table .tog { display: inline-block; width: 1.1rem; }
+    .loo-table tr.dropped .tog { text-decoration: none; }
     fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; }
     legend { padding: 0 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--accent); }
     label { display: block; margin-bottom: 0.5rem; font-size: 0.88rem; }
@@ -166,6 +183,13 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       <h2>Preview</h2>
       <div id="svg-host"></div>
       <div id="alm-flow-mount" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-label="Leave-one-out sensitivity">
+      <h2>Leave-one-out sensitivity <span style="font-weight:400;color:var(--muted);font-size:0.82rem">· CMA-style</span></h2>
+      <p class="hint" style="margin:0 0 0.6rem">Click a study to <strong>drop</strong> it and watch the pooled estimate update live; the forest shows the random-effects pool recomputed with each single study omitted (metafor's <code>leave1out</code>). Drops here are a what-if sensitivity view — they do <em>not</em> change your data, exports, or the bus.</p>
+      <button type="button" id="btn-loo" class="ghost" aria-expanded="false">Compute leave-one-out</button>
+      <div id="loo-host" role="status" aria-live="polite" style="margin-top:0.7rem"></div>
     </section>
   </main>
 
@@ -604,6 +628,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       const svg = parsed.studies.length ? buildSvg(state, parsed.studies, fe, re)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste at least one study row to render.</text></svg>";
       svgHost.innerHTML = svg;
+      try { renderLOO(parsed.studies); } catch (e) {}
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
       // url-state write (after each render so the link is always shareable)
       try {
@@ -612,6 +637,62 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         }
       } catch (e) {}
     }
+
+    // ---- Leave-one-out sensitivity (CMA-style). Self-contained: reuses the
+    // pure poolRE_PM on subsets; does NOT touch exports, the bus, or _lastStudies.
+    var looState = { open: false, dropped: new Set(), sig: "" };
+    function looPool(sub) {
+      if (!sub.length) return null;
+      if (sub.length === 1) { var s = sub[0]; return { mu: s.est, lo: s.est - Z975 * s.se, hi: s.est + Z975 * s.se, k: 1 }; }
+      var re = poolRE_PM(sub);
+      return { mu: re.mu, lo: re.lo, hi: re.hi, k: sub.length };
+    }
+    function looSig(studies) { return studies.length + "|" + studies.map(function (s) { return s.label + ":" + s.est + ":" + s.se; }).join("|"); }
+    function currentStudies() { return parseStudies(document.getElementById("f-data").value).studies; }
+    function renderLOO(studies) {
+      var host = document.getElementById("loo-host"); if (!host) return;
+      if (!looState.open) { host.innerHTML = ""; return; }
+      var sig = looSig(studies);
+      if (sig !== looState.sig) { looState.dropped = new Set(); looState.sig = sig; }   // study set changed -> reset drops
+      if (studies.length < 2) { host.innerHTML = "<p class='hint'>Need at least 2 studies for a leave-one-out analysis.</p>"; return; }
+
+      var baseline = looPool(studies);
+      var kept = studies.filter(function (s, i) { return !looState.dropped.has(i); });
+      var current = looPool(kept);
+      var dn = looState.dropped.size;
+      var dMu = current ? (current.mu - baseline.mu) : 0;
+      var dCls = Math.abs(dMu) < 1e-9 ? "flat" : "up";
+      var summary = "<div class='loo-summary'>"
+        + "<span>All studies: <span class='b'>" + fmt(baseline.mu) + "</span> [" + fmt(baseline.lo) + ", " + fmt(baseline.hi) + "] (k=" + baseline.k + ")</span>"
+        + "<span>Current (kept): <span class='b'>" + (current ? fmt(current.mu) : "—") + "</span>" + (current ? " [" + fmt(current.lo) + ", " + fmt(current.hi) + "] (k=" + current.k + ")" : "") + "</span>"
+        + "<span class='delta " + dCls + "'>" + (dn ? ("&Delta; = " + (dMu >= 0 ? "+" : "") + fmt(dMu) + " from dropping " + dn) : "no studies dropped") + "</span>"
+        + (dn ? " <button type='button' id='loo-reset' class='ghost' style='padding:0.2rem 0.55rem;font-size:0.78rem'>Reset</button>" : "")
+        + "</div>";
+      var rows = studies.map(function (s, i) {
+        var omit = looPool(studies.filter(function (_, j) { return j !== i; }));   // classic leave1out: omit this one from the FULL set
+        var dMuI = omit ? (omit.mu - baseline.mu) : 0;
+        var cl = s.est - Z975 * s.se, ch = s.est + Z975 * s.se;
+        var dropped = looState.dropped.has(i);
+        return "<tr class='study" + (dropped ? " dropped" : "") + "' data-loo-idx='" + i + "'>"
+          + "<td><span class='tog'>" + (dropped ? "☐" : "☑") + "</span> " + escapeXml(s.label) + "</td>"
+          + "<td>" + fmt(s.est) + " [" + fmt(cl) + ", " + fmt(ch) + "]</td>"
+          + "<td>" + (omit ? fmt(omit.mu) + " [" + fmt(omit.lo) + ", " + fmt(omit.hi) + "]" : "—") + "</td>"
+          + "<td>" + (dMuI >= 0 ? "+" : "") + fmt(dMuI) + "</td></tr>";
+      }).join("");
+      host.innerHTML = summary
+        + "<table class='loo-table'><thead><tr><th>Study (click to drop)</th><th>Effect [95% CI]</th><th>Pooled if omitted</th><th>&Delta;&mu;</th></tr></thead><tbody>" + rows + "</tbody></table>";
+      var rst = document.getElementById("loo-reset");
+      if (rst) rst.addEventListener("click", function () { looState.dropped = new Set(); renderLOO(currentStudies()); });
+    }
+    window.__almLOO = function () {
+      var studies = currentStudies();
+      if (studies.length < 2) return { open: looState.open, k: studies.length };
+      var baseline = looPool(studies);
+      var kept = studies.filter(function (s, i) { return !looState.dropped.has(i); });
+      var current = looPool(kept);
+      return { open: looState.open, dropped: Array.from(looState.dropped), kBase: baseline.k, baselineMu: baseline.mu,
+        keptK: current ? current.k : 0, currentMu: current ? current.mu : null };
+    };
 
     function loadSaved() {
       try {
@@ -811,6 +892,21 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       document.getElementById("btn-example").addEventListener("click", onExample);
       document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
       document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
+      // Leave-one-out (CMA-style) sensitivity
+      document.getElementById("btn-loo").addEventListener("click", function () {
+        looState.open = !looState.open;
+        this.setAttribute("aria-expanded", looState.open ? "true" : "false");
+        this.textContent = looState.open ? "Hide leave-one-out" : "Compute leave-one-out";
+        renderLOO(currentStudies());
+      });
+      document.getElementById("loo-host").addEventListener("click", function (e) {
+        var tr = e.target && e.target.closest ? e.target.closest("tr.study") : null;
+        if (!tr) return;
+        var i = parseInt(tr.getAttribute("data-loo-idx"), 10);
+        if (!isFinite(i)) return;
+        if (looState.dropped.has(i)) looState.dropped.delete(i); else looState.dropped.add(i);
+        renderLOO(currentStudies());
+      });
       if (window.TruthCertUI) {
         TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
         TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "forest-plot",
