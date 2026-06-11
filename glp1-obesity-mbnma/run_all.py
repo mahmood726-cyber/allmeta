@@ -75,6 +75,8 @@ STAGES = [
     ('C4a psoriasis league (Bayes)', 'class4_psoriasis/psoriasis_league_bayes.py', HERE, 'class4_psoriasis/psoriasis_league.json', True),
     ('C4b psoriasis transport', 'class4_psoriasis/psoriasis_transport.py', HERE, 'class4_psoriasis/psoriasis_transport.json', False),
     ('C4c psoriasis dashboard', 'class4_psoriasis/psoriasis_dashboard.py', HERE, 'class4_psoriasis/psoriasis_dashboard.html', False),
+    ('C4d psoriasis RM harvest', 'class4_psoriasis/psoriasis_rapidmeta_harvest.py', HERE, 'class4_psoriasis/psoriasis_trials.json', True),
+    ('C4e psoriasis RM config', 'class4_psoriasis/build_psoriasis_rapidmeta_config.py', HERE, 'class4_psoriasis/psoriasis_rapidmeta_config.json', False),
     ('C5a asthma league (Bayes)', 'class5_asthma/asthma_league_bayes.py', HERE, 'class5_asthma/asthma_league.json',      True),
     ('C5b asthma transport',   'class5_asthma/asthma_transport.py',      HERE, 'class5_asthma/asthma_transport.json',   False),
     ('C5c asthma dashboard',   'class5_asthma/asthma_dashboard.py',      HERE, 'class5_asthma/asthma_dashboard.html',   False),

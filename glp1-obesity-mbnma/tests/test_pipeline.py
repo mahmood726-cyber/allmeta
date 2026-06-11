@@ -410,30 +410,35 @@ def test_certainty_counts_not_double_counted(f):
         f'{f}: certainty_counts sum {sum(d["certainty_counts"].values())} != {len(d["comparisons"])} unique comparisons'
 
 
-def test_ra_rapidmeta_conversion():
-    # RA class wrapped in the RapidMeta workbench: per-trial ACR responder table + kit config
-    tr = _classfile('class6_ra/ra_trials.json')
+# RapidMeta conversion: binary-responder classes wrapped in the kit workbench (shared rm_harvest_binary.py)
+_RM_CONVERSIONS = [
+    ('class6_ra/ra_trials.json', 'class6_ra/ra_rapidmeta_config.json', 'ra_biologics_acr_nma'),
+    ('class4_psoriasis/psoriasis_trials.json', 'class4_psoriasis/psoriasis_rapidmeta_config.json',
+     'psoriasis_biologics_pasi_nma'),
+]
+@pytest.mark.parametrize('trials_f,cfg_f,slug', _RM_CONVERSIONS)
+def test_rapidmeta_conversion(trials_f, cfg_f, slug):
+    tr = _classfile(trials_f)
     trials = tr['trials']
-    assert len(trials) >= 30, 'RA RapidMeta cohort should have a substantial trial table'
+    assert len(trials) >= 30, f'{trials_f}: RapidMeta cohort should be substantial'
     for t in trials:
         assert t['nct'].startswith('NCT') and t['name']
-        # derived responder events must be valid counts within arm N
+        # derived responder events valid + v2 plausibility (no arm-swapped/tiny cells)
         assert 0 <= t['tE'] <= t['tN'] and 0 <= t['cE'] <= t['cN'], f"{t['nct']}: events outside [0,N]"
-        # v2 plausibility (multi-person review): no arm-swapped/tiny cells
         assert min(t['tN'], t['cN']) >= 10, f"{t['nct']}: arm N < 10"
         assert (t['cE'] / t['cN']) - (t['tE'] / t['tN']) <= 0.20, f"{t['nct']}: control implausibly beats active"
-        assert t['allOutcomes'], 'each trial lists at least one ACR outcome'
+        assert t['allOutcomes'], 'each trial lists at least one responder outcome'
     s = tr['screening']
     assert s['search_hits'] >= s['acr_reporting'] >= s['included'], 'screening funnel must be monotone'
-    # v2: PRISMA funnel must reconcile (every ACR-reporting trial accounted for)
-    assert s['funnel_reconciles'] is True, 'screening funnel must reconcile to acr_reporting'
+    # PRISMA funnel must reconcile (every responder-reporting trial accounted for)
+    assert s['funnel_reconciles'] is True
     assert s['included'] + sum(s['excluded'].values()) == s['acr_reporting']
-    # the kit config is well-formed against the rapidmeta-kit schema essentials
-    cfg = _classfile('class6_ra/ra_rapidmeta_config.json')
+    # kit config well-formed against the rapidmeta-kit schema essentials
+    cfg = _classfile(cfg_f)
     for k in ('drug', 'slug', 'condition', 'title', 'pico', 'trials'):
-        assert k in cfg and cfg[k], f'config missing {k}'
-    assert cfg['slug'] == 'ra_biologics_acr_nma' and len(cfg['trials']) == len(trials)
-    assert all('_agent' not in t for t in cfg['trials']), 'private bookkeeping keys must be stripped from the config'
+        assert k in cfg and cfg[k], f'{cfg_f} missing {k}'
+    assert cfg['slug'] == slug and len(cfg['trials']) == len(trials)
+    assert all('_agent' not in t for t in cfg['trials']), 'private bookkeeping keys must be stripped'
 
 def test_class_concordance_published():
     # class-level external validation: each generality class vs a PubMed-verified published NMA

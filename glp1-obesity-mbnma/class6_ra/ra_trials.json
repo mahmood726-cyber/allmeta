@@ -12,13 +12,13 @@
    "cN": 651,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -50,13 +50,13 @@
    "cN": 212,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: certolizumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: certolizumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: certolizumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: certolizumab vs control",
      "type": "binary"
     },
     {
@@ -88,13 +88,13 @@
    "cN": 488,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: baricitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: baricitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: baricitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: baricitinib vs control",
      "type": "binary"
     }
    ],
@@ -121,13 +121,13 @@
    "cN": 257,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -159,13 +159,13 @@
    "cN": 423,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -197,13 +197,13 @@
    "cN": 475,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -235,13 +235,13 @@
    "cN": 219,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tocilizumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tocilizumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tocilizumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: tocilizumab vs control",
      "type": "binary"
     }
    ],
@@ -268,13 +268,13 @@
    "cN": 314,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -306,13 +306,13 @@
    "cN": 205,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tocilizumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tocilizumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tocilizumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: tocilizumab vs control",
      "type": "binary"
     }
    ],
@@ -339,13 +339,13 @@
    "cN": 284,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: etanercept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: etanercept vs control",
      "type": "binary"
     },
     {
@@ -377,13 +377,13 @@
    "cN": 270,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tofacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tofacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tofacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: tofacitinib vs control",
      "type": "binary"
     }
    ],
@@ -410,13 +410,13 @@
    "cN": 200,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -476,13 +476,13 @@
    "cN": 228,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: baricitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: baricitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: baricitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: baricitinib vs control",
      "type": "binary"
     },
     {
@@ -514,13 +514,13 @@
    "cN": 221,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -552,13 +552,13 @@
    "cN": 216,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -590,13 +590,13 @@
    "cN": 212,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -628,13 +628,13 @@
    "cN": 211,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: abatacept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: abatacept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: abatacept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: abatacept vs control",
      "type": "binary"
     }
    ],
@@ -689,13 +689,13 @@
    "cN": 210,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: baricitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: baricitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: baricitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: baricitinib vs control",
      "type": "binary"
     },
     {
@@ -727,13 +727,13 @@
    "cN": 176,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: etanercept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: etanercept vs control",
      "type": "binary"
     },
     {
@@ -765,13 +765,13 @@
    "cN": 181,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: sarilumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: sarilumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: sarilumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: sarilumab vs control",
      "type": "binary"
     },
     {
@@ -803,13 +803,13 @@
    "cN": 176,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: baricitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: baricitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: baricitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: baricitinib vs control",
      "type": "binary"
     },
     {
@@ -841,13 +841,13 @@
    "cN": 169,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -879,13 +879,13 @@
    "cN": 163,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -917,13 +917,13 @@
    "cN": 169,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -983,13 +983,13 @@
    "cN": 101,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: etanercept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: etanercept vs control",
      "type": "binary"
     },
     {
@@ -1049,13 +1049,13 @@
    "cN": 138,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: abatacept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: abatacept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: abatacept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: abatacept vs control",
      "type": "binary"
     }
    ],
@@ -1082,13 +1082,13 @@
    "cN": 131,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tofacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tofacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tofacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: tofacitinib vs control",
      "type": "binary"
     },
     {
@@ -1120,13 +1120,13 @@
    "cN": 79,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: sarilumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: sarilumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: sarilumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: sarilumab vs control",
      "type": "binary"
     },
     {
@@ -1158,13 +1158,13 @@
    "cN": 69,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tocilizumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tocilizumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tocilizumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: tocilizumab vs control",
      "type": "binary"
     }
    ],
@@ -1191,13 +1191,13 @@
    "cN": 106,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -1229,13 +1229,13 @@
    "cN": 98,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: certolizumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: certolizumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: certolizumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: certolizumab vs control",
      "type": "binary"
     },
     {
@@ -1267,13 +1267,13 @@
    "cN": 60,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -1366,13 +1366,13 @@
    "cN": 76,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -1404,13 +1404,13 @@
    "cN": 65,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: etanercept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: etanercept vs control",
      "type": "binary"
     },
     {
@@ -1442,13 +1442,13 @@
    "cN": 65,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: etanercept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: etanercept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: etanercept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: etanercept vs control",
      "type": "binary"
     },
     {
@@ -1541,13 +1541,13 @@
    "cN": 57,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: abatacept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: abatacept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: abatacept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: abatacept vs control",
      "type": "binary"
     }
    ],
@@ -1574,13 +1574,13 @@
    "cN": 59,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -1612,13 +1612,13 @@
    "cN": 49,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -1650,13 +1650,13 @@
    "cN": 46,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: upadacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: upadacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: upadacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: upadacitinib vs control",
      "type": "binary"
     },
     {
@@ -1688,13 +1688,13 @@
    "cN": 24,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -1726,13 +1726,13 @@
    "cN": 33,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: abatacept vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: abatacept vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: abatacept vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: abatacept vs control",
      "type": "binary"
     }
    ],
@@ -1759,13 +1759,13 @@
    "cN": 35,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: adalimumab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: adalimumab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: adalimumab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: adalimumab vs control",
      "type": "binary"
     },
     {
@@ -1797,13 +1797,13 @@
    "cN": 37,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: tofacitinib vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: tofacitinib vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: tofacitinib vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: tofacitinib vs control",
      "type": "binary"
     },
     {
@@ -1868,13 +1868,13 @@
    "cN": 31,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: infliximab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: infliximab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: infliximab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: infliximab vs control",
      "type": "binary"
     }
    ],
@@ -1901,13 +1901,13 @@
    "cN": 18,
    "allOutcomes": [
     {
-     "shortLabel": "ACR20",
-     "title": "ACR20 response: rituximab vs control",
+     "shortLabel": "ACR50",
+     "title": "ACR50 response: rituximab vs control",
      "type": "binary"
     },
     {
-     "shortLabel": "ACR50",
-     "title": "ACR50 response: rituximab vs control",
+     "shortLabel": "ACR20",
+     "title": "ACR20 response: rituximab vs control",
      "type": "binary"
     },
     {
