@@ -45,7 +45,7 @@
             lo: scale === "ratio" ? Math.log(pl.ciLo) : pl.ciLo,
             hi: scale === "ratio" ? Math.log(pl.ciHi) : pl.ciHi,
             natural: pl.pointEstimate, naturalLo: pl.ciLo, naturalHi: pl.ciHi,
-            k: pl.k || studies.length, computed: false };
+            k: pl.k || studies.length, computed: false, model: pl.model || null };
     } else {
       p = pooled(studies, scale);   // no producer estimate -> compute + label it
     }
@@ -210,7 +210,8 @@
     var ratio = d.scale === "ratio", p = d.pooled, k = d.studies.length;
     var dir = p.natural < (ratio ? 1 : 0) ? "lower" : "higher";
     var sig = (p.naturalLo > (ratio ? 1 : 0)) || (p.naturalHi < (ratio ? 1 : 0));
-    var poolWord = p.computed ? "random-effects (REML, computed here)" : "as reported by the review";
+    var poolWord = p.model === "random" ? "random-effects model" : p.model === "fixed" ? "fixed-effect model"
+      : (p.computed ? "random-effects (REML, computed here)" : "as reported by the review");
 
     var banner = document.getElementById("demoBanner");
     if (d.demo) { banner.hidden = false; banner.textContent = "DEMO — no live synthesis is on the bus. Run a review in allmeta, then return and press “Refresh from review”."; }
@@ -281,10 +282,34 @@
     document.getElementById("article").innerHTML = html;
   }
 
+  function importRapidMeta(text) {
+    if (!window.RapidMetaImport) { alert("RapidMeta bridge not loaded."); return; }
+    var cfg; try { cfg = JSON.parse(text); } catch (e) { alert("That file is not valid JSON."); return; }
+    var res;
+    try { res = RapidMetaImport.loadToBus(cfg); } catch (e) { alert("Import failed: " + e.message); return; }
+    if (!res.studies.length) { alert("No usable trials found (need publishedHR+CI or 2×2 counts)."); return; }
+    render();
+    if (res.skipped.length) {
+      var banner = document.getElementById("demoBanner");
+      banner.hidden = false;
+      banner.textContent = "Imported " + res.studies.length + " trial(s) from RapidMeta; skipped " + res.skipped.length + " with no usable effect.";
+    }
+  }
+
   function boot() {
     render();
     var p = document.getElementById("btnPrint"); if (p) p.addEventListener("click", function () { window.print(); });
     var r = document.getElementById("btnRefresh"); if (r) r.addEventListener("click", render);
+    var imp = document.getElementById("btnImportRM"), file = document.getElementById("rmFile");
+    if (imp && file) {
+      imp.addEventListener("click", function () { file.click(); });
+      file.addEventListener("change", function () {
+        var f = file.files && file.files[0]; if (!f) return;
+        var rd = new FileReader();
+        rd.onload = function () { importRapidMeta(String(rd.result)); file.value = ""; };
+        rd.readAsText(f);
+      });
+    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

@@ -73,3 +73,42 @@ test('a live synthesis bus drives the numbers, demo banner disappears', async ({
   // pooled HR read verbatim from the bus (0.83), not re-pooled
   await expect(page.locator('.keyfinding .stmt')).toContainText('0.83');
 });
+
+test('imports a RapidMeta config onto the buses and renders it as a journal article', async ({ page }) => {
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForFunction(() => !!(window.RapidMetaImport && window.MaStudies && window.AlmMaCore), { timeout: 10000 });
+
+  // a RapidMeta-kit-shaped config: trials carry publishedHR + CI (and 2x2 counts)
+  const res = await page.evaluate(() => {
+    const cfg = {
+      title: 'Finerenone for cardiorenal outcomes in CKD',
+      pico: { out: 'CV death or HF hospitalisation' },
+      trials: [
+        { name: 'FIDELIO-DKD', year: 2020, tE: 367, tN: 2833, cE: 420, cN: 2841, publishedHR: 0.86, hrLCI: 0.75, hrUCI: 0.99 },
+        { name: 'FIGARO-DKD', year: 2021, publishedHR: 0.87, hrLCI: 0.76, hrUCI: 0.98 },
+        { name: 'FINEARTS-HF', year: 2024, publishedHR: 0.84, hrLCI: 0.74, hrUCI: 0.95 },
+        { name: 'No-effect trial' }, // no usable effect -> skipped, surfaced
+      ],
+    };
+    const r = window.RapidMetaImport.loadToBus(cfg);
+    return { n: r.studies.length, skipped: r.skipped.length, measure: r.measure };
+  });
+  expect(res.n).toBe(3);
+  expect(res.skipped).toBe(1);
+  expect(res.measure).toBe('HR');
+
+  await page.locator('#btnRefresh').click();
+
+  // the imported synthesis drives the article
+  await expect(page.locator('#demoBanner')).toBeHidden();
+  await expect(page.locator('h1.title')).toContainText('Finerenone');
+  await expect(page.locator('table.booktabs tbody tr')).toHaveCount(3);
+  await expect(page.locator('.article')).toContainText('FIDELIO-DKD 2020');
+  // the bridge pooled the trials as a random-effects model (disclosed, not "as reported")
+  await expect(page.locator('.keyfinding .sub')).toContainText('random-effects model');
+  // ratio scale -> the pooled HR is plausibly < 1
+  const hr = await page.evaluate(() => window.MaPooled.read().slice(-1)[0].pointEstimate);
+  expect(hr).toBeGreaterThan(0.8);
+  expect(hr).toBeLessThan(0.9);
+});
+

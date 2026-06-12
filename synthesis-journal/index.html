@@ -122,6 +122,8 @@
     <a class="hub-back" href="../review-project/" aria-label="Back to the review project">← review</a>
     <span class="spacer"></span>
     <button id="btnRefresh" class="ghost" type="button" title="Re-read the synthesis buses">Refresh from review</button>
+    <button id="btnImportRM" class="ghost" type="button" title="Load a RapidMeta config/export (.json) onto the buses">Import RapidMeta JSON</button>
+    <input id="rmFile" type="file" accept="application/json,.json" hidden>
     <button id="btnPrint" type="button" title="Open your device's Save-as-PDF dialog">⬇ Download journal PDF</button>
   </div>
   <div id="demoBanner" class="no-print" hidden></div>
@@ -135,6 +137,7 @@
   <script src="../shared/ma-studies-v1.js" defer></script>
   <script src="../shared/ma-pooled-v1.js" defer></script>
   <script src="../shared/ma-core.js" defer></script>
+  <script src="../shared/rapidmeta-import.js" defer></script>
   <script src="./synthesis-journal.js" defer></script>
 </body>
 </html>
