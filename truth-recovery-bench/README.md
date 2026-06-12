@@ -36,8 +36,36 @@ Ten methods, each as `fn(y, v) -> {mu, ci_lo, ci_hi, tau2, ok}`:
 | GRMA | robust grey-relational pooling | `GRMA_paper/grey_meta_v8.py` (imported verbatim) |
 | Trim-and-fill | L0 + DL re-pool | `allmeta/shared/trimfill.js` |
 
-The Python ports are **validated against the audited R-parity oracles** in
-`tests/test_methods.py`:
+### Unified-estimator contributions (branch `truth-recovery-unified-estimator`)
+
+Three new methods are plugged into the SAME harness and scored on the SAME grid,
+aimed at the brief's target: **≥0.90 coverage of the true μ across k=5→50 under
+unknown/multiple selection mechanisms, with bias ≤ Vevea's and no small-k
+blow-up.**
+
+**Measured outcome (full 55-cell × 1000-rep confirmation grid, see `REPORT.md` §7):**
+NPE achieves **0.98 mean** coverage of the true μ over all selection cells with
+mean **|bias| 0.028** (vs Vevea's 0.79 / 0.107) and **no small-k blow-up** (k=5
+RMSE 0.16 vs Vevea 9.18). It holds ≥0.90 on 24 of 25 selection×k cells; the lone
+exception is the hardest cell, **step_strong k=50 = 0.88** (the calibration
+preview had projected 0.90 there — the confirmation grid measures 0.88). So the
+strict "≥0.90 *everywhere*" target is missed by one cell at 2 points, while the
+substantive claim — honest coverage where the entire incumbent field collapses
+(naive RE → 0.00, Vevea worst 0.56) — holds decisively.
+
+| Method | Track | Idea (cross-disciplinary import) |
+|---|---|---|
+| **NPE** | 1 | Amortized simulation-based inference. A permutation-invariant feature map φ(D) (fixed DeepSets encoder, `features.py`) feeds gradient-boosted **quantile** regressors trained on a huge corpus of simulated (D → true μ) pairs spanning a **mixture of selection mechanisms** at continuous severity. Honest finite-sample coverage comes from **Mondrian conformalized quantile regression** (CQR, Romano et al. 2019) conditioned on observable (k, selection-severity). |
+| **PVS** | 2 | Penalised, model-averaged Vevea–Hedges: weakly-informative ridge on log-δ + hard L-BFGS-B bounds (kills the k≤10 runaway) + BIC model-averaging over step structures. |
+| **PartialID** | 2 | Manski-style **partial-identification bounds**: union of CIs over a severity ladder with δ fixed — an honest wide interval when the mechanism is unknown. |
+
+Training is offline and seeded (`train_sbi.py`, `TRAIN_SEED` disjoint from the
+harness `BASE_SEED`), producing `sbi_model.pkl` + `sbi_diagnostics.json` (SBC/PIT
+uniformity, calibration curve, and a held-out evaluation on the EXACT benchmark
+DGP). The harness then scores NPE/PVS/PartialID like any other method.
+
+The original ten Python ports are **validated against the audited R-parity
+oracles** in `tests/test_methods.py`:
 - Vevea–Hedges ≈ `metafor::selmodel(type="stepfun", steps=0.025)` (μ, τ², δ₂, se)
 - Copas–Shi ≈ `metasens` `copas.loglik.without.beta` profile MLE along the publprob path
 - REML ≈ a brute-force restricted-likelihood grid maximiser
@@ -79,6 +107,15 @@ python report.py --results results_full.json --out REPORT.md
 
 # validate the method ports against the R oracles
 python -m pytest tests/test_methods.py -v
+
+# --- unified estimators (this branch) ---
+# 1) train the amortized SBI model offline (seeded, ~12 min on 4 cores)
+python train_sbi.py --n-train 90000 --n-cal 40000 --n-val 15000 --iters 500
+# 2) (re)run the full benchmark — NPE/PVS/PartialID are auto-registered
+python harness.py --profile full --reps 1000 --procs 4
+python report.py --results results_full.json --out REPORT.md
+# 3) validate the new methods (contract, no-blowup, determinism, calibration)
+python -m pytest tests/test_unified.py -v
 ```
 
 Reproducibility: every replication draws from
@@ -87,11 +124,17 @@ Same `--reps` and `BASE_SEED` → identical numbers, process-count-independent.
 
 ## Files
 
-- `methods.py` — the ten estimators (validated ports + canonical kernels)
+- `methods.py` — the ten estimators (validated ports + canonical kernels) + registry of the three new unified methods
 - `dgp.py` — known-truth data-generating process + selection mechanisms
 - `harness.py` — grid, seeded replication loop, multiprocessing, aggregation
-- `report.py` — leaderboard + `REPORT.md` writer
+- `report.py` — leaderboard + `REPORT.md` writer (incl. §7 unified verdict)
+- `features.py` — permutation-invariant feature map φ(D) (shared by trainer + NPE)
+- `train_sbi.py` — offline amortized SBI trainer + conformal calibration + SBC diagnostics
+- `sbi.py` — online NPE estimator (loads `sbi_model.pkl`)
+- `robust_selection.py` — PVS (penalised model-averaged Vevea) + PartialID (Manski bounds)
 - `tests/test_methods.py` — R-oracle parity / correctness gate
+- `tests/test_unified.py` — contract / no-blowup / determinism / calibration-regression gate
+- `sbi_model.pkl`, `sbi_diagnostics.json` — trained artifact + calibration evidence (generated)
 - `REPORT.md` — the measured leaderboard (generated)
 
 ## Scope / honesty notes

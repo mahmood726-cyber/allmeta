@@ -8,3 +8,8 @@ REPORT_smoke.md
 .pytest_cache/
 
 run_full.err
+full_train.log
+run_new.log
+recal.log
+results_new.json
+results_merged.json.tmp
