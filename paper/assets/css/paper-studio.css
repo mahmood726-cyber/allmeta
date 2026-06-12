@@ -41,8 +41,9 @@
 .paper-toolbar .ps-title {
   font-weight: 800;
   color: #e2e8f0;
-  margin-right: auto;
+  margin: 0 auto 0 0;            /* keep the flex push-right; zero the default <h1> block margins */
   font-size: 0.95rem;
+  line-height: 1.2;
   letter-spacing: -0.01em;
 }
 .paper-toolbar button {
