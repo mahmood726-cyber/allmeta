@@ -13,9 +13,6 @@ class2_pcsk9/pcsk9_ldl_draws.npz
 class5_asthma/asthma_rr_draws.npz
 class4_psoriasis/psoriasis_pasi_draws.npz
 class6_ra/ra_acr_draws.npz
-class7_dta/dta_biv_draws.npz
-class7_dta/_harvest.log
-class7_dta/_league.log
 # RapidMeta-cloned dashboards: 1.2MB CDN-dependent live workbenches, regenerable via rapidmeta-kit clone.py
 # from the committed *_rapidmeta_config.json. Source (harvest/config/trials) IS committed. (assets/ already ignored.)
 *_review.html

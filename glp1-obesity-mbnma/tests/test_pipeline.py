@@ -401,7 +401,7 @@ def test_nnt_cri_ascending(f, key):
 
 _LEAGUES = ['nma_league.json', 'class2_pcsk9/pcsk9_league.json', 'class2_pcsk9/pcsk9_league_bayes.json',
             'class3_sglt2/sglt2_league.json', 'class4_psoriasis/psoriasis_league.json',
-            'class5_asthma/asthma_league.json', 'class6_ra/ra_league.json', 'class7_dta/dta_league.json']
+            'class5_asthma/asthma_league.json', 'class6_ra/ra_league.json']
 @pytest.mark.parametrize('f', _LEAGUES)
 def test_certainty_counts_not_double_counted(f):
     # certainty_counts must tally UNIQUE pairwise contrasts, not directed cells (which double-counts)
@@ -487,85 +487,14 @@ def test_rapidmeta_ratio_continuous_conversion(trials_f, cfg_f, slug, kind, rep_
         assert 'IRR' in cfg['pico']['out'] and 'NOT a hazard' in cfg['pico']['out']
 
 
-# --- class 7: DIAGNOSTIC TEST ACCURACY (6th outcome type, bivariate Se/Sp) ---
-def test_generality_class7_dta_league_depth():
-    d = _classfile('class7_dta/dta_league.json')
-    assert 'bivariate' in d['inference'].lower() and d['rhat'] <= 1.01, 'bivariate Bayesian league must converge'
-    assert d['lead'] == d['ranking'][0], 'lead must equal the top-ranked index test'
-    # every contrast comes from the draw matrix -> Youden-J difference CrI + P(superiority)
-    c0 = d['comparisons'][0]
-    assert 'cri_jdiff' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
-    assert sum(d['certainty_counts'].values()) == len(d['comparisons'])
-    # the comparative network mixes cancer sites -> the engine must NOT crown a clean winner
-    assert d['heterogeneity_flag'] is True, 'cross-target DTA network must carry the heterogeneity flag'
-
-def test_generality_class7_dta_results():
-    d = _classfile('class7_dta/dta_results.json')
-    assert 'bivariate' in d['outcome_type'].lower()
-    assert set(d['index_tests']) <= {'PET', 'MRI', 'CT', 'ultrasound'} and len(d['index_tests']) >= 3
-    for m, p in d['pooled'].items():
-        assert 0.3 <= p['sens'] <= 0.99 and 0.3 <= p['spec'] <= 0.99, f'{m}: pooled Se/Sp implausible'
-        assert abs(p['youden_j'] - (p['sens'] + p['spec'] - 1)) < 0.02, f'{m}: Youden J must equal Se+Sp-1'
-        assert p['sens_cri'][0] <= p['sens'] <= p['sens_cri'][1]
-    assert d['cross_target_flag'] is True and 'threshold_flags' in d
-
-def test_dta_transport_ppv_depth():
-    d = _classfile('class7_dta/dta_transport.json')
-    sc = d['scenarios']
-    assert len(sc) >= 3
-    ppv = [s['ppv'] for s in sc]; npv = [s['npv'] for s in sc]
-    # PPV rises and NPV falls monotonically with prevalence (the honest transport message)
-    assert ppv == sorted(ppv) and npv == sorted(npv, reverse=True)
-    assert ppv[-1] / max(ppv[0], 1e-6) >= 3, 'PPV should swing several-fold across prevalence targets'
-    assert any(s['primary'] for s in sc) and 'reference' in d['prevalence_source'].lower()
-    for s in sc:
-        assert s['ppv_cri'][0] <= s['ppv'] <= s['ppv_cri'][1]
-
-def test_dta_dashboard_offline():
-    p = os.path.join(ROOT, 'class7_dta', 'dta_dashboard.html')
-    if not os.path.exists(p):
-        pytest.skip('dta_dashboard.html not built')
-    h = open(p, encoding='utf-8').read()
-    assert 'http://' not in h and 'https://wwwn' not in h and 'C:/' not in h and 'C:\\' not in h
-    import re as _re
-    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>')
-    assert 'PPV' in h and 'Bivariate'.lower() in h.lower() and 'Youden' in h
-
-def test_dta_harvest_funnel_and_cells():
-    d = _classfile('class7_dta/dta_trials.json')
-    trials = d['trials']
-    assert len(trials) >= 30
-    for t in trials:
-        assert t['nct'].startswith('NCT') and t['modality'] in {'PET', 'MRI', 'CT', 'ultrasound'}
-        # reconstructed 2x2 internally consistent
-        assert t['tp'] + t['fn'] == t['n1'] and t['tn'] + t['fp'] == t['n0']
-        assert min(t['tp'], t['fp'], t['fn'], t['tn']) >= 0 and min(t['n1'], t['n0']) >= 10
-        assert 0.01 <= t['sens'] <= 1.0 and 0.01 <= t['spec'] <= 1.0
-    s = d['screening']
-    assert s['funnel_reconciles'] is True
-    assert s['included'] + sum(s['excluded'].values()) == s['se_sp_reporting']
-
-def test_dta_rapidmeta_conversion():
-    cfg = _classfile('class7_dta/dta_rapidmeta_config.json')
-    for k in ('drug', 'slug', 'condition', 'title', 'pico', 'trials', 'provenance_note'):
-        assert k in cfg and cfg[k], f'config missing {k}'
-    assert cfg['slug'] == 'oncologic_imaging_dta_nma' and len(cfg['trials']) >= 30
-    for t in cfg['trials']:
-        dor, lo, hi = t['publishedHR'], t['hrLCI'], t['hrUCI']
-        assert 0 < lo < dor < hi, f"{t['nct']}: DOR ratio CI must bracket the estimate"
-        assert '_modality' not in t and '_md' not in t
-    # the DOR must never be mislabelled as a hazard ratio
-    assert 'NOT a hazard ratio' in cfg['pico']['out'] and 'diagnostic' in cfg['pico']['out'].lower()
-
-
 def test_class_concordance_published():
     # class-level external validation: each generality class vs a PubMed-verified published NMA
     d = load('class_concordance.json')
-    assert d['n_classes'] == 6 and d['n_concordant'] == 6, 'all six class repoints should be concordant'
+    assert d['n_classes'] == 5 and d['n_concordant'] == 5, 'all five class repoints should be concordant'
     assert d['all_references_doi_resolved'] is True
     leads = {'class2_pcsk9/pcsk9_league.json': 'pcsk9', 'class3_sglt2/sglt2_league.json': 'sglt2',
              'class4_psoriasis/psoriasis_league.json': 'psoriasis', 'class5_asthma/asthma_league.json': 'asthma',
-             'class6_ra/ra_league.json': 'ra', 'class7_dta/dta_league.json': 'dta'}
+             'class6_ra/ra_league.json': 'ra'}
     for e in d['entries']:
         # every entry carries a real DOI + PMID and a stated honest boundary
         assert e['reference']['doi'] and e['reference']['pmid']

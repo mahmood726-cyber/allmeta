@@ -162,37 +162,9 @@ P(superiority), nutpie R̂=1.00) + GRADE + transport + offline dashboard, plus *
    C5d-e (harvest slow=AACT, config fast); clone is out-of-band, review.html + assets gitignored. Each built
    review is ~1.19–1.22 MB, 0 placeholder tokens, no dupilumab/COPD leftovers. Suite now **68 green**.
 
-   **SIXTH OUTCOME TYPE — DIAGNOSTIC TEST ACCURACY, full-depth class `class7_dta/` (DONE this session):**
-   DTA is the 6th outcome STRUCTURE = paired sensitivity/specificity with a between-study correlation (the
-   bivariate / Reitsma form), distinct from all five prior types. Registry-native comparative DTA of oncologic
-   IMAGING MODALITIES (PET/MRI/CT/ultrasound) for cancer lesion/nodal detection — the Scheidler CT/MRI/LAG
-   paradigm, harvested from AACT.
-   - **harvest** — `dta_harvest.py` → `dta_trials.json`: AACT posts Se & Sp as percentages each with its own
-     subgroup denominator, so the 2×2 is reconstructed `TP=round(Se%×n1), TN=round(Sp%×n0)` (same round(%×N)
-     pattern as RA/psoriasis, same fail-closed plausibility). 206 Se&Sp(%)-reporting → **66 included** across
-     PET k=29 / MRI k=17 / ultrasound k=13 / CT k=7; funnel reconciles. Pinned by `test_dta_harvest_funnel_and_cells`.
-   - **league** — `dta_league_bayes.py` → `dta_league.json` + `dta_results.json` (+ `dta_biv_draws.npz`,
-     gitignored): hierarchical Bayesian **bivariate (Reitsma)** model — paired (logit-Se, logit-Sp) with a 2×2
-     between-study covariance, binomial likelihood (nutpie, **R̂=1.0000**); per-modality Se/Sp + Youden J + DOR,
-     contrasts (J-diff CrI + P(superiority)). CT nominal lead (J=0.73) but **all 6 contrasts Low certainty** +
-     `heterogeneity_flag=True` (cross-target: network mixes cancer sites) → no clean winner. Engine also carries
-     a per-modality threshold-effect check. Pinned by `test_generality_class7_dta_league_depth` / `_results`.
-   - **transport** — `dta_transport.py` → `dta_transport.json`: Se/Sp draws → **PPV + NPV** across prevalence
-     targets (lead PPV swings 0.13 screening → 0.76 staging — the DTA analogue of the SGLT2 baseline-risk
-     dependence). Pinned by `test_dta_transport_ppv_depth`.
-   - **dashboard** — `dta_dashboard.py` → `dta_dashboard.html` (offline). Pinned by `test_dta_dashboard_offline`.
-   - **RapidMeta conversion** — `build_dta_rapidmeta_config.py` → `dta_rapidmeta_config.json`: per-study DOR in
-     the kit ratio slots, labelled "diagnostic OR" (NOT a hazard ratio, asserted). 66-trial workbench cloned
-     (`dta_review.html`, gitignored). Pinned by `test_dta_rapidmeta_conversion`.
-   - **concordance** — added a 6th entry to `class_concordance.py` vs **Kim et al. 2021, Br J Radiol**
-     (doi:10.1259/bjr.20201076, PMID 33595337, PubMed-verified 2026-06-12) — a PET/CT/US nodal-staging NMA whose
-     "complementary diagnostic roles" conclusion matches our "no clean winner". **n_classes=6, n_concordant=6.**
-   Wired into `run_all.py` as C7a–C7e. Suite now **75 green** (was 68). All registry-native; 2×2 are
-   AACT-RECONSTRUCTED (round(%×N)), NOT full-text 2×2 tables — stated in every provenance note.
-
-   Next depth idea: a 7th outcome family (e.g. proportion / single-arm incidence, or an ordinal-threshold DTA),
-   or give the RA league a true placebo-anchored ordinal NMA (needs per-arm responder counts → AACT posts %s).
-   Kit polish (`forest-plot-dynamic-height`) is ALREADY on kit `main` (HEAD 044744a) — all clones already have it.
+   Next depth idea: a 6th outcome family (e.g. proportion / single-arm incidence, or DTA Se/Sp), or give the
+   RA league a true placebo-anchored ordinal NMA (needs per-arm responder counts → currently AACT posts %s).
+   Optional polish: merge kit branch `forest-plot-dynamic-height` (plot-density fix) then re-clone all 5 reviews.
 
 ## Honesty guardrails to carry forward
 - Decision-support scaffold, NOT a guideline; judgement domains (RoB/values) stay with the human panel.
