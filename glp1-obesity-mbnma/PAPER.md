@@ -12,15 +12,18 @@ see trials that posted results to a registry but were never published or were in
 condition, and they rarely test whether the trial population represents the real-world target. We built a
 reproducible, registry-native pipeline that extracts arm-level weight-loss data directly from the
 ClinicalTrials.gov results mirror (AACT), fits a dose-response network meta-analysis (frequentist two-stage
-and a convergence-certified one-step Bayesian hierarchical Emax), cross-checks extraction against published
+and a one-step Bayesian hierarchical Emax with multi-arm covariance), cross-checks extraction against published
 primaries via PubMed abstracts, detects unpublished "ghost" trials by AACT×PubMed linkage, and transports
-the effects to authoritative real-world target populations. Across 57 post-2010 incretin trials (150 arms,
-9 nodes), extraction reproduced published primaries exactly (tirzepatide 15 mg 16.6 vs published 16.53 pp)
-and concorded with the literature NMA hierarchy. An **obesity-scoped** MEDLINE search recovered only 57% of
-the cohort; a broad diabetes-inclusive search recovered 89%, leaving an **irreducible ~10% of unpublished
-"ghost" trials no literature search can find**. The trials a literature search misses are
-disproportionately the diabetes stratum the obesity-trial population under-represents (an obesity-scoped
-evidence base is 0% diabetes vs ~26% in US adults with obesity); recovering them registry-natively closes
+the effects to authoritative real-world target populations. From a 57-trial registry supply, **29 trials
+(7 nodes)** entered the ≥36-week primary network. Extraction matched the published primary exactly in **3
+estimand-pinned spot-checks** (tirzepatide 15 mg 16.6 vs published 16.53 pp; cohort-wide held-out validation is
+future work); among nodes with **≥2 trials** the hierarchy concorded with the published NMAs (tirzepatide
+highest among approved agents). An **obesity-scoped** MEDLINE search recovered only 57% of
+the cohort; a broad diabetes-inclusive search recovered 89%, leaving **~9.5% (6/63) high-confidence unpublished
+"ghost" trials no literature search can find** (pending title/sponsor fallback confirmation). The trials a
+literature search misses are disproportionately the diabetes stratum the obesity-trial population
+under-represents (an obesity-scoped evidence base is 0% diabetes vs ~21% in US adults with obesity — NHANES
+2017–2020 microdata; an earlier literature marginal gave 26%); recovering them registry-natively closes
 about half that representativeness gap. We argue **reporting-completeness and population-transportability
 are one registry-native mechanism**, and position the approach within the evolution of evidence synthesis
 toward living, registry-native, target-transportable, human-attested review.
@@ -45,30 +48,42 @@ We address both directly from the registry, and show they are the same problem.
 - **Ghost detection & literature comparison:** AACT `study_references` × real multi-strategy MEDLINE search
   ([si]-confirmed for unpublished status).
 - **Transitivity / population:** AACT `baseline_measurements` + `conditions` (diabetes status).
-- **Robustness:** INSPECT-SR + leave-one-trial-out.
+- **Robustness:** leave-one-trial-out (INSPECT-SR-style trustworthiness checks require IPD/human attestation and were not run).
 - **Benefit–risk:** AACT `reported_events` (nausea).
 - **Transportability:** representativeness map vs NHANES; a TRUE Bayesian one-step network meta-regression
   with internal transport on the binary diabetes modifier; multi-target atlas (IDF Atlas regions + NHANES +
   Health Survey for England, obese-subset). Out-of-sample validated; jointly sensitivity-tested.
 
 ## 3. Results
-**Cohort & extraction.** 57 trials, 150 arms, 9 nodes (7 in the ≥36-wk primary), all post-2010, all CT.gov.
-Extraction exact vs published primaries (SURMOUNT-1 −16.0/−21.4/−22.5 = NEJM efficacy estimand; orforglipron,
-retatrutide exact) and concordant with Xie 2024 (tirzepatide 15 mg 16.6 vs 16.53 pp).
+**Cohort & extraction.** Cohort flow: 57 post-2010 incretin trials discovered with posted weight data (150
+arms); **29 trials / 7 nodes** met the ≥36-week landmark and entered the primary network; the literature/ghost
+comparison set is 63 (a broader incretin pull) and the RapidMeta workbench config carries 38. All CT.gov.
+Extraction matched the published primary exactly in **3 estimand-pinned spot-checks** (SURMOUNT-1
+−16.0/−21.4/−22.5 = NEJM efficacy estimand; orforglipron, retatrutide); cohort-wide held-out validation is
+future work. Concordant with Xie 2024 (tirzepatide 15 mg 16.6 vs 16.53 pp).
 
-**Hierarchy.** NUTS, POTH 0.85; three independent samplers agree on retatrutide/mazdutide (~22) >
-tirzepatide (16.6) > semaglutide (13–15) > orforglipron (11 pp). Modeling multi-arm covariance widens the
-CrIs (the contrast model was anti-conservative). Single-trial apex (mazdutide, retatrutide k=1) flagged
-INSUFFICIENT (INSPECT-SR). Benefit–risk reorders the top: efficacy-#1 mazdutide has the worst nausea (54%).
+**Hierarchy.** Among nodes with **k≥2**, tirzepatide ranks highest (17.5 pp), concordant with the published
+NMAs (McGowan 2025, *Nat Med* DOI 10.1038/s41591-025-03978-z; Wang 2025, DOI 10.1111/dom.16585; Zamanian 2025,
+DOI 10.1016/j.ejphar.2025.177966; Shi 2024) — and it is the **only Moderate-certainty conclusion** in the
+network (tirzepatide vs semaglutide-weekly). The single phase-2 nodes **mazdutide and retatrutide (k=1)** give
+the largest point estimates (~22 pp) but are flagged INSUFFICIENT and **excluded from the ranking claim**; their
+contrasts vs tirzepatide cross the null (mazdutide−tirzepatide 3.8 pp, 95% CrI −2.0 to 9.8, Very-low certainty).
+INSPECT-SR-style trustworthiness checks for these k=1 apex nodes require IPD/human attestation and were **not
+run**. *Convergence note:* the contrast NUTS model is certified (Rhat 1.0, ESS 603) but treats shared-placebo
+arms as independent (anti-conservative); the covariance-correct arm-based one-step widens the CrIs but is **not
+yet converged** (ESS 281 < 400), so multi-arm covariance is reported as a sensitivity, not the certified
+primary. Benefit–risk reorders the top regardless: the largest point-estimate node (mazdutide) has the worst
+nausea (54%).
 
-**Completeness.** 6 unpublished ghost trials ([si]-confirmed); ghost semaglutide 2.4 mg pooled 3.2 pp lower
-than published (reporting-bias direction). An obesity-scoped MEDLINE search finds 36/63 (57%); a broad
-diabetes-inclusive search finds 56/63 (89%); the **irreducible registry-only gain is the ~10% unpublished
+**Completeness.** 6 high-confidence unpublished ghost candidates ([si]-flagged, pending title/sponsor fallback
+confirmation); the ghost semaglutide 2.4 mg pooled 3.2 pp lower than published (reporting-bias direction,
+resting on k=2 analysable ghosts). An obesity-scoped MEDLINE search finds 36/63 (57%); a broad
+diabetes-inclusive search finds 56/63 (89%); the registry-only gain is the **~9.5% (6/63) unpublished
 ghosts**. Sourcing changes dose-specific estimates materially (oral-semaglutide 14 mg: 13.6 obesity-scoped
 vs 3.8 registry-native, from PIONEER T2D capture) while the cross-agent ranking is sourcing-robust.
 
 **Transportability.** Representativeness vs NHANES: trials ≈ target on age/BMI/sex/weight, but
-under-represent diabetes (obesity-scoped 0% / cohort ~16% vs US-obese 26%). A TRUE one-step Bayesian NMR
+under-represent diabetes (obesity-scoped 0% / cohort ~16% vs US-obese ~21%, NHANES microdata). A TRUE one-step Bayesian NMR
 estimates the diabetes modifier γ = 5.9 pp (95% CrI 3.5–8.1, P>0 = 1.00) and derives the transported effect
 as a posterior with full uncertainty propagation; **convergence-certified (compiled nutpie backend: max Rhat
 1.0000, min ESS 3354)**. Valid without IPD because diabetes is **binary with pure strata** (study-level =
@@ -79,10 +94,11 @@ MENA-obese 16.8 pp. BMI added as a second modifier (abstract-supplemented n=2→
 
 **The synthesis.** The trials a literature search misses are disproportionately the diabetes stratum the
 trial population under-represents; recovering them registry-natively closes the diabetes representativeness
-gap from +26 to +14.5 pp (patient-weighted). Completeness and transportability are one mechanism.
+gap from +26 to +14.5 pp (patient-weighted; this gap arithmetic uses the literature 26% marginal — the
+NHANES-microdata target is 20.6%, §4b). Completeness and transportability are one mechanism.
 
 **Robustness (responding to adversarial review).** (1) The "literature misses 43%" is correctly scoped:
-obesity-scoped SRs miss them *by design*; only the ~10% ghosts are irreducible. (2) Transport validated
+obesity-scoped SRs miss them *by design*; only the ~9.5% (6/63) ghosts are registry-only. (2) Transport validated
 out-of-sample across 6 agent/dose comparisons studied in both populations — direction correct 6/6, mean
 absolute error 1.4 pp predicting the held-out T2D effect (agent-specific γ +2.6 to +7.2 confirms common-γ
 is an approximation). (3) The transported estimate is robust to the joint assumption grid (tirzepatide →
@@ -155,7 +171,8 @@ recommendation that **matches a MAGIC GRADE living guideline** (weak, favour tir
 DOI 10.1136/bmj-2024-082071) and a published ranking (Shi 2024). The computable domains are pre-filled and
 traceable; judgement domains (risk of bias, values) remain the panel's. Two portfolio integrity methods
 were folded in: a **Benford digit screen** (applied to enrolment, not bounded percentages; the marginal
-deviation is the benign round-target signature) joining ghost-detection and INSPECT-SR, and **entropy
+deviation is the benign round-target signature) joining ghost-detection (the IPD/human-attested INSPECT-SR
+trustworthiness battery is noted but not run here), and **entropy
 balancing** (`nmatransport`), which is *infeasible* network-wide here because every trial is pure-obesity
 or pure-T2D — the very **binary-pure-strata structure that makes the γ-transport's extrapolation valid**, a
 duality that vindicates the transport while making its extrapolation assumption explicit for the indirectness
