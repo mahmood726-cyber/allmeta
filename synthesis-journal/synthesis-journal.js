@@ -110,6 +110,91 @@
     return svg;
   }
 
+  // ---- Funnel (contour-enhanced). Always rendered; interpretation gated at k<10
+  // (the caption says small-study tests are underpowered), following the standard. ----
+  function funnelSVG(d) {
+    var ratio = d.scale === "ratio", ex = ratio ? Math.exp : function (x) { return x; };
+    var studies = d.studies, p = d.pooled;
+    var xs = studies.map(function (s) { return s.est; }), ys = studies.map(function (s) { return s.se; });
+    var seMax = Math.max.apply(null, ys) * 1.2, mu = p.mu, z = Z;
+    var lo = Math.min.apply(null, xs.concat([mu - z * seMax, 0])), hi = Math.max.apply(null, xs.concat([mu + z * seMax, 0]));
+    var pad = (hi - lo) * 0.06 || 0.1; lo -= pad; hi += pad;
+    var W = 760, padL = 56, padR = 18, padT = 18, padB = 40, plotW = W - padL - padR, plotH = 300;
+    function X(v) { return padL + (v - lo) / (hi - lo) * plotW; }
+    function Y(se) { return padT + (se / seMax) * plotH; }   // SE increases downward
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + (plotH + padT + padB) + '" role="img" aria-label="Funnel plot" font-family="Segoe UI, system-ui, sans-serif">';
+    // pseudo 95% CI funnel (dashed grey) from apex (se=0) to se_max
+    var axApex = X(mu), bl = X(mu - z * seMax), br = X(mu + z * seMax);
+    svg += '<line x1="' + axApex.toFixed(1) + '" y1="' + Y(0) + '" x2="' + bl.toFixed(1) + '" y2="' + Y(seMax) + '" stroke="#a7a7a2" stroke-width="1" stroke-dasharray="4 3"/>';
+    svg += '<line x1="' + axApex.toFixed(1) + '" y1="' + Y(0) + '" x2="' + br.toFixed(1) + '" y2="' + Y(seMax) + '" stroke="#a7a7a2" stroke-width="1" stroke-dasharray="4 3"/>';
+    // pooled vertical (red) + no-effect dotted
+    svg += '<line x1="' + axApex.toFixed(1) + '" y1="' + Y(0) + '" x2="' + axApex.toFixed(1) + '" y2="' + Y(seMax) + '" stroke="#9c2b27" stroke-width="1.1"/>';
+    var nx = X(0); svg += '<line x1="' + nx.toFixed(1) + '" y1="' + Y(0) + '" x2="' + nx.toFixed(1) + '" y2="' + Y(seMax) + '" stroke="#a7a7a2" stroke-width="1" stroke-dasharray="1 3"/>';
+    // axes: SE on y (label), effect on x
+    svg += '<line x1="' + padL + '" y1="' + Y(0) + '" x2="' + padL + '" y2="' + Y(seMax) + '" stroke="#1d1d1b"/>';
+    svg += '<text x="14" y="' + ((Y(0) + Y(seMax)) / 2) + '" font-size="10" fill="#6f6f6a" transform="rotate(-90 14 ' + ((Y(0) + Y(seMax)) / 2) + ')" text-anchor="middle">Standard error</text>';
+    // study points (brand, white edge)
+    studies.forEach(function (s) {
+      svg += '<circle cx="' + X(s.est).toFixed(1) + '" cy="' + Y(s.se).toFixed(1) + '" r="5" fill="#054f16" stroke="#fff" stroke-width="0.8"/>';
+    });
+    // x ticks
+    var axisY = Y(seMax) + 4;
+    var ticks = ratio ? [0.5, 0.75, 1, 1.5, 2] : [lo, (lo + hi) / 2, hi];
+    ticks.forEach(function (t) { var v = ratio ? Math.log(t) : t; if (v < lo || v > hi) return; var x = X(v);
+      svg += '<line x1="' + x.toFixed(1) + '" y1="' + axisY + '" x2="' + x.toFixed(1) + '" y2="' + (axisY + 4) + '" stroke="#1d1d1b"/>';
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (axisY + 15) + '" font-size="9.5" fill="#6f6f6a" text-anchor="middle">' + fnum(t) + '</text>'; });
+    svg += '<text x="' + X(mu).toFixed(1) + '" y="' + (Y(0) + 12) + '" font-size="9.5" font-weight="700" fill="#9c2b27" text-anchor="middle">pooled ' + esc(d.measure) + ' ' + fnum(p.natural) + '</text>';
+    svg += "</svg>";
+    return svg;
+  }
+
+  // ---- Shared mini-forest for leave-one-out and cumulative: rows of est + CI
+  // against a shaded reference band (the comparison pooled). ----
+  function miniForestSVG(rows, ref, d) {
+    var ratio = d.scale === "ratio";
+    function toPlot(v) { return ratio ? Math.log(v) : v; }
+    var all = rows.reduce(function (a, r) { return a.concat([r.lo, r.hi]); }, [ref.lo, ref.hi, ratio ? 1 : 0]).map(toPlot);
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all), pad = (hi - lo) * 0.08 || 0.1; lo -= pad; hi += pad;
+    var W = 760, padL = 200, padR = 96, top = 14, rowH = 22, plotW = W - padL - padR;
+    var bandTop = top - 6, bandBot = top + rows.length * rowH + 2;
+    function X(v) { return padL + (toPlot(v) - lo) / (hi - lo) * plotW; }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + (bandBot + 34) + '" role="img" aria-label="Sensitivity mini-forest" font-family="Segoe UI, system-ui, sans-serif">';
+    // reference band (the overall/current pooled) + its centre
+    svg += '<rect x="' + X(ref.lo).toFixed(1) + '" y="' + bandTop + '" width="' + (X(ref.hi) - X(ref.lo)).toFixed(1) + '" height="' + (bandBot - bandTop) + '" fill="#efe4e2" opacity="0.7"/>';
+    svg += '<line x1="' + X(ref.est).toFixed(1) + '" y1="' + bandTop + '" x2="' + X(ref.est).toFixed(1) + '" y2="' + bandBot + '" stroke="#9c2b27" stroke-width="1"/>';
+    var nx = X(ratio ? 1 : 0); svg += '<line x1="' + nx.toFixed(1) + '" y1="' + bandTop + '" x2="' + nx.toFixed(1) + '" y2="' + bandBot + '" stroke="#a7a7a2" stroke-width="1" stroke-dasharray="2 3"/>';
+    rows.forEach(function (r, i) {
+      var y = top + i * rowH + rowH / 2;
+      svg += '<text x="8" y="' + (y + 3.5) + '" font-size="10.5" fill="#1d1d1b">' + esc(r.label) + '</text>';
+      svg += '<line x1="' + X(r.lo).toFixed(1) + '" y1="' + y + '" x2="' + X(r.hi).toFixed(1) + '" y2="' + y + '" stroke="#054f16" stroke-width="1.2"/>';
+      svg += '<rect x="' + (X(r.est) - 3.2).toFixed(1) + '" y="' + (y - 3.2) + '" width="6.4" height="6.4" fill="#054f16"/>';
+      svg += '<text x="' + (W - 8) + '" y="' + (y + 3.5) + '" font-size="10" fill="#6f6f6a" text-anchor="end">' + fnum(r.est) + ' (' + fnum(r.lo) + ', ' + fnum(r.hi) + ')</text>';
+    });
+    svg += '<line x1="' + padL + '" y1="' + (bandBot + 8) + '" x2="' + (W - padR) + '" y2="' + (bandBot + 8) + '" stroke="#1d1d1b"/>';
+    var ticks = ratio ? [0.5, 0.75, 1, 1.5, 2] : [lo, (lo + hi) / 2, hi];
+    ticks.forEach(function (t) { var v = ratio ? Math.log(t) : t; if (v < lo || v > hi) return; var x = X(ratio ? t : t);
+      svg += '<line x1="' + x.toFixed(1) + '" y1="' + (bandBot + 8) + '" x2="' + x.toFixed(1) + '" y2="' + (bandBot + 12) + '" stroke="#1d1d1b"/>';
+      svg += '<text x="' + x.toFixed(1) + '" y="' + (bandBot + 23) + '" font-size="9.5" fill="#6f6f6a" text-anchor="middle">' + fnum(t) + '</text>'; });
+    svg += "</svg>";
+    return svg;
+  }
+  function looRows(d) {
+    return d.studies.map(function (_, i) {
+      var sub = d.studies.filter(function (__, j) { return j !== i; });
+      var p = pooled(sub, d.scale);
+      return { label: "Omitting " + d.studies[i].label, est: p.natural, lo: p.naturalLo, hi: p.naturalHi };
+    });
+  }
+  function cumulativeRows(d) {
+    var rows = [];
+    for (var j = 1; j <= d.studies.length; j++) {
+      var sub = d.studies.slice(0, j);
+      var p = pooled(sub, d.scale);
+      rows.push({ label: "+ " + d.studies[j - 1].label, est: p.natural, lo: p.naturalLo, hi: p.naturalHi });
+    }
+    return rows;
+  }
+
   function studyTable(d) {
     var ratio = d.scale === "ratio", ex = ratio ? Math.exp : function (x) { return x; };
     var body = d.studies.map(function (s) {
@@ -159,7 +244,28 @@
     html += '<h2 class="section">Results</h2>';
     html += "<p>The " + k + " included studies and their effect estimates are listed in <b>Table 1</b>; the forest plot in <b>Figure 1</b> shows each study estimate with its 95% confidence interval and the pooled summary. " + absResult.replace(/<\/?b>/g, "") + "</p>";
     html += studyTable(d);
-    html += '<figure class="fig">' + forestSVG(d) + '<figcaption><span class="fnum">Figure 1.</span> Forest plot of the ' + k + " study estimates (brand squares, sized by precision) and the pooled estimate (red diamond). The dotted line marks no effect" + (ratio ? " (" + esc(d.measure) + " = 1)" : " (" + esc(d.measure) + " = 0)") + ".</figcaption></figure>";
+    // Figure catalogue in the fixed order (forest, L'Abbé, RoB, leave-one-out,
+    // cumulative, funnel); only the SUPPORTED figures are rendered and numbered,
+    // the rest are surfaced honestly in a figure inventory (metapaper SPEC 3.2).
+    var fnum2 = 0; function nextFig() { return ++fnum2; }
+    function figure(svg, caption) { return '<figure class="fig">' + svg + '<figcaption><span class="fnum">Figure ' + nextFig() + '.</span> ' + caption + "</figcaption></figure>"; }
+    var skipped = [];
+    html += figure(forestSVG(d), "Forest plot of the " + k + " study estimates (brand squares, sized by precision) and the pooled estimate (red diamond). The dotted line marks no effect" + (ratio ? " (" + esc(d.measure) + " = 1)" : " (" + esc(d.measure) + " = 0)") + ".");
+    // L'Abbé and RoB need data the effect-size bus doesn't carry — never fabricated.
+    skipped.push("<b>L’Abbé plot</b> — no per-arm event counts on the bus (effect estimates were entered directly).");
+    skipped.push("<b>Risk-of-bias traffic light</b> — no per-study RoB judgements on the bus.");
+    if (k >= 3) {
+      html += figure(miniForestSVG(looRows(d), { est: p.natural, lo: p.naturalLo, hi: p.naturalHi }, d),
+        "Leave-one-out sensitivity: the " + esc(d.measure) + " re-pooled with each trial removed in turn, against the all-trials estimate (red band). A row far from the band marks an influential trial.");
+      html += figure(miniForestSVG(cumulativeRows(d), { est: p.natural, lo: p.naturalLo, hi: p.naturalHi }, d),
+        "Cumulative meta-analysis: the " + esc(d.measure) + " as trials accrue in the order they appear in the review, against the current estimate (red band).");
+    } else {
+      skipped.push("<b>Leave-one-out</b> and <b>cumulative</b> sensitivity — too few trials (k=" + k + "; needs k≥3).");
+    }
+    var funnelNote = k < 10 ? " With k=" + k + " (<10), small-study/asymmetry tests are underpowered and are not used for inference here." : "";
+    html += figure(funnelSVG(d), "Funnel plot: each study’s effect against its standard error, with the pooled estimate (red) and the 95% pseudo-confidence funnel (dashed)." + funnelNote);
+
+    html += '<p style="font-family:var(--sans);font-size:11px;color:#6f6f6a"><b style="color:#054f16">Figures not shown (data-gated, never fabricated):</b> ' + skipped.join(" ") + "</p>";
 
     html += '<h2 class="section">Included studies</h2>';
     html += '<ol class="refs">' + d.studies.map(function (s) { return "<li>" + esc(s.label) + ". (Full citation from the review’s extraction record.)</li>"; }).join("") + "</ol>";

@@ -25,7 +25,15 @@ test('renders the Synthēsis standard from demo data, no errors', async ({ page 
   await expect(page.locator('.letterhead .wordmark')).toHaveText('Synthēsis');
   await expect(page.locator('.abstract h2')).toHaveText('Abstract');
   await expect(page.locator('.keyfinding .stmt')).toContainText('95% CI');
-  await expect(page.locator('figure.fig svg')).toHaveCount(1);
+  // figure catalogue: forest + leave-one-out + cumulative + funnel (k=7 demo, k>=3)
+  await expect(page.locator('figure.fig svg')).toHaveCount(4);
+  await expect(page.locator('figcaption')).toContainText(['Forest plot', 'Leave-one-out', 'Cumulative', 'Funnel plot']);
+  // data-gated figures surfaced honestly, never fabricated
+  await expect(page.locator('article')).toContainText('Figures not shown');
+  await expect(page.locator('article')).toContainText('L’Abbé');
+  await expect(page.locator('article')).toContainText('Risk-of-bias traffic light');
+  // funnel interpretation gated at k<10
+  await expect(page.locator('figcaption').filter({ hasText: 'Funnel' })).toContainText('underpowered');
   await expect(page.locator('table.booktabs')).toHaveCount(1);
   await expect(page.locator('.howtocite h3')).toContainText('How to cite');
   await expect(page.locator('.oa')).toContainText('CC BY 4.0');
