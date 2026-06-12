@@ -61,7 +61,50 @@
     };
   }
 
-  var api = { hksjQFloorAudit: hksjQFloorAudit };
+  // ---- Reproduction-floor audit (repro-floor-atlas, Scenario B) ----
+  // A Cochrane reader reconstructs each trial's log-effect and SE from the forest
+  // plot, which shows them to ~2 dp. Re-pooling those rounded values (fixed-effect
+  // inverse-variance) should land within the declared precision of the pool built
+  // from machine-precision inputs. When it doesn't, the published 2-dp result is
+  // not reproducible from what the paper actually prints. Scenario B is the lens
+  // that matches a studies bus (forest-plot-extractable yi/se), not raw counts.
+  //
+  // numpy half-even rounding (np.round) is replicated exactly: ties round to the
+  // even digit (0.125 -> 0.12, 0.135 -> 0.14), so the JS floor matches the atlas.
+  function roundHalfEven(x, dp) {
+    if (!isFinite(x)) return x;
+    var f = Math.pow(10, dp), y = x * f, fl = Math.floor(y), diff = y - fl, r;
+    if (Math.abs(diff - 0.5) < 1e-9) r = (fl % 2 === 0) ? fl : fl + 1;
+    else r = Math.round(y);
+    return r / f;
+  }
+  function _poolFE(yi, vi) {
+    var eps = 2.220446049250313e-16, sw = 0, swy = 0;
+    for (var i = 0; i < yi.length; i++) { var v = vi[i] > 0 ? vi[i] : eps, w = 1 / v; sw += w; swy += w * yi[i]; }
+    return swy / sw;
+  }
+  function reproFloorAudit(yi, sei, dp) {
+    dp = dp == null ? 2 : dp;
+    if (!yi || !sei || yi.length < 1 || sei.length !== yi.length) return null;
+    var vi = sei.map(function (s) { return s * s; });
+    var truth = _poolFE(yi, vi);
+    var yiR = yi.map(function (y) { return roundHalfEven(y, dp); });
+    var seR = sei.map(function (s) { return roundHalfEven(s, dp); });
+    var rounded = _poolFE(yiR, seR.map(function (s) { return s * s; }));
+    var delta = rounded - truth, absDelta = Math.abs(delta);
+    var adaptiveThreshold = 0.5 * Math.pow(10, -dp);
+    return {
+      k: yi.length, declaredDp: dp,
+      truthPooled: truth, roundedPooled: rounded,
+      delta: delta, absDelta: absDelta,
+      exceedsFixed: absDelta >= 0.005,            // Cochrane 2-dp CI half-width
+      exceedsAdaptive: absDelta >= adaptiveThreshold,
+      adaptiveThreshold: adaptiveThreshold,
+      reproducible: absDelta < adaptiveThreshold
+    };
+  }
+
+  var api = { hksjQFloorAudit: hksjQFloorAudit, reproFloorAudit: reproFloorAudit, _roundHalfEven: roundHalfEven };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AtlasAudits = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

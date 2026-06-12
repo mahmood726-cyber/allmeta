@@ -573,7 +573,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + biasCard(studies2));
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -796,6 +796,31 @@
         + "<tr><td>Un-floored (raw)</td><td>" + fnum(a.seUnfloored) + "</td><td>" + fnum(tx(a.ciUnflooredLo)) + " to " + fnum(tx(a.ciUnflooredHi)) + "</td><td>" + (a.sigUnfloored ? "yes" : "no") + "</td></tr>"
         + "</tbody></table>"
         + "<p class='exp-caveat'>Per-MA lens from the author's hksj-q-floor-atlas (6,386 CDSR meta-analyses, REML τ²). Un-floored HKSJ can shrink the SE below the Wald SE when Q&le;k&minus;1, to exactly zero when Q=0 — the floored value is the honest one. <b>Experimental</b> audit, shown for exploration.</p></div></details>";
+    }
+
+    // Reproduction-floor audit (author's repro-floor-atlas, Scenario B): can a
+    // reader who extracts each trial's log-effect + SE from the forest plot (to 2
+    // dp) re-pool to the precision the review claims? Shows the |Δ| between the
+    // 2-dp re-pool and the machine-precision pool for THESE studies.
+    function reproFloorCard(studies, scale) {
+      if (!(window.AtlasAudits && AtlasAudits.reproFloorAudit)) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 2) return "";
+      var yi = poolable.map(function (s) { return s.est; });
+      var sei = poolable.map(function (s) { return s.se; });
+      var a;
+      try { a = AtlasAudits.reproFloorAudit(yi, sei, 2); } catch (e) { return ""; }
+      if (!a) return "";
+      var ratio = scale === "ratio", tx = function (x) { return ratio ? Math.exp(x) : x; };
+      var verdict = a.reproducible
+        ? ["reproducible at " + a.declaredDp + " dp", "#34d399"]
+        : (a.exceedsFixed ? ["NOT reproducible (|Δ| ≥ 0.005)", "#f87171"] : ["below the adaptive floor", "#fbbf24"]);
+      var note = ratio ? " <span class='exp-sub'>(|Δ| and threshold are on the log scale, where the floor is defined)</span>" : "";
+      return "<details class='exp-methods'><summary>&#128300; Reproduction-floor audit <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
+        + "<div class='exp-row'>Re-pooling the forest-plot values rounded to " + a.declaredDp + " dp gives <b>" + fnum(tx(a.roundedPooled))
+        + "</b> vs the machine-precision pool <b>" + fnum(tx(a.truthPooled)) + "</b> &mdash; |Δ| = <b>" + a.absDelta.toFixed(4)
+        + "</b> (adaptive floor " + a.adaptiveThreshold.toFixed(4) + "): <b style='color:" + verdict[1] + "'>" + verdict[0] + "</b>." + note + "</div>"
+        + "<p class='exp-caveat'>Per-MA lens from the author's repro-floor-atlas (Scenario B across 7,545 CDSR MAs; 14.3% non-reproducible). Fixed-effect re-pool with numpy half-even rounding; the floor is on the natural reporting scale (log for ratio measures). <b>Experimental</b> audit.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled

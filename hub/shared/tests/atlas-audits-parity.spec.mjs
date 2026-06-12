@@ -9,6 +9,10 @@
  *                    width ratio (floored/unfloored) >= 1 always; == inf when Q=0;
  *                    the floor binds exactly in the I^2=0 / Q<k-1 regime; a flip
  *                    from significant->non-significant is the only legal direction.
+ *   reproFloorAudit  repro-floor-atlas Scenario B (precision_floor.py +
+ *                    classifier.py): round forest-plot yi/se to dp, re-pool
+ *                    fixed-effect, |Δ| vs machine-precision pool; numpy half-even
+ *                    rounding replicated exactly. Reference deltas from numpy.
  *
  * Host: review-project/index.html (loads ../shared/ma-core.js + atlas-audits.js
  * → window.AlmMaCore + window.AtlasAudits).
@@ -73,6 +77,49 @@ test('HKSJ Q-floor audit reproduces the atlas regime behaviour + invariants', as
   }
 
   // k<2 guard
+  expect(got.guard).toBeNull();
+
+  expect(errs, 'no console errors on the host page').toEqual([]);
+});
+
+test('reproduction-floor audit matches numpy half-even Scenario-B references', async ({ page }) => {
+  const errs = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForFunction(() => !!window.AtlasAudits, { timeout: 10000 });
+
+  // FAIL fixture: 3-dp effects with tiny SEs, so rounding to 2 dp distorts the pool.
+  const FAIL_YI = [0.123, 0.087, 0.151, 0.099];
+  const FAIL_SE = [0.004, 0.006, 0.005, 0.007];
+
+  const got = await page.evaluate(({ yi, sei, failYi, failSe }) => {
+    const A = window.AtlasAudits;
+    return {
+      // already-2dp forest values -> rounding is a no-op -> reproduces exactly
+      f6: A.reproFloorAudit(yi, sei, 2),
+      fail: A.reproFloorAudit(failYi, failSe, 2),
+      // half-even tie behaviour must match numpy np.round
+      he: [A._roundHalfEven(0.125, 2), A._roundHalfEven(0.135, 2), A._roundHalfEven(-0.125, 2), A._roundHalfEven(2.5, 0)],
+      guard: A.reproFloorAudit([0.1], [0.05, 0.06], 2),  // length mismatch
+    };
+  }, { yi: HET_YI, sei: [0.05, 0.06, 0.07, 0.09, 0.08, 0.10], failYi: FAIL_YI, failSe: FAIL_SE });
+
+  // numpy half-even ties
+  expect(got.he).toEqual([0.12, 0.14, -0.12, 2]);
+
+  // F6: inputs already at 2 dp -> delta exactly 0 -> reproducible
+  expect(got.f6.truthPooled).toBeCloseTo(-0.14109443, 6);
+  expect(got.f6.delta).toBe(0);
+  expect(got.f6.reproducible).toBe(true);
+
+  // FAIL: numpy reference truth=0.120545916256, |Δ|=0.014454083744, fails both thresholds
+  expect(got.fail.truthPooled).toBeCloseTo(0.12054592, 6);
+  expect(got.fail.absDelta).toBeCloseTo(0.01445408, 6);
+  expect(got.fail.exceedsFixed).toBe(true);
+  expect(got.fail.exceedsAdaptive).toBe(true);
+  expect(got.fail.reproducible).toBe(false);
+
+  // length-mismatch guard
   expect(got.guard).toBeNull();
 
   expect(errs, 'no console errors on the host page').toEqual([]);

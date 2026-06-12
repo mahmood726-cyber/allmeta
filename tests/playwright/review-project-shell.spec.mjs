@@ -556,6 +556,12 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await expect(hksj).toContainText("hksj-q-floor-atlas");
   await expect(hksj.locator("table tbody tr")).toHaveCount(2);
 
+  // reproduction-floor audit panel (author's repro-floor-atlas Scenario B)
+  const repro = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Reproduction-floor" });
+  await expect(repro).toHaveCount(1);
+  await expect(repro).toContainText("repro-floor-atlas");
+  await expect(repro).toContainText("machine-precision");
+
   // publication-bias signals panel (browser subset of MAFI): Egger + precision-effect
   const bias = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Publication-bias signals" });
   await expect(bias).toHaveCount(1);
