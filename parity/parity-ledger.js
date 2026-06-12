@@ -67,7 +67,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "bayesian-ma-parity.spec.mjs",
       "kind": "spec",
-      "title": "bayesian-ma-parity.spec.mjs — conjugate normal-normal R-parity.\r  bayesian-ma is",
+      "title": "bayesian-ma-parity.spec.mjs — conjugate normal-normal R-parity.  * bayesian-ma i",
       "module": null,
       "oracles": [
         "metafor"
@@ -80,7 +80,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "bayesian-mcmc-parity.spec.mjs",
       "kind": "spec",
-      "title": "bayesian-mcmc-parity.spec.mjs — Gibbs sampler validation (done right).\r  A real ",
+      "title": "bayesian-mcmc-parity.spec.mjs — Gibbs sampler validation (done right).  * A real",
       "module": null,
       "oracles": [
         "analytic/conjugate (R-checked)"
@@ -93,7 +93,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "bayesian-nma-parity.spec.mjs",
       "kind": "spec",
-      "title": "bayesian-nma-parity.spec.mjs — approximate-Bayes NMA R-parity.\r  WLS consistency",
+      "title": "bayesian-nma-parity.spec.mjs — approximate-Bayes NMA R-parity.  * WLS consistenc",
       "module": null,
       "oracles": [
         "netmeta"
@@ -106,7 +106,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "component-nma-parity.spec.mjs",
       "kind": "spec",
-      "title": "component-nma-parity.spec.mjs — additive CNMA R-parity vs netmeta::discomb.\r  Th",
+      "title": "component-nma-parity.spec.mjs — additive CNMA R-parity vs netmeta::discomb.  * T",
       "module": null,
       "oracles": [
         "meta::discomb",
@@ -120,7 +120,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "copas-parity.spec.mjs",
       "kind": "spec",
-      "title": "copas-parity.spec.mjs — Copas & Shi (2000) profile-MLE R-parity.\r  The copas app",
+      "title": "copas-parity.spec.mjs — Copas & Shi (2000) profile-MLE R-parity.  * The copas ap",
       "module": null,
       "oracles": [
         "R (formula-checked)"
@@ -188,7 +188,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "dose-response-spline-parity.spec.mjs",
       "kind": "spec",
-      "title": "NON-LINEAR (restricted cubic spline) dose-response MA\r (shared/dose-response",
+      "title": "NON-LINEAR (restricted cubic spline) dose-response MA (shared/dose-response",
       "module": "dose-response.js",
       "oracles": [
         "dosresmeta(logrr ~ rcs(dose,3)",
@@ -252,7 +252,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "experimental-ma-parity.spec.mjs",
       "kind": "spec",
-      "title": "Reference-parity for shared/experimental-ma.js — the author's OWN experimental\r ",
+      "title": "Reference-parity for shared/experimental-ma.js — the author's OWN experimental m",
       "module": "experimental-ma.js",
       "oracles": [],
       "stata": null,
@@ -276,7 +276,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "gosh-metareg-parity.spec.mjs",
       "kind": "spec",
-      "title": "gosh-metareg-parity.spec.mjs — meta-regression R-parity vs metafor.\r  After the ",
+      "title": "gosh-metareg-parity.spec.mjs — meta-regression R-parity vs metafor.  * After the",
       "module": null,
       "oracles": [
         "metafor::rma"
@@ -289,7 +289,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "km-reconstructor-parity.spec.mjs",
       "kind": "spec",
-      "title": "km-reconstructor-parity.spec.mjs — KM IPD reconstruction validation.\r  The app i",
+      "title": "km-reconstructor-parity.spec.mjs — KM IPD reconstruction validation.  * The app ",
       "module": null,
       "oracles": [
         "R (formula-checked)"
@@ -302,7 +302,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "limit-ma-parity.spec.mjs",
       "kind": "spec",
-      "title": "limit-ma-parity.spec.mjs — Rücker (2011) limit meta-analysis R-parity.\r  The lim",
+      "title": "limit-ma-parity.spec.mjs — Rücker (2011) limit meta-analysis R-parity.  * The li",
       "module": null,
       "oracles": [
         "metasens::limitmeta"
@@ -341,7 +341,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "mcid-parity.spec.mjs",
       "kind": "spec",
-      "title": "mcid-parity.spec.mjs — MCID rule-arithmetic + exact-qnorm guard.\r  mcid is deter",
+      "title": "mcid-parity.spec.mjs — MCID rule-arithmetic + exact-qnorm guard.  * mcid is dete",
       "module": null,
       "oracles": [
         "R (base stats)"
@@ -354,7 +354,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "median-to-mean-parity.spec.mjs",
       "kind": "spec",
-      "title": "median-to-mean-parity.spec.mjs — Wan/Luo/Shi R-parity.\r  Oracle = the published ",
+      "title": "median-to-mean-parity.spec.mjs — Wan/Luo/Shi R-parity.  * Oracle = the published",
       "module": null,
       "oracles": [
         "R (base stats)"
@@ -406,7 +406,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "nma-global-inconsistency-parity.spec.mjs",
       "kind": "spec",
-      "title": "nma-global-inconsistency-parity.spec.mjs — netmeta decomp.design R-parity.\r  App",
+      "title": "nma-global-inconsistency-parity.spec.mjs — netmeta decomp.design R-parity.  * Ap",
       "module": null,
       "oracles": [
         "netmeta"
@@ -419,7 +419,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "nma-inconsistency-parity.spec.mjs",
       "kind": "spec",
-      "title": "nma-inconsistency-parity.spec.mjs — netmeta FE R-parity.\r  The app is fixed-effe",
+      "title": "nma-inconsistency-parity.spec.mjs — netmeta FE R-parity.  * The app is fixed-eff",
       "module": null,
       "oracles": [
         "netmeta"
@@ -459,7 +459,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "nma-parity.spec.mjs",
       "kind": "spec",
-      "title": "nma-parity.spec.mjs — basic frequentist NMA R-parity vs netmeta.\r  Consistent fi",
+      "title": "nma-parity.spec.mjs — basic frequentist NMA R-parity vs netmeta.  * Consistent f",
       "module": null,
       "oracles": [
         "netmeta"
@@ -485,7 +485,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "powerma-parity.spec.mjs",
       "kind": "spec",
-      "title": "powerma-parity.spec.mjs — pre-MA sample size / RIS R-parity.\r  Oracle = the docu",
+      "title": "powerma-parity.spec.mjs — pre-MA sample size / RIS R-parity.  * Oracle = the doc",
       "module": null,
       "oracles": [
         "R (base stats)"
@@ -576,7 +576,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "rve-meta-cr2-parity.spec.mjs",
       "kind": "spec",
-      "title": "the CR2 bias-reduced RVE (Tipton 2015; Pustejovsky-Tipton 2018)\r with HTJ CORR-model τ² and per-coefficient Satterthwaite df",
+      "title": "the CR2 bias-reduced RVE (Tipton 2015; Pustejovsky-Tipton 2018) with HTJ CORR-model τ² and per-coefficient Satterthwaite df",
       "module": null,
       "oracles": [
         "robumeta",
@@ -630,7 +630,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "tsa-parity.spec.mjs",
       "kind": "spec",
-      "title": "tsa-parity.spec.mjs — Trial Sequential Analysis R-parity.\r  Oracle = the advance",
+      "title": "tsa-parity.spec.mjs — Trial Sequential Analysis R-parity.  * Oracle = the advanc",
       "module": null,
       "oracles": [
         "R (base stats)"
@@ -643,7 +643,7 @@ window.ALM_PARITY_LEDGER = {
     {
       "spec": "workbench-parity.spec.mjs",
       "kind": "spec",
-      "title": "workbench-parity.spec.mjs — MA Workbench canonical Paule-Mandel\r random-effects ",
+      "title": "workbench-parity.spec.mjs — MA Workbench canonical Paule-Mandel random-effects p",
       "module": null,
       "oracles": [
         "metafor"

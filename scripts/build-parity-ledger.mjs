@@ -78,7 +78,10 @@ const files = readdirSync(testsDir).filter(f => /parity/i.test(f) && f.endsWith(
 const rows = [];
 let totalAsserts = 0;
 for (const f of files) {
-  const src = readFileSync(join(testsDir, f), 'utf8');
+  // Normalise CRLF -> LF so the ledger is byte-identical whether generated on a
+  // Windows (autocrlf) checkout or Linux CI — otherwise a stray \r leaks into the
+  // extracted title/docstring and the drift sweep false-fails across platforms.
+  const src = readFileSync(join(testsDir, f), 'utf8').replace(/\r\n/g, '\n');
   const docMatch = src.match(/\/\*\*([\s\S]*?)\*\//);
   const doc = (docMatch ? docMatch[1] : '').replace(/\n\s*\*\s?/g, ' '); // flatten comment prefixes
   const tests = (src.match(/\btest\(/g) || []).length;
@@ -115,7 +118,7 @@ for (const d of readdirSync(root, { withFileTypes: true })) {
   for (const fn of entries.sort()) {
     const m = fn.match(/^test_against_([a-z0-9]+)\.py$/i);
     if (!m) continue;
-    const src = readFileSync(join(tdir, fn), 'utf8');
+    const src = readFileSync(join(tdir, fn), 'utf8').replace(/\r\n/g, '\n');
     const docM = src.match(/"""([\s\S]*?)"""/);
     const doc = (docM ? docM[1] : '').replace(/\s+/g, ' ').trim();
     const tests = (src.match(/\bdef test_/g) || []).length;
