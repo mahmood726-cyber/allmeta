@@ -1,4 +1,6 @@
-"""TRUE Bayesian one-step network meta-regression with internal transport (PyMC/NUTS).
+"""EXPERIMENTAL — no external R oracle; validated only against its own Python output / internal MC coverage (NUTS Rhat + ESS); not for primary published estimates without independent confirmation. Transportability validity is BOUNDED to the binary-effect-modifier / pure-strata case (see body); continuous modifiers would need IPD.
+
+TRUE Bayesian one-step network meta-regression with internal transport (PyMC/NUTS).
 One hierarchical model jointly estimates: per-trial placebo level, study random effects, per-node
 Emax dose-response, AND a diabetes effect-modifier gamma -- then derives the TRANSPORTED effect (to a
 target diabetes prevalence) as a posterior, propagating ALL uncertainty (no two-step plug-in).

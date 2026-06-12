@@ -1,4 +1,6 @@
-"""One-step Bayesian hierarchical Emax dose-response NMA (obesity).
+"""EXPERIMENTAL — no external R oracle; validated only against its own Python output / internal MC coverage (split-Rhat + ESS); not for primary published estimates without independent confirmation.
+
+One-step Bayesian hierarchical Emax dose-response NMA (obesity).
 
 Model (contrast scale; placebo levels profiled out -> equivalent to one-step under
 the Gaussian arm likelihood). For contrast k with agent a(k), weekly dose d_k:
