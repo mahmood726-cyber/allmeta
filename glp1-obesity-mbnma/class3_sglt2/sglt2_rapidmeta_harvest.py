@@ -1,5 +1,5 @@
 """SGLT2 per-trial HF/CV-composite hazard-ratio harvest for the RapidMeta conversion -- the SURVIVAL/HR path
-(vs the binary-responder rm_harvest_binary used by RA/psoriasis). Pulls one published HR + 95% CI per trial
+(vs a binary-responder harvester). Pulls one published HR + 95% CI per trial
 from AACT outcome_analyses (the same primary HF/CV composite endpoint the class-3 core repoint pools), maps it
 onto the kit's publishedHR / hrLCI / hrUCI slots. Registry-native (AACT); no IPD. Fails closed on implausible
 HRs and degenerate CIs, and reports a reconciling screening funnel."""

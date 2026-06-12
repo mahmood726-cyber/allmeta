@@ -1,6 +1,6 @@
 """CLASS-LEVEL external validation: compare each generality class's ENGINE output to a real, PubMed-verified
 published network meta-analysis for that class. This extends the incretin-only concordance battery
-(concordance_battery.py) to all five outcome-type repoints (PCSK9 / SGLT2 / psoriasis / asthma / RA).
+(concordance_battery.py) to the two cardiometabolic repoints kept in this repo (PCSK9 / SGLT2).
 
 Honesty discipline (per project rules):
 - Every reference is a real article whose DOI was resolved on PubMed (2026-06-11); findings are quoted from the
@@ -29,9 +29,6 @@ def order_of(ranking, agents):
 # ---- pull OUR engine outputs (programmatic, never hardcoded) ----
 pcsk9 = league('class2_pcsk9/pcsk9_league.json')
 sglt2 = league('class3_sglt2/sglt2_league.json')
-psor = league('class4_psoriasis/psoriasis_league.json')
-asth = league('class5_asthma/asthma_league.json')
-ra = league('class6_ra/ra_league.json')
 
 pcsk9_overlap = order_of(pcsk9['ranking'], {'evolocumab', 'alirocumab', 'inclisiran'})
 
@@ -73,64 +70,6 @@ ENTRIES = [
             'honest_note': ('Tsapas is a broad glucose-lowering NMA reporting SGLT2i at class level, not a '
                             'canagliflozin-vs-empagliflozin-vs-dapagliflozin head-to-head; our nominal '
                             'canagliflozin lead is explicitly Low-certainty, consistent with that.'),
-        },
-    },
-    {
-        'class': 'Psoriasis biologics (PASI-90 response)',
-        'reference': {'authors': 'Sbidian et al. (Cochrane)', 'year': 2022, 'journal': 'Cochrane Database Syst Rev',
-                      'doi': '10.1002/14651858.CD011535.pub5', 'pmid': '35603936',
-                      'design': 'living Cochrane NMA (CINeMA/SUCRA)', 'n_trials': 167, 'n_patients': 58912},
-        'published_finding': ('For PASI-90, anti-IL17 and anti-IL23 biologics beat anti-TNF; the most effective '
-                              '(high-certainty) were infliximab, bimekizumab, ixekizumab, risankizumab.'),
-        'our_source': 'class4_psoriasis/psoriasis_league.json',
-        'our_lead': psor['lead'],
-        'our_finding': (f"engine lead {psor['lead']} ({psor['median_response_pct'][psor['lead']]}% PASI-90); "
-                        f"reproduces IL-17/IL-23 > TNF with P(IL-17/23>TNF)={psor['il17_23_vs_tnf']['p_il_gt_tnf']}."),
-        'concordance': {
-            'level': 'concordant',
-            'basis': ('our lead bimekizumab sits in Sbidian top tier (bimekizumab/ixekizumab/risankizumab); the '
-                      'anti-IL17/IL23 > TNF hierarchy is reproduced.'),
-            'honest_note': ('Sbidian also ranks infliximab numerically highest, but its RR (50.19) is inflated by '
-                            'small/old trials and infliximab is outside our drug list; the modern top tier agrees.'),
-        },
-    },
-    {
-        'class': 'Asthma biologics (annualised exacerbation rate)',
-        'reference': {'authors': 'Menzies-Gow et al.', 'year': 2022, 'journal': 'J Med Econ',
-                      'doi': '10.1080/13696998.2022.2074195', 'pmid': '35570578',
-                      'design': 'indirect treatment comparison (NMA + STC)', 'n_trials': 16, 'n_patients': None},
-        'published_finding': ('All biologics had similar efficacy with no statistically significant rate-ratio '
-                              'differences; tezepelumab had numerically the lowest AAER and ranked first.'),
-        'our_source': 'class5_asthma/asthma_league.json',
-        'our_lead': asth['lead'],
-        'our_finding': (f"engine ranks {asth['lead']} first (IRR {asth['median_irr'][asth['lead']]}), all agents "
-                        f"reduce the rate, but flags I2-type heterogeneity -> no clean 'best biologic'."),
-        'concordance': {
-            'level': 'concordant',
-            'basis': ('both rank tezepelumab numerically first AND both decline statistical superiority of any '
-                      'single biologic — a precise two-part match including the self-flagging.'),
-            'honest_note': 'identical headline behaviour: nominal tezepelumab lead + explicit "no clean winner".',
-        },
-    },
-    {
-        'class': 'Rheumatoid-arthritis biologics/JAK (ACR response)',
-        'reference': {'authors': 'Singh et al. (Cochrane)', 'year': 2017, 'journal': 'Cochrane Database Syst Rev',
-                      'doi': '10.1002/14651858.CD012657', 'pmid': '28481462',
-                      'design': 'Cochrane NMA (Bayesian MTC)', 'n_trials': 19, 'n_patients': 6485},
-        'published_finding': ('Biologics+MTX improved ACR50 vs MTX (RR 1.40, absolute +16%, NNTB 7); evidence '
-                              'downgraded for INCONSISTENCY, with no clean within-class winner.'),
-        'our_source': 'class6_ra/ra_league.json',
-        'our_lead': ra['lead'],
-        'our_finding': (f"engine: all agents improve ACR response (lead {ra['lead']}); heterogeneity_flag="
-                        f"{ra['heterogeneity_flag']} (proportional-odds residual RMSE "
-                        f"{ra['proportional_odds_rmse_logit']}) -> ranking confounded, no clean winner."),
-        'concordance': {
-            'level': 'concordant',
-            'basis': ('class-level ACR benefit matches; crucially our heterogeneity flag mirrors Cochrane\'s '
-                      'inconsistency downgrade — both say "no clean within-class winner".'),
-            'honest_note': ('Singh 2017 is MTX-naive and pre-JAK (no tofacitinib/upa/bari data); our placebo-'
-                            'anchored ACR50 NNT (~1.4-5.9) is NOT the published biologic-vs-MTX incremental '
-                            'NNTB (7) — different contrast, stated openly.'),
         },
     },
 ]

@@ -163,34 +163,6 @@ def test_pcsk9_league_bayesian_parity():
     c0 = d['comparisons'][0]
     assert 'cri' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
 
-def test_asthma_league_bayesian_depth():
-    # 3rd full-depth class: Bayesian count/rate (exacerbation IRR) league
-    d = _classfile('class5_asthma/asthma_league.json')
-    assert d['outcome_type'] == 'count/rate' and 'bayesian' in d['inference'].lower()
-    assert d['rhat'] <= 1.01 and d['lead'] == 'tezepelumab'
-    assert all(v < 1.0 for v in d['median_irr'].values()), 'all biologics reduce the exacerbation rate'
-    c0 = d['comparisons'][0]
-    assert 'cri_logrr' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
-
-def test_asthma_transport_averted_depth():
-    d = _classfile('class5_asthma/asthma_transport.json')
-    sc = d['scenarios']
-    assert len(sc) >= 3
-    av = [s['averted_per_yr'] for s in sc]
-    assert av == sorted(av), 'absolute exacerbations averted should rise with baseline rate'
-    assert av[-1] / av[0] >= 3, 'absolute benefit should swing several-fold across severity targets'
-    assert any(s['primary'] for s in sc) and 'reference' in d['baseline_source'].lower()
-
-def test_asthma_dashboard_offline():
-    p = os.path.join(ROOT, 'class5_asthma', 'asthma_dashboard.html')
-    if not os.path.exists(p):
-        pytest.skip('asthma_dashboard.html not built')
-    h = open(p, encoding='utf-8').read()
-    assert 'http://' not in h and 'https://wwwn' not in h and 'C:/' not in h and 'C:\\' not in h
-    import re as _re
-    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>')
-    assert 'averted' in h and 'GRADE' in h and 'Bayesian' in h
-
 def test_sglt2_league_bayesian_depth():
     # 2nd full-depth class + Bayesian draw matrix: single-endpoint HF-hosp league with CrI/P(sup)
     d = _classfile('class3_sglt2/sglt2_league.json')
@@ -227,92 +199,6 @@ def test_sglt2_dashboard_offline():
     assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
     assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h
 
-def test_generality_class4_psoriasis_hierarchy():
-    d = _classfile('class4_psoriasis/psoriasis_results.json')
-    assert d['hierarchy_reproduced'] is True, 'should reproduce IL-17/IL-23 > TNF'
-    assert d['il17_23_mean_pct'] > d['tnf_mean_pct']
-
-def test_psoriasis_league_bayesian_depth():
-    # 4th full-depth class: Bayesian binary/responder (PASI-90) draw-matrix league with CrI/P(sup)
-    d = _classfile('class4_psoriasis/psoriasis_league.json')
-    assert d['outcome_type'] == 'binary/responder' and 'bayesian' in d['inference'].lower()
-    assert d['rhat'] <= 1.01, 'Bayesian league must have converged'
-    # established hierarchy reproduced with posterior probability
-    ivt = d['il17_23_vs_tnf']
-    assert ivt['il_median_pct'] > ivt['tnf_median_pct']
-    assert ivt['p_il_gt_tnf'] >= 0.9, 'IL-17/IL-23 > TNF should be near-certain in the draws'
-    assert d['lead'] == d['ranking'][0]
-    # contrasts come from draws -> carry CrI + P(superiority), on the risk-difference (pp) scale
-    c0 = d['comparisons'][0]
-    assert 'cri_pp' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
-
-def test_psoriasis_transport_nnt_depth():
-    d = _classfile('class4_psoriasis/psoriasis_transport.json')
-    sc = d['placebo_scenarios']
-    assert len(sc) >= 3
-    # responders gained falls and NNT rises as the placebo background rises (gained = response - placebo)
-    gained = [s['responders_gained_per100'] for s in sc]
-    nnts = [s['nnt'] for s in sc]
-    assert gained == sorted(gained, reverse=True) and nnts == sorted(nnts)
-    assert any(s['primary'] for s in sc) and 'reference' in d['baseline_source'].lower()
-    # per-agent decision table present; top biologic NNT is small (active response dominates)
-    pa = d['per_agent_nnt_at_reference']
-    assert len(pa) >= 5 and pa[0]['nnt'] < 3, 'lead biologic NNT should be tiny vs placebo'
-
-def test_psoriasis_dashboard_offline():
-    p = os.path.join(ROOT, 'class4_psoriasis', 'psoriasis_dashboard.html')
-    if not os.path.exists(p):
-        pytest.skip('psoriasis_dashboard.html not built')
-    h = open(p, encoding='utf-8').read()
-    assert 'http://' not in h and 'https://wwwn' not in h, 'dashboard must be fully offline'
-    assert 'C:/' not in h and 'C:\\' not in h, 'no hardcoded local paths'
-    import re as _re
-    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
-    assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h and 'PASI-90' in h
-
-def test_ra_league_bayesian_depth():
-    # 5th full-depth class + 5th outcome TYPE: ordinal ACR ladder, proportional-odds graded-response
-    d = _classfile('class6_ra/ra_league.json')
-    assert d['outcome_type'] == 'ordinal/ordered-categorical'
-    assert 'bayesian' in d['inference'].lower() and 'proportional-odds' in d['inference'].lower()
-    assert d['rhat'] <= 1.01, 'Bayesian league must have converged'
-    # ordered cutpoints by construction: tau_20 <= tau_50 <= tau_70 (the ACR difficulty ladder)
-    cut = d['cutpoints_logit']
-    assert cut['tau_20'] <= cut['tau_50'] <= cut['tau_70']
-    # class-level signal: advanced-MoA (IL-6/JAK) at least matches TNF on the latent scale
-    avt = d['adv_vs_tnf']
-    assert avt['adv_median_theta'] > avt['tnf_median_theta']
-    # honesty: arm-level heterogeneity is flagged (large proportional-odds residual), not a clean winner
-    assert d['heterogeneity_flag'] is True and d['proportional_odds_rmse_logit'] > 0
-    assert d['lead'] == d['ranking'][0]
-    # contrasts come from the latent draw matrix -> carry CrI + P(superiority)
-    c0 = d['comparisons'][0]
-    assert 'cri_logor' in c0 and 0.0 <= c0['p_superiority'] <= 1.0
-
-def test_ra_transport_nnt_depth():
-    d = _classfile('class6_ra/ra_transport.json')
-    assert d['threshold'] == 'ACR50'
-    sc = d['placebo_scenarios']
-    assert len(sc) >= 3
-    # responders gained falls and NNT rises as the placebo ACR50 background rises
-    gained = [s['responders_gained_per100'] for s in sc]
-    nnts = [s['nnt'] for s in sc]
-    assert gained == sorted(gained, reverse=True) and nnts == sorted(nnts)
-    assert any(s['primary'] for s in sc) and 'reference' in d['baseline_source'].lower()
-    pa = d['per_agent_nnt_at_reference']
-    assert len(pa) >= 10 and pa[0]['nnt'] < 5, 'lead-agent ACR50 NNT should be single-digit vs placebo'
-
-def test_ra_dashboard_offline():
-    p = os.path.join(ROOT, 'class6_ra', 'ra_dashboard.html')
-    if not os.path.exists(p):
-        pytest.skip('ra_dashboard.html not built')
-    h = open(p, encoding='utf-8').read()
-    assert 'http://' not in h and 'https://wwwn' not in h, 'dashboard must be fully offline'
-    assert 'C:/' not in h and 'C:\\' not in h, 'no hardcoded local paths'
-    import re as _re
-    assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
-    assert 'NNT' in h and 'GRADE' in h and 'Bayesian' in h and 'ACR' in h
-
 def test_pcsk9_league_depth():
     # frontier 2: PCSK9 promoted beyond a core repoint -> full league + per-pair GRADE certainty
     d = _classfile('class2_pcsk9/pcsk9_league.json')
@@ -347,15 +233,6 @@ def test_pcsk9_dashboard_offline():
     assert len(_re.findall(r'<div[\s>]', h)) == h.count('</div>'), 'div balance'
     assert 'GRADE' in h and 'mmol/L' in h and 'DRAFT' in h
 
-def test_generality_class5_asthma_rate():
-    d = _classfile('class5_asthma/asthma_results.json')
-    # 5th outcome TYPE: count/rate (annualised exacerbation incidence-rate ratio)
-    assert d['outcome_type'] == 'count/rate'
-    assert d['all_agents_reduce_rate'] is True, 'every biologic CI should sit below IRR=1 (significant rate reduction)'
-    assert 0.5 <= d['class_pooled_irr'] <= 0.9, 'class-pooled exacerbation IRR should land in the published ~0.6-0.8 band'
-    # method discriminates honestly: high cross-agent I2 flagged as effect modification, not a clean winner
-    assert d['cross_agent_I2'] >= 50
-    assert 'effect modification' in d['caveat'].lower() or 'transitivity' in d['caveat'].lower()
 
 
 def test_ubcma_reporting_bias_inferential_pair():
@@ -388,8 +265,6 @@ def test_concordance_battery_multireview():
 # ---------- cross-class convention regression guards (added 2026-06-11 after multi-person review) ----------
 _TRANSPORTS = [
     ('class3_sglt2/sglt2_transport.json', 'scenarios'),
-    ('class4_psoriasis/psoriasis_transport.json', 'placebo_scenarios'),
-    ('class6_ra/ra_transport.json', 'placebo_scenarios'),
 ]
 @pytest.mark.parametrize('f,key', _TRANSPORTS)
 def test_nnt_cri_ascending(f, key):
@@ -400,8 +275,7 @@ def test_nnt_cri_ascending(f, key):
     assert not bad, f'{f}: NNT CrI stored descending (lower>upper): {bad}'
 
 _LEAGUES = ['nma_league.json', 'class2_pcsk9/pcsk9_league.json', 'class2_pcsk9/pcsk9_league_bayes.json',
-            'class3_sglt2/sglt2_league.json', 'class4_psoriasis/psoriasis_league.json',
-            'class5_asthma/asthma_league.json', 'class6_ra/ra_league.json']
+            'class3_sglt2/sglt2_league.json']
 @pytest.mark.parametrize('f', _LEAGUES)
 def test_certainty_counts_not_double_counted(f):
     # certainty_counts must tally UNIQUE pairwise contrasts, not directed cells (which double-counts)
@@ -410,48 +284,15 @@ def test_certainty_counts_not_double_counted(f):
         f'{f}: certainty_counts sum {sum(d["certainty_counts"].values())} != {len(d["comparisons"])} unique comparisons'
 
 
-# RapidMeta conversion: binary-responder classes wrapped in the kit workbench (shared rm_harvest_binary.py)
-_RM_CONVERSIONS = [
-    ('class6_ra/ra_trials.json', 'class6_ra/ra_rapidmeta_config.json', 'ra_biologics_acr_nma'),
-    ('class4_psoriasis/psoriasis_trials.json', 'class4_psoriasis/psoriasis_rapidmeta_config.json',
-     'psoriasis_biologics_pasi_nma'),
-]
-@pytest.mark.parametrize('trials_f,cfg_f,slug', _RM_CONVERSIONS)
-def test_rapidmeta_conversion(trials_f, cfg_f, slug):
-    tr = _classfile(trials_f)
-    trials = tr['trials']
-    assert len(trials) >= 30, f'{trials_f}: RapidMeta cohort should be substantial'
-    for t in trials:
-        assert t['nct'].startswith('NCT') and t['name']
-        # derived responder events valid + v2 plausibility (no arm-swapped/tiny cells)
-        assert 0 <= t['tE'] <= t['tN'] and 0 <= t['cE'] <= t['cN'], f"{t['nct']}: events outside [0,N]"
-        assert min(t['tN'], t['cN']) >= 10, f"{t['nct']}: arm N < 10"
-        assert (t['cE'] / t['cN']) - (t['tE'] / t['tN']) <= 0.20, f"{t['nct']}: control implausibly beats active"
-        assert t['allOutcomes'], 'each trial lists at least one responder outcome'
-    s = tr['screening']
-    assert s['search_hits'] >= s['acr_reporting'] >= s['included'], 'screening funnel must be monotone'
-    # PRISMA funnel must reconcile (every responder-reporting trial accounted for)
-    assert s['funnel_reconciles'] is True
-    assert s['included'] + sum(s['excluded'].values()) == s['acr_reporting']
-    # kit config well-formed against the rapidmeta-kit schema essentials
-    cfg = _classfile(cfg_f)
-    for k in ('drug', 'slug', 'condition', 'title', 'pico', 'trials'):
-        assert k in cfg and cfg[k], f'{cfg_f} missing {k}'
-    assert cfg['slug'] == slug and len(cfg['trials']) == len(trials)
-    assert all('_agent' not in t for t in cfg['trials']), 'private bookkeeping keys must be stripped'
-
-
-# RapidMeta conversion of the NON-binary classes: continuous (PCSK9 md/se), survival (SGLT2 HR),
-# count/rate (asthma IRR). Each has a type-specific harvester; the kit carries continuous in allOutcomes
-# and ratio measures in the publishedHR/hrLCI/hrUCI slots (IRR labelled as IRR, not a hazard).
+# RapidMeta conversion of the cardiometabolic classes: continuous (PCSK9 md/se) and survival (SGLT2 HR).
+# Each has a type-specific harvester; the kit carries continuous in allOutcomes and the HR in the
+# publishedHR/hrLCI/hrUCI slots.
 _RM_RATIO_CONT = [
     # (trials_file, config_file, slug, kind, funnel_report_key, ratio_lo, ratio_hi)
     ('class2_pcsk9/pcsk9_trials.json', 'class2_pcsk9/pcsk9_rapidmeta_config.json',
      'pcsk9_ldl_md_nma', 'continuous', 'ldl_reporting', None, None),
     ('class3_sglt2/sglt2_trials.json', 'class3_sglt2/sglt2_rapidmeta_config.json',
      'sglt2_hf_hr_nma', 'survival', 'hr_reporting', 0.3, 1.3),
-    ('class5_asthma/asthma_trials.json', 'class5_asthma/asthma_rapidmeta_config.json',
-     'asthma_biologics_exac_irr_nma', 'rate', 'irr_reporting', 0.1, 2.0),
 ]
 @pytest.mark.parametrize('trials_f,cfg_f,slug,kind,rep_key,rlo,rhi', _RM_RATIO_CONT)
 def test_rapidmeta_ratio_continuous_conversion(trials_f, cfg_f, slug, kind, rep_key, rlo, rhi):
@@ -490,11 +331,9 @@ def test_rapidmeta_ratio_continuous_conversion(trials_f, cfg_f, slug, kind, rep_
 def test_class_concordance_published():
     # class-level external validation: each generality class vs a PubMed-verified published NMA
     d = load('class_concordance.json')
-    assert d['n_classes'] == 5 and d['n_concordant'] == 5, 'all five class repoints should be concordant'
+    assert d['n_classes'] == 2 and d['n_concordant'] == 2, 'both cardiometabolic class repoints should be concordant'
     assert d['all_references_doi_resolved'] is True
-    leads = {'class2_pcsk9/pcsk9_league.json': 'pcsk9', 'class3_sglt2/sglt2_league.json': 'sglt2',
-             'class4_psoriasis/psoriasis_league.json': 'psoriasis', 'class5_asthma/asthma_league.json': 'asthma',
-             'class6_ra/ra_league.json': 'ra'}
+    leads = {'class2_pcsk9/pcsk9_league.json': 'pcsk9', 'class3_sglt2/sglt2_league.json': 'sglt2'}
     for e in d['entries']:
         # every entry carries a real DOI + PMID and a stated honest boundary
         assert e['reference']['doi'] and e['reference']['pmid']

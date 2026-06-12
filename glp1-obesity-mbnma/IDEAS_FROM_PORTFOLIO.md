@@ -1,5 +1,10 @@
 # New ideas for this project — registry-ipd + cross-repo experimental methods
 
+> **Scope note (2026-06-12):** ideas below that reference the psoriasis / asthma / RA repoints are obsolete —
+> those classes were removed when the repo was refocused on the GLP-1 obesity question (see `NEXT_SESSION.md`).
+> Treat only obesity-flagship and PCSK9/SGLT2 (cardiometabolic) ideas as live.
+
+
 Survey (2026-06-11) of `registry-ipd` and portfolio experimental methods for things that plug into the
 glp1 generality engine + the RapidMeta conversion. Ordered by synergy / effort.
 

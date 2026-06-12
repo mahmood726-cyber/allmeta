@@ -1,6 +1,6 @@
 """PCSK9 per-trial LDL-C %-change harvest for the RapidMeta conversion -- the CONTINUOUS path (md/se), mirroring
 the incretin flagship's continuous harvest shape (active-minus-placebo mean difference + pooled SE) rather than
-the binary rm_harvest_binary. Pulls the LDL % change LS-mean + dispersion per arm from AACT, classifies arms as
+a binary-responder harvester. Pulls the LDL % change LS-mean + dispersion per arm from AACT, classifies arms as
 active(PCSK9 agent) vs placebo/statin control, and forms md = active-control with se = sqrt(se_a^2 + se_c^2).
 Per-arm SE is read directly (Standard Error), or derived (SD/sqrt(N), or CI width / 2*1.96). Registry-native
 (AACT); no IPD. Fails closed on implausible md / missing SE; reports a reconciling screening funnel."""
