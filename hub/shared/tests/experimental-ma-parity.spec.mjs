@@ -144,6 +144,7 @@ test('benchmark-superior estimators match their Python reference values (<1e-6)'
       boost20: E.boosting(yi, vi, 20, 0.2),
       boost5: E.boosting(yi, vi, 5, 0.2),
       seqAdapt: E.sequentialAdaptive(yi, vi, 0.05),
+      copula: E.gaussianCopula(yi, vi),
     };
   }, { yi: YI, vi: VI, homYi: HOM_YI, homVi: HOM_VI });
 
@@ -201,6 +202,11 @@ test('benchmark-superior estimators match their Python reference values (<1e-6)'
   expect(got.boost5.estimate).toBeCloseTo(-0.13899144, 6);
   expect(got.seqAdapt.estimate).toBeCloseTo(-0.13931017, 6);
   expect(got.seqAdapt.se).toBeCloseTo(0.03463704, 6);   // its own adaptive tau²
+
+  // batch 4 — Gaussian copula (lag-1 dependence inflates the SE; mu == RE mean)
+  expect(got.copula.estimate).toBeCloseTo(-0.13796647, 6);
+  expect(got.copula.se).toBeCloseTo(0.05269190, 6);
+  expect(got.copula.rho).toBeCloseTo(-0.86491375, 6);
 
   expect(errs, 'no console errors on the host page').toEqual([]);
 });

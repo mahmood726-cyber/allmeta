@@ -540,7 +540,8 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await expect(bench).toContainText("Elastic-net");
   await expect(bench).toContainText("Softmax-weighted");
   await expect(bench).toContainText("Gradient boosting");
-  await expect(bench.locator("table tbody tr")).toHaveCount(13);
+  await expect(bench).toContainText("Gaussian copula");
+  await expect(bench.locator("table tbody tr")).toHaveCount(14);
   // the #1 winner's pooled estimate back-transforms to exp(-0.13796647) ≈ 0.871
   const kh = await page.evaluate(() => {
     const s = window.MaStudies.read();

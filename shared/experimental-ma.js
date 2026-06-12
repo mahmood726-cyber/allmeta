@@ -381,6 +381,37 @@
     return { estimate: muFinal, se: se, ciLo: muFinal - z * se, ciHi: muFinal + z * se, tau2: tau2 };
   }
 
+  // ---- Benchmark-superior estimators, batch 4: Gaussian-copula pool.
+  // Normal-score each study's effect (standardised residual from the FE mean over
+  // the total SD), measure lag-1 dependence (rho) among the scores, and inflate the
+  // RE standard error by 1/sqrt(1 - |rho|/2). The point estimate is the RE mean
+  // (the dependence factor is a scalar, so it cancels in the weighted mean). The
+  // norm.cdf->clip[0.001,0.999]->norm.ppf round-trip is the identity except at the
+  // tails, so it reduces EXACTLY to clipping the standardised residual at
+  // +-norm.ppf(0.999) — no normal-CDF/quantile needed. Verified to 1e-6.
+  function gaussianCopula(yi, vi) {
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var wi = vi.map(function (v) { return 1 / v; });
+    var swi = wi.reduce(function (a, x) { return a + x; }, 0);
+    var muFe = yi.reduce(function (a, y, i) { return a + wi[i] * y; }, 0) / swi;
+    var CLIP = 3.090232306167813;   // +-norm.ppf(0.999)
+    var zsc = yi.map(function (y, i) {
+      var r = (y - muFe) / Math.sqrt(vi[i] + b.tau2);
+      return r < -CLIP ? -CLIP : (r > CLIP ? CLIP : r);
+    });
+    var rho = 0;
+    if (b.k > 1) {
+      var a = zsc.slice(0, -1), c = zsc.slice(1), n = a.length, ma = 0, mc = 0;
+      for (var i = 0; i < n; i++) { ma += a[i]; mc += c[i]; } ma /= n; mc /= n;
+      var sac = 0, saa = 0, scc = 0;
+      for (i = 0; i < n; i++) { var da = a[i] - ma, dc = c[i] - mc; sac += da * dc; saa += da * da; scc += dc * dc; }
+      rho = (saa > 0 && scc > 0) ? sac / Math.sqrt(saa * scc) : 0;
+    }
+    var depAdj = 1 - Math.abs(rho) * 0.5;
+    var mu = b.muRe, se = Math.sqrt(1 / (b.swiRe * depAdj)), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2, rho: rho };
+  }
+
   // ---- Bias signals (browser-computable subset of MAFI's asymmetry cluster) ----
   // Classic Egger (1997): OLS of the standard normal deviate (yi/sei) on precision
   // (1/sei); the intercept's t-test (df=k-2) is the small-study-asymmetry test.
@@ -411,7 +442,7 @@
     knappHartungMod: knappHartungMod, satterthwaiteDF: satterthwaiteDF, ivPlus: ivPlus, ridge: ridge, tikhonov: tikhonov,
     qualityEffects: qualityEffects, sampleSizeWeighted: sampleSizeWeighted,
     softmaxWeighted: softmaxWeighted, lassoReg: lassoReg, groupLasso: groupLasso, elasticNet: elasticNet,
-    boosting: boosting, sequentialAdaptive: sequentialAdaptive,
+    boosting: boosting, sequentialAdaptive: sequentialAdaptive, gaussianCopula: gaussianCopula,
     tcdf: tcdf, tinv: tinv, _quantile: quantile };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ExperimentalMA = api;
