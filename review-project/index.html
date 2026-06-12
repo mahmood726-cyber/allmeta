@@ -572,7 +572,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + biasCard(studies2));
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -730,6 +730,41 @@
         + "<div class='exp-row'>Egger small-study asymmetry: intercept <b>" + fnum(e.intercept) + "</b> (SE " + fnum(e.se) + "), p = <b>" + fnum(e.p) + "</b> &mdash; <b style='color:" + flag[1] + "'>" + flag[0] + " asymmetry</b>" + power + "</div>"
         + "<div class='exp-row'>Precision&ndash;effect correlation: <b>" + fnum(pec) + "</b></div>"
         + "<p class='exp-caveat'>Browser-computable subset of the author's MAFI scorecard (the asymmetry-cluster signals). The full calibrated MAFI ensemble &mdash; selection models (3PSM), excess-significance and gradient-boosted cluster weights trained across Cochrane domains &mdash; runs in the MAFI R package. <b>Experimental</b>; bias tests have low power below ~10 studies.</p></div></details>";
+    }
+
+    // Benchmark-superior estimators — the closed-form methods that BEAT
+    // DerSimonian-Laird in the author's 299-method / 12-scenario / 1000-sim
+    // benchmark (experimental-meta-analysis). Shown beside one another so the
+    // user can see how the winning weightings move the pool; all EXPERIMENTAL.
+    function benchmarkCard(studies, scale) {
+      if (!(window.ExperimentalMA && ExperimentalMA.knappHartungMod)) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 2) return "";
+      var yi = poolable.map(function (s) { return s.est; });
+      var vi = poolable.map(function (s) { return s.se * s.se; });
+      var ratio = scale === "ratio", tx = function (x) { return ratio ? Math.exp(x) : x; };
+      var E = ExperimentalMA;
+      // [label, win-rate note, result-or-null]
+      var defs = [
+        ["Knapp-Hartung (mod)", "#1 — 75% win rate", E.knappHartungMod(yi, vi, false)],
+        ["IVPlus (reg. IV)", "75%", E.ivPlus(yi, vi, 0.1)],
+        ["Ridge-regularized", "75%", E.ridge(yi, vi, 0.01)],
+        ["Tikhonov (prior 0)", "58–83%", E.tikhonov(yi, vi, 0.0, 0.1)],
+        ["Quality-effects", "67%", E.qualityEffects(yi, vi, 0.5)],
+        ["Satterthwaite df", "50%", E.satterthwaiteDF(yi, vi)],
+        ["Sample-size weighted", "50%", E.sampleSizeWeighted(yi, vi, 0.5)]
+      ];
+      var rows = defs.map(function (d) {
+        var r = d[2]; if (!r) return "";
+        return "<tr><td>" + esc(d[0]) + "</td><td>" + fnum(tx(r.estimate))
+          + "</td><td>" + fnum(tx(r.ciLo)) + " to " + fnum(tx(r.ciHi))
+          + "</td><td class='exp-sub'>" + esc(d[1]) + "</td></tr>";
+      }).join("");
+      if (!rows) return "";
+      return "<details class='exp-methods'><summary>&#128300; Benchmark-superior methods <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
+        + "<div class='exp-row'>Closed-form estimators that outperformed DerSimonian-Laird across the author's 299-method, 12-scenario, 1000-simulation benchmark — applied to these studies:</div>"
+        + "<table class='ptable'><thead><tr><th>Method</th><th>est</th><th>95% CI</th><th>vs DL</th></tr></thead><tbody>" + rows + "</tbody></table>"
+        + "<p class='exp-caveat'>Win rates are from the simulation benchmark (experimental-meta-analysis), not this dataset; they show how often each method beat DL across scenarios. Ported and parity-locked to the Python source. <b>Experimental</b>; shown for exploration, not a substitute for the pooled estimate above.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled

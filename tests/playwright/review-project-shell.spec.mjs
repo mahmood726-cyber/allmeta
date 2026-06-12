@@ -530,6 +530,22 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await expect(mv).toContainText("Naïve");
   await expect(mv.locator("table tbody tr")).toHaveCount(7);
 
+  // benchmark-superior methods panel: the closed-form estimators that beat DL in
+  // the author's 299-method simulation benchmark, one row each
+  const bench = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Benchmark-superior" });
+  await expect(bench).toHaveCount(1);
+  await expect(bench).toContainText("DerSimonian-Laird");
+  await expect(bench).toContainText("Knapp-Hartung");
+  await expect(bench).toContainText("Ridge");
+  await expect(bench.locator("table tbody tr")).toHaveCount(7);
+  // the #1 winner's pooled estimate back-transforms to exp(-0.13796647) ≈ 0.871
+  const kh = await page.evaluate(() => {
+    const s = window.MaStudies.read();
+    const r = window.ExperimentalMA.knappHartungMod(s.map(x => x.est), s.map(x => x.se * x.se), false);
+    return Math.exp(r.estimate);
+  });
+  expect(Math.abs(kh - 0.871123)).toBeLessThan(1e-4);
+
   // publication-bias signals panel (browser subset of MAFI): Egger + precision-effect
   const bias = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Publication-bias signals" });
   await expect(bias).toHaveCount(1);

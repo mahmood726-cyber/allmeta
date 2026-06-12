@@ -163,6 +163,111 @@
       ciLo: lo, ciHi: hi, verdict: (lo > 0 || hi < 0) ? "robust" : "fragile", k: n };
   }
 
+  // ---- Inverse Student-t (quantile) via bisection on tcdf, self-contained ----
+  function tinv(p, df) {
+    if (p <= 0) return -Infinity; if (p >= 1) return Infinity;
+    var lo = -1e6, hi = 1e6;
+    for (var it = 0; it < 200; it++) {
+      var mid = (lo + hi) / 2, f = tcdf(mid, df) - p;
+      if (Math.abs(f) < 1e-13 || (hi - lo) < 1e-12) return mid;
+      if (f < 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  // ---- Benchmark-superior estimators ----
+  // Closed-form methods that BEAT DerSimonian-Laird in the author's 299-method /
+  // 12-scenario / 1000-sim benchmark (experimental-meta-analysis). All share a DL
+  // tau^2 base, then differ in the weighting / interval rule. Ported verbatim from
+  // core_framework.py + methods/experimental_methods_part2.py, verified to 1e-6.
+  // Like every method here they are EXPERIMENTAL — surface behind the explicit label.
+  function dlBase(yi, vi) {
+    var k = yi.length;
+    var wi = vi.map(function (v) { return 1 / v; });
+    var swi = wi.reduce(function (a, b) { return a + b; }, 0);
+    var muFe = yi.reduce(function (a, y, i) { return a + wi[i] * y; }, 0) / swi;
+    var Q = yi.reduce(function (a, y, i) { return a + wi[i] * (y - muFe) * (y - muFe); }, 0);
+    var swi2 = wi.reduce(function (a, b) { return a + b * b; }, 0);
+    var c = swi - swi2 / swi;
+    var tau2 = c > 0 ? Math.max(0, (Q - (k - 1)) / c) : 0;
+    var wiRe = vi.map(function (v) { return 1 / (v + tau2); });
+    var swiRe = wiRe.reduce(function (a, b) { return a + b; }, 0);
+    var muRe = yi.reduce(function (a, y, i) { return a + wiRe[i] * y; }, 0) / swiRe;
+    return { k: k, tau2: tau2, wiRe: wiRe, swiRe: swiRe, muRe: muRe, Q: Q };
+  }
+  // #1 winner (75% win rate): modified Knapp-Hartung with optional q-adj truncation.
+  function knappHartungMod(yi, vi, truncate) {
+    var b = dlBase(yi, vi), k = b.k; if (k < 2) return null;
+    var qAdj = yi.reduce(function (a, y, i) { return a + b.wiRe[i] * (y - b.muRe) * (y - b.muRe); }, 0) / (k - 1);
+    if (truncate) qAdj = Math.max(1.0, qAdj);
+    var se = Math.sqrt(qAdj / b.swiRe), t = tinv(0.975, k - 1);
+    return { estimate: b.muRe, se: se, ciLo: b.muRe - t * se, ciHi: b.muRe + t * se, tau2: b.tau2 };
+  }
+  // Satterthwaite-df interval on the RE pool (small-sample df approximation).
+  function satterthwaiteDF(yi, vi) {
+    var b = dlBase(yi, vi), k = b.k; if (k < 2) return null;
+    var se = Math.sqrt(1 / b.swiRe);
+    var tv = vi.map(function (v) { return v + b.tau2; });
+    var s1 = tv.reduce(function (a, x) { return a + x; }, 0);
+    var s2 = tv.reduce(function (a, x) { return a + x * x; }, 0);
+    var df = Math.max(1, Math.min(k - 1, (s1 * s1) / s2));
+    var t = tinv(0.975, df);
+    return { estimate: b.muRe, se: se, ciLo: b.muRe - t * se, ciHi: b.muRe + t * se, tau2: b.tau2, df: df };
+  }
+  // Enhanced inverse-variance: shrink each variance toward the median before pooling.
+  function ivPlus(yi, vi, reg) {
+    reg = reg == null ? 0.1 : reg;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var medV = median(vi);
+    var wiRe = vi.map(function (v) { return 1 / (v + reg * medV + b.tau2); });
+    var swiRe = wiRe.reduce(function (a, x) { return a + x; }, 0);
+    var mu = yi.reduce(function (a, y, i) { return a + wiRe[i] * y; }, 0) / swiRe;
+    var se = Math.sqrt(1 / swiRe), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // Ridge-regularized pool: shrink the point estimate toward 0.
+  function ridge(yi, vi, lambda) {
+    lambda = lambda == null ? 0.01 : lambda;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var mu = (yi.reduce(function (a, y, i) { return a + b.wiRe[i] * y; }, 0)) / (b.swiRe + lambda * b.k);
+    var se = Math.sqrt(1 / b.swiRe), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // Tikhonov-regularized pool with a Gaussian prior (priorMean, priorPrecision).
+  function tikhonov(yi, vi, priorMean, priorPrec) {
+    priorMean = priorMean == null ? 0.0 : priorMean; priorPrec = priorPrec == null ? 0.1 : priorPrec;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var swYi = yi.reduce(function (a, y, i) { return a + b.wiRe[i] * y; }, 0);
+    var mu = (swYi + priorPrec * priorMean) / (b.swiRe + priorPrec);
+    var se = Math.sqrt(1 / (b.swiRe + priorPrec)), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // Quality-effects pool: precision-proxied quality weights raised to `power`.
+  function qualityEffects(yi, vi, power) {
+    power = power == null ? 0.5 : power;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var prec = vi.map(function (v) { return 1 / v; }), maxPrec = Math.max.apply(null, prec);
+    var qual = prec.map(function (p) { return Math.pow(p / maxPrec, power); });
+    var wiRe = qual.map(function (q, i) { return q / (vi[i] + b.tau2); });
+    var swiRe = wiRe.reduce(function (a, x) { return a + x; }, 0);
+    var mu = yi.reduce(function (a, y, i) { return a + wiRe[i] * y; }, 0) / swiRe;
+    var se = Math.sqrt(1 / swiRe), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // Sample-size-weighted pool (precision used as the size proxy when n is absent).
+  function sampleSizeWeighted(yi, vi, power, ni) {
+    power = power == null ? 0.5 : power;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var sizes = ni && ni.length === yi.length ? ni : vi.map(function (v) { return 1 / v; });
+    var meanN = sizes.reduce(function (a, x) { return a + x; }, 0) / sizes.length;
+    var scaled = sizes.map(function (n) { return Math.pow(n / meanN, power); });
+    var wiRe = scaled.map(function (s, i) { return s / (vi[i] + b.tau2); });
+    var swiRe = wiRe.reduce(function (a, x) { return a + x; }, 0);
+    var mu = yi.reduce(function (a, y, i) { return a + wiRe[i] * y; }, 0) / swiRe;
+    var se = Math.sqrt(1 / swiRe), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+
   // ---- Bias signals (browser-computable subset of MAFI's asymmetry cluster) ----
   // Classic Egger (1997): OLS of the standard normal deviate (yi/sei) on precision
   // (1/sei); the intercept's t-test (df=k-2) is the small-study-asymmetry test.
@@ -189,7 +294,9 @@
     return sxy / Math.sqrt(sxx * syy);
   }
 
-  var api = { grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, egger: egger, precisionEffectCor: precisionEffectCor, tcdf: tcdf, _quantile: quantile };
+  var api = { grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, egger: egger, precisionEffectCor: precisionEffectCor,
+    knappHartungMod: knappHartungMod, satterthwaiteDF: satterthwaiteDF, ivPlus: ivPlus, ridge: ridge, tikhonov: tikhonov,
+    qualityEffects: qualityEffects, sampleSizeWeighted: sampleSizeWeighted, tcdf: tcdf, tinv: tinv, _quantile: quantile };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ExperimentalMA = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -12,6 +12,12 @@
  *   specCollapse       spec-collapse-atlas/spec_collapse/aggregators.py::weighted_likelihood
  *   egger              MAFI/R/mafi.R  (classic Egger 1997 asymmetry intercept)
  *   precisionEffectCor MAFI/R/mafi.R  (corr(yi, 1/sei))
+ *   knappHartungMod .. sampleSizeWeighted
+ *                      experimental-meta-analysis (core_framework.py +
+ *                      methods/experimental_methods_part2.py) — the DL-base
+ *                      estimators that BEAT DerSimonian-Laird in the author's
+ *                      299-method / 12-scenario / 1000-sim benchmark. Verified
+ *                      against the framework's own Python output (no R oracle).
  *
  * Shared 6-study fixture (also the egger/precision fixture):
  *   yi  = [-0.15,-0.10,-0.20, 0.02,-0.30,-0.05]
@@ -101,4 +107,75 @@ test('experimental-ma guards: sub-threshold k returns null; spec-collapse never 
   expect(got.conf3).toBeNull();
   expect(got.egger2).toBeNull();
   expect(got.specWidth).toBeGreaterThan(got.tightestSingle);
+});
+
+test('benchmark-superior estimators match their Python reference values (<1e-6)', async ({ page }) => {
+  const errs = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForFunction(() => !!window.ExperimentalMA, { timeout: 10000 });
+
+  // Homogeneous fixture where the Knapp-Hartung q-adjustment is < 1, so the
+  // truncTrue branch genuinely diverges from truncFalse (floors q-adj at 1).
+  const HOM_YI = [0.10, 0.11, 0.09, 0.105, 0.095];
+  const HOM_VI = [0.20, 0.22, 0.18, 0.25, 0.21].map(s => s * s);
+
+  const got = await page.evaluate(({ yi, vi, homYi, homVi }) => {
+    const E = window.ExperimentalMA;
+    return {
+      khF: E.knappHartungMod(yi, vi, false),
+      khT: E.knappHartungMod(yi, vi, true),
+      satt: E.satterthwaiteDF(yi, vi),
+      ivp: E.ivPlus(yi, vi, 0.1),
+      ridge: E.ridge(yi, vi, 0.01),
+      tik: E.tikhonov(yi, vi, 0.0, 0.1),
+      qual: E.qualityEffects(yi, vi, 0.5),
+      ssw: E.sampleSizeWeighted(yi, vi, 0.5),
+      homF: E.knappHartungMod(homYi, homVi, false),
+      homT: E.knappHartungMod(homYi, homVi, true),
+      kh1: E.knappHartungMod([0.1], [0.04], false), // k<2 guard
+    };
+  }, { yi: YI, vi: VI, homYi: HOM_YI, homVi: HOM_VI });
+
+  // #1 winner (75% win rate): modified Knapp-Hartung. On this fixture q-adj>1 so
+  // truncTrue == truncFalse.
+  expect(got.khF.estimate).toBeCloseTo(-0.13796647, 6);
+  expect(got.khF.se).toBeCloseTo(0.04234053, 6);
+  expect(got.khF.ciLo).toBeCloseTo(-0.24680627, 6);
+  expect(got.khF.ciHi).toBeCloseTo(-0.02912667, 6);
+  expect(got.khT.se).toBeCloseTo(0.04234053, 6);
+
+  // Satterthwaite-df interval
+  expect(got.satt.estimate).toBeCloseTo(-0.13796647, 6);
+  expect(got.satt.ciLo).toBeCloseTo(-0.24000748, 6);
+  expect(got.satt.ciHi).toBeCloseTo(-0.03592546, 6);
+
+  // IVPlus (regularized inverse variance)
+  expect(got.ivp.estimate).toBeCloseTo(-0.13765986, 6);
+  expect(got.ivp.se).toBeCloseTo(0.04093611, 6);
+
+  // Ridge-regularized pool
+  expect(got.ridge.estimate).toBeCloseTo(-0.13795343, 6);
+
+  // Tikhonov-regularized pool with prior
+  expect(got.tik.estimate).toBeCloseTo(-0.13794474, 6);
+  expect(got.tik.se).toBeCloseTo(0.03969256, 6);
+
+  // Quality-effects pool
+  expect(got.qual.estimate).toBeCloseTo(-0.14204562, 6);
+  expect(got.qual.se).toBeCloseTo(0.04588898, 6);
+
+  // Sample-size-weighted pool (precision proxy)
+  expect(got.ssw.estimate).toBeCloseTo(-0.14204562, 6);
+  expect(got.ssw.se).toBeCloseTo(0.03907357, 6);
+
+  // Truncation branch genuinely binds on the homogeneous fixture
+  expect(got.homF.se).toBeCloseTo(0.00359645, 6);
+  expect(got.homT.se).toBeCloseTo(0.09316906, 6);
+  expect(Math.abs(got.homF.se - got.homT.se)).toBeGreaterThan(0.01);
+
+  // Sub-threshold k guard
+  expect(got.kh1).toBeNull();
+
+  expect(errs, 'no console errors on the host page').toEqual([]);
 });
