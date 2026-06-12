@@ -1,4 +1,6 @@
-"""Workstream B: TRUE one-step arm-based Bayesian MBNMA (fixes the panel-verified error).
+"""EXPERIMENTAL — no external R oracle; validated only against its own Python output / internal MC coverage (NUTS Rhat + ESS); not for primary published estimates without independent confirmation.
+
+Workstream B: TRUE one-step arm-based Bayesian MBNMA (fixes the panel-verified error).
 
 The contrast model (pymc_mbnma.py) treated 54 contrasts as independent, but 38/54 share a
 placebo arm within multi-arm trials -> within-trial covariance ignored -> anti-conservative CrIs.

@@ -1,4 +1,6 @@
-"""Complementary method #2 (frontier 4): GRMA (Grey Relational Meta-Analysis) as a ROBUST-POOLING
+"""EXPERIMENTAL — no external R oracle (GRMA is not in metafor); validated only against its own Python output (algorithm reproduced step-for-step from grma_meta.R); SENSITIVITY-ONLY, the IV/DL/REML pool stays primary; not for primary published estimates without independent confirmation.
+
+Complementary method #2 (frontier 4): GRMA (Grey Relational Meta-Analysis) as a ROBUST-POOLING
 sensitivity check on the headline incretin node. GRMA is the portfolio robust estimator: it weights studies
 by grey-relational similarity in a 2-feature space (effect, log-precision) with a redescending Tukey
 bisquare guard against effect outliers, instead of pure inverse-variance. Here it stress-tests whether the
