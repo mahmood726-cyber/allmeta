@@ -288,6 +288,21 @@ class FPNMAEngine {
     /**
      * Pool data per comparison (relative to reference).
      * Groups by treatment pair and merges time-point data.
+     *
+     * Reconstruction-variance weighting (VALIDATED, gold-anchored — Jansen 2011
+     * FP-NMA ingesting digitised/Guyot-reconstructed survival curves):
+     *   A reconstructed curve's late time-points are the LEAST identified (fewest
+     *   at risk, most censoring) so they carry a late-growing reconstruction bias
+     *   AND a late-growing reconstruction variance r(t)^2. Ignoring r(t) (sampling
+     *   SE only) equal-weights the biased late points and pulls the WLS FP fit off
+     *   at late times; encoding it — se_eff = sqrt(se_sampling^2 + r(t)^2) — down-
+     *   weights them and recovers the curve toward the all-IPD gold.
+     *
+     * The per-observation reconstruction SD r(t) is OPTIONAL: pass it as a
+     * study-level array `reconSDs` (alias `reconSEs`) parallel to `ses`, or as a
+     * single scalar applied to every interval. When absent (or non-finite), the
+     * weight is byte-identical to sampling-only: 1 / se^2 — a pure additive option
+     * with zero regression on existing all-IPD / scalar-SE inputs.
      */
     _prepareComparisons(data, reference) {
         const comparisons = {};
@@ -304,10 +319,26 @@ class FPNMAEngine {
                 };
             }
             const comp = comparisons[key];
+            const reconArr = Array.isArray(d.reconSDs) ? d.reconSDs
+                : (Array.isArray(d.reconSEs) ? d.reconSEs : null);
+            const reconScalar = (typeof d.reconSDs === 'number') ? d.reconSDs
+                : ((typeof d.reconSEs === 'number') ? d.reconSEs : null);
             for (let i = 0; i < d.timePoints.length; i++) {
                 comp.timePoints.push(d.timePoints[i]);
                 comp.logHRs.push(Math.log(d.hazardRatios[i]));
-                comp.weights.push(d.ses[i] > EPSILON ? 1 / (d.ses[i] * d.ses[i]) : 1);
+                const se = d.ses[i];
+                // optional reconstruction SD for this interval (array > scalar > none)
+                let r = null;
+                if (reconArr && Number.isFinite(reconArr[i])) r = reconArr[i];
+                else if (reconScalar !== null && Number.isFinite(reconScalar)) r = reconScalar;
+                if (r !== null && r > 0) {
+                    // se_eff^2 = se_sampling^2 + r(t)^2 (reconstruction-variance weighting)
+                    const seEffSq = se * se + r * r;
+                    comp.weights.push(seEffSq > EPSILON ? 1 / seEffSq : 1);
+                } else {
+                    // default: sampling-only — byte-identical to the original expression
+                    comp.weights.push(se > EPSILON ? 1 / (se * se) : 1);
+                }
             }
         }
         return Object.values(comparisons);
