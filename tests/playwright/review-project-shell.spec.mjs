@@ -562,6 +562,13 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   await expect(repro).toContainText("repro-floor-atlas");
   await expect(repro).toContainText("machine-precision");
 
+  // fragility robustness panel (author's fragility-atlas): robustness % + verdict
+  const frag = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Fragility robustness" });
+  await expect(frag).toHaveCount(1);
+  await expect(frag).toContainText("fragility-atlas");
+  await expect(frag).toContainText("DL-Wald reference");
+  await expect(frag).toContainText("robustness");
+
   // publication-bias signals panel (browser subset of MAFI): Egger + precision-effect
   const bias = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Publication-bias signals" });
   await expect(bias).toHaveCount(1);

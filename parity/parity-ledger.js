@@ -4,7 +4,7 @@ window.ALM_PARITY_LEDGER = {
   "specCount": 46,
   "pyCount": 19,
   "parityTestCount": 65,
-  "assertionCount": 212,
+  "assertionCount": 216,
   "pyAssertionCount": 77,
   "oracleCount": 41,
   "stataCount": 38,
@@ -60,9 +60,9 @@ window.ALM_PARITY_LEDGER = {
       "module": "atlas-audits.js",
       "oracles": [],
       "stata": null,
-      "tests": 4,
-      "asserts": 8,
-      "tightestDecimals": 6
+      "tests": 6,
+      "asserts": 12,
+      "tightestDecimals": 9
     },
     {
       "spec": "bayesian-ma-parity.spec.mjs",

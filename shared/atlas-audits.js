@@ -104,7 +104,68 @@
     };
   }
 
-  var api = { hksjQFloorAudit: hksjQFloorAudit, reproFloorAudit: reproFloorAudit, _roundHalfEven: roundHalfEven };
+  // ---- Fragility robustness (fragility-atlas) ----
+  // Re-analyse one MA across a grid of defensible analytical choices and score how
+  // often the conclusion (effect direction AND significance) survives, relative to
+  // the standard DL-Wald reference. classifyRobustness is the atlas's classifier
+  // (src/classifier.py) ported verbatim — the agreement rule, the robustness % and
+  // the Robust/Moderate/Fragile/Unstable bins. fragilityRobustness runs the grid on
+  // the R-verified ma-core (a BROWSER SUBSET: 4 variance estimators x 2 CI methods
+  // + leave-one-out; the full atlas adds SJ/HS/HE, t-dist CIs and trim-and-fill /
+  // PET-PEESE bias corrections in R, so the % here is not the atlas's published
+  // number — same lens, audited engine, smaller grid).
+  function classifyRobustness(specs, refDir, refSig) {
+    var total = specs.length;
+    if (!total) return null;
+    var agree = 0, reversed = 0, sig = 0;
+    for (var i = 0; i < total; i++) {
+      var s = specs[i];
+      if (s.direction === refDir && s.isSignificant === refSig) agree++;
+      if (s.isSignificant && s.direction !== refDir) reversed++;
+      if (s.isSignificant) sig++;
+    }
+    var robustness = agree / total * 100;
+    var classification = robustness >= 90 ? "Robust"
+      : robustness >= 70 ? "Moderate"
+      : robustness >= 50 ? "Fragile" : "Unstable";
+    return {
+      totalSpecs: total, agreeingSpecs: agree,
+      robustnessScore: robustness, classification: classification,
+      fracReversed: reversed / total, fracSignificant: sig / total
+    };
+  }
+  function fragilityRobustness(yi, vi, pool) {
+    pool = resolvePool(pool);
+    if (!pool || !yi || yi.length < 3) return null;   // LOO needs k>=3 to be meaningful
+    var ESTS = ["FE", "DL", "REML", "PM"], CIS = [false, true];
+    function specOf(r) { return { theta: r.mu, direction: r.mu >= 0 ? 1 : -1, isSignificant: (r.ciLo > 0 || r.ciHi < 0) }; }
+    var specs = [], ref = null;
+    try {
+      for (var a = 0; a < ESTS.length; a++) {
+        for (var b = 0; b < CIS.length; b++) {
+          var r = pool(yi, vi, { method: ESTS[a], knha: CIS[b], knhaFloor: true });
+          var sp = specOf(r); specs.push(sp);
+          if (ESTS[a] === "DL" && CIS[b] === false) ref = sp;   // the reference conclusion
+        }
+      }
+      for (var i = 0; i < yi.length; i++) {
+        var yl = yi.filter(function (_, j) { return j !== i; });
+        var vl = vi.filter(function (_, j) { return j !== i; });
+        specs.push(specOf(pool(yl, vl, { method: "DL", knha: false })));
+      }
+    } catch (e) { return null; }
+    if (!ref) return null;
+    var out = classifyRobustness(specs, ref.direction, ref.isSignificant);
+    out.k = yi.length;
+    out.refDirection = ref.direction;
+    out.refSignificant = ref.isSignificant;
+    out.grid = ESTS.length + " estimators × " + CIS.length + " CI methods + leave-one-out";
+    return out;
+  }
+
+  var api = { hksjQFloorAudit: hksjQFloorAudit, reproFloorAudit: reproFloorAudit,
+    fragilityRobustness: fragilityRobustness, classifyRobustness: classifyRobustness,
+    _roundHalfEven: roundHalfEven };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AtlasAudits = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

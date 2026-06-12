@@ -13,6 +13,13 @@
  *                    classifier.py): round forest-plot yi/se to dp, re-pool
  *                    fixed-effect, |Δ| vs machine-precision pool; numpy half-even
  *                    rounding replicated exactly. Reference deltas from numpy.
+ *   classifyRobustness / fragilityRobustness
+ *                    fragility-atlas (src/classifier.py): the agreement rule +
+ *                    robustness % + Robust/Moderate/Fragile/Unstable bins ported
+ *                    verbatim and locked on a controlled spec vector; the grid runs
+ *                    on the audited ma-core (browser subset), so the end-to-end
+ *                    score is checked behaviourally (classification bin), not bit
+ *                    against the atlas's larger R grid.
  *
  * Host: review-project/index.html (loads ../shared/ma-core.js + atlas-audits.js
  * → window.AlmMaCore + window.AtlasAudits).
@@ -120,6 +127,60 @@ test('reproduction-floor audit matches numpy half-even Scenario-B references', a
   expect(got.fail.reproducible).toBe(false);
 
   // length-mismatch guard
+  expect(got.guard).toBeNull();
+
+  expect(errs, 'no console errors on the host page').toEqual([]);
+});
+
+test('fragility robustness: classifier logic verbatim + end-to-end classification bins', async ({ page }) => {
+  const errs = [];
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForFunction(() => !!(window.AtlasAudits && window.AlmMaCore), { timeout: 10000 });
+
+  // Fragile fixture: DL-Wald reference is significant, but the influential first
+  // study + HKSJ widening flip most specs to non-significant -> Unstable.
+  const FRAG_YI = [-0.3, -0.05, -0.08, -0.02, -0.06];
+  const FRAG_VI = [0.10, 0.12, 0.13, 0.11, 0.14].map(s => s * s);
+
+  const got = await page.evaluate(({ sigYi, sigVi, fragYi, fragVi }) => {
+    const A = window.AtlasAudits, pool = window.AlmMaCore.pool;
+    // Controlled spec vector, ref=(-1, true): 6 agree, 1 reversed, 7 significant of 10.
+    const D = (direction, isSignificant) => ({ direction, isSignificant });
+    const specs = [
+      D(-1, true), D(-1, true), D(-1, true), D(-1, true), D(-1, true), D(-1, true),
+      D(-1, false), D(-1, false), D(1, true), D(1, false),
+    ];
+    return {
+      logic: A.classifyRobustness(specs, -1, true),
+      sig: A.fragilityRobustness(sigYi, sigVi, pool),
+      frag: A.fragilityRobustness(fragYi, fragVi, pool),
+      guard: A.fragilityRobustness([0.1, 0.2], [0.04, 0.05], pool),  // k<3
+    };
+  }, { sigYi: HOM_YI, sigVi: HOM_VI, fragYi: FRAG_YI, fragVi: FRAG_VI });
+
+  // classifier logic ported verbatim from classifier.py
+  expect(got.logic.totalSpecs).toBe(10);
+  expect(got.logic.agreeingSpecs).toBe(6);
+  expect(got.logic.robustnessScore).toBeCloseTo(60, 9);
+  expect(got.logic.classification).toBe('Fragile');
+  expect(got.logic.fracReversed).toBeCloseTo(0.1, 9);
+  expect(got.logic.fracSignificant).toBeCloseTo(0.7, 9);
+
+  // bins: >=90 Robust, >=70 Moderate, >=50 Fragile, else Unstable
+  // (the homogeneous SIG fixture is well-separated -> every spec agrees -> Robust)
+  expect(got.sig.robustnessScore).toBeCloseTo(100, 9);
+  expect(got.sig.classification).toBe('Robust');
+  // the reference spec must always agree with itself
+  expect(got.sig.agreeingSpecs).toBeGreaterThan(0);
+
+  // fragile fixture lands in the low-robustness bin (same conclusion as the atlas,
+  // even though the exact % differs by engine/grid)
+  expect(got.frag.classification).toBe('Unstable');
+  expect(got.frag.robustnessScore).toBeLessThan(50);
+  expect(got.frag.robustnessScore).toBeGreaterThanOrEqual(0);
+
+  // k<3 guard
   expect(got.guard).toBeNull();
 
   expect(errs, 'no console errors on the host page').toEqual([]);

@@ -573,7 +573,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + biasCard(studies2));
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + reproFloorCard(studies2, scale) + fragilityCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -821,6 +821,31 @@
         + "</b> vs the machine-precision pool <b>" + fnum(tx(a.truthPooled)) + "</b> &mdash; |Δ| = <b>" + a.absDelta.toFixed(4)
         + "</b> (adaptive floor " + a.adaptiveThreshold.toFixed(4) + "): <b style='color:" + verdict[1] + "'>" + verdict[0] + "</b>." + note + "</div>"
         + "<p class='exp-caveat'>Per-MA lens from the author's repro-floor-atlas (Scenario B across 7,545 CDSR MAs; 14.3% non-reproducible). Fixed-effect re-pool with numpy half-even rounding; the floor is on the natural reporting scale (log for ratio measures). <b>Experimental</b> audit.</p></div></details>";
+    }
+
+    // Fragility robustness (author's fragility-atlas): how often does the
+    // conclusion (direction AND significance) survive a grid of defensible analytic
+    // choices, vs the DL-Wald reference? Reports the robustness % + Robust/Moderate/
+    // Fragile/Unstable verdict over a ma-core subset grid (honest label below).
+    function fragilityCard(studies, scale) {
+      if (!(window.AtlasAudits && AtlasAudits.fragilityRobustness && window.AlmMaCore)) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 3) return "";
+      var yi = poolable.map(function (s) { return s.est; });
+      var vi = poolable.map(function (s) { return s.se * s.se; });
+      var a;
+      try { a = AtlasAudits.fragilityRobustness(yi, vi, AlmMaCore.pool); } catch (e) { return ""; }
+      if (!a) return "";
+      var colour = { Robust: "#34d399", Moderate: "#a3e635", Fragile: "#fbbf24", Unstable: "#f87171" }[a.classification] || "#fbbf24";
+      var refTxt = a.refSignificant ? "significant" : "non-significant";
+      var revNote = a.fracReversed > 0
+        ? " " + fnum(a.fracReversed * 100) + "% of specifications reverse the direction with significance."
+        : "";
+      return "<details class='exp-methods'><summary>&#128300; Fragility robustness <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
+        + "<div class='exp-row'>Across <b>" + a.totalSpecs + "</b> analytic specifications (" + esc(a.grid) + "), <b>" + a.agreeingSpecs
+        + "</b> agree with the DL-Wald reference (" + refTxt + ") — robustness <b>" + fnum(a.robustnessScore) + "%</b>: "
+        + "<b style='color:" + colour + "'>" + a.classification + "</b>." + revNote + "</div>"
+        + "<p class='exp-caveat'>Per-MA lens from the author's fragility-atlas (403 Cochrane reviews; 58% Fragile/Unstable; publication-bias correction was the most influential dimension). Browser subset computed on the audited ma-core engine — the full atlas adds SJ/HS/HE estimators, t-distribution CIs and trim-and-fill / PET-PEESE corrections in R, so this percentage is the same lens on a smaller grid, not the atlas's published figure. <b>Experimental</b> audit.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled
