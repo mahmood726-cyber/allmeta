@@ -1577,6 +1577,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["systematic-review", "pipeline", "provenance", "truthcert", "reproducible", "signed", "offline"]
   },
   {
+    name: "Synthēsis Journal PDF",
+    folder: "allmeta/synthesis-journal",
+    path: "./synthesis-journal/index.html",
+    added: "2026-06-12",
+    collection: "new",
+    mode: "file",
+    category: "Evidence Synthesis",
+    summary: "Render the synthesis on the bus as a premium, journal-grade article and print it to PDF — a browser port of the Synthēsis paper standard (synthesis-paper-spec/metapaper): Palatino typesetting, a washed structured abstract with a brand left-border, a red key-finding pull-quote, a house-rules forest figure (precision-sized study squares, one red pooled diamond), a booktabs study table, running heads, a page-of-page footer, and a CC-BY / how-to-cite block. Truth-first: every figure and number is read from ma-studies / ma-pooled; nothing is invented, and an empty bus renders a clearly-labelled demo.",
+    note: "Reads the cross-tool buses (pooled estimate verbatim from ma-pooled; never re-pooled). Fully offline; figures are inline SVG, no CDN.",
+    tags: ["pdf", "manuscript", "journal", "typesetting", "forest", "reporting", "synthesis", "ma-pooled-v1", "ma-studies-v1", "offline"]
+  },
+  {
     name: "Multivariate MA",
     folder: "allmeta/multivariate-ma",
     path: "./multivariate-ma/index.html",

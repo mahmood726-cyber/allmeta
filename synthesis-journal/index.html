@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:">
+  <meta name="description" content="Synthēsis Journal PDF — render an allmeta review as a premium, figure-rich, journal-grade article (Palatino typesetting, structured abstract, forest figure, how-to-cite). Every number is read from the synthesis buses; nothing is invented. Fully offline, print to PDF.">
+  <title>Synthēsis Journal PDF — allmeta</title>
+  <link rel="stylesheet" href="../hub/styles.css">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <style>
+    /* ---- Synthēsis Paper Standard, browser port of synthesis-paper-spec/metapaper
+       (style.py colour identity + pdf.py typography). Print-to-PDF gives a
+       journal-grade article; every figure/number is traced to the bus data. ---- */
+    :root {
+      --ink: #1d1d1b; --ink-soft: #39413a; --grey: #6f6f6a; --grey-lt: #a7a7a2;
+      --rule: #d6d8d1; --paper: #ffffff; --wash: #f1f5ee;
+      --brand: #054f16; --brand-lt: #0a972a; --red: #9c2b27; --red-wash: #efe4e2; --gold: #b8893b;
+      --rob-low: #4e8d6e; --rob-some: #d9a534; --rob-high: #b0483f;
+      --serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+      --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    }
+    .alm-bar { display: flex; align-items: center; gap: 1rem; padding: .5rem 1rem; font-family: var(--sans); }
+    .alm-bar a.hub-back { text-decoration: none; }
+    .alm-bar button { font-family: var(--sans); font-weight: 700; font-size: .82rem; padding: .5rem .95rem;
+      border-radius: .55rem; border: 1px solid var(--brand); background: var(--brand); color: #fff; cursor: pointer; }
+    .alm-bar button.ghost { background: #fff; color: var(--brand); }
+    .alm-bar .spacer { margin-left: auto; }
+    #demoBanner { font-family: var(--sans); font-size: .8rem; background: var(--gold); color: #2b2102;
+      padding: .4rem 1rem; text-align: center; }
+
+    /* The article page — A4 column, journal setting. */
+    .article {
+      background: var(--paper); color: var(--ink); font-family: var(--serif);
+      max-width: 46rem; margin: 1rem auto 4rem; padding: 2.4rem 3rem 3rem;
+      box-shadow: 0 1px 16px rgba(0,0,0,.12); font-size: 13.6px; line-height: 1.46; text-align: justify;
+      hyphens: auto; -webkit-hyphens: auto;
+    }
+    .article p { margin: 0 0 .6rem; }
+
+    /* Letterhead */
+    .letterhead { border-bottom: 2px solid var(--brand); padding-bottom: .5rem; margin-bottom: 1.2rem;
+      display: flex; align-items: baseline; justify-content: space-between; }
+    .wordmark { font-family: var(--serif); font-weight: 700; font-size: 1.7rem; color: var(--brand); letter-spacing: -.01em; }
+    .issue-line { font-family: var(--sans); font-size: .68rem; color: var(--grey); text-align: right; line-height: 1.4; }
+    .kicker { font-family: var(--sans); font-weight: 700; font-size: .68rem; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--brand-lt); margin: 0 0 .35rem; }
+
+    /* Title + deck */
+    h1.title { font-family: var(--serif); font-weight: 700; font-size: 1.72rem; line-height: 1.16;
+      margin: 0 0 .5rem; text-align: left; color: var(--ink); }
+    .deck { font-family: var(--serif); font-style: italic; font-size: 1.06rem; line-height: 1.36;
+      color: var(--ink-soft); margin: 0 0 1rem; text-align: left; }
+    .byline { font-family: var(--sans); font-size: .74rem; color: var(--grey); margin: 0 0 1.2rem; }
+
+    /* Structured abstract — washed box with a brand left-border */
+    .abstract { background: var(--wash); border-left: 4px solid var(--brand); padding: .9rem 1.1rem;
+      margin: 0 0 1.4rem; font-size: 12.4px; line-height: 1.42; }
+    .abstract h2 { font-family: var(--sans); font-weight: 700; font-size: .66rem; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--brand); margin: 0 0 .5rem; }
+    .abstract .lead { font-family: var(--sans); font-weight: 700; font-size: .72rem; color: var(--brand);
+      text-transform: uppercase; letter-spacing: .04em; }
+
+    /* Section headings + hairline rule */
+    h2.section { font-family: var(--sans); font-weight: 700; font-size: .95rem; color: var(--brand);
+      margin: 1.4rem 0 0; padding-bottom: .25rem; border-bottom: 1px solid var(--rule); break-after: avoid; }
+    h2.section + p { break-before: avoid; }
+
+    /* Pull-quote key finding — the one NYT-style display moment */
+    .keyfinding { display: flex; gap: 1rem; align-items: stretch; margin: 1.2rem 0; }
+    .keyfinding .bar { width: 5px; background: var(--red); border-radius: 3px; flex: none; }
+    .keyfinding .stmt { font-family: var(--serif); font-weight: 700; font-size: 1.35rem; line-height: 1.2; color: var(--ink); }
+    .keyfinding .sub { font-family: var(--sans); font-size: .76rem; color: var(--grey); margin-top: .35rem; }
+
+    /* Figure + caption */
+    figure.fig { margin: 1.2rem 0; break-inside: avoid; }
+    figure.fig svg { width: 100%; height: auto; display: block; }
+    figcaption { font-family: var(--serif); font-size: 11.4px; line-height: 1.35; color: var(--ink-soft); margin-top: .4rem; text-align: justify; }
+    figcaption .fnum { font-family: var(--sans); font-weight: 700; color: var(--brand); }
+
+    /* Booktabs table — heavy/medium/heavy rules, no verticals, WASH zebra */
+    table.booktabs { width: 100%; border-collapse: collapse; font-size: 11px; margin: 1.1rem 0; break-inside: avoid; }
+    table.booktabs caption { caption-side: top; text-align: left; font-family: var(--serif);
+      font-size: 11.4px; color: var(--ink-soft); margin-bottom: .35rem; }
+    table.booktabs caption .fnum { font-family: var(--sans); font-weight: 700; color: var(--brand); }
+    table.booktabs thead th { font-family: var(--sans); font-weight: 700; font-size: 10.4px; color: var(--brand);
+      text-align: right; padding: .3rem .5rem; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--grey); }
+    table.booktabs thead th:first-child, table.booktabs tbody td:first-child { text-align: left; }
+    table.booktabs tbody td { padding: .26rem .5rem; text-align: right; }
+    table.booktabs tbody tr:nth-child(even) { background: var(--wash); }
+    table.booktabs tbody tr:last-child td { border-bottom: 2px solid var(--ink); }
+
+    /* References — hanging indent */
+    ol.refs { font-size: 11.4px; line-height: 1.4; padding-left: 1.1rem; }
+    ol.refs li { margin: 0 0 .35rem; }
+
+    /* Open access + how-to-cite */
+    .oa { font-family: var(--sans); font-size: .72rem; color: var(--grey); margin-top: 1.6rem;
+      padding-top: .5rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 1rem; }
+    .howtocite { border: 1px solid var(--rule); background: var(--wash); padding: .7rem .9rem; margin-top: 1rem; font-size: 11.4px; }
+    .howtocite h3 { font-family: var(--sans); font-weight: 700; font-size: .62rem; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--brand); margin: 0 0 .4rem; }
+    .howtocite .cite { font-family: var(--serif); line-height: 1.4; }
+    .integrity { font-family: var(--sans); font-size: .68rem; color: var(--rob-high); margin-top: .6rem; }
+
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      .article { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+      @page {
+        size: A4; margin: 18mm 16mm 16mm;
+        @top-left { content: "Synthēsis"; font-family: "Segoe UI", sans-serif; font-size: 8pt; color: #6f6f6a; }
+        @top-right { content: "Evidence synthesis"; font-family: "Segoe UI", sans-serif; font-size: 8pt; color: #6f6f6a; }
+        @bottom-center { content: "Page " counter(page) " of " counter(pages); font-family: "Segoe UI", sans-serif; font-size: 8pt; color: #6f6f6a; }
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="alm-bar no-print">
+    <a class="hub-back" href="../" aria-label="Back to allmeta hub">← allmeta</a>
+    <a class="hub-back" href="../review-project/" aria-label="Back to the review project">← review</a>
+    <span class="spacer"></span>
+    <button id="btnRefresh" class="ghost" type="button" title="Re-read the synthesis buses">Refresh from review</button>
+    <button id="btnPrint" type="button" title="Open your device's Save-as-PDF dialog">⬇ Download journal PDF</button>
+  </div>
+  <div id="demoBanner" class="no-print" hidden></div>
+
+  <main>
+    <article class="article" id="article" aria-label="Synthēsis journal article">
+      <p>Loading the synthesis…</p>
+    </article>
+  </main>
+
+  <script src="../shared/ma-studies-v1.js" defer></script>
+  <script src="../shared/ma-pooled-v1.js" defer></script>
+  <script src="../shared/ma-core.js" defer></script>
+  <script src="./synthesis-journal.js" defer></script>
+</body>
+</html>
