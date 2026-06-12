@@ -1,0 +1,35 @@
+{
+ "comparison": "tirzepatide vs semaglutide-sc-weekly (indirect, star network)",
+ "transitivity_ok": true,
+ "transitivity_flags": [],
+ "domains": {
+  "Within-study bias": {
+   "rating": "Some concerns? PANEL",
+   "note": "Contribution-weighted RoB-2 of the tirz + sema trials; panel input (most industry-sponsored)."
+  },
+  "Reporting bias": {
+   "rating": "No concerns",
+   "note": "Directly measured (our strongest domain): 6 ghosts identified, observed pull -0.12 pp (negligible); not funnel-inferred (registry_pubbias.json)."
+  },
+  "Indirectness": {
+   "rating": "Some concerns",
+   "note": "(a) Population applicability transported & quantified (POTH 0.898). (b) INDIRECT comparison: transitivity balanced on available modifiers but INCOMPLETE (baseline wt (kg), HbA1c (%) missing). NB any CV-benefit claim -> Major concerns (weight not a validated CV surrogate)."
+  },
+  "Imprecision": {
+   "rating": "Major concerns",
+   "note": "Indirect contrast 2.9 pp, 95% CrI [-0.14, 5.98] crosses null (conservative; exact NMA contrast narrower)."
+  },
+  "Heterogeneity": {
+   "rating": "Some concerns",
+   "note": "I^2 of contributing nodes ~94% (high BUT largely EXPLAINED by follow-up 44-104 wk / population; CINeMA does not downgrade to major for explained heterogeneity)."
+  },
+  "Incoherence": {
+   "rating": "Not assessable",
+   "note": "Star network: no direct tirz-vs-sema evidence and no closed loop -> direct-vs-indirect agreement cannot be tested."
+  }
+ },
+ "cinema_confidence": "Low",
+ "majors": 1,
+ "some_concerns": 3,
+ "note": "indirect comparison; incoherence not assessable (star); within-study bias = panel; consistent with GRADE Low; head-to-head trial is the key gap"
+}

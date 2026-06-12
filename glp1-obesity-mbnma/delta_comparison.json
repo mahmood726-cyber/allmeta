@@ -1,0 +1,113 @@
+{
+ "S0_registry": {
+  "eff": {
+   "mazdutide": 10.492999999999999,
+   "orforglipron": 4.9893007452025175,
+   "retatrutide": 6.5600000000000005,
+   "semaglutide-oral": 3.7610461709313947,
+   "semaglutide-sc-daily": 3.6999999999999997,
+   "semaglutide-sc-weekly": 11.634545373385597,
+   "tirzepatide": 12.314809231846418
+  },
+  "k": {
+   "mazdutide": 1,
+   "orforglipron": 2,
+   "retatrutide": 1,
+   "semaglutide-oral": 3,
+   "semaglutide-sc-daily": 1,
+   "semaglutide-sc-weekly": 14,
+   "tirzepatide": 3
+  },
+  "order": [
+   "tirzepatide",
+   "semaglutide-sc-weekly",
+   "mazdutide",
+   "retatrutide",
+   "orforglipron",
+   "semaglutide-oral",
+   "semaglutide-sc-daily"
+  ],
+  "ntrials": 28,
+  "npts": 17401
+ },
+ "S1_no_ghost": {
+  "eff": {
+   "mazdutide": 10.492999999999999,
+   "orforglipron": 4.9893007452025175,
+   "retatrutide": 6.5600000000000005,
+   "semaglutide-oral": 3.7610461709313947,
+   "semaglutide-sc-daily": 3.6999999999999997,
+   "semaglutide-sc-weekly": 11.706929552717265,
+   "tirzepatide": 12.314809231846418
+  },
+  "k": {
+   "mazdutide": 1,
+   "orforglipron": 2,
+   "retatrutide": 1,
+   "semaglutide-oral": 3,
+   "semaglutide-sc-daily": 1,
+   "semaglutide-sc-weekly": 13,
+   "tirzepatide": 3
+  },
+  "order": [
+   "tirzepatide",
+   "semaglutide-sc-weekly",
+   "mazdutide",
+   "retatrutide",
+   "orforglipron",
+   "semaglutide-oral",
+   "semaglutide-sc-daily"
+  ],
+  "ntrials": 27,
+  "npts": 17164
+ },
+ "S2_literature": {
+  "eff": {
+   "mazdutide": 10.492999999999999,
+   "orforglipron": 7.1000000000000005,
+   "retatrutide": 6.5600000000000005,
+   "semaglutide-oral": 13.600000000000001,
+   "semaglutide-sc-daily": 3.6999999999999997,
+   "semaglutide-sc-weekly": 11.706929552717265,
+   "tirzepatide": 12.314809231846418
+  },
+  "k": {
+   "mazdutide": 1,
+   "orforglipron": 1,
+   "retatrutide": 1,
+   "semaglutide-oral": 1,
+   "semaglutide-sc-daily": 1,
+   "semaglutide-sc-weekly": 13,
+   "tirzepatide": 3
+  },
+  "order": [
+   "semaglutide-oral",
+   "tirzepatide",
+   "semaglutide-sc-weekly",
+   "mazdutide",
+   "orforglipron",
+   "retatrutide",
+   "semaglutide-sc-daily"
+  ],
+  "ntrials": 23,
+  "npts": 14510
+ },
+ "ghosts_in_cohort": [
+  "NCT04779697",
+  "NCT04969939",
+  "NCT05144984",
+  "NCT05579249",
+  "NCT06041217"
+ ],
+ "T2D_in_cohort": [
+  "NCT02607865",
+  "NCT02827708",
+  "NCT02863328",
+  "NCT02863419",
+  "NCT03018028",
+  "NCT03021187",
+  "NCT03086330",
+  "NCT04153929",
+  "NCT05971940"
+ ]
+}

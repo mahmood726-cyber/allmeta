@@ -1,0 +1,72 @@
+{
+ "placebo_nausea_pct": 4.0,
+ "agents": [
+  {
+   "node": "mazdutide",
+   "benefit": 22.5,
+   "se": 2.76,
+   "nausea": 53.8,
+   "nausea_excess": 49.8,
+   "frontier": true,
+   "efficiency": 0.45
+  },
+  {
+   "node": "retatrutide",
+   "benefit": 21.4,
+   "se": 2.07,
+   "nausea": 31.1,
+   "nausea_excess": 27.1,
+   "frontier": true,
+   "efficiency": 0.79
+  },
+  {
+   "node": "tirzepatide",
+   "benefit": 18.7,
+   "se": 1.25,
+   "nausea": 22.2,
+   "nausea_excess": 18.2,
+   "frontier": true,
+   "efficiency": 1.03
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "benefit": 15.8,
+   "se": 0.94,
+   "nausea": 15.7,
+   "nausea_excess": 11.7,
+   "frontier": true,
+   "efficiency": 1.35
+  },
+  {
+   "node": "orforglipron",
+   "benefit": 11.5,
+   "se": 1.76,
+   "nausea": 27.1,
+   "nausea_excess": 23.1,
+   "frontier": false,
+   "efficiency": 0.5
+  },
+  {
+   "node": "semaglutide-oral",
+   "benefit": 11.0,
+   "se": 1.15,
+   "nausea": 11.6,
+   "nausea_excess": 7.6,
+   "frontier": true,
+   "efficiency": 1.45
+  }
+ ],
+ "frontier": [
+  "mazdutide",
+  "retatrutide",
+  "tirzepatide",
+  "semaglutide-sc-weekly",
+  "semaglutide-oral"
+ ],
+ "dominated": [
+  "orforglipron"
+ ],
+ "tradeoff_nausea_per_pp_weight": 2.19,
+ "benefit_risk_corr": 0.72,
+ "note": "bivariate benefit-risk on nausea; extensible to full MedDRA AE table via AACT reported_events"
+}

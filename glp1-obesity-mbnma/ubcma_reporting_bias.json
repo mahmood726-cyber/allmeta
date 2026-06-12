@@ -1,0 +1,29 @@
+{
+ "method": "UBCMA (Unified Bias-Calibrated Meta-Analysis)",
+ "role": "inferential pair to the registry-native ghost-measurement",
+ "node": "semaglutide 2.4 mg vs placebo (%TBWL)",
+ "k_published": 13,
+ "k_ghost": 2,
+ "observed": {
+  "published_iv": 11.71,
+  "ghost_iv": 8.5,
+  "all_iv": 11.47,
+  "reporting_bias_gap_pp": 0.24
+ },
+ "visible_estimators": {
+  "DL": 11.6,
+  "REML": 11.6
+ },
+ "ubcma": {
+  "mu": 11.3,
+  "tau1": 0.0,
+  "tau2": 2.43,
+  "mix_weight": 0.48
+ },
+ "ubcma_correction_vs_DL_pp": -0.3,
+ "truth_correction_vs_DL_pp": -0.13,
+ "same_direction_as_ghost_truth": true,
+ "moved_closer_to_all15_truth": false,
+ "verdict": "UBCMA inferred a correction in the same DIRECTION the ghosts reveal, but did not fully reach the all-15 truth -- selection signal is partially detectable from the visible set; the registry-native direct measurement remains the stronger, model-free tool.",
+ "scope_note": "reporting-bias SENSITIVITY pairing of an inferential selection-bias model (UBCMA, fit on the visible set) with the direct registry-native ghost-measurement; does NOT change the headline ranking (sema-2.4 is a saturated node). Small ghost k (2) -- signal, not proof. No IPD; AACT contrasts + PubMed-confirmed ghost status only."
+}

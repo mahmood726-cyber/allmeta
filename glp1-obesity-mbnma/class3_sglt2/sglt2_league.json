@@ -1,0 +1,108 @@
+{
+ "class": "SGLT2 inhibitors",
+ "outcome": "hospitalisation for heart failure HR (exact endpoint)",
+ "inference": "Bayesian hierarchical RE on log-HR (nutpie); pairwise contrasts from posterior draws",
+ "ranking": [
+  "canagliflozin",
+  "sotagliflozin",
+  "empagliflozin",
+  "ertugliflozin"
+ ],
+ "kper": {
+  "canagliflozin": 2,
+  "empagliflozin": 5,
+  "ertugliflozin": 1,
+  "sotagliflozin": 2
+ },
+ "median_hr": {
+  "canagliflozin": 0.67,
+  "empagliflozin": 0.79,
+  "ertugliflozin": 0.88,
+  "sotagliflozin": 0.72
+ },
+ "class_pooled_hr": 0.76,
+ "rhat": 1.0,
+ "comparisons": [
+  {
+   "a": "canagliflozin",
+   "b": "sotagliflozin",
+   "hr_ratio": 0.93,
+   "cri_loghr": [
+    -0.33,
+    0.19
+   ],
+   "p_superiority": 0.698,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "canagliflozin",
+   "b": "empagliflozin",
+   "hr_ratio": 0.85,
+   "cri_loghr": [
+    -0.38,
+    0.05
+   ],
+   "p_superiority": 0.936,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "canagliflozin",
+   "b": "ertugliflozin",
+   "hr_ratio": 0.76,
+   "cri_loghr": [
+    -0.55,
+    0.01
+   ],
+   "p_superiority": 0.97,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "sotagliflozin",
+   "b": "empagliflozin",
+   "hr_ratio": 0.91,
+   "cri_loghr": [
+    -0.27,
+    0.08
+   ],
+   "p_superiority": 0.854,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "sotagliflozin",
+   "b": "ertugliflozin",
+   "hr_ratio": 0.82,
+   "cri_loghr": [
+    -0.45,
+    0.05
+   ],
+   "p_superiority": 0.948,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "empagliflozin",
+   "b": "ertugliflozin",
+   "hr_ratio": 0.9,
+   "cri_loghr": [
+    -0.32,
+    0.1
+   ],
+   "p_superiority": 0.849,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  }
+ ],
+ "certainty_counts": {
+  "Low": 3,
+  "Very low": 3
+ },
+ "k1_insufficient": [
+  "ertugliflozin"
+ ],
+ "lead": "canagliflozin",
+ "depth_note": "SECOND full-depth class: HF-hospitalisation single-endpoint league built from a Bayesian draw matrix (CrI + P(superiority), nutpie), resolving the class-3 I2=87% composite artifact; same GRADE/CINeMA domains as the incretin flagship nma_league.py. Star network (indirect contrasts); dapagliflozin drops out under the strict single-endpoint filter (posts the CV-death/HF composite). No IPD."
+}

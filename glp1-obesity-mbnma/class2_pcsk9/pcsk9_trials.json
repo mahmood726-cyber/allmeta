@@ -1,0 +1,1526 @@
+{
+ "trials": [
+  {
+   "nct": "NCT01953328",
+   "name": "AMG145",
+   "year": 2013,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 51,
+   "cN": 51,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -86.89,
+     "se": 6.004,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -86.89,
+   "_se": 6.004
+  },
+  {
+   "nct": "NCT01516879",
+   "name": "DESCARTES",
+   "year": 2012,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 599,
+   "cN": 302,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -86.24,
+     "se": 4.787,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -86.24,
+   "_se": 4.787
+  },
+  {
+   "nct": "NCT03433755",
+   "name": "Safety and Efficacy of Evolocumab in Addition ...",
+   "year": 2019,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 71,
+   "cN": 34,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -81.33,
+     "se": 6.911,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -81.33,
+   "_se": 6.911
+  },
+  {
+   "nct": "NCT01652703",
+   "name": "AMG145",
+   "year": 2012,
+   "phase": "2",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 52,
+   "cN": 52,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -79.55,
+     "se": 8.819,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -79.55,
+   "_se": 8.819
+  },
+  {
+   "nct": "NCT04666298",
+   "name": "ORION-15",
+   "year": 2021,
+   "phase": "2",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 98,
+   "cN": 57,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -78.79,
+     "se": 5.235,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -78.79,
+   "_se": 5.235
+  },
+  {
+   "nct": "NCT02662569",
+   "name": "BERSON",
+   "year": 2016,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 332,
+   "cN": 164,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -78.68,
+     "se": 5.554,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -78.68,
+   "_se": 5.554
+  },
+  {
+   "nct": "NCT01133522",
+   "name": "Ascending Multiple Dose Study to Evaluate the ...",
+   "year": 2010,
+   "phase": "1",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 6,
+   "cN": 10,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -77.79,
+     "se": 10.76,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -77.79,
+   "_se": 10.76
+  },
+  {
+   "nct": "NCT01663402",
+   "name": "ODYSSEY Outcomes: Evaluation of Cardiovascular...",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 9451,
+   "cN": 9462,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -74.7,
+     "se": 1.825,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -74.7,
+   "_se": 1.825
+  },
+  {
+   "nct": "NCT01763918",
+   "name": "RUTHERFORD-2",
+   "year": 2013,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 110,
+   "cN": 54,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -71.91,
+     "se": 3.362,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -71.91,
+   "_se": 3.362
+  },
+  {
+   "nct": "NCT02023879",
+   "name": "Phase III Study To Evaluate Alirocumab in Pati...",
+   "year": 2013,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 106,
+   "cN": 56,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -71.3,
+     "se": 2.677,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -71.3,
+   "_se": 2.677
+  },
+  {
+   "nct": "NCT01812707",
+   "name": "Efficacy and Safety Evaluation of Alirocumab (...",
+   "year": 2013,
+   "phase": "2",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 25,
+   "cN": 25,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -69.0,
+     "se": 4.384,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -69.0,
+   "_se": 4.384
+  },
+  {
+   "nct": "NCT01507831",
+   "name": "Long-term Safety and Tolerability of Alirocuma...",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 1523,
+   "cN": 777,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -68.8,
+     "se": 1.304,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -68.8,
+   "_se": 1.304
+  },
+  {
+   "nct": "NCT02739984",
+   "name": "BANTING",
+   "year": 2016,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 280,
+   "cN": 141,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -68.4,
+     "se": 2.885,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -68.4,
+   "_se": 2.885
+  },
+  {
+   "nct": "NCT02833844",
+   "name": "Safety, Tolerability and Efficacy on Low Densi...",
+   "year": 2017,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 295,
+   "cN": 141,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -67.57,
+     "se": 3.853,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -67.57,
+   "_se": 3.853
+  },
+  {
+   "nct": "NCT02584504",
+   "name": "ODYSSEY-NIPPON",
+   "year": 2015,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 53,
+   "cN": 56,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -67.5,
+     "se": 2.983,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -67.5,
+   "_se": 2.983
+  },
+  {
+   "nct": "NCT01288443",
+   "name": "Efficacy and Safety Evaluation of Alirocumab (...",
+   "year": 2011,
+   "phase": "2",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 29,
+   "cN": 31,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -67.3,
+     "se": 4.455,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -67.3,
+   "_se": 4.455
+  },
+  {
+   "nct": "NCT02107898",
+   "name": "Efficacy and Safety Evaluation of Alirocumab i...",
+   "year": 2014,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 143,
+   "cN": 71,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -66.5,
+     "se": 2.025,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -66.5,
+   "_se": 2.025
+  },
+  {
+   "nct": "NCT02289963",
+   "name": "Evaluation of Alirocumab in Addition to Lipid-...",
+   "year": 2015,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 97,
+   "cN": 102,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -66.5,
+     "se": 4.031,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -66.5,
+   "_se": 4.031
+  },
+  {
+   "nct": "NCT01380730",
+   "name": "LAPLACE",
+   "year": 2011,
+   "phase": "2",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 78,
+   "cN": 78,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -66.1,
+     "se": 3.387,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -66.1,
+   "_se": 3.387
+  },
+  {
+   "nct": "NCT04992065",
+   "name": "A Research Study Looking at How NNC0385-0434 T...",
+   "year": 2021,
+   "phase": "2",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 49,
+   "cN": 52,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -65.0,
+     "se": 6.496,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -65.0,
+   "_se": 6.496
+  },
+  {
+   "nct": "NCT01623115",
+   "name": "ODYSSEY FH I",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 321,
+   "cN": 163,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -63.3,
+     "se": 3.225,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -63.3,
+   "_se": 3.225
+  },
+  {
+   "nct": "NCT01975376",
+   "name": "SPIRE-1",
+   "year": 2013,
+   "phase": "3",
+   "group": "bococizumab (mAb) vs control",
+   "tN": 6439,
+   "cN": 8240,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -62.22,
+     "se": 0.468,
+     "title": "LDL-C % change: bococizumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "bococizumab",
+   "_md": -62.22,
+   "_se": 0.468
+  },
+  {
+   "nct": "NCT02729025",
+   "name": "ANITSCHKOW",
+   "year": 2016,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 62,
+   "cN": 59,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -60.66,
+     "se": 2.602,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -60.66,
+   "_se": 2.602
+  },
+  {
+   "nct": "NCT01968967",
+   "name": "SPIRE-LDL",
+   "year": 2013,
+   "phase": "3",
+   "group": "bococizumab (mAb) vs control",
+   "tN": 980,
+   "cN": 1071,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -60.0,
+     "se": 1.78,
+     "title": "LDL-C % change: bococizumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "bococizumab",
+   "_md": -60.0,
+   "_se": 1.78
+  },
+  {
+   "nct": "NCT03399370",
+   "name": "ORION-10",
+   "year": 2017,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 781,
+   "cN": 790,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -58.85,
+     "se": 1.354,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -58.85,
+   "_se": 1.354
+  },
+  {
+   "nct": "NCT01709500",
+   "name": "ODYSSEY FH II",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 166,
+   "cN": 81,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -58.7,
+     "se": 4.022,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -58.7,
+   "_se": 4.022
+  },
+  {
+   "nct": "NCT02957682",
+   "name": "Evaluating Effect of the Study Drug Praluent (...",
+   "year": 2016,
+   "phase": "4",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 1058,
+   "cN": 1051,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -58.2,
+     "se": 1.64,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -58.2,
+   "_se": 1.64
+  },
+  {
+   "nct": "NCT02326220",
+   "name": "ODYSSEY ESCAPE",
+   "year": 2015,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 41,
+   "cN": 21,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -57.7,
+     "se": 6.613,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -57.7,
+   "_se": 6.613
+  },
+  {
+   "nct": "NCT01975389",
+   "name": "SPIRE-2",
+   "year": 2013,
+   "phase": "3",
+   "group": "bococizumab (mAb) vs control",
+   "tN": 4654,
+   "cN": 5242,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -57.67,
+     "se": 0.576,
+     "title": "LDL-C % change: bococizumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "bococizumab",
+   "_md": -57.67,
+   "_se": 0.576
+  },
+  {
+   "nct": "NCT01266876",
+   "name": "Study of the Safety and Efficacy of REGN727/SA...",
+   "year": 2011,
+   "phase": "2",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 16,
+   "cN": 15,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -57.2,
+     "se": 7.001,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -57.2,
+   "_se": 7.001
+  },
+  {
+   "nct": "NCT02984982",
+   "name": "ODYSSEY J-IVUS",
+   "year": 2016,
+   "phase": "4",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 93,
+   "cN": 85,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -56.96,
+     "se": 2.645,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -56.96,
+   "_se": 2.645
+  },
+  {
+   "nct": "NCT01375751",
+   "name": "RUTHERFORD",
+   "year": 2011,
+   "phase": "2",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 56,
+   "cN": 56,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -56.36,
+     "se": 4.073,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -56.36,
+   "_se": 4.073
+  },
+  {
+   "nct": "NCT02585778",
+   "name": "Efficacy and Safety of Alirocumab Versus Place...",
+   "year": 2015,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 49,
+   "cN": 139,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -56.2,
+     "se": 4.305,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -56.2,
+   "_se": 4.305
+  },
+  {
+   "nct": "NCT01375777",
+   "name": "MENDEL",
+   "year": 2011,
+   "phase": "2",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 45,
+   "cN": 45,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -55.47,
+     "se": 3.748,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -55.47,
+   "_se": 3.748
+  },
+  {
+   "nct": "NCT03400800",
+   "name": "ORION-11",
+   "year": 2017,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 810,
+   "cN": 807,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -53.5,
+     "se": 1.607,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -53.5,
+   "_se": 1.607
+  },
+  {
+   "nct": "NCT03510884",
+   "name": "An Efficacy and Safety Study of Alirocumab in ...",
+   "year": 2018,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 50,
+   "cN": 25,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -52.7,
+     "se": 4.561,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -52.7,
+   "_se": 4.561
+  },
+  {
+   "nct": "NCT01644175",
+   "name": "Efficacy and Safety of Alirocumab (SAR236553/R...",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 204,
+   "cN": 105,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -52.4,
+     "se": 3.14,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -52.4,
+   "_se": 3.14
+  },
+  {
+   "nct": "NCT05763875",
+   "name": "V-Mono",
+   "year": 2023,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 174,
+   "cN": 87,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -50.74,
+     "se": 2.85,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -50.74,
+   "_se": 2.85
+  },
+  {
+   "nct": "NCT02100514",
+   "name": "SPIRE-LL",
+   "year": 2014,
+   "phase": "3",
+   "group": "bococizumab (mAb) vs control",
+   "tN": 468,
+   "cN": 235,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -50.0,
+     "se": 1.794,
+     "title": "LDL-C % change: bococizumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "bococizumab",
+   "_md": -50.0,
+   "_se": 1.794
+  },
+  {
+   "nct": "NCT03397121",
+   "name": "ORION-9",
+   "year": 2017,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 242,
+   "cN": 240,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -49.52,
+     "se": 2.831,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -49.52,
+   "_se": 2.831
+  },
+  {
+   "nct": "NCT01617655",
+   "name": "Efficacy and Safety of Alirocumab (SAR236553/R...",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 71,
+   "cN": 35,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -48.1,
+     "se": 7.155,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -48.1,
+   "_se": 7.155
+  },
+  {
+   "nct": "NCT04652726",
+   "name": "ORION-16",
+   "year": 2021,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 139,
+   "cN": 48,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -43.7,
+     "se": 6.434,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -43.7,
+   "_se": 6.434
+  },
+  {
+   "nct": "NCT03156621",
+   "name": "ODYSSEY HoFH",
+   "year": 2017,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 45,
+   "cN": 24,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -35.5,
+     "se": 7.801,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -35.5,
+   "_se": 7.801
+  },
+  {
+   "nct": "NCT05192941",
+   "name": "V-DIFFERENCE",
+   "year": 2022,
+   "phase": "4",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 898,
+   "cN": 872,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -35.14,
+     "se": 0.98,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -35.14,
+   "_se": 0.98
+  },
+  {
+   "nct": "NCT01588496",
+   "name": "TESLA",
+   "year": 2012,
+   "phase": "2/3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 33,
+   "cN": 16,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -33.44,
+     "se": 6.199,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -33.44,
+   "_se": 6.199
+  },
+  {
+   "nct": "NCT04807400",
+   "name": "SPIRIT",
+   "year": 2021,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 295,
+   "cN": 293,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -32.2,
+     "se": 3.302,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -32.2,
+   "_se": 3.302
+  },
+  {
+   "nct": "NCT04082442",
+   "name": "EVACS II",
+   "year": 2019,
+   "phase": "2",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 27,
+   "cN": 29,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -25.81,
+     "se": 14.609,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -25.81,
+   "_se": 14.609
+  },
+  {
+   "nct": "NCT03851705",
+   "name": "ORION-5",
+   "year": 2019,
+   "phase": "3",
+   "group": "inclisiran (siRNA) vs control",
+   "tN": 34,
+   "cN": 19,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -25.4,
+     "se": 10.813,
+     "title": "LDL-C % change: inclisiran vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "inclisiran",
+   "_md": -25.4,
+   "_se": 10.813
+  },
+  {
+   "nct": "NCT01709513",
+   "name": "Study of Alirocumab (REGN727/SAR236553) in Pat...",
+   "year": 2012,
+   "phase": "3",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 123,
+   "cN": 54,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -20.3,
+     "se": 3.958,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -20.3,
+   "_se": 3.958
+  },
+  {
+   "nct": "NCT01576484",
+   "name": "Open-Label Extension of Study R727-CL-1003 (NC...",
+   "year": 2012,
+   "phase": "2",
+   "group": "alirocumab (mAb) vs control",
+   "tN": 44,
+   "cN": 3,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -11.74,
+     "se": 10.351,
+     "title": "LDL-C % change: alirocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "alirocumab",
+   "_md": -11.74,
+   "_se": 10.351
+  },
+  {
+   "nct": "NCT02867813",
+   "name": "FOURIER OLE",
+   "year": 2016,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 2499,
+   "cN": 2532,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -5.68,
+     "se": 0.986,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -5.68,
+   "_se": 0.986
+  },
+  {
+   "nct": "NCT03080935",
+   "name": "Fourier Open-label Extension Study in Subjects...",
+   "year": 2017,
+   "phase": "3",
+   "group": "evolocumab (mAb) vs control",
+   "tN": 854,
+   "cN": 745,
+   "allOutcomes": [
+    {
+     "shortLabel": "LDL-C %",
+     "type": "continuous",
+     "md": -4.63,
+     "se": 1.302,
+     "title": "LDL-C % change: evolocumab vs control",
+     "estimandType": "LDL-C % change"
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ],
+   "_agent": "evolocumab",
+   "_md": -4.63,
+   "_se": 1.302
+  }
+ ],
+ "effect_measure": "LDL-C % change (active - control), continuous md/se",
+ "screening": {
+  "search_hits": 273,
+  "ldl_reporting": 102,
+  "included": 52,
+  "excluded": {
+   "no_percent_units": 3,
+   "no_control_arm": 31,
+   "no_active_arm": 10,
+   "no_usable_se": 4,
+   "implausible_md": 2
+  },
+  "funnel_reconciles": true
+ }
+}

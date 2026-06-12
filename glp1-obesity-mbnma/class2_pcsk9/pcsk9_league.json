@@ -1,0 +1,113 @@
+{
+ "class": "PCSK9 inhibitors",
+ "outcome": "% LDL-C change",
+ "ranking": [
+  "bococizumab",
+  "evolocumab",
+  "alirocumab",
+  "inclisiran"
+ ],
+ "median_ldl_pct": {
+  "bococizumab": -76.6,
+  "evolocumab": -61.3,
+  "alirocumab": -58.8,
+  "inclisiran": -58.4
+ },
+ "kper": {
+  "bococizumab": 4,
+  "evolocumab": 20,
+  "alirocumab": 23,
+  "inclisiran": 8
+ },
+ "comparisons": [
+  {
+   "a": "bococizumab",
+   "b": "evolocumab",
+   "diff": -15.2,
+   "ci": [
+    -29.8,
+    -0.7
+   ],
+   "p_more_reduction": 0.98,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bococizumab",
+   "b": "alirocumab",
+   "diff": -17.8,
+   "ci": [
+    -29.4,
+    -6.2
+   ],
+   "p_more_reduction": 0.999,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "bococizumab",
+   "b": "inclisiran",
+   "diff": -18.2,
+   "ci": [
+    -33.7,
+    -2.7
+   ],
+   "p_more_reduction": 0.989,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "evolocumab",
+   "b": "alirocumab",
+   "diff": -2.6,
+   "ci": [
+    -15.7,
+    10.6
+   ],
+   "p_more_reduction": 0.648,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CI crosses null"
+  },
+  {
+   "a": "evolocumab",
+   "b": "inclisiran",
+   "diff": -2.9,
+   "ci": [
+    -19.7,
+    13.8
+   ],
+   "p_more_reduction": 0.635,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CI crosses null"
+  },
+  {
+   "a": "alirocumab",
+   "b": "inclisiran",
+   "diff": -0.4,
+   "ci": [
+    -14.6,
+    13.8
+   ],
+   "p_more_reduction": 0.521,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CI crosses null"
+  }
+ ],
+ "certainty_counts": {
+  "Moderate": 3,
+  "Low": 3
+ },
+ "k1_insufficient": [],
+ "lead": "bococizumab",
+ "lead_vs_second": {
+  "diff": -15.2,
+  "ci": [
+   -29.8,
+   -0.7
+  ],
+  "p_more_reduction": 0.98,
+  "certainty": "Moderate",
+  "note": "indirect (star; no incoherence check)"
+ },
+ "depth_note": "league + GRADE/CINeMA certainty repointed to PCSK9 with the SAME computable domains as the incretin flagship nma_league.py (indirect-star baseline + imprecision-crosses-null + k=1 INSUFFICIENT); frequentist normal contrast (no Bayesian draws for this class); transport (to a target lipid population) and the HTML dashboard repoint identically but were not rebuilt -- this proves league+GRADE depth, not the full 40-stage run."
+}

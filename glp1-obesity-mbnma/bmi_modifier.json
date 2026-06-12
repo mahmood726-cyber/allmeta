@@ -1,0 +1,9 @@
+{
+ "bmi_coverage": 17,
+ "trial_mean_bmi": 35.8,
+ "nhanes_bmi": 36.0,
+ "bmi_gap": -0.2,
+ "bmi_slope_pp_per_unit": -0.04,
+ "bmi_transport_pp": -0.01,
+ "note": "BMI slope ecological (continuous modifier); contribution negligible; diabetes dominant"
+}

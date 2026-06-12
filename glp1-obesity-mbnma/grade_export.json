@@ -1,0 +1,81 @@
+{
+ "comparison": "tirzepatide vs subcutaneous semaglutide (weight loss, obesity)",
+ "grade_certainty": "Low",
+ "cinema_confidence": "Low",
+ "strength": "Conditional",
+ "summary_of_findings": [
+  {
+   "outcome": "Body-weight % change (>=36 wk) - CRITICAL",
+   "np": "~17,401 (19 RCTs, indirect)",
+   "cert": "Low",
+   "rel": "MD (continuous)",
+   "comp": "Mean -14.6 pp with semaglutide",
+   "inter": "MD 2.9 pp greater loss (95% CrI -0.2 to 6.0)",
+   "comments": "Indirect (no head-to-head); imprecision binding; CrI conservative."
+  },
+  {
+   "outcome": "Major adverse CV events (MACE) - CRITICAL",
+   "np": "no head-to-head",
+   "cert": "Not estimable (contrast)",
+   "rel": "vs placebo: sema HR 0.81, tirz 0.62",
+   "comp": "Both reduce MACE vs placebo",
+   "inter": "Between-drug difference NOT estimable",
+   "comments": "No head-to-head CV trial; weight loss is NOT a validated CV surrogate -> no inference permitted."
+  },
+  {
+   "outcome": "Nausea - IMPORTANT (harm)",
+   "np": "registry AE tables",
+   "cert": "Low",
+   "rel": "RD",
+   "comp": "16% with semaglutide",
+   "inter": "22% with tirzepatide (+6 pp)",
+   "comments": "Tirzepatide more nausea; both GI-dominant; placebo-anchored."
+  }
+ ],
+ "evidence_to_decision": [
+  {
+   "criterion": "Problem / priority",
+   "judgement": "Obesity pharmacotherapy selection between two incretins",
+   "source": "computed/established"
+  },
+  {
+   "criterion": "Desirable effects",
+   "judgement": "tirzepatide ~+2.94 pp more weight loss (P(superior)=0.97); both on the benefit-risk frontier (true)",
+   "source": "nma_contrast/joint_benefit_risk.json"
+  },
+  {
+   "criterion": "Undesirable effects",
+   "judgement": "tirzepatide more nausea (22% vs 16%); ~2.19 pp nausea per extra pp weight loss",
+   "source": "joint_benefit_risk.json"
+  },
+  {
+   "criterion": "Certainty of evidence",
+   "judgement": "Low (imprecision binding; difference uncertain)",
+   "source": "this profile"
+  },
+  {
+   "criterion": "Values / preferences",
+   "judgement": "PANEL INPUT: patients weight maximal loss vs GI tolerability differently",
+   "source": "human"
+  },
+  {
+   "criterion": "Resources / cost",
+   "judgement": "PANEL INPUT: relative price, access, administration",
+   "source": "human"
+  },
+  {
+   "criterion": "Equity / acceptability / feasibility",
+   "judgement": "PANEL INPUT",
+   "source": "human"
+  }
+ ],
+ "draft_recommendation": "CONDITIONAL (weak) recommendation: tirzepatide MAY be preferred where greater weight loss is prioritised, but the additional benefit is uncertain (low certainty); choice should weigh tolerability and cost",
+ "guardrails": [
+  "panel completes RoB/values/resources/equity",
+  "no CV-benefit claim from weight (not a validated surrogate)",
+  "k=1 apex agents INSUFFICIENT",
+  "every rating traceable + re-runnable from cited data"
+ ],
+ "key_evidence_gap": "indirect comparison; no incoherence check; head-to-head trial (SURMOUNT-5) is highest-value",
+ "export_note": "GRADEpro/iEtD-style; DRAFT decision-support; panel confirms; every cell traceable"
+}

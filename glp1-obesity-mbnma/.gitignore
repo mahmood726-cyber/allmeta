@@ -1,0 +1,15 @@
+PROGRESS.md
+_explore.py
+err.log
+__pycache__/
+*.pyc
+# generated RapidMeta dashboard + copied engine (reproducible from rapidmeta_config.json + clone.py)
+assets/
+incretin_obesity_dashboard.html
+_shot_*.png
+nma_draws.npz
+class3_sglt2/sglt2_hf_draws.npz
+class2_pcsk9/pcsk9_ldl_draws.npz
+# RapidMeta-cloned dashboards: 1.2MB CDN-dependent live workbenches, regenerable via rapidmeta-kit clone.py
+# from the committed *_rapidmeta_config.json. Source (harvest/config/trials) IS committed. (assets/ already ignored.)
+*_review.html

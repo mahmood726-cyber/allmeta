@@ -1,0 +1,212 @@
+{
+ "headline": {
+  "comparison": "tirzepatide vs semaglutide-sc-weekly",
+  "p_by_mid": {
+   "0": 0.97,
+   "1": 0.891,
+   "2": 0.727,
+   "3": 0.482,
+   "4": 0.237
+  },
+  "tipping_mid_p95": 0.5,
+  "tipping_mid_p50": 3.0
+ },
+ "league": [
+  {
+   "a": "mazdutide",
+   "b": "retatrutide",
+   "median": 1.1,
+   "k_min": 1,
+   "p_mid0": 0.63,
+   "p_mid2": 0.39,
+   "p_mid4": 0.19
+  },
+  {
+   "a": "mazdutide",
+   "b": "tirzepatide",
+   "median": 3.8,
+   "k_min": 1,
+   "p_mid0": 0.9,
+   "p_mid2": 0.72,
+   "p_mid4": 0.47
+  },
+  {
+   "a": "mazdutide",
+   "b": "semaglutide-sc-weekly",
+   "median": 6.7,
+   "k_min": 1,
+   "p_mid0": 0.99,
+   "p_mid2": 0.95,
+   "p_mid4": 0.83
+  },
+  {
+   "a": "mazdutide",
+   "b": "orforglipron",
+   "median": 11.1,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 0.98
+  },
+  {
+   "a": "mazdutide",
+   "b": "semaglutide-oral",
+   "median": 11.5,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 0.99
+  },
+  {
+   "a": "mazdutide",
+   "b": "semaglutide-sc-daily",
+   "median": 12.8,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 1.0
+  },
+  {
+   "a": "retatrutide",
+   "b": "tirzepatide",
+   "median": 2.6,
+   "k_min": 1,
+   "p_mid0": 0.87,
+   "p_mid2": 0.61,
+   "p_mid4": 0.29
+  },
+  {
+   "a": "retatrutide",
+   "b": "semaglutide-sc-weekly",
+   "median": 5.6,
+   "k_min": 1,
+   "p_mid0": 0.99,
+   "p_mid2": 0.95,
+   "p_mid4": 0.76
+  },
+  {
+   "a": "retatrutide",
+   "b": "orforglipron",
+   "median": 10.0,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 0.99
+  },
+  {
+   "a": "retatrutide",
+   "b": "semaglutide-oral",
+   "median": 10.4,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 1.0
+  },
+  {
+   "a": "retatrutide",
+   "b": "semaglutide-sc-daily",
+   "median": 11.8,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 1.0
+  },
+  {
+   "a": "tirzepatide",
+   "b": "semaglutide-sc-weekly",
+   "median": 2.9,
+   "k_min": 4,
+   "p_mid0": 0.97,
+   "p_mid2": 0.73,
+   "p_mid4": 0.24
+  },
+  {
+   "a": "tirzepatide",
+   "b": "orforglipron",
+   "median": 7.3,
+   "k_min": 2,
+   "p_mid0": 1.0,
+   "p_mid2": 0.99,
+   "p_mid4": 0.94
+  },
+  {
+   "a": "tirzepatide",
+   "b": "semaglutide-oral",
+   "median": 7.8,
+   "k_min": 4,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 0.98
+  },
+  {
+   "a": "tirzepatide",
+   "b": "semaglutide-sc-daily",
+   "median": 9.1,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 1.0,
+   "p_mid4": 0.99
+  },
+  {
+   "a": "semaglutide-sc-weekly",
+   "b": "orforglipron",
+   "median": 4.4,
+   "k_min": 2,
+   "p_mid0": 0.99,
+   "p_mid2": 0.9,
+   "p_mid4": 0.58
+  },
+  {
+   "a": "semaglutide-sc-weekly",
+   "b": "semaglutide-oral",
+   "median": 4.9,
+   "k_min": 5,
+   "p_mid0": 1.0,
+   "p_mid2": 0.97,
+   "p_mid4": 0.73
+  },
+  {
+   "a": "semaglutide-sc-weekly",
+   "b": "semaglutide-sc-daily",
+   "median": 6.2,
+   "k_min": 1,
+   "p_mid0": 1.0,
+   "p_mid2": 0.98,
+   "p_mid4": 0.87
+  },
+  {
+   "a": "orforglipron",
+   "b": "semaglutide-oral",
+   "median": 0.4,
+   "k_min": 2,
+   "p_mid0": 0.6,
+   "p_mid2": 0.2,
+   "p_mid4": 0.03
+  },
+  {
+   "a": "orforglipron",
+   "b": "semaglutide-sc-daily",
+   "median": 1.8,
+   "k_min": 1,
+   "p_mid0": 0.77,
+   "p_mid2": 0.46,
+   "p_mid4": 0.17
+  },
+  {
+   "a": "semaglutide-oral",
+   "b": "semaglutide-sc-daily",
+   "median": 1.3,
+   "k_min": 1,
+   "p_mid0": 0.74,
+   "p_mid2": 0.36,
+   "p_mid4": 0.09
+  }
+ ],
+ "confident_by_mid": {
+  "0": 5,
+  "2": 3,
+  "4": 1
+ },
+ "n_pairs": 21,
+ "note": "P(difference>MID) from the joint posterior; quantifies the panel-set MID dependence GRADE leaves to judgement; k>=2 filter flags single-trial INSUFFICIENT"
+}

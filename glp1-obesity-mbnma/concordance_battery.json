@@ -1,0 +1,95 @@
+{
+ "our_top3": [
+  "mazdutide",
+  "retatrutide",
+  "tirzepatide"
+ ],
+ "reviews": [
+  {
+   "review": "Shi 2024 (Lancet)",
+   "doi": "10.1016/S0140-6736(24)00351-9",
+   "scope": "all obesity drugs",
+   "top_incretin": [
+    "semaglutide"
+   ],
+   "concordant": true,
+   "certainty": "High-Moderate",
+   "note": "(also ranks phentermine-topiramate \u2014 outside our incretin scope)"
+  },
+  {
+   "review": "BMJ MAGIC guideline 2025",
+   "doi": "10.1136/bmj-2024-082071",
+   "scope": "T2D/obesity guideline",
+   "top_incretin": [
+    "tirzepatide"
+   ],
+   "concordant": true,
+   "certainty": "GRADE (weak rec)",
+   "note": ""
+  },
+  {
+   "review": "Iannone 2023 (DOM)",
+   "doi": "10.1111/dom.15138",
+   "scope": "all obesity drugs",
+   "top_incretin": [
+    "semaglutide"
+   ],
+   "concordant": true,
+   "certainty": "Moderate-High",
+   "note": "(also ranks phentermine-topiramate \u2014 outside our incretin scope)"
+  },
+  {
+   "review": "Xie 2024 (reproduced)",
+   "doi": "reproduced exactly in this project",
+   "scope": "incretins",
+   "top_incretin": [
+    "tirzepatide",
+    "semaglutide"
+   ],
+   "concordant": true,
+   "certainty": "NMA ranking",
+   "note": ""
+  },
+  {
+   "review": "Ma 2023 (BMJ Open)",
+   "doi": "10.1136/bmjopen-2022-061807",
+   "scope": "GLP-1 vs SGLT2",
+   "top_incretin": [
+    "semaglutide"
+   ],
+   "concordant": true,
+   "certainty": "Moderate",
+   "note": ""
+  },
+  {
+   "review": "Pan 2024 (Obesity)",
+   "doi": "10.1002/oby.24002",
+   "scope": "tirzepatide vs GLP-1 + others",
+   "top_incretin": [
+    "tirzepatide",
+    "semaglutide"
+   ],
+   "concordant": true,
+   "certainty": "SUCRA",
+   "note": ""
+  },
+  {
+   "review": "Hoffmann 2025 (Expert Opin Drug Saf)",
+   "doi": "10.1080/14740338.2025.2586703",
+   "scope": "tirzepatide doses",
+   "top_incretin": [
+    "tirzepatide"
+   ],
+   "concordant": true,
+   "certainty": "CINeMA",
+   "note": ""
+  }
+ ],
+ "n_reviews": 7,
+ "n_concordant": 7,
+ "tirzepatide_top_count": 4,
+ "semaglutide_top_count": 5,
+ "verdict": "7/7 published NMAs/guidelines concordant that incretins lead on weight loss; our registry-native ranking sits in the consensus (concordance now multi-review, n=7)",
+ "caveats": "metric/scope heterogeneity -> qualitative consensus + directional, not meta-meta pooling; broader reviews add non-incretin drugs outside our scope; certainty concordant in logic (estimand differs)",
+ "attribution": "According to PubMed; DOIs in reviews[]"
+}

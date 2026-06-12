@@ -1,0 +1,40 @@
+{
+ "_comment": "Item 7: pinned source manifest for the transportability layer — full provenance/audit.",
+ "retrieved": "2026-06 (this analysis run)",
+ "trial_data": {
+  "source": "AACT (CTTI ClinicalTrials.gov mirror)",
+  "snapshot": "20260601_pipe-delimited-export.zip",
+  "use": "arm-level % weight change, baseline conditions (diabetes status), survival HRs"
+ },
+ "target_distribution_primary": {
+  "source": "NHANES 2017-March 2020 prepandemic public microdata (CDC/NCHS)",
+  "files": ["P_DEMO.xpt", "P_BMX.xpt", "P_GHB.xpt", "P_DIQ.xpt"],
+  "url_base": "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/",
+  "subset": "adults age>=18, BMI>=30 (obese); n=3688; survey-weighted WTMECPRP",
+  "diabetes_def": "HbA1c (LBXGH) >=6.5% OR self-report (DIQ010==1)",
+  "diabetes_prevalence_pct": 20.6,
+  "note": "REPLACES the earlier hardcoded 26% (web-derived, too high). Joint distribution + ethnicity (RIDRETH3) available."
+ },
+ "target_distribution_secondary": {
+  "IDF_Diabetes_Atlas_2021": {
+   "source": "IDF Diabetes Atlas 10th ed. 2021 (NCBI NBK581940)",
+   "basis": "GENERAL-ADULT age-adjusted comparative prevalence (20-79)",
+   "regions_pct": {"Africa": 5.3, "Europe": 10.3, "Global": 10.5, "WesternPacific": 11.4, "NorthAmericaCaribbean": 15.0, "MENA": 18.1},
+   "caveat": "general-adult; obese-subset is higher -> scaled by obese/general ratio for the atlas"
+  },
+  "Health_Survey_for_England_2024": {"source": "NHS Digital HSE 2024", "obese_diabetes_pct": 13.0, "basis": "DIRECT obese-subset"}
+ },
+ "obese_general_ratio": {
+  "value": 1.8,
+  "derivation": "US 14.8%(general)->26%(obese)=1.76; UK 7%->13%=1.86; mean ~1.8",
+  "validation": "IDF N.America 15.0% x1.8 = 27% ~ NHANES US-obese (microdata 20.6%, web-26%) — order-consistent",
+  "use": "scales IDF general-adult regional prevalence to an obese-subset target where no direct survey exists",
+  "superseded_for_US_by": "NHANES microdata (direct, 20.6%)",
+  "superseded_for_ethnicity_by": "NHANES RIDRETH3 obese-subset prevalences (ethnicity_atlas.json)"
+ },
+ "modifier": {
+  "name": "diabetes status (binary)", "validity": "pure strata (obesity-only/T2D-only trials) -> study-level = individual-level -> NOT ecological",
+  "gamma_pp": 5.9, "gamma_cri": [3.5, 8.1], "agent_specific_gamma_sd_pp": 1.3,
+  "second_modifier_BMI": "near-target (trial 35.8 vs 36.4 microdata) -> ~0 transport contribution (ecological, flagged)"
+ }
+}

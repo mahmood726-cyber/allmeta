@@ -1,0 +1,15 @@
+{
+ "node": "semaglutide-sc-weekly 2.4mg",
+ "k_published": 13,
+ "k_ghost": 1,
+ "published_pooled_pp": 11.6,
+ "complete_pooled_pp": 11.49,
+ "measured_reporting_bias_shift_pp": -0.12,
+ "egger_intercept": -0.91,
+ "egger_p": 0.0,
+ "egger_detects_asymmetry": true,
+ "copas_applicable": false,
+ "measured_bias_negligible": true,
+ "finding": "Egger flags asymmetry (p~0.00) but the OBSERVED ghost is only -0.12pp from the pooled mean -> the asymmetry is small-study heterogeneity, NOT reporting bias; a trim-and-fill correction would be spurious. Registry ground truth disambiguates true suppression from look-alike asymmetry, preventing both missed and spurious bias. Copas inapplicable (k<15).",
+ "caveat": "1 ghost in this dose-node (small local shift); cohort-level 6-ghost channel (GHOST_TRIALS.md) is the substantive quantity"
+}

@@ -1,0 +1,31 @@
+nct,agent,dose_mg,n,mean_pct,dispersion,disp_value,var_of_mean,timepoint,param_type
+NCT04184622,placebo,0.0,635.0,-2.4,standard error,0.4,0.16000000000000003,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04184622,tirzepatide,5.0,623.0,-16.0,standard error,0.39,0.1521,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04184622,tirzepatide,10.0,629.0,-21.4,standard error,0.39,0.1521,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04184622,tirzepatide,15.0,625.0,-22.5,standard error,0.39,0.1521,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04657003,placebo,0.0,311.0,-3.3,standard error,0.49,0.24009999999999998,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04657003,tirzepatide,10.0,309.0,-13.4,standard error,0.48,0.2304,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04657003,tirzepatide,15.0,309.0,-15.7,standard error,0.49,0.24009999999999998,"Baseline, Week 72",LEAST_SQUARES_MEAN
+NCT04881760,placebo,0.0,68.0,-1.55,standard error,0.54,0.2916,"Baseline, Week 24",LEAST_SQUARES_MEAN
+NCT05051579,placebo,0.0,48.0,-2.0,standard error,0.81,0.6561000000000001,"Baseline, Week 26",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.05,92.0,-5.99,standard error,0.85,0.7224999999999999,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.1,96.0,-8.62,standard error,0.84,0.7055999999999999,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.2,94.0,-11.6,standard error,0.85,0.7224999999999999,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.3,95.0,-11.17,standard error,0.85,0.7224999999999999,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.4,100.0,-13.84,standard error,0.83,0.6889,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.3,95.0,-11.38,standard error,0.85,0.7224999999999999,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,semaglutide,0.4,100.0,-16.29,standard error,0.83,0.6889,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT02453711,placebo,0.0,123.0,-2.29,standard error,0.74,0.5476,"Week 0, Week 52",LEAST_SQUARES_MEAN
+NCT03548935,semaglutide,2.4,1306.0,-15.6,standard deviation,10.1,0.07810872894333844,Baseline (week 0) to week 68,MEAN
+NCT03548935,placebo,0.0,655.0,-2.8,standard deviation,6.5,0.06450381679389312,Baseline (week 0) to week 68,MEAN
+NCT03548935,semaglutide,2.4,1306.0,-16.9,standard deviation,9.4,0.06765696784073508,Baseline (week 0) to week 68,MEAN
+NCT03548935,placebo,0.0,655.0,-3.1,standard deviation,6.4,0.06253435114503818,Baseline (week 0) to week 68,MEAN
+NCT03552757,semaglutide,2.4,404.0,-9.9,standard deviation,8.0,0.15841584158415842,Baseline (week 0) to week 68,MEAN
+NCT03552757,placebo,0.0,403.0,-3.3,standard deviation,5.5,0.0750620347394541,Baseline (week 0) to week 68,MEAN
+NCT03552757,semaglutide,2.4,404.0,-10.7,standard deviation,7.8,0.1505940594059406,Baseline (week 0) to week 68,MEAN
+NCT03552757,placebo,0.0,403.0,-3.1,standard deviation,5.2,0.0670967741935484,Baseline (week 0) to week 68,MEAN
+NCT03693430,semaglutide,2.4,144.0,-15.9,standard deviation,12.3,1.0506250000000001,From Baseline (Week 0) to Week 104,MEAN
+NCT03693430,placebo,0.0,128.0,-1.9,standard deviation,8.9,0.6188281250000001,From Baseline (Week 0) to Week 104,MEAN
+NCT03693430,semaglutide,2.4,144.0,-17.3,standard deviation,11.9,0.9834027777777778,From Baseline (Week 0) to Week 104,MEAN
+NCT03693430,placebo,0.0,128.0,-2.0,standard deviation,8.6,0.5778125,From Baseline (Week 0) to Week 104,MEAN
+NCT04667377,placebo,0.0,77.0,-2.82,standard error,1.06,1.1236000000000002,"Baseline, Week 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, and 46.",LEAST_SQUARES_MEAN

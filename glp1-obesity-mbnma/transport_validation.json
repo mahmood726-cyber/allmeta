@@ -1,0 +1,60 @@
+{
+ "gamma": 5.9,
+ "validations": [
+  {
+   "agent": "orforglipron",
+   "dose": 12.0,
+   "obesity": 7.1,
+   "t2d_observed": 4.5,
+   "predicted": 1.2,
+   "error": -3.3,
+   "agent_gamma": 2.6
+  },
+  {
+   "agent": "orforglipron",
+   "dose": 36.0,
+   "obesity": 11.2,
+   "t2d_observed": 6.3,
+   "predicted": 5.3,
+   "error": -1.0,
+   "agent_gamma": 4.9
+  },
+  {
+   "agent": "semaglutide",
+   "dose": 2.4,
+   "obesity": 12.0,
+   "t2d_observed": 8.2,
+   "predicted": 6.1,
+   "error": -2.1,
+   "agent_gamma": 3.8
+  },
+  {
+   "agent": "semaglutide",
+   "dose": 7.2,
+   "obesity": 15.7,
+   "t2d_observed": 9.5,
+   "predicted": 9.8,
+   "error": 0.3,
+   "agent_gamma": 6.2
+  },
+  {
+   "agent": "tirzepatide",
+   "dose": 10.0,
+   "obesity": 15.7,
+   "t2d_observed": 10.1,
+   "predicted": 9.8,
+   "error": -0.3,
+   "agent_gamma": 5.6
+  },
+  {
+   "agent": "tirzepatide",
+   "dose": 15.0,
+   "obesity": 19.6,
+   "t2d_observed": 12.4,
+   "predicted": 13.7,
+   "error": 1.3,
+   "agent_gamma": 7.2
+  }
+ ],
+ "mean_abs_error": 1.4
+}

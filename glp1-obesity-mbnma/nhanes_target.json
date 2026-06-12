@@ -1,0 +1,56 @@
+{
+ "source": "NHANES 2017-March 2020 prepandemic microdata (CDC/NCHS), survey-weighted (WTMECPRP)",
+ "n_obese_adults": 3688,
+ "diabetes_def": "HbA1c>=6.5% OR self-reported diagnosis",
+ "target_microdata": {
+  "mean age (yr)": 48.1,
+  "% female": 52.3,
+  "mean BMI (kg/m2)": 36.4,
+  "mean baseline weight (kg)": 103.1,
+  "% with diabetes": 20.6
+ },
+ "was_hardcoded": {
+  "mean age (yr)": 49.5,
+  "% female": 52.0,
+  "mean BMI (kg/m2)": 36.0,
+  "mean baseline weight (kg)": 102.0,
+  "% with diabetes": 26.0
+ },
+ "diabetes_prevalence": 0.2056,
+ "diabetes_se": 0.0101,
+ "kish_neff": 1592.0,
+ "diabetes_by_ethnicity_pct": {
+  "MexicanAmerican": 20.7,
+  "NHAsian": 24.5,
+  "NHBlack": 22.4,
+  "NHWhite": 20.3,
+  "OtherHispanic": 18.1,
+  "OtherMixed": 20.6
+ },
+ "joint_correlations": {
+  "age": {
+   "age": 1.0,
+   "BMI": -0.088,
+   "HbA1c": 0.29,
+   "female": -0.01
+  },
+  "BMI": {
+   "age": -0.088,
+   "BMI": 1.0,
+   "HbA1c": 0.067,
+   "female": 0.15
+  },
+  "HbA1c": {
+   "age": 0.29,
+   "BMI": 0.067,
+   "HbA1c": 1.0,
+   "female": -0.03
+  },
+  "female": {
+   "age": -0.01,
+   "BMI": 0.15,
+   "HbA1c": -0.03,
+   "female": 1.0
+  }
+ }
+}

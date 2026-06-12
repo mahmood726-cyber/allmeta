@@ -1,0 +1,17 @@
+{
+ "agent": "semaglutide",
+ "outcome": "MACE",
+ "k": 5,
+ "target_RRR": 0.15,
+ "cumulative_HR": 0.81,
+ "cumulative_z": -6.59,
+ "I2": 0.0,
+ "diversity_D": 1.0,
+ "information_fraction": 3.17,
+ "obf_boundary_z": 1.96,
+ "conclusive": true,
+ "ongoing_trials": 386,
+ "ongoing_enrollment": 172654,
+ "finding": "semaglutide MACE benefit crosses the OBF boundary (conclusive); live pipeline still enrolling -> registry-native TSA is a research-prioritisation signal retrospective MA cannot give",
+ "caveat": "precision-ordered accrual; illustrative OBF; pipeline net includes non-CV trials"
+}

@@ -1,0 +1,84 @@
+{
+ "comparison": "tirzepatide vs subcutaneous semaglutide (weight loss, obesity)",
+ "effect_pp": 2.94,
+ "ci95": {
+  "lower": -0.14,
+  "upper": 5.98
+ },
+ "k": 19,
+ "domains": {
+  "Risk of bias": {
+   "rating": "PANEL INPUT REQUIRED",
+   "source": "human (RoB-2 per trial)",
+   "note": "Not auto-rated. Most trials industry-sponsored; some open-label. Panel must complete RoB-2."
+  },
+  "Inconsistency": {
+   "rating": "Serious",
+   "source": "computed: contrasts_full.csv",
+   "note": "I^2(semaglutide 2.4mg, dose-matched) = 93.9% -> high, BUT largely explained by follow-up (44-104 wk) and population; panel may judge as explained (not downgrade). Star network -> incoherence NOT assessable."
+  },
+  "Indirectness": {
+   "rating": "Not serious (quantified)",
+   "source": "pymc_transport_v2.json / TRANSPORTABILITY.md",
+   "note": "Applicability to the real-world obese target population is MEASURED, not judged: effects transported (tirz 17.5, sema 14.6 pp), ranking survives (POTH 0.898). NB: a CV-benefit claim WOULD be downgraded for indirectness -- weight loss is not a validated CV surrogate (extend_surrogate.json, I^2_HR=0%)."
+  },
+  "Imprecision": {
+   "rating": "Serious",
+   "source": "computed: grade_inputs.json / nma_contrast.json (EXACT joint posterior)",
+   "note": "Contrast 2.9 pp, 95% CrI [-0.14, 5.98] crosses null AND the MID (2 pp) -> SERIOUS. EXACT joint-posterior contrast (corr 0.02, near-independent star network) CONFIRMS this -- the conservative CrI was not over-wide. Nuance for the panel: P(tirz>sema)=0.97, P(diff>MID)=0.73 (directionally very likely better, magnitude uncertain)."
+  },
+  "Publication / reporting bias": {
+   "rating": "Not serious (directly measured)",
+   "source": "registry_pubbias.json / GHOST_TRIALS.md",
+   "note": "MEASURED not inferred: 6 posted-but-unpublished ghosts identified (AACTxPubMed); the observed pull is negligible (-0.12 pp) and Egger asymmetry was shown to be heterogeneity, not suppression."
+  }
+ },
+ "certainty": "Low",
+ "engine_baseline_certainty": "Low",
+ "etd": [
+  {
+   "criterion": "Problem / priority",
+   "judgement": "Obesity pharmacotherapy selection between two incretins",
+   "source": "computed/established"
+  },
+  {
+   "criterion": "Desirable effects",
+   "judgement": "tirzepatide ~+2.94 pp more weight loss (P(superior)=0.97); both on the benefit-risk frontier (true)",
+   "source": "nma_contrast/joint_benefit_risk.json"
+  },
+  {
+   "criterion": "Undesirable effects",
+   "judgement": "tirzepatide more nausea (22% vs 16%); ~2.19 pp nausea per extra pp weight loss",
+   "source": "joint_benefit_risk.json"
+  },
+  {
+   "criterion": "Certainty of evidence",
+   "judgement": "Low (imprecision binding; difference uncertain)",
+   "source": "this profile"
+  },
+  {
+   "criterion": "Values / preferences",
+   "judgement": "PANEL INPUT: patients weight maximal loss vs GI tolerability differently",
+   "source": "human"
+  },
+  {
+   "criterion": "Resources / cost",
+   "judgement": "PANEL INPUT: relative price, access, administration",
+   "source": "human"
+  },
+  {
+   "criterion": "Equity / acceptability / feasibility",
+   "judgement": "PANEL INPUT",
+   "source": "human"
+  }
+ ],
+ "draft_recommendation": "CONDITIONAL (weak) recommendation: tirzepatide MAY be preferred where greater weight loss is prioritised, but the additional benefit is uncertain (low certainty); choice should weigh tolerability and cost",
+ "strength": "Conditional",
+ "guardrails": [
+  "panel completes RoB/values/resources/equity",
+  "no CV-benefit claim from weight (not a validated surrogate)",
+  "k=1 apex agents INSUFFICIENT",
+  "every rating traceable + re-runnable from cited data"
+ ],
+ "principle": "transparent decision-support: pre-fill computable GRADE domains (traceable) + scaffold judgment domains; never autonomous"
+}

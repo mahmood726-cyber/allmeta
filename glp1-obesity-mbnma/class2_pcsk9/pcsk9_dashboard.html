@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCSK9 inhibitors - LDL-C league, GRADE certainty &amp; transported absolute lowering</title>
+<meta property="og:title" content="PCSK9i LDL-C league, GRADE certainty & transported absolute lowering">
+<meta property="og:description" content="Registry-native (AACT) PCSK9 inhibitor LDL-C NMA league with per-comparison GRADE/CINeMA certainty and NHANES-transported absolute LDL lowering. Decision-support DRAFT.">
+<meta property="og:type" content="website">
+<style>
+:root{--bg:#0f1419;--card:#1a2029;--ink:#e6edf3;--mut:#9aa7b4;--line:#2a323d;--acc:#4da3ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:23px;margin:0 0 4px} h2{font-size:17px;margin:30px 0 10px;color:var(--acc)}
+.sub{color:var(--mut);margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+.rowh,.colh{background:#222b36;font-weight:600} .rowh{text-align:left}
+.diag{background:#11161d;font-weight:700} .k{color:var(--mut);font-weight:400;font-size:12px}
+.eff{color:var(--mut)}
+.cert.high{background:#0e3a1e} .cert.mod{background:#3a360e} .cert.low{background:#3a1f0e} .cert.vlow{background:#3a0e12}
+td.ag{text-align:left;font-weight:600}
+.note{color:var(--mut);font-size:13px;border-left:3px solid var(--line);padding:4px 0 4px 12px;margin:10px 0}
+.flag{color:#ffb454} .legend span{display:inline-block;margin-right:14px;font-size:12px;color:var(--mut)}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin-right:4px}
+footer{color:var(--mut);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>PCSK9 inhibitors &mdash; LDL-C league, GRADE certainty &amp; transported absolute lowering</h1>
+<p class="sub">Registry-native (AACT) generality repoint &middot; <b>decision-support DRAFT</b> &mdash; RoB &amp; values stay with the panel. This is the depth proof for the PCSK9 class: the <b>league + GRADE + transport</b> stages repointed with the same engines as the incretin flagship.</p>
+
+<div class="card">
+<h2 style="margin-top:0">LDL-C league table &amp; per-comparison certainty</h2>
+<p class="sub">Lower triangle = % LDL-C difference (row &minus; column). Upper triangle = computable GRADE/CINeMA certainty (indirect-star baseline + imprecision when the contrast CI crosses the null + k=1 INSUFFICIENT) &mdash; the <b>identical domains</b> as <code>nma_league.py</code>. Diagonal = pooled % LDL-C reduction (k trials).</p>
+<table>
+<thead><tr><th></th><th class="colh">bococizumab</th><th class="colh">evolocumab</th><th class="colh">alirocumab</th><th class="colh">inclisiran</th></tr></thead>
+<tbody>
+<tr><th class="rowh">bococizumab</th><td class="diag">-76.6%<br><span class="k">k=4</span></td><td class="cert mod">Moderate</td><td class="cert mod">Moderate</td><td class="cert mod">Moderate</td></tr>
+<tr><th class="rowh">evolocumab</th><td class="eff">+15.2</td><td class="diag">-61.3%<br><span class="k">k=20</span></td><td class="cert low">Low</td><td class="cert low">Low</td></tr>
+<tr><th class="rowh">alirocumab</th><td class="eff">+17.8</td><td class="eff">+2.6</td><td class="diag">-58.8%<br><span class="k">k=23</span></td><td class="cert low">Low</td></tr>
+<tr><th class="rowh">inclisiran</th><td class="eff">+18.2</td><td class="eff">+2.9</td><td class="eff">+0.4</td><td class="diag">-58.4%<br><span class="k">k=8</span></td></tr>
+</tbody>
+</table>
+<p class="legend"><span><i class="sw" style="background:#3a360e"></i>Moderate</span><span><i class="sw" style="background:#3a1f0e"></i>Low</span><span><i class="sw" style="background:#3a0e12"></i>Very low</span></p>
+<p class="note">Across 6 ordered comparisons: <b>Moderate: 3, Low: 3</b>. No INSUFFICIENT node (every agent k&ge;4). <b>bococizumab</b> leads and its contrasts clear the null (Moderate); the evolocumab/alirocumab/inclisiran cluster is mutually indistinguishable (CIs cross null &rarr; Low).</p>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">Transported absolute LDL-C lowering</h2>
+<p class="sub">Registry % reduction &times; a real target baseline LDL-C. Target: <b>US adults with LDL-C &gt;= 100 mg/dL</b> &mdash; NHANES 2017-March 2020 prepandemic fasting microdata (CDC/NCHS), survey-weighted WTSAFPRP; n=2262 (Kish n<sub>eff</sub>=954), baseline LDL-C <b>132 mg/dL</b> (3.41 mmol/L). CTT shows CV risk tracks the <b>absolute (mmol/L)</b> lowering, so this is the decision-relevant scale.</p>
+<table>
+<thead><tr><th class="colh">Agent</th><th class="colh">% LDL-C reduction</th><th class="colh">Absolute (mg/dL, 95% CI)</th><th class="colh">Absolute (mmol/L)</th></tr></thead>
+<tbody>
+<tr><td class="ag">bococizumab</td><td>-76.6%</td><td><b>&minus;101.1</b> (89, 113)</td><td><b>&minus;2.61</b></td></tr>
+<tr><td class="ag">evolocumab</td><td>-61.3%</td><td><b>&minus;80.9</b> (66, 96)</td><td><b>&minus;2.09</b></td></tr>
+<tr><td class="ag">alirocumab</td><td>-58.8%</td><td><b>&minus;77.6</b> (68, 87)</td><td><b>&minus;2.01</b></td></tr>
+<tr><td class="ag">inclisiran</td><td>-58.4%</td><td><b>&minus;77.1</b> (61, 93)</td><td><b>&minus;1.99</b></td></tr>
+</tbody>
+</table>
+<p class="note flag">Transporting the LDL-C surrogate is <b>NOT</b> a cardiovascular-outcome claim. CTT context (illustrative only): ~22% relative risk reduction in major vascular events per 1 mmol/L absolute LDL lowering (CTT, Lancet 2010). The CV benefit must come from each agent's own CVOT and is downgraded for indirectness exactly as the league/GRADE layer does.</p>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">Honest scope</h2>
+<p class="sub">PCSK9 is the <b>depth-promoted</b> generality class: it carries league + GRADE + transport (3 of the 4 named depth stages; this dashboard is the 4th). The PCSK9 league uses the frequentist normal contrast (no Bayesian draw matrix for this class, unlike the incretin flagship). Transport assumes the % reduction is approximately population-transportable (the carried modifier is the target baseline LDL, not the percentage). Registry-native (AACT) + NHANES authoritative reference distribution; no IPD, no full text.</p>
+</div>
+
+<footer>Generated by <code>class2_pcsk9/pcsk9_dashboard.py</code> from <code>pcsk9_results.json</code> + <code>pcsk9_league.json</code> + <code>pcsk9_transport.json</code>. Fully offline &middot; no external assets. Decision-support DRAFT, not a guideline.</footer>
+</div>
+</body>
+</html>

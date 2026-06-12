@@ -1,0 +1,55 @@
+{
+ "what": "class-level external validation of the generality engine vs published network meta-analyses",
+ "n_classes": 2,
+ "n_concordant": 2,
+ "method": "engine ranking/lead read programmatically from each class league JSON; concordance judged at class-direction / top-tier / no-clean-winner level (not numeric effect match); every reference DOI resolved on PubMed.",
+ "all_references_doi_resolved": true,
+ "doi_resolution_date": "2026-06-11",
+ "entries": [
+  {
+   "class": "PCSK9 inhibitors (LDL-C lowering)",
+   "reference": {
+    "authors": "Jiang et al.",
+    "year": 2025,
+    "journal": "Front Cardiovasc Med",
+    "doi": "10.3389/fcvm.2024.1415668",
+    "pmid": "39975967",
+    "design": "Bayesian/frequentist NMA",
+    "n_trials": 68,
+    "n_patients": 21288
+   },
+   "published_finding": "Among PCSK9i monotherapy vs placebo, LDL-C reduction ranked evolocumab (MD -1.89) > alirocumab (-1.83) > inclisiran (-1.68 mmol/L).",
+   "our_source": "class2_pcsk9/pcsk9_league.json",
+   "our_lead": "bococizumab",
+   "our_finding": "engine ranks the overlapping agents evolocumab > alirocumab > inclisiran (lead overall bococizumab, a withdrawn agent NOT in the published network).",
+   "concordance": {
+    "level": "concordant",
+    "basis": "inclisiran ranks last among the three shared agents in BOTH analyses; PCSK9i all lower LDL-C.",
+    "honest_note": "our overall lead bococizumab was withdrawn and is absent from the published network; comparison is restricted to the evolocumab/alirocumab/inclisiran overlap. Jiang pools combination arms; we model %LDL monotherapy."
+   }
+  },
+  {
+   "class": "SGLT2 inhibitors (heart-failure hospitalisation)",
+   "reference": {
+    "authors": "Tsapas et al.",
+    "year": 2020,
+    "journal": "Ann Intern Med",
+    "doi": "10.7326/M20-0864",
+    "pmid": "32598218",
+    "design": "systematic review + NMA",
+    "n_trials": 453,
+    "n_patients": null
+   },
+   "published_finding": "SGLT-2 inhibitors reduced heart-failure hospitalisation (and end-stage renal disease) as a class; no clean within-class efficacy winner is crowned.",
+   "our_source": "class3_sglt2/sglt2_league.json",
+   "our_lead": "canagliflozin",
+   "our_finding": "engine: all SGLT2 agents reduce HF hospitalisation (lead canagliflozin HR 0.67), but every contrast is Low/Very-low certainty -> no clean within-class winner.",
+   "concordance": {
+    "level": "concordant",
+    "basis": "class-level direction matches (SGLT2i reduce HF hosp); both decline to crown a within-class winner.",
+    "honest_note": "Tsapas is a broad glucose-lowering NMA reporting SGLT2i at class level, not a canagliflozin-vs-empagliflozin-vs-dapagliflozin head-to-head; our nominal canagliflozin lead is explicitly Low-certainty, consistent with that."
+   }
+  }
+ ],
+ "honest_boundary": "this is corroboration at the level the abstracts support, not a re-pooling of the published data; contrasts differ across analyses and each entry records its boundary. Registry-native (AACT) engine vs full-SR published NMAs."
+}

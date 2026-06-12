@@ -1,0 +1,10 @@
+{
+ "lit_pct_t2d_ptwtd": 0.0,
+ "reg_pct_t2d_ptwtd": 11.5,
+ "nhanes_target": 26.0,
+ "gap_lit": 26.0,
+ "gap_reg": 14.5,
+ "gap_closed": 11.5,
+ "bridge_trials": 9,
+ "bridge_patients": 5969
+}

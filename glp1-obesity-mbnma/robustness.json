@@ -1,0 +1,51 @@
+[
+ {
+  "node": "mazdutide",
+  "k": 1,
+  "effect": 22.3,
+  "LOO_range": "N/A (k=1 -> removing the trial removes the node)",
+  "evidence": "INSUFFICIENT (k=1)"
+ },
+ {
+  "node": "retatrutide",
+  "k": 1,
+  "effect": 22.1,
+  "LOO_range": "N/A (k=1 -> removing the trial removes the node)",
+  "evidence": "INSUFFICIENT (k=1)"
+ },
+ {
+  "node": "tirzepatide",
+  "k": 4,
+  "effect": 16.1,
+  "LOO_range": "14.9-20.0 (swing 5.2pp)",
+  "evidence": "limited (k<=5)"
+ },
+ {
+  "node": "semaglutide-oral",
+  "k": 5,
+  "effect": 13.6,
+  "LOO_range": "11.9-13.6 (swing 1.7pp)",
+  "evidence": "limited (k<=5)"
+ },
+ {
+  "node": "semaglutide-sc-weekly",
+  "k": 15,
+  "effect": 13.3,
+  "LOO_range": "9.5-15.7 (swing 6.2pp)",
+  "evidence": "multi-trial"
+ },
+ {
+  "node": "orforglipron",
+  "k": 2,
+  "effect": 12.4,
+  "LOO_range": "6.3-12.4 (swing 6.1pp)",
+  "evidence": "limited (k<=5)"
+ },
+ {
+  "node": "semaglutide-sc-daily",
+  "k": 1,
+  "effect": 11.6,
+  "LOO_range": "N/A (k=1 -> removing the trial removes the node)",
+  "evidence": "INSUFFICIENT (k=1)"
+ }
+]

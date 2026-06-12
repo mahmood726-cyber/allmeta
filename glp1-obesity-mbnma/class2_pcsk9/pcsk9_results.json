@@ -1,0 +1,61 @@
+{
+ "class": "PCSK9 inhibitors",
+ "ldl_nma": {
+  "alirocumab": {
+   "ldl": -58.782608695652165,
+   "se": 3.5287282426997124,
+   "k": 23
+  },
+  "bococizumab": {
+   "ldl": -76.57499999999999,
+   "se": 4.731873307686925,
+   "k": 4
+  },
+  "evolocumab": {
+   "ldl": -61.339999999999996,
+   "se": 5.731085136525652,
+   "k": 20
+  },
+  "inclisiran": {
+   "ldl": -58.400000000000006,
+   "se": 6.321448748958918,
+   "k": 8
+  }
+ },
+ "ranking": [
+  "bococizumab",
+  "evolocumab",
+  "alirocumab",
+  "inclisiran"
+ ],
+ "lead_contrast": {
+  "a": "evolocumab",
+  "b": "alirocumab",
+  "diff_pct": -2.6,
+  "ci": [
+   -15.7,
+   10.6
+  ],
+  "certainty": "Low"
+ },
+ "surrogate_pairs": [
+  {
+   "nct": "NCT01663402",
+   "agent": "alirocumab",
+   "hr": 0.87,
+   "se_logHR": 0.038,
+   "ldl_pct": -67.6,
+   "title": "Time to First Occurrence of Any Cardiovascular"
+  },
+  {
+   "nct": "NCT01975389",
+   "agent": "bococizumab",
+   "hr": 0.82,
+   "se_logHR": 0.0958,
+   "ldl_pct": -75.0,
+   "title": "Event Rate Per 100 Participant-years for First"
+  }
+ ],
+ "surrogate_note": "PCSK9 LDL->MACE registry-natively thin (k=2; FOURIER/SPIRE-1 LDL% not posted); both pairs consistent with the established validated LDL surrogate; contrast = incretin weight->CV had k=6 and FAILED -> method discriminates",
+ "generality": "pipeline repointed by changing drug list + outcome term only; LDL NMA + GRADE produced coherently"
+}

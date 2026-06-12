@@ -1,0 +1,304 @@
+{
+ "nodes": [
+  "mazdutide",
+  "orforglipron",
+  "retatrutide",
+  "semaglutide-oral",
+  "semaglutide-sc-daily",
+  "semaglutide-sc-weekly",
+  "tirzepatide"
+ ],
+ "kper": {
+  "mazdutide": 1,
+  "orforglipron": 2,
+  "retatrutide": 1,
+  "semaglutide-oral": 5,
+  "semaglutide-sc-daily": 1,
+  "semaglutide-sc-weekly": 15,
+  "tirzepatide": 4
+ },
+ "order": [
+  "mazdutide",
+  "retatrutide",
+  "tirzepatide",
+  "semaglutide-sc-weekly",
+  "orforglipron",
+  "semaglutide-oral",
+  "semaglutide-sc-daily"
+ ],
+ "median_target": {
+  "mazdutide": 21.3,
+  "orforglipron": 10.3,
+  "retatrutide": 20.2,
+  "semaglutide-oral": 9.8,
+  "semaglutide-sc-daily": 8.4,
+  "semaglutide-sc-weekly": 14.6,
+  "tirzepatide": 17.5
+ },
+ "comparisons": [
+  {
+   "a": "mazdutide",
+   "b": "retatrutide",
+   "diff": 1.11,
+   "cri": [
+    -5.58,
+    7.78
+   ],
+   "p_sup": 0.63,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "mazdutide",
+   "b": "tirzepatide",
+   "diff": 3.8,
+   "cri": [
+    -2.03,
+    9.84
+   ],
+   "p_sup": 0.9,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "mazdutide",
+   "b": "semaglutide-sc-weekly",
+   "diff": 6.7,
+   "cri": [
+    1.13,
+    12.45
+   ],
+   "p_sup": 0.99,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "mazdutide",
+   "b": "orforglipron",
+   "diff": 11.07,
+   "cri": [
+    4.62,
+    17.76
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "mazdutide",
+   "b": "semaglutide-oral",
+   "diff": 11.53,
+   "cri": [
+    5.53,
+    17.63
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "mazdutide",
+   "b": "semaglutide-sc-daily",
+   "diff": 12.79,
+   "cri": [
+    6.5,
+    19.16
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "retatrutide",
+   "b": "tirzepatide",
+   "diff": 2.64,
+   "cri": [
+    -2.05,
+    7.56
+   ],
+   "p_sup": 0.87,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "retatrutide",
+   "b": "semaglutide-sc-weekly",
+   "diff": 5.59,
+   "cri": [
+    1.19,
+    10.08
+   ],
+   "p_sup": 0.99,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "retatrutide",
+   "b": "orforglipron",
+   "diff": 9.96,
+   "cri": [
+    4.68,
+    15.33
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "retatrutide",
+   "b": "semaglutide-oral",
+   "diff": 10.4,
+   "cri": [
+    5.82,
+    15.25
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "retatrutide",
+   "b": "semaglutide-sc-daily",
+   "diff": 11.76,
+   "cri": [
+    6.54,
+    16.71
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "tirzepatide",
+   "b": "semaglutide-sc-weekly",
+   "diff": 2.94,
+   "cri": [
+    -0.14,
+    5.98
+   ],
+   "p_sup": 0.97,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "tirzepatide",
+   "b": "orforglipron",
+   "diff": 7.28,
+   "cri": [
+    3.0,
+    11.53
+   ],
+   "p_sup": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "tirzepatide",
+   "b": "semaglutide-oral",
+   "diff": 7.77,
+   "cri": [
+    4.39,
+    11.08
+   ],
+   "p_sup": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "tirzepatide",
+   "b": "semaglutide-sc-daily",
+   "diff": 9.1,
+   "cri": [
+    4.65,
+    12.9
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "semaglutide-sc-weekly",
+   "b": "orforglipron",
+   "diff": 4.37,
+   "cri": [
+    0.6,
+    8.23
+   ],
+   "p_sup": 0.99,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "semaglutide-sc-weekly",
+   "b": "semaglutide-oral",
+   "diff": 4.85,
+   "cri": [
+    1.93,
+    7.72
+   ],
+   "p_sup": 1.0,
+   "certainty": "Moderate",
+   "note": "indirect (star; no incoherence check)"
+  },
+  {
+   "a": "semaglutide-sc-weekly",
+   "b": "semaglutide-sc-daily",
+   "diff": 6.17,
+   "cri": [
+    2.09,
+    9.63
+   ],
+   "p_sup": 1.0,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "orforglipron",
+   "b": "semaglutide-oral",
+   "diff": 0.45,
+   "cri": [
+    -3.23,
+    4.23
+   ],
+   "p_sup": 0.6,
+   "certainty": "Low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null"
+  },
+  {
+   "a": "orforglipron",
+   "b": "semaglutide-sc-daily",
+   "diff": 1.76,
+   "cri": [
+    -3.22,
+    6.44
+   ],
+   "p_sup": 0.77,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  },
+  {
+   "a": "semaglutide-oral",
+   "b": "semaglutide-sc-daily",
+   "diff": 1.3,
+   "cri": [
+    -2.95,
+    5.14
+   ],
+   "p_sup": 0.74,
+   "certainty": "Very low",
+   "note": "indirect (star; no incoherence check); imprecision: CrI crosses null; k=1 node INSUFFICIENT"
+  }
+ ],
+ "certainty_counts": {
+  "Very low": 5,
+  "Low": 12,
+  "Moderate": 4
+ },
+ "k1_insufficient": [
+  "mazdutide",
+  "retatrutide",
+  "semaglutide-sc-daily"
+ ],
+ "rhat": 1.0,
+ "note": "transported target effects; per-comparison certainty = computable GRADE/CINeMA domains (imprecision + k=1 + indirect star baseline); RoB/values = panel"
+}

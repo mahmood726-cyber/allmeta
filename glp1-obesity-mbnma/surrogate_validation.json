@@ -1,0 +1,78 @@
+{
+ "k": 6,
+ "pairs": [
+  {
+   "nct": "NCT01720446",
+   "agent": "semaglutide",
+   "label": "SUSTAIN-6 (sc 1.0)",
+   "dweight_pct": -4.625608061153579,
+   "lhr": -0.3011050927839216,
+   "hr": 0.74,
+   "se": 0.092221587918719,
+   "bl_kg": 92.1,
+   "bl_src": "AACT"
+  },
+  {
+   "nct": "NCT02692716",
+   "agent": "semaglutide",
+   "label": "PIONEER-6 (oral)",
+   "dweight_pct": -3.6956521739130435,
+   "lhr": -0.19845093872383832,
+   "hr": 0.82,
+   "se": 0.15041258452173228,
+   "bl_kg": 92.0,
+   "bl_src": "fallback92"
+  },
+  {
+   "nct": "NCT03574597",
+   "agent": "semaglutide",
+   "label": "SELECT (sc 2.4)",
+   "dweight_pct": -8.520000000000001,
+   "lhr": -0.2231435513142097,
+   "hr": 0.8,
+   "se": 0.05407503676498257,
+   "bl_kg": 92.0,
+   "bl_src": "fallback92"
+  },
+  {
+   "nct": "NCT03819153",
+   "agent": "semaglutide",
+   "label": "NCT03819153",
+   "dweight_pct": -4.467391304347826,
+   "lhr": -0.2744368457017603,
+   "hr": 0.76,
+   "se": 0.07338963176154789,
+   "bl_kg": 92.0,
+   "bl_src": "fallback92"
+  },
+  {
+   "nct": "NCT03914326",
+   "agent": "semaglutide",
+   "label": "NCT03914326 (oral)",
+   "dweight_pct": -3.1847826086956523,
+   "lhr": -0.15082288973458366,
+   "hr": 0.86,
+   "se": 0.056261943998500055,
+   "bl_kg": 92.0,
+   "bl_src": "fallback92"
+  },
+  {
+   "nct": "NCT04847557",
+   "agent": "tirzepatide",
+   "label": "SURPASS-CVOT",
+   "dweight_pct": -11.61,
+   "lhr": -0.4780358009429998,
+   "hr": 0.62,
+   "se": 0.21436741309948373,
+   "bl_kg": 92.0,
+   "bl_src": "fallback92"
+  }
+ ],
+ "slope_logHR_per_pct": 0.0117,
+ "hr_per_extra_pct_weightloss": 0.988,
+ "trial_level_R2": 0.19,
+ "pearson_r_all": 0.79,
+ "pearson_r_within_semaglutide": 0.22,
+ "finding": "NOT a validated trial-level surrogate; raw +0.79 leveraged entirely by tirzepatide; within-semaglutide weight loss does not track CV benefit (SELECT -8.5%/HR0.80 vs SUSTAIN-6 -4.6%/HR0.74); weight-independent GLP-1 CV effect; weight loss cannot substitute for hard-outcome trials",
+ "caveat": "k=6, semaglutide-dominated, agent-confounded, hypothesis-strength; full-class bivariate surrogacy is the real test"
+}

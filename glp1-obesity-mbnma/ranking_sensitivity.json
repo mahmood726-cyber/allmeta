@@ -1,0 +1,40 @@
+{
+  "label": "SENSITIVITY (all timepoints, dropped agents restored)",
+  "agents": [
+    "cagrilintide",
+    "danuglipron",
+    "mazdutide",
+    "orforglipron",
+    "retatrutide",
+    "semaglutide-oral",
+    "semaglutide-sc-daily",
+    "semaglutide-sc-weekly",
+    "survodutide",
+    "tirzepatide"
+  ],
+  "sucra": [
+    0.008055555555555554,
+    0.12431944444444448,
+    0.9470555555555557,
+    0.48775,
+    0.9417777777777779,
+    0.6143333333333333,
+    0.3931805555555556,
+    0.25641666666666674,
+    0.4506111111111111,
+    0.7765000000000002
+  ],
+  "poth": 0.9239188034090913,
+  "order": [
+    "mazdutide",
+    "retatrutide",
+    "tirzepatide",
+    "semaglutide-oral",
+    "orforglipron",
+    "survodutide",
+    "semaglutide-sc-daily",
+    "semaglutide-sc-weekly",
+    "danuglipron",
+    "cagrilintide"
+  ]
+}

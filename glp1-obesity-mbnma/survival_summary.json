@@ -1,0 +1,23 @@
+{
+ "hard_outcome_trials": 9,
+ "hr_rows": 67,
+ "by_agent": {
+  "dulaglutide": {
+   "trials": 1,
+   "median_hr": 0.91
+  },
+  "liraglutide": {
+   "trials": 2,
+   "median_hr": 0.91
+  },
+  "semaglutide": {
+   "trials": 5,
+   "median_hr": 0.77
+  },
+  "tirzepatide": {
+   "trials": 1,
+   "median_hr": 0.93
+  }
+ },
+ "km_reconstruct_candidates": 7
+}

@@ -1,0 +1,31 @@
+{
+ "obesity": {
+  "median": 2.94,
+  "cri": [
+   -0.14,
+   5.98
+  ],
+  "rho": 0.08,
+  "sd_exact": 1.55,
+  "sd_independent": 1.61,
+  "p_gt_0": 0.97,
+  "p_gt_mid2": 0.73,
+  "excludes_null": false
+ },
+ "target": {
+  "median": 2.94,
+  "cri": [
+   -0.14,
+   5.98
+  ],
+  "rho": 0.02,
+  "sd_exact": 1.55,
+  "sd_independent": 1.56,
+  "p_gt_0": 0.97,
+  "p_gt_mid2": 0.73,
+  "excludes_null": false
+ },
+ "mid_pp": 2.0,
+ "rhat": 1.0,
+ "interpretation": "exact contrast still includes null -> imprecision real (star network, near-independent), Low certainty stands"
+}

@@ -1,0 +1,78 @@
+{
+ "target": {
+  "age": 48.1,
+  "t2d": 0.2056
+ },
+ "nodes": [
+  {
+   "node": "mazdutide",
+   "k": 1,
+   "naive_pp": 22.3,
+   "gamma_transport_pp": 21.3,
+   "ebal_transport_pp": null,
+   "feasible": null
+  },
+  {
+   "node": "orforglipron",
+   "k": 2,
+   "naive_pp": 9.4,
+   "gamma_transport_pp": 10.3,
+   "ebal_transport_pp": null,
+   "feasible": false
+  },
+  {
+   "node": "retatrutide",
+   "k": 1,
+   "naive_pp": 22.1,
+   "gamma_transport_pp": 20.2,
+   "ebal_transport_pp": null,
+   "feasible": null
+  },
+  {
+   "node": "semaglutide-oral",
+   "k": 5,
+   "naive_pp": 7.1,
+   "gamma_transport_pp": 9.8,
+   "ebal_transport_pp": null,
+   "feasible": false
+  },
+  {
+   "node": "semaglutide-sc-daily",
+   "k": 1,
+   "naive_pp": 11.6,
+   "gamma_transport_pp": 8.4,
+   "ebal_transport_pp": null,
+   "feasible": null
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "k": 15,
+   "naive_pp": 12.0,
+   "gamma_transport_pp": 14.6,
+   "ebal_transport_pp": null,
+   "feasible": false
+  },
+  {
+   "node": "tirzepatide",
+   "k": 4,
+   "naive_pp": 17.9,
+   "gamma_transport_pp": 17.5,
+   "ebal_transport_pp": null,
+   "feasible": false
+  }
+ ],
+ "method": "nmatransport entropy balancing (moment-matched study weights)",
+ "covariates_balanced": [
+  "age",
+  "diabetes"
+ ],
+ "infeasible_nodes": [
+  "orforglipron",
+  "semaglutide-oral",
+  "semaglutide-sc-weekly",
+  "tirzepatide"
+ ],
+ "caveat": "aggregate-level: age-balancing ecological, diabetes exact (binary pure strata); BMI/weight too sparse; k=1 not reweightable",
+ "pure_strata_duality": "NO node is entropy-balanceable to 20.6% diabetes: every incretin trial is pure-obesity (0%) or pure-T2D (~100%), no mixed-prevalence trials -> reweighting-transport infeasible network-wide. That SAME binary-pure-strata structure is exactly what makes the gamma-extrapolation valid (study-level=individual-level coefficient). Entropy balancing thus VINDICATES the gamma choice and proves the transport rests on (justified) extrapolation, not reweighting.",
+ "finding": "entropy balancing is support-respecting and infeasible here (pure strata); gamma-extrapolation is the correct tool BECAUSE of the pure strata. Complementary methods; the result sharpens GRADE indirectness (transport is extrapolation-based, resting on the binary-pure-strata assumption a panel should scrutinise)."
+}

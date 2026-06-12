@@ -1,0 +1,57 @@
+{
+ "gam_mu": 5.5,
+ "gam_sd": 1.3,
+ "agent_gamma": {
+  "mazdutide": 5.6,
+  "orforglipron": 5.5,
+  "retatrutide": 5.6,
+  "semaglutide": 6.0,
+  "tirzepatide": 5.7
+ },
+ "rhat_max": 1.0,
+ "ess_min": 3529.0,
+ "nodes": [
+  {
+   "node": "mazdutide",
+   "eff_obesity": 22.5,
+   "eff_target": 21.1,
+   "agent_gamma": 5.6
+  },
+  {
+   "node": "retatrutide",
+   "eff_obesity": 21.4,
+   "eff_target": 20.0,
+   "agent_gamma": 5.6
+  },
+  {
+   "node": "tirzepatide",
+   "eff_obesity": 18.7,
+   "eff_target": 17.2,
+   "agent_gamma": 5.7
+  },
+  {
+   "node": "semaglutide-sc-weekly",
+   "eff_obesity": 15.8,
+   "eff_target": 14.3,
+   "agent_gamma": 6.0
+  },
+  {
+   "node": "orforglipron",
+   "eff_obesity": 11.2,
+   "eff_target": 9.8,
+   "agent_gamma": 5.5
+  },
+  {
+   "node": "semaglutide-oral",
+   "eff_obesity": 11.1,
+   "eff_target": 9.5,
+   "agent_gamma": 6.0
+  },
+  {
+   "node": "semaglutide-sc-daily",
+   "eff_obesity": 9.6,
+   "eff_target": 8.1,
+   "agent_gamma": 6.0
+  }
+ ]
+}
