@@ -1,6 +1,6 @@
 """CLASS-LEVEL external validation: compare each generality class's ENGINE output to a real, PubMed-verified
 published network meta-analysis for that class. This extends the incretin-only concordance battery
-(concordance_battery.py) to all five outcome-type repoints (PCSK9 / SGLT2 / psoriasis / asthma / RA).
+(concordance_battery.py) to all six outcome-type repoints (PCSK9 / SGLT2 / psoriasis / asthma / RA / DTA).
 
 Honesty discipline (per project rules):
 - Every reference is a real article whose DOI was resolved on PubMed (2026-06-11); findings are quoted from the
@@ -32,6 +32,7 @@ sglt2 = league('class3_sglt2/sglt2_league.json')
 psor = league('class4_psoriasis/psoriasis_league.json')
 asth = league('class5_asthma/asthma_league.json')
 ra = league('class6_ra/ra_league.json')
+dta = league('class7_dta/dta_league.json')
 
 pcsk9_overlap = order_of(pcsk9['ranking'], {'evolocumab', 'alirocumab', 'inclisiran'})
 
@@ -133,6 +134,32 @@ ENTRIES = [
                             'NNTB (7) — different contrast, stated openly.'),
         },
     },
+    {
+        'class': 'Oncologic imaging modalities (diagnostic test accuracy, bivariate Se/Sp)',
+        'reference': {'authors': 'Kim et al.', 'year': 2021, 'journal': 'Br J Radiol',
+                      'doi': '10.1259/bjr.20201076', 'pmid': '33595337',
+                      'design': 'diagnostic-accuracy network meta-analysis (SUCRA)', 'n_trials': 19,
+                      'n_patients': 3571},
+        'published_finding': ('Network meta-analysis of FDG-PET/(CT), CT and ultrasound for preoperative nodal '
+                              'staging: the modalities have COMPLEMENTARY diagnostic roles (highest-SUCRA test '
+                              'differs by nodal compartment), i.e. no single modality is uniformly best.'),
+        'our_source': 'class7_dta/dta_league.json',
+        'our_lead': dta['lead'],
+        'our_finding': (f"engine ranks {dta['lead']} nominally first by Youden J "
+                        f"({dta['median_youden_j'][dta['lead']]}), but every cross-modality contrast is "
+                        f"Low certainty and heterogeneity_flag={dta['heterogeneity_flag']} (the AACT network "
+                        f"mixes cancer sites) -> complementary roles, no clean winner."),
+        'concordance': {
+            'level': 'concordant',
+            'basis': ('both decline to crown a single best modality: the engine\'s "no clean winner" (all '
+                      'cross-modality Youden-J differences imprecise + cross-target heterogeneity flag) matches '
+                      'Kim\'s "complementary diagnostic roles" conclusion.'),
+            'honest_note': ('Kim 2021 is thyroid-specific (PET/CT/US, no MRI) using SUCRA on full-text 2x2 tables; '
+                            'ours is a pan-cancer registry-RECONSTRUCTED bivariate league (PET/MRI/CT/US, '
+                            'round(Se%xn1) cells, mixed target sites). The shared, validated claim is the '
+                            '"complementary / no-uniform-winner" hierarchy, NOT a modality-by-modality Se/Sp match.'),
+        },
+    },
 ]
 
 n = len(ENTRIES)
@@ -155,7 +182,7 @@ json.dump({
     'method': ('engine ranking/lead read programmatically from each class league JSON; concordance judged at '
                'class-direction / top-tier / no-clean-winner level (not numeric effect match); every reference '
                'DOI resolved on PubMed.'),
-    'all_references_doi_resolved': True, 'doi_resolution_date': '2026-06-11',
+    'all_references_doi_resolved': True, 'doi_resolution_date': '2026-06-11 (classes 1-5), 2026-06-12 (DTA, Kim 2021 via PubMed)',
     'entries': ENTRIES,
     'honest_boundary': ('this is corroboration at the level the abstracts support, not a re-pooling of the '
                         'published data; contrasts differ across analyses and each entry records its boundary. '

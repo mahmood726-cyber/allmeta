@@ -1,0 +1,107 @@
+{
+ "class": "oncologic imaging modalities (comparative DTA)",
+ "stage": "transport (bivariate Se/Sp -> PPV + NPV in a target)",
+ "lead": "CT",
+ "lead_youden_j": 0.732,
+ "scenarios": [
+  {
+   "setting": "population screening (low prevalence)",
+   "prevalence": 0.02,
+   "ppv": 0.128,
+   "ppv_cri": [
+    0.067,
+    0.237
+   ],
+   "npv": 0.997,
+   "npv_cri": [
+    0.993,
+    0.998
+   ],
+   "primary": false
+  },
+  {
+   "setting": "enriched / surveillance cohort (reference)",
+   "prevalence": 0.1,
+   "ppv": 0.445,
+   "ppv_cri": [
+    0.282,
+    0.629
+   ],
+   "npv": 0.982,
+   "npv_cri": [
+    0.964,
+    0.992
+   ],
+   "primary": true
+  },
+  {
+   "setting": "symptomatic / staging work-up (high prevalence)",
+   "prevalence": 0.3,
+   "ppv": 0.756,
+   "ppv_cri": [
+    0.603,
+    0.867
+   ],
+   "npv": 0.934,
+   "npv_cri": [
+    0.875,
+    0.968
+   ],
+   "primary": false
+  }
+ ],
+ "primary_scenario": "enriched / surveillance cohort (reference)",
+ "primary_prevalence": 0.1,
+ "per_modality_at_primary": {
+  "CT": {
+   "ppv": 0.445,
+   "ppv_cri": [
+    0.282,
+    0.629
+   ],
+   "npv": 0.982,
+   "npv_cri": [
+    0.964,
+    0.992
+   ]
+  },
+  "PET": {
+   "ppv": 0.408,
+   "ppv_cri": [
+    0.319,
+    0.511
+   ],
+   "npv": 0.98,
+   "npv_cri": [
+    0.97,
+    0.987
+   ]
+  },
+  "MRI": {
+   "ppv": 0.432,
+   "ppv_cri": [
+    0.313,
+    0.567
+   ],
+   "npv": 0.975,
+   "npv_cri": [
+    0.961,
+    0.984
+   ]
+  },
+  "ultrasound": {
+   "ppv": 0.278,
+   "ppv_cri": [
+    0.194,
+    0.401
+   ],
+   "npv": 0.974,
+   "npv_cri": [
+    0.956,
+    0.986
+   ]
+  }
+ },
+ "prevalence_source": "reference-distribution disease prevalences by clinical setting (authoritative reference, NOT registry-extracted)",
+ "depth_note": "predictive-value transport: per-modality Bayesian Se/Sp draws -> PPV + NPV with full posterior CrI across documented prevalence targets. Key honest message = prevalence dependence (lead PPV swings widely screening vs staging), so Se/Sp alone is not transportable -- the DTA analogue of the SGLT2 baseline-risk dependence. Prevalences are reference values; cross-modality ranking GRADE-downgraded for indirectness + cross-target heterogeneity. No IPD."
+}

@@ -12,10 +12,12 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
 | **Psoriasis biologics** | binary responder (PASI-90 %) | 1377 trials, 130 PASI-90 | established efficacy hierarchy | **Reproduces IL-17/IL-23 > TNF** (core repoint: mean 63% vs 33%, bimekizumab 85%), matching the Sbidian Cochrane NMA — now **full-depth**: Bayesian PASI-90 league (bimekizumab 89%, IL-17/23 57% vs TNF 31%, R̂=1.0000, P(IL-17/23>TNF)=1.000) + responders-gained/NNT transport + offline dashboard |
 | **Asthma biologics** | count/rate (annualised exacerbation IRR) | 640 trials, 26 with a rate ratio | rate-NMA + transitivity on baseline rate | **All 4 agents significantly reduce the exacerbation rate** (class IRR 0.70); but **flags** the raw cross-agent ranking (tezepelumab 0.47 > reslizumab 0.58 > benralizumab 0.74 > mepolizumab 0.80, I²=96%) as **effect modification** by baseline-rate / eosinophil enrichment — not a clean "best biologic" |
 | **RA biologics/JAK** | ordinal / ordered-categorical (ACR20>50>70 ladder) | 171/157/145 trials (ACR20/50/70), 4275 arm×threshold rows | proportional-odds graded-response on the ordered ladder | **Fits the ordered ladder** with one latent efficacy per agent + shared ordered cutpoints (nutpie R̂=1.0000); class-level advanced-MoA ≥ TNF holds (P(IL-6/JAK>TNF)=0.91) but **flags** the cross-agent ranking as arm-level heterogeneity (proportional-odds residual RMSE=2.0; a TNF agent leads while the class-mean favours advanced-MoA) — not a clean "best agent", the ordinal echo of the asthma flag. Full-depth (Bayesian ACR league + ACR50 responders-gained/NNT transport + offline dashboard) |
+| **Oncologic imaging** (DTA) | diagnostic test accuracy (paired Se/Sp, **bivariate**) | 206 trials posting Se&Sp%, 66 with reconstructable 2×2 across PET/MRI/CT/US | bivariate (Reitsma) correlation + threshold-effect + transitivity self-flag | **Fits the bivariate structure** (hierarchical (logit-Se, logit-Sp) with a 2×2 between-study covariance, binomial likelihood on registry-reconstructed cells, nutpie R̂=1.0000); CT nominal Youden-J lead but **every cross-modality contrast is Low certainty** and the engine **flags cross-target heterogeneity** (the AACT network mixes cancer sites) → complementary roles, not a clean winner — matching Kim 2021's "complementary diagnostic roles" NMA. Full-depth (Bayesian bivariate league + Se/Sp→PPV/NPV transport + offline dashboard) |
 
 ## What this demonstrates
-- **Five outcome types** — continuous weight, continuous lipid, hard-outcome survival, binary responder, and
-  count/rate (incidence-rate ratio) — handled by the same discovery → extraction → NMA → (GRADE) machinery.
+- **Six outcome types** — continuous weight, continuous lipid, hard-outcome survival, binary responder,
+  count/rate (incidence-rate ratio), and **diagnostic test accuracy (paired Se/Sp, bivariate)** — handled by the
+  same discovery → extraction → NMA → (GRADE) machinery.
 - **The methods discriminate.** The surrogate test failed for weight (incretins) and returned the validated
   direction for LDL (PCSK9) — it depends on the evidence, not the class. The SGLT2 repoint didn't manufacture
   a clean "class effect"; it surfaced the real composite-endpoint pitfall and flagged it. The asthma repoint
@@ -26,9 +28,9 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
   by baseline rate / eosinophil enrichment (asthma). The engine names each rather than papering over it.
 
 ## Honest scope
-- **Five classes are now full-depth proofs** (league + GRADE + transport + offline dashboard), spanning **all
-  five outcome types** (continuous biomarker, survival/absolute-risk, count/rate, binary/responder, ordinal),
-  and the league runs on a real **Bayesian draw matrix** (CrI + P(superiority)) in each:
+- **Six classes are now full-depth proofs** (league + GRADE + transport + offline dashboard), spanning **all
+  six outcome types** (continuous biomarker, survival/absolute-risk, count/rate, binary/responder, ordinal, and
+  diagnostic test accuracy), and the league runs on a real **Bayesian draw matrix** (CrI + P(superiority)) in each:
   - **Class 2 (PCSK9), continuous-biomarker path** — (1) full pairwise LDL **league** with **GRADE/CINeMA
     certainty**, in **both** a frequentist form (`pcsk9_league.json`: 3 Moderate / 3 Low) and a **Bayesian
     draw-matrix** form (`pcsk9_league_bayes.json`: nutpie, R̂=1.00, heteroscedastic per-agent SD — same
@@ -59,24 +61,35 @@ class's verdict. Each repoint changed only the **drug list + outcome term**.
     a TNF agent leads while the class-mean favours advanced-MoA), not a clean winner; (2) **transport**
     (`ra_transport.json`) predicted ACR50 → **responders gained/100 + NNT** vs placebo across MTX-dependent
     placebo backgrounds (the baseline moves the NNT, unlike psoriasis); (3) **offline dashboard**.
-- This proves the depth stages port across **all five outcome types** (continuous biomarker, survival/absolute-
-  risk, count/rate, binary/responder, ordinal), and that the league upgrades to a real Bayesian draw matrix in
-  every full-depth class.
+  - **Class 7 (oncologic imaging), diagnostic-test-accuracy path** — (1) a **Bayesian bivariate (Reitsma)**
+    **league** (`dta_league.json`, nutpie, R̂=1.0000) on the paired (logit-Se, logit-Sp) with a **2×2 between-
+    study covariance** (the bivariate correlation that distinguishes DTA from two independent proportions),
+    binomial likelihood on registry-reconstructed cells → per-modality Se/Sp + **Youden J** + diagnostic OR,
+    contrasts (J-difference CrI + P(superiority)); CT nominal lead but every contrast Low-certainty and the
+    engine carries a **threshold-effect** check (Spearman corr(logitSe, logit(1−Sp))) and a **cross-target
+    transitivity flag** (mixed cancer sites) → not a clean winner; (2) **transport** (`dta_transport.json`)
+    Se/Sp → **PPV + NPV** across prevalence targets (lead PPV swings ~0.13 screening → ~0.76 staging — the DTA
+    analogue of the SGLT2 baseline-risk dependence); (3) **offline dashboard**.
+- This proves the depth stages port across **all six outcome types** (continuous biomarker, survival/absolute-
+  risk, count/rate, binary/responder, ordinal, and diagnostic test accuracy), and that the league upgrades to a
+  real Bayesian draw matrix in every full-depth class.
 - Every class result is registry-native (AACT) and honestly bounded (small k where noted; demonstration, not
   a systematic review).
 
 ## Verdict
 **A reusable, outcome-type-general engine.** Repointing across continuous-biomarker, lipid, hard-outcome,
-binary-responder, count/rate, and ordinal classes took a drug list and an outcome term, and produced coherent
-syntheses plus *class-appropriate, self-flagging* method behaviour. The system is not a bespoke incretin
-analysis; its methods answer to the evidence in each class — and the depth stages (league + GRADE + transport +
-dashboard) port end-to-end across **five** classes spanning all five outcome types (continuous-biomarker,
-survival/absolute-risk, count/rate, binary/responder, ordinal), with the league running on a real **Bayesian
-draw matrix** in each, and all of them now wired into `run_all.py` (stages C2–C6). See
+binary-responder, count/rate, ordinal, and diagnostic-test-accuracy classes took a drug/test list and an outcome
+term, and produced coherent syntheses plus *class-appropriate, self-flagging* method behaviour. The system is
+not a bespoke incretin analysis; its methods answer to the evidence in each class — and the depth stages (league
++ GRADE + transport + dashboard) port end-to-end across **six** classes spanning all six outcome types
+(continuous-biomarker, survival/absolute-risk, count/rate, binary/responder, ordinal, diagnostic test accuracy),
+with the league running on a real **Bayesian draw matrix** in each, and all of them now wired into `run_all.py`
+(stages C2–C7). See
 `class2_pcsk9/GENERALITY.md` (+ `pcsk9_league` freq + `pcsk9_league_bayes` + `pcsk9_transport` +
 `pcsk9_dashboard.html`), `class3_sglt2/` (`sglt2_results.json` core + `sglt2_league.json` Bayesian +
 `sglt2_transport.json` + `sglt2_dashboard.html`), `class4_psoriasis/` (`psoriasis_results.json` core +
 `psoriasis_league.json` Bayesian + `psoriasis_transport.json` + `psoriasis_dashboard.html`), `class5_asthma/`
 (`asthma_results.json` core + `asthma_league.json` Bayesian + `asthma_transport.json` + `asthma_dashboard.html`),
 `class6_ra/` (`ra_results.json` core + `ra_league.json` Bayesian proportional-odds + `ra_transport.json` +
-`ra_dashboard.html`).
+`ra_dashboard.html`), `class7_dta/` (`dta_results.json` core + `dta_league.json` Bayesian bivariate Reitsma +
+`dta_transport.json` PPV/NPV + `dta_dashboard.html`).

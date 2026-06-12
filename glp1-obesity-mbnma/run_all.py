@@ -96,6 +96,15 @@ STAGES = [
     # dependency, not a run_all stage. Harvest + config are the committed, tested in-pipeline stages.
     ('C6d RA RM trial harvest', 'class6_ra/ra_rapidmeta_harvest.py',     HERE, 'class6_ra/ra_trials.json',              True),
     ('C6e RA RM config',       'class6_ra/build_ra_rapidmeta_config.py', HERE, 'class6_ra/ra_rapidmeta_config.json',    False),
+    # class 7 = DIAGNOSTIC TEST ACCURACY (6th outcome type, paired Se/Sp bivariate). harvest reconstructs the
+    # per-study 2x2 from AACT-posted Se/Sp percentages (slow=AACT); league is a hierarchical Bayesian bivariate
+    # Reitsma fit (slow=NUTS); transport/dashboard/RM-config read cached JSON (fast). RM config reads the same
+    # dta_trials.json the league uses (no separate harvest); the workbench HTML is the out-of-band clone.py call.
+    ('C7a DTA harvest',        'class7_dta/dta_harvest.py',              HERE, 'class7_dta/dta_trials.json',            True),
+    ('C7b DTA league (Bayes)', 'class7_dta/dta_league_bayes.py',         HERE, 'class7_dta/dta_league.json',            True),
+    ('C7c DTA transport',      'class7_dta/dta_transport.py',            HERE, 'class7_dta/dta_transport.json',         False),
+    ('C7d DTA dashboard',      'class7_dta/dta_dashboard.py',            HERE, 'class7_dta/dta_dashboard.html',         False),
+    ('C7e DTA RM config',      'class7_dta/build_dta_rapidmeta_config.py', HERE, 'class7_dta/dta_rapidmeta_config.json', False),
 ]
 
 print('Registry-native synthesis system — orchestrator')

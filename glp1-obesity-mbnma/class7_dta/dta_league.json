@@ -1,0 +1,118 @@
+{
+ "class": "oncologic imaging modalities (comparative DTA)",
+ "outcome": "diagnostic test accuracy -- Youden J (Se+Sp-1) from a Bayesian bivariate Reitsma model",
+ "inference": "hierarchical bivariate (logit-Se, logit-Sp) with 2x2 between-study covariance, binomial likelihood (nutpie); contrasts from posterior draws",
+ "ranking": [
+  "CT",
+  "PET",
+  "MRI",
+  "ultrasound"
+ ],
+ "kper": {
+  "CT": 7,
+  "MRI": 17,
+  "PET": 29,
+  "ultrasound": 13
+ },
+ "median_youden_j": {
+  "CT": 0.732,
+  "MRI": 0.676,
+  "PET": 0.703,
+  "ultrasound": 0.578
+ },
+ "pooled_sens": {
+  "CT": 0.857,
+  "MRI": 0.795,
+  "PET": 0.839,
+  "ultrasound": 0.815
+ },
+ "pooled_spec": {
+  "CT": 0.882,
+  "MRI": 0.884,
+  "PET": 0.866,
+  "ultrasound": 0.765
+ },
+ "rhat": 1.0,
+ "between_study_corr": 0.2,
+ "comparisons": [
+  {
+   "a": "CT",
+   "b": "PET",
+   "j_diff": 0.029,
+   "cri_jdiff": [
+    -0.17,
+    0.181
+   ],
+   "p_superiority": 0.634,
+   "certainty": "Low",
+   "note": "indirect (comparative DTA; not head-to-head); imprecision: J-difference CrI crosses 0"
+  },
+  {
+   "a": "CT",
+   "b": "MRI",
+   "j_diff": 0.056,
+   "cri_jdiff": [
+    -0.154,
+    0.231
+   ],
+   "p_superiority": 0.717,
+   "certainty": "Low",
+   "note": "indirect (comparative DTA; not head-to-head); imprecision: J-difference CrI crosses 0"
+  },
+  {
+   "a": "CT",
+   "b": "ultrasound",
+   "j_diff": 0.152,
+   "cri_jdiff": [
+    -0.075,
+    0.365
+   ],
+   "p_superiority": 0.912,
+   "certainty": "Low",
+   "note": "indirect (comparative DTA; not head-to-head); imprecision: J-difference CrI crosses 0"
+  },
+  {
+   "a": "PET",
+   "b": "MRI",
+   "j_diff": 0.027,
+   "cri_jdiff": [
+    -0.116,
+    0.182
+   ],
+   "p_superiority": 0.639,
+   "certainty": "Low",
+   "note": "indirect (comparative DTA; not head-to-head); imprecision: J-difference CrI crosses 0"
+  },
+  {
+   "a": "PET",
+   "b": "ultrasound",
+   "j_diff": 0.123,
+   "cri_jdiff": [
+    -0.044,
+    0.319
+   ],
+   "p_superiority": 0.924,
+   "certainty": "Low",
+   "note": "indirect (comparative DTA; not head-to-head); imprecision: J-difference CrI crosses 0"
+  },
+  {
+   "a": "MRI",
+   "b": "ultrasound",
+   "j_diff": 0.096,
+   "cri_jdiff": [
+    -0.09,
+    0.296
+   ],
+   "p_superiority": 0.839,
+   "certainty": "Low",
+   "note": "indirect (comparative DTA; not head-to-head); imprecision: J-difference CrI crosses 0"
+  }
+ ],
+ "certainty_counts": {
+  "Low": 6
+ },
+ "k1_insufficient": [],
+ "lead": "CT",
+ "heterogeneity_flag": true,
+ "depth_note": "SIXTH outcome type = diagnostic test accuracy. Full-depth Bayesian BIVARIATE (Reitsma) league: paired (logit-Se, logit-Sp) with a 2x2 between-study covariance, binomial likelihood on registry-reconstructed cells (nutpie), ranked by Youden J with P(superiority). The engine self-flags DTA-specific threats the other classes cannot: a threshold-effect check per modality (Spearman corr(logitSe, logit(1-Sp))) and a cross-target transitivity flag because the AACT network mixes cancer sites -> the cross-modality ranking is NOT a clean winner, the DTA echo of the asthma I2=96% / RA proportional-odds flags. Registry-reconstructed 2x2 (round(% x N) from posted Se/Sp + subgroup denominators), NOT full-text 2x2 tables. No IPD."
+}

@@ -1,0 +1,1804 @@
+{
+ "drug": "Oncologic imaging modalities",
+ "drug_lower": "imaging index tests",
+ "slug": "oncologic_imaging_dta_nma",
+ "condition": "cancer lesion and nodal staging",
+ "comparator": "Histopathology or follow-up reference standard",
+ "title": "Imaging modalities for cancer detection - comparative diagnostic-test-accuracy network",
+ "hero_h2": "Registry-native comparative DTA of PET / MRI / CT / ultrasound for oncologic lesion and nodal detection",
+ "nyt_headline": "Which scan finds cancer most accurately?",
+ "pico": {
+  "pop": "Patients undergoing imaging for cancer lesion / nodal / metastatic detection or staging",
+  "int": "Imaging modalities (PET, MRI, CT, ultrasound) as index tests",
+  "comp": "Histopathology or clinical follow-up reference standard",
+  "out": "Diagnostic accuracy - sensitivity, specificity, Youden J, diagnostic odds ratio (DOR). The forest shows the per-study DOR (a diagnostic ODDS RATIO), NOT a hazard ratio",
+  "subgroup": "By imaging modality and by cancer target site"
+ },
+ "acronyms": {
+  "NCT04010695": "Validation of Diagnostics to Identify Glucose-...",
+  "NCT03852316": "Clinical Study of a Diagnostic Device for NG, ...",
+  "NCT03824535": "18F-FSPG PET/CT in Diagnosing Early Lung Cance...",
+  "NCT01925014": "LOCAT",
+  "NCT04316676": "The MATCH Investigation: CT Myocardial Perfusi...",
+  "NCT01565369": "Evaluation of Physician Training Methods to Re...",
+  "NCT01949844": "Artifact-Free High-Resolution Myocardial Perfu...",
+  "NCT01869725": "Comparative Study of Sensitivity of Ga-DOTATOC...",
+  "NCT01710254": "RECAD-AF",
+  "NCT02673151": "68Ga-PSMA PET/CT in Detecting Prostate Cancer ...",
+  "NCT02397408": "11C- and 18F-Choline PET/MR Imaging for Prosta...",
+  "NCT01447719": "Autopsy Follow-up of Subjects Previously Image...",
+  "NCT04334902": "Evaluation of Clinical Decision Support System...",
+  "NCT00783302": "Study in Subjects Suspected of Having CAD Unde...",
+  "NCT00709852": "Safety and Efficacy of Gadobutrol 1.0 Molar (G...",
+  "NCT02933489": "Abbreviated Breast MRI and Digital Tomosynthes...",
+  "NCT01020838": "Phase III Study of Florbetaben (BAY94-9172) PE...",
+  "NCT02090855": "Re-Read Study to Compare the Brain Uptake of [...",
+  "NCT01550549": "Evaluation of Web-based Training to Educate Ph...",
+  "NCT01236300": "INSPECT",
+  "NCT01892540": "PET/CT or PET/MRI in Measuring Tumors in Patie...",
+  "NCT01672827": "Effectiveness of an Electronic Training Progra...",
+  "NCT02182947": "CE",
+  "NCT00595881": "Emergency Bedside Ultrasound for Pediatric Sof...",
+  "NCT03136328": "Diagnosis and Staging of Neuroendocrine Tumors...",
+  "NCT01927887": "Pre-Operative Nodal Staging of Thyroid Cancer ...",
+  "NCT02483481": "Using Ultrasound Elastography to Predict Devel...",
+  "NCT01395030": "PET/CT in Diagnosing Patients With Liver Cance...",
+  "NCT00623467": "Safety and Efficacy of Gadobutrol 1.0 Molar ( ...",
+  "NCT01012674": "Carotid and Vertebral Magnetic Resonance Angio...",
+  "NCT02981368": "OSPREY",
+  "NCT02624518": "68Ga-RM2 PET/MRI in Biochemically Recurrent Pr...",
+  "NCT04773015": "A Study to Evaluate the Effectiveness of VIZAM...",
+  "NCT00750282": "Phase II Study of Florbetaben (BAY 94-9172) PE...",
+  "NCT02430480": "Using Multiparametric MRI to Evaluate Intrapro...",
+  "NCT02260817": "Expanded Access to Diagnostic Imaging for Stag...",
+  "NCT01010932": "Carotid and Vertebral Magnetic Resonance Angio...",
+  "NCT01705496": "PJI",
+  "NCT04495634": "Evaluation of a Carbon Nanotube Enabled Solid-...",
+  "NCT01890421": "GadaCAD 1",
+  "NCT00853671": "Myocardial Stress Perfusion Imaging With Dual ...",
+  "NCT00920023": "Pre-Operative Staging of Pancreatic Cancer Usi...",
+  "NCT03149042": "Validation of a Computed Tomography (CT) Based...",
+  "NCT03113617": "68Ga-RM2 PET/CT in Detecting Regional Nodal an...",
+  "NCT02364388": "MAESTRO",
+  "NCT04410367": "PURSUE",
+  "NCT01138111": "Florbetaben (BAY94-9172) PET (Positron Emissio...",
+  "NCT01890434": "GadaCAD 2",
+  "NCT00416455": "Fludeoxyglucose (FDG) F 18 PET Scan, CT Scan, ...",
+  "NCT06652568": "DVT GUARD",
+  "NCT00707876": "Magnetic Resonance Angiography for Peripheral ...",
+  "NCT04936334": "The Role of 68Ga-PSMA-11 PET (Prostate Specifi...",
+  "NCT02678351": "68Ga-PSMA-11 PET/MRI in Finding Tumors in Pati...",
+  "NCT00928304": "Phase II Study of Florbetaben (BAY94-9172) PET...",
+  "NCT02684435": "CEUS-CKD",
+  "NCT03292874": "High Resolution MRI Study for Prostate Cancer",
+  "NCT03354273": "An International Study to Evaluate Diagnostic ...",
+  "NCT01011946": "Staging of Axillary Lymph Nodes Using the PEM ...",
+  "NCT00829413": "SonoVue\u00ae-Enhanced Ultrasound (US) Versus Unenh...",
+  "NCT02079025": "Multi-Center Trial of High-resolution Transrec...",
+  "NCT00788697": "SonoVue\u00ae-Enhanced Ultrasound Versus Unenhanced...",
+  "NCT04136912": "3-D Super Resolution Ultrasound Microvascular ...",
+  "NCT03510988": "Dedicated Breast PET/MRI in Evaluation of Exte...",
+  "NCT01743040": "TURBULENCE",
+  "NCT03347617": "Ferumoxytol MRI in Assessing Response to Pembr...",
+  "NCT04030104": "Reader-02"
+ },
+ "trials": [
+  {
+   "nct": "NCT04010695",
+   "name": "Validation of Diagnostics to Identify Glucose-...",
+   "year": 2019,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 11645.0,
+   "hrLCI": 660.836,
+   "hrUCI": 205203.613,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=1.00 Sp=0.97",
+     "publishedHR": 11645.0,
+     "hrLCI": 660.836,
+     "hrUCI": 205203.613
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03852316",
+   "name": "Clinical Study of a Diagnostic Device for NG, ...",
+   "year": 2019,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 3947.117,
+   "hrLCI": 2204.371,
+   "hrUCI": 7067.656,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.98 Sp=0.98",
+     "publishedHR": 3947.117,
+     "hrLCI": 2204.371,
+     "hrUCI": 7067.656
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03824535",
+   "name": "18F-FSPG PET/CT in Diagnosing Early Lung Cance...",
+   "year": 2019,
+   "group": "ultrasound (lung) -- diagnostic OR",
+   "publishedHR": 961.0,
+   "hrLCI": 17.909,
+   "hrUCI": 51566.383,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=1.00 Sp=1.00",
+     "publishedHR": 961.0,
+     "hrLCI": 17.909,
+     "hrUCI": 51566.383
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01925014",
+   "name": "LOCAT",
+   "year": 2013,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 732.119,
+   "hrLCI": 494.983,
+   "hrUCI": 1082.861,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.96 Sp=0.96",
+     "publishedHR": 732.119,
+     "hrLCI": 494.983,
+     "hrUCI": 1082.861
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04316676",
+   "name": "The MATCH Investigation: CT Myocardial Perfusi...",
+   "year": 2021,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 431.667,
+   "hrLCI": 16.461,
+   "hrUCI": 11319.824,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=1.00 Sp=0.97",
+     "publishedHR": 431.667,
+     "hrLCI": 16.461,
+     "hrUCI": 11319.824
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01565369",
+   "name": "Evaluation of Physician Training Methods to Re...",
+   "year": 2011,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 403.0,
+   "hrLCI": 15.326,
+   "hrUCI": 10596.701,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=1.00 Sp=0.94",
+     "publishedHR": 403.0,
+     "hrLCI": 15.326,
+     "hrUCI": 10596.701
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01949844",
+   "name": "Artifact-Free High-Resolution Myocardial Perfu...",
+   "year": 2014,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 324.0,
+   "hrLCI": 43.253,
+   "hrUCI": 2427.009,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.94 Sp=0.94",
+     "publishedHR": 324.0,
+     "hrLCI": 43.253,
+     "hrUCI": 2427.009
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01869725",
+   "name": "Comparative Study of Sensitivity of Ga-DOTATOC...",
+   "year": 2013,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 302.538,
+   "hrLCI": 16.335,
+   "hrUCI": 5603.352,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.82 Sp=1.00",
+     "publishedHR": 302.538,
+     "hrLCI": 16.335,
+     "hrUCI": 5603.352
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01710254",
+   "name": "RECAD-AF",
+   "year": 2013,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 207.182,
+   "hrLCI": 10.839,
+   "hrUCI": 3960.082,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.80 Sp=1.00",
+     "publishedHR": 207.182,
+     "hrLCI": 10.839,
+     "hrUCI": 3960.082
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02673151",
+   "name": "68Ga-PSMA PET/CT in Detecting Prostate Cancer ...",
+   "year": 2017,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 203.062,
+   "hrLCI": 48.415,
+   "hrUCI": 851.689,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.93 Sp=0.93",
+     "publishedHR": 203.062,
+     "hrLCI": 48.415,
+     "hrUCI": 851.689
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02397408",
+   "name": "11C- and 18F-Choline PET/MR Imaging for Prosta...",
+   "year": 2015,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 191.667,
+   "hrLCI": 7.074,
+   "hrUCI": 5192.848,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.88 Sp=1.00",
+     "publishedHR": 191.667,
+     "hrLCI": 7.074,
+     "hrUCI": 5192.848
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01447719",
+   "name": "Autopsy Follow-up of Subjects Previously Image...",
+   "year": 2010,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 189.063,
+   "hrLCI": 45.0,
+   "hrUCI": 794.326,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.94 Sp=0.94",
+     "publishedHR": 189.063,
+     "hrLCI": 45.0,
+     "hrUCI": 794.326
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04334902",
+   "name": "Evaluation of Clinical Decision Support System...",
+   "year": 2020,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 182.111,
+   "hrLCI": 58.47,
+   "hrUCI": 567.209,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.94 Sp=0.92",
+     "publishedHR": 182.111,
+     "hrLCI": 58.47,
+     "hrUCI": 567.209
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00783302",
+   "name": "Study in Subjects Suspected of Having CAD Unde...",
+   "year": 2008,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 157.265,
+   "hrLCI": 48.7,
+   "hrUCI": 507.852,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.96 Sp=0.87",
+     "publishedHR": 157.265,
+     "hrLCI": 48.7,
+     "hrUCI": 507.852
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00709852",
+   "name": "Safety and Efficacy of Gadobutrol 1.0 Molar (G...",
+   "year": 2008,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 110.655,
+   "hrLCI": 39.371,
+   "hrUCI": 311.005,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.69 Sp=0.98",
+     "publishedHR": 110.655,
+     "hrLCI": 39.371,
+     "hrUCI": 311.005
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02933489",
+   "name": "Abbreviated Breast MRI and Digital Tomosynthes...",
+   "year": 2016,
+   "group": "MRI (breast) -- diagnostic OR",
+   "publishedHR": 107.106,
+   "hrLCI": 82.701,
+   "hrUCI": 138.713,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.91 Sp=0.91",
+     "publishedHR": 107.106,
+     "hrLCI": 82.701,
+     "hrUCI": 138.713
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01020838",
+   "name": "Phase III Study of Florbetaben (BAY94-9172) PE...",
+   "year": 2009,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 95.605,
+   "hrLCI": 36.241,
+   "hrUCI": 252.209,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.91 Sp=0.91",
+     "publishedHR": 95.605,
+     "hrLCI": 36.241,
+     "hrUCI": 252.209
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02090855",
+   "name": "Re-Read Study to Compare the Brain Uptake of [...",
+   "year": 2013,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 88.714,
+   "hrLCI": 21.362,
+   "hrUCI": 368.42,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.90 Sp=0.88",
+     "publishedHR": 88.714,
+     "hrLCI": 21.362,
+     "hrUCI": 368.42
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01550549",
+   "name": "Evaluation of Web-based Training to Educate Ph...",
+   "year": 2011,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 87.656,
+   "hrLCI": 24.883,
+   "hrUCI": 308.794,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.86 Sp=0.94",
+     "publishedHR": 87.656,
+     "hrLCI": 24.883,
+     "hrUCI": 308.794
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01236300",
+   "name": "INSPECT",
+   "year": 2010,
+   "group": "ultrasound (pancreatic) -- diagnostic OR",
+   "publishedHR": 86.333,
+   "hrLCI": 4.844,
+   "hrUCI": 1538.678,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.59 Sp=1.00",
+     "publishedHR": 86.333,
+     "hrLCI": 4.844,
+     "hrUCI": 1538.678
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01892540",
+   "name": "PET/CT or PET/MRI in Measuring Tumors in Patie...",
+   "year": 2013,
+   "group": "PET (breast) -- diagnostic OR",
+   "publishedHR": 84.333,
+   "hrLCI": 12.84,
+   "hrUCI": 553.921,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.91 Sp=0.89",
+     "publishedHR": 84.333,
+     "hrLCI": 12.84,
+     "hrUCI": 553.921
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01672827",
+   "name": "Effectiveness of an Electronic Training Progra...",
+   "year": 2012,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 77.977,
+   "hrLCI": 23.448,
+   "hrUCI": 259.319,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.93 Sp=0.86",
+     "publishedHR": 77.977,
+     "hrLCI": 23.448,
+     "hrUCI": 259.319
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02182947",
+   "name": "CE",
+   "year": 2012,
+   "group": "MRI (colorectal) -- diagnostic OR",
+   "publishedHR": 68.2,
+   "hrLCI": 3.774,
+   "hrUCI": 1232.599,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=1.00 Sp=0.57",
+     "publishedHR": 68.2,
+     "hrLCI": 3.774,
+     "hrUCI": 1232.599
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00595881",
+   "name": "Emergency Bedside Ultrasound for Pediatric Sof...",
+   "year": 2008,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 60.062,
+   "hrLCI": 39.263,
+   "hrUCI": 91.881,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.89 Sp=0.89",
+     "publishedHR": 60.062,
+     "hrLCI": 39.263,
+     "hrUCI": 91.881
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03136328",
+   "name": "Diagnosis and Staging of Neuroendocrine Tumors...",
+   "year": 2016,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 55.857,
+   "hrLCI": 2.534,
+   "hrUCI": 1231.226,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.75 Sp=1.00",
+     "publishedHR": 55.857,
+     "hrLCI": 2.534,
+     "hrUCI": 1231.226
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01927887",
+   "name": "Pre-Operative Nodal Staging of Thyroid Cancer ...",
+   "year": 2012,
+   "group": "MRI (lymph-node) -- diagnostic OR",
+   "publishedHR": 55.0,
+   "hrLCI": 4.3,
+   "hrUCI": 703.432,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.85 Sp=0.89",
+     "publishedHR": 55.0,
+     "hrLCI": 4.3,
+     "hrUCI": 703.432
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02483481",
+   "name": "Using Ultrasound Elastography to Predict Devel...",
+   "year": 2015,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 42.25,
+   "hrLCI": 12.53,
+   "hrUCI": 142.469,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.86 Sp=0.86",
+     "publishedHR": 42.25,
+     "hrLCI": 12.53,
+     "hrUCI": 142.469
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01395030",
+   "name": "PET/CT in Diagnosing Patients With Liver Cance...",
+   "year": 2011,
+   "group": "PET (liver) -- diagnostic OR",
+   "publishedHR": 37.735,
+   "hrLCI": 12.193,
+   "hrUCI": 116.779,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.86 Sp=0.86",
+     "publishedHR": 37.735,
+     "hrLCI": 12.193,
+     "hrUCI": 116.779
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00623467",
+   "name": "Safety and Efficacy of Gadobutrol 1.0 Molar ( ...",
+   "year": 2007,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 37.449,
+   "hrLCI": 20.834,
+   "hrUCI": 67.313,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.80 Sp=0.90",
+     "publishedHR": 37.449,
+     "hrLCI": 20.834,
+     "hrUCI": 67.313
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01012674",
+   "name": "Carotid and Vertebral Magnetic Resonance Angio...",
+   "year": 2009,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 34.115,
+   "hrLCI": 17.574,
+   "hrUCI": 66.224,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.70 Sp=0.94",
+     "publishedHR": 34.115,
+     "hrLCI": 17.574,
+     "hrUCI": 66.224
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02981368",
+   "name": "OSPREY",
+   "year": 2016,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 33.592,
+   "hrLCI": 13.382,
+   "hrUCI": 84.325,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.40 Sp=0.98",
+     "publishedHR": 33.592,
+     "hrLCI": 13.382,
+     "hrUCI": 84.325
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02624518",
+   "name": "68Ga-RM2 PET/MRI in Biochemically Recurrent Pr...",
+   "year": 2015,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 33.351,
+   "hrLCI": 14.746,
+   "hrUCI": 75.431,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.70 Sp=0.93",
+     "publishedHR": 33.351,
+     "hrLCI": 14.746,
+     "hrUCI": 75.431
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04773015",
+   "name": "A Study to Evaluate the Effectiveness of VIZAM...",
+   "year": 2018,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 31.404,
+   "hrLCI": 17.356,
+   "hrUCI": 56.824,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.92 Sp=0.72",
+     "publishedHR": 31.404,
+     "hrLCI": 17.356,
+     "hrUCI": 56.824
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00750282",
+   "name": "Phase II Study of Florbetaben (BAY 94-9172) PE...",
+   "year": 2008,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 27.15,
+   "hrLCI": 13.56,
+   "hrUCI": 54.359,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.84 Sp=0.84",
+     "publishedHR": 27.15,
+     "hrLCI": 13.56,
+     "hrUCI": 54.359
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02430480",
+   "name": "Using Multiparametric MRI to Evaluate Intrapro...",
+   "year": 2015,
+   "group": "MRI (prostate) -- diagnostic OR",
+   "publishedHR": 26.571,
+   "hrLCI": 7.593,
+   "hrUCI": 92.986,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.81 Sp=0.87",
+     "publishedHR": 26.571,
+     "hrLCI": 7.593,
+     "hrUCI": 92.986
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02260817",
+   "name": "Expanded Access to Diagnostic Imaging for Stag...",
+   "year": 2014,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 26.133,
+   "hrLCI": 5.822,
+   "hrUCI": 117.3,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.97 Sp=0.48",
+     "publishedHR": 26.133,
+     "hrLCI": 5.822,
+     "hrUCI": 117.3
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01010932",
+   "name": "Carotid and Vertebral Magnetic Resonance Angio...",
+   "year": 2009,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 21.825,
+   "hrLCI": 11.166,
+   "hrUCI": 42.658,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.56 Sp=0.94",
+     "publishedHR": 21.825,
+     "hrLCI": 11.166,
+     "hrUCI": 42.658
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01705496",
+   "name": "PJI",
+   "year": 2012,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 20.25,
+   "hrLCI": 4.375,
+   "hrUCI": 93.722,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.80 Sp=0.80",
+     "publishedHR": 20.25,
+     "hrLCI": 4.375,
+     "hrUCI": 93.722
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04495634",
+   "name": "Evaluation of a Carbon Nanotube Enabled Solid-...",
+   "year": 2022,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 19.783,
+   "hrLCI": 1.014,
+   "hrUCI": 386.027,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.33 Sp=0.98",
+     "publishedHR": 19.783,
+     "hrLCI": 1.014,
+     "hrUCI": 386.027
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01890421",
+   "name": "GadaCAD 1",
+   "year": 2013,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 18.25,
+   "hrLCI": 10.655,
+   "hrUCI": 31.259,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.65 Sp=0.91",
+     "publishedHR": 18.25,
+     "hrLCI": 10.655,
+     "hrUCI": 31.259
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00853671",
+   "name": "Myocardial Stress Perfusion Imaging With Dual ...",
+   "year": 2008,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 16.0,
+   "hrLCI": 6.005,
+   "hrUCI": 42.631,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.79 Sp=0.80",
+     "publishedHR": 16.0,
+     "hrLCI": 6.005,
+     "hrUCI": 42.631
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00920023",
+   "name": "Pre-Operative Staging of Pancreatic Cancer Usi...",
+   "year": 2008,
+   "group": "MRI (lymph-node) -- diagnostic OR",
+   "publishedHR": 16.0,
+   "hrLCI": 2.674,
+   "hrUCI": 95.754,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.83 Sp=0.80",
+     "publishedHR": 16.0,
+     "hrLCI": 2.674,
+     "hrUCI": 95.754
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03149042",
+   "name": "Validation of a Computed Tomography (CT) Based...",
+   "year": 2016,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 15.926,
+   "hrLCI": 6.064,
+   "hrUCI": 41.826,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.83 Sp=0.76",
+     "publishedHR": 15.926,
+     "hrLCI": 6.064,
+     "hrUCI": 41.826
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03113617",
+   "name": "68Ga-RM2 PET/CT in Detecting Regional Nodal an...",
+   "year": 2017,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 15.123,
+   "hrLCI": 5.367,
+   "hrUCI": 42.614,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.79 Sp=0.79",
+     "publishedHR": 15.123,
+     "hrLCI": 5.367,
+     "hrUCI": 42.614
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02364388",
+   "name": "MAESTRO",
+   "year": 2015,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 14.282,
+   "hrLCI": 4.276,
+   "hrUCI": 47.7,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.95 Sp=0.41",
+     "publishedHR": 14.282,
+     "hrLCI": 4.276,
+     "hrUCI": 47.7
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04410367",
+   "name": "PURSUE",
+   "year": 2020,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 13.588,
+   "hrLCI": 0.655,
+   "hrUCI": 282.087,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=1.00 Sp=0.39",
+     "publishedHR": 13.588,
+     "hrLCI": 0.655,
+     "hrUCI": 282.087
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01138111",
+   "name": "Florbetaben (BAY94-9172) PET (Positron Emissio...",
+   "year": 2008,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 12.25,
+   "hrLCI": 4.534,
+   "hrUCI": 33.096,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.77 Sp=0.77",
+     "publishedHR": 12.25,
+     "hrLCI": 4.534,
+     "hrUCI": 33.096
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01890434",
+   "name": "GadaCAD 2",
+   "year": 2013,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 9.232,
+   "hrLCI": 5.916,
+   "hrUCI": 14.406,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.61 Sp=0.85",
+     "publishedHR": 9.232,
+     "hrLCI": 5.916,
+     "hrUCI": 14.406
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00416455",
+   "name": "Fludeoxyglucose (FDG) F 18 PET Scan, CT Scan, ...",
+   "year": 2007,
+   "group": "PET (lymph-node) -- diagnostic OR",
+   "publishedHR": 8.487,
+   "hrLCI": 3.908,
+   "hrUCI": 18.43,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.57 Sp=0.86",
+     "publishedHR": 8.487,
+     "hrLCI": 3.908,
+     "hrUCI": 18.43
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT06652568",
+   "name": "DVT GUARD",
+   "year": 2023,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 8.423,
+   "hrLCI": 5.91,
+   "hrUCI": 12.005,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.93 Sp=0.39",
+     "publishedHR": 8.423,
+     "hrLCI": 5.91,
+     "hrUCI": 12.005
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00707876",
+   "name": "Magnetic Resonance Angiography for Peripheral ...",
+   "year": 2008,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 8.41,
+   "hrLCI": 3.043,
+   "hrUCI": 23.24,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.75 Sp=0.75",
+     "publishedHR": 8.41,
+     "hrLCI": 3.043,
+     "hrUCI": 23.24
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04936334",
+   "name": "The Role of 68Ga-PSMA-11 PET (Prostate Specifi...",
+   "year": 2021,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 8.143,
+   "hrLCI": 3.325,
+   "hrUCI": 19.943,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.71 Sp=0.75",
+     "publishedHR": 8.143,
+     "hrLCI": 3.325,
+     "hrUCI": 19.943
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02678351",
+   "name": "68Ga-PSMA-11 PET/MRI in Finding Tumors in Pati...",
+   "year": 2016,
+   "group": "PET (prostate) -- diagnostic OR",
+   "publishedHR": 7.857,
+   "hrLCI": 3.323,
+   "hrUCI": 18.578,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.56 Sp=0.85",
+     "publishedHR": 7.857,
+     "hrLCI": 3.323,
+     "hrUCI": 18.578
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00928304",
+   "name": "Phase II Study of Florbetaben (BAY94-9172) PET...",
+   "year": 2009,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 7.61,
+   "hrLCI": 4.173,
+   "hrUCI": 13.877,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.73 Sp=0.73",
+     "publishedHR": 7.61,
+     "hrLCI": 4.173,
+     "hrUCI": 13.877
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02684435",
+   "name": "CEUS-CKD",
+   "year": 2016,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 7.344,
+   "hrLCI": 3.34,
+   "hrUCI": 16.145,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.75 Sp=0.71",
+     "publishedHR": 7.344,
+     "hrLCI": 3.34,
+     "hrUCI": 16.145
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03292874",
+   "name": "High Resolution MRI Study for Prostate Cancer",
+   "year": 2017,
+   "group": "MRI (prostate) -- diagnostic OR",
+   "publishedHR": 7.223,
+   "hrLCI": 3.208,
+   "hrUCI": 16.263,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.73 Sp=0.73",
+     "publishedHR": 7.223,
+     "hrLCI": 3.208,
+     "hrUCI": 16.263
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03354273",
+   "name": "An International Study to Evaluate Diagnostic ...",
+   "year": 2018,
+   "group": "PET (other) -- diagnostic OR",
+   "publishedHR": 6.373,
+   "hrLCI": 4.935,
+   "hrUCI": 8.23,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.72 Sp=0.72",
+     "publishedHR": 6.373,
+     "hrLCI": 4.935,
+     "hrUCI": 8.23
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01011946",
+   "name": "Staging of Axillary Lymph Nodes Using the PEM ...",
+   "year": 2009,
+   "group": "PET (breast) -- diagnostic OR",
+   "publishedHR": 4.0,
+   "hrLCI": 1.437,
+   "hrUCI": 11.132,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.68 Sp=0.68",
+     "publishedHR": 4.0,
+     "hrLCI": 1.437,
+     "hrUCI": 11.132
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00829413",
+   "name": "SonoVue\u00ae-Enhanced Ultrasound (US) Versus Unenh...",
+   "year": 2010,
+   "group": "ultrasound (liver) -- diagnostic OR",
+   "publishedHR": 3.36,
+   "hrLCI": 2.015,
+   "hrUCI": 5.605,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.62 Sp=0.67",
+     "publishedHR": 3.36,
+     "hrLCI": 2.015,
+     "hrUCI": 5.605
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT02079025",
+   "name": "Multi-Center Trial of High-resolution Transrec...",
+   "year": 2013,
+   "group": "ultrasound (prostate) -- diagnostic OR",
+   "publishedHR": 2.657,
+   "hrLCI": 2.182,
+   "hrUCI": 3.236,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.62 Sp=0.62",
+     "publishedHR": 2.657,
+     "hrLCI": 2.182,
+     "hrUCI": 3.236
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT00788697",
+   "name": "SonoVue\u00ae-Enhanced Ultrasound Versus Unenhanced...",
+   "year": 2009,
+   "group": "ultrasound (liver) -- diagnostic OR",
+   "publishedHR": 2.201,
+   "hrLCI": 1.311,
+   "hrUCI": 3.693,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.57 Sp=0.63",
+     "publishedHR": 2.201,
+     "hrLCI": 1.311,
+     "hrUCI": 3.693
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04136912",
+   "name": "3-D Super Resolution Ultrasound Microvascular ...",
+   "year": 2022,
+   "group": "ultrasound (breast) -- diagnostic OR",
+   "publishedHR": 2.0,
+   "hrLCI": 0.384,
+   "hrUCI": 10.409,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.50 Sp=0.67",
+     "publishedHR": 2.0,
+     "hrLCI": 0.384,
+     "hrUCI": 10.409
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03510988",
+   "name": "Dedicated Breast PET/MRI in Evaluation of Exte...",
+   "year": 2018,
+   "group": "PET (breast) -- diagnostic OR",
+   "publishedHR": 1.875,
+   "hrLCI": 0.39,
+   "hrUCI": 9.013,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), PET: Se=0.45 Sp=0.74",
+     "publishedHR": 1.875,
+     "hrLCI": 0.39,
+     "hrUCI": 9.013
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT01743040",
+   "name": "TURBULENCE",
+   "year": 2013,
+   "group": "CT (other) -- diagnostic OR",
+   "publishedHR": 1.759,
+   "hrLCI": 1.436,
+   "hrUCI": 2.154,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), CT: Se=0.57 Sp=0.57",
+     "publishedHR": 1.759,
+     "hrLCI": 1.436,
+     "hrUCI": 2.154
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT03347617",
+   "name": "Ferumoxytol MRI in Assessing Response to Pembr...",
+   "year": 2017,
+   "group": "MRI (other) -- diagnostic OR",
+   "publishedHR": 1.225,
+   "hrLCI": 0.265,
+   "hrUCI": 5.667,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), MRI: Se=0.47 Sp=0.58",
+     "publishedHR": 1.225,
+     "hrLCI": 0.265,
+     "hrUCI": 5.667
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  },
+  {
+   "nct": "NCT04030104",
+   "name": "Reader-02",
+   "year": 2019,
+   "group": "ultrasound (other) -- diagnostic OR",
+   "publishedHR": 0.556,
+   "hrLCI": 0.43,
+   "hrUCI": 0.718,
+   "allOutcomes": [
+    {
+     "shortLabel": "DOR",
+     "type": "survival",
+     "title": "Diagnostic odds ratio (DOR), ultrasound: Se=0.43 Sp=0.43",
+     "publishedHR": 0.556,
+     "hrLCI": 0.43,
+     "hrUCI": 0.718
+    }
+   ],
+   "rob": [
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns",
+    "some-concerns"
+   ]
+  }
+ ],
+ "provenance_note": "Registry-native cohort: 206 AACT trials posted both sensitivity and specificity as percentages; 66 had a usable modality + subgroup denominators to reconstruct a 2x2 (TP=round(Se%xn1), TN=round(Sp%xn0); fail-closed on implausible rate / tiny subgroup). The per-study summary is the DIAGNOSTIC ODDS RATIO (DOR=TP*TN/(FP*FN)), carried in the ratio slots and labelled 'diagnostic OR' - it is NOT a time-to-event hazard ratio. AACT-reconstructed 2x2, NOT 2x2 tables read from full text and NOT a dual-screened systematic review. Synthesis hierarchy: Bayesian bivariate (Reitsma) league (dta_league.json) ranked by Youden J; the engine flags the cross-modality ranking as cross-target heterogeneity (mixed cancer sites) -> not a clean winner."
+}
