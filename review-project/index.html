@@ -755,8 +755,10 @@
         ["Elastic-net", "#4 — 83% win rate", E.elasticNet(yi, vi, 0.1, 0.25)],
         ["LASSO-regularized", "83%", E.lassoReg(yi, vi, 0.01)],
         ["Group-LASSO", "75%", E.groupLasso(yi, vi, 0.1)],
+        ["Gradient boosting", "58%", E.boosting(yi, vi, 20, 0.2)],
         ["Satterthwaite df", "50%", E.satterthwaiteDF(yi, vi)],
         ["Sample-size weighted", "50%", E.sampleSizeWeighted(yi, vi, 0.5)],
+        ["Sequential-adaptive", "50%", E.sequentialAdaptive(yi, vi, 0.05)],
         ["Softmax-weighted", "50%", E.softmaxWeighted(yi, vi, 2.0)]
       ];
       var rows = defs.map(function (d) {

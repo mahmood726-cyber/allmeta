@@ -338,6 +338,49 @@
     return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
   }
 
+  // ---- Benchmark-superior estimators, batch 3: deterministic iterative pools.
+  // Gradient boosting on the pooled residual, and a sequential Bayesian filter
+  // with an adaptive tau^2 — both fully deterministic, ported verbatim, 1e-6.
+  // Gradient-boosting pool: start at the fixed-effect mean, then add a shrunken
+  // (learning-rate) step toward the precision-weighted residual each round.
+  function boosting(yi, vi, nRounds, lr) {
+    nRounds = nRounds == null ? 20 : nRounds; lr = lr == null ? 0.2 : lr;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var wi = vi.map(function (v) { return 1 / v; });
+    var swi = wi.reduce(function (a, x) { return a + x; }, 0);
+    var mu = yi.reduce(function (a, y, i) { return a + wi[i] * y; }, 0) / swi;   // FE start
+    for (var r = 0; r < nRounds; r++) {
+      var inc = yi.reduce(function (a, y, i) { return a + b.wiRe[i] * (y - mu); }, 0) / b.swiRe;
+      mu = mu + lr * inc;
+    }
+    var se = Math.sqrt(1 / b.swiRe), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // Sequential-adaptive pool: process studies most-precise first, Bayesian-update
+  // the mean and grow tau^2 by the learning-rate times the excess prediction error,
+  // then re-pool all studies under the final tau^2.
+  function sequentialAdaptive(yi, vi, lr) {
+    lr = lr == null ? 0.05 : lr;
+    var k = yi.length; if (k < 1) return null;
+    var idx = yi.map(function (_, i) { return i; }).sort(function (a, c) { return (1 / vi[c]) - (1 / vi[a]); });
+    var ys = idx.map(function (i) { return yi[i]; }), vs = idx.map(function (i) { return vi[i]; });
+    var mu = ys[0], tau2 = 0.0, cumW = 1 / vs[0];
+    for (var i = 1; i < k; i++) {
+      var priorVar = 1 / cumW + tau2, likVar = vs[i];
+      var postVar = 1 / (1 / priorVar + 1 / likVar);
+      var muNew = postVar * (mu / priorVar + ys[i] / likVar);
+      var predErr = (ys[i] - mu) * (ys[i] - mu), expVar = priorVar + likVar;
+      tau2 = tau2 + lr * Math.max(0, predErr - expVar);
+      mu = muNew;
+      cumW += 1 / (vs[i] + tau2);
+    }
+    var wiRe = vi.map(function (v) { return 1 / (v + tau2); });
+    var swiRe = wiRe.reduce(function (a, x) { return a + x; }, 0);
+    var muFinal = yi.reduce(function (a, y, i) { return a + wiRe[i] * y; }, 0) / swiRe;
+    var se = Math.sqrt(1 / swiRe), z = 1.959963984540054;
+    return { estimate: muFinal, se: se, ciLo: muFinal - z * se, ciHi: muFinal + z * se, tau2: tau2 };
+  }
+
   // ---- Bias signals (browser-computable subset of MAFI's asymmetry cluster) ----
   // Classic Egger (1997): OLS of the standard normal deviate (yi/sei) on precision
   // (1/sei); the intercept's t-test (df=k-2) is the small-study-asymmetry test.
@@ -368,6 +411,7 @@
     knappHartungMod: knappHartungMod, satterthwaiteDF: satterthwaiteDF, ivPlus: ivPlus, ridge: ridge, tikhonov: tikhonov,
     qualityEffects: qualityEffects, sampleSizeWeighted: sampleSizeWeighted,
     softmaxWeighted: softmaxWeighted, lassoReg: lassoReg, groupLasso: groupLasso, elasticNet: elasticNet,
+    boosting: boosting, sequentialAdaptive: sequentialAdaptive,
     tcdf: tcdf, tinv: tinv, _quantile: quantile };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ExperimentalMA = api;

@@ -141,6 +141,9 @@ test('benchmark-superior estimators match their Python reference values (<1e-6)'
       glasso: E.groupLasso(yi, vi, 0.1),
       enet25: E.elasticNet(yi, vi, 0.1, 0.25),
       enet50: E.elasticNet(yi, vi, 0.1, 0.5),
+      boost20: E.boosting(yi, vi, 20, 0.2),
+      boost5: E.boosting(yi, vi, 5, 0.2),
+      seqAdapt: E.sequentialAdaptive(yi, vi, 0.05),
     };
   }, { yi: YI, vi: VI, homYi: HOM_YI, homVi: HOM_VI });
 
@@ -192,6 +195,12 @@ test('benchmark-superior estimators match their Python reference values (<1e-6)'
   expect(got.glasso.estimate).toBeCloseTo(-0.13780890, 6);
   expect(got.enet25.estimate).toBeCloseTo(-0.13791078, 6);  // closed-form == scipy bounded optimiser
   expect(got.enet50.estimate).toBeCloseTo(-0.13787682, 6);
+
+  // batch 3 — deterministic iterative pools
+  expect(got.boost20.estimate).toBeCloseTo(-0.13800253, 6);
+  expect(got.boost5.estimate).toBeCloseTo(-0.13899144, 6);
+  expect(got.seqAdapt.estimate).toBeCloseTo(-0.13931017, 6);
+  expect(got.seqAdapt.se).toBeCloseTo(0.03463704, 6);   // its own adaptive tau²
 
   expect(errs, 'no console errors on the host page').toEqual([]);
 });
