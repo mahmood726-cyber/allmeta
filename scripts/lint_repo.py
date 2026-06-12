@@ -40,7 +40,10 @@ CDN_LINK = re.compile(r"""<link\b[^>]*\bhref\s*=\s*["']https?://""", re.I)
 # Hardcoded local filesystem paths that must never ship.
 LOCAL_PATH = re.compile(r"""[A-Za-z]:[\\/]Users[\\/]|/home/[a-z]|/Users/[A-Za-z]""")
 # Unpopulated template tokens.
-PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}|REPLACE_ME|__PLACEHOLDER__|\bTODO_FILL\b")  # sentinel:skip-line P1-unpopulated-placeholder  (this IS the detector's own pattern, not an unpopulated token)
+# Match identifier-like template tokens ({{title}}, {{ study.name }}, {{#each}}) but
+# NOT JSDoc record types (@returns {{a:number[], b:string}}) — those contain ':'/'['
+# and are valid documentation, not unpopulated placeholders (FP-audit: narrow, don't weaken).
+PLACEHOLDER = re.compile(r"\{\{[\w\s.#/\-]*\}\}|REPLACE_ME|__PLACEHOLDER__|\bTODO_FILL\b")  # sentinel:skip-line P1-unpopulated-placeholder  (this IS the detector's own pattern, not an unpopulated token)
 SCRIPT_OR_STYLE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.I | re.S)
 
 # Accepted baseline (Sentinel-style allowlist): findings here are known and
