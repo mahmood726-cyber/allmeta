@@ -546,6 +546,16 @@ test("Synthesis offers the author's experimental estimators, clearly labelled", 
   });
   expect(Math.abs(kh - 0.871123)).toBeLessThan(1e-4);
 
+  // HKSJ Q-floor audit panel (author's hksj-q-floor-atlas): floored vs un-floored
+  // HKSJ for these studies. The 6-study fixture is heterogeneous (I²>0) so the
+  // floor does not bind, but the card must still render both variants.
+  const hksj = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "HKSJ Q-floor" });
+  await expect(hksj).toHaveCount(1);
+  await expect(hksj).toContainText("Floored (RevMan-2025)");
+  await expect(hksj).toContainText("Un-floored");
+  await expect(hksj).toContainText("hksj-q-floor-atlas");
+  await expect(hksj.locator("table tbody tr")).toHaveCount(2);
+
   // publication-bias signals panel (browser subset of MAFI): Egger + precision-effect
   const bias = page.locator("#panel-synthesis .exp-methods").filter({ hasText: "Publication-bias signals" });
   await expect(bias).toHaveCount(1);

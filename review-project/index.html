@@ -246,6 +246,7 @@
   <script src="../shared/ma-core.js"></script>
   <!-- EXPERIMENTAL estimators ported from the author's method repos (GRMA, conformal-MA). -->
   <script src="../shared/experimental-ma.js"></script>
+  <script src="../shared/atlas-audits.js"></script>
   <script src="../shared/rob-core.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/review-bundle.js"></script>
@@ -572,7 +573,7 @@
           ? "<div class='synth-xref'>Canonical bus (ma-pooled-v1): " + esc(pooled.measure || "effect") + " " + fnum(pooled.pointEstimate)
               + " [" + fnum(pooled.ciLo) + ", " + fnum(pooled.ciHi) + "]" + (pooled.model ? " &middot; " + esc(pooled.model) : "") + " &middot; k=" + pooled.k + "</div>"
           : "<div class='synth-xref'>No canonical pooled result on the bus yet &mdash; the live recompute above is exploratory.</div>";
-        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + biasCard(studies2));
+        return wrapPrev("Pooled result &mdash; live recompute (JASP-style)", synthControls() + droppedWarn(studies2, live) + liveBlock + xref + experimentalCard(studies2, scale) + multiverseCard(studies2, scale) + benchmarkCard(studies2, scale) + hksjFloorCard(studies2, scale) + biasCard(studies2));
       }
       if (id === "certainty") {
         var g = lsGet("grade-sof-v1"); var outs = g && Array.isArray(g.outcomes) ? g.outcomes : null; if (!outs || !outs.length) return "";
@@ -765,6 +766,36 @@
         + "<div class='exp-row'>Closed-form estimators that outperformed DerSimonian-Laird across the author's 299-method, 12-scenario, 1000-simulation benchmark — applied to these studies:</div>"
         + "<table class='ptable'><thead><tr><th>Method</th><th>est</th><th>95% CI</th><th>vs DL</th></tr></thead><tbody>" + rows + "</tbody></table>"
         + "<p class='exp-caveat'>Win rates are from the simulation benchmark (experimental-meta-analysis), not this dataset; they show how often each method beat DL across scenarios. Ported and parity-locked to the Python source. <b>Experimental</b>; shown for exploration, not a substitute for the pooled estimate above.</p></div></details>";
+    }
+
+    // HKSJ Q-floor audit (author's hksj-q-floor-atlas): when this MA sits in the
+    // I²=0 regime (Q < k−1), raw HKSJ shrinks the SE below the REML+Wald SE and
+    // manufactures precision. Shows the floored (RevMan-2025 default) vs un-floored
+    // CI for THESE studies, beside the corpus headline.
+    function hksjFloorCard(studies, scale) {
+      if (!(window.AtlasAudits && window.AlmMaCore)) return "";
+      var poolable = (studies || []).filter(function (s) { return isFinite(s.est) && isFinite(s.se) && s.se > 0; });
+      if (poolable.length < 2) return "";
+      var yi = poolable.map(function (s) { return s.est; });
+      var vi = poolable.map(function (s) { return s.se * s.se; });
+      var a;
+      try { a = AtlasAudits.hksjQFloorAudit(yi, vi, AlmMaCore.pool); } catch (e) { return ""; }
+      if (!a) return "";
+      var ratio = scale === "ratio", tx = function (x) { return ratio ? Math.exp(x) : x; };
+      var rTxt = a.qZero ? "&infin; (Q=0 — un-floored CI has zero width)" : fnum(a.widthRatio) + "&times;";
+      var verdict = a.floorBinds
+        ? (a.sigLoss
+            ? ["the floor changes the conclusion", "#f87171"]
+            : ["the floor widens the CI but the conclusion holds", "#fbbf24"])
+        : ["I²>0 regime — the floor does not bind here", "#34d399"];
+      return "<details class='exp-methods'><summary>&#128300; HKSJ Q-floor audit <span class='exp-tag'>experimental</span></summary><div class='exp-body'>"
+        + "<div class='exp-row'>REML + Hartung-Knapp, I²=<b>" + fnum(a.i2) + "%</b> (Q=" + fnum(a.Q) + ", k=" + a.k + "). "
+        + "Flooring the variance correction at max(1, Q/(k&minus;1)) widens the 95% CI by <b>" + rTxt + "</b> &mdash; <b style='color:" + verdict[1] + "'>" + verdict[0] + "</b>.</div>"
+        + "<table class='ptable'><thead><tr><th>HKSJ variant</th><th>SE</th><th>95% CI</th><th>excludes null?</th></tr></thead><tbody>"
+        + "<tr><td>Floored (RevMan-2025)</td><td>" + fnum(a.seFloored) + "</td><td>" + fnum(tx(a.ciFlooredLo)) + " to " + fnum(tx(a.ciFlooredHi)) + "</td><td>" + (a.sigFloored ? "yes" : "no") + "</td></tr>"
+        + "<tr><td>Un-floored (raw)</td><td>" + fnum(a.seUnfloored) + "</td><td>" + fnum(tx(a.ciUnflooredLo)) + " to " + fnum(tx(a.ciUnflooredHi)) + "</td><td>" + (a.sigUnfloored ? "yes" : "no") + "</td></tr>"
+        + "</tbody></table>"
+        + "<p class='exp-caveat'>Per-MA lens from the author's hksj-q-floor-atlas (6,386 CDSR meta-analyses, REML τ²). Un-floored HKSJ can shrink the SE below the Wald SE when Q&le;k&minus;1, to exactly zero when Q=0 — the floored value is the honest one. <b>Experimental</b> audit, shown for exploration.</p></div></details>";
     }
 
     // Compact forest: study estimates + pooled diamond, transformed to the pooled
