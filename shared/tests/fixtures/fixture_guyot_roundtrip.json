@@ -1,0 +1,68 @@
+{
+  "nct_id": "SYNTH-GUYOT-RT",
+  "source": "synthetic",
+  "time_unit": "months",
+  "arms": [
+    {
+      "arm_id": "a",
+      "label": "Arm",
+      "role": "experimental",
+      "N": 20,
+      "total_events": 13,
+      "follow_up_max": 6,
+      "km_points": [
+        {
+          "t": 1,
+          "S": 0.9
+        },
+        {
+          "t": 2,
+          "S": 0.75
+        },
+        {
+          "t": 3,
+          "S": 0.69642857
+        },
+        {
+          "t": 4,
+          "S": 0.44318182
+        },
+        {
+          "t": 5,
+          "S": 0.31655844
+        },
+        {
+          "t": 6,
+          "S": 0.15827922
+        }
+      ],
+      "nar_points": [
+        {
+          "t": 0,
+          "n": 20
+        },
+        {
+          "t": 3,
+          "n": 14
+        },
+        {
+          "t": 6,
+          "n": 2
+        }
+      ]
+    }
+  ],
+  "hr": null,
+  "_truth": {
+    "d_schedule": [
+      2,
+      3,
+      1,
+      4,
+      2,
+      1
+    ],
+    "total_events": 13,
+    "N": 20
+  }
+}
