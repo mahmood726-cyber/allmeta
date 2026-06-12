@@ -268,6 +268,76 @@
     return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
   }
 
+  // ---- Benchmark-superior estimators, batch 2: adaptive weighting + regularised
+  // pools. Same 299-method benchmark, same DL-tau^2 base; all deterministic (no
+  // optimiser, no RNG) so they port exactly. Verified to 1e-6 vs the Python source.
+  // Softmax-weighted pool: precision/temperature through a softmax (low temp -> the
+  // single most precise study dominates; high temp -> toward uniform).
+  function softmaxWeighted(yi, vi, temperature) {
+    temperature = temperature == null ? 1.0 : temperature;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var prec = vi.map(function (v) { return 1 / (v + b.tau2); });
+    var logw = prec.map(function (p) { return p / temperature; });
+    var mx = Math.max.apply(null, logw);
+    var w = logw.map(function (l) { return Math.exp(l - mx); });
+    var sw = w.reduce(function (a, x) { return a + x; }, 0);
+    w = w.map(function (x) { return x / sw; });
+    var mu = yi.reduce(function (a, y, i) { return a + w[i] * y; }, 0);
+    var se = Math.sqrt(w.reduce(function (a, wi, i) { return a + wi * wi * (vi[i] + b.tau2); }, 0));
+    var z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // LASSO-regularised pool: soft-thresholded coordinate descent toward 0 (sparsity).
+  function lassoReg(yi, vi, lambda) {
+    lambda = lambda == null ? 0.1 : lambda;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var wi = vi.map(function (v) { return 1 / v; });
+    var swi = wi.reduce(function (a, x) { return a + x; }, 0);
+    var muFe = yi.reduce(function (a, y, i) { return a + wi[i] * y; }, 0) / swi;
+    var mu = muFe, hess = b.swiRe;
+    for (var it = 0; it < 100; it++) {
+      var grad = yi.reduce(function (a, y, i) { return a + b.wiRe[i] * (mu - y); }, 0);
+      var muUn = mu - grad / hess, t = lambda / hess;
+      var muNew = Math.sign(muUn) * Math.max(0, Math.abs(muUn) - t);
+      if (Math.abs(muNew - mu) < 1e-8) break;   // match Python: don't assign on convergence
+      mu = muNew;
+    }
+    var se = Math.sqrt(1 / b.swiRe), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+  // Group-LASSO pool: group studies by precision quartile, weighted-average the
+  // group means, then soft-threshold the combined effect.
+  function groupLasso(yi, vi, lambda) {
+    lambda = lambda == null ? 0.1 : lambda;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var prec = b.wiRe;   // 1/(vi+tau2)
+    var bins = [quantile(prec, 0.25), quantile(prec, 0.5), quantile(prec, 0.75)];
+    function digitize(x) { var g = 0; for (var j = 0; j < bins.length; j++) if (x >= bins[j]) g++; return g; }
+    var gMeans = [], gWeights = [];
+    for (var g = 0; g < 4; g++) {
+      var sw = 0, swy = 0, any = false;
+      for (var i = 0; i < yi.length; i++) if (digitize(prec[i]) === g) { sw += b.wiRe[i]; swy += b.wiRe[i] * yi[i]; any = true; }
+      if (any) { gMeans.push(swy / sw); gWeights.push(sw); }
+    }
+    var totW = gWeights.reduce(function (a, x) { return a + x; }, 0);
+    var muGl = 0; for (var m = 0; m < gMeans.length; m++) muGl += (gWeights[m] / totW) * gMeans[m];
+    var pen = lambda / (b.swiRe + 1e-10);
+    muGl = Math.abs(muGl) > pen ? Math.sign(muGl) * (Math.abs(muGl) - pen) : 0.0;
+    var se = Math.sqrt(1 / b.swiRe), z = 1.959963984540054;
+    return { estimate: muGl, se: se, ciLo: muGl - z * se, ciHi: muGl + z * se, tau2: b.tau2 };
+  }
+  // Elastic-net pool: closed-form minimiser of 0.5*Σwᵢ(yᵢ-μ)² + αλ|μ| + ½(1-α)λμ²
+  // (the convex objective the Python source solves with a 1-D bounded optimiser).
+  function elasticNet(yi, vi, lambda, alpha) {
+    lambda = lambda == null ? 0.1 : lambda; alpha = alpha == null ? 0.5 : alpha;
+    var b = dlBase(yi, vi); if (b.k < 1) return null;
+    var S = b.swiRe, Sy = yi.reduce(function (a, y, i) { return a + b.wiRe[i] * y; }, 0);
+    var st = Math.sign(Sy) * Math.max(0, Math.abs(Sy) - alpha * lambda);
+    var mu = st / (S + (1 - alpha) * lambda);
+    var se = Math.sqrt(1 / S), z = 1.959963984540054;
+    return { estimate: mu, se: se, ciLo: mu - z * se, ciHi: mu + z * se, tau2: b.tau2 };
+  }
+
   // ---- Bias signals (browser-computable subset of MAFI's asymmetry cluster) ----
   // Classic Egger (1997): OLS of the standard normal deviate (yi/sei) on precision
   // (1/sei); the intercept's t-test (df=k-2) is the small-study-asymmetry test.
@@ -296,7 +366,9 @@
 
   var api = { grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, egger: egger, precisionEffectCor: precisionEffectCor,
     knappHartungMod: knappHartungMod, satterthwaiteDF: satterthwaiteDF, ivPlus: ivPlus, ridge: ridge, tikhonov: tikhonov,
-    qualityEffects: qualityEffects, sampleSizeWeighted: sampleSizeWeighted, tcdf: tcdf, tinv: tinv, _quantile: quantile };
+    qualityEffects: qualityEffects, sampleSizeWeighted: sampleSizeWeighted,
+    softmaxWeighted: softmaxWeighted, lassoReg: lassoReg, groupLasso: groupLasso, elasticNet: elasticNet,
+    tcdf: tcdf, tinv: tinv, _quantile: quantile };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ExperimentalMA = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

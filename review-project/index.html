@@ -752,8 +752,12 @@
         ["Ridge-regularized", "75%", E.ridge(yi, vi, 0.01)],
         ["Tikhonov (prior 0)", "58–83%", E.tikhonov(yi, vi, 0.0, 0.1)],
         ["Quality-effects", "67%", E.qualityEffects(yi, vi, 0.5)],
+        ["Elastic-net", "#4 — 83% win rate", E.elasticNet(yi, vi, 0.1, 0.25)],
+        ["LASSO-regularized", "83%", E.lassoReg(yi, vi, 0.01)],
+        ["Group-LASSO", "75%", E.groupLasso(yi, vi, 0.1)],
         ["Satterthwaite df", "50%", E.satterthwaiteDF(yi, vi)],
-        ["Sample-size weighted", "50%", E.sampleSizeWeighted(yi, vi, 0.5)]
+        ["Sample-size weighted", "50%", E.sampleSizeWeighted(yi, vi, 0.5)],
+        ["Softmax-weighted", "50%", E.softmaxWeighted(yi, vi, 2.0)]
       ];
       var rows = defs.map(function (d) {
         var r = d[2]; if (!r) return "";

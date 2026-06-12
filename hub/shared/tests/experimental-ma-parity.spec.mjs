@@ -134,6 +134,13 @@ test('benchmark-superior estimators match their Python reference values (<1e-6)'
       homF: E.knappHartungMod(homYi, homVi, false),
       homT: E.knappHartungMod(homYi, homVi, true),
       kh1: E.knappHartungMod([0.1], [0.04], false), // k<2 guard
+      // batch 2: adaptive weighting + regularised pools
+      softmax: E.softmaxWeighted(yi, vi, 2.0),
+      lasso1: E.lassoReg(yi, vi, 0.1),
+      lasso01: E.lassoReg(yi, vi, 0.01),
+      glasso: E.groupLasso(yi, vi, 0.1),
+      enet25: E.elasticNet(yi, vi, 0.1, 0.25),
+      enet50: E.elasticNet(yi, vi, 0.1, 0.5),
     };
   }, { yi: YI, vi: VI, homYi: HOM_YI, homVi: HOM_VI });
 
@@ -176,6 +183,15 @@ test('benchmark-superior estimators match their Python reference values (<1e-6)'
 
   // Sub-threshold k guard
   expect(got.kh1).toBeNull();
+
+  // batch 2 — adaptive weighting + regularised pools (Python references)
+  expect(got.softmax.estimate).toBeCloseTo(-0.14999872, 6);
+  expect(got.softmax.se).toBeCloseTo(0.08174807, 6);
+  expect(got.lasso1.estimate).toBeCloseTo(-0.13780890, 6);
+  expect(got.lasso01.estimate).toBeCloseTo(-0.13795071, 6);
+  expect(got.glasso.estimate).toBeCloseTo(-0.13780890, 6);
+  expect(got.enet25.estimate).toBeCloseTo(-0.13791078, 6);  // closed-form == scipy bounded optimiser
+  expect(got.enet50.estimate).toBeCloseTo(-0.13787682, 6);
 
   expect(errs, 'no console errors on the host page').toEqual([]);
 });

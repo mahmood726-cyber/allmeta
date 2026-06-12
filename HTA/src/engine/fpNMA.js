@@ -173,7 +173,9 @@ function fitFPCoefficients(times, logHRs, weights, powers) {
             const resid = logHRs[j] - d * X[j][0];
             rss += weights[j] * resid * resid;
         }
-        return { coefficients: [d], residualSS: rss };
+        // WLS coefficient covariance = (X'WX)^-1 (weights are inverse-variances)
+        const cov = [[wxX > EPSILON ? 1 / wxX : 0]];
+        return { coefficients: [d], residualSS: rss, cov };
     }
 
     // order === 2: solve 2x2 normal equations
@@ -204,7 +206,11 @@ function fitFPCoefficients(times, logHRs, weights, powers) {
         const resid = logHRs[j] - d1 * X[j][0] - d2 * X[j][1];
         rss += weights[j] * resid * resid;
     }
-    return { coefficients: [d1, d2], residualSS: rss };
+    // WLS coefficient covariance = (X'WX)^-1 for the 2x2 normal equations
+    const cov = Math.abs(det) < EPSILON
+        ? [[0, 0], [0, 0]]
+        : [[a22 / det, -a12 / det], [-a12 / det, a11 / det]];
+    return { coefficients: [d1, d2], residualSS: rss, cov };
 }
 
 /**
@@ -372,7 +378,8 @@ class FPNMAEngine {
                     comparison: comp.comparison,
                     treatment: comp.treatment,
                     coefficients: fit.coefficients,
-                    coefficientsNoisy: noisyCoeffs
+                    coefficientsNoisy: noisyCoeffs,
+                    cov: fit.cov
                 });
             }
 
@@ -425,8 +432,17 @@ class FPNMAEngine {
                 const lhr = logHR(t, cr.coefficients, best.powers);
                 const hr = Math.exp(lhr);
                 hrs.push(hr);
-                // Approximate CI using coefficient uncertainty
-                const se = 0.1 * Math.abs(lhr) + 0.05; // heuristic SE
+                // CI from the fitted WLS covariance: Var(logHR(t)) = b(t)' Cov b(t), b(t)=fpBasis(t)
+                const basis = fpBasis(t, best.powers);
+                let varLhr = 0;
+                if (cr.cov) {
+                    for (let a = 0; a < basis.length; a++) {
+                        for (let bb = 0; bb < basis.length; bb++) {
+                            varLhr += basis[a] * cr.cov[a][bb] * basis[bb];
+                        }
+                    }
+                }
+                const se = Math.sqrt(Math.max(varLhr, 0));
                 lowers.push(Math.exp(lhr - 1.96 * se));
                 uppers.push(Math.exp(lhr + 1.96 * se));
             }

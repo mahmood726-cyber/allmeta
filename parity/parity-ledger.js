@@ -4,7 +4,7 @@ window.ALM_PARITY_LEDGER = {
   "specCount": 46,
   "pyCount": 19,
   "parityTestCount": 65,
-  "assertionCount": 216,
+  "assertionCount": 223,
   "pyAssertionCount": 77,
   "oracleCount": 41,
   "stataCount": 38,
@@ -257,7 +257,7 @@ window.ALM_PARITY_LEDGER = {
       "oracles": [],
       "stata": null,
       "tests": 5,
-      "asserts": 31,
+      "asserts": 38,
       "tightestDecimals": 8
     },
     {
