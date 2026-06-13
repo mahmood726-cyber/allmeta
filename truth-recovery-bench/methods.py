@@ -747,9 +747,11 @@ _UNIFIED_IMPORT_ERR = None
 try:
     from sbi import npe as _npe
     from robust_selection import pvs as _pvs, partial_id as _partial_id
+    from unified import unified as _unified
     ALL_METHODS["NPE"] = _npe
     ALL_METHODS["PVS"] = _pvs
     ALL_METHODS["PartialID"] = _partial_id
+    ALL_METHODS["Unified"] = _unified
 except Exception as _e:  # pragma: no cover
     _UNIFIED_IMPORT_ERR = _e
 

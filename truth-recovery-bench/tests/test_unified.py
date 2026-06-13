@@ -87,6 +87,46 @@ def test_npe_permutation_invariance():
     assert abs(r1["ci_lo"] - r2["ci_lo"]) < 1e-9
 
 
+@pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="sbi_model.pkl not trained")
+def test_unified_contract_and_union():
+    """Unified = NPE point ⊕ union(NPE, PartialID) interval.
+
+    Contract: valid keys, point inside its own interval, and the interval must
+    CONTAIN both base intervals (it is their union by construction).
+    """
+    import sbi
+    import unified as U
+    for sc in dgp.SCENARIOS:
+        y, v = _ma(sc, k=15, seed=3)
+        a = sbi.npe(y, v)
+        b = RS.partial_id(y, v)
+        r = U.unified(y, v)
+        assert REQUIRED_KEYS <= set(r)
+        assert r["ok"] is True
+        assert r["ci_lo"] <= r["mu"] <= r["ci_hi"], f"point outside CI ({sc})"
+        # union must dominate both base intervals (default mode=union)
+        assert r["ci_lo"] <= a["ci_lo"] + 1e-9 and r["ci_lo"] <= b["ci_lo"] + 1e-9
+        assert r["ci_hi"] >= a["ci_hi"] - 1e-9 and r["ci_hi"] >= b["ci_hi"] - 1e-9
+        # point is the (exact) NPE median
+        assert abs(r["mu"] - min(max(a["mu"], r["ci_lo"]), r["ci_hi"])) < 1e-9
+
+
+@pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="sbi_model.pkl not trained")
+def test_unified_determinism_and_point_invariance():
+    """Determinism (identical repeats) and exact permutation-invariance of the
+    POINT estimate (it is the NPE median); the interval inherits ~1e-7
+    optimiser-level reproducibility from PartialID, so it is checked loosely."""
+    import unified as U
+    y, v = _ma("step_strong", k=15, seed=5)
+    r1 = U.unified(y, v)
+    r2 = U.unified(y, v)
+    assert r1["mu"] == r2["mu"] and r1["ci_lo"] == r2["ci_lo"]
+    perm = np.random.default_rng(0).permutation(len(y))
+    r3 = U.unified(y[perm], v[perm])
+    assert abs(r1["mu"] - r3["mu"]) < 1e-9          # NPE point: exact
+    assert abs(r1["ci_lo"] - r3["ci_lo"]) < 1e-4    # PartialID bound: numerical
+
+
 @pytest.mark.skipif(not os.path.exists(DIAG_PATH), reason="diagnostics not generated")
 def test_calibration_regression():
     """Guard: held-out exact-DGP coverage must not regress below the bar.

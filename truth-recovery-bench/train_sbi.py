@@ -104,16 +104,23 @@ def sample_mechanism(rng):
     test mechanisms are densely covered, not merely bracketed.
     """
     u = rng.random()
-    if u < 0.28:
+    if u < 0.22:
         return {"kind": "none"}
-    if u < 0.62:
-        # p-step: weights = [1, w1, w2], 1 >= w1 >= w2 > 0
-        if rng.random() < 0.30:        # exact benchmark configs
+    if u < 0.67:
+        # p-step: weights = [1, w1, w2], 1 >= w1 >= w2 > 0. Weighted toward
+        # STRONGER selection than the benchmark so the strong-step regime (the
+        # documented failure) is densely trained and even bracketed from beyond.
+        r = rng.random()
+        if r < 0.22:                   # exact benchmark configs
             w = rng.choice(["weak", "strong"])
             weights = np.array([1.0, 0.75, 0.55]) if w == "weak" else np.array([1.0, 0.35, 0.10])
-        else:                          # continuous, bracketing + beyond
-            w1 = rng.uniform(0.20, 0.95)
-            w2 = rng.uniform(0.05, w1)
+        elif r < 0.40:                 # beyond-benchmark very-strong tier
+            w1 = rng.uniform(0.05, 0.30)
+            w2 = rng.uniform(0.02, w1)
+            weights = np.array([1.0, w1, w2])
+        else:                          # continuous, bracketing weak..strong
+            w1 = rng.uniform(0.10, 0.95)
+            w2 = rng.uniform(0.02, w1)
             weights = np.array([1.0, w1, w2])
         return {"kind": "step", "weights": weights}
     # Copas latent
@@ -139,8 +146,15 @@ def simulate_corpus(n, rng, label=""):
     while i < n:
         mu = rng.uniform(-1.2, 1.2)
         tau2 = 0.0 if rng.random() < 0.15 else rng.uniform(0.0, 0.30)
-        k = int(rng.integers(4, 56))
         mech = sample_mechanism(rng)
+        # Oversample LARGE k under strong step selection — the regime where the
+        # conformal interval is narrowest and the residual selection bias bites,
+        # i.e. exactly where coverage previously fell below 0.90.
+        strong_step = (mech["kind"] == "step" and mech["weights"][1] < 0.40)
+        if strong_step and rng.random() < 0.55:
+            k = int(rng.integers(18, 56))
+        else:
+            k = int(rng.integers(4, 56))
         out = gen_train_ma(rng, mu, tau2, k, mech)
         if out is None:
             continue
@@ -166,18 +180,36 @@ def _kbin(k):
     return int(np.searchsorted(K_BIN_EDGES, k, side="right") - 1)
 
 
+_SEV_I_EGGER = F.FEATURE_NAMES.index("egger_t")
+_SEV_I_TFK0 = F.FEATURE_NAMES.index("tf_k0")
+_SEV_I_CORR = F.FEATURE_NAMES.index("corr_y_se")
+_SEV_I_PLO = F.FEATURE_NAMES.index("p_bin_lo")
+_SEV_I_PHI = F.FEATURE_NAMES.index("p_bin_hi")
+
+
 def _sev_proxy(Xrow):
-    """Observable selection-severity scalar from features (|egger_t| + tf_k0 tilt)."""
-    egger_t = Xrow[F.FEATURE_NAMES.index("egger_t")]
-    tf_k0 = Xrow[F.FEATURE_NAMES.index("tf_k0")]
-    corr = Xrow[F.FEATURE_NAMES.index("corr_y_se")]
-    return abs(egger_t) + 0.5 * tf_k0 + 2.0 * abs(corr)
+    """Observable selection-severity scalar from features.
+
+    Combines the funnel-asymmetry signal (|egger_t|, corr(y,se), trim-fill gap)
+    with a STEP-SELECTION FINGERPRINT term: under one-sided p-step selection the
+    published set has a sharp surplus of just-significant studies and a deficit
+    of non-significant ones, i.e. (p_bin_lo - p_bin_hi) is large and positive —
+    a signature that p-driven (step) selection produces but precision-driven
+    (Copas) selection does not. Weighting it heavily separates strong-step
+    datasets into their OWN high-severity Mondrian bin, so the conformal
+    correction there is calibrated on step-like data alone and is not diluted by
+    the (much easier) Copas/none datasets that previously shared the bin. This is
+    the direct fix for the strong-step large-k under-coverage.
+    """
+    step_sig = max(0.0, Xrow[_SEV_I_PLO] - Xrow[_SEV_I_PHI])
+    return (abs(Xrow[_SEV_I_EGGER]) + 0.5 * Xrow[_SEV_I_TFK0]
+            + 2.0 * abs(Xrow[_SEV_I_CORR]) + 3.0 * step_sig)
 
 
 _FE_IDX = F.FEATURE_NAMES.index("fe_mu")
 
 
-def fit_quantiles(Xtr, Ytr, q_grid, rng_seed, lr=0.06, leaves=31,
+def fit_quantiles(Xtr, Ytr, q_grid, rng_seed, lr=0.06, leaves=47,
                   iters=400, min_leaf=40):
     """Fit quantile GBMs on the RESIDUAL target (mu - fe_mu).
 

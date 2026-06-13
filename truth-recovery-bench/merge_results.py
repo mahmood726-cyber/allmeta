@@ -26,7 +26,7 @@ if missing:
           f"{sorted(missing)[:5]}...")
     sys.exit(1)
 
-NEW_METHODS = ["NPE", "PVS", "PartialID"]
+NEW_METHODS = ["NPE", "PVS", "PartialID", "Unified"]
 bad_parity = []
 for cid, f in fmap.items():
     n = nmap[cid]

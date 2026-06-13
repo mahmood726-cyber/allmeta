@@ -23,7 +23,9 @@ import methods as M
 import train_sbi as T
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-_MODEL_PATH = os.path.join(HERE, "sbi_model.pkl")
+# Allow an explicit override (used to A/B trained artifacts on identical seeds)
+# without editing code; defaults to the canonical artifact.
+_MODEL_PATH = os.environ.get("SBI_MODEL_PATH") or os.path.join(HERE, "sbi_model.pkl")
 _ART = None
 _LOAD_ERR = None
 

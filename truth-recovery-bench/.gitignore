@@ -13,3 +13,11 @@ run_new.log
 recal.log
 results_new.json
 results_merged.json.tmp
+
+# unified-estimator intermediate / backup artifacts (regenerable; see README run §2b)
+*.log
+sbi_model_v1.pkl
+sbi_model_v2.pkl
+results_new_v1.json
+perrep_*.json
+*.tmp
