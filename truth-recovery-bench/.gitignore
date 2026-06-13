@@ -21,3 +21,7 @@ sbi_model_v2.pkl
 results_new_v1.json
 perrep_*.json
 *.tmp
+
+# real-scale NPE variant (goal-2 real-data contrast; regenerable via train_sbi --se-hi 3.0)
+sbi_model_realscale.pkl
+real_data/*.log

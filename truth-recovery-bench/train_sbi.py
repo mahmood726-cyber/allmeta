@@ -429,6 +429,9 @@ def recalibrate(args):
 
 
 def main():
+    # `global` must precede any use of these names in the function body (they
+    # appear below as argparse defaults), so it is the first statement here.
+    global SE_LO, SE_HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--n-train", type=int, default=70000)
     ap.add_argument("--n-cal", type=int, default=30000)
@@ -440,7 +443,16 @@ def main():
     ap.add_argument("--recal-only", action="store_true",
                     help="reuse trained GBMs; only rebuild conformal + diagnostics")
     ap.add_argument("--out", default=os.path.join(HERE, "sbi_model.pkl"))
+    ap.add_argument("--se-lo", type=float, default=SE_LO,
+                    help="training study-SE lower bound (default matches dgp.py)")
+    ap.add_argument("--se-hi", type=float, default=SE_HI,
+                    help="training study-SE upper bound; widen (e.g. 3.0) to "
+                         "bracket real log-OR data for a real-scale variant")
     args = ap.parse_args()
+    # Allow a real-scale variant whose training SE support brackets real data.
+    # _draw_se reads these module globals, so updating them reparameterises the
+    # whole training/calibration corpus.
+    SE_LO, SE_HI = args.se_lo, args.se_hi
     if args.quick:
         args.n_train, args.n_cal, args.n_val = 12000, 6000, 3000
         args.iters, args.eval_per_cell = 200, 200

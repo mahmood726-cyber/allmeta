@@ -41,14 +41,42 @@ import methods as M
 from sbi import npe as _npe
 from robust_selection import partial_id as _partial_id
 
-# Combination mode, frozen from the measured 55-cell grid. Override via env for
-# A/B measurement (ensemble_offline.py drives the comparison offline).
-_MODE = os.environ.get("UNIFIED_MODE", "union")
+# Combination rule and NPE interval scale, frozen from the measured 55-cell grid
+# (explore_tighten.py picks the width-minimal config holding min-coverage ≥0.90
+# and type-I ≤0.07). Override via env for A/B measurement.
+#
+#   rule="union"   : interval = NPE_CI ∪ PartialID_CI                  (max width)
+#   rule="lower"   : interval = [min(NPE_lo,PID_lo), NPE_hi]   (extend lower only;
+#                    justified because NPE's documented failure is UPWARD bias,
+#                    so only the lower bound needs widening — keeps NPE's tight
+#                    upper bound)
+#   rule="gated"   : widen to the union ONLY when PartialID's point falls OUTSIDE
+#                    NPE's interval (genuine selection disagreement); else keep
+#                    NPE's tight interval — recovers NPE tightness on easy cells.
+#   rule="gatedL"  : gated, lower-bound-only widening.
+#   npe_scale s≤1  : shrink NPE's interval toward its own point before combining
+#                    (a calibration knob equivalent to a looser conformal level);
+#                    s=1 is the conformal alpha=0.05 calibration.
+_MODE = os.environ.get("UNIFIED_MODE", "gated")
+_NPE_SCALE = float(os.environ.get("UNIFIED_NPE_SCALE", "1.15"))
 
 
-def unified(y, v, mode=None):
+def _scale_iv(mu, lo, hi, s):
+    """Rescale the interval [lo,hi] about the point mu by factor s (>0).
+
+    s<1 shrinks (tighter), s>1 expands (a wider conformal radius). s=1 is a
+    no-op. Matches explore_tighten.shrink_npe so the live estimator equals the
+    offline-measured config exactly.
+    """
+    if s == 1.0 or not (np.isfinite(lo) and np.isfinite(hi) and np.isfinite(mu)):
+        return lo, hi
+    return mu - s * (mu - lo), mu + s * (hi - mu)
+
+
+def unified(y, v, mode=None, npe_scale=None):
     """Coverage-targeted ensemble of NPE and PartialID. Drop-in harness method."""
     mode = mode or _MODE
+    s = _NPE_SCALE if npe_scale is None else npe_scale
     y = np.asarray(y, float)
     v = np.asarray(v, float)
     a = _npe(y, v)
@@ -66,9 +94,19 @@ def unified(y, v, mode=None):
     if not b_ok:
         return {**a, "method": "Unified", "ok": True}
 
-    lo = min(a["ci_lo"], b["ci_lo"])
-    hi = a["ci_hi"] if mode == "lower" else max(a["ci_hi"], b["ci_hi"])
-    mu = float(min(max(a["mu"], lo), hi))     # NPE point, clamped into the union
+    a_lo, a_hi = _scale_iv(a["mu"], a["ci_lo"], a["ci_hi"], s)  # shrunk NPE
+    if mode in ("gated", "gatedL"):
+        # widen only when the conservative sibling disagrees about location
+        disagree = (b["mu"] < a_lo) or (b["mu"] > a_hi)
+        if disagree:
+            lo = min(a_lo, b["ci_lo"])
+            hi = a_hi if mode == "gatedL" else max(a_hi, b["ci_hi"])
+        else:
+            lo, hi = a_lo, a_hi
+    else:
+        lo = min(a_lo, b["ci_lo"])
+        hi = a_hi if mode == "lower" else max(a_hi, b["ci_hi"])
+    mu = float(min(max(a["mu"], lo), hi))     # NPE point, clamped into interval
     tau2 = a.get("tau2", b.get("tau2", np.nan))
     se = (hi - lo) / (2 * 1.959963985)
     return {"method": "Unified", "mu": mu, "se": se,

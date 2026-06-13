@@ -88,27 +88,58 @@ def test_npe_permutation_invariance():
 
 
 @pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="sbi_model.pkl not trained")
-def test_unified_contract_and_union():
-    """Unified = NPE point ⊕ union(NPE, PartialID) interval.
-
-    Contract: valid keys, point inside its own interval, and the interval must
-    CONTAIN both base intervals (it is their union by construction).
-    """
+def test_unified_union_mode_dominates():
+    """mode='union': interval must CONTAIN both base intervals by construction."""
     import sbi
     import unified as U
     for sc in dgp.SCENARIOS:
         y, v = _ma(sc, k=15, seed=3)
         a = sbi.npe(y, v)
         b = RS.partial_id(y, v)
-        r = U.unified(y, v)
+        r = U.unified(y, v, mode="union", npe_scale=1.0)
         assert REQUIRED_KEYS <= set(r)
         assert r["ok"] is True
         assert r["ci_lo"] <= r["mu"] <= r["ci_hi"], f"point outside CI ({sc})"
-        # union must dominate both base intervals (default mode=union)
         assert r["ci_lo"] <= a["ci_lo"] + 1e-9 and r["ci_lo"] <= b["ci_lo"] + 1e-9
         assert r["ci_hi"] >= a["ci_hi"] - 1e-9 and r["ci_hi"] >= b["ci_hi"] - 1e-9
-        # point is the (exact) NPE median
         assert abs(r["mu"] - min(max(a["mu"], r["ci_lo"]), r["ci_hi"])) < 1e-9
+
+
+@pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="sbi_model.pkl not trained")
+def test_unified_lower_mode_keeps_npe_upper():
+    """mode='lower' (s=1): lower bound is the min of the two; upper = NPE upper."""
+    import sbi
+    import unified as U
+    for sc in dgp.SCENARIOS:
+        y, v = _ma(sc, k=15, seed=3)
+        a = sbi.npe(y, v)
+        b = RS.partial_id(y, v)
+        r = U.unified(y, v, mode="lower", npe_scale=1.0)
+        assert r["ok"] is True
+        assert abs(r["ci_hi"] - a["ci_hi"]) < 1e-9, f"lower mode moved upper ({sc})"
+        assert abs(r["ci_lo"] - min(a["ci_lo"], b["ci_lo"])) < 1e-9
+
+
+@pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="sbi_model.pkl not trained")
+def test_unified_default_contract():
+    """The frozen default config (gated, npe_scale=1.15): universal contract plus
+    consistency with an explicit call at the frozen parameters. The frozen scale
+    >1 expands NPE's interval (a wider conformal radius), so the result is NOT
+    bounded by the unscaled base intervals — that is by design."""
+    import unified as U
+    assert U._MODE == "gated" and abs(U._NPE_SCALE - 1.15) < 1e-12, \
+        "frozen default changed; update this test and the REPORT"
+    for sc in dgp.SCENARIOS:
+        y, v = _ma(sc, k=15, seed=3)
+        r = U.unified(y, v)                       # frozen default mode + scale
+        explicit = U.unified(y, v, mode="gated", npe_scale=1.15)
+        assert REQUIRED_KEYS <= set(r)
+        assert r["ok"] is True
+        assert r["ci_lo"] <= r["mu"] <= r["ci_hi"], f"point outside CI ({sc})"
+        assert r["ci_lo"] <= r["ci_hi"]
+        assert np.isfinite(r["ci_lo"]) and np.isfinite(r["ci_hi"])
+        assert abs(r["ci_lo"] - explicit["ci_lo"]) < 1e-12
+        assert abs(r["ci_hi"] - explicit["ci_hi"]) < 1e-12
 
 
 @pytest.mark.skipif(not os.path.exists(MODEL_PATH), reason="sbi_model.pkl not trained")

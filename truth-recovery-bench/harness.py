@@ -158,6 +158,18 @@ def build_grid(profile="full"):
                 cells.append({"mu": 0.3, "tau2": 0.05, "k": k, "scenario": sc,
                               "block": "smoke"})
         return cells
+    if profile == "stress":
+        # Goal-3 harder scenarios: very strong / misspecified / heavy-tailed.
+        # Primary effect at every k, plus a type-I (mu=0) probe at k=10,25.
+        for k in ks:
+            for sc in dgp.STRESS_SCENARIOS:
+                cells.append({"mu": 0.3, "tau2": 0.05, "k": k, "scenario": sc,
+                              "block": "stress"})
+        for k in [10, 25]:
+            for sc in dgp.STRESS_SCENARIOS:
+                cells.append({"mu": 0.0, "tau2": 0.05, "k": k, "scenario": sc,
+                              "block": "stress_typeI"})
+        return cells
     # Primary leaderboard grid: moderate heterogeneity, positive effect
     for k in ks:
         for sc in scen:
@@ -178,7 +190,8 @@ def build_grid(profile="full"):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--profile", default="full", choices=["full", "smoke"])
+    ap.add_argument("--profile", default="full",
+                    choices=["full", "smoke", "stress"])
     ap.add_argument("--reps", type=int, default=1000)
     ap.add_argument("--grma-B", type=int, default=199)
     ap.add_argument("--procs", type=int, default=max(1, os.cpu_count() - 1))
