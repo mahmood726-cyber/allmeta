@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "truth-recovery"
+version = "3.0.0"
+description = "Unified truth-recovery (honest coverage) meta-analysis estimator: gated NPE + partial-identification union with calibrated honest-coverage intervals."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+]
+
+[project.scripts]
+truth-recovery = "truth_recovery.__main__:main"
+
+[tool.setuptools]
+# Single-package layout: this directory IS the package. The validated source and the
+# trained artifact are vendored under _vendor/ and shipped as package data.
+packages = ["truth_recovery"]
+package-dir = {"truth_recovery" = "."}
+
+[tool.setuptools.package-data]
+truth_recovery = ["_vendor/*.py", "_vendor/*.pkl", "tests/*.json"]

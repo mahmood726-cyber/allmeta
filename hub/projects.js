@@ -1162,6 +1162,19 @@ window.HTML_APPS_PROJECTS = [
     tags: ["heterogeneity", "baujat", "prediction-interval"]
   },
   {
+    name: "Unified Truth-Recovery Engine",
+    subcategory: "Pooling",
+    folder: "allmeta/truth-recovery",
+    path: "./truth-recovery/index.html",
+    added: "2026-06-14",
+    collection: "new",
+    mode: "file",
+    category: "Pooling",
+    summary: "Pool with a SELECTABLE engine: classical random-effects (REML / DL / PM / HKSJ, in-browser via shared/ma-core.js) or the validated Unified truth-recovery estimator — a de-biased NPE point with an honest-coverage gated interval (calibrated gated union of amortized NPE + Manski partial-identification bounds). Reports the partial-ID bounds and whether the gate fired (selection / domain shift).",
+    note: "Validated: ≥0.90 coverage of the true μ on all 55 known-truth cells (min 0.927), type-I ≤0.054. The Unified engine is Python+scikit-learn and runs via a localhost bridge (python -m truth_recovery serve); classical engines run fully in-browser.",
+    tags: ["pooling", "truth-recovery", "honest-coverage", "partial-identification", "npe", "selectable-engine"]
+  },
+  {
     name: "TSA Calculator",
     subcategory: "Sensitivity",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/cast-when-certainty-kills.html",

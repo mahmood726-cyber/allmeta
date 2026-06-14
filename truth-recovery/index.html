@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unified Truth-Recovery Engine — allmeta</title>
+<meta property="og:title" content="Unified Truth-Recovery (honest coverage) — allmeta">
+<meta property="og:description" content="Pool a meta-analysis with a SELECTABLE engine: classical random-effects (REML / DL / PM / HKSJ, in-browser) or the validated Unified truth-recovery estimator with honest-coverage intervals (via the local engine bridge).">
+<meta property="og:type" content="website">
+<style>
+  :root { --fg:#1a1f29; --muted:#5c6675; --line:#dfe4ec; --accent:#2b6cb0;
+          --good:#2f855a; --warn:#b7791f; --bad:#c53030; --bg:#f7f9fc; --card:#fff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         color:var(--fg); background:var(--bg); }
+  header { padding:20px 24px; border-bottom:1px solid var(--line); background:var(--card); }
+  h1 { margin:0 0 4px; font-size:20px; }
+  .sub { color:var(--muted); font-size:13px; max-width:70ch; }
+  main { max-width:980px; margin:0 auto; padding:20px 24px 60px; }
+  fieldset { border:1px solid var(--line); border-radius:10px; margin:0 0 16px; padding:14px 16px; background:var(--card); }
+  legend { font-weight:600; padding:0 6px; }
+  label { display:block; margin:8px 0; }
+  .lbl { display:block; font-weight:600; font-size:13px; margin-bottom:4px; }
+  textarea { width:100%; min-height:150px; font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+             border:1px solid var(--line); border-radius:8px; padding:10px; resize:vertical; }
+  select,input[type=text] { font:14px system-ui; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  .row { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-end; }
+  .hint { color:var(--muted); font-size:12px; }
+  button { font:600 14px system-ui; padding:9px 16px; border:0; border-radius:8px; cursor:pointer; }
+  .primary { background:var(--accent); color:#fff; }
+  .ghost { background:#edf2f7; color:var(--fg); }
+  button:disabled { opacity:.55; cursor:not-allowed; }
+  table { border-collapse:collapse; width:100%; margin-top:6px; font-size:14px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+  td.num { font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; }
+  .pill.engine { background:#ebf4ff; color:var(--accent); }
+  .pill.gate { background:#fffaf0; color:var(--warn); }
+  .card { border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:var(--card); margin-top:14px; }
+  .status { font-size:13px; padding:6px 10px; border-radius:8px; display:inline-block; }
+  .status.ok { background:#f0fff4; color:var(--good); }
+  .status.off { background:#fff5f5; color:var(--bad); }
+  .status.wait { background:#fffaf0; color:var(--warn); }
+  code { background:#edf2f7; padding:1px 5px; border-radius:5px; font-size:13px; }
+  pre.cmd { background:#1a202c; color:#e2e8f0; padding:12px 14px; border-radius:8px; overflow:auto; font-size:13px; }
+  .note { font-size:12.5px; color:var(--muted); margin-top:8px; }
+  .err { color:var(--bad); font-weight:600; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Unified Truth-Recovery Engine <span class="pill engine">honest coverage</span></h1>
+  <div class="sub">Pool a meta-analysis with a <strong>selectable engine</strong>. The classical
+  random-effects estimators (REML / DL / PM, optionally HKSJ) run in your browser via the audited
+  <code>shared/ma-core.js</code>. The <strong>Unified truth-recovery</strong> estimator (validated:
+  ≥0.90 coverage of the true&nbsp;μ on all 55 known-truth cells) is Python+scikit-learn, so it runs via a
+  <strong>local engine bridge</strong> you start once — see the status panel below.</div>
+</header>
+<main>
+  <fieldset>
+    <legend>Study data</legend>
+    <label>
+      <span class="lbl">One study per line: <code>effect, value</code></span>
+      <textarea id="data" spellcheck="false"></textarea>
+      <span class="hint">Lines starting with <code>#</code> or blank are ignored. For ratio measures
+      enter the <strong>log</strong> effect (logRR / logOR / logHR). Choose whether the 2nd column is a
+      variance or a standard error below.</span>
+    </label>
+    <div class="row">
+      <label style="margin:0">
+        <span class="lbl">Second column is</span>
+        <select id="col2">
+          <option value="v">variance (vᵢ)</option>
+          <option value="se">standard error (seᵢ)</option>
+        </select>
+      </label>
+      <button class="ghost" id="loadExample" type="button">Load example</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Engine</legend>
+    <div class="row">
+      <label style="margin:0">
+        <span class="lbl">Pooling engine</span>
+        <select id="engine">
+          <option value="unified">Unified truth-recovery (honest coverage)</option>
+          <option value="REML">Classical RE — REML</option>
+          <option value="PM">Classical RE — Paule-Mandel</option>
+          <option value="DL">Classical RE — DerSimonian-Laird (k≥10)</option>
+          <option value="HKSJ">Classical RE — REML + HKSJ (t, Q-floor)</option>
+        </select>
+      </label>
+      <label style="margin:0">
+        <span class="lbl">Also show all classical engines</span>
+        <select id="compareAll"><option value="yes">yes (side-by-side)</option><option value="no">no</option></select>
+      </label>
+      <button class="primary" id="run" type="button">Pool</button>
+    </div>
+    <div class="note">The Unified engine returns a de-biased point and an <strong>honest-coverage</strong>
+    interval (calibrated gated union of an amortized NPE and Manski partial-identification bounds); it
+    also reports the partial-ID bounds and whether the gate fired (genuine selection / domain shift).</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Local engine bridge</legend>
+    <div class="row">
+      <label style="margin:0">
+        <span class="lbl">Bridge URL</span>
+        <input type="text" id="bridge" value="http://127.0.0.1:8731" size="26">
+      </label>
+      <button class="ghost" id="check" type="button">Check engine</button>
+      <span id="bridgeStatus" class="status wait">not checked</span>
+    </div>
+    <div id="bridgeHelp" class="note" hidden>
+      The Unified engine is not reachable. Start it once from the allmeta repo root:
+      <pre class="cmd">python -m truth_recovery serve --port 8731</pre>
+      (<code>engines/truth_recovery</code> — needs numpy / scipy / scikit-learn). The bridge is
+      localhost-only; nothing leaves your machine.
+    </div>
+  </fieldset>
+
+  <div id="out"></div>
+</main>
+
+<script src="../shared/ma-core.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var EXAMPLE = [
+    "# effect, variance  (e.g. logRR and its variance)",
+    "0.42, 0.061",
+    "0.18, 0.045",
+    "0.55, 0.083",
+    "0.31, 0.039",
+    "0.09, 0.052",
+    "0.47, 0.071",
+    "0.26, 0.048"
+  ].join("\n");
+
+  function parseStudies() {
+    var col2 = $("col2").value, rows = [], bad = [];
+    $("data").value.split(/\r?\n/).forEach(function (ln, i) {
+      var t = ln.trim();
+      if (!t || t[0] === "#") return;
+      var p = t.split(/[,\t]+/).map(function (x) { return x.trim(); });
+      var y = parseFloat(p[0]), val = parseFloat(p[1]);
+      if (!isFinite(y) || !isFinite(val)) { bad.push(i + 1); return; }
+      var v = col2 === "se" ? val * val : val;
+      if (!(v > 0)) { bad.push(i + 1); return; }
+      rows.push({ y: y, v: v });
+    });
+    return { rows: rows, bad: bad };
+  }
+
+  function fmt(x, d) { return (x === null || x === undefined || !isFinite(x)) ? "—" : x.toFixed(d == null ? 3 : d); }
+
+  // Classical engines computed in-browser via the audited single source.
+  function classical(yi, vi, key) {
+    var C = window.AlmMaCore;
+    if (!C) return null;
+    if (key === "DL" && yi.length < 10) return { skip: "DL needs k≥10 (advanced-stats.md)" };
+    var opts;
+    if (key === "HKSJ") opts = { method: "REML", knha: true, knhaFloor: true, pi: true };
+    else opts = { method: key, pi: true };
+    var r = C.pool(yi, vi, opts);
+    return {
+      label: key === "HKSJ" ? "REML + HKSJ" : key,
+      point: r.mu, lo: r.ciLo, hi: r.ciHi, tau2: r.tau2, I2: r.I2,
+      pilo: r.piLo, pihi: r.piHi
+    };
+  }
+
+  function rowHtml(label, point, lo, hi, tau2, extra) {
+    return "<tr><td>" + label + "</td>" +
+      "<td class='num'>" + fmt(point) + "</td>" +
+      "<td class='num'>[" + fmt(lo) + ", " + fmt(hi) + "]</td>" +
+      "<td class='num'>" + fmt(tau2) + "</td>" +
+      "<td>" + (extra || "") + "</td></tr>";
+  }
+
+  async function checkBridge() {
+    var base = $("bridge").value.replace(/\/+$/, "");
+    var s = $("bridgeStatus");
+    s.className = "status wait"; s.textContent = "checking…";
+    try {
+      var r = await fetch(base + "/info", { method: "GET" });
+      var j = await r.json();
+      s.className = "status ok";
+      s.textContent = "engine v" + j.version + (j.model_present ? " ✓ model loaded" : " ⚠ no model");
+      $("bridgeHelp").hidden = true;
+      return true;
+    } catch (e) {
+      s.className = "status off"; s.textContent = "not reachable";
+      $("bridgeHelp").hidden = false;
+      return false;
+    }
+  }
+
+  async function unifiedEstimate(yi, vi) {
+    var base = $("bridge").value.replace(/\/+$/, "");
+    var r = await fetch(base + "/estimate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ y: yi, v: vi })
+    });
+    var j = await r.json();
+    if (!r.ok || j.error) throw new Error(j.error || ("HTTP " + r.status));
+    return j;
+  }
+
+  async function run() {
+    var out = $("out");
+    var pr = parseStudies();
+    if (pr.rows.length < 2) {
+      out.innerHTML = "<div class='card'><span class='err'>Need at least 2 valid study rows." +
+        (pr.bad.length ? " Unparseable line(s): " + pr.bad.join(", ") + "." : "") + "</span></div>";
+      return;
+    }
+    var yi = pr.rows.map(function (r) { return r.y; });
+    var vi = pr.rows.map(function (r) { return r.v; });
+    var engine = $("engine").value, showAll = $("compareAll").value === "yes";
+
+    var body = "";
+    if (pr.bad.length) body += "<div class='note'>Skipped unparseable line(s): " + pr.bad.join(", ") + ".</div>";
+
+    // Which classical engines to show.
+    var classicalKeys = [];
+    if (showAll) classicalKeys = ["REML", "PM", "DL", "HKSJ"];
+    else if (engine !== "unified") classicalKeys = [engine];
+
+    var rows = "";
+    classicalKeys.forEach(function (k) {
+      var c = classical(yi, vi, k);
+      if (!c) return;
+      if (c.skip) { rows += rowHtml(k, null, null, null, null, "<span class='hint'>" + c.skip + "</span>"); return; }
+      var extra = c.pilo != null ? "PI [" + fmt(c.pilo) + ", " + fmt(c.pihi) + "], I²=" + fmt(c.I2, 1) + "%" : "";
+      rows += rowHtml(c.label, c.point, c.lo, c.hi, c.tau2, extra);
+    });
+
+    var unifiedNote = "";
+    if (engine === "unified" || showAll) {
+      var ok = await checkBridge();
+      if (!ok) {
+        unifiedNote = "<div class='note err'>Unified engine unavailable — start the local bridge " +
+          "(see the bridge panel). Classical engines (in-browser) are unaffected.</div>";
+      } else {
+        try {
+          var u = await unifiedEstimate(yi, vi);
+          var pidStr = "PartialID [" + fmt(u.partial_id.ci_lo) + ", " + fmt(u.partial_id.ci_hi) + "]";
+          var gate = u.gate_fired ? " <span class='pill gate'>gate fired</span>" : "";
+          var npeFlag = u.npe && u.npe.ok ? "" : " <span class='pill gate'>NPE OOD/fallback</span>";
+          rows = rowHtml("<strong>Unified truth-recovery</strong>", u.point, u.ci_lo, u.ci_hi, u.tau2,
+                         pidStr + gate + npeFlag) + rows;
+          if (u.notes && u.notes.length) {
+            unifiedNote = "<div class='note'>" + u.notes.map(function (n) { return "• " + n; }).join("<br>") + "</div>";
+          }
+        } catch (e) {
+          unifiedNote = "<div class='note err'>Unified engine error: " + e.message + "</div>";
+        }
+      }
+    }
+
+    body += "<div class='card'><table><thead><tr><th>Engine</th><th>Point</th>" +
+      "<th>95% interval</th><th>τ²</th><th>Detail</th></tr></thead><tbody>" +
+      (rows || "<tr><td colspan='5' class='hint'>No engine selected.</td></tr>") +
+      "</tbody></table>" + unifiedNote +
+      "<div class='note'>k = " + yi.length + " studies. Classical intervals from <code>shared/ma-core.js</code> " +
+      "(validated vs metafor). The Unified interval is an honest-coverage gated union; for ratio measures " +
+      "remember the inputs are on the log scale.</div></div>";
+    out.innerHTML = body;
+  }
+
+  $("loadExample").addEventListener("click", function () { $("data").value = EXAMPLE; });
+  $("check").addEventListener("click", checkBridge);
+  $("run").addEventListener("click", function () { run(); });
+  if (!$("data").value.trim()) $("data").value = EXAMPLE;
+})();
+</script>
+</body>
+</html>
