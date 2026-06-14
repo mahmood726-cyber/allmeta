@@ -1,0 +1,2031 @@
+{
+ "meta": {
+  "reps": 400,
+  "n_cells": 35
+ },
+ "summary": {
+  "clean_none": {
+   "abs_bias": {
+    "DL": 0.003023442268958498,
+    "REML": 0.003009168116085614,
+    "PET-PEESE": 0.023642706237086197,
+    "TrimFill": 0.004417696406837724,
+    "HenmiCopas": 0.004032996449134152,
+    "NPE": 0.009269575080029391
+   },
+   "coverage": {
+    "DL": 0.9030000000000001,
+    "REML": 0.9035,
+    "PET-PEESE": 0.8765000000000001,
+    "TrimFill": 0.8619999999999999,
+    "HenmiCopas": 0.9200000000000002,
+    "NPE": 0.9605
+   },
+   "width": {
+    "DL": 0.35576250776761437,
+    "REML": 0.35658481470617287,
+    "PET-PEESE": 0.7414346984489629,
+    "TrimFill": 0.360405335527514,
+    "HenmiCopas": 0.47172727667602316,
+    "NPE": 0.5228462808798112
+   }
+  },
+  "under_sel": {
+   "abs_bias": {
+    "DL": 0.10727105123699461,
+    "REML": 0.10713869514417869,
+    "PET-PEESE": 0.04003957012780024,
+    "TrimFill": 0.07614106863850274,
+    "HenmiCopas": 0.08989258242095985,
+    "NPE": 0.059108386191433805
+   },
+   "mean_cov": {
+    "DL": 0.6239999999999999,
+    "REML": 0.6214999999999999,
+    "PET-PEESE": 0.777625,
+    "TrimFill": 0.6981249999999999,
+    "HenmiCopas": 0.7212500000000002,
+    "NPE": 0.987125
+   },
+   "min_cov": {
+    "DL": 0.0,
+    "REML": 0.0,
+    "PET-PEESE": 0.175,
+    "TrimFill": 0.0775,
+    "HenmiCopas": 0.02,
+    "NPE": 0.96
+   }
+  },
+  "primary": {
+   "abs_bias": {
+    "DL": 0.08642152944338737,
+    "REML": 0.08631278973856009,
+    "PET-PEESE": 0.03676019734965743,
+    "TrimFill": 0.06179639419216972,
+    "HenmiCopas": 0.07272066522659473,
+    "NPE": 0.04914062396915292
+   },
+   "mean_cov": {
+    "DL": 0.6798000000000001,
+    "REML": 0.6779,
+    "PET-PEESE": 0.7974000000000001,
+    "TrimFill": 0.7309,
+    "HenmiCopas": 0.7610000000000001,
+    "NPE": 0.9817999999999999
+   },
+   "width": {
+    "DL": 0.324729647551708,
+    "REML": 0.3247236104813366,
+    "PET-PEESE": 0.6892176788431734,
+    "TrimFill": 0.3310810127471887,
+    "HenmiCopas": 0.4167464656334095,
+    "NPE": 0.5358874950564096
+   }
+  },
+  "typeI": {
+   "mean_reject0": {
+    "DL": 0.28425,
+    "REML": 0.28175,
+    "PET-PEESE": 0.1755,
+    "TrimFill": 0.26575,
+    "HenmiCopas": 0.20349999999999996,
+    "NPE": 0.03525
+   },
+   "max_reject0": {
+    "DL": 0.9325,
+    "REML": 0.91,
+    "PET-PEESE": 0.5175,
+    "TrimFill": 0.8775,
+    "HenmiCopas": 0.78,
+    "NPE": 0.085
+   }
+  }
+ },
+ "per_cell": [
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 5,
+    "scenario": "step_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k5_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.1991728696449953,
+     "coverage": 0.56,
+     "width": 0.461838546221385,
+     "reject0": 0.95,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.19849602666185107,
+     "coverage": 0.5425,
+     "width": 0.4599110181920989,
+     "reject0": 0.9425,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.016807304454270366,
+     "coverage": 0.8875,
+     "width": 1.5707319707074123,
+     "reject0": 0.345,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.16233693971715968,
+     "coverage": 0.665,
+     "width": 0.4669503196540228,
+     "reject0": 0.9225,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.175055110716486,
+     "coverage": 0.69,
+     "width": 0.6101913607338905,
+     "reject0": 0.81,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.13016847000912618,
+     "coverage": 0.9975,
+     "width": 0.910445080870288,
+     "reject0": 0.175,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 5,
+    "scenario": "step_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k5_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.06538072259882188,
+     "coverage": 0.8675,
+     "width": 0.5804043901016014,
+     "reject0": 0.68,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.06575072468010734,
+     "coverage": 0.8675,
+     "width": 0.584084123392229,
+     "reject0": 0.68,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.016755909381777845,
+     "coverage": 0.9375,
+     "width": 1.809534476931335,
+     "reject0": 0.3025,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.053998273605665226,
+     "coverage": 0.865,
+     "width": 0.5823033172809763,
+     "reject0": 0.675,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.05696507281131552,
+     "coverage": 0.8925,
+     "width": 0.857671000051001,
+     "reject0": 0.49,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.03813226111545176,
+     "coverage": 0.9975,
+     "width": 0.8833370078049296,
+     "reject0": 0.085,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 5,
+    "scenario": "none",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k5_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.0035570741607537926,
+     "coverage": 0.87,
+     "width": 0.5980868100252557,
+     "reject0": 0.5075,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.003361158099401962,
+     "coverage": 0.8675,
+     "width": 0.6012029997773554,
+     "reject0": 0.515,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.04568008690830633,
+     "coverage": 0.925,
+     "width": 1.878680202201776,
+     "reject0": 0.2425,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.009270912168421852,
+     "coverage": 0.8375,
+     "width": 0.5959191771218832,
+     "reject0": 0.5325,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.004476487760419645,
+     "coverage": 0.865,
+     "width": 0.879384036111293,
+     "reject0": 0.405,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.013143981768302504,
+     "coverage": 0.9825,
+     "width": 0.8589682553549287,
+     "reject0": 0.0675,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 5,
+    "scenario": "copas_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k5_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.13005594238213053,
+     "coverage": 0.805,
+     "width": 0.5198296265348827,
+     "reject0": 0.88,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.13000513265058672,
+     "coverage": 0.8025,
+     "width": 0.5187421652013506,
+     "reject0": 0.885,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.03436615918097463,
+     "coverage": 0.9,
+     "width": 1.649845882963441,
+     "reject0": 0.3075,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.09691291908560429,
+     "coverage": 0.785,
+     "width": 0.5207215046163113,
+     "reject0": 0.79,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.10490721567056571,
+     "coverage": 0.81,
+     "width": 0.701630718662869,
+     "reject0": 0.645,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.1025866276764919,
+     "coverage": 0.995,
+     "width": 0.8423716052859753,
+     "reject0": 0.22,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 5,
+    "scenario": "copas_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k5_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.05537914532542171,
+     "coverage": 0.8925,
+     "width": 0.5514868384148671,
+     "reject0": 0.7,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.05653291621008594,
+     "coverage": 0.8925,
+     "width": 0.5574265011211214,
+     "reject0": 0.6975,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.04723875869722349,
+     "coverage": 0.9075,
+     "width": 1.8962066161057731,
+     "reject0": 0.245,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.03623028475443335,
+     "coverage": 0.875,
+     "width": 0.5547280755027733,
+     "reject0": 0.6275,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.046312716307496504,
+     "coverage": 0.89,
+     "width": 0.7766004184056153,
+     "reject0": 0.51,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.03251598537394179,
+     "coverage": 0.9975,
+     "width": 0.848698695905569,
+     "reject0": 0.09,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "none",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k10_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": -0.000851690757391721,
+     "coverage": 0.8875,
+     "width": 0.41306337685580874,
+     "reject0": 0.7625,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": -0.00098148602598086,
+     "coverage": 0.8875,
+     "width": 0.4145271715704065,
+     "reject0": 0.76,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.039222004723564796,
+     "coverage": 0.8775,
+     "width": 0.7714916942828584,
+     "reject0": 0.4825,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": -0.0008350600583861834,
+     "coverage": 0.8675,
+     "width": 0.41901669993755236,
+     "reject0": 0.72,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": -0.0029124408581745476,
+     "coverage": 0.9225,
+     "width": 0.5484319697991538,
+     "reject0": 0.57,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.01186657917316436,
+     "coverage": 0.965,
+     "width": 0.616680654783584,
+     "reject0": 0.21,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "step_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k10_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.19502832140715215,
+     "coverage": 0.325,
+     "width": 0.31421522308015865,
+     "reject0": 0.9975,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.19337919304943724,
+     "coverage": 0.3175,
+     "width": 0.30492957536179316,
+     "reject0": 0.9975,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.054923266608524146,
+     "coverage": 0.755,
+     "width": 0.5872519892540154,
+     "reject0": 0.65,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.16203107036709863,
+     "coverage": 0.48,
+     "width": 0.3243334266141432,
+     "reject0": 0.9925,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.17521257247939065,
+     "coverage": 0.55,
+     "width": 0.37590625417756834,
+     "reject0": 0.985,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.12072476518158526,
+     "coverage": 0.99,
+     "width": 0.683365890341168,
+     "reject0": 0.415,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "step_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k10_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.07624743576262616,
+     "coverage": 0.815,
+     "width": 0.3851234914864126,
+     "reject0": 0.9275,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.07565974402425141,
+     "coverage": 0.8075,
+     "width": 0.3866691969032749,
+     "reject0": 0.9175,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.030254036089190806,
+     "coverage": 0.855,
+     "width": 0.6943337943937153,
+     "reject0": 0.6175,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.07527550030814939,
+     "coverage": 0.805,
+     "width": 0.3935012401234664,
+     "reject0": 0.9075,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.07328125782926265,
+     "coverage": 0.865,
+     "width": 0.499656384375859,
+     "reject0": 0.7675,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.06025977946766553,
+     "coverage": 0.995,
+     "width": 0.6302157315794745,
+     "reject0": 0.355,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "copas_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k10_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.05865522217563196,
+     "coverage": 0.8475,
+     "width": 0.387624780343752,
+     "reject0": 0.9225,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.05952049483333355,
+     "coverage": 0.8525,
+     "width": 0.39087564947769676,
+     "reject0": 0.9175,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.04295729415369398,
+     "coverage": 0.88,
+     "width": 0.7319360385346494,
+     "reject0": 0.485,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.033726087425682616,
+     "coverage": 0.8375,
+     "width": 0.3947957930774441,
+     "reject0": 0.8325,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.040740791636874385,
+     "coverage": 0.895,
+     "width": 0.5005839752949354,
+     "reject0": 0.7425,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.03912869558204246,
+     "coverage": 0.9875,
+     "width": 0.6052673451561081,
+     "reject0": 0.375,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "copas_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k10_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.10347680326461745,
+     "coverage": 0.73,
+     "width": 0.35531347021617354,
+     "reject0": 0.99,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.10399724022351037,
+     "coverage": 0.725,
+     "width": 0.3573460718117648,
+     "reject0": 0.99,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.041093034932370986,
+     "coverage": 0.83,
+     "width": 0.6652970181059682,
+     "reject0": 0.51,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.06117658156687006,
+     "coverage": 0.7575,
+     "width": 0.3627297053272637,
+     "reject0": 0.89,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.07856538374541344,
+     "coverage": 0.81,
+     "width": 0.444754969192998,
+     "reject0": 0.8475,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.07633336238189631,
+     "coverage": 1.0,
+     "width": 0.5852172477858332,
+     "reject0": 0.5625,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 15,
+    "scenario": "none",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k15_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.002796458582284944,
+     "coverage": 0.9075,
+     "width": 0.3225553476840278,
+     "reject0": 0.925,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.002825088608770787,
+     "coverage": 0.9075,
+     "width": 0.322731230352457,
+     "reject0": 0.9225,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.0205577279419909,
+     "coverage": 0.8425,
+     "width": 0.5025912099381895,
+     "reject0": 0.6575,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.0037541299511795745,
+     "coverage": 0.855,
+     "width": 0.3307179273688001,
+     "reject0": 0.89,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.0048475370227474834,
+     "coverage": 0.915,
+     "width": 0.40236173878602327,
+     "reject0": 0.8075,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.00820660486605046,
+     "coverage": 0.9625,
+     "width": 0.4864448118883821,
+     "reject0": 0.435,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 15,
+    "scenario": "step_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k15_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.06820475228469747,
+     "coverage": 0.84,
+     "width": 0.32231080400271866,
+     "reject0": 0.985,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.06826552930367868,
+     "coverage": 0.8275,
+     "width": 0.3222916104869036,
+     "reject0": 0.985,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.014202546620914525,
+     "coverage": 0.8475,
+     "width": 0.5062175924046732,
+     "reject0": 0.6975,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.0553462052862741,
+     "coverage": 0.835,
+     "width": 0.32890969967048456,
+     "reject0": 0.9475,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.0597613507841851,
+     "coverage": 0.8825,
+     "width": 0.4028458298875296,
+     "reject0": 0.9025,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.05299079471241669,
+     "coverage": 0.9925,
+     "width": 0.505307195579778,
+     "reject0": 0.56,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 15,
+    "scenario": "step_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k15_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.1935744643491098,
+     "coverage": 0.1575,
+     "width": 0.25731555006366524,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.19231043045113128,
+     "coverage": 0.155,
+     "width": 0.2516400069076963,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.0687825754080339,
+     "coverage": 0.6425,
+     "width": 0.4023282846136132,
+     "reject0": 0.76,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.15201269067819534,
+     "coverage": 0.4025,
+     "width": 0.26707225614489705,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.1709288426090309,
+     "coverage": 0.3875,
+     "width": 0.3004688003621623,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.098776948982922,
+     "coverage": 0.98,
+     "width": 0.5524453474768097,
+     "reject0": 0.585,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 15,
+    "scenario": "copas_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k15_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.055839764919036694,
+     "coverage": 0.845,
+     "width": 0.30879360640267683,
+     "reject0": 0.985,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.05592483325186437,
+     "coverage": 0.8375,
+     "width": 0.3086862810898996,
+     "reject0": 0.985,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.03825584098055068,
+     "coverage": 0.8425,
+     "width": 0.5097120608841214,
+     "reject0": 0.585,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.030184909430843454,
+     "coverage": 0.8225,
+     "width": 0.3164465114915713,
+     "reject0": 0.9225,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.03827680127702354,
+     "coverage": 0.91,
+     "width": 0.38040917842312133,
+     "reject0": 0.8975,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.03805163267248035,
+     "coverage": 0.9825,
+     "width": 0.47133872962687495,
+     "reject0": 0.645,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 15,
+    "scenario": "copas_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k15_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.111618114274943,
+     "coverage": 0.6975,
+     "width": 0.2978526395117664,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.11200157014051593,
+     "coverage": 0.71,
+     "width": 0.29994511865224877,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.027296132210633817,
+     "coverage": 0.8175,
+     "width": 0.48070258818469197,
+     "reject0": 0.605,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.0625136036450013,
+     "coverage": 0.7975,
+     "width": 0.3060676618942469,
+     "reject0": 0.975,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.08554071006776681,
+     "coverage": 0.81,
+     "width": 0.36198116085921117,
+     "reject0": 0.96,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.07641501475753293,
+     "coverage": 0.99,
+     "width": 0.4600146752250003,
+     "reject0": 0.8475,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "none",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k25_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.006137544952036,
+     "coverage": 0.9125,
+     "width": 0.2597685232628859,
+     "reject0": 0.99,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.0060573500779141365,
+     "coverage": 0.92,
+     "width": 0.2590062716957445,
+     "reject0": 0.99,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.012284906645789184,
+     "coverage": 0.865,
+     "width": 0.34042368920024524,
+     "reject0": 0.83,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.005002945407896475,
+     "coverage": 0.88,
+     "width": 0.2665533909934455,
+     "reject0": 0.9725,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.005540502841918815,
+     "coverage": 0.9475,
+     "width": 0.3138142166456032,
+     "reject0": 0.9625,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.003657145275638596,
+     "coverage": 0.945,
+     "width": 0.37653793950964903,
+     "reject0": 0.69,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "step_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k25_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.06461284168530895,
+     "coverage": 0.8025,
+     "width": 0.25055470603750235,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.06458727842897322,
+     "coverage": 0.8,
+     "width": 0.2503963937896213,
+     "reject0": 0.9975,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.043844287571594476,
+     "coverage": 0.835,
+     "width": 0.3214680227356617,
+     "reject0": 0.8875,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.06032490449964506,
+     "coverage": 0.7875,
+     "width": 0.25695316867708895,
+     "reject0": 0.9975,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.06023584409686861,
+     "coverage": 0.875,
+     "width": 0.2992369364337792,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.04658026435068652,
+     "coverage": 0.985,
+     "width": 0.3972693873774885,
+     "reject0": 0.735,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "step_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k25_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.19300279600920506,
+     "coverage": 0.035,
+     "width": 0.20239246758762536,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.19166738394435895,
+     "coverage": 0.03,
+     "width": 0.1976223514714291,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.10985499573253343,
+     "coverage": 0.4375,
+     "width": 0.25985510409706414,
+     "reject0": 0.9325,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.15162450570342617,
+     "coverage": 0.2325,
+     "width": 0.21105427722140335,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.17133467184465467,
+     "coverage": 0.1775,
+     "width": 0.2294012086195683,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.05594001048732827,
+     "coverage": 0.9775,
+     "width": 0.4730034405602974,
+     "reject0": 0.61,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "copas_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k25_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.05568277306900771,
+     "coverage": 0.84,
+     "width": 0.2471558284942241,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.055610350315973445,
+     "coverage": 0.8375,
+     "width": 0.2475267933378628,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.002912505045493896,
+     "coverage": 0.815,
+     "width": 0.3409891889665391,
+     "reject0": 0.795,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.030127596819510383,
+     "coverage": 0.84,
+     "width": 0.2535911851163871,
+     "reject0": 0.98,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.04347743222553618,
+     "coverage": 0.89,
+     "width": 0.2943455411534569,
+     "reject0": 0.9875,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.03595876898571265,
+     "coverage": 0.98,
+     "width": 0.36649359912714374,
+     "reject0": 0.83,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "copas_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k25_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.10219414492166695,
+     "coverage": 0.6325,
+     "width": 0.23400802329579615,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.10259969797032126,
+     "coverage": 0.63,
+     "width": 0.23538323127696567,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.01830726487490364,
+     "coverage": 0.775,
+     "width": 0.3283649395055839,
+     "reject0": 0.73,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.043821700781716155,
+     "coverage": 0.78,
+     "width": 0.24397651331506018,
+     "reject0": 0.9875,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.073748392858488,
+     "coverage": 0.78,
+     "width": 0.2744066862727628,
+     "reject0": 0.9975,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.053063711417273784,
+     "coverage": 0.96,
+     "width": 0.34145456253196454,
+     "reject0": 0.96,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 50,
+    "scenario": "none",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k50_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.0017744428923260336,
+     "coverage": 0.9375,
+     "width": 0.18533848101009354,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.001820757768360326,
+     "coverage": 0.935,
+     "width": 0.18545640013490094,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.0004688049657797788,
+     "coverage": 0.8725,
+     "width": 0.21398669662174563,
+     "reject0": 0.955,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.0032254344483045316,
+     "coverage": 0.87,
+     "width": 0.18981948221588907,
+     "reject0": 0.9975,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.002388013762410268,
+     "coverage": 0.95,
+     "width": 0.21464442203804235,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.009473564316991034,
+     "coverage": 0.9475,
+     "width": 0.2755997428625127,
+     "reject0": 0.935,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 50,
+    "scenario": "step_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k50_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.06517290750553928,
+     "coverage": 0.69,
+     "width": 0.1793447569336313,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.06513468641747622,
+     "coverage": 0.6875,
+     "width": 0.1793884603143812,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.046867326210562665,
+     "coverage": 0.805,
+     "width": 0.20490922969083805,
+     "reject0": 0.9825,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.05574778407515818,
+     "coverage": 0.735,
+     "width": 0.183606070572231,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.05733590231973962,
+     "coverage": 0.8025,
+     "width": 0.20599592296022975,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.04370330043956494,
+     "coverage": 0.9925,
+     "width": 0.3015745155521192,
+     "reject0": 0.955,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 50,
+    "scenario": "step_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k50_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.19163565950037237,
+     "coverage": 0.0,
+     "width": 0.14191877812590056,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.19041951778385396,
+     "coverage": 0.0,
+     "width": 0.1388659926186668,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.11864829692720208,
+     "coverage": 0.175,
+     "width": 0.16415827605532674,
+     "reject0": 0.9875,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.14255592254130434,
+     "coverage": 0.0775,
+     "width": 0.15002676098125234,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.1691200371803575,
+     "coverage": 0.02,
+     "width": 0.1554011293922593,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.013515617777038913,
+     "coverage": 0.9925,
+     "width": 0.37322208547523766,
+     "reject0": 0.8125,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 50,
+    "scenario": "copas_weak",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k50_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.05581215390504157,
+     "coverage": 0.775,
+     "width": 0.17461075577266955,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.05581072196783515,
+     "coverage": 0.78,
+     "width": 0.17482000345316334,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.010832269599885258,
+     "coverage": 0.875,
+     "width": 0.20215838707182449,
+     "reject0": 0.955,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.022420726012591874,
+     "coverage": 0.8525,
+     "width": 0.18077201152426184,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.040415213453419085,
+     "coverage": 0.875,
+     "width": 0.1992975741599881,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.024209815182066885,
+     "coverage": 0.9875,
+     "width": 0.2761957576072389,
+     "reject0": 0.98,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "none",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k10_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": -0.007420175064335513,
+     "coverage": 0.925,
+     "width": 0.4031865771945459,
+     "reject0": 0.075,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": -0.00834412736704371,
+     "coverage": 0.915,
+     "width": 0.40375423980739955,
+     "reject0": 0.085,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.014448566015539637,
+     "coverage": 0.91,
+     "width": 0.8454922855021687,
+     "reject0": 0.09,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": -0.008196112251912344,
+     "coverage": 0.8925,
+     "width": 0.41127122095280017,
+     "reject0": 0.1075,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": -0.009508936032520175,
+     "coverage": 0.9375,
+     "width": 0.524428264140949,
+     "reject0": 0.0625,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.016034130451393423,
+     "coverage": 0.9875,
+     "width": 0.57162676608786,
+     "reject0": 0.0125,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.3,
+    "tau2": 0.05,
+    "k": 50,
+    "scenario": "copas_strong",
+    "block": "primary"
+   },
+   "cell_id": "mu0.3_t20.05_k50_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.10467418975456588,
+     "coverage": 0.3225,
+     "width": 0.1673343673272194,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.10510043057442786,
+     "coverage": 0.3275,
+     "width": 0.16861564364238177,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.01659159787567016,
+     "coverage": 0.7325,
+     "width": 0.19726701762827237,
+     "reject0": 0.905,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.03445316646572494,
+     "coverage": 0.73,
+     "width": 0.17645914223686227,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.07663632850532254,
+     "coverage": 0.6125,
+     "width": 0.189240208036317,
+     "reject0": 1.0,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.043111897275451005,
+     "coverage": 0.9625,
+     "width": 0.27571807114188523,
+     "reject0": 0.995,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "step_weak",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k10_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.03639975141286925,
+     "coverage": 0.86,
+     "width": 0.4360811237841801,
+     "reject0": 0.14,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.037199348131644286,
+     "coverage": 0.855,
+     "width": 0.4357127916144432,
+     "reject0": 0.145,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.03177031180815238,
+     "coverage": 0.8675,
+     "width": 0.9385227022090169,
+     "reject0": 0.1325,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.03122301166598657,
+     "coverage": 0.8525,
+     "width": 0.4409276883284835,
+     "reject0": 0.1475,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.03408926362519343,
+     "coverage": 0.905,
+     "width": 0.5923615241812208,
+     "reject0": 0.095,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.02709999639291734,
+     "coverage": 0.9675,
+     "width": 0.6071340087673304,
+     "reject0": 0.0325,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "step_strong",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k10_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.2448897117295828,
+     "coverage": 0.44,
+     "width": 0.4307383576456737,
+     "reject0": 0.56,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.24474047582731961,
+     "coverage": 0.445,
+     "width": 0.4360367393742961,
+     "reject0": 0.555,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.1826600638594239,
+     "coverage": 0.6975,
+     "width": 0.945032012608737,
+     "reject0": 0.3025,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.23571250911532182,
+     "coverage": 0.4625,
+     "width": 0.4354725856166162,
+     "reject0": 0.5375,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.2335449907982862,
+     "coverage": 0.6075,
+     "width": 0.5921869672427605,
+     "reject0": 0.3925,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.22251269381808925,
+     "coverage": 0.9525,
+     "width": 0.6760032879004834,
+     "reject0": 0.0475,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "copas_weak",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k10_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.055728779798642936,
+     "coverage": 0.8775,
+     "width": 0.38952590115190483,
+     "reject0": 0.1225,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.05635699466646596,
+     "coverage": 0.875,
+     "width": 0.39019153994106526,
+     "reject0": 0.125,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.01238933750018238,
+     "coverage": 0.9,
+     "width": 0.8683977127138043,
+     "reject0": 0.1,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.036779658768871265,
+     "coverage": 0.875,
+     "width": 0.39603167977174286,
+     "reject0": 0.125,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.04002950306896972,
+     "coverage": 0.92,
+     "width": 0.503229573454598,
+     "reject0": 0.08,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.04666075705413471,
+     "coverage": 0.9925,
+     "width": 0.5621179586525501,
+     "reject0": 0.0075,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 10,
+    "scenario": "copas_strong",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k10_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.10621111548825077,
+     "coverage": 0.7625,
+     "width": 0.35903027453408676,
+     "reject0": 0.2375,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.10674913116423312,
+     "coverage": 0.765,
+     "width": 0.362877039635903,
+     "reject0": 0.235,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.02637069370434474,
+     "coverage": 0.8975,
+     "width": 0.7804020953425984,
+     "reject0": 0.1025,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.06266072121518959,
+     "coverage": 0.82,
+     "width": 0.3683000777062692,
+     "reject0": 0.18,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.07932156705058079,
+     "coverage": 0.84,
+     "width": 0.44685906417360627,
+     "reject0": 0.16,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.08835875302970347,
+     "coverage": 0.9825,
+     "width": 0.5391250489394736,
+     "reject0": 0.0175,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "none",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k25_none",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.0010381615528038443,
+     "coverage": 0.92,
+     "width": 0.2662501286188502,
+     "reject0": 0.08,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.0010787194050784603,
+     "coverage": 0.9225,
+     "width": 0.2658730143365165,
+     "reject0": 0.0775,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.0006154610521725629,
+     "coverage": 0.845,
+     "width": 0.4591840965943841,
+     "reject0": 0.155,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.0033395889312907634,
+     "coverage": 0.8575,
+     "width": 0.2722225824343221,
+     "reject0": 0.1425,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.0014630625148584061,
+     "coverage": 0.9425,
+     "width": 0.32431133470747964,
+     "reject0": 0.0575,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": -0.007038743999715573,
+     "coverage": 0.94,
+     "width": 0.35351233806750904,
+     "reject0": 0.06,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "step_weak",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k25_step_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.0466883890526389,
+     "coverage": 0.88,
+     "width": 0.2766058659834302,
+     "reject0": 0.12,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.04642652217283844,
+     "coverage": 0.88,
+     "width": 0.27804427356234934,
+     "reject0": 0.12,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.044933747460906115,
+     "coverage": 0.83,
+     "width": 0.4874870970301798,
+     "reject0": 0.17,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.051821176004327334,
+     "coverage": 0.82,
+     "width": 0.28213830593808664,
+     "reject0": 0.18,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.049430347990760064,
+     "coverage": 0.915,
+     "width": 0.3399091187108737,
+     "reject0": 0.085,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.03605798644994547,
+     "coverage": 0.98,
+     "width": 0.38708122545480217,
+     "reject0": 0.02,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "step_strong",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k25_step_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.2535393680346575,
+     "coverage": 0.0675,
+     "width": 0.27271150089297247,
+     "reject0": 0.9325,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.2538837086403742,
+     "coverage": 0.09,
+     "width": 0.2778400386115179,
+     "reject0": 0.91,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.18198081252596787,
+     "coverage": 0.4825,
+     "width": 0.4584527947168155,
+     "reject0": 0.5175,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.23286878544619857,
+     "coverage": 0.1225,
+     "width": 0.2763888936081833,
+     "reject0": 0.8775,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.23904153737845454,
+     "coverage": 0.22,
+     "width": 0.33060521535925824,
+     "reject0": 0.78,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.2069482665273226,
+     "coverage": 0.915,
+     "width": 0.4922014372406243,
+     "reject0": 0.085,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "copas_weak",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k25_copas_weak",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.0579881272295461,
+     "coverage": 0.8325,
+     "width": 0.2460355687424083,
+     "reject0": 0.1675,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.058059867125242144,
+     "coverage": 0.835,
+     "width": 0.24685110632748233,
+     "reject0": 0.165,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": 0.0001863446402326889,
+     "coverage": 0.8925,
+     "width": 0.45450790423437426,
+     "reject0": 0.1075,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.03854390250399374,
+     "coverage": 0.8375,
+     "width": 0.25245622915302834,
+     "reject0": 0.1625,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.04540630401430878,
+     "coverage": 0.9025,
+     "width": 0.29283344432153074,
+     "reject0": 0.0975,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.04238078689856423,
+     "coverage": 0.985,
+     "width": 0.33542877832488016,
+     "reject0": 0.015,
+     "n_ok": 400
+    }
+   }
+  },
+  {
+   "cell": {
+    "mu": 0.0,
+    "tau2": 0.05,
+    "k": 25,
+    "scenario": "copas_strong",
+    "block": "typeI"
+   },
+   "cell_id": "mu0.0_t20.05_k25_copas_strong",
+   "n_used": 400,
+   "methods": {
+    "DL": {
+     "bias": 0.10609301597892727,
+     "coverage": 0.5925,
+     "width": 0.23273728254500042,
+     "reject0": 0.4075,
+     "n_ok": 400
+    },
+    "REML": {
+     "bias": 0.10670683211695507,
+     "coverage": 0.6,
+     "width": 0.2352756737118322,
+     "reject0": 0.4,
+     "n_ok": 400
+    },
+    "PET-PEESE": {
+     "bias": -0.022116664828117222,
+     "coverage": 0.9225,
+     "width": 0.4127800734432482,
+     "reject0": 0.0775,
+     "n_ok": 400
+    },
+    "TrimFill": {
+     "bias": 0.046649647285887656,
+     "coverage": 0.8025,
+     "width": 0.24283443266220478,
+     "reject0": 0.1975,
+     "n_ok": 400
+    },
+    "HenmiCopas": {
+     "bias": 0.07596457817358186,
+     "coverage": 0.775,
+     "width": 0.27314968193256284,
+     "reject0": 0.225,
+     "n_ok": 400
+    },
+    "NPE": {
+     "bias": 0.06540209657485964,
+     "coverage": 0.945,
+     "width": 0.3123561395681194,
+     "reject0": 0.055,
+     "n_ok": 400
+    }
+   }
+  }
+ ]
+}
