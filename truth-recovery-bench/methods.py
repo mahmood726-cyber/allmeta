@@ -31,7 +31,7 @@ REML). All gotchas from the user's advanced-stats.md are respected:
 import warnings
 
 import numpy as np
-from scipy import stats, optimize
+from scipy import stats, optimize, integrate
 from scipy.special import ndtr, ndtri      # fast vectorised normal CDF / inverse CDF
 
 # Benign numerical edge cases (overflow in optimiser excursions, 0/0 in GRMA
@@ -914,6 +914,106 @@ def waap(y, v):
 
 
 # ===========================================================================
+# 9. Henmi-Copas robust confidence interval (port of metafor::hc.rma.uni)
+# ===========================================================================
+
+def henmi_copas(y, v, level=0.05):
+    """Henmi & Copas (2010) confidence interval, robust to publication bias.
+
+    Faithful line-by-line port of ``metafor::hc.rma.uni`` (metafor 5.0.1). The
+    point estimate is the FIXED-EFFECT weighted mean (H&C's central argument:
+    the FE estimator is less sensitive to small-study/publication bias than the
+    random-effects estimator, because RE up-weights the small, more-selected
+    studies). The interval is NOT the naive Wald interval: the distribution of
+    the standardised statistic is approximated by matching the first two moments
+    of the heterogeneity statistic Q to a gamma distribution (EQ/VQ below), and
+    the critical value ``t0`` is obtained by a uniroot over an integral of that
+    gamma CDF against the standard normal density. This widens the interval to
+    restore coverage under the unknown heterogeneity/selection.
+
+    Unit-tested for numerical agreement against ``metafor::hc()`` (see
+    tests/test_henmi_copas.py + hc_reference.json). Returns the standard method
+    dict; ``ok=False`` (with a DL fallback) if k<2 or the uniroot fails.
+    """
+    y = np.asarray(y, float)
+    v = np.asarray(v, float)
+    k = len(y)
+    if k < 2 or np.any(v <= 0):
+        re = dersimonian_laird(y, v)
+        return {**re, "method": "HenmiCopas", "ok": False,
+                "fail": "k<2" if k < 2 else "nonpos_var"}
+
+    wi = 1.0 / v
+    W1 = float(np.sum(wi))
+    W2 = float(np.sum(wi ** 2) / W1)          # NB: metafor's W2..W4 are sum(wi^j)/W1
+    W3 = float(np.sum(wi ** 3) / W1)
+    W4 = float(np.sum(wi ** 4) / W1)
+    beta = float(np.sum(wi * y) / W1)         # fixed-effect point estimate
+    Q = float(np.sum(wi * (y - beta) ** 2))
+    tau2 = max(0.0, (Q - (k - 1)) / (W1 - W2))
+    vb = (tau2 * W2 + 1.0) / W1
+    se = float(np.sqrt(vb))
+    VR = 1.0 + tau2 * W2
+    SDR = float(np.sqrt(VR))
+
+    def EQ(r):
+        return ((k - 1) + tau2 * (W1 - W2)
+                + tau2 ** 2 * ((1.0 / VR ** 2) * r ** 2 - 1.0 / VR) * (W3 - W2 ** 2))
+
+    def VQ(r):
+        rsq = r * r
+        recipvr2 = 1.0 / VR ** 2
+        return (2 * (k - 1) + 4 * tau2 * (W1 - W2)
+                + 2 * tau2 ** 2 * (W1 * W2 - 2 * W3 + W2 ** 2)
+                + 4 * tau2 ** 2 * (recipvr2 * rsq - 1.0 / VR) * (W3 - W2 ** 2)
+                + 4 * tau2 ** 3 * (recipvr2 * rsq - 1.0 / VR) * (W4 - 2 * W2 * W3 + W2 ** 3)
+                + 2 * tau2 ** 4 * (recipvr2 - 2 * (1.0 / VR ** 3) * rsq) * (W3 - W2 ** 2) ** 2)
+
+    def scale(r):
+        return VQ(r) / EQ(r)
+
+    def shape(r):
+        return EQ(r) ** 2 / VQ(r)
+
+    def finv(f):
+        return (W1 / W2 - 1.0) * (f ** 2 - 1.0) + (k - 1)
+
+    def eqn(x):
+        def integrand(r):
+            sc = scale(SDR * r)
+            sh = shape(SDR * r)
+            # R's pgamma(q, scale, shape) == scipy gamma.cdf(q, a=shape, scale=scale)
+            return stats.gamma.cdf(finv(r / x), a=sh, scale=sc) * stats.norm.pdf(r)
+        integral = integrate.quad(integrand, x, np.inf, limit=200)[0]
+        return integral - level / 2.0
+
+    # uniroot over (0, 2] as in metafor (lower bound nudged off 0 to avoid r/x->inf).
+    try:
+        lo, hi = 1e-8, 2.0
+        flo, fhi = eqn(lo), eqn(hi)
+        # metafor brackets on [0,2]; expand upper if the sign change is past 2.
+        tries = 0
+        while flo * fhi > 0 and hi < 16.0 and tries < 6:
+            hi *= 2.0
+            fhi = eqn(hi)
+            tries += 1
+        if flo * fhi > 0:
+            raise ValueError("HC root not bracketed")
+        t0 = float(optimize.brentq(eqn, lo, hi, xtol=np.finfo(float).eps ** 0.25,
+                                   maxiter=1000))
+    except Exception as e:
+        re = dersimonian_laird(y, v)
+        return {**re, "method": "HenmiCopas", "ok": False, "fail": f"uniroot:{e}"}
+
+    u0 = SDR * t0
+    ci_lo = beta - u0 * se
+    ci_hi = beta + u0 * se
+    return {"method": "HenmiCopas", "mu": beta, "se": se,
+            "ci_lo": float(ci_lo), "ci_hi": float(ci_hi),
+            "tau2": float(tau2), "hc_crit": float(u0), "ok": True}
+
+
+# ===========================================================================
 # Registry
 # ===========================================================================
 
@@ -931,6 +1031,7 @@ ALL_METHODS = {
     "p-uniform*": p_uniform_star,
     "WLS": wls_sd,
     "WAAP": waap,
+    "HenmiCopas": henmi_copas,
 }
 
 
