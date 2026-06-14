@@ -792,7 +792,7 @@ def _puni_profile(mu, y, sig, sigma, ycv, t2hi):
     return float(np.exp(r.x)), float(r.fun)
 
 
-def p_uniform_star(y, v):
+def p_uniform_star(y, v, ci=True):
     """p-uniform* (van Aert & van Assen 2021), faithful BOUNDED ML.
 
     The conditional likelihood is poorly identified at small k under strong
@@ -800,6 +800,11 @@ def p_uniform_star(y, v):
     FINITE intervals -- exactly as the `puniform` package bounds its effect-size
     search -- to avoid the documented small-k runaway.  Hitting a search bound is
     surfaced via ok=False rather than reported as a converged estimate.
+
+    ci=False skips the (expensive) profile-likelihood CI root-finding and returns
+    only the point estimate + tau2 (ci_lo/ci_hi = NaN, ok reflects the point fit).
+    Used by the mechanism-aware ensemble, which only needs p-uniform*'s POINT for
+    its component-disagreement signal -- a ~6x speedup over the full method.
     """
     y = np.asarray(y, float)
     v = np.asarray(v, float)
@@ -828,6 +833,12 @@ def p_uniform_star(y, v):
         return {**re, "method": "p-uniform*", "ok": False, "fail": "optim"}
     tau2_hat, nll_min = _puni_profile(mu_hat, y, sig, sigma, ycv, t2hi)
     at_bound = (mu_hat <= mu_lo + 1e-6) or (mu_hat >= mu_hi - 1e-6)
+
+    if not ci:
+        # point-only fast path (ensemble disagreement signal): skip CI root-find.
+        return {"method": "p-uniform*", "mu": mu_hat, "se": np.nan,
+                "ci_lo": np.nan, "ci_hi": np.nan, "tau2": tau2_hat,
+                "n_sig": int(sig.sum()), "ok": bool(not at_bound)}
 
     # Profile-likelihood CI: solve 2*(nll(mu) - nll_min) = qchisq(.95,1),
     # clamped to the finite search interval.
@@ -1051,6 +1062,15 @@ try:
     ALL_METHODS["Unified"] = _unified
 except Exception as _e:  # pragma: no cover
     _UNIFIED_IMPORT_ERR = _e
+
+# Mechanism-aware ensemble (P0). Imported after Unified so its NPE/PartialID
+# dependencies are resolved; degrades silently if the artifact is missing.
+_MECH_IMPORT_ERR = None
+try:
+    from mech_ensemble import mech_ensemble as _mech_ensemble
+    ALL_METHODS["MechEnsemble"] = _mech_ensemble
+except Exception as _e:  # pragma: no cover
+    _MECH_IMPORT_ERR = _e
 
 
 def run_all(y, v, seed=0):
