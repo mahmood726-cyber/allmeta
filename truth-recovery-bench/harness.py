@@ -158,6 +158,21 @@ def build_grid(profile="full"):
                 cells.append({"mu": 0.3, "tau2": 0.05, "k": k, "scenario": sc,
                               "block": "smoke"})
         return cells
+    if profile == "compare":
+        # Focused frontier head-to-head (2026-06-14): primary leaderboard grid
+        # (positive effect, moderate heterogeneity) + the type-I (mu=0) probe.
+        # All registered methods are scored together on identical seeds, so the
+        # new SOTA competitors (p-uniform*, WLS, WAAP) and the unified estimator
+        # are directly comparable. 35 cells.
+        for k in ks:
+            for sc in scen:
+                cells.append({"mu": 0.3, "tau2": 0.05, "k": k, "scenario": sc,
+                              "block": "primary"})
+        for k in [10, 25]:
+            for sc in scen:
+                cells.append({"mu": 0.0, "tau2": 0.05, "k": k, "scenario": sc,
+                              "block": "typeI"})
+        return cells
     if profile == "stress":
         # Goal-3 harder scenarios: very strong / misspecified / heavy-tailed.
         # Primary effect at every k, plus a type-I (mu=0) probe at k=10,25.
@@ -191,7 +206,7 @@ def build_grid(profile="full"):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--profile", default="full",
-                    choices=["full", "smoke", "stress"])
+                    choices=["full", "smoke", "stress", "compare"])
     ap.add_argument("--reps", type=int, default=1000)
     ap.add_argument("--grma-B", type=int, default=199)
     ap.add_argument("--procs", type=int, default=max(1, os.cpu_count() - 1))

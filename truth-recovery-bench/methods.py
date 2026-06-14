@@ -721,6 +721,199 @@ def grma(y, v, B=299, seed=0):
 
 
 # ===========================================================================
+# 8. SOTA competitor additions (frontier survey 2026-06-14)
+# ---------------------------------------------------------------------------
+# Three recognized publication-bias-robust competitors that were NOT in the
+# original yardstick, added so the unified estimator is scored against them:
+#
+#   p-uniform*  van Aert & van Assen (2021, Psychological Methods 26:485;
+#               Psychon Bull Rev 2025).  Conditional-likelihood selection
+#               model: each study's normal density is divided by the
+#               probability of its OWN observed significance category, which
+#               makes the likelihood invariant to the publication-probability
+#               ratio.  Joint ML over (mu, tau2) on truncated-normal densities;
+#               profile-likelihood (LRT-inverted) CI for mu.  Significance is
+#               one-sided right-tailed at alpha=0.025 (== two-sided .05), the
+#               puniform-package default, with study-specific effect-scale
+#               critical value y_cv,i = z_alpha * sqrt(v_i).
+#
+#   WLS         Stanley & Doucouliagos (2015, Stat Med 34:2116) "unrestricted
+#               weighted least squares" / multiplicative-variance MA: the FE
+#               (inverse-variance) point estimate with the variance multiplied
+#               by phi = Q/(k-1) and a t_{k-1} critical value.  S&D argue the
+#               FE/WLS point is LESS publication-bias-biased than the RE point
+#               because RE up-weights small (more selected) studies.
+#
+#   WAAP        Stanley, Doucouliagos & Ioannidis (2017, Stat Med 36:1580)
+#               "weighted average of adequately powered" studies: WLS restricted
+#               to studies with SE_i <= |WLS estimate|/2.8 (>=80% power to detect
+#               the WLS effect at two-sided .05); falls back to WLS if fewer than
+#               two studies qualify (the WAAP-WLS hybrid).
+# ===========================================================================
+
+_PUNI_ALPHA = 0.025                                   # right-tailed (== two-sided .05)
+_PUNI_ZCV = float(ndtri(1.0 - _PUNI_ALPHA))          # 1.959964...
+_CHI2_1_95 = 3.841458820694124                        # qchisq(.95, df=1)
+
+
+def _puni_negll(mu, tau2, y, sig, sigma, ycv):
+    """Negative conditional log-likelihood for p-uniform* at (mu, tau2)."""
+    if tau2 < 0:
+        return 1e12
+    s2 = sigma * sigma + tau2
+    s = np.sqrt(s2)
+    z = (y - mu) / s
+    logpdf = -0.5 * np.log(2 * np.pi) - np.log(s) - 0.5 * z * z
+    arg = (ycv - mu) / s
+    ll = logpdf.copy()
+    # P(significant) = sf(arg); P(nonsignificant) = cdf(arg).  Use log-CDF/SF
+    # for numerical stability deep in the tails.
+    if np.any(sig):
+        ll[sig] -= stats.norm.logsf(arg[sig])
+    if np.any(~sig):
+        ll[~sig] -= stats.norm.logcdf(arg[~sig])
+    val = -float(np.sum(ll))
+    return val if np.isfinite(val) else 1e12
+
+
+def _puni_t2hi(v):
+    """Finite upper bound on tau2 (keeps the conditional likelihood identified)."""
+    return float(max(50.0, 20.0 * np.max(v)))
+
+
+def _puni_profile(mu, y, sig, sigma, ycv, t2hi):
+    """Profile out tau2 in [0, t2hi] at fixed mu. Returns (tau2_hat, nll_min)."""
+    f = lambda lt2: _puni_negll(mu, np.exp(lt2), y, sig, sigma, ycv)
+    r = optimize.minimize_scalar(f, bounds=(np.log(1e-8), np.log(t2hi)),
+                                 method="bounded", options={"xatol": 1e-8})
+    nll0 = _puni_negll(mu, 0.0, y, sig, sigma, ycv)     # tau2 = 0 boundary
+    if nll0 <= r.fun + 1e-12:
+        return 0.0, float(nll0)
+    return float(np.exp(r.x)), float(r.fun)
+
+
+def p_uniform_star(y, v):
+    """p-uniform* (van Aert & van Assen 2021), faithful BOUNDED ML.
+
+    The conditional likelihood is poorly identified at small k under strong
+    selection (few/no non-significant studies), so mu and tau2 are searched on
+    FINITE intervals -- exactly as the `puniform` package bounds its effect-size
+    search -- to avoid the documented small-k runaway.  Hitting a search bound is
+    surfaced via ok=False rather than reported as a converged estimate.
+    """
+    y = np.asarray(y, float)
+    v = np.asarray(v, float)
+    sigma = np.sqrt(v)
+    ycv = _PUNI_ZCV * sigma                              # study-specific cutoff
+    sig = y >= ycv                                       # one-sided significant
+    t2hi = _puni_t2hi(v)
+    # Generous but FINITE effect-size search interval (selection biases up, so
+    # the correction reaches left; allow a wide left pad).
+    span = float(np.max(y) - np.min(y))
+    pad = 10.0 * float(np.max(sigma)) + 2.0 * span + 1.0
+    mu_lo = float(np.min(y)) - pad
+    mu_hi = float(np.max(y)) + 2.0 * float(np.max(sigma)) + 1.0
+
+    mu0 = float(np.clip(_fe_mu(y, v), mu_lo, mu_hi))
+    t0 = float(np.clip(_reml_tau2(y, v), 1e-6, t2hi))
+    obj = lambda p: _puni_negll(p[0], np.exp(p[1]), y, sig, sigma, ycv)
+    try:
+        res = optimize.minimize(obj, [mu0, np.log(t0)], method="L-BFGS-B",
+                                bounds=[(mu_lo, mu_hi),
+                                        (np.log(1e-8), np.log(t2hi))],
+                                options={"maxiter": 500, "ftol": 1e-11})
+        mu_hat = float(np.clip(res.x[0], mu_lo, mu_hi))
+    except Exception:
+        re = reml(y, v)
+        return {**re, "method": "p-uniform*", "ok": False, "fail": "optim"}
+    tau2_hat, nll_min = _puni_profile(mu_hat, y, sig, sigma, ycv, t2hi)
+    at_bound = (mu_hat <= mu_lo + 1e-6) or (mu_hat >= mu_hi - 1e-6)
+
+    # Profile-likelihood CI: solve 2*(nll(mu) - nll_min) = qchisq(.95,1),
+    # clamped to the finite search interval.
+    target = nll_min + 0.5 * _CHI2_1_95
+    prof = lambda m: _puni_profile(m, y, sig, sigma, ycv, t2hi)[1]
+    se_fe = float(np.sqrt(1.0 / np.sum(1.0 / v)))
+    step = max(0.05, 2.0 * se_fe)
+
+    def _root(direction, bound):
+        m_in = mu_hat
+        for _ in range(60):
+            m_out = m_in + direction * step
+            if (direction < 0 and m_out <= bound) or (direction > 0 and m_out >= bound):
+                m_out = bound
+                if prof(m_out) - target < 0:
+                    return np.nan            # not bracketed within the interval
+            if prof(m_out) - target >= 0:
+                try:
+                    return float(optimize.brentq(lambda m: prof(m) - target,
+                                                 m_in, m_out, xtol=1e-6))
+                except Exception:
+                    return np.nan
+            if m_out == bound:
+                return np.nan
+            m_in = m_out
+        return np.nan
+
+    ci_lo = _root(-1.0, mu_lo)
+    ci_hi = _root(+1.0, mu_hi)
+    ok = (np.isfinite(ci_lo) and np.isfinite(ci_hi) and not at_bound)
+    if np.isfinite(ci_lo) and np.isfinite(ci_hi):
+        se = float((ci_hi - ci_lo) / (2.0 * Z975))
+    else:
+        se = se_fe
+        ci_lo, ci_hi = mu_hat - Z975 * se, mu_hat + Z975 * se
+    return {"method": "p-uniform*", "mu": mu_hat, "se": se,
+            "ci_lo": float(ci_lo), "ci_hi": float(ci_hi), "tau2": tau2_hat,
+            "n_sig": int(sig.sum()), "ok": bool(ok)}
+
+
+def wls_sd(y, v):
+    """Unrestricted WLS / multiplicative-variance MA (Stanley-Doucouliagos 2015)."""
+    y = np.asarray(y, float)
+    v = np.asarray(v, float)
+    k = len(y)
+    w = 1.0 / v
+    W = float(w.sum())
+    beta = float(np.sum(w * y) / W)
+    Q = float(np.sum(w * (y - beta) ** 2))
+    phi = Q / (k - 1) if k > 1 else 1.0          # multiplicative dispersion (unfloored)
+    se = float(np.sqrt(phi / W))
+    tcrit = stats.t.ppf(0.975, max(1, k - 1))
+    return {"method": "WLS", "mu": beta, "se": se,
+            "ci_lo": beta - tcrit * se, "ci_hi": beta + tcrit * se,
+            "tau2": np.nan, "phi": phi, "ok": True}
+
+
+def waap(y, v):
+    """Weighted average of adequately powered studies (Stanley-Doucouliagos-Ioannidis 2017)."""
+    y = np.asarray(y, float)
+    v = np.asarray(v, float)
+    k = len(y)
+    base = wls_sd(y, v)
+    beta_wls = base["mu"]
+    se_i = np.sqrt(v)
+    if abs(beta_wls) > 0:
+        powered = se_i <= (abs(beta_wls) / 2.8)        # >=80% power at two-sided .05
+    else:
+        powered = np.zeros(k, bool)
+    npow = int(powered.sum())
+    if npow >= 2:
+        yp, vp = y[powered], v[powered]
+        w = 1.0 / vp
+        W = float(w.sum())
+        beta = float(np.sum(w * yp) / W)
+        Q = float(np.sum(w * (yp - beta) ** 2))
+        phi = Q / (npow - 1) if npow > 1 else 1.0
+        se = float(np.sqrt(phi / W))
+        tcrit = stats.t.ppf(0.975, max(1, npow - 1))
+        return {"method": "WAAP", "mu": beta, "se": se,
+                "ci_lo": beta - tcrit * se, "ci_hi": beta + tcrit * se,
+                "tau2": np.nan, "n_powered": npow, "ok": True}
+    return {**base, "method": "WAAP", "n_powered": npow, "ok": True}
+
+
+# ===========================================================================
 # Registry
 # ===========================================================================
 
@@ -735,6 +928,9 @@ ALL_METHODS = {
     "PET-PEESE": pet_peese,
     "GRMA": grma,
     "TrimFill": trim_fill,
+    "p-uniform*": p_uniform_star,
+    "WLS": wls_sd,
+    "WAAP": waap,
 }
 
 
