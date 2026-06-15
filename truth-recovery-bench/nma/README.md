@@ -96,6 +96,26 @@ same `--reps` and `BASE_SEED` reproduce every number, process-count-independent.
 - `tests/test_nma.py` — correctness gate (unbiasedness, τ² recovery, FE-bug reproduction, test calibration, ranking concentration, partial-ID contracts)
 - `REPORT.md`, `results_nma_full.json`, `results_partialid.json` — measured output (generated)
 
+## Reproduce in one command
+
+The full publication compendium (results JSON → REPORT.md → figures → worked
+example → manuscript PDF → tests) rebuilds with a single entry point. No pandoc or
+LaTeX is needed (the PDF is built by `tools/md2pdf.py`, reportlab only); no R is
+needed.
+
+```bash
+python -m pip install -r requirements.txt   # pinned: numpy/scipy/matplotlib/reportlab/pytest
+python run_all.py            # full (~5 min, 4 cores) -> regenerates everything
+python run_all.py --smoke    # fast end-to-end sanity check (~15-30 s)
+python run_all.py --no-sim   # rebuild report/figures/paper from the committed JSON (seconds)
+# or, with GNU make: `make all` / `make smoke` / `make paper` / `make test`
+```
+
+Determinism: base seed 20260615; the same `--reps` reproduce every number
+regardless of `--procs`. Artifacts: `REPORT.md`, `paper/manuscript.pdf`,
+`paper/figures/*.png`. See `DATA_MANIFEST.md` (simulated data only) and
+`READINESS.md` (done items + honest gaps, incl. the missing live `netmeta` R anchor).
+
 ## Next modalities
 
 This is the NMA stage of the modality roll-out; **DTA** and **dose-response** are
