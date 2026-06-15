@@ -1,0 +1,3302 @@
+{
+ "meta": {
+  "base_seed": 20260615,
+  "profile": "full",
+  "reps": 500,
+  "bayes_reps": 120,
+  "n_cells": 57,
+  "elapsed_sec": 278.7,
+  "spread_map": {
+   "sep": 0.6,
+   "tight": 0.18
+  },
+  "geometries": [
+   "star",
+   "loop",
+   "ladder",
+   "dense"
+  ],
+  "scenarios": [
+   "none",
+   "step_weak",
+   "step_strong",
+   "copas_weak",
+   "copas_strong"
+  ]
+ },
+ "results": [
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 2,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe2_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7553333333333333,
+    "RE": 0.8766666666666667,
+    "NetHK": 0.9493333333333334
+   },
+   "width": {
+    "NaiveFE": 0.551044848842982,
+    "RE": 0.7969397218909225,
+    "NetHK": 1.1628332390254754
+   },
+   "absbias_RE": 0.1750528955536125,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.01,
+    "naive_reject": 0.164
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9050853333333334,
+     "hit_rate": 0.898,
+     "overconfidence": 0.007085333333333388,
+     "spurious_confident": 0.012
+    },
+    "RE": {
+     "mean_pbest": 0.863176,
+     "hit_rate": 0.906,
+     "overconfidence": -0.04282399999999997,
+     "spurious_confident": 0.006
+    },
+    "Cal": {
+     "mean_pbest": 0.7779506666666666,
+     "hit_rate": 0.906,
+     "overconfidence": -0.12804933333333346,
+     "spurious_confident": 0.002
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9472222222222222,
+    "mean_pbest": 0.8509083333333333,
+    "hit_rate": 0.9083333333333333,
+    "overconfidence": -0.05742500000000006
+   },
+   "seconds": 24.9
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 2,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe2_t20.0_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9486666666666667,
+    "RE": 0.9593333333333334,
+    "NetHK": 0.996
+   },
+   "width": {
+    "NaiveFE": 0.5459085204835086,
+    "RE": 0.6461063056350481,
+    "NetHK": 0.9446358234911253
+   },
+   "absbias_RE": 0.12135284349399501,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.01,
+    "naive_reject": 0.06
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7397560000000001,
+     "hit_rate": 0.724,
+     "overconfidence": 0.015756000000000103,
+     "spurious_confident": 0.022
+    },
+    "RE": {
+     "mean_pbest": 0.7106186666666667,
+     "hit_rate": 0.706,
+     "overconfidence": 0.004618666666666771,
+     "spurious_confident": 0.012
+    },
+    "Cal": {
+     "mean_pbest": 0.617372,
+     "hit_rate": 0.706,
+     "overconfidence": -0.08862799999999993,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9972222222222222,
+    "mean_pbest": 0.6807833333333332,
+    "hit_rate": 0.6833333333333333,
+    "overconfidence": -0.0025500000000001632
+   },
+   "seconds": 25.0
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 2,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe2_t20.0_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9646666666666667,
+    "RE": 0.9713333333333334,
+    "NetHK": 0.998
+   },
+   "width": {
+    "NaiveFE": 0.5403142949203245,
+    "RE": 0.6173514578754837,
+    "NetHK": 0.8937218471217654
+   },
+   "absbias_RE": 0.10744323932842642,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.004,
+    "naive_reject": 0.036
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9352679999999999,
+     "hit_rate": 0.98,
+     "overconfidence": -0.044732000000000105,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9169946666666666,
+     "hit_rate": 0.97,
+     "overconfidence": -0.05300533333333335,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.8498626666666667,
+     "hit_rate": 0.97,
+     "overconfidence": -0.12013733333333332,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9972222222222222,
+    "mean_pbest": 0.8986250000000001,
+    "hit_rate": 0.9916666666666667,
+    "overconfidence": -0.09304166666666658
+   },
+   "seconds": 25.2
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 2,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe2_t20.05_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7706666666666667,
+    "RE": 0.8953333333333333,
+    "NetHK": 0.9646666666666667
+   },
+   "width": {
+    "NaiveFE": 0.5395255965508683,
+    "RE": 0.7710163312152251,
+    "NetHK": 1.1301593944523411
+   },
+   "absbias_RE": 0.16467152499150498,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.008,
+    "naive_reject": 0.15
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7721066666666667,
+     "hit_rate": 0.624,
+     "overconfidence": 0.14810666666666672,
+     "spurious_confident": 0.076
+    },
+    "RE": {
+     "mean_pbest": 0.7049826666666665,
+     "hit_rate": 0.612,
+     "overconfidence": 0.09298266666666655,
+     "spurious_confident": 0.03
+    },
+    "Cal": {
+     "mean_pbest": 0.6081480000000001,
+     "hit_rate": 0.612,
+     "overconfidence": -0.0038519999999998555,
+     "spurious_confident": 0.008
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9777777777777777,
+    "mean_pbest": 0.6661,
+    "hit_rate": 0.6166666666666667,
+    "overconfidence": 0.04943333333333333
+   },
+   "seconds": 24.9
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 2,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe2_t20.15_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5566666666666666,
+    "RE": 0.8526666666666667,
+    "NetHK": 0.9433333333333334
+   },
+   "width": {
+    "NaiveFE": 0.5282145558185793,
+    "RE": 1.0140331763392858,
+    "NetHK": 1.5002866060301014
+   },
+   "absbias_RE": 0.234127894151084,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.01,
+    "naive_reject": 0.346
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8384946666666667,
+     "hit_rate": 0.498,
+     "overconfidence": 0.3404946666666667,
+     "spurious_confident": 0.228
+    },
+    "RE": {
+     "mean_pbest": 0.7061546666666666,
+     "hit_rate": 0.512,
+     "overconfidence": 0.1941546666666666,
+     "spurious_confident": 0.084
+    },
+    "Cal": {
+     "mean_pbest": 0.6061493333333333,
+     "hit_rate": 0.512,
+     "overconfidence": 0.09414933333333331,
+     "spurious_confident": 0.026
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9388888888888889,
+    "mean_pbest": 0.6955916666666667,
+    "hit_rate": 0.5,
+    "overconfidence": 0.19559166666666672
+   },
+   "seconds": 30.9
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 2,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe2_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5606666666666666,
+    "RE": 0.862,
+    "NetHK": 0.9406666666666667
+   },
+   "width": {
+    "NaiveFE": 0.528248737261447,
+    "RE": 1.036061694981794,
+    "NetHK": 1.5331288341889564
+   },
+   "absbias_RE": 0.23107441508589044,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.01,
+    "naive_reject": 0.348
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.901768,
+     "hit_rate": 0.838,
+     "overconfidence": 0.06376800000000005,
+     "spurious_confident": 0.062
+    },
+    "RE": {
+     "mean_pbest": 0.8198253333333333,
+     "hit_rate": 0.88,
+     "overconfidence": -0.06017466666666671,
+     "spurious_confident": 0.016
+    },
+    "Cal": {
+     "mean_pbest": 0.71908,
+     "hit_rate": 0.88,
+     "overconfidence": -0.16091999999999995,
+     "spurious_confident": 0.002
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9388888888888889,
+    "mean_pbest": 0.8025416666666667,
+    "hit_rate": 0.9083333333333333,
+    "overconfidence": -0.10579166666666662
+   },
+   "seconds": 31.1
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe5_t20.0_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.96,
+    "RE": 0.9733333333333334,
+    "NetHK": 0.9853333333333333
+   },
+   "width": {
+    "NaiveFE": 0.3045438005728466,
+    "RE": 0.3417613309399124,
+    "NetHK": 0.3832351996294158
+   },
+   "absbias_RE": 0.06268370640439656,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.036,
+    "naive_reject": 0.062
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9959493333333334,
+     "hit_rate": 1.0,
+     "overconfidence": -0.004050666666666647,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9925426666666667,
+     "hit_rate": 1.0,
+     "overconfidence": -0.007457333333333316,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9789453333333333,
+     "hit_rate": 1.0,
+     "overconfidence": -0.021054666666666666,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9722222222222222,
+    "mean_pbest": 0.991275,
+    "hit_rate": 1.0,
+    "overconfidence": -0.008724999999999983
+   },
+   "seconds": 31.4
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe5_t20.0_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.95,
+    "RE": 0.962,
+    "NetHK": 0.9806666666666667
+   },
+   "width": {
+    "NaiveFE": 0.30362670886157167,
+    "RE": 0.3361833626779672,
+    "NetHK": 0.3756027699804625
+   },
+   "absbias_RE": 0.06282872590816699,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.026,
+    "naive_reject": 0.046
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8106386666666667,
+     "hit_rate": 0.846,
+     "overconfidence": -0.035361333333333245,
+     "spurious_confident": 0.004
+    },
+    "RE": {
+     "mean_pbest": 0.7904680000000001,
+     "hit_rate": 0.832,
+     "overconfidence": -0.0415319999999999,
+     "spurious_confident": 0.002
+    },
+    "Cal": {
+     "mean_pbest": 0.74742,
+     "hit_rate": 0.832,
+     "overconfidence": -0.08457999999999999,
+     "spurious_confident": 0.002
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9833333333333333,
+    "mean_pbest": 0.7730750000000001,
+    "hit_rate": 0.8333333333333334,
+    "overconfidence": -0.0602583333333333
+   },
+   "seconds": 31.4
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7233333333333334,
+    "RE": 0.9,
+    "NetHK": 0.928
+   },
+   "width": {
+    "NaiveFE": 0.3012785564640587,
+    "RE": 0.471350855163935,
+    "NetHK": 0.5339952747596195
+   },
+   "absbias_RE": 0.10462931066528841,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.034,
+    "naive_reject": 0.236
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.977212,
+     "hit_rate": 0.984,
+     "overconfidence": -0.006788000000000016,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9525106666666666,
+     "hit_rate": 0.994,
+     "overconfidence": -0.04148933333333338,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9268693333333333,
+     "hit_rate": 0.994,
+     "overconfidence": -0.06713066666666667,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.925,
+    "mean_pbest": 0.9459500000000001,
+    "hit_rate": 1.0,
+    "overconfidence": -0.05404999999999993
+   },
+   "seconds": 29.1
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe5_t20.05_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.754,
+    "RE": 0.926,
+    "NetHK": 0.9466666666666667
+   },
+   "width": {
+    "NaiveFE": 0.3015745626224876,
+    "RE": 0.47232518385353317,
+    "NetHK": 0.5362921344029523
+   },
+   "absbias_RE": 0.09371804876065164,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.05,
+    "naive_reject": 0.242
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8248293333333333,
+     "hit_rate": 0.734,
+     "overconfidence": 0.09082933333333332,
+     "spurious_confident": 0.064
+    },
+    "RE": {
+     "mean_pbest": 0.7424413333333334,
+     "hit_rate": 0.746,
+     "overconfidence": -0.003558666666666599,
+     "spurious_confident": 0.02
+    },
+    "Cal": {
+     "mean_pbest": 0.6864573333333333,
+     "hit_rate": 0.746,
+     "overconfidence": -0.059542666666666744,
+     "spurious_confident": 0.008
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9388888888888889,
+    "mean_pbest": 0.7193083333333333,
+    "hit_rate": 0.775,
+    "overconfidence": -0.055691666666666695
+   },
+   "seconds": 29.3
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe5_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5286666666666666,
+    "RE": 0.9206666666666666,
+    "NetHK": 0.9526666666666667
+   },
+   "width": {
+    "NaiveFE": 0.3047198240379913,
+    "RE": 0.6714242489249557,
+    "NetHK": 0.7684946730845853
+   },
+   "absbias_RE": 0.14323102627503473,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.042,
+    "naive_reject": 0.39
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.95394,
+     "hit_rate": 0.92,
+     "overconfidence": 0.03393999999999997,
+     "spurious_confident": 0.04
+    },
+    "RE": {
+     "mean_pbest": 0.8898240000000001,
+     "hit_rate": 0.954,
+     "overconfidence": -0.0641759999999999,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8487680000000001,
+     "hit_rate": 0.954,
+     "overconfidence": -0.10523199999999988,
+     "spurious_confident": 0.002
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9305555555555556,
+    "mean_pbest": 0.8882583333333334,
+    "hit_rate": 0.975,
+    "overconfidence": -0.0867416666666666
+   },
+   "seconds": 29.1
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "loop_T3_spe5_t20.15_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.524,
+    "RE": 0.9173333333333333,
+    "NetHK": 0.95
+   },
+   "width": {
+    "NaiveFE": 0.30241761164785663,
+    "RE": 0.6834803764345809,
+    "NetHK": 0.7780704431860268
+   },
+   "absbias_RE": 0.14394693669308015,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.05,
+    "naive_reject": 0.446
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8661266666666667,
+     "hit_rate": 0.602,
+     "overconfidence": 0.26412666666666673,
+     "spurious_confident": 0.172
+    },
+    "RE": {
+     "mean_pbest": 0.709624,
+     "hit_rate": 0.644,
+     "overconfidence": 0.06562400000000002,
+     "spurious_confident": 0.03
+    },
+    "Cal": {
+     "mean_pbest": 0.660656,
+     "hit_rate": 0.644,
+     "overconfidence": 0.016656000000000004,
+     "spurious_confident": 0.018
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9333333333333333,
+    "mean_pbest": 0.7182416666666666,
+    "hit_rate": 0.6666666666666666,
+    "overconfidence": 0.051574999999999926
+   },
+   "seconds": 29.2
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe2_t20.0_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9473333333333334,
+    "RE": 0.9613333333333334,
+    "NetHK": 0.986
+   },
+   "width": {
+    "NaiveFE": 0.5293278312218191,
+    "RE": 0.5981926514181766,
+    "NetHK": 0.7370119455643532
+   },
+   "absbias_RE": 0.10936031206484824,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.006,
+    "naive_reject": 0.032
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8750106666666667,
+     "hit_rate": 0.93,
+     "overconfidence": -0.054989333333333335,
+     "spurious_confident": 0.004
+    },
+    "RE": {
+     "mean_pbest": 0.857544,
+     "hit_rate": 0.934,
+     "overconfidence": -0.07645600000000008,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8052640000000001,
+     "hit_rate": 0.934,
+     "overconfidence": -0.12873599999999996,
+     "spurious_confident": 0.002
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9888888888888889,
+    "mean_pbest": 0.8432833333333333,
+    "hit_rate": 0.9416666666666667,
+    "overconfidence": -0.09838333333333338
+   },
+   "seconds": 37.1
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe2_t20.0_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9496666666666667,
+    "RE": 0.961,
+    "NetHK": 0.9886666666666667
+   },
+   "width": {
+    "NaiveFE": 0.5130082049536733,
+    "RE": 0.5893249428574225,
+    "NetHK": 0.7269384370165342
+   },
+   "absbias_RE": 0.1079339350869746,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.012,
+    "naive_reject": 0.076
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.652668,
+     "hit_rate": 0.598,
+     "overconfidence": 0.05466800000000005,
+     "spurious_confident": 0.002
+    },
+    "RE": {
+     "mean_pbest": 0.6264573333333333,
+     "hit_rate": 0.6,
+     "overconfidence": 0.026457333333333333,
+     "spurious_confident": 0.002
+    },
+    "Cal": {
+     "mean_pbest": 0.5633266666666666,
+     "hit_rate": 0.6,
+     "overconfidence": -0.036673333333333336,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9805555555555555,
+    "mean_pbest": 0.6158583333333334,
+    "hit_rate": 0.625,
+    "overconfidence": -0.009141666666666604
+   },
+   "seconds": 37.7
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe2_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.789,
+    "RE": 0.905,
+    "NetHK": 0.9503333333333334
+   },
+   "width": {
+    "NaiveFE": 0.5245466662715874,
+    "RE": 0.7611721906007024,
+    "NetHK": 0.9466874825622782
+   },
+   "absbias_RE": 0.15919764529262243,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.006,
+    "naive_reject": 0.242
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8761266666666667,
+     "hit_rate": 0.866,
+     "overconfidence": 0.010126666666666728,
+     "spurious_confident": 0.02
+    },
+    "RE": {
+     "mean_pbest": 0.8025999999999999,
+     "hit_rate": 0.854,
+     "overconfidence": -0.05140000000000011,
+     "spurious_confident": 0.006
+    },
+    "Cal": {
+     "mean_pbest": 0.733136,
+     "hit_rate": 0.854,
+     "overconfidence": -0.12086399999999997,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9555555555555556,
+    "mean_pbest": 0.796825,
+    "hit_rate": 0.8666666666666667,
+    "overconfidence": -0.06984166666666669
+   },
+   "seconds": 37.7
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe2_t20.05_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7626666666666667,
+    "RE": 0.9003333333333333,
+    "NetHK": 0.9456666666666667
+   },
+   "width": {
+    "NaiveFE": 0.5164826097133401,
+    "RE": 0.779891249810734,
+    "NetHK": 0.9778135447445299
+   },
+   "absbias_RE": 0.16314231358016354,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.008,
+    "naive_reject": 0.256
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7482213333333333,
+     "hit_rate": 0.506,
+     "overconfidence": 0.2422213333333333,
+     "spurious_confident": 0.094
+    },
+    "RE": {
+     "mean_pbest": 0.6333493333333333,
+     "hit_rate": 0.496,
+     "overconfidence": 0.13734933333333332,
+     "spurious_confident": 0.026
+    },
+    "Cal": {
+     "mean_pbest": 0.56614,
+     "hit_rate": 0.496,
+     "overconfidence": 0.07013999999999998,
+     "spurious_confident": 0.012
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9527777777777777,
+    "mean_pbest": 0.6164833333333333,
+    "hit_rate": 0.48333333333333334,
+    "overconfidence": 0.13314999999999994
+   },
+   "seconds": 38.1
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe2_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5653333333333334,
+    "RE": 0.8906666666666667,
+    "NetHK": 0.939
+   },
+   "width": {
+    "NaiveFE": 0.5213991944615426,
+    "RE": 1.0466864939819194,
+    "NetHK": 1.3198660040692642
+   },
+   "absbias_RE": 0.2292660937836764,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.012,
+    "naive_reject": 0.488
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8733746666666667,
+     "hit_rate": 0.708,
+     "overconfidence": 0.16537466666666678,
+     "spurious_confident": 0.1
+    },
+    "RE": {
+     "mean_pbest": 0.7451053333333332,
+     "hit_rate": 0.726,
+     "overconfidence": 0.019105333333333196,
+     "spurious_confident": 0.022
+    },
+    "Cal": {
+     "mean_pbest": 0.6702133333333333,
+     "hit_rate": 0.726,
+     "overconfidence": -0.05578666666666665,
+     "spurious_confident": 0.012
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9069444444444444,
+    "mean_pbest": 0.7336999999999999,
+    "hit_rate": 0.7333333333333333,
+    "overconfidence": 0.0003666666666666263
+   },
+   "seconds": 34.2
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe2_t20.15_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.586,
+    "RE": 0.9096666666666666,
+    "NetHK": 0.949
+   },
+   "width": {
+    "NaiveFE": 0.526036647482582,
+    "RE": 1.0713784189306708,
+    "NetHK": 1.3512081459982452
+   },
+   "absbias_RE": 0.22678371767199731,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.012,
+    "naive_reject": 0.502
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7941813333333333,
+     "hit_rate": 0.406,
+     "overconfidence": 0.38818133333333327,
+     "spurious_confident": 0.22
+    },
+    "RE": {
+     "mean_pbest": 0.6266039999999999,
+     "hit_rate": 0.402,
+     "overconfidence": 0.22460399999999991,
+     "spurious_confident": 0.058
+    },
+    "Cal": {
+     "mean_pbest": 0.5529733333333333,
+     "hit_rate": 0.402,
+     "overconfidence": 0.1509733333333333,
+     "spurious_confident": 0.016
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9375,
+    "mean_pbest": 0.6246916666666666,
+    "hit_rate": 0.43333333333333335,
+    "overconfidence": 0.1913583333333333
+   },
+   "seconds": 34.0
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe5_t20.0_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.958,
+    "RE": 0.9673333333333334,
+    "NetHK": 0.976
+   },
+   "width": {
+    "NaiveFE": 0.29981079284525514,
+    "RE": 0.3249051947582094,
+    "NetHK": 0.34726766943888143
+   },
+   "absbias_RE": 0.06009119890204681,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.022,
+    "naive_reject": 0.044
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9649773333333334,
+     "hit_rate": 0.992,
+     "overconfidence": -0.02702266666666664,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9582173333333333,
+     "hit_rate": 0.99,
+     "overconfidence": -0.03178266666666674,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9409,
+     "hit_rate": 0.99,
+     "overconfidence": -0.04910000000000003,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9638888888888889,
+    "mean_pbest": 0.947775,
+    "hit_rate": 0.9916666666666667,
+    "overconfidence": -0.04389166666666666
+   },
+   "seconds": 34.3
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe5_t20.0_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9486666666666667,
+    "RE": 0.9566666666666667,
+    "NetHK": 0.9663333333333334
+   },
+   "width": {
+    "NaiveFE": 0.3022374769341373,
+    "RE": 0.3259765911670914,
+    "NetHK": 0.3483291300832578
+   },
+   "absbias_RE": 0.06232678069476356,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.022,
+    "naive_reject": 0.038
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7400493333333333,
+     "hit_rate": 0.776,
+     "overconfidence": -0.035950666666666686,
+     "spurious_confident": 0.016
+    },
+    "RE": {
+     "mean_pbest": 0.7234293333333334,
+     "hit_rate": 0.76,
+     "overconfidence": -0.03657066666666664,
+     "spurious_confident": 0.018
+    },
+    "Cal": {
+     "mean_pbest": 0.6902560000000001,
+     "hit_rate": 0.76,
+     "overconfidence": -0.06974399999999992,
+     "spurious_confident": 0.01
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9597222222222223,
+    "mean_pbest": 0.7031,
+    "hit_rate": 0.7666666666666667,
+    "overconfidence": -0.06356666666666677
+   },
+   "seconds": 34.4
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7236666666666667,
+    "RE": 0.928,
+    "NetHK": 0.9406666666666667
+   },
+   "width": {
+    "NaiveFE": 0.2995261806654578,
+    "RE": 0.47617796533878165,
+    "NetHK": 0.5158076881054039
+   },
+   "absbias_RE": 0.102412150280239,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.048,
+    "naive_reject": 0.352
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9232053333333333,
+     "hit_rate": 0.92,
+     "overconfidence": 0.0032053333333332823,
+     "spurious_confident": 0.014
+    },
+    "RE": {
+     "mean_pbest": 0.8787586666666666,
+     "hit_rate": 0.946,
+     "overconfidence": -0.06724133333333338,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8469426666666666,
+     "hit_rate": 0.946,
+     "overconfidence": -0.09905733333333333,
+     "spurious_confident": 0.004
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9375,
+    "mean_pbest": 0.8887833333333333,
+    "hit_rate": 0.9833333333333333,
+    "overconfidence": -0.09455000000000002
+   },
+   "seconds": 29.0
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe5_t20.05_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.734,
+    "RE": 0.9303333333333333,
+    "NetHK": 0.9496666666666667
+   },
+   "width": {
+    "NaiveFE": 0.3022548180264036,
+    "RE": 0.479692189199991,
+    "NetHK": 0.5209514530575293
+   },
+   "absbias_RE": 0.09871531662050101,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.048,
+    "naive_reject": 0.374
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7549000000000001,
+     "hit_rate": 0.598,
+     "overconfidence": 0.15690000000000015,
+     "spurious_confident": 0.064
+    },
+    "RE": {
+     "mean_pbest": 0.64574,
+     "hit_rate": 0.606,
+     "overconfidence": 0.03974,
+     "spurious_confident": 0.01
+    },
+    "Cal": {
+     "mean_pbest": 0.5987,
+     "hit_rate": 0.606,
+     "overconfidence": -0.007299999999999973,
+     "spurious_confident": 0.008
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9388888888888889,
+    "mean_pbest": 0.6238916666666666,
+    "hit_rate": 0.65,
+    "overconfidence": -0.0261083333333334
+   },
+   "seconds": 28.9
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe5_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5296666666666666,
+    "RE": 0.9396666666666667,
+    "NetHK": 0.9576666666666667
+   },
+   "width": {
+    "NaiveFE": 0.29979531339321897,
+    "RE": 0.6767387366170605,
+    "NetHK": 0.7381068439886943
+   },
+   "absbias_RE": 0.14073053911917216,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.044,
+    "naive_reject": 0.654
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.918284,
+     "hit_rate": 0.828,
+     "overconfidence": 0.09028400000000003,
+     "spurious_confident": 0.086
+    },
+    "RE": {
+     "mean_pbest": 0.8248479999999999,
+     "hit_rate": 0.878,
+     "overconfidence": -0.05315200000000009,
+     "spurious_confident": 0.012
+    },
+    "Cal": {
+     "mean_pbest": 0.7805586666666666,
+     "hit_rate": 0.878,
+     "overconfidence": -0.09744133333333338,
+     "spurious_confident": 0.008
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9361111111111111,
+    "mean_pbest": 0.827975,
+    "hit_rate": 0.9083333333333333,
+    "overconfidence": -0.08035833333333331
+   },
+   "seconds": 28.9
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "ladder_T4_spe5_t20.15_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5233333333333333,
+    "RE": 0.933,
+    "NetHK": 0.954
+   },
+   "width": {
+    "NaiveFE": 0.3035507792129587,
+    "RE": 0.6730466918073416,
+    "NetHK": 0.7399585993347088
+   },
+   "absbias_RE": 0.13992938005632413,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.036,
+    "naive_reject": 0.62
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.830284,
+     "hit_rate": 0.498,
+     "overconfidence": 0.332284,
+     "spurious_confident": 0.2
+    },
+    "RE": {
+     "mean_pbest": 0.6351106666666666,
+     "hit_rate": 0.51,
+     "overconfidence": 0.1251106666666666,
+     "spurious_confident": 0.018
+    },
+    "Cal": {
+     "mean_pbest": 0.585924,
+     "hit_rate": 0.51,
+     "overconfidence": 0.07592399999999999,
+     "spurious_confident": 0.01
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9513888888888888,
+    "mean_pbest": 0.6359583333333333,
+    "hit_rate": 0.49166666666666664,
+    "overconfidence": 0.14429166666666665
+   },
+   "seconds": 29.0
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe2_t20.0_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9413333333333334,
+    "RE": 0.9533333333333334,
+    "NetHK": 0.9776666666666667
+   },
+   "width": {
+    "NaiveFE": 0.4441657143149079,
+    "RE": 0.49024172504320995,
+    "NetHK": 0.5742801759841328
+   },
+   "absbias_RE": 0.09150549642651504,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.006,
+    "naive_reject": 0.042
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9071346666666666,
+     "hit_rate": 0.952,
+     "overconfidence": -0.04486533333333331,
+     "spurious_confident": 0.002
+    },
+    "RE": {
+     "mean_pbest": 0.8943786666666668,
+     "hit_rate": 0.95,
+     "overconfidence": -0.05562133333333319,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.8576853333333333,
+     "hit_rate": 0.95,
+     "overconfidence": -0.09231466666666666,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9833333333333333,
+    "mean_pbest": 0.8823416666666667,
+    "hit_rate": 0.95,
+    "overconfidence": -0.06765833333333326
+   },
+   "seconds": 20.6
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe2_t20.0_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9313333333333333,
+    "RE": 0.9466666666666667,
+    "NetHK": 0.974
+   },
+   "width": {
+    "NaiveFE": 0.43872311268210723,
+    "RE": 0.4868745620233209,
+    "NetHK": 0.5716476424730536
+   },
+   "absbias_RE": 0.09473116129230834,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.004,
+    "naive_reject": 0.03
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.6860053333333332,
+     "hit_rate": 0.622,
+     "overconfidence": 0.06400533333333325,
+     "spurious_confident": 0.014
+    },
+    "RE": {
+     "mean_pbest": 0.6598813333333332,
+     "hit_rate": 0.614,
+     "overconfidence": 0.04588133333333322,
+     "spurious_confident": 0.01
+    },
+    "Cal": {
+     "mean_pbest": 0.6093,
+     "hit_rate": 0.614,
+     "overconfidence": -0.0047000000000000375,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9777777777777777,
+    "mean_pbest": 0.6103,
+    "hit_rate": 0.6,
+    "overconfidence": 0.010299999999999976
+   },
+   "seconds": 20.5
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe2_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.761,
+    "RE": 0.9063333333333333,
+    "NetHK": 0.9416666666666667
+   },
+   "width": {
+    "NaiveFE": 0.44105492288015646,
+    "RE": 0.6499477725761753,
+    "NetHK": 0.774462977661693
+   },
+   "absbias_RE": 0.13951330006610602,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.008,
+    "naive_reject": 0.276
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.894336,
+     "hit_rate": 0.862,
+     "overconfidence": 0.03233600000000003,
+     "spurious_confident": 0.042
+    },
+    "RE": {
+     "mean_pbest": 0.8325799999999999,
+     "hit_rate": 0.866,
+     "overconfidence": -0.033420000000000116,
+     "spurious_confident": 0.018
+    },
+    "Cal": {
+     "mean_pbest": 0.7807946666666666,
+     "hit_rate": 0.866,
+     "overconfidence": -0.08520533333333336,
+     "spurious_confident": 0.012
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9277777777777778,
+    "mean_pbest": 0.8268749999999999,
+    "hit_rate": 0.9083333333333333,
+    "overconfidence": -0.08145833333333341
+   },
+   "seconds": 20.2
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe2_t20.05_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.756,
+    "RE": 0.9093333333333333,
+    "NetHK": 0.945
+   },
+   "width": {
+    "NaiveFE": 0.4398077765802671,
+    "RE": 0.6541016047060451,
+    "NetHK": 0.7801703341890325
+   },
+   "absbias_RE": 0.13970055988189767,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.0,
+    "naive_reject": 0.28
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7520160000000001,
+     "hit_rate": 0.532,
+     "overconfidence": 0.2200160000000001,
+     "spurious_confident": 0.092
+    },
+    "RE": {
+     "mean_pbest": 0.6535493333333334,
+     "hit_rate": 0.518,
+     "overconfidence": 0.1355493333333334,
+     "spurious_confident": 0.03
+    },
+    "Cal": {
+     "mean_pbest": 0.5938906666666667,
+     "hit_rate": 0.518,
+     "overconfidence": 0.07589066666666666,
+     "spurious_confident": 0.014
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9375,
+    "mean_pbest": 0.6512666666666665,
+    "hit_rate": 0.5083333333333333,
+    "overconfidence": 0.14293333333333325
+   },
+   "seconds": 20.1
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe2_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.567,
+    "RE": 0.904,
+    "NetHK": 0.9423333333333334
+   },
+   "width": {
+    "NaiveFE": 0.44183110552849547,
+    "RE": 0.9060267012046254,
+    "NetHK": 1.0922133491418102
+   },
+   "absbias_RE": 0.1928469520315616,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.024,
+    "naive_reject": 0.63
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.87752,
+     "hit_rate": 0.76,
+     "overconfidence": 0.11751999999999996,
+     "spurious_confident": 0.102
+    },
+    "RE": {
+     "mean_pbest": 0.7657346666666667,
+     "hit_rate": 0.796,
+     "overconfidence": -0.030265333333333366,
+     "spurious_confident": 0.02
+    },
+    "Cal": {
+     "mean_pbest": 0.6987826666666667,
+     "hit_rate": 0.796,
+     "overconfidence": -0.09721733333333338,
+     "spurious_confident": 0.012
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9430555555555555,
+    "mean_pbest": 0.7714416666666667,
+    "hit_rate": 0.8166666666666667,
+    "overconfidence": -0.04522499999999996
+   },
+   "seconds": 15.6
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 2,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe2_t20.15_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.558,
+    "RE": 0.913,
+    "NetHK": 0.9466666666666667
+   },
+   "width": {
+    "NaiveFE": 0.442581117169843,
+    "RE": 0.9228992222377456,
+    "NetHK": 1.1051464931590977
+   },
+   "absbias_RE": 0.1929931567760881,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.016,
+    "naive_reject": 0.63
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8145826666666667,
+     "hit_rate": 0.46,
+     "overconfidence": 0.35458266666666666,
+     "spurious_confident": 0.208
+    },
+    "RE": {
+     "mean_pbest": 0.6250413333333333,
+     "hit_rate": 0.48,
+     "overconfidence": 0.14504133333333336,
+     "spurious_confident": 0.034
+    },
+    "Cal": {
+     "mean_pbest": 0.5627439999999999,
+     "hit_rate": 0.48,
+     "overconfidence": 0.08274399999999993,
+     "spurious_confident": 0.014
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9083333333333333,
+    "mean_pbest": 0.63045,
+    "hit_rate": 0.475,
+    "overconfidence": 0.15544999999999998
+   },
+   "seconds": 15.6
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe5_t20.0_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.949,
+    "RE": 0.9593333333333334,
+    "NetHK": 0.9703333333333334
+   },
+   "width": {
+    "NaiveFE": 0.25853400100461027,
+    "RE": 0.2801947307407451,
+    "NetHK": 0.2966469516177559
+   },
+   "absbias_RE": 0.0544120123845413,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.02,
+    "naive_reject": 0.038
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9825613333333333,
+     "hit_rate": 0.998,
+     "overconfidence": -0.015438666666666712,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9776573333333334,
+     "hit_rate": 0.998,
+     "overconfidence": -0.02034266666666662,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9674293333333333,
+     "hit_rate": 0.998,
+     "overconfidence": -0.030570666666666746,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.975,
+    "mean_pbest": 0.9696916666666666,
+    "hit_rate": 1.0,
+    "overconfidence": -0.03030833333333338
+   },
+   "seconds": 16.0
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.0,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe5_t20.0_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.9526666666666667,
+    "RE": 0.964,
+    "NetHK": 0.9723333333333334
+   },
+   "width": {
+    "NaiveFE": 0.2581756779550299,
+    "RE": 0.27766164645895014,
+    "NetHK": 0.2931957575586687
+   },
+   "absbias_RE": 0.05320127941183182,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.038,
+    "naive_reject": 0.08
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7693973333333334,
+     "hit_rate": 0.846,
+     "overconfidence": -0.0766026666666666,
+     "spurious_confident": 0.008
+    },
+    "RE": {
+     "mean_pbest": 0.754316,
+     "hit_rate": 0.85,
+     "overconfidence": -0.09568399999999999,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.7222866666666666,
+     "hit_rate": 0.85,
+     "overconfidence": -0.12771333333333335,
+     "spurious_confident": 0.004
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9694444444444444,
+    "mean_pbest": 0.7312833333333333,
+    "hit_rate": 0.7916666666666666,
+    "overconfidence": -0.060383333333333344
+   },
+   "seconds": 16.3
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7146666666666667,
+    "RE": 0.9253333333333333,
+    "NetHK": 0.939
+   },
+   "width": {
+    "NaiveFE": 0.25990920852911714,
+    "RE": 0.41661330106476485,
+    "NetHK": 0.44684946558939315
+   },
+   "absbias_RE": 0.0867513005914739,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.038,
+    "naive_reject": 0.426
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.948824,
+     "hit_rate": 0.956,
+     "overconfidence": -0.00717599999999996,
+     "spurious_confident": 0.008
+    },
+    "RE": {
+     "mean_pbest": 0.9117026666666668,
+     "hit_rate": 0.974,
+     "overconfidence": -0.062297333333333205,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.886704,
+     "hit_rate": 0.974,
+     "overconfidence": -0.08729599999999993,
+     "spurious_confident": 0.0
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9208333333333333,
+    "mean_pbest": 0.9130333333333333,
+    "hit_rate": 0.9666666666666667,
+    "overconfidence": -0.05363333333333342
+   },
+   "seconds": 19.0
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7153333333333334,
+    "RE": 0.9243333333333333,
+    "NetHK": 0.938
+   },
+   "width": {
+    "NaiveFE": 0.25879567795825803,
+    "RE": 0.41671255043475197,
+    "NetHK": 0.4462172380659577
+   },
+   "absbias_RE": 0.08839720648409916,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.032,
+    "naive_reject": 0.442
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.7893893333333333,
+     "hit_rate": 0.636,
+     "overconfidence": 0.15338933333333327,
+     "spurious_confident": 0.08
+    },
+    "RE": {
+     "mean_pbest": 0.687028,
+     "hit_rate": 0.642,
+     "overconfidence": 0.04502799999999996,
+     "spurious_confident": 0.034
+    },
+    "Cal": {
+     "mean_pbest": 0.6494000000000001,
+     "hit_rate": 0.642,
+     "overconfidence": 0.007400000000000073,
+     "spurious_confident": 0.02
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9111111111111111,
+    "mean_pbest": 0.6930916666666666,
+    "hit_rate": 0.6666666666666666,
+    "overconfidence": 0.02642499999999992
+   },
+   "seconds": 19.4
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe5_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5233333333333333,
+    "RE": 0.9346666666666666,
+    "NetHK": 0.955
+   },
+   "width": {
+    "NaiveFE": 0.25887528041176094,
+    "RE": 0.5865608230695293,
+    "NetHK": 0.6360062449614557
+   },
+   "absbias_RE": 0.12272638144851689,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.054,
+    "naive_reject": 0.788
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.929248,
+     "hit_rate": 0.862,
+     "overconfidence": 0.06724799999999997,
+     "spurious_confident": 0.068
+    },
+    "RE": {
+     "mean_pbest": 0.8445186666666668,
+     "hit_rate": 0.908,
+     "overconfidence": -0.06348133333333328,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8048333333333334,
+     "hit_rate": 0.908,
+     "overconfidence": -0.10316666666666663,
+     "spurious_confident": 0.002
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9291666666666667,
+    "mean_pbest": 0.8380666666666667,
+    "hit_rate": 0.9083333333333333,
+    "overconfidence": -0.07026666666666659
+   },
+   "seconds": 19.7
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "tight",
+    "block": "coverage"
+   },
+   "cell_id": "dense_T4_spe5_t20.15_inc0.0_none_tight",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5056666666666667,
+    "RE": 0.931,
+    "NetHK": 0.9506666666666667
+   },
+   "width": {
+    "NaiveFE": 0.2586735040508304,
+    "RE": 0.5939571159164045,
+    "NetHK": 0.6401639065488763
+   },
+   "absbias_RE": 0.12291196556052793,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.056,
+    "naive_reject": 0.736
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8418173333333333,
+     "hit_rate": 0.486,
+     "overconfidence": 0.3558173333333333,
+     "spurious_confident": 0.224
+    },
+    "RE": {
+     "mean_pbest": 0.6386106666666667,
+     "hit_rate": 0.558,
+     "overconfidence": 0.08061066666666661,
+     "spurious_confident": 0.022
+    },
+    "Cal": {
+     "mean_pbest": 0.5975573333333333,
+     "hit_rate": 0.558,
+     "overconfidence": 0.03955733333333322,
+     "spurious_confident": 0.018
+    }
+   },
+   "bayes": {
+    "reps": 120,
+    "cri_coverage": 0.9458333333333333,
+    "mean_pbest": 0.6503333333333333,
+    "hit_rate": 0.5833333333333334,
+    "overconfidence": 0.06699999999999995
+   },
+   "seconds": 20.6
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "loop_T3_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7233333333333334,
+    "RE": 0.9,
+    "NetHK": 0.928
+   },
+   "width": {
+    "NaiveFE": 0.3012785564640587,
+    "RE": 0.471350855163935,
+    "NetHK": 0.5339952747596195
+   },
+   "absbias_RE": 0.10462931066528841,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.034,
+    "naive_reject": 0.236
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.977212,
+     "hit_rate": 0.984,
+     "overconfidence": -0.006788000000000016,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9525106666666666,
+     "hit_rate": 0.994,
+     "overconfidence": -0.04148933333333338,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9268693333333333,
+     "hit_rate": 0.994,
+     "overconfidence": -0.06713066666666667,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 4.0
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.2,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "loop_T3_spe5_t20.05_inc0.2_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.61,
+    "RE": 0.838,
+    "NetHK": 0.882
+   },
+   "width": {
+    "NaiveFE": 0.299796545722469,
+    "RE": 0.47957313303377624,
+    "NetHK": 0.5449992845763767
+   },
+   "absbias_RE": 0.12870511151321246,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.094,
+    "naive_reject": 0.334
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9963026666666667,
+     "hit_rate": 0.998,
+     "overconfidence": -0.0016973333333333285,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9903493333333333,
+     "hit_rate": 0.998,
+     "overconfidence": -0.0076506666666666945,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9649866666666667,
+     "hit_rate": 0.998,
+     "overconfidence": -0.03301333333333334,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 3.9
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.5,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "loop_T3_spe5_t20.05_inc0.5_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.31733333333333336,
+    "RE": 0.626,
+    "NetHK": 0.6946666666666667
+   },
+   "width": {
+    "NaiveFE": 0.3078384743128064,
+    "RE": 0.5574088295536683,
+    "NetHK": 0.6340653835260611
+   },
+   "absbias_RE": 0.23945072395363487,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.302,
+    "naive_reject": 0.694
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9999666666666667,
+     "hit_rate": 1.0,
+     "overconfidence": -3.333333333332966e-05,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9986386666666667,
+     "hit_rate": 1.0,
+     "overconfidence": -0.0013613333333333255,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9625866666666666,
+     "hit_rate": 1.0,
+     "overconfidence": -0.03741333333333341,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 4.0
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "loop_T3_spe5_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5286666666666666,
+    "RE": 0.9206666666666666,
+    "NetHK": 0.9526666666666667
+   },
+   "width": {
+    "NaiveFE": 0.3047198240379913,
+    "RE": 0.6714242489249557,
+    "NetHK": 0.7684946730845853
+   },
+   "absbias_RE": 0.14323102627503473,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.042,
+    "naive_reject": 0.39
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.95394,
+     "hit_rate": 0.92,
+     "overconfidence": 0.03393999999999997,
+     "spurious_confident": 0.04
+    },
+    "RE": {
+     "mean_pbest": 0.8898240000000001,
+     "hit_rate": 0.954,
+     "overconfidence": -0.0641759999999999,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8487680000000001,
+     "hit_rate": 0.954,
+     "overconfidence": -0.10523199999999988,
+     "spurious_confident": 0.002
+    }
+   },
+   "seconds": 4.4
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.2,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "loop_T3_spe5_t20.15_inc0.2_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.49466666666666664,
+    "RE": 0.898,
+    "NetHK": 0.9273333333333333
+   },
+   "width": {
+    "NaiveFE": 0.3040229178142203,
+    "RE": 0.686598450163336,
+    "NetHK": 0.7888401225055797
+   },
+   "absbias_RE": 0.158698142051926,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.064,
+    "naive_reject": 0.478
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9798946666666666,
+     "hit_rate": 0.978,
+     "overconfidence": 0.0018946666666666,
+     "spurious_confident": 0.002
+    },
+    "RE": {
+     "mean_pbest": 0.9558599999999999,
+     "hit_rate": 0.994,
+     "overconfidence": -0.03814000000000006,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9128853333333334,
+     "hit_rate": 0.994,
+     "overconfidence": -0.08111466666666656,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 4.4
+  },
+  {
+   "cell": {
+    "geometry": "loop",
+    "T": 3,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.5,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "loop_T3_spe5_t20.15_inc0.5_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.35133333333333333,
+    "RE": 0.7413333333333333,
+    "NetHK": 0.814
+   },
+   "width": {
+    "NaiveFE": 0.30193170153224624,
+    "RE": 0.7219678747230094,
+    "NetHK": 0.8287598557184216
+   },
+   "absbias_RE": 0.2419274731576524,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.238,
+    "naive_reject": 0.714
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9966226666666667,
+     "hit_rate": 0.996,
+     "overconfidence": 0.0006226666666666603,
+     "spurious_confident": 0.002
+    },
+    "RE": {
+     "mean_pbest": 0.9900133333333333,
+     "hit_rate": 1.0,
+     "overconfidence": -0.0099866666666667,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.926348,
+     "hit_rate": 1.0,
+     "overconfidence": -0.07365200000000005,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 3.9
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "ladder_T4_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7236666666666667,
+    "RE": 0.928,
+    "NetHK": 0.9406666666666667
+   },
+   "width": {
+    "NaiveFE": 0.2995261806654578,
+    "RE": 0.47617796533878165,
+    "NetHK": 0.5158076881054039
+   },
+   "absbias_RE": 0.102412150280239,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.048,
+    "naive_reject": 0.352
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9232053333333333,
+     "hit_rate": 0.92,
+     "overconfidence": 0.0032053333333332823,
+     "spurious_confident": 0.014
+    },
+    "RE": {
+     "mean_pbest": 0.8787586666666666,
+     "hit_rate": 0.946,
+     "overconfidence": -0.06724133333333338,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8469426666666666,
+     "hit_rate": 0.946,
+     "overconfidence": -0.09905733333333333,
+     "spurious_confident": 0.004
+    }
+   },
+   "seconds": 3.6
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.2,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "ladder_T4_spe5_t20.05_inc0.2_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.637,
+    "RE": 0.886,
+    "NetHK": 0.9076666666666666
+   },
+   "width": {
+    "NaiveFE": 0.30319667006706574,
+    "RE": 0.5047670658420481,
+    "NetHK": 0.5482942361381897
+   },
+   "absbias_RE": 0.1207095467269702,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.148,
+    "naive_reject": 0.576
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8810066666666667,
+     "hit_rate": 0.772,
+     "overconfidence": 0.1090066666666667,
+     "spurious_confident": 0.07
+    },
+    "RE": {
+     "mean_pbest": 0.80284,
+     "hit_rate": 0.79,
+     "overconfidence": 0.012839999999999963,
+     "spurious_confident": 0.024
+    },
+    "Cal": {
+     "mean_pbest": 0.7386026666666666,
+     "hit_rate": 0.79,
+     "overconfidence": -0.051397333333333406,
+     "spurious_confident": 0.008
+    }
+   },
+   "seconds": 3.4
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.5,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "ladder_T4_spe5_t20.05_inc0.5_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.3923333333333333,
+    "RE": 0.7493333333333333,
+    "NetHK": 0.7966666666666666
+   },
+   "width": {
+    "NaiveFE": 0.3018146465278423,
+    "RE": 0.6038062337883379,
+    "NetHK": 0.658610197887311
+   },
+   "absbias_RE": 0.20146314316570374,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.68,
+    "naive_reject": 0.956
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8378826666666667,
+     "hit_rate": 0.412,
+     "overconfidence": 0.4258826666666667,
+     "spurious_confident": 0.31
+    },
+    "RE": {
+     "mean_pbest": 0.6965186666666666,
+     "hit_rate": 0.378,
+     "overconfidence": 0.3185186666666666,
+     "spurious_confident": 0.082
+    },
+    "Cal": {
+     "mean_pbest": 0.5548066666666667,
+     "hit_rate": 0.378,
+     "overconfidence": 0.17680666666666667,
+     "spurious_confident": 0.008
+    }
+   },
+   "seconds": 3.6
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "ladder_T4_spe5_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5296666666666666,
+    "RE": 0.9396666666666667,
+    "NetHK": 0.9576666666666667
+   },
+   "width": {
+    "NaiveFE": 0.29979531339321897,
+    "RE": 0.6767387366170605,
+    "NetHK": 0.7381068439886943
+   },
+   "absbias_RE": 0.14073053911917216,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.044,
+    "naive_reject": 0.654
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.918284,
+     "hit_rate": 0.828,
+     "overconfidence": 0.09028400000000003,
+     "spurious_confident": 0.086
+    },
+    "RE": {
+     "mean_pbest": 0.8248479999999999,
+     "hit_rate": 0.878,
+     "overconfidence": -0.05315200000000009,
+     "spurious_confident": 0.012
+    },
+    "Cal": {
+     "mean_pbest": 0.7805586666666666,
+     "hit_rate": 0.878,
+     "overconfidence": -0.09744133333333338,
+     "spurious_confident": 0.008
+    }
+   },
+   "seconds": 4.4
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.2,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "ladder_T4_spe5_t20.15_inc0.2_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.48633333333333334,
+    "RE": 0.9026666666666666,
+    "NetHK": 0.9326666666666666
+   },
+   "width": {
+    "NaiveFE": 0.29994343321064626,
+    "RE": 0.6920768606066819,
+    "NetHK": 0.7591390627853087
+   },
+   "absbias_RE": 0.1587706143107246,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.088,
+    "naive_reject": 0.692
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8720186666666666,
+     "hit_rate": 0.646,
+     "overconfidence": 0.2260186666666666,
+     "spurious_confident": 0.166
+    },
+    "RE": {
+     "mean_pbest": 0.7308879999999999,
+     "hit_rate": 0.67,
+     "overconfidence": 0.06088799999999983,
+     "spurious_confident": 0.028
+    },
+    "Cal": {
+     "mean_pbest": 0.6742906666666667,
+     "hit_rate": 0.67,
+     "overconfidence": 0.004290666666666665,
+     "spurious_confident": 0.018
+    }
+   },
+   "seconds": 5.5
+  },
+  {
+   "cell": {
+    "geometry": "ladder",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.5,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "ladder_T4_spe5_t20.15_inc0.5_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.3416666666666667,
+    "RE": 0.7943333333333333,
+    "NetHK": 0.8396666666666667
+   },
+   "width": {
+    "NaiveFE": 0.3008134779600821,
+    "RE": 0.751374682203483,
+    "NetHK": 0.8256081554153741
+   },
+   "absbias_RE": 0.23055382223433196,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.404,
+    "naive_reject": 0.92
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.8733746666666666,
+     "hit_rate": 0.376,
+     "overconfidence": 0.49737466666666663,
+     "spurious_confident": 0.388
+    },
+    "RE": {
+     "mean_pbest": 0.6830466666666667,
+     "hit_rate": 0.354,
+     "overconfidence": 0.3290466666666667,
+     "spurious_confident": 0.098
+    },
+    "Cal": {
+     "mean_pbest": 0.5693986666666667,
+     "hit_rate": 0.354,
+     "overconfidence": 0.21539866666666674,
+     "spurious_confident": 0.01
+    }
+   },
+   "seconds": 5.8
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7146666666666667,
+    "RE": 0.9253333333333333,
+    "NetHK": 0.939
+   },
+   "width": {
+    "NaiveFE": 0.25990920852911714,
+    "RE": 0.41661330106476485,
+    "NetHK": 0.44684946558939315
+   },
+   "absbias_RE": 0.0867513005914739,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.038,
+    "naive_reject": 0.426
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.948824,
+     "hit_rate": 0.956,
+     "overconfidence": -0.00717599999999996,
+     "spurious_confident": 0.008
+    },
+    "RE": {
+     "mean_pbest": 0.9117026666666668,
+     "hit_rate": 0.974,
+     "overconfidence": -0.062297333333333205,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.886704,
+     "hit_rate": 0.974,
+     "overconfidence": -0.08729599999999993,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 5.9
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.2,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.2_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.6773333333333333,
+    "RE": 0.945,
+    "NetHK": 0.959
+   },
+   "width": {
+    "NaiveFE": 0.2575068508199043,
+    "RE": 0.46489129564477966,
+    "NetHK": 0.49991739858754713
+   },
+   "absbias_RE": 0.09121770884993619,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.324,
+    "naive_reject": 0.842
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9494813333333334,
+     "hit_rate": 0.942,
+     "overconfidence": 0.007481333333333451,
+     "spurious_confident": 0.022
+    },
+    "RE": {
+     "mean_pbest": 0.904708,
+     "hit_rate": 0.948,
+     "overconfidence": -0.043292,
+     "spurious_confident": 0.006
+    },
+    "Cal": {
+     "mean_pbest": 0.82504,
+     "hit_rate": 0.948,
+     "overconfidence": -0.12295999999999996,
+     "spurious_confident": 0.002
+    }
+   },
+   "seconds": 5.8
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.5,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.5_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5676666666666667,
+    "RE": 0.9903333333333333,
+    "NetHK": 0.9953333333333333
+   },
+   "width": {
+    "NaiveFE": 0.2595774125012564,
+    "RE": 0.6463285733015252,
+    "NetHK": 0.7004668612097787
+   },
+   "absbias_RE": 0.09530215865805079,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.962,
+    "naive_reject": 1.0
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9306653333333332,
+     "hit_rate": 0.852,
+     "overconfidence": 0.07866533333333325,
+     "spurious_confident": 0.062
+    },
+    "RE": {
+     "mean_pbest": 0.8391426666666666,
+     "hit_rate": 0.962,
+     "overconfidence": -0.12285733333333337,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.6196506666666667,
+     "hit_rate": 0.962,
+     "overconfidence": -0.3423493333333333,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 6.6
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "dense_T4_spe5_t20.15_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.5233333333333333,
+    "RE": 0.9346666666666666,
+    "NetHK": 0.955
+   },
+   "width": {
+    "NaiveFE": 0.25887528041176094,
+    "RE": 0.5865608230695293,
+    "NetHK": 0.6360062449614557
+   },
+   "absbias_RE": 0.12272638144851689,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.054,
+    "naive_reject": 0.788
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.929248,
+     "hit_rate": 0.862,
+     "overconfidence": 0.06724799999999997,
+     "spurious_confident": 0.068
+    },
+    "RE": {
+     "mean_pbest": 0.8445186666666668,
+     "hit_rate": 0.908,
+     "overconfidence": -0.06348133333333328,
+     "spurious_confident": 0.004
+    },
+    "Cal": {
+     "mean_pbest": 0.8048333333333334,
+     "hit_rate": 0.908,
+     "overconfidence": -0.10316666666666663,
+     "spurious_confident": 0.002
+    }
+   },
+   "seconds": 6.5
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.2,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "dense_T4_spe5_t20.15_inc0.2_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.512,
+    "RE": 0.9426666666666667,
+    "NetHK": 0.956
+   },
+   "width": {
+    "NaiveFE": 0.2602262779239611,
+    "RE": 0.6270681311188124,
+    "NetHK": 0.6773126279097035
+   },
+   "absbias_RE": 0.12358262043394196,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.198,
+    "naive_reject": 0.888
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9379813333333334,
+     "hit_rate": 0.856,
+     "overconfidence": 0.08198133333333346,
+     "spurious_confident": 0.076
+    },
+    "RE": {
+     "mean_pbest": 0.8439093333333334,
+     "hit_rate": 0.898,
+     "overconfidence": -0.05409066666666662,
+     "spurious_confident": 0.002
+    },
+    "Cal": {
+     "mean_pbest": 0.7731653333333334,
+     "hit_rate": 0.898,
+     "overconfidence": -0.12483466666666665,
+     "spurious_confident": 0.002
+    }
+   },
+   "seconds": 6.7
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.15,
+    "incons": 0.5,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "inconsistency"
+   },
+   "cell_id": "dense_T4_spe5_t20.15_inc0.5_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.45066666666666666,
+    "RE": 0.973,
+    "NetHK": 0.9823333333333333
+   },
+   "width": {
+    "NaiveFE": 0.2561405759262314,
+    "RE": 0.7574778012240246,
+    "NetHK": 0.8192922098871713
+   },
+   "absbias_RE": 0.12451477395462085,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.822,
+    "naive_reject": 0.994
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9347639999999999,
+     "hit_rate": 0.794,
+     "overconfidence": 0.1407639999999999,
+     "spurious_confident": 0.116
+    },
+    "RE": {
+     "mean_pbest": 0.8011586666666667,
+     "hit_rate": 0.898,
+     "overconfidence": -0.09684133333333333,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.6208493333333334,
+     "hit_rate": 0.898,
+     "overconfidence": -0.27715066666666666,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 6.6
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "none",
+    "spread": "sep",
+    "block": "selection"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.0_none_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "coverage": {
+    "NaiveFE": 0.7146666666666667,
+    "RE": 0.9253333333333333,
+    "NetHK": 0.939
+   },
+   "width": {
+    "NaiveFE": 0.25990920852911714,
+    "RE": 0.41661330106476485,
+    "NetHK": 0.44684946558939315
+   },
+   "absbias_RE": 0.0867513005914739,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.038,
+    "naive_reject": 0.426
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.948824,
+     "hit_rate": 0.956,
+     "overconfidence": -0.00717599999999996,
+     "spurious_confident": 0.008
+    },
+    "RE": {
+     "mean_pbest": 0.9117026666666668,
+     "hit_rate": 0.974,
+     "overconfidence": -0.062297333333333205,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.886704,
+     "hit_rate": 0.974,
+     "overconfidence": -0.08729599999999993,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 5.7
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "copas_strong",
+    "spread": "sep",
+    "block": "selection"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.0_copas_strong_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 0.6325903922057663,
+   "coverage": {
+    "NaiveFE": 0.6306666666666667,
+    "RE": 0.8276666666666667,
+    "NetHK": 0.8493333333333334
+   },
+   "width": {
+    "NaiveFE": 0.2377864748793094,
+    "RE": 0.3759787165549419,
+    "NetHK": 0.39798612742402095
+   },
+   "absbias_RE": 0.11062979622986617,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.074,
+    "naive_reject": 0.524
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.979728,
+     "hit_rate": 0.992,
+     "overconfidence": -0.01227199999999995,
+     "spurious_confident": 0.002
+    },
+    "RE": {
+     "mean_pbest": 0.9716306666666666,
+     "hit_rate": 0.998,
+     "overconfidence": -0.026369333333333356,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9498386666666666,
+     "hit_rate": 0.998,
+     "overconfidence": -0.04816133333333339,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 5.2
+  },
+  {
+   "cell": {
+    "geometry": "dense",
+    "T": 4,
+    "spe": 5,
+    "tau2": 0.05,
+    "incons": 0.0,
+    "scenario": "step_strong",
+    "spread": "sep",
+    "block": "selection"
+   },
+   "cell_id": "dense_T4_spe5_t20.05_inc0.0_step_strong_sep",
+   "reps": 500,
+   "n_degenerate": 0,
+   "mean_sel_frac": 0.3970931421621466,
+   "coverage": {
+    "NaiveFE": 0.442,
+    "RE": 0.6556666666666666,
+    "NetHK": 0.7143333333333334
+   },
+   "width": {
+    "NaiveFE": 0.21581683061741738,
+    "RE": 0.3738094615385677,
+    "NetHK": 0.41146377415082136
+   },
+   "absbias_RE": 0.1516279216873913,
+   "incons": {
+    "testable_frac": 1.0,
+    "honest_reject": 0.412,
+    "naive_reject": 0.846
+   },
+   "ranking": {
+    "FE": {
+     "mean_pbest": 0.9943906666666666,
+     "hit_rate": 0.994,
+     "overconfidence": 0.0003906666666666503,
+     "spurious_confident": 0.0
+    },
+    "RE": {
+     "mean_pbest": 0.9875986666666666,
+     "hit_rate": 1.0,
+     "overconfidence": -0.012401333333333375,
+     "spurious_confident": 0.0
+    },
+    "Cal": {
+     "mean_pbest": 0.9398586666666666,
+     "hit_rate": 1.0,
+     "overconfidence": -0.06014133333333338,
+     "spurious_confident": 0.0
+    }
+   },
+   "seconds": 11.1
+  }
+ ]
+}
