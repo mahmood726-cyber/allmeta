@@ -74,6 +74,21 @@ Reproducibility: each replication draws from
 `np.random.default_rng(SeedSequence([BASE_SEED, hash(cell_id)]).spawn(rep))` —
 same `--reps` and `BASE_SEED` reproduce every number, process-count-independent.
 
+## Reproduce in one command
+
+```bash
+python -m pip install -r requirements.txt   # pinned: numpy/scipy/matplotlib/reportlab/pytest
+python run_all.py            # full: simulate -> REPORT.md -> figures -> manuscript PDF -> tests
+python run_all.py --smoke    # fast end-to-end sanity check (~1 min)
+python run_all.py --no-sim   # rebuild report/figures/paper from committed results JSON (seconds)
+```
+
+`make all` is equivalent (GNU make). The research compendium adds: `requirements.txt`
+(pinned env), `run_all.py` / `Makefile` (single entry point), `DATA_MANIFEST.md`
+(data description — simulated only), `paper/manuscript.md` (+ built
+`paper/manuscript.pdf`), `tools/` (figure + PDF builders), and `READINESS.md`
+(submission-readiness checklist + remaining external validation).
+
 ## Files
 
 - `dgp_dose.py` — known-truth dose-response DGP (linear/quadratic curve, GL covariance, slope τ², selection)
