@@ -1,0 +1,10 @@
+# DTA truth-recovery bench -- pinned environment.
+# Versions are the ones the committed results_dta_full.json / results_partialid.json
+# and REPORT.md were produced with (Python 3.13). The simulation core needs only
+# numpy + scipy; matplotlib/reportlab are for figures and the manuscript PDF;
+# pytest for the correctness/anchor gate.
+numpy==2.4.4
+scipy==1.17.1
+matplotlib==3.10.9
+reportlab==4.5.1
+pytest==9.0.3

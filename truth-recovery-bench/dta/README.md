@@ -99,6 +99,34 @@ same `--reps` and `BASE_SEED` reproduce every number, process-count-independent.
 - `tests/test_dta.py` — correctness gate (mada AuditC anchor, FE-bug reproduction, joint-region calibration, threshold detection, partial-ID contract)
 - `REPORT.md`, `results_dta_full.json`, `results_partialid.json` — measured output (generated)
 
+## Reproduce in one command
+
+The whole compendium — simulation, report, figures, manuscript PDF and the
+correctness/anchor test gate — rebuilds from one entry point (`run_all.py`, mirrored
+by the `Makefile`). No pandoc or LaTeX is needed; the PDF is built with reportlab.
+
+```bash
+python -m pip install -r requirements.txt   # numpy/scipy/matplotlib/reportlab/pytest, pinned
+
+python run_all.py            # full: harness (600 reps) -> partial-ID -> report
+                             #       -> figures -> worked example -> PDF -> pytest (~7 min)
+python run_all.py --smoke    # fast end-to-end sanity check (200 reps, ~1 min)
+python run_all.py --no-sim   # skip the simulation; rebuild report/figures/paper
+                             # from the committed results JSON (seconds)
+
+# or, equivalently, with GNU make:
+make all      # full reproduction        make smoke   # fast check
+make figures  # figures only             make paper   # build paper/manuscript.pdf
+make test     # correctness + mada anchor gate
+```
+
+Determinism: base seed 20260615; the same `--reps` reproduce every number regardless
+of `--procs`, and the full profile reproduces the committed `results_dta_full.json`
+and `results_partialid.json` exactly. Pinned environment in `requirements.txt`; data
+description in `DATA_MANIFEST.md`; submission status and remaining gaps (including the
+live `mada` R re-run) in `READINESS.md`; the publication-grade write-up with the
+measured tables and figures in `paper/manuscript.md` (`paper/manuscript.pdf`).
+
 ## Next modality
 
 This is the DTA stage of the modality roll-out; **dose-response** is the last one,
