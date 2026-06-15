@@ -186,3 +186,30 @@ Same `--reps` and `BASE_SEED` → identical numbers, process-count-independent.
   bias models — those need the full RoBMA MCMC package), so it is the
   *honest-but-bias-blind* reference, exactly as in the inventory.
 - **PET-PEESE** is fixed-effect WLS (no τ²) by construction.
+
+## Reproduce in one command
+
+The publication-grade compendium (pinned `requirements.txt`, `DATA_MANIFEST.md`,
+`READINESS.md`, the manuscript `paper/manuscript.md` + built `paper/manuscript.pdf`,
+and figures) regenerates from one entry point:
+
+```bash
+python -m pip install -r requirements.txt
+python run_all.py            # full: simulate -> REPORT.md -> figures -> worked example -> PDF -> tests
+python run_all.py --smoke    # fast end-to-end check (60 reps/cell)
+python run_all.py --no-sim   # rebuild figures/worked-example/paper/tests from committed JSON (seconds)
+# or, with GNU make:
+make all        # == python run_all.py
+make smoke      # fast
+make paper      # figures + manuscript PDF (reportlab, no pandoc/LaTeX)
+make test       # pytest gate (R-anchor parity + unified contracts)
+```
+
+The amortized NPE model `sbi_model.pkl` is a **committed, pre-computed artifact**;
+`run_all.py` loads it and does not retrain it. Retraining is an optional, documented
+offline step (`python train_sbi.py`; needs only scikit-learn — this benchmark's SBI
+estimator uses `HistGradientBoostingRegressor`, **not** torch or the `sbi` PyPI
+package; see `requirements-train.txt` and `DATA_MANIFEST.md`). The build host here
+has no torch, so the runtime NPE/Unified path and the full test suite run in the core
+environment. See `DATA_MANIFEST.md` (simulated data only; R-anchor fixtures) and
+`READINESS.md` (done items + honest gaps).

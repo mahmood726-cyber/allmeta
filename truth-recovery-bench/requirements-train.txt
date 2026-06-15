@@ -1,0 +1,12 @@
+# Optional -- ONLY needed to RETRAIN the amortized NPE model (sbi_model.pkl) from
+# scratch via `python train_sbi.py`. The committed sbi_model.pkl already exists, so
+# none of the deliverables (leaderboard, figures, manuscript, test gate) require
+# this file. Retraining is a heavy, seeded, offline step (~25-40 min on 4 cores).
+#
+# NOTE on dependencies: this benchmark's amortized SBI estimator is implemented with
+# scikit-learn's HistGradientBoostingRegressor as the quantile-regression backend
+# plus a fixed (autodiff-free) DeepSets-style feature map -- it does NOT use torch or
+# the `sbi` PyPI package. Retraining therefore needs only scikit-learn (already
+# pinned in requirements.txt). This file is kept for parity with the other modalities
+# and to make the optional-retraining contract explicit.
+scikit-learn==1.8.0
