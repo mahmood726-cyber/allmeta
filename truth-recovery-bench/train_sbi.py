@@ -48,6 +48,20 @@ import features as F
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRAIN_SEED = 777_123            # disjoint from harness BASE_SEED=20260611
 SE_LO, SE_HI = 0.10, 0.70      # matches dgp.py
+
+
+def diag_path_for(out):
+    """Derive a model-specific diagnostics path from the model --out path.
+
+    sbi_model.pkl            -> sbi_diagnostics.json   (canonical, tracked)
+    sbi_model_realscale.pkl  -> sbi_diagnostics_realscale.json
+    Keeps a real-scale (or any variant) retrain from clobbering the canonical
+    model's committed diagnostics file.
+    """
+    base = os.path.basename(out)
+    name = base.replace("sbi_model", "sbi_diagnostics")
+    name = os.path.splitext(name)[0] + ".json"
+    return os.path.join(os.path.dirname(os.path.abspath(out)) or HERE, name)
 Q_GRID = [0.025, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.975]
 _STEP_CUTS = np.array([0.025, 0.05])
 K_BIN_EDGES = [3, 7, 12, 20, 35, 100]   # k bins: [4-7][8-12][13-20][21-35][36+]
@@ -378,7 +392,7 @@ def _write_diagnostics(models, tau2_model, conf, Xval, Yval, exact, t0, alpha, o
         "exact_dgp_eval": exact,
         "elapsed_sec": round(time.perf_counter() - t0, 1),
     }
-    dp = os.path.join(HERE, "sbi_diagnostics.json")
+    dp = diag_path_for(out)
     with open(dp, "w") as f:
         json.dump(diagnostics, f, indent=1)
     return diagnostics, ks, cal_curve, post_cov, post_wid
@@ -529,7 +543,7 @@ def main():
         "exact_dgp_eval": exact,
         "elapsed_sec": round(time.perf_counter() - t0, 1),
     }
-    dp = os.path.join(HERE, "sbi_diagnostics.json")
+    dp = diag_path_for(args.out)
     with open(dp, "w") as f:
         json.dump(diagnostics, f, indent=1)
     print(f"[train] saved diagnostics -> {dp}", flush=True)

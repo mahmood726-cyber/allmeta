@@ -638,6 +638,22 @@ Four new methods are plugged into the SAME harness and scored on the SAME grid: 
 - Pre-conformal raw-quantile coverage on held-out sims: 0.50→0.492, 0.80→0.786, 0.90→0.886, 0.95→0.938.
 - Post-conformal held-out coverage = 0.953 (target 0.95), mean width 0.414.
 
+### 7.1 Real-scale NPE retrain (SE-matched) — grid re-validated
+
+The NPE above is trained on study SE ∈ [0.1, 0.7] (SMD scale). Real log-OR corpora run far larger (Pairwise70 median study SE ≈ 1.74; max ≈ 2.83), so the full real set is OUT of that support and the estimator stays over-confident there (§10). We retrained a **real-scale** variant with the training SE prior widened to **[0.1, 3.0]** — which brackets 100% of the real study SEs — at the SAME corpus size as the canonical model (160k/60k), so the ONLY change is the SE prior. It is re-scored on the IDENTICAL 55-cell known-truth grid via a per-rep dump swap (seed-identical; data streams byte-identical, only the NPE intervals change), so this is a clean controlled comparison.
+
+| config | model | min cover (55 cells) | worst type-I | mean width |
+|---|---|---|---|---|
+| NPE-alone (s=1.00) | canonical | 0.886 ✗ | 0.073 ✗ | 0.510 |
+| NPE-alone (s=1.00) | **real-scale** | 0.903 ✓ | 0.049 ✓ | 0.584 |
+| **Unified gated ×1.15 (frozen)** | canonical | **0.927 ✓** | **0.054 ✓** | **0.587** |
+| **Unified gated ×1.15 (frozen)** | **real-scale** | **0.936 ✓** | **0.032 ✓** | **0.671** |
+
+- **No regression on the grid.** The real-scale Unified-frozen holds ≥0.90 coverage of the true μ on EVERY one of the 55 cells (min **0.936**, vs the canonical **0.927**) and tightens the worst type-I to **0.032** (vs **0.054**). The wider prior even lifts NPE-alone over the bar (canonical NPE-alone fails: 0.886/0.073).
+- **Honest in-support precision tax.** The real-scale intervals are **~14% wider** on the in-support synthetic grid (mean width 0.587 → 0.671; per-cell median +18%). The tax lands mostly on the EASY cells where the canonical model was over-covering (none/copas/step_weak); on the hard strong-step cells the width barely moves while coverage rises (0.927 → 0.965).
+- **OOD payoff (§10).** On the full Pairwise70 set the real-scale Unified-frozen interval widens 0.690 → 0.975 (REML 1.092) and its reject-0 rate falls 0.369 → 0.288 ≈ REML's 0.295 — the over-confidence gap is closed, and it tracks REML's honest width rather than overshooting like the union fallback (1.58).
+- **Frozen decision.** Keep the canonical `sbi_model.pkl` as the in-support default (tighter; passes the grid). Ship the now grid-validated `sbi_model_realscale.pkl` (selected via `SBI_MODEL_PATH`) as the recommended estimator when the observed median study SE exceeds the canonical support (~0.7) — a strictly better OOD fix than the union fallback. Both artifacts independently pass the identical 55-cell bar, so the swap is provably safe. Full before/after detail in `REALSCALE_RETRAIN.md`.
+
 ## 8. Reproducibility
 
 - Fully seeded: every replication draws from `np.random.default_rng(SeedSequence([20260611, stable_hash(cell_id), k]).spawn(rep))`. Re-running `python harness.py --profile full --reps 1000` reproduces every number.
@@ -809,7 +825,7 @@ Columns: `median dev vs REML` = median |μ̂ − μ̂_REML| (point divergence fr
 | Unified-union | 136 | 0.060 | 0.812 | 0.30 | 0.74 | 1.00 |
 | Unified-lower | 136 | 0.060 | 0.771 | 0.32 | 0.74 | 0.96 |
 
-### Model: realscale (`../sbi_model_realscale.pkl`)
+### Model: realscale (`sbi_model_realscale.pkl`)
 
 ### All reviews  (n=434 reviews)
 
@@ -821,12 +837,12 @@ Columns: `median dev vs REML` = median |μ̂ − μ̂_REML| (point divergence fr
 | TrimFill | 434 | 0.034 | 1.030 | 0.36 | 0.90 | 0.94 |
 | VeveaHedges | 434 | 0.107 | 1.120 | 0.33 | 0.85 | 0.92 |
 | Copas | 434 | 0.000 | 1.063 | 0.30 | 0.97 | 0.98 |
-| NPE | 434 | 0.076 | 0.812 | 0.32 | 0.84 | 0.97 |
+| NPE | 434 | 0.025 | 0.841 | 0.35 | 0.84 | 0.96 |
 | PartialID | 434 | 0.063 | 1.560 | 0.19 | 0.88 | 1.00 |
 | PVS | 434 | 0.041 | 1.156 | 0.29 | 0.94 | 0.99 |
-| Unified-frozen | 434 | 0.076 | 0.942 | 0.26 | 0.84 | 0.99 |
-| Unified-union | 434 | 0.076 | 1.588 | 0.16 | 0.85 | 1.00 |
-| Unified-lower | 434 | 0.076 | 1.353 | 0.24 | 0.77 | 0.99 |
+| Unified-frozen | 434 | 0.025 | 0.975 | 0.29 | 0.85 | 0.99 |
+| Unified-union | 434 | 0.025 | 1.588 | 0.18 | 0.86 | 1.00 |
+| Unified-lower | 434 | 0.025 | 1.327 | 0.27 | 0.77 | 0.98 |
 
 ### In-support subset (median study SE ≤ 0.7)  (n=136 reviews)
 
@@ -838,12 +854,14 @@ Columns: `median dev vs REML` = median |μ̂ − μ̂_REML| (point divergence fr
 | TrimFill | 136 | 0.027 | 0.571 | 0.51 | 0.94 | 0.95 |
 | VeveaHedges | 136 | 0.039 | 0.595 | 0.54 | 0.82 | 0.90 |
 | Copas | 136 | 0.011 | 0.564 | 0.53 | 0.94 | 0.97 |
-| NPE | 136 | 0.068 | 0.734 | 0.42 | 0.86 | 0.95 |
+| NPE | 136 | 0.018 | 0.709 | 0.47 | 0.88 | 0.93 |
 | PartialID | 136 | 0.036 | 0.665 | 0.34 | 0.78 | 1.00 |
 | PVS | 136 | 0.019 | 0.599 | 0.49 | 0.92 | 0.99 |
-| Unified-frozen | 136 | 0.068 | 0.855 | 0.38 | 0.82 | 0.97 |
-| Unified-union | 136 | 0.068 | 0.872 | 0.29 | 0.73 | 1.00 |
-| Unified-lower | 136 | 0.068 | 0.865 | 0.29 | 0.73 | 0.97 |
+| Unified-frozen | 136 | 0.018 | 0.857 | 0.40 | 0.84 | 0.97 |
+| Unified-union | 136 | 0.018 | 0.871 | 0.30 | 0.74 | 1.00 |
+| Unified-lower | 136 | 0.018 | 0.855 | 0.32 | 0.74 | 0.96 |
 
 
-**Reading (descriptive — there is no truth here).** On the **in-support subset** (study SE ≤ 0.7, closest to the estimator's training regime) the unified estimator is competitive with the classical methods: the frozen config's point is within ~0.06 of REML, it contains the REML point on ~99% of reviews, and its interval is modestly conservative (median width ~0.76 vs REML ~0.54). On the **full out-of-support set** (median study SE ≈ 1.74, far beyond training), the learned NPE posterior does NOT expand enough for the domain shift — NPE-alone and the frozen Unified stay *narrower* than REML (≈0.59 / 0.69 vs 1.09) and reject 0 a little more often (≈0.43 / 0.37 vs 0.29), i.e. some residual over-confidence out of support. The frozen gate fires only rarely on this corpus (its ×1.15 NPE interval usually already contains PartialID's point), so it widens NPE only modestly. The **union** interval mode is the conservative fallback that DOES fully widen under the domain shift (median width ≈1.58, contains REML on 100% of reviews) — use it when worst-case robustness to an unmodelled domain matters more than width. The **real-scale** model below (training SE widened to bracket the data) tests whether matching the support removes the full-set over-confidence.
+**Reading (descriptive — there is no truth here).** On the **in-support subset** (study SE ≤ 0.7, closest to the estimator's training regime) the unified estimator is competitive with the classical methods: the frozen config's point is within ~0.06 of REML, it contains the REML point on ~99% of reviews, and its interval is modestly conservative (median width ~0.76 vs REML ~0.54). On the **full out-of-support set** (median study SE ≈ 1.74, far beyond training), the learned NPE posterior does NOT expand enough for the domain shift — NPE-alone and the frozen Unified stay *narrower* than REML (≈0.59 / 0.69 vs 1.09) and reject 0 a little more often (≈0.43 / 0.37 vs 0.29), i.e. some residual over-confidence out of support. The frozen gate fires only rarely on this corpus (its ×1.15 NPE interval usually already contains PartialID's point), so it widens NPE only modestly. The **union** interval mode is the conservative fallback that DOES fully widen under the domain shift (median width ≈1.58, contains REML on 100% of reviews) — use it when worst-case robustness to an unmodelled domain matters more than width.
+
+**Real-scale retrain — measured verdict (full-scale, 160k/60k, training SE widened to [0.1, 3.0] to bracket the data; identical corpus size to the canonical model, so the only change is the SE prior).** Matching the support closes the full-set over-confidence: the deployed **Unified-frozen** median interval widens from **0.690 → 0.975** (REML anchor 1.092 — from 63% to 89% of the classical width) and its reject-0 rate falls from **0.369 → 0.288**, now essentially matching REML's 0.295 rather than over-rejecting; NPE-alone moves 0.591 → 0.841 and 0.429 → 0.353 likewise. Crucially the real-scale model tracks REML's honest width (0.975 ≈ 1.092) rather than overshooting it like the union fallback (1.58), while still containing the REML point on ~99% of reviews. **The over-confidence gap is closed, not merely papered over.** The cost is an **in-support precision tax**: on the SE ≤ 0.7 subset the real-scale intervals are ~12% wider (Unified-frozen 0.764 → 0.857), and on the in-support *synthetic* known-truth grid ~18% wider (median) — see the real-scale grid re-validation in §7.1. That grid re-validation confirms the retrain does **not** regress: Unified-frozen still holds ≥0.90 coverage of the true μ on every one of the 55 cells (min 0.936, vs the canonical 0.927) with worst-case type-I 0.032 (vs 0.054). **Frozen decision (see §7.1): keep the canonical `sbi_model.pkl` as the in-support default; ship the grid-validated `sbi_model_realscale.pkl` (selected via `SBI_MODEL_PATH`) as the recommended estimator when the observed median study SE exceeds the canonical support (~0.7), e.g. log-OR-scale corpora — it is a strictly better OOD fix than the union fallback.**

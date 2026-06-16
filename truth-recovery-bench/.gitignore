@@ -22,8 +22,11 @@ results_new_v1.json
 perrep_*.json
 *.tmp
 
-# real-scale NPE variant (goal-2 real-data contrast; regenerable via train_sbi --se-hi 3.0)
-sbi_model_realscale.pkl
+# real-scale NPE variant: now a FROZEN, grid-validated deliverable (see
+# REALSCALE_RETRAIN.md). The model + its diagnostics + the before/after
+# validation JSONs are committed; only the regenerable per-rep dump
+# (perrep_npe_realscale.json, matched by perrep_*.json above) and logs stay
+# ignored.
 real_data/*.log
 
 # robust-SBI retrain (P1): resumable checkpoint chunks are regenerable; the final

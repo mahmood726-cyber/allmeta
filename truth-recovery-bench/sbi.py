@@ -82,6 +82,33 @@ _MODEL_PATH = os.environ.get("SBI_MODEL_PATH") or os.path.join(HERE, "sbi_model.
 _ART = None
 _LOAD_ERR = None
 
+# Canonical training SE support ceiling (matches train_sbi.SE_HI default). Above
+# this the canonical model is out-of-distribution and the SE-matched real-scale
+# variant (trained on SE up to 3.0) is the right artifact.
+_CANON_SE_HI = 0.70
+
+
+def recommended_model_path(median_se):
+    """Artifact whose training SE support brackets the observed median study SE.
+
+    Returns the real-scale model (`sbi_model_realscale.pkl`, trained on SE up to
+    3.0) when the data's median study SE exceeds the canonical support ceiling
+    (~0.7) — i.e. the data is OOD for the canonical model — otherwise the
+    canonical model. This lets callers AUTO-SELECT the coverage-honest artifact
+    without changing the default behaviour (which stays canonical unless
+    SBI_MODEL_PATH is set). Both artifacts independently pass the 55-cell
+    known-truth grid bar (see REALSCALE_RETRAIN.md), so either choice is
+    coverage-safe; the real-scale model additionally closes the over-confidence
+    gap on large-SE (e.g. log-OR) corpora. Falls back to canonical if the
+    real-scale artifact is absent.
+    """
+    canon = os.path.join(HERE, "sbi_model.pkl")
+    real = os.path.join(HERE, "sbi_model_realscale.pkl")
+    if (median_se is not None and np.isfinite(median_se)
+            and median_se > _CANON_SE_HI and os.path.exists(real)):
+        return real
+    return canon
+
 
 def _load():
     global _ART, _LOAD_ERR
