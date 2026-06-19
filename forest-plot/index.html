@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
+  <link rel="stylesheet" href="../shared/alm-task.css">
   <meta name="description" content="Forest plot viewer for pairwise meta-analysis. Paste studies, render SVG, export.">
   <meta name="color-scheme" content="light dark">
   <title>Forest Plot Viewer</title>
@@ -113,6 +114,22 @@
   <header>
     <h1>Forest Plot Viewer</h1>
     <p>Paste study-level effect sizes (already on the analysis scale — e.g. logOR, logRR, MD, SMD). Fixed-effect and Paule-Mandel random-effects pooling, live SVG render, SVG / PNG / JSON export.</p>
+    <details class="alm-task" open>
+      <summary>What to do on this page — pool the effects and check the model</summary>
+      <div class="alm-task-body">
+        <p>Combine the per-study effects into one pooled estimate and inspect the heterogeneity.</p>
+        <ol>
+          <li>Your checked data arrives from <a href="../extract/">Extraction</a> via the shared workspace (or paste / load it here).</li>
+          <li>Choose <strong>fixed-effect</strong> or <strong>random-effects</strong> pooling.</li>
+          <li>Read the pooled estimate, its 95% CI, and heterogeneity (I², τ²); export the figure if needed.</li>
+          <li>Click <strong>Paper Studio →</strong> (top right) to write it up.</li>
+        </ol>
+        <div class="alm-task-grid">
+          <div class="alm-card alm-tool"><h4>The tool does</h4>Computes the pooling maths and renders the forest plot (results are reproducible / verifiable).</div>
+          <div class="alm-card alm-you"><h4>You must check</h4>That pooling is <strong>appropriate</strong> — similar-enough studies, enough of them — and choose the model.</div>
+        </div>
+      </div>
+    </details>
   </header>
 
   <main class="layout">

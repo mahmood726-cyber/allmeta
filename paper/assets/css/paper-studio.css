@@ -60,7 +60,9 @@
 .paper-toolbar button:hover { background: #475569; }
 .paper-toolbar button.primary { background: var(--paper-accent); border-color: var(--paper-accent); color: #fff; }
 .paper-toolbar button.primary:hover { background: #1d4486; }
-.paper-toolbar .ps-save-status { font-size: 0.72rem; color: #94a3b8; margin-left: 0.4rem; }
+.paper-toolbar .ps-save-status { font-size: 0.72rem; color: #94a3b8; margin-left: 0.4rem; white-space: nowrap; }
+.paper-toolbar .ps-save-status.ps-saving { color: #d97706; }
+.paper-toolbar .ps-save-status.ps-saved { color: #16a34a; }
 .paper-toolbar button#btnFocusMode[aria-pressed="true"] { background: var(--paper-accent); border-color: var(--paper-accent); color: #fff; }
 
 /* ---- focus mode (Feature A): hide the host chrome for a full-screen writing space ----

@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: https://*.supabase.co">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <meta name="description" content="Paper Studio — turn an allmeta review into a manuscript. PICO, included studies, pooled results and PRISMA counts are auto-filled from your review (the sr-records / ma-studies / ma-pooled buses); you write the interpretation. Deterministic references from the included studies — no hallucinated citations. Fully offline.">
   <title>Paper Studio — allmeta</title>
   <link rel="stylesheet" href="../hub/styles.css">
+  <link rel="stylesheet" href="../shared/alm-task.css">
   <link rel="stylesheet" href="./assets/css/paper-studio.css">
   <style>
     /* This page hosts ONE Paper Studio tab standalone (no RapidMeta chrome), so
@@ -82,12 +83,25 @@
                 <button type="button" data-export="transparency" title="Everything the review produced: all charts, full results, every record with abstract + link.">Transparency appendix (.zip)</button>
             </div>
         </details>
-        <span id="paperSaveStatus" class="ps-save-status">Saved</span>
+        <span id="paperSaveStatus" class="ps-save-status" title="Your writing is saved automatically to this browser as you type">Autosaves as you type</span>
         <input id="paperJsonInput" type="file" accept="application/json" hidden>
       </div>
 
       <div class="paper-studio-layout">
         <aside class="paper-sidebar no-print">
+            <details class="alm-task" open>
+              <summary>What to do on this page — write up the review</summary>
+              <div class="alm-task-body">
+                <p>The numbers, figures and references are auto-filled from your analysis. <strong>Your job is to write the interpretation</strong> and check the underlying work.</p>
+                <ol>
+                  <li>Check the auto-filled evidence and the <strong>Data check — per study</strong> panel below (each included study's extracted effect, or “extract missing”).</li>
+                  <li>Fill the yellow boxes — what the result means, its limits, and why it matters.</li>
+                  <li>Verify every reference against PubMed / Crossref before submitting.</li>
+                  <li>Download your paper (PDF) when every required section is done.</li>
+                </ol>
+                <p style="font-size:.8rem;margin-top:.4rem">Your writing autosaves to <strong>this browser</strong>. Sign in (top bar) to sync it across devices.</p>
+              </div>
+            </details>
             <section id="paperNavPanel" class="paper-nav-panel"></section>
             <section class="paper-mission-panel">
                 <h4>Your job</h4>
@@ -106,6 +120,9 @@
     </section>
   </main>
 
+  <!-- Accounts + cross-device sync (inert until shared/alm-auth-config.js is set). -->
+  <script src="../shared/alm-auth-config.js" defer></script>
+  <script src="../shared/alm-auth.js" defer></script>
   <!-- Cross-tool buses first: the bridge reads them to build window.RapidMeta.state. -->
   <script src="../shared/ma-studies-v1.js" defer></script>
   <script src="../shared/ma-pooled-v1.js" defer></script>

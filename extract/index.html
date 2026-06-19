@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
+  <link rel="stylesheet" href="../shared/alm-task.css">
   <meta name="description" content="Automated structured data extraction for systematic reviews: PICO, sample sizes, effect sizes + 95% CIs, event counts and risk-of-bias cues pulled from included records — free, deterministic, in-browser — feeding straight into meta-analysis. Optional agent/CLI handoff to the rct-extractor engine.">
   <meta name="color-scheme" content="light dark">
   <title>Extract — structured data extraction</title>
@@ -78,6 +79,23 @@
   <header>
     <h1>Extract <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· structured data extraction</span></h1>
     <p>Turn included records — or <strong>uploaded PDFs</strong> — into a structured evidence table: <strong>PICO</strong>, sample sizes, <strong>effect sizes + 95% CIs</strong>, event counts and <strong>risk-of-bias cues</strong>, with a free, deterministic in-browser engine, then feed it straight into the meta-analysis apps. Every extracted value shows its <strong>grounded source sentence</strong>, and any AI-proposed value whose supporting quote isn't found in the text is flagged — so extraction stays auditable. PDFs are read entirely on your device (no upload). This is the step Elicit meters; here it is free, offline and reproducible.</p>
+    <details class="alm-task" open>
+      <summary>What to do on this page — extract and VERIFY the numbers</summary>
+      <div class="alm-task-body">
+        <p>For each included study, capture the effect size, sample sizes and event counts — then <strong>check every value against the source paper</strong>. The auto-extract is a first pass to review, not an oracle.</p>
+        <ol>
+          <li>Click <strong>Import included from Screen</strong> (or upload PDFs / a file), or <strong>Load example</strong>.</li>
+          <li>The engine extracts a row per study and shows the <strong>source sentence</strong> each value came from.</li>
+          <li>Open each row and <strong>verify every value against the paper</strong> — fix anything wrong. AI-proposed values whose quote isn't found in the text are flagged for you.</li>
+          <li>Confirm the effect <strong>measure and scale</strong> (ratio vs mean difference).</li>
+          <li>Click <strong>→ Send to meta-analysis</strong> to pass the checked data to <a href="../forest-plot/">Analysis</a>.</li>
+        </ol>
+        <div class="alm-task-grid">
+          <div class="alm-card alm-tool"><h4>The tool does</h4>Finds candidate numbers with the grounded sentence, and flags unsupported AI values.</div>
+          <div class="alm-card alm-you"><h4>You must check</h4>Every extracted value against the actual paper <strong>before pooling</strong> — wrong inputs give a wrong meta-analysis.</div>
+        </div>
+      </div>
+    </details>
   </header>
 
   <div class="toolbar">
@@ -158,6 +176,8 @@
   <p class="footer-note">The free engine is a transparent pattern extractor over <strong>title + abstract + any imported PDF full text</strong>: it finds effect sizes (HR/RR/OR/MD/SMD) with their 95% CIs, sample sizes, event counts, follow-up and risk-of-bias signals (randomisation, blinding, allocation concealment, ITT), and shows the <strong>source sentence</strong> each value was grounded in. PDF text is extracted locally via a vendored, offline build of Mozilla's pdf.js (Apache-2.0) — image-only/scanned PDFs need OCR first and won't yield text. PDF full text is held in memory only (never written to storage or exports). It is a <em>first pass to review</em>, not an oracle — confirm against the paper and edit any field before pooling. Ratio effects feed the <code>ma-studies-v1</code> bus as ln(effect) with SE = (ln&nbsp;hi − ln&nbsp;lo)/(2·1.96); MD/SMD on the natural scale. Everything is local; the optional BYO-key path is the only egress.</p>
 
   <script src="../shared/toast.js"></script>
+  <script src="../shared/alm-auth-config.js"></script>
+  <script src="../shared/alm-auth.js" defer></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/sr-records-v1.js"></script>
   <script src="../shared/extract-grounding-v1.js"></script>

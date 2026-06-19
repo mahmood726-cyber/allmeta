@@ -1,0 +1,61 @@
+/* shared/alm-task.css — concise, truthful "what to do on this page" callout.
+ *
+ * Used across the RapidMeta/allmeta workflow stages (Search, Screening,
+ * Extraction/Data-check, Analysis, Paper Studio) so every page states the user's
+ * task in plain language — and, for the human-QC steps, makes explicit what the
+ * tool computes vs. what the human must verify. Native <details> = collapsible
+ * with zero JS, so it renders even if scripts fail. Theme-aware (light/dark).
+ */
+.alm-task {
+  margin: 0.6rem 0 1rem;
+  border: 1px solid #cdd7e5;
+  border-left: 4px solid #2563eb;
+  border-radius: 10px;
+  background: #f4f8ff;
+  color: #1e293b;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  overflow: hidden;
+}
+.alm-task > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.alm-task > summary::-webkit-details-marker { display: none; }
+.alm-task > summary::before { content: "📋"; font-size: 0.95rem; }
+.alm-task > summary::after {
+  content: "▸"; margin-left: auto; transition: transform 0.15s ease; color: #64748b; font-weight: 400;
+}
+.alm-task[open] > summary::after { transform: rotate(90deg); }
+.alm-task .alm-task-body { padding: 0 0.95rem 0.85rem; }
+.alm-task p { margin: 0.35rem 0; }
+.alm-task ol, .alm-task ul { margin: 0.35rem 0; padding-left: 1.3rem; }
+.alm-task li { margin: 0.18rem 0; }
+.alm-task .alm-task-grid { display: grid; gap: 0.6rem; margin-top: 0.5rem; }
+@media (min-width: 620px) { .alm-task .alm-task-grid { grid-template-columns: 1fr 1fr; } }
+.alm-task .alm-card { border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.83rem; }
+.alm-task .alm-card h4 {
+  margin: 0 0 0.3rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800;
+}
+.alm-task .alm-tool { background: #eef2f7; border: 1px solid #d9e0ea; }
+.alm-task .alm-tool h4 { color: #475569; }
+.alm-task .alm-you { background: #fff7ed; border: 1px solid #fed7aa; }
+.alm-task .alm-you h4 { color: #b45309; }
+.alm-task .alm-you strong { color: #92400e; }
+
+@media (prefers-color-scheme: dark) {
+  .alm-task { background: #0f1d33; border-color: #27344a; border-left-color: #3b82f6; color: #cbd5e1; }
+  .alm-task > summary { color: #93c5fd; }
+  .alm-task .alm-tool { background: #16223a; border-color: #27344a; }
+  .alm-task .alm-tool h4 { color: #94a3b8; }
+  .alm-task .alm-you { background: #2a2012; border-color: #4d3b1a; }
+  .alm-task .alm-you h4 { color: #fbbf24; }
+  .alm-task .alm-you strong { color: #fcd34d; }
+}

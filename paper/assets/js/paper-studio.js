@@ -1342,15 +1342,28 @@
 
   /* ---------------- autosave ---------------- */
   var saveTimer, chkTimer;
+  function setSaveStatus(txt, cls) {
+    var s = document.getElementById("paperSaveStatus");
+    if (!s) return;
+    s.textContent = txt;
+    s.classList.remove("ps-saving", "ps-saved");
+    if (cls) s.classList.add(cls);
+  }
   function scheduleAutosave() {
+    // Immediate feedback so the user can SEE that edits are being captured, then
+    // a confirmed "Saved ✓ HH:MM" once the debounced write to storage lands.
+    setSaveStatus("Saving…", "ps-saving");
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       PS.save();
       var d = new Date();
       var hh = String(d.getHours()).padStart(2, "0"), mm = String(d.getMinutes()).padStart(2, "0");
-      var s = document.getElementById("paperSaveStatus"); if (s) s.textContent = "Autosaved " + hh + ":" + mm;
+      setSaveStatus("Saved ✓ " + hh + ":" + mm, "ps-saved");
+      // If signed in, mirror the save to the per-user cloud store (no-op otherwise).
+      try { if (window.AlmAuth && AlmAuth.notifyChange) AlmAuth.notifyChange("rapidmeta.paperState"); } catch (e) {}
     }, 500);
   }
+  PS.scheduleAutosave = scheduleAutosave;
 
   /* ---------------- JSON export / import / reset ---------------- */
   PS.downloadJson = function () {
@@ -1387,8 +1400,16 @@
   /* ---------------- save robustness (flush + cross-window) ---------------- */
   // Flush the pending debounced save when the page is hidden/closed so the last
   // few keystrokes are never lost (review P1-7).
-  function flushSave() { try { clearTimeout(saveTimer); PS.save(); } catch (e) {} }
+  function flushSave() {
+    try {
+      clearTimeout(saveTimer); PS.save();
+      var d = new Date(), hh = String(d.getHours()).padStart(2, "0"), mm = String(d.getMinutes()).padStart(2, "0");
+      setSaveStatus("Saved ✓ " + hh + ":" + mm, "ps-saved");
+      try { if (window.AlmAuth && AlmAuth.flush) AlmAuth.flush(); } catch (e) {}
+    } catch (e) {}
+  }
   window.addEventListener("pagehide", flushSave);
+  window.addEventListener("beforeunload", flushSave);
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flushSave(); });
   // Another tab/window saved to the same key — warn rather than silently diverge (review P1-6).
   window.addEventListener("storage", function (e) {

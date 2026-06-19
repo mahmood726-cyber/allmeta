@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.ebi.ac.uk https://api.crossref.org https://api.openalex.org https://clinicaltrials.gov https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
+  <link rel="stylesheet" href="../shared/alm-task.css">
   <meta name="description" content="Multi-source literature search across Europe PMC, Crossref, OpenAlex and ClinicalTrials.gov — one query, cross-source dedup, and a one-click handoff into the Screen citation screener. Free, browser-only, reproducible.">
   <meta name="color-scheme" content="light dark">
   <title>Search — multi-source literature retrieval</title>
@@ -79,6 +80,22 @@
   <header>
     <h1>Search <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· multi-source literature retrieval</span></h1>
     <p>One query across <strong>Europe PMC</strong> (PubMed + more, with abstracts), <strong>Crossref</strong>, <strong>OpenAlex</strong> and <strong>ClinicalTrials.gov</strong>. Cross-source dedup, then a one-click handoff into <strong>Screen</strong>. Free, browser-only — queries hit the public APIs directly from your machine; results stay on your device.</p>
+    <details class="alm-task" open>
+      <summary>What to do on this page — find the studies</summary>
+      <div class="alm-task-body">
+        <p>Search several databases at once, then send the results to Screening.</p>
+        <ol>
+          <li>Type your question or keywords (or <strong>Load PICO from Design</strong>). Optionally <strong>Expand query</strong> for synonyms.</li>
+          <li>Pick the sources to search and run <strong>Search</strong>; use <strong>Snowball</strong> to chase citations for extra recall.</li>
+          <li>Skim the results (click a row to read its abstract); duplicates across sources are merged for you.</li>
+          <li>Click <strong>Send to Screen</strong> to hand the records to <a href="../screen/">Screening</a>.</li>
+        </ol>
+        <div class="alm-task-grid">
+          <div class="alm-card alm-tool"><h4>The tool does</h4>Fetches real records from public APIs and de-duplicates them across sources.</div>
+          <div class="alm-card alm-you"><h4>You must check</h4>That the search is <strong>broad enough</strong> for your question — the tool can't know your full inclusion criteria.</div>
+        </div>
+      </div>
+    </details>
   </header>
 
   <div class="toolbar">
