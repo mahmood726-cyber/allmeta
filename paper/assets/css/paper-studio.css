@@ -68,9 +68,66 @@
    (what the review wanted inert/aria-hidden for), and works without the Fullscreen API. */
 body.ps-focus-mode #rapidmeta-integrity-badge,
 body.ps-focus-mode > header,
+body.ps-focus-mode .alm-paper-top,
 body.ps-focus-mode nav[role="tablist"] { display: none !important; }
 .ps-provenance { display: none; }
 body.ps-focus-mode .ps-provenance { display: inline; font-size: 0.72rem; color: #94a3b8; }
+
+/* Always-available escape from focus mode. Fixed, high z-index, large tap target —
+   shown ONLY in focus mode so the user can never get trapped full-screen with no way
+   back. (The toolbar's own "Exit focus" button + Esc also work; this is the guarantee.) */
+.ps-focus-fab { display: none; }
+body.ps-focus-mode .ps-focus-fab {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  position: fixed; top: 12px; right: 12px; z-index: 100000;
+  padding: 0.55rem 0.95rem; min-height: 42px;
+  background: var(--paper-accent, #2563eb); color: #fff;
+  border: 1px solid rgba(255,255,255,0.35); border-radius: 999px;
+  font: 700 0.82rem/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+.ps-focus-fab:hover { filter: brightness(1.07); }
+.ps-focus-fab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+/* Workflow-stage back-navigation in the top bar (issue: no way back to Search/
+   Screening/Extraction/Analysis from Paper Studio). State is preserved because every
+   stage app reads the same shared localStorage workspace buses. */
+.alm-stage-nav { display: inline-flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; margin-left: auto; }
+.alm-stage-label { font-size: 0.72rem; color: #94a3b8; margin-right: 0.15rem; }
+.alm-stage-nav a {
+  font-size: 0.78rem; font-weight: 600; text-decoration: none;
+  color: #1d4ed8; padding: 0.3rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff;
+}
+.alm-stage-nav a:hover, .alm-stage-nav a:focus-visible { border-color: #1d4ed8; background: #eff4ff; }
+@media (prefers-color-scheme: dark) {
+  .alm-stage-nav a { color: #93c5fd; background: #1e293b; border-color: #334155; }
+  .alm-stage-nav a:hover, .alm-stage-nav a:focus-visible { border-color: #60a5fa; background: #243044; }
+}
+
+/* Per-study data-check panel in the sidebar. */
+.paper-datacheck-panel h4 { margin: 0 0 0.4rem; }
+.dc-summary { font-size: 0.78rem; color: #475569; margin: 0 0 0.3rem; }
+.dc-note { font-size: 0.7rem; color: #64748b; margin: 0 0 0.4rem; }
+.dc-empty { font-size: 0.78rem; color: #64748b; }
+.dc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.dc-row { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.45rem 0.55rem; background: #f8fafc; }
+.dc-title { font-size: 0.78rem; font-weight: 600; color: #0f172a; line-height: 1.35; }
+.dc-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
+.dc-eff { font-size: 0.76rem; color: #166534; font-variant-numeric: tabular-nums; }
+.dc-se { color: #64748b; }
+.dc-missing { font-size: 0.76rem; color: #b45309; font-weight: 700; }
+.dc-links { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
+.dc-link { font-size: 0.72rem; font-weight: 600; text-decoration: none; color: #1d4ed8; padding: 0.1rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+.dc-link.ct { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.dc-link:hover { filter: brightness(1.05); }
+@media (prefers-color-scheme: dark) {
+  .dc-summary { color: #94a3b8; }
+  .dc-row { background: #0f172a; border-color: #1e293b; }
+  .dc-title { color: #e2e8f0; }
+  .dc-eff { color: #4ade80; }
+  .dc-link { color: #93c5fd; background: #1e293b; border-color: #334155; }
+  .dc-link.ct { background: #1d4ed8; color: #fff; }
+}
 
 /* "More" overflow + download menus */
 .toolbar-more, .download-menu { position: relative; }

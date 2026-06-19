@@ -24,7 +24,16 @@
   <div class="alm-paper-top no-print">
     <a class="hub-back" href="../" aria-label="Back to allmeta hub">← allmeta</a>
     <a class="hub-back" href="../workflow/" aria-label="Back to the review workflow">← review workflow</a>
+    <nav class="alm-stage-nav" aria-label="Jump back to a workflow stage">
+      <span class="alm-stage-label">Double-check a stage:</span>
+      <a href="../search/" title="Open the Search app — your records stay on the shared workspace">Search</a>
+      <a href="../screen/" title="Open the Screening app">Screening</a>
+      <a href="../extract/" title="Open the Extraction app">Extraction</a>
+      <a href="../forest-plot/" title="Open the Analysis (forest plot) app">Analysis</a>
+    </nav>
   </div>
+  <!-- Always-available escape from focus/full-screen so the user is never trapped. -->
+  <button type="button" id="psFocusFab" class="ps-focus-fab" aria-label="Exit focus mode and show the toolbar">⛶ Exit focus</button>
   <main>
     <section id="tab-paper" class="paper-studio-page" role="region" aria-label="Paper Studio">
 
@@ -85,6 +94,7 @@
                 <p class="paper-mission"><strong>allmeta calculates the evidence.</strong> Your job is to explain what it means, what it does not mean, and why it matters. A clean PDF unlocks once the required interpretation fields are complete.</p>
             </section>
             <section id="evidenceChipsPanel"></section>
+            <section id="dataCheckPanel" class="paper-datacheck-panel"></section>
             <section id="paperChecklistPanel"></section>
         </aside>
 

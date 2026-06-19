@@ -116,6 +116,19 @@
     .abstract { font-size:0.95rem; line-height:1.6; margin:0.5rem 0 1rem; max-height:42vh; overflow:auto;
                 border:1px solid var(--border); border-radius:8px; padding:0.75rem 0.9rem; background:var(--input-bg); }
     .abstract.empty { color:var(--muted); font-style:italic; }
+    .abstract-src { font-size:0.74rem; color:var(--muted); margin:0.5rem 0 0.2rem; }
+    .abstract-src strong { color:var(--ink, inherit); }
+    .abstract-src.ctgov { color:var(--warn, #b45309); }
+    /* Prominent per-record source links; ClinicalTrials.gov gets the strongest button. */
+    .reclinks { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.55rem 0 0.2rem; }
+    .reclink { display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; font-weight:600;
+               text-decoration:none; padding:0.4rem 0.8rem; min-height:36px; border-radius:8px;
+               border:1px solid var(--border-strong, #94a3b8); color:var(--ink, inherit); background:var(--input-bg); }
+    .reclink:hover, .reclink:focus-visible { filter:brightness(1.05); text-decoration:none; }
+    .reclink.ct { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+    .reclink.ct:hover { background:#1e40af; }
+    .reclink.pm { border-color:#0e7490; color:#0e7490; }
+    .reclink.doi { border-color:var(--border-strong, #94a3b8); }
     mark.hl-inc { background:var(--hl-inc); color:inherit; border-radius:3px; padding:0 1px; }
     mark.hl-exc { background:var(--hl-exc); color:inherit; border-radius:3px; padding:0 1px; }
     .decbtns { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem; }
@@ -611,6 +624,11 @@
         year: r.year ? (String(r.year).match(/\d{4}/) || [""])[0] : "",
         doi: clean(r.doi, 200).replace(/^https?:\/\/(dx\.)?doi\.org\//i, ""),
         pmid: clean(r.pmid, 30),
+        nct: clean(r.nct, 30) || (function () { var m = String(r.id || "").match(/NCT\d{8}/i); return m ? m[0].toUpperCase() : ""; })(),
+        url: clean(r.url, 500),
+        ctgovUrl: clean(r.ctgovUrl, 500),
+        abstractSource: clean(r.abstractSource, 60),
+        mergedSources: Array.isArray(r.mergedSources) ? r.mergedSources.map(function (s) { return clean(s, 40); }).filter(Boolean) : null,
         keywords: Array.isArray(r.keywords) ? r.keywords.map(function (k) { return clean(k, 120); }).filter(Boolean) : [],
         source: clean(r.source, 40) || "import",
         r1: r.r1 && typeof r.r1 === "object" ? { d: dec(r.r1.d), reason: r.r1.reason || "" } : { d: "", reason: "" },
@@ -841,6 +859,28 @@
       return '<span class="badge b-dec-' + t + '">' + escapeHtml(lbl) + "</span>";
     }
 
+    // Per-record source links. ClinicalTrials.gov is rendered as a prominent button
+    // (issue: CT.gov links were buried as plain "doi:"/"PMID:" text). Links open the
+    // real registry / PubMed / DOI page — nothing is fabricated; a button only shows
+    // when that identifier was actually captured for the record.
+    function ctgovUrlOf(r) {
+      if (r.ctgovUrl) return r.ctgovUrl;
+      if (r.nct) return "https://clinicaltrials.gov/study/" + r.nct;
+      if (/clinicaltrials\.gov/i.test(r.url || "")) return r.url;
+      return "";
+    }
+    function recordLinksHtml(r) {
+      var out = [];
+      var ct = ctgovUrlOf(r);
+      var pm = r.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + String(r.pmid).replace(/\D/g, "") + "/" : "";
+      var doiUrl = r.doi ? "https://doi.org/" + String(r.doi).replace(/^doi:/i, "") : "";
+      if (ct) out.push('<a class="reclink ct" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(ct) + '">↗ ClinicalTrials.gov' + (r.nct ? " (" + escapeHtml(r.nct) + ")" : "") + "</a>");
+      if (pm) out.push('<a class="reclink pm" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(pm) + '">↗ PubMed ' + escapeHtml(r.pmid) + "</a>");
+      if (doiUrl) out.push('<a class="reclink doi" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(doiUrl) + '">↗ DOI</a>');
+      if (!ct && !pm && !doiUrl && r.url) out.push('<a class="reclink" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(r.url) + '">↗ Source</a>');
+      return out.length ? '<div class="reclinks">' + out.join("") + "</div>" : "";
+    }
+
     function renderCard() {
       var r = currentRecord();
       if (!r) {
@@ -875,12 +915,26 @@
 
       var slot = activeSlot(r);
       var abEmpty = !r.abstract;
+      // Abstract provenance (truth-first): show which source the displayed abstract
+      // came from. After cross-source dedup a PubMed/journal abstract is preferred
+      // over a CT.gov brief summary; this line makes that preference visible and
+      // never invents text.
+      var absSrc = r.abstractSource || (r.source === "CT.gov" ? "ClinicalTrials.gov" : (r.source && r.source !== "import" ? r.source : ""));
+      var absIsCt = /clinicaltrials|ct\.gov/i.test(absSrc);
+      var absNote = abEmpty ? "" :
+        '<div class="abstract-src' + (absIsCt ? " ctgov" : "") + '">Abstract source: <strong>' + escapeHtml(absSrc || "imported record") + "</strong>" +
+        (absIsCt ? " — ClinicalTrials.gov brief summary (no journal abstract found for this record)" : "") + "</div>";
+      var abEmptyMsg = (r.nct || /clinicaltrials|ct\.gov/i.test(r.source || ""))
+        ? "No abstract available — this is a ClinicalTrials.gov registry record. Open the ClinicalTrials.gov link above to read the trial details."
+        : "No abstract available.";
       var html = '<div class="card' + (r.dup ? " is-dup" : "") + '">' +
         '<h2 class="ctitle">' + highlight(r.title || "(no title)") + "</h2>" +
         (meta.length ? '<p class="cmeta">' + meta.join("") + "</p>" : "") +
         (line2.length ? '<p class="cmeta">' + line2.join(" · ") + "</p>" : "") +
+        recordLinksHtml(r) +
         '<div class="badges">' + badges + "</div>" +
-        '<div class="abstract' + (abEmpty ? " empty" : "") + '">' + (abEmpty ? "No abstract available." : highlight(r.abstract)) + "</div>" +
+        absNote +
+        '<div class="abstract' + (abEmpty ? " empty" : "") + '">' + (abEmpty ? abEmptyMsg : highlight(r.abstract)) + "</div>" +
         (r.aiRationale ? '<p class="ai-rationale">AI rationale: ' + escapeHtml(r.aiRationale) + "</p>" : "") +
         '<div class="decbtns">' +
         '<button type="button" class="db-inc' + (slot.d === "include" ? " on" : "") + '" data-dec="include">Include <span class="kbd">i</span></button>' +
@@ -1308,8 +1362,8 @@
     // ---- example ----
     function loadExample() {
       var ex = [
-        { title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction (DAPA-HF)", abstract: "In this randomized, controlled trial, patients with HFrEF received dapagliflozin or placebo. The primary outcome of worsening heart failure or cardiovascular death was reduced. SGLT2 inhibition improved outcomes regardless of diabetes status.", authors: ["McMurray JJV", "Solomon SD"], journal: "N Engl J Med", year: "2019", doi: "10.1056/NEJMoa1911303", source: "pubmed", keywords: ["heart failure", "SGLT2", "dapagliflozin"] },
-        { title: "Empagliflozin in Heart Failure with a Preserved Ejection Fraction (EMPEROR-Preserved)", abstract: "Randomized trial of empagliflozin versus placebo in patients with HFpEF. Empagliflozin reduced the combined risk of cardiovascular death or hospitalization for heart failure.", authors: ["Anker SD", "Butler J"], journal: "N Engl J Med", year: "2021", doi: "10.1056/NEJMoa2107038", source: "pubmed", keywords: ["HFpEF", "empagliflozin"] },
+        { title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction (DAPA-HF)", abstract: "In this randomized, controlled trial, patients with HFrEF received dapagliflozin or placebo. The primary outcome of worsening heart failure or cardiovascular death was reduced. SGLT2 inhibition improved outcomes regardless of diabetes status.", authors: ["McMurray JJV", "Solomon SD"], journal: "N Engl J Med", year: "2019", doi: "10.1056/NEJMoa1911303", pmid: "31535829", nct: "NCT03036124", abstractSource: "PubMed/EuropePMC", source: "pubmed", keywords: ["heart failure", "SGLT2", "dapagliflozin"] },
+        { title: "A Study to Evaluate the Effect of Empagliflozin in Heart Failure With Preserved Ejection Fraction", abstract: "Brief Summary: This trial studies empagliflozin versus placebo in adults with chronic heart failure and a preserved ejection fraction. The primary endpoint is the composite of cardiovascular death or hospitalisation for heart failure.", authors: ["Boehringer Ingelheim"], journal: "Interventional · Completed", year: "2017", doi: "", nct: "NCT03057951", abstractSource: "ClinicalTrials.gov", source: "CT.gov", keywords: ["HFpEF", "empagliflozin"] },
         { title: "Effect of SGLT2 inhibitors on cardiac remodeling in a murine model", abstract: "We studied the effect of SGLT2 inhibition in mice subjected to transverse aortic constriction. This in vitro and animal study examined molecular signaling pathways.", authors: ["Lee K", "Park J"], journal: "J Mol Cell Cardiol", year: "2020", doi: "10.1016/j.yjmcc.2020.01.002", source: "pubmed", keywords: ["animal", "in vitro"] },
         { title: "Cost-effectiveness analysis of dapagliflozin for heart failure", abstract: "A health-economic model estimated the cost-effectiveness of dapagliflozin in HFrEF from a payer perspective. Incremental cost-effectiveness ratios are reported.", authors: ["Smith A"], journal: "PharmacoEconomics", year: "2021", doi: "10.1007/s40273-021-01010-z", source: "embase", keywords: ["cost-effectiveness"] },
         { title: "Dapagliflozin in patients with heart failure and reduced ejection fraction", abstract: "Duplicate import of the DAPA-HF primary results from a second database.", authors: ["McMurray JJV"], journal: "NEJM", year: "2019", doi: "10.1056/NEJMoa1911303", source: "embase", keywords: [] },

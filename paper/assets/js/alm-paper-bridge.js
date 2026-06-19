@@ -29,16 +29,43 @@
     } catch (e) { return null; }
   }
 
-  // Consensus-included, non-duplicate records from the sr-records-v1 schema
+  // Consensus screening decision for a record under the sr-records-v1 schema
   // (two fixed reviewers r1/r2 + a `resolved` override; `dup` marks duplicates).
+  // Returns { decision: "include"|"exclude"|"maybe"|"", confirmed: bool, reason }.
+  function decisionOf(r) {
+    if (!r) return { decision: "", confirmed: false, reason: "" };
+    var d1 = r.r1 && r.r1.d, d2 = r.r2 && r.r2.d, res = r.resolved;
+    var reason = (r.r1 && r.r1.reason) || (r.r2 && r.r2.reason) || "";
+    if (res) return { decision: res, confirmed: true, reason: reason };
+    if (d1 && d2) {
+      if (d1 === d2) return { decision: d1, confirmed: true, reason: reason };
+      return { decision: "maybe", confirmed: false, reason: reason }; // unreconciled conflict
+    }
+    var only = d1 || d2 || "";
+    return { decision: only, confirmed: false, reason: reason };
+  }
   function includedRecords(recs) {
     return (recs || []).filter(function (r) {
-      if (!r || r.dup) return false;
-      var d1 = r.r1 && r.r1.d, d2 = r.r2 && r.r2.d, res = r.resolved;
-      if (res) return res === "include";
-      if (d1 && d2) return d1 === "include" && d2 === "include";
-      return (d1 || d2) === "include";
+      return r && !r.dup && decisionOf(r).decision === "include";
     });
+  }
+
+  // Join key between an sr-records record and an ma-studies-v1 study row. The
+  // Extract app writes each study with label = clean(record.title, 80) (see
+  // extract/index.html toMaStudy), so the record title's normalized 80-char prefix
+  // is the reliable identity link — NOT array position, which silently mismatched
+  // per-record effects whenever extraction order/count differed from screening.
+  function normKey(s) {
+    return String(s == null ? "" : s).replace(/\s+/g, " ").trim().slice(0, 80).toLowerCase();
+  }
+  function buildStudyIndex(studies) {
+    var byLabel = {};
+    (studies || []).forEach(function (st, i) {
+      if (!st) return;
+      var k = normKey(st.label);
+      if (k && byLabel[k] == null) byLabel[k] = i; // first wins; collisions are rare
+    });
+    return byLabel;
   }
 
   // Optional heterogeneity fill from the per-study effects when the pooled
@@ -66,22 +93,64 @@
     var pooledList = (global.MaPooled && global.MaPooled.read && global.MaPooled.read()) || [];
     var pooled = pooledList.length ? pooledList[pooledList.length - 1] : null;
 
-    var trials = included.map(function (r, i) {
-      var st = studies[i] || {};
+    var studyIdx = buildStudyIndex(studies);
+    // Consensus-included records become trials, each carrying its screening status and
+    // the full per-record fields the paper writer + transparency appendix need. Per-record
+    // extracted effects are matched to ma-studies rows by IDENTITY (record title ==
+    // study label, the key the Extract app writes) — NOT by array position, which
+    // silently mismatched effects whenever extraction order/count differed from
+    // screening. Positional fallback applies ONLY when no label matches at all AND the
+    // counts line up exactly (legacy / analysis-only flows), and never fabricates data.
+    var anyLabelMatch = false;
+    included.forEach(function (r) { if (studyIdx[normKey(r.title)] != null) anyLabelMatch = true; });
+    var positionalOk = !anyLabelMatch && included.length === studies.length && studies.length > 0;
+
+    function trialFromRecord(r, inclPos) {
+      var dec = decisionOf(r);
+      var nct = (r.ids && r.ids.nctid) || r.nct || (function () { var m = String(r.id || "").match(/NCT\d{8}/i); return m ? m[0].toUpperCase() : ""; })();
+      var st = null;
+      var li = studyIdx[normKey(r.title)];
+      if (li != null) st = studies[li];
+      else if (positionalOk && inclPos >= 0) st = studies[inclPos] || null;
+      var ctUrl = r.ctgovUrl || (nct ? "https://clinicaltrials.gov/study/" + nct : (/clinicaltrials\.gov/i.test(r.url || "") ? r.url : ""));
       return {
-        title: r.title || st.label || ("Study " + (i + 1)),
+        id: nct || r.id || "",
+        title: r.title || (st && st.label) || "",
         authors: Array.isArray(r.authors) ? r.authors.join("; ") : (r.authors || ""),
-        year: r.year || st.year || null,
+        year: r.year || (st && st.year) || null,
+        journal: r.journal || "",
+        source: r.source || "",
+        status: dec.decision || "screened",
+        reason: dec.reason || "",
+        screenReview: { confirmed: !!dec.confirmed, decision: dec.decision || "" },
+        pmid: r.pmid || "",
+        doi: r.doi || "",
+        nct: nct,
+        abstract: r.abstract || "",
+        abstractSource: r.abstractSource || "",
+        ctgovUrl: ctUrl,
+        sourceUrl: r.url || "",
         n: (r.n != null ? r.n : null),
         rob: (r.rob || (r.r1 && r.r1.rob) || null),
-        effect: (st.est != null) ? { est: st.est, se: st.se } : null,
-        nct: (r.ids && r.ids.nctid) || r.nct || ((r.pmid && "") || "")
+        effect: (st && st.est != null && st.se != null) ? { est: st.est, se: st.se } : null,
+        extractMissing: !(st && st.est != null && st.se != null),
+        data: { name: r.title || (st && st.label) || "", abstract: r.abstract || "" }
       };
-    });
-    // Fall back to ma-studies as trials when no sr-records exist yet.
+    }
+
+    var trials = included.map(function (r, i) { return trialFromRecord(r, i); });
+
+    // Fall back to ma-studies as trials when no sr-records exist yet (analysis-only flow).
     if (!trials.length && studies.length) {
       trials = studies.map(function (st, i) {
-        return { title: st.label || ("Study " + (i + 1)), authors: "", year: st.year || null, n: null, rob: null, effect: { est: st.est, se: st.se }, nct: "" };
+        return {
+          id: "", title: st.label || ("Study " + (i + 1)), authors: "", year: st.year || null,
+          journal: "", source: "", status: "include", reason: "",
+          screenReview: { confirmed: false, decision: "include" },
+          pmid: "", doi: "", nct: "", abstract: "", abstractSource: "", ctgovUrl: "", sourceUrl: "",
+          n: null, rob: null, effect: { est: st.est, se: st.se }, extractMissing: false,
+          data: { name: st.label || ("Study " + (i + 1)), abstract: "" }
+        };
       });
     }
 
@@ -93,7 +162,7 @@
       tau2: pooled.tau2 != null ? pooled.tau2 : (het.tau2 != null ? het.tau2 : null),
       i2: pooled.i2 != null ? pooled.i2 : (het.i2 != null ? het.i2 : null),
       measure: pooled.measure || "", scale: pooled.scale || "",
-      k: pooled.k != null ? pooled.k : trials.length
+      k: pooled.k != null ? pooled.k : (included.length || studies.length)
     } : null;
 
     return {

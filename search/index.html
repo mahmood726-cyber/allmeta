@@ -184,6 +184,30 @@
     // Source preference for survivor selection (lower rank = kept). EuropePMC and
     // Crossref carry the richest metadata (abstracts, PMIDs/DOIs), so they win ties.
     var SRC_RANK = { "EuropePMC": 0, "Crossref": 1, "OpenAlex": 2, "CT.gov": 3 };
+    // When a duplicate is folded into its survivor, carry the identifiers and links
+    // the survivor lacks (notably the ClinicalTrials.gov NCT + link), and PREFER a
+    // real journal abstract over a CT.gov brief summary. Survivors are picked in
+    // source-rank order (PubMed/EuropePMC first), so a journal abstract is normally
+    // already on the survivor — this only upgrades the rare CT.gov-survivor case and
+    // never fabricates: every field copied was actually fetched for that trial.
+    function mergeDupInto(surv, dup) {
+      if (!surv || !dup) return;
+      if (!surv.nct && dup.nct) surv.nct = dup.nct;
+      if (!surv.ctgovUrl) {
+        if (dup.source === "CT.gov" && dup.url) surv.ctgovUrl = dup.url;
+        else if (dup.nct) surv.ctgovUrl = "https://clinicaltrials.gov/study/" + dup.nct;
+      }
+      if (!surv.pmid && dup.pmid) surv.pmid = dup.pmid;
+      if (!surv.doi && dup.doi) surv.doi = dup.doi;
+      // Abstract: only upgrade to a non-CT.gov abstract that is genuinely fuller.
+      if (dup.abstract && dup.source !== "CT.gov" &&
+          (!surv.abstract || (surv.source === "CT.gov" && dup.abstract.length > surv.abstract.length))) {
+        surv.abstract = dup.abstract;
+        surv.abstractSource = dup.abstractSource || dup.source;
+      }
+      surv.mergedSources = surv.mergedSources || [surv.source];
+      if (dup.source && surv.mergedSources.indexOf(dup.source) < 0) surv.mergedSources.push(dup.source);
+    }
     function dedup(recs) {
       var i, j, k;
       for (i = 0; i < recs.length; i++) { recs[i].dup = false; }
@@ -196,17 +220,20 @@
         var rb = SRC_RANK[recs[b].source]; if (rb == null) rb = 99;
         return (ra - rb) || (a - b);
       });
-      var seenDoi = {}, live = [];
+      var doiSurv = {}, live = [];
       for (k = 0; k < order.length; k++) {
         var r = recs[order[k]]; var d = r.doi; if (!d) continue;
-        if (seenDoi[d]) r.dup = true; else seenDoi[d] = 1;
+        if (doiSurv[d] != null) { r.dup = true; mergeDupInto(recs[doiSurv[d]], r); }
+        else doiSurv[d] = order[k];
       }
       for (k = 0; k < order.length; k++) { var rr = recs[order[k]]; if (!rr.dup) live.push({ r: rr, t: trigrams(normTitle(rr.title)) }); }
       for (i = 0; i < live.length; i++) {
         if (live[i].r.dup) continue;
         for (j = i + 1; j < live.length; j++) {
           if (live[j].r.dup) continue;
-          if (live[i].t.size && live[j].t.size && jaccard(live[i].t, live[j].t) >= 0.85) live[j].r.dup = true;
+          if (live[i].t.size && live[j].t.size && jaccard(live[i].t, live[j].t) >= 0.85) {
+            live[j].r.dup = true; mergeDupInto(live[i].r, live[j].r);
+          }
         }
       }
       return recs;
@@ -335,6 +362,7 @@
             return {
               id: freshId("epmc"), source: "EuropePMC",
               title: clean(x.title), abstract: clean(x.abstractText || ""),
+              abstractSource: x.abstractText ? "PubMed/EuropePMC" : "",
               authors: x.authorString ? x.authorString.split(/, ?/).map(function (a) { return clean(a, 120); }).filter(Boolean) : [],
               journal: clean(x.journalTitle || (x.bookOrReportDetails && x.bookOrReportDetails.publisher) || ""),
               year: clean(x.pubYear || "", 4), doi: normDoi(x.doi || ""), pmid: clean(x.pmid || "", 20),
@@ -356,6 +384,7 @@
             return {
               id: freshId("cr"), source: "Crossref",
               title: clean((x.title && x.title[0]) || ""), abstract: stripTags(x.abstract || ""),
+              abstractSource: x.abstract ? "Crossref" : "",
               authors: auth, journal: clean((x["container-title"] && x["container-title"][0]) || ""),
               year: yr, doi: normDoi(x.DOI || ""), pmid: "",
               url: x.DOI ? "https://doi.org/" + x.DOI : ""
@@ -369,6 +398,7 @@
       return {
         id: freshId("oa"), source: "OpenAlex",
         title: clean(x.display_name || x.title || ""), abstract: fromInverted(x.abstract_inverted_index),
+        abstractSource: x.abstract_inverted_index ? "OpenAlex" : "",
         authors: auth, journal: clean((x.primary_location && x.primary_location.source && x.primary_location.source.display_name) || ""),
         year: clean(x.publication_year || "", 4), doi: normDoi(x.doi || ""),
         pmid: clean((x.ids && x.ids.pmid ? String(x.ids.pmid).replace(/\D/g, "") : ""), 20),
@@ -396,6 +426,7 @@
               id: freshId("nct"), source: "CT.gov",
               title: clean(idm.briefTitle || idm.officialTitle || nct),
               abstract: clean(dm.briefSummary || dm.detailedDescription || ""),
+              abstractSource: (dm.briefSummary || dm.detailedDescription) ? "ClinicalTrials.gov" : "",
               authors: [(spm.leadSponsor && spm.leadSponsor.name) || ""].filter(Boolean),
               journal: clean(((des.studyType || "") + " · " + (stm.overallStatus || "")).replace(/^ · | · $/g, "")),
               year: year, doi: "", pmid: "",
@@ -499,7 +530,10 @@
       return {
         _schema: SR_RECORDS_KEY, _savedAt: new Date().toISOString(), query: q(),
         records: uniqueRecords().map(function (r) {
-          return { id: r.id, title: r.title, abstract: r.abstract, authors: r.authors, journal: r.journal, year: r.year, doi: r.doi, pmid: r.pmid, source: r.source };
+          return { id: r.id, title: r.title, abstract: r.abstract, abstractSource: r.abstractSource || "",
+            authors: r.authors, journal: r.journal, year: r.year, doi: r.doi, pmid: r.pmid, source: r.source,
+            nct: r.nct || "", url: r.url || "", ctgovUrl: r.ctgovUrl || (r.nct ? "https://clinicaltrials.gov/study/" + r.nct : ""),
+            mergedSources: r.mergedSources || null };
         })
       };
     }

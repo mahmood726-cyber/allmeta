@@ -317,6 +317,58 @@
       .map(function (c) { return '<span class="evidence-chip"><strong>' + esc(c[0]) + ':</strong> ' + esc(c[1]) + '</span>'; }).join("");
   };
 
+  /* ---------- per-record data check (issue: extracted per-record data not shown) ----------
+     Lists every INCLUDED study with the effect actually extracted for it, or an explicit
+     "extract missing" flag — records are never hidden, and no value is fabricated. Effects
+     are joined to records by identity in the bridge (alm-paper-bridge.js), not by position. */
+  function dcFmt(x) {
+    if (typeof x !== "number" || !isFinite(x)) return "—";
+    return (Math.abs(x) >= 1000 || Math.abs(x) < 0.001 && x !== 0) ? x.toPrecision(3) : x.toFixed(Math.abs(x) >= 10 ? 1 : 3);
+  }
+  function dcLinks(t) {
+    var out = [];
+    var ct = t.ctgovUrl || (t.nct ? "https://clinicaltrials.gov/study/" + t.nct : "");
+    var pm = t.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + String(t.pmid).replace(/\D/g, "") + "/" : "";
+    var doiUrl = t.doi ? "https://doi.org/" + String(t.doi).replace(/^doi:/i, "") : "";
+    if (ct) out.push('<a class="dc-link ct" target="_blank" rel="noopener noreferrer" href="' + esc(ct) + '">CT.gov</a>');
+    if (pm) out.push('<a class="dc-link" target="_blank" rel="noopener noreferrer" href="' + esc(pm) + '">PubMed</a>');
+    if (doiUrl) out.push('<a class="dc-link" target="_blank" rel="noopener noreferrer" href="' + esc(doiUrl) + '">DOI</a>');
+    else if (!ct && !pm && t.sourceUrl) out.push('<a class="dc-link" target="_blank" rel="noopener noreferrer" href="' + esc(t.sourceUrl) + '">Source</a>');
+    return out.length ? '<span class="dc-links">' + out.join("") + "</span>" : "";
+  }
+  PS.renderDataCheck = function () {
+    var RM = window.RapidMeta;
+    var trials = (RM && RM.state && RM.state.trials) || [];
+    var incl = trials.filter(function (t) {
+      var sr = t.screenReview;
+      if (sr && sr.confirmed && /^(include|exclude)$/.test(String(sr.decision))) return sr.decision === "include";
+      return String(t.status || "").toLowerCase() === "include";
+    });
+    if (!incl.length) {
+      return '<p class="dc-empty">No included studies on the workspace yet. Include studies in Screening and extract their effect data, then reopen Paper Studio.</p>';
+    }
+    var res = (RM.state && RM.state.results) || {};
+    var measure = res.measure || "", scale = res.scale || "";
+    var missing = 0;
+    var rows = incl.map(function (t) {
+      var eff;
+      if (t.effect && isFinite(t.effect.est) && isFinite(t.effect.se)) {
+        var shown = (scale === "ratio") ? Math.exp(t.effect.est) : t.effect.est;
+        eff = '<span class="dc-eff">' + (measure ? esc(measure) + " " : "") + dcFmt(shown) +
+          ' <span class="dc-se">(SE ' + dcFmt(t.effect.se) + ")</span></span>";
+      } else {
+        missing++;
+        eff = '<span class="dc-missing">⚠ extract missing</span>';
+      }
+      return '<li class="dc-row"><div class="dc-title">' + esc(t.title || t.id || "(untitled study)") + "</div>" +
+        '<div class="dc-meta">' + eff + dcLinks(t) + "</div></li>";
+    }).join("");
+    var head = '<p class="dc-summary">' + incl.length + " included · " + (incl.length - missing) +
+      " with extracted effect" + (missing ? ' · <strong class="dc-missing">' + missing + " missing</strong>" : "") + "</p>" +
+      (scale === "ratio" ? '<p class="dc-note">Effects shown back-transformed to the natural (ratio) scale.</p>' : "");
+    return head + '<ul class="dc-list">' + rows + "</ul>";
+  };
+
   /* ---------------- Methods/Results length + journal style ---------------- */
   var JOURNALS = { generic: "Generic", cochrane: "Cochrane style", jama: "JAMA style", bmj: "BMJ style", plos: "PLOS style", lancet: "Lancet style" };
   var LENGTHS = { concise: "Keep present size", moderate: "Moderately longer", detailed: "Much longer (detailed)" };
@@ -1252,6 +1304,8 @@
       '<button type="button" id="btnTutorCopy" class="tutor-copy-btn" title="Downloads a copy that keeps the prompts and tips visible, for your tutor to mark.">📄 Give my tutor a copy (with tips)</button>';
     var chips = document.getElementById("evidenceChipsPanel");
     if (chips) chips.innerHTML = '<h4>Evidence (auto-filled)</h4>' + PS.renderChips();
+    var dc = document.getElementById("dataCheckPanel");
+    if (dc) dc.innerHTML = '<h4>Data check — per study</h4>' + PS.renderDataCheck();
     // Show the lock state on the primary download button so it never looks "broken".
     var dlBtn = document.getElementById("btnDownloadCleanPdf");
     if (dlBtn) {
@@ -1424,6 +1478,7 @@
       var c = document.querySelector("#paperCanvas .onboard-card"); if (c) c.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     on("btnFocusMode", function () { PS.toggleFocusMode(); });
+    on("psFocusFab", function () { PS.setFocusMode(false); var fb = document.getElementById("btnFocusMode"); if (fb) try { fb.focus(); } catch (e) {} });
     on("btnWorkedExample", function () { PS.showWorkedExample(); });
     on("btnRefreshFigures", function () { PS.embedFigures(true); PS.toast("Refreshing figures from the analysis…"); });
     on("btnDownloadWorkingPdf", function () { PS.downloadPaperPdf({ clean: false }); });
