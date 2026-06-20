@@ -60,6 +60,14 @@ def classify(probe: dict) -> dict:
         return {"state": "CONSOLE-ERRORS", "reasons": reasons, "confidence": "high"}
 
     if probe.get("mount_found") is False:
+        # A navigation landing page (link-cards to sibling app pages, e.g. a project
+        # hub or e156-submission index) has no interactive mount BY DESIGN and must
+        # not be flagged MISSING-MOUNT. The probe marks these via landing_page when
+        # there is no mount but >=2 links to sibling .html app pages.
+        if probe.get("landing_page"):
+            n = probe.get("nav_link_count", 0)
+            reasons.append(f"navigation landing page ({n} links to sibling app pages; no interactive mount expected)")
+            return {"state": "OK", "reasons": reasons, "confidence": "high"}
         reasons.append("no primary mount landmark (svg/canvas/textarea/table input/action button)")
         return {"state": "MISSING-MOUNT", "reasons": reasons, "confidence": "medium"}
 

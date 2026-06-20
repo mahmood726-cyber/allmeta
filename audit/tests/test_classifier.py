@@ -49,6 +49,24 @@ def test_missing_mount_when_mount_false_and_no_errors():
     assert r["confidence"] == "medium"
 
 
+def test_landing_page_is_ok_not_missing_mount():
+    r = classify(_probe(mount_found=False, landing_page=True, nav_link_count=6))
+    assert r["state"] == "OK"
+    assert r["confidence"] == "high"
+    assert any("landing page" in s for s in r["reasons"])
+
+
+def test_missing_mount_when_no_mount_and_not_landing():
+    r = classify(_probe(mount_found=False, landing_page=False))
+    assert r["state"] == "MISSING-MOUNT"
+
+
+def test_real_app_with_mount_is_ok_even_if_landing_flag_absent():
+    # mount_found True short-circuits before the landing-page branch is consulted.
+    r = classify(_probe(mount_found=True))
+    assert r["state"] == "OK"
+
+
 def test_ok_when_all_clean():
     r = classify(_probe())
     assert r["state"] == "OK"
