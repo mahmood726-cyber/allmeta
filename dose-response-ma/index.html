@@ -52,6 +52,7 @@
       <select id="f-method" aria-label="Tau-squared estimator"><option value="REML" selected>REML</option><option value="PM">Paule-Mandel</option><option value="DL">DerSimonian-Laird</option><option value="FE">Fixed-effect</option></select>
     </label>
     <p class="note" style="margin-top:.5rem">Linear = log-RR per unit dose (τ² estimator applies). Spline = non-linear Harrell RCS basis, multivariate (mvmeta) REML pool — captures J/U-shaped exposures. GL covariance reconstructed per study by design type. Verified vs R <code>dosresmeta</code>.</p>
+      <p class="note" style="margin-top:.4rem"><strong>Knot placement</strong> (Harrell's recommended percentiles, R type-7 quantiles of the pooled dose distribution): 3 knots → 10th, 50th, 90th; 4 knots → 5th, 35th, 65th, 95th. The fitted knot doses are echoed in the results header.</p>
   </section>
   <section class="panel">
     <h2>Pooled dose-response</h2>
@@ -64,7 +65,7 @@
   </section>
 </main>
 <footer>
-  Two-stage dose-response MA via <code>shared/dose-response.js</code> (Greenland-Longnecker covariance reconstruction → per-study GLS → REML pool). <strong>Linear</strong>: per-study slope pooled on <code>shared/ma-core.js</code>, matches <code>dosresmeta(method="reml")</code> to ~1e-6 (<code>dose-response-parity.spec.mjs</code>). <strong>Restricted cubic spline</strong> (3/4 knots, Harrell basis): per-study multivariate GLS of the spline coefficients, pooled by a pure-JS multivariate (mvmeta) REML with a full between-study Ψ — matches <code>dosresmeta(logrr~rcs(dose,k))</code> to ~1e-5 on coefficients, vcov, Ψ and fitted log-RRs (<code>dose-response-spline-parity.spec.mjs</code>). References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Harrell 2001 (RCS).
+  Two-stage dose-response MA via <code>shared/dose-response.js</code> (Greenland-Longnecker covariance reconstruction → per-study GLS → REML pool). <strong>Linear</strong>: per-study slope pooled on <code>shared/ma-core.js</code>, matches <code>dosresmeta(method="reml")</code> to ~1e-6 (<code>dose-response-parity.spec.mjs</code>). <strong>Restricted cubic spline</strong> (3/4 knots at Harrell's recommended percentiles — 3: 10/50/90th; 4: 5/35/65/95th — via R type-7 quantiles of the pooled dose distribution): per-study multivariate GLS of the spline coefficients, pooled by a pure-JS multivariate (mvmeta) REML with a full between-study Ψ — matches <code>dosresmeta(logrr~rcs(dose,k))</code> to ~1e-5 on coefficients, vcov, Ψ and fitted log-RRs (<code>dose-response-spline-parity.spec.mjs</code>). References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Harrell 2001 (RCS).
 </footer>
 <script>
   (function () {

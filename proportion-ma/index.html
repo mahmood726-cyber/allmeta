@@ -99,7 +99,7 @@
           <option value="logit">Logit</option>
           <option value="raw">Raw (no transform) — not recommended</option>
         </select>
-        <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G et al. <em>Res Synth Methods</em> 2019;10:476-483 showed it can produce nonsensical back-transformed pooled CIs in some settings; for rare events prefer logit with continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
+        <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483 showed the inverse (back-)transformation has no single well-defined value (it depends on the chosen study size, e.g. harmonic mean), so the pooled proportion and its back-transformed CI can be seriously misleading; for rare events prefer logit with a boundary-only continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
       </label>
       <label>
         <span>Random-effects <span data-gloss="tau2">&tau;&sup2;</span> estimator</span>
@@ -154,7 +154,7 @@
     </section>
   </main>
   <footer>
-    Freeman-Tukey: <code>FT = &frac12;(arcsin&radic;(x/(n+1)) + arcsin&radic;((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer et al. <em>Res Synth Methods</em> 2019;10:476-483):</strong> FT back-transformed pooled CI can be nonsensical in some settings; prefer logit + continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/(x+0.5) + 1/(n-x+0.5)</code> with Cochrane Handbook §10.4.4 / Sweeting 2004 correction at zeros (cn=n+1). Clopper-Pearson: <code>qbeta(&alpha;/2, x, n-x+1)</code>. R-parity: logit+PM matches <code>metafor::escalc(measure="PLO")</code> + <code>rma(method="PM")</code> to tolerance 1e-6 (see <code>tests/fixtures/prop-tiny.R</code>).
+    Freeman-Tukey: <code>FT = &frac12;(arcsin&radic;(x/(n+1)) + arcsin&radic;((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483):</strong> the Freeman-Tukey inverse (back-)transformation has no single well-defined value — it depends on the study size used (here the harmonic mean of n), so the pooled proportion and its back-transformed CI can be seriously misleading and may fall outside [0,1] or invert; prefer logit + boundary-only continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/x + 1/(n-x)</code>; the 0.5 continuity correction (giving <code>1/(x+0.5) + 1/(n-x+0.5)</code>, cn=n+1) is added <strong>only</strong> for boundary studies where events = 0 or events = n (Cochrane Handbook §10.4.4 / Sweeting 2004) — never unconditionally, which would bias every study toward 50%. Clopper-Pearson: <code>qbeta(&alpha;/2, x, n-x+1)</code>. R-parity: logit+PM matches <code>metafor::escalc(measure="PLO")</code> + <code>rma(method="PM")</code> to tolerance 1e-6 (see <code>tests/fixtures/prop-tiny.R</code>).
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -259,8 +259,11 @@
     }
 
     function logitTransform(x, n) {
-      // Cochrane Handbook §10.4.4 / Sweeting 2004: continuity correction at extremes.
-      // Matches metafor::escalc(measure="PLO").
+      // Cochrane Handbook §10.4.4 / Sweeting 2004: the 0.5 continuity correction is
+      // applied ONLY when the proportion is at a boundary (events = 0 or events = n),
+      // i.e. exactly when logit(p) is otherwise ±Infinity — NOT unconditionally to
+      // every study. Adding 0.5 to non-boundary studies would bias every estimate
+      // toward p = 0.5. Matches metafor::escalc(measure="PLO", add=1/2, to="only0").
       var extreme = (x === 0) || (x === n);
       var cx = extreme ? x + 0.5 : x;
       var cn = extreme ? n + 1 : n;

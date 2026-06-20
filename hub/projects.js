@@ -1233,8 +1233,8 @@ window.HTML_APPS_PROJECTS = [
     mode: "file",
     category: "Evidence Synthesis",
     summary: "PRISMA-NMA reporting checklist — Hutton 2015 NMA extension over the PRISMA 2009 base. 29 base items (27 PRISMA 2009 + 2 NMA inline at items 18 and 19) plus 5 supplementary NMA items (S1-S5). Fillable, autosaves, exports a Markdown supplement.",
-    note: "Single file, offline, localStorage-backed; covers network geometry, transitivity, inconsistency, ranking metrics, and confidence assessment.",
-    tags: ["prisma", "nma", "reporting", "hutton-2015"]
+    note: "Single file, offline, localStorage-backed; covers network geometry, transitivity, inconsistency, ranking metrics, and confidence assessment. Note: the PRISMA-NMA 2015 (Hutton) checklist predates CINeMA — for confidence/certainty rating of NMA estimates, use CINeMA (Confidence in Network Meta-Analysis) or GRADE-NMA, which it does not itself prescribe.",
+    tags: ["prisma", "nma", "reporting", "hutton-2015", "cinema"]
   },
   {
     name: "Forest Plot Viewer",

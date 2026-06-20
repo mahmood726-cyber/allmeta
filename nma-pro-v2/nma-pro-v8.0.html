@@ -885,7 +885,7 @@ hasWarnings:warnings.length>0,
 warnings,
 overallRisk:warnings.some(w=>w.severity==='HIGH')?'High':warnings.length>0?'Moderate':'Low',
 plainLanguage:warnings.length>0?
-'?? WARNING: Evidence of publication bias detected. Smaller studies show systematically different results than larger studies. This can inflate treatment effects and distort rankings. Consider bias-adjusted analyses before making clinical recommendations.':
+'🚨 WARNING: Evidence of publication bias detected. Smaller studies show systematically different results than larger studies. This can inflate treatment effects and distort rankings. Consider bias-adjusted analyses before making clinical recommendations.':
 'No strong evidence of publication bias detected.'
 }}};
 
@@ -2515,7 +2515,7 @@ const{similarityScore,transitivityViolation,assessments}=transitivityResult;let 
 if(similarityScore>=0.8&&!transitivityViolation){riskLevel='Low';interpretation='Studies appear sufficiently similar across comparisons. The transitivity assumption is likely satisfied.';recommendations=['Proceed with NMA interpretation','Report similarity assessment in methods']}
 else if(similarityScore>=0.5){riskLevel='Moderate';interpretation='Some heterogeneity in study characteristics detected. Transitivity may be partially compromised.';recommendations=['Examine which covariates differ across comparisons','Consider meta-regression to adjust for imbalances','Interpret rankings with appropriate caution','Report limitations due to potential transitivity concerns']}
 else{riskLevel='High';interpretation='Substantial differences in study characteristics across comparisons. Transitivity assumption may be violated.';recommendations=['Consider whether NMA is appropriate for this network','Restrict to more homogeneous subset of studies','Use meta-regression or subgroup analysis','Report results as exploratory with major caveats','Consider pairwise meta-analyses only']}
-return{riskLevel,interpretation,recommendations,plainLanguage:riskLevel==='Low'?'? Studies comparing different treatments appear similar enough to combine in a network meta-analysis.':riskLevel==='Moderate'?'?? CAUTION: Some differences detected between studies comparing different treatments. Results should be interpreted with caution.':'?? WARNING: Major differences detected between studies. The network meta-analysis results may be unreliable. Consider whether combining these studies is appropriate.',detailedFindings:assessments}
+return{riskLevel,interpretation,recommendations,plainLanguage:riskLevel==='Low'?'✅ Studies comparing different treatments appear similar enough to combine in a network meta-analysis.':riskLevel==='Moderate'?'⚠️ CAUTION: Some differences detected between studies comparing different treatments. Results should be interpreted with caution.':'🚨 WARNING: Major differences detected between studies. The network meta-analysis results may be unreliable. Consider whether combining these studies is appropriate.',detailedFindings:assessments}
 }
 };
 

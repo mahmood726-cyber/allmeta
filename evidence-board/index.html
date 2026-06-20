@@ -431,6 +431,35 @@
         render();
       }
 
+      // V9-E10 — non-blocking notification: prefer the shared Toast helper;
+      // otherwise render a dismissible inline banner. Never use alert()/prompt().
+      function notifyError(message) {
+        if (typeof Toast !== "undefined" && Toast && typeof Toast.show === "function") {
+          Toast.show(message, "error");
+          return;
+        }
+        let banner = document.getElementById("inlineNotice");
+        if (!banner) {
+          banner = document.createElement("div");
+          banner.id = "inlineNotice";
+          banner.setAttribute("role", "alert");
+          banner.style.cssText = "margin:12px 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(145,33,33,0.4);background:rgba(145,33,33,0.1);color:#912121;font-size:0.9rem;display:flex;justify-content:space-between;gap:12px;align-items:center";
+          const board = document.getElementById("notes");
+          if (board && board.parentNode) board.parentNode.insertBefore(banner, board);
+          else document.body.appendChild(banner);
+        }
+        banner.textContent = "";
+        const text = document.createElement("span");
+        text.textContent = message;
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "button";
+        close.textContent = "Dismiss";
+        close.addEventListener("click", function () { banner.remove(); });
+        banner.appendChild(text);
+        banner.appendChild(close);
+      }
+
       function escapeHtml(value) {
         return String(value)
           .replace(/&/g, "&amp;")
@@ -598,8 +627,8 @@
             });
             persistAndRender();
           } catch (error) {
-            if (typeof Toast !== "undefined") Toast.show("That JSON file does not match the expected Evidence Board format.", "error");
-            else alert("That JSON file does not match the expected Evidence Board format.");
+            // V9-E10 — non-blocking error surface; never fall back to alert().
+            notifyError("That JSON file does not match the expected Evidence Board format.");
           } finally {
             importJson.value = "";
           }
