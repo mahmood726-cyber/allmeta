@@ -44,6 +44,8 @@ for (const app of APPS) {
     let load_ok = false;
     let timed_out = false;
     let mount_found = false;
+    let landing_page = false;
+    let nav_link_count = 0;
     let ui_text_matches = [];
 
     try {
@@ -74,6 +76,16 @@ for (const app of APPS) {
       } catch (_) {
         mount_found = false;
       }
+      // Landing-page detection: a navigation hub (project index / e156-submission
+      // index) has no interactive mount BY DESIGN — its primary content is link-cards
+      // to sibling .html app pages. Only consider it when no mount was found, so a
+      // real app (which has a mount) is never misclassified as a landing page.
+      if (!mount_found) {
+        try {
+          nav_link_count = await page.locator('a[href$=".html"]').count();
+        } catch (_) { nav_link_count = 0; }
+        landing_page = nav_link_count >= 2;
+      }
       const text = (await page.locator('body').innerText({ timeout: 5000 }).catch(() => '')) || '';
       ui_text_matches = NEEDS_SERVICE_PATTERNS
         .filter(p => p.test(text))
@@ -92,6 +104,8 @@ for (const app of APPS) {
       load_time_ms,
       console_errors: consoleErrors,
       mount_found,
+      landing_page,
+      nav_link_count,
       ui_text_matches,
       probe_crashed: false,
     };
