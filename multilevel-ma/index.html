@@ -260,6 +260,10 @@
       var totalVar = tau2_study + tau2_within + sigma2_typical + 1e-10;
       var I2_study = tau2_study / totalVar;
       var I2_within = tau2_within / totalVar;
+      // Sampling-variance (within-effect) share completes the decomposition; the three
+      // shares sum to 100% by construction (denominators identical). Surfaced so the
+      // I2 decomposition is verifiably exhaustive rather than tau2-only.
+      var I2_sampling = sigma2_typical / totalVar;
       // V9-08 — HKSJ adjustment with cluster df = J-1 (J = number of studies).
       // q-floor at 1 per Cochrane Handbook §10.10.4 / advanced-stats.md.
       var J = studies.length;
@@ -278,7 +282,7 @@
       var pi = (window.AlmMaCore && J >= 2)
         ? window.AlmMaCore.predictionInterval({ mu: mu, se: seMuHK, tau2: tau2_study + tau2_within, k: J })
         : null;
-      return { mu: mu, seMu: seMu, seMuHK: seMuHK, tCrit: tCrit, tau2_study: tau2_study, tau2_within: tau2_within, weights: wFinal, I2_study: I2_study, I2_within: I2_within, studies: studies, J: J,
+      return { mu: mu, seMu: seMu, seMuHK: seMuHK, tCrit: tCrit, tau2_study: tau2_study, tau2_within: tau2_within, weights: wFinal, I2_study: I2_study, I2_within: I2_within, I2_sampling: I2_sampling, studies: studies, J: J,
                piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null };
     }
 
@@ -304,6 +308,7 @@
         (f.piLo != null ? '<tr><td>95% prediction interval (t<sub>' + (f.J - 1) + '</sub>, total &tau;&sup2;)</td><td colspan="2">[' + fmt(f.piLo) + ', ' + fmt(f.piHi) + ']</td></tr>' : '') +
         '<tr><td><span data-gloss="tau2">&tau;&sup2;_study</span> (between-study)</td><td colspan="2">' + fmt(f.tau2_study, 4) + ' &mdash; share ' + (f.I2_study * 100).toFixed(1) + '%</td></tr>' +
         '<tr><td><span data-gloss="tau2">&tau;&sup2;_within</span> (within-study)</td><td colspan="2">' + fmt(f.tau2_within, 4) + ' &mdash; share ' + (f.I2_within * 100).toFixed(1) + '%</td></tr>' +
+        '<tr><td>&sigma;&sup2;_typical (within-effect sampling)</td><td colspan="2">share ' + (f.I2_sampling * 100).toFixed(1) + '% &mdash; (study + within + sampling = ' + ((f.I2_study + f.I2_within + f.I2_sampling) * 100).toFixed(1) + '%)</td></tr>' +
         '</tbody></table>';
 
       // Exact REML fit (matches metafor::rma.mv ~1|study/effect). Shown alongside the MoM
@@ -352,6 +357,7 @@
         tau2_within: f.tau2_within,
         I2_study: f.I2_study,
         I2_within: f.I2_within,
+        I2_sampling: f.I2_sampling,
       };
 
       // Persist URL state

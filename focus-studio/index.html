@@ -572,6 +572,28 @@
       const taskList = document.getElementById("taskList");
       const sessionList = document.getElementById("sessionList");
 
+      // V9-E11 — recursive deep merge of `got` over `def`, preserving any nested
+      // default key the saved payload is missing (a shallow spread would survive
+      // one level but drop defaults nested two or more levels deep). Type-checks
+      // at every level: a value of the wrong shape (e.g. a string where the
+      // default is an object) is ignored in favour of the default, so a
+      // tampered/legacy payload like {"durations":"oops"} can't break the timer.
+      function deepMergeState(def, got) {
+        if (Array.isArray(def)) {
+          return Array.isArray(got) ? got : structuredClone(def);
+        }
+        if (def !== null && typeof def === "object") {
+          if (got === null || typeof got !== "object" || Array.isArray(got)) return structuredClone(def);
+          const out = {};
+          for (const key of Object.keys(def)) {
+            out[key] = (key in got) ? deepMergeState(def[key], got[key]) : structuredClone(def[key]);
+          }
+          return out;
+        }
+        // Primitive: keep the saved value only if it's the same primitive type.
+        return (typeof got === typeof def) ? got : def;
+      }
+
       function loadState() {
         // V9-E11 — validate parsed state shape against DEFAULT_STATE per key;
         // a tampered/legacy payload like {"durations":"oops"} would otherwise
@@ -581,21 +603,7 @@
           if (!raw) return structuredClone(DEFAULT_STATE);
           const parsed = JSON.parse(raw);
           if (!parsed || typeof parsed !== "object") return structuredClone(DEFAULT_STATE);
-          const out = structuredClone(DEFAULT_STATE);
-          for (const key of Object.keys(DEFAULT_STATE)) {
-            const def = DEFAULT_STATE[key];
-            const got = parsed[key];
-            if (got === undefined) continue;
-            // Type-check: only assign if the parsed value is the same shape as default.
-            if (Array.isArray(def)) {
-              if (Array.isArray(got)) out[key] = got;
-            } else if (def !== null && typeof def === "object") {
-              if (got !== null && typeof got === "object" && !Array.isArray(got)) out[key] = { ...def, ...got };
-            } else {
-              if (typeof got === typeof def) out[key] = got;
-            }
-          }
-          return out;
+          return deepMergeState(DEFAULT_STATE, parsed);
         } catch (error) {
           return structuredClone(DEFAULT_STATE);
         }

@@ -96,6 +96,11 @@
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/stats-qt.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <!-- V9-E12: load Toast eagerly in <head> (synchronous, no defer) so window.Toast
+       is defined before the main app script that references Toast.show(...). toast.js
+       creates its DOM container lazily on first show(), so it has no body-at-load
+       dependency and is safe to include here. -->
+  <script src="../shared/toast.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -268,7 +273,18 @@
       if (!k || !window.AlmMaCore) return null;
       const yi = studies.map(s => s.est);
       const vi = studies.map(s => s.v);
-      const f = AlmMaCore.pool(yi, vi, { method, knha: test === "knha" });
+      // V9-02: when the user selects test="knha" (Hartung-Knapp-Sidik-Jonkman),
+      // delegate to the R-parity shared core, which computes the CI from the HKSJ
+      // standard error and the exact t_{k-1} critical value (NOT 1.96·se). We do
+      // NOT apply the q-floor max(1, Q/(k-1)) here: this tool's contract is
+      // bit-parity with metafor::rma(test="knha"), and metafor uses the RAW
+      // Knapp-Hartung statistic (no floor). Flooring would re-introduce the exact
+      // browser-vs-R divergence at q<1 that the 262-264 note describes and would
+      // break reml-validator-parity.spec.mjs (golden se 0.1815234631). The
+      // advanced-stats.md HKSJ floor is for CONDUCTING a conservative MA, not for
+      // a metafor validator. The z/1.96 path is preserved for the non-knha case.
+      const knha = test === "knha";
+      const f = AlmMaCore.pool(yi, vi, { method, knha, knhaFloor: false });
       return { estimate: f.mu, se: f.se, ci_lb: f.ciLo, ci_ub: f.ciHi, tau2: f.tau2, I2: f.I2, QE: f.Q, k: f.k };
     }
     window.__almValidatorFit = browserFit; // test hook (reml-validator-parity.spec.mjs)
@@ -660,7 +676,6 @@
     })();
   })();
   </script>
-  <script src="../shared/toast.js" defer></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>

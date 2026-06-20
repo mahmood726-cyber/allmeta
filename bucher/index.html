@@ -61,6 +61,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
@@ -157,11 +158,90 @@
       return Number.isFinite(x) ? x.toFixed(d) : '—';
     }
 
+    // Two-sided Student-t p-value (self-contained; used for the small-k indirect
+    // contrast so the p-value matches the t-based CI). Regularised incomplete
+    // beta via Lentz continued fraction — matches R pt() to ~1e-10.
+    function lnGamma(x) {
+      var cof = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+                 -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
+      var y = x, tmp = x + 5.5;
+      tmp -= (x + 0.5) * Math.log(tmp);
+      var ser = 1.000000000190015;
+      for (var j = 0; j < 6; j++) { y += 1; ser += cof[j] / y; }
+      return -tmp + Math.log(2.5066282746310005 * ser / x);
+    }
+    function betaCF(x, a, b) {
+      var MAXIT = 200, EPS = 3e-10, FPMIN = 1e-30;
+      var qab = a + b, qap = a + 1, qam = a - 1;
+      var c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d; var h = d;
+      for (var m = 1; m <= MAXIT; m++) {
+        var m2 = 2 * m;
+        var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; var del = d * c; h *= del;
+        if (Math.abs(del - 1) < EPS) break;
+      }
+      return h;
+    }
+    function betaInc(a, b, x) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      var bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+      if (x < (a + 1) / (a + b + 2)) return bt * betaCF(x, a, b) / a;
+      return 1 - bt * betaCF(1 - x, b, a) / b;
+    }
+    function pt2(t, df) {
+      if (!Number.isFinite(t) || df <= 0) return NaN;
+      return betaInc(df / 2, 0.5, df / (df + t * t)); // two-sided
+    }
+
     // ---- axis state (overrideable by axis-controls) ----
     var _axisState = {};
 
     // ---- results storage for export ----
     var _lastResults = null;
+
+    // Cycle 8: number of trials contributing to the two direct arms. Drives the
+    // t-vs-z choice for the indirect CI (see run()). Manual two-box entry = one
+    // trial per arm = 2; CSV / bus import overwrites this with the real count.
+    var _nStudies = 2;
+
+    // Critical value for a (1-alpha) two-sided interval. The Bucher indirect
+    // contrast pools two direct estimates; when only a few trials feed those
+    // arms, treating the contrast as standard normal is anti-conservative.
+    // Use t_{df} with df = (contributing trials) - 2 (two treatment effects
+    // estimated). df <= 0 (e.g. one trial per arm) has no t — fall back to z
+    // and flag the interval as not small-sample-corrected.
+    function qt975(df) {
+      // Prefer the audited shared quantile; fall back to bisecting the local
+      // two-sided t p-value so the t-CI still works if ma-core failed to load.
+      if (window.AlmMaCore && typeof AlmMaCore._qt === 'function') {
+        var t = AlmMaCore._qt(0.975, df);
+        if (Number.isFinite(t)) return t;
+      }
+      var lo = 0, hi = 1e4;
+      for (var i = 0; i < 200; i++) {
+        var m = (lo + hi) / 2;
+        // pt2 is two-sided: pt2 = 0.05 at the 0.975 quantile.
+        if (pt2(m, df) > 0.05) lo = m; else hi = m;
+      }
+      return (lo + hi) / 2;
+    }
+
+    function indirectCrit(df) {
+      if (df >= 1) {
+        var t = qt975(df);
+        if (Number.isFinite(t)) return { crit: t, dist: 't', df: df };
+      }
+      return { crit: Z975, dist: 'z', df: df };
+    }
 
     function run() {
       var dAC = parseFloat(document.getElementById('dAC').value);
@@ -180,12 +260,20 @@
       var dAB = dAC - dBC;
       var seAB = Math.sqrt(seAC * seAC + seBC * seBC);
       var z = dAB / seAB;
-      var p = 2 * (1 - pnorm(Math.abs(z)));
+
+      // Small-sample inference: prefer t_{df} over z for the indirect contrast.
+      var df = _nStudies - 2;                 // trials contributing minus 2 effects
+      var ind = indirectCrit(df);
+      var critAB = ind.crit;
+      // p-value on the same reference distribution as the CI.
+      var p = (ind.dist === 't')
+        ? pt2(z, ind.df)
+        : 2 * (1 - pnorm(Math.abs(z)));
 
       var rows = [
         { name: 'A vs C (direct)', est: dAC, se: seAC },
         { name: 'B vs C (direct)', est: dBC, se: seBC },
-        { name: 'A vs B (indirect, Bucher)', est: dAB, se: seAB },
+        { name: 'A vs B (indirect, Bucher)', est: dAB, se: seAB, crit: critAB },
       ];
 
       // Store for export
@@ -196,22 +284,35 @@
         dBC: dBC, seBC: seBC,
         d_indirect_AB: dAB,
         se_indirect_AB: seAB,
-        lo_AB: dAB - Z975 * seAB,
-        hi_AB: dAB + Z975 * seAB,
+        lo_AB: dAB - critAB * seAB,
+        hi_AB: dAB + critAB * seAB,
         p_AB: p,
+        crit_AB: critAB,
+        crit_dist: ind.dist,
+        df_AB: ind.df,
+        n_studies: _nStudies,
       };
 
       var bodyEl = document.getElementById('body');
       var __bodyParts = [''];
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
-        var lo = r.est - Z975 * r.se;
-        var hi = r.est + Z975 * r.se;
+        // Indirect contrast uses its small-sample t critical value; the two
+        // direct rows are shown as supplied (z reference).
+        var crit = Number.isFinite(r.crit) ? r.crit : Z975;
+        var lo = r.est - crit * r.se;
+        var hi = r.est + crit * r.se;
         var disp = scale === 'log'
           ? { est: Math.exp(r.est), lo: Math.exp(lo), hi: Math.exp(hi) }
           : { est: r.est, lo: lo, hi: hi };
         var pShow = r.name.indexOf('indirect') !== -1 ? fmt(p, 3) : '';
         __bodyParts.push('<tr><td><code>' + r.name + '</code></td><td>' + fmt(disp.est) + '</td><td>' + fmt(r.se) + '</td><td>[' + fmt(disp.lo) + ', ' + fmt(disp.hi) + ']</td><td>' + pShow + '</td></tr>');
+      }
+      // Reference-distribution / small-k note for the indirect CI.
+      if (ind.dist === 't') {
+        __bodyParts.push('<tr><td colspan="5" style="color:var(--muted);font-size:0.8rem;border-top:1px dashed var(--border)">Indirect 95% CI and p use t<sub>' + ind.df + '</sub> (small-sample correction, ' + _nStudies + ' contributing trials); direct rows use the supplied normal SEs.</td></tr>');
+      } else {
+        __bodyParts.push('<tr><td colspan="5" style="color:var(--warn);font-size:0.8rem;border-top:1px dashed var(--border)"><strong>Low k:</strong> with ' + _nStudies + ' contributing trial(s) the indirect degrees of freedom (' + (_nStudies - 2) + ') are too few for a t correction — the CI falls back to the normal (z) approximation and is likely anti-conservative. Import more trials per arm for small-sample-valid inference.</td></tr>');
       }
       bodyEl.innerHTML = __bodyParts.join('');
 
@@ -237,8 +338,9 @@
         if (_axisState.x[1] !== null) xMax = _axisState.x[1];
       }
 
-      var allLo = rows.map(function (r) { return r.est - Z975 * r.se; });
-      var allHi = rows.map(function (r) { return r.est + Z975 * r.se; });
+      var rcrit = function (r) { return Number.isFinite(r.crit) ? r.crit : Z975; };
+      var allLo = rows.map(function (r) { return r.est - rcrit(r) * r.se; });
+      var allHi = rows.map(function (r) { return r.est + rcrit(r) * r.se; });
       var autoLo = Math.min(0, Math.min.apply(null, allLo));
       var autoHi = Math.max(0, Math.max.apply(null, allHi));
       var pad = (autoHi - autoLo) * 0.1 || 0.3;
@@ -253,7 +355,7 @@
         var r = rows[i];
         var y = 30 + i * 40;
         __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + r.name + '</text>');
-        var l = r.est - Z975 * r.se, h = r.est + Z975 * r.se;
+        var l = r.est - rcrit(r) * r.se, h = r.est + rcrit(r) * r.se;
         __svgParts.push('<line x1="' + X(l) + '" y1="' + y + '" x2="' + X(h) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>');
         var isIndirect = r.name.indexOf('indirect') !== -1;
         var c = isIndirect ? 'var(--warn)' : 'var(--accent)';
@@ -316,7 +418,7 @@
         var sw = wi.reduce(function (a, b) { return a + b; }, 0);
         var mu = g.reduce(function (a, r, i) { return a + wi[i] * r.te; }, 0) / sw;
         var se = 1 / Math.sqrt(sw);
-        pairs[key] = { mu: mu, se: se };
+        pairs[key] = { mu: mu, se: se, n: g.length };
       });
 
       var keys = Object.keys(pairs);
@@ -327,6 +429,9 @@
       // Convention: first arm = AC, second arm = BC (so indirect = AB).
       var k0 = keys[0], k1 = keys[1];
       var p0 = pairs[k0], p1 = pairs[k1];
+
+      // Total trials feeding the two direct arms — drives the t-vs-z choice.
+      _nStudies = (p0.n || 1) + (p1.n || 1);
 
       // Populate fields: arm0 -> AC fields, arm1 -> BC fields
       document.getElementById('dAC').value  = p0.mu.toFixed(6);
@@ -348,6 +453,13 @@
       run();
     });
     document.getElementById('scale').addEventListener('change', run);
+
+    // Manually editing any of the four direct-arm boxes means a single
+    // user-supplied estimate per arm (no pooled trial set) — reset the
+    // contributing-trial count so the indirect CI honestly falls back to z.
+    ['dAC', 'seAC', 'dBC', 'seBC'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', function () { _nStudies = 2; });
+    });
 
     window.alm.csvUpload({
       target: '#alm-csv-mount',

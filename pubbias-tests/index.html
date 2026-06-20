@@ -315,11 +315,43 @@
       }
       var n0 = m * (m - 1) / 2;
       var tau = (concordant - discordant) / Math.sqrt((n0 - tiedX) * (n0 - tiedY));
-      // Variance of tau-b under H0 with ties is complex; use the no-ties form
-      // as an approximation (matches metafor's normal-approximation fallback
-      // when exact p is not requested).
-      var varTau = (2 * (2 * m + 5)) / (9 * m * (m - 1));
-      var z = tau / Math.sqrt(varTau);
+
+      // Begg & Mazumdar (1994) normal-approximation test on the Kendall score
+      // S = (#concordant - #discordant), standardised by the TIE-CORRECTED
+      // variance of S under H0 (Kendall 1970; this is the continuity/ties
+      // handling that metafor::ranktest and meta::metabias use, NOT the no-ties
+      // form m(m-1)(2m+5)/18 that the previous build approximated with).
+      //   var0   = m(m-1)(2m+5)
+      //   t1(g)  = Σ tg(tg-1)(2tg+5)          ties in x and in y
+      //   var(S) = [var0 - t1x - t1y]/18
+      //          + [Σ tx(tx-1) · Σ ty(ty-1)] / [2·m(m-1)]
+      //          + [Σ tx(tx-1)(tx-2) · Σ ty(ty-1)(ty-2)] / [9·m(m-1)(m-2)]
+      // With no ties this collapses to the no-ties form; with ties it matches R
+      // exactly (pb-tiny: p = 0.086681 vs metafor 0.086681).
+      function tieSums(vals) {
+        var counts = {}, key, t1 = 0, t2 = 0, t3 = 0;
+        for (var a = 0; a < vals.length; a++) {
+          key = vals[a].toFixed(12);
+          counts[key] = (counts[key] || 0) + 1;
+        }
+        for (key in counts) {
+          if (!Object.prototype.hasOwnProperty.call(counts, key)) continue;
+          var tg = counts[key];
+          t1 += tg * (tg - 1) * (2 * tg + 5);
+          t2 += tg * (tg - 1);
+          t3 += tg * (tg - 1) * (tg - 2);
+        }
+        return { t1: t1, t2: t2, t3: t3 };
+      }
+      var xVals = pairs.map(function (p) { return p.tStar; });
+      var yVals = pairs.map(function (p) { return p.v; });
+      var tx = tieSums(xVals), ty = tieSums(yVals);
+      var var0 = m * (m - 1) * (2 * m + 5);
+      var varS = (var0 - tx.t1 - ty.t1) / 18
+               + (tx.t2 * ty.t2) / (2 * m * (m - 1))
+               + (m > 2 ? (tx.t3 * ty.t3) / (9 * m * (m - 1) * (m - 2)) : 0);
+      var S = concordant - discordant;
+      var z = varS > 0 ? S / Math.sqrt(varS) : 0;
       return { statistic: tau, p: pz(z), name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: tau };
     }
 
@@ -557,6 +589,14 @@
         var cls = t.p < 0.05 ? 'bad' : 'ok';
         var verdict = t.p < 0.05 ? 'evidence of bias' : 'no evidence';
         body.innerHTML += '<tr><td><code>' + t.name + '</code></td><td>' + fmt(t.statistic, 3) + '</td><td>' + fmt(t.p, 3) + '</td><td>' + t.applicable + '</td><td><span class="chip ' + cls + '">' + verdict + '</span></td></tr>';
+      }
+      // Egger-on-binary caveat: for binary (log-OR) outcomes the standardised
+      // effect te/se and its precision 1/se are mathematically correlated, so the
+      // ordinary Egger regression has an inflated type-I error and is unreliable.
+      // Peters' (and Harbord's) tests were designed to remove that artefact — point
+      // the user at them rather than Egger when the outcome is binary.
+      if (fmt_ === 'binary') {
+        body.innerHTML += '<tr><td colspan="5" style="color:var(--warn);font-size:0.82rem;border-top:1px dashed var(--border)"><strong>&#9888; Egger unreliable for binary outcomes:</strong> with log-OR effects the standardised effect and its precision are intrinsically correlated, inflating Egger\'s false-positive rate. Use <strong>Peters\'</strong> test (or Harbord\'s) for binary outcomes instead.</td></tr>';
       }
       // Trim-and-fill summary row
       body.innerHTML += '<tr><td><code>Trim-and-fill</code></td><td>k0=' + tf.k0 + '</td><td>&#8212;</td><td>adjusted est=' + fmt(tf.est, 3) + '</td><td><span class="chip ' + (tf.k0 > 0 ? 'bad' : 'ok') + '">' + (tf.k0 > 0 ? 'imputed ' + tf.k0 + ' studies' : 'symmetric') + '</span></td></tr>';
