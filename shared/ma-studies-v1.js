@@ -76,6 +76,11 @@
       moderator: s && isFiniteNumber(s.moderator) ? s.moderator : null,
       group: s && typeof s.group === "string" && s.group.length ? s.group : null,
       year: s && isFiniteNumber(s.year) ? s.year : null,
+      // Optional analysis scale of (est, se): OR/RR/HR/RD/MD/SMD, or null when a
+      // legacy producer didn't tag it. Carried through so consumers can run the
+      // measureConsistency() guard (the §10.4 mixed-measure check) instead of
+      // silently pooling log-OR with log-RR. Additive: omitting it is fine.
+      measure: s && typeof s.measure === "string" && s.measure.length ? s.measure : null,
     };
   }
 
@@ -174,6 +179,34 @@
   /** Back-transform a log effect to the natural ratio scale. */
   function toRatio(est) {
     return isFiniteNumber(est) ? Math.exp(est) : null;
+  }
+
+  /**
+   * measureConsistency(studies) — the §10.4 guard the suite was missing.
+   * Pooling studies on different effect measures (e.g. log-OR with log-RR)
+   * silently mixes analysis scales and is invalid (Cochrane Handbook §10.2).
+   * This inspects the optional per-study `measure` tags and returns:
+   *   { ok, measures:[distinct...], mixed:boolean, untagged:count, n }
+   * `ok` is false ONLY when two or more DIFFERENT measures are present
+   * (genuine mixing). Untagged legacy rows never make `ok` false on their
+   * own — they are reported via `untagged` so a caller can warn, matching the
+   * "unknown-measure legacy warns, never blocks" rule.
+   */
+  function measureConsistency(studies) {
+    var s = Array.isArray(studies) ? studies : read();
+    var seen = {}, untagged = 0;
+    for (var i = 0; i < s.length; i++) {
+      var m = s[i] && typeof s[i].measure === "string" && s[i].measure.length ? s[i].measure : null;
+      if (m) seen[m] = true; else untagged++;
+    }
+    var measures = Object.keys(seen).sort();
+    return {
+      ok: measures.length <= 1,
+      measures: measures,
+      mixed: measures.length > 1,
+      untagged: untagged,
+      n: s.length,
+    };
   }
 
   // ----- CSV interop ------------------------------------------------------
@@ -618,6 +651,7 @@
     dropPoisoned: dropPoisoned,
     fromCI: fromCI,
     toRatio: toRatio,
+    measureConsistency: measureConsistency,
     parseCSV: parseCSV,
     toCSV: toCSV,
     studiesFromTextarea: studiesFromTextarea,

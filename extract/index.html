@@ -349,7 +349,9 @@
       var ratio = eff.measure === "HR" || eff.measure === "RR" || eff.measure === "OR";
       var built = MaStudies.fromCI(eff.point, eff.lo, eff.hi, ratio ? "ratio" : "linear");
       if (!built) return null;
-      return { label: clean(ex.title, 80) || ex.id, est: built.est, se: built.se, year: num(ex.year) };
+      // Tag the analysis scale so the §10.4 mixed-measure guard
+      // (MaStudies.measureConsistency) can flag silent OR-with-RR pooling.
+      return { label: clean(ex.title, 80) || ex.id, est: built.est, se: built.se, year: num(ex.year), measure: eff.measure };
     }
     function busStudies() {
       var out = [];
