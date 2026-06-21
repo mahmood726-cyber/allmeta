@@ -154,9 +154,10 @@
 
       <section class="panel">
         <h2>Pipeline</h2>
-        <p class="hint" style="margin-top:0">Search → Screen → <strong>Extract</strong> → meta-analysis. <strong>Send to meta-analysis</strong> writes the <code>ma-studies-v1</code> bus that the <a href="../forest-plot/">Forest plot</a> and other pooling apps read.</p>
+        <p class="hint" style="margin-top:0">Search → Screen → <strong>Extract</strong> → meta-analysis. <strong>Send to meta-analysis</strong> writes the <code>ma-studies-v1</code> bus that the <a href="../forest-plot/">Forest plot</a> and other pooling apps read; binary records with per-arm event counts also write the arm-level <code>ma-comparisons-v1</code> bus that <a href="../nma/">Network meta-analysis</a> reads.</p>
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
           <button type="button" id="btn-open-forest">Open Forest plot</button>
+          <button type="button" id="btn-open-nma">Open Network MA</button>
         </div>
       </section>
     </aside>
@@ -179,6 +180,7 @@
   <script src="../shared/alm-auth-config.js"></script>
   <script src="../shared/alm-auth.js" defer></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/ma-comparisons-v1.js"></script>
   <script src="../shared/sr-records-v1.js"></script>
   <script src="../shared/extract-grounding-v1.js"></script>
   <script src="../shared/vendor/pdfjs/pdf.min.js"></script>
@@ -360,6 +362,45 @@
         var s = toMaStudy(ex); if (s) out.push(s);
       }
       return out;
+    }
+
+    // ---- ma-comparisons-v1 (arm-level) bus feed ----------------------------
+    // A binary record with >=2 event pairs (events/total) becomes a 2-arm
+    // comparison study: arm1 = the intervention, arm2 = the comparator, labelled
+    // from PICO so the same treatment name lines up across records in the NMA.
+    // This is HEURISTIC (the regex grabs e/N pairs in text order) and meant to
+    // be reviewed/relabelled in the NMA app — matching this tool's "first pass"
+    // contract. HR/MD/SMD records are skipped (no 2x2 to build arms from).
+    function toComparisonStudy(ex) {
+      var eff = pickPrimary(ex); if (!eff) return null;
+      if (["OR", "RR", "RD"].indexOf(eff.measure) < 0) return null;   // binary only
+      var ev = Array.isArray(ex.events) ? ex.events.filter(function (e) {
+        return e && Number.isFinite(e.events) && Number.isFinite(e.total) && e.total > 0 && e.events <= e.total;
+      }) : [];
+      if (ev.length < 2) return null;
+      var p = ex.pico || {};
+      var tx = clean(p.intervention, 40) || "Intervention";
+      var co = clean(p.comparator, 40) || "Comparator";
+      if (tx === co) co = co + " (comparator)";
+      return {
+        id: clean(ex.title, 60) || ex.id,
+        year: num(ex.year),
+        arms: [
+          { treatment: tx, events: ev[0].events, n: ev[0].total },
+          { treatment: co, events: ev[1].events, n: ev[1].total },
+        ],
+      };
+    }
+    function busComparisons() {
+      var measure = null, studies = [];
+      for (var i = 0; i < records.length; i++) {
+        var ex = extractions[records[i].id]; if (!ex || ex.useInMa === false) continue;
+        var cs = toComparisonStudy(ex); if (!cs) continue;
+        var m = (pickPrimary(ex) || {}).measure;
+        if (!measure) measure = m;
+        if (m === measure) studies.push(cs);   // one envelope = one measure (the §10.4 guard)
+      }
+      return { studies: studies, measure: measure || "OR" };
     }
 
     function extractAll() {
@@ -624,7 +665,17 @@
       var studies = busStudies();
       if (!studies.length) { toast("No records have a usable effect + CI yet. Edit the effect fields or extract more."); return; }
       var ok = MaStudies.write(studies);
-      toast(ok ? ("Wrote " + studies.length + " studies to ma-studies-v1. Open a meta-analysis app to pool them.") : "Could not write to the shared bus.");
+      // Also populate the arm-level comparisons bus when binary 2x2 data is
+      // available, so the NMA / multi-arm apps can read it without a second step.
+      var armMsg = "";
+      try {
+        var cmp = busComparisons();
+        if (window.MaComparisons && cmp.studies.length) {
+          var okc = MaComparisons.write(cmp.studies, cmp.measure);
+          if (okc) armMsg = " + " + cmp.studies.length + " arm-level " + cmp.measure + " comparison(s) to ma-comparisons-v1 (review labels in NMA).";
+        }
+      } catch (_) {}
+      toast(ok ? ("Wrote " + studies.length + " studies to ma-studies-v1." + armMsg + " Open a meta-analysis app to pool them.") : "Could not write to the shared bus.");
     }
 
     // ===================== AI / CLI handoff =====================
@@ -744,6 +795,12 @@
       $("ai-key").addEventListener("change", function () { aiKeySet(this.value.trim()); });
       var sk = aiKeyGet(); if (sk) $("ai-key").value = sk;
       $("btn-open-forest").addEventListener("click", function () { var s = busStudies(); if (s.length) MaStudies.write(s); window.location.href = "../forest-plot/index.html"; });
+      $("btn-open-nma").addEventListener("click", function () {
+        var cmp = busComparisons();
+        if (window.MaComparisons && cmp.studies.length) MaComparisons.write(cmp.studies, cmp.measure);
+        else toast("No binary records with >=2 per-arm event counts to send to NMA yet.");
+        window.location.href = "../nma/index.html";
+      });
     }
 
     // ===================== test hook =====================
@@ -754,7 +811,7 @@
       toMaStudy: toMaStudy, applyAiResults: applyAiResults, aiPrompt: function () { return aiPrompt(records.length ? records : [{ id: "x", title: "t", abstract: "a" }]); },
       setRecords: function (recs) { setRecords(recs); return records.length; },
       appendRecords: function (recs) { return appendRecords(recs); },
-      busStudies: busStudies, envelope: envelope,
+      busStudies: busStudies, busComparisons: busComparisons, toComparisonStudy: toComparisonStudy, envelope: envelope,
       pick: function (id) { return pickPrimary(extractions[id]); },
       recordText: function (id) { var r = records.filter(function (x) { return x.id === id; })[0]; return r ? recordText(r) : ""; },
       applyAndRender: function (arr) { var n = applyAiResults(arr); render(); return n; },
