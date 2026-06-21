@@ -298,6 +298,30 @@
       return null;
     }
 
+    // ---- demographics (firstAuthor, country, centre, dates, age, %female, nTotal) ----
+    // Best-effort heuristics over title+abstract; every field falls back to null
+    // so the characteristics table renders blanks rather than guesses. Per the
+    // tool's "first pass to review" contract these are editable downstream.
+    var COUNTRIES = ["United States","USA","UK","United Kingdom","Canada","Australia","China","Japan","Germany","France","Italy","Spain","Netherlands","Sweden","Denmark","Norway","Finland","Brazil","India","Korea","South Korea","Switzerland","Belgium","Austria","Poland","Israel","Turkey","Iran","Egypt","South Africa","Mexico","Argentina","New Zealand","Ireland","Portugal","Greece","Russia","Singapore","Taiwan","Thailand"];
+    function extractDemographics(text, r) {
+      var firstAuthor = (r && Array.isArray(r.authors) && r.authors.length) ? clean(r.authors[0], 60) : null;
+      var country = null;
+      for (var i = 0; i < COUNTRIES.length; i++) {
+        var re = new RegExp("\\b" + COUNTRIES[i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b");
+        if (re.test(text)) { country = COUNTRIES[i]; break; }
+      }
+      var centre = /multi[- ]?cent(?:re|er)/i.test(text) ? "multicentre"
+                 : /single[- ]?cent(?:re|er)/i.test(text) ? "single-centre" : null;
+      var am = /(?:mean|median)\s+age\s*(?:\(?(?:SD|IQR)[^)]*\)?)?\s*(?:was|of|:|,|=)?\s*(\d{1,3}(?:\.\d+)?)\s*(?:years|y|yrs)?/i.exec(text);
+      var age = am ? num(am[1]) : null;
+      if (age != null && (age < 1 || age > 120)) age = null;
+      var fm = /(\d{1,3}(?:\.\d+)?)\s*%\s*(?:were\s+|of\s+(?:whom\s+)?(?:were\s+)?)?(?:female|women|woman)\b/i.exec(text)
+            || /(?:female|women)\b[^.\d]{0,20}(\d{1,3}(?:\.\d+)?)\s*%/i.exec(text);
+      var pctFemale = fm ? num(fm[1]) : null;
+      if (pctFemale != null && (pctFemale < 0 || pctFemale > 100)) pctFemale = null;
+      return { firstAuthor: firstAuthor, country: country, centre: centre, age: age, pctFemale: pctFemale };
+    }
+
     // ---- design ----
     function extractDesign(text) {
       if (/\bRCT\b|randomly\s+(?:assigned|allocated)/i.test(text)) return "RCT";
@@ -331,6 +355,7 @@
         id: r.id, title: r.title, year: r.year, doi: r.doi, pmid: r.pmid,
         design: extractDesign(text), pico: extractPICO(text),
         sampleSizes: extractSampleSizes(text), events: extractEvents(text),
+        demographics: extractDemographics(text, r),
         effects: extractEffects(text), followup: extractFollowup(text), rob: extractRoB(text),
         // the chosen primary effect for meta-analysis (auto unless overridden)
         chosen: null, manual: null
@@ -647,6 +672,7 @@
           return {
             id: r.id, title: r.title, year: r.year, doi: r.doi, pmid: r.pmid,
             design: ex.design || "", pico: ex.pico || {}, sampleSizes: ex.sampleSizes || {}, events: ex.events || [],
+            demographics: ex.demographics || {},
             effects: ex.effects || [], primaryEffect: eff || null, followup: ex.followup || null, rob: ex.rob || {}, useInMa: ex.useInMa !== false
           };
         })
@@ -654,10 +680,10 @@
     }
     function exportJSON() { downloadBlob(new Blob([JSON.stringify(envelope(), null, 2)], { type: "application/json" }), "extraction.json"); }
     function exportCSV() {
-      var header = ["id", "title", "year", "design", "n_total", "measure", "effect", "ci_low", "ci_high", "population", "intervention", "comparator", "outcome", "randomized", "blinding", "itt", "use_in_ma"];
+      var header = ["id", "title", "year", "first_author", "country", "centre", "mean_age", "pct_female", "design", "n_total", "measure", "effect", "ci_low", "ci_high", "population", "intervention", "comparator", "outcome", "randomized", "blinding", "itt", "use_in_ma"];
       var rows = records.map(function (r) {
-        var ex = extractions[r.id] || {}; var eff = pickPrimary(ex) || {}; var p = ex.pico || {}; var rob = ex.rob || {};
-        return [r.id, r.title, r.year, ex.design, (ex.sampleSizes || {}).total, eff.measure, eff.point, eff.lo, eff.hi, p.population, p.intervention, p.comparator, p.outcome, rob.randomized ? "1" : "", rob.blinding || "", rob.intentionToTreat ? "1" : "", ex.useInMa !== false ? "1" : "0"].map(csvCell).join(",");
+        var ex = extractions[r.id] || {}; var eff = pickPrimary(ex) || {}; var p = ex.pico || {}; var rob = ex.rob || {}; var dm = ex.demographics || {};
+        return [r.id, r.title, r.year, dm.firstAuthor, dm.country, dm.centre, dm.age, dm.pctFemale, ex.design, (ex.sampleSizes || {}).total, eff.measure, eff.point, eff.lo, eff.hi, p.population, p.intervention, p.comparator, p.outcome, rob.randomized ? "1" : "", rob.blinding || "", rob.intentionToTreat ? "1" : "", ex.useInMa !== false ? "1" : "0"].map(csvCell).join(",");
       });
       downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "extraction.csv");
     }

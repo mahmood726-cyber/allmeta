@@ -999,7 +999,11 @@
     // Risk-of-bias: clone the real host RoB bar chart if present (review fix).
     if (nonEmpty("#plot-rob-bar")) PS.cloneVisual("#plot-rob-bar", "#robPaperSlot", "riskOfBias", 760, 320);
     else ensurePlaceholder("#robPaperSlot", "riskOfBias", "Risk-of-bias summary appears here once you complete the Extraction → RoB step.");
-    ensurePlaceholder("#studyTablePaperSlot", "studyCharacteristics", "Add a brief characteristics summary, or paste the included-studies table here.");
+    // Characteristics of included studies: auto-build from the extraction bus
+    // (sr-extract-v1) when available, else fall back to the editable placeholder.
+    if (!mountCharacteristicsTable("#studyTablePaperSlot")) {
+      ensurePlaceholder("#studyTablePaperSlot", "studyCharacteristics", "Add a brief characteristics summary, or paste the included-studies table here. (Run the Extract step to auto-fill this from study demographics.)");
+    }
     // Done when results exist (our plots render from results), and PRISMA is present.
     return !!res && (nonEmpty("#prisma-flow-container") || nonEmpty("#prismaFlowContainer"));
   }
@@ -1083,6 +1087,50 @@
       return out;
     };
   };
+
+  /* ---------------- Characteristics-of-included-studies auto-table ----------
+   * Reads the sr-extract-v1 bus and renders a real characteristics table
+   * (the slot was previously an empty placeholder, so demographics extracted
+   * upstream were dropped on the floor). Columns follow the demographics
+   * schema: Study (first author, year), Country, Centre, N, Mean age, % female,
+   * Design, Population, Intervention vs Comparator, Effect. Returns true when a
+   * table was mounted, false when there is no extraction data to show. */
+  function readExtractRecords() {
+    try {
+      var raw = localStorage.getItem("sr-extract-v1");
+      if (!raw) return [];
+      var p = JSON.parse(raw);
+      return (p && p._schema === "sr-extract-v1" && Array.isArray(p.records)) ? p.records : [];
+    } catch (e) { return []; }
+  }
+  function mountCharacteristicsTable(sel) {
+    var el = document.querySelector(sel);
+    if (!el) return false;
+    // Don't clobber content the user typed/pasted into the slot.
+    if (el.children.length || (el.innerText || "").trim()) {
+      if (!el.querySelector("[data-ps-autochar]")) { markFig("studyCharacteristics", true); return true; }
+    }
+    var recs = readExtractRecords().filter(function (r) { return r && r.useInMa !== false; });
+    if (!recs.length) return false;
+    var cols = ["Study", "Country", "Centre", "N", "Mean age", "% female", "Design", "Population", "Intervention vs comparator", "Effect"];
+    function td(v) { return "<td>" + (v == null || v === "" ? "—" : esc(String(v))) + "</td>"; }
+    var rowsHtml = recs.map(function (r) {
+      var dm = r.demographics || {}, p = r.pico || {}, ss = r.sampleSizes || {}, eff = r.primaryEffect || {};
+      var study = (dm.firstAuthor ? dm.firstAuthor : (r.title || r.id || "Study")) + (r.year ? " " + r.year : "");
+      var ivc = (p.intervention || "—") + (p.comparator ? " vs " + p.comparator : "");
+      var effTxt = (eff && eff.measure && eff.point != null)
+        ? eff.measure + " " + eff.point + (eff.lo != null && eff.hi != null ? " [" + eff.lo + ", " + eff.hi + "]" : "")
+        : "—";
+      return "<tr>" + td(study) + td(dm.country) + td(dm.centre) + td(ss.total) + td(dm.age) +
+        td(dm.pctFemale) + td(r.design) + td(p.population) + td(ivc) + td(effTxt) + "</tr>";
+    }).join("");
+    el.innerHTML = '<div data-ps-autochar="1" style="overflow-x:auto"><table class="ps-char-table" style="border-collapse:collapse;width:100%;font-size:0.82rem">' +
+      "<thead><tr>" + cols.map(function (c) { return '<th style="text-align:left;border-bottom:2px solid #444;padding:4px 8px;white-space:nowrap">' + esc(c) + "</th>"; }).join("") + "</tr></thead>" +
+      "<tbody>" + rowsHtml.replace(/<td>/g, '<td style="border-bottom:1px solid #ddd;padding:4px 8px;vertical-align:top">') + "</tbody></table>" +
+      '<p class="no-clean-pdf" style="color:#777;font-size:0.72rem;margin:.4rem 0 0">Auto-generated from your extraction (' + recs.length + ' studies). Blank cells were not detected — edit in the Extract step or type over this table.</p></div>';
+    markFig("studyCharacteristics", true);
+    return true;
+  }
 
   function ensurePlaceholder(sel, figKey, msg) {
     var el = document.querySelector(sel);
