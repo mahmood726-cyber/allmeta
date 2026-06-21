@@ -28,9 +28,9 @@
   "use strict";
 
   var TRACKED = [
-    "sr-project-v1", "sr-records-v1", "screen-v1",
-    "ma-studies-v1", "ma-pooled-v1", "rapidmeta.paperState",
-    "grade-sof-v1", "rob-assess-v1"
+    "sr-project-v1", "sr-records-v1", "screen-v1", "sr-extract-v1",
+    "ma-studies-v1", "ma-comparisons-v1", "ma-pooled-v1", "nma-v1",
+    "rapidmeta.paperState", "grade-sof-v1", "rob-assess-v1"
   ];
   var SESSION_KEY = "alm-auth-session-v1";
   var META_KEY = "alm-sync-meta-v1";        // { key: localChangeMs }
