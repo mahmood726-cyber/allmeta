@@ -1,0 +1,9 @@
+Independently verify this network meta-analysis result WITHOUT using R/netmeta.
+Multi-arm fixture (binary, OR, log scale), reference treatment A:
+Studies (arm: events/n):
+S1 A:10/100 B:20/100; S2 A:12/120 B:18/110; S3 A:8/90 C:15/95;
+S4 A:11/100 C:14/100; S5 B:9/80 C:13/85; S6(3-arm) A:15/150 B:25/150 C:20/150.
+Compute the fixed-effect contrast-level GLS network estimates d_B and d_C (log-OR vs A)
+with the multi-arm shared-control covariance correction for S6 (Var=v_x+v_base, Cov=v_base,
+arm var = 1/e+1/(n-e), continuity correction only on zero cells — none here).
+Report d_B, se(d_B), d_C, se(d_C) to 4 decimals. Just the numbers and a one-line method note.

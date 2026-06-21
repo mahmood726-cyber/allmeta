@@ -59,9 +59,11 @@ correction. g and se match `metafor::escalc(measure="SMD")` to **1e-6** on all 4
 ## Independent cross-check
 
 The reference engines above (R `netmeta` / `metafor`) are themselves the
-independent oracle. A Codex round-robin recomputation of the multi-arm GLS
-fixture (no R) is recorded in `codex_verify.txt` / its output for a second,
-implementation-independent confirmation.
+independent oracle. A **Codex** round-robin recomputation of the multi-arm GLS
+fixture (no R, its own node REPL, building S6 as a 2×2 shared-A covariance
+block) returned **d_B=0.5926 (se 0.2043), d_C=0.4841 (se 0.2155)** — matching
+RapidMeta and netmeta to 4 dp. Triple, implementation-independent confirmation
+(RapidMeta = netmeta = Codex). Prompt: `codex_verify.txt`.
 
 **Status: all four published/benchmark comparisons match the reference R
 implementations to ≤1e-6.**

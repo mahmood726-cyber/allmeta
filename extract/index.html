@@ -484,13 +484,41 @@
       }
       return "";
     }
+    // Clickable source link-buttons (CT.gov / PubMed / DOI) — were previously
+    // plain non-clickable text. High-contrast pill anchors so they're visible
+    // on any theme.
+    function recordLinksHtml(r) {
+      var nct = (function () { var m = String(r.id || r.nct || "").match(/NCT\d{8}/i); return r.nct || (m ? m[0].toUpperCase() : ""); })();
+      var btn = function (href, label) {
+        return '<a class="reclink-btn" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(href) + '" ' +
+          'style="display:inline-block;margin:0 .35rem .35rem 0;padding:.2rem .55rem;border-radius:999px;background:#1f5fae;color:#fff;font-size:.78rem;text-decoration:none;border:1px solid #16447e">↗ ' + escapeHtml(label) + "</a>";
+      };
+      var out = [];
+      if (nct) out.push(btn("https://clinicaltrials.gov/study/" + nct, "ClinicalTrials.gov (" + nct + ")"));
+      if (r.pmid) out.push(btn("https://pubmed.ncbi.nlm.nih.gov/" + String(r.pmid).replace(/\D/g, "") + "/", "PubMed " + r.pmid));
+      if (r.doi) out.push(btn("https://doi.org/" + String(r.doi).replace(/^doi:/i, ""), "DOI"));
+      return out.length ? '<div class="reclinks" style="margin:0 0 .4rem">' + out.join("") + "</div>" : "";
+    }
+    function demogField(r, key, label, val) {
+      return '<label><span class="lbl">' + label + '</span><input type="text" data-dm="' + key + '" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(val == null ? "" : val) + '"></label>';
+    }
     function detailRow(r, ex) {
       var eff = pickPrimary(ex), man = ex.manual || (eff || {});
       var pico = ex.pico;
+      var dm = ex.demographics || {};
       var effList = ex.effects.length ? ex.effects.map(function (e) { return escapeHtml(effLabel(e)); }).join(" · ") : "none";
       var evts = ex.events.length ? ex.events.map(function (e) { return e.events + "/" + e.total; }).join(", ") : "none";
       return '<tr class="detail"><td></td><td colspan="5">' +
+        recordLinksHtml(r) +
         groundingLine(r, ex, eff) +
+        '<p class="hint" style="margin:0 0 0.2rem">Study characteristics (auto-filled — edit to correct; feeds the Paper Studio characteristics table).</p>' +
+        '<div class="field-grid">' +
+        demogField(r, "firstAuthor", "First author", dm.firstAuthor) +
+        demogField(r, "country", "Country", dm.country) +
+        demogField(r, "centre", "Centre", dm.centre) +
+        demogField(r, "age", "Mean age", dm.age) +
+        demogField(r, "pctFemale", "% female", dm.pctFemale) +
+        "</div>" +
         '<div class="field-grid">' +
         '<label><span class="lbl">Population</span><input type="text" data-f="population" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.population) + '"></label>' +
         '<label><span class="lbl">Intervention</span><input type="text" data-f="intervention" data-id="' + escapeHtml(r.id) + '" value="' + escapeHtml(pico.intervention) + '"></label>' +
@@ -517,6 +545,17 @@
       });
       Array.prototype.forEach.call(tb.querySelectorAll("[data-f]"), function (inp) {
         inp.addEventListener("input", function () { var ex = extractions[inp.getAttribute("data-id")]; if (ex) { ex.pico[inp.getAttribute("data-f")] = inp.value; save(); } });
+      });
+      Array.prototype.forEach.call(tb.querySelectorAll("[data-dm]"), function (inp) {
+        inp.addEventListener("input", function () {
+          var ex = extractions[inp.getAttribute("data-id")]; if (!ex) return;
+          if (!ex.demographics) ex.demographics = {};
+          var f = inp.getAttribute("data-dm"), v = inp.value.trim();
+          // age / %female are numeric; the rest free text. Empty → null.
+          if (f === "age" || f === "pctFemale") ex.demographics[f] = v === "" ? null : num(v);
+          else ex.demographics[f] = v === "" ? null : v;
+          save();
+        });
       });
       Array.prototype.forEach.call(tb.querySelectorAll("[data-m]"), function (inp) {
         inp.addEventListener("input", function () {
