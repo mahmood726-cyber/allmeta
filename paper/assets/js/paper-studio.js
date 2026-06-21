@@ -562,6 +562,16 @@
 
     html += renderOutcomeSections();   // one section per secondary outcome
 
+    // Network meta-analysis block — only shown when the comparisons bus holds a
+    // network (>=3 treatments). Mounted in renderFigures via mountNmaBlock().
+    html += '<div id="nmaPaperSection" style="display:none"><h3>Network meta-analysis</h3>' +
+      helper("Because your data compare more than two treatments, a network meta-analysis combines direct and indirect evidence. The league table gives every pairwise relative effect; SUCRA ranks treatments (it is a ranking, not an effect size — always read it with the league table).") +
+      '<div id="nmaPaperSlot"></div>' +
+      box("studentText.nmaInterpretation", "Interpret the network", "The highest-ranked treatment was... Its relative effect versus the reference was... The ranking should be read alongside the league table because...", "~3-4 sentences",
+        "Name the top-ranked treatment, give its relative effect vs the reference from the league table (with the interval), and say how confident the ranking is (SUCRA close together = uncertain ordering). Multi-arm trials were handled with the shared-control correction.",
+        "Individual counselling ranked highest (SUCRA 0.86) and was associated with higher odds of cessation than no contact (OR 2.45). Because the next two options had overlapping intervals, the exact ordering below first place is uncertain and should be read from the league table, not the rank alone.") +
+      '</div>';
+
     html += '<h3>Heterogeneity</h3>';
     var kNum = Number(a.kStudies);
     html += '<p>Statistical heterogeneity was I² = ' + auto("analysis.i2") + '%' + ((a.tau2 !== "" && a.tau2 != null) ? ', τ² = ' + esc(a.tau2) : '') +
@@ -1004,6 +1014,9 @@
     if (!mountCharacteristicsTable("#studyTablePaperSlot")) {
       ensurePlaceholder("#studyTablePaperSlot", "studyCharacteristics", "Add a brief characteristics summary, or paste the included-studies table here. (Run the Extract step to auto-fill this from study demographics.)");
     }
+    // Network meta-analysis block (network diagram + league + P-score ranking),
+    // shown only when the comparisons bus holds a >=3-treatment network.
+    mountNmaBlock("#nmaPaperSlot", "#nmaPaperSection");
     // Done when results exist (our plots render from results), and PRISMA is present.
     return !!res && (nonEmpty("#prisma-flow-container") || nonEmpty("#prismaFlowContainer"));
   }
@@ -1129,6 +1142,94 @@
       "<tbody>" + rowsHtml.replace(/<td>/g, '<td style="border-bottom:1px solid #ddd;padding:4px 8px;vertical-align:top">') + "</tbody></table>" +
       '<p class="no-clean-pdf" style="color:#777;font-size:0.72rem;margin:.4rem 0 0">Auto-generated from your extraction (' + recs.length + ' studies). Blank cells were not detected — edit in the Extract step or type over this table.</p></div>';
     markFig("studyCharacteristics", true);
+    return true;
+  }
+
+  /* ---------------- NMA results block (network + league + P-score) ---------
+   * Renders only when the ma-comparisons-v1 bus holds a network (>=3
+   * treatments). Uses the shared, netmeta-verified engine (AlmNmaMultiarm)
+   * with the multi-arm correction; ranks treatments by P-score (Rücker &
+   * Schwarzer 2015 — the deterministic SUCRA analog, no Monte-Carlo seed
+   * needed). Returns true when mounted. */
+  function _ncdf(x) { // standard normal CDF (Abramowitz-Stegun 7.1.26)
+    var t = 1 / (1 + 0.2316419 * Math.abs(x));
+    var d = 0.3989422804014327 * Math.exp(-x * x / 2);
+    var p = d * t * (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    return x >= 0 ? 1 - p : p;
+  }
+  function mountNmaBlock(slotSel, sectionSel) {
+    var sec = document.querySelector(sectionSel), slot = document.querySelector(slotSel);
+    if (!sec || !slot) return false;
+    if (!window.MaComparisons || !window.AlmNmaMultiarm) return false;
+    var env = window.MaComparisons.read();
+    if (!env || !Array.isArray(env.studies) || !env.studies.length) return false;
+    var rows = window.MaComparisons.toContrasts(env).map(function (c) {
+      return { study: c.study, t1: c.treatment2, t2: c.treatment1, est: c.te, se: c.se };
+    });
+    if (!rows.length) return false;
+    var fit = window.AlmNmaMultiarm.fit(rows, { model: "re" });
+    if (!fit.ok) return false;
+    var trts = fit.treatments;
+    if (trts.length < 3) return false;          // a pairwise MA, not a network
+    var ref = fit.refTreat;
+    // relative effect (i vs j) + se from the fit covariance (ref = implicit 0).
+    var idx = {}; fit.nonref.forEach(function (t, k) { idx[t] = k; });
+    function rel(i, j) {
+      var di = i === ref ? 0 : fit.d[idx[i]], dj = j === ref ? 0 : fit.d[idx[j]];
+      var vi = i === ref ? 0 : fit.cov[idx[i]][idx[i]], vj = j === ref ? 0 : fit.cov[idx[j]][idx[j]];
+      var cij = (i === ref || j === ref) ? 0 : fit.cov[idx[i]][idx[j]];
+      var est = di - dj, se = Math.sqrt(Math.max(0, vi + vj - 2 * cij));
+      return { est: est, se: se };
+    }
+    // P-score: mean over j of P(i has the larger effect vs the rest).
+    var pscore = {};
+    trts.forEach(function (i) {
+      var s = 0, n = 0;
+      trts.forEach(function (j) { if (i === j) return; var r = rel(i, j); if (r.se > 0) { s += _ncdf(r.est / r.se); n++; } });
+      pscore[i] = n ? s / n : 0;
+    });
+    var ranked = trts.slice().sort(function (a, b) { return pscore[b] - pscore[a]; });
+    // ---- network SVG (compact circular layout) ----
+    var W = 360, H = 300, cx = W / 2, cy = H / 2, R = 110, T = trts.length;
+    var pos = {}; trts.forEach(function (t, i) { var th = -Math.PI / 2 + 2 * Math.PI * i / T; pos[t] = { x: cx + R * Math.cos(th), y: cy + R * Math.sin(th) }; });
+    var edges = {};
+    rows.forEach(function (r) { var k = [r.t1, r.t2].sort().join("|"); edges[k] = (edges[k] || 0) + 1; });
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:380px" font-family="system-ui,sans-serif">';
+    Object.keys(edges).forEach(function (k) { var p = k.split("|"), a = pos[p[0]], b = pos[p[1]]; svg += '<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '" stroke="#2c5e8a" stroke-opacity="0.5" stroke-width="' + (1 + Math.min(5, edges[k])) + '"/>'; });
+    trts.forEach(function (t) { var isRef = t === ref; svg += '<circle cx="' + pos[t].x.toFixed(1) + '" cy="' + pos[t].y.toFixed(1) + '" r="' + (isRef ? 16 : 13) + '" fill="' + (isRef ? "#e6a919" : "#2c5e8a") + '" stroke="#15181d"/><text x="' + pos[t].x.toFixed(1) + '" y="' + (pos[t].y + 28).toFixed(1) + '" text-anchor="middle" font-size="11" fill="#15181d">' + esc(t) + "</text>"; });
+    svg += "</svg>";
+    // ---- league table (relative effects, ref-anchored display) ----
+    var lt = '<table style="border-collapse:collapse;font-size:0.78rem;margin-top:.5rem"><thead><tr><th style="padding:3px 6px"></th>';
+    trts.forEach(function (t) { lt += '<th style="padding:3px 6px;border-bottom:2px solid #444">' + esc(t) + "</th>"; });
+    lt += "</tr></thead><tbody>";
+    trts.forEach(function (rw) {
+      lt += '<tr><th style="padding:3px 6px;text-align:left">' + esc(rw) + "</th>";
+      trts.forEach(function (cl) {
+        if (rw === cl) { lt += '<td style="padding:3px 6px;color:#999">—</td>'; return; }
+        var r = rel(rw, cl), lo = r.est - 1.96 * r.se, hi = r.est + 1.96 * r.se;
+        lt += '<td style="padding:3px 6px;border-bottom:1px solid #ddd">' + r.est.toFixed(2) + '<br><span style="color:#777;font-size:.7rem">[' + lo.toFixed(2) + ", " + hi.toFixed(2) + "]</span></td>";
+      });
+      lt += "</tr>";
+    });
+    lt += "</tbody></table>";
+    // ---- P-score bars ----
+    var bars = ranked.map(function (t) {
+      var pc = (pscore[t] * 100).toFixed(1);
+      return '<div style="display:flex;align-items:center;gap:8px;margin:2px 0"><div style="width:140px;font-size:.8rem">' + esc(t) + (t === ref ? " (ref)" : "") + '</div>' +
+        '<div style="flex:1;background:#eee;border-radius:4px;height:14px"><span style="display:block;height:14px;border-radius:4px;background:#2c5e8a;width:' + pc + '%"></span></div>' +
+        '<div style="width:48px;text-align:right;font-size:.8rem">' + pc + "%</div></div>";
+    }).join("");
+    var multiNote = (fit.multiArmStudies && fit.multiArmStudies.length)
+      ? '<p style="color:#777;font-size:.72rem">Shared-control correction applied to ' + fit.multiArmStudies.length + ' multi-arm study/studies.</p>' : "";
+    slot.innerHTML = '<div data-ps-nma="1">' +
+      '<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start">' +
+      '<div><h4 style="margin:.2rem 0">Network (' + trts.length + ' treatments, reference: ' + esc(ref) + ")</h4>" + svg + "</div>" +
+      '<div style="flex:1;min-width:240px"><h4 style="margin:.2rem 0">Ranking (P-score, larger effect vs reference = higher)</h4>' + bars + multiNote + "</div>" +
+      "</div>" +
+      '<h4 style="margin:.6rem 0 .2rem">League table — relative effect of row vs column (' + esc(env.effectMeasure || "effect") + ', log scale; RE τ²=' + fit.tau2.toFixed(4) + ')</h4>' +
+      '<div style="overflow-x:auto">' + lt + "</div>" +
+      '<p class="no-clean-pdf" style="color:#777;font-size:.72rem">Auto-generated from the arm-level extraction bus via the netmeta-verified engine. P-score is a ranking, not an effect size — read it with the league table; direction assumes a larger effect vs the reference is preferable.</p></div>';
+    sec.style.display = "";
     return true;
   }
 
