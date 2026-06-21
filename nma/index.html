@@ -83,6 +83,8 @@
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
+  <script src="../shared/nma-multiarm-v1.js"></script>
+  <script src="../shared/ma-methods-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
 </head>
 <body>
@@ -90,7 +92,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Network Meta-Analysis</h1>
-    <p>Contrast-based frequentist NMA over an arbitrary treatment network. Connectivity check, network-graph preview, SUCRA with probability-of-best, league table of all relative effects. Multi-arm-trial correction off; use with caution per advanced-stats.md.</p>
+    <p>Contrast-based frequentist NMA over an arbitrary treatment network. Connectivity check, network-graph preview, SUCRA with probability-of-best, league table of all relative effects. Multi-arm trials get the shared-control correction (within-study covariance, +τ²/2 for random effects) — verified against R <code>netmeta</code> to 1e-6.</p>
     <p style="margin-top:.5rem;padding:.5rem .7rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.9rem"><strong>Test consistency before interpreting.</strong> The league table and SUCRA assume the network is consistent (direct and indirect evidence agree). Run a node-split / design-by-treatment check in <a href="../nma-inconsistency/">NMA Inconsistency</a> first; if inconsistency is present, the pooled estimates and rankings can be misleading.</p>
   </header>
 
@@ -134,6 +136,7 @@
           <button type="button" id="btn-league">Download league CSV</button>
           <button type="button" id="btn-json">Download JSON</button>
           <button type="button" id="btn-import">Import JSON</button>
+          <button type="button" id="btn-bus" title="Load arm-level contrasts written by Search → Screen → Extract">Load from extraction</button>
           <button type="button" id="btn-example">Load example</button>
           <button type="button" id="btn-reset">Reset</button>
           <input type="file" id="file-import" class="file-input-hidden" accept="application/json,.json" aria-label="File import">
@@ -159,7 +162,7 @@
 </section>
   </main>
 
-  <p class="footer-note">Contrast-level WLS per Lu G, Ades AE. <em>Stat Med</em> 2004;23:3105–3124 — simplified here: no multi-arm τ²/2 off-diagonal correction, no node-splitting in v1. SUCRA: Salanti G, Ades AE, Ioannidis JPA. <em>J Clin Epidemiol</em> 2011;64:163–171 — probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md). <strong>R-parity:</strong> on a consistent network (τ²=0) the FE/RE network effects and SE match <code>netmeta()</code> to 1e-4 and MC-SUCRA tracks <code>netrank()</code> P-score within Monte-Carlo error (<code>hub/shared/tests/nma-parity.spec.mjs</code>).</p>
+  <p class="footer-note">Contrast-level GLS per Lu G, Ades AE. <em>Stat Med</em> 2004;23:3105–3124, with the multi-arm shared-control correction (within-study covariance recovered from the pairwise SEs; +τ²/2 off-diagonal for random effects) — matching <code>netmeta</code> (Rücker 2012; Jackson-White-Riley 2012). Node-splitting is in <a href="../nma-inconsistency/">NMA Inconsistency</a>. SUCRA: Salanti G, Ades AE, Ioannidis JPA. <em>J Clin Epidemiol</em> 2011;64:163–171 — probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md). <strong>R-parity:</strong> on a consistent network (τ²=0) the FE/RE network effects and SE match <code>netmeta()</code> to 1e-4 and MC-SUCRA tracks <code>netrank()</code> P-score within Monte-Carlo error (<code>hub/shared/tests/nma-parity.spec.mjs</code>).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -168,7 +171,8 @@
   (function () {
     "use strict";
     const LS_KEY = "nma-v1";
-    const BUS_KEY = "ma-studies-v1";
+    // The arm-level contrast bus is read via window.MaComparisons (see
+    // busContrastsText); no raw localStorage key is referenced here.
 
     const fields = { data:"f-data", ref:"f-ref", model:"f-model", title:"f-title" };
     const EXAMPLE = [
@@ -300,80 +304,27 @@
       return R*Math.cos(theta);
     }
 
-    // ---- Contrast-based NMA via WLS ----
+    // ---- Contrast-based NMA — delegates to the validated GLS engine ----
+    // shared/nma-multiarm-v1.js applies the multi-arm / shared-control
+    // correction (within-study covariance, +τ²/2 for RE) and matches
+    // netmeta() to 1e-6. Multi-arm studies are detected automatically by
+    // grouping contrasts on `study` (a study with >2 treatments is multi-arm);
+    // see parseContrasts. The simple per-contrast WLS that lived here treated
+    // those contrasts as independent — a unit-of-analysis error (Handbook
+    // §23.3.4). Returns the same shape the rest of this file expects
+    // ({K, nonref, refTreat, d, cov, tau2}) plus {warnings, multiArmStudies}.
     function fitNMA(rows, treatments, refTreat, model) {
-      const nonref = treatments.filter(t => t !== refTreat);
-      const K = nonref.length;
-      const idx = {};
-      for (let k=0;k<K;k++) idx[nonref[k]] = k;
-      const n = rows.length;
-
-      // Design matrix X (n × K)
-      const X = zeros(n, K);
-      const y = new Array(n);
-      const w = new Array(n);
-      for (let i=0;i<n;i++) {
-        const r = rows[i];
-        y[i] = r.est;
-        w[i] = 1 / r.v;
-        // sign convention: y = d_t2 - d_t1
-        if (r.t2 !== refTreat) X[i][idx[r.t2]] += 1;
-        if (r.t1 !== refTreat) X[i][idx[r.t1]] -= 1;
-      }
-
-      // RE: estimate τ² via DL on contrast-level Q (simplified; treats all contrasts as "one meta" without adjustment)
-      let tau2 = 0;
-      if (model === "re" && n >= 2) {
-        // First FE solve, then DL from residuals
-        const feRes = solveWLS(X, y, w);
-        if (feRes) {
-          let Q = 0;
-          for (let i=0;i<n;i++) {
-            let yhat = 0;
-            for (let k=0;k<K;k++) yhat += X[i][k] * feRes.d[k];
-            Q += w[i] * (y[i] - yhat) * (y[i] - yhat);
-          }
-          const df = Math.max(1, n - K);
-          const wSum = w.reduce((a,b)=>a+b,0);
-          const w2Sum = w.reduce((a,b)=>a+b*b, 0);
-          const denom = wSum - w2Sum/wSum;
-          if (denom > 0) tau2 = Math.max(0, (Q - df) / denom);
-        }
-      }
-
-      // Apply τ² by inflating variances
-      const wAdj = rows.map(r => 1/(r.v + tau2));
-      const res = solveWLS(X, y, wAdj);
-      if (!res) return { error: "Design matrix is singular (disconnected network or insufficient contrasts)." };
-
-      // Relative effects: d_kk' = d_k' - d_k (both referenced to ref)
-      // Variance: var(d_k' - d_k) = var(d_k') + var(d_k) - 2 cov(d_k', d_k)
+      if (!window.AlmNmaMultiarm) return { error: "NMA engine not loaded." };
+      const fit = window.AlmNmaMultiarm.fit(rows, { ref: refTreat, model: model === "re" ? "re" : "fe" });
+      if (!fit.ok) return { error: fit.error || "Design matrix is singular (disconnected network or insufficient contrasts)." };
       return {
-        K, nonref, refTreat, d: res.d, cov: res.cov, tau2
+        K: fit.nonref.length, nonref: fit.nonref, refTreat: fit.refTreat,
+        d: fit.d, cov: fit.cov, tau2: fit.tau2,
+        Q: fit.Q, df: fit.df,
+        warnings: fit.warnings || [], multiArmStudies: fit.multiArmStudies || [],
       };
     }
 
-    function solveWLS(X, y, w) {
-      const n = X.length, K = X[0] ? X[0].length : 0;
-      if (n === 0 || K === 0) return null;
-      // X'WX
-      const XtWX = zeros(K, K);
-      for (let a=0;a<K;a++) {
-        for (let b=0;b<K;b++) {
-          let s = 0;
-          for (let i=0;i<n;i++) s += X[i][a] * w[i] * X[i][b];
-          XtWX[a][b] = s;
-        }
-      }
-      // X'Wy
-      const XtWy = new Array(K).fill(0);
-      for (let a=0;a<K;a++) { let s=0; for (let i=0;i<n;i++) s += X[i][a]*w[i]*y[i]; XtWy[a] = s; }
-      const inv = invert(XtWX);
-      if (!inv) return null;
-      const d = new Array(K).fill(0);
-      for (let a=0;a<K;a++) { let s=0; for (let b=0;b<K;b++) s += inv[a][b] * XtWy[b]; d[a] = s; }
-      return { d, cov: inv };
-    }
 
     function relEffect(fit, treatA, treatB) {
       // Return d_{B vs A} = d_B - d_A (with ref as implicit zero)
@@ -516,6 +467,12 @@
           leagueHost.innerHTML = "";
         } else {
           parts.push(statCard("τ²", fmt(fit.tau2, 4)));
+          // Surface the multi-arm correction + any dropped-study warnings.
+          if (fit.multiArmStudies && fit.multiArmStudies.length) {
+            extras.push("Multi-arm correction applied to " + fit.multiArmStudies.length +
+              " study/studies (" + fit.multiArmStudies.join(", ") + "): shared-control covariance + τ²/2 off-diagonal (Handbook §23.3.4).");
+          }
+          if (fit.warnings && fit.warnings.length) { for (const w of fit.warnings) extras.push(w); }
 
           // SUCRA
           const mc = mcSucra(fit, treatments, 10000);
@@ -636,6 +593,33 @@
       render();
     }
 
+    // ---- Read the arm-level ma-comparisons-v1 bus written by Extract -------
+    // toContrasts() emits {study, treatment1, treatment2, te, se, design}. We
+    // serialise to this app's CSV (study, t1, t2, est, se). Multi-arm trials
+    // appear as several rows sharing one `study` id — that grouping is exactly
+    // what fitNMA/AlmNmaMultiarm uses to apply the shared-control correction.
+    function busContrastsText() {
+      if (!window.MaComparisons) return null;
+      const env = window.MaComparisons.read();
+      if (!env || !Array.isArray(env.studies) || !env.studies.length) return null;
+      const rows = window.MaComparisons.toContrasts(env);
+      if (!rows || !rows.length) return null;
+      // est convention here is treatment2 − treatment1; toContrasts te is
+      // (treatment1 − treatment2), so swap the labels to keep est = t2 − t1.
+      const lines = ["# study, treatment1, treatment2, est, SE  (from extraction bus, " + (env.effectMeasure || "?") + " log-scale)"];
+      for (const r of rows) {
+        lines.push([r.study, r.treatment2, r.treatment1, r.te.toFixed(6), r.se.toFixed(6)].join(", "));
+      }
+      return { text: lines.join("\n"), measure: env.effectMeasure, n: rows.length };
+    }
+    function onLoadBus() {
+      const bus = busContrastsText();
+      if (!bus) { alert("No arm-level contrasts on the extraction bus yet. In Extract, send records with per-arm event/sample data to the comparisons bus first."); return; }
+      document.getElementById("f-data").value = bus.text;
+      if (!document.getElementById("f-title").value) document.getElementById("f-title").value = "NMA from extraction (" + bus.measure + ")";
+      render();
+    }
+
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("f-ref").addEventListener("change", render);
@@ -644,6 +628,7 @@
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-reset").addEventListener("click", onReset);
       document.getElementById("btn-example").addEventListener("click", onExample);
+      document.getElementById("btn-bus").addEventListener("click", onLoadBus);
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
         const f = e.target.files && e.target.files[0]; if (f) onImportJson(f); e.target.value = "";
@@ -677,7 +662,17 @@
     };
 
     const loaded = loadSaved();
-    if (!loaded) { document.getElementById("f-data").value = EXAMPLE; document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo"; }
+    if (!loaded) {
+      // Prefer real arm-level data from the extraction bus over the demo.
+      const bus = busContrastsText();
+      if (bus) {
+        document.getElementById("f-data").value = bus.text;
+        document.getElementById("f-title").value = "NMA from extraction (" + bus.measure + ")";
+      } else {
+        document.getElementById("f-data").value = EXAMPLE;
+        document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo";
+      }
+    }
     attach();
     render();
   })();
