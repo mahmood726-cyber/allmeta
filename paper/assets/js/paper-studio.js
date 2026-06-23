@@ -385,7 +385,36 @@
       styleSel("resultsLength", "Results length", LENGTHS, s.resultsLength) +
       '<span class="style-control-note"><strong>Not sure? Leave on “Generic” + “Keep present size.”</strong> These change only the wording of the grey auto-text — never your own writing and never your marks.</span></div>';
   }
-  PS.setStyle = function (id, val) { if (PS.state.style[id] !== undefined) { PS.state.style[id] = val; PS.save(); PS.render(); PS.embedFigures(); } };
+  PS.setStyle = function (id, val) {
+    if (PS.state.style[id] === undefined) return;
+    PS.state.style[id] = val;
+    PS.save();
+    // When the Methods or Results length toggle changes, offer to regenerate the
+    // auto-seeded text at the new length. User must confirm — edits are overwritten.
+    if (id === "methodsLength" || id === "resultsLength") {
+      var label = id === "methodsLength" ? "Methods" : "Results";
+      try {
+        if (window.confirm("Regenerate the pre-drafted " + label + " text at the new length?\n\n" +
+          "Your existing text will be overwritten with a fresh draft specific to your analysis.\n" +
+          "Click Cancel to keep your current text.")) {
+          if (id === "methodsLength") {
+            setNested(PS.state, "studentText.methodsAutoPara0", "");
+            setNested(PS.state, "studentText.methodsAutoPara1", "");
+            setNested(PS.state, "studentText.methodsAutoPara2", "");
+            setNested(PS.state, "studentText.searchStrategy", "");
+            setNested(PS.state, "studentText.screeningProcess", "");
+            setNested(PS.state, "studentText.prismaFlow", "");
+          } else {
+            setNested(PS.state, "studentText.resultsPrimaryNarrative", "");
+            setNested(PS.state, "studentText.nmaInterpretation", "");
+          }
+          seedAutoText();
+          PS.save();
+        }
+      } catch (e) {}
+    }
+    PS.render(); PS.embedFigures();
+  };
 
   function ctx() {
     var a = PS.state.analysis, p = PS.state.pico;
@@ -437,28 +466,32 @@
   }
 
   // Build a plain-text Results narrative from real computed values. Omits any
-  // sentence whose key values are missing so nothing is fabricated.
+  // sentence whose key values are missing so nothing is fabricated. Uses the
+  // actual PICO terms so the text is specific to THIS meta’s comparison.
   function buildResultsNarrative() {
     var a = PS.state.analysis, p = PS.state.pico;
     var k = a.kStudies, n = a.totalParticipants;
-    var est = a.effectEstimate, lci = a.ciLower, uci = a.ciUpper, cl = a.confLevel || "95";
+    var est = a.effectEstimate, lci = a.ciLower, uci = a.ciUci || a.ciUpper, cl = a.confLevel || "95";
     var i2 = a.i2, tau2 = a.tau2, pi = a.predictionInterval;
     var cert = a.certainty, measure = a.effectMeasure || "effect measure";
-    var out = (p && p.primaryOutcome) || "the primary outcome";
+    var out  = (p && p.primaryOutcome) || "the primary outcome";
+    var int_ = (p && p.intervention)   || null;
+    var comp = (p && p.comparator)     || null;
     var sentences = [];
-    if (k && n) sentences.push(k + " studies (" + n + " participants) contributed to the primary meta-analysis for " + out + ".");
-    else if (k) sentences.push(k + " studies were included in the meta-analysis for " + out + ".");
+    var compDesc = (int_ && comp) ? ("the effect of " + int_ + " versus " + comp + " on " + out) : out;
+    if (k && n) sentences.push(k + " studies (" + n + " participants) were included, examining " + compDesc + ".");
+    else if (k) sentences.push(k + " studies were included, examining " + compDesc + ".");
     if (est && lci && uci) sentences.push("The pooled " + measure + " was " + est + " (" + cl + "% CI: " + lci + " to " + uci + ").");
     else if (est) sentences.push("The pooled " + measure + " was " + est + ".");
     if (i2 != null && i2 !== "") {
       var i2n = Number(i2);
       var level = i2n < 25 ? "low" : i2n < 75 ? "moderate" : "high";
       var het = "Statistical heterogeneity was " + level + " (I² = " + i2 + "%)";
-      if (tau2 != null && tau2 !== "") het += ", with an estimated between-study variance of τ² = " + tau2;
+      if (tau2 != null && tau2 !== "") het += ", τ² = " + tau2;
       sentences.push(het + ".");
     }
-    if (pi) sentences.push("The 95% prediction interval was " + pi + ", indicating the range within which a future study’s true effect would be expected to fall.");
-    if (cert) sentences.push("The certainty of evidence (GRADE) for this outcome was rated as " + cert + ".");
+    if (pi) sentences.push("The 95% prediction interval was " + pi + ", indicating the range within which the true effect would be expected in a future study.");
+    if (cert) sentences.push("The certainty of evidence (GRADE) was " + cert + ".");
     return sentences.join(" ");
   }
 
@@ -512,53 +545,120 @@
   }
 
   // Seed student-authored boxes with auto-generated plain text on first open.
-  // Only fills empty fields — user edits are preserved across re-renders.
+  // Only fills EMPTY fields — user edits are always preserved across re-renders.
+  // All content is specific to THIS meta’s PICO and computed values; never generic.
   function seedAutoText() {
     try {
       var a = PS.state.analysis, p = PS.state.pico;
-      var pop  = (p && p.population)     || "[population]";
-      var int_ = (p && p.intervention)   || "[intervention]";
-      var comp = (p && p.comparator)     || "[comparator]";
-      var out  = (p && p.primaryOutcome) || "[primary outcome]";
-      var measure = (a && a.effectMeasure) || "chosen effect measure";
+      var pop  = (p && p.population)     || "[your patient population]";
+      var int_ = (p && p.intervention)   || "[the intervention]";
+      var comp = (p && p.comparator)     || "[the comparator]";
+      var out  = (p && p.primaryOutcome) || "[the primary outcome]";
+      var measure = (a && a.effectMeasure) || "the chosen effect measure";
       var model   = ((a && a.model) || "random-effects").toLowerCase();
-      var db   = (PS.state.search && PS.state.search.databases) || "[databases searched]";
-      var date = (PS.state.search && PS.state.search.searchDate) ? " on " + PS.state.search.searchDate : "";
-      var rob  = getNested(PS.state, "studentText.methodsRobTool") || "the Cochrane Risk of Bias 2 tool (RoB 2)";
+      var len     = PS.state.style.methodsLength || "concise";
+      var db      = (PS.state.search && PS.state.search.databases) || "[databases, e.g. MEDLINE/PubMed, Embase, Cochrane CENTRAL]";
+      var sDate   = (PS.state.search && PS.state.search.searchDate) || null;
+      var dateStr = sDate ? " on " + sDate : " (date to be confirmed)";
+      var rob     = getNested(PS.state, "studentText.methodsRobTool") || "the Cochrane Risk of Bias 2 tool (RoB 2)";
+      var k_total = (PS.state.search && PS.state.search.count)    || null;
+      var k_incl  = (PS.state.search && PS.state.search.included) || null;
 
+      // ── Methods paragraph 0: PICO framing ──
       if (!getNested(PS.state, "studentText.methodsAutoPara0")) {
-        setNested(PS.state, "studentText.methodsAutoPara0",
-          "The review question was structured using the PICO framework (Population, Intervention, Comparator, Outcome): " +
-          "the population was " + pop + ", the intervention was " + int_ + ", the comparator was " + comp +
-          ", and the primary outcome was " + out + ".");
-      }
-      if (!getNested(PS.state, "studentText.methodsAutoPara1")) {
-        setNested(PS.state, "studentText.methodsAutoPara1",
-          "Searches were performed in " + db + date + ". Two independent reviewers screened records and extracted " +
-          "data, resolving disagreements by discussion or consultation. Reporting followed the PRISMA 2020 guidance, " +
-          "and the review protocol was specified before data collection commenced.");
-      }
-      if (!getNested(PS.state, "studentText.methodsAutoPara2")) {
-        setNested(PS.state, "studentText.methodsAutoPara2",
-          "Treatment effects were summarised using the " + measure + ", and a " + model + " meta-analysis was performed. " +
-          "Between-study heterogeneity was quantified with I² (the percentage of variation attributable to true " +
-          "heterogeneity rather than chance) and τ² (the absolute between-study variance). A 95% prediction " +
-          "interval was reported when at least three studies contributed. Risk of bias was assessed using " + rob +
-          ", and certainty of evidence was graded using the GRADE approach (High, Moderate, Low, or Very Low). " +
-          "Between-study variance was estimated with the DerSimonian–Laird method. Where ≥10 studies " +
-          "were available, small-study effects were examined with a funnel plot and Egger’s test. Prespecified " +
-          "sensitivity analyses included leave-one-out re-analysis and a fixed-effect re-analysis. Analyses were " +
-          "performed in the RapidMeta browser engine, validated against R’s metafor and netmeta (tolerance " +
-          "≤1×10⁻⁶).");
+        var p0 = "The review question was structured using the PICO framework: the population was " + pop +
+                 "; the intervention was " + int_ + "; the comparator was " + comp +
+                 "; and the primary outcome was " + out + ".";
+        if (len !== "concise") {
+          p0 += " Eligibility criteria were specified before data collection and applied consistently by two independent reviewers; disagreements were resolved through discussion.";
+        }
+        if (len === "detailed") {
+          p0 += " The review was conducted in accordance with a pre-specified protocol to limit post-hoc modification of the eligibility rules or analysis plan. All participants were required to meet all four PICO criteria to be eligible for inclusion.";
+        }
+        setNested(PS.state, "studentText.methodsAutoPara0", p0);
       }
 
-      // Results: primary narrative
+      // ── Methods paragraph 1: Search and screening ──
+      if (!getNested(PS.state, "studentText.methodsAutoPara1")) {
+        var p1 = "Searches were performed in " + db + dateStr +
+                 " to identify studies of " + int_ + " versus " + comp +
+                 " in " + pop + " for " + out + ".";
+        if (len === "concise") {
+          p1 += " Records were screened against the pre-defined eligibility criteria. Study selection and data extraction were performed by two independent reviewers.";
+        } else {
+          p1 += " Two independent reviewers screened titles and abstracts, then full texts of potentially eligible records, resolving disagreements through discussion or by consulting a third reviewer. Reporting followed the PRISMA 2020 guidance.";
+        }
+        if (len === "detailed") {
+          p1 += " The search used controlled vocabulary (e.g. MeSH in MEDLINE, Emtree in Embase) and free-text variants for " + int_ + ", " + comp + ", and " + out + ". No language or date restrictions were applied. Reference lists of included studies and relevant systematic reviews were hand-searched. Trial registries (ClinicalTrials.gov, WHO ICTRP) were also consulted to identify registered and unpublished studies.";
+        }
+        setNested(PS.state, "studentText.methodsAutoPara1", p1);
+      }
+
+      // ── Methods paragraph 2: Statistical synthesis ──
+      if (!getNested(PS.state, "studentText.methodsAutoPara2")) {
+        var p2 = "Treatment effects were summarised using the " + measure +
+                 ", and a " + model + " meta-analysis was performed. " +
+                 "Between-study variance (τ²) was estimated with the DerSimonian–Laird method. " +
+                 "Heterogeneity was quantified with I² (the proportion of total variation attributable to true between-study differences) and τ².";
+        if (len !== "concise") {
+          p2 += " A 95% prediction interval was reported when at least three studies contributed, reflecting the range within which the true effect would be expected in a future study." +
+                " Risk of bias was assessed using " + rob + ", and certainty of evidence was graded using the GRADE approach (High, Moderate, Low, or Very Low).";
+        }
+        if (len === "detailed") {
+          p2 += " Where ten or more studies contributed, small-study effects were explored with a funnel plot and Egger’s regression test to assess potential publication bias." +
+                " Prespecified sensitivity analyses included a fixed-effect re-analysis and a leave-one-out analysis to assess the influence of individual studies on the pooled estimate." +
+                " All analyses were performed in the RapidMeta browser-based engine, independently validated against R’s metafor package and netmeta library to concordance ≤1×10⁻⁶.";
+        }
+        setNested(PS.state, "studentText.methodsAutoPara2", p2);
+      }
+
+      // ── Search strategy (new section) ──
+      if (!getNested(PS.state, "studentText.searchStrategy")) {
+        var ss = "A systematic search was conducted in " + db + dateStr +
+                 " for studies examining " + int_ + " versus " + comp +
+                 " in " + pop + " with respect to " + out + ".";
+        if (len !== "concise") {
+          ss += " The search combined controlled vocabulary (e.g. MeSH) and free-text terms for the intervention, comparator, population, and outcome. No language or publication-date restrictions were applied.";
+        }
+        if (len === "detailed") {
+          ss += " Reference lists of all eligible studies and relevant systematic reviews were hand-searched. Trial registries (ClinicalTrials.gov, WHO ICTRP) were searched for registered, ongoing, or unpublished studies.";
+        }
+        ss += " [Records identified: ___. After deduplication: ___. Fill in from your PRISMA diagram.]";
+        setNested(PS.state, "studentText.searchStrategy", ss);
+      }
+
+      // ── Screening process (new section) ──
+      if (!getNested(PS.state, "studentText.screeningProcess")) {
+        var sp = "Two independent reviewers screened all retrieved records against the pre-specified eligibility criteria (population: " + pop +
+                 "; intervention: " + int_ + "; comparator: " + comp + "; outcome: " + out + "). Disagreements were resolved by discussion.";
+        if (k_total) sp += " A total of " + k_total + " records were screened at the title and abstract stage.";
+        else sp += " [Total records screened: ___.]";
+        sp += " Full texts of potentially eligible records were obtained and independently assessed.";
+        if (k_incl) sp += " " + k_incl + " studies met all eligibility criteria and were included in the quantitative synthesis.";
+        else sp += " [Full texts assessed: ___. Excluded at full text: ___ (reasons listed in supplementary). Studies included: ___.]";
+        setNested(PS.state, "studentText.screeningProcess", sp);
+      }
+
+      // ── PRISMA flow description (new section) ──
+      if (!getNested(PS.state, "studentText.prismaFlow")) {
+        var pf  = "Study selection is reported in accordance with PRISMA 2020 (see flow diagram, Figure 1).";
+        if (k_total) pf += " Database searches yielded " + k_total + " records in total.";
+        else pf += " Database searches yielded [___] records in total.";
+        pf += " After removing [___] duplicate records, [___] were screened at the title and abstract stage; [___] were excluded.";
+        pf += " [___] full-text articles were assessed for eligibility; [___] were excluded (reasons in supplementary material).";
+        if (k_incl) pf += " " + k_incl + " studies were included in the quantitative synthesis.";
+        else pf += " [___] studies were included in the quantitative synthesis.";
+        pf += " [Replace every [___] above with the real count from your PRISMA diagram — these are editable placeholders.]";
+        setNested(PS.state, "studentText.prismaFlow", pf);
+      }
+
+      // ── Results: primary outcome narrative ──
       if (!getNested(PS.state, "studentText.resultsPrimaryNarrative")) {
         var prose = buildResultsNarrative();
         if (prose) setNested(PS.state, "studentText.resultsPrimaryNarrative", prose);
       }
 
-      // Results: NMA interpretation (seed only when NMA data available)
+      // ── Results: NMA interpretation (only when NMA data available) ──
       if (!getNested(PS.state, "studentText.nmaInterpretation")) {
         var nmaProse = buildNmaResultsNarrative();
         if (nmaProse) setNested(PS.state, "studentText.nmaInterpretation", nmaProse);
@@ -664,6 +764,40 @@
       html += ‘<p>’ + (par.label ? ‘<strong>’ + esc(par.label) + ‘.</strong> ‘ : ‘’) +
         box(path, label, "Edit the pre-drafted text, or clear it and retype.", null, null, starter) + ‘</p>’;
     });
+    html += '<h4 class="methods-subsection">Search strategy</h4>';
+    html += helper("Describe how and where you searched. The text below is pre-drafted from your analysis data — edit it freely. " +
+      "Replace every <strong>[___]</strong> with the real count from your PRISMA diagram. " +
+      "Never invent numbers — use a <strong>[___]</strong> placeholder for any count you don't have yet.");
+    html += box("studentText.searchStrategy", "Search strategy",
+      "Searches were performed in [databases] on [date] for studies of " + auto("pico.intervention", "[intervention]") +
+      " versus " + auto("pico.comparator", "[comparator]") + " in " + auto("pico.population", "[population]") +
+      " for " + auto("pico.primaryOutcome", "[primary outcome]") + ". [Records identified: ___. After deduplication: ___.]",
+      "2–3 sentences",
+      "Name the databases, the date, and the main search terms. Fill every [___] from your PRISMA diagram before submitting.",
+      null);
+
+    html += '<h4 class="methods-subsection">Screening</h4>';
+    html += helper("Two reviewers screen records independently. Fill the [___] counts from your actual screening log. " +
+      "The app knows the number of included studies (" + auto("analysis.kStudies", "—") + ") but not the full PRISMA flow — " +
+      "you must supply the missing counts.");
+    html += box("studentText.screeningProcess", "Screening process",
+      "Two independent reviewers screened all records against the eligibility criteria. Disagreements were resolved by discussion. " +
+      "[Records screened: ___. Full texts assessed: ___. Excluded at full text: ___. Studies included: " + auto("analysis.kStudies", "___") + ".]",
+      "2–3 sentences",
+      "Cover independent screening, how disagreements were resolved, and the key PRISMA counts. Replace every [___].",
+      null);
+
+    html += '<h4 class="methods-subsection">PRISMA flow</h4>';
+    html += helper("Write a brief prose description of the study-selection flow to accompany the PRISMA diagram (Figure 1, in the Results). " +
+      "Every <strong>[___]</strong> is a placeholder you must fill from your PRISMA diagram. " +
+      "<strong>Do not invent numbers.</strong> If you don't have a count, leave the placeholder and fill it before submitting.");
+    html += box("studentText.prismaFlow", "PRISMA flow description",
+      "Database searches yielded [___] records. After removing [___] duplicates, [___] were screened; [___] were excluded at title/abstract. " +
+      "[___] full texts were assessed; " + auto("analysis.kStudies", "[___]") + " studies were included. [Replace every [___] from your PRISMA diagram.]",
+      "2–4 sentences",
+      "Summarise the PRISMA flow in words. Every [___] is a real number from your diagram — do not invent.",
+      null);
+
     html += box("studentText.methodsStudentLimitation", "One limitation of this rapid workflow", "One limitation of this rapid workflow is...", "1-2 sentences",
       "Name one shortcut a rapid review takes (e.g. fewer databases, faster screening) and say how it could affect the result.",
       "One limitation of this rapid workflow is that the search covered fewer databases than a full systematic review, so a relevant study could have been missed, which may affect the result.");
@@ -674,7 +808,7 @@
     html += renderOutcomeManager();
 
     html += '<h3>Study selection</h3>';
-    html += helper("The PRISMA diagram shows how you went from all search hits down to the included studies. In the caption, give the key numbers.");
+    html += helper("The PRISMA diagram shows how you went from all search hits down to the included studies. The pre-drafted text above (in Methods → PRISMA flow) describes the flow in words; below is the diagram itself. In the caption, give the key numbers.");
     html += figureCard(1, "Study selection flow diagram", ["prisma"], "prismaPaperSlot", "figures.prisma.caption",
       "This figure shows that ___ records were identified, ___ full texts were assessed, and ___ studies were included.");
 
@@ -1140,8 +1274,28 @@
     // The host nulls state.results when you leave the Analysis tab, so cache the last good
     // one — keeps the paper's figures stable regardless of the host's scoping lifecycle.
     var liveRes = (window.RapidMeta && RapidMeta.state) ? RapidMeta.state.results : null;
-    if (liveRes && liveRes.plotData) PS._lastResults = liveRes;
-    var res = (liveRes && liveRes.plotData) ? liveRes : (PS._lastResults || liveRes);
+    if (liveRes && liveRes.plotData && liveRes.plotData.length) PS._lastResults = liveRes;
+    var res = (liveRes && liveRes.plotData && liveRes.plotData.length) ? liveRes : (PS._lastResults || liveRes);
+    // If results lack per-study plotData (happens in standalone paper/ mode where
+    // AnalysisEngine isn't loaded), build plotData from the trials bus so the
+    // funnel plot and detailed forest plot can still render and export.
+    if (res && (!res.plotData || !res.plotData.length)) {
+      try {
+        var tls = (window.RapidMeta && RapidMeta.state && RapidMeta.state.trials) || [];
+        var pd = [];
+        tls.forEach(function (t) {
+          if (t.effect && isFinite(t.effect.est) && t.effect.se > 0) {
+            var isCont = !!(res && (res.isContinuous || res.continuous));
+            pd.push({ id: t.title || t.id || "Study", name: t.title || t.id || "Study",
+                      logOR: t.effect.est, md: isCont ? t.effect.est : undefined, se: t.effect.se });
+          }
+        });
+        if (pd.length >= 2) {
+          res = Object.assign({}, res, { plotData: pd });
+          PS._lastResults = res;
+        }
+      } catch (e2) {}
+    }
     var primaryLabel = (PS.state.pico && PS.state.pico.primaryOutcome) || "primary outcome";
     var forestOk = PS.renderOwnFig("forest", "forestPlotPaperSlot", res, primaryLabel);
     if (!forestOk) ensurePlaceholder("#forestPlotPaperSlot", "forestPlot", "The forest plot appears here once your analysis has results. Open the Analysis Suite, then click “Refresh figures”.");
@@ -1385,12 +1539,18 @@
   }
 
   /* ---------------- modes ---------------- */
-  PS.setMode = function (mode) {
+  // _noPush: internal flag — set when called from popstate to avoid a double-push.
+  PS.setMode = function (mode, _noPush) {
     var canvas = document.getElementById("paperCanvas");
     if (!canvas) return;
     canvas.classList.remove("paper-mode-write", "paper-mode-preview");
     canvas.classList.add("paper-mode-" + mode);
     document.body.dataset.paperMode = mode;
+    // Push a history entry when entering a non-write mode so the browser Back
+    // button returns to write mode rather than leaving Paper Studio entirely.
+    if (!_noPush && mode !== "write") {
+      try { history.pushState({ psPage: true, psMode: mode }, ""); } catch (e) {}
+    }
   };
 
   /* ---------------- focus mode (Feature A) ---------------- */
@@ -1985,10 +2145,30 @@
     PS.updateWordCounts();
   };
 
+  // History guard: tag the initial page-load state so the browser Back button
+  // walks back through in-Paper-Studio mode switches (write → preview → write)
+  // before leaving the page entirely. Works on standalone paper/index.html and
+  // also when Paper Studio is embedded as a tab (popstate is a no-op there).
+  function initHistoryGuard() {
+    try {
+      history.replaceState({ psPage: true, psMode: "write" }, "");
+      window.addEventListener("popstate", function (e) {
+        var state = e.state;
+        if (!state || !state.psPage) return; // not our state — let browser navigate
+        // We arrived at a psPage history entry. If the current mode is non-write,
+        // the user pressed Back from preview/focus → restore write mode.
+        // _noPush=true because the history already moved back; we must not re-push.
+        var cur = document.body.dataset.paperMode || "write";
+        if (cur !== "write") PS.setMode("write", true);
+      });
+    } catch (e) {}
+  }
+
   // Initialise whenever the Paper Studio tab becomes visible, via ANY path:
   // switchTab() (keyboard nav, reload-restore) primarily; the button click is a
   // belt-and-suspenders fallback. onShow is idempotent so double-firing is fine.
   document.addEventListener("DOMContentLoaded", function () {
+    initHistoryGuard();
     if (window.RapidMeta && typeof RapidMeta.switchTab === "function" && !RapidMeta.__paperStudioHooked) {
       RapidMeta.__paperStudioHooked = true;
       var orig = RapidMeta.switchTab.bind(RapidMeta);

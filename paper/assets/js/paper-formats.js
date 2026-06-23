@@ -143,6 +143,7 @@
     secs.push({ h: "Primary outcome", lvl: 3 });
     secs.push({ para: ["The pooled " + (x.effectMeasure || "effect") + " for " + (pic.primaryOutcome || "the primary outcome") + " was " + ciTxt() + ".", g("studentText.forestInterpretation")].filter(nonblank) });
     secs.push({ fig: "forest", label: "Forest plot — " + (pic.primaryOutcome || "primary outcome"), caption: g("figures.forestPlot.caption") });
+    secs.push({ fig: "funnel", label: "Funnel plot — " + (pic.primaryOutcome || "primary outcome"), caption: g("figures.funnelPlot.caption") || "Funnel plot of included studies. Asymmetry may indicate small-study effects or publication bias; interpret cautiously when fewer than ten studies contribute." });
     (PS.state.outcomes || []).forEach(function (oc) {
       secs.push({ h: "Secondary outcome: " + oc.label + (oc.illustrative ? " (illustrative demo data)" : ""), lvl: 3 });
       secs.push({ para: ["For " + oc.label + ", the pooled " + (oc.measure || "effect") + " was " + (oc.est || "—") + " (" + (oc.lci || "—") + " to " + (oc.uci || "—") + ", 95% CI), I² = " + (oc.i2 || "—") + "%.", g("studentText.oc_" + oc.id + "_interp")].filter(nonblank) });
@@ -202,7 +203,9 @@
   function gatherFigImgs(m) {
     var jobs = m.sections.filter(function (s) { return s.fig && PS._figs && PS._figs[s.fig]; });
     return Promise.all(jobs.map(function (s) {
-      return window.Plotly.toImage(PS._figs[s.fig].box, { format: "png", width: 1000, height: (PS._figs[s.fig].box.layout.height || 350), scale: 2 })
+      var box = PS._figs[s.fig].box;
+      var ht = (box._fullLayout && box._fullLayout.height) || (box.layout && box.layout.height) || 350;
+      return window.Plotly.toImage(box, { format: "png", width: 1000, height: ht, scale: 2 })
         .then(function (uri) { return { id: s.fig, uri: uri }; }).catch(function () { return { id: s.fig, uri: null }; });
     })).then(function (arr) { var map = {}; arr.forEach(function (o) { if (o.uri) map[o.id] = o.uri; }); return map; });
   }

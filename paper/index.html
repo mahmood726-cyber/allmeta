@@ -132,6 +132,8 @@
   <!-- allmeta → Paper Studio bridge: assembles RapidMeta.state (activeTab:"paper"
        makes paper-studio.js auto-boot on DOMContentLoaded). -->
   <script src="./assets/js/alm-paper-bridge.js" defer></script>
+  <!-- Plotly (offline bundle): needed by paper-figures.js for forest/funnel rendering + export. -->
+  <script src="../shared/vendor/plotly-2.27.0.min.js" defer></script>
   <!-- Paper Studio modules (load order from the source build). -->
   <script src="./assets/js/paper-learning-links.js" defer></script>
   <script src="./assets/js/paper-readiness-checks.js" defer></script>
