@@ -394,7 +394,7 @@
       comp: auto("pico.comparator", "[comparator]"), out: auto("pico.primaryOutcome", "[primary outcome]"),
       measure: esc(a.effectMeasure || "chosen effect measure"), model: esc(a.model || "random-effects").toLowerCase(),
       db: esc(PS.state.search.databases || "[databases]"), date: PS.state.search.searchDate ? " on " + esc(PS.state.search.searchDate) : "",
-      rob: inlineBox("studentText.methodsRobTool", "RoB 2"), est: auto("analysis.effectEstimate"), i2: auto("analysis.i2"),
+      rob: esc(getNested(PS.state, "studentText.methodsRobTool") || "RoB 2"), est: auto("analysis.effectEstimate"), i2: auto("analysis.i2"),
       cl: auto("analysis.confLevel", "95"), lci: auto("analysis.ciLower"), uci: auto("analysis.ciUpper"),
       k: auto("analysis.kStudies"), n: auto("analysis.totalParticipants"), certainty: auto("analysis.certainty", "(see GRADE)")
     };
@@ -434,6 +434,136 @@
     var t = "The combined " + c.measure + " was " + c.est + " (" + c.lci + " to " + c.uci + ", " + c.cl + "% CI), I² = " + c.i2 + "%. Certainty of evidence (GRADE): " + c.certainty + ".";
     if (len === "detailed") t = "Across " + c.k + " studies (" + c.n + " participants), the combined " + c.measure + " was " + c.est + " (" + c.lci + " to " + c.uci + ", " + c.cl + "% CI), with I² = " + c.i2 + "% heterogeneity and " + c.certainty + " GRADE certainty.";
     return t;
+  }
+
+  // Build a plain-text Results narrative from real computed values. Omits any
+  // sentence whose key values are missing so nothing is fabricated.
+  function buildResultsNarrative() {
+    var a = PS.state.analysis, p = PS.state.pico;
+    var k = a.kStudies, n = a.totalParticipants;
+    var est = a.effectEstimate, lci = a.ciLower, uci = a.ciUpper, cl = a.confLevel || "95";
+    var i2 = a.i2, tau2 = a.tau2, pi = a.predictionInterval;
+    var cert = a.certainty, measure = a.effectMeasure || "effect measure";
+    var out = (p && p.primaryOutcome) || "the primary outcome";
+    var sentences = [];
+    if (k && n) sentences.push(k + " studies (" + n + " participants) contributed to the primary meta-analysis for " + out + ".");
+    else if (k) sentences.push(k + " studies were included in the meta-analysis for " + out + ".");
+    if (est && lci && uci) sentences.push("The pooled " + measure + " was " + est + " (" + cl + "% CI: " + lci + " to " + uci + ").");
+    else if (est) sentences.push("The pooled " + measure + " was " + est + ".");
+    if (i2 != null && i2 !== "") {
+      var i2n = Number(i2);
+      var level = i2n < 25 ? "low" : i2n < 75 ? "moderate" : "high";
+      var het = "Statistical heterogeneity was " + level + " (I² = " + i2 + "%)";
+      if (tau2 != null && tau2 !== "") het += ", with an estimated between-study variance of τ² = " + tau2;
+      sentences.push(het + ".");
+    }
+    if (pi) sentences.push("The 95% prediction interval was " + pi + ", indicating the range within which a future study’s true effect would be expected to fall.");
+    if (cert) sentences.push("The certainty of evidence (GRADE) for this outcome was rated as " + cert + ".");
+    return sentences.join(" ");
+  }
+
+  // Build a plain-text NMA narrative from the comparisons bus (only called when fit succeeds).
+  function buildNmaResultsNarrative() {
+    try {
+      if (!window.MaComparisons || !window.AlmNmaMultiarm) return "";
+      var env = window.MaComparisons.read();
+      if (!env || !Array.isArray(env.studies) || !env.studies.length) return "";
+      var rows = window.MaComparisons.toContrasts(env).map(function (c) {
+        return { study: c.study, t1: c.treatment2, t2: c.treatment1, est: c.te, se: c.se };
+      });
+      if (!rows.length) return "";
+      var fit = window.AlmNmaMultiarm.fit(rows, { model: "re" });
+      if (!fit.ok || fit.treatments.length < 3) return "";
+      var trts = fit.treatments, ref = fit.refTreat;
+      var idx = {}; fit.nonref.forEach(function (t, k) { idx[t] = k; });
+      var pscore = {};
+      trts.forEach(function (ti) {
+        var s = 0, n = 0;
+        trts.forEach(function (tj) {
+          if (ti === tj) return;
+          var di = ti === ref ? 0 : fit.d[idx[ti]], dj = tj === ref ? 0 : fit.d[idx[tj]];
+          var vi = ti === ref ? 0 : fit.cov[idx[ti]][idx[ti]], vj = tj === ref ? 0 : fit.cov[idx[tj]][idx[tj]];
+          var cij = (ti === ref || tj === ref) ? 0 : fit.cov[idx[ti]][idx[tj]];
+          var se = Math.sqrt(Math.max(0, vi + vj - 2 * cij));
+          if (se > 0) { s += _ncdf((di - dj) / se); n++; }
+        });
+        pscore[ti] = n ? s / n : 0;
+      });
+      var ranked = trts.slice().sort(function (a, b) { return pscore[b] - pscore[a]; });
+      var best = ranked[0];
+      var di = best === ref ? 0 : fit.d[idx[best]];
+      var vi = best === ref ? 0 : fit.cov[idx[best]][idx[best]];
+      var lo = (di - 1.96 * Math.sqrt(vi)).toFixed(2), hi = (di + 1.96 * Math.sqrt(vi)).toFixed(2);
+      var measure = env.effectMeasure || "log effect";
+      var sentences = [
+        "A network meta-analysis combined " + trts.length + " treatments from " + env.studies.length + " studies."
+      ];
+      if (best !== ref) {
+        sentences.push(best + " ranked highest (P-score " + (pscore[best] * 100).toFixed(1) + "%) with an estimated effect versus " + ref + " of " + di.toFixed(2) + " (" + measure + "; 95% CI " + lo + " to " + hi + ").");
+      } else {
+        sentences.push(ref + " was the reference; " + ranked[1] + " ranked highest among active treatments (P-score " + (pscore[ranked[1]] * 100).toFixed(1) + "%).");
+      }
+      sentences.push("P-scores indicate the probability that a treatment is superior to a randomly chosen competitor; they should be read alongside the league table rather than as standalone effect estimates.");
+      if (fit.multiArmStudies && fit.multiArmStudies.length) {
+        sentences.push("A shared-control correction was applied to " + fit.multiArmStudies.length + " multi-arm study/studies to account for correlated estimates.");
+      }
+      return sentences.join(" ");
+    } catch (e) { return ""; }
+  }
+
+  // Seed student-authored boxes with auto-generated plain text on first open.
+  // Only fills empty fields — user edits are preserved across re-renders.
+  function seedAutoText() {
+    try {
+      var a = PS.state.analysis, p = PS.state.pico;
+      var pop  = (p && p.population)     || "[population]";
+      var int_ = (p && p.intervention)   || "[intervention]";
+      var comp = (p && p.comparator)     || "[comparator]";
+      var out  = (p && p.primaryOutcome) || "[primary outcome]";
+      var measure = (a && a.effectMeasure) || "chosen effect measure";
+      var model   = ((a && a.model) || "random-effects").toLowerCase();
+      var db   = (PS.state.search && PS.state.search.databases) || "[databases searched]";
+      var date = (PS.state.search && PS.state.search.searchDate) ? " on " + PS.state.search.searchDate : "";
+      var rob  = getNested(PS.state, "studentText.methodsRobTool") || "the Cochrane Risk of Bias 2 tool (RoB 2)";
+
+      if (!getNested(PS.state, "studentText.methodsAutoPara0")) {
+        setNested(PS.state, "studentText.methodsAutoPara0",
+          "The review question was structured using the PICO framework (Population, Intervention, Comparator, Outcome): " +
+          "the population was " + pop + ", the intervention was " + int_ + ", the comparator was " + comp +
+          ", and the primary outcome was " + out + ".");
+      }
+      if (!getNested(PS.state, "studentText.methodsAutoPara1")) {
+        setNested(PS.state, "studentText.methodsAutoPara1",
+          "Searches were performed in " + db + date + ". Two independent reviewers screened records and extracted " +
+          "data, resolving disagreements by discussion or consultation. Reporting followed the PRISMA 2020 guidance, " +
+          "and the review protocol was specified before data collection commenced.");
+      }
+      if (!getNested(PS.state, "studentText.methodsAutoPara2")) {
+        setNested(PS.state, "studentText.methodsAutoPara2",
+          "Treatment effects were summarised using the " + measure + ", and a " + model + " meta-analysis was performed. " +
+          "Between-study heterogeneity was quantified with I² (the percentage of variation attributable to true " +
+          "heterogeneity rather than chance) and τ² (the absolute between-study variance). A 95% prediction " +
+          "interval was reported when at least three studies contributed. Risk of bias was assessed using " + rob +
+          ", and certainty of evidence was graded using the GRADE approach (High, Moderate, Low, or Very Low). " +
+          "Between-study variance was estimated with the DerSimonian–Laird method. Where ≥10 studies " +
+          "were available, small-study effects were examined with a funnel plot and Egger’s test. Prespecified " +
+          "sensitivity analyses included leave-one-out re-analysis and a fixed-effect re-analysis. Analyses were " +
+          "performed in the RapidMeta browser engine, validated against R’s metafor and netmeta (tolerance " +
+          "≤1×10⁻⁶).");
+      }
+
+      // Results: primary narrative
+      if (!getNested(PS.state, "studentText.resultsPrimaryNarrative")) {
+        var prose = buildResultsNarrative();
+        if (prose) setNested(PS.state, "studentText.resultsPrimaryNarrative", prose);
+      }
+
+      // Results: NMA interpretation (seed only when NMA data available)
+      if (!getNested(PS.state, "studentText.nmaInterpretation")) {
+        var nmaProse = buildNmaResultsNarrative();
+        if (nmaProse) setNested(PS.state, "studentText.nmaInterpretation", nmaProse);
+      }
+    } catch (e) {}
   }
 
   PS.render = function () {
@@ -513,15 +643,27 @@
     /* methods */
     html += '<h2>Methods</h2>';
     html += styleControl();
-    html += helper("This section is written for you from your analysis. Use the <strong>format selector</strong> above to make it longer or match a journal’s style — it changes only the grey auto-text. A <em>rapid review</em> is a faster, lighter systematic review. You add the eligibility criteria and one honest limitation; the τ² estimator and confidence-interval method are stated for you in the longer formats.");
+    html += helper("The paragraphs below are pre-drafted from your analysis — every number and method detail comes from what the app actually computed. All yellow boxes are editable: click any to modify the text. Add your eligibility criteria and one honest limitation in the boxes labelled for you.");
     // Eligibility is STUDENT-stated, not asserted by the tool (it cannot know your actual design).
-    html += '<p><strong>Eligibility.</strong> ' + box("studentText.methodsEligibility", "Eligibility criteria",
+    html += ‘<p><strong>Eligibility.</strong> ‘ + box("studentText.methodsEligibility", "Eligibility criteria",
       "We included [study design] of " + auto("pico.intervention", "[intervention]") + " versus " + auto("pico.comparator", "[comparator]") + " in " + auto("pico.population", "[population]") + " reporting " + auto("pico.primaryOutcome", "[primary outcome]") + ". We excluded...", "1-2 sentences",
       "State the ACTUAL study designs you included and your main inclusion/exclusion rules — do not leave the default if it is not what you did. The tool cannot know this for you.",
-      "We included randomised controlled trials comparing the intervention with the comparator in this population and reporting the main outcome. We excluded studies that were not randomised or did not report the outcome of interest.") + '</p>';
+      "We included randomised controlled trials comparing the intervention with the comparator in this population and reporting the main outcome. We excluded studies that were not randomised or did not report the outcome of interest.") + ‘</p>’;
     html += example("We included randomised controlled trials of finerenone versus placebo in adults with CKD and type 2 diabetes that reported cardiovascular events; we excluded non-randomised studies and trials without that outcome.",
       "We included all the relevant studies about the drug.");
-    methodsProse().forEach(function (par) { html += '<p>' + (par.label ? '<strong>' + esc(par.label) + '.</strong> ' : '') + par.text + '</p>'; });
+    // Auto-seeded paragraphs (PICO framing, search, synthesis). Rendered as editable boxes;
+    // seeded with real values from the analysis on first open via seedAutoText().
+    methodsProse().forEach(function (par, i) {
+      var path = "studentText.methodsAutoPara" + i;
+      var label = par.label || ("Methods paragraph " + (i + 1));
+      // Strip HTML tags+entities from par.text to produce a plain-text regeneration starter.
+      var starter = par.text
+        .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/&quot;/g, ‘"’).replace(/&#39;/g, "’").trim();
+      html += ‘<p>’ + (par.label ? ‘<strong>’ + esc(par.label) + ‘.</strong> ‘ : ‘’) +
+        box(path, label, "Edit the pre-drafted text, or clear it and retype.", null, null, starter) + ‘</p>’;
+    });
     html += box("studentText.methodsStudentLimitation", "One limitation of this rapid workflow", "One limitation of this rapid workflow is...", "1-2 sentences",
       "Name one shortcut a rapid review takes (e.g. fewer databases, faster screening) and say how it could affect the result.",
       "One limitation of this rapid workflow is that the search covered fewer databases than a full systematic review, so a relevant study could have been missed, which may affect the result.");
@@ -541,8 +683,11 @@
       "The included studies were similar because... The most important difference was... This matters because...");
 
     html += '<h3>Primary outcome</h3>';
-    html += helper("This sentence states the pooled result (already filled). Below the forest plot, write what it <em>means</em>: which way it points, how precise it is, and whether the size matters clinically.");
-    html += '<p>' + resultsPrimaryProse() + '</p>';
+    html += helper("The paragraph below is pre-filled from your actual analysis numbers. Edit it freely — every sentence comes from real computed values, not placeholders. Add your interpretation of the forest plot in the box below the figure.");
+    var resProse = buildResultsNarrative();
+    html += box("studentText.resultsPrimaryNarrative", "Primary outcome results",
+      resProse || "Describe the primary outcome results here: pooled estimate, CI, heterogeneity, and certainty of evidence.",
+      "2–4 sentences", null, resProse || null);
     if (a.droppedStudies) html += '<div class="dropped-warning">⚠️ <strong>' + a.droppedStudies + ' included study(ies) were not combined in the meta-analysis</strong>' +
       (a.droppedNames ? ' (' + esc(a.droppedNames) + ')' : '') + '. The pooled estimate above is based on ' + auto("analysis.kStudies") + ' studies only. The others appear in your review but could not be pooled numerically — most often because their event counts were not extracted (only a hazard ratio is available). Extract their event counts (or pool by hazard ratio), or state clearly in the paper that these studies were not included in the pooled estimate.</div>';
     html += figureCard(3, "Forest plot for the primary outcome", ["forest_plot", "confidence_interval", "effect_size"], "forestPlotPaperSlot", "figures.forestPlot.caption",
@@ -1078,6 +1223,7 @@
       var ae = document.activeElement;
       var typing = ae && ae.closest && ae.closest('#paperCanvas [contenteditable="true"]');
       PS.loadRapidMetaData();          // refresh the auto-filled numbers from the new analysis
+      seedAutoText();                  // re-seed Results narrative if analysis just became available
       if (!typing) PS.render();         // re-render the body (skipped mid-typing to keep focus)
       clonePass();                      // re-render the figures
       PS.updateChecklist();
@@ -1742,6 +1888,16 @@
 
     var canvas = document.getElementById("paperCanvas");
     if (canvas) {
+      // Fix: Chrome inserts a bare <br> into an empty contenteditable on focus, which
+      // makes :empty false and hides the CSS ::before placeholder — looks like "text erased".
+      // Remove that <br> immediately so the element stays :empty and the placeholder shows.
+      canvas.addEventListener("focus", function (e) {
+        var el = e.target;
+        if (!el || !el.classList) return;
+        if (!el.classList.contains("student-writing-box") && !el.classList.contains("student-editable")) return;
+        if (el.innerHTML === "<br>" || el.innerHTML === "<BR>") el.innerHTML = "";
+      }, true);
+
       canvas.addEventListener("input", function (e) {
         var el = e.target.closest("[data-field]");
         if (!el) return;
@@ -1814,6 +1970,7 @@
       PS.__selfRun = false;
     }
     PS.loadRapidMetaData();
+    seedAutoText();         // pre-fill Methods/Results boxes with real auto-text (only if empty)
     seedDemoOutcomes();     // demo only: illustrative secondary outcomes
     PS.render();            // re-render canvas content
     wireToolbar();          // no-op after the first call (listeners persist)
