@@ -1,0 +1,34 @@
+id,app_or_dataset,study,field,embedded_wrong,published_correct,source,status,severity
+C1,shared/canonical-datasets.js :: bcg,Ferguson & Simes 1949,vi,0.0786,0.1946,metafor::dat.bcg escalc(RR),APPLIED,High
+C2,shared/canonical-datasets.js :: bcg,Rosenthal et al 1960,vi,0.0408,0.4154,metafor::dat.bcg escalc(RR),APPLIED,High
+C3,shared/canonical-datasets.js :: bcg,Comstock & Webster,year,1956,1969,metafor::dat.bcg (Berkey 1995),APPLIED,Medium
+C4,benchmark/rapidmeta-validation/bcg_data.json,Ferguson+Rosenthal,vi,"0.0786,0.0408","0.1946,0.4154",metafor::dat.bcg,APPLIED,High
+C5,shared/canonical-datasets.js :: smoking,(whole dataset),structure+labels,"24 2-arm contrasts; labels scrambled; 2 dup + 1 phantom + 4 missing; df=21","24 studies incl 2 three-arm; A/B/C/D labels correct; df=23",netmeta::smokingcessation (Dias TSD2),STAGED (smoking_corrected_arms.json) - coordinate NMA session,Critical
+H1,HTA/index.html :: bcgVaccine,Aronson (1948),effect/se,-1.62/0.44,-0.89/0.57,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H2,HTA/index.html :: bcgVaccine,Ferguson (1949),effect/se,-0.39/0.22,-1.59/0.44,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H3,HTA/index.html :: bcgVaccine,Rosenthal (1960),effect/se,-1.35/0.58,-1.35/0.64,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H4,HTA/index.html :: bcgVaccine,Hart (1977),effect/se,-0.34/0.13,-1.44/0.14,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H5,HTA/index.html :: bcgVaccine,Frimodt (1973),effect/se,-0.79/0.20,-0.22/0.23,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H6,HTA/index.html :: bcgVaccine,Stein (1953),effect/se/lat,-1.44/0.58/27,-0.79/0.08/44,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H7,HTA/index.html :: bcgVaccine,Vandiviere (1973),effect/se/lat,-0.19/0.23/42,-1.62/0.47/19,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H8,HTA/index.html :: bcgVaccine,TPT Madras (1980),se,0.12,0.06,metafor::dat.bcg,CORRECTABLE-DEFERRED,Medium
+H9,HTA/index.html :: bcgVaccine,Coetzee (1968),se,0.27,0.24,metafor::dat.bcg,CORRECTABLE-DEFERRED,Medium
+H10,HTA/index.html :: bcgVaccine,Rosenthal (1961),effect/se,-1.56/0.44,-1.37/0.27,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H11,HTA/index.html :: bcgVaccine,Comstock (1974),effect/se,-0.02/0.59,-0.34/0.11,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H12,HTA/index.html :: bcgVaccine,pos12 'Comstock (1976)',label+effect/se,-0.54/0.32,'Comstock & Webster (1969)' 0.45/0.73,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+H13,HTA/index.html :: bcgVaccine,pos13 'Comstock-Sch (1976)',label+effect/se,0.45/0.40,'Comstock (1976)' -0.02/0.27,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P1,Pairwiseai/pairwise-pro-v2_2_evalue (5).html :: bcg(yi/vi),Aronson,vi,0.0359,0.3256,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P2,Pairwiseai/...evalue(5).html :: bcg(yi/vi),Ferguson,vi,0.0449,0.1946,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P3,Pairwiseai/...evalue(5).html :: bcg(yi/vi),Rosenthal1960,vi,0.0175,0.4154,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P4,Pairwiseai/...evalue(5).html :: bcg(yi/vi),Stein,vi,0.0207,0.0069,metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P5,Pairwiseai/...evalue(5).html :: bcg(yi/vi),pos8-13,yi (scrambled),"-0.4717,-0.9546,-1.5698,-0.3408,0.0173,-0.4668","0.0120,-0.4694,-1.3713,-0.3394,0.4459,-0.0173",metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P6,Pairwiseai/...evalue(5).html :: bcg(yi/vi),pos8-13,vi,"0.0618,0.0140,0.0516,0.0195,0.0058,0.0158","0.0040,0.0564,0.0730,0.0124,0.5325,0.0714",metafor::dat.bcg,CORRECTABLE-DEFERRED,High
+P7,Pairwiseai/...evalue(5).html :: bcg(yi/vi),TPT Madras,name year,1968,1980,metafor::dat.bcg,CORRECTABLE-DEFERRED,Medium
+P8,Pairwiseai/...evalue(5).html :: bcg(yi/vi),(block),provenance,"source 'Verified: metafor 4.4-0'","claim is false until data fixed",audit,FLAG,High
+P9,Pairwiseai/...evalue(5).html :: bcg 2x2,row6 'Comstock 1974',events/n,"180/16913, 372/17854","186/50634, 141/27338",metafor::dat.colditz1994,CORRECTABLE-DEFERRED,Medium
+F1,shared/canonical-datasets.js :: smoking,S21 (8/552 vs 19/583),arm counts,8/552 & 19/583,UNKNOWN - matches no published smoking study,Hasselblad 1998/Lu-Ades (needs source),FLAG-MANUAL,High
+F2,shared/canonical-datasets.js :: thrombolytics,(whole dataset),all,as embedded,not yet verified,Boland 2003 HTA / Dias TSD2 (no R built-in),FLAG-MANUAL,Unknown
+F3,shared/canonical-datasets.js :: eltrombopag,(whole dataset),binary_2x2,as embedded,not yet verified,Stijnen 2010 Table 1 (need paper),FLAG-MANUAL,Unknown
+V1,review-project/index.html :: magnesium,all 9 trials,2x2,(matches),exact match,metafor::dat.egger2001,VERIFIED-PASS,-
+V2,review-project/index.html :: cortico CD004661,pooled,FE-OR,0.957 [0.799-1.145],app states 0.96 [0.80-1.15],re-derived (meta::metabin),VERIFIED-PASS,-
+V3,review-project/index.html :: htn CD000028,pooled,FE-OR,0.891 [0.820-0.968],internally consistent,re-derived (meta::metabin),VERIFIED-PASS,-

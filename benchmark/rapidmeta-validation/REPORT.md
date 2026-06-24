@@ -67,3 +67,36 @@ RapidMeta and netmeta to 4 dp. Triple, implementation-independent confirmation
 
 **Status: all four published/benchmark comparisons match the reference R
 implementations to ≤1e-6.**
+
+---
+
+## ⚠️ CORRECTION ADDENDUM (2026-06-24 data-integrity audit) — supersedes claims above
+
+The validation above proves the **engines** match R — but it ran R on the
+**embedded** data, so it only proves engine==engine, not data==published. A
+separate data-integrity audit (see `../../qa_error_patterns.md`,
+`../../qa_master_correction_log.csv`) compared the embedded numbers against the
+published sources and found errors the engine-validation could not have caught:
+
+1. **§1 Smoking is INVALID as a "matches published" claim.** The embedded
+   `smoking` arms are **not** `netmeta::smokingcessation`. Embedded: 24 two-arm
+   contrasts, df=21, τ²=0.580. Published: 24 studies incl **2 three-arm**, 28
+   contrasts, df=23, τ²=0.599. Treatment labels are scrambled — the
+   "Individual vs No contact RE OR = 2.45" reported here actually equals the
+   **Group** effect (pub 2.465); true published Individual = 2.082, Self-help
+   1.516, Group 2.465. So §1's "= netmeta exactly / matching canonical gemtc"
+   is engine==engine on corrupted data, **not** a published match. Corrected
+   data staged at `smoking_corrected_arms.json` (regenerated from
+   `netmeta::smokingcessation`); merge pending coordination with the NMA-render
+   session.
+
+2. **§3 BCG fixtures had two wrong sampling variances** (Ferguson vi
+   0.0786→**0.1946**, Rosenthal-1960 vi 0.0408→**0.4154**) and one wrong year
+   (Comstock&Webster 1956→**1969**). These are **now fixed** in
+   `shared/canonical-datasets.js` and in `bcg_data.json`. The DL/REML/PM μ in §3
+   was pooled on the wrong vi; with corrected vi the REML pooled RR moves
+   0.4685 → **0.4894** (Rosenthal had been ~10× over-weighted). Re-run
+   `qa_bcg_impact.R` to reproduce.
+
+§2 (multi-arm GLS unit test) and §4 (SMD escalc) used synthetic/derived inputs
+and remain valid. Net: the **math is sound; some embedded data was not.**

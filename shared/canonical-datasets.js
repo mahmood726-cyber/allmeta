@@ -44,8 +44,8 @@
     // yi = log RR, vi = its sampling variance. Latitude in degrees.
     effect_se: [
       { label: "Aronson 1948",      yi: -0.8893, vi: 0.3256, year: 1948, latitude: 44, design: "rct" },
-      { label: "Ferguson 1949",     yi: -1.5854, vi: 0.0786, year: 1949, latitude: 55, design: "rct" },
-      { label: "Rosenthal 1960",    yi: -1.3481, vi: 0.0408, year: 1960, latitude: 42, design: "rct" },
+      { label: "Ferguson 1949",     yi: -1.5854, vi: 0.1946, year: 1949, latitude: 55, design: "rct" },
+      { label: "Rosenthal 1960",    yi: -1.3481, vi: 0.4154, year: 1960, latitude: 42, design: "rct" },
       { label: "Hart 1977",         yi: -1.4416, vi: 0.0203, year: 1977, latitude: 52, design: "rct" },
       { label: "Frimodt-Møller",    yi: -0.2175, vi: 0.0512, year: 1973, latitude: 13, design: "rct" },
       { label: "Stein 1953",        yi: -0.7861, vi: 0.0069, year: 1953, latitude: 44, design: "rct" },
@@ -54,7 +54,7 @@
       { label: "Coetzee 1968",      yi: -0.4694, vi: 0.0564, year: 1968, latitude: 27, design: "rct" },
       { label: "Rosenthal 1961",    yi: -1.3713, vi: 0.0730, year: 1961, latitude: 42, design: "rct" },
       { label: "Comstock 1974",     yi: -0.3394, vi: 0.0124, year: 1974, latitude: 18, design: "rct" },
-      { label: "Comstock + Webster",yi:  0.4459, vi: 0.5325, year: 1956, latitude: 33, design: "obs" },
+      { label: "Comstock + Webster",yi:  0.4459, vi: 0.5325, year: 1969, latitude: 33, design: "obs" },
       { label: "Comstock 1976",     yi: -0.0173, vi: 0.0714, year: 1976, latitude: 33, design: "obs" },
     ],
   };

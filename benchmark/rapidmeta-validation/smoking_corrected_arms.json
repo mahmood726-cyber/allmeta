@@ -1,0 +1,377 @@
+{
+  "reference": "No contact",
+  "measure": "OR",
+  "source": "netmeta::smokingcessation (Dias et al. NICE DSU TSD 2; Hasselblad 1998; Lu & Ades 2006)",
+  "studies": [
+    {
+      "id": "S1",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 9,
+          "n": 140
+        },
+        {
+          "treatment": "Individual",
+          "events": 23,
+          "n": 140
+        },
+        {
+          "treatment": "Group",
+          "events": 10,
+          "n": 138
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "arms": [
+        {
+          "treatment": "Self-help",
+          "events": 11,
+          "n": 78
+        },
+        {
+          "treatment": "Individual",
+          "events": 12,
+          "n": 85
+        },
+        {
+          "treatment": "Group",
+          "events": 29,
+          "n": 170
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 75,
+          "n": 731
+        },
+        {
+          "treatment": "Individual",
+          "events": 363,
+          "n": 714
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 2,
+          "n": 106
+        },
+        {
+          "treatment": "Individual",
+          "events": 9,
+          "n": 205
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 58,
+          "n": 549
+        },
+        {
+          "treatment": "Individual",
+          "events": 237,
+          "n": 1561
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 0,
+          "n": 33
+        },
+        {
+          "treatment": "Individual",
+          "events": 9,
+          "n": 48
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 3,
+          "n": 100
+        },
+        {
+          "treatment": "Individual",
+          "events": 31,
+          "n": 98
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 1,
+          "n": 31
+        },
+        {
+          "treatment": "Individual",
+          "events": 26,
+          "n": 95
+        }
+      ]
+    },
+    {
+      "id": "S9",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 6,
+          "n": 39
+        },
+        {
+          "treatment": "Individual",
+          "events": 17,
+          "n": 77
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 79,
+          "n": 702
+        },
+        {
+          "treatment": "Self-help",
+          "events": 77,
+          "n": 694
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 18,
+          "n": 671
+        },
+        {
+          "treatment": "Self-help",
+          "events": 21,
+          "n": 535
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 64,
+          "n": 642
+        },
+        {
+          "treatment": "Individual",
+          "events": 107,
+          "n": 761
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 5,
+          "n": 62
+        },
+        {
+          "treatment": "Individual",
+          "events": 8,
+          "n": 90
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 20,
+          "n": 234
+        },
+        {
+          "treatment": "Individual",
+          "events": 34,
+          "n": 237
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 0,
+          "n": 20
+        },
+        {
+          "treatment": "Group",
+          "events": 9,
+          "n": 20
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 8,
+          "n": 116
+        },
+        {
+          "treatment": "Self-help",
+          "events": 19,
+          "n": 149
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 95,
+          "n": 1107
+        },
+        {
+          "treatment": "Individual",
+          "events": 143,
+          "n": 1031
+        }
+      ]
+    },
+    {
+      "id": "S18",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 15,
+          "n": 187
+        },
+        {
+          "treatment": "Individual",
+          "events": 36,
+          "n": 504
+        }
+      ]
+    },
+    {
+      "id": "S19",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 78,
+          "n": 584
+        },
+        {
+          "treatment": "Individual",
+          "events": 73,
+          "n": 675
+        }
+      ]
+    },
+    {
+      "id": "S20",
+      "arms": [
+        {
+          "treatment": "No contact",
+          "events": 69,
+          "n": 1177
+        },
+        {
+          "treatment": "Individual",
+          "events": 54,
+          "n": 888
+        }
+      ]
+    },
+    {
+      "id": "S21",
+      "arms": [
+        {
+          "treatment": "Self-help",
+          "events": 20,
+          "n": 49
+        },
+        {
+          "treatment": "Individual",
+          "events": 16,
+          "n": 43
+        }
+      ]
+    },
+    {
+      "id": "S22",
+      "arms": [
+        {
+          "treatment": "Self-help",
+          "events": 7,
+          "n": 66
+        },
+        {
+          "treatment": "Group",
+          "events": 32,
+          "n": 127
+        }
+      ]
+    },
+    {
+      "id": "S23",
+      "arms": [
+        {
+          "treatment": "Individual",
+          "events": 12,
+          "n": 76
+        },
+        {
+          "treatment": "Group",
+          "events": 20,
+          "n": 74
+        }
+      ]
+    },
+    {
+      "id": "S24",
+      "arms": [
+        {
+          "treatment": "Individual",
+          "events": 9,
+          "n": 55
+        },
+        {
+          "treatment": "Group",
+          "events": 3,
+          "n": 26
+        }
+      ]
+    }
+  ]
+}
