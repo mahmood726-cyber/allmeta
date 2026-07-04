@@ -31,7 +31,13 @@
     var k = yi.length;
     if (k < 2 || vi.length !== k) return null;
     var sw = 0, swy = 0, i;
-    for (i = 0; i < k; i++) { var w = 1 / vi[i]; sw += w; swy += w * yi[i]; }
+    for (i = 0; i < k; i++) {
+      // Guard invalid inputs: a zero/negative/non-finite variance makes 1/vi
+      // Infinity or NaN and silently poisons mu, Q and the CI. Fail closed
+      // (like the k<2 case) rather than returning garbage that passes schema.
+      if (!(vi[i] > 0) || !isFinite(vi[i]) || !isFinite(yi[i])) return null;
+      var w = 1 / vi[i]; sw += w; swy += w * yi[i];
+    }
     var mu = swy / sw;                 // = fixed-effect (inverse-variance) estimate
     var seFE = Math.sqrt(1 / sw);
     var Q = 0;

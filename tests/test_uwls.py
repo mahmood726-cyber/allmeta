@@ -34,3 +34,13 @@ def test_point_equals_fixed_effect():
 
 def test_needs_two_studies():
     assert _run("U.uwls([0.1],[0.04])===null") is True
+
+def test_rejects_nonpositive_variance():
+    # A zero/negative variance would make 1/vi Infinity and poison mu/Q/CI;
+    # uwls must fail closed (null) rather than return NaN garbage.
+    assert _run("U.uwls([0.1,0.3,0.5],[0.04,0,0.03])===null") is True
+    assert _run("U.uwls([0.1,0.3,0.5],[0.04,-0.01,0.03])===null") is True
+
+def test_rejects_nonfinite_input():
+    assert _run("U.uwls([0.1,0.3,1/0],[0.04,0.05,0.03])===null") is True
+    assert _run("U.uwls([0.1,0.3,0.5],[0.04,0.05,1/0])===null") is True
