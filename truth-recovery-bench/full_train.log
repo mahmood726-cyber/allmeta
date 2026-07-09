@@ -1,0 +1,51 @@
+[train] simulating corpus: train=90000 cal=40000 val=15000 (seed=777123)
+  [train] 5000/90000 (11s)
+  [train] 10000/90000 (23s)
+  [train] 15000/90000 (34s)
+  [train] 20000/90000 (46s)
+  [train] 25000/90000 (57s)
+  [train] 30000/90000 (69s)
+  [train] 35000/90000 (81s)
+  [train] 40000/90000 (92s)
+  [train] 45000/90000 (104s)
+  [train] 50000/90000 (115s)
+  [train] 55000/90000 (127s)
+  [train] 60000/90000 (139s)
+  [train] 65000/90000 (150s)
+  [train] 70000/90000 (161s)
+  [train] 75000/90000 (172s)
+  [train] 80000/90000 (184s)
+  [train] 85000/90000 (195s)
+  [train] 90000/90000 (206s)
+  [cal] 5000/40000 (11s)
+  [cal] 10000/40000 (23s)
+  [cal] 15000/40000 (34s)
+  [cal] 20000/40000 (45s)
+  [cal] 25000/40000 (57s)
+  [cal] 30000/40000 (69s)
+  [cal] 35000/40000 (81s)
+  [cal] 40000/40000 (93s)
+  [val] 5000/15000 (12s)
+  [val] 10000/15000 (23s)
+  [val] 15000/15000 (34s)
+[train] corpus done in 333s
+[train] fitting quantile regressors...
+[train] building Mondrian conformal calibration...
+[train] diagnostics: SBC/PIT + calibration curve + exact-DGP eval...
+[train] saved model -> F:\allmeta\truth-recovery-bench\sbi_model.pkl
+[train] saved diagnostics -> F:\allmeta\truth-recovery-bench\sbi_diagnostics.json
+
+=== SBC / calibration ===
+PIT KS stat=0.0290 p=0.000 (uniform PIT => calibrated posterior)
+pre-conformal raw-quantile coverage: {'0.50': 0.48433333333333334, '0.80': 0.7817333333333333, '0.90': 0.8816666666666667, '0.95': 0.9404}
+post-conformal val coverage=0.952 (target 0.95) width=0.413
+
+=== exact-DGP held-out coverage (the honest preview) ===
+scenario       k=5  k=10 k=15 k=25 k=50
+none           0.98  0.97  0.97  0.94  0.96 
+step_weak      1.00  1.00  0.99  0.99  0.99 
+step_strong    0.99  0.96  0.93  0.89  0.89 
+copas_weak     0.99  0.99  0.99  0.98  0.99 
+copas_strong   0.99  0.99  0.98  0.96  0.97 
+
+[train] total 1146s

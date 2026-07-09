@@ -1,0 +1,6 @@
+[
+  { "name": "title1x", "cfg": { "titleRepeat": 1 } },
+  { "name": "title3x", "cfg": { "titleRepeat": 3 } },
+  { "name": "title4x", "cfg": { "titleRepeat": 4 } },
+  { "name": "title0x_abstractonly", "cfg": { "titleRepeat": 0 } }
+]

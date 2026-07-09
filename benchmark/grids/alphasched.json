@@ -1,0 +1,12 @@
+[
+  { "name": "sched_hi4_lo1.5_t10",  "cfg": { "alphaSched": { "hi": 4,  "lo": 1.5, "tau": 10 } } },
+  { "name": "sched_hi4_lo1_t10",    "cfg": { "alphaSched": { "hi": 4,  "lo": 1,   "tau": 10 } } },
+  { "name": "sched_hi6_lo1.5_t10",  "cfg": { "alphaSched": { "hi": 6,  "lo": 1.5, "tau": 10 } } },
+  { "name": "sched_hi6_lo1_t15",    "cfg": { "alphaSched": { "hi": 6,  "lo": 1,   "tau": 15 } } },
+  { "name": "sched_hi8_lo1.5_t15",  "cfg": { "alphaSched": { "hi": 8,  "lo": 1.5, "tau": 15 } } },
+  { "name": "sched_hi8_lo2_t20",    "cfg": { "alphaSched": { "hi": 8,  "lo": 2,   "tau": 20 } } },
+  { "name": "sched_hi5_lo2_t10",    "cfg": { "alphaSched": { "hi": 5,  "lo": 2,   "tau": 10 } } },
+  { "name": "sched_hi4_lo1.5_t20",  "cfg": { "alphaSched": { "hi": 4,  "lo": 1.5, "tau": 20 } } },
+  { "name": "sched_hi3_lo1_t10",    "cfg": { "alphaSched": { "hi": 3,  "lo": 1,   "tau": 10 } } },
+  { "name": "sched_hi10_lo1_t25",   "cfg": { "alphaSched": { "hi": 10, "lo": 1,   "tau": 25 } } }
+]

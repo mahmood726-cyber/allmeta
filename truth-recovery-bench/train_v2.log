@@ -1,0 +1,69 @@
+[train] simulating corpus: train=160000 cal=60000 val=15000 (seed=777123)
+  [train] 5000/160000 (25s)
+  [train] 10000/160000 (50s)
+  [train] 15000/160000 (74s)
+  [train] 20000/160000 (103s)
+  [train] 25000/160000 (130s)
+  [train] 30000/160000 (157s)
+  [train] 35000/160000 (184s)
+  [train] 40000/160000 (212s)
+  [train] 45000/160000 (243s)
+  [train] 50000/160000 (271s)
+  [train] 55000/160000 (300s)
+  [train] 60000/160000 (327s)
+  [train] 65000/160000 (356s)
+  [train] 70000/160000 (383s)
+  [train] 75000/160000 (411s)
+  [train] 80000/160000 (441s)
+  [train] 85000/160000 (468s)
+  [train] 90000/160000 (494s)
+  [train] 95000/160000 (522s)
+  [train] 100000/160000 (547s)
+  [train] 105000/160000 (572s)
+  [train] 110000/160000 (600s)
+  [train] 115000/160000 (627s)
+  [train] 120000/160000 (655s)
+  [train] 125000/160000 (683s)
+  [train] 130000/160000 (713s)
+  [train] 135000/160000 (743s)
+  [train] 140000/160000 (772s)
+  [train] 145000/160000 (800s)
+  [train] 150000/160000 (832s)
+  [train] 155000/160000 (863s)
+  [train] 160000/160000 (892s)
+  [cal] 5000/60000 (30s)
+  [cal] 10000/60000 (58s)
+  [cal] 15000/60000 (91s)
+  [cal] 20000/60000 (119s)
+  [cal] 25000/60000 (150s)
+  [cal] 30000/60000 (180s)
+  [cal] 35000/60000 (208s)
+  [cal] 40000/60000 (234s)
+  [cal] 45000/60000 (265s)
+  [cal] 50000/60000 (292s)
+  [cal] 55000/60000 (322s)
+  [cal] 60000/60000 (352s)
+  [val] 5000/15000 (30s)
+  [val] 10000/15000 (61s)
+  [val] 15000/15000 (92s)
+[train] corpus done in 1337s
+[train] fitting quantile regressors...
+[train] building Mondrian conformal calibration...
+[train] diagnostics: SBC/PIT + calibration curve + exact-DGP eval...
+[train] saved model -> sbi_model_v2.pkl
+[train] saved diagnostics -> F:\allmeta\truth-recovery-bench\sbi_diagnostics.json
+
+=== SBC / calibration ===
+PIT KS stat=0.0305 p=0.000 (uniform PIT => calibrated posterior)
+pre-conformal raw-quantile coverage: {'0.50': 0.49206666666666665, '0.80': 0.7864666666666666, '0.90': 0.8857333333333334, '0.95': 0.9382}
+post-conformal val coverage=0.953 (target 0.95) width=0.414
+
+=== exact-DGP held-out coverage (the honest preview) ===
+scenario       k=5  k=10 k=15 k=25 k=50
+none           0.97  0.97  0.97  0.95  0.96 
+step_weak      0.99  1.00  0.99  0.98  0.99 
+step_strong    0.99  1.00  0.99  0.98  0.98 
+copas_weak     0.99  0.99  0.99  0.97  0.98 
+copas_strong   1.00  0.99  0.99  0.97  0.97 
+
+[train] total 2231s

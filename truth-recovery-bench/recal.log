@@ -1,0 +1,28 @@
+[recal] loaded GBMs from F:\allmeta\truth-recovery-bench\sbi_model.pkl; alpha=0.04 cal=45000 val=12000
+  [cal] 5000/45000 (11s)
+  [cal] 10000/45000 (22s)
+  [cal] 15000/45000 (32s)
+  [cal] 20000/45000 (43s)
+  [cal] 25000/45000 (54s)
+  [cal] 30000/45000 (65s)
+  [cal] 35000/45000 (75s)
+  [cal] 40000/45000 (86s)
+  [cal] 45000/45000 (97s)
+  [val] 5000/12000 (11s)
+  [val] 10000/12000 (21s)
+[recal] saved recalibrated model -> F:\allmeta\truth-recovery-bench\sbi_model.pkl
+
+=== SBC / calibration ===
+PIT KS stat=0.0287 p=0.000 (uniform PIT => calibrated posterior)
+pre-conformal raw-quantile coverage: {'0.50': 0.4820833333333333, '0.80': 0.7819166666666667, '0.90': 0.88575, '0.95': 0.9395}
+post-conformal val coverage=0.961 (target 0.96) width=0.432
+
+=== exact-DGP held-out coverage (the honest preview) ===
+scenario       k=5  k=10 k=15 k=25 k=50
+none           0.98  0.98  0.98  0.95  0.97 
+step_weak      1.00  1.00  0.99  0.99  0.99 
+step_strong    0.99  0.98  0.94  0.90  0.90 
+copas_weak     0.99  0.99  0.99  0.98  0.99 
+copas_strong   1.00  0.99  0.98  0.96  0.97 
+
+[train] total 898s

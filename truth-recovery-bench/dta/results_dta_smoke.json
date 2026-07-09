@@ -1,0 +1,174 @@
+{
+ "meta": {
+  "base_seed": 20260615,
+  "profile": "smoke",
+  "reps": 200,
+  "n_cells": 3,
+  "elapsed_sec": 66.1,
+  "scenarios": [
+   "none",
+   "step_weak",
+   "step_strong",
+   "copas_weak",
+   "copas_strong"
+  ]
+ },
+ "results": [
+  {
+   "cell": {
+    "k": 15,
+    "se0": 0.85,
+    "sp0": 0.8,
+    "tau_se": 0.0,
+    "tau_sp": 0.0,
+    "rho": 0.0,
+    "thresh": 0.0,
+    "scenario": "none",
+    "block": "smoke"
+   },
+   "cell_id": "k15_se0.85_sp0.8_tSe0.0_tSp0.0_rho0.0_thr0.0_none",
+   "reps": 200,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "conv_frac": 1.0,
+   "coverage_se": {
+    "NaiveFE": 0.955,
+    "UnivDL": 0.965,
+    "Bivariate": 0.965,
+    "BivarHK": 0.98
+   },
+   "coverage_sp": {
+    "NaiveFE": 0.92,
+    "UnivDL": 0.945,
+    "Bivariate": 0.945,
+    "BivarHK": 0.955
+   },
+   "coverage_joint": {
+    "NaiveFE": 0.93,
+    "UnivDL": 0.95,
+    "Bivariate": 0.935,
+    "BivarHK": 0.97
+   },
+   "width_se": {
+    "NaiveFE": 0.034365821571897465,
+    "UnivDL": 0.03693744365325604,
+    "Bivariate": 0.03649160162033832,
+    "BivarHK": 0.04065516120475546
+   },
+   "width_sp": {
+    "NaiveFE": 0.038650149545807484,
+    "UnivDL": 0.042162897067325816,
+    "Bivariate": 0.04139999020767544,
+    "BivarHK": 0.0460929312182909
+   },
+   "auc_abs_err": 0.09138844126267948,
+   "mean_spearman": 0.025569044107867173,
+   "deeks_reject": 0.12,
+   "seconds": 25.8
+  },
+  {
+   "cell": {
+    "k": 15,
+    "se0": 0.85,
+    "sp0": 0.8,
+    "tau_se": 0.5,
+    "tau_sp": 0.5,
+    "rho": -0.4,
+    "thresh": 0.3,
+    "scenario": "none",
+    "block": "smoke"
+   },
+   "cell_id": "k15_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.4_thr0.3_none",
+   "reps": 200,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "conv_frac": 1.0,
+   "coverage_se": {
+    "NaiveFE": 0.285,
+    "UnivDL": 0.915,
+    "Bivariate": 0.905,
+    "BivarHK": 0.945
+   },
+   "coverage_sp": {
+    "NaiveFE": 0.285,
+    "UnivDL": 0.925,
+    "Bivariate": 0.92,
+    "BivarHK": 0.94
+   },
+   "coverage_joint": {
+    "NaiveFE": 0.07,
+    "UnivDL": 0.895,
+    "Bivariate": 0.87,
+    "BivarHK": 0.93
+   },
+   "width_se": {
+    "NaiveFE": 0.03871733656267498,
+    "UnivDL": 0.08318537676426847,
+    "Bivariate": 0.08120599189360857,
+    "BivarHK": 0.09450305722476206
+   },
+   "width_sp": {
+    "NaiveFE": 0.0421349414277047,
+    "UnivDL": 0.10339548273170987,
+    "Bivariate": 0.10191867036509222,
+    "BivarHK": 0.11849088466744856
+   },
+   "auc_abs_err": 0.021953716929373132,
+   "mean_spearman": 0.41707030345596247,
+   "deeks_reject": 0.12,
+   "seconds": 22.5
+  },
+  {
+   "cell": {
+    "k": 10,
+    "se0": 0.85,
+    "sp0": 0.8,
+    "tau_se": 0.5,
+    "tau_sp": 0.5,
+    "rho": -0.4,
+    "thresh": 0.6,
+    "scenario": "step_strong",
+    "block": "smoke"
+   },
+   "cell_id": "k10_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.4_thr0.6_step_strong",
+   "reps": 200,
+   "n_degenerate": 0,
+   "mean_sel_frac": 1.0,
+   "conv_frac": 1.0,
+   "coverage_se": {
+    "NaiveFE": 0.295,
+    "UnivDL": 0.88,
+    "Bivariate": 0.88,
+    "BivarHK": 0.95
+   },
+   "coverage_sp": {
+    "NaiveFE": 0.295,
+    "UnivDL": 0.915,
+    "Bivariate": 0.905,
+    "BivarHK": 0.95
+   },
+   "coverage_joint": {
+    "NaiveFE": 0.06,
+    "UnivDL": 0.865,
+    "Bivariate": 0.82,
+    "BivarHK": 0.915
+   },
+   "width_se": {
+    "NaiveFE": 0.049929583217450994,
+    "UnivDL": 0.12001463865075877,
+    "Bivariate": 0.11758556270431013,
+    "BivarHK": 0.14859728891253543
+   },
+   "width_sp": {
+    "NaiveFE": 0.05358242337715657,
+    "UnivDL": 0.153589340737119,
+    "Bivariate": 0.15126688223073684,
+    "BivarHK": 0.19034820292447102
+   },
+   "auc_abs_err": 0.017496546765628396,
+   "mean_spearman": 0.5740613381381525,
+   "deeks_reject": 0.135,
+   "seconds": 17.9
+  }
+ ]
+}

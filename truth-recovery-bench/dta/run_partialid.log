@@ -1,0 +1,99 @@
+{
+ "reps": 600,
+ "by_k": [
+  {
+   "k": 4,
+   "conv_frac": 1.0,
+   "coverage": {
+    "plugin": 0.375,
+    "PartialID": 0.4166666666666667
+   },
+   "width": {
+    "plugin": 0.1592002379212599,
+    "PartialID": 0.22473778737215175
+   }
+  },
+  {
+   "k": 6,
+   "conv_frac": 1.0,
+   "coverage": {
+    "plugin": 0.42833333333333334,
+    "PartialID": 0.49
+   },
+   "width": {
+    "plugin": 0.14440715139290286,
+    "PartialID": 0.2509967558734539
+   }
+  },
+  {
+   "k": 10,
+   "conv_frac": 1.0,
+   "coverage": {
+    "plugin": 0.5016666666666667,
+    "PartialID": 0.5916666666666667
+   },
+   "width": {
+    "plugin": 0.12332424612539296,
+    "PartialID": 0.2777062495408858
+   }
+  },
+  {
+   "k": 20,
+   "conv_frac": 1.0,
+   "coverage": {
+    "plugin": 0.565,
+    "PartialID": 0.6733333333333333
+   },
+   "width": {
+    "plugin": 0.09358788656410491,
+    "PartialID": 0.2630708940282751
+   }
+  }
+ ],
+ "by_thresh": [
+  {
+   "thresh": 0.0,
+   "coverage": {
+    "plugin": 0.23333333333333334,
+    "PartialID": 0.24666666666666667
+   },
+   "width": {
+    "plugin": 0.08284175740578864,
+    "PartialID": 0.19808362191148604
+   }
+  },
+  {
+   "thresh": 0.3,
+   "coverage": {
+    "plugin": 0.3466666666666667,
+    "PartialID": 0.44666666666666666
+   },
+   "width": {
+    "plugin": 0.10766194657055342,
+    "PartialID": 0.2410916336646912
+   }
+  },
+  {
+   "thresh": 0.6,
+   "coverage": {
+    "plugin": 0.53,
+    "PartialID": 0.5733333333333334
+   },
+   "width": {
+    "plugin": 0.13273008787741078,
+    "PartialID": 0.1947645730957268
+   }
+  },
+  {
+   "thresh": 1.0,
+   "coverage": {
+    "plugin": 0.6583333333333333,
+    "PartialID": 0.6816666666666666
+   },
+   "width": {
+    "plugin": 0.1461429878012022,
+    "PartialID": 0.17642099106502665
+   }
+  }
+ ]
+}

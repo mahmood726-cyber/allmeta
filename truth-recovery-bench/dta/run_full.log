@@ -1,0 +1,22 @@
+[dta-harness] profile=full cells=19 reps=600 procs=4
+  [1/19] k8_se0.85_sp0.8_tSe0.8_tSp0.8_rho-0.3_thr0.0_none (59.2s) covSe FE=0.30 DL=0.87 BV=0.86 HK=0.95
+  [2/19] k8_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.3_thr0.0_none (63.4s) covSe FE=0.48 DL=0.88 BV=0.85 HK=0.94
+  [3/19] k8_se0.85_sp0.8_tSe0.0_tSp0.0_rho-0.3_thr0.0_none (63.8s) covSe FE=0.95 DL=0.96 BV=0.96 HK=0.99
+  [4/19] k8_se0.85_sp0.8_tSe0.25_tSp0.25_rho-0.3_thr0.0_none (70.0s) covSe FE=0.81 DL=0.91 BV=0.90 HK=0.97
+  [5/19] k20_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.3_thr0.0_none (91.2s) covSe FE=0.30 DL=0.92 BV=0.92 HK=0.94
+  [6/19] k20_se0.85_sp0.8_tSe0.8_tSp0.8_rho-0.3_thr0.0_none (93.1s) covSe FE=0.11 DL=0.91 BV=0.91 HK=0.94
+  [7/19] k20_se0.85_sp0.8_tSe0.0_tSp0.0_rho-0.3_thr0.0_none (112.1s) covSe FE=0.94 DL=0.96 BV=0.96 HK=0.97
+  [8/19] k20_se0.85_sp0.8_tSe0.25_tSp0.25_rho-0.3_thr0.0_none (109.9s) covSe FE=0.71 DL=0.91 BV=0.90 HK=0.93
+  [9/19] k15_se0.85_sp0.8_tSe0.3_tSp0.3_rho-0.3_thr0.0_none (89.4s) covSe FE=0.65 DL=0.91 BV=0.89 HK=0.93
+  [10/19] k15_se0.85_sp0.8_tSe0.3_tSp0.3_rho-0.3_thr0.3_none (89.2s) covSe FE=0.52 DL=0.90 BV=0.89 HK=0.93
+  [11/19] k15_se0.85_sp0.8_tSe0.3_tSp0.3_rho-0.3_thr0.6_none (91.1s) covSe FE=0.21 DL=0.88 BV=0.88 HK=0.92
+  [12/19] k15_se0.85_sp0.8_tSe0.3_tSp0.3_rho-0.3_thr1.0_none (97.1s) covSe FE=0.09 DL=0.87 BV=0.92 HK=0.94
+  [13/19] k4_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.3_thr0.4_none (43.2s) covSe FE=0.46 DL=0.83 BV=0.78 HK=0.99
+  [14/19] k5_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.3_thr0.4_none (50.3s) covSe FE=0.48 DL=0.87 BV=0.86 HK=0.97
+  [15/19] k6_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.3_thr0.4_none (54.7s) covSe FE=0.41 DL=0.88 BV=0.85 HK=0.94
+  [16/19] k10_se0.85_sp0.8_tSe0.5_tSp0.5_rho-0.3_thr0.4_none (76.6s) covSe FE=0.36 DL=0.90 BV=0.89 HK=0.94
+  [17/19] k15_se0.85_sp0.8_tSe0.4_tSp0.4_rho-0.3_thr0.3_none (105.2s) covSe FE=0.37 DL=0.93 BV=0.91 HK=0.95
+  [18/19] k15_se0.85_sp0.8_tSe0.4_tSp0.4_rho-0.3_thr0.3_step_strong (104.1s) covSe FE=0.36 DL=0.91 BV=0.90 HK=0.94
+  [19/19] k15_se0.85_sp0.8_tSe0.4_tSp0.4_rho-0.3_thr0.3_copas_strong (97.5s) covSe FE=0.41 DL=0.93 BV=0.90 HK=0.95
+[dta-harness] done in 419s -> F:\allmeta\truth-recovery-bench\dta\results_dta_full.json
+ALL_DONE
