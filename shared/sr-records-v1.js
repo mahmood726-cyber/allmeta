@@ -46,6 +46,13 @@
       year: r.year ? (String(r.year).match(/\d{4}/) || [""])[0] : "",
       doi: clean(r.doi, 200).replace(/^https?:\/\/(dx\.)?doi\.org\//i, ""),
       pmid: clean(r.pmid, 30),
+      // Trial-registry linkage (mirror screen's normalizeImported): absent before,
+      // so NCT id / ctgov URL were silently dropped crossing the bus into Extract.
+      nct: clean(r.nct, 30) || (function () { var m = String(r.id || "").match(/NCT\d{8}/i); return m ? m[0].toUpperCase() : ""; })(),
+      url: clean(r.url, 500),
+      ctgovUrl: clean(r.ctgovUrl, 500),
+      abstractSource: clean(r.abstractSource, 60),
+      mergedSources: Array.isArray(r.mergedSources) ? r.mergedSources.map(function (s) { return clean(s, 40); }).filter(Boolean) : null,
       keywords: Array.isArray(r.keywords) ? r.keywords.map(function (k) { return clean(k, 120); }).filter(Boolean) : [],
       source: clean(r.source, 40) || "import",
       r1: r.r1 && typeof r.r1 === "object" ? { d: r.r1.d || "", reason: r.r1.reason || "" } : { d: "", reason: "" },

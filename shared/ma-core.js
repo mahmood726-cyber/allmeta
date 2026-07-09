@@ -30,8 +30,27 @@
     return { sw: sw, mu: mu, Q: Q };
   }
 
+  // Fail-closed input guard (matches uwls.js; advanced-stats.md). A zero,
+  // negative or non-finite variance makes 1/(vi+τ²) Infinity/NaN and silently
+  // poisons μ, Q and the CI — worse, a NEGATIVE variance yields a *finite*,
+  // clean-looking-but-wrong pooled estimate (a negative weight). A yi/vi length
+  // mismatch reads undefined → NaN. A non-finite effect propagates NaN. Detect
+  // these so the core never emits a garbage number that passes for a real one.
+  // Empty input is NOT "bad" here (the k<2 branches already handle it): the loop
+  // runs zero times and returns false, so tau2([],[])→0 etc. are unchanged.
+  // Valid inputs (finite yi, finite positive vi, equal length) are unaffected.
+  function _badVals(yi, vi) {
+    if (!Array.isArray(yi) || !Array.isArray(vi) || yi.length !== vi.length) return true;
+    for (var i = 0; i < yi.length; i++) {
+      if (!(typeof yi[i] === "number" && isFinite(yi[i]))) return true;
+      if (!(typeof vi[i] === "number" && vi[i] > 0 && isFinite(vi[i]))) return true;
+    }
+    return false;
+  }
+
   // DerSimonian-Laird moment estimator (closed form).
   function tau2DL(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length; if (k < 2) return 0;
     var w = vi.map(function (v) { return 1 / v; });
     var sw = 0, sw2 = 0, swy = 0;
@@ -45,6 +64,7 @@
 
   // Paule-Mandel: root of generalised Q(τ²) = k-1 (monotone decreasing).
   function tau2PM(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length, df = k - 1; if (df < 1) return 0;
     if (_wsums(yi, vi, 0).Q <= df) return 0;
     var lo = 0, hi = 1, guard = 0;
@@ -56,6 +76,7 @@
   // REML: fixed-point iteration of the restricted-likelihood τ² update
   //   τ²_{n+1} = [ Σ w²((y−μ)² − v) + 1/Σw ] / Σ w² ,  w = 1/(v+τ²).
   function tau2REML(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length; if (k < 2) return 0;
     var t2 = tau2DL(yi, vi); // warm start
     for (var it = 0; it < 200; it++) {
@@ -74,6 +95,7 @@
   // ML: fixed-point like REML but without the restricted +1/Σw correction.
   //   τ²_{n+1} = [ Σ w²((y−μ)² − v) ] / Σ w² ,  w = 1/(v+τ²).
   function tau2ML(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length; if (k < 2) return 0;
     var t2 = tau2DL(yi, vi);
     for (var it = 0; it < 300; it++) {
@@ -92,6 +114,7 @@
   // Hedges (a.k.a. variance-component / "HE"): unweighted moment estimator.
   //   τ² = Σ(y−ȳ)²/(k−1) − (1/k)Σv ,  ȳ = unweighted mean.
   function tau2HE(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length; if (k < 2) return 0;
     var ybar = 0, i; for (i = 0; i < k; i++) ybar += yi[i]; ybar /= k;
     var ss = 0, vbar = 0; for (i = 0; i < k; i++) { ss += (yi[i] - ybar) * (yi[i] - ybar); vbar += vi[i]; }
@@ -101,6 +124,7 @@
 
   // Hunter-Schmidt: τ² = (Q_FE − k) / Σw ,  w = 1/v.
   function tau2HS(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length; if (k < 1) return 0;
     var sw = 0, swy = 0, i; for (i = 0; i < k; i++) { var w = 1 / vi[i]; sw += w; swy += w * yi[i]; }
     var muFE = swy / sw, Q = 0; for (i = 0; i < k; i++) { var w2 = 1 / vi[i]; Q += w2 * (yi[i] - muFE) * (yi[i] - muFE); }
@@ -111,6 +135,7 @@
   //   τ²_0 = (1/k)Σ(y−ȳ)²; r_i = v_i/τ²_0; q_i = 1/(r_i+1); μ_v = Σq_i y_i/Σq_i;
   //   τ²_SJ = (1/(k−1)) Σ q_i (y_i − μ_v)².
   function tau2SJ(yi, vi) {
+    if (_badVals(yi, vi)) return NaN;
     var k = yi.length; if (k < 2) return 0;
     var ybar = 0, i; for (i = 0; i < k; i++) ybar += yi[i]; ybar /= k;
     var t0 = 0; for (i = 0; i < k; i++) t0 += (yi[i] - ybar) * (yi[i] - ybar); t0 /= k;
@@ -131,6 +156,18 @@
   function pool(yi, vi, opts) {
     opts = opts || {};
     var method = opts.method || "PM";
+    // Fail closed on structurally-invalid input rather than returning a NaN /
+    // finite-garbage object that looks like a real pooled result. Same-shape
+    // return with NaN numeric fields + { ok:false, error } so existing callers
+    // that read .mu/.se still see a non-finite value (safe to render) and
+    // defensive callers/tests can detect the failure. Valid inputs are unchanged.
+    if (_badVals(yi, vi)) {
+      return {
+        k: (Array.isArray(yi) ? yi.length : 0), tau2: NaN, mu: NaN, se: NaN,
+        ciLo: NaN, ciHi: NaN, Q: NaN, I2: NaN, method: method, knha: false,
+        ok: false, error: "invalid inputs: yi/vi must be equal-length arrays of finite effects with finite positive variances",
+      };
+    }
     var k = yi.length, df = k - 1, level = opts.level || 0.95, alpha = 1 - level;
     var t2 = (typeof opts.tau2 === "number" && opts.tau2 >= 0) ? opts.tau2
            : (method === "FE" ? 0 : (_T[method] || tau2PM)(yi, vi));

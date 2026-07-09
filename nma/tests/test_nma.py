@@ -64,10 +64,20 @@ def test_matrix_helpers():
     for fn in ("function matmul", "function invert", "function cholesky"):
         assert fn in text, f"Missing: {fn}"
 def test_design_matrix_signs():
-    """y = d_t2 - d_t1 => +1 at t2's column, -1 at t1's column."""
+    """y = d_t2 - d_t1 => +1 at t2's column, -1 at t1's column.
+
+    The per-contrast WLS that once built the design matrix inline here was a
+    unit-of-analysis error for multi-arm studies (it treated shared-control
+    contrasts as independent). It was replaced by a delegation to the validated
+    GLS engine shared/nma-multiarm-v1.js (netmeta 1e-6). Assert (a) the app
+    delegates to that engine and (b) the engine keeps the +1(to=t2)/-1(from=t1)
+    sign convention, so the guard tracks the sign logic where it now lives.
+    """
     text = INDEX.read_text(encoding="utf-8")
-    assert "X[i][idx[r.t2]] += 1" in text
-    assert "X[i][idx[r.t1]] -= 1" in text
+    assert "window.AlmNmaMultiarm.fit" in text, "nma app must delegate to the shared GLS engine"
+    engine = (ROOT.parent / "shared" / "nma-multiarm-v1.js").read_text(encoding="utf-8")
+    assert "X[ri][idx[ct.to]] += 1" in engine, "engine lost the +1 (to/t2) design-matrix sign"
+    assert "X[ri][idx[ct.from]] -= 1" in engine, "engine lost the -1 (from/t1) design-matrix sign"
 def test_script_close_not_in_string():
     text = INDEX.read_text(encoding="utf-8")
     m = re.search(r"<script>\s*(.*?)\s*</script>", text, re.DOTALL)

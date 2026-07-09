@@ -63,6 +63,36 @@ def test_bad_ai_suggestion_dropped_and_id_minted():
 
 
 @pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_registry_linkage_fields_survive_the_bus():
+    # Regression: before nct/url/ctgovUrl/abstractSource/mergedSources were added
+    # to the shared normaliser, a record Screen wrote with a trial-registry link
+    # lost those fields when Extract read it back through normalizeRecord() —
+    # silent data loss of a typed identifier (NCT). They must round-trip.
+    o = _run(
+        "const rec=R.normalizeRecord({title:'t',nct:'NCT01234567',"
+        "url:'https://pubmed.ncbi.nlm.nih.gov/1/',ctgovUrl:'https://clinicaltrials.gov/study/NCT01234567',"
+        "abstractSource:'ctgov',mergedSources:['pubmed','ctgov', '']});"
+        "console.log(JSON.stringify(rec));"
+    )
+    assert o["nct"] == "NCT01234567"                       # explicit nct preserved (clean, no re-case)
+    assert o["url"] == "https://pubmed.ncbi.nlm.nih.gov/1/"
+    assert o["ctgovUrl"] == "https://clinicaltrials.gov/study/NCT01234567"
+    assert o["abstractSource"] == "ctgov"
+    assert o["mergedSources"] == ["pubmed", "ctgov"]        # blanks filtered
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
+def test_nct_recovered_from_id_when_field_absent():
+    # Mirror screen: an NCT id embedded in the record id is recovered into nct.
+    o = _run(
+        "const rec=R.normalizeRecord({title:'t',id:'NCT09876543'});"
+        "console.log(JSON.stringify({nct:rec.nct,ms:rec.mergedSources}));"
+    )
+    assert o["nct"] == "NCT09876543"
+    assert o["ms"] is None                                  # absent mergedSources -> null
+
+
+@pytest.mark.skipif(NODE is None, reason="node not installed")
 def test_envelope_roundtrip():
     o = _run(
         "const env=R.buildEnvelope([{title:'a'},{title:'b'}],'2026-01-01T00:00:00Z');"
@@ -106,7 +136,11 @@ def test_shared_shape_matches_screen_normalizer():
 
     def keys(src: str, anchor: str) -> set:
         i = src.index(anchor)
-        block = src[i: i + 1400]
+        # Window must span the whole returned object literal in BOTH files. The
+        # canonical shape grew (trial-registry linkage fields nct/url/ctgovUrl/
+        # abstractSource/mergedSources), pushing the last keys past the old 1400
+        # budget; 2000 covers the full object in shared (~1890) and screen (~1780).
+        block = src[i: i + 2000]
         # top-level "key:" tokens inside the returned object literal
         return set(re.findall(r"\n\s{6,}([a-zA-Z][a-zA-Z0-9]*)\s*:", block))
 
