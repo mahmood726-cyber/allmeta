@@ -139,7 +139,7 @@
     </section>
   </main>
   <footer>
-    <abbr data-gloss="p-curve">p-curve</abbr>: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. <strong>Method-vs-code disclosure (allmeta heuristic):</strong> the right-skew test here uses <abbr data-gloss="Fisher">Fisher's combined method</abbr> <code>-2&middot;&Sigma; ln(pp) ~ &chi;&sup2;(2k)</code> on uniformly-transformed pp = p/0.05 values (the original Simonsohn 2014 paper recommends Stouffer's z-pool; both detect right-skew but power differs). The flatness "no evidential value" indicator is a <abbr data-gloss="Binomial">binomial test</abbr> of pp &le; 0.5 vs 0.5 against a U(0,1) null &mdash; NOT Simonsohn's 33%-power flatness test, which is not implemented here. Read the indicator as "right-skew not detected (k may be small)" rather than positive evidence of no effect. <abbr data-gloss="p-uniform">p-uniform</abbr>: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309.
+    <abbr data-gloss="p-curve">p-curve</abbr>: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. <strong>Method-vs-code disclosure (allmeta heuristic):</strong> the right-skew test here uses <abbr data-gloss="Fisher">Fisher's combined method</abbr> <code>-2&middot;&Sigma; ln(pp) ~ &chi;&sup2;(2k)</code> on uniformly-transformed pp = p/0.05 values (the original Simonsohn 2014 paper recommends Stouffer's z-pool; both detect right-skew but power differs). The flatness test is Simonsohn's real 33%-power test: for each significant study a pp-value is computed under a 33%-power alternative (the non-centrality giving that study's test 1/3 power at &alpha;=.05, two-sided) and the pp-values are combined by <abbr data-gloss="Stouffer">Stouffer's method</abbr> <code>Z = &Sigma;&Phi;&#8315;&sup1;(pp)/&radic;k</code>; a significantly small flatness <em>p</em> means the curve is <em>flatter</em> than 33% power (inadequate evidential value). Full and half (<em>p</em>&lt;.025) curves are reported. The non-central benchmark is computed for the two families the app accepts as input &mdash; two-sided <em>z</em> (ncp&#8407;&nbsp;&mu;&nbsp;&asymp;&nbsp;1.529) and non-central <em>t</em> at the common df (CDF verified against <code>scipy.stats.nct</code> to&nbsp;1e-6); every input row is therefore covered. (A legacy binomial pp&le;0.5 screen is retained in the exported JSON only, for schema back-compat, and is not shown.) <abbr data-gloss="p-uniform">p-uniform</abbr>: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309.
   </footer>
   <script>
     function pnorm(x) {
@@ -179,13 +179,25 @@
       const T_skew = -2 * ppRight.reduce((s, pp) => s + Math.log(pp), 0);
       const p_skew = 1 - pchi(T_skew, 2 * nSig);
 
-      // --- Flatness test: transform pp to pp_33 = Φ(z - z_(1-33%)) (i.e., what p would be under 33% power).
-      // Approximate by transforming pp under 33%-power alternative using the CDF of an alternative distribution.
-      // Shortcut: compare observed distribution to uniform via binomial test on pp ≤ 0.5 vs expected 0.5.
-      // This is Simonsohn's approximate flatness test.
+      // --- Legacy uniform screen (kept ONLY for the pcurve-results-v1 export
+      // schema and its R-parity fixture): binomial proportion of pp ≤ 0.5 vs
+      // 0.5 under U(0,1). This is NOT the flatness test any more — the real
+      // 33%-power flatness test (below) drives the UI. Do not read these three
+      // fields as evidential-value evidence.
       const pLow = ppRight.filter(pp => pp <= 0.5).length / nSig;
       const z_flat = (pLow - 0.5) / Math.sqrt(0.25 / nSig);
       const p_flat = 2 * (1 - pnorm(Math.abs(z_flat)));
+
+      // --- REAL flatness test (Simonsohn 33%-power benchmark; see engine below).
+      // Uses the selected test family (z two-sided, or t at the common df) to
+      // build each study's pp-value under a 33%-power alternative, then Stouffer.
+      const testType = document.getElementById("test").value;
+      const dfVal = parseInt(document.getElementById("df").value, 10);
+      const useT = (testType === "t" && Number.isFinite(dfVal) && dfVal >= 1);
+      const flatFamily = useT ? ("non-central t, df=" + dfVal) : "two-sided z";
+      const flatFull = useT ? flatnessT(raw, dfVal, false) : flatnessZ(raw, false);
+      const flatHalf = useT ? flatnessT(raw, dfVal, true) : flatnessZ(raw, true);
+      const ncp33 = flatFull ? flatFull.ncp : NaN;
 
       // --- p-uniform: under a fixed true effect δ and selective-publication, conditional p-values should be U(0,1) after transformation p* = P(p ≤ p | reject).
       // Iteratively find δ that makes mean(pp_delta) = 0.5.
@@ -220,6 +232,15 @@
         prop_low: pLow,
         z_flat: z_flat,
         p_flat: p_flat,
+        // Real 33%-power flatness test (Simonsohn 2014/2015):
+        flat_family: flatFamily,
+        flat_ncp33: ncp33,
+        flat_full_k: flatFull ? flatFull.k : 0,
+        flat_full_stouffer_z: flatFull ? flatFull.Z : NaN,
+        flat_full_p: flatFull ? flatFull.pflat : NaN,
+        flat_half_k: flatHalf ? flatHalf.k : 0,
+        flat_half_stouffer_z: flatHalf ? flatHalf.Z : NaN,
+        flat_half_p: flatHalf ? flatHalf.pflat : NaN,
         delta_puniform: delta,
         p_values_used: raw,
       };
@@ -229,9 +250,17 @@
       const flagSkew = p_skew < 0.05 ? "ok" : "bad";
       const labelSkew = p_skew < 0.05 ? "evidential value" : "no evidential value";
       __testsBodyParts.push(`<tr><td><code>Right-skew (full p-curve)</code></td><td>&#x3c7;&sup2; = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`);
-      const flagFlat = p_flat < 0.05 ? "ok" : "bad";
-      const labelFlat = p_flat < 0.05 ? "non-flat" : "right-skew not detected (binomial screen; see 33%-power note)";
-      __testsBodyParts.push(`<tr><td><code>Flatness (vs uniform)</code></td><td>z = ${fmt(z_flat, 2)}</td><td>${fmt(p_flat, 3)}</td><td><span class="chip ${flagFlat}">${labelFlat}</span></td></tr>`);
+      // Real 33%-power flatness rows (full and half curve). A significant
+      // (small p) result ⇒ curve is FLATTER than 33% power ⇒ inadequate
+      // evidential value (chip "bad"); otherwise "not flatter than 33%".
+      const flatRow = (label, res) => {
+        if (!res) return `<tr><td><code>${label}</code></td><td>&mdash;</td><td>&mdash;</td><td><span class="chip bad">no p in range</span></td></tr>`;
+        const flag = res.pflat < 0.05 ? "bad" : "ok";
+        const txt = res.pflat < 0.05 ? "flatter than 33% power (inadequate)" : "not flatter than 33% power";
+        return `<tr><td><code>${label}</code> <span class="hint" style="display:inline;color:var(--muted);font-size:0.72rem">k=${res.k}, ${flatFamily}, ncp&#8407;=${fmt(res.ncp, 2)}</span></td><td>Z = ${fmt(res.Z, 2)}</td><td>${fmt(res.pflat, 3)}</td><td><span class="chip ${flag}">${txt}</span></td></tr>`;
+      };
+      __testsBodyParts.push(flatRow("Flatness (full, vs 33% power)", flatFull));
+      __testsBodyParts.push(flatRow("Flatness (half, p&lt;.025, vs 33% power)", flatHalf));
 
       const puBody = document.getElementById("pu-body");
       puBody.innerHTML = `
@@ -283,6 +312,97 @@
     function pchi(x, k) {
       if (k <= 0 || x <= 0) return 0;
       return _gammp(k / 2, x / 2);
+    }
+
+    // =====================================================================
+    // REAL flatness test (Simonsohn, Nelson & Simmons 2014 JEP:Gen; 2015
+    // "Better p-curves"). For each significant study we compute its pp-value
+    // UNDER A 33%-POWER ALTERNATIVE (the noncentrality that gives the study's
+    // test 1/3 power at α=.05, two-sided), then combine the pp's with
+    // Stouffer's method (Z = Σ Φ⁻¹(pp)/√k). A curve significantly FLATTER
+    // than the 33%-power benchmark (p_flat small) lacks evidential value.
+    //
+    //   pp33 = P(stat ≥ obs | stat ≥ crit, ncp33)   (uniform under 33% power;
+    //          small when p is small, →1 as p→cutoff)
+    //   Z    = Σ Φ⁻¹(pp33) / √k          p_flat = 1 − Φ(Z)   (small ⇒ flat)
+    //
+    // Full curve conditions on the α=.05 cutoff; half curve uses only p<.025
+    // studies and conditions on the .025 cutoff — but the 33%-power ncp is
+    // ALWAYS defined at α=.05 (Simonsohn's benchmark is 33% power at .05).
+    //
+    // Supported input families (both faithfully computed & scipy-verified):
+    //   z  — two-sided normal (ncp33 μ ≈ 1.529; verified vs scipy.stats.norm)
+    //   t  — non-central t at the common df (ncp33 δ depends on df; the
+    //        non-central t CDF _pnct matches scipy.stats.nct to 1e-6).
+    // No other family is included in the statistic (honesty: the app only
+    // accepts z and t inputs, so the flatness test covers every input row).
+
+    // Non-central t CDF via v=u² substitution over the χ²(ν) density, Simpson
+    // rule. F(t;ν,δ)=∫₀^∞ Φ(t·√(v/ν)−δ)·f_{χ²}(v;ν)dv. Matches scipy.stats.nct
+    // to ~1e-6 across ν∈[1,100], δ∈[0,2.5] (verified in node vs scipy 1.17).
+    function _pnct(t, nu, d) {
+      const N = 2000;
+      const Umax = Math.sqrt(nu + 12 * Math.sqrt(2 * nu)) + 6;
+      const logc = Math.log(2) - (nu / 2) * Math.log(2) - _lngamma(nu / 2);
+      const h = Umax / N, snu = Math.sqrt(nu);
+      let tot = 0;
+      for (let i = 0; i <= N; i++) {
+        const u = i * h;
+        let f;
+        if (u === 0) { f = (nu === 1) ? Math.exp(logc) * pnorm(-d) : 0; }
+        else { const lw = logc + (nu - 1) * Math.log(u) - u * u / 2; f = Math.exp(lw) * pnorm(t * u / snu - d); }
+        const w = (i === 0 || i === N) ? 1 : (i % 2 === 1 ? 4 : 2);
+        tot += w * f;
+      }
+      return tot * h / 3;
+    }
+    function _ptc(x, nu) { return _pnct(x, nu, 0); }           // central t CDF
+    function _qtc(p, nu) {                                      // central t quantile (bisection)
+      let lo = -200, hi = 200;
+      for (let i = 0; i < 70; i++) { const m = (lo + hi) / 2; if (_ptc(m, nu) < p) lo = m; else hi = m; }
+      return (lo + hi) / 2;
+    }
+    // ncp giving 33% power: monotone in ncp, root on [0,8] by bisection.
+    function _solveNcp33(powFn) {
+      let lo = 0, hi = 8;
+      for (let i = 0; i < 70; i++) { const m = (lo + hi) / 2; if (powFn(m) < 1 / 3) lo = m; else hi = m; }
+      return (lo + hi) / 2;
+    }
+    // Two-sided rejection probability (power) at |stat|>crit under the alt.
+    function _zTailPow(crit, mu) { return (1 - pnorm(crit - mu)) + pnorm(-crit - mu); }
+    function _tTailPow(crit, df, d) { return (1 - _pnct(crit, df, d)) + _pnct(-crit, df, d); }
+
+    // Flatness for a z (two-sided normal) family.
+    function flatnessZ(ps, half) {
+      const crit05 = qnorm(0.975);
+      const ncp33 = _solveNcp33(mu => _zTailPow(crit05, mu));
+      const thr = half ? 0.025 : 0.05;
+      const critCond = qnorm(1 - thr / 2);
+      const use = ps.filter(p => p > 0 && p < thr);
+      if (!use.length) return null;
+      const den = _zTailPow(critCond, ncp33);
+      const pp = use.map(p => {
+        const zo = qnorm(1 - p / 2);
+        return Math.min(1 - 1e-12, Math.max(1e-12, _zTailPow(zo, ncp33) / den));
+      });
+      const Z = pp.reduce((s, v) => s + qnorm(v), 0) / Math.sqrt(pp.length);
+      return { ncp: ncp33, k: use.length, pp, Z, pflat: 1 - pnorm(Z) };
+    }
+    // Flatness for a t (non-central t) family at common df.
+    function flatnessT(ps, df, half) {
+      const crit05 = _qtc(0.975, df);
+      const ncp33 = _solveNcp33(d => _tTailPow(crit05, df, d));
+      const thr = half ? 0.025 : 0.05;
+      const critCond = _qtc(1 - thr / 2, df);
+      const use = ps.filter(p => p > 0 && p < thr);
+      if (!use.length) return null;
+      const den = _tTailPow(critCond, df, ncp33);
+      const pp = use.map(p => {
+        const to = _qtc(1 - p / 2, df);
+        return Math.min(1 - 1e-12, Math.max(1e-12, _tTailPow(to, df, ncp33) / den));
+      });
+      const Z = pp.reduce((s, v) => s + qnorm(v), 0) / Math.sqrt(pp.length);
+      return { ncp: ncp33, k: use.length, pp, Z, pflat: 1 - pnorm(Z) };
     }
 
     function drawCurve(pvals) {

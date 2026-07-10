@@ -320,7 +320,7 @@ function solveGLSWorker(points, tau2Override, useREML) {
 
   // Compute Q and I²
   const Q = computeQStatWorker(y, X, result.beta, V_blocks, tau2, invBlocks);
-  const df = (nStudies - 1) * p;
+  const df = nPoints - p;
   const I2 = Math.max(0, 100 * (Q - df) / Math.max(Q, 0.001));
 
   return {
@@ -421,7 +421,8 @@ function estimateTau2DLWorker(X, y, V_blocks) {
   const feResult = solveGLSWithTau2Worker(X, y, V_blocks, 0, invBlocks0);
   const Q = computeQStatWorker(y, X, feResult.beta, V_blocks, 0, invBlocks0);
 
-  const df = (K - 1) * p;
+  const nPoints = y.length;
+  const df = (nPoints - p);
 
   let sumTrV = 0;
   for (const block of V_blocks) {

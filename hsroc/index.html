@@ -89,13 +89,16 @@
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
+  <!-- Audited Reitsma ML bivariate DTA engine (shared with dta-sroc). Drives the summary
+       operating point, SROC curve, and confidence/prediction regions for k>=4. -->
+  <script src="../shared/dta-bivariate.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Bivariate <abbr data-gloss="DTA">DTA</abbr> / <abbr data-gloss="HSROC">HSROC</abbr></h1>
-    <p>Meta-analysis of diagnostic test accuracy: bivariate random-effects model on logit(<abbr data-gloss="Se">Se</abbr>) and logit(<abbr data-gloss="FPR">FPR</abbr> = 1−<abbr data-gloss="Sp">Sp</abbr>), with a parametric <abbr data-gloss="HSROC">HSROC</abbr> curve and summary operating point. Approximates Reitsma/Harbord via DerSimonian-Laird on each margin. For rigorous estimates use R's <code>mada::reitsma</code>.</p>
+    <p>Meta-analysis of diagnostic test accuracy: bivariate random-effects model on logit(<abbr data-gloss="Se">Se</abbr>) and logit(<abbr data-gloss="FPR">FPR</abbr> = 1−<abbr data-gloss="Sp">Sp</abbr>), with a parametric <abbr data-gloss="HSROC">HSROC</abbr> curve and summary operating point. Fitted by full maximum-likelihood bivariate random effects (Reitsma), matching R's <code>mada::reitsma</code> for k&nbsp;&ge;&nbsp;4; a DerSimonian-Laird per-margin approximation is retained only as a small-sample fallback when k&nbsp;&lt;&nbsp;4.</p>
   </header>
 
   <main id="main-content" class="layout">
@@ -155,7 +158,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Implemented as alternating univariate DerSimonian-Laird pools on each margin + empirical residual correlation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251 approximation; NOT iterated to convergence). 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
+  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (Cholesky-parameterised Σ, GLS-profiled μ, Nelder-Mead; <code>mada::reitsma</code>-parity to ~1e-4). A univariate DerSimonian-Laird per-margin approximation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) is retained only as a k&nbsp;&lt;&nbsp;4 fallback where Σ is not identifiable. 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -192,7 +195,7 @@
     window.__almResults = function () {
       var state = readState();
       var parsed = parseStudies(state.data);
-      var p = parsed.studies.length >= 3 ? pool(parsed.studies) : null;
+      var p = fitModel(parsed.studies).p;
       var rows = parsed.studies.map(function (s) {
         return {
           study:     s.label,
@@ -329,6 +332,36 @@
       };
     }
 
+    // Drive the summary/SROC/regions from the audited Reitsma ML bivariate engine
+    // (window.AlmDTABivariate) when k>=4. fit() throws for k<4 (Σ not identifiable), so
+    // below that we fall back to the inline DerSimonian-Laird per-margin approximation.
+    // Returns { p, fit, mlUsed } where p has the pool()-shaped fields the renderer reads;
+    // when ML drove it, p.covMuOff carries the exact cov(μ_Se, μ_FPR) for LR/DOR delta CIs.
+    function fitModel(studies) {
+      var fit = null;
+      if (studies.length >= 4 && window.AlmDTABivariate) {
+        try {
+          fit = window.AlmDTABivariate.fit(studies.map(function (s) {
+            return { tp: s.tp, fp: s.fp, fn: s.fn, tn: s.tn };
+          }));
+        } catch (e) { fit = null; }
+      }
+      if (fit) {
+        var rhoB = fit.Sigma[0][1] / Math.sqrt(fit.Sigma[0][0] * fit.Sigma[1][1]);
+        return {
+          fit: fit, mlUsed: true,
+          p: {
+            muSe:    fit.muLogitSe,          muFPR:   fit.muLogitFPR,
+            seMuSe:  Math.sqrt(fit.covMu[0][0]), seMuFPR: Math.sqrt(fit.covMu[1][1]),
+            tauSe2:  fit.Sigma[0][0],         tauFPR2: fit.Sigma[1][1],
+            rho:     Number.isFinite(rhoB) ? rhoB : 0,
+            covMuOff: fit.covMu[0][1],
+          },
+        };
+      }
+      return { fit: null, mlUsed: false, p: studies.length >= 3 ? pool(studies) : null };
+    }
+
     function invLogit(x) { return 1 / (1 + Math.exp(-x)); }
 
     function fmt(x, d) { return Number.isFinite(x) ? x.toFixed(d == null ? 3 : d) : "—"; }
@@ -338,7 +371,7 @@
       return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
 
-    function drawSROC(studies, p) {
+    function drawSROC(studies, p, fit) {
       var W=600, H=500, padL=60, padR=20, padT=30, padB=55;
       var plotW = W-padL-padR, plotH = H-padT-padB;
       var parts = [];
@@ -377,12 +410,25 @@
         parts.push('<circle cx="' + X(s.fpr) + '" cy="' + Y(s.se) + '" r="' + r + '" fill="#2c5e8a" fill-opacity="0.8"><title>' + escXml(s.label) + ': Se=' + fmtPct(s.se) + ', Sp=' + fmtPct(s.sp) + '</title></circle>');
       }
 
-      // SROC curve (symmetric Rutter-Gatsonis / Moses): slope on the logit scale
-      // is σ_Se/σ_FPR = sqrt(τ²_Se/τ²_FPR) — NOT the regression slope ρ·σ_Se/σ_FPR.
-      // The ρ-weighted slope drew the curve backwards (downward) whenever the
-      // between-study correlation was negative; sqrt(τ²_Se/τ²_FPR) matches
-      // mada::reitsma's sroc() exactly (logit-slope 1.328 on the test fixture).
-      if (p && p.tauFPR2 > 0 && p.tauSe2 > 0) {
+      // Confidence & prediction regions + SROC curve. When the Reitsma ML engine is
+      // available (k>=4) draw its 95% prediction region (Σ) behind, its 95% confidence
+      // region (cov μ), and its symmetric SROC curve — all from AlmDTABivariate, matching
+      // mada::plot.reitsma. Otherwise fall back to the inline DL logit-scale curve.
+      var clip01 = function (v) { return Math.max(0.0005, Math.min(0.9995, v)); };
+      if (fit && window.AlmDTABivariate) {
+        var predPts = AlmDTABivariate.regionEllipse(fit, "prediction", 120)
+          .map(function (pt) { return X(clip01(pt.fpr)) + "," + Y(clip01(pt.tpr)); }).join(" ");
+        var confPts = AlmDTABivariate.regionEllipse(fit, "confidence", 120)
+          .map(function (pt) { return X(clip01(pt.fpr)) + "," + Y(clip01(pt.tpr)); }).join(" ");
+        parts.push('<polygon points="' + predPts + '" fill="#b05a1c" fill-opacity="0.06" stroke="#b05a1c" stroke-width="1.2" stroke-dasharray="6 4"/>');
+        parts.push('<polygon points="' + confPts + '" fill="#b05a1c" fill-opacity="0.12" stroke="#b05a1c" stroke-width="1.4"/>');
+        var srocPts = AlmDTABivariate.srocCurve(fit, 120)
+          .map(function (pt) { return X(clip01(pt.fpr)) + "," + Y(clip01(pt.tpr)); }).join(" ");
+        parts.push('<polyline points="' + srocPts + '" fill="none" stroke="#b05a1c" stroke-width="2"/>');
+      } else if (p && p.tauFPR2 > 0 && p.tauSe2 > 0) {
+        // DerSimonian-Laird fallback (k<4): symmetric Rutter-Gatsonis logit-scale slope
+        // sqrt(τ²_Se/τ²_FPR) — NOT the ρ-weighted regression slope (which flips sign when
+        // the between-study correlation is negative).
         var slope = Math.sqrt(p.tauSe2 / p.tauFPR2);
         var intercept = p.muSe - slope * p.muFPR;
         var curvePts = [];
@@ -394,8 +440,11 @@
         parts.push('<polyline points="' + curvePts.join(" ") + '" fill="none" stroke="#b05a1c" stroke-width="2"/>');
       }
 
-      // Summary operating point + CI rectangle
-      if (p) {
+      // Summary operating point (ML: exact Se/Sp; DL fallback also shows the SE rectangle).
+      if (fit) {
+        var mSe = fit.sens, mFPR = 1 - fit.spec;
+        parts.push('<circle cx="' + X(mFPR) + '" cy="' + Y(mSe) + '" r="7" fill="#b05a1c" stroke="#fff" stroke-width="2"><title>Summary (ML): Se=' + fmtPct(mSe) + ', Sp=' + fmtPct(fit.spec) + '</title></circle>');
+      } else if (p) {
         var sumSe  = invLogit(p.muSe);
         var sumFPR = invLogit(p.muFPR);
         var seLo  = invLogit(p.muSe  - Z975 *p.seMuSe);
@@ -444,7 +493,8 @@
         return;
       }
 
-      var p = pool(studies);
+      var fm = fitModel(studies);
+      var p = fm.p, fit = fm.fit;
 
       // Per-study table
       var tbl = ['<table><thead><tr><th>Study</th><th>Se</th><th>Sp</th><th>logit(Se)</th><th>logit(FPR)</th></tr></thead><tbody>'];
@@ -467,7 +517,10 @@
       var lrPos  = sumSe / sumFPR;                     // Se / (1 - Sp)
       var lrNeg  = (1 - sumSe) / sumSp;                // (1 - Se) / Sp
       var dorVal = lrPos / lrNeg;                      // = exp(muSe - muFPR)
-      var _cov = p.rho * p.seMuSe * p.seMuFPR, _vSe = p.seMuSe * p.seMuSe, _vF = p.seMuFPR * p.seMuFPR;
+      // When the ML engine drove p, cov(μ_Se, μ_FPR) is exact (covMuOff); the DL fallback
+      // only has margin SEs + an empirical ρ, so approximate the cross-term as ρ·se·se.
+      var _cov = (p.covMuOff != null) ? p.covMuOff : p.rho * p.seMuSe * p.seMuFPR;
+      var _vSe = p.seMuSe * p.seMuSe, _vF = p.seMuFPR * p.seMuFPR;
       var seLogLRp = Math.sqrt(Math.max(0, (1-sumSe)*(1-sumSe)*_vSe + sumSp*sumSp*_vF - 2*(1-sumSe)*sumSp*_cov));
       var seLogLRn = Math.sqrt(Math.max(0, sumSe*sumSe*_vSe + sumFPR*sumFPR*_vF - 2*sumSe*sumFPR*_cov));
       var seLogDOR = Math.sqrt(Math.max(0, _vSe + _vF - 2*_cov));
@@ -498,17 +551,21 @@
         '</tbody></table>';
 
       // Stat chips
+      var rhoLabel = fm.mlUsed ? "ρ (between-study)" : "ρ (empirical)";
+      var rhoTitle = fm.mlUsed
+        ? "Between-study correlation of logit(Se) vs logit(FPR) from the ML bivariate covariance Σ (Reitsma, mada::reitsma parity)."
+        : "Empirical residual correlation of logit(Se) vs logit(FPR) — DerSimonian-Laird small-sample fallback (k<4); not the ML Σ correlation.";
       statsWrap.innerHTML = '<div class="stats">' +
         '<div class="stat"><span class="k">k studies</span><span class="v">' + studies.length + '</span></div>' +
         '<div class="stat"><span class="k">Pooled Se</span><span class="v">' + fmtPct(sumSe) + '</span></div>' +
         '<div class="stat"><span class="k">Pooled Sp</span><span class="v">' + fmtPct(sumSp) + '</span></div>' +
-        '<div class="stat" title="Empirical residual correlation of logit(Se) vs logit(FPR). This DerSimonian-Laird approximation does not estimate the bivariate model Ψ correlation — use mada::reitsma for that."><span class="k">ρ (empirical)</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
+        '<div class="stat" title="' + escXml(rhoTitle) + '"><span class="k">' + rhoLabel + '</span><span class="v">' + fmt(p.rho, 3) + '</span></div>' +
         '<div class="stat" title="Diagnostic odds ratio = (Se·Sp)/((1−Se)(1−Sp)). Single global summary of accuracy."><span class="k"><abbr data-gloss="DOR">DOR</abbr></span><span class="v">' + fmt(dorVal, 2) + '</span></div>' +
         (aucVal !== null ? '<div class="stat" title="Area under the symmetric SROC curve (numerical). 1.0 = perfect, 0.5 = uninformative."><span class="k">SROC AUC</span><span class="v">' + fmt(aucVal, 3) + '</span></div>' : '') +
         '</div>';
 
       // SROC plot
-      srocHost.innerHTML = drawSROC(studies, p);
+      srocHost.innerHTML = drawSROC(studies, p, fit);
 
       // Persist to localStorage
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
