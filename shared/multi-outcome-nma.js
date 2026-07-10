@@ -99,24 +99,65 @@
     return Sigma;
   }
 
-  // ---- DL τ² per outcome (across all contrast rows, ignoring multi-arm) -
+  // ---- DL τ² per outcome (about the fitted NMA consistency effects) -----
+  //
+  // Generalized (Jackson) DerSimonian-Laird: Q is measured about the FE
+  // network fit d̂ (not a single grand mean), so between-treatment effect
+  // differences are NOT counted as heterogeneity. df = n_rows − nBasic and
+  // the denominator is tr(W) − tr((X'WX)⁻¹ X'W²X). On a zero-heterogeneity
+  // star network this returns τ²≈0 (a plain grand-mean pool inflates it).
 
-  function _tau2_DL_perOutcome(rowsPerOutcome) {
-    // rowsPerOutcome = [ [{yi, vi}, ...], ... ] (length K)
+  function _tau2_DL_perOutcome(rowsPerOutcome, nBasic) {
+    // rowsPerOutcome = [ [{yi, vi, iA, iB}, ...], ... ] (length K)
+    // iA/iB = treatment indices (0 = reference); design column = idx−1.
     var taus = [];
     for (var k = 0; k < rowsPerOutcome.length; k++) {
       var rows = rowsPerOutcome[k];
-      if (rows.length < 2) { taus.push(0); continue; }
-      var w = rows.map(function (r) { return 1 / r.vi; });
-      var sw = w.reduce(function (a, b) { return a + b; }, 0);
-      var swy = 0;
-      for (var i = 0; i < rows.length; i++) swy += w[i] * rows[i].yi;
-      var muFE = swy / sw;
+      var df = rows.length - nBasic;
+      if (rows.length < 2 || df < 1) { taus.push(0); continue; }
+      // Per-outcome NMA design (n_rows × nBasic) and FE weights W = diag(1/vi).
+      var Xk = zeros(rows.length, nBasic);
+      var w = new Array(rows.length);
+      for (var i = 0; i < rows.length; i++) {
+        w[i] = 1 / rows[i].vi;
+        if (rows[i].iA > 0) Xk[i][rows[i].iA - 1] = -1;
+        if (rows[i].iB > 0) Xk[i][rows[i].iB - 1] = +1;
+      }
+      // X'WX, X'Wy, X'W²X and tr(W).
+      var XtWX = zeros(nBasic, nBasic);
+      var XtW2X = zeros(nBasic, nBasic);
+      var XtWy = new Array(nBasic).fill(0);
+      var trW = 0;
+      for (var i2 = 0; i2 < rows.length; i2++) {
+        trW += w[i2];
+        for (var a = 0; a < nBasic; a++) {
+          XtWy[a] += Xk[i2][a] * w[i2] * rows[i2].yi;
+          for (var b = 0; b < nBasic; b++) {
+            XtWX[a][b] += Xk[i2][a] * w[i2] * Xk[i2][b];
+            XtW2X[a][b] += Xk[i2][a] * w[i2] * w[i2] * Xk[i2][b];
+          }
+        }
+      }
+      var XtWXinv;
+      try { XtWXinv = inverse(XtWX); } catch (e) { taus.push(0); continue; }
+      // FE network effects d̂ = (X'WX)⁻¹ X'Wy.
+      var dhat = new Array(nBasic).fill(0);
+      for (var a2 = 0; a2 < nBasic; a2++)
+        for (var b2 = 0; b2 < nBasic; b2++) dhat[a2] += XtWXinv[a2][b2] * XtWy[b2];
+      // Q about the fitted network effects.
       var Q = 0;
-      for (var j = 0; j < rows.length; j++) Q += w[j] * (rows[j].yi - muFE) * (rows[j].yi - muFE);
-      var sw2 = w.reduce(function (a, b) { return a + b * b; }, 0);
-      var denom = sw - sw2 / sw;
-      taus.push(Math.sqrt(denom > 1e-12 ? Math.max(0, (Q - (rows.length - 1)) / denom) : 0));
+      for (var i3 = 0; i3 < rows.length; i3++) {
+        var fitv = 0;
+        for (var c = 0; c < nBasic; c++) fitv += Xk[i3][c] * dhat[c];
+        var e = rows[i3].yi - fitv;
+        Q += w[i3] * e * e;
+      }
+      // Denominator: tr(W) − tr((X'WX)⁻¹ X'W²X).
+      var trTerm = 0;
+      for (var a3 = 0; a3 < nBasic; a3++)
+        for (var b3 = 0; b3 < nBasic; b3++) trTerm += XtWXinv[a3][b3] * XtW2X[b3][a3];
+      var denom = trW - trTerm;
+      taus.push(Math.sqrt(denom > 1e-12 ? Math.max(0, (Q - df) / denom) : 0));
     }
     return taus;
   }
@@ -179,10 +220,11 @@
       perOutcomeRows.push(rows.filter(function (r) {
         return r.outcomes[k] && isFinite(r.outcomes[k].yi);
       }).map(function (r) {
-        return { yi: r.outcomes[k].yi, vi: r.outcomes[k].sei * r.outcomes[k].sei };
+        return { yi: r.outcomes[k].yi, vi: r.outcomes[k].sei * r.outcomes[k].sei,
+                 iA: trtIndex[r.trtA], iB: trtIndex[r.trtB] };
       }));
     }
-    var seedTaus = _tau2_DL_perOutcome(perOutcomeRows);
+    var seedTaus = _tau2_DL_perOutcome(perOutcomeRows, nBasic);
 
     // Seed Σ_RE^outcomes as diag(τ²_k) + off-diag from sample correlation
     // of per-row residuals (rough but good enough for non-iterative).

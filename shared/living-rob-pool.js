@@ -31,6 +31,12 @@
 (function (global) {
   "use strict";
 
+  // In node, ensure the audited pooling engine (AlmMaCore, used for PM τ²)
+  // is loaded; in the browser it is provided by a prior <script> tag.
+  if (typeof global.AlmMaCore === "undefined" && typeof require === "function") {
+    try { require("./ma-core.js"); } catch (e) { /* other loader */ }
+  }
+
   // ---- RoB → bias map (reuse from network-bias-adjust default) ----------
 
   var DEFAULT_BIAS_MAP = {
@@ -92,28 +98,26 @@
                warning: "no studies remain after RoB exclusion at this snapshot" };
     }
 
-    // DL τ² estimated on un-downweighted weights (Cochrane Handbook §10.10
-    // — bias is a sensitivity adjustment, not a heterogeneity reduction).
-    var w0 = prepared.map(function (r) { return 1 / r.vi; });
-    var sw0 = w0.reduce(function (a, b) { return a + b; }, 0);
-    var swy0 = 0;
-    for (var j = 0; j < prepared.length; j++) swy0 += w0[j] * prepared[j].yi;
-    var muFE = swy0 / sw0;
-    var Q = 0;
-    for (var k = 0; k < prepared.length; k++) Q += w0[k] * (prepared[k].yi - muFE) * (prepared[k].yi - muFE);
-    var sw02 = w0.reduce(function (a, b) { return a + b * b; }, 0);
-    var denomDL = sw0 - sw02 / sw0;
-    var tau2 = denomDL > 1e-12 ? Math.max(0, (Q - (prepared.length - 1)) / denomDL) : 0;
+    // τ² via Paule–Mandel (PM) on the un-downweighted studies — house
+    // default for the small k this living-MA module targets; DL is
+    // downward-biased there. bias is a sensitivity adjustment on the pool,
+    // not a heterogeneity reduction (Cochrane Handbook §10.10).
+    var yiArr = prepared.map(function (p) { return p.yi; });
+    var viArr = prepared.map(function (p) { return p.vi; });
+    var tau2 = global.AlmMaCore.tau2PM(yiArr, viArr);
 
     // Bias-adjusted RE pool: w_eff = (1 − bias) / (v + τ²)
-    var sw = 0, swy = 0;
+    var sw = 0, swy = 0, sww2 = 0;
     for (var m = 0; m < prepared.length; m++) {
       var w = (1 - prepared[m].bias) / (prepared[m].vi + tau2);
       sw += w;
       swy += w * prepared[m].yi;
+      sww2 += w * w * (prepared[m].vi + tau2);
     }
     var mu = swy / sw;
-    var se = Math.sqrt(1 / sw);
+    // Sandwich SE for non-IV (bias-scaled) weights: sqrt(Σ w_i² (v_i+τ²)) / Σ w_i.
+    // Reduces to sqrt(1/Σw) when all bias equal.
+    var se = Math.sqrt(sww2) / sw;
     var Z975 = 1.959963984540054;
     return {
       date: asOf,

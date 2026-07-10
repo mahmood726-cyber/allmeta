@@ -33,8 +33,8 @@
     var aa = a, bb = b, cc = c, dd = d;
     if (a === 0 || b === 0 || c === 0 || d === 0) { aa += 0.5; bb += 0.5; cc += 0.5; dd += 0.5; }
     if (measure === "RD") {
-      var p1 = a / (a + b), p0 = c / (c + d);
-      return { yi: p1 - p0, vi: p1 * (1 - p1) / (a + b) + p0 * (1 - p0) / (c + d) };
+      var p1 = aa / (aa + bb), p0 = cc / (cc + dd);
+      return { yi: p1 - p0, vi: aa * bb / Math.pow(aa + bb, 3) + cc * dd / Math.pow(cc + dd, 3) };
     }
     if (measure === "RR") {
       return { yi: Math.log((aa / (aa + bb)) / (cc / (cc + dd))), vi: 1 / aa - 1 / (aa + bb) + 1 / cc - 1 / (cc + dd) };
@@ -77,11 +77,11 @@
       // modifiable candidates this step
       var cand = [];
       for (var i = 0; i < a.length; i++) {
-        if (less ? (c[i] > 0) : (a[i] > 0)) cand.push({ s: i, grp: 0 });       // control arm
-        if (less ? (a[i] < a[i] + b[i]) : (c[i] < c[i] + d[i])) cand.push({ s: i, grp: 1 }); // treatment arm has room
+        if (less ? (c[i] > 0) : (d[i] > 0)) cand.push({ s: i, grp: 0 });       // control arm
+        if (less ? (a[i] < a[i] + b[i]) : (a[i] > 0)) cand.push({ s: i, grp: 1 }); // treatment arm has room
       }
       // (treatment room check uses n1=a+b)
-      cand = cand.filter(function (k) { return k.grp === 0 ? true : (less ? (a[k.s] < studies[k.s].n1) : (c[k.s] < studies[k.s].n0)); });
+      cand = cand.filter(function (k) { return k.grp === 0 ? true : (less ? (a[k.s] < studies[k.s].n1) : (a[k.s] > 0)); });
       if (!cand.length) { moremod = false; break; }
       var best = null;
       for (var j = 0; j < cand.length; j++) {

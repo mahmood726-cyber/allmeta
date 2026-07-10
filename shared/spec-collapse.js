@@ -63,7 +63,7 @@
   function _qt(p, df) { return global.AlmMaCore._qt(p, df); }
 
   function _pool(yi, vi, est, knha) {
-    return global.AlmMaCore.pool(yi, vi, { method: est, knha: !!knha });
+    return global.AlmMaCore.pool(yi, vi, { method: est, knha: !!knha, knhaFloor: !!knha });
   }
 
   // One specification -> {theta, var, k, ciLo, ciHi, significant, ...labels}.

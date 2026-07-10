@@ -50,7 +50,12 @@
     var TEj = te[jmin];
     var zmax = Math.max.apply(null, z), zmin = Math.min.apply(null, z);
     var dte = te.map(function (t) { return t - TEj; });
-    var slope = (zmax - zmin) / (Math.max.apply(null, dte) - Math.min.apply(null, dte));
+    var dteSpread = Math.max.apply(null, dte) - Math.min.apply(null, dte);
+    if (dteSpread === 0) {
+      var pts0 = te.map(function (t, i) { return { te: t, z: z[i], absz: Math.abs(z[i]) }; });
+      return { lfk: 0, interpretation: "no asymmetry (degenerate: all effects equal)", points: pts0, TEj: TEj };
+    }
+    var slope = (zmax - zmin) / dteSpread;
     var s = 0; for (var k = 0; k < K; k++) s += z[k] + slope * (te[k] - TEj);
     var index = 5 / (2 * K) * s;
     var ax = Math.abs(index);

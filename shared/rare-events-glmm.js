@@ -107,7 +107,7 @@
     var logTerms = new Array(nodes.length);
     for (var q = 0; q < nodes.length; q++) {
       var u = nodes[q];
-      var logitT = mu + theta + tau * u;
+      var logitT = mu + theta + tau * Math.SQRT2 * u;
       var ll = _logBin(eT, nT, logitT) + _logBin(eC, nC, mu);
       // Hermite weights are for ∫ f(u) e^{-u²} du; convert to ∫ f(u) φ(u) du
       // by multiplying by exp(u²)/√π (φ(u) = e^{-u²/2}/√(2π); the change
@@ -249,7 +249,7 @@
     var logTerms = new Array(HG10_NODES.length);
     for (var q = 0; q < HG10_NODES.length; q++) {
       var u = HG10_NODES[q];
-      var logitT = mu + theta + tau * u;
+      var logitT = mu + theta + tau * Math.SQRT2 * u;
       logTerms[q] = _logBin(eT, nT, logitT)
                   + Math.log(HG10_WEIGHTS[q]) - 0.5 * Math.log(Math.PI);
     }

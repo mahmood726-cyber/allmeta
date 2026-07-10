@@ -50,6 +50,7 @@
       var tx = function (v) { return ratio ? Math.exp(v) : v; };
       var lo = isFinite(p.lo) ? p.lo : p.mu - Z975 * p.se;
       var hi = isFinite(p.hi) ? p.hi : p.mu + Z975 * p.se;
+      if (!isFinite(lo) || !isFinite(hi)) { toast("Pooled estimate is missing a confidence interval (no CI and no SE)."); return; }
       var result = {
         pointEstimate: tx(p.mu), ciLo: tx(lo), ciHi: tx(hi),
         scale: ratio ? "ratio" : "linear",

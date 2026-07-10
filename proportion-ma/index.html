@@ -95,8 +95,8 @@
       <label>
         <span>Transformation</span>
         <select id="trans" aria-label="Trans">
-          <option value="ft" selected>Freeman-Tukey double arcsine</option>
-          <option value="logit">Logit</option>
+          <option value="ft">Freeman-Tukey double arcsine</option>
+          <option value="logit" selected>Logit</option>
           <option value="raw">Raw (no transform) — not recommended</option>
         </select>
         <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483 showed the inverse (back-)transformation has no single well-defined value (it depends on the chosen study size, e.g. harmonic mean), so the pooled proportion and its back-transformed CI can be seriously misleading; for rare events prefer logit with a boundary-only continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
@@ -336,7 +336,17 @@
         var t;
         if (trans === 'ft') t = ftTransform(r.x, r.n);
         else if (trans === 'logit') t = logitTransform(r.x, r.n);
-        else { var p = r.x / r.n; t = { y: p, v: Math.max(p * (1 - p) / r.n, 1e-8) }; }
+        else {
+          // Boundary-only continuity correction, mirroring logitTransform: a study
+          // with x=0 or x=n otherwise gets v=0 → weight ~1e8 that dominates the FE
+          // pool. Use cx=x+0.5, cn=n+1 at the boundary; the 1e-8 floor is no longer
+          // needed once the degenerate variance is corrected.
+          var ext = (r.x === 0) || (r.x === r.n);
+          var cx = ext ? r.x + 0.5 : r.x;
+          var cn = ext ? r.n + 1 : r.n;
+          var p = cx / cn;
+          t = { y: p, v: p * (1 - p) / cn };
+        }
         return Object.assign({}, r, t);
       });
 
@@ -359,7 +369,7 @@
       // back-transformed exactly like the CI so it stays in [0,1].
       var lo = pooled.mu_re - Z975 * pooled.seRE;
       var hi = pooled.mu_re + Z975 * pooled.seRE;
-      var piT = (window.AlmMaCore && rows.length >= 2)
+      var piT = (window.AlmMaCore && rows.length >= 3)
         ? window.AlmMaCore.predictionInterval({ mu: pooled.mu_re, se: pooled.seRE, tau2: pooled.tau2, k: rows.length })
         : null;
       var poolP, poolLo, poolHi, poolPiLo = null, poolPiHi = null;

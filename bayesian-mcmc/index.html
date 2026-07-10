@@ -216,7 +216,7 @@
       return { mean, sd, lo: q(0.025), hi: q(0.975), median: q(0.5) };
     }
 
-    // Gelman-Rubin R-hat with split chains. Gelman-Vehtari (2013) finite-chain corrected.
+    // Gelman-Rubin R-hat with split chains. Vehtari et al. (2021) / BDA3 (2013) convention.
     function rhat(chains) {
       const m = chains.length * 2;  // split chains
       const split = chains.flatMap(c => [c.slice(0, c.length / 2), c.slice(c.length / 2)]);
@@ -228,8 +228,8 @@
         const mn = means[i];
         return a + c.reduce((s, v) => s + (v - mn) ** 2, 0) / (c.length - 1);
       }, 0) / m;
-      // Finite-chain correction: add (1 + 1/m)·B/n rather than B/n
-      const varHat = ((n - 1) * W / n + (1 + 1 / m) * B / n);
+      // Pooled variance estimate (BDA3-2013 / Vehtari-2021 / Stan / coda): no (1+1/m) factor
+      const varHat = ((n - 1) * W / n + B / n);
       return Math.sqrt(varHat / W);
     }
 

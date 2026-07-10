@@ -83,11 +83,15 @@
   }
 
   // fit(rows) — rows:[{tp,fp,fn,tn}]. Returns the bivariate ML fit + DTA summaries.
+  // Contract: requires k >= 4 studies. With k < 4 the between-study covariance Σ is not
+  // identifiable (the sample-variance divisor k-1 collapses and ρ is unconstrained), so
+  // fit() throws rather than silently propagating NaN. Screen k upstream for small-k UX.
   function fit(rows) {
     var studies = _prep(rows), k = studies.length;
+    if (k < 4) throw new Error("dta-bivariate: bivariate ML requires k >= 4 studies (got k=" + k + "); Σ is not identifiable below k=4.");
     // Cholesky params [log l11, l21, log l22] → Σ = L Lᵀ (PD). Warm start from moments.
     var v1 = [], v2 = []; studies.forEach(function (s) { v1.push(s.y[0]); v2.push(s.y[1]); });
-    function vr(a) { var m = a.reduce(function (x, y) { return x + y; }, 0) / a.length; return a.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / (a.length - 1); }
+    function vr(a) { if (a.length < 2) return 0; var m = a.reduce(function (x, y) { return x + y; }, 0) / a.length; return a.reduce(function (x, y) { return x + (y - m) * (y - m); }, 0) / (a.length - 1); }
     var s1 = Math.sqrt(Math.max(0.1, vr(v1) * 0.5)), s2 = Math.sqrt(Math.max(0.1, vr(v2) * 0.5));
     var obj = function (p) {
       var l11 = Math.exp(p[0]), l21 = p[1], l22 = Math.exp(p[2]);
@@ -113,15 +117,15 @@
     var lrPos = Se / FPR, lrNeg = (1 - Se) / Sp;
     // var(log LR+) ≈ (1-Se)/(Se·nSe-ish)… use the means' variances via delta on logit:
     // log LR+ = log(Se) - log(FPR). d log Se / d muSe = (1-Se); d log FPR / d muFPR = (1-FPR).
-    var seLogLRpos = Math.sqrt((1 - Se) * (1 - Se) * covMu[0][0] + (1 - FPR) * (1 - FPR) * covMu[1][1]);
+    var seLogLRpos = Math.sqrt(Math.max(0, (1 - Se) * (1 - Se) * covMu[0][0] + (1 - FPR) * (1 - FPR) * covMu[1][1] - 2 * (1 - Se) * (1 - FPR) * covMu[0][1]));
     // log LR- = log(1-Se) - log(Sp); d log(1-Se)/dmuSe = -Se ; d log(Sp)/dmuFPR = -(? Sp=1-FPR) = FPR
-    var seLogLRneg = Math.sqrt(Se * Se * covMu[0][0] + FPR * FPR * covMu[1][1]);
+    var seLogLRneg = Math.sqrt(Math.max(0, Se * Se * covMu[0][0] + FPR * FPR * covMu[1][1] - 2 * Se * FPR * covMu[0][1]));
     var DOR = lrPos / lrNeg;
 
-    // SROC (Reitsma): logit(TPR) as a function of logit(FPR): slope = Σ12/Σ22·… use the
-    // "mu" + the random-effects regression. Standard SROC line through μ with slope
-    // b = Σ[1][2]/Σ[2][2] (regression of logit-TPR on logit-FPR).
-    var srocSlope = Sigma[0][1] / Sigma[1][1];
+    // SROC (Rutter-Gatsonis, mada default): symmetric major-axis line through μ with
+    // slope b = √(Σ11/Σ22) (positive; matches mada type="ruttergatsonis" and the hsroc
+    // sibling), NOT the Σ12/Σ22 regression slope (which flips sign when Σ12 < 0).
+    var srocSlope = Math.sqrt(Sigma[0][0] / Sigma[1][1]);
     var srocIntercept = mu[0] - srocSlope * mu[1];
 
     return {
