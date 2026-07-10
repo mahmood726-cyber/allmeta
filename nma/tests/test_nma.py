@@ -64,10 +64,16 @@ def test_matrix_helpers():
     for fn in ("function matmul", "function invert", "function cholesky"):
         assert fn in text, f"Missing: {fn}"
 def test_design_matrix_signs():
-    """y = d_t2 - d_t1 => +1 at t2's column, -1 at t1's column."""
-    text = INDEX.read_text(encoding="utf-8")
-    assert "X[i][idx[r.t2]] += 1" in text
-    assert "X[i][idx[r.t1]] -= 1" in text
+    """y = d_t2 - d_t1 => +1 at t2's column, -1 at t1's column.
+
+    The design matrix moved out of nma/index.html into the shared multi-arm
+    GLS engine (shared/nma-multiarm-v1.js, netmeta-parity); assert the sign
+    convention there, where `to = t2` and `from = t1`.
+    """
+    engine = (ROOT.parent / "shared" / "nma-multiarm-v1.js").read_text(encoding="utf-8")
+    assert "var to = row.t2, from = row.t1" in engine
+    assert "X[ri][idx[ct.to]] += 1" in engine
+    assert "X[ri][idx[ct.from]] -= 1" in engine
 def test_script_close_not_in_string():
     text = INDEX.read_text(encoding="utf-8")
     m = re.search(r"<script>\s*(.*?)\s*</script>", text, re.DOTALL)
