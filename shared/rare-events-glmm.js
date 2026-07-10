@@ -240,9 +240,17 @@
   //   u_i ~ N(0, τ²); e_C_i, e_T_i ~ Binom
   //
   // Each study's μ_i is profiled out at every (θ, τ²) via golden-section
-  // search; the marginal over u_i integrates with 10-point Hermite-Gauss.
-  // Matches metafor::rma.glmm(model="UM.FS", method="ML") to within
-  // Hermite quadrature precision (~1e-3 in θ for typical clinical data).
+  // search; the marginal over u_i integrates with a FIXED 10-point
+  // Hermite-Gauss rule (u = τ·√2·node; see the √2 change-of-variable).
+  //
+  // Accuracy vs metafor::rma.glmm(model="UM.FS", method="ML"): exact at τ²≈0
+  // (θ, se to ~1e-6), but the fixed (non-adaptive) 10-point rule degrades as
+  // heterogeneity grows — metafor uses ADAPTIVE Gauss-Hermite. On τ²>0 data θ
+  // agrees to ~1e-2 while se and τ² can differ 15–40% (τ² e.g. 0.368 vs
+  // metafor 0.313 at τ²≈0.3; the gap widens for larger τ²). The √2 scale is
+  // nonetheless correct — without it τ² is ~2× metafor (regression-guarded in
+  // tests/test_rare_events_glmm.py::test_umfs_sqrt2_scale_vs_metafor). For
+  // publication-grade UM.FS estimates at high heterogeneity, use metafor.
 
   function _logL_study_uncond(eT, nT, eC, nC, theta, tau, mu) {
     var llC = _logBin(eC, nC, mu);

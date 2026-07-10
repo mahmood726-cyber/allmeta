@@ -178,3 +178,33 @@ def test_profileMu_finds_reasonable_baseline():
         }}));
     """)
     assert 0.05 < out["implied_pc"] < 0.18
+
+
+def test_umfs_sqrt2_scale_vs_metafor():
+    """UM.FS τ²>0 regression guard for the √2 Gauss-Hermite change-of-variable.
+
+    Golden values captured from metafor::rma.glmm(measure="OR", model="UM.FS",
+    method="ML") on R 4.6.0 / metafor (2026-07-10), moderate-heterogeneity 2x2
+    fixture (10 studies, n1i=n2i=200). Fixed 10-point GH is NOT metafor-adaptive-
+    parity here, so this asserts the √2 SCALE, not tight parity: with √2, τ² is
+    ~1.17× metafor; WITHOUT it (the pre-fix bug) τ² is ~2.35× metafor. The guard
+    is that τ² lands nearer metafor than the doubled value — which the √2-less
+    engine fails.
+    """
+    ai = [10, 25, 6, 30, 14, 8, 22, 12, 18, 9]
+    ci = [14, 15, 15, 12, 20, 16, 10, 19, 11, 17]
+    META_THETA, META_TAU2 = -0.03186512, 0.31335754  # metafor UM.FS ML
+    rows = "[" + ",".join(
+        f"{{events_T:{a},n_T:200,events_C:{c},n_C:200}}" for a, c in zip(ai, ci)
+    ) + "]"
+    out = _run_node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const u = M.fitUnconditional({rows});
+        console.log(JSON.stringify({{theta: u.theta, tau2: u.tau2}}));
+    """)
+    # θ agrees to ~1e-2 (fixed-GH, not metafor-adaptive)
+    assert abs(out["theta"] - META_THETA) < 5e-2, out
+    # √2 scale: τ² nearer metafor than to 2×metafor (the √2-less bug gives ~2.35×)
+    assert abs(out["tau2"] - META_TAU2) < abs(out["tau2"] - 2 * META_TAU2), out
+    # and within a loose band of metafor (guards gross drift both ways)
+    assert 0.6 * META_TAU2 < out["tau2"] < 1.6 * META_TAU2, out
