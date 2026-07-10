@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Group-sequential trial-design boundaries: exact O'Brien-Fleming / Pocock / Lan-DeMets / Hwang-Shih-DeCani alpha-spending efficacy (and beta-spending futility) boundaries via recursive Gauss-Legendre integration, matching gsDesign.">
+  <meta name="color-scheme" content="light dark">
+  <title>Group-Sequential Design — spending-function boundaries</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; --grid:#e4e0d7; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; --grid:#2b3036; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 76ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.7rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.3rem 0 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    svg { width: 100%; height: auto; display: block; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+    .foot { color: var(--muted); font-size: 0.8rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; max-width: 92ch; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/gsdesign.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Group-Sequential Design</h1>
+    <p>Exact efficacy (and optional beta-spending futility) boundaries for a K-look group-sequential trial, from the canonical joint distribution of the sequential Z-statistics via recursive Gauss-Legendre integration (Armitage-McPherson-Rowe). Matches <code>gsDesign</code>. Unlike the meta-analysis monitoring tools (<a href="../tsa/">TSA</a>, <a href="../sequential-ma/">sequential-MA</a>), this is the exact boundary, not the closed-form approximation.</p>
+  </header>
+  <main>
+    <section class="panel" aria-label="Design inputs">
+      <h2>Design</h2>
+      <div class="row2">
+        <label><span class="lbl">One-sided α</span><input id="alpha" type="number" step="any" min="0.0001" max="0.2" value="0.025" aria-label="One-sided α"></label>
+        <label><span class="lbl">Looks (K)</span><input id="K" type="number" step="1" min="1" max="10" value="4" aria-label="Looks (K)"></label>
+      </div>
+      <label>
+        <span class="lbl">Spending function</span>
+        <select id="spend" aria-label="Spending function">
+          <option value="obf" selected>O'Brien-Fleming (Lan-DeMets)</option>
+          <option value="pocock">Pocock</option>
+          <option value="landemets">Lan-DeMets ρ (power)</option>
+          <option value="hsd">Hwang-Shih-DeCani γ</option>
+        </select>
+      </label>
+      <label id="paramWrap" hidden>
+        <span class="lbl" id="paramLbl">Parameter</span>
+        <input id="param" type="number" step="any" value="1" aria-label="Parameter">
+      </label>
+      <label>
+        <span class="lbl">Test</span>
+        <select id="sided" aria-label="Test">
+          <option value="1" selected>One-sided</option>
+          <option value="2">Two-sided</option>
+        </select>
+      </label>
+      <label>
+        <span class="lbl">Futility (β-spending)</span>
+        <select id="fut" aria-label="Futility (β-spending)">
+          <option value="none" selected>None</option>
+          <option value="obf">O'Brien-Fleming</option>
+          <option value="pocock">Pocock</option>
+        </select>
+      </label>
+      <label id="betaWrap" hidden>
+        <span class="lbl">Power target (1−β)</span>
+        <input id="power" type="number" step="any" min="0.5" max="0.99" value="0.9" aria-label="Power target (1−β)">
+      </label>
+      <button class="primary" id="run" type="button">Compute boundaries</button>
+      <p class="foot" style="margin-top:.6rem">Equally-spaced information fractions (i/K). Nominal p is the per-look two-sided/one-sided crossing p-value.</p>
+    </section>
+
+    <section class="panel" aria-label="Boundaries">
+      <h2>Boundaries</h2>
+      <table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th></tr></thead><tbody id="tb"></tbody></table>
+      <svg id="plot" viewBox="0 0 640 300" role="img" aria-label="Boundary plot"></svg>
+      <p class="foot" id="note"></p>
+    </section>
+  </main>
+  <footer>
+    <p><strong>Method.</strong> Sequential Z with independent increments (Cov(Z<sub>i</sub>,Z<sub>j</sub>)=√(t<sub>i</sub>/t<sub>j</sub>)); boundaries solved by the recursive-density method (Armitage, McPherson &amp; Rowe 1969) with 32-point Gauss-Legendre quadrature and bisection on each look's incremental spend. Spending: O'Brien-Fleming &amp; Pocock (Lan &amp; DeMets 1983), power (Lan-DeMets ρ), Hwang-Shih-DeCani γ (1990). Engine <code>shared/gsdesign.js</code>, verified vs <code>gsDesign::gsDesign</code> to ~1e-5. Fully offline. Ported from the author's AdaptSim.</p>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+      var $ = function (id) { return document.getElementById(id); };
+      function needsParam() { var s = $("spend").value; return s === "landemets" || s === "hsd"; }
+      function sync() {
+        $("paramWrap").hidden = !needsParam();
+        $("paramLbl").textContent = $("spend").value === "landemets" ? "ρ (power)" : "γ (HSD)";
+        $("betaWrap").hidden = $("fut").value === "none";
+      }
+      function run() {
+        var K = Math.max(1, Math.min(10, parseInt($("K").value, 10) || 1));
+        var frac = []; for (var i = 1; i <= K; i++) frac.push(i / K);
+        var opts = {
+          alpha: parseFloat($("alpha").value),
+          infoFracs: frac,
+          spend: $("spend").value,
+          param: parseFloat($("param").value),
+          twoSided: $("sided").value === "2",
+          futility: $("fut").value === "none" ? "none" : "betaspend",
+          futSpend: $("fut").value === "none" ? "obf" : $("fut").value,
+          beta: 1 - (parseFloat($("power").value) || 0.9)
+        };
+        var b = window.AlmGSDesign.boundaries(opts);
+        var tb = $("tb"); tb.textContent = "";
+        b.forEach(function (r) {
+          var tr = document.createElement("tr");
+          function td(v) { var c = document.createElement("td"); c.textContent = v; tr.appendChild(c); }
+          td("" + r.look); td(r.infoFrac.toFixed(3)); td(r.z_eff.toFixed(4));
+          td(r.nomP_eff.toPrecision(3)); td(r.cumAlpha.toFixed(5));
+          td(r.z_fut > -10 ? r.z_fut.toFixed(4) : "—");
+          tb.appendChild(tr);
+        });
+        draw(b, opts.twoSided);
+        $("note").textContent = "Final-look Z = " + b[b.length - 1].z_eff.toFixed(4) +
+          "; total α spent = " + b[b.length - 1].cumAlpha.toFixed(5) + ".";
+      }
+      function draw(b, twoSided) {
+        var svg = $("plot"); while (svg.firstChild) svg.removeChild(svg.firstChild);
+        var W = 640, H = 300, m = { l: 44, r: 14, t: 14, b: 34 };
+        var maxZ = 0; b.forEach(function (r) { maxZ = Math.max(maxZ, r.z_eff, r.z_fut > -10 ? Math.abs(r.z_fut) : 0); });
+        maxZ = Math.ceil(maxZ + 0.5);
+        var lo = twoSided ? -maxZ : 0;
+        function X(t) { return m.l + (W - m.l - m.r) * t; }
+        function Y(z) { return m.t + (H - m.t - m.b) * (1 - (z - lo) / (maxZ - lo)); }
+        function line(x1, y1, x2, y2, col, dash) {
+          var e = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          e.setAttribute("x1", x1); e.setAttribute("y1", y1); e.setAttribute("x2", x2); e.setAttribute("y2", y2);
+          e.setAttribute("stroke", col); e.setAttribute("stroke-width", "1.5"); if (dash) e.setAttribute("stroke-dasharray", dash);
+          svg.appendChild(e);
+        }
+        function dot(x, y, col) { var e = document.createElementNS("http://www.w3.org/2000/svg", "circle"); e.setAttribute("cx", x); e.setAttribute("cy", y); e.setAttribute("r", "3.5"); e.setAttribute("fill", col); svg.appendChild(e); }
+        function txt(x, y, s, anchor) { var e = document.createElementNS("http://www.w3.org/2000/svg", "text"); e.setAttribute("x", x); e.setAttribute("y", y); e.setAttribute("font-size", "11"); e.setAttribute("fill", "var(--muted)"); e.setAttribute("text-anchor", anchor || "middle"); e.textContent = s; svg.appendChild(e); }
+        // axes
+        line(m.l, Y(lo), W - m.r, Y(lo), "var(--grid)");
+        for (var g = Math.ceil(lo); g <= maxZ; g++) { line(m.l, Y(g), W - m.r, Y(g), "var(--grid)"); txt(m.l - 6, Y(g) + 3, "" + g, "end"); }
+        // efficacy + futility polylines
+        var px = null, pyE = null, pyF = null;
+        b.forEach(function (r) {
+          var x = X(r.infoFrac), yE = Y(r.z_eff);
+          if (px !== null) line(px, pyE, x, yE, "var(--accent)");
+          dot(x, yE, "var(--accent)");
+          if (twoSided) { var yEl = Y(-r.z_eff); if (px !== null) line(px, Y(-b[r.look - 2].z_eff), x, yEl, "var(--accent)"); dot(x, yEl, "var(--accent)"); }
+          if (r.z_fut > -10) { var yF = Y(r.z_fut); if (pyF !== null && px !== null) line(px, pyF, x, yF, "var(--warn)", "4 3"); dot(x, yF, "var(--warn)"); pyF = yF; }
+          txt(x, H - m.b + 16, r.infoFrac.toFixed(2));
+          px = x; pyE = yE;
+        });
+        txt((m.l + W - m.r) / 2, H - 4, "information fraction");
+      }
+      $("spend").addEventListener("change", sync);
+      $("fut").addEventListener("change", sync);
+      $("run").addEventListener("click", run);
+      sync(); run();
+    })();
+  </script>
+</body>
+</html>
