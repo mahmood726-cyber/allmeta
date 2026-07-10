@@ -229,7 +229,7 @@
       if (!(tau > 0)) { host.innerHTML = '<p class="hint">No survival summary (no horizon).</p>'; return; }
       var rows = r.arms.map(function (arm) {
         var km = E.kmFromIPD(arm.ipd);
-        var med = E.medianFromKM(km);
+        var med = E.medianFromKM(km, { interpolate: true });
         var rm = E.rmst(km, tau);
         return { label: arm.label || arm.arm_id, role: arm.role, median: med, rmst: rm };
       });

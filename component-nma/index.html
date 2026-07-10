@@ -170,13 +170,19 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
         const beta = matVec(cov, XtWy);
         return { beta, cov };
       }
-      let { beta } = wls(w);
+      let { beta, cov: covFE } = wls(w);
       const res = y.map((yi, i) => yi - X[i].reduce((s, x, j) => s + x * beta[j], 0));
       const Q = res.reduce((s, r, i) => s + w[i] * r * r, 0);
       const df = Math.max(1, rows.length - p);
       const sumW = w.reduce((a, b) => a + b, 0);
-      const sumW2 = w.reduce((a, b) => a + b * b, 0);
-      const tau2 = Math.max(0, (Q - df) / (sumW - sumW2 / sumW));
+      // Generalized DerSimonian–Laird moment denominator for multi-component WLS:
+      // denom = sumW − trace(cov · X'W²X); reduces to sumW − sumW²/sumW when p=1.
+      const XtW2 = Xt.map(r => r.map((x, j) => x * w[j] * w[j]));
+      const XtW2X = matMul(XtW2, X);
+      let tr = 0;
+      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr += covFE[i][j] * XtW2X[j][i];
+      const denom = sumW - tr;
+      const tau2 = denom <= 1e-12 ? 0 : Math.max(0, (Q - df) / denom);
       const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
       const res2 = wls(wRE);
       return { comps, beta: res2.beta, cov: res2.cov, tau2, Q, df };

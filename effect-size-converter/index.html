@@ -293,6 +293,11 @@
         push("RR",     est, se, "log-scale SE");
         push("ln(RR)", logRR, se);
         if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
+          const p1 = est * p0;
+          if (!(p1 > 0 && p1 < 1)) {
+            push("OR", NaN, NaN,
+              `implied p₁ = RR·p₀ = ${p1.toFixed(3)} outside (0,1) — OR/RD/SMD not defined`);
+          } else {
           const or = est * (1 - p0) / (1 - est * p0);
           // SE(logOR) via delta from SE(logRR):
           //   d(ln OR)/d(ln RR) = 1 / (1 - p0 * RR)
@@ -309,6 +314,7 @@
             push("OR", or, seLogOR, "via RR→OR given p₀; log-scale SE");
             push("RD", (est - 1) * p0, NaN, "point only");
             push("SMD (Cox via OR)", Math.log(or) * COX, seLogOR * COX, "Cox's constant");
+          }
           }
         }
       } else if (type === "RD") {
@@ -718,7 +724,8 @@
         var lo = parseFloat(document.getElementById('ev-lo').value);
         var hi = parseFloat(document.getElementById('ev-hi').value);
         var rare = document.getElementById('ev-rare').checked;
-        if (!isFinite(pt) || pt <= 0) { out.textContent = 'Enter a positive estimate.'; window.__almLastEValue = function () { return null; }; return; }
+        var ratio = meas !== 'SMD';
+        if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; window.__almLastEValue = function () { return null; }; return; }
         var r = window.AlmEValue.eValues(meas, pt, isFinite(lo) ? lo : null, isFinite(hi) ? hi : null, { rare: rare });
         var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
         out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + f(r.ci) + '</strong>' +

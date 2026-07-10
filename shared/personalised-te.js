@@ -12,7 +12,8 @@
  * Two layers of estimation:
  *
  *   1. Within each subgroup, pool the subgroup-specific effects across
- *      studies via inverse-variance (with DL τ²_subgroup).
+ *      studies via inverse-variance (with PM τ²_subgroup; PM/REML not DL
+ *      because subgroup k is small — DL is severely biased for k=1–3).
  *
  *   2. Across subgroups, treat each subgroup's pooled estimate ŷ_s as an
  *      observation of the true subgroup effect θ_s ~ N(μ, σ²_between).
@@ -71,6 +72,30 @@
     return Math.max(0, (Q - (k - 1)) / denom);
   }
 
+  // Resolve the R-verified ma-core module in either browser (global.AlmMaCore)
+  // or Node (require) scope; null if unreachable.
+  function _maCore() {
+    if (typeof global !== "undefined" && global && global.AlmMaCore) return global.AlmMaCore;
+    if (typeof window !== "undefined" && window.AlmMaCore) return window.AlmMaCore;
+    if (typeof require !== "undefined") { try { return require("./ma-core"); } catch (e) { /* ignore */ } }
+    return null;
+  }
+
+  // Paule-Mandel τ². House convention is REML/PM for small k: subgroup pools
+  // typically have k=1–3, where the DL estimator is severely biased. Reuses
+  // ma-core.tau2PM (validated vs metafor); falls back to DL only if ma-core is
+  // unreachable in scope.
+  function _tau2_PM(rows) {
+    if (rows.length < 2) return 0;
+    var mc = _maCore();
+    if (mc && typeof mc.tau2PM === "function") {
+      var yi = rows.map(function (r) { return r.yi; });
+      var vi = rows.map(function (r) { return r.vi; });
+      return mc.tau2PM(yi, vi);
+    }
+    return _tau2_DL(rows);
+  }
+
   function fit(rowsIn, opts) {
     opts = opts || {};
     var Z975 = 1.959963984540054;
@@ -89,12 +114,13 @@
       byGroup[g].push(rows[i]);
     }
 
-    // (1) Per-subgroup random-effects pool (DL τ² within each subgroup).
+    // (1) Per-subgroup random-effects pool (PM τ² within each subgroup;
+    //     PM/REML not DL because subgroup k is small — see _tau2_PM).
     var subgroupPools = Object.create(null);
     for (var s = 0; s < groupOrder.length; s++) {
       var g2 = groupOrder[s];
       var grp = byGroup[g2];
-      var tau2g = _tau2_DL(grp);
+      var tau2g = _tau2_PM(grp);
       var p = _ivPool(grp, tau2g);
       subgroupPools[g2] = {
         yi_pooled: p.mu, se_pooled: p.se, k: grp.length, tau2_within: tau2g,
@@ -107,7 +133,7 @@
       return { yi: subgroupPools[g3].yi_pooled,
                vi: subgroupPools[g3].se_pooled * subgroupPools[g3].se_pooled };
     });
-    var sigma2_between = _tau2_DL(sgRows);
+    var sigma2_between = _tau2_PM(sgRows);
     var overall = _ivPool(sgRows, sigma2_between);
 
     // (3) Empirical Bayes shrinkage per subgroup.
@@ -175,7 +201,7 @@
 
   var api = {
     fit: fit, predict: predict,
-    _ivPool: _ivPool, _tau2_DL: _tau2_DL,
+    _ivPool: _ivPool, _tau2_DL: _tau2_DL, _tau2_PM: _tau2_PM,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmPersonalisedTE = api;

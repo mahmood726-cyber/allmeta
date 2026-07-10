@@ -326,7 +326,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (k < 2) return null;
       const target = k - 1;
       const res0 = computeQ(studies, 0);
-      const tCrit = tQuantile975(k - 1);
+      const tCrit = window.AlmMaCore._qt(0.975, k - 1);
 
       // Paule-Mandel τ² via the audited single-source core (shared/ma-core.js).
       const tau2 = window.AlmMaCore.tau2PM(studies.map(s => s.est), studies.map(s => s.v));
@@ -350,7 +350,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       // at k=3 (see advanced-stats.md + heterogeneity app). Defined for k>=2.
       let piLo = NaN, piHi = NaN;
       if (k >= 2) {
-        const tPI = tQuantile975(k - 1);
+        const tPI = window.AlmMaCore._qt(0.975, k - 1);
         const sePI = Math.sqrt(seHKSJ * seHKSJ + tau2);
         piLo = fin.mu - tPI * sePI;
         piHi = fin.mu + tPI * sePI;

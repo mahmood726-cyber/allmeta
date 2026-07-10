@@ -6,11 +6,15 @@
  * among the permutation distribution. Exact (enumerate all k! permutations) for small
  * k; Monte-Carlo (fixed, deterministic permutations) otherwise.
  *
- * Matches metafor::permutest on a model fit with method="PM", test="knha": each
+ * Mirrors metafor::permutest on a model fit with method="PM", test="knha": each
  * permutation refits the PM meta-regression and recomputes the HKSJ t-statistic for the
  * slope; p = #{|t_perm| ≥ |t_obs|} / nperm (the observed/identity permutation included).
  *
- * Verified vs metafor::permutest(rma(method="PM", test="knha"), exact=TRUE).
+ * NOTE: as a CONDUCTOR this module floors the KNHA slope statistic's residual
+ * dispersion q at 1 (q = max(1, rss/(k-2)), per advanced-stats.md HKSJ-floor).
+ * metafor::permutest uses the RAW statistic, so exact bit-parity holds only when
+ * q_raw = rss/(k-2) >= 1 (no flooring active); for over-dispersed fits the floored
+ * and raw statistics agree, and they diverge only when q_raw < 1.
  * Reference: Higgins JPT, Thompson SG (2004), Stat Med 23:1663-1682.
  */
 (function (global) {

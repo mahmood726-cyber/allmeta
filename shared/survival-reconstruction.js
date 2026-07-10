@@ -779,7 +779,7 @@
     for (const a of arms) {
       const rec = result.arms.find(x => x.arm_id === a.arm_id);
       if (!rec || !a.median || a.median.value == null) continue;
-      const rm = medianFromKM(kmFromIPD(rec.ipd));
+      const rm = medianFromKM(kmFromIPD(rec.ipd), { interpolate: true });
       if (rm == null) { c3ok = false; c3detail.push({ arm: a.arm_id, recon: null, reg: a.median.value }); continue; }
       const ok = Math.abs(rm - a.median.value) / a.median.value <= 0.05;
       c3ok = c3ok && ok; c3detail.push({ arm: a.arm_id, recon: rm, reg: a.median.value });

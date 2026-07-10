@@ -15,8 +15,8 @@
  *                           δ_j ~ N(δ_obs, σ²_bias), so y_j = μ + δ_j + ε_j.
  *                           Reference: Welton, Cooper, Ades, Lu, Sutton 2009
  *                           (Stat Med); Schmitz, Adams, Walsh 2013 (Res Synth
- *                           Methods). Implemented via closed-form REML when
- *                           δ_obs and σ²_bias have non-informative priors.
+ *                           Methods). Implemented via DerSimonian-Laird /
+ *                           method-of-moments estimation.
  *
  * Inputs:
  *   { yi, vi, design }   where design ∈ "rct" | "obs"
@@ -128,7 +128,7 @@
   //   ε_j ~ N(0, v_j + τ²)   (within-design heterogeneity)
   //   δ_j ~ N(δ_obs, σ²_bias)  (between-obs-study bias variability)
   //
-  // Closed-form REML when δ_obs and σ²_bias have non-informative priors.
+  // Estimated by DerSimonian-Laird / method-of-moments throughout.
   // We estimate τ² from RCTs alone (the cleanest signal), δ_obs as the
   // mean obs-vs-RCT difference, and σ²_bias by method of moments on the
   // obs residuals after subtracting δ_obs.
@@ -167,7 +167,8 @@
       var denomB = sumW - sumW2 / sumW;
       biasVar = denomB > 1e-12 ? Math.max(0, (Qb - (obs.length - 1)) / denomB) : 0;
     }
-    // Pool RCTs at REML weights for the final μ (the bias term doesn't
+    // Pool RCTs at DerSimonian-Laird / method-of-moments weights for the
+    // final μ (the bias term doesn't
     // contribute to μ, only inflates the obs effective variance for the
     // shrinkage-weighted display).
     var mu = poolR.mu;

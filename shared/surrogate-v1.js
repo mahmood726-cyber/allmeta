@@ -22,6 +22,7 @@
   function mean(a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; }
   function varS(a) { var m = mean(a), n = a.length; return a.reduce(function (s, x) { return s + (x - m) * (x - m); }, 0) / (n - 1); }
   function cov(a, b) { var ma = mean(a), mb = mean(b), n = a.length, s = 0; for (var i = 0; i < n; i++) s += (a[i] - ma) * (b[i] - mb); return s / (n - 1); }
+  function _pearson(s, f) { var vs = varS(s), vf = varS(f); return (vs > 0 && vf > 0) ? cov(s, f) / Math.sqrt(vs * vf) : null; }
 
   // weighted OLS of f ~ 1 + s  (weights w); returns {a,b,cov,sigma2,wrss}
   function _wls(s, f, w) {
@@ -55,7 +56,7 @@
     var w = seF.map(function (e) { return 1 / (e * e); });
 
     var nv = _naiveR2(s, f, w);
-    var pearson = cov(s, f) / Math.sqrt(varS(s) * varS(f));
+    var pearson = _pearson(s, f);
 
     // heterogeneity of the FINAL effects (is there between-trial signal at all?)
     var sw = w.reduce(function (a, b) { return a + b; }, 0), fbarW = 0, i;
@@ -66,7 +67,7 @@
     // estimation-error-adjusted trial-level R² (strip within-trial variance)
     var varFobs = varS(f), withinF = mean(seF.map(function (e) { return e * e; }));
     var varFadj = varFobs - withinF;
-    var degenerate = (Q <= dfQ) || (varFadj <= 0.25 * varFobs);
+    var degenerate = (Q <= dfQ) || (varFadj <= 0.25 * varFobs) || (varS(s) <= 0);
     var r2adj = null, adjReason = null;
     if (degenerate) {
       adjReason = "after removing within-trial sampling variance, the between-trial variance of the TRUE final effect is ~0 — too little signal (or k too small) to estimate a stable adjusted R²; it would explode/clip at 1.0 and is not interpretable.";

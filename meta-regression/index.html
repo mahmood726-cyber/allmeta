@@ -537,12 +537,10 @@
         // Residual heterogeneity test: Q_E = sum w_i * r_i² with w from null
         // model (Cochrane Handbook §10.11.4 follow-up). df = k-2.
         if (parsed.studies.length >= 3) {
-          let qE = 0;
-          for (const s of parsed.studies) {
-            const w = 1 / s.v;
-            const r = s.est - f.b0 - f.b1 * s.x;
-            qE += w * r * r;
-          }
+          // Q_E uses the FE WLS fit (τ²=0), matching metafor QE. Using the RE
+          // (PM τ²>0) coefficients over-states residual heterogeneity.
+          const feFit = fit(parsed.studies, 0);
+          const qE = feFit ? feFit.rss : 0;
           const dfE = parsed.studies.length - 2;
           const pQE = 1 - chiSqCDF(qE, dfE);
           _lastQE = { qE, dfE, pQE };

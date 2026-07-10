@@ -22,8 +22,8 @@
  *   δ_IPD, δ_obs ~ estimable via method of moments on residuals
  *
  * Returns per-contrast μ̂_c (the RCT-anchored truth), the bias offsets,
- * and the bias-adjusted prediction interval (which is wider than the
- * naive NMA RE-CI because it accounts for δ uncertainty).
+ * and a bias-adjusted Wald CI (ci_lo/ci_hi) that propagates both the
+ * δ-offset estimation uncertainty and the between-study bias variance.
  *
  * Extends the older cross-design.js to the NETWORK case — same logic
  * but per-contrast rather than per-treatment-vs-control.
@@ -171,16 +171,28 @@
       //     Effective y after bias removal: y_i - δ_obs
       //     Similarly for IPD.
       var allYi = [], allVi = [];
+      var wIpdTotal = 0, wObsTotal = 0;
       for (var rr = 0; rr < rcts.length; rr++) {
         allYi.push(rcts[rr].yi); allVi.push(rcts[rr].vi + tau2Rct);
       }
-      for (var rr2 = 0; rr2 < ipds.length; rr2++) {
-        allYi.push(ipds[rr2].yi - deltaIpd);
-        allVi.push(ipds[rr2].vi + tau2Rct + sigma2Ipd);
+      // A single-study obs/ipd stream is just-identified: its residual is
+      // fully absorbed into δ, so it would collapse onto the anchor and then
+      // be re-pooled as spurious independent evidence — narrowing the CI
+      // below the anchor. Give any k==1 obs/ipd stream ZERO weight in the μ
+      // pool (mirrors cross-design.js excluding single-study non-RCT data).
+      if (ipds.length >= 2) {
+        for (var rr2 = 0; rr2 < ipds.length; rr2++) {
+          var vEffI = ipds[rr2].vi + tau2Rct + sigma2Ipd;
+          allYi.push(ipds[rr2].yi - deltaIpd); allVi.push(vEffI);
+          wIpdTotal += 1 / vEffI;
+        }
       }
-      for (var rr3 = 0; rr3 < obs.length; rr3++) {
-        allYi.push(obs[rr3].yi - deltaObs);
-        allVi.push(obs[rr3].vi + tau2Rct + sigma2Obs);
+      if (obs.length >= 2) {
+        for (var rr3 = 0; rr3 < obs.length; rr3++) {
+          var vEffO = obs[rr3].vi + tau2Rct + sigma2Obs;
+          allYi.push(obs[rr3].yi - deltaObs); allVi.push(vEffO);
+          wObsTotal += 1 / vEffO;
+        }
       }
       var swA = 0, swyA = 0;
       for (var ii = 0; ii < allYi.length; ii++) {
@@ -192,7 +204,17 @@
         muSyn = NaN; seSyn = NaN;
       } else {
         muSyn = swyA / swA;
-        seSyn = Math.sqrt(1 / swA);
+        // Propagate the shared δ-offset estimation variance ONCE per stream
+        // (δ is a single shared estimate, correlated across its stream):
+        //   Var(μ_syn) = 1/swA
+        //     + (w_ipd_total/swA)² · var(δ_ipd)
+        //     + (w_obs_total/swA)² · var(δ_obs),   var(δ_stream) ≈ 1/w_total
+        var varDeltaIpd = wIpdTotal > 0 ? 1 / wIpdTotal : 0;
+        var varDeltaObs = wObsTotal > 0 ? 1 / wObsTotal : 0;
+        var varSyn = 1 / swA
+          + (wIpdTotal / swA) * (wIpdTotal / swA) * varDeltaIpd
+          + (wObsTotal / swA) * (wObsTotal / swA) * varDeltaObs;
+        seSyn = Math.sqrt(varSyn);
       }
 
       results[cname] = {

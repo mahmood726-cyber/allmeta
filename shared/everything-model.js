@@ -90,6 +90,7 @@
     var mu = new Array(outcomes.length).fill(0);
     var gamma = new Array(times.length).fill(0);
     var delta = new Array(studies.length).fill(0);
+    var Vpost = new Array(studies.length).fill(0);
 
     // Seed μ with per-outcome inverse-variance pool ignoring everything else.
     for (var k = 0; k < outcomes.length; k++) {
@@ -118,11 +119,12 @@
           denom += 1 / r2.vi;
         }
         delta[s] = num / denom;
+        Vpost[s] = 1 / denom;
       }
       // M-step:
       //   (a) τ² = mean of δ² + posterior variance correction
       var sumD2 = 0;
-      for (var s2 = 0; s2 < studies.length; s2++) sumD2 += delta[s2] * delta[s2];
+      for (var s2 = 0; s2 < studies.length; s2++) sumD2 += delta[s2] * delta[s2] + Vpost[s2];
       tau2 = Math.max(1e-8, sumD2 / studies.length);
 
       //   (b) γ_t for t ≠ refTime: solve the per-time equations holding

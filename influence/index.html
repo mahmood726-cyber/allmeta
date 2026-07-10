@@ -231,15 +231,15 @@
         const diag = rows.map((r, i) => {
           // Hat value: w_i / sum(w)
           const hat = full.wRE[i] / full.swRE;
-          // Studentized residual
-          const resid = (r.te - full.mu) / Math.sqrt(r.se * r.se + full.tau2);
           // Leave-one-out pool
           const rest = rows.filter((_, j) => j !== i);
           const loo = pool(rest);
+          // Studentized (deleted) residual: deleted mean, deleted τ², SE of the mean
+          const resid = (r.te - loo.mu) / Math.sqrt(r.se * r.se + loo.tau2 + loo.seMu * loo.seMu);
           // DFFITS
           const dffits = (full.mu - loo.mu) / Math.sqrt(r.se * r.se + loo.tau2);
-          // Cook's D
-          const cooksD = hat * resid * resid / (1 - hat) ** 2;
+          // Cook's D (refit-based: (μ − μ_(−i))² / se_μ²)
+          const cooksD = (full.mu - loo.mu) ** 2 / (full.seMu * full.seMu);
           // Cov-ratio
           const covRatio = (loo.seMu / full.seMu) ** 2;
           return {
