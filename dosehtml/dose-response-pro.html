@@ -2121,7 +2121,7 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
   const result = solveGLSWithTau2Spline(X, y, V_blocks, tau2, p);
 
   const Q = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
-  const df = Math.max((nStudies - 1) * p, 0);
+  const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? 1 - chiSqCDF(Q, df) : NaN;
   const fitStats = computeModelFitStats(result, p, nPoints);
@@ -2191,7 +2191,7 @@ function fitLinearModel(points, tau2Override = null) {
   const result = solveGLSLinear(X, y, V_blocks, tau2);
 
   const Q = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
-  const df = Math.max((nStudies - 1) * p, 0);
+  const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? 1 - chiSqCDF(Q, df) : NaN;
   const fitStats = computeModelFitStats(result, p, nPoints);
@@ -2315,7 +2315,8 @@ function estimateTau2Linear(X, y, V_blocks) {
 
   const feResult = solveGLSLinear(X, y, V_blocks, 0);
   const Q = computeQStatLinear(y, X, feResult.beta, V_blocks, 0);
-  const df = (K - 1) * p;
+  const nPoints = y.length;
+  const df = Math.max(nPoints - p, 0);
 
   let sumTrV = 0;
   for (const block of V_blocks) {
@@ -2640,7 +2641,7 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
 
   // Compute Q and I²
   const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
-  const df = Math.max((nStudies - 1) * p, 0);
+  const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? 1 - chiSqCDF(Q, df) : NaN;
   const fitStats = computeModelFitStats(result, p, nPoints);
@@ -2805,7 +2806,7 @@ function solveGLS(points, tau2Override = null) {
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
   const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
-  const df = Math.max((nStudies - 1) * p, 0);
+  const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? 1 - chiSqCDF(Q, df) : NaN;
 
@@ -3274,7 +3275,10 @@ function estimateTau2DL(X, y, V_blocks) {
   // systematically wrong when REML didn't converge.
   // For univariate effects (p=1, n_block=1), fall back to the standard
   // Cochran/DL form `denom = ΣW − ΣW²/ΣW` with W_i = 1/v_i.
-  const df = Math.max((K - 1) * p, 0);
+  // Residual df of the one-stage FE-GLS fit is nPoints − p (coincides with
+  // (K−1)·p only when every study has exactly p points).
+  const nPoints = y.length;
+  const df = Math.max(nPoints - p, 0);
 
   let denominator = 0;
   // Univariate fast path (each block is 1×1).
@@ -7363,7 +7367,7 @@ function performSubgroupAnalysis(variable, modelType) {
 
   // Degrees of freedom
   const dfBetween = analyzableForBetween.length - 1;
-  const dfWithin = subgroupResults.reduce((sum, s) => sum + Math.max((s.nStudies - 1) * (s.parameterCount || 0), 0), 0);
+  const dfWithin = subgroupResults.reduce((sum, s) => sum + Math.max((s.nPoints || 0) - (s.parameterCount || 0), 0), 0);
 
   // P-values
   const pBetween = dfBetween > 0 ? 1 - chiSqCDF(overallQBetween, dfBetween) : NaN;
