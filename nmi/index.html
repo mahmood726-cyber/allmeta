@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Network Meta-Interpolation (Harari et al. 2023): effect-modifier adjustment in NMA from published subgroup analyses — interpolate every study's treatment effect to a common EM level, then run an anchored NMA that preserves the whole connected network.">
+  <meta name="color-scheme" content="light dark">
+  <title>Network Meta-Interpolation — effect-modifier-adjusted NMA from subgroups</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6;
+            --good:#2f7d55; --good-soft:#e4f1ea; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c;
+              --good:#79c69e; --good-soft:#1e3128; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 78ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(340px, 30rem) 1fr; align-items: start; }
+    @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.7rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--border);
+                   padding: 0.35rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-bottom: 0.5rem; }
+    th, td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    td.big { font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+    td code, .mono { font-variant-numeric: tabular-nums; }
+    .studies-wrap { overflow-x: auto; }
+    table.studies input { width: 100%; min-width: 3.6rem; padding: 0.25rem 0.35rem; font-size: 0.82rem; }
+    table.studies input.trt { min-width: 2.4rem; text-align: center; }
+    table.studies td { padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--border); }
+    table.studies th { font-size: 0.64rem; }
+    .rm { background: transparent; border: none; color: var(--warn); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.3rem; }
+    svg { width: 100%; height: auto; display: block; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    .note strong { color: var(--warn); }
+    .good { background: var(--good-soft); border-left: 3px solid var(--good); padding: 0.55rem 0.8rem;
+            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
+    #interp { font-size: 0.92rem; margin: 0.4rem 0 0.6rem; }
+    .pill { display:inline-block; font-size:0.72rem; padding:0.1rem 0.5rem; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-weight:600; }
+    .legend { display:flex; gap:1.2rem; font-size:0.78rem; color:var(--muted); margin:0.2rem 0 0.6rem; flex-wrap:wrap; }
+    .legend span { display:inline-flex; align-items:center; gap:0.35rem; }
+    .swatch { width:0.85rem; height:0.85rem; border-radius:2px; display:inline-block; }
+    .controls { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:0.6rem; }
+    .controls > * { margin-bottom:0; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; max-width: 100ch; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .err { color: var(--warn); font-weight: 600; font-size: 0.85rem; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/nma-multiarm-v1.js"></script>
+  <script src="../shared/nmi.js"></script>
+</head>
+<body>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
+  <header>
+    <h1>Network Meta-Interpolation</h1>
+    <p>When effect modifiers are <em>imbalanced</em> across a network, a plain anchored indirect comparison is biased. NMI (Harari et&nbsp;al. 2023) fixes this using only <strong>published subgroup analyses</strong>: fit each study's within-study effect-modifier &rarr; treatment-effect line, interpolate every study to a <strong>common EM level</strong>, then run an anchored NMA on the balanced contrasts. Unlike MAIC it keeps the whole connected network; unlike ML-NMR it needs no individual-patient data.</p>
+  </header>
+  <main>
+    <section class="col-left">
+      <div class="panel">
+        <h2>Studies &mdash; effect at two EM subgroup levels</h2>
+        <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.6rem">Each row: an anchored contrast (<em>T1&rarr;T2</em>) reported at a low and a high level of one effect modifier <em>x</em> (e.g. biomarker &minus; / +, or a standardised covariate). Effects are on the analysis scale (log&nbsp;OR/RR/HR or mean difference).</p>
+        <div class="studies-wrap">
+          <table class="studies">
+            <thead><tr>
+              <th>Study</th><th>T1</th><th>T2</th>
+              <th>x&#8321;</th><th>eff&#8321;</th><th>se&#8321;</th>
+              <th>x&#8322;</th><th>eff&#8322;</th><th>se&#8322;</th><th></th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <button type="button" id="add" class="ghost">+ Add study</button>
+        <button type="button" id="demo" class="ghost">Reset demo</button>
+      </div>
+      <div class="panel">
+        <h2>Target population &amp; model</h2>
+        <div class="grid3">
+          <label><span class="lbl">Target EM x&#42;</span><input id="xstar" type="number" step="any" value="0.5"><span class="hint">common level to evaluate the network at</span></label>
+          <label><span class="lbl">Reference</span><input id="ref" type="text" value="A"><span class="hint">anchor treatment</span></label>
+          <label><span class="lbl">Model</span>
+            <select id="model" aria-label="Model"><option value="fe">Fixed effect</option><option value="re">Random effects</option></select>
+          </label>
+        </div>
+        <div class="grid3">
+          <label><span class="lbl">Covariance</span>
+            <select id="cov" aria-label="Covariance"><option value="independent">Independent (exact)</option><option value="minnorm">Min-norm (reference)</option></select>
+            <span class="hint">how per-point SEs become the interpolated SE</span>
+          </label>
+          <label><span class="lbl">CI level</span>
+            <select id="alpha" aria-label="CI level"><option value="0.05">95%</option><option value="0.1">90%</option><option value="0.01">99%</option></select>
+          </label>
+          <label><span class="lbl">&nbsp;</span><button type="button" id="run" class="primary" style="width:100%">Run NMI</button></label>
+        </div>
+        <div class="note"><strong>Reduction:</strong> a single EM with two subgroup points (Independent covariance) makes each study's interpolation identical to ordinary subgroup meta-regression <code>rma(yi, vi, mods=~x)</code> evaluated at x&#42;; a network with no EM variation reduces to the plain anchored (Bucher) NMA. Both are pinned in <code>tests/test_nmi.py</code>.</div>
+        <p id="err" class="err"></p>
+      </div>
+    </section>
+    <section class="col-right">
+      <div class="panel">
+        <h2>Population-adjusted network estimates <span class="pill" id="atpill"></span></h2>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--accent)"></span>NMI (adjusted to x&#42;)</span>
+          <span><span class="swatch" style="background:var(--muted)"></span>Naive NMA (subgroup-pooled, unadjusted)</span>
+        </div>
+        <svg id="forest" viewBox="0 0 620 220" role="img" aria-label="Forest plot of population-adjusted versus naive network estimates"></svg>
+        <table>
+          <thead><tr><th>Contrast</th><th>NMI est [CI]</th><th>Naive est [CI]</th><th>&Delta;</th></tr></thead>
+          <tbody id="net"></tbody>
+        </table>
+        <p id="interp"></p>
+      </div>
+      <div class="panel">
+        <h2>Per-study interpolation to x&#42;</h2>
+        <table>
+          <thead><tr><th>Study</th><th>Contrast</th><th>slope (EM effect)</th><th>eff @ x&#42;</th><th>se @ x&#42;</th></tr></thead>
+          <tbody id="interprows"></tbody>
+        </table>
+        <p style="font-size:0.8rem;color:var(--muted);margin:0.3rem 0 0">The <em>slope</em> is the within-study change in treatment effect per unit of the modifier. A large spread of study populations combined with non-zero slopes is exactly the situation a plain NMA gets wrong and NMI corrects.</p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    NMI interpolates each study's effect-modifier &rarr; treatment-effect surface (OLS) to a common target x&#42;, reconstructs the interpolated SE, then runs an anchored NMA on the balanced contrasts. The final regression is delegated to the multi-arm-correct GLS engine <code>shared/nma-multiarm-v1.js</code> (verified vs <code>netmeta</code> to 1e&minus;6). The single-EM two-subgroup reduction matches <code>metafor::rma(~x)</code> and the no-EM-variation reduction matches the Bucher indirect estimate, both to &lt;1e&minus;9 (live-computed anchors in <code>tests/test_nmi.py</code>). The reference min-norm covariance is a heuristic and does <em>not</em> reproduce the exact independent-subgroup SE &mdash; use it only for reference reproduction. Reference: Harari&nbsp;O, Soltanifar&nbsp;M, Cappelleri&nbsp;JC, et&nbsp;al. Network meta-interpolation: effect modification adjustment in network meta-analysis using subgroup analyses. <em>Res Synth Methods</em>. 2023;14(2):211&ndash;233. doi:10.1002/jrsm.1608. Computed client-side by the audited <code>shared/nmi.js</code>. Not a substitute for individual-patient-data methods when IPD is available.
+  </footer>
+  <script>
+    // B trials enrolled biomarker-high populations (precise at x=1); C trials
+    // biomarker-low (precise at x=0). A naive network is badly EM-imbalanced;
+    // interpolating every study to x*=0.5 corrects it (B→C flips sign).
+    var DEMO = [
+      { s: "TRIAL-1", t1: "A", t2: "B", xa: 0, ea: 0.30, sa: 0.44, xb: 1, eb: 1.30, sb: 0.22 },
+      { s: "TRIAL-2", t1: "A", t2: "B", xa: 0, ea: 0.42, sa: 0.46, xb: 1, eb: 1.24, sb: 0.24 },
+      { s: "TRIAL-3", t1: "A", t2: "C", xa: 0, ea: 0.55, sa: 0.22, xb: 1, eb: 2.05, sb: 0.44 },
+      { s: "TRIAL-4", t1: "A", t2: "C", xa: 0, ea: 0.48, sa: 0.24, xb: 1, eb: 2.12, sb: 0.46 }
+    ];
+    var rows;
+
+    function cell(v, cls, aria, step) {
+      return '<td><input class="' + (cls || "") + '" aria-label="' + aria + '" value="' + v + '"' + (step ? ' type="number" step="any"' : '') + '></td>';
+    }
+    function renderRows(data) {
+      var tb = document.getElementById("rows");
+      tb.innerHTML = "";
+      data.forEach(function (r, i) {
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          cell(r.s, "", "Study label row " + (i + 1)) +
+          cell(r.t1, "trt", "Treatment 1 row " + (i + 1)) +
+          cell(r.t2, "trt", "Treatment 2 row " + (i + 1)) +
+          cell(r.xa, "", "EM level 1 row " + (i + 1), true) +
+          cell(r.ea, "", "Effect at level 1 row " + (i + 1), true) +
+          cell(r.sa, "", "SE at level 1 row " + (i + 1), true) +
+          cell(r.xb, "", "EM level 2 row " + (i + 1), true) +
+          cell(r.eb, "", "Effect at level 2 row " + (i + 1), true) +
+          cell(r.sb, "", "SE at level 2 row " + (i + 1), true) +
+          '<td><button type="button" class="rm" aria-label="Remove row ' + (i + 1) + '">&times;</button></td>';
+        tb.appendChild(tr);
+      });
+      tb.querySelectorAll(".rm").forEach(function (b, i) {
+        b.addEventListener("click", function () { readRows(); rows.splice(i, 1); renderRows(rows); });
+      });
+    }
+    function readRows() {
+      var out = [];
+      document.querySelectorAll("#rows tr").forEach(function (tr) {
+        var v = tr.querySelectorAll("input");
+        out.push({ s: v[0].value, t1: v[1].value.trim(), t2: v[2].value.trim(),
+          xa: +v[3].value, ea: +v[4].value, sa: +v[5].value,
+          xb: +v[6].value, eb: +v[7].value, sb: +v[8].value });
+      });
+      rows = out; return out;
+    }
+
+    function poolIV(e1, s1, e2, s2) {
+      var w1 = 1 / (s1 * s1), w2 = 1 / (s2 * s2), W = w1 + w2;
+      return { est: (w1 * e1 + w2 * e2) / W, se: Math.sqrt(1 / W) };
+    }
+    function fmt(x, d) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(d == null ? 3 : d); }
+
+    function run() {
+      var err = document.getElementById("err"); err.textContent = "";
+      var data = readRows();
+      if (data.length < 2) { err.textContent = "Add at least two studies forming a connected network."; return; }
+      var xstar = parseFloat(document.getElementById("xstar").value);
+      var ref = document.getElementById("ref").value.trim() || "A";
+      var model = document.getElementById("model").value;
+      var cov = document.getElementById("cov").value;
+      var alpha = parseFloat(document.getElementById("alpha").value);
+      if (!isFinite(xstar)) { err.textContent = "Target EM x* must be a number."; return; }
+
+      // Build NMI studies (single EM, two subgroup points) and naive studies.
+      var nmiStudies = [], naiveRows = [], bad = false;
+      data.forEach(function (r) {
+        if (!(r.sa > 0) || !(r.sb > 0) || !r.t1 || !r.t2) { bad = true; return; }
+        nmiStudies.push({ study: r.s, t1: r.t1, t2: r.t2,
+          X: [[r.xa], [r.xb]], TE: [r.ea, r.eb], se: [r.sa, r.sb] });
+        var p = poolIV(r.ea, r.sa, r.eb, r.sb);
+        naiveRows.push({ study: r.s, t1: r.t1, t2: r.t2, est: p.est, se: p.se });
+      });
+      if (bad) { err.textContent = "Each study needs valid treatments and positive SEs."; return; }
+
+      var fit = AlmNMI.fit(nmiStudies, [xstar], { ref: ref, model: model, cov: cov, alpha: alpha });
+      if (!fit.ok) { err.textContent = "NMI/NMA failed: " + fit.error; return; }
+      var naive = AlmNmaMultiarm.fit(naiveRows, { ref: fit.refTreat, model: model });
+
+      document.getElementById("atpill").textContent = "x∗ = " + xstar + "  ·  " + (model === "re" ? "random" : "fixed") + "  ·  " + (100 * (1 - alpha)).toFixed(0) + "% CI";
+      renderInterp(fit);
+      renderNetwork(fit, naive, alpha);
+    }
+
+    function renderInterp(fit) {
+      var tb = document.getElementById("interprows"); tb.innerHTML = "";
+      fit.interpolated.forEach(function (it, i) {
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<td>" + it.study + "</td><td class=mono>" + it.t1 + "→" + it.t2 + "</td>" +
+          "<td class=mono>" + (it.degenerate ? "— (no EM var.)" : fmt(it.slope)) + "</td>" +
+          "<td class=mono>" + fmt(it.est) + "</td><td class=mono>" + fmt(it.se) + "</td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    function contrastMap(fit) {
+      var m = {}; fit.contrasts.forEach(function (c) { m[c.from + "→" + c.to] = c; }); return m;
+    }
+    function naiveContrast(naive, from, to, z) {
+      function idx(t) { return t === naive.refTreat ? -1 : naive.nonref.indexOf(t); }
+      var ia = idx(from), ib = idx(to);
+      var da = ia < 0 ? 0 : naive.d[ia], db = ib < 0 ? 0 : naive.d[ib];
+      var va = ia < 0 ? 0 : naive.cov[ia][ia], vb = ib < 0 ? 0 : naive.cov[ib][ib];
+      var cab = (ia < 0 || ib < 0) ? 0 : naive.cov[ia][ib];
+      var est = db - da, se = Math.sqrt(Math.max(0, va + vb - 2 * cab));
+      return { est: est, se: se, lo: est - z * se, hi: est + z * se };
+    }
+
+    function renderNetwork(fit, naive, alpha) {
+      var z = AlmNMI._qnorm(1 - alpha / 2);
+      var tb = document.getElementById("net"); tb.innerHTML = "";
+      var plot = [];
+      fit.contrasts.forEach(function (c) {
+        var nv = naiveContrast(naive, c.from, c.to, z);
+        var label = c.from + "→" + c.to;
+        var d = c.est - nv.est;
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<td class=mono>" + label + "</td>" +
+          "<td class=mono>" + fmt(c.est) + " [" + fmt(c.lo) + ", " + fmt(c.hi) + "]</td>" +
+          "<td class=mono>" + fmt(nv.est) + " [" + fmt(nv.lo) + ", " + fmt(nv.hi) + "]</td>" +
+          "<td class=mono>" + (d >= 0 ? "+" : "") + fmt(d) + "</td>";
+        tb.appendChild(tr);
+        plot.push({ label: label, nmi: c, naive: nv });
+      });
+      drawForest(plot);
+      // interpretation: highlight the indirect contrast(s) that move the most
+      var moved = plot.slice().sort(function (a, b) { return Math.abs(b.nmi.est - b.naive.est) - Math.abs(a.nmi.est - a.naive.est); })[0];
+      var interp = document.getElementById("interp");
+      if (moved) {
+        var shift = moved.nmi.est - moved.naive.est;
+        interp.innerHTML = "Adjusting to the common population (x∗) shifts <strong>" + moved.label +
+          "</strong> by <strong>" + (shift >= 0 ? "+" : "") + fmt(shift) + "</strong> on the analysis scale versus the naive network estimate" +
+          (Math.abs(shift) > moved.naive.se ? " &mdash; larger than its own standard error, so effect-modifier imbalance was materially biasing the indirect comparison." : ".");
+      }
+    }
+
+    function drawForest(plot) {
+      var svg = document.getElementById("forest");
+      var W = 620, rowH = 30, top = 24, H = top + plot.length * rowH * 2 + 24;
+      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      var all = [];
+      plot.forEach(function (p) { all.push(p.nmi.lo, p.nmi.hi, p.naive.lo, p.naive.hi); });
+      var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+      if (lo === hi) { lo -= 1; hi += 1; }
+      var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+      var xL = 150, xR = W - 20;
+      function X(v) { return xL + (v - lo) / (hi - lo) * (xR - xL); }
+      var parts = [];
+      // zero line
+      if (lo < 0 && hi > 0) parts.push('<line x1="' + X(0) + '" y1="' + top + '" x2="' + X(0) + '" y2="' + (H - 24) + '" stroke="var(--border)" stroke-dasharray="3 3"/>');
+      // axis ticks
+      var ticks = 4;
+      for (var t = 0; t <= ticks; t++) {
+        var v = lo + (hi - lo) * t / ticks;
+        parts.push('<line x1="' + X(v) + '" y1="' + (H - 24) + '" x2="' + X(v) + '" y2="' + (H - 20) + '" stroke="var(--muted)"/>');
+        parts.push('<text x="' + X(v) + '" y="' + (H - 8) + '" font-size="10" fill="var(--muted)" text-anchor="middle">' + v.toFixed(2) + '</text>');
+      }
+      plot.forEach(function (p, i) {
+        var yBase = top + i * rowH * 2 + rowH * 0.5;
+        parts.push('<text x="8" y="' + (yBase + rowH * 0.5) + '" font-size="12" fill="var(--ink)" font-weight="600">' + p.label + '</text>');
+        // NMI row (accent)
+        parts.push(bar(X(p.nmi.lo), X(p.nmi.hi), X(p.nmi.est), yBase, 'var(--accent)'));
+        // naive row (muted)
+        parts.push(bar(X(p.naive.lo), X(p.naive.hi), X(p.naive.est), yBase + rowH, 'var(--muted)'));
+      });
+      svg.innerHTML = parts.join("");
+      function bar(x1, x2, xm, y, col) {
+        return '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" stroke="' + col + '" stroke-width="2"/>' +
+          '<line x1="' + x1 + '" y1="' + (y - 4) + '" x2="' + x1 + '" y2="' + (y + 4) + '" stroke="' + col + '" stroke-width="2"/>' +
+          '<line x1="' + x2 + '" y1="' + (y - 4) + '" x2="' + x2 + '" y2="' + (y + 4) + '" stroke="' + col + '" stroke-width="2"/>' +
+          '<circle cx="' + xm + '" cy="' + y + '" r="4" fill="' + col + '"/>';
+      }
+    }
+
+    document.getElementById("add").addEventListener("click", function () {
+      readRows(); rows.push({ s: "TRIAL-" + (rows.length + 1), t1: "A", t2: "B", xa: 0, ea: 0.4, sa: 0.3, xb: 1, eb: 1.2, sb: 0.28 }); renderRows(rows);
+    });
+    document.getElementById("demo").addEventListener("click", function () { rows = DEMO.map(function (r) { return Object.assign({}, r); }); renderRows(rows); run(); });
+    document.getElementById("run").addEventListener("click", run);
+
+    rows = DEMO.map(function (r) { return Object.assign({}, r); });
+    renderRows(rows);
+    run();
+  </script>
+</body>
+</html>
