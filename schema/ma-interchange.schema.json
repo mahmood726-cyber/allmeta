@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ma-workbench.org/schemas/ma-interchange-v1.json",
+  "title": "Meta-Analysis Interchange Format (MAIF) v1.0",
+  "description": "Common JSON schema for exchanging study-level data between meta-analysis tools. Each tool enriches the dataset additively — only 'studies' with 'yi' and 'sei' are required; all other fields are optional extensions. Adopted into allmeta from the author's methodssuite; allmeta emits/ingests it via shared/maif.js.",
+  "type": "object",
+  "required": ["version", "studies"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Review or analysis title" },
+        "effectType": { "type": "string", "enum": ["logOR", "logRR", "logHR", "SMD", "MD", "RD"], "description": "Effect measure" },
+        "outcomeLabel": { "type": "string" },
+        "createdBy": { "type": "string", "description": "Tool that created the file" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "author": { "type": "string" }
+      }
+    },
+    "studies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "yi", "sei"],
+        "properties": {
+          "id": { "type": "string", "description": "Study label (e.g., 'Smith 2020')" },
+          "yi": { "type": "number", "description": "Effect estimate (log-scale for ratio measures)" },
+          "sei": { "type": "number", "description": "Standard error of yi", "exclusiveMinimum": 0 },
+          "ni": { "type": "integer", "description": "Total sample size", "minimum": 1 },
+          "year": { "type": "integer" },
+
+          "moderators": {
+            "type": "object",
+            "description": "Named moderator values for meta-regression",
+            "additionalProperties": { "type": ["number", "string"] }
+          },
+
+          "rob": {
+            "type": "object",
+            "description": "Risk of bias assessment (from RoB Assessor)",
+            "properties": {
+              "framework": { "type": "string", "enum": ["rob2", "robins-i"] },
+              "overall": { "type": "string" },
+              "domains": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "judgment": { "type": "string" },
+                    "rationale": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+
+          "components": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Component labels for component NMA (e.g., ['CBT', 'Exercise'])"
+          },
+
+          "arm1": { "type": "string", "description": "Treatment arm 1 label" },
+          "arm2": { "type": "string", "description": "Treatment arm 2 label (comparator)" }
+        }
+      }
+    },
+
+    "results": {
+      "type": "object",
+      "description": "Analysis results (populated by analysis tools)",
+      "properties": {
+        "pooling": {
+          "type": "object",
+          "description": "Pooled estimates from Pooling Suite",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "theta": { "type": "number" },
+              "se": { "type": "number" },
+              "ciLo": { "type": "number" },
+              "ciHi": { "type": "number" },
+              "tau2": { "type": "number" },
+              "I2": { "type": "number" },
+              "piLo": { "type": "number" },
+              "piHi": { "type": "number" }
+            }
+          }
+        },
+        "pubBias": {
+          "type": "object",
+          "description": "Publication bias results from Pub Bias Suite",
+          "properties": {
+            "eggerP": { "type": "number" },
+            "beggP": { "type": "number" },
+            "trimFillK0": { "type": "integer" },
+            "trimFillTheta": { "type": "number" },
+            "petEstimate": { "type": "number" },
+            "peeseEstimate": { "type": "number" },
+            "verdict": { "type": "string", "enum": ["none", "possible", "likely"] }
+          }
+        },
+        "regression": {
+          "type": "object",
+          "description": "Meta-regression results",
+          "properties": {
+            "moderators": { "type": "array", "items": { "type": "string" } },
+            "coefficients": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "estimate": { "type": "number" },
+                  "se": { "type": "number" },
+                  "p": { "type": "number" }
+                }
+              }
+            },
+            "R2": { "type": "number" },
+            "tau2Res": { "type": "number" }
+          }
+        },
+        "bayesian": {
+          "type": "object",
+          "properties": {
+            "muPosteriorMean": { "type": "number" },
+            "muCrI": { "type": "array", "items": { "type": "number" } },
+            "tauPosteriorMean": { "type": "number" },
+            "pMuLessThan0": { "type": "number" }
+          }
+        }
+      }
+    },
+
+    "prisma": {
+      "type": "object",
+      "description": "PRISMA 2020 compliance (from PRISMA Checker)",
+      "properties": {
+        "complianceScore": { "type": "number" },
+        "itemsReported": { "type": "integer" },
+        "totalItems": { "type": "integer" }
+      }
+    }
+  }
+}
