@@ -256,7 +256,7 @@
     }
     function exportCSV() {
       if (!lastResult || !lastResult.exportable || !lastResult.arms) { toast("Nothing exportable — reconstruct a Tier A/B trial first."); return; }
-      function csv(v){v=String(v==null?'':v); if(/^[=+\-@\t\r]/.test(v))v="'"+v; return '"'+v.replace(/"/g,'""')+'"';}
+      function csv(v){v=String(v==null?'':v); if(/^[=+@\t\r]/.test(v))v="'"+v; return '"'+v.replace(/"/g,'""')+'"';}
       var lines = ["arm_id,label,time,status"];
       lastResult.arms.forEach(function (arm) {
         arm.ipd.forEach(function (r) { lines.push([csv(arm.arm_id), csv(arm.label), csv(r.time), csv(r.status)].join(",")); });

@@ -1204,7 +1204,7 @@ class HTAApp {
 
         const csvCell = (v) => {
             let s = String(v);
-            if (/^[=+@\t\r-]/.test(s)) s = "'" + s;
+            if (/^[=+@\t\r]/.test(s)) s = "'" + s;
             if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
             return s;
         };

@@ -20,7 +20,7 @@
   function _csvEscape(v) {
     let s = (v == null) ? '' : String(v);
     if (DANGEROUS.test(s)) s = "'" + s;
-    if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
   function _flatKVs(obj, prefix) {

@@ -547,7 +547,7 @@
       const svg = buildNetworkSvg(state, treatments, parsed.rows, null);
       downloadBlob(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}), "nma-"+slugify(state.title,"network")+".svg");
     }
-    function csvCell(v){ var s=String(v==null?"":v); if(/^[=+\-@\t\r]/.test(s)) s="'"+s; if(/[",\n\r]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
+    function csvCell(v){ var s=String(v==null?"":v); if(/^[=+@\t\r]/.test(s)) s="'"+s; if(/[",\n\r]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
     function onDownloadLeague() {
       const state = readState();
       const parsed = parseContrasts(state.data);

@@ -93,24 +93,32 @@
     var rawHeaders = matrix[0].map(function (h) { return h.trim(); });
 
     // Build headerMap: raw header string -> column descriptor (possibly fuzzy).
-    var headerMap = {};
-    for (var hi = 0; hi < rawHeaders.length; hi++) {
+    // Two passes so a fuzzy near-match can NEVER hijack a column that another
+    // header claims exactly (e.g. "sd" is Levenshtein 1 from "se" — without this
+    // it would overwrite the real "se" with the standard deviation). Pass 1 takes
+    // exact matches; pass 2 fuzzes only over columns not already claimed, and no
+    // two headers may map to the same column.
+    var headerMap = {}, claimed = {}, hi, ci;
+    for (hi = 0; hi < rawHeaders.length; hi++) {
+      var he = rawHeaders[hi];
+      for (ci = 0; ci < columns.length; ci++) {
+        if (he === columns[ci].name && !claimed[columns[ci].name]) { headerMap[he] = columns[ci]; claimed[columns[ci].name] = true; break; }
+      }
+    }
+    for (hi = 0; hi < rawHeaders.length; hi++) {
       var h = rawHeaders[hi];
+      if (headerMap[h]) continue;                     // already claimed exactly
       var bestCol = null, bestDist = Infinity;
-      for (var ci = 0; ci < columns.length; ci++) {
+      for (ci = 0; ci < columns.length; ci++) {
+        if (claimed[columns[ci].name]) continue;      // don't hijack a claimed column
         var d = _lev(h, columns[ci].name, 3);
         if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }
       }
-      if (bestCol && bestDist === 0) {
-        // Exact match.
-        headerMap[h] = bestCol;
-      } else if (bestCol && bestDist <= 2) {
-        // Fuzzy match — remap silently with a warning.
-        headerMap[h] = bestCol;
+      if (bestCol && bestDist <= 2) {
+        headerMap[h] = bestCol; claimed[bestCol.name] = true;
         warnings.push('Header "' + h + '" mapped to "' + bestCol.name + '" (Levenshtein ' + bestDist + ')');
       } else {
-        // Unknown header — pass through as a plain string column.
-        headerMap[h] = { name: h };
+        headerMap[h] = { name: h };                   // pass through as a plain column
       }
     }
 
