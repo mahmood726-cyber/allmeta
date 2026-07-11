@@ -53,41 +53,57 @@
     return (lo + hi) / 2;
   }
 
-  // REML: fixed-point iteration of the restricted-likelihood τ² update
-  //   τ²_{n+1} = [ Σ w²((y−μ)² − v) + 1/Σw ] / Σ w² ,  w = 1/(v+τ²).
-  function tau2REML(yi, vi) {
-    var k = yi.length; if (k < 2) return 0;
-    var t2 = tau2DL(yi, vi); // warm start
-    for (var it = 0; it < 200; it++) {
-      var sw = 0, sw2 = 0, swy = 0, i;
-      for (i = 0; i < k; i++) { var w = 1 / (vi[i] + t2); sw += w; sw2 += w * w; swy += w * yi[i]; }
-      var mu = swy / sw, num = 0;
-      for (i = 0; i < k; i++) { var w2 = 1 / (vi[i] + t2); num += w2 * w2 * ((yi[i] - mu) * (yi[i] - mu) - vi[i]); }
-      var next = num / sw2 + 1 / sw; // REML fixed point (Viechtbauer 2005)
-      if (next < 0) next = 0;
-      if (Math.abs(next - t2) < 1e-12) { t2 = next; break; }
-      t2 = next;
-    }
-    return t2;
+  // (Restricted) profile log-likelihood of τ² for the normal-normal RE model,
+  // up to an additive constant. restricted=true adds the −½ log Σw REML term.
+  //   ℓ(τ²) = −½[ Σ log(v+τ²) + Σ (y−μ̂)²/(v+τ²) ]  (− ½ log Σw if restricted)
+  function _tau2LogLik(yi, vi, t2, restricted) {
+    var k = yi.length, sw = 0, swy = 0, slog = 0, i;
+    for (i = 0; i < k; i++) { var w = 1 / (vi[i] + t2); sw += w; swy += w * yi[i]; slog += Math.log(vi[i] + t2); }
+    var mu = swy / sw, rss = 0;
+    for (i = 0; i < k; i++) { var w2 = 1 / (vi[i] + t2); rss += w2 * (yi[i] - mu) * (yi[i] - mu); }
+    var ll = -0.5 * (slog + rss);
+    if (restricted) ll -= 0.5 * Math.log(sw);
+    return ll;
   }
 
-  // ML: fixed-point like REML but without the restricted +1/Σw correction.
-  //   τ²_{n+1} = [ Σ w²((y−μ)² − v) ] / Σ w² ,  w = 1/(v+τ²).
-  function tau2ML(yi, vi) {
-    var k = yi.length; if (k < 2) return 0;
-    var t2 = tau2DL(yi, vi);
-    for (var it = 0; it < 300; it++) {
-      var sw = 0, sw2 = 0, swy = 0, i;
+  // (Restricted) maximum-likelihood τ² via the standard fixed-point update
+  //   τ²_{n+1} = [ Σ w²((y−μ)² − v) (+ 1/Σw if restricted) ] / Σ w² ,  w=1/(v+τ²).
+  // The bare iteration can boundary-trap (REML) or oscillate without converging
+  // (ML) on dominant-precise-outlier data, returning a τ² far from the true
+  // maximiser (→ a wildly over-narrow CI). We therefore keep the fast iteration
+  // but return the (restricted) profile-likelihood argmax among the iterate and
+  // robust fallbacks {PM, DL, 0}. On well-behaved data the iterate IS the max,
+  // so the fallback is never chosen and the metafor-verified value is returned
+  // unchanged (exact parity); only in the pathological cases does it escape to
+  // the profile-LL-better PM estimate.
+  function _tau2FixedPoint(yi, vi, restricted, iters) {
+    var k = yi.length, t2 = tau2DL(yi, vi), i;
+    for (var it = 0; it < iters; it++) {
+      var sw = 0, sw2 = 0, swy = 0;
       for (i = 0; i < k; i++) { var w = 1 / (vi[i] + t2); sw += w; sw2 += w * w; swy += w * yi[i]; }
       var mu = swy / sw, num = 0;
       for (i = 0; i < k; i++) { var w2 = 1 / (vi[i] + t2); num += w2 * w2 * ((yi[i] - mu) * (yi[i] - mu) - vi[i]); }
-      var next = num / sw2;
+      var next = num / sw2 + (restricted ? 1 / sw : 0);
       if (next < 0) next = 0;
       if (Math.abs(next - t2) < 1e-12) { t2 = next; break; }
       t2 = next;
     }
     return t2;
   }
+  function _tau2Guarded(yi, vi, restricted) {
+    if (yi.length < 2) return 0;
+    var fp = _tau2FixedPoint(yi, vi, restricted, restricted ? 200 : 300);
+    var best = fp, bestLL = _tau2LogLik(yi, vi, fp, restricted);
+    var cands = [tau2PM(yi, vi), tau2DL(yi, vi), 0];
+    for (var j = 0; j < cands.length; j++) {
+      var t = cands[j];
+      if (t >= 0 && isFinite(t)) { var l = _tau2LogLik(yi, vi, t, restricted); if (l > bestLL + 1e-9) { bestLL = l; best = t; } }
+    }
+    return best;
+  }
+
+  function tau2REML(yi, vi) { return _tau2Guarded(yi, vi, true); }
+  function tau2ML(yi, vi) { return _tau2Guarded(yi, vi, false); }
 
   // Hedges (a.k.a. variance-component / "HE"): unweighted moment estimator.
   //   τ² = Σ(y−ȳ)²/(k−1) − (1/k)Σv ,  ȳ = unweighted mean.
@@ -239,11 +255,13 @@
     if (global.AlmStats && typeof global.AlmStats.qt === "function") return global.AlmStats.qt(p, df);
     if (p <= 0) return -Infinity; if (p >= 1) return Infinity;
     if (Math.abs(p - 0.5) < 1e-15) return 0;
+    // t is symmetric about 0: mirror the lower tail so the bracket expands
+    // correctly (the old fixed [-4,0] bracket clamped any quantile below -4).
+    if (p < 0.5) return -_qt(1 - p, df);
     var lo = 0, hi = 4, guard = 0;
     while (_tcdf(hi, df) < p && guard++ < 200) hi *= 2;
-    var loB = (p < 0.5) ? -hi : 0, hiB = (p < 0.5) ? 0 : hi;
-    for (var i = 0; i < 200; i++) { var m = (loB + hiB) / 2; if (_tcdf(m, df) < p) loB = m; else hiB = m; }
-    return (loB + hiB) / 2;
+    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_tcdf(m, df) < p) lo = m; else hi = m; }
+    return (lo + hi) / 2;
   }
 
   var api = {

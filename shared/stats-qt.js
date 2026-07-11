@@ -128,13 +128,28 @@
       y = ((1 / (((df + 6) / (df * y) - 0.089 * d - 0.822) * (df + 2) * 3) + 0.5 / (df + 4)) * y - 1)
           * (df + 1) / (df + 2) + 1 / y;
     }
-    var t = Math.sqrt(df * y);
-    // One Newton step against pt for sub-1e-9 precision.
-    var fT = pt(t, df) - (p > 0.5 ? p : 1 - p);
-    var dfT = Math.exp(_logGamma((df + 1) / 2) - _logGamma(df / 2)
-                       - 0.5 * Math.log(df * Math.PI)
-                       - ((df + 1) / 2) * Math.log(1 + t * t / df));
-    if (dfT > 1e-30) t = t - fT / dfT;
+    var target = p > 0.5 ? p : 1 - p;    // upper-tail prob in (0.5, 1)
+    var t0 = Math.sqrt(df * y);
+    if (!(t0 > 0) || !isFinite(t0)) t0 = Math.abs(qnorm(target));
+    // Safeguarded Newton-bisection on the monotone pt(.,df). A bare Hill+single-
+    // Newton step overshoots catastrophically at small df / extreme tails (the
+    // step is unbounded when the density is tiny), so keep a bracket [lo,hi] and
+    // fall back to bisection whenever a Newton step would leave it. Always
+    // converges; standard cases still hit ~1e-13 in a few iterations.
+    var lo = 0, hi = t0 > 1 ? t0 : 1;
+    while (pt(hi, df) < target && hi < 1e15) hi *= 2;
+    var t = (t0 > lo && t0 < hi) ? t0 : 0.5 * (lo + hi);
+    for (var _i = 0; _i < 80; _i++) {
+      var f = pt(t, df) - target;
+      if (f > 0) hi = t; else lo = t;
+      var dens = Math.exp(_logGamma((df + 1) / 2) - _logGamma(df / 2)
+                          - 0.5 * Math.log(df * Math.PI)
+                          - ((df + 1) / 2) * Math.log(1 + t * t / df));
+      var tn = dens > 1e-300 ? t - f / dens : NaN;
+      if (!(tn > lo && tn < hi) || !isFinite(tn)) tn = 0.5 * (lo + hi);    // bisect
+      if (Math.abs(tn - t) <= 1e-13 * (Math.abs(t) + 1e-13)) { t = tn; break; }
+      t = tn;
+    }
     return p > 0.5 ? t : -t;
   }
 

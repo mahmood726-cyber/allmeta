@@ -20,11 +20,18 @@
 
   function _now() { try { return new Date().toISOString(); } catch (e) { return null; } }
 
+  // Secrets that must NEVER ride out in (or be overwritten by) an emailable
+  // project file: the TruthCert HMAC signing key (its whole point is to prove
+  // authorship — leaking it lets anyone forge receipts under your identity),
+  // and any stored API/LLM/auth token.
+  var SECRET = /(^truthcert-hmac-key$)|(-ai-key$)|(-api-key$)|(_token$)|(^.*apikey.*$)/i;
+
   function snapshot() {
     var entries = {};
     try {
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
+        if (SECRET.test(k)) continue;   // never export secrets
         entries[k] = localStorage.getItem(k);
       }
     } catch (e) {}
@@ -55,6 +62,7 @@
       if (opts.clear) localStorage.clear();
       for (var k in obj.entries) {
         if (Object.prototype.hasOwnProperty.call(obj.entries, k)) {
+          if (SECRET.test(k)) continue;   // never let a project file overwrite local secrets
           localStorage.setItem(k, obj.entries[k]); n++;
         }
       }
