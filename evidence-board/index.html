@@ -411,14 +411,14 @@
       function loadState() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) return { entries: SEED.slice() };
+          if (!raw) return { entries: SEED.map(e => ({ ...e })) };
           const parsed = JSON.parse(raw);
           // V11-E08 — guard against null / non-object payloads (JSON.parse('null')
           // is a valid value); accessing .entries on null throws TypeError.
-          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { entries: SEED.slice() };
-          return { entries: Array.isArray(parsed.entries) ? parsed.entries : SEED.slice() };
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { entries: SEED.map(e => ({ ...e })) };
+          return { entries: Array.isArray(parsed.entries) ? parsed.entries : SEED.map(e => ({ ...e })) };
         } catch (error) {
-          return { entries: SEED.slice() };
+          return { entries: SEED.map(e => ({ ...e })) };
         }
       }
 
@@ -579,7 +579,7 @@
       });
 
       document.getElementById("resetSeed").addEventListener("click", function () {
-        state.entries = SEED.slice();
+        state.entries = SEED.map(e => ({ ...e }));
         persistAndRender();
       });
 

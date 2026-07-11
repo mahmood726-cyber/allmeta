@@ -110,6 +110,7 @@
       var r = window.AlmDoseResponse.fit(studies, { method: method });
       head.innerHTML = "k = " + r.k + " studies · pooled slope = <strong>" + fmt(r.slope, 5) + "</strong> log-RR/unit (SE " + fmt(r.se, 5) + ")"
         + " · τ² = " + fmt(r.tau2, 5) + " · RR at +10 units = <strong>" + fmt(Math.exp(r.slope * 10), 3) + "</strong>";
+      var perStudyExport = [];
       body.innerHTML = studies.map(function (rows, i) {
         var type = (rows[0] && rows[0].type) || "cc";
         // Re-derive this study's slope with fit()'s own keep-predicate (has a reference
@@ -119,11 +120,12 @@
         var levels = rows.map(function (r2) { var v = (r2.se == null || isNaN(r2.se)) ? 0 : r2.se * r2.se; return { dose: +r2.dose, cases: +r2.cases, n: +r2.n, y: +r2.logrr || 0, v: v, ref: v === 0 }; });
         var ps = null;
         if (levels.some(function (l) { return l.ref; })) { var s = window.AlmDoseResponse._studySlope(levels, type); if (s && isFinite(s.beta) && s.varBeta > 0) ps = s; }
+        perStudyExport.push({ studyIndex: i + 1, type: type, slope: (ps && ps.beta != null) ? ps.beta : null, se: (ps && ps.varBeta != null) ? Math.sqrt(ps.varBeta) : null, dropped: !ps });
         return "<tr><td>" + (i + 1) + "</td><td>" + esc(type) + "</td><td>" + (ps && ps.beta != null ? fmt(ps.beta, 5) : "—") + "</td><td>" + (ps && ps.varBeta != null ? fmt(Math.sqrt(ps.varBeta), 5) : "—") + "</td></tr>";
       }).join("");
       document.getElementById("curve-host").innerHTML = curve(r.slope, r.se);
-      _last = { _schema: "dose-response-results-v1", k: r.k, method: method, slope: r.slope, se: r.se, tau2: r.tau2, ciLo: r.ciLo, ciHi: r.ciHi,
-        perStudy: r.perStudy.map(function (p) { return { slope: p.beta, se: Math.sqrt(p.varBeta) }; }) };
+      _last = { _schema: "dose-response-results-v2", k: r.k, method: method, slope: r.slope, se: r.se, tau2: r.tau2, ciLo: r.ciLo, ciHi: r.ciHi,
+        perStudy: perStudyExport };
     }
 
     function runSpline(studies, nk, head, body) {

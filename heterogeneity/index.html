@@ -451,7 +451,7 @@
       }
       // Axis labels
       parts.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Contribution to Q</text>");
-      parts.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Influence on pooled (SD units)</text>");
+      parts.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Influence on pooled result (squared standardized)</text>");
       // Points
       for (const p of points) {
         parts.push("<circle cx=\""+x(p.x)+"\" cy=\""+y(p.y)+"\" r=\"5\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
@@ -855,10 +855,7 @@
       capacity: 20,
     });
 
-    window.alm.tooltips({
-      root: document.body,
-      glossaryUrl: '../hub/shared/glossary.json',
-    });
+    window.alm.tooltips({ src: '../hub/shared/glossary.json' });
   })();
   </script>
   <script src="../shared/toast.js" defer></script>

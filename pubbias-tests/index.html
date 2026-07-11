@@ -656,7 +656,7 @@
         if (_axisState.x[1] !== null) xMax = _axisState.x[1];
       }
       if (_axisState && Array.isArray(_axisState.y)) {
-        if (_axisState.y[0] !== null) seMax = _axisState.y[1];
+        if (_axisState.y[1] !== null) seMax = _axisState.y[1];
       }
 
       var X = function (t) { return padL + (t - xMin) / (xMax - xMin) * plotW; };

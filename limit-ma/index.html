@@ -318,13 +318,13 @@
       // Apply axis overrides if set
       var xMin = null, xMax = null, yMin = null, yMax = null;
       if (_axisState) {
-        if (_axisState.x) {
-          if (_axisState.x.min !== null && _axisState.x.min !== undefined) xMin = _axisState.x.min;
-          if (_axisState.x.max !== null && _axisState.x.max !== undefined) xMax = _axisState.x.max;
+        if (Array.isArray(_axisState.x)) {
+          if (_axisState.x[0] != null) xMin = _axisState.x[0];
+          if (_axisState.x[1] != null) xMax = _axisState.x[1];
         }
-        if (_axisState.y) {
-          if (_axisState.y.min !== null && _axisState.y.min !== undefined) yMin = _axisState.y.min;
-          if (_axisState.y.max !== null && _axisState.y.max !== undefined) yMax = _axisState.y.max;
+        if (Array.isArray(_axisState.y)) {
+          if (_axisState.y[0] != null) yMin = _axisState.y[0];
+          if (_axisState.y[1] != null) yMax = _axisState.y[1];
         }
       }
 

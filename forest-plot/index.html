@@ -460,6 +460,15 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (!isFinite(lo) || !isFinite(hi) || lo === hi) { lo = -1; hi = 1; }
       const pad = (hi - lo) * 0.1;
       lo -= pad; hi += pad;
+      // User Effect-axis override (axis-controls min/max). Applied after the
+      // auto-domain + pad so an explicit min/max wins verbatim. Guarded so a
+      // partial/inverted override cannot flip the domain.
+      var _ax = window.__almAxis;
+      if (_ax && Array.isArray(_ax.x)) {
+        var _lo = isFinite(_ax.x[0]) ? _ax.x[0] : lo;
+        var _hi = isFinite(_ax.x[1]) ? _ax.x[1] : hi;
+        if (_lo < _hi) { lo = _lo; hi = _hi; }
+      }
 
       function x(v) { return LEFT + (v - lo) / (hi - lo) * PLOT_W; }
 
@@ -633,13 +642,14 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       // Returns the random-effects pool by default (matches the displayed
       // diamond); FE values are available via `_almForestState().fe`.
       window._almForestState = function () {
+        if (!re) return null; // k<2: no RE pool -> callers' if(!s) / (s && s.pool) guards fire the toast
         return {
           studies: parsed.studies,
           fe: fe,
           re: re,
           pool: { mu: re.mu, se: re.se, ci_lb: re.lo, ci_ub: re.hi,
                   tau2: re.tau2, I2: re.I2, k: parsed.studies.length },
-          opts: { method: "PM", test: "z", title: state.title || "" },
+          opts: { method: "PM", test: "knha", title: state.title || "" },
         };
       };
       renderStats(parsed.studies, fe, re);
@@ -1077,11 +1087,12 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       axes: [{ key: 'x', label: 'Effect axis', range: [null, null], log: false }],
       onChange: function (state) {
         window.__almAxis = state;
-        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
-        // the SVG X-axis domain. The buildSvg() function auto-computes its
-        // domain from study CIs; wiring __almAxis into buildSvg() requires
-        // threading lo/hi overrides through render() — deferred to a future
-        // cycle. The controls are functional UI but domain override is no-op.
+        // Re-render so the new Effect-axis min/max takes effect: buildSvg()
+        // reads window.__almAxis to override its auto-computed X domain.
+        // Dispatch input on f-data (the same trigger csvUpload/__almLoad use)
+        // since storing state alone would never repaint the plot.
+        var ta = document.getElementById('f-data');
+        if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
       },
     });
 
@@ -1136,7 +1147,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       // the modal can show |Δ| between R and JS for each field.
       AlmWebR.attachLiveButton({
         btn: "#btn-verify-live",
-        method: "REML", test: "z",
+        method: "PM", test: "knha",
         getJsResult: function () {
           var s = (typeof window._almForestState === "function") ? window._almForestState() : null;
           return s && s.pool ? {

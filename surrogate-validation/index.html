@@ -146,7 +146,7 @@
         + '<div class="stats">'
         + stat("Adjusted R²", r.r2_adj != null ? r.r2_adj.toFixed(2) : "refused")
         + stat("Naive R²", r.r2_naive != null ? r.r2_naive.toFixed(2) : "—")
-        + stat("Pearson r", r.pearson.toFixed(2))
+        + stat("Pearson r", r.pearson != null ? r.pearson.toFixed(2) : "—")
         + stat("I² (final)", (r.i2 * 100).toFixed(0) + "%")
         + stat("Slope", r.slope != null ? r.slope.toFixed(3) : "—")
         + stat("STE", r.ste != null ? r.ste.toFixed(2) : "—")

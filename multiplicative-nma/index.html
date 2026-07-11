@@ -147,7 +147,7 @@
       rows.forEach(function (r, i) {
         var cy = padT + i * rowH + rowH / 2;
         var xl = X(r.ciLo), xh = X(r.ciHi), xc = X(r.est);
-        s += '<text x="6" y="' + (cy + 3.5).toFixed(1) + '" font-size="11">' + r.label + '</text>';
+        s += '<text x="6" y="' + (cy + 3.5).toFixed(1) + '" font-size="11">' + esc(r.label) + '</text>';
         s += '<line x1="' + xl.toFixed(1) + '" y1="' + cy + '" x2="' + xh.toFixed(1) + '" y2="' + cy + '" stroke="var(--accent)" stroke-width="1.5"/>';
         s += '<rect x="' + (xc - 3).toFixed(1) + '" y="' + (cy - 3) + '" width="6" height="6" fill="var(--accent)"/>';
       });
@@ -160,6 +160,7 @@
       return s;
     }
 
+    function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
     function run() {
       var p = parse(document.getElementById("data").value);
       var out = document.getElementById("out");
@@ -188,10 +189,10 @@
       treatments.forEach(function (t) {
         var e = res.effects[t];
         if (t === res.reference) {
-          html += "<tr class='ref'><td>" + t + " <span class='hint' style='display:inline'>(reference)</span></td><td>—</td><td>—</td><td>—</td></tr>";
+          html += "<tr class='ref'><td>" + esc(t) + " <span class='hint' style='display:inline'>(reference)</span></td><td>—</td><td>—</td><td>—</td></tr>";
           return;
         }
-        html += "<tr><td>" + t + "</td><td><code>" + f(e.estimate) + "</code> (" + f(e.ciLo) + ", " + f(e.ciHi) + ")</td><td>" + e.se.toFixed(4) + "</td><td>" + e.seFE.toFixed(4) + "</td></tr>";
+        html += "<tr><td>" + esc(t) + "</td><td><code>" + f(e.estimate) + "</code> (" + f(e.ciLo) + ", " + f(e.ciHi) + ")</td><td>" + e.se.toFixed(4) + "</td><td>" + e.seFE.toFixed(4) + "</td></tr>";
         forestRows.push({ label: t + " vs " + res.reference, est: e.estimate, ciLo: e.ciLo, ciHi: e.ciHi });
       });
       out.innerHTML = html;

@@ -308,14 +308,14 @@
         const cx = padL + i * cellW + cellW / 2;
         const cy = padT + 30;
         __svgParts.push(`<text x="${cx}" y="${padT}" text-anchor="middle" font-size="11" fill="currentColor">${d.toUpperCase()}</text>`);
-        __svgParts.push(`<circle cx="${cx}" cy="${cy}" r="18" fill="${colors[v[d]]}" opacity="0.85"/>`);
+        __svgParts.push(`<circle cx="${cx}" cy="${cy}" r="18" style="fill:${colors[v[d]]}" opacity="0.85"/>`);
         const sym = { low: "+", some: "−", high: "×", ni: "?" }[v[d]];
         __svgParts.push(`<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="18" fill="white" font-weight="700">${sym}</text>`);
       });
       // legend
       let lx = padL; const ly = padT + cellH;
       for (const [k, label] of [["low", "Low"], ["some", "Some concerns"], ["high", "High"], ["ni", "Not judged"]]) {
-        __svgParts.push(`<circle cx="${lx + 8}" cy="${ly}" r="7" fill="${colors[k]}" opacity="0.85"/>`);
+        __svgParts.push(`<circle cx="${lx + 8}" cy="${ly}" r="7" style="fill:${colors[k]}" opacity="0.85"/>`);
         __svgParts.push(`<text x="${lx + 22}" y="${ly + 4}" font-size="11" fill="currentColor">${label}</text>`);
         lx += 115;
       }

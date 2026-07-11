@@ -192,7 +192,7 @@
     var SR_RECORDS_KEY = "sr-records-v1";
     var EXTRACT_KEY = "sr-extract-v1";
     var AI_KEY_LS = "extract-ai-key";
-    var toast = function (m) { try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
+    var toast = function (m) { try { if (window.Toast && Toast.show) return Toast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
     var $ = function (id) { return document.getElementById(id); };
 
     var records = [];     // [{id,title,abstract,authors,year,journal,doi,pmid}]
@@ -603,10 +603,17 @@
         var raw = localStorage.getItem(SCREEN_KEY);
         if (!raw) { toast("No Screen project found (screen-v1). Screen some records and mark includes first."); return; }
         var p = JSON.parse(raw);
+        var mode = p.mode || "dual";
         var recs = (p.records || []).filter(function (r) {
           if (r.dup) return false;
-          var d = r.resolved || (r.r1 && r.r1.d) || ""; var d2 = (r.r2 && r.r2.d) || "";
-          return d === "include" || (d && d === d2 && d === "include") || d2 === "include";
+          var eff;
+          if (mode === "single") { eff = (r.r1 && r.r1.d) || ""; }
+          else if (r.resolved) { eff = r.resolved; }
+          else {
+            var a = r.r1 && r.r1.d, b = r.r2 && r.r2.d;
+            eff = (a && b) ? (a === b ? a : "conflict") : (a || b || "");
+          }
+          return eff === "include";
         });
         if (!recs.length) { toast("No included records in the Screen project yet."); return; }
         setRecords(recs);

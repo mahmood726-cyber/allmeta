@@ -140,8 +140,8 @@
         var s = d.summary;
         if (s.provenance) pill(s.provenance + ' provenance change' + (s.provenance > 1 ? 's' : ''), 'prov');
         if (s.fields) pill(s.fields + ' field change' + (s.fields > 1 ? 's' : ''), 'changed');
-        if (s.studiesAdded) pill('+' + s.studiesAdded + ' study' + (s.studiesAdded > 1 ? 'ies' : ''), 'added');
-        if (s.studiesRemoved) pill('−' + s.studiesRemoved + ' study' + (s.studiesRemoved > 1 ? 'ies' : ''), 'removed');
+        if (s.studiesAdded) pill('+' + s.studiesAdded + (s.studiesAdded === 1 ? ' study' : ' studies'), 'added');
+        if (s.studiesRemoved) pill('−' + s.studiesRemoved + (s.studiesRemoved === 1 ? ' study' : ' studies'), 'removed');
         if (s.studiesChanged) pill(s.studiesChanged + ' study mutated', 'changed');
         if (s.maxRelPct > 0) pill('max Δ ' + (s.maxRelPct >= 1 ? s.maxRelPct.toFixed(1) : s.maxRelPct.toFixed(3)) + '%',
                                   s.maxRelPct > 5 ? 'removed' : 'changed');

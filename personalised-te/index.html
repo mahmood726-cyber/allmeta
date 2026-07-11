@@ -107,11 +107,12 @@ S2, biomarker+, -0.70, 0.028</textarea>
       return rows;
     }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
     function run() {
       var rows = parse(document.getElementById("src").value);
-      if (rows.length < 2) { document.getElementById("overall").innerHTML = '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 rows.</div>'; return; }
+      if (rows.length < 2) { document.getElementById("overall").innerHTML = '<div class="card" style="grid-column:1/-1;color:var(--warn)">Need ≥ 2 rows.</div>'; return; }
       var r = AlmPersonalisedTE.fit(rows);
-      if (!r.ok) { document.getElementById("overall").innerHTML = '<div class="card" style="grid-column:1/-1;color:var(--bad)">' + r.error + '</div>'; return; }
+      if (!r.ok) { document.getElementById("overall").innerHTML = '<div class="card" style="grid-column:1/-1;color:var(--warn)">' + r.error + '</div>'; return; }
       document.getElementById("overall").innerHTML =
         '<div class="card"><span class="k">μ̂ overall</span><span class="v">' + fmt(r.overall.mu, 4) + '</span></div>' +
         '<div class="card"><span class="k">SE</span><span class="v">' + fmt(r.overall.se, 4) + '</span></div>' +
@@ -122,7 +123,7 @@ S2, biomarker+, -0.70, 0.028</textarea>
       for (var name in r.subgroups) {
         var s = r.subgroups[name];
         var bar = Math.round(s.shrinkage_weight * 100) + "px";
-        html += "<tr><td><strong>" + name + "</strong></td>" +
+        html += "<tr><td><strong>" + esc(name) + "</strong></td>" +
           "<td>" + fmt(s.yi_pooled, 4) + " (SE " + fmt(s.se_pooled, 3) + ")</td>" +
           "<td><strong>" + fmt(s.theta_shrunk, 4) + "</strong> (SE " + fmt(s.se_shrunk, 3) + ")</td>" +
           "<td>" + fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) + "</td>" +
@@ -133,7 +134,7 @@ S2, biomarker+, -0.70, 0.028</textarea>
       var predLabel = (document.getElementById("f-predict").value || "").trim();
       var p = AlmPersonalisedTE.predict(r, predLabel);
       document.getElementById("pred").innerHTML =
-        "For patient subgroup <code>" + predLabel + "</code>: " +
+        "For patient subgroup <code>" + esc(predLabel) + "</code>: " +
         "<strong>" + fmt(p.estimate, 4) + "</strong> (95% CI " + fmt(p.ci_lo, 3) + ", " + fmt(p.ci_hi, 3) + ") — basis: <em>" + p.basis + "</em>" +
         (p.shrinkage_weight ? " (shrinkage weight " + fmt(p.shrinkage_weight, 2) + ")" : "");
       window.__almLastPersonalised = function () { return { fit: r, prediction: p }; };

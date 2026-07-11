@@ -178,7 +178,7 @@
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 2) {
         document.querySelector("#series tbody").innerHTML =
-          '<tr><td colspan="7" style="color:var(--bad)">Need ≥ 2 studies.</td></tr>';
+          '<tr><td colspan="7" style="color:var(--warn)">Need ≥ 2 studies.</td></tr>';
         return;
       }
       var snapInput = (document.getElementById("f-snaps").value || "").trim();
@@ -190,7 +190,7 @@
       }
       if (!snaps.length) {
         document.querySelector("#series tbody").innerHTML =
-          '<tr><td colspan="7" style="color:var(--bad)">No snapshot dates derivable from data.</td></tr>';
+          '<tr><td colspan="7" style="color:var(--warn)">No snapshot dates derivable from data.</td></tr>';
         return;
       }
       var series = AlmLivingRoB.poolOverTime(rows, snaps);

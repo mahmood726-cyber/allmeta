@@ -760,7 +760,7 @@
     });
     document.getElementById("btn-export-csv").addEventListener("click", () => {
       const head = "type,estimate,ci_lower,ci_upper,p_value,standard_error,confidence,source_text\n";
-      const q = s => { if (s == null) return ""; const x = String(s); return /[,"\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
+      const q = s => { if (s == null) return ""; let x = String(s); if (/^[=+@\t\r]/.test(x)) x = "'" + x; return /[,"\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
       const body = (window.LAST_EXTRACTIONS || []).map(e => [
         e.effect_type, e.point_estimate,
         e.ci?.lower, e.ci?.upper,

@@ -243,7 +243,11 @@
         const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
         const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
         const large = (a2 - a1) > Math.PI ? 1 : 0;
-        __svgParts.push(`<path d="M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}" fill="none" stroke="${s.color}" stroke-width="${w}" opacity="0.9"/>`);
+        if (s.v === total) {
+          __svgParts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${w}" opacity="0.9"/>`);
+        } else {
+          __svgParts.push(`<path d="M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}" fill="none" stroke="${s.color}" stroke-width="${w}" opacity="0.9"/>`);
+        }
         acc += s.v;
       }
       // centre circle for donut look
@@ -256,13 +260,17 @@
       const host = document.getElementById("section-progress");
       const __hostParts = [""];
       for (const [sec, items] of ITEMS) {
-        const total = items.length;
-        const done = items.reduce((a, [n]) => a + ((STATE[n]?.status === "yes") ? 1 : 0), 0);
-        const frac = Math.round(100 * done / total);
+        const rel = items.filter(([n]) => (STATE[n]?.status || "") !== "na");
+        const total = rel.length;
+        const done = rel.reduce((a, [n]) => {
+          const s = STATE[n]?.status;
+          return a + (s === "yes" ? 1 : s === "partial" ? 0.5 : 0);
+        }, 0);
+        const frac = total === 0 ? 100 : Math.round(100 * done / total);
         __hostParts.push(`
           <div style="margin-bottom:0.6rem">
             <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-bottom:0.2rem">
-              <span>${sec}</span><span>${done}/${total}</span>
+              <span>${sec}</span><span>${Math.round(done)}/${total}</span>
             </div>
             <div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden">
               <div style="width:${frac}%; height:100%; background:var(--accent)"></div>

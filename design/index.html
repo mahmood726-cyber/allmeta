@@ -181,7 +181,7 @@
     var LS_KEY = "design-v1";          // local autosave of the form
     var SR_PROJECT_KEY = "sr-project-v1"; // shared envelope read by Search/Screen
     var AI_KEY_LS = "design-ai-key";
-    var toast = function (m) { try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
+    var toast = function (m) { try { if (window.Toast && Toast.show) return Toast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
     var $ = function (id) { return document.getElementById(id); };
 
     function clean(s, cap) { s = String(s == null ? "" : s).replace(/\s+/g, " ").trim(); cap = cap || 4000; return s.length > cap ? s.slice(0, cap) : s; }

@@ -67,7 +67,7 @@
       </label>
       <label>
         <span>Family</span>
-        <select id="f-family" aria-label="F family">
+        <select id="f-family">
           <option value="OBF">O'Brien-Fleming (default)</option>
           <option value="POCOCK">Pocock</option>
           <option value="LINEAR">Linear (reference)</option>
@@ -79,7 +79,7 @@
       </label>
       <label>
         <span>Include β-spending futility?</span>
-        <select id="f-futility" aria-label="F futility"><option value="0">No</option><option value="1">Yes (β=0.20)</option></select>
+        <select id="f-futility"><option value="0">No</option><option value="1">Yes (β=0.20)</option></select>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Compute boundaries</button>
     </section>
@@ -127,10 +127,11 @@
       var bounds = lk.map(function (l) { return l.alpha_boundary; });
       var zs = lk.map(function (l) { return Math.abs(l.z); });
       var maxY = Math.max(Math.max.apply(null, bounds), Math.max.apply(null, zs), 4);
+      var loY = -maxY;
       function X(t) { return padL + (W - padL - padR) * t; }
-      function Y(y) { return padT + (H - padT - padB) * (1 - y / maxY); }
+      function Y(y) { return padT + (H - padT - padB) * (1 - (y - loY) / (maxY - loY)); }
       svg.insertAdjacentHTML("beforeend",
-        '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (H - padB) + '" y2="' + (H - padB) + '" stroke="currentColor"/>' +
+        '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="currentColor"/>' +
         '<line x1="' + padL + '" x2="' + padL + '" y1="' + padT + '" y2="' + (H - padB) + '" stroke="currentColor"/>');
       // Upper boundary line + mirror (lower)
       var up = lk.map(function (l) { return X(l.t) + "," + Y(l.alpha_boundary); }).join(" ");

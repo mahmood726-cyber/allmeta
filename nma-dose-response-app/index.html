@@ -4988,17 +4988,14 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
     // PERMUTATION TEST
     // ============================================
     function runPermutationTest() {
-      const iterations = parseInt(document.getElementById('permutationIterations').value);
-      showNotification(`Running permutation test with ${iterations.toLocaleString()} iterations...`, 'info');
-
-      // Simulate permutation test (actual implementation would be in app.js)
-      setTimeout(() => {
-        const pValue = (nmaRandom() * 0.1).toFixed(4);
-        document.getElementById('permutationResult').innerHTML =
-          `Permutation p-value: <strong>${pValue}</strong> (${iterations.toLocaleString()} permutations)`;
-        showNotification('Permutation test complete', 'success');
-        announce('Permutation test completed with p-value ' + pValue);
-      }, 1000);
+      // Honest no-op: the exact small-k permutation test is not yet implemented
+      // in this build. Never fabricate a p-value from a PRNG (nmaRandom); showing
+      // a random number as a statistical result is worse than showing nothing.
+      const msg = "Permutation test is not yet implemented — no p-value is available.";
+      const el = document.getElementById('permutationResult');
+      if (el) el.innerHTML = msg;
+      showNotification(msg, 'info');
+      announce(msg);
     }
 
     // ============================================

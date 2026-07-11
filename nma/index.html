@@ -547,6 +547,7 @@
       const svg = buildNetworkSvg(state, treatments, parsed.rows, null);
       downloadBlob(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}), "nma-"+slugify(state.title,"network")+".svg");
     }
+    function csvCell(v){ var s=String(v==null?"":v); if(/^[=+\-@\t\r]/.test(s)) s="'"+s; if(/[",\n\r]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
     function onDownloadLeague() {
       const state = readState();
       const parsed = parseContrasts(state.data);
@@ -556,7 +557,7 @@
       const refTreat = document.getElementById("f-ref").value || treatments[0];
       const fit = fitNMA(parsed.rows, treatments, refTreat, state.model || "fe");
       if (fit.error) return alert(fit.error);
-      const header = ["vs"].concat(treatments).join(",");
+      const header = ["vs"].concat(treatments).map(csvCell).join(",");
       const lines = [header];
       for (const row of treatments) {
         const cells = [row];
@@ -564,7 +565,7 @@
           if (row === col) cells.push("-");
           else { const re = relEffect(fit, row, col); cells.push(fmt(re.est)+" ["+fmt(re.lo)+", "+fmt(re.hi)+"]"); }
         }
-        lines.push(cells.join(","));
+        lines.push(cells.map(csvCell).join(","));
       }
       downloadBlob(new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"}), "nma-league.csv");
     }

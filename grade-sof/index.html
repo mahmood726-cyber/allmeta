@@ -358,6 +358,7 @@
         '    <option value="HR"' + (o.effectType==="HR"?' selected':'') + '>HR</option>',
         '    <option value="MD"' + (o.effectType==="MD"?' selected':'') + '>MD</option>',
         '    <option value="SMD"' + (o.effectType==="SMD"?' selected':'') + '>SMD</option>',
+        '    <option value="RD"' + (o.effectType==="RD"?' selected':'') + '>RD</option>',
         '  </select></label>',
         '  <label><span class="lbl">Point estimate</span><input type="text" data-field="effect" value="' + escapeHtml(o.effect) + '" placeholder="0.85" aria-label="Point estimate"></label>',
         '  <label><span class="lbl">CI low</span><input type="text" data-field="ciLo" value="' + escapeHtml(o.ciLo) + '" placeholder="0.68" aria-label="CI low"></label>',
@@ -392,12 +393,12 @@
       const radio = (name, val, current, label) => {
         const checked = (current|0) === (val|0) ? " checked" : "";
         const groupName = "grade-" + name + "-" + idx;
-        return '<label><input type="radio" name="' + groupName + '" data-grade="' + name + '" data-idx="' + idx + '" value="' + val + '"' + checked + ' aria-label="&#x27; + label + &#x27;"> ' + label + '</label>';
+        return '<label><input type="radio" name="' + groupName + '" data-grade="' + name + '" data-idx="' + idx + '" value="' + val + '"' + checked + ' aria-label="' + label + '"> ' + label + '</label>';
       };
       const designRadio = (val, label) => {
         const checked = g.design === val ? " checked" : "";
         const groupName = "grade-design-" + idx;
-        return '<label><input type="radio" name="' + groupName + '" data-grade="design" data-idx="' + idx + '" value="' + val + '"' + checked + ' aria-label="&#x27; + label + &#x27;"> ' + label + '</label>';
+        return '<label><input type="radio" name="' + groupName + '" data-grade="design" data-idx="' + idx + '" value="' + val + '"' + checked + ' aria-label="' + label + '"> ' + label + '</label>';
       };
       const upgradeEnabled = g.design === "obs" && (g.rob|0)+(g.inc|0)+(g.ind|0)+(g.imp|0)+(g.pub|0) === 0;
       const computed = gradeCompute(g);

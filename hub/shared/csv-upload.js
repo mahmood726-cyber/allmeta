@@ -52,6 +52,9 @@
 
   function _coerce(value, type) {
     if (type === 'int') {
+      if (value === '') {
+        return { value: null, err: 'missing int' };
+      }
       var n = Number(value);
       if (!Number.isFinite(n) || !Number.isInteger(n)) {
         return { value: null, err: 'not int: ' + value };
@@ -59,6 +62,9 @@
       return { value: n };
     }
     if (type === 'float') {
+      if (value === '') {
+        return { value: null, err: 'missing float' };
+      }
       var f = Number(value);
       if (!Number.isFinite(f)) {
         return { value: null, err: 'not float: ' + value };

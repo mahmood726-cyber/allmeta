@@ -331,10 +331,17 @@
       const nullV = parseFloat(state.nullVal);
       const centre = state.center === "null" && isFinite(nullV) ? nullV : (fe ? fe.mu : 0);
 
+      // Axis-controls overrides (axis-controls onChange stores {x:[lo,hi], y:[lo,hi]}).
+      // x = effect axis [xLo, xHi]; y = Max SE (y upper bound) override.
+      const _ax = window.__almAxis || {};
+      const _axX = Array.isArray(_ax.x) ? _ax.x : [null, null];
+      const _axY = Array.isArray(_ax.y) ? _ax.y : [null, null];
+
       // SE axis: 0 at top, maxSE at bottom
       let maxSE = 0;
       for (const s of studies) if (s.se > maxSE) maxSE = s.se;
       maxSE = maxSE * 1.15 || 1;
+      if (_axY[1] != null && isFinite(_axY[1]) && _axY[1] > 0) maxSE = _axY[1];
 
       // Effect axis: encompass all study CIs and the funnel limits at maxSE (±Z975 *maxSE)
       let xLo = Infinity, xHi = -Infinity;
@@ -346,6 +353,8 @@
       if (funLo < xLo) xLo = funLo;
       if (funHi > xHi) xHi = funHi;
       if (isFinite(nullV)) { if (nullV < xLo) xLo = nullV; if (nullV > xHi) xHi = nullV; }
+      if (_axX[0] != null && isFinite(_axX[0])) xLo = _axX[0];
+      if (_axX[1] != null && isFinite(_axX[1])) xHi = _axX[1];
       if (!(isFinite(xLo) && isFinite(xHi)) || xLo === xHi) { xLo = -1; xHi = 1; }
       const xPad = (xHi - xLo) * 0.05; xLo -= xPad; xHi += xPad;
 
@@ -701,10 +710,9 @@
   //            reset-undo, tooltips
   //   skipped (present-good): chart-download
   // Adapter shims map to existing engine without changing math.
-  // Deferred: axis-controls renders but does NOT yet drive the SVG x/y axis
-  //   domain — buildSvg() auto-computes domain; wiring __almAxis into
-  //   buildSvg() requires threading overrides through render() — deferred
-  //   to a future cycle.
+  // axis-controls: onChange stores window.__almAxis and dispatches 'input' on
+  //   #f-data to re-run render(); buildSvg() reads __almAxis to override the
+  //   effect-axis (x=[lo,hi]) and Max SE (y[1]) before the auto-pad step.
   // =======================================================================
   (function () {
     if (!window.alm) return;  // fail-open: modules not loaded, skip silently
@@ -803,9 +811,9 @@
     // Axis controls: x = effect (with optional log toggle), y = SE (linear,
     // inverted). Per Task 18 audit, y-axis is SE NOT log-SE; expose a Max SE
     // override (y upper bound) only. The log toggle applies to the x axis.
-    // NOTE: axis-controls renders min/max inputs but does NOT yet drive the
-    // SVG domain. buildSvg() auto-computes domain from study CIs; threading
-    // __almAxis overrides into buildSvg() deferred to a future cycle.
+    // buildSvg() reads window.__almAxis: x=[xLo,xHi] effect-axis overrides
+    // (applied before the auto-pad step), y[1]=Max SE override. onChange
+    // dispatches an 'input' on #f-data to re-run render() so edits take effect.
     window.alm.axisControls({
       target: '#alm-axis-mount',
       axes: [
@@ -814,6 +822,8 @@
       ],
       onChange: function (state) {
         window.__almAxis = state;
+        var ta = document.getElementById('f-data');
+        if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
       },
     });
 

@@ -300,6 +300,7 @@
         parts.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
       }
       // Frame
+      parts.push("<clipPath id=\"plot\"><rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\"/></clipPath>");
       parts.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
       // Zero line
       parts.push("<line x1=\""+L+"\" y1=\""+y(0)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(0)+"\" stroke=\"#7a8294\" stroke-width=\"1\"/>");
@@ -317,8 +318,8 @@
       if (boundPts.length) {
         const pUp = boundPts.map(p => x(p.info)+","+y(p.zUp)).join(" ");
         const pLo = boundPts.map(p => x(p.info)+","+y(p.zLo)).join(" ");
-        parts.push("<polyline points=\""+pUp+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.5\"/>");
-        parts.push("<polyline points=\""+pLo+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.5\"/>");
+        parts.push("<polyline points=\""+pUp+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.5\" clip-path=\"url(#plot)\"/>");
+        parts.push("<polyline points=\""+pLo+"\" fill=\"none\" stroke=\"#b05a1c\" stroke-width=\"1.5\" clip-path=\"url(#plot)\"/>");
       }
 
       // RIS vertical line

@@ -464,10 +464,7 @@
         parts.push("<text x=\"" + (W / 2) + "\" y=\"34\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"700\" fill=\"#15181d\">" + escapeXml(s.title) + "</text>");
       }
 
-      // Section labels
-      parts.push(sectionLabel(40, 78, "Identification"));
-      parts.push(sectionLabel(40, 360, "Screening"));
-      parts.push(sectionLabel(40, 900, "Included"));
+      // Section labels are emitted later, derived from the dynamic box y-positions.
 
       // Left rail separators
       parts.push("<line x1=\"160\" y1=\"60\" x2=\"160\" y2=\"" + (H - 40) + "\" stroke=\"#d9d5cc\" stroke-width=\"1\"/>");
@@ -530,6 +527,11 @@
         "Studies included in review (n = " + s.studies + ")",
         "Reports of included studies (n = " + s.reports + ")"
       ], {fill: "#e8f0f7"}));
+
+      // Section labels — derived from dynamic box positions so they track the boxes.
+      parts.push(sectionLabel(40, idRowY - 12, "Identification"));
+      parts.push(sectionLabel(40, screenedY - 12, "Screening"));
+      parts.push(sectionLabel(40, includedY - 12, "Included"));
 
       parts.push("</svg>");
       return parts.join("");
@@ -640,6 +642,7 @@
         if (!el) continue;
         el.value = el.type === "number" ? "0" : "";
       }
+      var sl = document.getElementById('f-search-log'); if (sl) sl.value = '';
       render();
     }
 

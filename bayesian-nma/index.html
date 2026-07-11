@@ -292,7 +292,16 @@ A, B, -0.32, 0.08</textarea>
     // --- render ---
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
+    function clearOutputs() {
+      ["sucra", "sucra-plot", "network", "fit-summary"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = "";
+      });
+      _lastBNMA = null;
+    }
+
     function run() {
+      clearOutputs();
       const rows = parse(document.getElementById("src").value);
       const refTrt = document.getElementById("ref").value.trim() || "A";
       const direction = document.getElementById("direction").value;
