@@ -735,6 +735,54 @@ window.HTML_APPS_PROJECTS = [
     tags: ["multiverse", "spec-curve", "many-analyst", "robustness", "weighted-likelihood", "false-robustness"]
   },
   {
+    name: "Reverse-Bayes (Analysis of Credibility)",
+    folder: "allmeta/reverse-bayes",
+    path: "./reverse-bayes/index.html",
+    added: "2026-07-11",
+    collection: "existing",
+    mode: "file",
+    category: "Sensitivity",
+    summary: "Reverse-Bayes robustness for a pooled effect: the Matthews (2018) sceptical prior — how sharp a prior centred on no effect a sceptic must hold to overturn the result — and the Held (2019) intrinsic-credibility limit (|z| ≥ √2·z_α). Closed-form and offline; a companion to the E-value, spec-collapse and fragility tools.",
+    note: "Verified against the closed forms (sceptical p = α exactly at the intrinsic-credibility limit). Normal approximation on the analysis scale.",
+    tags: ["reverse-bayes", "analysis-of-credibility", "sceptical-prior", "intrinsic-credibility", "matthews", "held", "robustness"]
+  },
+  {
+    name: "Network meta-interpolation (NMI)",
+    folder: "allmeta/nmi",
+    path: "./nmi/index.html",
+    added: "2026-07-11",
+    collection: "existing",
+    mode: "file",
+    category: "Network MA",
+    summary: "Population-adjusted indirect comparison from published subgroup results (Harari 2023): BLUP-interpolate each study's effect to a common effect-modifier grid, reconstruct the between-point covariance, and run an anchored NMA meta-regression at the target-population EM mean — preserving the whole network without IPD.",
+    note: "Experimental. Degenerate single-EM case reduces to metafor::rma(~EM) to 1e-6; no-EM reduces to Bucher/netmeta. The exact 'independent' covariance mode is the default (the published min-norm SE is anticonservative).",
+    tags: ["nma", "network-meta-interpolation", "effect-modification", "population-adjustment", "subgroup", "harari"]
+  },
+  {
+    name: "Non-PH survival NMA",
+    folder: "allmeta/nma-survival-nph",
+    path: "./nma-survival-nph/index.html",
+    added: "2026-07-11",
+    collection: "existing",
+    mode: "file",
+    category: "Network MA",
+    summary: "Piecewise-exponential network meta-analysis for time-to-event outcomes when the hazard ratio is not constant: split follow-up into intervals, form per-interval log-HR contrasts from events + person-time, and fit an independent contrast NMA per interval — giving interval-specific relative effects plus an inverse-variance time-averaged pool.",
+    note: "Per-interval effects verified against netmeta::netmeta() to 1e-6. Independent-interval (Poisson) approximation; delegates to the audited shared/nma-multiarm-v1.js.",
+    tags: ["nma", "survival", "non-proportional-hazards", "piecewise-exponential", "time-to-event", "log-hr"]
+  },
+  {
+    name: "Group-sequential design",
+    folder: "allmeta/gsdesign",
+    path: "./gsdesign/index.html",
+    added: "2026-07-11",
+    collection: "existing",
+    mode: "file",
+    category: "Trial Sequential Analysis",
+    summary: "Exact group-sequential efficacy (and beta-spending futility) boundaries for a K-look trial via the recursive-density method (Armitage-McPherson-Rowe) with 32-point Gauss-Legendre quadrature — O'Brien-Fleming, Pocock, Lan-DeMets ρ and Hwang-Shih-DeCani γ spending, plus conditional power. The exact boundary, unlike the closed-form approximation in the TSA / sequential-MA monitoring tools.",
+    note: "Verified against gsDesign::gsDesign to ~1e-5 across all four spending families. Ported from AdaptSim.",
+    tags: ["group-sequential", "gsdesign", "alpha-spending", "obrien-fleming", "pocock", "boundaries", "conditional-power"]
+  },
+  {
     name: "ROBINS-I",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "allmeta/robins-i",
