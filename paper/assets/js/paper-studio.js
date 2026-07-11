@@ -440,7 +440,7 @@
     if (len === "detailed") search += " Reporting followed the PRISMA 2020 guidance, and the review methods were specified before data collection.";
     var synth = "Treatment effects were summarized using the " + c.measure + ", and a " + c.model + " meta-analysis was performed; heterogeneity was quantified with I² and τ². Risk of bias was assessed using " + c.rob + ", and certainty of evidence using GRADE.";
     if (len !== "concise") synth += " Between-study variance (τ²) was estimated using a random-effects (DerSimonian–Laird) model, and a prediction interval was calculated when at least three studies contributed.";
-    if (len === "detailed") synth += " Prespecified sensitivity analyses (such as leave-one-out and fixed-effect re-analysis) and small-study-effect checks (a funnel plot, with Egger's test where at least 10 studies contributed) may be reported. Analyses were performed in the RapidMeta browser engine (validated against R’s metafor). <em class=\"confirm-note no-clean-pdf\">(These statistical details follow common defaults — please confirm they match the settings you actually used, and delete any analysis you did not run.)</em>";
+    if (len === "detailed") synth += " Prespecified sensitivity analyses (such as leave-one-out and fixed-effect re-analysis) and small-study-effect checks (a funnel plot, with Egger's test where at least 10 studies contributed) may be reported. Analyses were performed in the RapidMeta browser engine (validated against R's metafor). <em class=\"confirm-note no-clean-pdf\">(These statistical details follow common defaults — please confirm they match the settings you actually used, and delete any analysis you did not run.)</em>";
     if (j === "jama") { // structured subheadings
       paras.push({ label: "Data Sources", text: search });
       paras.push({ label: "Study Selection", text: pico });
@@ -467,7 +467,7 @@
 
   // Build a plain-text Results narrative from real computed values. Omits any
   // sentence whose key values are missing so nothing is fabricated. Uses the
-  // actual PICO terms so the text is specific to THIS meta’s comparison.
+  // actual PICO terms so the text is specific to THIS meta's comparison.
   function buildResultsNarrative() {
     var a = PS.state.analysis, p = PS.state.pico;
     var k = a.kStudies, n = a.totalParticipants;
@@ -546,7 +546,7 @@
 
   // Seed student-authored boxes with auto-generated plain text on first open.
   // Only fills EMPTY fields — user edits are always preserved across re-renders.
-  // All content is specific to THIS meta’s PICO and computed values; never generic.
+  // All content is specific to THIS meta's PICO and computed values; never generic.
   function seedAutoText() {
     try {
       var a = PS.state.analysis, p = PS.state.pico;
@@ -605,9 +605,9 @@
                 " Risk of bias was assessed using " + rob + ", and certainty of evidence was graded using the GRADE approach (High, Moderate, Low, or Very Low).";
         }
         if (len === "detailed") {
-          p2 += " Where ten or more studies contributed, small-study effects were explored with a funnel plot and Egger’s regression test to assess potential publication bias." +
+          p2 += " Where ten or more studies contributed, small-study effects were explored with a funnel plot and Egger's regression test to assess potential publication bias." +
                 " Prespecified sensitivity analyses included a fixed-effect re-analysis and a leave-one-out analysis to assess the influence of individual studies on the pooled estimate." +
-                " All analyses were performed in the RapidMeta browser-based engine, independently validated against R’s metafor package and netmeta library to concordance ≤1×10⁻⁶.";
+                " All analyses were performed in the RapidMeta browser-based engine, independently validated against R's metafor package and netmeta library to concordance ≤1×10⁻⁶.";
         }
         setNested(PS.state, "studentText.methodsAutoPara2", p2);
       }
@@ -745,10 +745,10 @@
     html += styleControl();
     html += helper("The paragraphs below are pre-drafted from your analysis — every number and method detail comes from what the app actually computed. All yellow boxes are editable: click any to modify the text. Add your eligibility criteria and one honest limitation in the boxes labelled for you.");
     // Eligibility is STUDENT-stated, not asserted by the tool (it cannot know your actual design).
-    html += ‘<p><strong>Eligibility.</strong> ‘ + box("studentText.methodsEligibility", "Eligibility criteria",
+    html += '<p><strong>Eligibility.</strong> ' + box("studentText.methodsEligibility", "Eligibility criteria",
       "We included [study design] of " + auto("pico.intervention", "[intervention]") + " versus " + auto("pico.comparator", "[comparator]") + " in " + auto("pico.population", "[population]") + " reporting " + auto("pico.primaryOutcome", "[primary outcome]") + ". We excluded...", "1-2 sentences",
       "State the ACTUAL study designs you included and your main inclusion/exclusion rules — do not leave the default if it is not what you did. The tool cannot know this for you.",
-      "We included randomised controlled trials comparing the intervention with the comparator in this population and reporting the main outcome. We excluded studies that were not randomised or did not report the outcome of interest.") + ‘</p>’;
+      "We included randomised controlled trials comparing the intervention with the comparator in this population and reporting the main outcome. We excluded studies that were not randomised or did not report the outcome of interest.") + '</p>';
     html += example("We included randomised controlled trials of finerenone versus placebo in adults with CKD and type 2 diabetes that reported cardiovascular events; we excluded non-randomised studies and trials without that outcome.",
       "We included all the relevant studies about the drug.");
     // Auto-seeded paragraphs (PICO framing, search, synthesis). Rendered as editable boxes;
@@ -760,9 +760,9 @@
       var starter = par.text
         .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")
         .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-        .replace(/&quot;/g, ‘"’).replace(/&#39;/g, "’").trim();
-      html += ‘<p>’ + (par.label ? ‘<strong>’ + esc(par.label) + ‘.</strong> ‘ : ‘’) +
-        box(path, label, "Edit the pre-drafted text, or clear it and retype.", null, null, starter) + ‘</p>’;
+        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+      html += '<p>' + (par.label ? '<strong>' + esc(par.label) + '.</strong> ' : '') +
+        box(path, label, "Edit the pre-drafted text, or clear it and retype.", null, null, starter) + '</p>';
     });
     html += '<h4 class="methods-subsection">Search strategy</h4>';
     html += helper("Describe how and where you searched. The text below is pre-drafted from your analysis data — edit it freely. " +
@@ -858,8 +858,8 @@
         : (isFinite(kNum) && kNum < 3 ? '. A prediction interval was not estimated (k < 3).' : '.')) + '</p>';
     html += '<div class="figure-learning-row no-clean-pdf"><button type="button" data-learn="heterogeneity" aria-haspopup="dialog">What is heterogeneity?</button>' +
       (a.predictionInterval ? '<button type="button" data-learn="prediction_interval" aria-haspopup="dialog">What is a prediction interval?</button>' : '') + '</div>';
-    html += helper("Heterogeneity = how much the studies’ results differ beyond chance. I² estimates the share of that variation that is real difference rather than chance: a high I² means results vary a lot; a low or 0% I² is consistent with agreement, but with only a few studies it can simply mean there were too few to detect a difference — so do not state it as proof the studies agree. τ² is the actual spread of true effects between studies; look at it and the prediction interval too.");
-    html += box("studentText.heterogeneityInterpretation", "Interpret the heterogeneity", "The studies’ results varied a little / a lot, which suggests... Combining them still makes sense / is questionable because...", "~2-3 sentences",
+    html += helper("Heterogeneity = how much the studies' results differ beyond chance. I² estimates the share of that variation that is real difference rather than chance: a high I² means results vary a lot; a low or 0% I² is consistent with agreement, but with only a few studies it can simply mean there were too few to detect a difference — so do not state it as proof the studies agree. τ² is the actual spread of true effects between studies; look at it and the prediction interval too.");
+    html += box("studentText.heterogeneityInterpretation", "Interpret the heterogeneity", "The studies' results varied a little / a lot, which suggests... Combining them still makes sense / is questionable because...", "~2-3 sentences",
       "Is the I² low, moderate or high? If high, why might the studies differ (different patients, doses, follow-up)? Is combining them still reasonable? Remember a low I² with few studies is not proof of agreement.",
       "The results across the studies varied only a little, which suggests they are broadly consistent. With only a few studies this agreement should be read cautiously rather than as proof, but combining them still seems reasonable.");
     html += example("I² was low and τ² close to zero, so the three trials gave broadly consistent results; with only three studies this agreement should be read cautiously rather than as proof.",
@@ -959,7 +959,7 @@
     /* Disclosures — these stay in the Clean PDF (the submittable artifact) */
     html += '<h2>Disclosures</h2>';
     html += helper("These statements stay in the final PDF — journals and integrity policies require them. The first two are written for you; complete funding, competing interests and registration.");
-    html += '<p><strong>Use of automated tools.</strong> The structured numerical results, the Methods and Results summary text, the figures, the GRADE certainty summary, and the reference identifiers were generated automatically by the RapidMeta Evidence Paper Studio from the author’s own meta-analysis. The introduction, figure captions, all interpretation, the discussion and the conclusions are the author’s own work. Because the auto-generated sections come from a shared template, their wording may be similar to other papers produced with the same tool.</p>';
+    html += `<p><strong>Use of automated tools.</strong> The structured numerical results, the Methods and Results summary text, the figures, the GRADE certainty summary, and the reference identifiers were generated automatically by the RapidMeta Evidence Paper Studio from the author's own meta-analysis. The introduction, figure captions, all interpretation, the discussion and the conclusions are the author's own work. Because the auto-generated sections come from a shared template, their wording may be similar to other papers produced with the same tool.</p>`;
     html += '<p><strong>Data availability and provenance.</strong> The analysis was based on data the author extracted from the included trials. Sources searched: ' + esc(PS.state.search.databases || "(state databases)") + (PS.state.search.searchDate ? ', last searched ' + esc(PS.state.search.searchDate) : '') + '. Underlying trial data and the analysis project are available from the author on request.</p>';
     html += '<p><strong>Protocol and registration.</strong> ' + box("studentText.registration", "Protocol / registration", "This review was registered as... / This review was not registered.", "1 sentence", "State the registration (e.g. PROSPERO number) or say it was not registered.",
       "This review was not formally registered before it was carried out.") + '</p>';
@@ -974,7 +974,7 @@
 
     /* references */
     html += '<h2>References</h2>';
-    html += helper("List the studies you included. The button below builds them for you from your trials’ stored IDs — then check each one. Number them and keep one per line.");
+    html += helper("List the studies you included. The button below builds them for you from your trials' stored IDs — then check each one. Number them and keep one per line.");
     html += '<div class="refs-build-row no-clean-pdf">' +
       '<button type="button" data-action="build-refs">Build references from included studies</button>' +
       '<span class="refs-note">These references are a <strong>draft</strong> assembled from data stored in your analysis, and can be incomplete or wrong. ' +
@@ -1363,7 +1363,7 @@
       // If a figure finished loading and now needs a caption, say so plainly — so the
       // checklist/lock changing doesn't read as "I broke it" (round-3 review, Sam).
       var after = countRequiredCaptions();
-      if (after > captionsBefore) PS.toast("A figure finished loading, so its caption was added to your checklist — that’s expected, not an error.");
+      if (after > captionsBefore) PS.toast("A figure finished loading, so its caption was added to your checklist — that's expected, not an error.");
     })();
   };
   function countRequiredCaptions() {
