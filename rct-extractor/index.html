@@ -538,6 +538,13 @@
     }
 
     async function run() {
+      // Security guard FIRST: refuse a non-loopback API URL before the demo
+      // fast-path, the text check, or any fetch — and surface why, so an
+      // external URL can never silently reach a fetch (SSRF/exfiltration).
+      if (!validLoopback(apiUrlEl.value)) {
+        resBody.innerHTML = `<tr><td colspan="7" style="color:var(--err)">Refused: the API URL must be a loopback address (127.0.0.1 / localhost).</td></tr>`;
+        return;
+      }
       // Demo-mode fast path: skip network entirely, render fixture.
       if (DEMO_MODE) { runDemo(); return; }
 
