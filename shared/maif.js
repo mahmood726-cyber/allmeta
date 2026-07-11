@@ -51,6 +51,8 @@
   // Parse a MAIF document → allmeta study objects ({id, yi, sei, vi, ...}).
   function toStudies(maif) {
     if (!maif || !Array.isArray(maif.studies)) throw new Error("MAIF: missing studies[]");
+    var errs = validate(maif);
+    if (errs.length) throw new Error("MAIF: invalid document — " + errs.slice(0, 3).join("; "));
     return maif.studies.map(function (r) {
       var s = { id: r.id, yi: r.yi, sei: r.sei, vi: r.sei * r.sei };
       if (r.ni != null) s.ni = r.ni;
