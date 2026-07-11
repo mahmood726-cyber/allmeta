@@ -181,19 +181,19 @@
           body.innerHTML += `<div class="q">
             <span class="prompt"><strong>${q.id}</strong> — ${q.prompt}</span>
             <span class="opts">
-              ${[Y, N, U].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}" aria-label="${d.id} ${q.id}"><span>${v}</span></label>`).join("")}
+              ${[Y, N, U].map(v => `<label><input type="radio" name="${d.id}-${q.id}" value="${v}" aria-label="${d.id} ${q.id}: ${ {Y:'Yes',N:'No',U:'Unclear'}[v] }"><span>${v}</span></label>`).join("")}
             </span>
           </div>`;
         }
         // Manual judgement row
         body.innerHTML += `<div class="judge-row">
           <label>Risk of bias judgment
-            <select data-domain="${d.id}" data-judge="rob" aria-label="Input">
+            <select data-domain="${d.id}" data-judge="rob">
               <option value="">auto</option><option value="low">Low</option><option value="high">High</option><option value="unclear">Unclear</option>
             </select>
           </label>
           ${d.applicability ? `<label>Applicability concern
-            <select data-domain="${d.id}" data-judge="app" aria-label="Input">
+            <select data-domain="${d.id}" data-judge="app">
               <option value="">—</option><option value="low">Low</option><option value="high">High</option><option value="unclear">Unclear</option>
             </select>
           </label>` : `<div></div>`}
@@ -225,8 +225,9 @@
         robBadge.className = "verdict " + rob;
         if (d.applicability) {
           const appBadge = document.querySelector(`#dom-${d.id} [data-kind="app"]`);
-          appBadge.textContent = "App: " + app.charAt(0).toUpperCase() + app.slice(1);
-          appBadge.className = "verdict " + app;
+          const appLabel = app ? app.charAt(0).toUpperCase() + app.slice(1) : "—";
+          appBadge.textContent = "App: " + appLabel;
+          appBadge.className = "verdict " + (app || "unclear");
         }
       }
       renderSummary(results);

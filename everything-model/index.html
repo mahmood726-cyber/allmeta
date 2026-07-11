@@ -119,6 +119,7 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
       return rows;
     }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
     function run() {
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 2) { document.getElementById("meta").innerHTML = '<div class="card" style="color:var(--bad)">Need ≥ 2 rows.</div>'; return; }
@@ -138,20 +139,20 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
       var muHtml = "";
       for (var o in r.mu) {
         var m = r.mu[o];
-        muHtml += "<tr><td>" + o + "</td><td>" + fmt(m.estimate, 4) + "</td><td>" + fmt(m.se, 4) + "</td><td>" + fmt(m.ci_lo, 3) + ", " + fmt(m.ci_hi, 3) + "</td></tr>";
+        muHtml += "<tr><td>" + esc(o) + "</td><td>" + fmt(m.estimate, 4) + "</td><td>" + fmt(m.se, 4) + "</td><td>" + fmt(m.ci_lo, 3) + ", " + fmt(m.ci_hi, 3) + "</td></tr>";
       }
       document.querySelector("#mu tbody").innerHTML = muHtml;
 
       var gHtml = "";
       for (var t in r.gamma) {
         var g = r.gamma[t];
-        gHtml += "<tr><td>" + t + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + (g.is_reference ? "ref" : "") + "</td></tr>";
+        gHtml += "<tr><td>" + esc(t) + "</td><td>" + fmt(g.estimate, 4) + "</td><td>" + (g.is_reference ? "ref" : "") + "</td></tr>";
       }
       document.querySelector("#gamma tbody").innerHTML = gHtml;
 
       var dHtml = "";
       for (var s in r.delta) {
-        dHtml += "<tr><td>" + s + "</td><td>" + fmt(r.delta[s].estimate, 4) + "</td></tr>";
+        dHtml += "<tr><td>" + esc(s) + "</td><td>" + fmt(r.delta[s].estimate, 4) + "</td></tr>";
       }
       document.querySelector("#delta tbody").innerHTML = dHtml;
 

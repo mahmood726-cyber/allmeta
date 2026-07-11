@@ -103,11 +103,6 @@
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
       </label>
-      <label>
-        <span>Assumed proportion of studies unpublished</span>
-        <input id="p-unobs" type="number" step="0.05" min="0" max="0.9" value="0.20" aria-label="Range typically 0.1&amp;#8211;0.3 in the Copas literature.">
-        <span class="hint">Range typically 0.1&#8211;0.3 in the Copas literature.</span>
-      </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit sensitivity grid</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
@@ -490,7 +485,6 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      var pUnobs = parseFloat(document.getElementById('p-unobs').value) || 0.2;
       var warnEl = document.getElementById('k-warn');
       if (warnEl) {
         if (rows.length < 15 && rows.length >= 3) {
@@ -633,14 +627,12 @@
     function snapshot() {
       return {
         src: document.getElementById('src').value,
-        pUnobs: document.getElementById('p-unobs').value,
       };
     }
 
     function restore(snap) {
       if (!snap) return;
       if (snap.src    !== undefined) document.getElementById('src').value      = snap.src;
-      if (snap.pUnobs !== undefined) document.getElementById('p-unobs').value  = snap.pUnobs;
       run();
     }
 
@@ -729,7 +721,6 @@
     window.alm.urlState({ version: 1 });
     var restored = window.alm.urlState.read();
     if (restored && Object.keys(restored).length > 0) {
-      if (restored.pUnobs !== undefined) document.getElementById('p-unobs').value = restored.pUnobs;
       if (restored.src    !== undefined) document.getElementById('src').value     = restored.src;
       run();
     } else {

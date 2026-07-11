@@ -152,6 +152,7 @@
       const alpha = inputs.alpha, power = inputs.power, ratio = inputs.ratio;
       const za = qnorm(1 - alpha / 2);
       const zb = qnorm(power);
+      if (!Number.isFinite(za) || !Number.isFinite(zb)) return null;
       let nPerArm, totalN, eventsTarget;
       if (outcome === "binary") {
         const p0 = inputs.p0, rrr = inputs.rrr;

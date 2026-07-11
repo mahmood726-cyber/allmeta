@@ -193,7 +193,7 @@
       .replace(/<text[^>]*data-truthcert="1"[^>]*>[\s\S]*?<\/text>\s*/g, "");
     var json = _payload(res);
     var meta = '<metadata id="truthcert">' + _xmlEscape(JSON.stringify(json)) + '</metadata>';
-    var out = s.replace(/(<svg\b[^>]*>)/, "$1\n" + meta);
+    var out = s.replace(/(<svg\b[^>]*>)/, function (m) { return m + "\n" + meta; });
     // Handle any viewBox "minX minY w h" (chart-download.js pads to "-12 -12 …"),
     // not just "0 0 w h"; anchor the footer to the bottom-left of the viewBox.
     var vb = s.match(/viewBox="(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)"/);
@@ -203,7 +203,7 @@
     var caption = footerLine(res);
     var txt = '<text data-truthcert="1" x="' + (x0 + 6) + '" y="' + (y0 + h - 4) + '" font-size="9" '
       + 'fill="#888" font-family="monospace">' + _xmlEscape(caption) + "</text>";
-    out = out.replace(/(<\/svg>\s*)$/, txt + "\n$1");
+    out = out.replace(/(<\/svg>\s*)$/, function (m) { return txt + "\n" + m; });
     return out;
   }
 

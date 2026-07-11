@@ -1202,9 +1202,15 @@ class HTAApp {
             return;
         }
 
+        const csvCell = (v) => {
+            let s = String(v);
+            if (/^[=+@\t\r-]/.test(s)) s = "'" + s;
+            if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+            return s;
+        };
         let csv = 'Strategy,Total Costs,Total QALYs,Life Years\n';
         for (const [id, r] of Object.entries(this.results.strategies)) {
-            csv += `${r.label || id},${r.total_costs.toFixed(2)},${r.total_qalys.toFixed(4)},${r.life_years.toFixed(4)}\n`;
+            csv += `${csvCell(r.label || id)},${r.total_costs.toFixed(2)},${r.total_qalys.toFixed(4)},${r.life_years.toFixed(4)}\n`;
         }
 
         this.downloadFile(csv, 'hta-results.csv', 'text/csv');
@@ -1490,9 +1496,11 @@ Parameter Overrides: ${summary.parameterChanges}
         const a = document.createElement('a');
         a.href = url;
         a.download = `${this.project.metadata?.id || 'model'}.hta.zip`;
+        document.body.appendChild(a);
         a.click();
+        a.remove();
 
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 0);
         this.showToast('Package exported', 'success');
     }
 
@@ -1503,9 +1511,11 @@ Parameter Overrides: ${summary.parameterChanges}
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
+        a.remove();
 
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 0);
     }
 
     // ============ UI HELPERS ============

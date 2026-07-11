@@ -211,8 +211,13 @@
       if (!Number.isFinite(n) || n < 5) {
         warnSlot.innerHTML = `<div class="note"><strong>Warning:</strong> sample size is very small (n &lt; 5). These estimators are known to be unreliable below ~15; Wan et al. recommend at least n=25.</div>`;
       }
-      if (scenario === "C1" && (a > q1 || q1 > m || m > q3 || q3 > b)) {
-        warnSlot.innerHTML += `<div class="note"><strong>Input check:</strong> order must satisfy a ≤ Q1 ≤ m ≤ Q3 ≤ b.</div>`;
+      let orderBad = false;
+      if (scenario === "C1") orderBad = (a > q1 || q1 > m || m > q3 || q3 > b);
+      else if (scenario === "C2") orderBad = (a > m || m > b);
+      else if (scenario === "C3") orderBad = (q1 > m || m > q3);
+      if (orderBad) {
+        const req = scenario === "C1" ? "a ≤ Q1 ≤ m ≤ Q3 ≤ b" : scenario === "C2" ? "a ≤ m ≤ b" : "Q1 ≤ m ≤ Q3";
+        warnSlot.innerHTML += `<div class="note"><strong>Input check:</strong> order must satisfy ${req}.</div>`;
       }
 
       const rows = [];

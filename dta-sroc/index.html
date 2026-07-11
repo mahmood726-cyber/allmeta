@@ -552,7 +552,8 @@
       const parsed = parseStudies(state.data);
       if (!parsed.studies.length) return null;
       const fit = regressDS(parsed.studies);
-      return { state, svg: buildSvg(state, parsed.studies, fit) };
+      const bivar = (window.AlmDTABivariate && parsed.studies.length >= 4) ? window.AlmDTABivariate.fit(parsed.studies.map(s=>({tp:s.tp,fp:s.fp,fn:s.fn,tn:s.tn}))) : null;
+      return { state, svg: buildSvg(state, parsed.studies, fit, bivar) };
     }
     function onDownloadSvg() {
       const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");

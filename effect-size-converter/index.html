@@ -592,6 +592,7 @@
       const p0 = parseFloat(document.getElementById("ctx-p0").value);
       const sd = parseFloat(document.getElementById("ctx-sd").value);
       if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return; }
+      if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return; }
       const rows = convert(type, est, se, p0, sd);
       const warn = type === "HR"
         ? "HR ↔ OR / SMD conversions assume proportional hazards (a single constant HR is meaningful) plus low event rate and balanced follow-up. They are exact only as the baseline risk → 0; the implied OR/SMD also depends on the (often unstated) baseline-risk and censoring pattern. If hazards are non-proportional (e.g. crossing survival curves, delayed effects) a single HR — and hence any converted OR/SMD — is undefined; report RMST or time-specific effects instead. For non-rare events the approximation overstates the OR; use caution for survival data with many events."
@@ -739,6 +740,9 @@
     })();
 
     window.__almResults = function () {
+      // Re-sync the results table from the live inputs so the export never
+      // mixes a stale table with fresh input_estimate/input_se (same epoch).
+      if (typeof runConvert === 'function') runConvert();
       var type = (document.getElementById('in-type') || {}).value || '';
       var est  = parseFloat((document.getElementById('in-est') || {}).value);
       var se   = parseFloat((document.getElementById('in-se')  || {}).value);

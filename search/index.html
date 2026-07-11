@@ -181,7 +181,7 @@
     var SR_RECORDS_KEY = "sr-records-v1";
     var SR_PROJECT_KEY = "sr-project-v1";
     var AI_KEY_LS = "search-ai-key";
-    var toast = function (m) { try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
+    var toast = function (m) { try { if (window.Toast && Toast.show) return Toast.show(m); } catch (e) {} try { console.log(m); } catch (e) {} };
     var $ = function (id) { return document.getElementById(id); };
     var records = [];
     var controller = null;

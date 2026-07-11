@@ -256,10 +256,17 @@
     skipped.push("<b>L’Abbé plot</b> — no per-arm event counts on the bus (effect estimates were entered directly).");
     skipped.push("<b>Risk-of-bias traffic light</b> — no per-study RoB judgements on the bus.");
     if (k >= 3) {
-      html += figure(miniForestSVG(looRows(d), { est: p.natural, lo: p.naturalLo, hi: p.naturalHi }, d),
-        "Leave-one-out sensitivity: the " + esc(d.measure) + " re-pooled with each trial removed in turn, against the all-trials estimate (red band). A row far from the band marks an influential trial.");
-      html += figure(miniForestSVG(cumulativeRows(d), { est: p.natural, lo: p.naturalLo, hi: p.naturalHi }, d),
-        "Cumulative meta-analysis: the " + esc(d.measure) + " as trials accrue in the order they appear in the review, against the current estimate (red band).");
+      // The reference band must use the SAME engine (REML, Knapp-Hartung) as the
+      // LOO/cumulative rows so the all-trials cumulative row coincides with the
+      // band by construction. The abstract/keyfinding/forest headline keep the
+      // verbatim bus value (p.natural) per the bus contract.
+      var refP = pooled(d.studies, d.scale);
+      var miniRef = { est: refP.natural, lo: refP.naturalLo, hi: refP.naturalHi };
+      var sensNote = p.computed ? "" : " These sensitivity panels are recomputed here (REML, Knapp-Hartung) and may differ from the summary above, which is read verbatim from the review.";
+      html += figure(miniForestSVG(looRows(d), miniRef, d),
+        "Leave-one-out sensitivity: the " + esc(d.measure) + " re-pooled with each trial removed in turn, against the all-trials estimate (red band). A row far from the band marks an influential trial." + sensNote);
+      html += figure(miniForestSVG(cumulativeRows(d), miniRef, d),
+        "Cumulative meta-analysis: the " + esc(d.measure) + " as trials accrue in the order they appear in the review, against the current estimate (red band)." + sensNote);
     } else {
       skipped.push("<b>Leave-one-out</b> and <b>cumulative</b> sensitivity — too few trials (k=" + k + "; needs k≥3).");
     }

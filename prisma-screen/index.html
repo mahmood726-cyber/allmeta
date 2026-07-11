@@ -450,7 +450,7 @@
       const parsed = parseRecords(readState().data);
       const header = "id,title,tag1,tag2,stage,reason";
       const rows = parsed.records.map(r => [r.id, r.title, r.tag1, r.tag2, r.stage, r.reason]
-        .map(v => '"' + String(v||"").replace(/"/g, '""') + '"').join(","));
+        .map(v => { let s = String(v||""); if (/^[=+@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }).join(","));
       const csv = [header].concat(rows).join("\n");
       downloadBlob(new Blob([csv], {type:"text/csv;charset=utf-8"}), "prisma-screen.csv");
     }

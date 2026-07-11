@@ -207,6 +207,8 @@ StudyE, 4, 600, 10, 600</textarea>
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
+    function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    function escSvg(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 
     function mhOR(rows) {
       // Mantel-Haenszel OR with Robins-Breslow-Greenland SE
@@ -355,7 +357,7 @@ StudyE, 4, 600, 10, 600</textarea>
       var perParts = [];
       for (var j = 0; j < studies.length; j++) {
         var s = studies[j];
-        perParts.push('<tr><td>' + s.label + '</td><td>' + s.e1 + '/' + s.n1 + '</td><td>' + s.e2 + '/' + s.n2 + '</td><td>' + fmt(s.est) + '</td><td>[' + fmt(s.lo) + ', ' + fmt(s.hi) + ']</td></tr>');
+        perParts.push('<tr><td>' + esc(s.label) + '</td><td>' + s.e1 + '/' + s.n1 + '</td><td>' + s.e2 + '/' + s.n2 + '</td><td>' + fmt(s.est) + '</td><td>[' + fmt(s.lo) + ', ' + fmt(s.hi) + ']</td></tr>');
       }
       perBody.innerHTML = perParts.join('');
 
@@ -454,7 +456,7 @@ StudyE, 4, 600, 10, 600</textarea>
       var y = 25;
       for (var i = 0; i < studies.length; i++) {
         var s = studies[i];
-        parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + s.label + '</text>');
+        parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + escSvg(s.label) + '</text>');
         parts.push('<line x1="' + X(s.lo) + '" y1="' + y + '" x2="' + X(s.hi) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>');
         parts.push('<rect x="' + (X(s.est) - 3.5) + '" y="' + (y - 3.5) + '" width="7" height="7" fill="var(--accent)"/>');
         y += 22;
@@ -463,7 +465,7 @@ StudyE, 4, 600, 10, 600</textarea>
       for (var j = 0; j < pooled.length; j++) {
         var p = pooled[j];
         if (!p) continue;
-        parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">' + p.name + '</text>');
+        parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">' + escSvg(p.name) + '</text>');
         parts.push('<polygon points="' + X(p.lo) + ',' + y + ' ' + X(p.est) + ',' + (y - 7) + ' ' + X(p.hi) + ',' + y + ' ' + X(p.est) + ',' + (y + 7) + '" fill="var(--warn)" opacity="0.9"/>');
         y += 24;
       }

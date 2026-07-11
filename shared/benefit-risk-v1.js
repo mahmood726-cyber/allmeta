@@ -85,6 +85,18 @@
     var ranges = _ranges(criteria, treatments);
     var weights = _normWeights(criteria);
 
+    // Every treatment must have a finite mean for every criterion — a missing
+    // cell would otherwise flow undefined NaN into totalValue, the SMAA argmax,
+    // EVPI, and bar() rendering with no warning.
+    for (var ti = 0; ti < treatments.length; ti++) {
+      for (var cj = 0; cj < criteria.length; cj++) {
+        var cell = treatments[ti].perf ? treatments[ti].perf[criteria[cj].id] : null;
+        if (!(cell && isFinite(cell.mean))) {
+          return { ok: false, error: "treatment " + (treatments[ti].name || treatments[ti].id) + " missing performance for criterion " + criteria[cj].id };
+        }
+      }
+    }
+
     // deterministic MCDA (at the mean performance)
     var det = treatments.map(function (t) { return { id: t.id, name: t.name || t.id, value: totalValue(t, criteria, ranges, weights, null) }; });
     det.slice().sort(function (a, b) { return b.value - a.value; }).forEach(function (d, i) { d.rank = i + 1; });

@@ -16099,7 +16099,8 @@ function exportVerdictYAML() {
       type: "text/yaml"
     }),
     a = document.createElement("a");
-  a.href = URL.createObjectURL(n), a.download = `truthcert_verdict_${(new Date).toISOString().slice(0,10)}.yaml`, a.click(), showToast("YAML exported successfully", "success")
+  const u = URL.createObjectURL(n);
+  a.href = u, a.download = `truthcert_verdict_${(new Date).toISOString().slice(0,10)}.yaml`, a.click(), URL.revokeObjectURL(u), showToast("YAML exported successfully", "success")
 }
 
 function exportVerdictJSON() {
@@ -16117,7 +16118,8 @@ function exportVerdictJSON() {
       type: "application/json"
     }),
     a = document.createElement("a");
-  a.href = URL.createObjectURL(n), a.download = `truthcert_verdict_${(new Date).toISOString().slice(0,10)}.json`, a.click(), showToast("JSON exported successfully", "success")
+  const u = URL.createObjectURL(n);
+  a.href = u, a.download = `truthcert_verdict_${(new Date).toISOString().slice(0,10)}.json`, a.click(), URL.revokeObjectURL(u), showToast("JSON exported successfully", "success")
 }
 
 function exportVerdictExcel() {

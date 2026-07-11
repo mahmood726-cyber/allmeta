@@ -165,6 +165,10 @@
         const blob = pdf.output('blob');
         _download(blob, basename + '.pdf');
       };
+      img.onerror = (e) => {
+        URL.revokeObjectURL(blobURL);
+        console.warn('[alm.chartDownload] PDF load failed:', e);
+      };
       img.src = blobURL;
     });
   }

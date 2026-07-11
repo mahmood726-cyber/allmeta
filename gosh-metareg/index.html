@@ -207,6 +207,11 @@
           await new Promise(r => setTimeout(r, 0));
         }
       }
+      if (results.length === 0) {
+        msg.textContent = "No subsets meet the minimum size (min k > number of studies).";
+        btn.disabled = false;
+        return;
+      }
       mn.textContent = results.length.toLocaleString();
       const bs = results.map(r => r.b1).sort((a, b) => a - b);
       // Correct median for even-length arrays

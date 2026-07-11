@@ -52,6 +52,7 @@
     .overall .rating.mod { background: var(--mod-soft); color: var(--mod); }
     .overall .rating.low { background: var(--low-soft); color: var(--low); }
     .overall .rating.clow { background: var(--clow-soft); color: var(--clow); }
+    .overall .rating.muted { background: var(--input-bg); color: var(--muted); }
     .counts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; }
     .counts .card { background: var(--accent-soft); padding: 0.5rem 0.7rem; border-radius: 6px; }
     .counts .card .k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -74,7 +75,7 @@
     </section>
     <section class="panel">
       <h2>Overall confidence</h2>
-      <div class="overall"><span class="rating clow" id="rating">Critically low</span></div>
+      <div class="overall"><span class="rating muted" id="rating">Not rated</span></div>
       <div class="counts">
         <div class="card"><span class="k">Critical flaws</span><span class="v" id="c-critical">0</span></div>
         <div class="card"><span class="k">Non-critical weaknesses</span><span class="v" id="c-nonc">0</span></div>
@@ -142,9 +143,12 @@
     // Pure Shea-2017 computation (no DOM) — used by evaluate() and the
     // behavioural-test hook. state = {"1":"Y","2":"N",...}.
     function amstarCompute(state) {
-      let critical = 0, nonc = 0;
+      let critical = 0, nonc = 0, unrated = 0;
       for (const [num] of ITEMS) {
         const v = state[num];
+        // An item is "rated" only once the reviewer picks Y/PY/N/NA; a blank
+        // ("") item is still pending and must NOT be silently treated as Yes.
+        if (v !== "Y" && v !== "PY" && v !== "N" && v !== "NA") unrated++;
         if (v === "N") {
           // Shea 2017 BMJ 358:j4008: "No" on a critical domain → critical
           // flaw; "No" on a non-critical domain → non-critical weakness.
@@ -157,11 +161,12 @@
         }
       }
       let rating, cls;
-      if (critical > 1) { rating = "Critically low"; cls = "clow"; }
+      if (unrated > 0) { rating = "Not rated"; cls = "muted"; }
+      else if (critical > 1) { rating = "Critically low"; cls = "clow"; }
       else if (critical === 1) { rating = "Low"; cls = "low"; }
       else if (nonc > 1) { rating = "Moderate"; cls = "mod"; }
       else { rating = "High"; cls = "high"; }
-      return { critical, nonc, rating, cls };
+      return { critical, nonc, rating, cls, unrated };
     }
 
     function evaluate() {

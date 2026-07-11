@@ -311,6 +311,7 @@
       const padL = 50, padR = 20, padT = 20, padB = 40;
       const plotW = W - padL - padR, plotH = H - padT - padB;
       const tMax = Math.max(...orig.map(p => p.t));
+      if (!(tMax > 0)) { svg.innerHTML = ""; return; }
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       const __svgParts = [""];
       const X = t => padL + (t / tMax) * plotW;
@@ -322,7 +323,8 @@
         __svgParts.push(`<line x1="${padL - 4}" x2="${padL}" y1="${Y(s)}" y2="${Y(s)}" stroke="currentColor" opacity="0.5"/>`);
         __svgParts.push(`<text x="${padL - 8}" y="${Y(s) + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.7">${(s * 100).toFixed(0)}%</text>`);
       }
-      for (let t = 0; t <= tMax + 0.01; t += Math.ceil(tMax / 6)) {
+      const step = Math.max(1, Math.ceil(tMax / 6));
+      for (let t = 0; t <= tMax + 0.01; t += step) {
         __svgParts.push(`<line x1="${X(t)}" y1="${padT + plotH}" x2="${X(t)}" y2="${padT + plotH + 4}" stroke="currentColor" opacity="0.5"/>`);
         __svgParts.push(`<text x="${X(t)}" y="${padT + plotH + 18}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(0)}</text>`);
       }

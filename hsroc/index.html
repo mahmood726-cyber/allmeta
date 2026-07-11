@@ -371,7 +371,7 @@
       return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
 
-    function drawSROC(studies, p, fit) {
+    function drawSROC(studies, p, fit, title) {
       var W=600, H=500, padL=60, padR=20, padT=30, padB=55;
       var plotW = W-padL-padR, plotH = H-padT-padB;
       var parts = [];
@@ -381,6 +381,8 @@
 
       parts.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H +
         '" role="img" aria-label="HSROC plot — observed study points, HSROC curve, and summary operating point" style="background:#fff">');
+
+      if (title) parts.push('<text x="' + (W/2) + '" y="18" text-anchor="middle" font-size="14" font-weight="700" fill="#15181d">' + escXml(title) + '</text>');
 
       // Grid lines
       var ticks = [0, 0.2, 0.4, 0.6, 0.8, 1];
@@ -565,7 +567,7 @@
         '</div>';
 
       // SROC plot
-      srocHost.innerHTML = drawSROC(studies, p, fit);
+      srocHost.innerHTML = drawSROC(studies, p, fit, state.title);
 
       // Persist to localStorage
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}

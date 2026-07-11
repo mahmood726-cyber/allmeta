@@ -79,11 +79,11 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       </label>
       <label>
         <span>Reference treatment</span>
-        <input id="f-ref" type="text" value="A" aria-label="Predict at covariate values (comma-separated)">
+        <input id="f-ref" type="text" value="A" aria-label="Reference treatment">
       </label>
       <label>
         <span>Predict at covariate values (comma-separated)</span>
-        <input id="f-predict" type="text" value="40, 50, 60, 70" aria-label="F predict">
+        <input id="f-predict" type="text" value="40, 50, 60, 70" aria-label="Predict at covariate values (comma-separated)">
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit network meta-regression</button>
       <div class="note">
@@ -200,7 +200,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 4) {
         document.getElementById("summary").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 4 valid contrast rows.</div>';
+          '<div class="card" style="grid-column:1/-1;color:var(--warn)">Need ≥ 4 valid contrast rows.</div>';
         return;
       }
       var refTrt = (document.getElementById("f-ref").value || "").trim();
@@ -218,7 +218,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
         fit = AlmNmaMetaReg.fit(rows, treatments, { predictAt: predicts.length ? predicts : undefined });
       } catch (e) {
         document.getElementById("summary").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Fit failed: ' + e.message + '</div>';
+          '<div class="card" style="grid-column:1/-1;color:var(--warn)">Fit failed: ' + e.message + '</div>';
         return;
       }
       document.getElementById("summary").innerHTML =

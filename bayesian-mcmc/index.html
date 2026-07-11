@@ -262,9 +262,18 @@
       const burn = parseInt(document.getElementById("burn").value, 10);
       const tauPrior = parseFloat(document.getElementById("tau-prior").value);
       const chainsN = parseInt(document.getElementById("chains").value, 10);
-      if (rows.length < 3) return;
-
       const status = document.getElementById("status");
+      if (rows.length < 3) {
+        status.textContent = "Need at least 3 valid studies (est,se per line) to sample.";
+        document.getElementById("body").innerHTML = "";
+        ["mu-density", "tau-density", "trace"].forEach(id => {
+          const s = document.getElementById(id);
+          if (s) s.innerHTML = "";
+        });
+        _lastMCMC = null;
+        return;
+      }
+
       const btnRun = document.getElementById("btn-run");
       const resultsPanel = btnRun.closest(".panel").nextElementSibling;
       btnRun.disabled = true;

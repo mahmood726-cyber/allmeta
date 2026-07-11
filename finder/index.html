@@ -127,6 +127,12 @@
         });
       }
       function labelForNodeOption(parentNodeId, childNodeId) {
+        // Recommendation crumbs are stored as '__reco__:<label>' — strip the
+        // sentinel and truncate like a normal option label.
+        if (childNodeId.indexOf('__reco__:') === 0) {
+          var rl = childNodeId.slice(9);
+          return rl.length > 36 ? rl.slice(0, 33) + '…' : rl;
+        }
         var parent = TREE.nodes[parentNodeId];
         if (!parent || !parent.options) return childNodeId;
         for (var i = 0; i < parent.options.length; i++) {

@@ -11,7 +11,7 @@
     const h = (window.location.hash || '').replace(/^#/, '');
     if (!h) return null;
     var obj;
-    try { obj = JSON.parse(atob(h)); }
+    try { obj = JSON.parse(decodeURIComponent(escape(atob(h)))); }
     catch (_) { return null; }
     if (!obj || typeof obj !== 'object') return null;
     if (obj.v !== _version) return null;  // version-mismatch: fail-open with null
@@ -24,7 +24,7 @@
 
   init.write = function (state) {
     var wrapped = Object.assign({ v: _version }, state);
-    var blob = btoa(JSON.stringify(wrapped));
+    var blob = btoa(unescape(encodeURIComponent(JSON.stringify(wrapped))));
     if (blob.length > MAX_BYTES) {
       console.warn('[alm.urlState] state too long for URL (' + blob.length + ' B > ' + MAX_BYTES + ' B); use Save Project file instead');
       return false;

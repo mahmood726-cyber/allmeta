@@ -208,12 +208,14 @@ R004,Cardiovascular outcomes with empagliflozin,Zannad F,2020,Lancet," aria-labe
 
     function firstAuthorSurname(authors) {
       if (!authors) return "";
-      // authors: semicolon- or ampersand-separated; take first; surname = last token before comma or first token overall
+      // authors: semicolon- or ampersand-separated; take first; surname = token
+      // before comma, else the longest alphabetic token (>=2) so initials-first
+      // ("Smith JA") and initials-last ("J Smith") both yield the surname
       const first = authors.split(/[;&]/)[0].trim();
       if (!first) return "";
       if (first.includes(",")) return first.split(",")[0].trim().toLowerCase();
-      const parts = first.split(/\s+/);
-      return parts[parts.length - 1].toLowerCase();
+      const toks = first.toLowerCase().match(/[a-z]{2,}/g) || [];
+      return toks.reduce((b, t) => (t.length > b.length ? t : b), "");
     }
 
     // --- trigram Jaccard similarity ---

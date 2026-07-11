@@ -390,7 +390,7 @@
     <section class="board">
       <div class="columns" id="columns"></div>
     </section>
-  </div>
+  </main>
 
   <script>
     (function () {
@@ -408,6 +408,11 @@
         { id: crypto.randomUUID(), title: "Add one more standalone utility", detail: "Keep it single-file and locally persistent.", label: "build", status: "backlog" }
       ];
 
+      // Fresh clones of the seed cards so in-place edits / drag status changes
+      // can never leak back into the shared SEED objects (SEED.slice() is a
+      // shallow copy that shares the same card objects).
+      function freshSeed() { return SEED.map(c => ({ ...c, id: crypto.randomUUID() })); }
+
       let state = loadState();
       let draggedId = null;
 
@@ -423,12 +428,12 @@
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) {
-            return { cards: SEED.slice() };
+            return { cards: freshSeed() };
           }
           const parsed = JSON.parse(raw);
-          return { cards: Array.isArray(parsed.cards) ? parsed.cards : SEED.slice() };
+          return { cards: Array.isArray(parsed.cards) ? parsed.cards : freshSeed() };
         } catch (error) {
-          return { cards: SEED.slice() };
+          return { cards: freshSeed() };
         }
       }
 
@@ -589,7 +594,7 @@
       searchInput.addEventListener("input", render);
 
       document.getElementById("seedBoard").addEventListener("click", function () {
-        state.cards = SEED.slice();
+        state.cards = freshSeed();
         persistAndRender();
       });
 

@@ -241,7 +241,7 @@
 
     function fmt(x, d) {
       d = d === undefined ? 3 : d;
-      return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
+      return Number.isFinite(x) ? x.toFixed(d) : '—';
     }
 
     // ---- axis state (overrideable by axis-controls) ----
@@ -255,7 +255,7 @@
       var model = document.getElementById('model').value;
       var rows = parse(text);
       if (rows.length < 3 || rows.length > 100) {
-        document.getElementById('m-n').textContent = '&#8212;';
+        document.getElementById('m-n').textContent = '—';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }

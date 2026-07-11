@@ -543,7 +543,7 @@
         });
         rows.push([st.label, st.framework, "overall", "Overall", overallVerdict(st), "", "", ""]);
       });
-      var csv = rows.map(function (r) { return r.map(function (c) { var s = String(c == null ? "" : c); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }).join("\n");
+      var csv = rows.map(function (r) { return r.map(function (c) { var s = String(c == null ? "" : c); if (/^[=+@\t\r]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(","); }).join("\n");
       downloadBlob(csv, "rob-assessment.csv", "text/csv");
     });
 
@@ -554,12 +554,15 @@
 
     // Push pre-rated rows to the RoB traffic-light app's bus.
     document.getElementById("btn-push-tl").addEventListener("click", function () {
+      var mapV = function (v) { return v === "moderate" ? "some" : (v === "serious" || v === "critical" ? "high" : v); };
+      var headerDoms = state.studies.length ? state.studies[0].domains.map(function (d) { return d.name; }) : [];
       var rows = state.studies.map(function (st) {
-        var ratings = st.domains.map(function (d) { var v = domVerdict(st, d.id); return v === "moderate" ? "some" : (v === "serious" || v === "critical" ? "high" : v); });
+        var ratings = st.domains.map(function (d) { return mapV(domVerdict(st, d.id)); });
+        ratings.push(mapV(overallVerdict(st)));
         return [st.label].concat(ratings).join(",");
       });
       try {
-        localStorage.setItem("rob-traffic-light-v1", JSON.stringify({ _schema: "rob-traffic-light-v1", _savedAt: new Date().toISOString(), csv: rows.join("\n") }));
+        localStorage.setItem("rob-traffic-light-v1", JSON.stringify({ _schema: "rob-traffic-light-v1", _savedAt: new Date().toISOString(), domains: headerDoms.concat(["Overall"]).join(", "), data: rows.join("\n"), title: "RoB assessment", view: "both" }));
         toast("Sent " + rows.length + " study(ies) to the RoB traffic-light app.");
       } catch (e) { toast("Could not write to the traffic-light bus."); }
     });

@@ -131,10 +131,11 @@ Trial 5, -0.38, 0.022</textarea>
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
 
     function run() {
+      window.__almLastBMA = function () { return null; };
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 2) {
         document.getElementById("summary-card").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--bad)">Need ≥ 2 studies.</div>';
+          '<div class="card" style="grid-column:1/-1;color:var(--warn,#b05a1c)">Need ≥ 2 studies.</div>';
         document.getElementById("per-model").innerHTML = "";
         return;
       }
@@ -143,7 +144,7 @@ Trial 5, -0.38, 0.022</textarea>
       var result = AlmBMA.fit(yi, vi, AlmBMA.defaultModels());
       if (!result.ok) {
         document.getElementById("summary-card").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--bad)">BMA failed: ' +
+          '<div class="card" style="grid-column:1/-1;color:var(--warn,#b05a1c)">BMA failed: ' +
           (result.error || "unknown") + '</div>';
         return;
       }
