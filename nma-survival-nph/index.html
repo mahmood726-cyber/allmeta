@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Piecewise-exponential non-proportional-hazards network meta-analysis: interval-specific log-hazard-ratio relative effects across a treatment network, matching netmeta run per time interval.">
+  <meta name="color-scheme" content="light dark">
+  <title>Non-PH Survival NMA — piecewise-exponential network meta-analysis</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 78ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(300px, 25rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.7rem; }
+    label .lbl { display: block; margin-bottom: 0.15rem; font-weight: 500; }
+    textarea { width: 100%; min-height: 12rem; padding: 0.5rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: 0.82rem ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    select, input { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border); background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.3rem 0 1rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    h3 { font-size: 0.95rem; margin: 1rem 0 0.3rem; }
+    .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-top: 0.6rem; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; max-width: 92ch; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+  </style>
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/nma-multiarm-v1.js"></script>
+  <script src="../shared/nma-survival-nph.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Non-PH Survival Network Meta-Analysis</h1>
+    <p>When the hazard ratio is not constant over time, split follow-up into intervals and fit a piecewise-exponential model: within each interval the arm log-hazard is log((events+cc)/person-time) and each interval becomes an independent contrast-based NMA, giving <strong>interval-specific</strong> relative effects (the non-PH signal). Delegates to the netmeta-verified GLS engine; an inverse-variance pool across intervals gives a time-averaged log-HR.</p>
+  </header>
+  <main>
+    <section class="panel" aria-label="Arm-level survival data">
+      <h2>Data</h2>
+      <label>
+        <span class="lbl">Arm-level rows: study, treatment, interval, events, person-time</span>
+        <textarea id="data" aria-label="Arm-level rows: study, treatment, interval, events, person-time" spellcheck="false"></textarea>
+      </label>
+      <div class="row2">
+        <label><span class="lbl">Model</span>
+          <select id="model" aria-label="Model"><option value="fe" selected>Fixed effect</option><option value="re">Random effects (per interval)</option></select>
+        </label>
+        <label><span class="lbl">Continuity correction</span><input id="cc" type="number" step="any" min="0" value="0.5" aria-label="Continuity correction"></label>
+      </div>
+      <button class="primary" id="run" type="button">Fit</button>
+    </section>
+
+    <section class="panel" aria-label="Interval-specific effects">
+      <h2>Interval-specific relative effects (log-HR)</h2>
+      <div id="out"></div>
+      <div class="note" id="note" hidden></div>
+    </section>
+  </main>
+  <footer>
+    <p><strong>Method.</strong> Piecewise-exponential (Poisson) approximation: arm log-hazard = log((events+cc)/person-time), per-interval log-HR = difference (Var ≈ 1/(events+cc) summed over the two arms). Each interval is an independent contrast-based NMA solved by <code>shared/nma-multiarm-v1.js</code> (verified vs <code>netmeta</code> ≤1e-6); interval effects are pooled by inverse variance. Interval rows use an independent-interval approximation (within-arm temporal correlation not modeled). Engine <code>shared/nma-survival-nph.js</code>, verified vs <code>netmeta::netmeta()</code> per interval. Offline. Ported from advanced-nma-pooling.</p>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+      var $ = function (id) { return document.getElementById(id); };
+      var EXAMPLE = [
+        "s1, A, 1, 40, 1000", "s1, B, 1, 30, 1000",
+        "s2, A, 1, 45, 900", "s2, C, 1, 20, 900",
+        "s3, B, 1, 28, 850", "s3, C, 1, 22, 800",
+        "s1, A, 2, 20, 800", "s1, B, 2, 35, 800",
+        "s2, A, 2, 25, 700", "s2, C, 2, 30, 700",
+        "s3, B, 2, 33, 650", "s3, C, 2, 24, 600"
+      ].join("\n");
+
+      function parse(text) {
+        var rows = [];
+        text.split(/\r?\n/).forEach(function (ln) {
+          ln = ln.trim(); if (!ln || ln.charAt(0) === "#") return;
+          var p = ln.split(/[,\t]/).map(function (x) { return x.trim(); });
+          if (p.length < 5) return;
+          var ev = parseFloat(p[3]), pt = parseFloat(p[4]);
+          if (!isFinite(ev) || !(pt > 0)) return;
+          rows.push({ study: p[0], treatment: p[1], interval: p[2], events: ev, ptime: pt });
+        });
+        return rows;
+      }
+
+      function run() {
+        var rows = parse($("data").value);
+        var note = $("note"); note.hidden = true; note.textContent = "";
+        if (rows.length < 2) { note.hidden = false; note.textContent = "Need at least two arm rows."; $("out").textContent = ""; return; }
+        var res;
+        try { res = window.AlmNmaSurvivalNPH.fit(rows, { model: $("model").value, cc: parseFloat($("cc").value) }); }
+        catch (e) { note.hidden = false; note.textContent = "Error: " + e.message; $("out").textContent = ""; return; }
+        var out = $("out"); out.textContent = "";
+        res.intervalIds.forEach(function (iv) {
+          var block = res.intervals[iv];
+          var h = document.createElement("h3"); h.textContent = "Interval " + iv + " — vs " + block.refTreat +
+            (block.tau2 ? " (τ²=" + block.tau2.toFixed(4) + ")" : ""); out.appendChild(h);
+          out.appendChild(effTable(block.effects));
+        });
+        if (Object.keys(res.pooled).length) {
+          var hp = document.createElement("h3"); hp.textContent = "Pooled across intervals (IV, time-averaged log-HR)"; out.appendChild(hp);
+          out.appendChild(effTable(res.pooled));
+        }
+        if (res.warnings && res.warnings.length) { note.hidden = false; note.textContent = res.warnings.join("  ·  "); }
+      }
+
+      function effTable(effects) {
+        var tbl = document.createElement("table");
+        tbl.innerHTML = "<thead><tr><th>Treatment</th><th>log-HR</th><th>SE</th><th>HR (95% CI)</th></tr></thead>";
+        var tb = document.createElement("tbody");
+        Object.keys(effects).sort().forEach(function (t) {
+          var e = effects[t], tr = document.createElement("tr");
+          function td(v) { var c = document.createElement("td"); c.textContent = v; tr.appendChild(c); }
+          var lo = Math.exp(e.logHR - 1.959963984540054 * e.se), hi = Math.exp(e.logHR + 1.959963984540054 * e.se);
+          td(t); td(isFinite(e.logHR) ? e.logHR.toFixed(4) : "—"); td(isFinite(e.se) ? e.se.toFixed(4) : "—");
+          td(isFinite(e.logHR) ? Math.exp(e.logHR).toFixed(3) + " (" + lo.toFixed(3) + ", " + hi.toFixed(3) + ")" : "—");
+          tb.appendChild(tr);
+        });
+        tbl.appendChild(tb); return tbl;
+      }
+
+      $("data").value = EXAMPLE;
+      $("run").addEventListener("click", run);
+      run();
+    })();
+  </script>
+</body>
+</html>
