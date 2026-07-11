@@ -238,3 +238,26 @@ def test_reduction_c_moderator_montecarlo_recovery():
     assert o["allPositive"] is True
     # Wald CI coverage is near nominal (loose 3-sigma-ish band for 15 reps)
     assert o["coverage"] >= 0.73
+
+
+def test_boundary_exposes_mean_and_flags_unidentified():
+    """Hardening: at the |delta|->1 boundary, beta is the location xi (NOT the
+    pooled mean) and shape SEs are undefined. The engine must (a) flag boundary +
+    non-convergence, (b) warn, and (c) expose meanEffect = xi + omega*delta*sqrt(2/pi),
+    which recovers the true pooled effect (metafor rma ML mu = -0.7463) that beta
+    alone (xi ~ +0.10) does not."""
+    body = f"""
+      const yi={_arr(MAG_YI)}, vi={_arr(MAG_VI)};
+      const X=yi.map(()=>[1]), Z=yi.map(()=>[1]), W=yi.map(()=>[1]);
+      const f=DMR.fit(yi,vi,X,Z,W);
+      console.log(JSON.stringify({{beta:f.beta[0], mean:f.meanEffect[0],
+        boundary:f.boundary, converged:f.converged, nWarn:(f.warnings||[]).length}}));
+    """
+    o = _run(body)
+    assert o["boundary"] is True
+    assert o["converged"] is False
+    assert o["nWarn"] >= 1
+    # beta (xi) is near +0.10 and far from the true pooled effect
+    assert o["beta"] > -0.2
+    # meanEffect recovers the true pooled effect (metafor rma ML mu = -0.7463)
+    assert abs(o["mean"] - (-0.7463152)) < 0.1, o

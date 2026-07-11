@@ -49,16 +49,17 @@
 
   /**
    * Apply DEFF adjustment to a row-list of { yi, vi, m_bar?, icc? }.
-   * Rows with m_bar or icc missing (or m_bar < 2) are left unadjusted.
-   * Returns a new array with vi inflated where appropriate; original
-   * yi unchanged.
+   * Rows with m_bar < 2 are left unadjusted. A row with a MISSING icc is left
+   * unadjusted UNLESS an explicit `defaultIcc` is passed (no silent default —
+   * substituting an assumed icc inflates vi ~45% without the caller's consent).
+   * Returns a new array with vi inflated where appropriate; original yi unchanged.
    */
   function adjustRows(rows, defaultIcc) {
-    var dIcc = isFinite(defaultIcc) ? defaultIcc : 0.05;
+    var hasDefault = isFinite(defaultIcc);
     return rows.map(function (r) {
-      var icc = isFinite(r.icc) ? r.icc : dIcc;
+      var icc = isFinite(r.icc) ? r.icc : (hasDefault ? defaultIcc : NaN);
       var mBar = isFinite(r.m_bar) ? r.m_bar : 1;
-      if (mBar < 2 || icc <= 0) return Object.assign({}, r);
+      if (mBar < 2 || !isFinite(icc) || icc <= 0) return Object.assign({}, r);
       var deff = 1 + (mBar - 1) * icc;
       return Object.assign({}, r, {
         vi_unadjusted: r.vi, vi: r.vi * deff, deff: deff,

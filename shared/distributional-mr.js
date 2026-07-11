@@ -262,11 +262,27 @@
       tau2.push(o2 * (1 - 2 * del * del / Math.PI)); // Var of SN = omega^2 (1 - 2 delta^2/pi)
     }
 
+    // ---- mean effect: 'beta' is the skew-normal LOCATION xi, NOT the pooled
+    // mean. Expose E[theta_i] = X_i·beta + omega_i·delta_i·sqrt(2/pi) so callers
+    // read the correctly-signed pooled effect (beta alone is misleading under skew).
+    var s2pi = Math.sqrt(2 / Math.PI), meanEffect = [];
+    for (i = 0; i < k; i++) meanEffect.push(_dot(X[i], beta) + Math.sqrt(omega2[i]) * delta[i] * s2pi);
+
+    // ---- boundary / identification diagnostics (never silently return NaN SEs).
+    var boundary = delta.some(function (d) { return Math.abs(d) > 0.999; });
+    var seHasNaN = se.some(function (x) { return !isFinite(x); });
+    var converged = (HsInv !== null) && !boundary && !seHasNaN;
+    var warnings = [];
+    if (boundary) warnings.push("skew-normal shape hit the |delta|->1 boundary: lambda is unidentified from aggregate (yi,vi) data. 'beta' is the location xi, NOT the pooled mean — use 'meanEffect' or the normal location-scale fit for the pooled effect.");
+    if (seHasNaN) warnings.push("some standard errors are undefined (shape at/near the boundary or a singular Hessian); do not report them.");
+    if (k < (opts.kMin || 20)) warnings.push("k=" + k + " < " + (opts.kMin || 20) + ": the skew/shape parameter is weakly identified; interpret shape and its SE with caution.");
+
     return {
       beta: beta, betaSE: se.slice(0, p),
       alpha: alpha, alphaSE: se.slice(p, p + q),
       nu: nu, nuSE: se.slice(p + q, p + q + r),
       omega2: omega2, lambda: lambda, delta: delta, tau2: tau2,
+      meanEffect: meanEffect, boundary: boundary, converged: converged, warnings: warnings,
       vcov: vcov, logLik: -o3.f, k: k, p: p, q: q, r: r, shapeEstimated: true, delegated: false,
     };
   }
