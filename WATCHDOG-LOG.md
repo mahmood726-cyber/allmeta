@@ -60,3 +60,4 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T21:37:27 | keyscan BUG+FIX | depth-counting zoning was INERT (all 3 known cases returned 'own'); a sibling </td> cancels the current <td> opener | replaced with a STACK, verified 3/3 on known cited/own cases
 2026-07-16T21:37:27 | keyscan HONEST | with working zoning: 336 raw hits -> 52 own-keys; 284 (85%) were CITATIONS not own registrations | PACTR 17 -> 2 => prior scans' 'PACTR ~= 0' CONFIRMED, not refuted
 2026-07-16T21:37:27 | store totals | 344,858 tables / 5,480,255 rows across linked_rct(174,456) + dta(38,015) + oa_rct(132,387)
+2026-07-16T22:41:02 | keyscan DISCARD | the oa_rct keyscan that finished ran on the BROKEN zoning: claimed 38,908 keys / PACTR 507 / 69.2% docs | DELETED, re-running with the verified stack (85% of that class is citations)
