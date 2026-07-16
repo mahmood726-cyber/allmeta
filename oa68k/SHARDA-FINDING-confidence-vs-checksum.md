@@ -201,6 +201,58 @@ Two things follow:
 (Aside, registered in the error register rather than here: that figure pools k=2
 studies with ORs of 3.09 and 0.41 into 1.12 [0.15, 8.04] at I² = 98.3%.)
 
+## Test-retest: two independent reads of the same figures agreed on EVERY digit
+
+A duplicate assignment (before the reservation log closed that hole) produced an
+accidental but clean experiment: the same two figures read twice, independently,
+under different contracts (v3 native-ish, v4 crop-mandated), the second worker
+reading the pixels **before** opening the first's file.
+
+    agreement on every digit      tau2=0.12, Q(10)=6278.57, all 22 effects/CIs/
+                                  weights, three negative-zero limits
+    both abstained                on the SAME two rows
+    both flagged                  the SAME two anomalies
+    crops corrected               NOTHING on these two figures
+
+**Vision is self-consistent on legible pixels.** That matters for interpreting the
+`n_c` 174/149 misread: it was not random noise from a stochastic reader, it was a
+deterministic artefact of being shown unreadable input. Same conclusion, sharper —
+the defect is in what we hand the model, not in the model's steadiness.
+
+**And it bounds the v4 claim honestly.** These were 794px Stata renderings with
+~8px text: legible at native, and cropping changed nothing. v4 is not uniformly
+necessary. It earned its keep on the *other* two figures in that batch, where a
+~5px `NOTE: Weights are from random-effects model` line is illegible at native
+and is **the only thing licensing that figure's `model` field**. So: crops are
+cheap insurance whose value is concentrated on the figures that need them, and you
+cannot know which those are without looking. Mandating them is still right; the
+blanket claim "native reading is unreliable" is not — it is unreliable *below a
+legibility threshold*, and above it vision replicates exactly.
+
+## A third cause of unreadability that no upscale fixes: OCCLUSION
+
+The two abstentions above are not a resolution failure. PMC13141270 Fig3 rows
+Heuchert 2015 and Abera 2021 print `?.00 [ 1.00, 1.00]` with the navy diamond
+marker drawn **on top of** the leading digit. The worker escalated to **12x** to
+test the cause: the glyph is physically covered. No upscale recovers a pixel the
+publisher painted over.
+
+`[1.00, 1.00]` makes `1.00` the only coherent value — and both workers abstained
+anyway, because that value is derivable **only from its own CI**, which is
+inference, not reading. This is the discipline working: a defensible guess is
+still a guess.
+
+**This is the cleanest discriminating case in the run.** A parser reading `.00`
+will emit `0.00` at high confidence. Vision, twice, independently, refused. So the
+abstention taxonomy is at least:
+
+    resolution   fixable by cropping (tau2 28.2566 -> 26.2566)
+    occlusion    IRREDUCIBLE — the datum is not in the image at any zoom
+    absence      never printed (a null, not an abstain)
+
+Only the first is a harness defect. Conflating them would let a fixable problem
+hide inside an unfixable one.
+
 ## What follows
 
 1. **Implement the column-checksum check.** Printed "Total events" and Subtotal N
