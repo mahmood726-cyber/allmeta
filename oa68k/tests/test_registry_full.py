@@ -173,6 +173,37 @@ def test_universe_is_randomised_interventional_only(con):
 
 
 @pytest.mark.skipif(not _store_ready("trial_results"), reason="store not extracted")
+def test_distinct_arms_sharing_a_group_code_stay_distinct(con):
+    """The payoff of keying on result_group_id, asserted on the real store.
+
+    NCT01626079's OG000 spans three different arms. If a refactor ever keyed arms
+    on (nct_id, ctgov_group_code), those three would fuse into one pseudo-arm —
+    and store-wide 23,419 (nct, code) pairs hide >1 real arm title across 9,915
+    trials, i.e. 21.4% of the 46,347 trials with posted results would carry
+    fabricated arms. This test fails the moment that happens.
+    """
+    p = os.path.join(C.STORE, "trial_results", "*.parquet").replace(os.sep, "/")
+    titles = con.execute(f"""
+        SELECT COUNT(DISTINCT group_title) FROM read_parquet('{p}')
+        WHERE nct_id = 'NCT01626079' AND ctgov_group_code = 'OG000'
+          AND group_resolved
+    """).fetchone()[0]
+    assert titles >= 3, (
+        "NCT01626079/OG000 should resolve to several distinct arms; getting "
+        f"{titles} means arms are being fused (or the snapshot changed — "
+        "re-verify the arm-key design before relaxing this)")
+
+    # And the fusion must not have happened anywhere: distinct titles under one
+    # code are expected, but each result_group_id must still map to one title.
+    fused = con.execute(f"""
+        SELECT COUNT(*) FROM (
+          SELECT result_group_id FROM read_parquet('{p}') WHERE group_resolved
+          GROUP BY result_group_id HAVING COUNT(DISTINCT group_title) > 1)
+    """).fetchone()[0]
+    assert fused == 0, f"{fused} result_group_ids carry >1 arm title"
+
+
+@pytest.mark.skipif(not _store_ready("trial_results"), reason="store not extracted")
 def test_results_are_keyed_by_result_group_id(con):
     """Unresolvable arms are recorded as unresolved, never silently dropped."""
     p = os.path.join(C.STORE, "trial_results", "*.parquet").replace(os.sep, "/")
