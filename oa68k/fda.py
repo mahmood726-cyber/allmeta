@@ -303,13 +303,20 @@ def extract_and_link(limit: int | None = None) -> dict:
             if not path or not os.path.isfile(path):
                 continue
             agg["docs"] += 1
+            # Page cap is a real constraint, not tidiness: these reviews run to
+            # hundreds of pages and 22 MB, and pdfplumber costs ~1s/page. The
+            # trial identity + efficacy sections sit in the front matter, so 40
+            # pages buys the protocol codes at a fraction of the time. Recorded
+            # as a cap so nobody reads "no codes" as "no codes in the document".
             try:
                 with pdfplumber.open(path) as doc:
                     txt = "\n".join((pg.extract_text() or "")
-                                    for pg in doc.pages[:60])
-            except Exception:
+                                    for pg in doc.pages[:40])
+            except Exception as e:
                 agg["no_text"] += 1
                 continue
+            print(f"[fda:link] {rec['appl_no']} {pdf['suffix']} "
+                  f"{len(txt):,} chars", flush=True)
             if len(txt) < 500:
                 agg["no_text"] += 1          # scanned/image-only review
                 continue
