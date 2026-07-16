@@ -83,8 +83,21 @@ def parse_tables(xml_bytes: bytes) -> list[dict]:
                 headers = [v for v, _ in cs]
             else:
                 rows.append([v for v, _ in cs])
+        # The raw <table-wrap> fragment travels with the parsed form. Two
+        # reasons, both learned the hard way:
+        #  1. Downstream extractors take `tables_xml=` and do their own, better
+        #     parsing. Handing them our lossy summary throws away the 25-38pp of
+        #     extraction they measured they could get from the real markup
+        #     (malaria 50.0->79.2%, TB 20.7->51.2%, NCD 23.3->61.7%).
+        #  2. A store that keeps only shape (n_rows/n_cols/headers) and drops the
+        #     CELLS is not a table store. Ours held 37,850 tables describing
+        #     647,445 rows and zero values.
+        try:
+            raw = ET.tostring(tw, encoding="unicode")
+        except Exception:
+            raw = ""
         tables.append({"label": label, "caption": caption,
-                       "headers": headers, "rows": rows})
+                       "headers": headers, "rows": rows, "xml": raw})
     return tables
 
 

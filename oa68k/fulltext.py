@@ -322,13 +322,26 @@ def _run_locked(limit, all_, corpus, tdir, ledger) -> dict:
                 with open(rec["path"], "rb") as f:
                     xml = f.read()
                 for ti, t in enumerate(jats.parse_tables(xml)):
+                    trows = t.get("rows") or []
                     rows.append({
                         "pmcid": c["pmcid"], "pmid": c["pmid"], "ncts": c["ncts"],
                         "table_index": ti,
+                        "label": (t.get("label") or "")[:80],
                         "caption": (t.get("caption") or "")[:500],
-                        "n_rows": len(t.get("rows") or []),
+                        "n_rows": len(trows),
                         "n_cols": len(t.get("headers") or []),
                         "headers": " | ".join(t.get("headers") or []),
+                        # THE CELLS. Without these the store holds table
+                        # skeletons: shape and headers, no data. Measured: we had
+                        # 37,850 tables describing 647,445 rows and zero values.
+                        # JSON so one parquet column survives ragged tables
+                        # (JATS rows are not guaranteed rectangular).
+                        "rows_json": json.dumps(trows, ensure_ascii=False),
+                        # Raw <table-wrap> so downstream extractors can take
+                        # tables_xml= and do their own parsing — re-parsing the
+                        # real markup is worth +25-38pp of extraction over
+                        # text-only, which beats every disease difference.
+                        "table_xml": t.get("xml") or "",
                         "tier": rec.get("tier"), "corpus": corpus,
                         "source_tier": "oa_fulltext",
                         "locator": rec["locator"], "extracted_at": today,
