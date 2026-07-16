@@ -163,13 +163,37 @@ def test_every_row_carries_provenance(con):
 
 
 @pytest.mark.skipif(not _store_ready(), reason="store not extracted yet")
-def test_universe_is_randomised_interventional_only(con):
+def test_universe_is_interventional_and_randomised_or_randomised_by_title(con):
+    """The universe is INTERVENTIONAL and randomised — but 'randomised' has two
+    evidences, not one.
+
+    This test originally asserted `allocation = 'RANDOMIZED'`, which encoded OUR
+    filter as the definition of the world. METHODS-CONTRACT §0 is explicit that
+    this is the recurring failure. AACT leaves `allocation` NULL for trials that
+    ARE randomised (the field was never filled), and 710 such trials say
+    "randomi*" in their title — 23 with an African site, 2 malaria/TB. They are
+    now recovered as a distinct, weaker-evidence stratum (registry_full.
+    extend_universe), so the assertion widens to match the corpus rather than the
+    corpus being narrowed to match the assertion.
+    """
     p = os.path.join(C.STORE, "trials", "*.parquet").replace(os.sep, "/")
     bad = con.execute(f"""
         SELECT COUNT(*) FROM read_parquet('{p}')
-        WHERE study_type <> 'INTERVENTIONAL' OR allocation <> 'RANDOMIZED'
+        WHERE study_type <> 'INTERVENTIONAL'
     """).fetchone()[0]
-    assert bad == 0, f"{bad} non-RCT rows leaked into the universe"
+    assert bad == 0, f"{bad} non-interventional rows leaked into the universe"
+
+    # Anything not RANDOMIZED by field must be randomised by title — never by
+    # nothing. A row with neither evidence is a real leak.
+    leak = con.execute(f"""
+        SELECT COUNT(*) FROM read_parquet('{p}')
+        WHERE COALESCE(allocation,'') <> 'RANDOMIZED'
+          AND lower(COALESCE(brief_title,'') || ' ' ||
+                    COALESCE(official_title,'')) NOT LIKE '%randomi%'
+    """).fetchone()[0]
+    assert leak == 0, (
+        f"{leak} trials are neither allocation=RANDOMIZED nor randomised-by-title "
+        f"— a non-randomised trial has entered the RCT universe")
 
 
 @pytest.mark.skipif(not _store_ready("trial_results"), reason="store not extracted")

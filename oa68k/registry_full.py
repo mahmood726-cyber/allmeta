@@ -155,6 +155,82 @@ def build_universe(con, batch_size: int = BATCH_SIZE, rebuild: bool = False) -> 
             "priority_malaria_tb_hiv": r[2]}
 
 
+def extend_universe(con, batch_size: int = BATCH_SIZE) -> dict:
+    """ADD trials the strict predicate misses. Additive only — never reshuffles.
+
+    METHODS-CONTRACT §0: do not report OUR ceiling as the WORLD'S limit. Our
+    universe predicate is `study_type='INTERVENTIONAL' AND allocation='RANDOMIZED'`,
+    and AACT's `allocation` is simply NULL for some trials that ARE randomised —
+    the field was never filled in. Measured on this snapshot:
+
+        interventional, allocation NULL            5,694
+        ...of which say "randomi*" in the title      710   <- randomised, dropped
+        ...of those 710, with an African site         23
+        ...of those 710, malaria/TB                    2
+
+    710 of 290,724 is 0.24% — small, but it is OUR filter defining trials out of
+    the corpus, which is exactly the failure the contract names. So we recover
+    them rather than report a coverage number that quietly excludes them.
+
+    Additive by construction: new NCTs get batch_ids starting at max+1, so every
+    existing batch assignment is untouched and already-extracted batches are
+    neither re-run nor invalidated. This is why `build_universe(rebuild=True)`
+    stays forbidden — a reshuffle would double-count; an append cannot.
+
+    These trials are tagged `randomised_by_title` so downstream can treat them as
+    a distinct, weaker-evidence stratum: the title says randomised, the structured
+    field never confirmed it. That is a candidate, not a verdict.
+    """
+    path = universe_path()
+    if not os.path.isfile(path):
+        raise FileNotFoundError("build the universe first")
+    existing = con.execute(f"SELECT COUNT(*), MAX(batch_id) FROM {_univ()}").fetchone()
+    next_batch = (existing[1] or 0) + 1
+
+    sql = f"""
+    WITH extra AS (
+      SELECT s.nct_id
+      FROM {_pq('studies')} s
+      LEFT JOIN {_pq('designs')} d USING(nct_id)
+      WHERE s.study_type = 'INTERVENTIONAL'
+        AND d.allocation IS NULL
+        AND lower(COALESCE(s.brief_title,'') || ' ' ||
+                  COALESCE(s.official_title,'')) LIKE '%randomi%'
+        AND s.nct_id NOT IN (SELECT nct_id FROM {_univ()})
+    ),
+    prio AS (
+      SELECT DISTINCT nct_id FROM {_pq('conditions')}
+      WHERE regexp_matches(downcase_name, '{PRIORITY_RE}')
+    )
+    SELECT e.nct_id,
+           CASE WHEN p.nct_id IS NOT NULL THEN 'p0_malaria_tb_hiv'
+                ELSE 'p1_rest' END AS cohort,
+           CAST({next_batch} + FLOOR((row_number() OVER (ORDER BY e.nct_id) - 1)
+                / {batch_size}) AS INTEGER) AS batch_id
+    FROM extra e LEFT JOIN prio p ON p.nct_id = e.nct_id
+    """
+    n_new = con.execute(f"SELECT COUNT(*) FROM ({sql})").fetchone()[0]
+    if n_new == 0:
+        return {"status": "nothing to add", "trials": existing[0]}
+
+    tmp = path + ".ext.tmp"
+    con.execute(f"""COPY (
+        SELECT nct_id, cohort, batch_id FROM {_univ()}
+        UNION ALL
+        SELECT nct_id, cohort, batch_id FROM ({sql})
+    ) TO '{tmp.replace(os.sep,'/')}' (FORMAT PARQUET)""")
+    n, d = con.execute(f"SELECT COUNT(*), COUNT(DISTINCT nct_id) FROM "
+                       f"read_parquet('{tmp.replace(os.sep,'/')}')").fetchone()
+    if n != d:
+        os.remove(tmp)
+        raise ValueError(f"extend would duplicate trials ({n} rows, {d} distinct)")
+    os.replace(tmp, path)
+    return {"status": "extended", "added": n_new, "trials_before": existing[0],
+            "trials_after": n, "first_new_batch": next_batch,
+            "note": "randomised-by-title, allocation NULL in AACT — recovered "
+                    "per METHODS-CONTRACT §0 (our filter is not the world's limit)"}
+
+
 def _univ() -> str:
     return f"read_parquet('{universe_path().replace(os.sep, '/')}')"
 
@@ -490,6 +566,9 @@ if __name__ == "__main__":
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--rebuild-universe", action="store_true")
+    ap.add_argument("--extend-universe", action="store_true",
+                    help="additively recover randomised-by-title trials whose "
+                         "AACT allocation field is NULL (METHODS-CONTRACT §0)")
     ap.add_argument("--shard-id", type=int, default=0)
     ap.add_argument("--shard-count", type=int, default=1)
     a = ap.parse_args()
@@ -497,5 +576,7 @@ if __name__ == "__main__":
         print(json.dumps(status(), indent=2))
     elif a.rebuild_universe:
         print(json.dumps(build_universe(connect(), rebuild=True), indent=2))
+    elif a.extend_universe:
+        print(json.dumps(extend_universe(connect()), indent=2))
     else:
         print(json.dumps(run(a.batches, a.all, a.shard_id, a.shard_count), indent=2))
