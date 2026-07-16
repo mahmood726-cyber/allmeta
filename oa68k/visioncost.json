@@ -1,0 +1,62 @@
+{
+  "billing": "NO API KEY IN THIS ENVIRONMENT \u2014 subscription/gateway path. A subscription cannot run a batch job; API credits are a separate product. Mahmood must check console -> Billing.",
+  "budget_gbp_month": 180.0,
+  "usd_per_gbp_ASSUMED": 1.25,
+  "budget_usd_month": 225.0,
+  "forest_figures": 15989,
+  "assumptions_not_measured": {
+    "img_tokens_assumed": 500,
+    "prompt_tokens": 1200,
+    "output_tokens": 1500,
+    "note": "exact image tokens need count_tokens() -> needs an API key"
+  },
+  "scenarios": {
+    "UPPER": {
+      "claude-opus-4-8": {
+        "usd_per_figure_batched": 0.03371,
+        "figures_per_month_budget": 6674,
+        "usd_full_corpus": 538.9891899999999,
+        "months_for_full_corpus": 2.3955075111111106
+      },
+      "claude-sonnet-5": {
+        "usd_per_figure_batched": 0.020226,
+        "figures_per_month_budget": 11124,
+        "usd_full_corpus": 323.39351400000004,
+        "months_for_full_corpus": 1.4373045066666668
+      },
+      "claude-haiku-4-5": {
+        "usd_per_figure_batched": 0.006742,
+        "figures_per_month_budget": 33372,
+        "usd_full_corpus": 107.797838,
+        "months_for_full_corpus": 0.4791015022222222
+      }
+    },
+    "LOWER": {
+      "claude-opus-4-8": {
+        "usd_per_figure_batched": 0.023,
+        "figures_per_month_budget": 9782,
+        "usd_full_corpus": 367.747,
+        "months_for_full_corpus": 1.6344311111111112
+      },
+      "claude-sonnet-5": {
+        "usd_per_figure_batched": 0.0138,
+        "figures_per_month_budget": 16304,
+        "usd_full_corpus": 220.6482,
+        "months_for_full_corpus": 0.9806586666666667
+      },
+      "claude-haiku-4-5": {
+        "usd_per_figure_batched": 0.0046,
+        "figures_per_month_budget": 48913,
+        "usd_full_corpus": 73.5494,
+        "months_for_full_corpus": 0.32688622222222224
+      }
+    }
+  },
+  "decisive_gold_set": {
+    "n": 1000,
+    "usd_upper_opus": 33.709999999999994,
+    "gbp_upper_opus": 26.967999999999996,
+    "pct_of_one_month": 14.98222222222222,
+    "verdict": "budget is NOT the binding constraint"
+  }
+}

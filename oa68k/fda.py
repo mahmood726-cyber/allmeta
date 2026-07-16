@@ -83,6 +83,29 @@ PDF_SUFFIXES = ["StatR", "MedR", "SumR", "ClinPharmR", "CrossR", "MedRevPart1"]
 PROTOCOL_RE = re.compile(r"\b(?:[A-Z]{2,8}[-\s]?\d{2,6}(?:[-\s]?\d{2,4})?|"
                          r"[A-Z]{1,4}\d{3,6}[A-Z]?\d{0,4})\b")
 
+# METHODS-CONTRACT §15: a probabilistic join that silently mismatches is WORSE
+# than no join — it fabricates with full confidence. The gate caught this route
+# doing exactly that: PROTOCOL_RE matches "COVID-19", which resolved to **13
+# different NCTs**, i.e. one disease name masquerading as a protocol code and
+# linking an FDA review to thirteen unrelated trials. These are the tokens that
+# LOOK like <letters>-<digits> but are diseases, standards, statutes or units.
+CODE_BLOCKLIST = {
+    "COVID-19", "COVID19", "SARS-COV-2", "SARSCOV2", "MERS-COV", "HIV-1",
+    "HIV-2", "H1N1", "H3N2", "H5N1", "TYPE-1", "TYPE-2", "PHASE-1", "PHASE-2",
+    "PHASE-3", "PHASE-4", "CTCAE-4", "CTCAE-5", "ICH-E6", "ICH-E9", "CFR-21",
+    "SECTION-505", "ECOG-0", "ECOG-1", "NYHA-2", "NYHA-3", "CHILD-PUGH",
+    "GRADE-3", "GRADE-4", "GRADE-5", "WEEK-12", "WEEK-24", "WEEK-48",
+    "DAY-28", "DAY-14", "PART-1", "PART-2", "ARM-1", "ARM-2", "TABLE-1",
+    "FIGURE-1", "APPENDIX-1", "VERSION-1", "VERSION-2", "STUDY-1", "STUDY-2",
+    "OMEGA-3", "IL-6", "IL-2", "PD-1", "PD-L1", "CD-4", "CD-8", "TNF-A",
+    "HBA1C", "SF-36", "EQ-5D", "QT-C", "P-450", "CYP3A4", "CYP2D6",
+}
+
+# A code must resolve to exactly ONE trial to be shipped. A code mapping to many
+# NCTs is ambiguous by definition — and an ambiguous link asserted as a fact is
+# the fabrication §15 forbids.
+MAX_NCTS_PER_CODE = 1
+
 
 def _rows(z: zipfile.ZipFile, name: str) -> list[dict]:
     txt = z.read(name).decode("utf-8", "replace").splitlines()
@@ -296,7 +319,8 @@ def extract_and_link(limit: int | None = None) -> dict:
 
     today = date.today().isoformat()
     out_rows, agg = [], {"docs": 0, "codes": 0, "linked": 0, "unlinked": 0,
-                         "ncts": set(), "no_text": 0}
+                         "ncts": set(), "no_text": 0, "blocked_tokens": 0,
+                         "ambiguous_dropped": 0, "ambiguous_examples": {}}
     for rec in recs:
         for pdf in rec.get("pdfs", []):
             path = pdf.get("path")
@@ -322,6 +346,9 @@ def extract_and_link(limit: int | None = None) -> dict:
                 continue
             codes = {c.upper().replace(" ", "-") for c in PROTOCOL_RE.findall(txt)}
             codes = {c for c in codes if not c.startswith(("NDA", "BLA", "ANDA"))}
+            blocked = codes & CODE_BLOCKLIST
+            codes -= CODE_BLOCKLIST
+            agg["blocked_tokens"] += len(blocked)
             agg["codes"] += len(codes)
             if not codes:
                 continue
@@ -329,17 +356,32 @@ def extract_and_link(limit: int | None = None) -> dict:
             hits = con.execute(
                 f"SELECT DISTINCT code, nct_id, id_source FROM idinfo "
                 f"WHERE code IN ({inlist})").fetchall()
+            # Ambiguity gate: drop any code resolving to >1 trial. Measured on
+            # the first run, "COVID-19" resolved to 13 NCTs — one token linking a
+            # review to thirteen unrelated trials. Shipping that would poison
+            # everything downstream with full confidence.
+            per_code: dict[str, set] = {}
+            for code, nct, _src in hits:
+                per_code.setdefault(code, set()).add(nct)
             for code, nct, src in hits:
+                k = len(per_code[code])
+                if k > MAX_NCTS_PER_CODE:
+                    agg["ambiguous_dropped"] += 1
+                    agg["ambiguous_examples"].setdefault(code, k)
+                    continue
                 agg["linked"] += 1
                 agg["ncts"].add(nct)
                 out_rows.append({
                     "appl_no": rec["appl_no"], "appl_type": rec["appl_type"],
                     "sponsor": rec["sponsor"], "doc_suffix": pdf["suffix"],
                     "pdf_url": pdf["url"], "protocol_code": code, "nct_id": nct,
-                    "id_source": src,
+                    "id_source": src, "n_ncts_for_code": k,
                     "method": "protocol code in FDA review text -> AACT "
-                              "id_information -> nct_id",
-                    "confidence": "candidate — code match, needs adjudication",
+                              "id_information -> nct_id; blocklisted disease/"
+                              "standard tokens removed; codes resolving to >1 "
+                              "trial dropped as ambiguous",
+                    "confidence": "candidate — unambiguous code match, still "
+                                  "needs adjudication before use as fact",
                     "source_tier": "regulatory", "locator": pdf["url"],
                     "licence": "US federal government work — public domain",
                     "extracted_at": today})

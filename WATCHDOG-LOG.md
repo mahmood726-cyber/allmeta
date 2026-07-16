@@ -39,3 +39,7 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T14:58:27 | isrctn | FULL malaria+TB ISRCTN population ingested: 927 fetched (315+612 = registry totals), 891 distinct | KEY-ABSENT 770/891 = 86.4% (vs 65% on the n=211 sample) | African-recruiting 330 (37.0%)
 2026-07-16T14:58:27 | isrctn | 304/891 = 34.1% are African-recruiting AND NCT-absent => structurally invisible to any NCT join | e.g. ISRCTN10885288 UGANDA CKD n=1,125, registered primary present, NCT ABSENT
 2026-07-16T14:58:27 | isrctn-BUG | ISRCTN API ignores offset/page/start/from/skip - every request returns page 1 | first run 'fetched' 1,100 -> 197 distinct and computed 93.9% off the repeat; DISCARDED. limit>=totalCount is the only paging control
+2026-07-16T17:47:32 | fulltext:linked_rct | PHASE COMPLETE: 62,881 papers, 34,343 with tables, 104,870 tables | next phases started (dta harvest + isrctn ncd)
+2026-07-16T17:47:32 | fda §15 GATE | regex matched 'COVID-19' -> 13 NCTs = FABRICATION | gate cut 69 links -> 22, 29 NCTs -> 12 (3 blocked, 8 ambiguous dropped)
+2026-07-16T17:47:32 | fda §15 PRECISION | hand-verified 12 codes: ~10 correct, KEYNOTE-189->NCT03950674 is a sub-study (wrong record), PEG-3350 is a LAXATIVE not a code | precision ~83% => ROUTE NOT USABLE YET, candidates only
+2026-07-16T17:47:32 | isrctn NCD | HIV+NCD ingested: key-absent 90.3%, AFRICAN ONLY 3.9% | vs malaria/TB 37.0% - the NCD-African gap holds IN ISRCTN TOO => not a CT.gov artefact, NCD African trials are genuinely scarce everywhere

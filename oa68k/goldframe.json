@@ -1,0 +1,37 @@
+{
+  "figscan_ledger": "F:\\allmeta\\oa68k\\data\\figscan.pc1.jsonl",
+  "n_scanned": 13315,
+  "harvest_metas_known": 24688,
+  "frames": {
+    "meta": {
+      "n": 8817,
+      "papers_with_forest": 5157,
+      "rate": 0.5848928206873086,
+      "ci95": [
+        0.5745727942500696,
+        0.5951389031008953
+      ],
+      "forest_figures": 15989
+    },
+    "not_in_harvest": {
+      "n": 4498,
+      "papers_with_forest": 196,
+      "rate": 0.04357492218763895,
+      "ci95": [
+        0.037988154009642935,
+        0.0499406616110577
+      ],
+      "forest_figures": 591
+    },
+    "BLENDED": {
+      "n": 13315,
+      "papers_with_forest": 5353,
+      "rate": 0.4020277882087871,
+      "ci95": [
+        0.3937289447099129,
+        0.4103831486421096
+      ],
+      "forest_figures": 16580
+    }
+  }
+}

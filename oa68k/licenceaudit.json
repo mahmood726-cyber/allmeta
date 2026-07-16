@@ -1,0 +1,127 @@
+{
+  "frame": {
+    "harvest_metas": 24688,
+    "with_forest": 5157,
+    "jats_on_disk": 5157,
+    "missing_jats": 0
+  },
+  "source": "JATS <ali:license_ref> (NISO ALI) \u2014 publisher's own declaration",
+  "classes": {
+    "CC-BY": {
+      "n": 2887,
+      "pct": 55.98216017064185,
+      "ci95": [
+        54.623337146704806,
+        57.332077257023464
+      ],
+      "posture": "SHAREABLE",
+      "why": "derivatives redistributable WITH ATTRIBUTION"
+    },
+    "CC-BY-NC-ND": {
+      "n": 1559,
+      "pct": 30.23075431452395,
+      "ci95": [
+        28.992380049568467,
+        31.498560032762292
+      ],
+      "posture": "\u26a0\ufe0f NO-DERIVATIVES",
+      "why": "non-commercial AND NoDerivs \u2014 the most restrictive common OA licence"
+    },
+    "CC-BY-NC": {
+      "n": 659,
+      "pct": 12.778747333721157,
+      "ci95": [
+        11.895173696855874,
+        13.717734089347058
+      ],
+      "posture": "NON-COMMERCIAL",
+      "why": "redistributable for NON-COMMERCIAL use only \u2014 fits our mission, but downstream commercial re-use is barred, which limits who can adopt the benchmark"
+    },
+    "CC-BY-NC-SA": {
+      "n": 22,
+      "pct": 0.4266046150862905,
+      "ci95": [
+        0.28189743756023566,
+        0.6451141568277802
+      ],
+      "posture": "NON-COMMERCIAL*",
+      "why": "non-commercial AND share-alike"
+    },
+    "CC-BY-SA": {
+      "n": 14,
+      "pct": 0.2714756641458212,
+      "ci95": [
+        0.16178398663404336,
+        0.4552006540106142
+      ],
+      "posture": "SHAREABLE*",
+      "why": "redistributable but SHARE-ALIKE: the derivative must carry the same licence \u2014 a mixed-licence gold set cannot be uniformly CC-BY"
+    },
+    "CC-BY-ND": {
+      "n": 6,
+      "pct": 0.11634671320535195,
+      "ci95": [
+        0.05333258049224601,
+        0.2536251064090531
+      ],
+      "posture": "\u26a0\ufe0f NO-DERIVATIVES",
+      "why": "NoDerivs \u2014 a derived dataset is arguably exactly what ND forbids"
+    },
+    "CC0": {
+      "n": 4,
+      "pct": 0.07756447547023464,
+      "ci95": [
+        0.030166826385568855,
+        0.19928412207989074
+      ],
+      "posture": "SHAREABLE",
+      "why": "public domain dedication"
+    },
+    "OTHER/UNRECOGNISED": {
+      "n": 3,
+      "pct": 0.058173356602675974,
+      "ci95": [
+        0.01978576075307078,
+        0.17091181849446896
+      ],
+      "posture": "\u26a0\ufe0f UNKNOWN",
+      "why": "not a recognised CC URL \u2014 treat as NOT shareable until read by a human"
+    },
+    "NO_LICENSE_REF": {
+      "n": 3,
+      "pct": 0.058173356602675974,
+      "ci95": [
+        0.01978576075307078,
+        0.17091181849446896
+      ],
+      "posture": "\u26a0\ufe0f UNKNOWN",
+      "why": "no machine-readable licence in the JATS \u2014 fail closed"
+    }
+  },
+  "summary": {
+    "cc_by_or_cc0": {
+      "k": 2891,
+      "n": 5157,
+      "pct": 56.05972464611208,
+      "ci95": [
+        54.701100392206456,
+        57.409327488393494
+      ]
+    },
+    "share_alike": 14,
+    "non_commercial": 681,
+    "no_derivatives": 1565,
+    "unknown": 6
+  },
+  "license_ref_content_type": {
+    "ccbylicense": 2887,
+    "ccbyncndlicense": 1559,
+    "ccbyncsalicense": 22,
+    "ccbynclicense": 659,
+    "none": 3,
+    "ccbyndlicense": 6,
+    "ccbysalicense": 14,
+    "cc0license": 4
+  },
+  "fallback_verdict": "DIFFERENT ARTEFACT"
+}

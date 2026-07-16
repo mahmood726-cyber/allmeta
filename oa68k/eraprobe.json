@@ -1,0 +1,59 @@
+{
+  "total_oa_metas": 67762,
+  "method": "exact hitCount facets \u2014 no paging, no sampling",
+  "eras": {
+    "\u22642014": {
+      "total": 5671,
+      "pct_of_world": 8.368997373158997,
+      "shareable": 4289,
+      "shareable_pct": 75.63040028213719,
+      "nd_family": 233,
+      "nd_pct": 4.108622817845177,
+      "unknown": 384,
+      "unknown_pct": 6.77129254099806,
+      "want_for_n1000_proportional": 83.68997373158997,
+      "headroom": 51.2486718391818
+    },
+    "2015-19": {
+      "total": 15311,
+      "pct_of_world": 22.595259880168825,
+      "shareable": 10709,
+      "shareable_pct": 69.94317810724316,
+      "nd_family": 1571,
+      "nd_pct": 10.26059695643655,
+      "unknown": 348,
+      "unknown_pct": 2.2728757102736594,
+      "want_for_n1000_proportional": 225.95259880168825,
+      "headroom": 47.39489634903011
+    },
+    "2020-22": {
+      "total": 18813,
+      "pct_of_world": 27.763348189250614,
+      "shareable": 12939,
+      "shareable_pct": 68.77690958379844,
+      "nd_family": 1511,
+      "nd_pct": 8.031680221123692,
+      "unknown": 1080,
+      "unknown_pct": 5.74071121033328,
+      "want_for_n1000_proportional": 277.6334818925061,
+      "headroom": 46.6046094721735
+    },
+    "2023-26": {
+      "total": 27967,
+      "pct_of_world": 41.27239455742156,
+      "shareable": 17414,
+      "shareable_pct": 62.26624235706368,
+      "nd_family": 6295,
+      "nd_pct": 22.508670933600314,
+      "unknown": 121,
+      "unknown_pct": 0.432652769335288,
+      "want_for_n1000_proportional": 412.72394557421563,
+      "headroom": 42.192851145993494
+    }
+  },
+  "shareable_rate_range": [
+    62.26624235706368,
+    75.63040028213719
+  ],
+  "shareable_rate_spread": 1.214629266504267
+}

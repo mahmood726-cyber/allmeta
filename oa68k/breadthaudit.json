@@ -1,0 +1,127 @@
+{
+  "n": 5157,
+  "shareable": 2891,
+  "shareable_pct": 56.05972464611208,
+  "by_publisher": {
+    "BMC": {
+      "n_all": 1388,
+      "n_shareable": 402,
+      "pct_of_corpus": 26.914872988171417,
+      "pct_of_public_subset": 13.90522310619163,
+      "skew": 0.5166371437941659
+    },
+    "UNKNOWN": {
+      "n_all": 748,
+      "n_shareable": 478,
+      "pct_of_corpus": 14.504556912933877,
+      "pct_of_public_subset": 16.534071255620894,
+      "skew": 1.1399225329577132
+    },
+    "Wiley": {
+      "n_all": 377,
+      "n_shareable": 244,
+      "pct_of_corpus": 7.310451813069614,
+      "pct_of_public_subset": 8.439986163957109,
+      "skew": 1.1545095131969976
+    },
+    "Frontiers": {
+      "n_all": 367,
+      "n_shareable": 367,
+      "pct_of_corpus": 7.116540624394028,
+      "pct_of_public_subset": 12.694569353164995,
+      "skew": 1.7838118298166725
+    },
+    "Springer/BMC": {
+      "n_all": 267,
+      "n_shareable": 126,
+      "pct_of_corpus": 5.177428737638162,
+      "pct_of_public_subset": 4.358353510895884,
+      "skew": 0.8417988410370814
+    },
+    "Wolters Kluwer": {
+      "n_all": 264,
+      "n_shareable": 117,
+      "pct_of_corpus": 5.119255381035486,
+      "pct_of_public_subset": 4.047042545831892,
+      "skew": 0.7905529700323889
+    },
+    "MDPI": {
+      "n_all": 252,
+      "n_shareable": 252,
+      "pct_of_corpus": 4.886561954624782,
+      "pct_of_public_subset": 8.716707021791768,
+      "skew": 1.7838118298166723
+    },
+    "PLOS": {
+      "n_all": 229,
+      "n_shareable": 229,
+      "pct_of_corpus": 4.440566220670933,
+      "pct_of_public_subset": 7.921134555517122,
+      "skew": 1.7838118298166725
+    },
+    "OUP": {
+      "n_all": 150,
+      "n_shareable": 99,
+      "pct_of_corpus": 2.908667830133799,
+      "pct_of_public_subset": 3.4244206157039088,
+      "skew": 1.1773158076790038
+    },
+    "Taylor & Francis": {
+      "n_all": 112,
+      "n_shareable": 45,
+      "pct_of_corpus": 2.1718053131665696,
+      "pct_of_public_subset": 1.5565548253199586,
+      "skew": 0.7167101101941988
+    },
+    "BMJ": {
+      "n_all": 108,
+      "n_shareable": 17,
+      "pct_of_corpus": 2.094240837696335,
+      "pct_of_public_subset": 0.588031822898651,
+      "skew": 0.28078519543410585
+    },
+    "JMIR": {
+      "n_all": 80,
+      "n_shareable": 80,
+      "pct_of_corpus": 1.5512895094046926,
+      "pct_of_public_subset": 2.767208578346593,
+      "skew": 1.7838118298166725
+    }
+  },
+  "by_era": {
+    "\u22642014": {
+      "n_all": 1,
+      "n_shareable": 0,
+      "pct_of_corpus": 0.01939111886755866,
+      "pct_of_public_subset": 0.0,
+      "skew": 0.0
+    },
+    "2020-22": {
+      "n_all": 2,
+      "n_shareable": 0,
+      "pct_of_corpus": 0.03878223773511732,
+      "pct_of_public_subset": 0.0,
+      "skew": 0.0
+    },
+    "2023-26": {
+      "n_all": 5152,
+      "n_shareable": 2891,
+      "pct_of_corpus": 99.9030444056622,
+      "pct_of_public_subset": 100.0,
+      "skew": 1.00097049689441
+    },
+    "unknown": {
+      "n_all": 2,
+      "n_shareable": 0,
+      "pct_of_corpus": 0.03878223773511732,
+      "pct_of_public_subset": 0.0,
+      "skew": 0.0
+    }
+  },
+  "verdict": {
+    "publisher_skew_min": 0.28078519543410585,
+    "publisher_skew_max": 1.7838118298166725,
+    "era_skew_min": 1.00097049689441,
+    "era_skew_max": 1.00097049689441
+  }
+}
