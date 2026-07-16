@@ -1,5 +1,27 @@
 # The raw-XML cache (~8.5 GB projected) and ledgers stay on pc1 — never committed.
-data/
+# NOTE: `data/*` not `data/` — git cannot re-include a file whose PARENT dir is
+# excluded, so an excluded `data/` would silently defeat the exception below.
+# (Verified with `git check-ignore -v`; the naive `data/` + `!…` form FAILED.)
+data/*
+
+# EXCEPTION — the vision evidence ledger. The rule above exists because a script
+# REGENERATES everything under data/. Nothing regenerates this: a vision call is
+# non-reproducible (re-running the model returns a DIFFERENT answer), so the
+# ledger is EVIDENCE, not derived data. On 2026-07-16 "has vision ever run?"
+# needed a forensic audit precisely because the calls were never stored. 344 KB
+# of text; the raw responses in it are irreplaceable and cost real money.
+# The BLOBS stay ignored: ~4.6 MB/36 figures (~2 GB at corpus scale) and they are
+# re-fetchable from the PMC CDN — and content-hashed, so drift is detectable.
+!data/visionstore/
+data/visionstore/*
+!data/visionstore/calls.jsonl
+# Same reasoning, per-shard. The exception is BY NAME because `data/visionstore/*`
+# excludes the dir's contents wholesale; a shard added without its own `!` line is
+# silently untracked, which is how irreplaceable evidence goes missing quietly.
+# Shard writers append here to avoid interleaving with the owner's calls.jsonl;
+# the owner merges. Blobs stay ignored (re-fetchable + content-hashed).
+!data/visionstore/calls.shard-A.jsonl
+
 __pycache__/
 .pytest_cache/
 *.pyc
