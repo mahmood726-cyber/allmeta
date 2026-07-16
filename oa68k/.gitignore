@@ -3,3 +3,5 @@ data/
 __pycache__/
 .pytest_cache/
 *.pyc
+# Local resume state: holds local paths + run state, not portable across nodes.
+PROGRESS.md

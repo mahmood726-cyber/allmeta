@@ -49,6 +49,18 @@ from net import PoliteSession, append_jsonl, load_done_keys
 # never bleed across populations.
 CORPORA = ("linked_rct", "dta", "oa_rct")
 
+# Commit tables+ledger together every N papers. Small enough that a kill costs
+# seconds of re-fetch, large enough to avoid a parquet file per paper.
+COMMIT_EVERY = 100
+
+# NCBI eutils allows ~3 req/s per IP without an API key, and that budget is
+# SHARED: the 68k lane's harvest.py runs its own PoliteSession against the same
+# host from this same machine. At the default 0.34s each we would together push
+# ~5.8 req/s and risk both lanes being blocked. We take the smaller share (~1.4
+# req/s) because their harvest is the 68k spine and ours is a backlog that can
+# take as long as it needs. Env-overridable for a node running this lane alone.
+NCBI_MIN_INTERVAL = float(os.environ.get("OA68K_NCBI_INTERVAL", "0.7"))
+
 
 def ft_ledger(corpus: str) -> str:
     stem = "paperft" if corpus == "linked_rct" else f"paperft_{corpus}"
@@ -99,6 +111,51 @@ def candidates() -> list[dict]:
             for r in rows]
 
 
+def fetch_or_cached(sess: PoliteSession, c: dict) -> dict:
+    """Reuse the on-disk XML if we already have it; only then hit the network.
+
+    The cache is shared with the 68k lane's harvest (keyed by PMCID, and the
+    bytes are the same document either way), so a meta already harvested there
+    costs us nothing. harvest.fetch_fulltext always re-fetches, which is right
+    for a first pass but wasteful for a re-run after a crash — and every avoided
+    request is NCBI budget handed back to the other lane.
+    """
+    path = os.path.join(C.CACHE, f"{c['pmcid']}.xml")
+    if os.path.isfile(path) and os.path.getsize(path) > 500:
+        return {"pmcid": c["pmcid"], "pmid": c.get("pmid"), "doi": c.get("doi"),
+                "status": "XML", "tier": "cache", "tiers_tried": ["cache"],
+                "bytes": os.path.getsize(path), "path": path}
+    return harvest.fetch_fulltext(sess, c)
+
+
+def _acquire_lock(corpus: str):
+    """One harvester per corpus per node, enforced by an O_EXCL lock file.
+
+    Not defensive padding — this bug happened: two `fulltext.py --all` processes
+    ran concurrently (a nohup that I wrongly believed dead, plus a managed job),
+    computed the same todo list, and re-fetched the same 427 papers while both
+    appending to one ledger. `ps` on Git Bash shows no command arguments, so
+    grepping for the script name reported 0 matches and hid it. A lock makes the
+    second instance fail loudly instead of silently doubling the NCBI load.
+    """
+    lock = os.path.join(C.DATA, f".fulltext_{corpus}.{C.NODE}.lock")
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        try:
+            with open(lock) as f:
+                who = f.read().strip()
+        except OSError:
+            who = "unknown"
+        raise RuntimeError(
+            f"another fulltext harvester holds {lock} ({who}). Two harvesters on "
+            f"one corpus re-fetch the same papers and double the NCBI rate. If "
+            f"that process is genuinely dead, delete the lock file and re-run.")
+    with os.fdopen(fd, "w") as f:
+        f.write(f"pid={os.getpid()} started={date.today().isoformat()}")
+    return lock
+
+
 def seed_candidates(corpus: str) -> list[dict]:
     """Candidates for an EPMC-seeded corpus (dta / oa_rct)."""
     import epmc_seed
@@ -116,6 +173,17 @@ def run(limit: int | None, all_: bool = False,
     C.ensure_dirs()
     tdir, ledger = tables_dir(corpus), ft_ledger(corpus)
     os.makedirs(tdir, exist_ok=True)
+    lock = _acquire_lock(corpus)
+    try:
+        return _run_locked(limit, all_, corpus, tdir, ledger)
+    finally:
+        try:
+            os.remove(lock)
+        except OSError:
+            pass
+
+
+def _run_locked(limit, all_, corpus, tdir, ledger) -> dict:
     today = date.today().isoformat()
     cands = candidates() if corpus == "linked_rct" else seed_candidates(corpus)
     done = load_done_keys(ledger, "pmcid")
@@ -125,11 +193,36 @@ def run(limit: int | None, all_: bool = False,
     print(f"[fulltext:{corpus}] {len(cands)} OA papers; {len(done)} done; "
           f"fetching {len(todo)}", flush=True)
 
-    sess = PoliteSession()
-    agg = {"fetched": 0, "missed": 0, "with_tables": 0, "tables": 0}
-    buf, t0 = [], time.monotonic()
+    sess = PoliteSession(min_interval=NCBI_MIN_INTERVAL)
+    agg = {"fetched": 0, "missed": 0, "from_cache": 0, "with_tables": 0,
+           "tables": 0}
+    tbuf, lbuf, t0 = [], [], time.monotonic()
+
+    def commit():
+        """Persist tables FIRST, then the ledger rows that claim them.
+
+        Order is the whole point. Appending the ledger per paper while buffering
+        its tables means a kill in between marks the paper done with its tables
+        never written — and because resume is a set-difference on the ledger, that
+        paper is skipped forever. Silent, permanent loss. Observed live: 521
+        papers marked done, 8 table rows on disk, ~1,500 parsed tables lost in a
+        killed process's buffer.
+
+        Tables-then-ledger inverts the risk into a harmless one: a kill in the
+        window re-fetches those papers next run and re-writes their table rows,
+        so the failure mode is duplicate rows (detectable and removable by
+        (pmcid, table_index)) instead of missing ones. Prefer visible duplication
+        over invisible loss.
+        """
+        if tbuf:
+            _flush(tbuf, tdir)
+            tbuf.clear()
+        for r in lbuf:
+            append_jsonl(ledger, r)
+        lbuf.clear()
+
     for i, c in enumerate(todo):
-        rec = harvest.fetch_fulltext(sess, c)
+        rec = fetch_or_cached(sess, c)
         rec.update(ncts=c["ncts"], cohort_rank=c["cohort_rank"], corpus=corpus,
                    source_tier="oa_fulltext", extracted_at=today,
                    locator=f"https://europepmc.org/article/PMC/{c['pmcid']}")
@@ -141,7 +234,7 @@ def run(limit: int | None, all_: bool = False,
                 tabs = jats.parse_tables(xml)
                 n_tab = len(tabs)
                 for ti, t in enumerate(tabs):
-                    buf.append({
+                    tbuf.append({
                         "pmcid": c["pmcid"], "pmid": c["pmid"], "ncts": c["ncts"],
                         "table_index": ti,
                         "caption": (t.get("caption") or "")[:500],
@@ -155,22 +248,22 @@ def run(limit: int | None, all_: bool = False,
             except Exception as e:
                 rec["table_parse_error"] = str(e)[:200]
         rec["n_tables"] = n_tab
-        append_jsonl(ledger, rec)
+        lbuf.append(rec)
         if rec["status"] == "XML":
             agg["fetched"] += 1
+            agg["from_cache"] += int(rec.get("tier") == "cache")
             agg["with_tables"] += int(n_tab > 0)
             agg["tables"] += n_tab
         else:
             agg["missed"] += 1
-        if len(buf) >= 2000:
-            _flush(buf, tdir)
-            buf = []
+        if len(lbuf) >= COMMIT_EVERY:
+            commit()
         if (i + 1) % 50 == 0:
             rate = (i + 1) / max(time.monotonic() - t0, 1e-9) * 60
             print(f"[fulltext:{corpus}] {i+1}/{len(todo)} ({rate:.0f}/min) "
-                  f"xml={agg['fetched']} tables={agg['tables']}", flush=True)
-    if buf:
-        _flush(buf, tdir)
+                  f"xml={agg['fetched']} cache={agg['from_cache']} "
+                  f"tables={agg['tables']}", flush=True)
+    commit()
     print(f"[fulltext:{corpus}] {agg}")
     return agg
 
