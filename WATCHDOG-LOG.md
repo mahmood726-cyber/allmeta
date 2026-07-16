@@ -15,3 +15,4 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T12:39:27 | transportability | African site: malaria 63.2% vs NCD-cardiometabolic 3.1% (1,392/44,697) | absence (malaria) vs elsewhere-generated (NCD) quantified
 2026-07-16T12:47:28 | fda:link | 24 review PDFs -> 69 links -> 29 distinct NCTs (0 unextractable) | Turner loop closed on REAL regulatory data
 2026-07-16T12:47:28 | transport | 24,469 RCTs w/ Region-of-Enrollment; 45,289 w/ structured sex (was 843 = category-vs-classification bug, 54x undercount) | NCD mean 0.5% participants in Africa vs malaria 64.8%
+2026-07-16T12:51:29 | resume-verify | KILL/RESTART PASSED: no-skip 5,970=5,970 | no-redo 0 dupes | monotone | stale-lock reclaim added (a killed harvester's lock would have wedged the watchdog permanently)

@@ -33,6 +33,8 @@ import argparse
 import glob
 import json
 import os
+import re
+import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -177,6 +179,18 @@ def fetch_or_cached(sess: PoliteSession, c: dict) -> dict:
     return harvest.fetch_fulltext(sess, c)
 
 
+def _pid_alive(pid: int) -> bool:
+    """Is that PID still running? Windows has no os.kill(pid, 0) semantics we can
+    rely on here, so ask the OS task list."""
+    try:
+        out = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+            capture_output=True, text=True, timeout=20).stdout
+        return str(pid) in out
+    except Exception:
+        return True          # can't tell => assume alive => refuse the lock
+
+
 def _acquire_lock(corpus: str):
     """One harvester per corpus per node, enforced by an O_EXCL lock file.
 
@@ -186,23 +200,42 @@ def _acquire_lock(corpus: str):
     appending to one ledger. `ps` on Git Bash shows no command arguments, so
     grepping for the script name reported 0 matches and hid it. A lock makes the
     second instance fail loudly instead of silently doubling the NCBI load.
+
+    STALE-LOCK RECOVERY, and this one is load-bearing for the standing run: a
+    KILLED harvester leaves its lock behind. A watchdog that restarts this lane
+    from checkpoint would then hit the lock, fail, and the lane would stay dead
+    for good — a permanent outage caused by the safety mechanism. Verified live:
+    killing a harvester mid-flight left `.fulltext_linked_rct.pc1.lock` orphaned.
+    So we record the PID and take the lock if its owner is gone. A lock held by a
+    LIVE process is still refused — that is the case it exists for.
     """
     lock = os.path.join(C.DATA, f".fulltext_{corpus}.{C.NODE}.lock")
-    try:
-        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError:
+    for attempt in (1, 2):
         try:
-            with open(lock) as f:
-                who = f.read().strip()
-        except OSError:
-            who = "unknown"
-        raise RuntimeError(
-            f"another fulltext harvester holds {lock} ({who}). Two harvesters on "
-            f"one corpus re-fetch the same papers and double the NCBI rate. If "
-            f"that process is genuinely dead, delete the lock file and re-run.")
-    with os.fdopen(fd, "w") as f:
-        f.write(f"pid={os.getpid()} started={date.today().isoformat()}")
-    return lock
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                with open(lock) as f:
+                    who = f.read().strip()
+            except OSError:
+                who = ""
+            m = re.search(r"pid=(\d+)", who or "")
+            if m and not _pid_alive(int(m.group(1))) and attempt == 1:
+                print(f"[fulltext] stale lock from dead pid {m.group(1)} — "
+                      f"reclaiming ({lock})", flush=True)
+                try:
+                    os.remove(lock)
+                except OSError:
+                    pass
+                continue
+            raise RuntimeError(
+                f"another fulltext harvester holds {lock} ({who}). Two harvesters "
+                f"on one corpus re-fetch the same papers and double the NCBI "
+                f"rate. If that process is genuinely dead, delete the lock file.")
+        with os.fdopen(fd, "w") as f:
+            f.write(f"pid={os.getpid()} started={date.today().isoformat()}")
+        return lock
+    raise RuntimeError(f"could not acquire {lock}")
 
 
 def seed_candidates(corpus: str) -> list[dict]:
