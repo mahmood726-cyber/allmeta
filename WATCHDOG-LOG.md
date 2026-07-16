@@ -51,3 +51,8 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T18:41:45 | MILESTONE | cached == layer3 available in EVERY cohort (malaria 402/402, TB 241/241, HIV 1,210/1,210, NCD 14,532/14,574) | availability IS acquisition now
 2026-07-16T18:41:45 | malaria | OA layer 402 = 2.8x registry layer 145 | independently consistent w/ reachability lane's 3.5x => for malaria OA full text IS the primary layer
 2026-07-16T18:41:45 | oa_rct | seed 40,000 (39,889 w/ pmcid); harvest STARTED
+2026-07-16T20:49:03 | oa_rct PHASE COMPLETE | 39,887 papers harvested, 38,455 with tables, 132,387 tables (9,272 from cache = linked_rct overlap)
+2026-07-16T20:49:03 | seed-BUG | --max 40000 wrote complete=true at 40,000 of hit_count=105,402 => remaining 65,402 unreachable FOREVER | fixed: complete now means EXHAUSTED, capped runs set stopped_at_max; stale flag corrected; seed resuming
+2026-07-16T20:49:03 | ema EPAR | reachable (robots allows /en/documents/), 2,321 human medicines, 462 priority | assessment-report PDF = /en/documents/assessment-report/{drug}-epar-public-assessment-report_en.pdf
+2026-07-16T20:49:03 | ema BIMODAL | generic/hybrid (Qaialdo) 38pp 2 tables 0 endpoints = USELESS | new active substance (Entresto) 115pp 75 TABLES, PARADIGM-HF x20, p-values, HRs = RICH | EPAR value depends on application type
+2026-07-16T20:49:03 | ema LINKAGE GAP | 0 NCT, 0 EudraCT in the Entresto EPAR - trials named (PARADIGM) not accessioned | same gap as FDA; name-matching precision ~83% per the §15 gate => NOT usable as a fact route yet

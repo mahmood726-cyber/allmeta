@@ -127,13 +127,23 @@ def seed(corpus: str, query: str, max_rows: int | None = None) -> dict:
             if max_rows and written >= max_rows:
                 break
         nxt = j.get("nextCursorMark")
-        complete = (not nxt or nxt == cursor or (max_rows and written >= max_rows))
+        # `complete` means THE CORPUS IS EXHAUSTED — never merely "this run
+        # stopped". Hitting --max is a bounded run, not a finished corpus, and
+        # marking it complete would make the next full run short-circuit on the
+        # "already complete" check and silently never fetch the remainder.
+        # Observed: oa_rct wrote 40,000 of hit_count=105,402 and recorded
+        # complete=true — 65,402 rows would have been unreachable forever. Same
+        # family as the empty-page bug fixed above: a flag that says "done" when
+        # it means "stopped".
+        exhausted = (not nxt or nxt == cursor)
+        capped = bool(max_rows and written >= max_rows)
         atomic_write_json(stp, {"corpus": corpus, "query": query,
                                 "hit_count": hit_count, "written": written,
                                 "next_cursor": nxt or cursor,
-                                "complete": bool(complete)})
+                                "complete": bool(exhausted),
+                                "stopped_at_max": capped and not exhausted})
         print(f"[seed:{corpus}] {written}/{hit_count} rows", flush=True)
-        if complete:
+        if exhausted or capped:
             break
         cursor = nxt
 
