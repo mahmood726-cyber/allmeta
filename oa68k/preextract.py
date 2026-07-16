@@ -37,7 +37,10 @@ def collect_ncts() -> set:
     (74% false), so mixing them would poison the trial set.
     """
     ncts = set()
-    paths = C.node_ledgers("detect2") or C.node_ledgers("detect")
+    # newest detector wins: v3 (column-semantic, JATS) > v2 > v1. Never mix — v1/v2
+    # links are BACKGROUND-contaminated (74% false).
+    paths = next((C.node_ledgers(s) for s in ("detect3", "detect2", "detect")
+                  if C.node_ledgers(s)), [])
     for path in paths:
         with open(path, "r", encoding="utf-8") as f:
             for line in f:

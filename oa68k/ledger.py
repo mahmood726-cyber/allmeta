@@ -48,7 +48,8 @@ def report() -> dict:
     # Prefer detect2 (table-scoped detectors + reference_type-filtered links).
     # v1's links are 74% BACKGROUND-contaminated and its E1/E5 are text-regex FPs,
     # so never mix the two.
-    stem = "detect2" if C.node_ledgers("detect2") else "detect"
+    stem = next((s for s in ("detect3", "detect2", "detect")
+                 if C.node_ledgers(s)), "detect")
     det = {"detected": 0, "cites_registry_linked_trial": 0, "distinct_ncts": set(),
            "e1_candidates": 0, "e5_candidates": 0, "ref_pmids": 0,
            "prose_fractions_not_flagged": 0}

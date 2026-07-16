@@ -44,15 +44,30 @@ PMID_RE = re.compile(r"^\d{1,9}$")
 CHUNK = 80          # EXT_ID ORs per EPMC query; keeps the URL well under limits
 
 
-def collect_pmids() -> list:
+def collect_pmids(link_types_only: bool = True) -> list:
     """Distinct well-formed PMIDs linked to any RCT in the store, ordered by
-    cohort priority (malaria/TB/HIV first), then PMID.
+    (reports-this-trial, priority cohort, pmid).
 
-    Ordering is load-bearing, not cosmetic. Sorting by PMID alone walks the
-    corpus oldest-first — a probe of the first 240 resolved only 2 open-access
-    full texts, because 1970s-80s papers predate OA entirely. That is both the
-    wrong order for Mahmood's priority and a misleading first read on coverage.
-    A PMID linked to any priority trial is fetched in the priority pass.
+    Ordering is load-bearing, not cosmetic — two measured reasons:
+
+    1. **reference_type.** Only DERIVED (NLM-derived: this paper reports this
+       trial) and RESULT (author-declared results paper) are evidence that the
+       paper reports the trial. BACKGROUND means the trial merely CITES the
+       paper. Measured on this store: 448,231 distinct linked PMIDs, of which
+       only 178,236 are DERIVED/RESULT — **269,995 (60.2%) are BACKGROUND-only**
+       and can never contribute to the three-layer rule. Fetching them first
+       would spend ~60% of the network budget on papers we then discard. (The
+       68k lane's linkmap.py measured the same contamination corpus-wide: 68% of
+       AACT's crosswalk rows are BACKGROUND, worst fan-out 301 NCTs for one
+       famous citation.)
+    2. **Cohort.** Malaria/TB/HIV first, per the standing priority.
+
+    Sorting by PMID alone walks oldest-first (a 240-PMID probe resolved just 2
+    open-access full texts, because 1970s-80s papers predate OA) — deterministic
+    but the wrong order, and a misleading early read on coverage.
+
+    `link_types_only=False` widens to BACKGROUND for a completeness pass; those
+    paper nodes are real, just not trial evidence.
     """
     import duckdb
     refs = sorted(glob.glob(os.path.join(C.STORE, "trial_refs", "*.parquet")))
@@ -64,21 +79,28 @@ def collect_pmids() -> list:
     def lst(fs):
         return "[" + ",".join("'" + f.replace(os.sep, "/") + "'" for f in fs) + "]"
 
+    where = ("AND upper(reference_type) IN ('DERIVED','RESULT')"
+             if link_types_only else "")
     con = duckdb.connect()
+    cohort_join = (f"LEFT JOIN (SELECT nct_id, cohort FROM "
+                   f"read_parquet({lst(trials)})) t ON t.nct_id = r.nct_id"
+                   if trials else "")
+    cohort_expr = ("MIN(CASE WHEN t.cohort = 'p0_malaria_tb_hiv' THEN 0 ELSE 1 END)"
+                   if trials else "1")
     rows = con.execute(f"""
         WITH r AS (
-          SELECT trim(pmid) AS pmid, nct_id FROM read_parquet({lst(refs)})
-          WHERE pmid IS NOT NULL AND trim(pmid) <> ''
-        ),
-        t AS (SELECT nct_id, cohort FROM read_parquet({lst(trials)}))
+          SELECT trim(pmid) AS pmid, nct_id, reference_type
+          FROM read_parquet({lst(refs)})
+          WHERE pmid IS NOT NULL AND trim(pmid) <> '' {where}
+        )
         SELECT r.pmid,
-               MIN(CASE WHEN t.cohort = 'p0_malaria_tb_hiv' THEN 0 ELSE 1 END) AS rank
-        FROM r LEFT JOIN t ON t.nct_id = r.nct_id
+               MIN(CASE WHEN upper(r.reference_type) IN ('DERIVED','RESULT')
+                        THEN 0 ELSE 1 END) AS reports_trial,
+               {cohort_expr} AS cohort_rank
+        FROM r {cohort_join}
         GROUP BY r.pmid
-        ORDER BY rank, CAST(r.pmid AS BIGINT)
-    """).fetchall() if trials else con.execute(f"""
-        SELECT DISTINCT trim(pmid), 1 FROM read_parquet({lst(refs)})
-        WHERE pmid IS NOT NULL AND trim(pmid) <> ''""").fetchall()
+        ORDER BY reports_trial, cohort_rank, CAST(r.pmid AS BIGINT)
+    """).fetchall()
 
     # Fail closed on junk rather than sending it to EPMC: a non-numeric "pmid"
     # is a data-quality signal, not something to silently coerce.
@@ -132,10 +154,11 @@ def _row(rec: dict, today: str) -> dict:
     }
 
 
-def run(limit: int | None = None, all_: bool = False) -> dict:
+def run(limit: int | None = None, all_: bool = False,
+        include_background: bool = False) -> dict:
     os.makedirs(PAPERS_DIR, exist_ok=True)
     today = date.today().isoformat()
-    want = collect_pmids()                       # already priority-ordered
+    want = collect_pmids(link_types_only=not include_background)  # priority-ordered
     done = load_done_keys(CROSSWALK_LEDGER, "pmid")
     todo = [p for p in want if p not in done]    # preserve that order
     if not all_ and limit:
@@ -210,5 +233,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=2000)
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--include-background", action="store_true",
+                    help="also fetch BACKGROUND-only PMIDs (60%% of links; they "
+                         "do NOT report the trial — completeness pass only)")
     a = ap.parse_args()
-    print(json.dumps(run(a.limit, a.all), indent=2))
+    print(json.dumps(run(a.limit, a.all, a.include_background), indent=2))

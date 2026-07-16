@@ -55,6 +55,22 @@ def parse_tables(xml_bytes: bytes) -> list[dict]:
             elif t == "caption":
                 caption = _text(ch)
 
+        # A row is the header row if it is a pure-<th> row OR if it lives inside
+        # <thead> at all. The <thead> arm is not belt-and-braces: PLOS — one of
+        # the largest OA publishers — marks up header rows as
+        # <thead><tr><td>…</td></tr></thead>, using <td>, not <th>. Keying only
+        # on <th> silently returns headers=[] for every PLOS table and demotes
+        # the real header into `rows` as if it were data. Measured on the first
+        # 12 OA trial papers harvested here: 39 of 40 tables came back
+        # header-less, and column-semantic detection is impossible without the
+        # header (that is the entire reason the JATS tier is preferred over BioC).
+        head_trs = set()
+        for sect in tw.iter():
+            if sect.tag.split("}")[-1] == "thead":
+                for tr in sect.iter():
+                    if tr.tag.split("}")[-1] == "tr":
+                        head_trs.add(id(tr))
+
         rows: list[list[str]] = []
         headers: list[str] = []
         for tr in tw.iter():
@@ -63,8 +79,8 @@ def parse_tables(xml_bytes: bytes) -> list[dict]:
             cs = _cells(tr)
             if not cs:
                 continue
-            if not headers and all(h for _, h in cs):
-                headers = [v for v, _ in cs]      # a pure-<th> row = the header
+            if not headers and (id(tr) in head_trs or all(h for _, h in cs)):
+                headers = [v for v, _ in cs]
             else:
                 rows.append([v for v, _ in cs])
         tables.append({"label": label, "caption": caption,

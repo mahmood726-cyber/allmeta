@@ -104,3 +104,18 @@ def test_ref_pmids_from_jats():
 def test_malformed_jats_does_not_crash():
     r = detect3.analyse(b"<article><body>truncated")
     assert r["n_tables"] == 0 and r["n_e1"] == 0
+
+
+def test_case_control_column_not_flagged():
+    """The detector's 1-of-1 real-world FP: `Case/Control 183/150` in a genetic
+    association meta = 183 cases vs 150 controls, not events over participants."""
+    x = table(["Population", "Case/Control"], [["Africa", "183/150"]],
+              caption="Table 3 Results of the meta-analysis from genetic models.")
+    r = detect3.analyse(x)
+    assert r["n_e5"] == 0, "case/control counts must not read as an impossible cell"
+    assert r["cells_skipped_excluded_col"] == 1
+
+
+def test_sample_size_tc_column_not_flagged():
+    x = table(["Study", "Sample size (T/C)"], [["A", "150/183"]])
+    assert detect3.analyse(x)["n_e5"] == 0

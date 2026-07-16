@@ -38,14 +38,19 @@ FRAC_IN = re.compile(r"\b(\d{1,6})\s*/\s*(\d{1,6})\b")
 # Positive evidence: this column holds events over participants.
 EVENTS_HDR = re.compile(
     r"\bn\s*/\s*n\b|\bn\s*/\s*total\b|\bevents?\s*/\s*|/\s*total\b|"
-    r"\bno\.?\s*/\s*|\bevents?\b|\bn\s*\(%\)|\bcases?\s*/\s*|\bincidence\b|"
+    r"\bno\.?\s*/\s*|\bevents?\b|\bn\s*\(%\)|\bincidence\b|"
     r"\bnumerator\b|\bresponders?\b|\bevent rate\b", re.IGNORECASE)
 
 # Negative evidence: never an events/N column, regardless of shape.
+# `case/control` is here, not in EVENTS_HDR: the only candidate that survived the
+# precision-first sweep was `Case/Control 183/150` in a genetic-association meta —
+# i.e. 183 cases vs 150 controls, a DESIGN descriptor, not events over participants.
+# It was the detector's 1-of-1 false positive; blocking it closes that class.
 NOT_EVENTS_HDR = re.compile(
     r"train|test|split|validation|cohort size|male\s*/\s*female|female\s*/\s*male|"
     r"\bsex\b|\bgender\b|\bm\s*/\s*f\b|dose|mg\b|ratio|\bage\b|year|"
     r"country|centre|center|design|model|reference|author|study id|"
+    r"case\s*/\s*control|control\s*/\s*case|sample size|"
     r"follow[- ]?up|duration|\bmean\b|\bsd\b|\bci\b|\bp[- ]?value\b|allocation",
     re.IGNORECASE)
 
