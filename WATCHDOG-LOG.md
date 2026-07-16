@@ -43,3 +43,7 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T17:47:32 | fda §15 GATE | regex matched 'COVID-19' -> 13 NCTs = FABRICATION | gate cut 69 links -> 22, 29 NCTs -> 12 (3 blocked, 8 ambiguous dropped)
 2026-07-16T17:47:32 | fda §15 PRECISION | hand-verified 12 codes: ~10 correct, KEYNOTE-189->NCT03950674 is a sub-study (wrong record), PEG-3350 is a LAXATIVE not a code | precision ~83% => ROUTE NOT USABLE YET, candidates only
 2026-07-16T17:47:32 | isrctn NCD | HIV+NCD ingested: key-absent 90.3%, AFRICAN ONLY 3.9% | vs malaria/TB 37.0% - the NCD-African gap holds IN ISRCTN TOO => not a CT.gov artefact, NCD African trials are genuinely scarce everywhere
+2026-07-16T18:35:44 | dta PHASE COMPLETE | 11,754 docs harvested, 38,015 tables, 3,631,878 cells (reparsed to uniform schema, 0 network calls)
+2026-07-16T18:35:44 | dta_detect | 2,608 flagged of 38,015 tables (2,154 sens_spec + 448 explicit TP/FP/FN/TN + 6 cross_tab); 1,797 papers with >=1 candidate 2x2
+2026-07-16T18:35:44 | dta SPLIT (honest) | of the 1,797: 1,033 (57.5%) are META-ANALYSES reporting OTHER studies' 2x2s; only 764 (42.5%) likely PRIMARY DTA | metas over-represented (57.5% of flagged vs 35.7% of corpus) - do NOT quote 1,797 as primary-DTA coverage
+2026-07-16T18:35:44 | oa_rct | seeding started (105,402 target)
