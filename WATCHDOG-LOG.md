@@ -36,3 +36,6 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T14:51:23 | D11 | TB n/N 9.2% < n(%) 13.3% < N-in-header 14.3% => our n/N-only diagnostic undercounted TB | BUT malaria is opposite (n/N 17.5% > n(%) 9.3%) - D11 holds for TB/HIV/NCD, not malaria
 2026-07-16T14:51:23 | reparse | 24,130 docs -> 69,586 tables -> 6,159,944 cells, 0 network calls | cache made the re-parse free
 2026-07-16T14:51:23 | D10 | our lane does NOT route through rct-extractor: binary comes from AACT outcome_measurements (COUNT_OF_PARTICIPANTS, 782,388 rows) | our emitted binary is NOT through the blind pipe
+2026-07-16T14:58:27 | isrctn | FULL malaria+TB ISRCTN population ingested: 927 fetched (315+612 = registry totals), 891 distinct | KEY-ABSENT 770/891 = 86.4% (vs 65% on the n=211 sample) | African-recruiting 330 (37.0%)
+2026-07-16T14:58:27 | isrctn | 304/891 = 34.1% are African-recruiting AND NCT-absent => structurally invisible to any NCT join | e.g. ISRCTN10885288 UGANDA CKD n=1,125, registered primary present, NCT ABSENT
+2026-07-16T14:58:27 | isrctn-BUG | ISRCTN API ignores offset/page/start/from/skip - every request returns page 1 | first run 'fetched' 1,100 -> 197 distinct and computed 93.9% off the repeat; DISCARDED. limit>=totalCount is the only paging control
