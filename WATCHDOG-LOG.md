@@ -47,3 +47,7 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T18:35:44 | dta_detect | 2,608 flagged of 38,015 tables (2,154 sens_spec + 448 explicit TP/FP/FN/TN + 6 cross_tab); 1,797 papers with >=1 candidate 2x2
 2026-07-16T18:35:44 | dta SPLIT (honest) | of the 1,797: 1,033 (57.5%) are META-ANALYSES reporting OTHER studies' 2x2s; only 764 (42.5%) likely PRIMARY DTA | metas over-represented (57.5% of flagged vs 35.7% of corpus) - do NOT quote 1,797 as primary-DTA coverage
 2026-07-16T18:35:44 | oa_rct | seeding started (105,402 target)
+2026-07-16T18:41:45 | CHECKPOINT 3-way | malaria 894: ANY-LAYER 555 (62.1%) | TB 776: 420 (54.1%) | NCD 84,524: 35,951 (42.5%) | HIV 4,962: 2,617 (52.7%)
+2026-07-16T18:41:45 | MILESTONE | cached == layer3 available in EVERY cohort (malaria 402/402, TB 241/241, HIV 1,210/1,210, NCD 14,532/14,574) | availability IS acquisition now
+2026-07-16T18:41:45 | malaria | OA layer 402 = 2.8x registry layer 145 | independently consistent w/ reachability lane's 3.5x => for malaria OA full text IS the primary layer
+2026-07-16T18:41:45 | oa_rct | seed 40,000 (39,889 w/ pmcid); harvest STARTED
