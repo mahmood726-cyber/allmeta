@@ -1,0 +1,5 @@
+# The raw-XML cache (~8.5 GB projected) and ledgers stay on pc1 — never committed.
+data/
+__pycache__/
+.pytest_cache/
+*.pyc
