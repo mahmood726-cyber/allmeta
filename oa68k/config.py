@@ -157,6 +157,13 @@ AACT_EXT_TABLES = [
     "calculated_values",         # derived registry fields (e.g. months to report)
     "outcome_counts",            # analysed N per arm per outcome -> ArmRecord.n
     "outcome_analysis_groups",   # which arms a posted analysis contrasts
+    # Transportability layer: WHO was enrolled. For NCD the evidence base was
+    # generated elsewhere (3.1% of cardiometabolic trials have an African site),
+    # so age/sex/region/baseline-risk are what let a Kampala user judge whether a
+    # Western estimate applies to their clinic. Prose cannot be regressed on;
+    # these are the structured sources.
+    "baseline_measurements",     # age/sex/race/BMI/BP per arm (STRUCTURED)
+    "baseline_counts",           # denominators for the above
 ]
 
 
