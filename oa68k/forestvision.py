@@ -52,6 +52,32 @@ SCHEMA = {
         },
         "outcome": {"type": ["string", "null"],
                     "description": "Outcome name from caption/axis/header, verbatim."},
+        # --- ARM IDENTITY. Added 2026-07-16 after the provenance audit found the
+        # schema recorded events_t/n_t/events_c/n_c but NOTHING saying WHICH
+        # printed column became "t". That made arm identity unauditable: it held
+        # in 4/4 hand-checks purely by the convention "left column -> t", and a
+        # plot printing control FIRST would invert the effect SILENTLY.
+        # No checksum can see this — the columns still sum. It is the same defect
+        # that let pregnancy ordinals into the parser as trial arms, and it was
+        # proven on an FDA table where BOTH checksums passed 6/6 while only 2 of
+        # 6 columns were randomised arms.
+        # The headers are already printed on the plot and the model already reads
+        # them, so this costs nothing and converts arm identity from
+        # unfalsifiable to checkable.
+        "arm_t_label": {"type": ["string", "null"],
+                        "description": "VERBATIM printed column header for the arm "
+                                       "mapped to *_t (e.g. 'ACT', 'Exposure', 'IV "
+                                       "iron'). null if the plot prints no arm "
+                                       "headers. NEVER infer it from a drug name in "
+                                       "the caption - read the column header."},
+        "arm_c_label": {"type": ["string", "null"],
+                        "description": "VERBATIM printed column header for the arm "
+                                       "mapped to *_c (e.g. 'Control', 'Placebo')."},
+        "model": {"type": ["string", "null"],
+                  "description": "Pooling model AS PRINTED in the column header "
+                                 "('IV, Random' / 'M-H, Fixed' / 'Peto'). null if "
+                                 "not printed. NEVER infer random-effects from the "
+                                 "presence of Tau2 - implying is not reading."},
         "timepoint": {"type": ["string", "null"]},
         "effect_measure": {"type": ["string", "null"],
                            "description": "RR|OR|HR|RD|MD|SMD|IV|other, as printed."},

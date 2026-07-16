@@ -61,3 +61,7 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T21:37:27 | keyscan HONEST | with working zoning: 336 raw hits -> 52 own-keys; 284 (85%) were CITATIONS not own registrations | PACTR 17 -> 2 => prior scans' 'PACTR ~= 0' CONFIRMED, not refuted
 2026-07-16T21:37:27 | store totals | 344,858 tables / 5,480,255 rows across linked_rct(174,456) + dta(38,015) + oa_rct(132,387)
 2026-07-16T22:41:02 | keyscan DISCARD | the oa_rct keyscan that finished ran on the BROKEN zoning: claimed 38,908 keys / PACTR 507 / 69.2% docs | DELETED, re-running with the verified stack (85% of that class is citations)
+2026-07-17T00:51:43 | keyscan oa_rct FIXED | 53,529 own-keys from 45,139 docs (64.9%); cited_not_own only 3,080 (5.4%) vs DTA's 85% - because oa_rct are PRIMARY RCT reports, DTA corpus was 57.5% metas
+2026-07-17T00:51:43 | PACTR RECONCILED (not refuted) | 539 PACTR OWN-registrations among OA RCT reports (6/6 hand-verified as real 'Trial registration:' statements) | prior scans: 1/1,662 among trials CITED BY OA METAS => DIFFERENT POPULATIONS, both true
+2026-07-17T00:51:43 | THE FINDING | African-registered trials EXIST and are published (539 PACTR + 5,067 ISRCTN own-keys) but meta-analyses essentially never cite them (1/1,662) | this is an INCLUSION/CITATION gap, not an existence gap and not only a key gap
+2026-07-17T00:51:43 | registry mix (own-keys, oa_rct) | NCT 33,627 | ISRCTN 5,067 | ChiCTR 3,667 | ANZCTR 2,149 | NTR 1,806 | EudraCT 1,494 | IRCT 1,287 | DRKS 1,020 | UMIN 900 | KCT 592 | CTRI 565 | PACTR 539 | TCTR 394 | RBR 389
