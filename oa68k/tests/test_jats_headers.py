@@ -81,3 +81,72 @@ def test_data_only_table_yields_no_false_header():
 
 def test_malformed_xml_returns_empty_not_raise():
     assert jats.parse_tables(b"<article><body><table-wrap>") == []
+
+
+# ------------------------------------------------- D3: multi-row nested headers
+def test_multirow_header_composes_and_does_not_leak_into_data():
+    """The malaria/TB shape, and the direct cause of arm-assignment failure.
+
+    Measured: 37.9% of our harvested tables have a multi-row <thead>. Keeping
+    only row 1 loses the arm names ("n (%)" cannot tell you WHICH arm) AND turns
+    row 2 into a fake data row.
+    """
+    x = _wrap('<table><thead>'
+              '<tr><td rowspan="2">Timepoint</td>'
+              '<td colspan="2">Artemether-Lumefantrine</td>'
+              '<td colspan="2">Placebo</td></tr>'
+              '<tr><td>n (%)</td><td>N</td><td>n (%)</td><td>N</td></tr>'
+              '</thead><tbody>'
+              '<tr><td>Day 28</td><td>85 (94.4)</td><td>90</td>'
+              '<td>60 (66.7)</td><td>90</td></tr>'
+              '</tbody></table>')
+    t = jats.parse_tables(x)[0]
+    # every column keeps its ARM identity, not just the statistic
+    assert t["headers"] == [
+        "Timepoint",
+        "Artemether-Lumefantrine | n (%)", "Artemether-Lumefantrine | N",
+        "Placebo | n (%)", "Placebo | N"]
+    # and the second header row must NOT appear as data
+    assert t["rows"] == [["Day 28", "85 (94.4)", "90", "60 (66.7)", "90"]]
+    assert len(t["headers"]) == len(t["rows"][0])
+
+
+def test_rowspan_stub_fills_down_not_blank():
+    x = _wrap('<table><thead>'
+              '<tr><th rowspan="2">Outcome</th><th colspan="2">Arm A</th></tr>'
+              '<tr><th>Events</th><th>Total</th></tr>'
+              '</thead><tbody><tr><td>Death</td><td>4</td><td>50</td></tr>'
+              '</tbody></table>')
+    t = jats.parse_tables(x)[0]
+    assert t["headers"] == ["Outcome", "Arm A | Events", "Arm A | Total"]
+
+
+def test_repeated_label_across_header_rows_is_not_duplicated():
+    """'Placebo | Placebo' is noise; collapse consecutive repeats."""
+    x = _wrap('<table><thead>'
+              '<tr><td>Arm</td><td>Placebo</td></tr>'
+              '<tr><td>Arm</td><td>Placebo</td></tr>'
+              '</thead><tbody><tr><td>x</td><td>1</td></tr></tbody></table>')
+    t = jats.parse_tables(x)[0]
+    assert t["headers"] == ["Arm", "Placebo"]
+
+
+def test_all_th_row_below_data_is_not_promoted_to_header():
+    """A mid-table all-<th> row is a section divider. Promoting it would drop a
+    real data row."""
+    x = _wrap('<table><tbody>'
+              '<tr><th>Arm</th><th>N</th></tr>'
+              '<tr><td>Drug</td><td>10</td></tr>'
+              '<tr><th>Subgroup: female</th><th>N</th></tr>'
+              '<tr><td>Drug</td><td>5</td></tr>'
+              '</tbody></table>')
+    t = jats.parse_tables(x)[0]
+    assert t["headers"] == ["Arm", "N"]
+    assert len(t["rows"]) == 3, "the mid-table th row must survive as data"
+
+
+def test_table_xml_fragment_is_carried_for_downstream_reparsing():
+    x = _wrap('<table><thead><tr><th>A</th></tr></thead>'
+              '<tbody><tr><td>1</td></tr></tbody></table>')
+    t = jats.parse_tables(x)[0]
+    assert "table-wrap" in t["xml"] and "<td>1</td>" in t["xml"]
