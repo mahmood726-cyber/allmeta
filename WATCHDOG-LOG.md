@@ -56,3 +56,7 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-16T20:49:03 | ema EPAR | reachable (robots allows /en/documents/), 2,321 human medicines, 462 priority | assessment-report PDF = /en/documents/assessment-report/{drug}-epar-public-assessment-report_en.pdf
 2026-07-16T20:49:03 | ema BIMODAL | generic/hybrid (Qaialdo) 38pp 2 tables 0 endpoints = USELESS | new active substance (Entresto) 115pp 75 TABLES, PARADIGM-HF x20, p-values, HRs = RICH | EPAR value depends on application type
 2026-07-16T20:49:03 | ema LINKAGE GAP | 0 NCT, 0 EudraCT in the Entresto EPAR - trials named (PARADIGM) not accessioned | same gap as FDA; name-matching precision ~83% per the §15 gate => NOT usable as a fact route yet
+2026-07-16T21:37:27 | KEY-ABSENT at scale | oa_rct: 30,760 NEW papers, only 5 in our crosswalk => 30,755 OA RCT reports (132,387 tables) OUTSIDE the registry crosswalk entirely | data present, KEY absent
+2026-07-16T21:37:27 | keyscan BUG+FIX | depth-counting zoning was INERT (all 3 known cases returned 'own'); a sibling </td> cancels the current <td> opener | replaced with a STACK, verified 3/3 on known cited/own cases
+2026-07-16T21:37:27 | keyscan HONEST | with working zoning: 336 raw hits -> 52 own-keys; 284 (85%) were CITATIONS not own registrations | PACTR 17 -> 2 => prior scans' 'PACTR ~= 0' CONFIRMED, not refuted
+2026-07-16T21:37:27 | store totals | 344,858 tables / 5,480,255 rows across linked_rct(174,456) + dta(38,015) + oa_rct(132,387)
