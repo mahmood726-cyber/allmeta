@@ -65,6 +65,18 @@ def run(max_rows: int | None = None) -> dict:
             print(f"[ingest] hitCount={hit_count}")
         results = j.get("resultList", {}).get("result", [])
         if not results:
+            # An empty page IS the end of the corpus, so checkpoint it as
+            # complete. Breaking out without writing leaves complete=false on
+            # disk permanently — observed live: seed.jsonl held all 67,771 rows
+            # while ingest_state.json still read complete=False, so the
+            # "already complete" short-circuit above could never fire and every
+            # re-invocation (incl. the Phase-5 monthly delta) re-probed a page
+            # to learn nothing.
+            atomic_write_json(C.INGEST_STATE, {
+                "hit_count": hit_count, "written": written,
+                "next_cursor": cursor, "complete": True,
+                "query": C.OA_META_QUERY,
+            })
             break
         for res in results:
             append_jsonl(C.SEED, _row(res))

@@ -41,8 +41,23 @@ import harvest
 import jats
 from net import PoliteSession, append_jsonl, load_done_keys
 
-FT_LEDGER = os.path.join(C.DATA, f"paperft.{C.NODE}.jsonl")
-TABLES_DIR = os.path.join(C.STORE, "paper_tables")
+# Corpora this stage can harvest. `linked_rct` comes from the registry crosswalk;
+# `dta` and `oa_rct` come from EPMC seeds and deliberately reach BEYOND the
+# registry — an unregistered trial, or a DTA study (which is typically not a
+# registered RCT at all), is invisible to CT.gov but is exactly the evidence a
+# synthesist still needs. Each corpus keeps its own ledger + table dir so counts
+# never bleed across populations.
+CORPORA = ("linked_rct", "dta", "oa_rct")
+
+
+def ft_ledger(corpus: str) -> str:
+    stem = "paperft" if corpus == "linked_rct" else f"paperft_{corpus}"
+    return os.path.join(C.DATA, f"{stem}.{C.NODE}.jsonl")
+
+
+def tables_dir(corpus: str) -> str:
+    name = "paper_tables" if corpus == "linked_rct" else f"paper_tables_{corpus}"
+    return os.path.join(C.STORE, name)
 
 
 def _lst(fs) -> str:
@@ -84,16 +99,30 @@ def candidates() -> list[dict]:
             for r in rows]
 
 
-def run(limit: int | None, all_: bool = False) -> dict:
+def seed_candidates(corpus: str) -> list[dict]:
+    """Candidates for an EPMC-seeded corpus (dta / oa_rct)."""
+    import epmc_seed
+    rows = epmc_seed.load_seed(corpus, priority_first=True)
+    return [{"pmcid": r["pmcid"], "pmid": r.get("pmid"), "doi": r.get("doi"),
+             "source": r.get("source") or "MED",
+             "cohort_rank": 0 if r.get("priority") else 1,
+             "any_results": False, "ncts": None} for r in rows]
+
+
+def run(limit: int | None, all_: bool = False,
+        corpus: str = "linked_rct") -> dict:
+    if corpus not in CORPORA:
+        raise ValueError(f"unknown corpus {corpus!r}; expected one of {CORPORA}")
     C.ensure_dirs()
-    os.makedirs(TABLES_DIR, exist_ok=True)
+    tdir, ledger = tables_dir(corpus), ft_ledger(corpus)
+    os.makedirs(tdir, exist_ok=True)
     today = date.today().isoformat()
-    cands = candidates()
-    done = load_done_keys(FT_LEDGER, "pmcid")
+    cands = candidates() if corpus == "linked_rct" else seed_candidates(corpus)
+    done = load_done_keys(ledger, "pmcid")
     todo = [c for c in cands if c["pmcid"] not in done]
     if not all_ and limit:
         todo = todo[:limit]
-    print(f"[fulltext] {len(cands)} OA trial papers; {len(done)} done; "
+    print(f"[fulltext:{corpus}] {len(cands)} OA papers; {len(done)} done; "
           f"fetching {len(todo)}", flush=True)
 
     sess = PoliteSession()
@@ -101,7 +130,7 @@ def run(limit: int | None, all_: bool = False) -> dict:
     buf, t0 = [], time.monotonic()
     for i, c in enumerate(todo):
         rec = harvest.fetch_fulltext(sess, c)
-        rec.update(ncts=c["ncts"], cohort_rank=c["cohort_rank"],
+        rec.update(ncts=c["ncts"], cohort_rank=c["cohort_rank"], corpus=corpus,
                    source_tier="oa_fulltext", extracted_at=today,
                    locator=f"https://europepmc.org/article/PMC/{c['pmcid']}")
         n_tab = 0
@@ -119,14 +148,14 @@ def run(limit: int | None, all_: bool = False) -> dict:
                         "n_rows": len(t.get("rows") or []),
                         "n_cols": len(t.get("headers") or []),
                         "headers": " | ".join(t.get("headers") or []),
-                        "tier": rec.get("tier"),
+                        "tier": rec.get("tier"), "corpus": corpus,
                         "source_tier": "oa_fulltext",
                         "locator": rec["locator"], "extracted_at": today,
                     })
             except Exception as e:
                 rec["table_parse_error"] = str(e)[:200]
         rec["n_tables"] = n_tab
-        append_jsonl(FT_LEDGER, rec)
+        append_jsonl(ledger, rec)
         if rec["status"] == "XML":
             agg["fetched"] += 1
             agg["with_tables"] += int(n_tab > 0)
@@ -134,23 +163,23 @@ def run(limit: int | None, all_: bool = False) -> dict:
         else:
             agg["missed"] += 1
         if len(buf) >= 2000:
-            _flush(buf)
+            _flush(buf, tdir)
             buf = []
         if (i + 1) % 50 == 0:
             rate = (i + 1) / max(time.monotonic() - t0, 1e-9) * 60
-            print(f"[fulltext] {i+1}/{len(todo)} ({rate:.0f}/min) "
+            print(f"[fulltext:{corpus}] {i+1}/{len(todo)} ({rate:.0f}/min) "
                   f"xml={agg['fetched']} tables={agg['tables']}", flush=True)
     if buf:
-        _flush(buf)
-    print(f"[fulltext] {agg}")
+        _flush(buf, tdir)
+    print(f"[fulltext:{corpus}] {agg}")
     return agg
 
 
-def _flush(rows: list[dict]) -> None:
+def _flush(rows: list[dict], tdir: str) -> None:
     import pyarrow as pa
     import pyarrow.parquet as pq
-    n = len(glob.glob(os.path.join(TABLES_DIR, "part_*.parquet")))
-    dst = os.path.join(TABLES_DIR, f"part_{n:05d}.parquet")
+    n = len(glob.glob(os.path.join(tdir, "part_*.parquet")))
+    dst = os.path.join(tdir, f"part_{n:05d}.parquet")
     tmp = dst + ".tmp"
     pq.write_table(pa.Table.from_pylist(rows), tmp, compression="zstd")
     os.replace(tmp, dst)
@@ -162,5 +191,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=200)
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--corpus", choices=CORPORA, default="linked_rct")
     a = ap.parse_args()
-    print(json.dumps(run(a.limit, a.all), indent=2))
+    print(json.dumps(run(a.limit, a.all, a.corpus), indent=2))
