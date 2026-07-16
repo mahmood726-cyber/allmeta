@@ -37,6 +37,29 @@ EFETCH_PMC = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 MAILTO = os.environ.get("OA68K_MAILTO", "mahmood726@gmail.com")
 USER_AGENT = f"oa68k-pipeline/0.1 (mailto:{MAILTO})"
 
+# ---- NCBI E-utilities rate budget.
+# SECRET: read from the environment ONLY. Never hardcode it, never log it, never
+# write it to a file. `net.PoliteSession` injects it into eutils calls; nothing
+# else should ever touch the value. Set with:  setx NCBI_API_KEY "..."
+NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
+
+# ⚠️ NCBI's limit is PER API KEY, not per IP: 3 req/s keyless, 10 req/s with a key.
+# Two nodes sharing ONE key therefore share ONE 10/s budget — running each at 9/s
+# would burn 18/s and simply earn 429s. So the per-node rate is the budget divided
+# by the number of nodes sharing the key, minus headroom for the concurrent
+# registry lane (crosswalk.py) which also calls NCBI from this host.
+_NODES_SHARING_KEY = int(os.environ.get("OA68K_NODES_SHARING_KEY", "2"))
+_HEADROOM = 0.8                                    # leave 20% for the other lane
+
+
+def reqs_per_sec() -> float:
+    """Per-node request rate. Explicit override wins: OA68K_RPS."""
+    override = os.environ.get("OA68K_RPS")
+    if override:
+        return float(override)
+    budget = 10.0 if NCBI_API_KEY else 3.0
+    return max(0.5, budget * _HEADROOM / max(1, _NODES_SHARING_KEY))
+
 # ---- Data root (ledgers + XML cache). Created on demand; ours to own.
 DATA = os.environ.get("OA68K_DATA", os.path.join(HERE, "data"))
 CACHE = os.path.join(DATA, "cache")          # cached full-text XML, content by pmcid
@@ -132,6 +155,8 @@ AACT_EXT_TABLES = [
     "participant_flows",         # flow/recruitment prose
     "drop_withdrawals",          # attrition per group
     "calculated_values",         # derived registry fields (e.g. months to report)
+    "outcome_counts",            # analysed N per arm per outcome -> ArmRecord.n
+    "outcome_analysis_groups",   # which arms a posted analysis contrasts
 ]
 
 

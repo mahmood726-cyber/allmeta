@@ -34,12 +34,13 @@ import glob
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import config as C
 import harvest
 import jats
-from net import PoliteSession, append_jsonl, load_done_keys
+from net import PoliteSession, RateLimiter, append_jsonl, load_done_keys
 
 # Corpora this stage can harvest. `linked_rct` comes from the registry crosswalk;
 # `dta` and `oa_rct` come from EPMC seeds and deliberately reach BEYOND the
@@ -53,13 +54,32 @@ CORPORA = ("linked_rct", "dta", "oa_rct")
 # seconds of re-fetch, large enough to avoid a parquet file per paper.
 COMMIT_EVERY = 100
 
-# NCBI eutils allows ~3 req/s per IP without an API key, and that budget is
-# SHARED: the 68k lane's harvest.py runs its own PoliteSession against the same
-# host from this same machine. At the default 0.34s each we would together push
-# ~5.8 req/s and risk both lanes being blocked. We take the smaller share (~1.4
-# req/s) because their harvest is the 68k spine and ours is a backlog that can
-# take as long as it needs. Env-overridable for a node running this lane alone.
-NCBI_MIN_INTERVAL = float(os.environ.get("OA68K_NCBI_INTERVAL", "0.7"))
+# ---- NCBI budget share ----------------------------------------------------
+# The limit is PER API KEY (3/s keyless, 10/s keyed), NOT per process, and the
+# key is shared with the 68k lane's harvest.py on this host AND on the laptop.
+# config.reqs_per_sec() divides the budget across nodes and holds back
+# _HEADROOM=20% explicitly "for the other lane" — that reserved slice is US. So
+# we take exactly it rather than inventing a number: 10*0.2 = 2.0 req/s keyed,
+# 3*0.2 = 0.6 keyless. Exceeding it throttles the KEY, which would hurt both
+# lanes at once.
+#
+# CONCURRENCY IS THE POINT, and this is measured, not assumed. A single efetch
+# round-trip is ~0.4-1.0s, so a SEQUENTIAL loop is latency-bound near ~1 req/s
+# no matter how high the rate ceiling. Benchmarked on this host (12 papers):
+#   keyless sequential @1.2/s ->  0.56 req/s (  34/min)   <- what we were doing
+#   keyed   sequential @2.0/s ->  0.97 req/s (  58/min)   1.7x: the key alone
+#   keyed   4 workers  @2.0/s ->  1.80 req/s ( 108/min)   3.2x: key + workers
+# i.e. the API key on its own buys ~1.7x; the ~3x needs workers to fill the
+# latency. Workers share ONE RateLimiter so the node still respects the budget.
+def _my_rps() -> float:
+    override = os.environ.get("OA68K_NCBI_RPS")
+    if override:
+        return float(override)
+    budget = 10.0 if C.NCBI_API_KEY else 3.0
+    return max(0.3, budget * 0.20)          # the slice reqs_per_sec() holds back
+
+
+WORKERS = int(os.environ.get("OA68K_FT_WORKERS", "4"))
 
 
 def ft_ledger(corpus: str) -> str:
@@ -193,7 +213,11 @@ def _run_locked(limit, all_, corpus, tdir, ledger) -> dict:
     print(f"[fulltext:{corpus}] {len(cands)} OA papers; {len(done)} done; "
           f"fetching {len(todo)}", flush=True)
 
-    sess = PoliteSession(min_interval=NCBI_MIN_INTERVAL)
+    # One shared limiter for every worker: N workers with N private timers would
+    # each think they own the whole budget and collectively blow the per-key
+    # limit. Each worker gets its own Session (connection pooling) but defers to
+    # the shared gate.
+    limiter = RateLimiter(_my_rps())
     agg = {"fetched": 0, "missed": 0, "from_cache": 0, "with_tables": 0,
            "tables": 0}
     tbuf, lbuf, t0 = [], [], time.monotonic()
@@ -221,20 +245,22 @@ def _run_locked(limit, all_, corpus, tdir, ledger) -> dict:
             append_jsonl(ledger, r)
         lbuf.clear()
 
-    for i, c in enumerate(todo):
+    def work(c: dict):
+        """Fetch + parse ONE paper. Runs on a worker thread; touches no shared
+        state and never writes — the main thread owns all persistence, so the
+        tables-then-ledger commit order survives concurrency."""
+        sess = PoliteSession(min_interval=0, limiter=limiter)
         rec = fetch_or_cached(sess, c)
         rec.update(ncts=c["ncts"], cohort_rank=c["cohort_rank"], corpus=corpus,
                    source_tier="oa_fulltext", extracted_at=today,
                    locator=f"https://europepmc.org/article/PMC/{c['pmcid']}")
-        n_tab = 0
+        rows = []
         if rec["status"] == "XML" and rec.get("path"):
             try:
                 with open(rec["path"], "rb") as f:
                     xml = f.read()
-                tabs = jats.parse_tables(xml)
-                n_tab = len(tabs)
-                for ti, t in enumerate(tabs):
-                    tbuf.append({
+                for ti, t in enumerate(jats.parse_tables(xml)):
+                    rows.append({
                         "pmcid": c["pmcid"], "pmid": c["pmid"], "ncts": c["ncts"],
                         "table_index": ti,
                         "caption": (t.get("caption") or "")[:500],
@@ -247,22 +273,31 @@ def _run_locked(limit, all_, corpus, tdir, ledger) -> dict:
                     })
             except Exception as e:
                 rec["table_parse_error"] = str(e)[:200]
-        rec["n_tables"] = n_tab
-        lbuf.append(rec)
-        if rec["status"] == "XML":
-            agg["fetched"] += 1
-            agg["from_cache"] += int(rec.get("tier") == "cache")
-            agg["with_tables"] += int(n_tab > 0)
-            agg["tables"] += n_tab
-        else:
-            agg["missed"] += 1
-        if len(lbuf) >= COMMIT_EVERY:
-            commit()
-        if (i + 1) % 50 == 0:
-            rate = (i + 1) / max(time.monotonic() - t0, 1e-9) * 60
-            print(f"[fulltext:{corpus}] {i+1}/{len(todo)} ({rate:.0f}/min) "
-                  f"xml={agg['fetched']} cache={agg['from_cache']} "
-                  f"tables={agg['tables']}", flush=True)
+        rec["n_tables"] = len(rows)
+        return rec, rows
+
+    done_n = 0
+    # Chunked so memory stays bounded and each chunk commits atomically; a kill
+    # costs at most one chunk of re-fetch, never a lost table (see commit()).
+    for start in range(0, len(todo), COMMIT_EVERY):
+        chunk = todo[start:start + COMMIT_EVERY]
+        with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+            for rec, rows in ex.map(work, chunk):
+                lbuf.append(rec)
+                tbuf.extend(rows)
+                if rec["status"] == "XML":
+                    agg["fetched"] += 1
+                    agg["from_cache"] += int(rec.get("tier") == "cache")
+                    agg["with_tables"] += int(len(rows) > 0)
+                    agg["tables"] += len(rows)
+                else:
+                    agg["missed"] += 1
+        commit()
+        done_n += len(chunk)
+        rate = done_n / max(time.monotonic() - t0, 1e-9) * 60
+        print(f"[fulltext:{corpus}] {done_n}/{len(todo)} ({rate:.0f}/min, "
+              f"{WORKERS}w @{_my_rps():.1f}/s) xml={agg['fetched']} "
+              f"cache={agg['from_cache']} tables={agg['tables']}", flush=True)
     commit()
     print(f"[fulltext:{corpus}] {agg}")
     return agg
