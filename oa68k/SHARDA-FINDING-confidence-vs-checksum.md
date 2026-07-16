@@ -11,22 +11,45 @@ A text parser tested earlier was **47.1% wrong with every error emitted at
 unusable at any coverage. The hypothesis: *vision will abstain where the parser
 confabulates, and that abstention is the finding.*
 
-## What actually happened
+## What actually happened — the answer changed once resolution was controlled
 
-**Vision did not abstain either.**
+At 465 rows the abstention rate was **0.00%**, and the one provable error was
+emitted at `confidence: "high"`. That looked like "vision shares the parser's
+failure mode."
 
-    study rows banked            465
-    row-level abstentions          0        (0.00%)
-    row confidence          high 435 | medium 29 | low 1
-    per-field abstentions          4        (ci_high 3, ci_low 1)
+At 1185 rows it is **2.19% (26/1185)** — and the structure of those 26 is the
+whole finding:
 
-The one error we can *prove* was emitted at `confidence: "high"`, with
-`field_confidence["n_c"] = "high"`. **The model's self-reported gradient gave no
-signal on its own error.** On this evidence vision shares the parser's failure
-mode. It does not rescue us from it.
+    study rows banked          1185
+    row-level abstentions        26        (2.19%)
+    row confidence        high 1091 | medium 67 | low 1 | abstain 26
+    per-field abstentions        67        (weight_pct 27, effect 26, ci_high 3,
+                                            ci_low 2, year 6, label 3)
 
-That is the opposite of the hypothesis, and it is the honest result. n=1 detected
-error is a weak sample and must not be dressed up as a rate — see Limits below.
+**All 26 abstentions come from ONE figure** (PMC12548209 `Fig2`, 778x540 px,
+~5px digits). The worker who read it cropped and upscaled, and reported that the
+digits **flip between upscale factors** — `6.36` vs `6.96`, `0.59` vs `0.99`,
+`3.85`/`3.95`/`3.05`. It abstained on every per-study effect and weight, while
+still banking the legible footer (model "Random-effects model", tau²=1.69, Q,
+df=25 — which matches its own 26 counted rows).
+
+**So the reject option exists, and it fires when the model engages with the
+ambiguity.** The earlier 0.00% was not vision refusing to abstain. It was vision
+never being given the chance to notice it could not see.
+
+The failure mode is therefore **not** "vision never abstains". It is:
+
+> **Vision reading at native resolution does not know that it cannot see.**
+> 5px text does not present as uncertain — it presents as a plausible glyph, at
+> `high`.
+
+That is a harness defect that *manufactures* the parser's pathology, and it is
+fixable (prompt v4 makes crop-and-upscale mandatory). The parser's 47.1%-wrong-
+all-at-high has no such fix — it has no reject option at any input quality.
+
+The one proven error (`n_c` 174 vs 149, at `high`) is a native-resolution digit
+confusion — i.e. an instance of exactly this defect, not evidence that vision is
+irredeemably overconfident.
 
 ## What DID provide a reject option: the plot's over-determination
 
@@ -107,6 +130,45 @@ role with a ceiling.
 - **The 0 abstentions may be a prompt artefact**, not a property of the model:
   these figures were largely legible at native resolution. The abstention rate on
   *hard* figures is not yet measured.
+
+## The confounder that reframes the 0% abstention rate: READ RESOLUTION
+
+Two workers, unprompted, reported the same thing — and it changes how the
+abstention number should be read.
+
+- One (PMC12028635 `g005`): τ² renders as **`28.2566` at native resolution**; a
+  6x crop resolved it to **`26.2566`**. Their words: *"this is exactly the digit
+  a parser emits at confidence=high."*
+- Another (PMC12402402, three figures): *"All three BRB3 images pack 2–8 panels
+  into ~700px-wide JPEGs (~5px text). I cropped each panel and 4x LANCZOS-upscaled
+  before reading. A pipeline that feeds these at native size is reading noise —
+  worth checking whether other shards did."*
+
+**Workers were not told how to read.** Some cropped and upscaled; some read at
+native size. So `read resolution` is an **uncontrolled variable across this run**,
+and it is plausibly the dominant one:
+
+- The one proven misread (`n_c` 174 vs 149) is a native-resolution digit
+  confusion, emitted at `high`.
+- The workers who cropped are the ones who *caught* ambiguous digits — and
+  produced abstentions instead of confident wrong answers.
+
+**This makes 0.00% abstention uninterpretable as a property of vision.** It is a
+property of *vision-at-whatever-resolution-each-worker-chose*. A model reading
+5px text does not experience uncertainty; it experiences a plausible glyph. That
+is precisely the parser's failure mode, and it may be an artefact of the harness
+rather than of the model.
+
+**The abstention measurement must be redone with resolution controlled** — read
+the same figures at native size and at Nx crop, compare. Until then, no
+abstention rate from this run should be quoted as a property of vision. Recorded
+here rather than quietly dropped, because the headline "vision doesn't abstain
+either" is only half true: *vision reading noise* doesn't abstain. Whether *vision
+reading legible pixels* abstains is not yet measured.
+
+Prompt v4 makes crop-and-upscale mandatory for any ambiguous digit and requires
+the worker to record how it read. That fixes future waves; it does not
+retroactively fix the 64 figures already banked, which is why this section exists.
 
 ## What follows
 

@@ -27,3 +27,4 @@ __pycache__/
 *.pyc
 # Local resume state: holds local paths + run state, not portable across nodes.
 PROGRESS.md
+PROGRESS-*.md

@@ -1,8 +1,72 @@
 # SHARD-A FOREST PLOT FULL CAPTURE — prompt v2 (2026-07-16)
 
-**Emit `"prompt_version": "shardA.FOREST_FULL_CAPTURE@2026-07-16-v2"` as a
+**Emit `"prompt_version": "shardA.FOREST_FULL_CAPTURE@2026-07-16-v4"` as a
 top-level key in every JSON file you write.** It records which contract produced
 the reading. Copy that string exactly.
+
+## v4 — READ RESOLUTION IS MANDATORY. Read this before you open an image.
+
+Two v2/v3 workers independently found that **native resolution produces confident
+misreads, not abstentions**:
+
+- τ² read as `28.2566` at native size; a 6x crop resolved it to `26.2566`.
+- Multipanel figures pack 2–8 panels into ~700px-wide JPEGs (~5px text): *"a
+  pipeline that feeds these at native size is reading noise."*
+
+A model reading 5px text does not feel uncertain — it sees a plausible glyph and
+reports `high`. That is the exact failure this run exists to detect, and reading
+lazily manufactures it.
+
+**Therefore:**
+
+1. **Read the image once at native size to get the layout** (panels, columns,
+   how many rows).
+2. **Before you commit ANY digit you are not certain of, crop that region and
+   upscale it** (e.g. Pillow: `img.crop(box).resize((w*4, h*4), Image.LANCZOS)`,
+   save to your scratch dir, `Read` the crop). Use the Bash tool for this.
+3. **Multipanel or text under ~10px: crop EVERY panel and read the crops.** Do
+   not read a 4-panel 700px figure at native size and report `high`.
+4. **If it is still ambiguous after upscaling, THEN abstain.** An abstention
+   after a 6x crop is a real measurement. An abstention without one is laziness,
+   and a confident answer without one is worse.
+
+Record what you did as a top-level key:
+
+```json
+"read_method": {
+  "native_read": true,
+  "crops_used": true,
+  "max_upscale": 4,
+  "regions_cropped": ["panel A counts column", "heterogeneity line"],
+  "notes": "5px text at native; all numerics read from 4x LANCZOS crops"
+}
+```
+
+Set `crops_used: false` **only** if the figure was genuinely legible at native
+size. This field is a measured variable, not paperwork — it is how we separate
+"vision is wrong" from "vision was shown noise".
+
+## v3 additions — two gaps that v2 workers found and reported
+
+Emit these two top-level keys on every figure:
+
+```json
+"comparator_present": true,
+"nonevent_columns_printed": false,
+```
+
+**`comparator_present`** — `false` for a SINGLE-ARM meta-analysis (a pooled
+proportion/prevalence/incidence: one arm, no control). These print Events/Total
+and so satisfy `forest_dichotomous` literally, but **no 2x2 exists** — there is
+nothing to compare against. A v2 worker flagged that counting them as
+`forest_dichotomous` would inflate the headline "recoverable 2x2" number. If
+`comparator_present` is false, leave `events_c`/`n_c` null and say so in notes.
+
+**`nonevent_columns_printed`** — `true` when the plot prints Yes/No or
+event/non-event columns (Stata style) rather than event/total. **Do NOT sum them
+into `n_t`/`n_c`** — that is imputation. Put the raw grid verbatim in
+`reading_notes` and leave the totals null. The schema has no non-event field;
+that gap is known and is being recorded, not papered over.
 
 You are reading forest-plot images with your own vision. You have vision via the
 `Read` tool. No API key is needed. `Read` the image file path directly.
