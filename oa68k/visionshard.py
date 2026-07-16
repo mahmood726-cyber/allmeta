@@ -50,32 +50,70 @@ SHARD = os.path.join(VS.STORE_DIR, "calls.shard-A.jsonl")
 # The model that actually looked at the pixels. Recorded, not guessed: these are
 # Claude Code subagents on this session's model, reading via the `Read` tool.
 MODEL_ID = "claude-opus-4-8[1m]/claude_code_subagent@2026-07-16"
-PROMPT_VERSION = "shardA.FOREST_FULL_CAPTURE@2026-07-16-v1"
 PARSER_VERSION = "shardA/raw_json_verbatim@1"
+
+# The prompt is a PROPERTY OF THE CALL, not of the ingester. A module-level
+# constant stamped on every raw at ingest time is a provenance LIE the moment the
+# prompt changes mid-run: raws already on disk, produced under the old prompt,
+# silently acquire the new version string. So the version travels IN the raw (the
+# worker echoes it) and is only fallen back to for the v1 raws written before the
+# field existed. Never widen this fallback — an unknown prompt must read as v1
+# UNTAGGED, not as whatever is current.
+PROMPT_VERSION_FALLBACK = "shardA.FOREST_FULL_CAPTURE@2026-07-16-v1(untagged)"
 
 
 def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def seen_all() -> set:
-    """(sha, role) across BOTH ledgers. A figure the owner already read must not
-    be re-read here — a re-read returns a different answer, not a cheaper one."""
+def _keys(led: str) -> set:
     out = set()
-    for led in (VS.LEDGER, SHARD):
-        if not os.path.exists(led):
-            continue
-        with open(led, encoding="utf-8") as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    r = json.loads(line)
-                    out.add((r["image_sha256"], r.get("role")))
-                except Exception:
-                    continue      # one corrupt line must not hide the rest
+    if not os.path.exists(led):
+        return out
+    with open(led, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                out.add((r["image_sha256"], r.get("role")))
+            except Exception:
+                continue          # one corrupt line must not hide the rest
     return out
+
+
+def seen_shard() -> set:
+    """(sha, role) in THIS SHARD ONLY — the write-idempotency key.
+
+    DELIBERATELY NOT the union with the owner's ledger, and the distinction cost
+    us a corrupted record before it was understood:
+
+    A RE-RUN and an INDEPENDENT SECOND OBSERVATION are not the same event. The
+    owner's ledger having an ANSWER_KEY for this sha does NOT mean re-writing
+    mine is a no-op — it means two lanes looked at the same pixels and got two
+    answers, which for a non-reproducible call is DATA (it measures vision's
+    self-consistency), not duplication. Suppressing it destroys evidence already
+    bought.
+
+    The bug this replaces: idempotency was checked per-role against the union, so
+    when the owner concurrently banked an ANSWER_KEY, this lane refused its own AK
+    but still wrote the BEHAVIOURAL_RECORD derived from it — leaving a BR whose
+    provenance note pointed at an AK that did not exist in this shard. The two
+    roles from one raw are ATOMIC: they are the same observation, so they are
+    written or skipped together, judged against this shard alone.
+
+    Not-re-READING what the owner already read is a WORKLIST concern (don't spend
+    twice), enforced before dispatch — not a write-time concern. By ingest time
+    the call is already bought and refusing it only loses it.
+    """
+    return _keys(SHARD)
+
+
+def owner_keys() -> set:
+    """(sha, role) in the OWNER's ledger — recorded as a collision FLAG, never
+    used to refuse a write. The merge needs to know a repeat-read happened."""
+    return _keys(VS.LEDGER)
 
 
 def _append(rec: dict) -> None:
@@ -86,7 +124,7 @@ def _append(rec: dict) -> None:
 
 
 def _rec(*, image_path, sha, role, route, raw_response, parsed, parser_version,
-         source_kind, source_id, notes):
+         source_kind, source_id, notes, prompt_version, also_in_owner_ledger=False):
     return {
         "schema_version": VS.SCHEMA_VERSION,
         "call_ts": _utcnow(),
@@ -100,7 +138,7 @@ def _rec(*, image_path, sha, role, route, raw_response, parsed, parser_version,
         "blob": VS.stash_blob(image_path, sha),
         "model_id": MODEL_ID,
         "route": route,
-        "prompt_version": PROMPT_VERSION,
+        "prompt_version": prompt_version,
         "raw_response": raw_response,
         "parsed": parsed,
         "parser_version": parser_version,
@@ -114,10 +152,16 @@ def _rec(*, image_path, sha, role, route, raw_response, parsed, parser_version,
         "cost_basis": "unmeasurable_subagent_route",
         "notes": notes,
         "shard": "A",
+        # A repeat-read, not a contradiction: the owner's ledger holds a record
+        # for this (sha, role) too. Two independent observations of the same
+        # non-reproducible call are a MEASUREMENT of vision self-consistency —
+        # the merge must compare them, not silently keep one. Flagged, never
+        # used to suppress.
+        "also_in_owner_ledger": also_in_owner_ledger,
     }
 
 
-def ingest_file(path: str, seen: set) -> dict:
+def ingest_file(path: str, seen: set, owner: set | None = None) -> dict:
     """Bank ONE raw file: the verbatim bytes a vision subagent wrote.
 
     Fails closed on every mismatch. A raw file that does not parse, or whose
@@ -141,10 +185,15 @@ def ingest_file(path: str, seen: set) -> dict:
         return {"file": path, "banked": 0,
                 "error": "sha mismatch — the raw does not describe these bytes"}
 
+    pv = parsed.get("prompt_version") or PROMPT_VERSION_FALLBACK
+    owner = owner if owner is not None else owner_keys()
+
     n = 0
     if (sha, "ANSWER_KEY") not in seen:
         _append(_rec(
             image_path=ip, sha=sha, role="ANSWER_KEY", route="agent_read",
+            prompt_version=pv,
+            also_in_owner_ledger=(sha, "ANSWER_KEY") in owner,
             raw_response=raw,                 # VERBATIM bytes, pre-parse
             parsed=parsed, parser_version=PARSER_VERSION,
             source_kind="forest_figure", source_id=parsed.get("pmcid"),
@@ -155,13 +204,21 @@ def ingest_file(path: str, seen: set) -> dict:
         n += 1
 
     if (sha, "BEHAVIOURAL_RECORD") not in seen:
+        # A swallowed exception here silently drops the behavioural half of an
+        # observation and reports success — the caller sees a smaller count and
+        # no reason. Surface it; the ANSWER_KEY still banks.
         try:
             b = behaviour.extract_one(parsed)
+            b_err = None
         except Exception as e:
-            b = None
+            b, b_err = None, "%s: %s" % (type(e).__name__, e)
+        if b_err:
+            print("BEHAVIOUR FAILED", parsed.get("pmcid"), "|", b_err)
         if b is not None:
             _append(_rec(
                 image_path=ip, sha=sha, role="BEHAVIOURAL_RECORD", route="derived",
+                prompt_version=pv,
+                also_in_owner_ledger=(sha, "BEHAVIOURAL_RECORD") in owner,
                 raw_response="[DERIVED — no new vision call. Extracted by %s from "
                              "the shard-A agent_read whose verbatim raw IS retained "
                              "in this same shard under role=ANSWER_KEY, keyed on the "
@@ -179,12 +236,13 @@ def ingest_file(path: str, seen: set) -> dict:
 
 
 def ingest_dir(d: str) -> int:
-    seen = seen_all()
+    seen = seen_shard()
+    owner = owner_keys()
     files = sorted(glob.glob(os.path.join(d, "**", "raw_*.json"), recursive=True))
     ok = err = 0
     banked = 0
     for f in files:
-        r = ingest_file(f, seen)
+        r = ingest_file(f, seen, owner)
         if r.get("error"):
             err += 1
             print("REFUSED", os.path.basename(f), "|", r["error"])

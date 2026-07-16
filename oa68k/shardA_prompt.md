@@ -1,4 +1,8 @@
-# SHARD-A FOREST PLOT FULL CAPTURE — prompt v1 (2026-07-16)
+# SHARD-A FOREST PLOT FULL CAPTURE — prompt v2 (2026-07-16)
+
+**Emit `"prompt_version": "shardA.FOREST_FULL_CAPTURE@2026-07-16-v2"` as a
+top-level key in every JSON file you write.** It records which contract produced
+the reading. Copy that string exactly.
 
 You are reading forest-plot images with your own vision. You have vision via the
 `Read` tool. No API key is needed. `Read` the image file path directly.
@@ -95,6 +99,24 @@ subgroup structure · effect measure · model · outcome name · scale.
   "reading_notes": "<what you could and could not read, and why. Name anything odd: multipanel, leave-one-out panels, mismatched labels, unreadable columns.>"
 }
 ```
+
+### `figure_kind` is decided by WHAT IS PRINTED, not by the outcome's nature
+
+This tripped a v1 worker, so it is now explicit:
+
+- **`forest_dichotomous`** — per-arm **events/N are PRINTED** as columns.
+- **`forest_continuous`** — per-arm **mean±SD (and N) are PRINTED** as columns.
+- **`forest_generic`** — only effect + CI (and maybe weight/Z/p) are printed,
+  **NO per-arm counts**. The plot cannot yield a 2x2.
+
+A mortality (dichotomous) outcome plotted CMA-style with only `OR | Lower |
+Upper | Z | p` columns is **`forest_generic`**, NOT `forest_dichotomous`. The
+question this field answers is "can a 2x2 be recovered from these pixels?" — it
+is not asking what the outcome is made of. Getting this wrong overstates how much
+of the corpus is recoverable, which is a headline number.
+
+If in doubt: did you fill `events_t`/`n_t` (or `mean_t`/`sd_t`) from PRINTED
+columns? If no — it is `forest_generic`.
 
 ### `row_type` is THE CRITICAL FIELD
 
