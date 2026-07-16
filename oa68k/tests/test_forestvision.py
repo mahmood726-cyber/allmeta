@@ -41,7 +41,11 @@ def test_finds_real_fig_with_asset_and_caption():
     assert f["kind"] == "forest"
     assert f["graphic_hrefs"] == ["art-f2.jpg"]
     assert f["assets"] == ["https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9/bin/art-f2.jpg"]
-    assert f["retrievable"] is True
+    # `locator_recorded`, deliberately NOT `retrievable`: this bin/ URL is
+    # measured to 404: writing a locator is not the same as being able to fetch
+    # bytes, and the old name asserted a capability the JATS cannot provide.
+    assert f["locator_recorded"] is True
+    assert "retrievable" not in f
 
 
 def test_classifier_refuses_funnel_and_prisma():
@@ -186,6 +190,49 @@ def test_total_mismatch_catches_a_subtotal_misread_as_a_study():
     ]}
     out = FV.check_extraction(doc)
     assert any("MISMATCH" in s.get("verdict", "") for s in out["structural"]), out
+
+
+def test_multipanel_total_is_not_compared_against_all_panels():
+    """Regression: the structural check used to manufacture its own failures.
+
+    On a multi-panel figure it summed EVERY study row against EACH panel's Total,
+    so panel B's Total (931) was compared to the studies of panels A+B+C (15,839)
+    and reported MISMATCH on a figure that had been read correctly. Real case:
+    PMC12254995, where 4 of 4 structural 'failures' were this bug. A total whose
+    scope cannot be established must be SKIPPED, not guessed at.
+    """
+    doc = {"effect_measure": "OR", "figure_kind": "forest_multipanel", "rows": [
+        _row(label="A1", subgroup="Panel A", n_t=100, n_c=100),
+        _row(label="A2", subgroup="Panel A", n_t=200, n_c=200),
+        {"label": "Total (95% CI)", "row_type": "total", "subgroup": "Panel A",
+         "n_t": 300, "n_c": 300},
+        _row(label="B1", subgroup="Panel B", n_t=50, n_c=50),
+        {"label": "Total (95% CI)", "row_type": "total", "subgroup": "Panel B",
+         "n_t": 50, "n_c": 50},
+    ]}
+    out = FV.check_extraction(doc)
+    assert all(s["verdict"] == "ok" for s in out["structural"]), out["structural"]
+
+
+def test_unscopable_total_on_multipanel_is_skipped_not_failed():
+    doc = {"effect_measure": "OR", "figure_kind": "forest_multipanel", "rows": [
+        _row(label="A1", subgroup="Panel A", n_t=100, n_c=100),
+        _row(label="B1", subgroup="Panel B", n_t=50, n_c=50),
+        {"label": "Total (95% CI)", "row_type": "total", "n_t": 100, "n_c": 100},
+    ]}
+    out = FV.check_extraction(doc)
+    assert [s["verdict"] for s in out["structural"]] == ["scope_unknown"]
+
+
+def test_single_panel_mismatch_still_caught_after_the_scoping_fix():
+    """The fix must not defang the check on the single-panel case it was for."""
+    doc = {"effect_measure": "OR", "figure_kind": "forest_dichotomous", "rows": [
+        _row(label="A", n_t=50, n_c=50),
+        _row(label="B", n_t=50, n_c=50),
+        {"label": "Total (95% CI)", "row_type": "total", "n_t": 999, "n_c": 999},
+    ]}
+    out = FV.check_extraction(doc)
+    assert any("MISMATCH" in s.get("verdict", "") for s in out["structural"])
 
 
 def test_total_reconciles_when_rows_are_correct():

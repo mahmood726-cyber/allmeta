@@ -5,7 +5,7 @@ the included-study list, arm sizes and the pooled estimate, but the **per-trial
 2x2 event counts live in the forest-plot images**. Text extraction cannot reach
 them. Before spending a single vision token we must answer one question honestly:
 
-    how many harvested metas actually have a RETRIEVABLE forest plot?
+    how many harvested metas actually have a forest plot we can locate at all?
 
 That coverage number is the first gate. This module answers it from the cache
 alone — no network, no model — so it is cheap, deterministic and re-runnable.
@@ -24,9 +24,14 @@ forest plot than hand the vision layer a CONSORT diagram or a PRISMA flowchart
 and let it hallucinate rows out of it. Every figure keeps its raw caption so the
 classifier can be re-tuned against a hand-checked sample without a re-scan.
 
-`retrievable` is NOT `has a graphic href`. It means we recorded a concrete asset
-locator we can actually fetch (the PMC OA `bin/` path for that PMCID + filename).
-Availability is not acquisition — a later stage records whether the bytes landed.
+FIELD NAMING IS A CORRECTNESS ISSUE. This field is `locator_recorded`, NOT
+`retrievable`. It records only that we wrote a candidate asset locator (the PMC
+`bin/` path for that PMCID + filename) — and that locator is now MEASURED TO 404
+(see figfetch.py: the bin/ route is dead and the OA package tree is deprecated;
+bytes come from a CDN URL carrying opaque hashes that must be resolved per
+article). Calling it `retrievable` claimed a capability we do not have from the
+JATS alone, exactly the overclaim the 68k plan's R3 rename guarded against.
+Availability is not acquisition; `figfetch` records whether bytes actually landed.
 
 Run:  python figscan.py --limit 500        # scan cached JATS, write ledger
       python figscan.py --summary         # coverage counts, batch-actual
@@ -143,7 +148,7 @@ def scan_xml(pmcid: str, xml_bytes: bytes) -> list[dict]:
             "kind": kind, "why": why,
             "graphic_hrefs": hrefs,
             "assets": assets,
-            "retrievable": bool(assets),
+            "locator_recorded": bool(assets),
         })
     return out
 
@@ -223,7 +228,7 @@ def summary() -> dict:
             fo = [x for x in r["figs"] if x["kind"] == "forest"]
             if fo:
                 arts_with_forest += 1
-                ret = [x for x in fo if x["retrievable"]]
+                ret = [x for x in fo if x["locator_recorded"]]
                 if ret:
                     arts_with_forest_retrievable += 1
                 forest_retrievable += len(ret)
@@ -232,10 +237,11 @@ def summary() -> dict:
         "articles_with_any_figure": with_any_fig,
         "figures_by_kind": kind_tot,
         "articles_with_a_forest_plot": arts_with_forest,
-        "articles_with_a_RETRIEVABLE_forest_plot": arts_with_forest_retrievable,
-        "retrievable_forest_figures": forest_retrievable,
-        "note": ("batch-actual over the cached articles only. `retrievable` = an "
-                 "asset locator was recorded, NOT that bytes were fetched. "
+        "articles_with_forest_plot_and_a_locator": arts_with_forest_retrievable,
+        "forest_figures_with_a_locator": forest_retrievable,
+        "note": ("batch-actual over the cached articles only. A locator is NOT "
+                 "retrievability: the bin/ locator 404s and bytes come from a "
+                 "per-article-resolved CDN URL (see figfetch). "
                  "`unknown` kind = caption carried no positive forest evidence; "
                  "it is not a claim the figure is not a forest plot."),
     }

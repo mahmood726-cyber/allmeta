@@ -37,7 +37,24 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
-import config as C
+# ---- LANE KEY SELECTION. Must run BEFORE `import config`, which snapshots
+# NCBI_API_KEY at module import time.
+#
+# This lane owns KEY B (env: NCBI_API_KEY_PREEXTRACT). KEY A (env:
+# NCBI_API_KEY) belongs to the three 68k harvest shards, which share its 10/s.
+# One key per workload: we map OUR key into the slot net.PoliteSession reads, so
+# this process can never spend the harvest lane's budget. Doing this in config.py
+# instead would be wrong — config is shared, and the 68k lane must keep KEY A.
+#
+# This is selection, NOT stacking: exactly one key is ever attached to a request,
+# and each key serves one workload. Presenting both keys on one stream to fake
+# 20/s would be limit-evasion; on a 429 we slow down (PoliteSession honours
+# Retry-After), we do not rotate keys to dodge the throttle.
+_LANE_KEY = os.environ.get("NCBI_API_KEY_PREEXTRACT", "").strip()
+if _LANE_KEY:
+    os.environ["NCBI_API_KEY"] = _LANE_KEY
+
+import config as C  # noqa: E402  (import order is load-bearing, see above)
 import harvest
 import jats
 from net import PoliteSession, RateLimiter, append_jsonl, load_done_keys
@@ -54,32 +71,44 @@ CORPORA = ("linked_rct", "dta", "oa_rct")
 # seconds of re-fetch, large enough to avoid a parquet file per paper.
 COMMIT_EVERY = 100
 
-# ---- NCBI budget share ----------------------------------------------------
-# The limit is PER API KEY (3/s keyless, 10/s keyed), NOT per process, and the
-# key is shared with the 68k lane's harvest.py on this host AND on the laptop.
-# config.reqs_per_sec() divides the budget across nodes and holds back
-# _HEADROOM=20% explicitly "for the other lane" — that reserved slice is US. So
-# we take exactly it rather than inventing a number: 10*0.2 = 2.0 req/s keyed,
-# 3*0.2 = 0.6 keyless. Exceeding it throttles the KEY, which would hurt both
-# lanes at once.
+# ---- NCBI rate ------------------------------------------------------------
+# With a DEDICATED key (KEY B) the whole 10 req/s is this lane's — no longer the
+# 20% slice we took while sharing KEY A with the harvest shards. We still hold
+# back 20% headroom: running flat at the stated ceiling earns 429s, and backing
+# off is the rule (never rotate keys to dodge a throttle).
 #
 # CONCURRENCY IS THE POINT, and this is measured, not assumed. A single efetch
 # round-trip is ~0.4-1.0s, so a SEQUENTIAL loop is latency-bound near ~1 req/s
-# no matter how high the rate ceiling. Benchmarked on this host (12 papers):
-#   keyless sequential @1.2/s ->  0.56 req/s (  34/min)   <- what we were doing
-#   keyed   sequential @2.0/s ->  0.97 req/s (  58/min)   1.7x: the key alone
+# no matter how high the ceiling — the key raises a ceiling a sequential loop
+# never reaches. Benchmarked on this host:
+#   keyless sequential @1.2/s ->  0.56 req/s (  34/min)   <- the original
+#   keyed   sequential @2.0/s ->  0.97 req/s (  58/min)   1.7x: key alone
 #   keyed   4 workers  @2.0/s ->  1.80 req/s ( 108/min)   3.2x: key + workers
-# i.e. the API key on its own buys ~1.7x; the ~3x needs workers to fill the
-# latency. Workers share ONE RateLimiter so the node still respects the budget.
+# Workers therefore scale with the rate; they share ONE RateLimiter so the node
+# still respects the per-key budget rather than N timers each assuming it is alone.
 def _my_rps() -> float:
     override = os.environ.get("OA68K_NCBI_RPS")
     if override:
         return float(override)
-    budget = 10.0 if C.NCBI_API_KEY else 3.0
-    return max(0.3, budget * 0.20)          # the slice reqs_per_sec() holds back
+    if not C.NCBI_API_KEY:
+        return 0.6                       # keyless: leave room for other lanes
+    if _LANE_KEY:
+        return 8.0                       # dedicated KEY B: 10/s minus headroom
+    return 2.0                           # sharing KEY A: the reserved slice only
 
 
-WORKERS = int(os.environ.get("OA68K_FT_WORKERS", "4"))
+# Worker count is set from PRODUCTION measurement, not the fetch-only benchmark.
+# The benchmark said 12w@8/s (98/min) beat 4w@2/s (44/min) — but it only fetched.
+# In production this stage ALSO parses JATS (ElementTree, CPU-bound, GIL-held),
+# so measured end-to-end on the real corpus:
+#     4 workers @2.0/s -> 80/min   (cache=0)
+#    12 workers @8.0/s -> 58/min   <- WORSE: threads contend on the GIL parsing
+#                                     XML, and extra sockets cannot fix a CPU wall
+# So the rate ceiling is not the binding constraint here and more workers past a
+# point actively hurt. 6 is the compromise: enough to cover network latency, few
+# enough to avoid parse contention. Re-measure before raising it — a benchmark
+# that skips the CPU half of the work will lie to you again.
+WORKERS = int(os.environ.get("OA68K_FT_WORKERS", "6" if _LANE_KEY else "4"))
 
 
 def ft_ledger(corpus: str) -> str:

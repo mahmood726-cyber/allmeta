@@ -229,24 +229,47 @@ def check_extraction(doc: dict) -> dict:
         s = r["_check"]["status"]
         tally[s] = tally.get(s, 0) + 1
     studies = [r for r in rows if r.get("row_type") == "study"]
-    # Structural check: a "Total" row's N should equal the sum of its studies'.
-    # This catches a subtotal misread as a study (it would double the sum) and a
-    # dropped study row (it would leave the sum short) — both invisible row-wise.
+    # Structural check: a "Total" row's N should equal the sum of the studies IT
+    # POOLS. This catches a subtotal misread as a study (the sum would double) and
+    # a dropped study row (the sum would fall short) — neither is visible row-wise.
+    #
+    # SCOPING IS THE WHOLE DIFFICULTY. A first cut summed every study row in the
+    # figure against every total row. On a MULTI-PANEL figure (13 of the first 24
+    # scored here) that is meaningless: panel B's Total was compared against the
+    # studies of panels A+B+C combined, and it reported MISMATCH on figures that
+    # were read perfectly. The check was manufacturing its own failures. A total
+    # is therefore only compared against the studies sharing its `subgroup`, and
+    # when panel/subgroup scoping cannot be established the check is SKIPPED
+    # (`scope_unknown`) rather than run on a scope we know to be wrong — an
+    # unscoped comparison is worse than none, because it looks like evidence.
     struct = []
     tot = [r for r in rows if r.get("row_type") == "total"]
+    multi = (doc.get("figure_kind") == "forest_multipanel"
+             or len({r.get("subgroup") for r in studies}) > 1
+             or len(tot) > 1)
     for t in tot:
+        scope = t.get("subgroup")
+        if multi and scope is None:
+            struct.append({"check": "total", "verdict": "scope_unknown",
+                           "why": "multi-panel/subgrouped figure and this total "
+                                  "names no subgroup — cannot know which studies "
+                                  "it pools; not checked"})
+            continue
+        mine = [r for r in studies
+                if scope is None or r.get("subgroup") == scope]
         for arm in ("n_t", "n_c"):
             tv = t.get(arm)
-            sv = [r.get(arm) for r in studies if r.get(arm) is not None]
+            sv = [r.get(arm) for r in mine if r.get(arm) is not None]
             if tv is None or not sv:
                 continue
             if abs(sum(sv) - float(tv)) > 0.5:
-                struct.append({"check": f"total {arm}", "printed_total": tv,
-                               "sum_of_studies": sum(sv),
+                struct.append({"check": f"total {arm}", "scope": scope,
+                               "printed_total": tv, "sum_of_studies": sum(sv),
                                "verdict": "MISMATCH — a row is missing, "
                                           "duplicated, or misclassified"})
             else:
-                struct.append({"check": f"total {arm}", "verdict": "ok"})
+                struct.append({"check": f"total {arm}", "scope": scope,
+                               "verdict": "ok"})
     return {"n_rows": len(rows), "n_studies": len(studies),
             "row_checks": tally, "structural": struct,
             "figure_kind": doc.get("figure_kind"),
