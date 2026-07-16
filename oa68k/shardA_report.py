@@ -49,6 +49,21 @@ def main() -> int:
         print("nothing banked yet")
         return 0
 
+    # MULTI-OBSERVATION IMAGES. An image read independently twice contributes TWO
+    # ANSWER_KEYs, so "figures" and "observations" stop being the same number.
+    # Counting observations as figures would silently inflate every row total
+    # (one image here contributes 56 rows in one reading and 148 in the other).
+    #
+    # The report does NOT pick a winner. Picking by row count would reward
+    # confabulation — the reading that invents the most rows would win — and
+    # picking the latest would encode "newest is best", which is not true in
+    # general. The disagreement is surfaced and left for the arbitration recorded
+    # in each record's `notes`.
+    by_sha = {}
+    for r in ak:
+        by_sha.setdefault(r["image_sha256"], []).append(r)
+    multi = {s: v for s, v in by_sha.items() if len(v) > 1}
+
     kinds = Counter(r["parsed"].get("figure_kind") for r in ak)
     conf = Counter()
     field_present = Counter()
@@ -81,8 +96,20 @@ def main() -> int:
         conf[r.get("prompt_version")] += 1
 
     print("=== SHARD-A CHECKPOINT ===")
-    print("figures (ANSWER_KEY) :", len(ak))
-    print("study rows           :", n_studies)
+    print("distinct figures     :", len(by_sha))
+    print("observations         :", len(ak), "(an image read twice contributes 2)")
+    print("study rows           :", n_studies, "— across OBSERVATIONS, not figures")
+    if multi:
+        print()
+        print("!! MULTI-OBSERVATION IMAGES — read independently more than once.")
+        print("   Row counts below double-count these. No winner is picked here;")
+        print("   the arbitration is in each record's `notes`.")
+        for s, v in multi.items():
+            rows = [sum(1 for x in (r["parsed"].get("rows") or [])
+                        if x.get("row_type") == "study") for r in v]
+            print("   %s %s: %d observations, study rows %s"
+                  % (v[0].get("source_id"), s[:12], len(v), rows))
+        print()
     print("repeat-reads flagged :", sum(1 for r in ak if r.get("also_in_owner_ledger")))
     print("prompt versions      :", dict(conf))
     print("figure_kind          :", dict(kinds))

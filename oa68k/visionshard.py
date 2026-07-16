@@ -235,6 +235,59 @@ def ingest_file(path: str, seen: set, owner: set | None = None) -> dict:
     return {"file": path, "banked": n, "pmcid": parsed.get("pmcid"), "sha": sha}
 
 
+def ingest_duplicate(path: str, why: str) -> int:
+    """Bank a SECOND independent observation of an image already in this shard.
+
+    NOT a re-run, and the distinction is the whole point. `seen_shard()` refuses a
+    repeat (sha, role) so a re-ingest is a no-op — correct for reruns, WRONG when
+    two workers genuinely looked at the same pixels and disagreed. That disagreement
+    is the measurement, and it is not reconstructable later.
+
+    Why this exists (2026-07-16): two workers read PMC11098556 app3-fig2. One
+    returned 148 study rows reconciling EXACTLY against all nine printed subtotals
+    (251/1496/163/1092/3069/108/44/45/54 -> 6322); the other returned 56, missing
+    the entire 91-row Peninsular Malaysia subgroup and failing four subtotals. The
+    second was written to the raw_ slot last and was therefore the one banked. The
+    ledger held the broken read and the correct one sat in a .bak.
+
+    Both are kept. NEITHER is deleted and NEITHER is edited: the arbitration
+    (`why`) is recorded as data, so a later reader can check our reasoning against
+    the raws instead of trusting it. The store's job is to preserve what was
+    observed, not to decide who was right — but it must not silently keep only the
+    loser.
+    """
+    raw = open(path, encoding="utf-8").read()
+    parsed = json.loads(raw)
+    ip = parsed.get("image_path")
+    if not ip or not os.path.exists(ip):
+        print("REFUSED: image missing:", ip)
+        return 1
+    sha = VS.sha256_file(ip)
+    prior = [r for r in (json.loads(l) for l in open(SHARD, encoding="utf-8") if l.strip())
+             if r["image_sha256"] == sha and r["role"] == "ANSWER_KEY"]
+    if not prior:
+        print("REFUSED: no prior ANSWER_KEY for this sha — use --ingest, not "
+              "--ingest-duplicate (this path is only for a SECOND observation)")
+        return 1
+    rec = _rec(
+        image_path=ip, sha=sha, role="ANSWER_KEY", route="agent_read",
+        prompt_version=parsed.get("prompt_version") or PROMPT_VERSION_FALLBACK,
+        raw_response=raw, parsed=parsed, parser_version=PARSER_VERSION,
+        source_kind="forest_figure", source_id=parsed.get("pmcid"),
+        also_in_owner_ledger=(sha, "ANSWER_KEY") in owner_keys(),
+        notes="INDEPENDENT SECOND OBSERVATION of an image already banked in this "
+              "shard (%d prior ANSWER_KEY). Both readings are retained; neither is "
+              "edited or deleted. ARBITRATION: %s" % (len(prior), why),
+    )
+    rec["observation_seq"] = len(prior) + 1
+    rec["duplicate_of_sha"] = sha
+    _append(rec)
+    print(json.dumps({"banked": 1, "sha": sha[:16], "pmcid": parsed.get("pmcid"),
+                      "observation_seq": rec["observation_seq"],
+                      "prior_observations": len(prior)}, indent=2))
+    return 0
+
+
 def ingest_dir(d: str) -> int:
     seen = seen_shard()
     owner = owner_keys()
@@ -287,8 +340,18 @@ def verify() -> int:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--ingest", metavar="DIR")
+    ap.add_argument("--ingest-duplicate", metavar="RAWFILE",
+                    help="bank a SECOND independent observation of an already-"
+                         "banked image. Requires --why.")
+    ap.add_argument("--why", help="the arbitration, recorded as data alongside "
+                                  "both readings")
     ap.add_argument("--verify", action="store_true")
     a = ap.parse_args()
+    if a.ingest_duplicate:
+        if not a.why:
+            ap.error("--ingest-duplicate requires --why: an unexplained second "
+                     "observation is indistinguishable from a double-write")
+        sys.exit(ingest_duplicate(a.ingest_duplicate, a.why))
     if a.ingest:
         sys.exit(ingest_dir(a.ingest))
     sys.exit(verify())
