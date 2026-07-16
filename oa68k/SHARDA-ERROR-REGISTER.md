@@ -68,6 +68,9 @@ findable, not so they can be quoted.
 | C-9 | PMC12602456 | Same alteplase arms (330/329) labelled "Hill et al **2025**" in g002 but "**2020**" in g005/g006; in g002 the row label says 2025 while its own Year column prints 2020. |
 | C-10 | PMC12590296 panel C | Columns headed "Total experimental **events**, No." hold **arm sizes** (357 of 484). Header contradicts contents. |
 | C-11 | PMC12784543 `Fig5` | Caption says "diamond symbols indicate each study's estimated DOR"; in the image studies are **squares** and the lone diamond is the **pooled** estimate. A caption-driven parser would ingest the pooled diamond as a study row. |
+| C-12 | PMC11201327 `Fig17` | **Verified against the pixels.** Pools k=2 — Tesfaye 2021 OR 3.09 (1.92, 4.97) and Feleke 2019 OR 0.41 (0.34, 0.51), whose CIs do not overlap and point opposite ways — into Overall 1.12 (0.15, 8.04) at **I² = 98.3%, p = 0.000**. A pooled estimate from two studies that disagree this completely carries no information; the CI spans a 50-fold range. Standing rule: never DerSimonian-Laird at k<10. The figure also declares a `% Weight` column and prints no weights, so the weight checksum is unavailable. |
+| C-13 | PMC13141270 `Fig8` | Prints `tau² = 0.00, I² = 100.00%, H² = 336872.22` beside `Q(4) = 16.47` — mutually impossible (Q=16.47 on df=4 implies I² ≈ 76%; tau²=0 implies I² = 0%). The weight checksum passes exactly (100.00), so the *reading* is corroborated and the defect is in the published heterogeneity block. |
+| C-14 | PMC12548209 `Fig2` | Prints `I-squared = 1.00` on a **fraction scale, not %** — a parser emits `i2_pct = 1.0` (meaning 1%) when the true value is 100%. Also prints effect sizes ~5–10.4 for **ITN utilization**, a proportion that cannot exceed 1. The worker left `i2_pct` null rather than convert. |
 
 ---
 

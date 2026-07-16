@@ -170,6 +170,37 @@ Prompt v4 makes crop-and-upscale mandatory for any ambiguous digit and requires
 the worker to record how it read. That fixes future waves; it does not
 retroactively fix the 64 figures already banked, which is why this section exists.
 
+## A schema smell found by a false alarm: `null` is overloaded
+
+A worker flagged another worker's file — `weight_pct: null` on two study rows in a
+figure family that prints a Weight column — as a null/abstain conflation breaking
+a checksum. **It was a false positive**, and the reason is instructive.
+
+The accused file was correct: `weight_pct: null` **with**
+`field_confidence.weight_pct: "abstain"`. Value slot empty, reason recorded. The
+reporting worker read only the value and could not see the reason.
+
+Checked against the pixels (PMC11201327 Fig17): the figure **prints a `% Weight`
+column header and no weight values at all**. So neither code cleanly fits — this
+is a third state, *"column declared, values absent"*, and the contract only offers
+"never printed" and "printed but unreadable".
+
+Two things follow:
+
+1. **`null` is overloaded.** It means "publisher never printed it" AND "model
+   abstained", separable only by reading `field_confidence`. Any consumer joining
+   on `weight_pct` alone cannot tell a publisher's omission from a model's
+   refusal — the exact distinction this run exists to preserve. `shardA_report.py`
+   counts them separately and is safe; a naive consumer is not. A dedicated
+   sentinel (or a `value_state` field) would fix it at the source.
+2. **A worker reviewing another worker's output reached a confident wrong
+   conclusion from a partial view of the schema** — the same failure mode we are
+   studying in the parser, one level up. It was caught by opening the image. That
+   is the only thing that ever catches it.
+
+(Aside, registered in the error register rather than here: that figure pools k=2
+studies with ORs of 3.09 and 0.41 into 1.12 [0.15, 8.04] at I² = 98.3%.)
+
 ## What follows
 
 1. **Implement the column-checksum check.** Printed "Total events" and Subtotal N
