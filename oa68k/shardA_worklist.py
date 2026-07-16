@@ -37,6 +37,26 @@ FIGCACHE = os.path.join(C.DATA, "figcache")
 FIGSCAN = os.path.join(C.DATA, f"figscan.{C.NODE}.jsonl")
 SEEDS = ("seed.jsonl", "seed_dta.jsonl", "seed_oa_rct.jsonl")
 
+# ---- THE RESERVATION LOG. Measured cost of not having one: 26 of 96 dispatched
+# reads (27%) were duplicates — real vision calls spent to get a SECOND answer to
+# a question already asked.
+#
+# Re-reading the ledger before every dispatch is NECESSARY BUT NOT SUFFICIENT: a
+# figure handed to a worker 5 minutes ago is not in the ledger yet (the worker is
+# still looking at it), so the next wave's worklist happily hands it out again.
+# The ledger records what is FINISHED; it cannot see what is IN FLIGHT.
+#
+# Because the sort is deterministic, this failure is not random — the next wave
+# re-lists the SAME top-of-list figures. Generating 240 manifests and dispatching
+# 32 made it certain: the 208 undispatched stayed unread, so the next regeneration
+# reproduced them, and the overlap was structural rather than unlucky.
+#
+# So dispatch must CLAIM a figure at manifest time, not at ingest time. This log
+# is that claim. It is append-only and never pruned: a claim that expires is a
+# claim that lets the duplicate back in, and a re-read is not free — it returns a
+# DIFFERENT answer for the same pixels.
+RESERVED = os.path.join(C.DATA, "_shardA_reserved.txt")
+
 # Topic patterns. British `ae` spellings need `a?e`, not `[ae]`: the char class
 # matches exactly ONE of a/e, so `an[ae]mia` SILENTLY MISSES "anaemia" (which has
 # both). Any regex over UK-spelled medical text has this trap.
@@ -104,11 +124,28 @@ def topic_of(text: str) -> str:
     return "other"
 
 
+def reserved() -> set:
+    if not os.path.exists(RESERVED):
+        return set()
+    with open(RESERVED, encoding="utf-8") as fh:
+        return {l.strip() for l in fh if l.strip()}
+
+
+def reserve(shas) -> None:
+    """Claim these figures BEFORE a worker is dispatched at them."""
+    with open(RESERVED, "a", encoding="utf-8") as fh:
+        for s in shas:
+            fh.write(s + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+
+
 def build() -> list:
     titles, caps = _titles(), _captions()
-    # Read the ledgers NOW. This is the whole point of the module: an "already
-    # read" set computed earlier in the session is stale by dispatch time.
-    done = {s for s, _ in (SH.seen_shard() | SH.owner_keys())}
+    # Read the ledgers NOW — an "already read" set computed earlier in the
+    # session is stale by dispatch time. Then UNION the reservation log, which
+    # covers the gap the ledger cannot: figures currently in flight.
+    done = {s for s, _ in (SH.seen_shard() | SH.owner_keys())} | reserved()
     out = []
     for p in glob.glob(os.path.join(FIGCACHE, "*", "*")):
         if os.path.splitext(p)[1].lower() not in (".jpg", ".jpeg", ".png", ".gif"):
@@ -139,7 +176,31 @@ def main() -> int:
     ap.add_argument("--start", type=int, default=0, help="first batch number")
     ap.add_argument("--limit", type=int, help="max figures to batch")
     ap.add_argument("--stats", action="store_true")
+    ap.add_argument("--no-reserve", action="store_true",
+                    help="plan without claiming. For inspection only — a wave "
+                         "dispatched from unreserved manifests WILL collide with "
+                         "the next wave.")
+    ap.add_argument("--release", metavar="DIR",
+                    help="un-claim the figures in DIR's manifests. ONLY for "
+                         "manifests that were generated and never dispatched — "
+                         "releasing an in-flight figure re-creates the duplicate.")
     a = ap.parse_args()
+
+    if a.release:
+        keep = reserved()
+        drop = set()
+        for f in glob.glob(os.path.join(a.release, "batch_*.json")):
+            for it in json.load(open(f, encoding="utf-8")):
+                drop.add(it["sha"])
+        # Never release something already read — that claim is now permanent.
+        done = {s for s, _ in (SH.seen_shard() | SH.owner_keys())}
+        drop -= done
+        with open(RESERVED, "w", encoding="utf-8") as fh:
+            for s in sorted(keep - drop):
+                fh.write(s + "\n")
+        print("released %d claims (%d kept; %d refused as already-read)"
+              % (len(drop), len(keep - drop), len(done & drop)))
+        return 0
 
     work = build()
     print("unread figures on disk:", len(work))
@@ -159,6 +220,18 @@ def main() -> int:
                   "w", encoding="utf-8") as fh:
             json.dump(b, fh, indent=1)
         n += 1
+    # Claim them NOW, at manifest time. Reserving at ingest time is too late —
+    # that is precisely the window the duplicates walked through.
+    #
+    # ONLY GENERATE WHAT YOU WILL DISPATCH. Manifests written and never handed to
+    # a worker are the worst case: reserved (so nobody reads them) but unread (so
+    # they are silently dropped from the corpus). --limit must match the wave you
+    # are actually about to launch.
+    if not a.no_reserve:
+        reserve([i["sha"] for i in work])
+        print("reserved %d figures -> %s" % (len(work), RESERVED))
+        print("  ^ these are now CLAIMED. Dispatch every manifest you just made,")
+        print("    or they are reserved-but-unread and drop out of the corpus.")
     print("wrote %d manifests (batch size %d) -> %s" % (n, a.batch_size, a.out))
     print("first:", work[0]["topic"], work[0]["pmcid"], work[0]["fname"])
     print("last :", work[-1]["topic"], work[-1]["pmcid"], work[-1]["fname"])
