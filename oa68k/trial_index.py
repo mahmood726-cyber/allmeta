@@ -79,7 +79,12 @@ def build() -> dict:
     T = _lst("trials")
     if T is None:
         raise FileNotFoundError("no trials in the store — run registry_full.py")
-    REF, P = _lst("trial_refs"), _lst("papers")
+    REF = _lst("trial_refs")
+    # Prefer the WIDENED paper table (papers_union.py): `papers` holds only
+    # PMIDs that came FROM aact refs, so a keyscan-recovered NCT whose paper the
+    # registry never linked had no row to join to — the merged gain collapsed
+    # 5,861 -> 625 on our own join, not on the world.
+    P = _lst("papers_all") or _lst("papers")
     os.makedirs(INDEX_DIR, exist_ok=True)
     con = duckdb.connect()
     con.execute("SET memory_limit='4GB'")

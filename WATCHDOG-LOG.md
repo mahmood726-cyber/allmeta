@@ -69,3 +69,6 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-17T01:18:37 | keyscan MERGE | trial_index now unions AACT study_references + keyscan own-keys | both agree 15,568 | AACT-only 74,470 | KEYSCAN-ONLY 625 (trials AACT never linked)
 2026-07-17T01:18:37 | keyscan MERGE - honest correction | I projected 5,861 new links; the MERGED gain is 625 | the other ~5,236 NCTs have harvested papers but those papers are not in the `papers` crosswalk (it only holds PMIDs sourced FROM aact refs) => next step: union the oa_rct seed into `papers`
 2026-07-17T01:18:37 | tests | 188 passing
+2026-07-17T01:21:04 | papers_union | widened `papers` 183,131 (aact-sourced) -> 271,513 by unioning the EPMC seeds we found ourselves (oa_rct 76,684 + dta 11,698); found_via preserved per row
+2026-07-17T01:21:04 | keyscan MERGE v2 | keyscan-ONLY links 625 -> 5,895 after widening | my 5,861 projection was RIGHT; the 625 was MY JOIN, not the world (papers held only aact-sourced PMIDs)
+2026-07-17T01:21:04 | layer gains | layer2 89,433->95,404 | layer3 45,404->53,197 | cached 53,113 | all-three 10,297->11,760 | no-paper-link 200,771->195,445
