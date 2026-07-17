@@ -22,6 +22,14 @@ data/visionstore/*
 # the owner merges. Blobs stay ignored (re-fetchable + content-hashed).
 !data/visionstore/calls.shard-A.jsonl
 
+# THE TRANSFER HOLDOUT. Same reasoning as the ledger, sharper: nothing regenerates
+# it, and its ENTIRE value is that it was fixed at a timestamp BEFORE the cardio
+# pivot. An uncommitted holdout can be silently regenerated or edited after tuning,
+# which is exactly the post-hoc selection it exists to prevent — git is what makes
+# "frozen 2026-07-17T08:07:21Z, before any cardio figure was read" checkable by
+# someone who does not trust us.
+!data/holdout_malaria_tb.json
+
 __pycache__/
 .pytest_cache/
 *.pyc

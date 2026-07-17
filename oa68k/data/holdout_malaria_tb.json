@@ -1,0 +1,105 @@
+{
+ "frozen_at": "2026-07-17T08:07:21+00:00",
+ "frozen_before": "any cardiology figure was read for development",
+ "rule": "disease in {malaria,TB} by title regex AND >=1 figscan forest figure AND T1 (methods text names RevMan) AND not already read in either ledger; ordered by sha256(pmcid); first 20 taken",
+ "why_t1": "malaria/TB papers are 4.0%/7.7% productive (measured, paper level, 2026-07-16). A random sample would be ~19/20 single-arm prevalence plots and would test nothing. T1 selects on the FILTER (frozen, tuned on nothing), NOT on the outcome. This is a transfer test OF THE METHOD, not an estimate of malaria/TB yield.",
+ "contract": "NEVER read for development. NEVER tuned on. Read ONCE, at the end, as the transfer test. Transfers => the claim is earned. Fails => we found the boundary, which is also a finding.",
+ "n_candidates": 13,
+ "n_frozen": 13,
+ "papers": [
+  {
+   "pmcid": "PMC4470349",
+   "disease": "TB",
+   "n_forest_figs": 5,
+   "title": "Xpert\u00ae MTB/RIF assay for pulmonary tuberculosis and rifampicin resistance in adults.",
+   "order": "03dcfd1ea3de3703e437e06e3f89d844c7d453d7d2b81e98626db1d013a5bbe8"
+  },
+  {
+   "pmcid": "PMC12548016",
+   "disease": "TB",
+   "n_forest_figs": 7,
+   "title": "Xpert MTB/RIF Ultra assay for tuberculosis disease and rifampicin resistance in children.",
+   "order": "057d6d110bee06a8f7e02f6f817a9ad43029f5109cc5c069658ac55438726ad8"
+  },
+  {
+   "pmcid": "PMC12699939",
+   "disease": "TB",
+   "n_forest_figs": 2,
+   "title": "FujiLAM assays for tuberculosis detection in people with HIV: a systematic review and meta-analysis.",
+   "order": "256159ba153bdddca27c2eb990a61bb874e6163eafb903d9b9705783e80cad54"
+  },
+  {
+   "pmcid": "PMC12550432",
+   "disease": "TB",
+   "n_forest_figs": 2,
+   "title": "Efficacy &amp; safety of high-dose rifampicin in pulmonary tuberculosis: A systematic review &amp; meta-analysis.",
+   "order": "47cbb306eb3d39b018ad41120703bd875265a05ca74f099b26cca257b5cbcd6a"
+  },
+  {
+   "pmcid": "PMC12045032",
+   "disease": "TB",
+   "n_forest_figs": 6,
+   "title": "Xpert Ultra versus Xpert MTB/RIF for pulmonary tuberculosis and rifampicin resistance in adults with presumptive pulmonary tuberculosis.",
+   "order": "66b8de171343b78f4c17c9c03694ec0535f9b3c24b1ae186326b723dec37f160"
+  },
+  {
+   "pmcid": "PMC12188635",
+   "disease": "TB",
+   "n_forest_figs": 4,
+   "title": "Low-complexity manual nucleic acid amplification tests for pulmonary tuberculosis in children.",
+   "order": "9563d2dd867188fcf109057e83fe684172b6ff8a4a9f536746c4acbbd34d9f35"
+  },
+  {
+   "pmcid": "PMC12501552",
+   "disease": "TB",
+   "n_forest_figs": 2,
+   "title": "Effects of Communication Strategies on Treatment Adherence and Success in Tuberculosis: A Systematic Review and Meta-Analysis.",
+   "order": "bd57466035b5d0be2ca7ca8e4e6f2a879f182dbf3722158f61cce0f0c9b5400a"
+  },
+  {
+   "pmcid": "PMC11930391",
+   "disease": "TB",
+   "n_forest_figs": 4,
+   "title": "Truenat MTB assays for pulmonary tuberculosis and rifampicin resistance in adults and adolescents.",
+   "order": "c02fd82ffe4b09c02fe30f81b047893c517639ab7ff15018e1edc51b23c87693"
+  },
+  {
+   "pmcid": "PMC8078611",
+   "disease": "TB",
+   "n_forest_figs": 9,
+   "title": "Xpert MTB/RIF and Xpert MTB/RIF Ultra assays for active tuberculosis and rifampicin resistance in children.",
+   "order": "ce295466416d4c33c715ccbb9438e812d4ae65929c034feb17d251a67f247cc4"
+  },
+  {
+   "pmcid": "PMC13251282",
+   "disease": "TB",
+   "n_forest_figs": 3,
+   "title": "Efficacy and safety of vitamin D supplementation in treating pulmonary tuberculosis: a systematic review and meta-analysis.",
+   "order": "d00c92a360b46bf1d05e4eceac8e566f8d8b84116623d93cb6575137b4ca0ad0"
+  },
+  {
+   "pmcid": "PMC12613362",
+   "disease": "TB",
+   "n_forest_figs": 1,
+   "title": "Risk of drug-induced liver injury in chronic hepatitis C and tuberculosis co- infection: a systematic review and meta- analysis.",
+   "order": "d1cc1f9efa11e16f4f8f84cded218d208e09ab25f565f6bf771be101be095bfa"
+  },
+  {
+   "pmcid": "PMC12320217",
+   "disease": "TB",
+   "n_forest_figs": 8,
+   "title": "Low-complexity automated nucleic acid amplification tests for extrapulmonary tuberculosis and rifampicin resistance in adults and adolescents.",
+   "order": "f3b2100ab1bc68906c3d5f0cb6d9580f43e2eaea96ba1e9dab7782332c3c6a5b"
+  },
+  {
+   "pmcid": "PMC12710616",
+   "disease": "TB",
+   "n_forest_figs": 3,
+   "title": "Vitamin D supplementation for tuberculosis prevention: A meta-analysis.",
+   "order": "fd89ea64abcfe93c414129989b642539a3a95c5c9ebabc9a5ccb6dd1ccab8040"
+  }
+ ],
+ "LIMITATION_TB_ONLY": "FROZEN AS TB-ONLY, 13 papers, NOT the 20 requested and NOT malaria+TB. Stated rather than padded. Measured cause: malaria has only 2 T1 (RevMan) papers with forest figures in the ENTIRE corpus (2/28 = 7.1%, vs 34.3% corpus-wide), and both were already read for the yield analysis, so they are contaminated and cannot serve as a holdout. Malaria cannot supply a clean transfer test at any size. Padding this list with non-T1 malaria papers would have produced a test the method cannot pass or fail \u2014 single-arm prevalence plots contain no 2x2 to recover \u2014 i.e. verification theatre.",
+ "SECOND_FINDING_IN_THE_LIST_ITSELF": "The TB holdout is dominated by Cochrane DIAGNOSTIC ACCURACY reviews (Xpert MTB/RIF, Truenat, FujiLAM). So TB's productive shape is DTA (TP/FP/FN/TN 2x2s), not comparative RCT synthesis. That refines the corollary: it is not that TB lacks poolable structure \u2014 it is that TB's poolable structure is DIAGNOSTIC, while the tournament's answer key is THERAPEUTIC. A method tuned on cardio RCT forests may fail here for a reason that has nothing to do with the disease.",
+ "transfer_test_scope": "TB only. Malaria is untestable \u2014 see LIMITATION_TB_ONLY."
+}
