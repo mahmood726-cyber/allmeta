@@ -89,23 +89,49 @@ def build() -> dict:
     if got:
         con.executemany("INSERT INTO harvested VALUES (?)", [(x,) for x in got])
 
+    # TWO LINK INSTRUMENTS, unioned. AACT's study_references is the REGISTRY's
+    # view of the trial->paper link (curated, incomplete). keyscan is the PAPER's
+    # view: the accession the authors printed in their own full text. They see
+    # different things — measured, keyscan recovers **5,861** trials whose papers
+    # study_references never linked — so using only the registry's view reports
+    # OUR join predicate as the world's coverage (§0).
+    #
+    # Only OWN-zone keyscan hits are eligible: a paper CITING an NCT is not a
+    # paper reporting it, and 85% of raw full-text hits in the meta-heavy corpora
+    # are citations. See keyscan._zone.
+    keys = _lst("keyscan") if os.path.isdir(os.path.join(C.STORE, "keyscan")) \
+        else None
+    ks_cte = f"""
+        , ks AS (
+          SELECT DISTINCT accession AS nct_id, pmcid, pmid
+          FROM {keys}
+          WHERE registry = 'ClinicalTrials.gov' AND zone = 'own'
+        )""" if keys else ", ks AS (SELECT NULL nct_id, NULL pmcid, NULL pmid WHERE FALSE)"
+
     # Paper side collapsed to ONE row per trial BEFORE the join — this is the
     # dedup. Without it a trial with 7 reporting papers becomes 7 rows.
-    papers_cte = f"""
+    papers_cte = f"""{ks_cte}
+        , linked AS (
+          SELECT r.nct_id, trim(r.pmid) AS pmid, 'aact_study_references' AS via
+          FROM {REF} r WHERE upper(r.reference_type) IN ('DERIVED','RESULT')
+          UNION
+          SELECT k.nct_id, k.pmid, 'keyscan_own_fulltext' AS via FROM ks k
+          WHERE k.pmid IS NOT NULL
+        )
         , per_trial_papers AS (
-          SELECT r.nct_id,
+          SELECT l.nct_id,
                  COUNT(DISTINCT p.pmid) AS n_reporting_papers,
                  MAX(CASE WHEN p.has_abstract THEN 1 ELSE 0 END) AS l2,
                  MAX(CASE WHEN p.is_open_access AND p.in_pmc THEN 1 ELSE 0 END) AS l3,
                  MAX(CASE WHEN h.pmcid IS NOT NULL THEN 1 ELSE 0 END) AS ft_cached,
                  MIN(p.pmid) AS first_pmid,
                  MIN(p.pmcid) AS first_pmcid,
-                 MIN(p.doi) AS first_doi
-          FROM {REF} r
-          JOIN {P} p ON p.pmid = trim(r.pmid)
+                 MIN(p.doi) AS first_doi,
+                 string_agg(DISTINCT l.via, '+') AS link_via
+          FROM linked l
+          JOIN {P} p ON p.pmid = l.pmid
           LEFT JOIN harvested h ON h.pmcid = p.pmcid
-          WHERE upper(r.reference_type) IN ('DERIVED','RESULT')
-          GROUP BY r.nct_id
+          GROUP BY l.nct_id
         )""" if (REF and P) else ""
 
     join = ("LEFT JOIN per_trial_papers pp ON pp.nct_id = t.nct_id"
@@ -114,11 +140,12 @@ def build() -> dict:
                COALESCE(pp.l2, 0) = 1 AS layer2_abstract,
                COALESCE(pp.l3, 0) = 1 AS layer3_oa_fulltext,
                COALESCE(pp.ft_cached, 0) = 1 AS fulltext_cached,
-               pp.first_pmid AS pmid, pp.first_pmcid AS pmcid, pp.first_doi AS doi,"""
+               pp.first_pmid AS pmid, pp.first_pmcid AS pmcid, pp.first_doi AS doi,
+               pp.link_via,"""
             if papers_cte else """0 AS n_reporting_papers,
                FALSE AS layer2_abstract, FALSE AS layer3_oa_fulltext,
                FALSE AS fulltext_cached,
-               NULL AS pmid, NULL AS pmcid, NULL AS doi,""")
+               NULL AS pmid, NULL AS pmcid, NULL AS doi, NULL AS link_via,""")
 
     today = date.today().isoformat()
     sql = f"""

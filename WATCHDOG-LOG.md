@@ -65,3 +65,7 @@ ISRCTN/PACTR). No Embase, no paywalled full text, no CSRs.
 2026-07-17T00:51:43 | PACTR RECONCILED (not refuted) | 539 PACTR OWN-registrations among OA RCT reports (6/6 hand-verified as real 'Trial registration:' statements) | prior scans: 1/1,662 among trials CITED BY OA METAS => DIFFERENT POPULATIONS, both true
 2026-07-17T00:51:43 | THE FINDING | African-registered trials EXIST and are published (539 PACTR + 5,067 ISRCTN own-keys) but meta-analyses essentially never cite them (1/1,662) | this is an INCLUSION/CITATION gap, not an existence gap and not only a key gap
 2026-07-17T00:51:43 | registry mix (own-keys, oa_rct) | NCT 33,627 | ISRCTN 5,067 | ChiCTR 3,667 | ANZCTR 2,149 | NTR 1,806 | EudraCT 1,494 | IRCT 1,287 | DRKS 1,020 | UMIN 900 | KCT 592 | CTRI 565 | PACTR 539 | TCTR 394 | RBR 389
+2026-07-17T01:18:37 | oa_rct PHASE COMPLETE | 65,011 target: 59,609 papers with tables, 192,902 tables (19,233 from cache)
+2026-07-17T01:18:37 | keyscan MERGE | trial_index now unions AACT study_references + keyscan own-keys | both agree 15,568 | AACT-only 74,470 | KEYSCAN-ONLY 625 (trials AACT never linked)
+2026-07-17T01:18:37 | keyscan MERGE - honest correction | I projected 5,861 new links; the MERGED gain is 625 | the other ~5,236 NCTs have harvested papers but those papers are not in the `papers` crosswalk (it only holds PMIDs sourced FROM aact refs) => next step: union the oa_rct seed into `papers`
+2026-07-17T01:18:37 | tests | 188 passing
