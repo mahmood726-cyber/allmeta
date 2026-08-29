@@ -1181,7 +1181,14 @@ def _is_primary_report(xml: str, req: Request) -> tuple:
         yr = re.search(r"<PubDate>.*?<Year>(\d{4})</Year>", xml, flags=re.S)
         lasts = [_xml_text(x).lower() for x in
                  re.findall(r"<LastName>(.*?)</LastName>", xml, flags=re.S)]
-        if yr and yr.group(1) == want_year and any(surname == l for l in lasts):
+        # A SURNAME PARTICLE IS PART OF THE NAME IN PUBMED. The label parses
+        # "van Veldhuisen 1998" down to its last word, "veldhuisen", while
+        # PubMed stores LastName="van Veldhuisen". Exact equality therefore
+        # rejected the trial's own report for every particled surname.
+        def _sur_match(stored):
+            st = " ".join(str(stored).split())
+            return st == surname or st.endswith(" " + surname) or surname.endswith(st)
+        if yr and yr.group(1) == want_year and any(_sur_match(l) for l in lasts):
             return True, ("first-author surname '" + surname + "' and year "
                           + want_year + " both match the label")
     return False, ("names the trial only in the abstract -- this is a CITING paper, "
@@ -1697,6 +1704,27 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 19 -- an AUTHOR-YEAR study label is an identity too")
+    rqB = Request(trial="Beller 1995", field_path="counts.all_cause_mortality")
+    check("'Beller 1995' parses to (beller, 1995)",
+          _label_author_year(rqB) == ("beller", "1995"))
+    check("'MOCHA' does not parse as author-year",
+          _label_author_year(Request(trial="MOCHA", field_path="x")) is None)
+    xml_ok = ("<PubmedArticle><PMID>1</PMID><PubDate><Year>1995</Year></PubDate>"
+              "<LastName>Beller</LastName><ArticleTitle>Carvedilol in heart failure"
+              "</ArticleTitle></PubmedArticle>")
+    check("author+year both matching is accepted", _is_primary_report(xml_ok, rqB)[0])
+    check("the WRONG YEAR is refused even with the right author",
+          not _is_primary_report(xml_ok.replace("1995", "2001"), rqB)[0])
+    check("the WRONG AUTHOR is refused even with the right year",
+          not _is_primary_report(xml_ok.replace("Beller", "Smith"), rqB)[0])
+    rqV = Request(trial="van Veldhuisen 1998", field_path="x")
+    xml_v = ("<PubmedArticle><PMID>2</PMID><PubDate><Year>1998</Year></PubDate>"
+             "<LastName>van Veldhuisen</LastName><ArticleTitle>Digoxin</ArticleTitle>"
+             "</PubmedArticle>")
+    check("a PARTICLED surname still matches ('van Veldhuisen')",
+          _is_primary_report(xml_v, rqV)[0])
+
     print("PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins")
     saved2 = list(RUNGS)
     try:
@@ -1833,7 +1861,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 63 if extractor() is not None else 61
+    n = 69 if extractor() is not None else 67
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0
