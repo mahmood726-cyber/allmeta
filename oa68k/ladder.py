@@ -1191,7 +1191,13 @@ def climb(req: Request, session=None, stop_at_first_hit: bool = True,
         rec.attempts.append(asdict(a))
         rec.total_seconds += a.seconds
         rec.total_bytes += a.bytes_in
-        if a.outcome == Outcome.HIT.value and a.value:
+        # ⚠ THE FIRST HIT WINS, ALWAYS. `stop_at_first_hit=False` means "keep running
+        # the lower rungs so their standalone yield can be MEASURED"; it does not mean
+        # "let a lower rung overwrite a higher one". Rung order IS priority order, and
+        # without this guard the measurement pass silently changed the answer it was
+        # measuring -- EMPEROR-Reduced flipped from MATCHED to MISMATCHED because
+        # rung 3 overwrote rung 2's exact registry value.
+        if a.outcome == Outcome.HIT.value and a.value and rec.supplying_rung is None:
             rec.state = State.OBTAINED.value
             rec.supplying_rung = rung.value
             rec.supplying_rung_name = rung.name
@@ -1437,6 +1443,31 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 14 -- a measurement pass must not change the answer it measures")
+
+    class _FakeAttempt:
+        pass
+
+    saved = list(RUNGS)
+    try:
+        def _hit(rungno, val):
+            def fn(session, req):
+                return Attempt(rungno, "R" + str(rungno) + "_X", "s", "u", 200, 0.1, 1,
+                               "a" * 64, Outcome.HIT.value, "", value=val,
+                               provenance_tier="registry_results", retrieved_utc="t")
+            return fn
+        RUNGS[:] = [(Rung.R2_REGISTRY, _hit(2, {"estimate": 0.92, "measure": "HR"})),
+                    (Rung.R3_LITERATURE, _hit(3, {"estimate": 1.11, "measure": "HR"}))]
+        rec = climb(Request(trial="T", field_path="effect.all_cause_mortality"),
+                    session=object(), stop_at_first_hit=False)
+        check("running every rung still returns the FIRST rung's value",
+              rec.value["estimate"] == 0.92)
+        check("and names the FIRST rung as the supplier", rec.supplying_rung == 2)
+        check("while still recording BOTH attempts for the yield table",
+              len(rec.attempts) == 2)
+    finally:
+        RUNGS[:] = saved
+
     print("PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper")
     check("MERIT-HF's design-paper title is recognised",
           bool(_DESIGN_PAPER.search("Rationale, design, and organization of the "
@@ -1456,7 +1487,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 44 if extractor() is not None else 42
+    n = 47 if extractor() is not None else 45
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0

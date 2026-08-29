@@ -45,6 +45,7 @@ except Exception:
     pass
 
 import ladder as L
+import ladder_store
 
 GROUND_TRUTH_SOURCE = {
     "file": r"C:\Projects\HFrEF-RUNIN-NMA.md",
@@ -135,6 +136,14 @@ def main(argv=None) -> int:
               "RETRIEVED_NO_VALUE and the benchmark would measure nothing.")
         return 2
 
+    # THROUGH THE WRITE PATH, not beside it. Every record goes through
+    # ladder_store.emit() -- strict=False so a refusal is WRITTEN to the ledger as
+    # its own kind rather than vanishing from the denominator. A gate nobody calls
+    # is not a gate.
+    ledger = os.path.join(os.path.dirname(a.out) or ".", "trial_values.jsonl")
+    if os.path.exists(ledger):
+        os.remove(ledger)
+
     recs, rows = [], []
     for t in HFREF:
         req = L.Request(trial=t["trial"], field_path="effect.all_cause_mortality",
@@ -144,7 +153,10 @@ def main(argv=None) -> int:
         rec = L.climb(req, session=s, stop_at_first_hit=not a.all_rungs, only=only)
         d = asdict(rec)
         sc = score(t, d)
-        d["benchmark"] = {"truth": t, "score": sc}
+        written = ladder_store.emit({k: v for k, v in d.items()}, ledger, strict=False)
+        d["benchmark"] = {"truth": t, "score": sc,
+                          "write_path": written.get("state"),
+                          "refusal_reasons": written.get("refusal_reasons", [])}
         recs.append(d)
         rows.append({"trial": t["trial"], "human_layer": t["human_layer"],
                      "verdict": sc["verdict"], "rung": d.get("supplying_rung_name") or "-",
@@ -180,6 +192,13 @@ def main(argv=None) -> int:
     print("  NOT_FOUND  " + str(nf) + "/" + str(n) + "   the ladder did not obtain it -- "
           "a statement about THE LADDER, not about the evidence")
     L.print_yield(rep)
+
+    lr = ladder_store.report(ledger)
+    print("\nWRITE PATH (ladder_store.emit) -- kinds enumerated before the count:")
+    print("  kinds: " + ", ".join(lr["kinds_enumerated_first"]))
+    for k, v in sorted(lr["counts"].items()):
+        print("  " + k.ljust(26) + str(v) + "/" + str(lr["rows"]))
+    print("  ledger " + ledger)
 
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
