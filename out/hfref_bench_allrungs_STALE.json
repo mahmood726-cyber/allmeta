@@ -1,0 +1,1536 @@
+{
+ "ground_truth_source": {
+  "file": "C:\\Projects\\HFrEF-RUNIN-NMA.md",
+  "dated": "2026-07-16",
+  "section": "1.4 V1 -- table 'trial | L1 registry | L2 abstract | used'",
+  "established_by": "hand retrieval by Mahmood, outside this codebase",
+  "field": "all-cause mortality, trial-level treatment effect vs control"
+ },
+ "extractor": {
+  "available": true,
+  "path": "F:/tr-build/rct-extractor-v2",
+  "version": "5.0.0",
+  "why": ""
+ },
+ "mode": "all_rungs",
+ "summary": {
+  "matched": 5,
+  "mismatched": 3,
+  "not_found": 0,
+  "n": 8
+ },
+ "rows": [
+  {
+   "trial": "PARADIGM-HF",
+   "human_layer": "L2 abstract",
+   "verdict": "MATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 0.84,
+   "hand": 0.84,
+   "measure": "HR",
+   "seconds": 22.8,
+   "kb": 4512
+  },
+  {
+   "trial": "SOLVD",
+   "human_layer": "L2 abstract",
+   "verdict": "MATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 0.84,
+   "hand": 0.84,
+   "measure": "RR",
+   "seconds": 41.1,
+   "kb": 2318
+  },
+  {
+   "trial": "DAPA-HF",
+   "human_layer": "L1 registry",
+   "verdict": "MISMATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 2.67,
+   "hand": 0.83,
+   "measure": "HR",
+   "seconds": 15.3,
+   "kb": 4007
+  },
+  {
+   "trial": "EMPEROR-Reduced",
+   "human_layer": "L1 registry",
+   "verdict": "MISMATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 2.38,
+   "hand": 0.92,
+   "measure": "HR",
+   "seconds": 17.5,
+   "kb": 3040
+  },
+  {
+   "trial": "EMPHASIS-HF",
+   "human_layer": "L1 registry",
+   "verdict": "MISMATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 30.0,
+   "hand": 0.761,
+   "measure": "HR",
+   "seconds": 15.7,
+   "kb": 2496
+  },
+  {
+   "trial": "RALES",
+   "human_layer": "L2 abstract",
+   "verdict": "MATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 0.7,
+   "hand": 0.7,
+   "measure": "RR",
+   "seconds": 38.1,
+   "kb": 1698
+  },
+  {
+   "trial": "MERIT-HF",
+   "human_layer": "L2 abstract",
+   "verdict": "MATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 0.66,
+   "hand": 0.66,
+   "measure": "RR",
+   "seconds": 32.0,
+   "kb": 2077
+  },
+  {
+   "trial": "CIBIS-II",
+   "human_layer": "L2 abstract",
+   "verdict": "MATCHED",
+   "rung": "R3_LITERATURE",
+   "tier": "trial_report",
+   "got": 0.66,
+   "hand": 0.66,
+   "measure": "HR",
+   "seconds": 29.2,
+   "kb": 2360
+  }
+ ],
+ "yield": {
+  "n_data_requested": 8,
+  "states": {
+   "OBTAINED": 8
+  },
+  "per_rung": {
+   "R1_PRIOR_META": {
+    "rung": 1,
+    "reached": 8,
+    "hit": 0,
+    "retrieved_no_value": 8,
+    "miss": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 96.70363712310791,
+    "bytes": 65885
+   },
+   "R2_REGISTRY": {
+    "rung": 2,
+    "reached": 8,
+    "hit": 3,
+    "retrieved_no_value": 1,
+    "miss": 0,
+    "failed": 0,
+    "skipped": 4,
+    "seconds": 2.2167840003967285,
+    "bytes": 1544456
+   },
+   "R3_LITERATURE": {
+    "rung": 3,
+    "reached": 8,
+    "hit": 8,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 100.29437232017517,
+    "bytes": 19988087
+   },
+   "R4_REGULATORY": {
+    "rung": 4,
+    "reached": 8,
+    "hit": 0,
+    "retrieved_no_value": 8,
+    "miss": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 12.089296340942383,
+    "bytes": 1450061
+   },
+   "R5_PROTOCOL": {
+    "rung": 5,
+    "reached": 8,
+    "hit": 0,
+    "retrieved_no_value": 2,
+    "miss": 2,
+    "failed": 0,
+    "skipped": 4,
+    "seconds": 0.4360995292663574,
+    "bytes": 3571
+   }
+  },
+  "denominator_note": "'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'failed' is a transport error and measures OUR REACH, not the source."
+ },
+ "records": [
+  {
+   "request": {
+    "trial": "PARADIGM-HF",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "NCT01035255",
+    "pmid": "",
+    "doi": "",
+    "drug": "sacubitril",
+    "aliases": [
+     "PARADIGM HF"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "HR",
+    "estimate": 0.84,
+    "ci_low": 0.76,
+    "ci_high": 0.93,
+    "source_text": "hazard ratio for death from any cause, 0.84; 95% CI, 0.76 to 0.93",
+    "extractor_confidence": 0.99,
+    "consistency_ok": true,
+    "n_effects_in_document": 2,
+    "n_scoped_to_outcome": 1,
+    "scope_strength": "same_sentence",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "25176015",
+     "year": "2014",
+     "title": "Angiotensin-neprilysin inhibition versus enalapril in heart failure.",
+     "why_primary": "record carries NCT01035255 as its own registration",
+     "rank_among_own_reports": 1,
+     "n_own_reports": 145
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 9.61811637878418,
+     "bytes_in": 7795,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:05:26+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov/api/v2",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT01035255",
+     "http_status": 200,
+     "seconds": 1.8710310459136963,
+     "bytes_in": 530065,
+     "payload_sha256": "a44ccee0163bd0445bd6c677d1fe4ddb88f29d550c7680ea56efeb557a020286",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "field path searched: resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]; 6 outcome measures posted; no analysis matched effect.all_cause_mortality | history: history FAILED http 403 from this host -- a fact about OUR REACH, not about whether the revisions exist",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:05:28+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 7.948382139205933,
+     "bytes_in": 3913570,
+     "payload_sha256": "1836d0b416e7b5524ea86b5963ff27b26b052b45bf0d3b55a2684272ad0b21e5",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 146 candidate pmids; 176 candidates fetched, 145 are the trial's own report; value from pmid 25176015 (2014, record carries NCT01035255 as its own registration)",
+     "value": {
+      "measure": "HR",
+      "estimate": 0.84,
+      "ci_low": 0.76,
+      "ci_high": 0.93,
+      "source_text": "hazard ratio for death from any cause, 0.84; 95% CI, 0.76 to 0.93",
+      "extractor_confidence": 0.99,
+      "consistency_ok": true,
+      "n_effects_in_document": 2,
+      "n_scoped_to_outcome": 1,
+      "scope_strength": "same_sentence",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "25176015",
+       "year": "2014",
+       "title": "Angiotensin-neprilysin inhibition versus enalapril in heart failure.",
+       "why_primary": "record carries NCT01035255 as its own registration",
+       "rank_among_own_reports": 1,
+       "n_own_reports": 145
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:05:40+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 3.2366504669189453,
+     "bytes_in": 168156,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications ANDA213627,ANDA213604,ANDA213605,ANDA213611,NDA207620; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 18941 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:05:45+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT01035255",
+     "http_status": 200,
+     "seconds": 0.10082602500915527,
+     "bytes_in": 737,
+     "payload_sha256": "574db4100b93c8c9a2f382245a3870b60d47a5174cb407488c4305a68c185c87",
+     "outcome": "MISS",
+     "note": "field path searched: documentSection.largeDocumentModule.largeDocs; 0 posted documents  | a protocol/SAP states what will be MEASURED, not the result; availability recorded, no value mined",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:05:45+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 22.77500605583191,
+   "total_bytes": 4620323,
+   "benchmark": {
+    "truth": {
+     "trial": "PARADIGM-HF",
+     "aliases": [
+      "PARADIGM HF"
+     ],
+     "nct": "NCT01035255",
+     "drug": "sacubitril",
+     "measure": "HR",
+     "est": 0.84,
+     "lo": 0.76,
+     "hi": 0.93,
+     "human_layer": "L2 abstract",
+     "human_note": "registry had counts but no HR"
+    },
+    "score": {
+     "verdict": "MATCHED",
+     "log_diff": 0.0,
+     "got": 0.84,
+     "measure": "HR"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "SOLVD",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "enalapril",
+    "aliases": [
+     "Studies of Left Ventricular Dysfunction",
+     "SOLVD-T",
+     "SOLVD Treatment"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "RR",
+    "estimate": 0.84,
+    "ci_low": 0.74,
+    "ci_high": 0.95,
+    "source_text": "reduction in risk, 16 percent; 95 percent confidence interval, 5 to 26 percent",
+    "derived": "RR = 1 - RRR; interval bounds inverted",
+    "derived_from_text": true,
+    "scope_strength": "same_sentence_risk_reduction",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "2057034",
+     "year": "1991",
+     "title": "Effect of enalapril on survival in patients with reduced left ventricular ejection fractions and congestive heart failure.",
+     "why_primary": "authored by the trial's own investigator group",
+     "rank_among_own_reports": 5,
+     "n_own_reports": 83
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 15.050665855407715,
+     "bytes_in": 8380,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:06:00+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:06:00+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 24.830162048339844,
+     "bytes_in": 2200777,
+     "payload_sha256": "a50117eccd0e7d3de17c1fb073b67e0963236d17507c31985c477c5992be37e5",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 83 candidate pmids; 131 candidates fetched, 83 are the trial's own report; value from pmid 2057034 (1991, authored by the trial's own investigator group)",
+     "value": {
+      "measure": "RR",
+      "estimate": 0.84,
+      "ci_low": 0.74,
+      "ci_high": 0.95,
+      "source_text": "reduction in risk, 16 percent; 95 percent confidence interval, 5 to 26 percent",
+      "derived": "RR = 1 - RRR; interval bounds inverted",
+      "derived_from_text": true,
+      "scope_strength": "same_sentence_risk_reduction",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "2057034",
+       "year": "1991",
+       "title": "Effect of enalapril on survival in patients with reduced left ventricular ejection fractions and congestive heart failure.",
+       "why_primary": "authored by the trial's own investigator group",
+       "rank_among_own_reports": 5,
+       "n_own_reports": 83
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:06:30+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.2348370552062988,
+     "bytes_in": 164692,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications NDA018998,ANDA075909,ANDA213273,NDA019221,ANDA075657; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 12222 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:06:32+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:06:32+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 41.11566495895386,
+   "total_bytes": 2373849,
+   "benchmark": {
+    "truth": {
+     "trial": "SOLVD",
+     "aliases": [
+      "Studies of Left Ventricular Dysfunction",
+      "SOLVD-T",
+      "SOLVD Treatment"
+     ],
+     "nct": "",
+     "drug": "enalapril",
+     "measure": "RR",
+     "est": 0.84,
+     "lo": 0.74,
+     "hi": 0.95,
+     "human_layer": "L2 abstract",
+     "human_note": "1991, no registry record; RRR 16% (5-26)"
+    },
+    "score": {
+     "verdict": "MATCHED",
+     "log_diff": 0.0,
+     "got": 0.84,
+     "measure": "RR"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "DAPA-HF",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "NCT03036124",
+    "pmid": "",
+    "doi": "",
+    "drug": "dapagliflozin",
+    "aliases": [
+     "DAPA HF"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "HR",
+    "estimate": 2.67,
+    "ci_low": 2.03,
+    "ci_high": 3.52,
+    "source_text": "hazard ratio, 2.67 (95% CI, 2.03-3.52",
+    "extractor_confidence": 0.99,
+    "consistency_ok": true,
+    "n_effects_in_document": 4,
+    "n_scoped_to_outcome": 3,
+    "scope_strength": "same_sentence",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "32883108",
+     "year": "2020",
+     "title": "Effect of Dapagliflozin on Outpatient Worsening of Patients With Heart Failure and Reduced Ejection Fraction: A Prespecified Analysis of DAP",
+     "why_primary": "record carries NCT03036124 as its own registration",
+     "rank_among_own_reports": 5,
+     "n_own_reports": 101
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 8.025628566741943,
+     "bytes_in": 9099,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:06:40+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov/api/v2",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT03036124",
+     "http_status": 200,
+     "seconds": 0.10862970352172852,
+     "bytes_in": 292243,
+     "payload_sha256": "5a0eba9155d97653baa051bd003f49130a96957779477ad0397c5de41f2940e2",
+     "outcome": "HIT",
+     "note": "resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]",
+     "value": {
+      "measure": "HR",
+      "measure_raw": "Hazard Ratio (HR)",
+      "estimate": 0.83,
+      "ci_low": 0.71,
+      "ci_high": 0.97,
+      "source_text": "Subjects Included in the Endpoint of All-cause Mortality.",
+      "ci_pct": "95",
+      "n_outcome_measures_scanned": 6,
+      "n_matched_cue": 1,
+      "n_rejected_as_composite": 0,
+      "scope_strength": "registry_outcome_title"
+     },
+     "provenance_tier": "registry_results",
+     "retrieved_utc": "2026-08-29T22:06:40+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 5.625335931777954,
+     "bytes_in": 3417826,
+     "payload_sha256": "1338403353b9ac9f8ff1a11052515b557920fb38f79a9859594f0bbc47c4b8c9",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 101 candidate pmids; 137 candidates fetched, 101 are the trial's own report; value from pmid 32883108 (2020, record carries NCT03036124 as its own registration)",
+     "value": {
+      "measure": "HR",
+      "estimate": 2.67,
+      "ci_low": 2.03,
+      "ci_high": 3.52,
+      "source_text": "hazard ratio, 2.67 (95% CI, 2.03-3.52",
+      "extractor_confidence": 0.99,
+      "consistency_ok": true,
+      "n_effects_in_document": 4,
+      "n_scoped_to_outcome": 3,
+      "scope_strength": "same_sentence",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "32883108",
+       "year": "2020",
+       "title": "Effect of Dapagliflozin on Outpatient Worsening of Patients With Heart Failure and Reduced Ejection Fraction: A Prespecified Analysis of DAP",
+       "why_primary": "record carries NCT03036124 as its own registration",
+       "rank_among_own_reports": 5,
+       "n_own_reports": 101
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:07:13+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.3883588314056396,
+     "bytes_in": 383625,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications NDA205649,ANDA211468,ANDA211470,ANDA211478,ANDA211479; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 59420 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:07:16+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT03036124",
+     "http_status": 200,
+     "seconds": 0.10519075393676758,
+     "bytes_in": 1148,
+     "payload_sha256": "25f501e43bc24a4c56f218be035004dd6a221b43084e69204e91fdb5b4d7607b",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "field path searched: documentSection.largeDocumentModule.largeDocs; 2 posted documents Prot,SAP | a protocol/SAP states what will be MEASURED, not the result; availability recorded, no value mined",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:07:16+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 15.253143787384033,
+   "total_bytes": 4103941,
+   "benchmark": {
+    "truth": {
+     "trial": "DAPA-HF",
+     "aliases": [
+      "DAPA HF"
+     ],
+     "nct": "NCT03036124",
+     "drug": "dapagliflozin",
+     "measure": "HR",
+     "est": 0.83,
+     "lo": 0.71,
+     "hi": 0.97,
+     "human_layer": "L1 registry",
+     "human_note": ""
+    },
+    "score": {
+     "verdict": "MISMATCHED",
+     "why": "estimate differs beyond tolerance",
+     "log_diff": 1.1684,
+     "got": 2.67,
+     "measure": "HR",
+     "hand_value": 0.83
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "EMPEROR-Reduced",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "NCT03057977",
+    "pmid": "",
+    "doi": "",
+    "drug": "empagliflozin",
+    "aliases": [
+     "EMPEROR Reduced"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "HR",
+    "estimate": 2.38,
+    "ci_low": 1.25,
+    "ci_high": 4.55,
+    "source_text": "hazard ratio 2.38, 95% CI 1.25-4.55",
+    "extractor_confidence": 0.99,
+    "consistency_ok": true,
+    "n_effects_in_document": 2,
+    "n_scoped_to_outcome": 2,
+    "scope_strength": "same_sentence",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "35711093",
+     "year": "2022",
+     "title": "Early changes in estimated glomerular filtration rate post-initiation of empagliflozin in EMPEROR-Reduced.",
+     "why_primary": "record carries NCT03057977 as its own registration",
+     "rank_among_own_reports": 16,
+     "n_own_reports": 61
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 13.150571346282959,
+     "bytes_in": 8263,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:07:29+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov/api/v2",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT03057977",
+     "http_status": 200,
+     "seconds": 0.11363458633422852,
+     "bytes_in": 293676,
+     "payload_sha256": "18350f416337b091208fafe33700df5f35746bbf00a997648d6b75d6a77ed1aa",
+     "outcome": "HIT",
+     "note": "resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]",
+     "value": {
+      "measure": "HR",
+      "measure_raw": "Hazard Ratio (HR)",
+      "estimate": 0.92,
+      "ci_low": 0.77,
+      "ci_high": 1.1,
+      "source_text": "Time to All-cause Mortality",
+      "ci_pct": "95",
+      "n_outcome_measures_scanned": 10,
+      "n_matched_cue": 1,
+      "n_rejected_as_composite": 0,
+      "scope_strength": "registry_outcome_title"
+     },
+     "provenance_tier": "registry_results",
+     "retrieved_utc": "2026-08-29T22:07:29+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 2.890230894088745,
+     "bytes_in": 2429761,
+     "payload_sha256": "9dd07c75d2b7cce32998aa3ac1b786efbf429fc951cd9bc581008576355d7bfd",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 61 candidate pmids; 97 candidates fetched, 61 are the trial's own report; value from pmid 35711093 (2022, record carries NCT03057977 as its own registration)",
+     "value": {
+      "measure": "HR",
+      "estimate": 2.38,
+      "ci_low": 1.25,
+      "ci_high": 4.55,
+      "source_text": "hazard ratio 2.38, 95% CI 1.25-4.55",
+      "extractor_confidence": 0.99,
+      "consistency_ok": true,
+      "n_effects_in_document": 2,
+      "n_scoped_to_outcome": 2,
+      "scope_strength": "same_sentence",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "35711093",
+       "year": "2022",
+       "title": "Early changes in estimated glomerular filtration rate post-initiation of empagliflozin in EMPEROR-Reduced.",
+       "why_primary": "record carries NCT03057977 as its own registration",
+       "rank_among_own_reports": 16,
+       "n_own_reports": 61
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:07:40+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.2491934299468994,
+     "bytes_in": 381110,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications NDA206073,NDA206111,NDA212614,NDA204629,NDA208658; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 50273 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:07:43+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT03057977",
+     "http_status": 200,
+     "seconds": 0.12836050987243652,
+     "bytes_in": 1121,
+     "payload_sha256": "8e0a8182055bad99e66169966939976c101a26214bb0f353651f7197e2854354",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "field path searched: documentSection.largeDocumentModule.largeDocs; 2 posted documents Prot,SAP | a protocol/SAP states what will be MEASURED, not the result; availability recorded, no value mined",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:07:43+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 17.53199076652527,
+   "total_bytes": 3113931,
+   "benchmark": {
+    "truth": {
+     "trial": "EMPEROR-Reduced",
+     "aliases": [
+      "EMPEROR Reduced"
+     ],
+     "nct": "NCT03057977",
+     "drug": "empagliflozin",
+     "measure": "HR",
+     "est": 0.92,
+     "lo": 0.77,
+     "hi": 1.1,
+     "human_layer": "L1 registry",
+     "human_note": ""
+    },
+    "score": {
+     "verdict": "MISMATCHED",
+     "why": "estimate differs beyond tolerance",
+     "log_diff": 0.9505,
+     "got": 2.38,
+     "measure": "HR",
+     "hand_value": 0.92
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "EMPHASIS-HF",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "NCT00232180",
+    "pmid": "",
+    "doi": "",
+    "drug": "eplerenone",
+    "aliases": [
+     "EMPHASIS HF"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "OR",
+    "estimate": 30.0,
+    "ci_low": null,
+    "ci_high": null,
+    "source_text": "or =30",
+    "extractor_confidence": 0.55705,
+    "consistency_ok": true,
+    "n_effects_in_document": 1,
+    "n_scoped_to_outcome": 1,
+    "scope_strength": "one_sentence_back",
+    "has_interval": false,
+    "interval_pass": "no_interval_available",
+    "report": {
+     "pmid": "20388647",
+     "year": "2010",
+     "title": "Rationale and design of the Eplerenone in Mild Patients Hospitalization And SurvIval Study in Heart Failure (EMPHASIS-HF).",
+     "why_primary": "record carries NCT00232180 as its own registration",
+     "rank_among_own_reports": 38,
+     "n_own_reports": 38
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 9.467628955841064,
+     "bytes_in": 7805,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:07:52+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov/api/v2",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT00232180",
+     "http_status": 200,
+     "seconds": 0.1234886646270752,
+     "bytes_in": 428472,
+     "payload_sha256": "834ea90025713a76a5be601a9153850b63fd96527eeb5dc40209a5dd2049c12c",
+     "outcome": "HIT",
+     "note": "resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]",
+     "value": {
+      "measure": "HR",
+      "measure_raw": "Hazard Ratio (HR)",
+      "estimate": 0.761,
+      "ci_low": 0.622,
+      "ci_high": 0.932,
+      "source_text": "Number of Participants With First Occurrence of All-Cause Mortality (Adjudicated)",
+      "ci_pct": "95",
+      "n_outcome_measures_scanned": 18,
+      "n_matched_cue": 2,
+      "n_rejected_as_composite": 1,
+      "scope_strength": "registry_outcome_title"
+     },
+     "provenance_tier": "registry_results",
+     "retrieved_utc": "2026-08-29T22:07:53+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 4.82444953918457,
+     "bytes_in": 2017524,
+     "payload_sha256": "ceb45416508232cef86c517703e5821ff019aa66e2d897cf06bd910fb4bbe0b5",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 38 candidate pmids; 82 candidates fetched, 38 are the trial's own report; value from pmid 20388647 (2010, record carries NCT00232180 as its own registration)",
+     "value": {
+      "measure": "OR",
+      "estimate": 30.0,
+      "ci_low": null,
+      "ci_high": null,
+      "source_text": "or =30",
+      "extractor_confidence": 0.55705,
+      "consistency_ok": true,
+      "n_effects_in_document": 1,
+      "n_scoped_to_outcome": 1,
+      "scope_strength": "one_sentence_back",
+      "has_interval": false,
+      "interval_pass": "no_interval_available",
+      "report": {
+       "pmid": "20388647",
+       "year": "2010",
+       "title": "Rationale and design of the Eplerenone in Mild Patients Hospitalization And SurvIval Study in Heart Failure (EMPHASIS-HF).",
+       "why_primary": "record carries NCT00232180 as its own registration",
+       "rank_among_own_reports": 38,
+       "n_own_reports": 38
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:08:19+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.2284319400787354,
+     "bytes_in": 101598,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications ANDA206922,ANDA213812,ANDA214663,ANDA207842,NDA021437; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 15231 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:08:21+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "https://clinicaltrials.gov/api/v2/studies/NCT00232180",
+     "http_status": 200,
+     "seconds": 0.10172224044799805,
+     "bytes_in": 565,
+     "payload_sha256": "41cf381ca29d31bc7e0f03cc593f082ee4af0ae13ea039f01cc6565ce7b65962",
+     "outcome": "MISS",
+     "note": "field path searched: documentSection.largeDocumentModule.largeDocs; 0 posted documents  | a protocol/SAP states what will be MEASURED, not the result; availability recorded, no value mined",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:08:21+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 15.745721340179443,
+   "total_bytes": 2555964,
+   "benchmark": {
+    "truth": {
+     "trial": "EMPHASIS-HF",
+     "aliases": [
+      "EMPHASIS HF"
+     ],
+     "nct": "NCT00232180",
+     "drug": "eplerenone",
+     "measure": "HR",
+     "est": 0.761,
+     "lo": 0.622,
+     "hi": 0.932,
+     "human_layer": "L1 registry",
+     "human_note": ""
+    },
+    "score": {
+     "verdict": "MISMATCHED",
+     "why": "estimate differs beyond tolerance",
+     "log_diff": 3.6743,
+     "got": 30.0,
+     "measure": "OR",
+     "hand_value": 0.761
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "RALES",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "spironolactone",
+    "aliases": [
+     "Randomized Aldactone Evaluation Study"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "RR",
+    "estimate": 0.7,
+    "ci_low": 0.6,
+    "ci_high": 0.82,
+    "source_text": "relative risk of death: 0.70; 95% CI, 0.60-0.82",
+    "extractor_confidence": 0.99,
+    "consistency_ok": true,
+    "n_effects_in_document": 1,
+    "n_scoped_to_outcome": 1,
+    "scope_strength": "same_sentence",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "10589274",
+     "year": "1999",
+     "title": "[Study of the month. The RALES study (randomized aldactone evaluation study].",
+     "why_primary": "title names the trial",
+     "rank_among_own_reports": 31,
+     "n_own_reports": 70
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 9.240150451660156,
+     "bytes_in": 7802,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:08:30+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:08:30+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 27.585277318954468,
+     "bytes_in": 1644474,
+     "payload_sha256": "67c70bce7235612e6654f99fb39aa130768f267691e3600e7ad1509e37ebb893",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 73 candidate pmids; 119 candidates fetched, 70 are the trial's own report; value from pmid 10589274 (1999, title names the trial)",
+     "value": {
+      "measure": "RR",
+      "estimate": 0.7,
+      "ci_low": 0.6,
+      "ci_high": 0.82,
+      "source_text": "relative risk of death: 0.70; 95% CI, 0.60-0.82",
+      "extractor_confidence": 0.99,
+      "consistency_ok": true,
+      "n_effects_in_document": 1,
+      "n_scoped_to_outcome": 1,
+      "scope_strength": "same_sentence",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "10589274",
+       "year": "1999",
+       "title": "[Study of the month. The RALES study (randomized aldactone evaluation study].",
+       "why_primary": "title names the trial",
+       "rank_among_own_reports": 31,
+       "n_own_reports": 70
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:09:03+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.2290773391723633,
+     "bytes_in": 86749,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications ANDA217761,ANDA040424,NDA209478,ANDA089424,ANDA040750; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 8319 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:05+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:05+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 38.05450510978699,
+   "total_bytes": 1739025,
+   "benchmark": {
+    "truth": {
+     "trial": "RALES",
+     "aliases": [
+      "Randomized Aldactone Evaluation Study"
+     ],
+     "nct": "",
+     "drug": "spironolactone",
+     "measure": "RR",
+     "est": 0.7,
+     "lo": 0.6,
+     "hi": 0.82,
+     "human_layer": "L2 abstract",
+     "human_note": "1999, no registry record"
+    },
+    "score": {
+     "verdict": "MATCHED",
+     "log_diff": 0.0,
+     "got": 0.7,
+     "measure": "RR"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "MERIT-HF",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "metoprolol",
+    "aliases": [
+     "MERIT HF",
+     "Metoprolol CR/XL Randomised Intervention Trial"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "RR",
+    "estimate": 0.66,
+    "ci_low": 0.53,
+    "ci_high": 0.81,
+    "source_text": "relative risk 0.66 [95% CI 0.53-0.81",
+    "extractor_confidence": 0.99,
+    "consistency_ok": true,
+    "n_effects_in_document": 1,
+    "n_scoped_to_outcome": 1,
+    "scope_strength": "same_sentence",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "10376614",
+     "year": "1999",
+     "title": "Effect of metoprolol CR/XL in chronic heart failure: Metoprolol CR/XL Randomised Intervention Trial in Congestive Heart Failure (MERIT-HF).",
+     "why_primary": "title names the trial",
+     "rank_among_own_reports": 5,
+     "n_own_reports": 40
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 17.298258543014526,
+     "bytes_in": 8315,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:22+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:22+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 13.458845138549805,
+     "bytes_in": 2025454,
+     "payload_sha256": "929c34e43acbd601d2173192bce51e91b8e3a76205af1a79bc2150eaddca2c0c",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 41 candidate pmids; 90 candidates fetched, 40 are the trial's own report; value from pmid 10376614 (1999, title names the trial)",
+     "value": {
+      "measure": "RR",
+      "estimate": 0.66,
+      "ci_low": 0.53,
+      "ci_high": 0.81,
+      "source_text": "relative risk 0.66 [95% CI 0.53-0.81",
+      "extractor_confidence": 0.99,
+      "consistency_ok": true,
+      "n_effects_in_document": 1,
+      "n_scoped_to_outcome": 1,
+      "scope_strength": "same_sentence",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "10376614",
+       "year": "1999",
+       "title": "Effect of metoprolol CR/XL in chronic heart failure: Metoprolol CR/XL Randomised Intervention Trial in Congestive Heart Failure (MERIT-HF).",
+       "why_primary": "title names the trial",
+       "rank_among_own_reports": 5,
+       "n_own_reports": 40
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:09:40+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.2660508155822754,
+     "bytes_in": 94094,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications ANDA211143,ANDA203699,ANDA077739,NDA210428,ANDA200981; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 11334 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:42+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:42+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 32.023154497146606,
+   "total_bytes": 2127863,
+   "benchmark": {
+    "truth": {
+     "trial": "MERIT-HF",
+     "aliases": [
+      "MERIT HF",
+      "Metoprolol CR/XL Randomised Intervention Trial"
+     ],
+     "nct": "",
+     "drug": "metoprolol",
+     "measure": "RR",
+     "est": 0.66,
+     "lo": 0.53,
+     "hi": 0.81,
+     "human_layer": "L2 abstract",
+     "human_note": "1999, no registry record"
+    },
+    "score": {
+     "verdict": "MATCHED",
+     "log_diff": 0.0,
+     "got": 0.66,
+     "measure": "RR"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "CIBIS-II",
+    "field_path": "effect.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "bisoprolol",
+    "aliases": [
+     "CIBIS II",
+     "Cardiac Insufficiency Bisoprolol Study"
+    ],
+    "measure_hint": ""
+   },
+   "state": "OBTAINED",
+   "supplying_rung": 3,
+   "supplying_rung_name": "R3_LITERATURE",
+   "value": {
+    "measure": "HR",
+    "estimate": 0.66,
+    "ci_low": 0.54,
+    "ci_high": 0.81,
+    "source_text": "hazard ratio 0.66 (95% CI 0.54-0.81",
+    "extractor_confidence": 0.99,
+    "consistency_ok": true,
+    "n_effects_in_document": 2,
+    "n_scoped_to_outcome": 1,
+    "scope_strength": "same_sentence",
+    "has_interval": true,
+    "interval_pass": "with_interval",
+    "report": {
+     "pmid": "10023943",
+     "year": "1999",
+     "title": "The Cardiac Insufficiency Bisoprolol Study II (CIBIS-II): a randomised trial.",
+     "why_primary": "title names the trial",
+     "rank_among_own_reports": 8,
+     "n_own_reports": 43
+    }
+   },
+   "provenance_tier": "trial_report",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.fullTextXML",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 14.852617025375366,
+     "bytes_in": 8426,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:57+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:09:57+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "ncbi.efetch.pubmed",
+     "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+     "http_status": 200,
+     "seconds": 13.131689310073853,
+     "bytes_in": 2338701,
+     "payload_sha256": "c831fb44bcfeb4864a65cd954373a32300ee1c7e3aee0b916109c4877c4e3712",
+     "outcome": "HIT",
+     "note": "epmc seeded 50 pmids; esearch 47 candidate pmids; 96 candidates fetched, 43 are the trial's own report; value from pmid 10023943 (1999, title names the trial)",
+     "value": {
+      "measure": "HR",
+      "estimate": 0.66,
+      "ci_low": 0.54,
+      "ci_high": 0.81,
+      "source_text": "hazard ratio 0.66 (95% CI 0.54-0.81",
+      "extractor_confidence": 0.99,
+      "consistency_ok": true,
+      "n_effects_in_document": 2,
+      "n_scoped_to_outcome": 1,
+      "scope_strength": "same_sentence",
+      "has_interval": true,
+      "interval_pass": "with_interval",
+      "report": {
+       "pmid": "10023943",
+       "year": "1999",
+       "title": "The Cardiac Insufficiency Bisoprolol Study II (CIBIS-II): a randomised trial.",
+       "why_primary": "title names the trial",
+       "rank_among_own_reports": 8,
+       "n_own_reports": 43
+      }
+     },
+     "provenance_tier": "trial_report",
+     "retrieved_utc": "2026-08-29T22:10:14+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 1.2566964626312256,
+     "bytes_in": 70037,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "drugsfda: 5 applications ANDA217368,ANDA078635,ANDA215666,ANDA215680,ANDA075643; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 6871 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:10:16+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T22:10:16+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 29.241002798080444,
+   "total_bytes": 2417164,
+   "benchmark": {
+    "truth": {
+     "trial": "CIBIS-II",
+     "aliases": [
+      "CIBIS II",
+      "Cardiac Insufficiency Bisoprolol Study"
+     ],
+     "nct": "",
+     "drug": "bisoprolol",
+     "measure": "HR",
+     "est": 0.66,
+     "lo": 0.54,
+     "hi": 0.81,
+     "human_layer": "L2 abstract",
+     "human_note": "1999, no registry record"
+    },
+    "score": {
+     "verdict": "MATCHED",
+     "log_diff": 0.0,
+     "got": 0.66,
+     "measure": "HR"
+    }
+   }
+  }
+ ]
+}

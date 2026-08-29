@@ -1,0 +1,408 @@
+{
+ "n_trials": 28,
+ "pmid_present": 28,
+ "demonstrated": 11,
+ "held_unverified": 0,
+ "unresolved": 17,
+ "conflicts": 0,
+ "unresolved_pre_2005": 16,
+ "unresolved_2005_or_later": 1,
+ "unresolved_year_unknown": 0,
+ "rows": [
+  {
+   "id": "HF-001",
+   "name": "SOLVD-Treatment",
+   "pmid": "2057034",
+   "year": 1991,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1991, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-008",
+   "name": "SPICE",
+   "pmid": "10740141",
+   "year": 2000,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2000, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-010",
+   "name": "ELITE",
+   "pmid": "9074572",
+   "year": 1997,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1997, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-011",
+   "name": "ELITE-II",
+   "pmid": "10821361",
+   "year": 2000,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2000, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-012",
+   "name": "REPLACE",
+   "pmid": "11182175",
+   "year": 2001,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2001, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-013",
+   "name": "CIBIS-I",
+   "pmid": "7923660",
+   "year": 1994,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1994, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-014",
+   "name": "CIBIS-II",
+   "pmid": "10023943",
+   "year": 1999,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1999, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-015",
+   "name": "MERIT-HF",
+   "pmid": "10376614",
+   "year": 1999,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1999, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-016",
+   "name": "COPERNICUS",
+   "pmid": "11386263",
+   "year": 2001,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2001, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-017",
+   "name": "BEST",
+   "pmid": "11386264",
+   "year": 2001,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2001, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-018",
+   "name": "US-Carvedilol",
+   "pmid": "8614419",
+   "year": 1996,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1996, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-019",
+   "name": "RESOLVD",
+   "pmid": "10653828",
+   "year": 2000,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2000, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-020",
+   "name": "He 2015",
+   "pmid": "28834619",
+   "year": 2015,
+   "held_identifier": "NCT01917149",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT01917149"
+    }
+   ],
+   "resolution": "NCT01917149",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 28834619 <DataBank>ClinicalTrials.gov</DataBank> = NCT01917149",
+   "note": ""
+  },
+  {
+   "id": "HF-021",
+   "name": "CARMEN",
+   "pmid": "15115904",
+   "year": 2004,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2004, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-022",
+   "name": "RALES",
+   "pmid": "10471456",
+   "year": 1999,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 1999, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-023",
+   "name": "EMPHASIS-HF",
+   "pmid": "21073363",
+   "year": 2011,
+   "held_identifier": "NCT00232180",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT00232180"
+    }
+   ],
+   "resolution": "NCT00232180",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 21073363 <DataBank>ClinicalTrials.gov</DataBank> = NCT00232180",
+   "note": ""
+  },
+  {
+   "id": "HF-024",
+   "name": "J-EMPHASIS-HF",
+   "pmid": "28824029",
+   "year": 2017,
+   "held_identifier": "NCT01115855",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT01115855"
+    }
+   ],
+   "resolution": "NCT01115855",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 28824029 <DataBank>ClinicalTrials.gov</DataBank> = NCT01115855",
+   "note": ""
+  },
+  {
+   "id": "HF-025",
+   "name": "Vizzardi 2014",
+   "pmid": "24196866",
+   "year": 2014,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held"
+  },
+  {
+   "id": "HF-028",
+   "name": "Val-HeFT",
+   "pmid": "11759645",
+   "year": 2001,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2001, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-029",
+   "name": "CHARM-Added",
+   "pmid": "13678869",
+   "year": 2003,
+   "held_identifier": null,
+   "declared_by_own_report": [],
+   "resolution": null,
+   "method": null,
+   "evidence": null,
+   "note": "no registration declared by the paper and none held; reported 2003, before registration was a publication condition (2005) or a US legal requirement (2007) -- absence here is EXPECTED and is NOT a demonstration that none exists"
+  },
+  {
+   "id": "HF-030",
+   "name": "PARADIGM-HF",
+   "pmid": "25176015",
+   "year": 2014,
+   "held_identifier": "NCT01035255",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT01035255"
+    }
+   ],
+   "resolution": "NCT01035255",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 25176015 <DataBank>ClinicalTrials.gov</DataBank> = NCT01035255",
+   "note": ""
+  },
+  {
+   "id": "HF-031",
+   "name": "PARACHUTE-HF",
+   "pmid": "41335448",
+   "year": 2026,
+   "held_identifier": "NCT04023227",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT04023227"
+    }
+   ],
+   "resolution": "NCT04023227",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 41335448 <DataBank>ClinicalTrials.gov</DataBank> = NCT04023227",
+   "note": ""
+  },
+  {
+   "id": "HF-032",
+   "name": "DAPA-HF",
+   "pmid": "31535829",
+   "year": 2019,
+   "held_identifier": "NCT03036124",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT03036124"
+    }
+   ],
+   "resolution": "NCT03036124",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 31535829 <DataBank>ClinicalTrials.gov</DataBank> = NCT03036124",
+   "note": ""
+  },
+  {
+   "id": "HF-033",
+   "name": "EMPEROR-Reduced",
+   "pmid": "32865377",
+   "year": 2020,
+   "held_identifier": "NCT03057977",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT03057977"
+    }
+   ],
+   "resolution": "NCT03057977",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 32865377 <DataBank>ClinicalTrials.gov</DataBank> = NCT03057977",
+   "note": ""
+  },
+  {
+   "id": "HF-034",
+   "name": "GALACTIC-HF",
+   "pmid": "33185990",
+   "year": 2021,
+   "held_identifier": "NCT02929329",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT02929329"
+    },
+    {
+     "registry": "EudraCT",
+     "accession": "2016-002299-28"
+    }
+   ],
+   "resolution": "NCT02929329",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 33185990 <DataBank>ClinicalTrials.gov</DataBank> = NCT02929329",
+   "note": ""
+  },
+  {
+   "id": "HF-036",
+   "name": "VICTOR",
+   "pmid": "40897189",
+   "year": 2025,
+   "held_identifier": "NCT05093933",
+   "declared_by_own_report": [
+    {
+     "registry": "ClinicalTrials.gov",
+     "accession": "NCT05093933"
+    }
+   ],
+   "resolution": "NCT05093933",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 40897189 <DataBank>ClinicalTrials.gov</DataBank> = NCT05093933",
+   "note": ""
+  },
+  {
+   "id": "HF-037",
+   "name": "DIGIT-HF",
+   "pmid": "40879434",
+   "year": 2025,
+   "held_identifier": "EudraCT 2013-005326-38",
+   "declared_by_own_report": [
+    {
+     "registry": "EudraCT",
+     "accession": "2013-005326-38"
+    }
+   ],
+   "resolution": "2013-005326-38",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 40879434 <DataBank>EudraCT</DataBank> = 2013-005326-38",
+   "note": ""
+  },
+  {
+   "id": "HF-038",
+   "name": "QUEST",
+   "pmid": "39095596",
+   "year": 2024,
+   "held_identifier": "ChiCTR1900021929",
+   "declared_by_own_report": [
+    {
+     "registry": "ChiCTR",
+     "accession": "1900021929"
+    }
+   ],
+   "resolution": "1900021929",
+   "method": "D1_own_report_databank",
+   "evidence": "PubMed 39095596 <DataBank>ChiCTR</DataBank> = 1900021929",
+   "note": ""
+  }
+ ]
+}

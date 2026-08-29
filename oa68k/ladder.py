@@ -52,6 +52,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -93,7 +94,18 @@ class Outcome(str, Enum):
     RETRIEVED_NO_VALUE = "RETRIEVED_NO_VALUE"  # a document came back, no value in it
     MISS = "MISS"                            # source answered, nothing there
     FAILED = "FAILED"                        # transport error -- OUR reach, not the world
-    SKIPPED = "SKIPPED"                      # preconditions absent (e.g. no NCT)
+    EMPTY = "EMPTY"                          # a 200 with an EMPTY BODY -- see below
+    SKIPPED = "SKIPPED"                      # no plan: a required identifier is absent
+
+
+# EMPTY IS NOT MISS, AND THE SIBLING LANE PAID FOR THE DISTINCTION. Its fetcher saw
+# two 200-shaped EMPTY BODIES on endpoints that had worked minutes earlier, between a
+# timeout and a 429. A ladder that scores an empty 200 as "no data exists"
+# MANUFACTURES ABSENCES OUT OF A RATE LIMITER -- there it would have invented eleven.
+# The whole family, all four of which this programme has now met:
+#     200 is not a document . 000 is not a paywall . 404 is not absence .
+#     an EMPTY 200 is not an empty source.
+MIN_BODY_BYTES = 2         # at or below this, a 200 is EMPTY rather than an answer
 
 
 # Provenance tiers, strongest first. A prior-meta table is usable and UNVERIFIED.
@@ -554,19 +566,30 @@ def rung1_prior_meta(session, req: Request) -> Attempt:
         url = C_EFETCH_PMC + "?db=pmc&id=" + pmcid
         retrieved += 1
         total_b += len(r2.content)
-        # TABLE FIRST. A meta-analysis puts its per-trial numbers in a TABLE, and
-        # jats.parse_tables already gives real column headers -- which is the whole
-        # reason the JATS tier is preferred. The prose window is the fallback, not
-        # the method: on the first benchmark run the prose path retrieved 8 full
-        # texts per trial and extracted nothing from any of them.
+        # ⛔ TABLES ONLY. THE PROSE ROUTE IS DELETED, AND THE MEASUREMENT IS WHY.
+        #
+        # Once retrieval worked, rung 1 produced 4 values on the HFrEF set. THREE of
+        # them came from the prose window and all three were WRONG, each in a
+        # different way:
+        #   EMPEROR-Reduced -> HR 0.84 (0.76-0.93)  ... which is PARADIGM-HF's number
+        #   MERIT-HF        -> HR 0.66 (0.54-0.81)  ... which is CIBIS-II's interval
+        #   EMPHASIS-HF     -> HR 0.77 (0.62-0.96)  ... a third meta's recomputation,
+        #                      which PASSED the 3% tolerance by luck, and a lucky pass
+        #                      is worse than a miss because nothing flags it
+        #
+        # The mechanism is one sentence: A META-ANALYSIS'S PROSE NAMES MANY TRIALS,
+        # SO PROXIMITY IS NOT ATTRIBUTION. Taking the nearest effect to a trial name
+        # in a document that discusses forty trials is the same defect as reading a
+        # value out of a paper that merely CITES the trial -- which this module
+        # already refuses at rung 3. Refusing it there and permitting it here was
+        # inconsistent, and the inconsistency cost three data.
+        #
+        # A per-trial number is trustworthy from a prior meta only when it sits in a
+        # ROW whose label resolves to this trial, inside a TABLE whose caption or
+        # headers name the outcome. That is structure, not proximity.
         val = _prior_meta_from_tables(r2.content, names, req)
-        how = "table"
-        if not val:
-            seg = _segment_naming_trial(_xml_text(r2.text), names)
-            val = extract_effect(seg, req) if seg else None
-            how = "prose"
         if val:
-            val["prior_meta_route"] = how
+            val["prior_meta_route"] = "table"
             val["cited_by"] = {"pmcid": pmcid, "title": (h.get("title") or "")[:140],
                                "journal": h.get("journalTitle", ""), "year": h.get("pubYear", "")}
             return Attempt(1, "R1_PRIOR_META", "harvest.fetch_fulltext", url, 200,
@@ -609,6 +632,7 @@ def _prior_meta_from_tables(xml_bytes: bytes, names: list, req: Request):
     field = req.field_path.split(".")[-1]
     cues = OUTCOME_CUES.get(field, [])
     single = field in SINGLE_OUTCOME_FIELDS
+    n_row_rejected = 0
     for t in tables:
         head = " ".join(t.get("headers") or [])
         scope_text = (t.get("caption", "") + " " + head)
@@ -622,6 +646,17 @@ def _prior_meta_from_tables(xml_bytes: bytes, names: list, req: Request):
             label = " ".join(cells[:2])
             if not _names_trial(label, req):
                 continue
+            # ⚠ A ROW THAT NAMES THE TRIAL IS NOT NECESSARILY THE TRIAL'S RESULT.
+            # CIBIS-II was read as HR 0.57 (0.37-0.94) from a row reading
+            # "Krum, Australia, 2007 (CIBIS-II) | Post hoc analysis of RCT", inside a
+            # table captioned "All-cause mortality in randomized and non-randomized
+            # STATIN HF studies". The caption carried the outcome cue, so the table
+            # scoped; the row named the trial, so the row matched; and the number was
+            # a post-hoc statin sub-analysis. Same family as the design-paper defect
+            # at rung 3: naming is a filter, and a filter is not an attribution.
+            if _ROW_NOT_A_RESULT.search(" ".join(cells)):
+                n_row_rejected += 1
+                continue
             for c in cells:
                 m = _CELL_EFFECT.search(c.replace(" ", " "))
                 if not m:
@@ -634,8 +669,17 @@ def _prior_meta_from_tables(xml_bytes: bytes, names: list, req: Request):
                                         + c)[:200],
                         "table_caption": t.get("caption", "")[:200],
                         "scope_strength": "prior_meta_table_caption_or_header",
-                        "n_tables_in_document": len(tables)}
+                        "n_tables_in_document": len(tables),
+                        "n_rows_rejected_not_a_result": n_row_rejected}
     return None
+
+
+# A row label that names the trial but does NOT carry the trial's own randomised
+# result. Every one of these appeared in a real table on this benchmark.
+_ROW_NOT_A_RESULT = re.compile(
+    r"\b(post[- ]?hoc|posthoc|observational|non[- ]?randomi[sz]ed|registry|"
+    r"sub[- ]?group|subanalysis|sub[- ]?analysis|secondary analysis|pooled|"
+    r"propensity|cohort|extension|open[- ]?label follow)\b", re.I)
 
 
 def _measure_in(s: str) -> str:
@@ -1240,9 +1284,71 @@ def climb(req: Request, session=None, stop_at_first_hit: bool = True,
             rec.supplying_rung_name = rung.name
             rec.value = a.value
             rec.provenance_tier = a.provenance_tier
-            if stop_at_first_hit:
+            if stop_at_first_hit and rec.provenance_tier != "prior_meta_table":
                 break
+            # A PRIOR-META VALUE DOES NOT END THE CLIMB. See _reconcile below.
+            if stop_at_first_hit:
+                continue
+    _reconcile(rec, req, session)
     return rec
+
+
+def _reconcile(rec: "Record", req: "Request", session) -> None:
+    """§6b: where a prior-meta value is used, ATTEMPT THE PRIMARY READ ANYWAY and
+    record whether it reconciles.
+
+    ⚠ THIS IS NOT BELT-AND-BRACES. It is the difference between the ladder's best
+    result and its worst. Measured on the HFrEF set, rung 1's four prior-meta values
+    reproduced the trial's own report ONE time in four -- and the three failures were
+    a different trial's number, a different trial's interval, and a post-hoc statin
+    sub-analysis. "Peer-reviewed" describes the meta-analysis; it does not describe
+    the correctness of any single cell someone typed into its table.
+
+    So: a prior_meta_table value is a CANDIDATE. The primary read outranks it
+    (TIERS puts trial_report first), and the pair is recorded either way, because
+    "attempted and did not reconcile" is a finding and silence is not.
+    """
+    if rec.provenance_tier != "prior_meta_table" or not rec.value:
+        return
+    prior = dict(rec.value)
+    try:
+        a = rung3_literature(session, req)
+    except Exception as e:                           # noqa: BLE001
+        rec.value["reconciliation"] = {"attempted": True, "reconciles": None,
+                                       "why": "primary read failed: " + type(e).__name__}
+        return
+    rec.attempts.append(asdict(a))
+    rec.total_seconds += a.seconds
+    rec.total_bytes += a.bytes_in
+
+    if a.outcome != Outcome.HIT.value or not a.value:
+        rec.value["reconciliation"] = {
+            "attempted": True, "reconciles": None,
+            "why": "no primary read available to check against (" + a.outcome + ")",
+            "prior_meta_value": prior}
+        return
+
+    p, q = prior.get("estimate"), a.value.get("estimate")
+    same_measure = canon_measure(prior.get("measure")) == canon_measure(a.value.get("measure"))
+    agree = (p and q and p > 0 and q > 0
+             and abs(math.log(p) - math.log(q)) <= RECONCILE_LOG_TOL and same_measure)
+
+    # The primary read WINS. Tier order is not decoration.
+    rec.value = dict(a.value)
+    rec.value["reconciliation"] = {
+        "attempted": True, "reconciles": bool(agree),
+        "prior_meta_value": prior, "primary_value": {k: a.value.get(k) for k in
+                                                     ("measure", "estimate", "ci_low",
+                                                      "ci_high", "report")},
+        "why": ("prior-meta table agrees with the trial's own report" if agree else
+                "prior-meta table DISAGREES with the trial's own report; the primary "
+                "read is used and the disagreement is recorded")}
+    rec.provenance_tier = a.provenance_tier
+    rec.supplying_rung = 3
+    rec.supplying_rung_name = "R3_LITERATURE"
+
+
+RECONCILE_LOG_TOL = 0.03
 
 
 # --------------------------------------------------------------- the measure
@@ -1258,8 +1364,8 @@ def yield_report(records: list) -> dict:
     per = {}
     for rung, _ in RUNGS:
         per[rung.name] = {"rung": rung.value, "reached": 0, "hit": 0,
-                          "retrieved_no_value": 0, "miss": 0, "failed": 0, "skipped": 0,
-                          "seconds": 0.0, "bytes": 0}
+                          "retrieved_no_value": 0, "miss": 0, "empty": 0, "failed": 0,
+                          "skipped": 0, "seconds": 0.0, "bytes": 0}
     for rec in records:
         for a in rec["attempts"] if isinstance(rec, dict) else rec.attempts:
             a = a if isinstance(a, dict) else asdict(a)
@@ -1268,7 +1374,7 @@ def yield_report(records: list) -> dict:
             p["seconds"] += a["seconds"]
             p["bytes"] += a["bytes_in"]
             key = {"HIT": "hit", "RETRIEVED_NO_VALUE": "retrieved_no_value", "MISS": "miss",
-                   "FAILED": "failed", "SKIPPED": "skipped"}[a["outcome"]]
+                   "EMPTY": "empty", "FAILED": "failed", "SKIPPED": "skipped"}[a["outcome"]]
             p[key] += 1
     n = len(records)
     states = {}
@@ -1286,6 +1392,7 @@ def yield_report(records: list) -> dict:
             "n_data_requested. 'hit' counts data where a VALUE was extracted; "
             "'retrieved_no_value' counts documents fetched that yielded none, and is "
             "reported separately because a retrieval count is not an evidence claim. "
+            "'empty' is a 200 with an empty body -- a rate limiter, never an empty source. "
             "'failed' is a transport error and measures OUR REACH, not the source."),
     }
 
@@ -1296,11 +1403,12 @@ def print_yield(rep: dict) -> None:
     for k, v in sorted(rep["states"].items()):
         print("  " + k.ljust(24) + str(v) + "/" + str(rep["n_data_requested"]))
     print("\nYIELD PER RUNG  (hit / reached -- reached is the denominator for THAT rung)")
-    print("  rung                  hit  ret-no-val  miss  fail  skip   reached    sec     KB")
+    print("  rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec     KB")
     for name, p in sorted(rep["per_rung"].items(), key=lambda kv: kv[1]["rung"]):
         print("  " + name.ljust(18)
               + str(p["hit"]).rjust(5) + str(p["retrieved_no_value"]).rjust(12)
-              + str(p["miss"]).rjust(6) + str(p["failed"]).rjust(6) + str(p["skipped"]).rjust(6)
+              + str(p["miss"]).rjust(6) + str(p["empty"]).rjust(6)
+              + str(p["failed"]).rjust(6) + str(p["skipped"]).rjust(6)
               + str(p["reached"]).rjust(10) + ("%.1f" % p["seconds"]).rjust(8)
               + str(int(p["bytes"] / 1024)).rjust(7))
     print("\n" + rep["denominator_note"])
@@ -1480,6 +1588,36 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 16 -- a prior-meta row that is not a RESULT must be rejected")
+    xmlrow = (b'<article><body><table-wrap><label>Table 5</label>'
+              b'<caption><p>All-cause mortality in randomized and non-randomized '
+              b'statin HF studies</p></caption>'
+              b'<table><thead><tr><th>Study</th><th>Design</th><th>HR (95% CI)</th></tr>'
+              b'</thead><tbody>'
+              b'<tr><td>Krum, Australia, 2007 (CIBIS-II)</td>'
+              b'<td>Post hoc analysis of RCT</td><td>0.57 (0.37-0.94)</td></tr>'
+              b'</tbody></table></table-wrap></body></article>')
+    rqC = Request(trial="CIBIS-II", field_path="effect.all_cause_mortality",
+                  aliases=["CIBIS II"])
+    check("a 'Post hoc analysis of RCT' row is refused even though it names the trial",
+          _prior_meta_from_tables(xmlrow, ["CIBIS-II"], rqC) is None)
+    ok_row = xmlrow.replace(b"Post hoc analysis of RCT", b"Randomised controlled trial")
+    got_ok = _prior_meta_from_tables(ok_row, ["CIBIS-II"], rqC)
+    check("the same row WITHOUT the post-hoc label is accepted (0.57)",
+          got_ok is not None and abs(got_ok["estimate"] - 0.57) < 1e-9)
+    check("'observational' is rejected too",
+          _ROW_NOT_A_RESULT.search("CIBIS-II | observational cohort") is not None)
+    check("a plain trial row is not rejected",
+          _ROW_NOT_A_RESULT.search("CIBIS-II 1999 | bisoprolol vs placebo") is None)
+
+    print("PLANT 17 -- EMPTY must not collapse into MISS in the yield table")
+    rep = yield_report([{"state": "NOT_YET_FOUND", "attempts": [
+        {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "EMPTY",
+         "seconds": 0.1, "bytes_in": 0}]}])
+    check("an empty 200 lands in 'empty'", rep["per_rung"]["R1_PRIOR_META"]["empty"] == 1)
+    check("and NOT in 'miss'", rep["per_rung"]["R1_PRIOR_META"]["miss"] == 0)
+    check("nor in 'failed'", rep["per_rung"]["R1_PRIOR_META"]["failed"] == 0)
+
     print("PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE")
     import harvest as _H
     _real_fetch = _H.fetch_fulltext
@@ -1551,7 +1689,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 49 if extractor() is not None else 47
+    n = 56 if extractor() is not None else 54
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0

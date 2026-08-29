@@ -1,0 +1,799 @@
+[
+ {
+  "id": "HF-001",
+  "name": "SOLVD-Treatment",
+  "pmid": "2057034",
+  "doi": "10.1056/NEJM199108013250501",
+  "nct": null,
+  "pmid_note": "verified: NEJM 1991, enalapril vs placebo, 452/1285 vs 510/1284",
+  "edge": "Placebo->ACEI",
+  "arms": [
+   {
+    "treat": "Placebo",
+    "events": 510,
+    "n": 1284
+   },
+   {
+    "treat": "ACEI",
+    "events": 452,
+    "n": 1285
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 2569,
+  "total_events": 962,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-008",
+  "name": "SPICE",
+  "pmid": "10740141",
+  "doi": "10.1016/s0002-8703(00)90037-1",
+  "nct": null,
+  "pmid_note": "SOURCED 2026-07-30, RE-TIERED 2026-07-30. The primary is Granger CB et al, Am Heart J 2000;139(4):609-17, DOI 10.1016/s0002-8703(00)90037-1 = SPICE (Study of Patients Intolerant of Converting Enzyme inhibitors); the acronym is absent from the PubMed record, which is why an acronym-keyed search missed it. Abstract: 'randomization in a 2:1 ratio to receive candesartan (n = 179) or a placebo (n = 91)' and 'death 3.4% and 3.3%'. TIER: RECOVERED_FROM_PERCENTAGE_UNIQUE, not VERIFIED_FULL. The source prints NO integer death counts. 6 and 3 are each the unique integer rounding to the published percentages against the stated denominators (6/179 = 3.352%, 3/91 = 3.297%). That is a sound derivation but it is not a verbatim-reported count, unlike CIBIS-II or MERIT-HF which print their integers. SPICE stays in the network: this is a labelling correction, no count changed.",
+  "edge": "Placebo->ARB",
+  "arms": [
+   {
+    "treat": "Placebo",
+    "events": 3,
+    "n": 91
+   },
+   {
+    "treat": "ARB",
+    "events": 6,
+    "n": 179
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 270,
+  "total_events": 9,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "RECOVERED_FROM_PERCENTAGE_UNIQUE",
+  "in_quarantined_network": true
+ },
+ {
+  "id": "HF-010",
+  "name": "ELITE",
+  "pmid": "9074572",
+  "doi": "10.1016/s0140-6736(97)01187-2",
+  "nct": null,
+  "pmid_note": "RE-TIERED 2026-07-30 and a NEW FINDING. Losartan 17/352 is uniquely recovered from the published 4.8%. Captopril is NOT: 8.7% over n=370 admits no integer (32 prints 8.6%, 33 prints 8.9%), so the ledger's 32 cannot be derived from the accessible record. Most likely the published 4.8%/8.7% are Kaplan-Meier estimates at 48 weeks rather than crude proportions. NOT a quarantine trigger -- the counts are not identical across arms -- and no count was changed. Raised for the next gate.",
+  "edge": "ACEI->ARB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 32,
+    "n": 370
+   },
+   {
+    "treat": "ARB",
+    "events": 17,
+    "n": 352
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 722,
+  "total_events": 49,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "NOT_RECOVERABLE_FROM_PERCENTAGE",
+  "in_quarantined_network": true
+ },
+ {
+  "id": "HF-011",
+  "name": "ELITE-II",
+  "pmid": "10821361",
+  "doi": "10.1016/s0140-6736(00)02213-3",
+  "nct": null,
+  "pmid_note": "verified: Lancet 2000, losartan n=1578 vs captopril n=1574",
+  "edge": "ACEI->ARB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 250,
+    "n": 1574
+   },
+   {
+    "treat": "ARB",
+    "events": 280,
+    "n": 1578
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 3152,
+  "total_events": 530,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-012",
+  "name": "REPLACE",
+  "pmid": "11182175",
+  "doi": "10.1016/s0167-5273(00)00426-5",
+  "nct": null,
+  "pmid_note": "verified: Int J Cardiol 2001, telmisartan n=301 vs enalapril n=77",
+  "edge": "ACEI->ARB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 2,
+    "n": 77
+   },
+   {
+    "treat": "ARB",
+    "events": 4,
+    "n": 301
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 378,
+  "total_events": 6,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-013",
+  "name": "CIBIS-I",
+  "pmid": "7923660",
+  "doi": "10.1161/01.cir.90.4.1765",
+  "nct": null,
+  "pmid_note": "verified: Circulation 1994, 53/320 bisoprolol vs 67/321 placebo",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 67,
+    "n": 321
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 53,
+    "n": 320
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 641,
+  "total_events": 120,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-014",
+  "name": "CIBIS-II",
+  "pmid": "10023943",
+  "doi": null,
+  "nct": null,
+  "pmid_note": "verified: Lancet 1999, 156/1327 vs 228/1320",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 228,
+    "n": 1320
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 156,
+    "n": 1327
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 2647,
+  "total_events": 384,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-015",
+  "name": "MERIT-HF",
+  "pmid": "10376614",
+  "doi": null,
+  "nct": null,
+  "pmid_note": "verified: Lancet 1999, 145/1990 vs 217/2001",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 217,
+    "n": 2001
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 145,
+    "n": 1990
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 3991,
+  "total_events": 362,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-016",
+  "name": "COPERNICUS",
+  "pmid": "11386263",
+  "doi": "10.1056/NEJM200105313442201",
+  "nct": null,
+  "pmid_note": "verified: NEJM 2001, 130/1156 carvedilol vs 190/1133 placebo",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 190,
+    "n": 1133
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 130,
+    "n": 1156
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 2289,
+  "total_events": 320,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-017",
+  "name": "BEST",
+  "pmid": "11386264",
+  "doi": "10.1056/NEJM200105313442202",
+  "nct": null,
+  "pmid_note": "verified: NEJM 2001, 411/1354 bucindolol vs 449/1354 placebo",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 449,
+    "n": 1354
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 411,
+    "n": 1354
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 2708,
+  "total_events": 860,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-018",
+  "name": "US-Carvedilol",
+  "pmid": "8614419",
+  "doi": "10.1056/NEJM199605233342101",
+  "nct": null,
+  "pmid_note": "RE-TIERED 2026-07-30. Counts derived from '7.8 percent' and '3.2 percent'; 31/398 and 22/696 are each uniquely determined. Retained.",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 31,
+    "n": 398
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 22,
+    "n": 696
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 1094,
+  "total_events": 53,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "RECOVERED_FROM_PERCENTAGE_UNIQUE",
+  "in_quarantined_network": true
+ },
+ {
+  "id": "HF-019",
+  "name": "RESOLVD",
+  "pmid": "10653828",
+  "doi": "10.1161/01.cir.101.4.378",
+  "nct": null,
+  "pmid_note": "CORRECTED 2026-07-30: was PMID 10477530 (McKelvie, Circulation 1999;100:1056-64), the candesartan/enalapril comparison in 768 patients, which contains no metoprolol randomisation and cannot substantiate this contrast. The data are the RESOLVD metoprolol sub-study, Circulation 2000;101(4):378-84: '426 patients ... randomized to receive metoprolol CR or placebo' (212+214=426). The abstract's '3.4% versus 8.1%' conflicts with the paper's own body text, which reports the metoprolol deaths as n=8 (3.7%) vs placebo n=17 (8.1%); the extracted 8 and 17 match the body. The residual is an inconsistency INTERNAL TO THE SOURCE, not an extraction error. Evidence tier for the body figures: SECONDARY_CORROBORATED (publisher blocks automated retrieval; that was not circumvented).",
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 17,
+    "n": 212
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 8,
+    "n": 214
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 426,
+  "total_events": 25,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT (body text, SECONDARY_CORROBORATED)",
+  "in_quarantined_network": true
+ },
+ {
+  "id": "HF-020",
+  "name": "He 2015",
+  "pmid": "28834619",
+  "doi": "10.1002/ehf2.12042",
+  "nct": "NCT01917149",
+  "pmid_note": "VERIFIED FULL 2026-07-30 from PMC5746969. Table 1 arm sizes: metoprolol 96, low-dose benazepril 97, low-dose valsartan 100, high-dose benazepril 101, high-dose valsartan 97. Table 2 all-cause deaths: 14, 11, 13, 8, 8. Ledger ACEI 19/198 = 11/97 + 8/101 exactly; BB 14/96 exactly. DISCLOSURES: (a) the two benazepril DOSE arms are pooled onto one ACEI node; the trial found them significantly different (P=0.042) but that P is for the PRIMARY COMPOSITE, not all-cause death - on all-cause death the arms are 11/97 vs 8/101, Fisher p=0.49, so the pooling is defensible for THIS outcome. (b) the two valsartan arms (13/100 and 8/97) are dropped entirely rather than mapped to the ARB node. (c) the source is internally inconsistent on enrolment: abstract and registry say 480, the Results text and Table 1 sum to 491.",
+  "edge": "ACEI->BB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 19,
+    "n": 198
+   },
+   {
+    "treat": "BB",
+    "events": 14,
+    "n": 96
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 294,
+  "total_events": 33,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT",
+  "in_quarantined_network": true
+ },
+ {
+  "id": "HF-021",
+  "name": "CARMEN",
+  "pmid": "15115904",
+  "doi": "10.1023/B:CARD.0000025756.32499.6f",
+  "nct": null,
+  "pmid_note": "QUARANTINED 2026-07-30 (symmetric pass). PMID 15115904 confirms the arms (carvedilol N=191, enalapril N=190, combination N=191) but the trial's primary endpoint is LVESVI and it reports NO per-arm deaths anywhere -- its only safety statement is 'All three arms showed similar safety profiles and withdrawal rates.' The 14/14/14 has no located source, and the settled fit script's line 377 already called CARMEN inadmissible. Withheld from the QUARANTINED co-primary; STILL PRESENT in the FULL co-primary, which is displayed beside it.",
+  "edge": "ACEI->ACEI+BB ; ACEI->BB (3-arm)",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 14,
+    "n": 190
+   },
+   {
+    "treat": "ACEI+BB",
+    "events": 14,
+    "n": 191
+   },
+   {
+    "treat": "BB",
+    "events": 14,
+    "n": 191
+   }
+  ],
+  "n_arms": 3,
+  "total_n": 572,
+  "total_events": 42,
+  "quarantined": true,
+  "quarantine_violation": "unverified per-arm all-cause deaths (14/14/14) identical across all three arms; primary endpoint is LVESVI and the source reports no deaths",
+  "in_network": true,
+  "in_quarantined_network": false,
+  "count_provenance_tier": "UNVERIFIED"
+ },
+ {
+  "id": "HF-022",
+  "name": "RALES",
+  "pmid": "10471456",
+  "doi": "10.1056/NEJM199909023411001",
+  "nct": null,
+  "pmid_note": "verified: NEJM 1999, spironolactone 284/822 vs 386/841",
+  "edge": "ACEI->ACEI+MRA",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 386,
+    "n": 841
+   },
+   {
+    "treat": "ACEI+MRA",
+    "events": 284,
+    "n": 822
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 1663,
+  "total_events": 670,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-023",
+  "name": "EMPHASIS-HF",
+  "pmid": "21073363",
+  "doi": "10.1056/NEJMoa1009492",
+  "nct": "NCT00232180",
+  "pmid_note": "RE-TIERED 2026-07-30. Counts derived from '12.5%' and '15.5%'. Placebo 213/1373 is unique; eplerenone 12.5% over n=1364 admits BOTH 170 and 171. The ledger's 171 is admissible but not uniquely determined. Retained; the 1-death ambiguity is far below the resolution of any network estimate.",
+  "edge": "ACEI+BB->ACEI+BB+MRA",
+  "arms": [
+   {
+    "treat": "ACEI+BB",
+    "events": 213,
+    "n": 1373
+   },
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 171,
+    "n": 1364
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 2737,
+  "total_events": 384,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "RECOVERED_FROM_PERCENTAGE_NON_UNIQUE",
+  "in_quarantined_network": true
+ },
+ {
+  "id": "HF-024",
+  "name": "J-EMPHASIS-HF",
+  "pmid": "28824029",
+  "doi": "10.1253/circj.CJ-17-0323",
+  "nct": "NCT01115855",
+  "pmid_note": "verified: Circ J 2017, eplerenone in Japanese patients, NCT01115855",
+  "edge": "ACEI+BB->ACEI+BB+MRA",
+  "arms": [
+   {
+    "treat": "ACEI+BB",
+    "events": 10,
+    "n": 110
+   },
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 17,
+    "n": 111
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 221,
+  "total_events": 27,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-025",
+  "name": "Vizzardi 2014",
+  "pmid": "24196866",
+  "doi": "10.1097/MAJ.0b013e31829dd6b1",
+  "nct": null,
+  "pmid_note": "QUARANTINED 2026-07-30 (symmetric pass). PMID 24196866 confirms n=65/65 exactly, but the trial reports only the composite of death from any cause or cardiovascular hospitalization and event-free survival; no per-arm all-cause death count is stated. The ledger's identical 8/8 is unverified AND identical across arms. Withheld from the QUARANTINED co-primary; STILL PRESENT in the FULL one.",
+  "edge": "ACEI+BB->ACEI+BB+MRA",
+  "arms": [
+   {
+    "treat": "ACEI+BB",
+    "events": 8,
+    "n": 65
+   },
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 8,
+    "n": 65
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 130,
+  "total_events": 16,
+  "quarantined": true,
+  "in_network": true,
+  "quarantine_violation": "unverified per-arm all-cause deaths (8/8) identical across both arms; the source reports only composite event-free survival",
+  "in_quarantined_network": false,
+  "count_provenance_tier": "UNVERIFIED"
+ },
+ {
+  "id": "HF-028",
+  "name": "Val-HeFT",
+  "pmid": "11759645",
+  "doi": "10.1056/NEJMoa010713",
+  "nct": null,
+  "pmid_note": "verified: NEJM 2001, valsartan add-on",
+  "edge": "ACEI->ACEI+ARB",
+  "arms": [
+   {
+    "treat": "ACEI",
+    "events": 484,
+    "n": 2499
+   },
+   {
+    "treat": "ACEI+ARB",
+    "events": 495,
+    "n": 2511
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 5010,
+  "total_events": 979,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-029",
+  "name": "CHARM-Added",
+  "pmid": "13678869",
+  "doi": "10.1016/S0140-6736(03)14283-3",
+  "nct": null,
+  "pmid_note": "verified: Lancet 2003, candesartan added to ACEI",
+  "edge": "ACEI+BB->ACEI+BB+ARB",
+  "arms": [
+   {
+    "treat": "ACEI+BB",
+    "events": 412,
+    "n": 1272
+   },
+   {
+    "treat": "ACEI+BB+ARB",
+    "events": 377,
+    "n": 1276
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 2548,
+  "total_events": 789,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-030",
+  "name": "PARADIGM-HF",
+  "pmid": "25176015",
+  "doi": "10.1056/NEJMoa1409077",
+  "nct": "NCT01035255",
+  "pmid_note": "verified: NEJM 2014, sacubitril/valsartan vs enalapril, NCT01035255",
+  "edge": "ACEI+BB->ARNI+BB",
+  "arms": [
+   {
+    "treat": "ACEI+BB",
+    "events": 835,
+    "n": 4212
+   },
+   {
+    "treat": "ARNI+BB",
+    "events": 711,
+    "n": 4187
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 8399,
+  "total_events": 1546,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-031",
+  "name": "PARACHUTE-HF",
+  "pmid": "41335448",
+  "doi": "10.1001/jama.2025.19808",
+  "nct": "NCT04023227",
+  "pmid_note": "verified: JAMA 2026, sacubitril/valsartan vs enalapril in Chagas HF, NCT04023227",
+  "edge": "ACEI+BB->ARNI+BB",
+  "arms": [
+   {
+    "treat": "ACEI+BB",
+    "events": 134,
+    "n": 460
+   },
+   {
+    "treat": "ARNI+BB",
+    "events": 129,
+    "n": 462
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 922,
+  "total_events": 263,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-032",
+  "name": "DAPA-HF",
+  "pmid": "31535829",
+  "doi": "10.1056/NEJMoa1911303",
+  "nct": "NCT03036124",
+  "pmid_note": "verified: NEJM 2019, dapagliflozin, NCT03036124",
+  "edge": "ACEI+BB+MRA->+SGLT2i",
+  "arms": [
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 329,
+    "n": 2371
+   },
+   {
+    "treat": "+SGLT2i",
+    "events": 276,
+    "n": 2373
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 4744,
+  "total_events": 605,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-033",
+  "name": "EMPEROR-Reduced",
+  "pmid": "32865377",
+  "doi": "10.1056/NEJMoa2022190",
+  "nct": "NCT03057977",
+  "pmid_note": "verified: NEJM 2020, empagliflozin, NCT03057977",
+  "edge": "ACEI+BB+MRA->+SGLT2i",
+  "arms": [
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 266,
+    "n": 1867
+   },
+   {
+    "treat": "+SGLT2i",
+    "events": 249,
+    "n": 1863
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 3730,
+  "total_events": 515,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-034",
+  "name": "GALACTIC-HF",
+  "pmid": "33185990",
+  "doi": "10.1056/NEJMoa2025797",
+  "nct": "NCT02929329",
+  "pmid_note": "QUARANTINED then REINSTATED 2026-07-30. The quarantine was correct on the evidence then in hand: PMID 33185990 confirms the denominators exactly (omecamtiv 4120, placebo 4112) but states only CARDIOVASCULAR death -- '808 patients (19.6%) and 798 patients (19.4%) ... died from cardiovascular causes' -- so the identical 1078/1078 all-cause figure was unverified AND identical, which is the rule exactly. The pass flagged the registry as the one route it had not exhausted. That route closes it: the ClinicalTrials.gov NCT02929329 posted results state per-arm ALL-CAUSE deaths as verbatim integers in the FDAAA All-Cause Mortality table -- 1078 of 4112 (placebo) and 1078 of 4120 (omecamtiv) -- matching the extraction exactly in both arms, over a window running to end of study. The identical count is a genuine coincidence (26.216% vs 26.165%). Only the identical limb of the rule still holds, so the trial is RETAINED IN BOTH co-primary fits and the +Omecamtiv node survives. No count was changed.",
+  "edge": "ACEI+BB+MRA->+Omecamtiv",
+  "arms": [
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 1078,
+    "n": 4112
+   },
+   {
+    "treat": "+Omecamtiv",
+    "events": 1078,
+    "n": 4120
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 8232,
+  "total_events": 2156,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT",
+  "was_quarantined": true,
+  "reinstated": true,
+  "reinstated_because": "The quarantine rule requires per-arm all-cause deaths to be UNVERIFIED **and** identical across arms. The counts are still identical (1078/1078); they are no longer unverified.",
+  "count_source": "ClinicalTrials.gov NCT02929329 posted results, adverse-events module (the FDAAA 'All-Cause Mortality' table), retrieved 2026-07-30 via CT.gov API v2",
+  "violation_when_quarantined": "unverified per-arm all-cause deaths (1078/1078) identical across both arms; the source states CARDIOVASCULAR death (808/798), not all-cause",
+  "violation_resolved_by": "ClinicalTrials.gov NCT02929329 posted results, adverse-events module (the FDAAA 'All-Cause Mortality' table), retrieved 2026-07-30 via CT.gov API v2"
+ },
+ {
+  "id": "HF-036",
+  "name": "VICTOR",
+  "pmid": "40897189",
+  "doi": "10.1016/S0140-6736(25)01665-4",
+  "nct": "NCT05093933",
+  "pmid_note": "verified: Lancet 2025, vericiguat 3053 vs placebo 3052, NCT05093933. CORRECTED: the trial ledger carried 32222134, which is VICTORIA (NEJM 2020), a DIFFERENT trial",
+  "edge": "ACEI+BB+MRA->+Vericiguat",
+  "arms": [
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 440,
+    "n": 3052
+   },
+   {
+    "treat": "+Vericiguat",
+    "events": 377,
+    "n": 3053
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 6105,
+  "total_events": 817,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-037",
+  "name": "DIGIT-HF",
+  "pmid": "40879434",
+  "doi": "10.1056/NEJMoa2415471",
+  "nct": "EudraCT 2013-005326-38",
+  "pmid_note": "verified: NEJM 2025, digitoxin; all-cause death 167/613 vs 177/599 matches this fit exactly; mITT 1212 of 1240 randomised",
+  "edge": "ACEI+BB+MRA->+Digitoxin",
+  "arms": [
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 177,
+    "n": 599
+   },
+   {
+    "treat": "+Digitoxin",
+    "events": 167,
+    "n": 613
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 1212,
+  "total_events": 344,
+  "quarantined": false,
+  "in_network": true,
+  "in_quarantined_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT"
+ },
+ {
+  "id": "HF-038",
+  "name": "QUEST",
+  "pmid": "39095596",
+  "doi": "10.1038/s41591-024-03169-2",
+  "nct": "ChiCTR1900021929",
+  "pmid_note": "VERIFIED FULL 2026-07-30 from PMC11333273: 'A total of 221 patients (14.21%) in the QLQX group and 262 patients (16.85%) in the placebo group died from any cause (HR, 0.84; 95% CI, 0.70-1.01; P = 0.058).' Counts and denominators exact. BINDING PRESENTATION CONSTRAINT: the trial's own all-cause-mortality analysis is NOT significant. Fisher's exact on the crude 2x2 gives p=0.0426 with fragility index 1, but that test ignores censoring and differential follow-up. No QLQX contrast may be presented as significant on the crude 2x2.",
+  "edge": "ACEI+BB+MRA->+QLQX",
+  "arms": [
+   {
+    "treat": "ACEI+BB+MRA",
+    "events": 262,
+    "n": 1555
+   },
+   {
+    "treat": "+QLQX",
+    "events": 221,
+    "n": 1555
+   }
+  ],
+  "n_arms": 2,
+  "total_n": 3110,
+  "total_events": 483,
+  "quarantined": false,
+  "in_network": true,
+  "count_provenance_tier": "VERBATIM_COUNT",
+  "in_quarantined_network": true
+ }
+]

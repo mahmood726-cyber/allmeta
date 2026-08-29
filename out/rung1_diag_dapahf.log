@@ -1,0 +1,24 @@
+OA metas naming DAPA-HF: 8 (of hitCount 159)
+
+PMC10290876  FULLTEXT FAILED 404
+PMC9499855  FULLTEXT FAILED 404
+PMC9947801  FULLTEXT FAILED 404
+PMC9157547  FULLTEXT FAILED 404
+PMC12843294  FULLTEXT FAILED 404
+PMC13108307  FULLTEXT FAILED 404
+PMC11973562  FULLTEXT FAILED 404
+PMC12890774  FULLTEXT FAILED 404
+
+TOTALS over 0 OA metas
+  tables                  0
+  scoped_tables           0
+  rows_naming_trial       0
+  rows_with_effect_cell   0
+  figures                 0
+  fig_captions_scoped     0
+
+READ THIS AS:
+  scoped_tables 0            -> route A/B: the metas do not TABULATE this outcome
+  rows_naming_trial 0        -> the per-trial rows are not in tables at all
+  figures >> tables          -> route B: the numbers are PIXELS (forestvision.py)
+  rows_with_effect_cell > 0  -> route C: OUR reader missed it, and that is a defect

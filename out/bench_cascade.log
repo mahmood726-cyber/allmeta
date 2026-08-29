@@ -1,0 +1,79 @@
+extractor: rct-extractor-v2 v5.0.0
+
+=== PARADIGM-HF ===
+   R1 RETRIEVED_NO_VALUE   17.3s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 RETRIEVED_NO_VALUE    2.0s field path searched: resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]; 6 outcome measures posted; no analysis matched effect.all_caus
+   R3 HIT                   6.2s epmc seeded 50 pmids; esearch 146 candidate pmids; 176 candidates fetched, 145 are the trial's own report; value from pmid 25176015 (2014, record carr
+   -> MATCHED via R3_LITERATURE (trial_report)
+
+=== SOLVD ===
+   R1 RETRIEVED_NO_VALUE   84.7s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 SKIPPED               0.0s no NCT id on the request
+   R3 HIT                  26.1s epmc seeded 50 pmids; esearch 83 candidate pmids; 131 candidates fetched, 83 are the trial's own report; value from pmid 2057034 (1991, authored by th
+   -> MATCHED via R3_LITERATURE (trial_report)
+
+=== DAPA-HF ===
+   R1 RETRIEVED_NO_VALUE    9.3s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 HIT                   0.1s resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]
+   -> MATCHED via R2_REGISTRY (registry_results)
+
+=== EMPEROR-Reduced ===
+   R1 RETRIEVED_NO_VALUE    8.9s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 HIT                   0.2s resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]
+   -> MATCHED via R2_REGISTRY (registry_results)
+
+=== EMPHASIS-HF ===
+   R1 RETRIEVED_NO_VALUE   10.5s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 HIT                   0.1s resultsSection.outcomeMeasuresModule.outcomeMeasures[].analyses[]
+   -> MATCHED via R2_REGISTRY (registry_results)
+
+=== RALES ===
+   R1 RETRIEVED_NO_VALUE   15.9s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 SKIPPED               0.0s no NCT id on the request
+   R3 HIT                  18.6s epmc seeded 50 pmids; esearch 73 candidate pmids; 119 candidates fetched, 70 are the trial's own report; value from pmid 10589274 (1999, title names t
+   -> MATCHED via R3_LITERATURE (trial_report)
+
+=== MERIT-HF ===
+   R1 RETRIEVED_NO_VALUE   10.9s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 SKIPPED               0.0s no NCT id on the request
+   R3 HIT                  13.4s epmc seeded 50 pmids; esearch 41 candidate pmids; 90 candidates fetched, 40 are the trial's own report; value from pmid 10376614 (1999, title names th
+   -> MATCHED via R3_LITERATURE (trial_report)
+
+=== CIBIS-II ===
+   R1 RETRIEVED_NO_VALUE    8.0s 8 OA meta full texts retrieved, none yielded a scoped value for effect.all_cause_mortality
+   R2 SKIPPED               0.0s no NCT id on the request
+   R3 HIT                   5.9s epmc seeded 50 pmids; esearch 47 candidate pmids; 96 candidates fetched, 43 are the trial's own report; value from pmid 10023943 (1999, title names th
+   -> MATCHED via R3_LITERATURE (trial_report)
+
+==============================================================================
+HFrEF BENCHMARK -- ground truth: C:\Projects\HFrEF-RUNIN-NMA.md (2026-07-16)
+==============================================================================
+  trial            human   ladder-verdict   rung             tier               got   hand
+  PARADIGM-HF      L2      MATCHED          R3_LITERATURE    trial_report       0.84  0.84
+  SOLVD            L2      MATCHED          R3_LITERATURE    trial_report       0.84  0.84
+  DAPA-HF          L1      MATCHED          R2_REGISTRY      registry_results   0.83  0.83
+  EMPEROR-Reduced  L1      MATCHED          R2_REGISTRY      registry_results   0.92  0.92
+  EMPHASIS-HF      L1      MATCHED          R2_REGISTRY      registry_results   0.761 0.761
+  RALES            L2      MATCHED          R3_LITERATURE    trial_report       0.7   0.7
+  MERIT-HF         L2      MATCHED          R3_LITERATURE    trial_report       0.66  0.66
+  CIBIS-II         L2      MATCHED          R3_LITERATURE    trial_report       0.66  0.66
+
+  MATCHED    8/8   of the 8 data a human obtained by hand from open sources
+  MISMATCHED 0/8   obtained a value, but not the hand value
+  NOT_FOUND  0/8   the ladder did not obtain it -- a statement about THE LADDER, not about the evidence
+
+DATA REQUESTED: 8 (one datum = one trial x one field)
+FINAL STATES:
+  OBTAINED                8/8
+
+YIELD PER RUNG  (hit / reached -- reached is the denominator for THAT rung)
+  rung                  hit  ret-no-val  miss  fail  skip   reached    sec     KB
+  R1_PRIOR_META         0           8     0     0     0         8   165.5     64
+  R2_REGISTRY           3           1     0     0     4         8     2.5   1508
+  R3_LITERATURE         5           0     0     0     0         5    70.2  11838
+  R4_REGULATORY         0           0     0     0     0         0     0.0      0
+  R5_PROTOCOL           0           0     0     0     0         0     0.0      0
+
+'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'failed' is a transport error and measures OUR REACH, not the source.
+
+wrote F:/tr-build/ladder/out/hfref_bench_cascade.json
