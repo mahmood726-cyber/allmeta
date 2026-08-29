@@ -17,7 +17,7 @@ Layer 3 of §11's map lists, under "what is missing": *"the retrieval LADDER (pr
 | `ladder_store.py` | the **write path** — a value enters the synthesis through here or not at all |
 | `ladder_bench.py` | the HFrEF validation set, scored against a known answer |
 
-**Plants: 63 (`ladder.py`) + 14 (`ladder_store.py`) + 10 (`obtainability.py`) = 87**, each watched failing on the defect, passing on the clean case, restored, and the restoration asserted. All 87 pass. **Fourteen of the 47 exist because a benchmark run produced a wrong number and the fix had to be pinned so it cannot come back.**
+**Plants: 63 (`ladder.py`) + 14 (`ladder_store.py`) + 10 (`obtainability.py`) = 87**, each watched failing on the defect, passing on the clean case, restored, and the restoration asserted. All 87 pass. **Thirty of the 63 in `ladder.py` exist because a benchmark run produced a wrong number and the fix had to be pinned so it cannot come back.**
 
 ---
 
