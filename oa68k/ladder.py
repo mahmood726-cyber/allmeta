@@ -143,6 +143,7 @@ class Request:
     drug: str = ""
     aliases: list = field(default_factory=list)
     measure_hint: str = ""          # "HR" / "RR" -- a hint, never a filter
+    topic_terms: list = field(default_factory=list)   # e.g. ["heart failure"]
 
 
 @dataclass
@@ -1034,7 +1035,7 @@ def _esearch_pmids(session, req: Request, notes: list) -> list:
         pass
 
     strong = (['"' + req.nct + '"[si]'] if req.nct else []) \
-        + ['"' + n + '"[Title]' for n in names] \
+        + ['"' + n + '"[Title]' + _topic_and(req) for n in names] \
         + [n + '[cn]' for n in names] \
         + author_year \
         + ['"' + n + '"[Author]' for n in names]
@@ -1168,6 +1169,18 @@ def _is_primary_report(xml: str, req: Request) -> tuple:
     title = _xml_text(" ".join(re.findall(r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>",
                                           xml, flags=re.S)))
     if _names_trial(title, req):
+        # AN ACRONYM MATCH ALONE IS NOT AN IDENTITY. MOCHA, PRECISE, SPICE and
+        # STRETCH are ordinary English words, and "title names the trial"
+        # accepted PMID 4448900 for MOCHA and a 2026 paper for PRECISE --
+        # neither about heart failure at all. Where the caller supplies topic
+        # terms the record must ALSO be about the topic. This is "naming is a
+        # filter, not an identity" one level up from where it first bit.
+        if req.topic_terms:
+            hay = (title + " " + _pubmed_abstract(xml)).lower()
+            if not any(t.lower() in hay for t in req.topic_terms):
+                return False, ("title contains the acronym but the record is "
+                               "not about " + "/".join(req.topic_terms)
+                               + " -- an acronym collision, not the trial")
         return True, "title names the trial"
 
     # THIRD ARM: THE LABEL IS AN AUTHOR AND A YEAR. For a subject called
@@ -1193,6 +1206,13 @@ def _is_primary_report(xml: str, req: Request) -> tuple:
                           + want_year + " both match the label")
     return False, ("names the trial only in the abstract -- this is a CITING paper, "
                    "not the trial's own report")
+
+
+def _topic_and(req: Request) -> str:
+    """AND-ed topic clause when topic terms are supplied, else empty."""
+    if not req.topic_terms:
+        return ""
+    return " AND (" + " OR ".join(chr(34) + t + chr(34) for t in req.topic_terms) + ")"
 
 
 def _label_author_year(req: Request):
@@ -1718,6 +1738,17 @@ def _selftest() -> int:
           not _is_primary_report(xml_ok.replace("1995", "2001"), rqB)[0])
     check("the WRONG AUTHOR is refused even with the right year",
           not _is_primary_report(xml_ok.replace("Beller", "Smith"), rqB)[0])
+    print("   (acronym collision)")
+    rqM = Request(trial="MOCHA", field_path="x", topic_terms=["heart failure"])
+    off = ("<PubmedArticle><PMID>4448900</PMID><ArticleTitle>Mocha and coffee"
+           "</ArticleTitle></PubmedArticle>")
+    on = ("<PubmedArticle><PMID>1</PMID><ArticleTitle>MOCHA: carvedilol in chronic "
+          "heart failure</ArticleTitle></PubmedArticle>")
+    check("an acronym title match OFF-topic is refused", not _is_primary_report(off, rqM)[0])
+    check("the same acronym ON-topic is accepted", _is_primary_report(on, rqM)[0])
+    check("with NO topic terms the acronym match still passes (opt-in, not a change "
+          "of default)", _is_primary_report(off, Request(trial="MOCHA", field_path="x"))[0])
+
     rqV = Request(trial="van Veldhuisen 1998", field_path="x")
     xml_v = ("<PubmedArticle><PMID>2</PMID><PubDate><Year>1998</Year></PubDate>"
              "<LastName>van Veldhuisen</LastName><ArticleTitle>Digoxin</ArticleTitle>"
@@ -1861,7 +1892,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 69 if extractor() is not None else 67
+    n = 72 if extractor() is not None else 70
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0

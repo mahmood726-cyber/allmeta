@@ -376,3 +376,101 @@ Their `states.py` refusal machinery (`Demonstration` / `ProbeFailure` / `declare
 ## A5. Plants
 
 **63 in `ladder.py`, 14 in `ladder_store.py`, 10 in `obtainability.py` = 87.** All pass. Plant 18 exists because `_reconcile` — the rule that makes rung 1 safe — had **never once run** in a live benchmark; writing it exposed that `_reconcile` called rung 3 directly and so could not be stubbed, meaning its own check could only ever have run against the network.
+
+---
+
+# ADDENDUM 2 — the donor-supplement ten (2026-08-30)
+
+## B1. The result: **0 of 10**
+
+The ten trials in `F:\E156\hfref-trial-ledger-v3.jsonl` whose outcome provenance is
+`counts_source: "donor supplement"` — i.e. whose per-arm counts were carried from a
+prior meta-analysis rather than read from the trial's own report. Scored on **per-arm
+event counts, exactly**: integers, no tolerance.
+
+```
+  id      trial                    identity     verdict      rung
+  HF-005  Captopril-Digoxin 1988   -            NOT_FOUND    -
+  HF-006  Beller 1995              -            NOT_FOUND    -
+  HF-007  van Veldhuisen 1998      -            NOT_FOUND    -
+  HF-008  SPICE                    39957733     NOT_FOUND    -
+  HF-009  STRETCH                  42518831     NOT_FOUND    -
+  HF-019  RESOLVD                  10477530     NOT_FOUND    -
+  HF-052  Colucci 1996             -            NOT_FOUND    -
+  HF-053  MOCHA                    4448900      NOT_FOUND    -
+  HF-054  PRECISE                  42667216     NOT_FOUND    -
+  HF-055  Cohn 1997                -            NOT_FOUND    -
+
+  STAGE 0  identity DEMONSTRATED    5/10
+  STAGE 1  counts MATCHED exactly   0/10
+           counts MISMATCHED        0/10
+           not found               10/10
+```
+
+### Yield per rung — and what each rung actually read
+
+```
+  rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec
+  R1_PRIOR_META         0           5     0     0     5     0        10   266.8
+  R2_REGISTRY           0           0     0     0     0    10        10     0.0
+  R3_LITERATURE         0           7     3     0     0     0        10   649.7
+  R4_REGULATORY         0           0     0     0     0    10        10     0.0
+  R5_PROTOCOL           0           0     0     0     0    10        10     0.0
+```
+
+- **R1** read **5 OA meta-analyses' full texts** (3.5 MB) and found no table row for these trials; the other 5 subjects hit Europe PMC **503** and are recorded `FAILED`, not `MISS`.
+- **R2 and R5 never ran**: all ten lack an NCT, so there is **no plan**. `SKIPPED` is its own column exactly so those ten do not enter a retrieval denominator.
+- **R3** read **17 MB across 10 subjects** — for PRECISE, 180 PubMed records of which 175 are the trial's own reports — and extracted no per-arm mortality counts from any abstract.
+- ⚠ **R4 never ran either, and that is a defect in MY BENCH, not a measurement of FDA.** I did not pass a drug name, so `rung4_regulatory` returned `SKIPPED` ten times. **"Rung 4 yielded 0" would be a false claim here**; the correct statement is *0 of 0 attempted*. Passing the drug (recoverable from the `edge` field and from names like "Colucci 1996 (US Carvedilol program)") is the first thing to fix before this row means anything.
+
+## B2. The ladder hits the same wall the ledger already documents — independently
+
+This is the part worth keeping. The union ledger's SOURCE record for the donor that
+holds these counts:
+
+```
+SRC-B17  Burnett H et al. Circ Heart Fail 2017;10(1):e003529
+  access_tier  OPEN          reachability  BLOCKED
+  recovered    30 of 57      shortfall     27
+  taken_from_it  "30 trial names read from Fig 2/3/4 legends; ZERO arm-level counts"
+  _barrier       Supplement Table II ... bot-mitigation on the publisher supplement
+```
+
+and the only core-set NMA that publishes denominators at all:
+
+```
+SRC-DM22  De Marzo V et al. J Intern Med 2022  —  69 of 69 trial names + ARM DENOMINATORS
+          ... per-arm EVENT counts not recovered
+```
+
+⇒ **The route a human used to get these ten was a donor supplement that is now behind
+bot-mitigation.** The ladder's 0/10 is not a different answer from the ledger's — it
+is the same answer, reached without being told. `access_tier: OPEN` and
+`reachability: BLOCKED` together are the whole finding: **the licence permits it and
+the bytes are not served.**
+
+## B3. Identity: an acronym match is not an identity either
+
+The first corroborated-free run "demonstrated" identity for 5 of 10 — and at least
+two are **acronym collisions**: `MOCHA -> PMID 4448900` and `PRECISE -> a 2026 paper`,
+neither about heart failure. MOCHA, PRECISE, SPICE and STRETCH are ordinary English
+words, and my `_is_primary_report` accepted "the title names the trial".
+
+**This is the same lesson as the citing-paper defect, one level up.** Fixed by
+requiring topic corroboration: where the caller supplies `topic_terms`, a title
+acronym match must ALSO be about the topic. Plant 20 asserts the off-topic record is
+refused, the on-topic one accepted, and — importantly — that with no topic terms the
+old behaviour is unchanged, so this is opt-in rather than a silent default change.
+
+**Three of the ten resolve to nothing at all** (`Captopril-Digoxin 1988`, `Colucci 1996`,
+`Cohn 1997`): esearch returns candidates, none passes the primary-report test.
+`Captopril-Digoxin[cn]` returns **0** — I checked, so the collective-author route that
+found SOLVD does not reach it.
+
+## B4. Corrected denominators
+
+- **43 TRIALS, not 44 rows** — `HF-021b` is CARMEN's second contrast. Every figure
+  above says which it counts.
+- The earlier "31 of 44 pre-FDAAA so rung 2 caps near 13" needs re-deriving on 43
+  trials. On the 28-trial artefact I measured directly (§A2) the registry ceiling is
+  **11/28**, all 11 confirmed by the papers' own `<DataBank>` declarations.

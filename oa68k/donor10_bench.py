@@ -112,8 +112,11 @@ def main(argv=None) -> int:
         raw = t.get("name") or ""
         if "(" in raw:
             aliases.append(raw[raw.find("(") + 1:raw.rfind(")")].strip())
+        # TOPIC CORROBORATION. Every subject here is an HFrEF trial, so an acronym
+        # match that is not about heart failure is a collision, not the trial.
         req = L.Request(trial=name, field_path="counts.all_cause_mortality",
-                        nct=t.get("nct") or "", aliases=[x for x in aliases if x])
+                        nct=t.get("nct") or "", aliases=[x for x in aliases if x],
+                        topic_terms=["heart failure", "cardiac failure"])
         print("\n=== " + t["id"] + " " + name + " ===")
 
         ident = resolve_identity(req, s)

@@ -1,0 +1,1550 @@
+{
+ "summary": {
+  "n": 10,
+  "identity_demonstrated": 5,
+  "matched": 0,
+  "mismatched": 0
+ },
+ "denominator_of": "the ten trials in hfref-trial-ledger-v3.jsonl whose outcome provenance is a donor supplement; the fitted set is 43 TRIALS (44 rows: HF-021b is CARMEN's second contrast)",
+ "rows": [
+  {
+   "id": "HF-005",
+   "name": "Captopril-Digoxin 1988",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement only"
+  },
+  {
+   "id": "HF-006",
+   "name": "Beller 1995",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement (FLAGGED-SINGLE)"
+  },
+  {
+   "id": "HF-007",
+   "name": "van Veldhuisen 1998",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-008",
+   "name": "SPICE",
+   "identity": "39957733",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-009",
+   "name": "STRETCH",
+   "identity": "42518831",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-019",
+   "name": "RESOLVD",
+   "identity": "10477530",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-052",
+   "name": "Colucci 1996",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-053",
+   "name": "MOCHA",
+   "identity": "4448900",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-054",
+   "name": "PRECISE",
+   "identity": "42667216",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-055",
+   "name": "Cohn 1997",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  }
+ ],
+ "yield": {
+  "n_data_requested": 10,
+  "states": {
+   "NOT_YET_FOUND": 10
+  },
+  "per_rung": {
+   "R1_PRIOR_META": {
+    "rung": 1,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 5,
+    "miss": 0,
+    "empty": 0,
+    "failed": 5,
+    "skipped": 0,
+    "seconds": 266.84135842323303,
+    "bytes": 3579516
+   },
+   "R2_REGISTRY": {
+    "rung": 2,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 10,
+    "seconds": 0.0,
+    "bytes": 0
+   },
+   "R3_LITERATURE": {
+    "rung": 3,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 7,
+    "miss": 3,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 649.6526684761047,
+    "bytes": 17406940
+   },
+   "R4_REGULATORY": {
+    "rung": 4,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 10,
+    "seconds": 0.0,
+    "bytes": 0
+   },
+   "R5_PROTOCOL": {
+    "rung": 5,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 10,
+    "seconds": 0.0,
+    "bytes": 0
+   }
+  },
+  "denominator_note": "'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'empty' is a 200 with an empty body -- a rate limiter, never an empty source. 'failed' is a transport error and measures OUR REACH, not the source."
+ },
+ "records": [
+  {
+   "request": {
+    "trial": "Captopril-Digoxin 1988",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.search",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 503,
+     "seconds": 26.016103744506836,
+     "bytes_in": 197,
+     "payload_sha256": "2968ae7f4439f7d2b3be207fbcdff85d47c95bd1ca48a8cee10e36ab8054e50e",
+     "outcome": "FAILED",
+     "note": "http 503",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:20:03+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:20:03+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 26.067782878875732,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "epmc search 503; esearch 0 candidate pmids",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:20:31+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:20:31+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:20:31+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 52.08388662338257,
+   "total_bytes": 197,
+   "benchmark": {
+    "truth": {
+     "id": "HF-005",
+     "name": "Captopril-Digoxin 1988",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 8,
+       "n": 104,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 6,
+       "n": 100,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement only",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": null,
+     "why": "esearch returned no candidates",
+     "notes": [
+      "esearch 0 candidate pmids"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Beller 1995",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 52.29323959350586,
+     "bytes_in": 355789,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "2 of 2 OA meta full texts RETRIEVED (0 unobtainable); none of the 2 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:21:25+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:21:25+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 158.5584259033203,
+     "bytes_in": 306356,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 7 pmids; esearch 0 candidate pmids; 7 candidates fetched, 0 are the trial's own report",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:24:05+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:24:05+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:24:05+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 210.85166549682617,
+   "total_bytes": 662145,
+   "benchmark": {
+    "truth": {
+     "id": "HF-006",
+     "name": "Beller 1995",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 4,
+       "n": 130,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 5,
+       "n": 63,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement (FLAGGED-SINGLE)",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": null,
+     "why": "esearch returned no candidates",
+     "notes": [
+      "esearch 0 candidate pmids"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "van Veldhuisen 1998",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 27.218199491500854,
+     "bytes_in": 260071,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "2 of 2 OA meta full texts RETRIEVED (0 unobtainable); none of the 2 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:24:33+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:24:33+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 41.06171655654907,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "epmc search 503; esearch 0 candidate pmids",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:25:15+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:25:15+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:25:15+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 68.27991604804993,
+   "total_bytes": 260071,
+   "benchmark": {
+    "truth": {
+     "id": "HF-007",
+     "name": "van Veldhuisen 1998",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 182,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 1,
+       "n": 62,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": null,
+     "why": "esearch returned no candidates",
+     "notes": [
+      "esearch 0 candidate pmids"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "SPICE",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "39957733",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.search",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 503,
+     "seconds": 25.746346473693848,
+     "bytes_in": 190,
+     "payload_sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554",
+     "outcome": "FAILED",
+     "note": "http 503",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:25:43+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:25:43+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 50.971654415130615,
+     "bytes_in": 3995463,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 50 pmids; esearch 147 candidate pmids; 180 candidates fetched, 148 are the trial's own report; no scoped value in any of the 148 own-report abstracts; pmc fulltext FAILED 404",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:27:57+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:27:57+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:27:57+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 76.71800088882446,
+   "total_bytes": 3995653,
+   "benchmark": {
+    "truth": {
+     "id": "HF-008",
+     "name": "SPICE",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ARB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 6,
+       "n": 179,
+       "node": "ARB"
+      },
+      {
+       "label": "control",
+       "events": 3,
+       "n": 91,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "39957733",
+     "year": "2024",
+     "title": "Facilitating spice recognition and classification: An image dataset of Indian spices.",
+     "why": "title names the trial",
+     "n_own_reports": 120,
+     "notes": [
+      "esearch 147 candidate pmids"
+     ],
+     "seconds": 1.0258939266204834
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "STRETCH",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "42518831",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.search",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 503,
+     "seconds": 24.993908405303955,
+     "bytes_in": 190,
+     "payload_sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554",
+     "outcome": "FAILED",
+     "note": "http 503",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:28:24+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:28:24+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 77.34139156341553,
+     "bytes_in": 4671802,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 50 pmids; esearch 120 candidate pmids; 168 candidates fetched, 124 are the trial's own report; no scoped value in any of the 124 own-report abstracts; pmc fulltext FAILED 404",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:30:47+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:30:47+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:30:47+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 102.33529996871948,
+   "total_bytes": 4671992,
+   "benchmark": {
+    "truth": {
+     "id": "HF-009",
+     "name": "STRETCH",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ARB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 10,
+       "n": 633,
+       "node": "ARB"
+      },
+      {
+       "label": "control",
+       "events": 1,
+       "n": 211,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "42518831",
+     "year": "2025",
+     "title": "Optimal Mechanical Stretch Promotes TSP-1 Expression Through Akt and GSK-3&#x3b2;/&#x3b2;-Catenin Signaling Pathways in ",
+     "why": "title names the trial",
+     "n_own_reports": 120,
+     "notes": [
+      "esearch 120 candidate pmids"
+     ],
+     "seconds": 1.1803922653198242
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "RESOLVD",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "10477530",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 17.050515174865723,
+     "bytes_in": 1396395,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:31:06+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:31:06+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 61.311436891555786,
+     "bytes_in": 1540385,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 50 pmids; esearch 5 candidate pmids; 52 candidates fetched, 5 are the trial's own report; no scoped value in any of the 5 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:32:10+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:32:10+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:32:10+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 78.36195206642151,
+   "total_bytes": 2936780,
+   "benchmark": {
+    "truth": {
+     "id": "HF-019",
+     "name": "RESOLVD",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 8,
+       "n": 214,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 17,
+       "n": 212,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "10477530",
+     "year": "1999",
+     "title": "Comparison of candesartan, enalapril, and their combination in congestive heart failure: randomized evaluation of strate",
+     "why": "title names the trial",
+     "n_own_reports": 5,
+     "notes": [
+      "esearch 5 candidate pmids"
+     ],
+     "seconds": 0.31946468353271484
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Colucci 1996",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 19.680649280548096,
+     "bytes_in": 355820,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "2 of 2 OA meta full texts RETRIEVED (0 unobtainable); none of the 2 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:32:32+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:32:32+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 43.857335805892944,
+     "bytes_in": 302536,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 8 pmids; esearch 0 candidate pmids; 8 candidates fetched, 0 are the trial's own report",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:33:18+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:33:18+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:33:18+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 63.53798508644104,
+   "total_bytes": 658356,
+   "benchmark": {
+    "truth": {
+     "id": "HF-052",
+     "name": "Colucci 1996 (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 232,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 5,
+       "n": 134,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": null,
+     "why": "esearch returned no candidates",
+     "notes": [
+      "esearch 0 candidate pmids"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "MOCHA",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "4448900",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 12.195484161376953,
+     "bytes_in": 1210477,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:33:33+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:33:33+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 18.114517211914062,
+     "bytes_in": 2434499,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 50 pmids; esearch 98 candidate pmids; 137 candidates fetched, 98 are the trial's own report; no scoped value in any of the 98 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:34:43+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:34:43+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:34:43+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 30.310001373291016,
+   "total_bytes": 3644976,
+   "benchmark": {
+    "truth": {
+     "id": "HF-053",
+     "name": "MOCHA (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 12,
+       "n": 261,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 13,
+       "n": 84,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "4448900",
+     "year": "1974",
+     "title": "Mocha, a new coat color and behavior mutation on chromosome 10 of the mouse.",
+     "why": "title names the trial",
+     "n_own_reports": 97,
+     "notes": [
+      "esearch 98 candidate pmids"
+     ],
+     "seconds": 0.6583552360534668
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "PRECISE",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "42667216",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.search",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 503,
+     "seconds": 25.91656517982483,
+     "bytes_in": 197,
+     "payload_sha256": "2968ae7f4439f7d2b3be207fbcdff85d47c95bd1ca48a8cee10e36ab8054e50e",
+     "outcome": "FAILED",
+     "note": "http 503",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:35:12+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:35:12+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 78.09348702430725,
+     "bytes_in": 4155899,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc search 504; esearch 220 candidate pmids; 180 candidates fetched, 175 are the trial's own report; no scoped value in any of the 175 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:38:12+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:38:12+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:38:12+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 104.01005220413208,
+   "total_bytes": 4156096,
+   "benchmark": {
+    "truth": {
+     "id": "HF-054",
+     "name": "PRECISE (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 6,
+       "n": 133,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 11,
+       "n": 145,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "42667216",
+     "year": "2026",
+     "title": "Engineering Atomically Precise Cu 4 I 4 Nanoclusters With Integrated Adsorption and Hydrogenation Functions for Efficien",
+     "why": "title names the trial",
+     "n_own_reports": 120,
+     "notes": [
+      "esearch 220 candidate pmids"
+     ],
+     "seconds": 0.9377796649932861
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Cohn 1997",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": ""
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.search",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 503,
+     "seconds": 35.73034691810608,
+     "bytes_in": 190,
+     "payload_sha256": "b429e25e7813a9e2b90dcec11d9cb5287751246128dd6c76a7349774829c5554",
+     "outcome": "FAILED",
+     "note": "http 503",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:38:50+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:38:50+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 94.27492022514343,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "epmc search 500; esearch 0 candidate pmids",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:40:27+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no drug name on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:40:27+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-29T23:40:27+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 130.0052671432495,
+   "total_bytes": 190,
+   "benchmark": {
+    "truth": {
+     "id": "HF-055",
+     "name": "Cohn 1997 (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 70,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 2,
+       "n": 35,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": null,
+     "why": "esearch returned no candidates",
+     "notes": [
+      "esearch 0 candidate pmids"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  }
+ ]
+}
