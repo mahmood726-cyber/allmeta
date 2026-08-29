@@ -74,9 +74,18 @@ extractor: rct-extractor-v2 v5.0.0
 
 === HF-054 PRECISE ===
    R0 IDENTITY  pmid 42667216 (title names the trial)
- 35.7s http 503
+   R1 FAILED               72.5s http 503
    R2 SKIPPED               0.0s no NCT id on the request
-   R3 MISS                 94.3s epmc search 500; esearch 0 candidate pmids
+   R3 RETRIEVED_NO_VALUE   84.4s epmc seeded 50 pmids; esearch 220 candidate pmids; 180 candidates fetched, 175 are the trial's own report; no scoped value in any 
+   R4 SKIPPED               0.0s no drug name on the request
+   R5 SKIPPED               0.0s no NCT id
+   -> NOT_FOUND via -
+
+=== HF-055 Cohn 1997 ===
+   R0 IDENTITY  pmid 9389394 (first-author surname 'cohn' and year 1997 both match the lab)
+   R1 RETRIEVED_NO_VALUE   49.8s 4 of 4 OA meta full texts RETRIEVED (0 unobtainable); none of the 4 retrieved yielded a scoped value for counts.all_cause_mortalit
+   R2 SKIPPED               0.0s no NCT id on the request
+   R3 RETRIEVED_NO_VALUE   41.8s epmc seeded 32 pmids; esearch 120 candidate pmids; 153 candidates fetched, 120 are the trial's own report; no scoped value in any 
    R4 SKIPPED               0.0s no drug name on the request
    R5 SKIPPED               0.0s no NCT id
    -> NOT_FOUND via -
@@ -86,17 +95,17 @@ DONOR-SUPPLEMENT TEN -- per-arm counts, scored EXACTLY
 ==============================================================================
   id      trial                  identity   verdict      rung
   HF-005  Captopril-Digoxin 1988 None       NOT_FOUND    -
-  HF-006  Beller 1995            None       NOT_FOUND    -
+  HF-006  Beller 1995            8535917    NOT_FOUND    -
   HF-007  van Veldhuisen 1998    None       NOT_FOUND    -
   HF-008  SPICE                  39957733   NOT_FOUND    -
   HF-009  STRETCH                42518831   NOT_FOUND    -
   HF-019  RESOLVD                10477530   NOT_FOUND    -
-  HF-052  Colucci 1996           None       NOT_FOUND    -
+  HF-052  Colucci 1996           8941105    NOT_FOUND    -
   HF-053  MOCHA                  4448900    NOT_FOUND    -
   HF-054  PRECISE                42667216   NOT_FOUND    -
-  HF-055  Cohn 1997              None       NOT_FOUND    -
+  HF-055  Cohn 1997              9389394    NOT_FOUND    -
 
-  STAGE 0  identity DEMONSTRATED   5/10   of the ten trials whose ledger row carries counts_source='donor supplement'
+  STAGE 0  identity DEMONSTRATED   8/10   of the ten trials whose ledger row carries counts_source='donor supplement'
   STAGE 1  counts MATCHED exactly   0/10   same denominator
            counts MISMATCHED        0/10
            not found                10/10
@@ -107,12 +116,12 @@ FINAL STATES:
 
 YIELD PER RUNG  (hit / reached -- reached is the denominator for THAT rung)
   rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec     KB
-  R1_PRIOR_META         0           5     0     0     5     0        10   266.8   3495
+  R1_PRIOR_META         0           7     1     0     2     0        10   304.9   5413
   R2_REGISTRY           0           0     0     0     0    10        10     0.0      0
-  R3_LITERATURE         0           7     3     0     0     0        10   649.7  16998
+  R3_LITERATURE         0          10     0     0     0     0        10   379.0  17200
   R4_REGULATORY         0           0     0     0     0    10        10     0.0      0
   R5_PROTOCOL           0           0     0     0     0    10        10     0.0      0
 
 'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'empty' is a 200 with an empty body -- a rate limiter, never an empty source. 'failed' is a transport error and measures OUR REACH, not the source.
 
-wrote F:/tr-build/ladder/out/donor10_result.json (40889 bytes)
+wrote F:/tr-build/ladder/out/donor10_result.json (42529 bytes)

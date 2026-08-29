@@ -474,3 +474,56 @@ found SOLVD does not reach it.
 - The earlier "31 of 44 pre-FDAAA so rung 2 caps near 13" needs re-deriving on 43
   trials. On the 28-trial artefact I measured directly (§A2) the registry ceiling is
   **11/28**, all 11 confirmed by the papers' own `<DataBank>` declarations.
+
+## B5. Corroborated re-run — identity 9/10, counts still 0/10
+
+With the particle fix and topic corroboration, the same ten:
+
+```
+  id      trial                    identity     verdict
+  HF-005  Captopril-Digoxin 1988   -            NOT_FOUND
+  HF-006  Beller 1995              8535917      NOT_FOUND
+  HF-007  van Veldhuisen 1998      9857856      NOT_FOUND
+  HF-008  SPICE                    8334878      NOT_FOUND
+  HF-009  STRETCH                  1192554      NOT_FOUND
+  HF-019  RESOLVD                  10477530     NOT_FOUND
+  HF-052  Colucci 1996             8941105      NOT_FOUND
+  HF-053  MOCHA                    8941106      NOT_FOUND
+  HF-054  PRECISE                  8941104      NOT_FOUND
+  HF-055  Cohn 1997                9389394      NOT_FOUND
+
+  STAGE 0  identity DEMONSTRATED   9/10     (was 5/10, two of them collisions)
+  STAGE 1  counts MATCHED exactly  0/10
+
+  rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec     KB
+  R1_PRIOR_META         0           8     0     0     2     0        10   231.7   6512
+  R2_REGISTRY           0           0     0     0     0    10        10     0.0      0
+  R3_LITERATURE         0          10     0     0     0     0        10   323.2  15540
+  R4_REGULATORY         0           0     0     0     0    10        10     0.0      0
+  R5_PROTOCOL           0           0     0     0     0    10        10     0.0      0
+```
+
+**MOCHA and PRECISE now resolve to `8941106` and `8941104` — the real 1996
+Circulation US Carvedilol Program papers**, where before they were a 1970s record
+and a 2026 paper. `van Veldhuisen 1998 -> 9857856` came from the particle fix.
+`Cohn 1997 -> 9389394`. **Identity went 5/10 to 9/10 on two rules**, both of which
+say the same thing: a name match is a filter, and a filter is not an identity.
+
+⚠ **Two of the nine remain era-implausible and I am flagging rather than counting
+them clean: `SPICE -> 8334878` (1993) and `STRETCH -> 1192554` (1975).** Both pass
+the stated standard — acronym in the title, on topic — and both look wrong for a
+1990s HFrEF trial. **The check that would settle it is a publication year on the
+ledger row, which `hfref-trial-ledger-v3.jsonl` does not carry.** That is a concrete
+ask: a `year` field would let identity refuse an era-implausible match instead of
+leaving me to eyeball it.
+
+**R1 read 6.5 MB and R3 read 15.5 MB, and neither produced a single per-arm count.**
+Ten of ten at R3 are `RETRIEVED_NO_VALUE` — documents fetched, no counts in them. The
+1990s abstracts these trials published report mortality as percentages and hazard
+statements, not as `events/N` per arm, which is exactly why the ledger records their
+counts as donor-carried in the first place.
+
+⚠ **R4 is still `SKIPPED` 10/10 in this run because the drug fix landed after it
+started.** `substances_of()` + openFDA resolution is committed (`cf97a0a`) and
+plant-covered, but **has not yet been measured on these ten.** Reporting it as
+anything other than unmeasured would be the error I just corrected.
