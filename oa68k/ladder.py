@@ -287,6 +287,13 @@ def extract_effect(text: str, req: Request) -> dict | None:
     if req.measure_hint:
         m = [e for e in pool if e.get("type") == req.measure_hint]
         pool = m or pool
+    # Prefer an effect that carries an INTERVAL. A ratio with no CI is not poolable,
+    # and MERIT-HF returned "or =0.40" -- a bare odds ratio from a subgroup paper --
+    # in preference to nothing. Preference, not a filter: an interval-less value is
+    # still returned if it is all there is, and it is flagged as such.
+    withci = [e for e in pool
+              if e.get("ci_lower") is not None and e.get("ci_upper") is not None]
+    pool = withci or pool
     e = pool[0]
     if e.get("effect_size") is None:
         return None
@@ -297,7 +304,8 @@ def extract_effect(text: str, req: Request) -> dict | None:
             "extractor_confidence": e.get("calibrated_confidence"),
             "consistency_ok": (e.get("consistency") or {}).get("consistent"),
             "n_effects_in_document": len(effects), "n_scoped_to_outcome": len(scoped),
-            "scope_strength": strength or "unscoped_no_cue_defined"}
+            "scope_strength": strength or "unscoped_no_cue_defined",
+            "has_interval": e.get("ci_lower") is not None and e.get("ci_upper") is not None}
 
 
 _SENT_END = re.compile(r"(?<=[.;])\s+(?=[A-Z(])")
@@ -335,7 +343,13 @@ def _cue_precedes(text: str, effect: dict, cues: list, n_sentences: int,
 OUTCOME_CUES = {
     "all_cause_mortality": ["death from any cause", "all-cause mortality", "all cause mortality",
                             "death from any", "total mortality", "died from any cause",
-                            "all-cause death", "mortality from any cause"],
+                            "all-cause death", "mortality from any cause",
+                            # 1990s phrasing. RALES reports "relative risk of death,
+                            # 0.70" and would be missed by the modern cue list
+                            # alone; a cue set built only on recent trials is a
+                            # sample, and everything outside it is silently lost.
+                            "risk of death", "reduction in mortality", "overall mortality",
+                            "total mortality", "deaths from any cause", "survival"],
     "cv_death_or_hf_hosp": ["cardiovascular death or", "cardiovascular causes or hospitalization",
                             "primary composite", "primary end point", "primary endpoint",
                             "worsening heart failure"],
@@ -678,75 +692,60 @@ def rung3_literature(session, req: Request) -> Attempt:
     total_b = 0
     notes = []
 
-    # 3a Europe PMC: find the trial's primary report and read its abstract.
+    # 3a Europe PMC: SEEDING ONLY. It contributes candidate PMIDs; it no longer
+    # extracts. The abstract shortcut here had only the title to gate on, so it
+    # returned before the ranking below could run and handed back PARADIGM-HF's
+    # mortality HR as 1.17 from a 2026 German-cohort paper. One extraction path,
+    # one gate, one ranking.
     q = _primary_report_query(req)
+    epmc_pmids = []
     r, s, err = _get(session, EPMC_SEARCH,
-                     {"query": q, "format": "json", "pageSize": "10", "resultType": "core"})
+                     {"query": q, "format": "json", "pageSize": "50", "resultType": "lite"})
     total_s += s
     if r is None or r.status_code != 200:
         notes.append("epmc search " + (str(r.status_code) if r is not None else "FAILED " + err))
     else:
         total_b += len(r.content)
         hits = (r.json().get("resultList") or {}).get("result") or []
-        notes.append("epmc " + str(len(hits)) + " hits")
-        for h in hits:
-            ab = h.get("abstractText") or ""
-            if not ab:
-                continue
-            # Same gate as the efetch path: the record must NAME the trial.
-            if not _names_trial((h.get("title") or "") + " " + ab, req):
-                continue
-            val = extract_effect(_xml_text(ab), req)
-            if val:
-                val["report"] = {"pmid": h.get("pmid", ""), "pmcid": h.get("pmcid", ""),
-                                 "title": (h.get("title") or "")[:140],
-                                 "journal": h.get("journalTitle", ""),
-                                 "year": h.get("pubYear", "")}
-                return Attempt(3, "R3_LITERATURE", "europepmc.abstract", EPMC_SEARCH, 200,
-                               total_s, total_b, _sha(ab), Outcome.HIT.value,
-                               "; ".join(notes), value=val, provenance_tier="trial_report",
-                               retrieved_utc=_now())
-            # keep this record as the full-text candidate: it named the trial.
-            if not req.pmid and h.get("pmid"):
-                req.pmid = h.get("pmid")
+        epmc_pmids = [h["pmid"] for h in hits if h.get("pmid")]
+        notes.append("epmc seeded " + str(len(epmc_pmids)) + " pmids")
 
-    # 3b NCBI efetch on the abstract (works from hosts where EPMC sub-resources 404).
-    #
-    # ⚠ THE DOCUMENT MUST NAME THE TRIAL. The first version took esearch's top hit
-    # unchecked; for CIBIS-II that was an unrelated 2017 paper and the ladder
-    # returned 1.06 as though it were the trial's mortality effect -- a confident
-    # wrong answer, which is worse than none. Every candidate is now gated on
-    # naming the trial before a single number is read out of it.
+    # 3b NCBI efetch: the ONLY extraction path, over ranked own-reports.
     pmid = req.pmid or ""
     cands = ([pmid] if pmid else []) + _esearch_pmids(session, req, notes)
-    checked = 0
-    for cand in cands[:6]:
+    cands += [p for p in epmc_pmids if p not in cands]
+    ranked = []
+    if cands:
+        # ONE efetch for every candidate, then rank offline.
         r2, s2, err2 = _get(session, EFETCH,
-                            {"db": "pubmed", "id": cand, "retmode": "xml"})
+                            {"db": "pubmed", "id": ",".join(cands[:180]),
+                             "retmode": "xml"})
         total_s += s2
         if r2 is None or r2.status_code != 200:
             notes.append("efetch FAILED " + (err2 or str(getattr(r2, "status_code", "?"))))
-            continue
-        total_b += len(r2.content)
-        checked += 1
-        title_abs = _pubmed_title_abstract(r2.text)
-        if not _names_trial(title_abs, req):
-            continue
-        ab = _pubmed_abstract(r2.text)
-        val = extract_effect(ab, req)
-        notes.append("efetch pmid " + cand + " NAMES the trial, abstract "
-                     + str(len(ab)) + " chars")
-        if val:
-            pmid = cand
-            val["report"] = {"pmid": cand}
-            return Attempt(3, "R3_LITERATURE", "ncbi.efetch.pubmed", EFETCH, 200,
-                           total_s, total_b, _sha(r2.content), Outcome.HIT.value,
-                           "; ".join(notes), value=val, provenance_tier="trial_report",
-                           retrieved_utc=_now())
-        pmid = pmid or cand
-    if checked and not pmid:
-        notes.append(str(checked) + " pubmed records fetched, none NAMED the trial "
-                     "-- candidate rejected rather than mined")
+        else:
+            total_b += len(r2.content)
+            ranked = _rank_reports(r2.text, req)
+            notes.append(str(len(cands[:180])) + " candidates fetched, "
+                         + str(len(ranked)) + " are the trial's own report")
+            for rec in ranked:
+                val = extract_effect(rec["abstract"], req)
+                if val:
+                    val["report"] = {"pmid": rec["pmid"], "year": rec["year"],
+                                     "title": rec["title"][:140],
+                                     "why_primary": rec["why"],
+                                     "rank_among_own_reports": ranked.index(rec) + 1,
+                                     "n_own_reports": len(ranked)}
+                    notes.append("value from pmid " + rec["pmid"] + " (" + rec["year"]
+                                 + ", " + rec["why"] + ")")
+                    return Attempt(3, "R3_LITERATURE", "ncbi.efetch.pubmed", EFETCH, 200,
+                                   total_s, total_b, _sha(r2.content), Outcome.HIT.value,
+                                   "; ".join(notes), value=val,
+                                   provenance_tier="trial_report", retrieved_utc=_now())
+                pmid = pmid or rec["pmid"]
+            if ranked:
+                notes.append("no scoped value in any of the " + str(len(ranked))
+                             + " own-report abstracts")
 
     # 3c PMC open-access full text.
     pmcid = _pmcid_for(session, pmid, notes) if pmid else ""
@@ -784,21 +783,137 @@ def _primary_report_query(req: Request) -> str:
 def _esearch_pmids(session, req: Request, notes: list) -> list:
     """Candidate PMIDs. The NCT is tried first because it is an identity, not a
     string match; the trial name is a fallback and its hits must still be gated."""
+    # ⚠ FOR A PRE-REGISTRY TRIAL THE ACRONYM IS OFTEN IN THE COLLECTIVE AUTHOR, NOT
+    # THE TITLE. RALES's primary report is titled "The effect of spironolactone on
+    # morbidity and mortality in patients with severe heart failure"; the trial's
+    # name appears only as the author, "Randomized Aldactone Evaluation Study
+    # Investigators". SOLVD is the same. A title-only search cannot reach either, so
+    # [Author] is a first-class route, not a fallback.
+    #
+    # And ALL strong terms are collected rather than stopping at the first that
+    # returns anything: stopping early is how the primary report stays outside the
+    # candidate set, and a ranking cannot rank what it was never given.
     ids: list = []
-    terms = ([req.nct] if req.nct else []) + \
-            ['"' + n + '"[tiab]' for n in ([req.trial] + list(req.aliases)) if n]
-    for term in terms[:4]:
-        r, s, err = _get(session, ESEARCH, {"db": "pubmed", "term": term, "retmax": "5",
-                                            "retmode": "json"})
+    names = [n for n in ([req.trial] + list(req.aliases)) if n]
+    # ⚠ AND retmax IS A DENOMINATOR. PubMed returns ids newest-first, so a small
+    # retmax silently drops the OLD papers -- exactly where a primary report sits.
+    # Measured: at retmax 15 the true primary report was inside the candidate set for
+    # 1 of 5 trials. Ids are cheap; fetch a wide list and let the ranking choose.
+    #
+    # The registry accession is searched in its OWN field, [si] (secondary source id).
+    # A bare NCT string does not reliably reach the DataBank entry.
+    # [cn] is the CORPORATE/COLLECTIVE author field and it is the one that reaches
+    # the pre-registry primary reports: SOLVD's 1991 NEJM paper is authored by "SOLVD
+    # Investigators" and is found by SOLVD[cn] and by nothing else here -- not
+    # [Title], not [Author], not [tiab].
+    strong = (['"' + req.nct + '"[si]'] if req.nct else []) \
+        + ['"' + n + '"[Title]' for n in names] \
+        + [n + '[cn]' for n in names] \
+        + ['"' + n + '"[Author]' for n in names]
+    weak = ['"' + n + '"[tiab]' for n in names]
+
+    def _run(term, retmax):
+        r, s, err = _get(session, ESEARCH, {"db": "pubmed", "term": term,
+                                            "retmax": str(retmax), "retmode": "json"})
         if r is None or r.status_code != 200:
             notes.append("esearch FAILED for " + term[:40])
-            continue
-        got = ((r.json().get("esearchresult") or {}).get("idlist") or [])
-        ids += [i for i in got if i not in ids]
-        if ids:
-            break
+            return []
+        return ((r.json().get("esearchresult") or {}).get("idlist") or [])
+
+    for term in strong[:12]:
+        ids += [i for i in _run(term, 120) if i not in ids]
+    if not ids:
+        for term in weak[:3]:
+            ids += [i for i in _run(term, 120) if i not in ids]
+            if ids:
+                break
     notes.append("esearch " + str(len(ids)) + " candidate pmids")
     return ids
+
+
+def _rank_reports(xml: str, req: Request) -> list:
+    """Split a multi-record efetch, keep the trial's OWN reports, rank them.
+
+    ⚠ THE SECOND HALF OF THE CITING-PAPER PROBLEM. Rejecting papers that name the
+    trial only in the abstract removes the Chagas-cardiomyopathy class. It does NOT
+    remove the trial's own SECONDARY analyses, which name it in their titles too --
+    "PARADIGM-HF eligibility in historical German cohorts", a 2012 RALES subgroup
+    paper -- and those returned 1.17 and 1.90 where the primary reports say 0.84 and
+    0.70. Naming is a filter; it is not a ranking.
+
+    Rank, strongest first:
+      1. the record carries the trial's REGISTRATION as its own,
+      2. EARLIEST publication year -- the primary report precedes its own
+         secondary literature, and that is the one ordering which separates
+         them without knowing the answer,
+      3. typed a randomised controlled trial.
+
+    YEAR OUTRANKS THE PUBLICATION TYPE, and the order was the other way round
+    until it cost a datum: SOLVD's 1991 primary report carries no 'Randomized
+    Controlled Trial' tag -- the tag is applied inconsistently to pre-1995
+    records -- while a 1998 secondary analysis does, so the type test promoted
+    the secondary above the primary. An attribute that is MISSING for the old
+    records must not outrank the attribute that identifies them.
+
+    Ties keep esearch's order. Every rank is recorded on the value, so a value taken
+    from rank 3 of 7 says so.
+    """
+    out = []
+    for block in re.findall(r"<PubmedArticle>.*?</PubmedArticle>", xml, flags=re.S):
+        ok, why = _is_primary_report(block, req)
+        if not ok:
+            continue
+        pm = re.search(r"<PMID[^>]*>(\d+)</PMID>", block)
+        yr = re.search(r"<PubDate>.*?<Year>(\d{4})</Year>", block, flags=re.S) or \
+            re.search(r"<ArticleDate[^>]*>.*?<Year>(\d{4})</Year>", block, flags=re.S)
+        ptypes = " ".join(re.findall(r"<PublicationType[^>]*>(.*?)</PublicationType>",
+                                     block, flags=re.S)).lower()
+        out.append({
+            "pmid": pm.group(1) if pm else "",
+            "year": yr.group(1) if yr else "9999",
+            "title": _xml_text(" ".join(re.findall(
+                r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>", block, flags=re.S))),
+            "abstract": _pubmed_abstract(block),
+            "why": why,
+            "has_registration": why.startswith("record carries"),
+            "is_rct": "randomized controlled trial" in ptypes,
+        })
+    out.sort(key=lambda r: (not r["has_registration"], r["year"], not r["is_rct"]))
+    return out
+
+
+def _is_primary_report(xml: str, req: Request) -> tuple:
+    """Is this PubMed record the trial's OWN report, or a paper that merely CITES it?
+
+    ⚠ NAMING THE TRIAL IS NECESSARY AND NOT SUFFICIENT, and the gap is not cosmetic:
+    without this gate the benchmark returned PARADIGM-HF's mortality HR as 1.82 --
+    read out of a 2026 paper on Chagas cardiomyopathy that cites it -- and
+    CIBIS-II's as 1.06 from another citing paper. Both were internally consistent,
+    confidently extracted, and wrong. A confident wrong value is worse than a
+    missing one.
+
+    Two independent discriminators, either of which suffices:
+
+      1. THE RECORD CARRIES THE TRIAL'S REGISTRATION AS ITS OWN. PubMed records the
+         registry accession of the trial a paper REPORTS in <DataBank>, not of the
+         trials it cites. This catches PARADIGM-HF, whose title -- "Angiotensin-
+         neprilysin inhibition versus enalapril in heart failure" -- does not name
+         the trial at all.
+      2. THE TITLE NAMES THE TRIAL. This catches the pre-registry era, where there
+         is no accession to carry: CIBIS-II, MERIT-HF, RALES and SOLVD all put the
+         trial's name in their titles.
+
+    Returns (is_primary, why) so the reason is recorded either way.
+    """
+    banks = re.findall(r"<AccessionNumber[^>]*>(.*?)</AccessionNumber>", xml, flags=re.S)
+    if req.nct and any(req.nct.upper() in b.upper() for b in banks):
+        return True, "record carries " + req.nct + " as its own registration"
+    title = _xml_text(" ".join(re.findall(r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>",
+                                          xml, flags=re.S)))
+    if _names_trial(title, req):
+        return True, "title names the trial"
+    return False, ("names the trial only in the abstract -- this is a CITING paper, "
+                   "not the trial's own report")
 
 
 def _names_trial(text: str, req: Request) -> bool:
