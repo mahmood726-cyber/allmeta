@@ -270,9 +270,10 @@ def extract_effect(text: str, req: Request) -> dict | None:
         return None
     effects = res.get("effects") or []
     if not effects:
-        return None
+        return _derive_from_risk_reduction(text, req)
 
     want = OUTCOME_CUES.get(req.field_path.split(".")[-1], [])
+    single_field = req.field_path.split(".")[-1] in SINGLE_OUTCOME_FIELDS
     scoped, strength = [], ""
     for n_sent in (1, 2):
         single = req.field_path.split(".")[-1] in SINGLE_OUTCOME_FIELDS
@@ -283,7 +284,7 @@ def extract_effect(text: str, req: Request) -> dict | None:
             break
     pool = scoped or ([] if want else effects)
     if not pool:
-        return None
+        return _derive_from_risk_reduction(text, req)
     if req.measure_hint:
         m = [e for e in pool if e.get("type") == req.measure_hint]
         pool = m or pool
@@ -306,6 +307,50 @@ def extract_effect(text: str, req: Request) -> dict | None:
             "n_effects_in_document": len(effects), "n_scoped_to_outcome": len(scoped),
             "scope_strength": strength or "unscoped_no_cue_defined",
             "has_interval": e.get("ci_lower") is not None and e.get("ci_upper") is not None}
+
+
+# THE 1991 LITERATURE DOES NOT PRINT A RATIO. SOLVD's primary report says
+# "reduction in risk, 16 percent; 95 percent confidence interval, 5 to 26 percent"
+# and never prints 0.84 anywhere. Mahmood obtained 0.84 (0.74-0.95) by hand, by
+# applying RR = 1 - RRR. That is a DERIVATION, not an extraction, and without it the
+# ladder simply cannot read a whole era of trial reports.
+#
+# ⚠ THE INTERVAL BOUNDS INVERT: a 26% reduction is the LOWER risk ratio. Getting
+# this backwards yields a plausible interval pointing the wrong way, which is the
+# kind of error nothing downstream would catch.
+_RRR = re.compile(
+    r"(?:reduction in risk|risk reduction|reduction in mortality|relative risk "
+    r"reduction|rrr)\b[^.;]{0,40}?(\d+(?:\.\d+)?)\s*(?:percent|%)"
+    r"[^.]{0,90}?(?:95\s*(?:percent|%)\s*(?:confidence interval|ci))[^0-9]{0,12}"
+    r"(\d+(?:\.\d+)?)\s*(?:percent|%)?\s*(?:to|-|–|,)\s*(\d+(?:\.\d+)?)\s*(?:percent|%)",
+    re.I)
+
+
+def _derive_from_risk_reduction(text: str, req: Request):
+    """RR = 1 - RRR, with the interval bounds INVERTED. Scoped like any other value."""
+    field = req.field_path.split(".")[-1]
+    cues = OUTCOME_CUES.get(field, [])
+    single = field in SINGLE_OUTCOME_FIELDS
+    for m in _RRR.finditer(text or ""):
+        head = text[max(0, m.start() - 400): m.start()]
+        bounds = [b.end() for b in _SENT_END.finditer(head)]
+        clause = head[bounds[-1]:] if bounds else head
+        if cues and not any(c in (clause + m.group(0)).lower() for c in cues):
+            continue
+        pre = clause[:clause.find("(")] if "(" in clause else clause
+        if single and (_is_composite(pre) or _is_cause_specific(pre)):
+            continue
+        p, lo, hi = (float(x) for x in m.groups())
+        if not (0 <= lo <= p <= hi <= 100):
+            continue                 # the reduction must sit inside its own interval
+        return {"measure": "RR", "estimate": round(1 - p / 100.0, 4),
+                "ci_low": round(1 - hi / 100.0, 4), "ci_high": round(1 - lo / 100.0, 4),
+                "source_text": m.group(0)[:160],
+                "derived": "RR = 1 - RRR; interval bounds inverted",
+                "derived_from_text": True,
+                "scope_strength": "same_sentence_risk_reduction",
+                "has_interval": True}
+    return None
 
 
 _SENT_END = re.compile(r"(?<=[.;])\s+(?=[A-Z(])")
@@ -332,9 +377,10 @@ def _cue_precedes(text: str, effect: dict, cues: list, n_sentences: int,
         return False
     # Same disqualifier as the registry path: "death from any cause OR
     # hospitalization" contains the all-cause-mortality cue and is a composite.
-    if single_outcome and _is_composite(clause[:clause.lower().find("(")
-                                        if "(" in clause else len(clause)]):
-        return False
+    if single_outcome:
+        head = clause[:clause.find("(")] if "(" in clause else clause
+        if _is_composite(head) or _is_cause_specific(head):
+            return False
     return True
 
 
@@ -343,7 +389,7 @@ def _cue_precedes(text: str, effect: dict, cues: list, n_sentences: int,
 OUTCOME_CUES = {
     "all_cause_mortality": ["death from any cause", "all-cause mortality", "all cause mortality",
                             "death from any", "total mortality", "died from any cause",
-                            "all-cause death", "mortality from any cause",
+                            "all-cause death", "mortality from any cause", "deaths",
                             # 1990s phrasing. RALES reports "relative risk of death,
                             # 0.70" and would be missed by the modern cue list
                             # alone; a cue set built only on recent trials is a
@@ -361,12 +407,33 @@ OUTCOME_CUES = {
 # real answer, 0.761, four rows further down the SAME module. So single-outcome
 # fields carry DISQUALIFIERS, and the answer is three-state -- matched / matched-but-
 # composite / no match -- never two.
-COMPOSITE_MARKS = (" or ", "/", "composite", " plus ", " and/or ", " & ")
+#
+# ⚠ AND A MARKER MUST NOT MATCH A DRUG NAME. A bare "/" was in this tuple, so
+# "metoprolol CR/XL" read as a composite and MERIT-HF's OWN primary sentence --
+# "All-cause mortality was lower in the metoprolol CR/XL group ... relative risk
+# 0.66 [95% CI 0.53-0.81]" -- was thrown away, after which the ladder took an odds
+# ratio of 0.40 out of a 2002 subgroup paper. The slash now has to be spaced.
+# "sacubitril/valsartan" and "CR/XL" are the class this protects.
+COMPOSITE_MARKS = (" or ", " composite", "composite of", " plus ", " and/or ", " / ", " & ")
 SINGLE_OUTCOME_FIELDS = {"all_cause_mortality"}
+
+# A CAUSE-SPECIFIC death is not all-cause death, and SOLVD's abstract prints three
+# risk reductions in a row: all deaths (16%), deaths "attributed to progressive heart
+# failure" (22%), and a death-or-hospitalisation composite (26%). Only the first is
+# the datum. Composite disqualifiers do not catch the middle one -- it needs its own.
+CAUSE_SPECIFIC_MARKS = (
+    "attributed to", "due to", "cardiovascular death", "cardiac death", "cv death",
+    "sudden death", "sudden cardiac", "arrhythmi", "non-cardiovascular", "cancer",
+    "pump failure", "worsening heart failure", "from heart failure",
+)
 
 
 def _is_composite(title: str) -> bool:
     return any(m in " " + title.lower() + " " for m in COMPOSITE_MARKS)
+
+
+def _is_cause_specific(clause: str) -> bool:
+    return any(m in clause.lower() for m in CAUSE_SPECIFIC_MARKS)
 
 
 # CT.gov paramType is free text: 'Hazard Ratio (HR)', 'Rate Ratio (RR)', 'Win Ratio
@@ -728,9 +795,19 @@ def rung3_literature(session, req: Request) -> Attempt:
             ranked = _rank_reports(r2.text, req)
             notes.append(str(len(cands[:180])) + " candidates fetched, "
                          + str(len(ranked)) + " are the trial's own report")
-            for rec in ranked:
-                val = extract_effect(rec["abstract"], req)
-                if val:
+            # TWO PASSES over the ranked own-reports: first accept only a value that
+            # carries an INTERVAL, then settle for one without. A ratio with no
+            # interval is not poolable, and preferring it merely because its document
+            # ranked higher is how "or =0.40" beat "relative risk 0.66 [0.53-0.81]".
+            for require_interval in (True, False):
+                for rec in ranked:
+                    val = extract_effect(rec["abstract"], req)
+                    if not val:
+                        continue
+                    if require_interval and not val.get("has_interval"):
+                        continue
+                    val["interval_pass"] = "with_interval" if require_interval \
+                        else "no_interval_available"
                     val["report"] = {"pmid": rec["pmid"], "year": rec["year"],
                                      "title": rec["title"][:140],
                                      "why_primary": rec["why"],
@@ -742,7 +819,8 @@ def rung3_literature(session, req: Request) -> Attempt:
                                    total_s, total_b, _sha(r2.content), Outcome.HIT.value,
                                    "; ".join(notes), value=val,
                                    provenance_tier="trial_report", retrieved_utc=_now())
-                pmid = pmid or rec["pmid"]
+            if ranked and not pmid:
+                pmid = ranked[0]["pmid"]
             if ranked:
                 notes.append("no scoped value in any of the " + str(len(ranked))
                              + " own-report abstracts")
@@ -877,9 +955,24 @@ def _rank_reports(xml: str, req: Request) -> list:
             "why": why,
             "has_registration": why.startswith("record carries"),
             "is_rct": "randomized controlled trial" in ptypes,
+            "is_design_paper": bool(_DESIGN_PAPER.search(_xml_text(" ".join(re.findall(
+                r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>", block, flags=re.S))))),
         })
-    out.sort(key=lambda r: (not r["has_registration"], r["year"], not r["is_rct"]))
+    # ⚠ AND A TRIAL'S OWN LITERATURE STARTS BEFORE ITS RESULTS DO. "Earliest year"
+    # walks straight into the RATIONALE-AND-DESIGN paper, which is the trial's own,
+    # names it in the title, and reports no outcome: MERIT-HF's rank 1 was its 1997
+    # design paper, out of which the ladder read "or =0.40". Design papers are
+    # DEMOTED, not excluded -- they are still the trial's own documents, and rung 5
+    # wants exactly them.
+    out.sort(key=lambda r: (r["is_design_paper"], not r["has_registration"],
+                            r["year"], not r["is_rct"]))
     return out
+
+
+_DESIGN_PAPER = re.compile(
+    r"\b(rationale|study design|design and (?:rationale|organi[sz]ation|methods)|"
+    r"organi[sz]ation of|study protocol|protocol for|baseline characteristics|"
+    r"design of the|methods? of the|statistical analysis plan)\b", re.I)
 
 
 def _is_primary_report(xml: str, req: Request) -> tuple:
@@ -899,15 +992,29 @@ def _is_primary_report(xml: str, req: Request) -> tuple:
          trials it cites. This catches PARADIGM-HF, whose title -- "Angiotensin-
          neprilysin inhibition versus enalapril in heart failure" -- does not name
          the trial at all.
-      2. THE TITLE NAMES THE TRIAL. This catches the pre-registry era, where there
-         is no accession to carry: CIBIS-II, MERIT-HF, RALES and SOLVD all put the
-         trial's name in their titles.
+      2. THE INVESTIGATOR GROUP AUTHORED IT. A paper whose CollectiveName is the
+         trial's own investigator group IS the trial's report, by authorship.
+      3. THE TITLE NAMES THE TRIAL. This catches the rest of the pre-registry era:
+         CIBIS-II and MERIT-HF put the trial's name in their titles.
+
+    ⚠ ARM 2 IS NOT OPTIONAL, AND ITS ABSENCE COST A DATUM. SOLVD's 1991 primary
+    report is titled "Effect of enalapril on survival in patients with reduced left
+    ventricular ejection fractions and congestive heart failure" -- the trial is not
+    named in it at all -- and is authored by "SOLVD Investigators". A title-only test
+    REJECTED the primary report as a citing paper, and the ladder then read its value
+    out of a 1998 secondary analysis. This is the same fact that made [cn] the only
+    search field able to reach it: if the collective author is how you FIND a paper,
+    the collective author is also how you RECOGNISE it.
 
     Returns (is_primary, why) so the reason is recorded either way.
     """
     banks = re.findall(r"<AccessionNumber[^>]*>(.*?)</AccessionNumber>", xml, flags=re.S)
     if req.nct and any(req.nct.upper() in b.upper() for b in banks):
         return True, "record carries " + req.nct + " as its own registration"
+    collective = " ".join(re.findall(r"<CollectiveName>(.*?)</CollectiveName>",
+                                     xml, flags=re.S))
+    if collective and _names_trial(_xml_text(collective), req):
+        return True, "authored by the trial's own investigator group"
     title = _xml_text(" ".join(re.findall(r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>",
                                           xml, flags=re.S)))
     if _names_trial(title, req):
@@ -1286,12 +1393,70 @@ def _selftest() -> int:
     check("bounds that do not bracket the estimate are rejected",
           _prior_meta_from_tables(xml_bad, ["DAPA-HF"], rq) is None)
 
+    print("PLANT 10 -- a composite marker must not fire on a DRUG NAME")
+    check("'metoprolol CR/XL group' is not a composite",
+          not _is_composite("All-cause mortality was lower in the metoprolol CR/XL group"))
+    check("'sacubitril/valsartan' is not a composite",
+          not _is_composite("Death from any cause in the sacubitril/valsartan arm"))
+    check("'mortality or HF hospitalisation' still IS a composite",
+          _is_composite("All-cause mortality or heart failure hospitalisation"))
+    check("a spaced slash still IS a composite", _is_composite("Death / hospitalisation"))
+
+    print("PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death")
+    check("'deaths attributed to progressive heart failure' is cause-specific",
+          _is_cause_specific("the largest reduction occurred among the deaths "
+                             "attributed to progressive heart failure"))
+    check("'There were 510 deaths in the placebo group' is NOT cause-specific",
+          not _is_cause_specific("There were 510 deaths in the placebo group"))
+
+    print("PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT")
+    solvd = ("There were 510 deaths in the placebo group (39.7 percent), as compared "
+             "with 452 in the enalapril group (35.2 percent) (reduction in risk, 16 "
+             "percent; 95 percent confidence interval, 5 to 26 percent; P = 0.0036). "
+             "Although reductions in mortality were observed in several categories of "
+             "cardiac deaths, the largest reduction occurred among the deaths "
+             "attributed to progressive heart failure (251 in the placebo group vs. "
+             "209 in the enalapril group; reduction in risk, 22 percent; 95 percent "
+             "confidence interval, 6 to 35 percent).")
+    rqS = Request(trial="SOLVD", field_path="effect.all_cause_mortality")
+    got = _derive_from_risk_reduction(solvd, rqS)
+    check("16% reduction -> RR 0.84", got is not None and abs(got["estimate"] - 0.84) < 1e-9)
+    check("the 26% bound becomes the LOWER limit 0.74",
+          got is not None and abs(got["ci_low"] - 0.74) < 1e-9)
+    check("the 5% bound becomes the UPPER limit 0.95",
+          got is not None and abs(got["ci_high"] - 0.95) < 1e-9)
+    check("bounds are the right way round",
+          got is not None and got["ci_low"] < got["ci_high"])
+    check("it does NOT take the 22% cause-specific reduction",
+          got is not None and abs(got["estimate"] - 0.78) > 1e-6)
+    bad = solvd.replace("reduction in risk, 16 percent; 95 percent confidence "
+                        "interval, 5 to 26 percent",
+                        "reduction in risk, 16 percent; 95 percent confidence "
+                        "interval, 20 to 26 percent")
+    gotbad = _derive_from_risk_reduction(bad, rqS)
+    check("a point estimate outside its own interval is refused",
+          gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
+
+    print("PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper")
+    check("MERIT-HF's design-paper title is recognised",
+          bool(_DESIGN_PAPER.search("Rationale, design, and organization of the "
+                                    "Metoprolol CR/XL Randomized Intervention Trial "
+                                    "in Heart Failure (MERIT-HF)")))
+    check("a study-protocol title is recognised",
+          bool(_DESIGN_PAPER.search("Study protocol for the XYZ trial")))
+    check("the RESULTS paper's title is NOT flagged as a design paper",
+          not _DESIGN_PAPER.search("Effect of metoprolol CR/XL in chronic heart "
+                                   "failure: MERIT-HF"))
+    check("nor is a plain outcome title",
+          not _DESIGN_PAPER.search("Angiotensin-neprilysin inhibition versus "
+                                   "enalapril in heart failure"))
+
     print("RESTORE -- yield_report still correct after every plant")
     rep = yield_report([{"state": "OBTAINED", "attempts": [
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 28 if extractor() is not None else 26
+    n = 44 if extractor() is not None else 42
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0

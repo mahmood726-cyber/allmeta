@@ -107,4 +107,34 @@ A refusal is **written to the ledger as its own kind** (`REFUSED_BY_WRITE_PATH`)
 
 ## 6. What already exists that we should be calling, not rebuilding
 
-*(inserted below)*
+Two passes: a mechanical inventory of 822/822 worktree Python files and 78/78 `oa68k` modules (`out/REUSE-INVENTORY.md`), then a judged shortlist over 25 files opened one by one (`out/REUSE-SHORTLIST.md`).
+
+⚠ **One instrument caveat, stated because the number is in the file.** The inventory's "Rung Reuse Map" counts a module as a rung-N implementation if it merely *contains a keyword*, which is a join measuring the join — it lists `dosehtml/dose-response-cli.py` as a rung-1 (prior meta-analysis) asset. **Its per-module table is sound; its rung-map counts are not, and are not quoted anywhere in this report.**
+
+### Already reused — the ladder calls these today
+
+| module | callable | what it saved |
+|---|---|---|
+| `oa68k/net.py` | `PoliteSession` | the rate gate, Retry-After, backoff. Hand-rolling this earned 503 on 8/8 rung-1 calls before it was delegated. |
+| `oa68k/config.py` | `reqs_per_sec()` | the shared per-node NCBI budget |
+| `oa68k/jats.py` | `parse_tables(xml_bytes)` | real `<thead>` handling, including the PLOS `<td>`-header case, for the rung-1 table reader |
+| `rct-extractor-v2` | `rx.extract(text)` | 180+ effect patterns, SE derivation, per-effect consistency check. Loose-coupled by env var exactly as `extractor_bridge/extract_meta.py` already does it — **not vendored**. |
+
+### Should be reused next — named, with the exact reason
+
+| module | callable | what the ladder currently duplicates |
+|---|---|---|
+| `oa68k/trial_key_audit.py` | `fetch_pubmed(sess, pmids) -> {pmid: {pub_types, databanks, abstract, year}}` | **the closest duplication in the whole build.** It already batches ≤200 PMIDs and parses `<DataBank>` with ElementTree — the exact mechanism `_rank_reports` re-derives by regex. It is short two fields: `ArticleTitle` and `CollectiveName`. **Add those two and `_rank_reports` can delegate outright.** |
+| `oa68k/refjoin.py` | `ref_entries_full(xml)`, `resolve(label, refs)` | acronym / surname-year / surname-only label resolution with explicit ambiguity rejection — the identity layer rung 1 needs to map a forest-plot row label to a trial |
+| `oa68k/refmatch.py` | `match_label(label, refs, year_slack=1)` | same, resolving a study label to exactly one PMID |
+| `oa68k/harvest.py` | `fetch_fulltext(sess, row)` | the efetch-JATS → EPMC → BioC cascade with caching, which rung 3's full-text step re-implements |
+| `oa68k/fda.py` | `ingest()`, `harvest(limit)`, `extract_and_link(limit)` | FDA's **official** ApplicationDocs inventory, review-PDF fetching, and protocol-code → NCT linking via AACT `id_information`. Rung 4 currently only probes openFDA and records addresses. |
+| `oa68k/net.py` | `append_jsonl`, `load_done_keys` | the ladder has no durable ledger or resume set yet; `ladder_store.emit()` writes but does not skip completed requests |
+| `oa68k/registry_ids.py` | `find_all(text)` | NCT + ISRCTN + PACTR + CTRI + ChiCTR + EudraCT extraction. The ladder is NCT-only, which is a real coverage limit for non-US registries. |
+| `oa68k/forestvision.py` | `check_extraction(doc)` | over-determined forest-row arithmetic checking |
+
+### The repos worth pulling from, and one that does not exist
+
+- **`rct-extractor-v2`** (v5.0.0, commit `6427e00`) — *the* V2 extractor. Clean public API, 17 specialties, arm-level 2×2 output. Already wired here.
+- **`repro-checker`**, **`cardiosynth`**, **`registry-ipd`**, **`metaextract`**, **`ctgov-search-strategies`**, **`living-meta-engine`**, **`rapidmeta-kit`** — the closest things to a retrieval/extraction pipeline in the account.
+- ⚠ **There is no `metapipe`.** No local directory under `F:\`, `C:\Projects\`, or `C:\` matches, and neither `mahmood726-cyber` nor `mahmood726` owns a repo of that name (`gh search repos metapipe --owner ...` → 0). The candidates above are what I take the intent to have meant; if `metapipe` is a real thing it is somewhere I have not been told about, and I am not going to guess which of these it is.
