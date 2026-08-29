@@ -17,7 +17,7 @@ Layer 3 of §11's map lists, under "what is missing": *"the retrieval LADDER (pr
 | `ladder_store.py` | the **write path** — a value enters the synthesis through here or not at all |
 | `ladder_bench.py` | the HFrEF validation set, scored against a known answer |
 
-**Plants: 28 + 10 + 14 = 52**, each watched failing on the defect, passing on the clean case, restored, and the restoration asserted. All pass.
+**Plants: 47 (`ladder.py`) + 14 (`ladder_store.py`) + 10 (`obtainability.py`) = 71**, each watched failing on the defect, passing on the clean case, restored, and the restoration asserted. All 71 pass. **Fourteen of the 47 exist because a benchmark run produced a wrong number and the fix had to be pinned so it cannot come back.**
 
 ---
 
@@ -95,13 +95,103 @@ A refusal is **written to the ledger as its own kind** (`REFUSED_BY_WRITE_PATH`)
 
 **Three verdicts, never two:** `MATCHED` · `MISMATCHED` (obtained a value that is not the hand value — its own count, because folding it into "found" is exactly the retrieval-as-evidence error) · `NOT_FOUND`.
 
-*(results table inserted below from the final run)*
+### Result — first-hit cascade, run 2026-08-29
+
+| trial | human used | ladder verdict | rung | tier | ladder | hand |
+|---|---|---|---|---|---|---|
+| PARADIGM-HF | L2 abstract | MATCHED | R3 literature | trial_report | 0.84 | 0.84 |
+| SOLVD | L2 abstract | MATCHED | R3 literature | trial_report | 0.84 | 0.84 |
+| DAPA-HF | L1 registry | MATCHED | R2 registry | registry_results | 0.83 | 0.83 |
+| EMPEROR-Reduced | L1 registry | MATCHED | R2 registry | registry_results | 0.92 | 0.92 |
+| EMPHASIS-HF | L1 registry | MATCHED | R2 registry | registry_results | 0.761 | 0.761 |
+| RALES | L2 abstract | MATCHED | R3 literature | trial_report | 0.70 | 0.70 |
+| MERIT-HF | L2 abstract | MATCHED | R3 literature | trial_report | 0.66 | 0.66 |
+| CIBIS-II | L2 abstract | MATCHED | R3 literature | trial_report | 0.66 | 0.66 |
+
+```
+MATCHED     8/8   of the 8 data a human obtained by hand from open sources
+MISMATCHED  0/8
+NOT_FOUND   0/8
+```
+
+**The ladder's routing agrees with the human's on all eight**: the three trials he took from the registry, the ladder took from the registry; the five he took from abstracts, it took from abstracts.
+
+### Yield per rung — first-hit cascade
+
+```
+  rung                  hit  ret-no-val  miss  fail  skip   reached    sec     KB
+  R1_PRIOR_META         0           8     0     0     0         8   165.5     64
+  R2_REGISTRY           3           1     0     0     4         8     2.5   1508
+  R3_LITERATURE         5           0     0     0     0         5    70.2  11838
+  R4_REGULATORY         0           0     0     0     0         0     0.0      0
+  R5_PROTOCOL           0           0     0     0     0         0     0.0      0
+```
+
+**`reached` is the denominator, and it is the denominator OF a different set for each rung**: the data still unfound when that rung ran. R3's 5/5 is 5 of the 5 data that reached it, not 5 of 8. R4 and R5 have `reached = 0` — **nothing reached them, so this run measures nothing at all about the regulatory rung.** A `0` in their `hit` column would be a lie; the honest statement is that they are unmeasured here, which is why the `--all-rungs` pass exists.
+
+⚠ **Cost is not free and the cheap rung is not the first one.** R2 supplied 3 data in **2.5 seconds**; R1 supplied 0 in **165 seconds**, 66× the cost of the rung that actually worked. If the ladder's order were cost-optimal it would put the registry first.
+
+### Yield per rung — every rung run on every datum (`--all-rungs`)
+
+The cascade cannot measure a rung that nothing reaches. This pass runs all five on all eight, so each rung gets the same denominator and its **standalone** yield is visible.
+
+```
+  rung                  hit  ret-no-val  miss  fail  skip   reached    sec
+  R1_PRIOR_META         0           8     0     0     0         8    96.7
+  R2_REGISTRY           3           1     0     0     4         8     2.2
+  R3_LITERATURE         8           0     0     0     0         8   100.3
+  R4_REGULATORY         0           8     0     0     0         8    12.1
+  R5_PROTOCOL           0           2     2     0     4         8     0.4
+```
+
+Read across:
+
+- **R3 alone gets all eight.** The trial's own report, reached through Europe PMC + NCBI, is sufficient for this whole set on its own.
+- **R2 gets 3 of the 4 that have an NCT** — the fourth is PARADIGM-HF, whose registry entry posts counts but no hazard ratio, exactly as the hand table records ("counts, **no HR**"). The other 4 are `SKIPPED`: they predate the registry. **`skip` is its own column precisely so those 4 never quietly enter a denominator.**
+- **R4 reached all 8 and returned 8 × `RETRIEVED_NO_VALUE`.** It found FDA applications for every drug (5 each) and read a value from none. That is not "FDA has nothing" — see §5.
+- **R5 found posted Protocol and SAP documents for 2 of the 4 NCT-bearing trials** and deliberately mined no value from them.
+
+⚠ **`hit=0` for R1 and R4 is a measurement of OUR EXTRACTOR against those sources, not of those sources.** Both returned documents. Neither returned a number we could read.
+
+### It took six runs, and every fix came from a plant or a measurement
+
+Reported in full because the intermediate numbers are the evidence that the final one is not luck:
+
+| run | matched | what it found |
+|---|---|---|
+| 1 | 0/8 | hand-rolled HTTP with no rate gate → 503 on 8/8 rung-1 calls; `'Hazard Ratio (HR)'` scored an exact hit as a mismatch |
+| 2 | 3/8 | citing papers mined as if they were the trial's report (PARADIGM-HF 1.82 from a Chagas cardiomyopathy paper) |
+| 3 | 6/8 | secondary analyses outranking primary reports; `retmax` dropping the old papers |
+| 4 | 6/8 | SOLVD's primary *rejected* — its title never names the trial; the name is in the collective author |
+| 5 | 7/8 | `"/"` as a composite marker killed MERIT-HF's own sentence via "metoprolol CR/XL" |
+| 6 | **8/8** | the 1997 design paper outranking the 1999 results paper |
 
 ---
 
 ## 5. What the ladder could not find, and why
 
-*(inserted below)*
+**Nothing, on this set** — but that sentence is worth exactly one benchmark of eight data on one outcome in one disease, and no more. What it *did* fail at, and what remains genuinely out of reach:
+
+### Rung 1 returned 0 hits from 8 reached, against a premise that names it the best source
+
+Mahmood: *"best source is previous metas — and that data is peer reviewed so easy to use."* The measurement disagrees, and a zero against a stated premise gets diagnosed before it gets reported. `rung1_diagnose.py` separates the three explanations — the metas do not carry it / they carry it as **pixels in a forest plot** / our table reader missed it. This project has already measured the answer once from the other direction: `oa68k/SHARDA-ANSWER-KEY-YIELD.md` found **74.5% of 137 forest figures carry no per-arm data at all**, and the per-trial numbers that do exist live in figures — which is precisely why `forestvision.py`, `visionshard.py` and `answerkey.py` exist. **The likely reading is that rung 1's ceiling is not the corpus but the modality, and lifting it means calling the vision layer that already exists rather than writing more table regexes.**
+
+### CT.gov version history is unreachable **from this host** — and that is a retrieval fact, not an evidence one
+
+`/api/int/studies/<NCT>/history` returns **403** here on every variant tried: with browser headers, with a `Referer`, with a session cookie from the study page, and on `classic.clinicaltrials.gov`. The v2 path returns **404**, as the brief said. Every probe is recorded as `FAILED`, and the note says so in words:
+
+> *"history FAILED http 403 from this host — a fact about OUR REACH, not about whether the revisions exist"*
+
+**This is not a claim that `originalData` is unavailable.** It reached the brief's author from somewhere else. The correct next step is a different egress, not a conclusion.
+
+### Two capabilities the ladder does not have, named rather than approximated
+
+1. **FDA review PDFs are addressed but not read.** Rung 4 reports where a review lives (`accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf`) and does not parse it. The reviews of the era we care about are **scans**: `regulatory/REGULATORY-SOURCE.md` §5 measured the text layer at **2%** for FDA's pre-2005 documents. At scale this is an **OCR problem, not a retrieval problem**, and there is no OCR engine in this environment. Saying "rung 4 yields 0" without saying that would be a claim about the evidence made out of a gap in our tooling.
+2. **Protocols and SAPs are located, not mined.** Rung 5 records `documentSection.largeDocumentModule.largeDocs` and stops. A protocol says what *will be* measured; treating it as a results source is the "a data-extraction table is not a synthesis commitment" error, and it is deliberately not done.
+
+### Non-US registries are out of reach by construction
+
+The ladder is NCT-only. `oa68k/registry_ids.py` already extracts ISRCTN, PACTR, CTRI, ChiCTR and EudraCT accessions; the ladder does not call it yet. **Every trial registered only outside CT.gov currently skips rung 2 entirely** — visible in the benchmark as 4 `SKIPPED` at R2, all of them pre-registry trials, but the same hole applies to a live Chinese or Indian trial.
 
 ---
 
@@ -137,4 +227,47 @@ Two passes: a mechanical inventory of 822/822 worktree Python files and 78/78 `o
 
 - **`rct-extractor-v2`** (v5.0.0, commit `6427e00`) — *the* V2 extractor. Clean public API, 17 specialties, arm-level 2×2 output. Already wired here.
 - **`repro-checker`**, **`cardiosynth`**, **`registry-ipd`**, **`metaextract`**, **`ctgov-search-strategies`**, **`living-meta-engine`**, **`rapidmeta-kit`** — the closest things to a retrieval/extraction pipeline in the account.
-- ⚠ **There is no `metapipe`.** No local directory under `F:\`, `C:\Projects\`, or `C:\` matches, and neither `mahmood726-cyber` nor `mahmood726` owns a repo of that name (`gh search repos metapipe --owner ...` → 0). The candidates above are what I take the intent to have meant; if `metapipe` is a real thing it is somewhere I have not been told about, and I am not going to guess which of these it is.
+- ⚠ **There is no `metapipe`.** (see below) No local directory under `F:\`, `C:\Projects\`, or `C:\` matches, and neither `mahmood726-cyber` nor `mahmood726` owns a repo of that name (`gh search repos metapipe --owner ...` → 0). The candidates above are what I take the intent to have meant; if `metapipe` is a real thing it is somewhere I have not been told about, and I am not going to guess which of these it is.
+
+---
+
+## 7. What to do next, in the order it is worth doing
+
+1. **Delegate `_rank_reports` to `trial_key_audit.fetch_pubmed`** after adding
+   `ArticleTitle` and `CollectiveName` to its return. It already batches 200 PMIDs and
+   parses `<DataBank>` properly with ElementTree; the ladder re-derives that by regex.
+   Cheapest reuse win in the list.
+2. **Point rung 1 at the vision layer, not at more table regexes.** The measurement says
+   the per-trial numbers in OA meta-analyses are pixels; `forestvision.py`,
+   `visionshard.py` and `answerkey.py` already read pixels. Route rung 1 through the
+   stored figure extractions and re-measure its yield against the same 8 data.
+3. **Reorder the rungs by measured cost.** R2 supplies at 0.3 s/datum and R1 at 12 s/datum
+   for nothing. The premise that prior metas are the cheapest source is not what the
+   instrument measures; either the routing follows the measurement, or the measurement
+   gets a stated reason why it should not.
+4. **Give rung 2 the other registries.** `registry_ids.find_all()` already extracts
+   ISRCTN/PACTR/CTRI/ChiCTR/EudraCT. Until it is called, every non-CT.gov trial skips
+   rung 2 entirely.
+5. **Find a working egress for CT.gov history.** 403 here on every variant; it works
+   elsewhere. That is a network problem with a network answer, and `originalData` is the
+   only route to what a sponsor changed after the fact.
+6. **Widen the benchmark before trusting the 8/8.** One outcome, one disease, eight data,
+   and the trials are famous. The number that would mean something is the same ladder on
+   a set where the trials are obscure — and on a *second* field (per-arm N, or the harms
+   count) where the extractor has no cue list tuned to it.
+
+## 8. Two things this run should not be read as saying
+
+**"8/8" is not a claim about the ladder's accuracy.** It is a claim about eight data on
+one outcome in one disease, where the ground truth was a table one person built. The
+honest reading is: *the ladder reproduces, unaided, the retrieval a domain expert did by
+hand on his own best case, including choosing the same source layer for each trial.*
+That is worth having and it is not a generalisation.
+
+**"rung 4 yields 0" is not a claim about regulatory documents.** Rung 4 retrieved
+something for all eight and parsed a value from none, because the reviews that carry
+per-trial results are scanned PDFs and this environment has no OCR. `regulatory/`
+already proved per-trial recovery from an FDA statistical review by hand
+(oseltamivir, both pivotal trials, per-arm N + medians + 95% CIs). **The rung is
+unimplemented, not empty**, and the distinction is exactly the one this whole design
+exists to keep.

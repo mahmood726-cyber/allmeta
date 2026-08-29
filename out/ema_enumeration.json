@@ -1,0 +1,89 @@
+{
+ "enumeration": {
+  "name": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+  "url": "https://www.ema.europa.eu/en/documents/report/medicines-output-medicines-report_en.xlsx",
+  "row_meaning": "one row = one medicine EMA has assessed centrally. An EPAR exists ONLY for a centrally authorised medicine.",
+  "retrieved_utc": "2026-08-29T21:09:04+00:00",
+  "sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+  "n_rows": 5285,
+  "keys": "<5285 keys withheld>",
+  "positive_control_key": "Entresto",
+  "positive_control_passed": true,
+  "positive_control_note": "positive control 'Entresto' FOUND among the 5285 keys of sha256:19c195990013",
+  "absence_licenses": "Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature."
+ },
+ "verdicts": [
+  {
+   "granted": true,
+   "reason": "EARNED: 'Ferinject' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "Ferinject",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'Venofer' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "Venofer",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'Monofer' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "Monofer",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'CosmoFer' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "CosmoFer",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'ferric carboxymaltose' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "ferric carboxymaltose",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'iron sucrose' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "iron sucrose",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'ferric derisomaltose' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "ferric derisomaltose",
+   "evidence_kind": "enumeration_rows"
+  },
+  {
+   "granted": true,
+   "reason": "EARNED: 'iron isomaltoside 1000' is absent from all 5285 rows of EMA medicines register (medicines-output-medicines-report_en.xlsx) (sha256:19c195990013, retrieved 2026-08-29T21:09:04+00:00); positive control 'Entresto' was found in the same bytes. Absence licenses exactly this: 'EMA has no centrally authorised product under this name, therefore no EPAR exists.' It licenses NOTHING about national authorisations, about FDA, or about the trial literature.",
+   "enumeration": "EMA medicines register (medicines-output-medicines-report_en.xlsx)",
+   "enumeration_sha256": "19c195990013616735091d1b57019fa43afb66a492002ab8a3a9a58d2f0954e7",
+   "enumeration_retrieved_utc": "2026-08-29T21:09:04+00:00",
+   "query_key": "iron isomaltoside 1000",
+   "evidence_kind": "enumeration_rows"
+  }
+ ]
+}
