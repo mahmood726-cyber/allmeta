@@ -264,6 +264,45 @@ def extractor():
     return None
 
 
+def extract_counts(text: str, req: Request) -> dict | None:
+    """PER-ARM EVENT COUNTS, the datum a pooled 2x2 actually needs.
+
+    A different datum from an effect estimate, and it must be scored differently:
+    events and denominators are INTEGERS, so the comparison is exact. There is no
+    tolerance to hide behind, which makes this the harder and more honest benchmark.
+
+    The V2 extractor already yields `arm_level.poolable_2x2` with an `endpoint`
+    label; we scope on that rather than re-deriving arm detection.
+    """
+    rx = extractor()
+    if rx is None or not text:
+        return None
+    try:
+        res = rx.extract(text)
+    except Exception:                                # noqa: BLE001
+        return None
+    al = res.get("arm_level") or {}
+    want_endpoint = {"all_cause_mortality": ("MORTALITY", "DEATH", "ALL_CAUSE_MORTALITY")}
+    want = want_endpoint.get(req.field_path.split(".")[-1], ())
+    pools = al.get("poolable_2x2") or al.get("tables_2x2") or []
+    scoped = [p for p in pools if not want or str(p.get("endpoint", "")).upper() in want]
+    if not scoped:
+        return None
+    p = scoped[0]
+    a1, a2 = p.get("arm1") or {}, p.get("arm2") or {}
+    if None in (a1.get("events"), a1.get("total"), a2.get("events"), a2.get("total")):
+        return None
+    return {"datum": "per_arm_counts", "endpoint": p.get("endpoint"),
+            "arm1": {"label": a1.get("label"), "events": a1.get("events"),
+                     "n": a1.get("total")},
+            "arm2": {"label": a2.get("label"), "events": a2.get("events"),
+                     "n": a2.get("total")},
+            "both_consistent": p.get("both_consistent"),
+            "needs_review": p.get("needs_review"),
+            "n_pools_in_document": len(pools), "n_scoped": len(scoped),
+            "scope_strength": "extractor_endpoint_label"}
+
+
 def extract_effect(text: str, req: Request) -> dict | None:
     """Pull the effect estimate for this request's outcome out of free text.
 
@@ -273,6 +312,8 @@ def extract_effect(text: str, req: Request) -> dict | None:
     cannot be established we return None rather than the first effect on the page --
     an unscoped value is worse than a missing one, because it looks like data.
     """
+    if req.field_path.startswith("counts."):
+        return extract_counts(text, req)
     rx = extractor()
     if rx is None or not text:
         return None
@@ -965,11 +1006,39 @@ def _esearch_pmids(session, req: Request, notes: list) -> list:
     # the pre-registry primary reports: SOLVD's 1991 NEJM paper is authored by "SOLVD
     # Investigators" and is found by SOLVD[cn] and by nothing else here -- not
     # [Title], not [Author], not [tiab].
+    # A STUDY LABEL IS NOT ALWAYS AN ACRONYM. Half this benchmark's subjects are
+    # AUTHOR-YEAR labels -- 'Beller 1995', 'van Veldhuisen 1998', 'Colucci 1996' --
+    # and "Beller 1995"[Title] matches nothing, so an acronym-only resolver reports
+    # UNRESOLVED for a trial whose report is trivially findable by author and year.
+    # refmatch.parse_label already splits exactly this form (it was built for RevMan
+    # study labels), so the label is PARSED here rather than pattern-guessed.
+    author_year, topical = [], []
+    try:
+        import refmatch as RM
+        for n in names:
+            got = RM.parse_label(n)
+            if not got:
+                continue
+            surname, yr, _sfx = got
+            words = [w for w in surname.split() if len(w) > 2]
+            if not words:
+                continue
+            author_year.append(words[-1] + '[au] AND ' + yr + '[dp]')
+            # 'Captopril-Digoxin 1988' parses to a two-word 'surname' that is really
+            # two DRUG names. An [au] query on it is nonsense, so the same parse also
+            # yields a topical term -- the only route to that subject.
+            if len(words) > 1:
+                topical.append(' AND '.join(w + '[tiab]' for w in words)
+                               + ' AND ' + yr + '[dp]')
+    except Exception:                                # noqa: BLE001
+        pass
+
     strong = (['"' + req.nct + '"[si]'] if req.nct else []) \
         + ['"' + n + '"[Title]' for n in names] \
         + [n + '[cn]' for n in names] \
+        + author_year \
         + ['"' + n + '"[Author]' for n in names]
-    weak = ['"' + n + '"[tiab]' for n in names]
+    weak = ['"' + n + '"[tiab]' for n in names] + topical
 
     def _run(term, retmax):
         r, s, err = _get(session, ESEARCH, {"db": "pubmed", "term": term,
@@ -1100,8 +1169,40 @@ def _is_primary_report(xml: str, req: Request) -> tuple:
                                           xml, flags=re.S)))
     if _names_trial(title, req):
         return True, "title names the trial"
+
+    # THIRD ARM: THE LABEL IS AN AUTHOR AND A YEAR. For a subject called
+    # "Beller 1995" the identity is carried by the AUTHOR and the YEAR, and neither
+    # is in the title -- so the title test rejects the trial's own report. Half the
+    # donor-supplement ten are labelled this way. The match must be BOTH: a surname
+    # alone is not an identity, and a year alone certainly is not.
+    ay = _label_author_year(req)
+    if ay:
+        surname, want_year = ay
+        yr = re.search(r"<PubDate>.*?<Year>(\d{4})</Year>", xml, flags=re.S)
+        lasts = [_xml_text(x).lower() for x in
+                 re.findall(r"<LastName>(.*?)</LastName>", xml, flags=re.S)]
+        if yr and yr.group(1) == want_year and any(surname == l for l in lasts):
+            return True, ("first-author surname '" + surname + "' and year "
+                          + want_year + " both match the label")
     return False, ("names the trial only in the abstract -- this is a CITING paper, "
                    "not the trial's own report")
+
+
+def _label_author_year(req: Request):
+    """('beller', '1995') for an author-year study label, else None."""
+    try:
+        import refmatch as RM
+    except Exception:                                # noqa: BLE001
+        return None
+    for n in [req.trial] + list(req.aliases):
+        got = RM.parse_label(n or "")
+        if not got:
+            continue
+        surname, yr, _ = got
+        words = [w for w in surname.split() if len(w) > 2]
+        if words:
+            return words[-1], yr
+    return None
 
 
 def _names_trial(text: str, req: Request) -> bool:

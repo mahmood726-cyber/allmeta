@@ -391,3 +391,256 @@ exec
 "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"gate10\" F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-live-fix" in F:\tr-build\ladder
 exec
 "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"multiroute_retrieve\" F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-live-fix" in F:\tr-build\ladder
+2026-08-29T23:06:12.701881Z ERROR codex_core::tools::router: error=Exit code: 124
+Wall time: 133.1 seconds
+Output:
+command timed out after 133147 milliseconds
+F:\tr-build\ladder\out\codex_sec11.log:20:  B. 'gate10' with '10 instrumented classes'. Find the gate10 implementation, COUNT the rules it actually registers (list their names/ids), and check whether any rule disables itself above a file-count threshold (look for a cap like 300).
+F:\tr-build\ladder\out\codex_sec11.log:278:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"gate10\" F:\\allmeta F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-live-fix" in F: [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:336:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"gate10\" F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Pr [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:391:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"gate10\" F:\\tr-build\\ladder F:\ [... omitted end of long line]
+
+ exited 124 in 133147ms:
+F:\tr-build\ladder\out\codex_sec11.log:20:  B. 'gate10' with '10 instrumented classes'. Find the gate10 implementation, COUNT the rules it actually registers (list their names/ids), and check whether any rule disables itself above a file-count threshold (look for a cap like 300).
+F:\tr-build\ladder\out\codex_sec11.log:278:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"gate10\" F:\\allmeta F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-live-fix" in F: [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:336:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"gate10\" F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Pr [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:391:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"gate10\" F:\\tr-build\\ladder F:\ [... omitted end of long line]
+
+2026-08-29T23:06:13.386336Z ERROR codex_core::tools::router: error=Exit code: 124
+Wall time: 133.6 seconds
+Output:
+command timed out after 133598 milliseconds
+F:\tr-build\ladder\out\codex_sec11.log:19:  A. 'multiroute_retrieve' as a sanctioned recorder, and a store of '317 documents with route, date, sha256'. Grep for multiroute_retrieve, and for any JSON/JSONL holding ~317 records with keys route/date/sha256. Report the actual record co [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:276:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"multiroute_retrieve\" F:\\allmeta F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-li [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:332:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"multiroute_retrieve\" F:\\tr-build\\ladder F:\\fixwt\\ [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:393:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"multiroute_retrieve\" F:\\tr-buil [... omitted end of long line]
+
+ exited 124 in 133598ms:
+F:\tr-build\ladder\out\codex_sec11.log:19:  A. 'multiroute_retrieve' as a sanctioned recorder, and a store of '317 documents with route, date, sha256'. Grep for multiroute_retrieve, and for any JSON/JSONL holding ~317 records with keys route/date/sha256. Report the actual record co [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:276:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"multiroute_retrieve\" F:\\allmeta F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-li [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:332:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"multiroute_retrieve\" F:\\tr-build\\ladder F:\\fixwt\\ [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:393:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"multiroute_retrieve\" F:\\tr-buil [... omitted end of long line]
+
+2026-08-29T23:06:13.936268Z ERROR codex_core::tools::router: error=Exit code: 124
+Wall time: 134.5 seconds
+Output:
+command timed out after 134507 milliseconds
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:21:  C. 'hrSource' - grep for every read and every write. If it is read but never assigned, say so with both line lists.
+F:\tr-build\ladder\out\codex_sec11.log:280:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"hrSource\" F:\\allmeta F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-live-fix" in  [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:298:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:299:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:300:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:301:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:302:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:303:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:304:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:305:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:306:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:307:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:308:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:309:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:310:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:313:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:314:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:315:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:316:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:317:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:318:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:319:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:320:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:321:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:322:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:323:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:324:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:325:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:326:C:\Projects\_rmf-live-fix\INCRETIN_HFpEF_REVIEW.html:4789:    <script>const escapeHtml=unsafe=>String(unsafe??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])),sanitizeHighlightTerms=highlights=>{ [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:327:C:\Projects\_rmf-live-fix\ATTR_CM_REVIEW.html:4792:    <script>const escapeHtml=unsafe=>String(unsafe??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])),sanitizeHighlightTerms=highlights=>{const o [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:328:F:\fixwt\ladder\ATTR_CM_REVIEW.html:5031:    <script>const escapeHtml=unsafe=>String(unsafe??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])),sanitizeHighlightTerms=highlights=>{const out=[],seen [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:334:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"hrSource\" F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\ [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:353:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:354:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:355:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:356:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:357:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:358:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:359:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:360:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:362:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:363:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:365:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:366:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:367:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:371:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:372:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:373:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:374:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:375:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:376:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:377:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:378:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:380:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:381:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:383:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:384:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:385:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:389:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"hrSource\" F:\\tr-build\\ladder F [... omitted end of long line]
+
+ exited 124 in 134507ms:
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:21:  C. 'hrSource' - grep for every read and every write. If it is read but never assigned, say so with both line lists.
+F:\tr-build\ladder\out\codex_sec11.log:280:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"hrSource\" F:\\allmeta F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\Projects\\_rmf-live-fix" in  [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:298:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:299:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:300:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:301:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:302:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:303:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:304:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:305:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:306:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:307:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:308:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:309:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:310:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:313:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:314:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:315:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:316:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:317:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:318:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:319:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:320:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:321:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:322:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:323:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:324:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:325:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:326:C:\Projects\_rmf-live-fix\INCRETIN_HFpEF_REVIEW.html:4789:    <script>const escapeHtml=unsafe=>String(unsafe??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])),sanitizeHighlightTerms=highlights=>{ [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:327:C:\Projects\_rmf-live-fix\ATTR_CM_REVIEW.html:4792:    <script>const escapeHtml=unsafe=>String(unsafe??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])),sanitizeHighlightTerms=highlights=>{const o [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:328:F:\fixwt\ladder\ATTR_CM_REVIEW.html:5031:    <script>const escapeHtml=unsafe=>String(unsafe??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])),sanitizeHighlightTerms=highlights=>{const out=[],seen [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:334:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' \"hrSource\" F:\\tr-build\\ladder F:\\fixwt\\ladder C:\\ [... omitted end of long line]
+F:\tr-build\ladder\out\codex_sec11.log:353:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:354:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:355:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:356:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:357:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:358:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:359:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:360:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:362:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:363:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:365:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:366:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:367:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:371:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:380:        if body.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:372:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:381:            d['hrSource'] = str(body['hrSource'])
+F:\tr-build\ladder\out\codex_sec11.log:373:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:443:        # hrSource flag for QUALITY_GATE Gate 4 (provenance). Allowed values:
+F:\tr-build\ladder\out\codex_sec11.log:374:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:445:        hsm = re.search(r"hrSource:\s*['\"]([a-z_]+)['\"]", body)
+F:\tr-build\ladder\out\codex_sec11.log:375:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:447:            d['hrSource'] = hsm.group(1)
+F:\tr-build\ladder\out\codex_sec11.log:376:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:723:            # Gate 4 provenance: every trial with publishedHR must have hrSource OR
+F:\tr-build\ladder\out\codex_sec11.log:377:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:727:                if t.get('publishedHR') and not t.get('hrSource'):
+F:\tr-build\ladder\out\codex_sec11.log:378:C:\Projects\_rmf-live-fix\validate_living_ma_portfolio.py:799:                print(f"    FAIL  {r['name']:30s}  {len(r['gate4_violations'])} trial(s) lack hrSource and full CI")
+F:\tr-build\ladder\out\codex_sec11.log:380:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:63:- (b) Peto-derived from event counts, marked `hrSource: 'peto_from_counts'`
+F:\tr-build\ladder\out\codex_sec11.log:381:C:\Projects\_rmf-live-fix\QUALITY_GATE.md:64:- (c) Pre-specified IPD pool (e.g. FIDELITY for FINERENONE), marked `hrSource: 'ipd_pool'`
+F:\tr-build\ladder\out\codex_sec11.log:383:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:24:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:384:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\INCRETIN_HFpEF_REVIEW.json:133:      "hrSource": "peto_from_counts",
+F:\tr-build\ladder\out\codex_sec11.log:385:C:\Projects\_rmf-live-fix\outputs\extraction_audit\data\ATTR_CM_REVIEW.json:265:      "hrSource": null,
+F:\tr-build\ladder\out\codex_sec11.log:389:"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n -S --max-columns 240 --max-columns-preview --glob '"'!node_modules/**'"' --glob '"'!.git/objects/**'"' --glob '"'!*.html'"' \"hrSource\" F:\\tr-build\\ladder F [... omitted end of long line]
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files --glob '"'!node_modules/**'"' --glob '"'!.git/**'"' --glob '"'!out/codex_sec11.log'"' F:\\tr-build\\ladder | Measure-Object" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files --glob '"'!node_modules/**'"' --glob '"'!.git/**'"' F:\\fixwt\\ladder | Measure-Object" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files --glob '"'!node_modules/**'"' --glob '"'!.git/**'"' C:\\Projects\\_rmf-live-fix | Measure-Object" in F:\tr-build\ladder
+ succeeded in 84126ms:
+
+
+Count    : 180
+Average  : 
+Sum      : 
+Maximum  : 
+Minimum  : 
+Property : 
+
+
+
+
+ succeeded in 87861ms:
+
+
+Count    : 3419
+Average  : 
+Sum      : 
+Maximum  : 
+Minimum  : 
+Property : 
+
+
+
+
+ succeeded in 92187ms:
+
+
+Count    : 14111
+Average  : 
+Sum      : 
+Maximum  : 
+Minimum  : 
+Property : 
+
+
+
+
+codex
+The self-log in `out/codex_sec11.log` contains the prompt and earlier command output, so I am excluding that file from subsequent searches to avoid circular evidence. The roots are moderately large, especially `_rmf-live-fix`, so I am using targeted extension searches and explicit count scripts where plain recursive grep is too slow.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files --glob '"'!node_modules/**'"' --glob '"'!.git/**'"' F:\\allmeta | Measure-Object" in F:\tr-build\ladder
+ succeeded in 281108ms:
+
+
+Count    : 3483
+Average  : 
+Sum      : 
+Maximum  : 
+Minimum  : 
+Property : 
+
+
+
+
+codex
+I have enough evidence to switch from unrestricted grep to a reproducible scanner: it still walks the requested roots and emits `file:line` snippets, but it skips binary and log self-evidence and avoids being stalled by very long generated lines.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath F:\\fixwt\\ladder -Force | Select-Object Mode,Name,Length" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath F:\\tr-build\\ladder -Force | Select-Object Mode,Name,Length" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath C:\\Projects\\_rmf-live-fix -Force | Select-Object Mode,Name,Length" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath F:\\allmeta -Force | Select-Object Mode,Name,Length" in F:\tr-build\ladder

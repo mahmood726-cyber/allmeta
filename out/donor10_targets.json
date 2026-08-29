@@ -1,0 +1,252 @@
+[
+ {
+  "id": "HF-005",
+  "name": "Captopril-Digoxin 1988",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "Placebo->ACEI",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 8,
+    "n": 104,
+    "node": "ACEI"
+   },
+   {
+    "label": "control",
+    "events": 6,
+    "n": 100,
+    "node": "Placebo"
+   }
+  ],
+  "counts_source": "donor supplement only",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-006",
+  "name": "Beller 1995",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "Placebo->ACEI",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 4,
+    "n": 130,
+    "node": "ACEI"
+   },
+   {
+    "label": "control",
+    "events": 5,
+    "n": 63,
+    "node": "Placebo"
+   }
+  ],
+  "counts_source": "donor supplement (FLAGGED-SINGLE)",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-007",
+  "name": "van Veldhuisen 1998",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "Placebo->ACEI",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 2,
+    "n": 182,
+    "node": "ACEI"
+   },
+   {
+    "label": "control",
+    "events": 1,
+    "n": 62,
+    "node": "Placebo"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-008",
+  "name": "SPICE",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "Placebo->ARB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 6,
+    "n": 179,
+    "node": "ARB"
+   },
+   {
+    "label": "control",
+    "events": 3,
+    "n": 91,
+    "node": "Placebo"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-009",
+  "name": "STRETCH",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "Placebo->ARB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 10,
+    "n": 633,
+    "node": "ARB"
+   },
+   {
+    "label": "control",
+    "events": 1,
+    "n": 211,
+    "node": "Placebo"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-019",
+  "name": "RESOLVD",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 8,
+    "n": 214,
+    "node": "ACEI+BB"
+   },
+   {
+    "label": "control",
+    "events": 17,
+    "n": 212,
+    "node": "ACEI"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-052",
+  "name": "Colucci 1996 (US Carvedilol protocol)",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 2,
+    "n": 232,
+    "node": "ACEI+BB"
+   },
+   {
+    "label": "control",
+    "events": 5,
+    "n": 134,
+    "node": "ACEI"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-053",
+  "name": "MOCHA (US Carvedilol protocol)",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 12,
+    "n": 261,
+    "node": "ACEI+BB"
+   },
+   {
+    "label": "control",
+    "events": 13,
+    "n": 84,
+    "node": "ACEI"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-054",
+  "name": "PRECISE (US Carvedilol protocol)",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 6,
+    "n": 133,
+    "node": "ACEI+BB"
+   },
+   {
+    "label": "control",
+    "events": 11,
+    "n": 145,
+    "node": "ACEI"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ },
+ {
+  "id": "HF-055",
+  "name": "Cohn 1997 (US Carvedilol protocol)",
+  "pmid": null,
+  "doi": null,
+  "nct": null,
+  "edge": "ACEI->ACEI+BB",
+  "arms": [
+   {
+    "label": "treatment",
+    "events": 2,
+    "n": 70,
+    "node": "ACEI+BB"
+   },
+   {
+    "label": "control",
+    "events": 2,
+    "n": 35,
+    "node": "ACEI"
+   }
+  ],
+  "counts_source": "donor supplement",
+  "tier": "T5-supplement",
+  "outcome": "all-cause mortality"
+ }
+]

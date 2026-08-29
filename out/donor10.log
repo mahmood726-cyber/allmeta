@@ -1,0 +1,13 @@
+extractor: rct-extractor-v2 v5.0.0
+
+=== HF-005 Captopril-Digoxin 1988 ===
+   R0 IDENTITY  UNRESOLVED -- 12 candidates fetched, NONE is the trial's own report (all name it only in the abstract, i
+   R1 MISS                  9.4s 0 OA meta-analyses naming this trial
+   R2 SKIPPED               0.0s no NCT id on the request
+   R3 RETRIEVED_NO_VALUE   11.0s epmc seeded 0 pmids; esearch 12 candidate pmids; 12 candidates fetched, 0 are the trial's own report
+   R4 SKIPPED               0.0s no drug name on the request
+   R5 SKIPPED               0.0s no NCT id
+   -> NOT_FOUND via -
+
+=== HF-006 Beller 1995 ===
+   R0 IDENTITY  pmid 8535917 (first-author surname 'beller' and year 1995 both match the l)
