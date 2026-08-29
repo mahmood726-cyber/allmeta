@@ -70,9 +70,17 @@ def resolve_identity(req: L.Request, session) -> dict:
                 "why": (str(len(ids)) + " candidates fetched, NONE is the trial's own "
                         "report (all name it only in the abstract, i.e. cite it)")}
     top = ranked[0]
+    # Harvest the record's own substance annotations while we have the XML. Which of
+    # them is the drug is decided by openFDA in rung 4, not guessed here.
+    import re as _re
+    blk = ""
+    for b in _re.findall(r"<PubmedArticle>.*?</PubmedArticle>", r.text, flags=_re.S):
+        if ">" + top["pmid"] + "<" in b:
+            blk = b
+            break
     return {"pmid": top["pmid"], "year": top["year"], "title": top["title"][:120],
             "why": top["why"], "n_own_reports": len(ranked), "notes": notes,
-            "seconds": secs}
+            "seconds": secs, "substances": L.substances_of(blk or r.text)}
 
 
 def score_counts(truth_arms: list, got: dict) -> dict:
@@ -124,6 +132,9 @@ def main(argv=None) -> int:
                                     if ident.get("pmid") else "UNRESOLVED -- " + str(ident.get("why"))[:90]))
         if ident.get("pmid"):
             req.pmid = ident["pmid"]
+            req.drug_candidates = ident.get("substances") or []
+            if req.drug_candidates:
+                print("      substances: " + ", ".join(req.drug_candidates[:5]))
 
         rec = L.climb(req, session=s, stop_at_first_hit=True)
         d = asdict(rec)

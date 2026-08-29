@@ -144,6 +144,7 @@ class Request:
     aliases: list = field(default_factory=list)
     measure_hint: str = ""          # "HR" / "RR" -- a hint, never a filter
     topic_terms: list = field(default_factory=list)   # e.g. ["heart failure"]
+    drug_candidates: list = field(default_factory=list)  # from PubMed <NameOfSubstance>
 
 
 @dataclass
@@ -1208,6 +1209,17 @@ def _is_primary_report(xml: str, req: Request) -> tuple:
                    "not the trial's own report")
 
 
+def substances_of(xml: str) -> list:
+    """PubMed <NameOfSubstance> terms for a record -- classes AND the drug, in the
+    record's own words. Which of them is the drug is decided by openFDA, not here."""
+    out = []
+    for x in re.findall(r"<NameOfSubstance[^>]*>(.*?)</NameOfSubstance>", xml, flags=re.S):
+        t = _xml_text(x).strip()
+        if t and t not in out:
+            out.append(t)
+    return out
+
+
 def _topic_and(req: Request) -> str:
     """AND-ed topic clause when topic terms are supplied, else empty."""
     if not req.topic_terms:
@@ -1287,17 +1299,43 @@ def rung4_regulatory(session, req: Request) -> Attempt:
     Only (b) can ever produce GENUINELY_UNOBTAINABLE, and only through
     obtainability.earn_unobtainable().
     """
-    if not req.drug:
+    # THE DRUG NEED NOT BE GUESSED. PubMed annotates every record with
+    # <NameOfSubstance>, which for the US Carvedilol papers reads
+    # ["Adrenergic beta-Antagonists", "Carbazoles", "Propanolamines", "Carvedilol"] --
+    # three class terms and the drug. Rather than hand-picking which is the drug,
+    # every candidate is offered to openFDA and THE REGISTER DECIDES: the one that
+    # resolves to drug applications is the drug. A hand list of drug names would be a
+    # sample over an open vocabulary, which is the defect this project keeps meeting.
+    candidates = [req.drug] if req.drug else []
+    candidates += [c for c in (req.drug_candidates or []) if c not in candidates]
+    if not candidates:
         return Attempt(4, "R4_REGULATORY", "fda+ema", "", None, 0.0, 0, "",
-                       Outcome.SKIPPED.value, "no drug name on the request",
+                       Outcome.SKIPPED.value,
+                       "no plan: no drug name and no substance annotation on the request",
                        retrieved_utc=_now())
     total_s = 0.0
     total_b = 0
     notes = []
 
-    r, s, err = _get(session, OPENFDA_DRUGSFDA,
-                     {"search": 'openfda.generic_name:"' + req.drug + '"', "limit": "5"})
-    total_s += s
+    resolved = ""
+    r = None
+    for cand in candidates[:6]:
+        r, s, err = _get(session, OPENFDA_DRUGSFDA,
+                         {"search": 'openfda.generic_name:"' + cand + '"', "limit": "5"})
+        total_s += s
+        if r is not None and r.status_code == 200:
+            resolved = cand
+            notes.append("openFDA recognises generic_name=" + cand)
+            break
+        if r is not None and r.status_code == 404:
+            notes.append("openFDA: 0 applications for " + cand)
+    if not resolved:
+        return Attempt(4, "R4_REGULATORY", "fda(openfda)", OPENFDA_DRUGSFDA, None,
+                       total_s, total_b, "", Outcome.MISS.value,
+                       "none of " + str(len(candidates)) + " substance candidates is a "
+                       "generic_name openFDA knows: " + ", ".join(candidates[:6]),
+                       retrieved_utc=_now())
+    req.drug = resolved
     if r is None:
         notes.append("drugsfda FAILED " + err)
     elif r.status_code == 404:
@@ -1724,6 +1762,23 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 21 -- the DRUG is read from the record, not guessed")
+    xs = ("<PubmedArticle><NameOfSubstance UI='D000319'>Adrenergic beta-Antagonists"
+          "</NameOfSubstance><NameOfSubstance UI='D002220'>Carbazoles</NameOfSubstance>"
+          "<NameOfSubstance UI='D000068556'>Carvedilol</NameOfSubstance>"
+          "</PubmedArticle>")
+    got = substances_of(xs)
+    check("all three substance annotations are harvested", len(got) == 3)
+    check("the drug is among them, unranked", "Carvedilol" in got)
+    check("class terms are NOT discarded here -- openFDA decides which is the drug",
+          "Adrenergic beta-Antagonists" in got)
+    check("a record with no annotations yields an empty list, not a guess",
+          substances_of("<PubmedArticle/>") == [])
+    rqD = Request(trial="X", field_path="counts.all_cause_mortality")
+    at = rung4_regulatory(None, rqD)
+    check("rung 4 with NO drug and NO candidates is SKIPPED with 'no plan'",
+          at.outcome == Outcome.SKIPPED.value and "no plan" in at.note)
+
     print("PLANT 19 -- an AUTHOR-YEAR study label is an identity too")
     rqB = Request(trial="Beller 1995", field_path="counts.all_cause_mortality")
     check("'Beller 1995' parses to (beller, 1995)",
@@ -1892,7 +1947,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 72 if extractor() is not None else 70
+    n = 77 if extractor() is not None else 75
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0
