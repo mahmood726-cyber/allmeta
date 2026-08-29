@@ -151,7 +151,9 @@ Read across:
 - **R4 reached all 8 and returned 8 × `RETRIEVED_NO_VALUE`.** It found FDA applications for every drug (5 each) and read a value from none. That is not "FDA has nothing" — see §5.
 - **R5 found posted Protocol and SAP documents for 2 of the 4 NCT-bearing trials** and deliberately mined no value from them.
 
-⚠ **`hit=0` for R1 and R4 is a measurement of OUR EXTRACTOR against those sources, not of those sources.** Both returned documents. Neither returned a number we could read.
+⚠ **`hit=0` for R1 and R4 is a measurement of OUR EXTRACTOR against those sources, not of those sources.** R4 returned documents and no number we could read. **R1 returned nothing at all** — see §5: its note in this table said "8 retrieved" when 0 were retrieved, and that note is now fixed. The `hit` and `reached` columns are unaffected; only R1's *reason* was mislabelled.
+
+⚠ **And a live operational fact, recorded because it will recur:** after roughly ten benchmark runs against Europe PMC in two hours, its search endpoint began returning **503** to rung 1's query. The re-run started after the fix records those as `FAILED`, which is the correct label — a fact about our reach and the source's patience, not about the corpus. **The rung-1 finding below does not rest on that run**; it rests on `rung1_diagnose.py`, which retrieved all 8 metas successfully.
 
 ### It took six runs, and every fix came from a plant or a measurement
 
