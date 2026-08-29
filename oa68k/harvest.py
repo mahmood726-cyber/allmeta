@@ -76,6 +76,13 @@ def fetch_fulltext(sess: PoliteSession, row: dict) -> dict:
 
 
 def _cache(out: dict, tier: str, pmcid: str, content: bytes) -> dict:
+    # The cache directory must EXIST before a tier can succeed. Without this line a
+    # fresh checkout raises FileNotFoundError here, the caller's `except Exception:
+    # pass` swallows it, all three tiers "fail", and fetch_fulltext returns
+    # reason="no_free_fulltext" -- a claim about the WORLD produced by a missing
+    # local directory. Measured 2026-08-29 in a new worktree: 8 of 8 PMCIDs reported
+    # unobtainable while efetch was returning 200 with <table-wrap> for every one.
+    os.makedirs(C.CACHE, exist_ok=True)
     path = os.path.join(C.CACHE, f"{pmcid}.xml")
     with open(path, "wb") as f:
         f.write(content)

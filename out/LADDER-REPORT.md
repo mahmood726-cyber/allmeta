@@ -172,9 +172,36 @@ Reported in full because the intermediate numbers are the evidence that the fina
 
 **Nothing, on this set** — but that sentence is worth exactly one benchmark of eight data on one outcome in one disease, and no more. What it *did* fail at, and what remains genuinely out of reach:
 
-### Rung 1 returned 0 hits from 8 reached, against a premise that names it the best source
+### ⭐ Rung 1 returned 0 hits — and diagnosing that zero found a defect in MY OWN instrument, and then the real answer
 
-Mahmood: *"best source is previous metas — and that data is peer reviewed so easy to use."* The measurement disagrees, and a zero against a stated premise gets diagnosed before it gets reported. `rung1_diagnose.py` separates the three explanations — the metas do not carry it / they carry it as **pixels in a forest plot** / our table reader missed it. This project has already measured the answer once from the other direction: `oa68k/SHARDA-ANSWER-KEY-YIELD.md` found **74.5% of 137 forest figures carry no per-arm data at all**, and the per-trial numbers that do exist live in figures — which is precisely why `forestvision.py`, `visionshard.py` and `answerkey.py` exist. **The likely reading is that rung 1's ceiling is not the corpus but the modality, and lifting it means calling the vision layer that already exists rather than writing more table regexes.**
+Mahmood: *"best source is previous metas — and that data is peer reviewed so easy to use."* A zero against a stated premise gets diagnosed before it gets reported, so I wrote `rung1_diagnose.py` to separate three explanations: the metas do not carry it / they carry it as **pixels** / our reader missed it.
+
+**The diagnostic immediately found a fourth explanation I had not enumerated, and it was mine.**
+
+> Every one of the 8 full-text fetches was returning **404**, while rung 1's own note said *"8 OA meta full texts retrieved"*.
+
+Two defects in one line, and the first is the exact error this module exists to prevent:
+
+1. **It counted loop iterations as retrievals.** `tried += 1` sat *before* the fetch. **"RETRIEVED is not OBTAINED" — committed inside the module written to enforce it.** Every benchmark run so far had been reporting 8 retrievals of 0.
+2. **It used a route this repo already documents as broken from this host.** `config.py`, verbatim: *"efetch serves TRUE JATS … and works from this host where EPMC sub-resources are proxy-404'd."* `harvest.fetch_fulltext()` implements that cascade and was sitting there unused. **The single most concrete argument for the reuse list in §6 is that I did not read it first.**
+
+And under that sat a **third** defect, in shared code: `harvest._cache()` writes to `C.CACHE`, which does not exist in a fresh worktree. `open()` raised `FileNotFoundError`, `fetch_fulltext`'s own `except Exception: pass` swallowed it on all three tiers, and it returned `reason="no_free_fulltext"` — **a claim about the world manufactured by a missing local directory.** Fixed at the root with `os.makedirs(C.CACHE, exist_ok=True)`, which converts that sentinel from a lie into a truth for every caller, not just this one.
+
+**With retrieval actually working, the diagnostic answers the question:**
+
+```
+8 OA meta-analyses naming DAPA-HF, retrieved (of hitCount 159)
+  tables                  19
+  scoped_tables            0     <- no table's caption/headers name all-cause mortality
+  rows naming DAPA-HF      2     <- both in "Characteristics of included RCTs" tables
+  rows with an effect+CI   1     <- and that one is a characteristics row, not an outcome
+  figures                 32
+  fig captions scoped      7     <- SEVEN figure captions DO name the outcome
+```
+
+⇒ **Route B, measured rather than assumed: in these meta-analyses the per-trial mortality numbers are in FOREST PLOTS, not tables.** Zero table captions scope to the outcome; seven figure captions do. Rung 1's ceiling is the **modality**, not the corpus — and `oa68k` already owns the layer that reads pixels (`forestvision.py`, `visionshard.py`, `answerkey.py`), whose own measurement points the same way (`SHARDA-ANSWER-KEY-YIELD.md`: 74.5% of 137 forest figures carry no per-arm data, and what does exist is in figures).
+
+**Mahmood's premise is not refuted by rung 1's zero.** The data *is* there — it is just drawn rather than tabulated, and the ladder as built reads only text.
 
 ### CT.gov version history is unreachable **from this host** — and that is a retrieval fact, not an evidence one
 

@@ -475,6 +475,7 @@ def canon_measure(raw) -> str:
 
 # ------------------------------------------------------------------ RUNG 1 ---
 EPMC_SEARCH = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
+C_EFETCH_PMC = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 EPMC_FULLTEXT = "https://www.ebi.ac.uk/europepmc/webservices/rest/{src}/{pid}/fullTextXML"
 
 
@@ -511,17 +512,47 @@ def rung1_prior_meta(session, req: Request) -> Attempt:
                        len(r.content), _sha(r.content), Outcome.MISS.value,
                        "0 OA meta-analyses naming this trial", retrieved_utc=_now())
 
-    total_s, total_b, tried = secs, len(r.content), 0
+    # ⚠ COUNT RETRIEVALS, NOT ATTEMPTS -- AND USE THE ROUTE THAT WORKS FROM HERE.
+    #
+    # The first version fetched EPMC's fullTextXML directly and reported "8 OA meta
+    # full texts retrieved" while EVERY ONE of them 404'd. Two defects in one line:
+    # it counted loop iterations as retrievals -- the exact "RETRIEVED is not
+    # OBTAINED" error, committed inside the module written to prevent it -- and it
+    # used a route config.py already documents as broken from this host ("efetch
+    # serves TRUE JATS ... and works from this host where EPMC sub-resources are
+    # proxy-404'd"). harvest.fetch_fulltext() implements that cascade
+    # (efetch JATS -> EPMC -> BioC) and was there the whole time.
+    #
+    # So rung 1's "0 hits" was never a fact about prior meta-analyses. It was our own
+    # retrieval failing, reported as our own retrieval succeeding.
+    import harvest as H
+    sess = polite_for(EFETCH)
+    total_s, total_b = secs, len(r.content)
+    attempted = retrieved = fetch_failed = 0
     for h in hits:
         pmcid = h.get("pmcid") or ""
         if not pmcid:
             continue
-        tried += 1
-        url = EPMC_FULLTEXT.format(src="PMC", pid=pmcid)
-        r2, s2, err2 = _get(session, url, timeout=90)
-        total_s += s2
-        if r2 is None or r2.status_code != 200:
+        attempted += 1
+        t0 = time.time()
+        try:
+            got = H.fetch_fulltext(sess, {"pmcid": pmcid, "pmid": h.get("pmid"),
+                                          "source": h.get("source") or "MED"})
+        except Exception:                            # noqa: BLE001
+            got = {"status": "UNOBTAINABLE", "reason": "exception"}
+        total_s += time.time() - t0
+        if got.get("status") != "XML" or not got.get("path"):
+            fetch_failed += 1
             continue
+        with open(got["path"], "rb") as _fh:
+            _body = _fh.read()
+
+        class _R:                    # keep the downstream shape unchanged
+            content = _body
+            text = _body.decode("utf-8", "replace")
+        r2 = _R()
+        url = C_EFETCH_PMC + "?db=pmc&id=" + pmcid
+        retrieved += 1
         total_b += len(r2.content)
         # TABLE FIRST. A meta-analysis puts its per-trial numbers in a TABLE, and
         # jats.parse_tables already gives real column headers -- which is the whole
@@ -538,15 +569,21 @@ def rung1_prior_meta(session, req: Request) -> Attempt:
             val["prior_meta_route"] = how
             val["cited_by"] = {"pmcid": pmcid, "title": (h.get("title") or "")[:140],
                                "journal": h.get("journalTitle", ""), "year": h.get("pubYear", "")}
-            return Attempt(1, "R1_PRIOR_META", "europepmc.fullTextXML", url, 200,
+            return Attempt(1, "R1_PRIOR_META", "harvest.fetch_fulltext", url, 200,
                            total_s, total_b, _sha(r2.content), Outcome.HIT.value,
-                           "value read from a prior meta-analysis (" + pmcid + "); "
-                           "UNVERIFIED tier", value=val,
+                           "value read from a prior meta-analysis (" + pmcid + ") via "
+                           + str(got.get("tier")) + "; UNVERIFIED tier", value=val,
                            provenance_tier="prior_meta_table", retrieved_utc=_now())
-    return Attempt(1, "R1_PRIOR_META", "europepmc.fullTextXML", EPMC_SEARCH, 200, total_s,
-                   total_b, "", Outcome.RETRIEVED_NO_VALUE.value,
-                   str(tried) + " OA meta full texts retrieved, none yielded a scoped value "
-                   "for " + req.field_path, retrieved_utc=_now())
+
+    note = (str(retrieved) + " of " + str(attempted) + " OA meta full texts RETRIEVED ("
+            + str(fetch_failed) + " unobtainable); none of the " + str(retrieved)
+            + " retrieved yielded a scoped value for " + req.field_path)
+    # If nothing was retrieved, this rung FAILED. Calling that RETRIEVED_NO_VALUE
+    # would assert we read documents we never got.
+    outcome = (Outcome.RETRIEVED_NO_VALUE.value if retrieved
+               else (Outcome.FAILED.value if attempted else Outcome.MISS.value))
+    return Attempt(1, "R1_PRIOR_META", "harvest.fetch_fulltext", EPMC_SEARCH, 200, total_s,
+                   total_b, "", outcome, note, retrieved_utc=_now())
 
 
 # An effect with its interval as one table cell: "0.83 (0.71, 0.97)", "0.83 (0.71-0.97)",
@@ -1443,6 +1480,33 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE")
+    import harvest as _H
+    _real_fetch = _H.fetch_fulltext
+    _real_get = globals()["_get"]
+
+    class _FakeResp:
+        status_code = 200
+        content = (b'{"resultList":{"result":[{"pmcid":"PMC1"},{"pmcid":"PMC2"}]},'
+                   b'"hitCount":2}')
+
+        def json(self):
+            return json.loads(self.content)
+
+    try:
+        globals()["_get"] = lambda *a, **k: (_FakeResp(), 0.1, "")
+        _H.fetch_fulltext = lambda s, row: {"status": "UNOBTAINABLE",
+                                            "reason": "no_free_fulltext"}
+        at = rung1_prior_meta(None, Request(trial="X",
+                                            field_path="effect.all_cause_mortality"))
+        check("0 retrieved of 2 attempted -> FAILED, not RETRIEVED_NO_VALUE",
+              at.outcome == Outcome.FAILED.value)
+        check("the note says '0 of 2 ... RETRIEVED', never '2 retrieved'",
+              "0 of 2 OA meta full texts RETRIEVED" in at.note)
+    finally:
+        _H.fetch_fulltext = _real_fetch
+        globals()["_get"] = _real_get
+
     print("PLANT 14 -- a measurement pass must not change the answer it measures")
 
     class _FakeAttempt:
@@ -1487,7 +1551,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 47 if extractor() is not None else 45
+    n = 49 if extractor() is not None else 47
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0

@@ -64,15 +64,25 @@ def main() -> int:
         pmcid = h.get("pmcid") or ""
         if not pmcid:
             continue
-        url = L.EPMC_FULLTEXT.format(src="PMC", pid=pmcid)
-        r2, s2, e2 = L._get(None, url, timeout=90)
-        if r2 is None or r2.status_code != 200:
-            print(pmcid + "  FULLTEXT FAILED " + (e2 or str(getattr(r2, "status_code", "?"))))
+        # Same route as rung 1: harvest.fetch_fulltext (efetch JATS first). Fetching
+        # EPMC's fullTextXML directly 404s from this host, which is how the first
+        # version of this diagnostic reported "0 metas" and would have blamed the
+        # corpus for our own egress.
+        import harvest as H
+        import net as N
+        got = H.fetch_fulltext(N.PoliteSession(min_interval=0.35, timeout=90),
+                               {"pmcid": pmcid, "pmid": h.get("pmid"),
+                                "source": h.get("source") or "MED"})
+        if got.get("status") != "XML" or not got.get("path"):
+            print(pmcid + "  FULLTEXT UNOBTAINABLE tiers=" + str(got.get("tiers_tried"))
+                  + " reason=" + str(got.get("reason")))
             continue
+        with open(got["path"], "rb") as fh:
+            xml = fh.read()
+        text = xml.decode("utf-8", "replace")
         tot["metas"] += 1
-        xml = r2.content
         tables = jats.parse_tables(xml)
-        figs = re.findall(r"<fig[ >].*?</fig>", r2.text, flags=re.S)
+        figs = re.findall(r"<fig[ >].*?</fig>", text, flags=re.S)
         tot["tables"] += len(tables)
         tot["figures"] += len(figs)
         for f in figs:
