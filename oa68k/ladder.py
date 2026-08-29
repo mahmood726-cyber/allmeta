@@ -1311,8 +1311,16 @@ def _reconcile(rec: "Record", req: "Request", session) -> None:
     if rec.provenance_tier != "prior_meta_table" or not rec.value:
         return
     prior = dict(rec.value)
+    # Look rung 3 up IN THE RUNG TABLE rather than calling rung3_literature directly.
+    # Calling it directly made _reconcile unstubbable, so its own plant went to the
+    # live network -- a check that cannot be exercised offline is a check nobody runs.
+    fn = dict((r.value, f) for r, f in RUNGS).get(3)
+    if fn is None:
+        rec.value["reconciliation"] = {"attempted": False,
+                                       "why": "rung 3 is not in the rung table"}
+        return
     try:
-        a = rung3_literature(session, req)
+        a = fn(session, req)
     except Exception as e:                           # noqa: BLE001
         rec.value["reconciliation"] = {"attempted": True, "reconciles": None,
                                        "why": "primary read failed: " + type(e).__name__}
@@ -1588,6 +1596,41 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins")
+    saved2 = list(RUNGS)
+    try:
+        def _mk(rungno, val, tier):
+            def fn(session, req):
+                return Attempt(rungno, "R" + str(rungno), "s", "u", 200, 0.1, 1,
+                               "a" * 64, Outcome.HIT.value, "", value=val,
+                               provenance_tier=tier, retrieved_utc="t")
+            return fn
+        prior = {"estimate": 0.57, "measure": "HR", "ci_low": 0.37, "ci_high": 0.94}
+        primary = {"estimate": 0.66, "measure": "HR", "ci_low": 0.54, "ci_high": 0.81}
+        RUNGS[:] = [(Rung.R1_PRIOR_META, _mk(1, dict(prior), "prior_meta_table")),
+                    (Rung.R3_LITERATURE, _mk(3, dict(primary), "trial_report"))]
+        rec = climb(Request(trial="T", field_path="effect.all_cause_mortality"),
+                    session=object(), stop_at_first_hit=True)
+        rc = (rec.value or {}).get("reconciliation") or {}
+        check("a prior-meta hit does NOT end the climb", rc.get("attempted") is True)
+        check("disagreement is recorded as reconciles=False", rc.get("reconciles") is False)
+        check("the PRIMARY read wins on tier order (0.66, not 0.57)",
+              abs(rec.value["estimate"] - 0.66) < 1e-9)
+        check("the prior-meta value is kept alongside, not discarded",
+              abs(rc["prior_meta_value"]["estimate"] - 0.57) < 1e-9)
+        check("the supplying rung is restated as the primary", rec.supplying_rung == 3)
+        check("the tier is upgraded to trial_report",
+              rec.provenance_tier == "trial_report")
+
+        RUNGS[:] = [(Rung.R1_PRIOR_META, _mk(1, dict(prior), "prior_meta_table")),
+                    (Rung.R3_LITERATURE, _mk(3, dict(prior), "trial_report"))]
+        rec2 = climb(Request(trial="T", field_path="effect.all_cause_mortality"),
+                     session=object(), stop_at_first_hit=True)
+        check("agreement is recorded as reconciles=True",
+              (rec2.value or {}).get("reconciliation", {}).get("reconciles") is True)
+    finally:
+        RUNGS[:] = saved2
+
     print("PLANT 16 -- a prior-meta row that is not a RESULT must be rejected")
     xmlrow = (b'<article><body><table-wrap><label>Table 5</label>'
               b'<caption><p>All-cause mortality in randomized and non-randomized '
@@ -1689,7 +1732,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 56 if extractor() is not None else 54
+    n = 63 if extractor() is not None else 61
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0
