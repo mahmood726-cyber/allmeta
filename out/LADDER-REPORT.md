@@ -17,7 +17,7 @@ Layer 3 of §11's map lists, under "what is missing": *"the retrieval LADDER (pr
 | `ladder_store.py` | the **write path** — a value enters the synthesis through here or not at all |
 | `ladder_bench.py` | the HFrEF validation set, scored against a known answer |
 
-**Plants: 47 (`ladder.py`) + 14 (`ladder_store.py`) + 10 (`obtainability.py`) = 71**, each watched failing on the defect, passing on the clean case, restored, and the restoration asserted. All 71 pass. **Fourteen of the 47 exist because a benchmark run produced a wrong number and the fix had to be pinned so it cannot come back.**
+**Plants: 63 (`ladder.py`) + 14 (`ladder_store.py`) + 10 (`obtainability.py`) = 87**, each watched failing on the defect, passing on the clean case, restored, and the restoration asserted. All 87 pass. **Fourteen of the 47 exist because a benchmark run produced a wrong number and the fix had to be pinned so it cannot come back.**
 
 ---
 
@@ -300,3 +300,79 @@ already proved per-trial recovery from an FDA statistical review by hand
 (oseltamivir, both pivotal trials, per-arm N + medians + 95% CIs). **The rung is
 unimplemented, not empty**, and the distinction is exactly the one this whole design
 exists to keep.
+
+---
+
+# ADDENDUM — after the sibling lane's findings (2026-08-30)
+
+## A1. Its headline does not describe the artefact I can see, and the difference is the filename
+
+The sibling reported: *"`HFREF_NMA_FULL_REVIEW.html` carries 44 NAMES AND NOTHING ELSE — every `nct` is a placeholder `HF-001`, no PMIDs, no DOIs, no counts."*
+
+I could not find that file. What exists at `F:\rapidmeta-finerenone-hfref-wt\HFREF_NMA_AUTO_FULL_REVIEW.html` (1,135,362 bytes) — note **`_AUTO_`**, a different name — parses to a `trials[]` array of **28** entries, measured:
+
+| field | present |
+|---|---|
+| `id` (e.g. `HF-001`) | 28/28 |
+| `name` | 28/28 |
+| **`pmid`** | **28/28** |
+| `doi` | 26/28 |
+| `nct` | 11/28 (incl. `ChiCTR1900021929`, `EudraCT 2013-005326-38`) |
+| **arms with `events` + `n`** | **28/28** |
+| `pmid_note` | 28/28 |
+
+**`HF-001` is the internal `id` field, not the `nct`.** `nct` is explicitly `null` where absent, and every trial carries a PMID and a full 2×2.
+
+I am not claiming the sibling is wrong about *its* file — I am claiming these are **two different artefacts and the report must name which**. This is this project's own rule arriving from the other direction: a page NAME is not an artefact identity. Both figures should be quoted with a path and a byte count, or neither.
+
+## A2. Identity, measured — and the gap is much smaller than "names and nothing else"
+
+`oa68k/identity.py` (rung 0, cost counted separately). It refuses to write an identifier it cannot demonstrate, and reuses `trial_key_audit.fetch_pubmed` — the top item on the reuse shortlist — rather than re-deriving `<DataBank>` parsing.
+
+**Demonstration standard.** D1: the trial's own report declares its registration in PubMed `<DataBank><AccessionNumber>`. D2: CT.gov's own `acronym` equals the name. *"First hit for a text query" is a GUESS and is refused* — an unverified NCT does not fail loudly, it silently redirects every later rung to a different trial.
+
+```
+IDENTITY -- rung 0, over 28 trials
+  denominator is OF: the trials carried in the corpus's own trials[] array
+  PMID held by the corpus            28/28
+  DEMONSTRATED registration (D1)     11/28
+  held but UNVERIFIED                 0/28
+  unresolved                         17/28
+     of which reported pre-2005        16   <- absence EXPECTED, no mandate existed
+     of which 2005 or later             1   <- the only real gap: Vizzardi 2014
+  CONFLICTS (held != declared)          0
+```
+
+**Answer to "what would it take to give these trials real registrations": almost nothing, because almost none are missing one.** All 11 identifiers the corpus holds are confirmed by the papers' own declarations — none were guesses. Sixteen predate ICMJE-2005/FDAAA-2007 and correctly have no registration; recording those as `GENUINELY_UNOBTAINABLE` would be wrong, because "no mandate existed" is a structural argument, not a register's answer about that trial. **One trial is a real gap.**
+
+This also confirms the sibling's *shape* while differing on its magnitude: **the registry rung's ceiling is set by ERA, not by our retrieval.** Here that ceiling is 11/28 (39%); they predicted ~13/44 (30%) on their set.
+
+⚠ **Two defects in my own identity code, both caught before reporting.** (1) A raw string compare called `EudraCT 2013-005326-38` vs `2013-005326-38` a CONFLICT — two accusations of data disagreement manufactured by a registry *prefix*. (2) I scraped the publication year out of `pmid_note` prose, which carries the date the note was *verified*; it returned **2026 for US-Carvedilol (1996)** and inverted the era split, reporting 6 "real gaps" where there is 1. PubMed's `<PubDate><Year>` was already in hand. A date is a typed field; scraping one is how you invert your own headline.
+
+## A3. The prose route was inventing values — and this is the real answer on rung 1
+
+Once rung 1's retrieval worked (§5), it produced 4 values and **the benchmark fell from 8/8 to 5/8**. Three came from the prose window and all three were wrong; the fourth came from a post-hoc statin sub-analysis row. Full detail in the commit; the one-line mechanism is **a meta-analysis's prose names many trials, so proximity is not attribution** — the same thing this module already refuses at rung 3, permitted at rung 1 by inconsistency.
+
+The prose route is **deleted**. With tables only:
+
+```
+R1_PRIOR_META  0 hits / 8 reached   64 OA meta full texts retrieved, 9.3 MB
+```
+
+and the note now says *"8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value"* — a true sentence, where before it said "8 retrieved" of zero.
+
+**And SO 6b is now implemented rather than quoted.** `_reconcile()` runs the primary read behind every prior-meta hit, the primary wins on tier order, and the pair is stored either way. Measured on the four prose-era values: **the prior-meta cell reproduced the trial's own report once in four.** *"Peer-reviewed" describes the meta-analysis; it does not describe any single cell someone typed into its table.*
+
+The write-path gate had already refused all four for lacking a `reconciliation` field — **it caught exactly the values that turned out to be wrong**, before the benchmark scored them.
+
+## A4. Adopted from the sibling lane
+
+- **`EMPTY` is now a separate `Outcome` from `MISS`.** A 200 with an empty body is a rate limiter, never an empty source. Their fetcher met two; a ladder scoring those as absence would have manufactured eleven. The family is now complete in one place: *200 is not a document · 000 is not a paywall · 404 is not absence · an empty 200 is not an empty source.*
+- **Rung 0 identity, cost counted separately** so it can neither inflate nor deflate any rung's yield.
+- **`SKIPPED` = "no plan: a required identifier is absent"**, which is their `EMPTY — no plan` case. I keep it distinct from `EMPTY` because conflating "we had nothing to ask" with "the source answered with nothing" loses the identity finding.
+
+Their `states.py` refusal machinery (`Demonstration` / `ProbeFailure` / `declare_unobtainable`, with no converter between the first two) is stronger typing than my `obtainability.py`, which reaches the same refusals through validation rather than through the type system. **These are duplicates and one should go — theirs.** Mine should be reduced to what it uniquely has: the live EMA enumeration builder that produces the `Enumeration` + `PositiveControl` their `Demonstration` requires.
+
+## A5. Plants
+
+**63 in `ladder.py`, 14 in `ladder_store.py`, 10 in `obtainability.py` = 87.** All pass. Plant 18 exists because `_reconcile` — the rule that makes rung 1 safe — had **never once run** in a live benchmark; writing it exposed that `_reconcile` called rung 3 directly and so could not be stubbed, meaning its own check could only ever have run against the network.
