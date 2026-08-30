@@ -256,7 +256,7 @@ Two passes: a mechanical inventory of 822/822 worktree Python files and 78/78 `o
 
 - **`rct-extractor-v2`** (v5.0.0, commit `6427e00`) — *the* V2 extractor. Clean public API, 17 specialties, arm-level 2×2 output. Already wired here.
 - **`repro-checker`**, **`cardiosynth`**, **`registry-ipd`**, **`metaextract`**, **`ctgov-search-strategies`**, **`living-meta-engine`**, **`rapidmeta-kit`** — the closest things to a retrieval/extraction pipeline in the account.
-- ⚠ **There is no `metapipe`.** (see below) No local directory under `F:\`, `C:\Projects\`, or `C:\` matches, and neither `mahmood726-cyber` nor `mahmood726` owns a repo of that name (`gh search repos metapipe --owner ...` → 0). The candidates above are what I take the intent to have meant; if `metapipe` is a real thing it is somewhere I have not been told about, and I am not going to guess which of these it is.
+- ⚠ **There is no `metapipe`.** (see below) No local directory under `F:\`, `C:\Projects\`, or `C:\` matches, and `gh search repos metapipe --owner mahmood726-cyber` returns 0. (A later check settled a loose end in that sentence: **`mahmood726` is not a GitHub handle at all** — `gh repo list mahmood726` returns *"the owner handle was not recognized as either a GitHub user or an organization"*. So there is one account, `mahmood726-cyber`, and it has no `metapipe`.) The candidates above are what I take the intent to have meant; if `metapipe` is a real thing it is somewhere I have not been told about, and I am not going to guess which of these it is.
 
 ---
 
