@@ -981,7 +981,18 @@ def _primary_report_query(req: Request) -> str:
     q = "(" + " OR ".join(parts) + ")"
     if req.nct:
         q = "(" + q + ' OR "' + req.nct + '")'
-    return q + ' AND (PUB_TYPE:"Randomized Controlled Trial" OR PUB_TYPE:"Clinical Trial, Phase III" OR SRC:MED)'
+    # ⛔ NO PUBLICATION-TYPE CLAUSE. This used to end with
+    #   AND (PUB_TYPE:"Randomized Controlled Trial" OR PUB_TYPE:"Clinical Trial,
+    #        Phase III" OR SRC:MED)
+    # which is the defect a sibling lane retracted a finding over: A TYPE TAG IS NOT
+    # A ROLE. Sub-studies carry the RCT tag too, so the clause cannot establish that
+    # a record is the trial's own report -- and because the ROLE decision downstream
+    # (_is_primary_report) is identity-based, a type filter here can only ever LOSE a
+    # true primary that lacks the tag. SOLVD's 1991 paper is exactly that shape.
+    # (The old clause was also near-vacuous: the SRC:MED disjunct is true of
+    # essentially every MEDLINE record, so it filtered almost nothing while carrying
+    # the risk of dropping the one record that mattered.)
+    return q
 
 
 def _esearch_pmids(session, req: Request, notes: list) -> list:
@@ -1792,6 +1803,23 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG")
+    q = _primary_report_query(Request(trial="SOLVD", field_path="x", nct="NCT001"))
+    check("the seed query carries NO PUB_TYPE clause", "PUB_TYPE" not in q)
+    check("nor an open-access clause", "OPEN_ACCESS" not in q and "HAS_FT" not in q)
+    check("it still carries the trial name and the accession",
+          "SOLVD" in q and "NCT001" in q)
+    # is_rct survives ONLY as a tertiary ranking key, never as a gate.
+    xml_nt = ("<PubmedArticle><PMID>7</PMID><PubDate><Year>1991</Year></PubDate>"
+              "<CollectiveName>SOLVD Investigators</CollectiveName>"
+              "<ArticleTitle>Effect of enalapril on survival</ArticleTitle>"
+              "</PubmedArticle>")
+    rqT = Request(trial="SOLVD", field_path="x", aliases=["SOLVD Investigators"])
+    ok, why = _is_primary_report(xml_nt, rqT)
+    check("a primary report with NO publication-type tag is still accepted", ok)
+    check("and it is accepted on AUTHORSHIP, not on a tag",
+          "investigator group" in why)
+
     print("PLANT 22 -- the ERA GATE refuses a year-implausible identity")
     xml_era = ("<PubmedArticle><PMID>1192554</PMID><PubDate><Year>1975</Year></PubDate>"
                "<ArticleTitle>STRETCH in heart failure</ArticleTitle></PubmedArticle>"
@@ -1999,7 +2027,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 81 if extractor() is not None else 79
+    n = 86 if extractor() is not None else 84
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0
