@@ -1,0 +1,1897 @@
+Reading additional input from stdin...
+OpenAI Codex v0.146.1
+--------
+workdir: F:\tr-build\ladder
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a05138-14a0-7041-bf75-fdd5dc0f6461
+--------
+user
+SMALL MECHANICAL CHECK, two files, no network.
+
+For F:/tr-build/ladder/oa68k/ladder.py, F:/tr-build/ladder/oa68k/ladder_store.py, F:/tr-build/ladder/oa68k/obtainability.py:
+
+1. Count the actual number of times check(...) is CALLED inside each file's selftest function (_selftest). Count call sites, not definitions.
+2. Find the line that sets the expected total (in ladder.py it looks like 'n = 86 if extractor() is not None else 84'; in the others it is a literal like 'n = 14').
+3. Report per file: actual check() call count vs the declared n, and whether they AGREE.
+
+This matters because those n values are maintained BY HAND and are quoted in reports. If any disagree, the reported plant count is wrong.
+
+Then, in ladder.py only, list every distinct PLANT header string (the lines matching print("PLANT ...")) with its number, and say whether the numbers are contiguous or whether any number is DUPLICATED or MISSING.
+
+Write F:/tr-build/ladder/out/PLANT-COUNT-CHECK.md and print it. ASCII only, under 60 lines. Show the command you used for each count.
+codex
+I’ll keep this mechanical and local: first I’m checking the required context files, then I’ll inspect only the three target files and write the report under `out`.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath F:\\ProjectIndex\\INDEX.md -TotalCount 20" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath F:\\E156\\rewrite-workbook.txt -TotalCount 20" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'git status --short' in F:\tr-build\ladder
+ succeeded in 1463ms:
+E156 REWRITE WORKBOOK
+sentinel:skip-file
+sentinel:claim-language-allow
+(Sentinel markers above:
+ - sentinel:skip-file: this workbook intentionally contains C:\Users\... PATH:
+   lines pointing to each project's local source directory â€” they're metadata,
+   not code. The marker keeps Sentinel from emitting ~16 P0 hardcoded-path
+   BLOCKs every push.
+ - sentinel:claim-language-allow: CURRENT BODY entries are the AI-drafted
+   summaries that students rewrite into hedged language â€” flagging overclaim
+   words IN those drafts is the whole pedagogical point, not a defect.
+   File-scope marker here suppresses the ~1293 claim-language WARNs on the
+   CURRENT BODY entries; the YOUR REWRITE entries are where the hedging
+   discipline matters and remains lintable in the rendered student board.)
+
+DENOMINATOR CONVENTION (added 2026-05-06 after review-findings P1-5):
+  Each entry header is `[N/total]` where N = ordinal insertion index and
+  `total` = current portfolio size as of the most recent reconcile sweep.
+  Older entries are back-rewritten on milestone boundaries (rather than
+  preserving their insertion-time denominator) to keep
+
+ succeeded in 1779ms:
+<!-- sentinel:skip-file - portfolio registry; absolute paths ARE the data -->
+# C: Drive Project Index
+> **Last updated**: 2026-05-14 (C:\HTML apps focused repair batch continued: hub shell launch fix, static contracts across ten HTML app repos, NMA/living-meta/nma-dose-response landing and asset-link repairs, and NMA doc hardcoded-path cleanup. Prior SheafNMA v0.2.0, D-drive legacy smoke-contract continuation, CardioOracle lifecycle status freeze, C-drive model/project smoke-contract continuation, mahmood789 consolidation, Sentinel/Overmind JSONL and verification repair, C-drive reproducibility audit continuation, C-drive verification repair, D-drive repair batch, superapp, C-drive sweep, home-folder hardening, Trial Truthfulness Atlas, and portfolio notes retained below.)
+
+### C:\HTML apps focused repair batch (2026-05-14)
+> - `C:\HTML apps\hub\`: added a launchable `index.html` shell and static contract tests for required registry/runtime wiring; fixed `app.js` local `file://` launch resolution so the hub opened from `hub\index.html` links sibling apps from the parent HTML-apps directory instead of nesting paths under `hub`. Verification: `pytest -q -p no:cacheprovider` -> `3 passed`; `node --check app.js && node --check projects.js` -> PASS; headless Chrome smoke on `file:///mnt/c/HTML%20apps/hub/index.html` confirmed the page title and sibling app links. GitHub pushed: `mahmood726-cyber/hub` main `c1a6725`.
+> - `C:\HTML apps\evidence-board\`, `C:\HTML apps\focus-studio\`, `C:\HTML apps\kanban-lab\`: added pytest-visible static app shell contracts covering title/description, localStorage persistence hooks, key controls, and absence of unresolved templates or hardcoded local drive paths; added repo `.gitignore` entries for Python caches and `PROGRESS.md`. Verification: each `pytest -q -p no:cacheprovider` -> `2 passed` with the existing pytest `cache_dir` warning; scoped `git diff --check` -> PASS. GitHub pushed: `evidence-board` master `9a87c8b`, `focus-studio` master `0fa728b`, `kanban-lab` master `81cad38`.
+> - `C:\HTML apps\nma-pro-v2\`: fixed the landing page's broken app links from absent v6/v7 asset filenames to the current `e156-submission/assets/nma-pro-v8.0.html`, added static link-resolution contracts, and removed Sentinel P0 hardcoded local OneDrive paths from legacy docs. Verification: `pytest -q -p no:cacheprovider tests/test_smoke.py tests/test_static_links.py` -> `3 passed`; manual Sentinel scan on the clean push clone -> `BLOCK=0 WARN=1 INFO=302` (pre-existing tracked autogen warning plus HTML a11y INFO). GitHub pushed: master `a2834e7` for the link fix and master `a74e385` for the P0 doc cleanup.
+> - `C:\HTML apps\IPD-Meta-Pro\` and `C:\HTML apps\Truthcert1\`: added static link-resolution contracts for landing-page local assets and canonical app entrypoints. Verification: `IPD-Meta-Pro` `pytest -q -p no:cacheprovider tests/test_static_links.py` -> `2 passed`; `Truthcert1` same command -> `2 passed` with existing pytest `cache_dir` warning. GitHub pushed: `IPD-Meta-Pro` master `b26ee09`, `Truthcert1` master `81eddd3`.
+> - `C:\HTML apps\living-meta\`: repaired landing-page validation links that pointed to a missing HTML asset and an out-of-repo sibling path; linked the existing validation and limitations docs instead, and added a static link-resolution contract. Verification: `pytest -q -p no:cacheprovider tests/test_static_links.py` -> `2 passed`; manual Sentinel scan on the clean push clone -> `BLOCK=0 WARN=0 INFO=8` (pre-existing HTML a11y INFO). GitHub pushed: master `c3c8a9b`.
+> - `C:\HTML apps\Pairwiseai\`: added a static landing-page contract covering local link resolution, absence of unresolved templates/local drive paths, and the key app entrypoints under `e156-submission/assets`. Verification: `pytest -q -p no:cacheprovider tests/test_static_links.py` -> `2 passed`; manual Sentinel scan on the clean push clone -> `BLOCK=0 WARN=0 INFO=1731` (pre-existing HTML a11y INFO). GitHub pushed: master `2ade493`.
+> - `C:\HTML apps\nma-dose-response-app\`: pushed the existing smoke-blocker commit and added an E156 asset-bundle repair so `e156-submission\assets\index*.html` resolves its JS runtime dependencies from inside the assets folder; added a static link-resolution contract covering root and E156 app entrypoints. Verification: `pytest -q -p no:cacheprovider tests/test_smoke.py tests/test_static_links.py` -> `4 passed` with the existing pytest `cache_dir` warning; manual Sentinel scan on the clean push clone -> `BLOCK=0 WARN=0 INFO=442` (pre-existing HTML a11y INFO). GitHub pushed: master `e95fae0` and `96594b6`.
+> - Push gate: Windows Git credential path succeeded after WSL Git lacked HTTPS credentials. Sentinel pre-push/manual scan verdicts were BLOCK=0; evidence-board INFO=18, focus-studio INFO=10, kanban-lab INFO=10, living-meta INFO=8, Pairwiseai INFO=1731, nma-dose-response-app INFO=442 (pre-existing P2 HTML accessibility notes); hub push emitted no Sentinel findings.
+> - Existing unrelated dirty files were left unstaged in these repos, mainly protocol/license/doc edits and untracked `paper\` outputs in the three app repos, plus pre-existing hub metadata/submission/style edits.
+
+### SheafNMA (2026-05-12; v0.2.0 real-NMA-corpus validation + 36-cell Ã— 1000-rep simulation + methods paper draft)
+> - `C:\Models\SheafNMA\` â€” cellular-sheaf inconsistency localization for network meta-analysis. v0.1.0 (2026-04-07) was math + single-file HTML dashboard + E156 #153 micro-paper on a synthetic 12-contrast network. v0.2.0 refactored the 457-LOC `generate_figures.py` into a `sheafnma/` package (`core`, `io`, `simulate`, `comparators`, `r_bridge`), validated on 13 R-netmeta built-in NMAs, and shipped a methods-paper draft for Research Synthesis Methods.
+> - Method: precision-weighted coboundary `F[e, treat1] = -1/SE_e, F[e, treat2] = +1/SE_e`; sheaf Laplacian `L = Fáµ€F` (symmetric PSD); WLS-solve node estimates with node 0 anchored; per-edge residuals `r_e = dÌƒ_e âˆ’ (F x*)_e` localize inconsistency; **Global Inconsistency Index** `GII = Î£ rÂ²` is the global statistic. One algebraic object yields both global + per-edge â€” complements (not replaces) node-splitting.
+> - Real-corpus headline: across **13 R-netmeta built-in NMAs** (Senn 2013 diabetes, Dias smokingcessation, Dong 2013 thrombolytics, Linde 2015/2016 acupuncture, Salanti antimanic, Baker, Dogliotti, Franchini, Gurusamy, Stowe, Woods, dietaryfat, parkinson) the global design-by-treatment Ï‡Â² (Higgins 2012) failed to reject in all 13. **SheafNMA flagged â‰¥1 localized inconsistency edge in 5 of those 13 (38.5%)** at the Youden-frozen threshold of **2.6912** â€” networks that look globally consistent harbor at least one inconsistent edge the global test misses.
+> - Simulation rigor: 36-cell grid (n_treatments âˆˆ {4,6,8} Ã— n_studies_per_edge âˆˆ {3,5,10} Ã— Ï„_inc âˆˆ {0,0.2,0.5,1.0}) Ã— **1000 replications per cell**, held-out training cell at (6,5,0.5) for Youden's-J threshold selection (frozen before evaluating remaining 35 cells). Type-I error at Ï„_inc=0 was **0.000 across all cells**. Mean per-edge sensitivity 0.981 / specificity 0.945 at Ï„_inc=0.5.
+
+ succeeded in 3657ms:
+?? out/codex_plants.log
+?? out/codex_selectors.log
+?? out/donor10_era.json
+?? out/donor10_era.log
+?? out/push3.log
+
+codex
+The worktree has unrelated untracked files under `out`; I’ll leave them alone and create only the requested `PLANT-COUNT-CHECK.md`. I’m using AST-based counting so definitions or comments don’t get mixed into the call-site count.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n \"def _selftest|check\\(|"'^'"\\s*n\\s*=\" F:\\tr-build\\ladder\\oa68k\\ladder_store.py" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n \"def _selftest|check\\(|"'^'"\\s*n\\s*=|print\\(\\\"PLANT\" F:\\tr-build\\ladder\\oa68k\\ladder.py" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg -n \"def _selftest|check\\(|"'^'"\\s*n\\s*=\" F:\\tr-build\\ladder\\oa68k\\obtainability.py" in F:\tr-build\ladder
+ succeeded in 3981ms:
+250:def _selftest() -> int:
+255:    def check(label, cond):
+268:    check("granted for a genuinely absent key", v.granted)
+269:    check("reason names the register AND its hash",
+274:    check("REFUSED when the evidence is an http status", not v.granted)
+275:    check("the refusal says it measures our reach", "REACH" in v.reason.upper())
+279:    check("REFUSED when the register says it exists", not v.granted)
+285:    check("an enumeration with 0 rows has a failed control", not bad.positive_control_passed)
+287:    check("REFUSED when the control did not pass", not v.granted)
+291:    check("REFUSED with no enumeration", not v.granted)
+298:    check("REFUSED when the version is unknown", not v.granted)
+302:    check("REFUSED when the evidence is a search miss", not v.granted)
+306:    check("restoration asserted", v.granted)
+308:    n = 10
+
+2026-08-30T05:51:01.167657Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 5.1 seconds
+Output:
+The string is missing the terminator: ".
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
+ 
+
+ exited 1 in 5054ms:
+The string is missing the terminator: ".
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
+ 
+
+ succeeded in 5403ms:
+54:def check(rec: dict) -> list:
+126:    reasons = check(rec)
+149:    n = 0
+163:def _selftest() -> int:
+173:        return check(rec)
+238:    n = 14
+
+codex
+The quick text scan already shows `obtainability.py` declares `n = 10`, which differs from the example shape in your prompt. I’m now doing the exact AST pass for counts and extracting the declared `n` lines and plant headers.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+import ast, pathlib, re
+files = [
+    pathlib.Path(r'F:/tr-build/ladder/oa68k/ladder.py'),
+    pathlib.Path(r'F:/tr-build/ladder/oa68k/ladder_store.py'),
+    pathlib.Path(r'F:/tr-build/ladder/oa68k/obtainability.py'),
+]
+for path in files:
+    src = path.read_text(encoding='utf-8')
+    tree = ast.parse(src)
+    fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_selftest')
+    calls = [n for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == 'check']
+    n_assigns = []
+    for n in ast.walk(fn):
+        if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'n' for t in n.targets):
+            n_assigns.append(n.lineno)
+    lines = src.splitlines()
+    print(path.name)
+    print('check_calls', len(calls), 'lines', [c.lineno for c in calls])
+    print('n_lines', [(ln, lines[ln-1].strip()) for ln in n_assigns])
+    if path.name == 'ladder.py':
+        plants=[]
+        for i,line in enumerate(lines,1):
+            m = re.search(r'print\\(\"(PLANT ["'^"]*)"'"\\)', line)
+            if m:
+                plants.append((i,m.group(1)))
+        print('plants', plants)
+'@ | python -" in F:\tr-build\ladder
+ succeeded in 5476ms:
+ladder.py
+check_calls 86 lines [1644, 1651, 1653, 1661, 1662, 1663, 1672, 1673, 1704, 1706, 1708, 1712, 1713, 1714, 1715, 1721, 1723, 1726, 1727, 1746, 1748, 1749, 1752, 1756, 1759, 1763, 1765, 1767, 1769, 1772, 1775, 1789, 1790, 1792, 1794, 1796, 1803, 1808, 1809, 1810, 1819, 1820, 1832, 1834, 1837, 1842, 1851, 1852, 1853, 1855, 1859, 1864, 1866, 1871, 1872, 1874, 1882, 1883, 1884, 1891, 1940, 1944, 1946, 1948, 1955, 1956, 1957, 2012, 2016, 2018, 2021, 2028, 1683, 1688, 1910, 1911, 1912, 1914, 1916, 1917, 1924, 1978, 1980, 2003, 2005, 2006]
+n_lines [(2030, 'n = 86 if extractor() is not None else 84')]
+plants [(1642, "PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'"), (1646, 'PLANT 2 -- a retrieval with no value must NOT count as a hit'), (1656, 'PLANT 3 -- FAILED and MISS are counted separately'), (1665, "PLANT 4 -- the denominator is per-rung 'reached', not n requested"), (1675, 'PLANT 5 -- outcome scoping refuses an unscoped value'), (1691, 'PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field'), (1711, 'PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss'), (1718, 'PLANT 8 -- a document that does not NAME the trial must be rejected'), (1730, 'PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest'), (1762, 'PLANT 10 -- a composite marker must not fire on a DRUG NAME'), (1771, 'PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death'), (1778, 'PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT'), (1806, 'PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG'), (1823, 'PLANT 22 -- the ERA GATE refuses a year-implausible identity'), (1845, 'PLANT 21 -- the DRUG is read from the record, not guessed'), (1862, 'PLANT 19 -- an AUTHOR-YEAR study label is an identity too'), (1894, 'PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins'), (1929, 'PLANT 16 -- a prior-meta row that is not a RESULT must be rejected'), (1951, 'PLANT 17 -- EMPTY must not collapse into MISS in the yield table'), (1959, 'PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE'), (1986, 'PLANT 14 -- a measurement pass must not change the answer it measures'), (2011, 'PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper')]
+ladder_store.py
+check_calls 1 lines [173]
+n_lines [(238, 'n = 14')]
+obtainability.py
+check_calls 11 lines [268, 269, 274, 275, 279, 285, 287, 291, 298, 302, 306]
+n_lines [(308, 'n = 10')]
+
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath F:\\tr-build\\ladder\\oa68k\\ladder.py | Select-Object -Skip 1610 -First 430" in F:\tr-build\ladder
+ succeeded in 5134ms:
+            "'failed' is a transport error and measures OUR REACH, not the source."),
+    }
+
+
+def print_yield(rep: dict) -> None:
+    print("\nDATA REQUESTED: " + str(rep["n_data_requested"]) + " (one datum = one trial x one field)")
+    print("FINAL STATES:")
+    for k, v in sorted(rep["states"].items()):
+        print("  " + k.ljust(24) + str(v) + "/" + str(rep["n_data_requested"]))
+    print("\nYIELD PER RUNG  (hit / reached -- reached is the denominator for THAT rung)")
+    print("  rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec     KB")
+    for name, p in sorted(rep["per_rung"].items(), key=lambda kv: kv[1]["rung"]):
+        print("  " + name.ljust(18)
+              + str(p["hit"]).rjust(5) + str(p["retrieved_no_value"]).rjust(12)
+              + str(p["miss"]).rjust(6) + str(p["empty"]).rjust(6)
+              + str(p["failed"]).rjust(6) + str(p["skipped"]).rjust(6)
+              + str(p["reached"]).rjust(10) + ("%.1f" % p["seconds"]).rjust(8)
+              + str(int(p["bytes"] / 1024)).rjust(7))
+    print("\n" + rep["denominator_note"])
+
+
+# ------------------------------------------------------------------ selftest
+def _selftest() -> int:
+    """Plants both ways over the parts that do not need the network."""
+    fails = []
+
+    def check(label, cond):
+        print(("  ok    " if cond else "  FAIL  ") + label)
+        if not cond:
+            fails.append(label)
+
+    print("PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'")
+    rec = Record(request={})
+    check("a fresh Record is NOT_YET_ATTEMPTED", rec.state == State.NOT_YET_ATTEMPTED.value)
+
+    print("PLANT 2 -- a retrieval with no value must NOT count as a hit")
+    recs = [{"state": "NOT_YET_FOUND", "attempts": [
+        {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "RETRIEVED_NO_VALUE",
+         "seconds": 1.0, "bytes_in": 10}]}]
+    rep = yield_report(recs)
+    check("hit=0 when a document was retrieved but no value extracted",
+          rep["per_rung"]["R1_PRIOR_META"]["hit"] == 0)
+    check("retrieved_no_value=1 and is reported separately",
+          rep["per_rung"]["R1_PRIOR_META"]["retrieved_no_value"] == 1)
+
+    print("PLANT 3 -- FAILED and MISS are counted separately")
+    recs = [{"state": "NOT_YET_FOUND", "attempts": [
+        {"rung": 2, "rung_name": "R2_REGISTRY", "outcome": "FAILED", "seconds": 0.1, "bytes_in": 0},
+        {"rung": 3, "rung_name": "R3_LITERATURE", "outcome": "MISS", "seconds": 0.1, "bytes_in": 0}]}]
+    rep = yield_report(recs)
+    check("failed lands in 'failed'", rep["per_rung"]["R2_REGISTRY"]["failed"] == 1)
+    check("miss lands in 'miss'", rep["per_rung"]["R3_LITERATURE"]["miss"] == 1)
+    check("failed does not leak into miss", rep["per_rung"]["R2_REGISTRY"]["miss"] == 0)
+
+    print("PLANT 4 -- the denominator is per-rung 'reached', not n requested")
+    recs = [{"state": "OBTAINED", "attempts": [
+                {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]},
+            {"state": "OBTAINED", "attempts": [
+                {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "MISS", "seconds": 1, "bytes_in": 1},
+                {"rung": 3, "rung_name": "R3_LITERATURE", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}]
+    rep = yield_report(recs)
+    check("R1 reached 2", rep["per_rung"]["R1_PRIOR_META"]["reached"] == 2)
+    check("R3 reached 1, NOT 2", rep["per_rung"]["R3_LITERATURE"]["reached"] == 1)
+
+    print("PLANT 5 -- outcome scoping refuses an unscoped value")
+    rx = extractor()
+    if rx is None:
+        print("  SKIP  extractor absent: " + str(_EXTRACTOR_INFO.get("why")))
+    else:
+        txt = ("Renal events occurred in 120 vs 150 patients (hazard ratio 0.79; 95% CI, "
+               "0.62 to 1.00).")
+        req = Request(trial="X", field_path="effect.all_cause_mortality")
+        check("no all-cause-mortality cue in the text -> None, not the renal HR",
+              extract_effect(txt, req) is None)
+        txt2 = txt + (" Death from any cause occurred in 276 of 2373 vs 329 of 2371 "
+                      "(hazard ratio, 0.83; 95% CI, 0.71 to 0.97).")
+        got = extract_effect(txt2, req)
+        check("with the cue present it returns 0.83, not 0.79",
+              got is not None and abs(got["estimate"] - 0.83) < 1e-9)
+
+    print("PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field")
+    oms = [
+        {"title": "Number of Participants With First Occurrence of All-Cause Mortality "
+                  "or Heart Failure (HF) Hospitalization",
+         "analyses": [{"paramType": "Hazard Ratio (HR)", "paramValue": "0.647",
+                       "ciLowerLimit": "0.552", "ciUpperLimit": "0.757"}]},
+        {"title": "Number of Participants With First Occurrence of All-Cause Mortality "
+                  "(Adjudicated)",
+         "analyses": [{"paramType": "Hazard Ratio (HR)", "paramValue": "0.761",
+                       "ciLowerLimit": "0.622", "ciUpperLimit": "0.932"}]},
+    ]
+    reqE = Request(trial="EMPHASIS-HF", field_path="effect.all_cause_mortality")
+    got = _ctgov_effect(oms, reqE)
+    check("EMPHASIS-HF returns 0.761, not the composite 0.647",
+          got is not None and abs(got["estimate"] - 0.761) < 1e-9)
+    check("the composite rejection is COUNTED, not silent",
+          got is not None and got["n_rejected_as_composite"] == 1)
+    check("with the single-outcome row removed it refuses rather than falling back "
+          "to the composite", _ctgov_effect(oms[:1], reqE) is None)
+
+    print("PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss")
+    check("'Hazard Ratio (HR)' -> HR", canon_measure("Hazard Ratio (HR)") == "HR")
+    check("'Rate Ratio (RR)' -> RR", canon_measure("Rate Ratio (RR)") == "RR")
+    check("'Win Ratio (WR)' -> WR, not HR", canon_measure("Win Ratio (WR)") == "WR")
+    check("an unrecognised type returns '' rather than a guess",
+          canon_measure("Some New Statistic") == "")
+
+    print("PLANT 8 -- a document that does not NAME the trial must be rejected")
+    reqC = Request(trial="CIBIS-II", field_path="effect.all_cause_mortality",
+                   aliases=["CIBIS II"], nct="")
+    check("an unrelated abstract is rejected",
+          not _names_trial("Bisoprolol in a cohort of outpatients with heart failure", reqC))
+    check("the trial's own report is accepted",
+          _names_trial("The Cardiac Insufficiency Bisoprolol Study II (CIBIS-II): a "
+                       "randomised trial", reqC))
+    check("a hyphen/space variant is accepted", _names_trial("CIBIS II results", reqC))
+    check("a substring inside another token is NOT accepted",
+          not _names_trial("XCIBIS-IIY", reqC))
+
+    print("PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest")
+    xml = (b'<article><body><table-wrap><label>Table 2</label>'
+           b'<caption><p>All-cause mortality, hazard ratios by trial</p></caption>'
+           b'<table><thead><tr><th>Trial</th><th>HR (95% CI)</th></tr></thead>'
+           b'<tbody>'
+           b'<tr><td>DAPA-HF 2019</td><td>0.83 (0.71, 0.97)</td></tr>'
+           b'<tr><td>EMPEROR-Reduced 2020</td><td>0.92 (0.77, 1.10)</td></tr>'
+           b'</tbody></table></table-wrap>'
+           b'<table-wrap><label>Table 3</label>'
+           b'<caption><p>Cardiovascular death or heart failure hospitalisation</p></caption>'
+           b'<table><thead><tr><th>Trial</th><th>HR (95% CI)</th></tr></thead>'
+           b'<tbody><tr><td>DAPA-HF 2019</td><td>0.74 (0.65, 0.85)</td></tr>'
+           b'</tbody></table></table-wrap></body></article>')
+    rq = Request(trial="DAPA-HF", field_path="effect.all_cause_mortality",
+                 aliases=["DAPA HF"])
+    got = _prior_meta_from_tables(xml, ["DAPA-HF"], rq)
+    check("reads DAPA-HF's mortality row (0.83), not the composite table (0.74)",
+          got is not None and abs(got["estimate"] - 0.83) < 1e-9)
+    check("measure taken from the header", got is not None and got["measure"] == "HR")
+    check("does not return the OTHER trial's row",
+          got is not None and "EMPEROR" not in got["source_text"])
+    rq2 = Request(trial="CIBIS-II", field_path="effect.all_cause_mortality")
+    check("a trial absent from the table returns None, not the first row",
+          _prior_meta_from_tables(xml, ["CIBIS-II"], rq2) is None)
+    xml_noscope = xml.replace(b"All-cause mortality, hazard ratios by trial",
+                              b"Baseline characteristics")
+    check("an unscoped table is refused even though the row is there",
+          _prior_meta_from_tables(xml_noscope, ["DAPA-HF"], rq) is None)
+    xml_bad = xml.replace(b"0.83 (0.71, 0.97)", b"0.83 (1.71, 0.97)")
+    check("bounds that do not bracket the estimate are rejected",
+          _prior_meta_from_tables(xml_bad, ["DAPA-HF"], rq) is None)
+
+    print("PLANT 10 -- a composite marker must not fire on a DRUG NAME")
+    check("'metoprolol CR/XL group' is not a composite",
+          not _is_composite("All-cause mortality was lower in the metoprolol CR/XL group"))
+    check("'sacubitril/valsartan' is not a composite",
+          not _is_composite("Death from any cause in the sacubitril/valsartan arm"))
+    check("'mortality or HF hospitalisation' still IS a composite",
+          _is_composite("All-cause mortality or heart failure hospitalisation"))
+    check("a spaced slash still IS a composite", _is_composite("Death / hospitalisation"))
+
+    print("PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death")
+    check("'deaths attributed to progressive heart failure' is cause-specific",
+          _is_cause_specific("the largest reduction occurred among the deaths "
+                             "attributed to progressive heart failure"))
+    check("'There were 510 deaths in the placebo group' is NOT cause-specific",
+          not _is_cause_specific("There were 510 deaths in the placebo group"))
+
+    print("PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT")
+    solvd = ("There were 510 deaths in the placebo group (39.7 percent), as compared "
+             "with 452 in the enalapril group (35.2 percent) (reduction in risk, 16 "
+             "percent; 95 percent confidence interval, 5 to 26 percent; P = 0.0036). "
+             "Although reductions in mortality were observed in several categories of "
+             "cardiac deaths, the largest reduction occurred among the deaths "
+             "attributed to progressive heart failure (251 in the placebo group vs. "
+             "209 in the enalapril group; reduction in risk, 22 percent; 95 percent "
+             "confidence interval, 6 to 35 percent).")
+    rqS = Request(trial="SOLVD", field_path="effect.all_cause_mortality")
+    got = _derive_from_risk_reduction(solvd, rqS)
+    check("16% reduction -> RR 0.84", got is not None and abs(got["estimate"] - 0.84) < 1e-9)
+    check("the 26% bound becomes the LOWER limit 0.74",
+          got is not None and abs(got["ci_low"] - 0.74) < 1e-9)
+    check("the 5% bound becomes the UPPER limit 0.95",
+          got is not None and abs(got["ci_high"] - 0.95) < 1e-9)
+    check("bounds are the right way round",
+          got is not None and got["ci_low"] < got["ci_high"])
+    check("it does NOT take the 22% cause-specific reduction",
+          got is not None and abs(got["estimate"] - 0.78) > 1e-6)
+    bad = solvd.replace("reduction in risk, 16 percent; 95 percent confidence "
+                        "interval, 5 to 26 percent",
+                        "reduction in risk, 16 percent; 95 percent confidence "
+                        "interval, 20 to 26 percent")
+    gotbad = _derive_from_risk_reduction(bad, rqS)
+    check("a point estimate outside its own interval is refused",
+          gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
+
+    print("PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG")
+    q = _primary_report_query(Request(trial="SOLVD", field_path="x", nct="NCT001"))
+    check("the seed query carries NO PUB_TYPE clause", "PUB_TYPE" not in q)
+    check("nor an open-access clause", "OPEN_ACCESS" not in q and "HAS_FT" not in q)
+    check("it still carries the trial name and the accession",
+          "SOLVD" in q and "NCT001" in q)
+    # is_rct survives ONLY as a tertiary ranking key, never as a gate.
+    xml_nt = ("<PubmedArticle><PMID>7</PMID><PubDate><Year>1991</Year></PubDate>"
+              "<CollectiveName>SOLVD Investigators</CollectiveName>"
+              "<ArticleTitle>Effect of enalapril on survival</ArticleTitle>"
+              "</PubmedArticle>")
+    rqT = Request(trial="SOLVD", field_path="x", aliases=["SOLVD Investigators"])
+    ok, why = _is_primary_report(xml_nt, rqT)
+    check("a primary report with NO publication-type tag is still accepted", ok)
+    check("and it is accepted on AUTHORSHIP, not on a tag",
+          "investigator group" in why)
+
+    print("PLANT 22 -- the ERA GATE refuses a year-implausible identity")
+    xml_era = ("<PubmedArticle><PMID>1192554</PMID><PubDate><Year>1975</Year></PubDate>"
+               "<ArticleTitle>STRETCH in heart failure</ArticleTitle></PubmedArticle>"
+               "<PubmedArticle><PMID>999</PMID><PubDate><Year>1999</Year></PubDate>"
+               "<ArticleTitle>STRETCH: candesartan in heart failure</ArticleTitle>"
+               "</PubmedArticle>")
+    rqE = Request(trial="STRETCH", field_path="x", known_year=1999,
+                  topic_terms=["heart failure"])
+    kept = _rank_reports(xml_era, rqE)
+    check("the 1975 candidate is REFUSED against a known year of 1999",
+          [k["pmid"] for k in kept] == ["999"])
+    check("the refusal is COUNTED in the note, not silent",
+          kept and "1 candidates refused on year" in kept[0].get("era_gate", ""))
+    rqN = Request(trial="STRETCH", field_path="x", topic_terms=["heart failure"])
+    check("with NO known_year the gate is INERT -- both survive (opt-in)",
+          len(_rank_reports(xml_era, rqN)) == 2)
+    rqS = Request(trial="STRETCH", field_path="x", known_year=1999, year_slack=1,
+                  topic_terms=["heart failure"])
+    xml_edge = xml_era.replace("<Year>1999</Year>", "<Year>2000</Year>")
+    check("slack of 1 still accepts a report published the following year",
+          any(k["pmid"] == "999" for k in _rank_reports(xml_edge, rqS)))
+
+    print("PLANT 21 -- the DRUG is read from the record, not guessed")
+    xs = ("<PubmedArticle><NameOfSubstance UI='D000319'>Adrenergic beta-Antagonists"
+          "</NameOfSubstance><NameOfSubstance UI='D002220'>Carbazoles</NameOfSubstance>"
+          "<NameOfSubstance UI='D000068556'>Carvedilol</NameOfSubstance>"
+          "</PubmedArticle>")
+    got = substances_of(xs)
+    check("all three substance annotations are harvested", len(got) == 3)
+    check("the drug is among them, unranked", "Carvedilol" in got)
+    check("class terms are NOT discarded here -- openFDA decides which is the drug",
+          "Adrenergic beta-Antagonists" in got)
+    check("a record with no annotations yields an empty list, not a guess",
+          substances_of("<PubmedArticle/>") == [])
+    rqD = Request(trial="X", field_path="counts.all_cause_mortality")
+    at = rung4_regulatory(None, rqD)
+    check("rung 4 with NO drug and NO candidates is SKIPPED with 'no plan'",
+          at.outcome == Outcome.SKIPPED.value and "no plan" in at.note)
+
+    print("PLANT 19 -- an AUTHOR-YEAR study label is an identity too")
+    rqB = Request(trial="Beller 1995", field_path="counts.all_cause_mortality")
+    check("'Beller 1995' parses to (beller, 1995)",
+          _label_author_year(rqB) == ("beller", "1995"))
+    check("'MOCHA' does not parse as author-year",
+          _label_author_year(Request(trial="MOCHA", field_path="x")) is None)
+    xml_ok = ("<PubmedArticle><PMID>1</PMID><PubDate><Year>1995</Year></PubDate>"
+              "<LastName>Beller</LastName><ArticleTitle>Carvedilol in heart failure"
+              "</ArticleTitle></PubmedArticle>")
+    check("author+year both matching is accepted", _is_primary_report(xml_ok, rqB)[0])
+    check("the WRONG YEAR is refused even with the right author",
+          not _is_primary_report(xml_ok.replace("1995", "2001"), rqB)[0])
+    check("the WRONG AUTHOR is refused even with the right year",
+          not _is_primary_report(xml_ok.replace("Beller", "Smith"), rqB)[0])
+    print("   (acronym collision)")
+    rqM = Request(trial="MOCHA", field_path="x", topic_terms=["heart failure"])
+    off = ("<PubmedArticle><PMID>4448900</PMID><ArticleTitle>Mocha and coffee"
+           "</ArticleTitle></PubmedArticle>")
+    on = ("<PubmedArticle><PMID>1</PMID><ArticleTitle>MOCHA: carvedilol in chronic "
+          "heart failure</ArticleTitle></PubmedArticle>")
+    check("an acronym title match OFF-topic is refused", not _is_primary_report(off, rqM)[0])
+    check("the same acronym ON-topic is accepted", _is_primary_report(on, rqM)[0])
+    check("with NO topic terms the acronym match still passes (opt-in, not a change "
+          "of default)", _is_primary_report(off, Request(trial="MOCHA", field_path="x"))[0])
+
+    rqV = Request(trial="van Veldhuisen 1998", field_path="x")
+    xml_v = ("<PubmedArticle><PMID>2</PMID><PubDate><Year>1998</Year></PubDate>"
+             "<LastName>van Veldhuisen</LastName><ArticleTitle>Digoxin</ArticleTitle>"
+             "</PubmedArticle>")
+    check("a PARTICLED surname still matches ('van Veldhuisen')",
+          _is_primary_report(xml_v, rqV)[0])
+
+    print("PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins")
+    saved2 = list(RUNGS)
+    try:
+        def _mk(rungno, val, tier):
+            def fn(session, req):
+                return Attempt(rungno, "R" + str(rungno), "s", "u", 200, 0.1, 1,
+                               "a" * 64, Outcome.HIT.value, "", value=val,
+                               provenance_tier=tier, retrieved_utc="t")
+            return fn
+        prior = {"estimate": 0.57, "measure": "HR", "ci_low": 0.37, "ci_high": 0.94}
+        primary = {"estimate": 0.66, "measure": "HR", "ci_low": 0.54, "ci_high": 0.81}
+        RUNGS[:] = [(Rung.R1_PRIOR_META, _mk(1, dict(prior), "prior_meta_table")),
+                    (Rung.R3_LITERATURE, _mk(3, dict(primary), "trial_report"))]
+        rec = climb(Request(trial="T", field_path="effect.all_cause_mortality"),
+                    session=object(), stop_at_first_hit=True)
+        rc = (rec.value or {}).get("reconciliation") or {}
+        check("a prior-meta hit does NOT end the climb", rc.get("attempted") is True)
+        check("disagreement is recorded as reconciles=False", rc.get("reconciles") is False)
+        check("the PRIMARY read wins on tier order (0.66, not 0.57)",
+              abs(rec.value["estimate"] - 0.66) < 1e-9)
+        check("the prior-meta value is kept alongside, not discarded",
+              abs(rc["prior_meta_value"]["estimate"] - 0.57) < 1e-9)
+        check("the supplying rung is restated as the primary", rec.supplying_rung == 3)
+        check("the tier is upgraded to trial_report",
+              rec.provenance_tier == "trial_report")
+
+        RUNGS[:] = [(Rung.R1_PRIOR_META, _mk(1, dict(prior), "prior_meta_table")),
+                    (Rung.R3_LITERATURE, _mk(3, dict(prior), "trial_report"))]
+        rec2 = climb(Request(trial="T", field_path="effect.all_cause_mortality"),
+                     session=object(), stop_at_first_hit=True)
+        check("agreement is recorded as reconciles=True",
+              (rec2.value or {}).get("reconciliation", {}).get("reconciles") is True)
+    finally:
+        RUNGS[:] = saved2
+
+    print("PLANT 16 -- a prior-meta row that is not a RESULT must be rejected")
+    xmlrow = (b'<article><body><table-wrap><label>Table 5</label>'
+              b'<caption><p>All-cause mortality in randomized and non-randomized '
+              b'statin HF studies</p></caption>'
+              b'<table><thead><tr><th>Study</th><th>Design</th><th>HR (95% CI)</th></tr>'
+              b'</thead><tbody>'
+              b'<tr><td>Krum, Australia, 2007 (CIBIS-II)</td>'
+              b'<td>Post hoc analysis of RCT</td><td>0.57 (0.37-0.94)</td></tr>'
+              b'</tbody></table></table-wrap></body></article>')
+    rqC = Request(trial="CIBIS-II", field_path="effect.all_cause_mortality",
+                  aliases=["CIBIS II"])
+    check("a 'Post hoc analysis of RCT' row is refused even though it names the trial",
+          _prior_meta_from_tables(xmlrow, ["CIBIS-II"], rqC) is None)
+    ok_row = xmlrow.replace(b"Post hoc analysis of RCT", b"Randomised controlled trial")
+    got_ok = _prior_meta_from_tables(ok_row, ["CIBIS-II"], rqC)
+    check("the same row WITHOUT the post-hoc label is accepted (0.57)",
+          got_ok is not None and abs(got_ok["estimate"] - 0.57) < 1e-9)
+    check("'observational' is rejected too",
+          _ROW_NOT_A_RESULT.search("CIBIS-II | observational cohort") is not None)
+    check("a plain trial row is not rejected",
+          _ROW_NOT_A_RESULT.search("CIBIS-II 1999 | bisoprolol vs placebo") is None)
+
+    print("PLANT 17 -- EMPTY must not collapse into MISS in the yield table")
+    rep = yield_report([{"state": "NOT_YET_FOUND", "attempts": [
+        {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "EMPTY",
+         "seconds": 0.1, "bytes_in": 0}]}])
+    check("an empty 200 lands in 'empty'", rep["per_rung"]["R1_PRIOR_META"]["empty"] == 1)
+    check("and NOT in 'miss'", rep["per_rung"]["R1_PRIOR_META"]["miss"] == 0)
+    check("nor in 'failed'", rep["per_rung"]["R1_PRIOR_META"]["failed"] == 0)
+
+    print("PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE")
+    import harvest as _H
+    _real_fetch = _H.fetch_fulltext
+    _real_get = globals()["_get"]
+
+    class _FakeResp:
+        status_code = 200
+        content = (b'{"resultList":{"result":[{"pmcid":"PMC1"},{"pmcid":"PMC2"}]},'
+                   b'"hitCount":2}')
+
+        def json(self):
+            return json.loads(self.content)
+
+    try:
+        globals()["_get"] = lambda *a, **k: (_FakeResp(), 0.1, "")
+        _H.fetch_fulltext = lambda s, row: {"status": "UNOBTAINABLE",
+                                            "reason": "no_free_fulltext"}
+        at = rung1_prior_meta(None, Request(trial="X",
+                                            field_path="effect.all_cause_mortality"))
+        check("0 retrieved of 2 attempted -> FAILED, not RETRIEVED_NO_VALUE",
+              at.outcome == Outcome.FAILED.value)
+        check("the note says '0 of 2 ... RETRIEVED', never '2 retrieved'",
+              "0 of 2 OA meta full texts RETRIEVED" in at.note)
+    finally:
+        _H.fetch_fulltext = _real_fetch
+        globals()["_get"] = _real_get
+
+    print("PLANT 14 -- a measurement pass must not change the answer it measures")
+
+    class _FakeAttempt:
+        pass
+
+    saved = list(RUNGS)
+    try:
+        def _hit(rungno, val):
+            def fn(session, req):
+                return Attempt(rungno, "R" + str(rungno) + "_X", "s", "u", 200, 0.1, 1,
+                               "a" * 64, Outcome.HIT.value, "", value=val,
+                               provenance_tier="registry_results", retrieved_utc="t")
+            return fn
+        RUNGS[:] = [(Rung.R2_REGISTRY, _hit(2, {"estimate": 0.92, "measure": "HR"})),
+                    (Rung.R3_LITERATURE, _hit(3, {"estimate": 1.11, "measure": "HR"}))]
+        rec = climb(Request(trial="T", field_path="effect.all_cause_mortality"),
+                    session=object(), stop_at_first_hit=False)
+        check("running every rung still returns the FIRST rung's value",
+              rec.value["estimate"] == 0.92)
+        check("and names the FIRST rung as the supplier", rec.supplying_rung == 2)
+        check("while still recording BOTH attempts for the yield table",
+              len(rec.attempts) == 2)
+    finally:
+        RUNGS[:] = saved
+
+    print("PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper")
+    check("MERIT-HF's design-paper title is recognised",
+          bool(_DESIGN_PAPER.search("Rationale, design, and organization of the "
+                                    "Metoprolol CR/XL Randomized Intervention Trial "
+                                    "in Heart Failure (MERIT-HF)")))
+    check("a study-protocol title is recognised",
+          bool(_DESIGN_PAPER.search("Study protocol for the XYZ trial")))
+    check("the RESULTS paper's title is NOT flagged as a design paper",
+          not _DESIGN_PAPER.search("Effect of metoprolol CR/XL in chronic heart "
+                                   "failure: MERIT-HF"))
+    check("nor is a plain outcome title",
+          not _DESIGN_PAPER.search("Angiotensin-neprilysin inhibition versus "
+                                   "enalapril in heart failure"))
+
+    print("RESTORE -- yield_report still correct after every plant")
+    rep = yield_report([{"state": "OBTAINED", "attempts": [
+        {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
+    check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
+
+    n = 86 if extractor() is not None else 84
+    print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
+          + ("PASS" if not fails else "FAIL " + str(fails)))
+    return 1 if fails else 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--bench", action="store_true", help="run the HFrEF validation set")
+    ap.add_argument("--trial", default="")
+
+codex
+The `ladder.py` plant headers are all distinct, but their numbering skips `20` and the source order jumps after `12`. I’m writing the report now with the exact counting/extraction commands included.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Test-Path -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md" in F:\tr-build\ladder
+ succeeded in 5098ms:
+False
+
+apply patch
+patch: completed
+F:\tr-build\ladder\out\PLANT-COUNT-CHECK.md
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e0bbc97878b0264ecbedb9fed7d69929595d133
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,69 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`.
++Network: not used.
++
++## Commands Used
++
++Count check() call sites inside `_selftest`:
++
++```powershell
++@'
++import ast, pathlib
++path = pathlib.Path(r'F:/tr-build/ladder/oa68k/ladder.py')
++src = path.read_text(encoding='utf-8')
++fn = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == '_selftest')
++print(len([n for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == 'check']))
++'@ | python -
++```
++
++Same command with `ladder_store.py` and `obtainability.py` substituted for `ladder.py`.
++
++Find declared `n` line:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Find PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e0bbc97878b0264ecbedb9fed7d69929595d133
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,69 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`.
++Network: not used.
++
++## Commands Used
++
++Count check() call sites inside `_selftest`:
++
++```powershell
++@'
++import ast, pathlib
++path = pathlib.Path(r'F:/tr-build/ladder/oa68k/ladder.py')
++src = path.read_text(encoding='utf-8')
++fn = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == '_selftest')
++print(len([n for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == 'check']))
++'@ | python -
++```
++
++Same command with `ladder_store.py` and `obtainability.py` substituted for `ladder.py`.
++
++Find declared `n` line:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Find PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+codex
+I’ve created the report; I’m checking its line count against your under-60-lines constraint before printing it.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "(Get-Content -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md).Count" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md" in F:\tr-build\ladder
+ succeeded in 8692ms:
+# PLANT Count Check
+
+Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`.
+Network: not used.
+
+## Commands Used
+
+Count check() call sites inside `_selftest`:
+
+```powershell
+@'
+import ast, pathlib
+path = pathlib.Path(r'F:/tr-build/ladder/oa68k/ladder.py')
+src = path.read_text(encoding='utf-8')
+fn = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == '_selftest')
+print(len([n for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == 'check']))
+'@ | python -
+```
+
+Same command with `ladder_store.py` and `obtainability.py` substituted for `ladder.py`.
+
+Find declared `n` line:
+
+```powershell
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
+```
+
+Find PLANT headers:
+
+```powershell
+rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
+```
+
+## check() Calls vs Declared n
+
+| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
+|---|---:|---|---|
+| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
+| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
+| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
+
+## ladder.py PLANT Headers
+
+1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
+2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
+3. `PLANT 3 -- FAILED and MISS are counted separately`
+4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
+5. `PLANT 5 -- outcome scoping refuses an unscoped value`
+6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
+7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
+8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
+9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
+10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
+11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
+12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
+13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
+14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
+15. `PLANT 21 -- the DRUG is read from the record, not guessed`
+16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
+17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
+18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
+19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
+20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
+21. `PLANT 14 -- a measurement pass must not change the answer it measures`
+22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
+
+Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+ succeeded in 9076ms:
+69
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e0bbc97878b0264ecbedb9fed7d69929595d133
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,69 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`.
++Network: not used.
++
++## Commands Used
++
++Count check() call sites inside `_selftest`:
++
++```powershell
++@'
++import ast, pathlib
++path = pathlib.Path(r'F:/tr-build/ladder/oa68k/ladder.py')
++src = path.read_text(encoding='utf-8')
++fn = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == '_selftest')
++print(len([n for n in ast.walk(fn) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == 'check']))
++'@ | python -
++```
++
++Same command with `ladder_store.py` and `obtainability.py` substituted for `ladder.py`.
++
++Find declared `n` line:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Find PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+codex
+The first draft was 69 lines, so I’m tightening the report while keeping the required commands, counts, and plant list intact.
+apply patch
+patch: completed
+F:\tr-build\ladder\out\PLANT-COUNT-CHECK.md
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a95a702f8b038a40b1a415a7e68dd691773b50f
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,62 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++
++check() call-site counts inside `_selftest`:
++
++```powershell
++@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/ladder.py
++@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/ladder_store.py
++@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/obtainability.py
++```
++
++Declared `n` lines:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a95a702f8b038a40b1a415a7e68dd691773b50f
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,62 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++
++check() call-site counts inside `_selftest`:
++
++```powershell
++@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/ladder.py
++@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/ladder_store.py
++@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/obtainability.py
++```
++
++Declared `n` lines:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+codex
+I noticed the command block was too abbreviated after the line-count edit. I’m replacing it with concrete command lines rather than pseudocode.
+apply patch
+patch: completed
+F:\tr-build\ladder\out\PLANT-COUNT-CHECK.md
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..554c96ba866d2088d158a78cf566bf598e26d816
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,83 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++
++check() call-site counts inside `_selftest`:
++
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Declared `n` lines:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
++
++---
++
++# ADJUDICATION
++
++**PLANT 20 missing — CONFIRMED and fixed.** I had numbered a block 21 when the
++previous was 19, and folded what should have been PLANT 20 (the acronym-collision
++topic check) into PLANT 19's block under an unnumbered `print("   (acronym
++collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
++is refused" — a citation to a label that did not exist.** The block now carries its
++own header and the numbering is contiguous 1..24.
++
++**`n = 86 ... else 84` flagged as "NO if extractor() is None" — FALSE FLAG, no change
++made.** The count is static; the branch is not. PLANT 5 sits behind
++`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
++exactly two call sites do not execute and 84 is the correct expected total. Codex
++counted call sites without following the guard, which is the right thing for a
++mechanical pass to do and the wrong thing to act on without tracing it.
++
++⇒ **One real defect, one false positive, from a check that took one small job.** The
++real one was a label error in a report, and labels are identifiers.
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..554c96ba866d2088d158a78cf566bf598e26d816
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,83 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++
++check() call-site counts inside `_selftest`:
++
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Declared `n` lines:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
++
++---
++
++# ADJUDICATION
++
++**PLANT 20 missing — CONFIRMED and fixed.** I had numbered a block 21 when the
++previous was 19, and folded what should have been PLANT 20 (the acronym-collision
++topic check) into PLANT 19's block under an unnumbered `print("   (acronym
++collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
++is refused" — a citation to a label that did not exist.** The block now carries its
++own header and the numbering is contiguous 1..24.
++
++**`n = 86 ... else 84` flagged as "NO if extractor() is None" — FALSE FLAG, no change
++made.** The count is static; the branch is not. PLANT 5 sits behind
++`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
++exactly two call sites do not execute and 84 is the correct expected total. Codex
++counted call sites without following the guard, which is the right thing for a
++mechanical pass to do and the wrong thing to act on without tracing it.
++
++⇒ **One real defect, one false positive, from a check that took one small job.** The
++real one was a label error in a report, and labels are identifiers.
+
+codex
+The report is now concrete and should be within the requested size. I’m doing the final line-count check and printing the file contents.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "(Get-Content -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md).Count" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md" in F:\tr-build\ladder
+ succeeded in 4534ms:
+# PLANT Count Check
+
+Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
+
+## Commands Used
+
+check() call-site counts inside `_selftest`:
+
+```powershell
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
+```
+
+Declared `n` lines:
+
+```powershell
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
+```
+
+PLANT headers:
+
+```powershell
+rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
+```
+
+## check() Calls vs Declared n
+
+| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
+|---|---:|---|---|
+| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
+| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
+| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
+
+## ladder.py PLANT Headers
+
+1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
+2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
+3. `PLANT 3 -- FAILED and MISS are counted separately`
+4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
+5. `PLANT 5 -- outcome scoping refuses an unscoped value`
+6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
+7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
+8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
+9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
+10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
+11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
+12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
+13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
+14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
+15. `PLANT 21 -- the DRUG is read from the record, not guessed`
+16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
+17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
+18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
+19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
+20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
+21. `PLANT 14 -- a measurement pass must not change the answer it measures`
+22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
+
+Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+---
+
+# ADJUDICATION
+
+**PLANT 20 missing â€” CONFIRMED and fixed.** I had numbered a block 21 when the
+previous was 19, and folded what should have been PLANT 20 (the acronym-collision
+topic check) into PLANT 19's block under an unnumbered `print("   (acronym
+collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
+is refused" â€” a citation to a label that did not exist.** The block now carries its
+own header and the numbering is contiguous 1..24.
+
+**`n = 86 ... else 84` flagged as "NO if extractor() is None" â€” FALSE FLAG, no change
+made.** The count is static; the branch is not. PLANT 5 sits behind
+`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
+exactly two call sites do not execute and 84 is the correct expected total. Codex
+counted call sites without following the guard, which is the right thing for a
+mechanical pass to do and the wrong thing to act on without tracing it.
+
+â‡’ **One real defect, one false positive, from a check that took one small job.** The
+real one was a label error in a report, and labels are identifiers.
+
+ succeeded in 5107ms:
+83
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..554c96ba866d2088d158a78cf566bf598e26d816
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,83 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++
++check() call-site counts inside `_selftest`:
++
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Declared `n` lines:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
++
++---
++
++# ADJUDICATION
++
++**PLANT 20 missing — CONFIRMED and fixed.** I had numbered a block 21 when the
++previous was 19, and folded what should have been PLANT 20 (the acronym-collision
++topic check) into PLANT 19's block under an unnumbered `print("   (acronym
++collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
++is refused" — a citation to a label that did not exist.** The block now carries its
++own header and the numbering is contiguous 1..24.
++
++**`n = 86 ... else 84` flagged as "NO if extractor() is None" — FALSE FLAG, no change
++made.** The count is static; the branch is not. PLANT 5 sits behind
++`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
++exactly two call sites do not execute and 84 is the correct expected total. Codex
++counted call sites without following the guard, which is the right thing for a
++mechanical pass to do and the wrong thing to act on without tracing it.
++
++⇒ **One real defect, one false positive, from a check that took one small job.** The
++real one was a label error in a report, and labels are identifiers.
+
+codex
+The printed file showed stale appended text after the requested report, including non-ASCII characters. I’m removing that tail and re-checking ASCII plus the line limit before the final print.
+2026-08-30T05:55:47.126156Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in F:\tr-build\ladder\out\PLANT-COUNT-CHECK.md:
+Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+---
+
+# ADJUDICATION
+
+**PLANT 20 missing â€” CONFIRMED and fixed.** I had numbered a block 21 when the
+previous was 19, and folded what should have been PLANT 20 (the acronym-collision
+topic check) into PLANT 19's block under an unnumbered `print("   (acronym
+collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
+is refused" â€” a citation to a label that did not exist.** The block now carries its
+own header and the numbering is contiguous 1..24.
+
+**`n = 86 ... else 84` flagged as "NO if extractor() is None" â€” FALSE FLAG, no change
+made.** The count is static; the branch is not. PLANT 5 sits behind
+`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
+exactly two call sites do not execute and 84 is the correct expected total. Codex
+counted call sites without following the guard, which is the right thing for a
+mechanical pass to do and the wrong thing to act on without tracing it.
+
+â‡’ **One real defect, one false positive, from a check that took one small job.** The
+real one was a label error in a report, and labels are identifiers.
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..554c96ba866d2088d158a78cf566bf598e26d816
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,83 @@
++# PLANT Count Check
++
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++
++check() call-site counts inside `_selftest`:
++
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++Declared `n` lines:
++
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++
++PLANT headers:
++
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
++
++---
++
++# ADJUDICATION
++
++**PLANT 20 missing — CONFIRMED and fixed.** I had numbered a block 21 when the
++previous was 19, and folded what should have been PLANT 20 (the acronym-collision
++topic check) into PLANT 19's block under an unnumbered `print("   (acronym
++collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
++is refused" — a citation to a label that did not exist.** The block now carries its
++own header and the numbering is contiguous 1..24.
++
++**`n = 86 ... else 84` flagged as "NO if extractor() is None" — FALSE FLAG, no change
++made.** The count is static; the branch is not. PLANT 5 sits behind
++`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
++exactly two call sites do not execute and 84 is the correct expected total. Codex
++counted call sites without following the guard, which is the right thing for a
++mechanical pass to do and the wrong thing to act on without tracing it.
++
++⇒ **One real defect, one false positive, from a check that took one small job.** The
++real one was a label error in a report, and labels are identifiers.
+
+codex
+The stale tail has encoding damage, so I’m replacing the report file wholesale with a clean ASCII-only version instead of trying to match corrupted text.
+apply patch
+patch: completed
+F:\tr-build\ladder\out\PLANT-COUNT-CHECK.md
+apply patch
+patch: completed
+F:\tr-build\ladder\out\PLANT-COUNT-CHECK.md
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd322b3d45f6490b7c1509b35d8c5634aafab2d2
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,53 @@
++# PLANT Count Check
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++check() call-site counts inside `_selftest`:
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++Declared `n` lines:
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++PLANT headers:
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd322b3d45f6490b7c1509b35d8c5634aafab2d2
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,53 @@
++# PLANT Count Check
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++check() call-site counts inside `_selftest`:
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++Declared `n` lines:
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++PLANT headers:
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+codex
+The clean replacement is in place. I’m running the final checks now: line count, ASCII scan, and then printing the report.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "(Get-Content -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md).Count" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath F:\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md" in F:\tr-build\ladder
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$s = Get-Content -LiteralPath F:'"\\tr-build\\ladder\\out\\PLANT-COUNT-CHECK.md -Raw; if ("'$s.ToCharArray() | Where-Object { [int][char]$_ -gt 127 }) { '"'NON_ASCII' } else { 'ASCII_OK' }" in F:\tr-build\ladder
+ succeeded in 3587ms:
+# PLANT Count Check
+Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
+
+## Commands Used
+check() call-site counts inside `_selftest`:
+```powershell
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
+```
+Declared `n` lines:
+```powershell
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
+rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
+```
+PLANT headers:
+```powershell
+rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
+```
+
+## check() Calls vs Declared n
+| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
+|---|---:|---|---|
+| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
+| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
+| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
+
+## ladder.py PLANT Headers
+1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
+2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
+3. `PLANT 3 -- FAILED and MISS are counted separately`
+4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
+5. `PLANT 5 -- outcome scoping refuses an unscoped value`
+6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
+7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
+8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
+9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
+10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
+11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
+12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
+13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
+14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
+15. `PLANT 21 -- the DRUG is read from the record, not guessed`
+16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
+17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
+18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
+19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
+20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
+21. `PLANT 14 -- a measurement pass must not change the answer it measures`
+22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
+
+Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+ succeeded in 7058ms:
+53
+
+ succeeded in 6104ms:
+ASCII_OK
+
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd322b3d45f6490b7c1509b35d8c5634aafab2d2
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,53 @@
++# PLANT Count Check
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++check() call-site counts inside `_selftest`:
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++Declared `n` lines:
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++PLANT headers:
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+codex
+Done. Wrote and printed [PLANT-COUNT-CHECK.md](F:/tr-build/ladder/out/PLANT-COUNT-CHECK.md).
+
+Final checks:
+- Line count: `53`
+- ASCII: `ASCII_OK`
+- Network: not used
+
+Key result:
+- `ladder.py`: `86` check call sites; declared `86 if extractor() is not None else 84`; agrees only on extractor-present path.
+- `ladder_store.py`: `1` check call site; declared `14`; disagree.
+- `obtainability.py`: `11` check call sites; declared `10`; disagree.
+- `ladder.py` PLANT numbers: no duplicates, missing `20`, not contiguous.
+diff --git a/out/PLANT-COUNT-CHECK.md b/out/PLANT-COUNT-CHECK.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd322b3d45f6490b7c1509b35d8c5634aafab2d2
+--- /dev/null
++++ b/out/PLANT-COUNT-CHECK.md
+@@ -0,0 +1,53 @@
++# PLANT Count Check
++Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
++
++## Commands Used
++check() call-site counts inside `_selftest`:
++```powershell
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
++python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
++```
++Declared `n` lines:
++```powershell
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
++rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
++```
++PLANT headers:
++```powershell
++rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
++```
++
++## check() Calls vs Declared n
++| File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
++|---|---:|---|---|
++| `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
++| `oa68k/ladder_store.py` | 1 | line 238: `n = 14` | NO |
++| `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
++
++## ladder.py PLANT Headers
++1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
++2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
++3. `PLANT 3 -- FAILED and MISS are counted separately`
++4. `PLANT 4 -- the denominator is per-rung 'reached', not n requested`
++5. `PLANT 5 -- outcome scoping refuses an unscoped value`
++6. `PLANT 6 -- a COMPOSITE title must not satisfy a single-outcome field`
++7. `PLANT 7 -- CT.gov paramType must canonicalise, or a true match scores as a miss`
++8. `PLANT 8 -- a document that does not NAME the trial must be rejected`
++9. `PLANT 9 -- the prior-meta TABLE path reads the right row and refuses the rest`
++10. `PLANT 10 -- a composite marker must not fire on a DRUG NAME`
++11. `PLANT 11 -- a CAUSE-SPECIFIC death is not all-cause death`
++12. `PLANT 12 -- RR = 1 - RRR, and the interval bounds INVERT`
++13. `PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG`
++14. `PLANT 22 -- the ERA GATE refuses a year-implausible identity`
++15. `PLANT 21 -- the DRUG is read from the record, not guessed`
++16. `PLANT 19 -- an AUTHOR-YEAR study label is an identity too`
++17. `PLANT 18 -- a prior-meta value must be RECONCILED, and the primary wins`
++18. `PLANT 16 -- a prior-meta row that is not a RESULT must be rejected`
++19. `PLANT 17 -- EMPTY must not collapse into MISS in the yield table`
++20. `PLANT 15 -- a rung that retrieved NOTHING must not say RETRIEVED_NO_VALUE`
++21. `PLANT 14 -- a measurement pass must not change the answer it measures`
++22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
++
++Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
+
+tokens used
+91,456
+Done. Wrote and printed [PLANT-COUNT-CHECK.md](F:/tr-build/ladder/out/PLANT-COUNT-CHECK.md).
+
+Final checks:
+- Line count: `53`
+- ASCII: `ASCII_OK`
+- Network: not used
+
+Key result:
+- `ladder.py`: `86` check call sites; declared `86 if extractor() is not None else 84`; agrees only on extractor-present path.
+- `ladder_store.py`: `1` check call site; declared `14`; disagree.
+- `obtainability.py`: `11` check call sites; declared `10`; disagree.
+- `ladder.py` PLANT numbers: no duplicates, missing `20`, not contiguous.

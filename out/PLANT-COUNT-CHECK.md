@@ -1,33 +1,25 @@
 # PLANT Count Check
-
 Scope: `oa68k/ladder.py`, `oa68k/ladder_store.py`, `oa68k/obtainability.py`. Network: not used.
 
 ## Commands Used
-
 check() call-site counts inside `_selftest`:
-
 ```powershell
-@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/ladder.py
-@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/ladder_store.py
-@' ... AST count Name("check") Call nodes inside FunctionDef("_selftest") ... '@ | python - F:/tr-build/ladder/oa68k/obtainability.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\ladder_store.py
+python -c "import ast,pathlib,sys;s=pathlib.Path(sys.argv[1]).read_text(encoding='utf-8');f=next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='_selftest');print(sum(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='check' for n in ast.walk(f)))" F:\tr-build\ladder\oa68k\obtainability.py
 ```
-
 Declared `n` lines:
-
 ```powershell
 rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder.py
 rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\ladder_store.py
 rg -n "^\s*n\s*=" F:\tr-build\ladder\oa68k\obtainability.py
 ```
-
 PLANT headers:
-
 ```powershell
 rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
 ```
 
 ## check() Calls vs Declared n
-
 | File | Actual check() call sites in `_selftest` | Declared n line | Agree? |
 |---|---:|---|---|
 | `oa68k/ladder.py` | 86 | line 2030: `n = 86 if extractor() is not None else 84` | YES if `extractor() is not None`; NO if `extractor() is None` |
@@ -35,7 +27,6 @@ rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
 | `oa68k/obtainability.py` | 11 | line 308: `n = 10` | NO |
 
 ## ladder.py PLANT Headers
-
 1. `PLANT 1 -- default state is NOT_YET_FOUND, never 'unavailable'`
 2. `PLANT 2 -- a retrieval with no value must NOT count as a hit`
 3. `PLANT 3 -- FAILED and MISS are counted separately`
@@ -60,24 +51,3 @@ rg -n "print\(\"PLANT" F:\tr-build\ladder\oa68k\ladder.py
 22. `PLANT 13 -- a RATIONALE/DESIGN paper must not outrank the results paper`
 
 Numbering verdict: no duplicated PLANT numbers. Missing PLANT number: 20. Numbers are not contiguous.
-
----
-
-# ADJUDICATION
-
-**PLANT 20 missing — CONFIRMED and fixed.** I had numbered a block 21 when the
-previous was 19, and folded what should have been PLANT 20 (the acronym-collision
-topic check) into PLANT 19's block under an unnumbered `print("   (acronym
-collision)")`. **A prior report of mine cited "Plant 20 asserts the off-topic record
-is refused" — a citation to a label that did not exist.** The block now carries its
-own header and the numbering is contiguous 1..24.
-
-**`n = 86 ... else 84` flagged as "NO if extractor() is None" — FALSE FLAG, no change
-made.** The count is static; the branch is not. PLANT 5 sits behind
-`if rx is None: print SKIP / else: <2 checks>`, so when the extractor is absent
-exactly two call sites do not execute and 84 is the correct expected total. Codex
-counted call sites without following the guard, which is the right thing for a
-mechanical pass to do and the wrong thing to act on without tracing it.
-
-⇒ **One real defect, one false positive, from a check that took one small job.** The
-real one was a label error in a report, and labels are identifiers.

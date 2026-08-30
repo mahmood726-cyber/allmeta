@@ -1,0 +1,1782 @@
+{
+ "summary": {
+  "n": 10,
+  "identity_demonstrated": 9,
+  "matched": 0,
+  "mismatched": 0
+ },
+ "denominator_of": "the ten trials in hfref-trial-ledger-v3.jsonl whose outcome provenance is a donor supplement; the fitted set is 43 TRIALS (44 rows: HF-021b is CARMEN's second contrast)",
+ "rows": [
+  {
+   "id": "HF-005",
+   "name": "Captopril-Digoxin 1988",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement only"
+  },
+  {
+   "id": "HF-006",
+   "name": "Beller 1995",
+   "identity": "7560247",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement (FLAGGED-SINGLE)"
+  },
+  {
+   "id": "HF-007",
+   "name": "van Veldhuisen 1998",
+   "identity": "9857856",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-008",
+   "name": "SPICE",
+   "identity": "10448027",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-009",
+   "name": "STRETCH",
+   "identity": "10577995",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-019",
+   "name": "RESOLVD",
+   "identity": "10477530",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-052",
+   "name": "Colucci 1996",
+   "identity": "8941105",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-053",
+   "name": "MOCHA",
+   "identity": "8941106",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-054",
+   "name": "PRECISE",
+   "identity": "8941104",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-055",
+   "name": "Cohn 1997",
+   "identity": "9330125",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  }
+ ],
+ "yield": {
+  "n_data_requested": 10,
+  "states": {
+   "NOT_YET_FOUND": 10
+  },
+  "per_rung": {
+   "R1_PRIOR_META": {
+    "rung": 1,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 9,
+    "miss": 1,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 33.33696484565735,
+    "bytes": 7949013
+   },
+   "R2_REGISTRY": {
+    "rung": 2,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 10,
+    "seconds": 0.0,
+    "bytes": 0
+   },
+   "R3_LITERATURE": {
+    "rung": 3,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 10,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 21.38899874687195,
+    "bytes": 14397445
+   },
+   "R4_REGULATORY": {
+    "rung": 4,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 5,
+    "miss": 4,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 38.18289542198181,
+    "bytes": 752762
+   },
+   "R5_PROTOCOL": {
+    "rung": 5,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 10,
+    "seconds": 0.0,
+    "bytes": 0
+   }
+  },
+  "denominator_note": "'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'empty' is a 200 with an empty body -- a rate limiter, never an empty source. 'failed' is a transport error and measures OUR REACH, not the source."
+ },
+ "records": [
+  {
+   "request": {
+    "trial": "Captopril-Digoxin 1988",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [],
+    "known_year": 1988,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "europepmc.search",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 2.2578375339508057,
+     "bytes_in": 288,
+     "payload_sha256": "3ec49034c318ac909ac9e0268c47d122aa76ae3f2bd6f0c0d3db1322ca469751",
+     "outcome": "MISS",
+     "note": "0 OA meta-analyses naming this trial",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:41+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:41+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.5372951030731201,
+     "bytes_in": 163301,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 0 pmids; esearch 12 candidate pmids; 12 candidates fetched, 0 are the trial's own report",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:44+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no plan: no drug name and no substance annotation on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:44+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:44+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 3.795132637023926,
+   "total_bytes": 163589,
+   "benchmark": {
+    "truth": {
+     "id": "HF-005",
+     "name": "Captopril-Digoxin 1988",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 8,
+       "n": 104,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 6,
+       "n": 100,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement only",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1988,
+     "union_pmid": null
+    },
+    "identity": {
+     "pmid": null,
+     "notes": [
+      "esearch 12 candidate pmids"
+     ],
+     "seconds": 0.32845377922058105,
+     "why": "12 candidates fetched, NONE is the trial's own report (all name it only in the abstract, i.e. cite it)"
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Beller 1995",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "7560247",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Cardiotonic Agents",
+     "Diuretics",
+     "Digoxin",
+     "Lisinopril"
+    ],
+    "known_year": 1995,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 3.398970365524292,
+     "bytes_in": 355789,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "2 of 2 OA meta full texts RETRIEVED (0 unobtainable); none of the 2 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:49+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:52:49+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 6.792099952697754,
+     "bytes_in": 505334,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 7 pmids; esearch 36 candidate pmids; 44 candidates fetched, 36 are the trial's own report; no scoped value in any of the 36 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:23+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 4.1391003131866455,
+     "bytes_in": 128374,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Cardiotonic Agents; openFDA: 0 applications for Diuretics; openFDA recognises generic_name=Digoxin; drugsfda: 5 applications ANDA215307,NDA020405,NDA021648,ANDA214982,ANDA040481; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 12270 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:28+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:28+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 14.330170631408691,
+   "total_bytes": 989497,
+   "benchmark": {
+    "truth": {
+     "id": "HF-006",
+     "name": "Beller 1995",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 4,
+       "n": 130,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 5,
+       "n": 63,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement (FLAGGED-SINGLE)",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1995,
+     "union_pmid": null
+    },
+    "identity": {
+     "pmid": "7560247",
+     "year": "1995",
+     "title": "Lisinopril versus placebo in the treatment of heart failure: the Lisinopril Heart Failure Study Group.",
+     "why": "first-author surname 'beller' and year 1995 both match the label",
+     "n_own_reports": 36,
+     "notes": [
+      "esearch 36 candidate pmids"
+     ],
+     "seconds": 0.4657096862792969,
+     "substances": [
+      "Cardiotonic Agents",
+      "Diuretics",
+      "Digoxin",
+      "Lisinopril"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "van Veldhuisen 1998",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "9857856",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Angiotensin-Converting Enzyme Inhibitors",
+     "Imidazoles",
+     "Imidazolidines",
+     "Natriuretic Peptide, Brain",
+     "Atrial Natriuretic Factor",
+     "imidapril"
+    ],
+    "known_year": 1998,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 2.34159779548645,
+     "bytes_in": 260071,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "2 of 2 OA meta full texts RETRIEVED (0 unobtainable); none of the 2 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:32+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:32+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.566969394683838,
+     "bytes_in": 132105,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 2 pmids; esearch 13 candidate pmids; 16 candidates fetched, 13 are the trial's own report; no scoped value in any of the 13 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:41+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.292255878448486,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "none of 6 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors, Imidazoles, Imidazolidines, Natriuretic Peptide, Brain, Atrial Natriuretic Factor, imidapril",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:46+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:46+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 9.200823068618774,
+   "total_bytes": 392176,
+   "benchmark": {
+    "truth": {
+     "id": "HF-007",
+     "name": "van Veldhuisen 1998",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 182,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 1,
+       "n": 62,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1998,
+     "union_pmid": null
+    },
+    "identity": {
+     "pmid": "9857856",
+     "year": "1998",
+     "title": "High- versus low-dose ACE inhibition in chronic heart failure: a double-blind, placebo-controlled study of imidapril.",
+     "why": "first-author surname 'veldhuisen' and year 1998 both match the label",
+     "n_own_reports": 13,
+     "notes": [
+      "esearch 13 candidate pmids"
+     ],
+     "seconds": 0.35729193687438965,
+     "substances": [
+      "Angiotensin-Converting Enzyme Inhibitors",
+      "Imidazoles",
+      "Imidazolidines",
+      "Natriuretic Peptide, Brain",
+      "Atrial Natriuretic Factor",
+      "imidapril"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "SPICE",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "10448027",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Angiotensin-Converting Enzyme Inhibitors"
+    ],
+    "known_year": 2000,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 4.1994640827178955,
+     "bytes_in": 1318134,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:52+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:52+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.5792055130004883,
+     "bytes_in": 1605951,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 41 pmids; esearch 33 candidate pmids; 75 candidates fetched, 2 are the trial's own report; no scoped value in any of the 2 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:56+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 0.23158693313598633,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "none of 1 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:56+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:53:56+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 6.01025652885437,
+   "total_bytes": 2924085,
+   "benchmark": {
+    "truth": {
+     "id": "HF-008",
+     "name": "SPICE",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ARB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 6,
+       "n": 179,
+       "node": "ARB"
+      },
+      {
+       "label": "control",
+       "events": 3,
+       "n": 91,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 2000,
+     "union_pmid": null
+    },
+    "identity": {
+     "pmid": "10448027",
+     "year": "1999",
+     "title": "Contemporary management of patients with left ventricular systolic dysfunction. Results from the Study of Patients Intol",
+     "why": "title names the trial",
+     "n_own_reports": 2,
+     "notes": [
+      "esearch 33 candidate pmids"
+     ],
+     "seconds": 0.6459472179412842,
+     "substances": [
+      "Angiotensin-Converting Enzyme Inhibitors"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "STRETCH",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "10577995",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Angiotensin Receptor Antagonists",
+     "Antihypertensive Agents",
+     "Benzimidazoles",
+     "Biphenyl Compounds",
+     "Cardiovascular Agents",
+     "Receptor, Angiotensin, Type 1",
+     "Receptor, Angiotensin, Type 2",
+     "Tetrazoles",
+     "Angiotensin II",
+     "Renin",
+     "candesartan cilexetil"
+    ],
+    "known_year": 1999,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 2.861086130142212,
+     "bytes_in": 1295203,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:01+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:01+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 2.194129705429077,
+     "bytes_in": 2464071,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 37 pmids; esearch 100 candidate pmids; 137 candidates fetched, 5 are the trial's own report; no scoped value in any of the 5 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:07+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.254359006881714,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "none of 11 substance candidates is a generic_name openFDA knows: Angiotensin Receptor Antagonists, Antihypertensive Agents, Benzimidazoles, Biphenyl Compounds, Cardiovascular Agents, Receptor, Angiotensin, Type 1",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:12+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:12+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 10.309574842453003,
+   "total_bytes": 3759274,
+   "benchmark": {
+    "truth": {
+     "id": "HF-009",
+     "name": "STRETCH",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ARB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 10,
+       "n": 633,
+       "node": "ARB"
+      },
+      {
+       "label": "control",
+       "events": 1,
+       "n": 211,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1999,
+     "union_pmid": null
+    },
+    "identity": {
+     "pmid": "10577995",
+     "year": "1999",
+     "title": "Improvement in exercise tolerance and symptoms of congestive heart failure during treatment with candesartan cilexetil. ",
+     "why": "title names the trial",
+     "n_own_reports": 4,
+     "notes": [
+      "esearch 100 candidate pmids"
+     ],
+     "seconds": 0.9250545501708984,
+     "substances": [
+      "Angiotensin Receptor Antagonists",
+      "Antihypertensive Agents",
+      "Benzimidazoles",
+      "Biphenyl Compounds",
+      "Cardiovascular Agents",
+      "Receptor, Angiotensin, Type 1",
+      "Receptor, Angiotensin, Type 2",
+      "Tetrazoles",
+      "Angiotensin II",
+      "Renin",
+      "candesartan cilexetil"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "RESOLVD",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "10477530",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Angiotensin-Converting Enzyme Inhibitors",
+     "Benzimidazoles",
+     "Biphenyl Compounds",
+     "Drug Combinations",
+     "Hormones",
+     "Tetrazoles",
+     "Enalapril",
+     "Creatinine",
+     "Potassium",
+     "candesartan"
+    ],
+    "known_year": 2000,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 3.8196754455566406,
+     "bytes_in": 1396395,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:17+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:17+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.406651258468628,
+     "bytes_in": 1383613,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 50 pmids; esearch 5 candidate pmids; 52 candidates fetched, 3 are the trial's own report; no scoped value in any of the 3 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:21+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.248965263366699,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "none of 10 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors, Benzimidazoles, Biphenyl Compounds, Drug Combinations, Hormones, Tetrazoles",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:26+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:26+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 10.475291967391968,
+   "total_bytes": 2780008,
+   "benchmark": {
+    "truth": {
+     "id": "HF-019",
+     "name": "RESOLVD",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 8,
+       "n": 214,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 17,
+       "n": 212,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 2000,
+     "union_pmid": null
+    },
+    "identity": {
+     "pmid": "10477530",
+     "year": "1999",
+     "title": "Comparison of candesartan, enalapril, and their combination in congestive heart failure: randomized evaluation of strate",
+     "why": "title names the trial",
+     "n_own_reports": 3,
+     "notes": [
+      "esearch 5 candidate pmids"
+     ],
+     "seconds": 0.3300783634185791,
+     "substances": [
+      "Angiotensin-Converting Enzyme Inhibitors",
+      "Benzimidazoles",
+      "Biphenyl Compounds",
+      "Drug Combinations",
+      "Hormones",
+      "Tetrazoles",
+      "Enalapril",
+      "Creatinine",
+      "Potassium",
+      "candesartan"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Colucci 1996",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8941105",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Propanolamines",
+     "Carvedilol"
+    ],
+    "known_year": 1996,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 0.9884250164031982,
+     "bytes_in": 355820,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "2 of 2 OA meta full texts RETRIEVED (0 unobtainable); none of the 2 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:30+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:30+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.1332616806030273,
+     "bytes_in": 664652,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 8 pmids; esearch 51 candidate pmids; 60 candidates fetched, 51 are the trial's own report; no scoped value in any of the 51 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:54:58+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 4.258378028869629,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:04+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:04+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 6.3800647258758545,
+   "total_bytes": 1176569,
+   "benchmark": {
+    "truth": {
+     "id": "HF-052",
+     "name": "Colucci 1996 (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 232,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 5,
+       "n": 134,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1996,
+     "union_pmid": "8941105"
+    },
+    "identity": {
+     "pmid": "8941105",
+     "year": "1996",
+     "title": "Carvedilol inhibits clinical progression in patients with mild symptoms of heart failure. US Carvedilol Heart Failure St",
+     "why": "first-author surname 'colucci' and year 1996 both match the label",
+     "n_own_reports": 51,
+     "notes": [
+      "esearch 51 candidate pmids"
+     ],
+     "seconds": 0.44255900382995605,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "MOCHA",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8941106",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Propanolamines",
+     "Carvedilol"
+    ],
+    "known_year": 1996,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 4.7281107902526855,
+     "bytes_in": 1210477,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:11+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:11+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.723517894744873,
+     "bytes_in": 1427104,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 37 pmids; esearch 40 candidate pmids; 78 candidates fetched, 2 are the trial's own report; no scoped value in any of the 2 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:15+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 4.25748348236084,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:22+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:22+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 10.709112167358398,
+   "total_bytes": 2793678,
+   "benchmark": {
+    "truth": {
+     "id": "HF-053",
+     "name": "MOCHA (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 12,
+       "n": 261,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 13,
+       "n": 84,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1996,
+     "union_pmid": "8941106"
+    },
+    "identity": {
+     "pmid": "8941106",
+     "year": "1996",
+     "title": "Carvedilol produces dose-related improvements in left ventricular function and survival in subjects with chronic heart f",
+     "why": "title names the trial",
+     "n_own_reports": 2,
+     "notes": [
+      "esearch 40 candidate pmids"
+     ],
+     "seconds": 0.6645779609680176,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "PRECISE",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8941104",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Placebos",
+     "Propanolamines",
+     "Carvedilol"
+    ],
+    "known_year": 1996,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 4.484215021133423,
+     "bytes_in": 1111018,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "8 of 8 OA meta full texts RETRIEVED (0 unobtainable); none of the 8 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:29+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:29+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 2.235541582107544,
+     "bytes_in": 4296027,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 42 pmids; esearch 143 candidate pmids; 180 candidates fetched, 1 are the trial's own report; no scoped value in any of the 1 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:35+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.2514612674713135,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Placebos; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:42+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:42+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 11.97121787071228,
+   "total_bytes": 5563142,
+   "benchmark": {
+    "truth": {
+     "id": "HF-054",
+     "name": "PRECISE (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 6,
+       "n": 133,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 11,
+       "n": 145,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1996,
+     "union_pmid": "8941104"
+    },
+    "identity": {
+     "pmid": "8941104",
+     "year": "1996",
+     "title": "Double-blind, placebo-controlled study of the effects of carvedilol in patients with moderate to severe heart failure. T",
+     "why": "title names the trial",
+     "n_own_reports": 1,
+     "notes": [
+      "esearch 143 candidate pmids"
+     ],
+     "seconds": 0.948190450668335,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Placebos",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Cohn 1997",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "9330125",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Propanolamines",
+     "Carvedilol"
+    ],
+    "known_year": 1997,
+    "year_slack": 1
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 1,
+     "rung_name": "R1_PRIOR_META",
+     "source": "harvest.fetch_fulltext",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": 200,
+     "seconds": 4.257582664489746,
+     "bytes_in": 645818,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "4 of 4 OA meta full texts RETRIEVED (0 unobtainable); none of the 4 retrieved yielded a scoped value for counts.all_cause_mortality",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:49+00:00"
+    },
+    {
+     "rung": 2,
+     "rung_name": "R2_REGISTRY",
+     "source": "clinicaltrials.gov",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:55:49+00:00"
+    },
+    {
+     "rung": 3,
+     "rung_name": "R3_LITERATURE",
+     "source": "epmc+efetch+pmc",
+     "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+     "http_status": null,
+     "seconds": 1.2203266620635986,
+     "bytes_in": 1755287,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "epmc seeded 32 pmids; esearch 120 candidate pmids; 153 candidates fetched, 120 are the trial's own report; no scoped value in any of the 120 own-report abstracts",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:57:05+00:00"
+    },
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 4.249305248260498,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:57:11+00:00"
+    },
+    {
+     "rung": 5,
+     "rung_name": "R5_PROTOCOL",
+     "source": "clinicaltrials.gov.largeDocs",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no NCT id",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T05:57:11+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 9.727214574813843,
+   "total_bytes": 2557202,
+   "benchmark": {
+    "truth": {
+     "id": "HF-055",
+     "name": "Cohn 1997 (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 70,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 2,
+       "n": 35,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality",
+     "known_year": 1997,
+     "union_pmid": "9330125"
+    },
+    "identity": {
+     "pmid": "9330125",
+     "year": "1997",
+     "title": "Safety and efficacy of carvedilol in severe heart failure. The U.S. Carvedilol Heart Failure Study Group.",
+     "why": "first-author surname 'cohn' and year 1997 both match the label",
+     "n_own_reports": 120,
+     "notes": [
+      "esearch 120 candidate pmids"
+     ],
+     "seconds": 0.899306058883667,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  }
+ ]
+}
