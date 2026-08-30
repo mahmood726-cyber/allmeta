@@ -1120,6 +1120,10 @@ def _rank_reports(xml: str, req: Request) -> list:
             "why": why,
             "has_registration": why.startswith("record carries"),
             "is_rct": "randomized controlled trial" in ptypes,
+            "topic_in_title": bool(req.topic_terms) and any(
+                t.lower() in _xml_text(" ".join(re.findall(
+                    r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>", block, flags=re.S))).lower()
+                for t in req.topic_terms),
             "is_design_paper": bool(_DESIGN_PAPER.search(_xml_text(" ".join(re.findall(
                 r"<ArticleTitle[^>]*>(.*?)</ArticleTitle>", block, flags=re.S))))),
         })
@@ -1157,8 +1161,14 @@ def _rank_reports(xml: str, req: Request) -> list:
                              + " candidates refused on year")
         out = keep
 
+    # ⭐ TOPIC IN THE TITLE OUTRANKS TOPIC ANYWHERE. Cohn 1997 resolved to
+    # "Cutaneous closure after cardiac operations" -- a 1997 paper by a Cohn whose
+    # ABSTRACT mentions heart failure -- over "Safety and efficacy of carvedilol in
+    # severe heart failure. The U.S. Carvedilol...", which is the trial's own report
+    # and says so in its title. Author-and-year is ambiguous when the surname is
+    # common; where the title itself is on topic, that is the stronger claim.
     out.sort(key=lambda r: (r["is_design_paper"], not r["has_registration"],
-                            r["year"], not r["is_rct"]))
+                            not r["topic_in_title"], r["year"], not r["is_rct"]))
     return out
 
 
@@ -1803,6 +1813,25 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 24 -- topic IN THE TITLE outranks topic anywhere")
+    two = ("<PubmedArticle><PMID>9389394</PMID><PubDate><Year>1997</Year></PubDate>"
+           "<LastName>Cohn</LastName><ArticleTitle>Cutaneous closure after cardiac "
+           "operations</ArticleTitle><AbstractText>Patients with heart failure were "
+           "included.</AbstractText></PubmedArticle>"
+           "<PubmedArticle><PMID>9330125</PMID><PubDate><Year>1997</Year></PubDate>"
+           "<LastName>Cohn</LastName><ArticleTitle>Safety and efficacy of carvedilol "
+           "in severe heart failure</ArticleTitle></PubmedArticle>")
+    rqC2 = Request(trial="Cohn 1997", field_path="x", known_year=1997,
+                   topic_terms=["heart failure"])
+    rk = _rank_reports(two, rqC2)
+    check("both are the trial's own report by author+year", len(rk) == 2)
+    check("the one with the topic IN ITS TITLE ranks first", rk[0]["pmid"] == "9330125")
+    check("the abstract-only match is kept, not discarded, just ranked below",
+          rk[1]["pmid"] == "9389394")
+    rqNo = Request(trial="Cohn 1997", field_path="x", known_year=1997)
+    check("with no topic terms the key is inert and order falls back to year/type",
+          len(_rank_reports(two, rqNo)) == 2)
+
     print("PLANT 23 -- no selector may claim a ROLE from a TYPE TAG or an OA FLAG")
     q = _primary_report_query(Request(trial="SOLVD", field_path="x", nct="NCT001"))
     check("the seed query carries NO PUB_TYPE clause", "PUB_TYPE" not in q)
@@ -1873,7 +1902,7 @@ def _selftest() -> int:
           not _is_primary_report(xml_ok.replace("1995", "2001"), rqB)[0])
     check("the WRONG AUTHOR is refused even with the right year",
           not _is_primary_report(xml_ok.replace("Beller", "Smith"), rqB)[0])
-    print("   (acronym collision)")
+    print("PLANT 20 -- an ACRONYM COLLISION must be refused by topic")
     rqM = Request(trial="MOCHA", field_path="x", topic_terms=["heart failure"])
     off = ("<PubmedArticle><PMID>4448900</PMID><ArticleTitle>Mocha and coffee"
            "</ArticleTitle></PubmedArticle>")
@@ -2027,7 +2056,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 86 if extractor() is not None else 84
+    n = 90 if extractor() is not None else 88
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0
