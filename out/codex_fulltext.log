@@ -1,0 +1,439 @@
+Reading additional input from stdin...
+OpenAI Codex v0.146.1
+--------
+workdir: F:\tr-build\ladder
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: medium
+reasoning summaries: none
+session id: 01a0513d-0df3-74c1-8484-a42a09966fc0
+--------
+user
+SMALL, ONE FILE, NO NETWORK. Read F:/allmeta/oa68k/fulltext.py.
+
+A sibling lane retracted a finding because it selected 'the trial report' using an OPEN-ACCESS flag: an OA flag on A paper linked to an NCT says nothing about THE PRIMARY report, and adding a publication-type filter does not save it because sub-studies carry the RCT tag too. A TYPE TAG IS NOT A ROLE.
+
+fulltext.py's docstring says its candidate set is papers the crosswalk resolved as 'is_open_access AND in_pmc' linked to an RCT by a DERIVED/RESULT reference.
+
+TASK: determine, from the code only, whether fulltext.py commits that error. Answer these separately, each with the line number and the predicate copied verbatim:
+1. Where is the candidate set built, and what EXACTLY does it filter on? Quote the SQL/predicate.
+2. Does anything in the file claim or assume the selected paper is the trial's PRIMARY report, as opposed to A paper reporting or citing that trial? Quote whatever comes closest.
+3. Does it use referenceType DERIVED/RESULT, and does the file anywhere acknowledge that this field is unreliable?
+4. What does it write per record, and does the record say WHICH paper it is (a role) or only that it is linked?
+
+Then a one-paragraph verdict: COMMITS THE ERROR / DOES NOT COMMIT IT / CANNOT TELL FROM THIS FILE, and say what would settle it.
+
+Do not speculate about files you did not open. If you need another file to answer, name it and say the answer is incomplete without it. Write F:/tr-build/ladder/out/FULLTEXT-SELECTOR-CHECK.md and print it. ASCII only, under 70 lines.
+codex
+I’ll keep this to the requested file and the output note. I’m going to inspect `fulltext.py` with line numbers, then write the markdown report under `out/`.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$path='"'F:/allmeta/oa68k/fulltext.py'; if (Test-Path "'$path) { Get-Content -LiteralPath $path | ForEach-Object -Begin {$i=1} -Process { '"'{0,5}: {1}' -f "'$i, $_; $i++ } } else { Write-Error "Missing $path" }' in F:\tr-build\ladder
+ succeeded in 14083ms:
+    1: """Stage T3 â€” OA full text for the TRIAL papers (layer 3 of the three-layer rule).
+    2: 
+    3: Layer 1 is the registry record (registry_full.py). Layer 2 is the abstract
+    4: (crosswalk.py). This is layer 3: the open-access full text of the papers that
+    5: actually report the trials â€” where the results tables, harms and (for DTA) the
+    6: 2x2 sens/spec cells live.
+    7: 
+    8: REUSE, not reimplementation:
+    9:   - `harvest.fetch_fulltext()` already implements the structure-first tier
+   10:     cascade (efetch JATS -> EPMC fullTextXML -> BioC) and caches by PMCID. The
+   11:     68k lane measured that efetch works from this host where EPMC sub-resources
+   12:     are proxy-404'd. We call it as-is.
+   13:   - `jats.parse_tables()` already parses <table-wrap> with real column headers.
+   14:     Column semantics are the whole reason the JATS tier is worth the bytes.
+   15: 
+   16: SEPARATE LEDGER, deliberately. `ledger.py` globs `harvest.*.jsonl` and counts
+   17: every row as an OA *meta-analysis*. Trial papers are a different population, so
+   18: writing them to the harvest ledger would silently inflate the 68k lane's corpus
+   19: count. We write `paperft.<node>.jsonl` instead. The XML cache IS shared (keyed by
+   20: PMCID, content-identical either way) â€” that is a real saving, not a collision.
+   21: 
+   22: Candidate set: papers the crosswalk resolved as `is_open_access AND in_pmc` with
+   23: a PMCID, linked to an RCT by a DERIVED/RESULT reference. Priority order:
+   24: malaria/TB/HIV first, then trials with posted registry results (so the registry
+   25: and the paper can be cross-checked against each other), then the rest.
+   26: 
+   27: Run:  python fulltext.py --limit 500
+   28:       python fulltext.py --all
+   29: """
+   30: from __future__ import annotations
+   31: 
+   32: import argparse
+   33: import glob
+   34: import json
+   35: import os
+   36: import re
+   37: import subprocess
+   38: import time
+   39: from concurrent.futures import ThreadPoolExecutor
+   40: from datetime import date
+   41: 
+   42: # ---- LANE KEY SELECTION. Must run BEFORE `import config`, which snapshots
+   43: # NCBI_API_KEY at module import time.
+   44: #
+   45: # This lane owns KEY B (env: NCBI_API_KEY_PREEXTRACT). KEY A (env:
+   46: # NCBI_API_KEY) belongs to the three 68k harvest shards, which share its 10/s.
+   47: # One key per workload: we map OUR key into the slot net.PoliteSession reads, so
+   48: # this process can never spend the harvest lane's budget. Doing this in config.py
+   49: # instead would be wrong â€” config is shared, and the 68k lane must keep KEY A.
+   50: #
+   51: # This is selection, NOT stacking: exactly one key is ever attached to a request,
+   52: # and each key serves one workload. Presenting both keys on one stream to fake
+   53: # 20/s would be limit-evasion; on a 429 we slow down (PoliteSession honours
+   54: # Retry-After), we do not rotate keys to dodge the throttle.
+   55: _LANE_KEY = os.environ.get("NCBI_API_KEY_PREEXTRACT", "").strip()
+   56: if _LANE_KEY:
+   57:     os.environ["NCBI_API_KEY"] = _LANE_KEY
+   58: 
+   59: import config as C  # noqa: E402  (import order is load-bearing, see above)
+   60: import harvest
+   61: import jats
+   62: from net import PoliteSession, RateLimiter, append_jsonl, load_done_keys
+   63: 
+   64: # Corpora this stage can harvest. `linked_rct` comes from the registry crosswalk;
+   65: # `dta` and `oa_rct` come from EPMC seeds and deliberately reach BEYOND the
+   66: # registry â€” an unregistered trial, or a DTA study (which is typically not a
+   67: # registered RCT at all), is invisible to CT.gov but is exactly the evidence a
+   68: # synthesist still needs. Each corpus keeps its own ledger + table dir so counts
+   69: # never bleed across populations.
+   70: CORPORA = ("linked_rct", "dta", "oa_rct")
+   71: 
+   72: # Commit tables+ledger together every N papers. Small enough that a kill costs
+   73: # seconds of re-fetch, large enough to avoid a parquet file per paper.
+   74: COMMIT_EVERY = 100
+   75: 
+   76: # ---- NCBI rate ------------------------------------------------------------
+   77: # With a DEDICATED key (KEY B) the whole 10 req/s is this lane's â€” no longer the
+   78: # 20% slice we took while sharing KEY A with the harvest shards. We still hold
+   79: # back 20% headroom: running flat at the stated ceiling earns 429s, and backing
+   80: # off is the rule (never rotate keys to dodge a throttle).
+   81: #
+   82: # CONCURRENCY IS THE POINT, and this is measured, not assumed. A single efetch
+   83: # round-trip is ~0.4-1.0s, so a SEQUENTIAL loop is latency-bound near ~1 req/s
+   84: # no matter how high the ceiling â€” the key raises a ceiling a sequential loop
+   85: # never reaches. Benchmarked on this host:
+   86: #   keyless sequential @1.2/s ->  0.56 req/s (  34/min)   <- the original
+   87: #   keyed   sequential @2.0/s ->  0.97 req/s (  58/min)   1.7x: key alone
+   88: #   keyed   4 workers  @2.0/s ->  1.80 req/s ( 108/min)   3.2x: key + workers
+   89: # Workers therefore scale with the rate; they share ONE RateLimiter so the node
+   90: # still respects the per-key budget rather than N timers each assuming it is alone.
+   91: def _my_rps() -> float:
+   92:     override = os.environ.get("OA68K_NCBI_RPS")
+   93:     if override:
+   94:         return float(override)
+   95:     if not C.NCBI_API_KEY:
+   96:         return 0.6                       # keyless: leave room for other lanes
+   97:     if _LANE_KEY:
+   98:         return 8.0                       # dedicated KEY B: 10/s minus headroom
+   99:     return 2.0                           # sharing KEY A: the reserved slice only
+  100: 
+  101: 
+  102: # Worker count is set from PRODUCTION measurement, not the fetch-only benchmark.
+  103: # The benchmark said 12w@8/s (98/min) beat 4w@2/s (44/min) â€” but it only fetched.
+  104: # In production this stage ALSO parses JATS (ElementTree, CPU-bound, GIL-held),
+  105: # so measured end-to-end on the real corpus:
+  106: #     4 workers @2.0/s -> 80/min   (cache=0)
+  107: #    12 workers @8.0/s -> 58/min   <- WORSE: threads contend on the GIL parsing
+  108: #                                     XML, and extra sockets cannot fix a CPU wall
+  109: # So the rate ceiling is not the binding constraint here and more workers past a
+  110: # point actively hurt. 6 is the compromise: enough to cover network latency, few
+  111: # enough to avoid parse contention. Re-measure before raising it â€” a benchmark
+  112: # that skips the CPU half of the work will lie to you again.
+  113: WORKERS = int(os.environ.get("OA68K_FT_WORKERS", "6" if _LANE_KEY else "4"))
+  114: 
+  115: 
+  116: def ft_ledger(corpus: str) -> str:
+  117:     stem = "paperft" if corpus == "linked_rct" else f"paperft_{corpus}"
+  118:     return os.path.join(C.DATA, f"{stem}.{C.NODE}.jsonl")
+  119: 
+  120: 
+  121: def tables_dir(corpus: str) -> str:
+  122:     name = "paper_tables" if corpus == "linked_rct" else f"paper_tables_{corpus}"
+  123:     return os.path.join(C.STORE, name)
+  124: 
+  125: 
+  126: def _lst(fs) -> str:
+  127:     return "[" + ",".join("'" + f.replace(os.sep, "/") + "'" for f in fs) + "]"
+  128: 
+  129: 
+  130: def candidates() -> list[dict]:
+  131:     """OA-in-PMC papers that REPORT an RCT, priority-ordered."""
+  132:     import duckdb
+  133:     papers = sorted(glob.glob(os.path.join(C.STORE, "papers", "*.parquet")))
+  134:     refs = sorted(glob.glob(os.path.join(C.STORE, "trial_refs", "*.parquet")))
+  135:     trials = sorted(glob.glob(os.path.join(C.STORE, "trials", "*.parquet")))
+  136:     if not papers:
+  137:         raise FileNotFoundError("no papers in the store â€” run crosswalk.py first")
+  138:     con = duckdb.connect()
+  139:     rows = con.execute(f"""
+  140:         WITH p AS (
+  141:           SELECT pmid, pmcid, doi, title FROM read_parquet({_lst(papers)})
+  142:           WHERE is_open_access AND in_pmc
+  143:             AND pmcid IS NOT NULL AND trim(pmcid) <> ''
+  144:         ),
+  145:         link AS (
+  146:           SELECT trim(pmid) AS pmid, nct_id FROM read_parquet({_lst(refs)})
+  147:           WHERE upper(reference_type) IN ('DERIVED','RESULT')
+  148:         ),
+  149:         t AS (SELECT nct_id, cohort, results_posted
+  150:               FROM read_parquet({_lst(trials)}))
+  151:         SELECT p.pmcid, p.pmid, p.doi,
+  152:                MIN(CASE WHEN t.cohort='p0_malaria_tb_hiv' THEN 0 ELSE 1 END) AS c_rank,
+  153:                MAX(CASE WHEN t.results_posted THEN 1 ELSE 0 END) AS any_results,
+  154:                string_agg(DISTINCT link.nct_id, ' | ') AS ncts
+  155:         FROM p JOIN link ON link.pmid = p.pmid
+  156:                LEFT JOIN t ON t.nct_id = link.nct_id
+  157:         GROUP BY p.pmcid, p.pmid, p.doi
+  158:         ORDER BY c_rank, any_results DESC, CAST(p.pmid AS BIGINT)
+  159:     """).fetchall()
+  160:     return [{"pmcid": r[0], "pmid": r[1], "doi": r[2], "source": "MED",
+  161:              "cohort_rank": r[3], "any_results": bool(r[4]), "ncts": r[5]}
+  162:             for r in rows]
+  163: 
+  164: 
+  165: def fetch_or_cached(sess: PoliteSession, c: dict) -> dict:
+  166:     """Reuse the on-disk XML if we already have it; only then hit the network.
+  167: 
+  168:     The cache is shared with the 68k lane's harvest (keyed by PMCID, and the
+  169:     bytes are the same document either way), so a meta already harvested there
+  170:     costs us nothing. harvest.fetch_fulltext always re-fetches, which is right
+  171:     for a first pass but wasteful for a re-run after a crash â€” and every avoided
+  172:     request is NCBI budget handed back to the other lane.
+  173:     """
+  174:     path = os.path.join(C.CACHE, f"{c['pmcid']}.xml")
+  175:     if os.path.isfile(path) and os.path.getsize(path) > 500:
+  176:         return {"pmcid": c["pmcid"], "pmid": c.get("pmid"), "doi": c.get("doi"),
+  177:                 "status": "XML", "tier": "cache", "tiers_tried": ["cache"],
+  178:                 "bytes": os.path.getsize(path), "path": path}
+  179:     return harvest.fetch_fulltext(sess, c)
+  180: 
+  181: 
+  182: def _pid_alive(pid: int) -> bool:
+  183:     """Is that PID still running? Windows has no os.kill(pid, 0) semantics we can
+  184:     rely on here, so ask the OS task list."""
+  185:     try:
+  186:         out = subprocess.run(
+  187:             ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+  188:             capture_output=True, text=True, timeout=20).stdout
+  189:         return str(pid) in out
+  190:     except Exception:
+  191:         return True          # can't tell => assume alive => refuse the lock
+  192: 
+  193: 
+  194: def _acquire_lock(corpus: str):
+  195:     """One harvester per corpus per node, enforced by an O_EXCL lock file.
+  196: 
+  197:     Not defensive padding â€” this bug happened: two `fulltext.py --all` processes
+  198:     ran concurrently (a nohup that I wrongly believed dead, plus a managed job),
+  199:     computed the same todo list, and re-fetched the same 427 papers while both
+  200:     appending to one ledger. `ps` on Git Bash shows no command arguments, so
+  201:     grepping for the script name reported 0 matches and hid it. A lock makes the
+  202:     second instance fail loudly instead of silently doubling the NCBI load.
+  203: 
+  204:     STALE-LOCK RECOVERY, and this one is load-bearing for the standing run: a
+  205:     KILLED harvester leaves its lock behind. A watchdog that restarts this lane
+  206:     from checkpoint would then hit the lock, fail, and the lane would stay dead
+  207:     for good â€” a permanent outage caused by the safety mechanism. Verified live:
+  208:     killing a harvester mid-flight left `.fulltext_linked_rct.pc1.lock` orphaned.
+  209:     So we record the PID and take the lock if its owner is gone. A lock held by a
+  210:     LIVE process is still refused â€” that is the case it exists for.
+  211:     """
+  212:     lock = os.path.join(C.DATA, f".fulltext_{corpus}.{C.NODE}.lock")
+  213:     for attempt in (1, 2):
+  214:         try:
+  215:             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+  216:         except FileExistsError:
+  217:             try:
+  218:                 with open(lock) as f:
+  219:                     who = f.read().strip()
+  220:             except OSError:
+  221:                 who = ""
+  222:             m = re.search(r"pid=(\d+)", who or "")
+  223:             if m and not _pid_alive(int(m.group(1))) and attempt == 1:
+  224:                 print(f"[fulltext] stale lock from dead pid {m.group(1)} â€” "
+  225:                       f"reclaiming ({lock})", flush=True)
+  226:                 try:
+  227:                     os.remove(lock)
+  228:                 except OSError:
+  229:                     pass
+  230:                 continue
+  231:             raise RuntimeError(
+  232:                 f"another fulltext harvester holds {lock} ({who}). Two harvesters "
+  233:                 f"on one corpus re-fetch the same papers and double the NCBI "
+  234:                 f"rate. If that process is genuinely dead, delete the lock file.")
+  235:         with os.fdopen(fd, "w") as f:
+  236:             f.write(f"pid={os.getpid()} started={date.today().isoformat()}")
+  237:         return lock
+  238:     raise RuntimeError(f"could not acquire {lock}")
+  239: 
+  240: 
+  241: def seed_candidates(corpus: str) -> list[dict]:
+  242:     """Candidates for an EPMC-seeded corpus (dta / oa_rct)."""
+  243:     import epmc_seed
+  244:     rows = epmc_seed.load_seed(corpus, priority_first=True)
+  245:     return [{"pmcid": r["pmcid"], "pmid": r.get("pmid"), "doi": r.get("doi"),
+  246:              "source": r.get("source") or "MED",
+  247:              "cohort_rank": 0 if r.get("priority") else 1,
+  248:              "any_results": False, "ncts": None} for r in rows]
+  249: 
+  250: 
+  251: def run(limit: int | None, all_: bool = False,
+  252:         corpus: str = "linked_rct") -> dict:
+  253:     if corpus not in CORPORA:
+  254:         raise ValueError(f"unknown corpus {corpus!r}; expected one of {CORPORA}")
+  255:     C.ensure_dirs()
+  256:     tdir, ledger = tables_dir(corpus), ft_ledger(corpus)
+  257:     os.makedirs(tdir, exist_ok=True)
+  258:     lock = _acquire_lock(corpus)
+  259:     try:
+  260:         return _run_locked(limit, all_, corpus, tdir, ledger)
+  261:     finally:
+  262:         try:
+  263:             os.remove(lock)
+  264:         except OSError:
+  265:             pass
+  266: 
+  267: 
+  268: def _run_locked(limit, all_, corpus, tdir, ledger) -> dict:
+  269:     today = date.today().isoformat()
+  270:     cands = candidates() if corpus == "linked_rct" else seed_candidates(corpus)
+  271:     done = load_done_keys(ledger, "pmcid")
+  272:     todo = [c for c in cands if c["pmcid"] not in done]
+  273:     if not all_ and limit:
+  274:         todo = todo[:limit]
+  275:     print(f"[fulltext:{corpus}] {len(cands)} OA papers; {len(done)} done; "
+  276:           f"fetching {len(todo)}", flush=True)
+  277: 
+  278:     # One shared limiter for every worker: N workers with N private timers would
+  279:     # each think they own the whole budget and collectively blow the per-key
+  280:     # limit. Each worker gets its own Session (connection pooling) but defers to
+  281:     # the shared gate.
+  282:     limiter = RateLimiter(_my_rps())
+  283:     agg = {"fetched": 0, "missed": 0, "from_cache": 0, "with_tables": 0,
+  284:            "tables": 0}
+  285:     tbuf, lbuf, t0 = [], [], time.monotonic()
+  286: 
+  287:     def commit():
+  288:         """Persist tables FIRST, then the ledger rows that claim them.
+  289: 
+  290:         Order is the whole point. Appending the ledger per paper while buffering
+  291:         its tables means a kill in between marks the paper done with its tables
+  292:         never written â€” and because resume is a set-difference on the ledger, that
+  293:         paper is skipped forever. Silent, permanent loss. Observed live: 521
+  294:         papers marked done, 8 table rows on disk, ~1,500 parsed tables lost in a
+  295:         killed process's buffer.
+  296: 
+  297:         Tables-then-ledger inverts the risk into a harmless one: a kill in the
+  298:         window re-fetches those papers next run and re-writes their table rows,
+  299:         so the failure mode is duplicate rows (detectable and removable by
+  300:         (pmcid, table_index)) instead of missing ones. Prefer visible duplication
+  301:         over invisible loss.
+  302:         """
+  303:         if tbuf:
+  304:             _flush(tbuf, tdir)
+  305:             tbuf.clear()
+  306:         for r in lbuf:
+  307:             append_jsonl(ledger, r)
+  308:         lbuf.clear()
+  309: 
+  310:     def work(c: dict):
+  311:         """Fetch + parse ONE paper. Runs on a worker thread; touches no shared
+  312:         state and never writes â€” the main thread owns all persistence, so the
+  313:         tables-then-ledger commit order survives concurrency."""
+  314:         sess = PoliteSession(min_interval=0, limiter=limiter)
+  315:         rec = fetch_or_cached(sess, c)
+  316:         rec.update(ncts=c["ncts"], cohort_rank=c["cohort_rank"], corpus=corpus,
+  317:                    source_tier="oa_fulltext", extracted_at=today,
+  318:                    locator=f"https://europepmc.org/article/PMC/{c['pmcid']}")
+  319:         rows = []
+  320:         if rec["status"] == "XML" and rec.get("path"):
+  321:             try:
+  322:                 with open(rec["path"], "rb") as f:
+  323:                     xml = f.read()
+  324:                 for ti, t in enumerate(jats.parse_tables(xml)):
+  325:                     trows = t.get("rows") or []
+  326:                     rows.append({
+  327:                         "pmcid": c["pmcid"], "pmid": c["pmid"], "ncts": c["ncts"],
+  328:                         "table_index": ti,
+  329:                         "label": (t.get("label") or "")[:80],
+  330:                         "caption": (t.get("caption") or "")[:500],
+  331:                         "n_rows": len(trows),
+  332:                         "n_cols": len(t.get("headers") or []),
+  333:                         "headers": " | ".join(t.get("headers") or []),
+  334:                         # THE CELLS. Without these the store holds table
+  335:                         # skeletons: shape and headers, no data. Measured: we had
+  336:                         # 37,850 tables describing 647,445 rows and zero values.
+  337:                         # JSON so one parquet column survives ragged tables
+  338:                         # (JATS rows are not guaranteed rectangular).
+  339:                         "rows_json": json.dumps(trows, ensure_ascii=False),
+  340:                         # Raw <table-wrap> so downstream extractors can take
+  341:                         # tables_xml= and do their own parsing â€” re-parsing the
+  342:                         # real markup is worth +25-38pp of extraction over
+  343:                         # text-only, which beats every disease difference.
+  344:                         "table_xml": t.get("xml") or "",
+  345:                         "tier": rec.get("tier"), "corpus": corpus,
+  346:                         "source_tier": "oa_fulltext",
+  347:                         "locator": rec["locator"], "extracted_at": today,
+  348:                     })
+  349:             except Exception as e:
+  350:                 rec["table_parse_error"] = str(e)[:200]
+  351:         rec["n_tables"] = len(rows)
+  352:         return rec, rows
+  353: 
+  354:     done_n = 0
+  355:     # Chunked so memory stays bounded and each chunk commits atomically; a kill
+  356:     # costs at most one chunk of re-fetch, never a lost table (see commit()).
+  357:     for start in range(0, len(todo), COMMIT_EVERY):
+  358:         chunk = todo[start:start + COMMIT_EVERY]
+  359:         with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+  360:             for rec, rows in ex.map(work, chunk):
+  361:                 lbuf.append(rec)
+  362:                 tbuf.extend(rows)
+  363:                 if rec["status"] == "XML":
+  364:                     agg["fetched"] += 1
+  365:                     agg["from_cache"] += int(rec.get("tier") == "cache")
+  366:                     agg["with_tables"] += int(len(rows) > 0)
+  367:                     agg["tables"] += len(rows)
+  368:                 else:
+  369:                     agg["missed"] += 1
+  370:         commit()
+  371:         done_n += len(chunk)
+  372:         rate = done_n / max(time.monotonic() - t0, 1e-9) * 60
+  373:         print(f"[fulltext:{corpus}] {done_n}/{len(todo)} ({rate:.0f}/min, "
+  374:               f"{WORKERS}w @{_my_rps():.1f}/s) xml={agg['fetched']} "
+  375:               f"cache={agg['from_cache']} tables={agg['tables']}", flush=True)
+  376:     commit()
+  377:     print(f"[fulltext:{corpus}] {agg}")
+  378:     return agg
+  379: 
+  380: 
+  381: def _flush(rows: list[dict], tdir: str) -> None:
+  382:     import pyarrow as pa
+  383:     import pyarrow.parquet as pq
+  384:     n = len(glob.glob(os.path.join(tdir, "part_*.parquet")))
+  385:     dst = os.path.join(tdir, f"part_{n:05d}.parquet")
+  386:     tmp = dst + ".tmp"
+  387:     pq.write_table(pa.Table.from_pylist(rows), tmp, compression="zstd")
+  388:     os.replace(tmp, dst)
+  389:     print(f"[fulltext] wrote {len(rows)} table rows -> {os.path.basename(dst)}",
+  390:           flush=True)
+  391: 
+  392: 
+  393: if __name__ == "__main__":
+  394:     ap = argparse.ArgumentParser()
+  395:     ap.add_argument("--limit", type=int, default=200)
+  396:     ap.add_argument("--all", action="store_true")
+  397:     ap.add_argument("--corpus", choices=CORPORA, default="linked_rct")
+  398:     a = ap.parse_args()
+  399:     print(json.dumps(run(a.limit, a.all, a.corpus), indent=2))
+
+codex
+The relevant selector is confined to `candidates()` for the default `linked_rct` corpus, with a separate seed loader for other corpora. I’m writing the check now with only predicates visible in this file.
+exec
+"C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "New-Item -ItemType Directory -Force -Path 'F:/tr-build/ladder/out' | Out-Null" in F:\tr-build\ladder
+ succeeded in 3716ms:
+apply patch
