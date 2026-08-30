@@ -22,7 +22,9 @@
   ],
   "counts_source": "donor supplement only",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1988,
+  "union_pmid": null
  },
  {
   "id": "HF-006",
@@ -47,7 +49,9 @@
   ],
   "counts_source": "donor supplement (FLAGGED-SINGLE)",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1995,
+  "union_pmid": null
  },
  {
   "id": "HF-007",
@@ -72,7 +76,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1998,
+  "union_pmid": null
  },
  {
   "id": "HF-008",
@@ -97,7 +103,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 2000,
+  "union_pmid": null
  },
  {
   "id": "HF-009",
@@ -122,7 +130,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1999,
+  "union_pmid": null
  },
  {
   "id": "HF-019",
@@ -147,7 +157,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 2000,
+  "union_pmid": null
  },
  {
   "id": "HF-052",
@@ -172,7 +184,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1996,
+  "union_pmid": "8941105"
  },
  {
   "id": "HF-053",
@@ -197,7 +211,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1996,
+  "union_pmid": "8941106"
  },
  {
   "id": "HF-054",
@@ -222,7 +238,9 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1996,
+  "union_pmid": "8941104"
  },
  {
   "id": "HF-055",
@@ -247,6 +265,8 @@
   ],
   "counts_source": "donor supplement",
   "tier": "T5-supplement",
-  "outcome": "all-cause mortality"
+  "outcome": "all-cause mortality",
+  "known_year": 1997,
+  "union_pmid": "9330125"
  }
 ]

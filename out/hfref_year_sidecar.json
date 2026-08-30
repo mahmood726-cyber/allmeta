@@ -1,0 +1,563 @@
+{
+ "ledger": "F:/E156/hfref-trial-ledger-v3.jsonl",
+ "contract": "SIDECAR ONLY -- keyed by ledger_id, merged deliberately or not at all. The ledger's bytes are pinned at a remote and are not edited here.",
+ "year_source": "PubMed <PubDate><Year> for the row's own PMID; never scraped from prose",
+ "n_rows": 61,
+ "n_with_pmid": 37,
+ "n_year_resolved": 37,
+ "n_no_pmid": 24,
+ "n_pmid_but_no_year": 0,
+ "n_pre_icmje_2005": 21,
+ "n_pre_fdaaa_2007": 23,
+ "rows": [
+  {
+   "ledger_id": "HF-001",
+   "name": "SOLVD-Treatment",
+   "pmid": "2057034",
+   "year": 1991,
+   "source": "PubMed 2057034 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-002",
+   "name": "FEST",
+   "pmid": "8682023",
+   "year": 1995,
+   "source": "PubMed 8682023 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-003",
+   "name": "CASSIS",
+   "pmid": "8751029",
+   "year": 1995,
+   "source": "PubMed 8751029 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-004",
+   "name": "Brown 1995",
+   "pmid": "7887385",
+   "year": 1995,
+   "source": "PubMed 7887385 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-005",
+   "name": "Captopril-Digoxin 1988",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-006",
+   "name": "Beller 1995",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-007",
+   "name": "van Veldhuisen 1998",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-008",
+   "name": "SPICE",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-009",
+   "name": "STRETCH",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-010",
+   "name": "ELITE",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-011",
+   "name": "ELITE-II",
+   "pmid": "10821361",
+   "year": 2000,
+   "source": "PubMed 10821361 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-012",
+   "name": "REPLACE",
+   "pmid": "11182175",
+   "year": 2001,
+   "source": "PubMed 11182175 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-013",
+   "name": "CIBIS-I",
+   "pmid": "7923660",
+   "year": 1994,
+   "source": "PubMed 7923660 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-014",
+   "name": "CIBIS-II",
+   "pmid": "10023943",
+   "year": 1999,
+   "source": "PubMed 10023943 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-015",
+   "name": "MERIT-HF",
+   "pmid": "10376614",
+   "year": 1999,
+   "source": "PubMed 10376614 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-016",
+   "name": "COPERNICUS",
+   "pmid": "11386263",
+   "year": 2001,
+   "source": "PubMed 11386263 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-017",
+   "name": "BEST",
+   "pmid": "11386264",
+   "year": 2001,
+   "source": "PubMed 11386264 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-018",
+   "name": "US Carvedilol Program (pooled)",
+   "pmid": "8614419",
+   "year": 1996,
+   "source": "PubMed 8614419 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-019",
+   "name": "RESOLVD",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-020",
+   "name": "He 2015",
+   "pmid": "28834619",
+   "year": 2015,
+   "source": "PubMed 28834619 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-021",
+   "name": "CARMEN",
+   "pmid": "15115904",
+   "year": 2004,
+   "source": "PubMed 15115904 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-022",
+   "name": "RALES",
+   "pmid": "10471456",
+   "year": 1999,
+   "source": "PubMed 10471456 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-023",
+   "name": "EMPHASIS-HF",
+   "pmid": "21073363",
+   "year": 2011,
+   "source": "PubMed 21073363 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-024",
+   "name": "J-EMPHASIS-HF",
+   "pmid": "28824029",
+   "year": 2017,
+   "source": "PubMed 28824029 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-025",
+   "name": "Vizzardi 2014",
+   "pmid": "24196866",
+   "year": 2014,
+   "source": "PubMed 24196866 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-026",
+   "name": "EPHESUS",
+   "pmid": "12668699",
+   "year": 2003,
+   "source": "PubMed 12668699 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-027",
+   "name": "AREA IN-CHF",
+   "pmid": "19147459",
+   "year": 2009,
+   "source": "PubMed 19147459 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-028",
+   "name": "Val-HeFT",
+   "pmid": "11759645",
+   "year": 2001,
+   "source": "PubMed 11759645 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-029",
+   "name": "CHARM-Added",
+   "pmid": "13678869",
+   "year": 2003,
+   "source": "PubMed 13678869 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-030",
+   "name": "PARADIGM-HF",
+   "pmid": "25176015",
+   "year": 2014,
+   "source": "PubMed 25176015 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-031",
+   "name": "PARACHUTE-HF",
+   "pmid": "41335448",
+   "year": 2026,
+   "source": "PubMed 41335448 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-032",
+   "name": "DAPA-HF",
+   "pmid": "31535829",
+   "year": 2019,
+   "source": "PubMed 31535829 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-033",
+   "name": "EMPEROR-Reduced",
+   "pmid": "32865377",
+   "year": 2020,
+   "source": "PubMed 32865377 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-034",
+   "name": "GALACTIC-HF",
+   "pmid": "33185990",
+   "year": 2021,
+   "source": "PubMed 33185990 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-035",
+   "name": "VICTORIA",
+   "pmid": "32222134",
+   "year": 2020,
+   "source": "PubMed 32222134 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-036",
+   "name": "VICTOR",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-037",
+   "name": "DIGIT-HF",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-038",
+   "name": "QUEST",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-039",
+   "name": "A-HeFT",
+   "pmid": "15533851",
+   "year": 2004,
+   "source": "PubMed 15533851 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-040",
+   "name": "SOLVD-Prevention",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-041",
+   "name": "CAPRICORN",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-042",
+   "name": "SHIFT",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-043",
+   "name": "J-SHIFT",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-044",
+   "name": "PIONEER-HF",
+   "pmid": "30415601",
+   "year": 2019,
+   "source": "PubMed 30415601 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-045",
+   "name": "SOCRATES-REDUCED",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-046",
+   "name": "HEART-FID",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-047",
+   "name": "SOLOIST-WHF",
+   "pmid": "33200892",
+   "year": 2021,
+   "source": "PubMed 33200892 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-048",
+   "name": "Hy-C (Fonarow 1992)",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-049",
+   "name": "MUCHA (Hori 2004)",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-050",
+   "name": "CELICARD",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-051",
+   "name": "Sturm 2000",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-052",
+   "name": "Colucci 1996 (US Carvedilol protocol)",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-053",
+   "name": "MOCHA (US Carvedilol protocol)",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-054",
+   "name": "PRECISE (US Carvedilol protocol)",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-055",
+   "name": "Cohn 1997 (US Carvedilol protocol)",
+   "pmid": null,
+   "year": null,
+   "source": "no PMID on the ledger row -- nothing to resolve a year from",
+   "pre_icmje_2005": null,
+   "pre_fdaaa_2007": null
+  },
+  {
+   "ledger_id": "HF-056",
+   "name": "CIBIS-III",
+   "pmid": "16143696",
+   "year": 2005,
+   "source": "PubMed 16143696 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-057",
+   "name": "COMET",
+   "pmid": "12853193",
+   "year": 2003,
+   "source": "PubMed 12853193 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-058",
+   "name": "HEAAL",
+   "pmid": "19922995",
+   "year": 2009,
+   "source": "PubMed 19922995 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": false
+  },
+  {
+   "ledger_id": "HF-059",
+   "name": "ATLAS",
+   "pmid": "10587334",
+   "year": 1999,
+   "source": "PubMed 10587334 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-060",
+   "name": "SENIORS",
+   "pmid": "15642700",
+   "year": 2005,
+   "source": "PubMed 15642700 <PubDate><Year>",
+   "pre_icmje_2005": false,
+   "pre_fdaaa_2007": true
+  },
+  {
+   "ledger_id": "HF-061",
+   "name": "MDC",
+   "pmid": "7902479",
+   "year": 1993,
+   "source": "PubMed 7902479 <PubDate><Year>",
+   "pre_icmje_2005": true,
+   "pre_fdaaa_2007": true
+  }
+ ]
+}

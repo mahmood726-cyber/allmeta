@@ -145,6 +145,8 @@ class Request:
     measure_hint: str = ""          # "HR" / "RR" -- a hint, never a filter
     topic_terms: list = field(default_factory=list)   # e.g. ["heart failure"]
     drug_candidates: list = field(default_factory=list)  # from PubMed <NameOfSubstance>
+    known_year: int | None = None    # the era gate; see _rank_reports
+    year_slack: int = 1              # a report can straddle a year boundary
 
 
 @dataclass
@@ -1116,6 +1118,34 @@ def _rank_reports(xml: str, req: Request) -> list:
     # design paper, out of which the ladder read "or =0.40". Design papers are
     # DEMOTED, not excluded -- they are still the trial's own documents, and rung 5
     # wants exactly them.
+    # ⭐ THE ERA GATE. When the caller knows the trial's year, a candidate whose
+    # publication year is far from it is REFUSED outright -- not merely ranked low.
+    # This is what turns two plausible-looking wrong answers into caught ones:
+    #     SPICE   union ledger says 2000, the acronym match was PMID 8334878 (1993)
+    #     STRETCH union ledger says 1999, the acronym match was PMID 1192554 (1975,
+    #             "Acetylcholine-induced reversal of canine and feline atrial
+    #              myocardial depression")
+    # Both passed every other test -- acronym in the title, on topic. A false
+    # identity that LOOKS right is worse than one that looks wrong, and the year is
+    # the cheapest thing that separates them.
+    if req.known_year:
+        keep, refused = [], 0
+        for r in out:
+            try:
+                yr = int(r["year"])
+            except (TypeError, ValueError):
+                keep.append(r)
+                continue
+            if abs(yr - int(req.known_year)) <= max(0, int(req.year_slack)):
+                keep.append(r)
+            else:
+                refused += 1
+        for r in keep:
+            r["era_gate"] = ("within +/-" + str(req.year_slack) + " of "
+                             + str(req.known_year) + "; " + str(refused)
+                             + " candidates refused on year")
+        out = keep
+
     out.sort(key=lambda r: (r["is_design_paper"], not r["has_registration"],
                             r["year"], not r["is_rct"]))
     return out
@@ -1762,6 +1792,28 @@ def _selftest() -> int:
     check("a point estimate outside its own interval is refused",
           gotbad is None or abs(gotbad["estimate"] - 0.84) > 1e-6)
 
+    print("PLANT 22 -- the ERA GATE refuses a year-implausible identity")
+    xml_era = ("<PubmedArticle><PMID>1192554</PMID><PubDate><Year>1975</Year></PubDate>"
+               "<ArticleTitle>STRETCH in heart failure</ArticleTitle></PubmedArticle>"
+               "<PubmedArticle><PMID>999</PMID><PubDate><Year>1999</Year></PubDate>"
+               "<ArticleTitle>STRETCH: candesartan in heart failure</ArticleTitle>"
+               "</PubmedArticle>")
+    rqE = Request(trial="STRETCH", field_path="x", known_year=1999,
+                  topic_terms=["heart failure"])
+    kept = _rank_reports(xml_era, rqE)
+    check("the 1975 candidate is REFUSED against a known year of 1999",
+          [k["pmid"] for k in kept] == ["999"])
+    check("the refusal is COUNTED in the note, not silent",
+          kept and "1 candidates refused on year" in kept[0].get("era_gate", ""))
+    rqN = Request(trial="STRETCH", field_path="x", topic_terms=["heart failure"])
+    check("with NO known_year the gate is INERT -- both survive (opt-in)",
+          len(_rank_reports(xml_era, rqN)) == 2)
+    rqS = Request(trial="STRETCH", field_path="x", known_year=1999, year_slack=1,
+                  topic_terms=["heart failure"])
+    xml_edge = xml_era.replace("<Year>1999</Year>", "<Year>2000</Year>")
+    check("slack of 1 still accepts a report published the following year",
+          any(k["pmid"] == "999" for k in _rank_reports(xml_edge, rqS)))
+
     print("PLANT 21 -- the DRUG is read from the record, not guessed")
     xs = ("<PubmedArticle><NameOfSubstance UI='D000319'>Adrenergic beta-Antagonists"
           "</NameOfSubstance><NameOfSubstance UI='D002220'>Carbazoles</NameOfSubstance>"
@@ -1947,7 +1999,7 @@ def _selftest() -> int:
         {"rung": 1, "rung_name": "R1_PRIOR_META", "outcome": "HIT", "seconds": 1, "bytes_in": 1}]}])
     check("restoration asserted", rep["per_rung"]["R1_PRIOR_META"]["hit"] == 1)
 
-    n = 77 if extractor() is not None else 75
+    n = 81 if extractor() is not None else 79
     print("\nselftest: " + str(n - len(fails)) + "/" + str(n) + " -- "
           + ("PASS" if not fails else "FAIL " + str(fails)))
     return 1 if fails else 0
