@@ -101,6 +101,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", default=os.path.join(L.OUT_DIR, "donor10_targets.json"))
     ap.add_argument("--out", default=os.path.join(L.OUT_DIR, "donor10_result.json"))
+    ap.add_argument("--only", default="",
+                    help="comma-separated rung numbers, e.g. 4 -- to measure ONE rung "
+                         "on its own denominator rather than leaving it inside a "
+                         "cascade zero")
     a = ap.parse_args(argv)
 
     with open(a.targets, encoding="utf-8") as f:
@@ -136,7 +140,8 @@ def main(argv=None) -> int:
             if req.drug_candidates:
                 print("      substances: " + ", ".join(req.drug_candidates[:5]))
 
-        rec = L.climb(req, session=s, stop_at_first_hit=True)
+        only = [int(x) for x in a.only.split(",") if x.strip()] if a.only else None
+        rec = L.climb(req, session=s, stop_at_first_hit=True, only=only)
         d = asdict(rec)
         sc = score_counts(t.get("arms") or [], d.get("value"))
         d["benchmark"] = {"truth": t, "identity": ident, "score": sc}
