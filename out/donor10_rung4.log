@@ -1,0 +1,93 @@
+extractor: rct-extractor-v2 v5.0.0
+
+=== HF-005 Captopril-Digoxin 1988 ===
+   R0 IDENTITY  UNRESOLVED -- 12 candidates fetched, NONE is the trial's own report (all name it only in the abstract, i
+   R4 SKIPPED               0.0s no plan: no drug name and no substance annotation on the request
+   -> NOT_FOUND via -
+
+=== HF-006 Beller 1995 ===
+   R0 IDENTITY  pmid 8535917 (first-author surname 'beller' and year 1995 both match the l)
+   R4 SKIPPED               0.0s no plan: no drug name and no substance annotation on the request
+   -> NOT_FOUND via -
+
+=== HF-007 van Veldhuisen 1998 ===
+   R0 IDENTITY  pmid 9857856 (first-author surname 'veldhuisen' and year 1998 both match t)
+      substances: Angiotensin-Converting Enzyme Inhibitors, Imidazoles, Imidazolidines, Natriuretic Peptide, Brain, Atrial Natriuretic Factor
+   R4 MISS                  5.8s none of 6 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors, Imidazoles, Imidazolidin
+   -> NOT_FOUND via -
+
+=== HF-008 SPICE ===
+   R0 IDENTITY  pmid 8334878 (title names the trial)
+   R4 SKIPPED               0.0s no plan: no drug name and no substance annotation on the request
+   -> NOT_FOUND via -
+
+=== HF-009 STRETCH ===
+   R0 IDENTITY  pmid 1192554 (title names the trial)
+      substances: Strophanthidin, Lidocaine, Acetylcholine
+   R4 RETRIEVED_NO_VALUE    2.3s openFDA: 0 applications for Strophanthidin; openFDA recognises generic_name=Lidocaine; drugsfda: 5 applications ANDA208017,ANDA218
+   -> NOT_FOUND via -
+
+=== HF-019 RESOLVD ===
+   R0 IDENTITY  pmid 10477530 (title names the trial)
+      substances: Angiotensin-Converting Enzyme Inhibitors, Benzimidazoles, Biphenyl Compounds, Drug Combinations, Hormones
+   R4 MISS                  5.2s none of 10 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors, Benzimidazoles, Bipheny
+   -> NOT_FOUND via -
+
+=== HF-052 Colucci 1996 ===
+   R0 IDENTITY  pmid 8941105 (first-author surname 'colucci' and year 1996 both match the )
+      substances: Adrenergic beta-Antagonists, Carbazoles, Propanolamines, Carvedilol
+   R4 RETRIEVED_NO_VALUE    4.4s openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propa
+   -> NOT_FOUND via -
+
+=== HF-053 MOCHA ===
+   R0 IDENTITY  pmid 8941106 (title names the trial)
+      substances: Adrenergic beta-Antagonists, Carbazoles, Propanolamines, Carvedilol
+   R4 RETRIEVED_NO_VALUE    4.2s openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propa
+   -> NOT_FOUND via -
+
+=== HF-054 PRECISE ===
+   R0 IDENTITY  pmid 8941104 (title names the trial)
+      substances: Adrenergic beta-Antagonists, Carbazoles, Placebos, Propanolamines, Carvedilol
+   R4 RETRIEVED_NO_VALUE    5.2s openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Place
+   -> NOT_FOUND via -
+
+=== HF-055 Cohn 1997 ===
+   R0 IDENTITY  pmid 9389394 (first-author surname 'cohn' and year 1997 both match the lab)
+   R4 SKIPPED               0.0s no plan: no drug name and no substance annotation on the request
+   -> NOT_FOUND via -
+
+==============================================================================
+DONOR-SUPPLEMENT TEN -- per-arm counts, scored EXACTLY
+==============================================================================
+  id      trial                  identity   verdict      rung
+  HF-005  Captopril-Digoxin 1988 None       NOT_FOUND    -
+  HF-006  Beller 1995            8535917    NOT_FOUND    -
+  HF-007  van Veldhuisen 1998    9857856    NOT_FOUND    -
+  HF-008  SPICE                  8334878    NOT_FOUND    -
+  HF-009  STRETCH                1192554    NOT_FOUND    -
+  HF-019  RESOLVD                10477530   NOT_FOUND    -
+  HF-052  Colucci 1996           8941105    NOT_FOUND    -
+  HF-053  MOCHA                  8941106    NOT_FOUND    -
+  HF-054  PRECISE                8941104    NOT_FOUND    -
+  HF-055  Cohn 1997              9389394    NOT_FOUND    -
+
+  STAGE 0  identity DEMONSTRATED   9/10   of the ten trials whose ledger row carries counts_source='donor supplement'
+  STAGE 1  counts MATCHED exactly   0/10   same denominator
+           counts MISMATCHED        0/10
+           not found                10/10
+
+DATA REQUESTED: 10 (one datum = one trial x one field)
+FINAL STATES:
+  NOT_YET_FOUND           10/10
+
+YIELD PER RUNG  (hit / reached -- reached is the denominator for THAT rung)
+  rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec     KB
+  R1_PRIOR_META         0           0     0     0     0     0         0     0.0      0
+  R2_REGISTRY           0           0     0     0     0     0         0     0.0      0
+  R3_LITERATURE         0           0     0     0     0     0         0     0.0      0
+  R4_REGULATORY         0           4     2     0     0     4        10    27.2    482
+  R5_PROTOCOL           0           0     0     0     0     0         0     0.0      0
+
+'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'empty' is a 200 with an empty body -- a rate limiter, never an empty source. 'failed' is a transport error and measures OUR REACH, not the source.
+
+wrote F:/tr-build/ladder/out/donor10_rung4.json (28789 bytes)

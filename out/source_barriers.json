@@ -1,0 +1,202 @@
+[
+ {
+  "cite": "Burnett H et al. Circ Heart Fail 2017;10(1):e003529",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 57,
+  "rec": 30,
+  "text": "MIXED",
+  "barrier": "Main text open at PMC5265698 and read. Supplement Table II \u2014 which holds the full 57-trial list and all arm-level event data \u2014 is not in the PMC XML payload (no supplementary manifest, no ta",
+  "route": "PMC5265698 main text RETRIEVED; Supplement Table II NOT retrieved"
+ },
+ {
+  "cite": "Komajda M et al. Eur J Heart Fail 2018;20(9):1315",
+  "tier": "PAYWALLED",
+  "reach": "UNREACHABLE",
+  "stated": 58,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "No PMCID exists for this record \u2014 not deposited, so PMC is a structural dead end rather than a fetch failure. Wiley pdfdirect returned HTTP 200 with an EMPTY BODY (JavaScript/Cloudflare inte",
+  "route": "PubMed metadata only; no PMC deposit exists"
+ },
+ {
+  "cite": "Tromp J et al. JACC Heart Fail 2022;10(2):73",
+  "tier": "PAYWALLED",
+  "reach": "UNREACHABLE",
+  "stated": 75,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "convert_article_ids returns NO PMCID \u2014 the paper is not in PMC at all, so the 'reconstruct from figures' route could not even be attempted. Elsevier/JACC paywall (permanent) plus dead fetch ",
+  "route": "PubMed metadata only; convert_article_ids returns no PMCID"
+ },
+ {
+  "cite": "De Marzo V et al. J Intern Med 2022;292(2):333",
+  "tier": "OPEN",
+  "reach": "RETRIEVED",
+  "stated": 69,
+  "rec": 69,
+  "text": "TEXT",
+  "barrier": "Trial list and ARM DENOMINATORS fully recovered \u2014 69 of 69. Per-arm EVENT counts are NOT recovered: they live in a supplementary file ('Number of events for the endpoints of interest in the ",
+  "route": "PMC9546056 full text; main-text Table 1 rendered intact"
+ },
+ {
+  "cite": "Tang X et al. BMC Cardiovasc Disord 2024;24:666",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 49,
+  "rec": 25,
+  "text": "MIXED",
+  "barrier": "Genuinely open access (BMC, CC-BY) and the narrative was read \u2014 but the PMC renderer STRIPS ALL TABLES and collapses inline citation markers to '[,,,-]'. The text literally reads 'The clinic",
+  "route": "PMC11585106 narrative RETRIEVED; Table 1 and Table S1 NOT rendered"
+ },
+ {
+  "cite": "van Essen BJ et al. J Am Coll Cardiol 2025;86(24):2513",
+  "tier": "PAYWALLED",
+  "reach": "UNREACHABLE",
+  "stated": 89,
+  "rec": 1,
+  "text": "NOT-ASSESSED",
+  "barrier": "No PMCID. JACC paywall. Declared update of Tromp 2021: inherits T21's 75-trial base and adds 14. THE 14 ADDITIONS COULD NOT BE IDENTIFIED. Exactly ONE trial is named anywhere in the reachabl",
+  "route": "PubMed abstract only; no PMCID"
+ },
+ {
+  "cite": "Al-Gobari M et al. BMC Cardiovasc Disord 2013;13:52",
+  "tier": "OPEN",
+  "reach": "RETRIEVED",
+  "stated": 30,
+  "rec": 30,
+  "text": "TEXT",
+  "barrier": "30 of 30 trial names + total n recovered. Per-arm event counts NOT recovered \u2014 forest plots stripped by the PMC renderer; only POOLED arm totals are printed (SCD 673/12768 vs 924/12011; CV d",
+  "route": "PMC3716800 full text; Table 1 rendered intact"
+ },
+ {
+  "cite": "Kotecha D et al. Syst Rev 2013;2:7 (BB-HF IPD protocol)",
+  "tier": "OPEN",
+  "reach": "RETRIEVED",
+  "stated": 11,
+  "rec": 11,
+  "text": "TEXT",
+  "barrier": "11 of 11 recovered, plus TWO NAMED CONSIDERED-AND-EXCLUDED trials (RESOLVD Pilot, CARMEN) which are legitimate discovery entries. Inclusion floor n>300, so this review STRUCTURALLY CANNOT su",
+  "route": "PMC3564787 full text; Tables 1-2 rendered"
+ },
+ {
+  "cite": "Silvetti S et al. ESC Heart Fail 2017;4(4):595",
+  "tier": "OPEN",
+  "reach": "RETRIEVED",
+  "stated": 6,
+  "rec": 6,
+  "text": "TEXT",
+  "barrier": "6 of 6 recovered WITH per-arm denominators. ALL SIX ARE n<100 \u2014 the single densest small-trial yield of this pass. Per-trial event counts were in Figure 2 (forest plot), which is stripped; o",
+  "route": "PMC5695198 full text; Tables 1-2 rendered intact"
+ },
+ {
+  "cite": "MRA in heart failure meta-analysis. BMC Cardiovasc Disor",
+  "tier": "OPEN",
+  "reach": "RETRIEVED",
+  "stated": 6,
+  "rec": 6,
+  "text": "TEXT",
+  "barrier": "6 of 6 recovered. Per-arm Events|Total present but POOLED BY SUBGROUP, not per trial (e.g. HFrEF all-cause 933/5505 vs 1153/5527). Usable as checksums only. Net-new yield LOW \u2014 all six are l",
+  "route": "PMC12482028 full text; Tables 1-3 rendered"
+ },
+ {
+  "cite": "Sun J et al. BMC Complement Altern Med 2016;16:201 (Qili",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 129,
+  "rec": 12,
+  "text": "MIXED",
+  "barrier": "129 RCTs / 11,547 patients across 131 articles, 2005-2015. MEAN TRIAL SIZE ~89 PATIENTS \u2014 this is the single largest cache of exactly the small trials that NMAs discard. Table 1 (per-study d",
+  "route": "PMC4940829 body rendered; Table 1 stripped; Additional file unreachable"
+ },
+ {
+  "cite": "Eplerenone vs spironolactone in HF. BMC Cardiovasc Disor",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 10,
+  "rec": 5,
+  "text": "MIXED",
+  "barrier": "10 studies but only 4 are RCTs \u2014 the rest observational, and under this programme's RCT-ONLY rule the observational rows are not ledger-eligible. Of the 4 RCTs only ONE (Naser) was identifia",
+  "route": "PMC11395778 body rendered; Tables 1-2 stripped"
+ },
+ {
+  "cite": "Suebsaicharoen C et al. Open Heart 2023;10(2):e002364",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 15,
+  "rec": 5,
+  "text": "MIXED",
+  "barrier": "This is a NETWORK meta-analysis, outside the pairwise seam; recorded for completeness. Study-characteristics table stripped. League tables rendered but carry HRs only, no arm counts. 5 named",
+  "route": "PMC10632908; study-characteristics table stripped"
+ },
+ {
+  "cite": "Heran BS et al. Cochrane Database Syst Rev 2012;4:CD0030",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 24,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "22 studies / 17,900 patients at LVEF<=40%, plus 2 studies / 7,151 at LVEF>40% (24 / 25,051 total). ZERO RECOVERED. Cochrane PMC deposits carry NO BODY TEXT in this API's rendering \u2014 full_tex",
+  "route": "PMC6823214 record exists; get_full_text_article returns empty string"
+ },
+ {
+  "cite": "Hood WB et al. Cochrane Database Syst Rev 2014;4:CD00290",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 13,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "13 studies / 7,896 participants. ZERO RECOVERED. Same empty-body Cochrane barrier. Inclusion floor was >=20 participants and >=7 weeks with AF prevalence <2% \u2014 so it WILL contain small digox",
+  "route": "PMC7138042; get_full_text_article returns empty string"
+ },
+ {
+  "cite": "Benstoem C et al. Cochrane Database Syst Rev 2020;11:CD0",
+  "tier": "OPEN",
+  "reach": "BLOCKED",
+  "stated": 19,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "19 studies (76 reports) / 19,628 participants: 11 HFrEF, 3 HFpEF, 1 HFmrEF, 4 unspecified. ZERO RECOVERED. Same empty-body Cochrane barrier. Against the 1-3 ivabradine trials the core-set NM",
+  "route": "PMC8094176; get_full_text_article returns empty string"
+ },
+ {
+  "cite": "Cleland JGF et al. Cochrane Database Syst Rev CD002131 (",
+  "tier": "OPEN",
+  "reach": "STRUCTURALLY-ABSENT",
+  "stated": 0,
+  "rec": 0,
+  "text": "TEXT",
+  "barrier": "SUBSTANTIVE FINDING, NOT A RETRIEVAL FAILURE. The record reads back verbatim: 'This is the protocol for a review and there is no abstract.' The flagship Cochrane beta-blocker heart-failure r",
+  "route": "record read back in full"
+ },
+ {
+  "cite": "Boeuf-Gibot S et al. Eur J Clin Pharmacol 2021;77:321 (A",
+  "tier": "PAYWALLED",
+  "reach": "UNREACHABLE",
+  "stated": 11,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "11 double-blind ACEi-vs-placebo RCTs / 13,882 patients. ZERO RECOVERED. No PMC deposit; publisher paywall. HIGHEST-VALUE UNRECOVERED ACE-INHIBITOR TARGET \u2014 a modern HFrEF-specific pairwise A",
+  "route": "no PMCID; convert_article_ids returns none"
+ },
+ {
+  "cite": "Classic beta-blocker/ACEi pairwise overviews: Garg & Yus",
+  "tier": "PAYWALLED",
+  "reach": "UNREACHABLE",
+  "stated": 62,
+  "rec": 0,
+  "text": "NOT-ASSESSED",
+  "barrier": "Lechat 18 trials/3,023 pts; Brophy 22/10,135; Shibata 22/10,480; Garg & Yusuf size not stated in abstract. ZERO RECOVERED across all four. Publisher paywalls plus dead transport. Lechat's ME",
+  "route": "convert_article_ids returns NO PMCID for any of the four"
+ },
+ {
+  "cite": "E156 internal lanes: hfref-trial-ledger.jsonl (RECONCILI",
+  "tier": "OPEN",
+  "reach": "RETRIEVED",
+  "stated": 111,
+  "rec": 111,
+  "text": "TEXT",
+  "barrier": "111 records across three lanes, resolving to 92 unique trials after applying the cross-lane no-double-count rules stated in the pre-2000 lane header. Carries per-arm ALL-CAUSE-MORTALITY coun",
+  "route": "local file read"
+ }
+]

@@ -1,0 +1,1102 @@
+{
+ "summary": {
+  "n": 10,
+  "identity_demonstrated": 9,
+  "matched": 0,
+  "mismatched": 0
+ },
+ "denominator_of": "the ten trials in hfref-trial-ledger-v3.jsonl whose outcome provenance is a donor supplement; the fitted set is 43 TRIALS (44 rows: HF-021b is CARMEN's second contrast)",
+ "rows": [
+  {
+   "id": "HF-005",
+   "name": "Captopril-Digoxin 1988",
+   "identity": null,
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement only"
+  },
+  {
+   "id": "HF-006",
+   "name": "Beller 1995",
+   "identity": "8535917",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement (FLAGGED-SINGLE)"
+  },
+  {
+   "id": "HF-007",
+   "name": "van Veldhuisen 1998",
+   "identity": "9857856",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-008",
+   "name": "SPICE",
+   "identity": "8334878",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-009",
+   "name": "STRETCH",
+   "identity": "1192554",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-019",
+   "name": "RESOLVD",
+   "identity": "10477530",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-052",
+   "name": "Colucci 1996",
+   "identity": "8941105",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-053",
+   "name": "MOCHA",
+   "identity": "8941106",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-054",
+   "name": "PRECISE",
+   "identity": "8941104",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  },
+  {
+   "id": "HF-055",
+   "name": "Cohn 1997",
+   "identity": "9389394",
+   "verdict": "NOT_FOUND",
+   "rung": "-",
+   "tier": "-",
+   "counts_source_in_ledger": "donor supplement"
+  }
+ ],
+ "yield": {
+  "n_data_requested": 10,
+  "states": {
+   "NOT_YET_FOUND": 10
+  },
+  "per_rung": {
+   "R1_PRIOR_META": {
+    "rung": 1,
+    "reached": 0,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0,
+    "bytes": 0
+   },
+   "R2_REGISTRY": {
+    "rung": 2,
+    "reached": 0,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0,
+    "bytes": 0
+   },
+   "R3_LITERATURE": {
+    "rung": 3,
+    "reached": 0,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0,
+    "bytes": 0
+   },
+   "R4_REGULATORY": {
+    "rung": 4,
+    "reached": 10,
+    "hit": 0,
+    "retrieved_no_value": 4,
+    "miss": 2,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 4,
+    "seconds": 27.174600839614868,
+    "bytes": 494276
+   },
+   "R5_PROTOCOL": {
+    "rung": 5,
+    "reached": 0,
+    "hit": 0,
+    "retrieved_no_value": 0,
+    "miss": 0,
+    "empty": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0,
+    "bytes": 0
+   }
+  },
+  "denominator_note": "'reached' is the denominator for its own rung: the number of data for which THIS RUNG ACTUALLY RAN. The ladder stops at the first hit, so a rung's denominator is the set still unfound when it was reached -- not n_data_requested. 'hit' counts data where a VALUE was extracted; 'retrieved_no_value' counts documents fetched that yielded none, and is reported separately because a retrieval count is not an evidence claim. 'empty' is a 200 with an empty body -- a rate limiter, never an empty source. 'failed' is a transport error and measures OUR REACH, not the source."
+ },
+ "records": [
+  {
+   "request": {
+    "trial": "Captopril-Digoxin 1988",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": []
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no plan: no drug name and no substance annotation on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:03:44+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 0.0,
+   "total_bytes": 0,
+   "benchmark": {
+    "truth": {
+     "id": "HF-005",
+     "name": "Captopril-Digoxin 1988",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 8,
+       "n": 104,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 6,
+       "n": 100,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement only",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": null,
+     "notes": [
+      "esearch 12 candidate pmids"
+     ],
+     "seconds": 0.42554736137390137,
+     "why": "12 candidates fetched, NONE is the trial's own report (all name it only in the abstract, i.e. cite it)"
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Beller 1995",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8535917",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": []
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no plan: no drug name and no substance annotation on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:03:46+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 0.0,
+   "total_bytes": 0,
+   "benchmark": {
+    "truth": {
+     "id": "HF-006",
+     "name": "Beller 1995",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 4,
+       "n": 130,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 5,
+       "n": 63,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement (FLAGGED-SINGLE)",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "8535917",
+     "year": "1995",
+     "title": "The effect of feedback on anxiety levels during ultrasound scanning for ovarian cancer.",
+     "why": "first-author surname 'beller' and year 1995 both match the label",
+     "n_own_reports": 36,
+     "notes": [
+      "esearch 36 candidate pmids"
+     ],
+     "seconds": 0.5345277786254883,
+     "substances": []
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "van Veldhuisen 1998",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "9857856",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Angiotensin-Converting Enzyme Inhibitors",
+     "Imidazoles",
+     "Imidazolidines",
+     "Natriuretic Peptide, Brain",
+     "Atrial Natriuretic Factor",
+     "imidapril"
+    ]
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.77991247177124,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "none of 6 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors, Imidazoles, Imidazolidines, Natriuretic Peptide, Brain, Atrial Natriuretic Factor, imidapril",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:03:53+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 5.77991247177124,
+   "total_bytes": 0,
+   "benchmark": {
+    "truth": {
+     "id": "HF-007",
+     "name": "van Veldhuisen 1998",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ACEI",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 182,
+       "node": "ACEI"
+      },
+      {
+       "label": "control",
+       "events": 1,
+       "n": 62,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "9857856",
+     "year": "1998",
+     "title": "High- versus low-dose ACE inhibition in chronic heart failure: a double-blind, placebo-controlled study of imidapril.",
+     "why": "first-author surname 'veldhuisen' and year 1998 both match the label",
+     "n_own_reports": 13,
+     "notes": [
+      "esearch 13 candidate pmids"
+     ],
+     "seconds": 0.41379785537719727,
+     "substances": [
+      "Angiotensin-Converting Enzyme Inhibitors",
+      "Imidazoles",
+      "Imidazolidines",
+      "Natriuretic Peptide, Brain",
+      "Atrial Natriuretic Factor",
+      "imidapril"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "SPICE",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8334878",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": []
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no plan: no drug name and no substance annotation on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:03:55+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 0.0,
+   "total_bytes": 0,
+   "benchmark": {
+    "truth": {
+     "id": "HF-008",
+     "name": "SPICE",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ARB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 6,
+       "n": 179,
+       "node": "ARB"
+      },
+      {
+       "label": "control",
+       "events": 3,
+       "n": 91,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "8334878",
+     "year": "1993",
+     "title": "An improved SPICE heart model that obeys Starling's law.",
+     "why": "title names the trial",
+     "n_own_reports": 33,
+     "notes": [
+      "esearch 33 candidate pmids"
+     ],
+     "seconds": 0.6995716094970703,
+     "substances": []
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "STRETCH",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "1192554",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Strophanthidin",
+     "Lidocaine",
+     "Acetylcholine"
+    ]
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 2.3018767833709717,
+     "bytes_in": 25985,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Strophanthidin; openFDA recognises generic_name=Lidocaine; drugsfda: 5 applications ANDA208017,ANDA218182,ANDA088327,ANDA088328,ANDA207182; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 0 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:03:59+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 2.3018767833709717,
+   "total_bytes": 25985,
+   "benchmark": {
+    "truth": {
+     "id": "HF-009",
+     "name": "STRETCH",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "Placebo->ARB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 10,
+       "n": 633,
+       "node": "ARB"
+      },
+      {
+       "label": "control",
+       "events": 1,
+       "n": 211,
+       "node": "Placebo"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "1192554",
+     "year": "1975",
+     "title": "Acetylcholine-induced reversal of canine and feline atrial myocardial depression during stretch, cardiac failure, and dr",
+     "why": "title names the trial",
+     "n_own_reports": 83,
+     "notes": [
+      "esearch 100 candidate pmids"
+     ],
+     "seconds": 0.7838280200958252,
+     "substances": [
+      "Strophanthidin",
+      "Lidocaine",
+      "Acetylcholine"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "RESOLVD",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "10477530",
+    "doi": "",
+    "drug": "",
+    "aliases": [],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Angiotensin-Converting Enzyme Inhibitors",
+     "Benzimidazoles",
+     "Biphenyl Compounds",
+     "Drug Combinations",
+     "Hormones",
+     "Tetrazoles",
+     "Enalapril",
+     "Creatinine",
+     "Potassium",
+     "candesartan"
+    ]
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.233705997467041,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "MISS",
+     "note": "none of 10 substance candidates is a generic_name openFDA knows: Angiotensin-Converting Enzyme Inhibitors, Benzimidazoles, Biphenyl Compounds, Drug Combinations, Hormones, Tetrazoles",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:04:06+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 5.233705997467041,
+   "total_bytes": 0,
+   "benchmark": {
+    "truth": {
+     "id": "HF-019",
+     "name": "RESOLVD",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 8,
+       "n": 214,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 17,
+       "n": 212,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "10477530",
+     "year": "1999",
+     "title": "Comparison of candesartan, enalapril, and their combination in congestive heart failure: randomized evaluation of strate",
+     "why": "title names the trial",
+     "n_own_reports": 5,
+     "notes": [
+      "esearch 5 candidate pmids"
+     ],
+     "seconds": 0.3167440891265869,
+     "substances": [
+      "Angiotensin-Converting Enzyme Inhibitors",
+      "Benzimidazoles",
+      "Biphenyl Compounds",
+      "Drug Combinations",
+      "Hormones",
+      "Tetrazoles",
+      "Enalapril",
+      "Creatinine",
+      "Potassium",
+      "candesartan"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Colucci 1996",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8941105",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Propanolamines",
+     "Carvedilol"
+    ]
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 4.380918741226196,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:04:43+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 4.380918741226196,
+   "total_bytes": 156097,
+   "benchmark": {
+    "truth": {
+     "id": "HF-052",
+     "name": "Colucci 1996 (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 232,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 5,
+       "n": 134,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "8941105",
+     "year": "1996",
+     "title": "Carvedilol inhibits clinical progression in patients with mild symptoms of heart failure. US Carvedilol Heart Failure St",
+     "why": "first-author surname 'colucci' and year 1996 both match the label",
+     "n_own_reports": 51,
+     "notes": [
+      "esearch 51 candidate pmids"
+     ],
+     "seconds": 0.6125597953796387,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "MOCHA",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8941106",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Propanolamines",
+     "Carvedilol"
+    ]
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 4.234203815460205,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:04:52+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 4.234203815460205,
+   "total_bytes": 156097,
+   "benchmark": {
+    "truth": {
+     "id": "HF-053",
+     "name": "MOCHA (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 12,
+       "n": 261,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 13,
+       "n": 84,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "8941106",
+     "year": "1996",
+     "title": "Carvedilol produces dose-related improvements in left ventricular function and survival in subjects with chronic heart f",
+     "why": "title names the trial",
+     "n_own_reports": 40,
+     "notes": [
+      "esearch 40 candidate pmids"
+     ],
+     "seconds": 0.5888149738311768,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "PRECISE",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "8941104",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": [
+     "Adrenergic beta-Antagonists",
+     "Carbazoles",
+     "Placebos",
+     "Propanolamines",
+     "Carvedilol"
+    ]
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda(openfda)+ema",
+     "url": "https://api.fda.gov/drug/drugsfda.json",
+     "http_status": null,
+     "seconds": 5.243983030319214,
+     "bytes_in": 156097,
+     "payload_sha256": "",
+     "outcome": "RETRIEVED_NO_VALUE",
+     "note": "openFDA: 0 applications for Adrenergic beta-Antagonists; openFDA: 0 applications for Carbazoles; openFDA: 0 applications for Placebos; openFDA: 0 applications for Propanolamines; openFDA recognises generic_name=Carvedilol; drugsfda: 5 applications ANDA078332,ANDA076649,ANDA076373,NDA022012,ANDA078165; review PDFs addressable at accessdata.fda.gov/drugsatfda_docs/nda/<year>/<applno>Orig1s000StatR.pdf -- NOT parsed here (scanned reviews need OCR; see regulatory/REGULATORY-SOURCE.md sec 5); label clinical_studies 24151 chars",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:05:02+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 5.243983030319214,
+   "total_bytes": 156097,
+   "benchmark": {
+    "truth": {
+     "id": "HF-054",
+     "name": "PRECISE (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 6,
+       "n": 133,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 11,
+       "n": 145,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "8941104",
+     "year": "1996",
+     "title": "Double-blind, placebo-controlled study of the effects of carvedilol in patients with moderate to severe heart failure. T",
+     "why": "title names the trial",
+     "n_own_reports": 102,
+     "notes": [
+      "esearch 143 candidate pmids"
+     ],
+     "seconds": 1.2803313732147217,
+     "substances": [
+      "Adrenergic beta-Antagonists",
+      "Carbazoles",
+      "Placebos",
+      "Propanolamines",
+      "Carvedilol"
+     ]
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  },
+  {
+   "request": {
+    "trial": "Cohn 1997",
+    "field_path": "counts.all_cause_mortality",
+    "nct": "",
+    "pmid": "9389394",
+    "doi": "",
+    "drug": "",
+    "aliases": [
+     "US Carvedilol protocol"
+    ],
+    "measure_hint": "",
+    "topic_terms": [
+     "heart failure",
+     "cardiac failure"
+    ],
+    "drug_candidates": []
+   },
+   "state": "NOT_YET_FOUND",
+   "supplying_rung": null,
+   "supplying_rung_name": "",
+   "value": null,
+   "provenance_tier": "",
+   "attempts": [
+    {
+     "rung": 4,
+     "rung_name": "R4_REGULATORY",
+     "source": "fda+ema",
+     "url": "",
+     "http_status": null,
+     "seconds": 0.0,
+     "bytes_in": 0,
+     "payload_sha256": "",
+     "outcome": "SKIPPED",
+     "note": "no plan: no drug name and no substance annotation on the request",
+     "value": null,
+     "provenance_tier": "",
+     "retrieved_utc": "2026-08-30T00:05:05+00:00"
+    }
+   ],
+   "unobtainable_verdict": null,
+   "total_seconds": 0.0,
+   "total_bytes": 0,
+   "benchmark": {
+    "truth": {
+     "id": "HF-055",
+     "name": "Cohn 1997 (US Carvedilol protocol)",
+     "pmid": null,
+     "doi": null,
+     "nct": null,
+     "edge": "ACEI->ACEI+BB",
+     "arms": [
+      {
+       "label": "treatment",
+       "events": 2,
+       "n": 70,
+       "node": "ACEI+BB"
+      },
+      {
+       "label": "control",
+       "events": 2,
+       "n": 35,
+       "node": "ACEI"
+      }
+     ],
+     "counts_source": "donor supplement",
+     "tier": "T5-supplement",
+     "outcome": "all-cause mortality"
+    },
+    "identity": {
+     "pmid": "9389394",
+     "year": "1997",
+     "title": "Cutaneous closure after cardiac operations: a controlled, randomized, prospective comparison of intradermal versus stapl",
+     "why": "first-author surname 'cohn' and year 1997 both match the label",
+     "n_own_reports": 120,
+     "notes": [
+      "esearch 120 candidate pmids"
+     ],
+     "seconds": 0.7298765182495117,
+     "substances": []
+    },
+    "score": {
+     "verdict": "NOT_FOUND",
+     "why": "no counts extracted"
+    }
+   }
+  }
+ ]
+}

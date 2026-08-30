@@ -527,3 +527,59 @@ counts as donor-carried in the first place.
 started.** `substances_of()` + openFDA resolution is committed (`cf97a0a`) and
 plant-covered, but **has not yet been measured on these ten.** Reporting it as
 anything other than unmeasured would be the error I just corrected.
+
+
+## B6. R4 measured on its own denominator — 0 of 10, and now it is a measurement
+
+`donor10_bench.py --only 4`. Identity resolves first, `substances_of()` harvests the
+record's own `<NameOfSubstance>` terms, and openFDA decides which is a drug.
+
+```
+  rung                  hit  ret-no-val  miss empty  fail  skip   reached    sec    KB
+  R4_REGULATORY         0           4     2     0     0     4        10    27.2   482
+```
+
+| | n | what it means |
+|---|---|---|
+| SKIPPED | 4 | **no plan** — the record carries no substance annotation at all |
+| MISS | 2 | candidates existed and **openFDA recognises none of them** as a generic_name (they are class terms: "Angiotensin-Converting Enzyme Inhibitors", "Benzimidazoles") |
+| RETRIEVED_NO_VALUE | 4 | a drug resolved, applications were returned, **and the label carries no per-arm counts** |
+| HIT | 0 | |
+
+**The register decided, exactly as intended.** For Colucci 1996:
+
+```
+openFDA: 0 applications for Adrenergic beta-Antagonists
+openFDA: 0 applications for Carbazoles
+openFDA: 0 applications for Propanolamines
+openFDA recognises generic_name=Carvedilol
+  -> 5 applications ANDA078332, ANDA076649, ANDA076373, NDA022012, ANDA078165
+  -> label clinical_studies 0 chars
+```
+
+Three class terms rejected, the drug accepted, **and no hand-written drug list
+anywhere.** The applications are real and the per-arm counts are not in the *label* —
+they would be in the statistical review PDF, which is the OCR-blocked path already
+documented in `regulatory/REGULATORY-SOURCE.md` §5 (text layer 2% for pre-2005 FDA
+documents). **So R4's zero here is a fact about openFDA's label endpoint, not about
+FDA's holdings.**
+
+### ⚠ And R4 caught an unverified identity propagating — the exact harm the rule predicts
+
+```
+HF-009 STRETCH -> PMID 1192554
+  title       "Acetylcholine-induced reversal of canine and feline atrial
+               myocardial depression"          (1975, cats and dogs)
+  substances  ['Strophanthidin', 'Lidocaine', 'Acetylcholine']
+  rung 4      openFDA recognises generic_name=Lidocaine -> 5 applications
+```
+
+**A 1990s heart-failure trial's regulatory rung went and asked the FDA about
+lidocaine.** This is why `identity.py` refuses to write an identifier it cannot
+demonstrate: *an unverified identifier does not fail loudly, it silently redirects
+every later rung to a different subject*, and every number downstream then describes
+that other subject. Here the redirection is visible because rung 4 prints what it
+asked. It usually is not.
+
+⇒ **It also vindicates flagging `SPICE` and `STRETCH` rather than counting them
+clean.** The year field requested in §B5 would have refused PMID 1192554 outright.
