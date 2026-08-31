@@ -122,7 +122,7 @@ RE_OBS_TITLE = re.compile(r"\b(?:cohort|observational|case[- ]control|real[- ]wo
 RE_NOTREVIEW_TITLE = re.compile(r"^\s*(?:retraction|correction|erratum|comment on)\b", re.I)
 BAD_PT = {"retracted publication", "comment", "editorial", "published erratum"}
 
-RE_PROSPERO = re.compile(r"\bCRD42\d{9}\b")
+RE_PROSPERO = re.compile(r"\bCRD42\d{9,10}\b")
 # A PROSPERO id is CRD42 + 9 digits (e.g. CRD42022358299). The first build demanded
 # CRD42 + 12 digits and therefore matched NOTHING: 0 of 108 read papers scored as
 # registered, which is the zero that sent me back to the instrument. RE_CRD_TOKEN keeps
