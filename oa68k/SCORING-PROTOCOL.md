@@ -31,11 +31,20 @@ included studies. That is not a low score. **It is an unsatisfiable criterion, a
 unsatisfiable criterion reported as a failure is a measurement of the rubric, not of
 the review.**
 
-⚠️ **I could not find run 1's criterion definitions on this machine.** I searched the
-repo's documents and the whole of `F:\claude-temp\pend` for `AT`-prefixed identifiers
-and found none. So the criteria below are written fresh and **the identifiers do not
-correspond to run 1's**. If Mahmood has the run-1 list, re-keying to it is a rename,
-not a rewrite — but I am not going to invent continuity I cannot verify.
+⚠️ **Run 1's criterion definitions are not on this machine** — I searched the repo's
+documents and the whole of `F:\claude-temp\pend` for `AT`-prefixed identifiers and found
+none. **The identifiers below are new and are not run 1's.** They are not renamed onto
+run 1's list, because that list is available to me only as a summary and building on a
+paraphrase would be worse than saying so.
+
+**Correspondence to run 1's three failing conditions, stated in one line and not used as
+a mapping:** run 1's *(a)* certainty not rated on the compared outcome is covered by
+**S2** and **S5**; its *(b)* included trials unenumerable — the only unanimous failure,
+the one labelled `AT2` — is **S1**; its *(c)* our topics drug-keyed where Cochrane is
+question-keyed is a **matching** condition, not a scoring one, and is already handled by
+the two-stage matcher in `OPEN-COMPARATOR-PROTOCOL.md` §5. ⛔ **(c) is deliberately not
+imported as a criterion**: scoring a review for answering a differently-shaped question
+would penalise it for our matcher's reach.
 
 **The fix, applied to every criterion below:**
 
@@ -81,6 +90,60 @@ worded as if it did.
 
 ---
 
+## 2A. ⭐ The blinding control, pre-registered here before it runs
+
+**It runs FIRST. A blinding control run after the criteria measures nothing, because by
+then we know which way we would like it to fall.**
+
+**Task given to the judge:** the two dossiers, and one question — *which side is
+machine-generated, and what gave it away?* Nothing about quality is asked.
+
+**Sample, drawn deterministically and fixed here before any result exists.** Pairs are
+ordered by `sha256(pair_id)`; **sample A = the first 6**, **sample B = the next 6**.
+Both are named now so that neither can be chosen later.
+
+**Test, pre-registered.** Primary is the **pooled** count of correct identifications
+across 6 pairs × 3 families = **n = 18**, against a one-sided binomial at p = 0.5.
+Computed, not asserted:
+
+| n | rejects at | α | power p=0.70 | power p=0.80 | power p=0.90 |
+|---|---|---|---|---|---|
+| 18 (pooled, primary) | ≥13 correct | 0.048 | 0.53 | **0.87** | 0.99 |
+| 6 (per family, descriptive only) | 6 of 6 | 0.016 | — | 0.26 | — |
+
+⚠️ **The honest limit, stated in advance:** at n = 18 this detects *strong*
+identification (p ≈ 0.8+) with 87% power and is **underpowered against p = 0.7**
+(53%). A null therefore means **"no strong identification found"**, not "the comparison
+is blinded". The per-family tests are descriptive; at n = 6 only a clean 6-of-6 clears
+α, and their power against p = 0.8 is 0.26.
+
+**Consequence, declared before the result:** if judges identify our side above chance,
+**every criterion result afterwards measures FORMAT, not quality**, and is reported as
+such. The control's outcome is published whichever way it falls.
+
+⛔ **The burn rule.** If the control fails and the dossier renderer is changed in
+response, **sample A is marked burned** and the revalidation runs on **sample B**.
+Iterating the renderer against the same sample until it passes would fit the renderer
+to the control and destroy the only measurement of the instrument we own. Sample B may
+be used once, for the same reason.
+
+⚠️ I expect this control to be hard to pass. Our side renders structured JSON and the
+comparator is a journal article; a common section skeleton does not make the prose look
+alike. **That is a reason to run it, not a reason to soften it.**
+
+> ### ⛔ RESULT, appended 2026-08-31: THE CONTROL FAILED. **SAMPLE A IS BURNED.**
+>
+> 9/9 completed calls correct (p = 0.00195); **anthropic 6/6, p = 0.0156, clearing the
+> pre-registered per-family test on its own and depending on no voided call**; 3 google
+> calls voided on timeout. Every judge named the same tell: our side is raw JSON.
+> **The comparison is NOT blinded, and no criterion may be scored on this renderer.**
+> Full result: `oa68k/PANEL-AND-BLINDING-RESULT.md` and `blinding_control.json`.
+>
+> **Sample A may not be used again.** Any renderer change revalidates on **sample B**,
+> once. Anything else fits the renderer to the control.
+
+---
+
 ## 3. The criteria
 
 Every criterion is judged from **what a reader can recover from the published
@@ -111,10 +174,23 @@ rather than by running the rubric and reading the output.** A criterion that bot
 sides' selection rules have already decided produces a clean, monotone, entirely
 artefactual result — and it would have been the most quotable number in the report.
 
-⚠️ **S8's asymmetry is real and is not a scoring artefact — it is a finding, reported
-in prose:** the comparators are prospectively registered and our reviews are not. A
-reader is entitled to weigh that. It is excluded from the *score* because the score
-would double-count our two selection rules, not because it is unimportant.
+### ⛔ Where the S1 and S8 asymmetries must be written — this is a binding reporting rule
+
+**Both go in the SAME SECTION as the headline result, in the same breath as any win.
+Not a footnote, not a limitations section, not a later paragraph.**
+
+A caveat in a separate section is the first thing dropped by whoever quotes us next,
+and *"the comparators are prospectively registered and our reviews are not, permanently
+and by our own rule"* is the strongest sentence an opponent has. If it is going to be
+said about us, it will be said by us, next to the number it qualifies.
+
+The same applies to S1: report it, exclude it, and say **why** in the criterion's own
+text rather than in a note elsewhere — which is why the two rows above carry their own
+reasons rather than pointing at a paragraph.
+
+⚠️ S8's asymmetry is real and is not a scoring artefact. It is excluded from the *score*
+because the score would double-count our two selection rules, **not** because it is
+unimportant — and a reader is entitled to weigh it.
 
 ### The rule that catches the retrieval trap one layer up
 
@@ -214,10 +290,25 @@ Rules, all enforced by the harness before a verdict is counted:
 Expected families: `anthropic` (Claude) · `openai` (Codex) · `google` (agy pinned to a
 Gemini model, or the separate `gemini` CLI on PATH — both present, neither yet proven).
 
-⚠️ **No liveness probe has been run.** The standing rule is that a status file is not
-liveness and only a real completion that names its own model proves a seat. The
-settings file above is evidence about a *default*, not about whether any seat answers.
-Probing costs quota, so I have stopped short of it and am asking rather than assuming.
+### The liveness probe: authorised, minimal, and its conditions
+
+**Exactly one real completion per family. Three calls, no more.** A status file is not
+liveness; only a completion that names its own model proves a seat.
+
+- Each probe **writes its own per-run log file**, and the model string is read back
+  **out of that file on disk**, not out of a variable. The 6-of-6 panel of a previous
+  night was settleable months later only because someone wrote a per-judge log; a run
+  without one is unfalsifiable the moment it scrolls away.
+- The artefact must be **non-empty** and `rc == 0`, and the returned model string must
+  match the booked family.
+- ⛔ **The prompt is passed as an argv argument, never piped on stdin** — the stdin path
+  answers as GPT-OSS regardless of the pin.
+- ⛔ **No retrying into a pass.** One call per family. A failure is published as a
+  failure, naming the seat and the reason, and the panel publishes as
+  **`DEGRADED_TWO_FAMILY`**.
+- A probe that dies on an invalid CLI argument is recorded as **`PROBE_HARNESS_ERROR`**,
+  which is *our* fault and is distinct from a seat failure — the same
+  absent-versus-not-shown distinction, applied to our own tooling.
 
 ---
 
