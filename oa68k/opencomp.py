@@ -122,7 +122,13 @@ RE_OBS_TITLE = re.compile(r"\b(?:cohort|observational|case[- ]control|real[- ]wo
 RE_NOTREVIEW_TITLE = re.compile(r"^\s*(?:retraction|correction|erratum|comment on)\b", re.I)
 BAD_PT = {"retracted publication", "comment", "editorial", "published erratum"}
 
-RE_PROSPERO = re.compile(r"CRD42\d{12}")
+RE_PROSPERO = re.compile(r"\bCRD42\d{9}\b")
+# A PROSPERO id is CRD42 + 9 digits (e.g. CRD42022358299). The first build demanded
+# CRD42 + 12 digits and therefore matched NOTHING: 0 of 108 read papers scored as
+# registered, which is the zero that sent me back to the instrument. RE_CRD_TOKEN keeps
+# every CRD-shaped token so a malformed id in the paper stays visible instead of
+# silently becoming "not registered".
+RE_CRD_TOKEN = re.compile(r"\bCRD\d{6,14}\b")
 RE_NCT = re.compile(r"NCT\d{8}")
 RE_ISRCTN = re.compile(r"ISRCTN\d{8}")
 RE_CHICTR = re.compile(r"ChiCTR-?[A-Za-z0-9\-]{4,}")
@@ -138,7 +144,7 @@ RE_STATED_K = re.compile(
 
 
 # ---------------------------------------------------------------- transport
-def _get(url, tries=4, sleep=2.0):
+def _get(url, tries=6, sleep=2.0):
     """Return (status, bytes). status is an int, or a string reason on transport death."""
     last = None
     for a in range(tries):
@@ -146,7 +152,14 @@ def _get(url, tries=4, sleep=2.0):
             r = urlopen(Request(url, headers=UA), timeout=120)
             return r.getcode(), r.read()
         except HTTPError as e:
-            if e.code in (403, 412, 429):
+            # 429/503 are RATE LIMITS, not verdicts. Backing off is required before any
+            # of them may be reported as a blocked retrieval; run 2 died at retstart=0
+            # because this returned on the first 429.
+            if e.code in (429, 503):
+                time.sleep(6.0 * (a + 1))
+                last = "HTTP %d" % e.code
+                continue
+            if e.code in (403, 412):
                 return e.code, b""
             if e.code == 404:
                 return 404, b""
@@ -176,7 +189,7 @@ def esearch_pmids(term, log=print):
             if p not in seen:
                 seen.add(p)
                 out.append(p)
-        time.sleep(0.34)
+        time.sleep(0.5)
     if total > 9999:
         log("  !! WARNING: %d records but esearch ceiling is 9999 -- TRUNCATED" % total)
     return total, out
@@ -287,7 +300,9 @@ def parse_fulltext(xml_bytes):
         "registry_ids": [],
         "cited_pmids": [],
         "prospero_ids": [],
+        "prospero_tokens_seen": [],
         "fulltext_bytes": len(xml_bytes),
+        "_text": txt,
     }
     try:
         root = ET.fromstring(xml_bytes)
@@ -311,6 +326,7 @@ def parse_fulltext(xml_bytes):
     d["registry_ids"] = sorted(ids)
     d["cited_pmids"] = sorted(set(d["cited_pmids"]))
     d["prospero_ids"] = sorted(set(RE_PROSPERO.findall(txt)))
+    d["prospero_tokens_seen"] = sorted(set(RE_CRD_TOKEN.findall(txt)))
     return d
 
 
@@ -343,20 +359,33 @@ def match_topics(parsed, proposed_for):
     """PROTOCOL section 5.3. Only ever called on a row we actually read."""
     txt_ids = set(parsed["registry_ids"])
     cited = set(parsed["cited_pmids"])
-    acro_hay = " ".join(parsed["included_table_captions"])  # not enough on its own
-    per_topic, any_key = {}, bool(txt_ids or cited)
+    # PROTOCOL 5.3 matches acronyms over the RETRIEVED FULL TEXT. The first build
+    # searched only table captions, which is not the full text and is not what the
+    # frozen rule says. Case-SENSITIVE, because SCORED and DELIVER are ordinary English
+    # words: a false match corrupts a score, a false non-match only shrinks the set.
+    hay = parsed.get("_text") or ""
+    per_topic = {}
+    any_key = bool(txt_ids or cited)
     for t in proposed_for:
-        hit = []
+        hit, keys = [], {}
         for nct, acro, pmid in OUR_TRIALS[t]:
+            k_used = None
             if nct in txt_ids:
-                hit.append(nct)
+                k_used = "nct"
             elif pmid and pmid in cited:
+                k_used = "cited_pmid"
+            elif acro and re.search(r"\b%s\b" % re.escape(acro), hay):
+                k_used = "acronym"
+                any_key = True
+            if k_used:
                 hit.append(nct)
-            elif acro and re.search(r"\b%s\b" % re.escape(acro), acro_hay, re.I):
-                hit.append(nct)
+                keys[nct] = k_used
         k = len(OUR_TRIALS[t])
         per_topic[t] = {"overlap": sorted(set(hit)), "k": k,
-                        "frac": round(len(set(hit)) / float(k), 3)}
+                        "frac": round(len(set(hit)) / float(k), 3),
+                        "key_used": keys,
+                        "matched_on_acronym_alone": sum(1 for v in keys.values()
+                                                        if v == "acronym")}
     matched = [t for t, v in per_topic.items()
                if len(v["overlap"]) >= MIN_OVERLAP_N and v["frac"] >= MIN_OVERLAP_FRAC]
     if matched:
@@ -371,12 +400,20 @@ def design_gate(m):
     title = m["title"] or ""
     hay = "%s %s" % (title, m["abstract"] or "")
     pts = set(m["pubtypes"])
+    # PubMed's "Meta-Analysis"[PT] EXPLODES to the narrower "Network Meta-Analysis"[PT].
+    # The first build tested G1 first, so 128 NMAs were filed NOT_PT_META_ANALYSIS inside
+    # EXCLUDED_DESIGN -- exactly the silent folding the protocol forbids. NMA is tested
+    # first now. This moves rows BETWEEN TWO EXCLUDED CELLS and cannot admit anything to
+    # the eligible set.
+    if "network meta-analysis" in pts or RE_NMA.search(hay):
+        return "EXCLUDED_NMA", "NETWORK_META_ANALYSIS"
     if "meta-analysis" not in pts:
         return "EXCLUDED_DESIGN", "NOT_PT_META_ANALYSIS"
     if pts & BAD_PT or RE_NOTREVIEW_TITLE.search(title):
         return "EXCLUDED_DESIGN", "NOT_A_REVIEW_RECORD"
-    if RE_NMA.search(hay):
-        return "EXCLUDED_NMA", "NETWORK_META_ANALYSIS"
+    if not m["abstract"]:
+        # "could not evaluate" is not "failed". Named, still excluded.
+        return "EXCLUDED_DESIGN", "NO_ABSTRACT_CANNOT_EVALUATE_RCT_RESTRICTION"
     if not RE_RCT.search(hay):
         return "EXCLUDED_DESIGN", "NO_RCT_RESTRICTION"
     if RE_OBS_TITLE.search(title):
@@ -476,6 +513,7 @@ def build(log=print):
             "enumeration_vs_stated": None,
             "prospero_registered": None,
             "prospero_ids": None,
+            "prospero_tokens_seen": None,
             "match_status": None,
             "matched_topics": None,
             "overlap_detail": None,
@@ -513,7 +551,7 @@ def build(log=print):
             r["enumeration_vs_stated"] = "STATED_K_UNKNOWN"
         else:
             r["enumeration_vs_stated"] = "COMPLETE" if n >= r["stated_k"] else "PARTIAL"
-        r["prospero_ids"] = parsed["prospero_ids"] or None
+        r["prospero_tokens_seen"] = parsed["prospero_tokens_seen"] or None
         abs_pro = RE_PROSPERO.findall(meta.get(p, {}).get("abstract") or "")
         allpro = sorted(set(parsed["prospero_ids"]) | set(abs_pro))
         r["prospero_ids"] = allpro or None
@@ -647,6 +685,43 @@ def build(log=print):
             "otherwise.",
         "eligible_comparators": n_elig,
         "eligible_by_topic": eligible_by_topic,
+        "corrections_after_the_first_run":
+            "The first build of this frame returned 0 eligible comparators. Protocol "
+            "section 7 pre-committed that a zero measures the instrument until proven "
+            "otherwise and must be answered by hand-running a known-good example. Three "
+            "IMPLEMENTATION defects were found and fixed. NO criterion, threshold, term "
+            "list or trial set was changed. "
+            "(1) The PROSPERO regex demanded CRD42 + 12 digits; a real id is CRD42 + 9. "
+            "It could not match any registration that exists, and scored 0 of 108 read "
+            "papers as registered. Hand-verified against PMC10946839, PMC11755955 and "
+            "PMC10517929, all three of which carry a CRD42 id in their full text. This "
+            "fix CAN raise eligibility and is disclosed as such. "
+            "(2) PubMed's \"Meta-Analysis\"[PT] explodes to the narrower \"Network "
+            "Meta-Analysis\"[PT], and the design gate tested G1 before G2, so 128 network "
+            "meta-analyses were filed under EXCLUDED_DESIGN/NOT_PT_META_ANALYSIS instead "
+            "of the named EXCLUDED_NMA stratum the protocol requires. The fix moves rows "
+            "between two EXCLUDED cells and is provably eligibility-neutral. "
+            "(3) Protocol 5.3 matches frozen trial acronyms over the retrieved full text; "
+            "the first build searched only included-studies table captions, which is not "
+            "the full text. Corrected to the full text, case-sensitively. This CAN raise "
+            "eligibility and is disclosed as such. "
+            "Also: records carrying no abstract at all now get the named reason "
+            "NO_ABSTRACT_CANNOT_EVALUATE_RCT_RESTRICTION rather than being reported as "
+            "having failed a test that could not be run on them. Still excluded.",
+        "what_was_NOT_changed":
+            "G3 (the RCT-restriction gate) refuses 182 records whose title and abstract "
+            "never state a restriction to randomised trials, and some of those are "
+            "genuinely trial-based (individual-participant-data meta-analyses in "
+            "particular). Loosening G3 after seeing the results could admit new eligible "
+            "comparators, which is the definition of the cherry-picking this protocol "
+            "exists to prevent. G3, the overlap thresholds, the Stage-A term lists, the "
+            "trial sets and the quality criterion are untouched.",
+        "acronym_key_audit":
+            "overlap_detail[topic].key_used records, per trial, WHICH key produced the "
+            "match: nct, cited_pmid or acronym. Any match resting on an acronym alone is "
+            "therefore visible and countable, because SCORED and DELIVER are ordinary "
+            "English words and a case-sensitive word-boundary match is a mitigation, not "
+            "a proof.",
     }
     for r in out:
         r["provenance"] = prov
