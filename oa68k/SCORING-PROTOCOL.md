@@ -8,6 +8,67 @@ planting driver `oa68k/opencompscore_plant.py`. **No judge has been called.**
 
 ---
 
+## ⭐ AMENDMENT 2026-08-31 — THE JOIN IS RULED: `nct_pmid`
+
+> **`nct_pmid` — 13 pairs, 12 comparators. Chosen because a frozen acronym finds
+> MENTIONS, not INCLUSIONS: `DELIVER` matched 14 papers and two of the three hand-read
+> were reviews naming it as an ONGOING trial. 22 keeps matches we have specific evidence
+> are unsound; 8 discards NCT-joined pairs that are sound.**
+
+Mahmood ruled "go" against that recommendation with its reasoning stated. Recorded here
+so nobody re-litigates it.
+
+### ⛔ It was chosen AFTER the frame was built. Why that is not post-hoc
+
+1. **All three options were computed and published BEFORE the choice**, from **one
+   artefact**, and each is reproducible from `opencomp_pairs.jsonl` today:
+   **frozen 23 pairs / 22 comparators · `nct_pmid` 13 / 12 · `cited_pmid` 8 / 8.**
+   Nothing was recomputed to support the decision and nothing needs re-running to
+   change it.
+2. **The evidence is a hand-read of three papers, not a look at which number was
+   larger.** PMID 33586910 (2020) and 35338608 (2022) name `DELIVER` as an *ongoing*
+   trial; PMID 37773799 (2023) genuinely includes it. The acronym key was measured to
+   find mentions before any join was preferred.
+3. ⚠️ **12 is SMALLER than 22, so the ruling went AGAINST our own headline count.** That
+   is the strongest available evidence it was not chosen for the number, and it is
+   stated here rather than left for a reader to notice.
+
+### What the other two would have given, recorded so the flattering one cannot be hidden
+
+| join | pairs | comparators | scoreable after the surface gate |
+|---|---|---|---|
+| `frozen` | 23 | 22 | 22 |
+| **`nct_pmid` (RULED)** | **13** | **12** | **12** |
+| `cited_pmid` | 8 | 8 | 7 |
+
+---
+
+## ⛔ 2B. Surface agreement — a page must agree with every other surface that describes it
+
+A peer lane found 69 sidecars pooling trials absent from the page they describe, and
+three surfaces publishing different pooled estimates for the same review. **If we enter a
+page into a scored head-to-head while another of our own surfaces publishes a different
+number for it, a win does not survive a reader clicking twice — and being checkable is
+the entire claim.**
+
+Before any pair is judged: **C1** no trial pooled by an object may be absent from the page
+that describes it; **C2** two objects may not record different randomised denominators for
+the same trial (events may legitimately differ by outcome, denominators may not); pages
+are joined to objects **by reader-visible trial identifier, never by keyword**.
+
+A pair failing this is **`NOT_SCOREABLE_SURFACE_DISAGREEMENT`** — a named state, **not a
+loss for the review and not a silent exclusion**; every pair keeps a row and the per-join
+counts must sum to the pair count.
+
+⛔ **Not implemented, and named rather than implied:** numeric comparison of published
+pooled estimates across surfaces. A pair passing this gate is **not** thereby proven
+numerically consistent.
+
+**Result (`oa68k/SURFACE-AGREEMENT-RESULT.md`): under the ruled join, 12 of 13 scoreable;
+`iv-iron-hf` is `NOT_SCOREABLE_SURFACE_DISAGREEMENT`.**
+
+---
+
 ## ⛔ 0. The join is not mine and this protocol never touches it
 
 Mahmood holds 22 / 12 / 8. **Nothing here picks one.**
