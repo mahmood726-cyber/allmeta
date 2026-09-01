@@ -222,10 +222,23 @@ def efetch_meta(pmids, log=print):
             title = " ".join("".join(t.itertext()) for t in art.findall(".//ArticleTitle"))
             abst = " ".join("".join(t.itertext()) for t in art.findall(".//Abstract/AbstractText"))
             pts = [(t.text or "").strip().lower() for t in art.findall(".//PublicationType")]
+            # ⛔ THE ARTICLE'S OWN DOI, NOT A CITED REFERENCE'S. `.//ArticleId` reaches
+            # into ReferenceList/Reference/ArticleIdList, so taking the last match there
+            # returned a DOI from the paper's BIBLIOGRAPHY -- e.g. PMID 40998847
+            # (Scientific Reports) came back as 10.3390/jcm11020288, a J Clin Med paper it
+            # merely cites. The article's own identifier lives in ELocationID, or failing
+            # that in PubmedData/ArticleIdList. Metadata only -- no criterion reads doi --
+            # but it was about to be published as a routing key for another lane.
             doi = None
-            for aid in art.findall(".//ArticleId"):
-                if aid.get("IdType") == "doi":
-                    doi = (aid.text or "").strip()
+            for el in art.findall(".//Article/ELocationID"):
+                if el.get("EIdType") == "doi" and (el.text or "").strip():
+                    doi = el.text.strip()
+                    break
+            if not doi:
+                for aid in art.findall("PubmedData/ArticleIdList/ArticleId"):
+                    if aid.get("IdType") == "doi":
+                        doi = (aid.text or "").strip()
+                        break
             yr = art.findtext(".//JournalIssue/PubDate/Year") or \
                 art.findtext(".//JournalIssue/PubDate/MedlineDate") or None
             meta[pid] = {

@@ -42,3 +42,45 @@ I do not have.** The three render-level checks above are what the verification r
 2. The anti-`git add -A` guard refuses top-level `.html`. `STAGING_WIDE=1` is the escape it
    documents for a legitimately staged path, and it was used **deliberately, with one path
    staged by name**. ⛔ **No hook was bypassed and `--no-verify` was not used.**
+
+---
+
+# The routing artefact: `TWENTY_COMPARATORS.json`
+
+**Fetch:** `git show origin/main:TWENTY_COMPARATORS.json` in
+`mahmood726-cyber/rapidmeta-finerenone`.
+
+| | |
+|---|---|
+| **path** | `TWENTY_COMPARATORS.json` — **top level**, tracked |
+| **commit on `main`** | `bbdb94584` (`6ad5f4df5..bbdb94584`) |
+| **blob sha256** | `1f5807308cf5fabe9eca2e07cb26f35cc77c4ac2f2127e612876142f962670c3` |
+| **size** | 36,470 bytes |
+| **verified** | read back from `origin/main` in a **different clone** |
+
+⛔ **Not `outputs/`.** `.gitignore:131` ignores `outputs/*.json`, so a file placed there is
+untracked and unfetchable — the exact failure this request warned about. ⚠️ **Worth
+relaying: the peer lane's own `outputs/DO_NOT_REBUILD_FROM_SIDECAR.json` is likewise
+untracked**, so it exists only on the machine that wrote it.
+
+**Contents:** 20 comparators / 14 topics / 10 families / 24 pairs under the ruled
+`nct_pmid` join. Per row: our topic slug · our page filename · comparator PMID + DOI ·
+journal · year · title · PROSPERO id · source frame · our k · overlap and fraction ·
+**the join key per trial**. Plus the disposition of all 155 objects (49 + 65 + 4 + 37 =
+155, every topic named); the builder refuses to write if that sum is wrong.
+
+## Two defects found while checking it, both fixed before it shipped
+
+1. ⛔ **Wrong DOIs.** `efetch_meta` walked `.//ArticleId`, which reaches into the
+   **reference list**, and kept the last match — so the "DOI" was a **cited paper's**.
+   PMID 40998847 (*Scientific Reports*) carried `10.3390/jcm11020288`, a *J Clin Med*
+   paper it merely cites. Caught because the DOI prefix disagreed with the journal name
+   **in the same row**. Real DOI `10.1038/s41598-025-16166-3`. DOIs are now fetched
+   directly per PMID from `ELocationID` / `PubmedData ArticleIdList` — 24 of 24 resolved,
+   every prefix agreeing with its publisher. `opencomp.py` fixed for future runs. No
+   criterion reads `doi`, so **eligibility is unaffected** — but it was about to become a
+   routing key for another lane.
+2. The key list could be misread: a pair qualifies on **ruled** keys alone, yet a further
+   trial might carry a non-ruled acronym key, which put `acronym` in two pairs' key lists.
+   Split into `ruled_join_keys_that_qualified` (nct 13, cited_pmid 13 — **no acronym**) and
+   `all_keys_present_including_non_ruled`, with a note that acronym carries no weight.
