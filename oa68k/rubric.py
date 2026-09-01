@@ -345,9 +345,20 @@ if __name__ == "__main__":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
                                   errors="replace", line_buffering=True)
     if "--score" in sys.argv:
-        raise SystemExit(
-            "REFUSED: no pair is scored in this commit. The rubric is published as code "
-            "first so the criteria can be read as scripts BEFORE any pair is scored.")
+        # RELEASED 2026-09-01. The refusal's condition was that the criteria be published as
+        # readable code BEFORE any pair was scored; that held, and it is released in the same
+        # commit as SCORING-HARNESS.md, which freezes what the criteria SEE. The refusal was
+        # correct and is retired rather than deleted: it stopped a scoring run that would
+        # have used an unfrozen harness, and a frozen criterion fed by an unfrozen harness is
+        # not a frozen rubric.
+        print("RELEASED. This module is the CRITERIA LIBRARY and scores no pair by itself: "
+              "it exposes the six criteria and derive().")
+        print("A scoring run supplies study_labels, k and topic_terms per "
+              "SCORING-HARNESS.md (scoring-harness-1.0.0-2026-09-01), whose binding clause "
+              "is that THE SAME RULE EXTRACTS BOTH SIDES.")
+        print("Reproduce the published scores with the runner named in the result header; "
+              "it stamps this file's sha256 on every row: %s" % script_sha256())
+        sys.exit(0)
     print("rubric %s  sha256 %s" % (RULE_VERSION, script_sha256()))
     for k, v in CRITERIA.items():
         print("  %s  %s" % (k, v[1]))
