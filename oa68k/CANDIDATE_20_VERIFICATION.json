@@ -1,0 +1,100 @@
+{
+ "_what_this_is": "Verification of a list of 20 claimed cardiology meta-analyses, each said to carry a high-leverage analytical defect. THIS IS VERIFICATION, NOT ANALYSIS. No re-analysis was started.",
+ "_verified": "2026-09-02",
+ "_evidence_grades": {
+  "MEASURED": "established by a command recorded in this file, against a free source",
+  "INFERRED": "derived from a MEASURED fact by stated reasoning",
+  "CLAIMED": "asserted by the source list and NOT established here"
+ },
+ "_free_sources_only": "PubMed E-utilities, Europe PMC REST, the journal's own page. Standing scope rule.",
+ "_procedure": "Per candidate, stop at the first failure: (1) does the paper exist -- resolve journal/year/DOI/title, never match on title alone; (2) is it open access; (3) does the claimed defect exist in the paper's own bytes, quoted with a locator; (4) does the claimed critique-letter exist; (5) only then, is it reconstructible.",
+
+ "_headline": {
+  "candidates_supplied_to_me": 1,
+  "candidates_in_the_list": 20,
+  "candidates_NOT_supplied": 19,
+  "assessed": 1,
+  "survived_step_1_exists": 1,
+  "survived_step_2_open_access_licence": 1,
+  "survived_step_2b_full_text_actually_retrievable": 0,
+  "survived_step_3_defect_verified_in_the_paper_s_own_bytes": 0,
+  "_note": "0 of 1 assessed candidates survived step 3, and the reason is RETRIEVAL, not refutation. See _the_finding."
+ },
+
+ "_the_finding": "The single candidate I could assess EXISTS and is OPENLY LICENSED (cc by-nc-nd) yet its full text is NOT RETRIEVABLE from any free source: no PMC record, no Europe PMC full text, and HTTP 403 from both jacc.org and sciencedirect.com. So the claimed defect can be neither confirmed nor refuted. ⛔ THIS IS THE SAME WALL THAT ENDED THE COCHRANE COMPARISON, in a different journal: we cannot read the included-study list or the results text, so a claim about them is unscoreable. If the remaining 19 are similarly recent Elsevier/JACC-family papers, verification will hit the same wall and the list's strategic value collapses -- not because the claims are false, but because they are UNCHECKABLE by us. That is worth establishing before any re-analysis is planned.",
+
+ "_licence_is_not_retrieval": "cc by-nc-nd is a statement about the paper's TERMS. isOpenAccess=N, inEPMC=N, inPMC=N, pmcid=null, hasPDF=N are statements about what we can OBTAIN. They are different facts and this file never collapses them. 'We could not get the paper' is NOT 'the paper lacks the number'.",
+
+ "candidates": [
+  {
+   "n": 1,
+   "claimed_topic": {"value": "GLP-1 receptor agonists in pregnancy", "grade": "CLAIMED"},
+   "claimed_journal_year": {"value": "JACC: Advances 2026", "grade": "CLAIMED"},
+   "claimed_defect": {
+    "value": "The text reports OR 0.91 (0.72-1.16), P=.44 and the figure reports OR 0.59 (0.36-0.96), P=.03 FOR THE SAME OUTCOME -- a document that contradicts itself.",
+    "grade": "CLAIMED",
+    "why_it_was_checked_first": "If true it is a known-answer control sitting inside the document: a self-contradiction can be checked without reconstructing anything."
+   },
+
+   "step1_exists": {
+    "verdict": "YES",
+    "grade": "MEASURED",
+    "pmid": "41925658",
+    "journal": "JACC. Advances",
+    "year": "2026",
+    "first_publication_date": "2026-04-01",
+    "doi": "10.1016/j.jacadv.2026.102649",
+    "title": "GLP-1 Receptor Agonist Exposure During Pregnancy: A Systematic Review and Meta-Analysis of Adverse Pregnancy Outcomes.",
+    "publication_types": ["Journal Article"],
+    "commands": [
+     "esearch.fcgi?db=pubmed&term=(GLP-1 OR glucagon-like) AND pregnan* AND (\"JACC\"[Journal] OR \"JACC. Advances\"[Journal])  -> count=1, id 41925658",
+     "efetch.fcgi?db=pubmed&retmode=xml&id=41925658  -> journal/year/title/doi above",
+     "GET https://doi.org/10.1016/j.jacadv.2026.102649 -> HTTP 200, resolves to linkinghub.elsevier.com/retrieve/pii/S2772963X26000669"
+    ],
+    "identity_note": "Identity confirmed on journal + year + DOI + title TOGETHER, and the DOI independently resolves to an Elsevier PII. Not matched on title alone.",
+    "⛔_a_near_miss_recorded": "Four OTHER real 2026 GLP-1-in-pregnancy meta-analyses exist -- PMIDs 42536323 (Endocrine), 42307450 (Clinical Obesity), 42447044 (Endocrine Connections), 42061782 (AJOG). Matching on topic alone would have resolved to a REAL BUT DIFFERENT PAPER, which is the dangerous failure mode here.",
+    "⛔_my_own_query_artefact": "The search '\"JACC. Advances\"[Journal] AND meta-analysis[pt] AND 2026[dp]' returned COUNT=0, because this paper is indexed with PublicationType 'Journal Article' only and is NOT tagged Meta-Analysis. That zero was a REACH ARTEFACT OF MY QUERY, not evidence of absence. Had I stopped there I would have wrongly reported the paper as nonexistent."
+   },
+
+   "step2_open_access": {
+    "licence_open": {"value": true, "grade": "MEASURED", "license": "cc by-nc-nd"},
+    "full_text_retrieved": {"value": false, "grade": "MEASURED", "status": "NOT_RETRIEVED_NO_FULLTEXT_RECORD + NOT_RETRIEVED_BLOCKED"},
+    "evidence": {
+     "europe_pmc": "isOpenAccess=N, inEPMC=N, inPMC=N, pmcid=null, hasPDF=N",
+     "jacc.org": "HTTP 403 Forbidden",
+     "sciencedirect.com": "HTTP 403 Forbidden"
+    },
+    "commands": [
+     "GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:41925658 AND SRC:MED&resultType=core&format=json",
+     "GET https://www.jacc.org/doi/10.1016/j.jacadv.2026.102649 -> 403",
+     "GET https://www.sciencedirect.com/science/article/pii/S2772963X26X00042 -> 403"
+    ]
+   },
+
+   "step3_defect_in_the_paper_s_own_bytes": {
+    "verdict": "UNVERIFIABLE_FROM_FREE_SOURCES",
+    "grade": "MEASURED (about our access) / the defect itself remains CLAIMED",
+    "⛔_not_a_refutation": "The claimed text-versus-figure contradiction is NEITHER CONFIRMED NOR REFUTED. We could not obtain the bytes. Reporting this as 'the defect is absent' would be exactly the error of treating a failed retrieval as a fact about the paper.",
+    "what_would_settle_it": "One retrieval of the full text or of Figure/Table carrying the outcome in question, from any route the scope rule permits. A single page would do it: the claim is a self-contradiction, so it needs no reconstruction and no comparator."
+   },
+
+   "step4_critique_letter": {"verdict": "NOT_ASSESSED", "grade": "CLAIMED", "reason": "step 3 did not pass; the procedure stops at the first failure"},
+   "step5_reconstructible": {"verdict": "NOT_ASSESSED", "grade": "CLAIMED", "reason": "step 3 did not pass"},
+
+   "overall": "EXISTS, OPENLY LICENSED, NOT RETRIEVABLE. Defect unverified and NOT refuted."
+  }
+ ],
+
+ "candidates_2_to_20": {
+  "status": "NOT SUPPLIED",
+  "n": 19,
+  "⛔_why_there_are_no_rows": "The list itself was described but not included in the instruction I received. I have candidate #1's details only. I will not create rows for candidates I have not been given, and I will not infer their journals, DOIs or claimed defects -- a fabricated row in a verification file is worse than an absent one, because it is indistinguishable from a checked one.",
+  "what_I_need": "The 20 rows as supplied: for each, the claimed title, journal, year, DOI if given, the claimed defect, and whether a critique letter is claimed."
+ },
+
+ "_what_was_NOT_done": [
+  "No re-analysis was started. Verification only, as instructed.",
+  "No extraction rule, no pooling, no comparison against our corpus.",
+  "No candidate was scored, and the frozen comparator protocol was not touched."
+ ]
+}
