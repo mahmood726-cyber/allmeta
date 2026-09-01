@@ -88,6 +88,42 @@ justification above is stated in terms of §5.3's declaration and not in terms o
 effect**, and this file is committed BEFORE the re-run so the commit order is the evidence
 that the form was not chosen for the number it produces.
 
+## ⛔ AMENDMENT 5, 2026-09-01 — A CRITERION ABOUT A STUDY IS SATISFIED IF IT HOLDS FOR ANY OF THAT STUDY'S DECLARED FORMS
+
+§5.3 declares `NCT03036124 DAPA-HF 31535829` as **one study**. A criterion asking something
+about *the study* must be evaluated against *the study* — and the study is identified by any
+of the forms its own protocol declares.
+
+⭐ **This does not modify the criteria. It correctly identifies the object the criteria are
+about.** The six criteria are unchanged and their sha is unchanged; what changes is STUDY
+IDENTITY, which was never the criteria's to define — they receive a label list and are silent
+on how a study becomes a label.
+
+## Why a fifth amendment was necessary rather than an implementation choice
+
+Amendment 4 said "whichever form the document actually uses". Our pages use **all three**, so
+it does not select, and every way of breaking the tie was disqualified:
+
+    list order                  reimposes a convention §5.3 never stated -- and this is what
+                                the first implementation silently did, leaving the run
+                                byte-identical to the pre-amendment one
+    pick the satisfying form    tuning to outcome, under a rule that did not say ANY
+    pass all three as labels    S3/S7 are CONJUNCTIONS, so it demands a hit near EVERY form:
+                                stricter than the criterion means
+
+**All three roads were closed, which is when a spec change is legitimate rather than
+convenient.** Under this amendment the second option ceases to be tuning and becomes the
+correct implementation, because the rule now says ANY form suffices.
+
+**Implementation, without reimplementing anything:** for each declared study, the criterion
+ITSELF is asked about each form in turn with a single-study label list; the first form it
+answers SATISFIED for becomes that study's label, and if none does, the first declared form is
+used so the study correctly fails. The criterion is the test; nothing here re-derives it.
+
+⚠️ **ORDER OF RECORD.** Written and committed BEFORE the re-run, as with amendment 4, and for
+the same reason: the justification above is about study identity, not about the effect on any
+score.
+
 ## THE BINDING CLAUSE
 
 ⛔⛔ **THE SAME RULE MUST EXTRACT BOTH SIDES.** If our labels came from our curated
