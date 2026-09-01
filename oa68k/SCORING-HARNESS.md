@@ -18,6 +18,76 @@ This file freezes the feeding. It is pre-registration, exactly as the criteria w
 
 ---
 
+## ⛔ AMENDMENT 1, 2026-09-01 — SYMMETRIC CODE IS NOT A SYMMETRIC RULE
+
+The first implementation ran ONE function over both sides and still built the asymmetry in.
+Measured on `ablation-af-heart-failure` vs PMID 40998847:
+
+    ours   k=4   NCT00643188 …   the page's INCLUDED trials
+    theirs k=2   NCT05508256 …   "Ongoing RCTs, such as (CABA-HFPEF; NCT05508256) and
+                                  (STABLE-SR IV; NCT06125925), may provide more definitive
+                                  evidence" — trials it explicitly does NOT include
+
+Our pages print a registry id per included trial; their papers print registry ids mainly for
+trials they are **not** including. Same code, both sides, **different kinds of thing**.
+
+⇒ **THE RULE WAS SYMMETRIC AND THE MEANING WAS NOT.** The clause below is therefore about
+what is EXTRACTED, not about which function runs.
+
+**The rule, in one line:** *a study label is a registry identifier the document declares
+whose own sentence does not mark it as ongoing, planned, future or excluded; fewer than two
+such identifiers is `NOT_SCOREABLE_NO_STUDY_LIST`.*
+
+⚠️ This is deliberately conservative and will refuse many comparators. That refusal is a
+**PRISMA 2020 item 17 finding about them**, reported as a headline count — not a low score,
+and it applies to our pages identically.
+
+## ⛔ AMENDMENT 2, 2026-09-01 — §5.2 COVERS SIX TOPICS; THE PROGRAMME HAS FOURTEEN
+
+`S2_estimand` requires `topic_terms`, and its docstring binds them to the vocabularies
+**frozen in OPEN-COMPARATOR-PROTOCOL.md §5.2 — "no new list is introduced here"**. §5.2
+covers `sglt2-hf`, `sotagliflozin-hf`, `arni-hfref`, `iv-iron-hf`, `alirocumab-lipid`,
+`bococizumab-lipid-review`. The comparator set covers **fourteen** topics.
+
+⇒ For a topic outside §5.2, `topic_terms` **cannot be built without introducing a new list**,
+which S2 forbids. The state is **`NOT_SCOREABLE_NO_FROZEN_TOPIC_TERMS`**, and it is a
+declared limit of the protocol rather than a property of either document.
+
+⚠️ AND §5.2 DISCLOSES ITS OWN BIAS, which must travel with every S2 result: *"the topic term
+lists in §5.2 were written by someone who already knew which trials our reviews pool, so they
+are tuned to find our questions. They are not tuned to any comparator."* **S2 is therefore
+the one criterion with a known pro-us tilt, and it is stated, not corrected** — correcting it
+would introduce the new list §5.2 forbids.
+
+## ⛔ AMENDMENT 4, 2026-09-01 — A STUDY LABEL IS ANY COORDINATE FORM THE ARTEFACT DECLARES
+
+§5.3 declares each of our included trials as **three coordinate forms of one study**:
+
+    NCT03036124 DAPA-HF 31535829      registry id · acronym · PMID
+
+⇒ **A label rule that accepts any of them is faithful to what the artefact declares. A rule
+that picks a single form imposes a convention the protocol never stated.** §5.3 does not
+nominate a canonical form; it prints all three as equally the study's name.
+
+**And it is the SYMMETRIC choice.** A comparator's included-studies table prints whatever
+form that paper uses — an acronym, an author-year, a registry id — and the harness already
+takes their labels as printed. Accepting any declared form on our side treats both sides the
+same way; insisting on registry ids for us while accepting anything for them would be the
+asymmetry Amendment 1 exists to prevent, re-entering through the other door.
+
+**Implementation, and the constraint that fixes it:** S3 and S7 are CONJUNCTIONS over the
+label list, so passing three forms of one study as three labels would demand a numeric row
+near *each* form — stricter than the criterion means and wrong. ⇒ **One label per declared
+study: whichever of its coordinate forms the document actually uses.** `k` is unchanged and
+equals the number of declared studies.
+
+⚠️ **ORDER OF RECORD.** This amendment was written after observing that a registry-id-only
+rule produced `S7 NOT_SATISFIED` on 9 of 9 of our own pages while those pages name a
+risk-of-bias tool and carry 21–53 risk-of-bias level statements beside trial ACRONYMS. **The
+justification above is stated in terms of §5.3's declaration and not in terms of that
+effect**, and this file is committed BEFORE the re-run so the commit order is the evidence
+that the form was not chosen for the number it produces.
+
 ## THE BINDING CLAUSE
 
 ⛔⛔ **THE SAME RULE MUST EXTRACT BOTH SIDES.** If our labels came from our curated
@@ -31,9 +101,9 @@ Our curated list is therefore **not used**. Both sides are parsed, by one functi
 
 ## THE THREE INPUTS
 
-    study_labels   opencomp.parse_fulltext(document)["registry_ids"]
-                   -- the registry identifiers (NCT / ISRCTN / ChiCTR) THE DOCUMENT ITSELF
-                      declares, extracted by regex over the decoded text.
+    study_labels   registry identifiers (NCT / ISRCTN / ChiCTR) the document declares,
+                   MINUS any whose surrounding sentence marks it as ONGOING, PLANNED,
+                   FUTURE or EXCLUDED. Fewer than two survivors -> NOT_SCOREABLE_NO_STUDY_LIST.
                    ⭐ REUSED, NOT REIMPLEMENTED. This is the same function, and the same
                       `registry_ids` field, that produced `enumerates_included_studies` and
                       `enumeration_via` in the published frames. A second extractor would be
