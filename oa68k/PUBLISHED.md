@@ -84,3 +84,62 @@ journal · year · title · PROSPERO id · source frame · our k · overlap and 
    trial might carry a non-ruled acronym key, which put `acronym` in two pairs' key lists.
    Split into `ruled_join_keys_that_qualified` (nct 13, cited_pmid 13 — **no acronym**) and
    `all_keys_present_including_non_ruled`, with a note that acronym carries no weight.
+
+---
+
+# The constraint was never the literature — published beside the twenty
+
+**Manifest updated on `origin/main`:** commit `7416a12e2` · blob sha256
+`83db342a572ca6c7a8237c19f7ddb28cc03b91dff6a18baebbc1d5e34c252c91` · 45,182 bytes ·
+verified from a second clone.
+
+## The finding
+
+**Of 155 store topics, only 27 have a live pooled estimate. 128 have none** — no effect to
+compare, so no Summary of Findings can exist for them at any comparator quality. **Only 7 of
+our 14 comparator-bearing topics are live.** The programme spent its effort hunting
+counterparts for reviews that mostly have nothing to counter.
+
+## The 19 — the only population where a future comparator could become scoreable
+
+| topic | k | pooled measure |
+|---|---|---|
+| `alirocumab-lipid` | 8 | MD |
+| `malaria-vaccines` | 7 | HR, IRR |
+| `bococizumab-lipid-review` | 6 | MD |
+| `apixaban-vte-prophylaxis` | 5 | RR |
+| `apixaban-vte-treatment` | 4 | RR |
+| `cangrelor-pci-review` | 3 | (measure unnamed on the object) |
+| `ceftaroline-auto-full-review` | 3 | RR |
+| `inclisiran-lipid-kidney-auto-full-review` | 3 | MD |
+| `rotavirus-vaccine-africa-review` | 3 | OR |
+| `tigecycline-ciai` | 3 | RR |
+| `agyw-hiv-prep-review` | 2 | RR |
+| `azilsartan-chlorthalidone-vs-olmesartan-hctz` | 2 | MD |
+| `cab-prep-hiv-review` | 2 | RR |
+| `empagliflozin-hf-auto-full-review` | 2 | OR |
+| `gepotidacin-urinary-tract-auto-full-review` | 2 | RR |
+| `icosapent-lipid-auto-full-review` | 2 | MD |
+| `incretin-hfpef-review` | 2 | MD |
+| `lefamulin-cabp-auto-full-review` | 2 | RR |
+| `rosuvastatin-auto-full-review` | 2 | OR |
+
+⛔ **Marked do-not-search-again in the file itself.** They have been searched twice under the
+frozen rule — the second time with a wider recall arm querying their own registration
+identifiers — and returned zero eligible both times. The list is published so nobody
+re-derives it.
+
+⚠️ One row is worth a second look by whoever owns the object, not by me:
+`cangrelor-pci-review` has a live pooled estimate whose **measure is not named** on the
+object. That is a gap in the store, not in the search.
+
+## The refusal, recorded in the published file
+
+⛔ **Reviving a withdrawn pool to raise the comparator count is refused, and the refusal
+ships with the data.** Those estimates are withdrawn for stated methodological reasons —
+*"the four trials measure four different things"*. **Reviving a pool the review itself
+refused, in order to raise a count, is the exact shape of every failure the frozen rule
+exists to prevent, applied to our content instead of our criteria.**
+
+**Ceiling: 13 scoreable now, 16 with the three surface disagreements fixed. That fix is the
+only route, it is upstream, and it costs nothing methodological.**
