@@ -37,12 +37,7 @@
      ]
     }
    ],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "SHORTLIST_ONLY_DIFFERENT_PICO",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "our icosapent topic asks AMR101 versus PLACEBO on triglyceride lowering; the candidate claims EPA versus EPA+DHA. Different comparator, therefore a different estimand -- adjacent, not matching."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#32",
@@ -57,12 +52,7 @@
    },
    "n_shortlisted_store_topics": 0,
    "shortlisted": [],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "NO_OVERLAP",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "we hold sglt2-hf (SGLT2 inhibitors in chronic heart failure) and attr-cm-review / attr-pn-review (tafamidis or acoramidis in ATTR-CM; patisiran, vutrisiran and eplontersen in ATTR-PN). NO topic addresses SGLT2 IN AMYLOIDOSIS. Holding both drug families separately is NOT holding the PICO -- a name is not an identity."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#33",
@@ -77,12 +67,7 @@
    },
    "n_shortlisted_store_topics": 0,
    "shortlisted": [],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "NO_OVERLAP",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "two independent reasons. (1) POPULATION: our acs-antiplatelet-review is ACUTE coronary syndrome, while the candidate claims STABLE / chronic CAD. (2) our object cannot be matched on its question at all -- see the metadata defect recorded in this file."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#34",
@@ -113,12 +98,7 @@
      ]
     }
    ],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "SHORTLIST_ONLY_DIFFERENT_PICO",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "our cangrelor-pci-review asks cangrelor versus clopidogrel, a DRUG comparison at PCI; the candidate claims a STENT-STRATEGY network. Different intervention class."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#35",
@@ -133,12 +113,7 @@
    },
    "n_shortlisted_store_topics": 0,
    "shortlisted": [],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "NO_OVERLAP",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "no diagnostic-accuracy topic exists in the store."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#37",
@@ -184,12 +159,7 @@
      ]
     }
    ],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "PLAUSIBLE_PICO_MATCH",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "our inclisiran-lipid-kidney-auto-full-review is inclisiran for elevated LDL-C in HeFH, ASCVD or ASCVD-risk equivalents; the candidate claims inclisiran LDL lowering. Same drug, same outcome, same population family. k=3, one live pooled estimate, HOSTABLE NOW. STILL UNCONFIRMED: the candidate paper has never been resolved, so this is a shortlist agreeing with a DESCRIPTION, not a match to a document."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#38",
@@ -204,12 +174,7 @@
    },
    "n_shortlisted_store_topics": 0,
    "shortlisted": [],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "NO_OVERLAP",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "too generic to match a PICO; meta-regression is a method, not a question."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   },
   {
    "candidate": "#40",
@@ -224,30 +189,130 @@
    },
    "n_shortlisted_store_topics": 0,
    "shortlisted": [],
-   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing.",
-   "hand_read_verdict": {
-    "value": "NO_OVERLAP",
-    "grade": "MEASURED -- I read our declared question",
-    "why": "no adherence-proportion topic exists in the store."
-   }
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
+  },
+  {
+   "candidate": "ID#1",
+   "what_the_list_CLAIMS_it_is": {
+    "value": "influenza antivirals; source-data error, CAPSTONE-2 hospitalisations",
+    "grade": "CLAIMED"
+   },
+   "paper_resolved": {
+    "value": false,
+    "grade": "MEASURED",
+    "why": "no title, journal, year or DOI was supplied for this candidate; nothing has been resolved"
+   },
+   "n_shortlisted_store_topics": 0,
+   "shortlisted": [],
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
+  },
+  {
+   "candidate": "ID#2",
+   "what_the_list_CLAIMS_it_is": {
+    "value": "triple-dose rifampin TB; own sensitivity analyses overturn the headline",
+    "grade": "CLAIMED"
+   },
+   "paper_resolved": {
+    "value": false,
+    "grade": "MEASURED",
+    "why": "no title, journal, year or DOI was supplied for this candidate; nothing has been resolved"
+   },
+   "n_shortlisted_store_topics": 0,
+   "shortlisted": [],
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
+  },
+  {
+   "candidate": "ID#6",
+   "what_the_list_CLAIMS_it_is": {
+    "value": "high-dose rifampicin NMA; nodes by rifampicin vs by drug combination",
+    "grade": "CLAIMED"
+   },
+   "paper_resolved": {
+    "value": false,
+    "grade": "MEASURED",
+    "why": "no title, journal, year or DOI was supplied for this candidate; nothing has been resolved"
+   },
+   "n_shortlisted_store_topics": 0,
+   "shortlisted": [],
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
+  },
+  {
+   "candidate": "ID#7",
+   "what_the_list_CLAIMS_it_is": {
+    "value": "corticosteroids in HIV-associated TB",
+    "grade": "CLAIMED"
+   },
+   "paper_resolved": {
+    "value": false,
+    "grade": "MEASURED",
+    "why": "no title, journal, year or DOI was supplied for this candidate; nothing has been resolved"
+   },
+   "n_shortlisted_store_topics": 0,
+   "shortlisted": [],
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
+  },
+  {
+   "candidate": "ID#10",
+   "what_the_list_CLAIMS_it_is": {
+    "value": "ceftolozane/tazobactam vs ceftazidime-avibactam, MDR Pseudomonas",
+    "grade": "CLAIMED"
+   },
+   "paper_resolved": {
+    "value": false,
+    "grade": "MEASURED",
+    "why": "no title, journal, year or DOI was supplied for this candidate; nothing has been resolved"
+   },
+   "n_shortlisted_store_topics": 2,
+   "shortlisted": [
+    {
+     "our_topic_key": "ceftolozane-infection-auto-full-review",
+     "our_declared_question_VERBATIM": "Ceftolozane Infection: is a pooled estimate possible?",
+     "our_title": "Ceftolozane/tazobactam in infections",
+     "k": 3,
+     "live_pooled_outcomes": 0,
+     "hostable_now": false,
+     "intervention_terms_hit": [
+      "ceftolozane",
+      "tazobactam"
+     ],
+     "population_terms_hit": [
+      "infection"
+     ]
+    },
+    {
+     "our_topic_key": "ceftazidime-avibactam-auto-full-review",
+     "our_declared_question_VERBATIM": "Ceftazidime Avibactam: is a pooled estimate possible?",
+     "our_title": "Ceftazidime and avibactam in complicated intra-abdominal and urinary tract infections",
+     "k": 2,
+     "live_pooled_outcomes": 0,
+     "hostable_now": false,
+     "intervention_terms_hit": [
+      "avibactam",
+      "ceftazidime"
+     ],
+     "population_terms_hit": [
+      "infection",
+      "intra-abdominal",
+      "urinary"
+     ]
+    }
+   ],
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
+  },
+  {
+   "candidate": "ID#9",
+   "what_the_list_CLAIMS_it_is": {
+    "value": "PCP treatment network meta-analysis",
+    "grade": "CLAIMED"
+   },
+   "paper_resolved": {
+    "value": false,
+    "grade": "MEASURED",
+    "why": "no title, journal, year or DOI was supplied for this candidate; nothing has been resolved"
+   },
+   "n_shortlisted_store_topics": 0,
+   "shortlisted": [],
+   "⛔_status": "SHORTLIST ONLY -- read our declared question above and confirm the PICO by hand. This licenses nothing."
   }
- ],
- "_hand_read_summary": {
-  "plausible_pico_match": [
-   "#37"
-  ],
-  "shortlist_only_different_pico": [
-   "#31",
-   "#34"
-  ],
-  "no_overlap": [
-   "#32",
-   "#33",
-   "#35",
-   "#38",
-   "#40"
-  ],
-  "_note": "The keyword shortlist proposed 4 overlaps. Reading OUR DECLARED QUESTION reduced it to 1 plausible. That gap is the name-is-not-an-identity rule doing its job, and it is why the shortlist licenses nothing."
- },
- "a_defect_in_OUR_store_surfaced_by_this": "Several of our topics have NO USABLE DECLARED QUESTION, which makes question-based matching weaker BECAUSE OF US rather than because of the candidates. acs-antiplatelet-review's question field is a trial-declared OUTCOME STRING -- 'In Multiple trial-declared outcomes: Participants With Any Event From the Composite of Death From Vascular Causes...' -- naming neither its intervention nor its population. attr-pn-review and inclisiran-lipid-kidney use the template 'In [the title], what do the contributing trials show?', which restates the title instead of stating a PICO. A comparator hunt that matches on the question cannot find these topics. That is our metadata gap to fix, not a property of the literature."
+ ]
 }

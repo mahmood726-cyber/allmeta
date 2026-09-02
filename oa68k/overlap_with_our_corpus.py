@@ -54,6 +54,23 @@ CANDIDATES = [
      []),
     ("#40", "pooled proportions with definitional heterogeneity (adherence)",
      ["adherence", "persistence", "compliance"], []),
+    # --- infectious-disease batch. NAMESPACED ID#n because this batch renumbers from 1 and
+    # collides with the first list: "#1" would otherwise denote two different papers.
+    ("ID#1", "influenza antivirals; source-data error, CAPSTONE-2 hospitalisations",
+     ["baloxavir", "oseltamivir", "zanamivir", "antiviral"], ["influenza"]),
+    ("ID#2", "triple-dose rifampin TB; own sensitivity analyses overturn the headline",
+     ["rifampi", "rifampin"], ["tuberculosis", "\bTB\b"]),
+    ("ID#6", "high-dose rifampicin NMA; nodes by rifampicin vs by drug combination",
+     ["rifampi", "rifampin"], ["tuberculosis", "\bTB\b"]),
+    ("ID#7", "corticosteroids in HIV-associated TB",
+     ["corticosteroid", "dexamethasone", "prednisolone", "steroid"],
+     ["tuberculosis", "\bTB\b", "\bHIV\b"]),
+    ("ID#10", "ceftolozane/tazobactam vs ceftazidime-avibactam, MDR Pseudomonas",
+     ["ceftolozane", "tazobactam", "ceftazidime", "avibactam"],
+     ["Pseudomonas", "infection", "intra-abdominal", "urinary"]),
+    ("ID#9", "PCP treatment network meta-analysis",
+     ["trimethoprim", "sulfamethoxazole", "pentamidine", "atovaquone"],
+     ["pneumocystis", "\bPCP\b"]),
 ]
 
 
