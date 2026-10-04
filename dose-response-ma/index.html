@@ -139,6 +139,7 @@
     var DR = window.AlmDoseResponse, $ = function (id) { return document.getElementById(id); };
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 4 : d) : "—"; }
     function sig(x, s) { if (!(typeof x === "number" && isFinite(x))) return "—"; if (x === 0) return "0"; var a = Math.abs(x); return (a >= 1e-3 && a < 1e5) ? String(+x.toPrecision(s || 4)) : x.toExponential((s || 4) - 1); }
+    function ptxt(p) { var s = pfmt(p); return s.charAt(0) === "<" ? "p " + s : "p = " + s; }
     function pfmt(p) { return !(typeof p === "number" && isFinite(p)) ? "—" : (p < 0.0001 ? "< 0.0001" : p.toFixed(4)); }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
     function nums(s) { return String(s || "").split(/[,;\s]+/).filter(function (t) { return t !== ""; }).map(Number).filter(isFinite); }
@@ -223,7 +224,7 @@
         var b = r.coef[0], se = Math.sqrt(r.vcov[0][0]);
         head += "<br>Pooled slope <strong>" + sig(b, 4) + "</strong> log RR per unit of dose (SE " + sig(se, 3) + "); RR per unit = <strong>" + fmt(Math.exp(b), 4) + "</strong> [" + fmt(Math.exp(b - 1.959963984540054 * se), 4) + ", " + fmt(Math.exp(b + 1.959963984540054 * se), 4) + "].";
       } else if (r.waldNonlin) {
-        head += "<br>Test for non-linearity: χ² = " + fmt(r.waldNonlin.chi2, 2) + " on " + r.waldNonlin.df + " df, p = " + pfmt(r.waldNonlin.p) + ".";
+        head += "<br>Test for non-linearity: χ² = " + fmt(r.waldNonlin.chi2, 2) + " on " + r.waldNonlin.df + " df, " + ptxt(r.waldNonlin.p) + ".";
       }
       $("headline").innerHTML = head;
       var msgs = (r.warnings || []).map(function (w) { return "<div class='msg warn' role='status'>" + esc(w) + "</div>"; });
@@ -242,17 +243,17 @@
       // tests
       var rows = [];
       if (r.qtest) {
-        rows.push(["Q test of heterogeneity (all coefficients)", "Q = " + fmt(r.qtest.Q[0], 3) + ", df = " + r.qtest.df[0] + ", p = " + pfmt(r.qtest.p[0])]);
+        rows.push(["Q test of heterogeneity (all coefficients)", "Q = " + fmt(r.qtest.Q[0], 3) + ", df = " + r.qtest.df[0] + ", " + ptxt(r.qtest.p[0])]);
         rows.push(["I² (from Q)", fmt(r.I2, 1) + "%"]);
-        for (var j = 1; j < r.qtest.Q.length; j++) rows.push(["Q for " + esc(r.names[j - 1]) + " (dosresmeta df = studies − terms)", "Q = " + fmt(r.qtest.Q[j], 3) + ", df = " + r.qtest.df[j] + ", p = " + pfmt(r.qtest.p[j])]);
+        for (var j = 1; j < r.qtest.Q.length; j++) rows.push(["Q for " + esc(r.names[j - 1]) + " (dosresmeta df = studies − terms)", "Q = " + fmt(r.qtest.Q[j], 3) + ", df = " + r.qtest.df[j] + ", " + ptxt(r.qtest.p[j])]);
       } else rows.push(["Q test of heterogeneity", "not defined for the one-stage approach (as in dosresmeta)"]);
       if (r.Psi) {
         if (r.Psi.length === 1) rows.push(["Between-study variance τ²", sig(r.Psi[0][0], 4) + " (τ = " + sig(Math.sqrt(r.Psi[0][0]), 4) + ")"]);
         else rows.push(["Between-study covariance Ψ", r.Psi.map(function (row) { return row.map(function (v) { return sig(v, 3); }).join(", "); }).join(" ; ")]);
       } else rows.push(["Between-study variance", "0 (fixed effect)"]);
-      rows.push(["Wald test, all dose coefficients = 0", "χ² = " + fmt(r.wald.chi2, 3) + ", df = " + r.wald.df + ", p = " + pfmt(r.wald.p)]);
-      if (r.waldNonlin) rows.push(["Wald test for non-linearity (terms after the first = 0)", "χ² = " + fmt(r.waldNonlin.chi2, 3) + ", df = " + r.waldNonlin.df + ", p = " + pfmt(r.waldNonlin.p)]);
-      rows.push(["Goodness of fit: deviance (fixed-effect fit to all points)", "D = " + fmt(r.gof.D, 3) + ", df = " + r.gof.df + ", p = " + pfmt(r.gof.p)]);
+      rows.push(["Wald test, all dose coefficients = 0", "χ² = " + fmt(r.wald.chi2, 3) + ", df = " + r.wald.df + ", " + ptxt(r.wald.p)]);
+      if (r.waldNonlin) rows.push(["Wald test for non-linearity (terms after the first = 0)", "χ² = " + fmt(r.waldNonlin.chi2, 3) + ", df = " + r.waldNonlin.df + ", " + ptxt(r.waldNonlin.p)]);
+      rows.push(["Goodness of fit: deviance (fixed-effect fit to all points)", "D = " + fmt(r.gof.D, 3) + ", df = " + r.gof.df + ", " + ptxt(r.gof.p)]);
       rows.push(["Coefficient of determination R² (adjusted)", fmt(r.gof.R2, 4) + " (" + fmt(r.gof.R2adj, 4) + ")"]);
       if (r.logLik != null) rows.push(["Log-likelihood" + (r.method === "reml" ? " (restricted)" : "") + " · AIC", fmt(r.logLik, 4) + " · " + fmt(r.aic, 3)]);
       $("tests-body").innerHTML = rows.map(function (x) { return "<tr><th scope='row'>" + x[0] + "</th><td>" + x[1] + "</td></tr>"; }).join("");
