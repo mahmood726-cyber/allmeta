@@ -4,7 +4,8 @@
  * a +0.5 continuity correction to ALL studies (correction.control="all") when any cell is 0.
  *   μ_logitSe = 2.07625908, μ_logitFPR = -1.26244709,
  *   Σ = [[1.22384177, 0.58323292],[0.58323292, 0.37488242]].
- * This is a genuine iterative ML fit (GLS-profiled μ, Cholesky Σ, Nelder-Mead) — NO R/WASM.
+ * fit(rows, { method: 'ml' }); the default is REML, as in mada. Full grid (all mada datasets, methods,
+ * correction rules, meta-regression): dta-bivariate-mada-parity.spec.mjs.
  * Surfaced in dta-sroc alongside the Moses SROC; the app also reports LR± (delta-method CIs),
  * the diagnostic OR, and the Spearman threshold-effect correlation.
  */
@@ -19,7 +20,7 @@ test('bivariate ML matches mada::reitsma(method="ml")', async ({ page }) => {
   const errs = [];
   page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
   await page.goto(URL, { waitUntil: 'load' });
-  const f = await page.evaluate((rows) => window.AlmDTABivariate.fit(rows), ROWS);
+  const f = await page.evaluate((rows) => window.AlmDTABivariate.fit(rows, { method: 'ml' }), ROWS);
   expect(f.muLogitSe).toBeCloseTo(2.07625908, 4);
   expect(f.muLogitFPR).toBeCloseTo(-1.26244709, 4);
   expect(f.Sigma[0][0]).toBeCloseTo(1.22384177, 4);

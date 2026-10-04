@@ -158,7 +158,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (Cholesky-parameterised Σ, GLS-profiled μ, Nelder-Mead; <code>mada::reitsma</code>-parity to ~1e-4). A univariate DerSimonian-Laird per-margin approximation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) is retained only as a k&nbsp;&lt;&nbsp;4 fallback where Σ is not identifiable. 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
+  <p class="footer-note">Model: bivariate random-effects on logit-<abbr data-gloss="Se">Se</abbr>, logit-<abbr data-gloss="FPR">FPR</abbr>, correlation ρ — Reitsma JB et&nbsp;al. <em>J Clin Epidemiol</em> 2005;58:982–990; Rutter CM, Gatsonis CA. <em>Stat Med</em> 2001;20:2865–2884 (<abbr data-gloss="HSROC">HSROC</abbr>). Fitted by maximum-likelihood bivariate random effects for k&nbsp;&ge;&nbsp;4 via the shared Reitsma engine (the IGLS start and BFGS optimisation of <code>mvmeta</code>; parity with <code>mada::reitsma(method = "ml")</code> on all six <code>mada</code> example datasets). The prediction region is that of <code>mada::plot.reitsma(predict = TRUE)</code> (between-study plus estimation uncertainty). A univariate DerSimonian-Laird per-margin approximation (Harbord RM et&nbsp;al. <em>Biostatistics</em> 2007;8:239–251) is retained only as a k&nbsp;&lt;&nbsp;4 fallback where Σ is not identifiable. 0.5 continuity correction when any cell is zero. <abbr data-gloss="HSROC">HSROC</abbr> curve = locus of (FPR, Se) pairs from the conditional mean linear predictor. <strong>Choosing a tool:</strong> for the Moses SROC line and a Spearman threshold-effect check (e.g. k&lt;5 or when bivariate fails to converge), use <a href="../dta-sroc/">Moses DTA-SROC &rarr;</a>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -343,7 +343,7 @@
         try {
           fit = window.AlmDTABivariate.fit(studies.map(function (s) {
             return { tp: s.tp, fp: s.fp, fn: s.fn, tn: s.tn };
-          }));
+          }), { method: "ml" });
         } catch (e) { fit = null; }
       }
       if (fit) {
@@ -413,9 +413,9 @@
       }
 
       // Confidence & prediction regions + SROC curve. When the Reitsma ML engine is
-      // available (k>=4) draw its 95% prediction region (Σ) behind, its 95% confidence
-      // region (cov μ), and its symmetric SROC curve — all from AlmDTABivariate, matching
-      // mada::plot.reitsma. Otherwise fall back to the inline DL logit-scale curve.
+      // available (k>=4) draw its 95% prediction region (Σ + cov μ) behind, its 95% confidence
+      // region (cov μ), and its Rutter–Gatsonis SROC curve — all from AlmDTABivariate, matching
+      // mada::plot.reitsma(predict = TRUE). Otherwise fall back to the inline DL logit-scale curve.
       var clip01 = function (v) { return Math.max(0.0005, Math.min(0.9995, v)); };
       if (fit && window.AlmDTABivariate) {
         var predPts = AlmDTABivariate.regionEllipse(fit, "prediction", 120)

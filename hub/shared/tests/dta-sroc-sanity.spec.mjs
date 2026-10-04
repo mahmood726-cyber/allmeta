@@ -19,7 +19,7 @@
  * DTA-specific notes:
  *   - The ROC chart renders in #svg-host (not #funnel or #forest-plot)
  *   - T4 checks that the SVG still renders inside #svg-host after retrofit
- *   - T5 checks dta-sroc-results-v1 schema with alpha, beta, k fields
+ *   - T5 checks dta-sroc-results-v2 schema with alpha, beta, k fields
  *   - tooltips uses src: '../hub/shared/glossary.json' (not glossaryUrl)
  */
 import { test, expect } from '@playwright/test';
@@ -116,8 +116,8 @@ test.describe('dta-sroc retrofit sanity', () => {
     expect(polylineCount, 'Expected SROC curve polyline in SVG').toBeGreaterThan(0);
   });
 
-  // T5 — results-export JSON has dta-sroc-results-v1 schema and SROC fields
-  test('results-export JSON contains dta-sroc-results-v1 schema with SROC stats', async ({ page }) => {
+  // T5 — results-export JSON has dta-sroc-results-v2 schema and SROC fields
+  test('results-export JSON contains dta-sroc-results-v2 schema with SROC stats', async ({ page }) => {
     await page.goto(DTA_URL);
     await waitForAlm(page);
     await waitForSvg(page);
@@ -131,7 +131,8 @@ test.describe('dta-sroc retrofit sanity', () => {
     const text = readFileSync(path, 'utf-8');
     const obj = JSON.parse(text);
 
-    expect(obj._schema, 'Missing or wrong _schema field').toBe('dta-sroc-results-v1');
+    expect(obj._schema, 'Missing or wrong _schema field').toBe('dta-sroc-results-v2');
+    expect(obj.bivariate && obj.bivariate.method, 'bivariate fit (REML by default)').toBe('reml');
     expect(obj.k,       'k field missing').toBeGreaterThan(0);
     expect(obj.alpha,   'alpha (Moses SROC intercept) missing').not.toBeNull();
     expect(obj.beta,    'beta (Moses SROC slope) missing').not.toBeNull();

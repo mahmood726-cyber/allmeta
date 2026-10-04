@@ -7,9 +7,10 @@
  *
  *   Default example (7 studies, no zero cells):
  *     α=4.30850244  β=0.46400383  ρ=−0.75000000
- *   Zero-cell study (+0.5 added to ALL 4 cells of any study with a zero cell):
- *     TP=c(50,40,60,30) FP=c(5,0,8,4) FN=c(10,8,12,15) TN=c(80,75,90,70)
- *     → α=3.02612719  β=−0.84761628  ρ=0.73786479
+ *   Zero-cell study, TP=c(50,40,60,30) FP=c(5,0,8,4) FN=c(10,8,12,15) TN=c(80,75,90,70), with
+ *   mada's two continuity-correction rules (mada::mslSROC(correction.control = ...)):
+ *     "single" (+0.5 to the cells of the study with a zero cell) → α=3.02612719  β=−0.84761628  ρ=0.73786479
+ *     "all"    (+0.5 to every cell of every study; the default)  → α=2.87891754  β=−0.89983822  ρ=0.8
  */
 import { test, expect } from '@playwright/test';
 const URL = 'http://localhost:8088/dta-sroc/index.html';
@@ -31,11 +32,18 @@ test('dta-sroc default example: SROC α/β + Spearman ρ match R lm()/cor()', as
 
 test('dta-sroc zero-cell study: +0.5 continuity correction matches R', async ({ page }) => {
   await page.goto(URL, { waitUntil: 'load' });
-  const r = await page.evaluate(() => {
-    const data = 'S1, 50, 5, 10, 80\nS2, 40, 0, 8, 75\nS3, 60, 8, 12, 90\nS4, 30, 4, 15, 70';
-    document.getElementById('f-data').value = data;
+  const run = (cc) => page.evaluate((cc) => {
+    document.getElementById('f-data').value = 'S1, 50, 5, 10, 80\nS2, 40, 0, 8, 75\nS3, 60, 8, 12, 90\nS4, 30, 4, 15, 70';
+    document.getElementById('f-cov').value = '';
+    document.getElementById('f-cc').value = cc;
     return window.__almResults();
-  });
+  }, cc);
+  const all = await run('all');
+  expect(all.alpha).toBeCloseTo(2.87891754, 6);
+  expect(all.beta).toBeCloseTo(-0.89983822, 6);
+  expect(all.spearman_rho).toBeCloseTo(0.8, 6);
+  expect(all.rows.every(x => x.corrected === 1)).toBe(true);
+  const r = await run('single');
   console.log('  zero-cell:', JSON.stringify({ alpha: r.alpha, beta: r.beta, rho: r.spearman_rho, k: r.k }));
   expect(r.k).toBe(4);
   expect(r.alpha).toBeCloseTo(3.02612719, 6);
