@@ -5,27 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Two-stage linear dose-response meta-analysis (Greenland-Longnecker) pooling the log-RR trend across studies with reconstructed within-study covariance.">
+  <meta name="description" content="Dose-response meta-analysis in the browser (Greenland-Longnecker / Hamling covariance; linear, quadratic and restricted cubic spline curves; two-stage and one-stage; REML, ML, MM and fixed effect; meta-regression), reproducing the R package dosresmeta.">
   <meta name="color-scheme" content="light dark">
   <title>Dose-Response Meta-Analysis</title>
   <style>
-    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7; --border:#d9d5cc; --input-bg:#fbfaf6; }
-    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --accent-soft:#223044; --border:#2f343a; --input-bg:#23272c; } }
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470; --accent:#2c5e8a; --accent-soft:#e8f0f7; --border:#d9d5cc; --input-bg:#fbfaf6; --warn-bg:#fff4e0; --warn-ink:#6b4200; --err-bg:#fde8e8; --err-ink:#8a1c1c; }
+    @media (prefers-color-scheme:dark) { :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae; --accent:#6aa6d4; --accent-soft:#223044; --border:#2f343a; --input-bg:#23272c; --warn-bg:#3a2e14; --warn-ink:#f2d29b; --err-bg:#3d1c1c; --err-ink:#f5b5b5; } }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
     * { box-sizing: border-box; } html,body { margin:0; padding:0; }
     body { font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
     header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
-    header h1 { margin:0 0 .25rem; font-size:1.6rem; } header p { margin:0; color:var(--muted); font-size:.95rem; max-width:72ch; }
-    main { padding:1.5rem clamp(1rem,3vw,3rem); display:grid; gap:1.5rem; grid-template-columns:minmax(300px,24rem) 1fr; align-items:start; }
+    header h1 { margin:0 0 .25rem; font-size:1.6rem; } header p { margin:0; color:var(--muted); font-size:.95rem; max-width:80ch; }
+    main { padding:1.5rem clamp(1rem,3vw,3rem); display:grid; gap:1.5rem; grid-template-columns:minmax(300px,26rem) 1fr; align-items:start; }
     @media (max-width:1000px) { main { grid-template-columns:1fr; } }
-    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.2rem; }
-    h2 { font-size:1.05rem; margin:0 0 .6rem; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.2rem; min-width:0; }
+    h2 { font-size:1.05rem; margin:1.1rem 0 .5rem; } h2:first-child { margin-top:0; }
     textarea { width:100%; min-height:13rem; font-family:ui-monospace,Consolas,monospace; font-size:.8rem; background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.5rem; }
-    label { display:block; font-size:.85rem; }
-    select { background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.35rem .5rem; margin-top:.3rem; }
-    table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:.4rem; } th,td { text-align:left; padding:.3rem .5rem; border-bottom:1px solid var(--border); }
-    .stat { color:var(--muted); font-size:.92rem; } .note { color:var(--muted); font-size:.8rem; }
-    footer { padding:1rem clamp(1rem,3vw,3rem) 2rem; color:var(--muted); font-size:.8rem; border-top:1px solid var(--border); max-width:92ch; } a { color:var(--accent); }
+    label { display:block; font-size:.85rem; margin-top:.6rem; }
+    select, input[type=text] { background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.35rem .5rem; margin-top:.25rem; font:inherit; font-size:.85rem; }
+    input[type=text] { width:100%; } select { max-width:100%; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    label.check { display:flex; gap:.45rem; align-items:flex-start; } label.check input { margin-top:.25rem; }
+    .scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; margin-top:.3rem; font-variant-numeric:tabular-nums; } th,td { text-align:left; padding:.3rem .5rem; border-bottom:1px solid var(--border); }
+    td.num, th.num { text-align:right; }
+    .stat { color:var(--ink); font-size:.95rem; } .note { color:var(--muted); font-size:.8rem; }
+    [hidden] { display:none !important; }
+    #msgs:empty { display:none; }
+    .msg { border-radius:6px; padding:.5rem .7rem; margin-top:.6rem; font-size:.85rem; }
+    .msg.warn { background:var(--warn-bg); color:var(--warn-ink); } .msg.err { background:var(--err-bg); color:var(--err-ink); }
+    .charts { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+    .charts svg { max-width:100%; height:auto; }
+    footer { padding:1rem clamp(1rem,3vw,3rem) 2rem; color:var(--muted); font-size:.8rem; border-top:1px solid var(--border); max-width:100ch; } a { color:var(--accent); }
   </style>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/dose-response.js"></script>
@@ -37,158 +48,294 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;right:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif">← allmeta</a>
 <header>
   <h1>Dose-Response Meta-Analysis</h1>
-  <p>Two-stage linear dose-response synthesis (Greenland-Longnecker): each study's within-dose covariance is reconstructed from the cell counts, a GLS trend is fitted per study, and the slopes are pooled by random effects. Distinct from network dose-response.</p>
+  <p>Pools dose-response curves from studies that report relative risks at several doses against a reference. The correlation between estimates that share a reference group is reconstructed from the counts (Greenland–Longnecker or Hamling). Curves can be linear, quadratic or restricted cubic splines, fitted by the two-stage or one-stage approach. The estimation reproduces the R package <code>dosresmeta</code>. Distinct from network dose-response.</p>
 </header>
 <main id="main">
-  <section class="panel">
-    <h2>Studies</h2>
-    <label>One row per dose level: <code>study, dose, cases, n, logRR, SE, type</code>. The reference level has <code>logRR=0</code> and blank SE. <code>type</code> ∈ cc / ir / ci.
-      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
-    </label>
-    <label style="margin-top:.6rem">Trend shape
-      <select id="f-shape" aria-label="Dose-response trend shape"><option value="linear" selected>Linear</option><option value="spline3">Restricted cubic spline (3 knots)</option><option value="spline4">Restricted cubic spline (4 knots)</option></select>
-    </label>
-    <label style="margin-top:.6rem">Heterogeneity (τ²) estimator
-      <select id="f-method" aria-label="Tau-squared estimator"><option value="REML" selected>REML</option><option value="PM">Paule-Mandel</option><option value="DL">DerSimonian-Laird</option><option value="FE">Fixed-effect</option></select>
-    </label>
-    <p class="note" style="margin-top:.5rem">Linear = log-RR per unit dose (τ² estimator applies). Spline = non-linear Harrell RCS basis, multivariate (mvmeta) REML pool — captures J/U-shaped exposures. GL covariance reconstructed per study by design type. Verified vs R <code>dosresmeta</code>.</p>
-      <p class="note" style="margin-top:.4rem"><strong>Knot placement</strong> (Harrell's recommended percentiles, R type-7 quantiles of the pooled dose distribution): 3 knots → 10th, 50th, 90th; 4 knots → 5th, 35th, 65th, 95th. The fitted knot doses are echoed in the results header.</p>
+  <section class="panel" aria-labelledby="h-input">
+    <h2 id="h-input">Studies</h2>
+    <label for="f-data">One row per dose level: <code>study, dose, cases, n, logRR, SE, type[, covariate]</code>. Each study's reference level has blank SE (its logRR is 0). <code>type</code> is <code>cc</code> (case-control), <code>ir</code> (incidence rate; <code>n</code> = person-time) or <code>ci</code> (cumulative incidence). The optional covariate is a study-level number for meta-regression.</label>
+    <textarea id="f-data" spellcheck="false"></textarea>
+
+    <h2>Model</h2>
+    <label for="f-shape">Curve</label>
+    <select id="f-shape">
+      <option value="linear" selected>Linear trend</option>
+      <option value="quadratic">Quadratic</option>
+      <option value="spline3">Restricted cubic spline, 3 knots</option>
+      <option value="spline4">Restricted cubic spline, 4 knots</option>
+      <option value="spline5">Restricted cubic spline, 5 knots</option>
+      <option value="splinec">Restricted cubic spline, knots I choose</option>
+    </select>
+    <label for="f-knots" id="l-knots" hidden>Knot doses (comma-separated, 3 to 7)</label>
+    <input type="text" id="f-knots" hidden placeholder="e.g. 0, 10, 25, 50" autocomplete="off">
+    <p class="note" id="knot-note">Default knots follow Harrell: the 10th/50th/90th percentiles of all doses for 3 knots, 5/35/65/95th for 4, and 5/27.5/50/72.5/95th for 5 (R type-7 quantiles, as <code>quantile()</code>).</p>
+    <div class="row2">
+      <div><label for="f-cov">Within-study covariance</label>
+        <select id="f-cov"><option value="gl" selected>Greenland–Longnecker</option><option value="h">Hamling</option><option value="indep">Independent (ignore)</option></select></div>
+      <div><label for="f-proc">Approach</label>
+        <select id="f-proc"><option value="2stage" selected>Two-stage</option><option value="1stage">One-stage</option></select></div>
+    </div>
+    <label for="f-method">Pooling method</label>
+    <select id="f-method">
+      <option value="REML" selected>Random effects, REML</option>
+      <option value="ML">Random effects, ML</option>
+      <option value="MM">Random effects, method of moments</option>
+      <option value="FE">Fixed effect</option>
+      <option value="PM">Random effects, Paule–Mandel (linear, two-stage, GL only)</option>
+      <option value="DL">Random effects, DerSimonian–Laird (linear, two-stage, GL only)</option>
+    </select>
+    <label class="check"><input type="checkbox" id="f-mod"> <span>Meta-regression on the covariate column (two-stage): the curve's coefficients depend linearly on the covariate.</span></label>
+
+    <h2>Predictions</h2>
+    <div class="row2">
+      <div><label for="f-xref">Reference dose</label><input type="text" id="f-xref" autocomplete="off" placeholder="default: lowest dose"></div>
+      <div><label for="f-modval">Covariate value</label><input type="text" id="f-modval" autocomplete="off" placeholder="meta-regression only"></div>
+    </div>
+    <label for="f-pdoses">Doses to report (comma-separated)</label>
+    <input type="text" id="f-pdoses" autocomplete="off" placeholder="default: 10th–90th percentiles of the doses">
   </section>
-  <section class="panel">
-    <h2>Pooled dose-response</h2>
-    <div id="headline" class="stat"></div>
-    <h2 style="margin-top:1rem">Per-study slopes</h2>
-    <table><thead><tr><th>Study</th><th>type</th><th>slope (logRR/unit)</th><th>SE</th></tr></thead><tbody id="res-body"></tbody></table>
-    <h2 style="margin-top:1rem">Pooled RR by dose</h2>
-    <div id="curve-host"></div>
+
+  <section class="panel" aria-labelledby="h-res">
+    <h2 id="h-res">Pooled dose-response</h2>
+    <div id="headline" class="stat" aria-live="polite"></div>
+    <div id="msgs" aria-live="polite"></div>
+
+    <h2>Coefficients</h2>
+    <div class="scroll"><table><caption class="note" style="text-align:left">Pooled coefficients of the dose terms (log relative risk scale); dose is measured from each study's reference dose.</caption>
+      <thead><tr><th scope="col">Term</th><th scope="col" class="num">Estimate</th><th scope="col" class="num">SE</th><th scope="col" class="num">z</th><th scope="col" class="num">p</th><th scope="col" class="num">95% CI</th></tr></thead><tbody id="coef-body"></tbody></table></div>
+
+    <h2>Heterogeneity and tests</h2>
+    <div class="scroll"><table><thead><tr><th scope="col">Statistic</th><th scope="col">Value</th></tr></thead><tbody id="tests-body"></tbody></table></div>
+
+    <h2>Predicted relative risks</h2>
+    <div class="scroll"><table><thead><tr><th scope="col" class="num">Dose</th><th scope="col" class="num">RR</th><th scope="col" class="num">95% CI</th><th scope="col" class="num">log RR</th><th scope="col" class="num">SE</th></tr></thead><tbody id="pred-body"></tbody></table></div>
+
+    <h2>Plots</h2>
+    <div class="charts"><div id="curve-host"></div><div id="resid-host"></div></div>
+
+    <h2>Studies</h2>
+    <div class="scroll"><table><thead><tr><th scope="col">Study</th><th scope="col">Type</th><th scope="col" class="num">Reference dose</th><th scope="col" class="num">Non-reference doses</th><th scope="col">Study coefficients (SE)</th></tr></thead><tbody id="res-body"></tbody></table></div>
     <div id="alm-export-mount" style="margin-top:1rem"></div>
   </section>
 </main>
 <footer>
-  Two-stage dose-response MA via <code>shared/dose-response.js</code> (Greenland-Longnecker covariance reconstruction → per-study GLS → REML pool). <strong>Linear</strong>: per-study slope pooled on <code>shared/ma-core.js</code>, matches <code>dosresmeta(method="reml")</code> to ~1e-6 (<code>dose-response-parity.spec.mjs</code>). <strong>Restricted cubic spline</strong> (3/4 knots at Harrell's recommended percentiles — 3: 10/50/90th; 4: 5/35/65/95th — via R type-7 quantiles of the pooled dose distribution): per-study multivariate GLS of the spline coefficients, pooled by a pure-JS multivariate (mvmeta) REML with a full between-study Ψ — matches <code>dosresmeta(logrr~rcs(dose,k))</code> to ~1e-5 on coefficients, vcov, Ψ and fitted log-RRs (<code>dose-response-spline-parity.spec.mjs</code>). References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Harrell 2001 (RCS).
+  <p>Engine: <code>shared/dose-response.js</code> (<code>fitDR</code>), a port of the estimation in <code>dosresmeta</code> 2.2.0 and <code>mixmeta</code>. Doses are measured from each study's reference dose. The two-stage approach fits each study by generalised least squares and pools the coefficient vectors: REML and ML start from 10 iterative GLS steps, then maximise with BFGS. The one-stage approach fits all points together with a random-effects covariance, as dosresmeta does (Nelder–Mead, capped at 100 likelihood evaluations; the app says when the cap stops it before convergence). A two-stage fit needs as many non-reference doses in every study as the curve has coefficients; otherwise the app refuses, as dosresmeta does, and suggests the one-stage approach. Q, I², the Wald tests, the goodness-of-fit statistics (deviance, R², from <code>gof()</code>) and the decorrelated residuals follow dosresmeta's definitions.</p>
+  <p>Verification: every multi-study binary dataset shipped with dosresmeta (16 datasets, 784 model × covariance × approach × method combinations) is reproduced within numerical tolerance, and every fit dosresmeta refuses is refused (<code>hub/shared/tests/dose-response-dosresmeta-parity.spec.mjs</code>).</p>
+  <p>References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Hamling et al. 2008, <em>Stat Med</em> 27:954; Orsini et al. 2012, <em>Am J Epidemiol</em> 175:66; Gasparrini, Armstrong &amp; Kenward 2012, <em>Stat Med</em> 31:3821; Crippa &amp; Orsini 2016, <em>J Stat Softw</em> 72(c01); Harrell 2015, <em>Regression Modeling Strategies</em>.</p>
 </footer>
 <script>
   (function () {
     "use strict";
-    // Example: alcohol intake & CVD (dosresmeta::alcohol_cvd), 6 studies (4 cc, 2 ci).
+    // Example: alcohol intake and cardiovascular disease, dosresmeta::alcohol_cvd (Liu et al. 2009),
+    // 6 studies (4 case-control, 2 cumulative incidence); log RRs and SEs rounded to 6 decimals.
     var EXAMPLE = [
       "# study, dose, cases, n, logRR, SE, type",
-      "1, 0, 126, 414, 0, , cc", "1, 9.06, 61, 261, -0.2231, 0.2233, cc", "1, 27, 69, 228, -0.0001, 0.2338, cc", "1, 45, 22, 44, 0.5306, 0.3765, cc", "1, 64.8, 19, 34, 0.8755, 0.4440, cc",
-      "2, 0, 77, 258, 0, , cc", "2, 16.05, 88, 413, -0.4308, 0.2213, cc", "2, 46.43, 24, 202, -1.0788, 0.2976, cc",
-      "3, 0, 32, 92, 0, , cc", "3, 5.3, 26, 91, -0.1985, 0.3091, cc", "3, 22.5, 12, 49, -0.2151, 0.3938, cc", "3, 45, 9, 38, -0.4456, 0.4543, cc",
-      "4, 0, 17, 126, 0, , cc", "4, 5.3, 32, 273, -0.3041, 0.3186, cc", "4, 15.9, 30, 274, -0.3939, 0.3209, cc", "4, 45, 8, 87, -0.5534, 0.4515, cc",
-      "5, 0, 159, 480, 0, , ci", "5, 6, 229, 975, -0.4155, 0.1442, ci", "5, 18, 38, 207, -0.6349, 0.2383, ci", "5, 28.8, 39, 133, -0.0834, 0.2739, ci",
-      "6, 0, 27, 116, 0, , ci", "6, 5.5, 86, 432, -0.40, 0.2293, ci", "6, 15.5, 35, 184, -0.288, 0.2557, ci", "6, 27, 9, 49, -0.5798, 0.3938, ci"
+      "1, 0, 126, 414, 0, , cc", "1, 9.06, 61, 261, -0.223144, 0.223338, cc", "1, 27, 69, 228, -0.0001, 0.233752, cc", "1, 45, 22, 44, 0.530628, 0.376514, cc", "1, 64.8, 19, 34, 0.875469, 0.444005, cc",
+      "2, 0, 77, 258, 0, , cc", "2, 16.05, 88, 413, -0.430783, 0.221305, cc", "2, 46.425, 24, 202, -1.07881, 0.297565, cc", "2, 77.16, 13, 64, -0.616186, 0.387079, cc", "3, 0, 83, 208, 0, , cc",
+      "3, 1.176, 46, 175, -0.579818, 0.317147, cc", "3, 8.916, 17, 58, -0.562119, 0.418614, cc", "3, 18.72, 4, 11, 0.615186, 0.909101, cc", "4, 0, 83, 208, 0, , cc", "4, 0.955, 29, 117, -0.287682, 0.333234, cc",
+      "4, 7.43, 32, 81, 0.512824, 0.338373, cc", "4, 15.6, 18, 39, -0.314711, 0.471345, cc", "5, 0, 159, 480, 0, , ci", "5, 6, 229, 975, -0.415516, 0.144215, ci", "5, 18, 38, 207, -0.634878, 0.238349, ci",
+      "5, 28.8, 39, 133, -0.083382, 0.273885, ci", "6, 0, 302, 1269, 0, , ci", "6, 6.25, 129, 436, -0.223144, 0.156587, ci", "6, 18.75, 19, 49, -0.01005, 0.351089, ci", "6, 30, 15, 41, -0.261365, 0.416511, ci"
     ].join("\n");
+    var DR = window.AlmDoseResponse, $ = function (id) { return document.getElementById(id); };
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 4 : d) : "—"; }
-    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+    function sig(x, s) { if (!(typeof x === "number" && isFinite(x))) return "—"; if (x === 0) return "0"; var a = Math.abs(x); return (a >= 1e-3 && a < 1e5) ? String(+x.toPrecision(s || 4)) : x.toExponential((s || 4) - 1); }
+    function pfmt(p) { return !(typeof p === "number" && isFinite(p)) ? "—" : (p < 0.0001 ? "< 0.0001" : p.toFixed(4)); }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function nums(s) { return String(s || "").split(/[,;\s]+/).filter(function (t) { return t !== ""; }).map(Number).filter(isFinite); }
     var _last = null;
     window._almLastDoseResponse = function () { return _last; };
 
     function parse(text) {
-      var byStudy = {};
+      var byStudy = {}, order = [];
       String(text || "").split(/\r?\n/).forEach(function (line) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
         var p = t.split(/\s*,\s*/);
         if (p.length < 6) return;
         var id = p[0], dose = parseFloat(p[1]), cases = parseFloat(p[2]), n = parseFloat(p[3]),
-            logrr = parseFloat(p[4]), seRaw = p[5].trim(), type = (p[6] || "cc").trim();
+            logrr = parseFloat(p[4]), seRaw = (p[5] || "").trim(), type = (p[6] || "cc").trim().toLowerCase(), cov = p.length > 7 ? parseFloat(p[7]) : NaN;
         var se = seRaw === "" ? null : parseFloat(seRaw);
-        if (!isFinite(dose) || !isFinite(cases) || !isFinite(n)) return;
-        (byStudy[id] = byStudy[id] || []).push({ dose: dose, cases: cases, n: n, logrr: isFinite(logrr) ? logrr : 0, se: se, type: type });
+        if (!isFinite(dose)) return;
+        if (!byStudy[id]) { byStudy[id] = { id: id, rows: [], mod: cov }; order.push(id); }
+        byStudy[id].rows.push({ dose: dose, cases: cases, n: n, logrr: isFinite(logrr) ? logrr : 0, se: se, type: type });
+        if (!isFinite(byStudy[id].mod) && isFinite(cov)) byStudy[id].mod = cov;
       });
-      return Object.keys(byStudy).map(function (k) { return byStudy[k]; });
+      return order.map(function (k) { return byStudy[k]; });
+    }
+
+    function syncControls() {
+      var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, mod = $("f-mod").checked;
+      var custom = shape === "splinec"; $("f-knots").hidden = !custom; $("l-knots").hidden = !custom;
+      var m = $("f-method");
+      var allow = { REML: true, ML: true, FE: true, MM: proc === "2stage", PM: shape === "linear" && proc === "2stage" && cov === "gl" && !mod, DL: shape === "linear" && proc === "2stage" && cov === "gl" && !mod };
+      Array.prototype.forEach.call(m.options, function (o) { o.disabled = !allow[o.value]; });
+      if (!allow[m.value]) m.value = "REML";
+      $("f-mod").disabled = proc !== "2stage"; if (proc !== "2stage") $("f-mod").checked = false;
+      $("f-modval").disabled = !$("f-mod").checked;
+    }
+
+    function clearOut(msg, kind) {
+      $("headline").textContent = ""; ["coef-body", "tests-body", "pred-body", "res-body", "curve-host", "resid-host"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
+      _last = null;
     }
 
     function run() {
-      var studies = parse(document.getElementById("f-data").value);
-      var method = document.getElementById("f-method").value;
-      var shape = document.getElementById("f-shape").value;
-      var head = document.getElementById("headline"), body = document.getElementById("res-body");
-      if (studies.length < 2) { head.textContent = "Enter ≥ 2 studies."; body.innerHTML = ""; document.getElementById("curve-host").innerHTML = ""; _last = null; return; }
-      if (shape !== "linear") { runSpline(studies, shape === "spline4" ? 4 : 3, head, body); return; }
-      var r = window.AlmDoseResponse.fit(studies, { method: method });
-      head.innerHTML = "k = " + r.k + " studies · pooled slope = <strong>" + fmt(r.slope, 5) + "</strong> log-RR/unit (SE " + fmt(r.se, 5) + ")"
-        + " · τ² = " + fmt(r.tau2, 5) + " · RR at +10 units = <strong>" + fmt(Math.exp(r.slope * 10), 3) + "</strong>";
-      var perStudyExport = [];
-      body.innerHTML = studies.map(function (rows, i) {
-        var type = (rows[0] && rows[0].type) || "cc";
-        // Re-derive this study's slope with fit()'s own keep-predicate (has a reference
-        // level AND a finite, positive-variance slope). This attributes each slope to its
-        // ORIGINAL study index and emits a placeholder row for dropped studies, instead of
-        // zipping `studies` positionally against the COMPACTED r.perStudy array.
-        var levels = rows.map(function (r2) { var v = (r2.se == null || isNaN(r2.se)) ? 0 : r2.se * r2.se; return { dose: +r2.dose, cases: +r2.cases, n: +r2.n, y: +r2.logrr || 0, v: v, ref: v === 0 }; });
-        var ps = null;
-        if (levels.some(function (l) { return l.ref; })) { var s = window.AlmDoseResponse._studySlope(levels, type); if (s && isFinite(s.beta) && s.varBeta > 0) ps = s; }
-        perStudyExport.push({ studyIndex: i + 1, type: type, slope: (ps && ps.beta != null) ? ps.beta : null, se: (ps && ps.varBeta != null) ? Math.sqrt(ps.varBeta) : null, dropped: !ps });
-        return "<tr><td>" + (i + 1) + "</td><td>" + esc(type) + "</td><td>" + (ps && ps.beta != null ? fmt(ps.beta, 5) : "—") + "</td><td>" + (ps && ps.varBeta != null ? fmt(Math.sqrt(ps.varBeta), 5) : "—") + "</td></tr>";
-      }).join("");
-      document.getElementById("curve-host").innerHTML = curve(r.slope, r.se);
-      _last = { _schema: "dose-response-results-v2", k: r.k, method: method, slope: r.slope, se: r.se, tau2: r.tau2, ciLo: r.ciLo, ciHi: r.ciHi,
-        perStudy: perStudyExport };
-    }
-
-    function runSpline(studies, nk, head, body) {
-      var f = window.AlmDoseResponse.fitSpline(studies, { nk: nk });
-      if (!f.beta) { head.textContent = "Spline needs ≥ 2 fittable studies."; body.innerHTML = ""; document.getElementById("curve-host").innerHTML = ""; _last = null; return; }
-      var knotsTxt = f.knots.map(function (k) { return fmt(k, 2); }).join(", ");
-      var p36 = f.predict(36, 0);
-      head.innerHTML = "k = " + f.k + " studies · " + (nk) + "-knot restricted cubic spline (knots at " + knotsTxt + ")"
-        + " · RR at dose 36 vs 0 = <strong>" + fmt(Math.exp(p36.logRR), 3) + "</strong> [" + fmt(Math.exp(p36.ciLo), 3) + ", " + fmt(Math.exp(p36.ciHi), 3) + "]"
-        + " · non-linearity is shown by the curve below.";
-      body.innerHTML = f.beta.map(function (b, i) {
-        return "<tr><td>β" + (i + 1) + (i === 0 ? " (linear)" : " (spline)") + "</td><td>—</td><td>" + fmt(b, 5) + "</td><td>" + fmt(Math.sqrt(f.cov[i][i]), 5) + "</td></tr>";
-      }).join("");
-      document.getElementById("curve-host").innerHTML = curveSpline(f);
-      _last = { _schema: "dose-response-results-v1", k: f.k, method: "REML(mvmeta)", shape: nk + "-knot-rcs",
-        knots: f.knots, beta: f.beta, cov: f.cov, Psi: f.Psi,
-        rrByDose: [10, 20, 30, 40, 50, 60].map(function (d) { var pr = f.predict(d, 0); return { dose: d, rr: Math.exp(pr.logRR), lo: Math.exp(pr.ciLo), hi: Math.exp(pr.ciHi) }; }) };
-    }
-
-    function curveSpline(f) {
-      var W = 520, H = 220, L = 60, R = 20, T = 20, B = 40, pw = W - L - R, ph = H - T - B;
-      var dmax = Math.max(f.knots[f.knots.length - 1] * 1.25, 60), pts = [], lo = Infinity, hi = -Infinity, dz;
-      for (dz = 0; dz <= dmax; dz += dmax / 60) {
-        var pr = f.predict(dz, 0), rr = Math.exp(pr.logRR), rlo = Math.exp(pr.ciLo), rhi = Math.exp(pr.ciHi);
-        pts.push({ d: dz, rr: rr, lo: rlo, hi: rhi }); if (rlo < lo) lo = rlo; if (rhi > hi) hi = rhi;
+      syncControls();
+      var studies = parse($("f-data").value), shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
+      if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
+      var model = shape === "linear" ? "linear" : shape === "quadratic" ? "quadratic" : "rcs", knots;
+      if (model === "rcs") {
+        if (shape === "splinec") { knots = nums($("f-knots").value); if (knots.length < 3) { clearOut("Enter 3 to 7 knot doses, or choose a default knot set.", "warn"); return; } }
+        else knots = +shape.slice(6);
       }
-      if (hi < 1) hi = 1; if (lo > 1) lo = 1; var pad = (hi - lo) * 0.05; lo -= pad; hi += pad;
-      var x = function (d) { return L + d / dmax * pw; }, y = function (v) { return T + ph - (v - lo) / (hi - lo) * ph; };
-      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
-      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (matchMedia('(prefers-color-scheme:dark)').matches ? '#1c1f23' : '#fff') + "'/>");
-      // CI ribbon
-      var up = pts.map(function (q, i) { return (i ? "L" : "M") + x(q.d) + "," + y(q.hi); }).join(" ");
-      var dn = pts.slice().reverse().map(function (q) { return "L" + x(q.d) + "," + y(q.lo); }).join(" ");
-      p.push("<path d='" + up + " " + dn + " Z' fill='#2c5e8a' fill-opacity='0.12' stroke='none'/>");
-      if (lo < 1 && hi > 1) p.push("<line x1='" + L + "' y1='" + y(1) + "' x2='" + (W - R) + "' y2='" + y(1) + "' stroke='#888' stroke-dasharray='3,3'/>");
-      var path = pts.map(function (q, i) { return (i ? "L" : "M") + x(q.d) + "," + y(q.rr); }).join(" ");
-      p.push("<path d='" + path + "' fill='none' stroke='#2c5e8a' stroke-width='2'/>");
-      // knot ticks
-      f.knots.forEach(function (k) { if (k > 0 && k <= dmax) p.push("<line x1='" + x(k) + "' y1='" + (T + ph) + "' x2='" + x(k) + "' y2='" + (T + ph - 6) + "' stroke='#b23a48' stroke-width='1.5'/>"); });
-      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='currentColor'>Dose (knots in red)</text>");
-      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>Pooled RR</text>");
-      p.push("</svg>"); return p.join("");
+      var method = { REML: "reml", ML: "ml", MM: "mm", FE: "fixed", PM: "fixed", DL: "fixed" }[M];
+      var r = DR.fitDR(studies, { model: model, knots: knots, covariance: cov, proc: proc, method: method, mod: useMod });
+      if (!r.ok) {
+        var extra = r.excluded && r.excluded.length ? " Excluded: " + r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ") + "." : "";
+        clearOut(r.error + extra); return;
+      }
+      // Paule–Mandel / DerSimonian–Laird (linear, two-stage, GL): pool the per-study slopes on ma-core.
+      if (M === "PM" || M === "DL") {
+        var lf = DR.fit(studies.map(function (s) { return s.rows; }), { method: M });
+        r.coef = [lf.slope]; r.vcov = [[lf.se * lf.se]]; r.Psi = [[lf.tau2]]; r.logLik = null; r.aic = null;
+        r.wald = { chi2: Math.pow(lf.slope / lf.se, 2), df: 1, p: DR._internal.pchisqUpper(Math.pow(lf.slope / lf.se, 2), 1) };
+        r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return { dose: +d, logRR: lp, se: se, ciLo: lp - 1.959963984540054 * se, ciHi: lp + 1.959963984540054 * se, rr: Math.exp(lp), rrLo: Math.exp(lp - 1.959963984540054 * se), rrHi: Math.exp(lp + 1.959963984540054 * se) }; }); };
+      }
+      render(r, { shape: shape, M: M, studies: studies });
     }
 
-    function curve(slope, se) {
-      var W = 520, H = 220, L = 60, R = 20, T = 20, B = 40, pw = W - L - R, ph = H - T - B, dmax = 60;
-      var rrs = []; for (var dz = 0; dz <= dmax; dz += 2) rrs.push(Math.exp(slope * dz));
-      var lo = Math.min.apply(null, rrs.concat([Math.exp((slope - 1.96 * se) * dmax)])), hi = Math.max.apply(null, rrs.concat([Math.exp((slope + 1.96 * se) * dmax), 1]));
-      var x = function (d) { return L + d / dmax * pw; }, y = function (v) { return T + ph - (v - lo) / (hi - lo) * ph; };
-      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
-      p.push("<rect width='" + W + "' height='" + H + "' fill='" + (matchMedia('(prefers-color-scheme:dark)').matches ? '#1c1f23' : '#fff') + "'/>");
-      if (lo < 1 && hi > 1) p.push("<line x1='" + L + "' y1='" + y(1) + "' x2='" + (W - R) + "' y2='" + y(1) + "' stroke='#888' stroke-dasharray='3,3'/>");
-      var path = rrs.map(function (v, i) { return (i ? "L" : "M") + x(i * 2) + "," + y(v); }).join(" ");
-      p.push("<path d='" + path + "' fill='none' stroke='#2c5e8a' stroke-width='2'/>");
-      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='currentColor'>Dose</text>");
-      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>Pooled RR</text>");
-      p.push("</svg>"); return p.join("");
+    function methodLabel(r, M) {
+      return (r.proc === "2stage" ? "two-stage" : "one-stage") + ", " + ({ REML: "REML", ML: "ML", MM: "method of moments", FE: "fixed effect", PM: "Paule–Mandel", DL: "DerSimonian–Laird" }[M])
+        + ", " + ({ gl: "Greenland–Longnecker", h: "Hamling", indep: "independent" }[r.covariance]) + " covariance";
     }
 
-    document.getElementById("f-data").value = EXAMPLE;
-    document.getElementById("f-data").addEventListener("input", run);
-    document.getElementById("f-method").addEventListener("change", run);
-    document.getElementById("f-shape").addEventListener("change", run);
+    function render(r, ui) {
+      var xrefIn = nums($("f-xref").value), xref = xrefIn.length ? xrefIn[0] : r.doseRange[0];
+      var modv = nums($("f-modval").value), modValue = r.mod ? (modv.length ? modv[0] : 0) : null;
+      var nonref = []; ui.studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se != null && isFinite(row.se)) nonref.push(row.dose); }); });
+      nonref.sort(function (a, b) { return a - b; });
+      var pd = nums($("f-pdoses").value);
+      if (!pd.length) pd = [0.1, 0.25, 0.5, 0.75, 0.9].map(function (p) { return +DR._quantile7(nonref, p).toPrecision(3); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
+      var preds = r.predict(pd, xref, modValue);
+      var shapeTxt = r.model === "linear" ? "linear trend" : r.model === "quadratic" ? "quadratic curve" : r.knots.length + "-knot restricted cubic spline (knots at " + r.knots.map(function (k) { return sig(k, 4); }).join(", ") + ")";
+      var head = "k = " + r.k + " studies, " + r.nobs + " non-reference doses · " + shapeTxt + " · " + methodLabel(r, ui.M) + (r.mod ? " · meta-regression on the covariate" : "");
+      if (r.model === "linear" && !r.mod) {
+        var b = r.coef[0], se = Math.sqrt(r.vcov[0][0]);
+        head += "<br>Pooled slope <strong>" + sig(b, 4) + "</strong> log RR per unit of dose (SE " + sig(se, 3) + "); RR per unit = <strong>" + fmt(Math.exp(b), 4) + "</strong> [" + fmt(Math.exp(b - 1.959963984540054 * se), 4) + ", " + fmt(Math.exp(b + 1.959963984540054 * se), 4) + "].";
+      } else if (r.waldNonlin) {
+        head += "<br>Test for non-linearity: χ² = " + fmt(r.waldNonlin.chi2, 2) + " on " + r.waldNonlin.df + " df, p = " + pfmt(r.waldNonlin.p) + ".";
+      }
+      $("headline").innerHTML = head;
+      var msgs = (r.warnings || []).map(function (w) { return "<div class='msg warn' role='status'>" + esc(w) + "</div>"; });
+      if (r.excluded.length) msgs.push("<div class='msg warn' role='status'>Excluded " + r.excluded.length + " stud" + (r.excluded.length > 1 ? "ies" : "y") + ": " + esc(r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ")) + ".</div>");
+      var hi = r.doseRange[1], lo = r.doseRange[0];
+      if (pd.some(function (d) { return d > hi || d < lo; })) msgs.push("<div class='msg warn' role='status'>Some requested doses lie outside the observed range (" + sig(lo, 4) + " to " + sig(hi, 4) + "); those predictions are extrapolations.</div>");
+      $("msgs").innerHTML = msgs.join("");
+
+      // coefficients
+      var names = r.mod ? r.names.concat(r.names.map(function (n) { return n + " × covariate"; })) : r.names.slice();
+      $("coef-body").innerHTML = r.coef.map(function (b, i) {
+        var s = Math.sqrt(r.vcov[i][i]), z = b / s, p = DR._internal.pchisqUpper(z * z, 1);
+        return "<tr><th scope='row'>" + esc(names[i]) + "</th><td class='num'>" + sig(b, 5) + "</td><td class='num'>" + sig(s, 4) + "</td><td class='num'>" + fmt(z, 2) + "</td><td class='num'>" + pfmt(p) + "</td><td class='num'>" + sig(b - 1.959963984540054 * s, 4) + " to " + sig(b + 1.959963984540054 * s, 4) + "</td></tr>";
+      }).join("");
+
+      // tests
+      var rows = [];
+      if (r.qtest) {
+        rows.push(["Q test of heterogeneity (all coefficients)", "Q = " + fmt(r.qtest.Q[0], 3) + ", df = " + r.qtest.df[0] + ", p = " + pfmt(r.qtest.p[0])]);
+        rows.push(["I² (from Q)", fmt(r.I2, 1) + "%"]);
+        for (var j = 1; j < r.qtest.Q.length; j++) rows.push(["Q for " + esc(r.names[j - 1]) + " (dosresmeta df = studies − terms)", "Q = " + fmt(r.qtest.Q[j], 3) + ", df = " + r.qtest.df[j] + ", p = " + pfmt(r.qtest.p[j])]);
+      } else rows.push(["Q test of heterogeneity", "not defined for the one-stage approach (as in dosresmeta)"]);
+      if (r.Psi) {
+        if (r.Psi.length === 1) rows.push(["Between-study variance τ²", sig(r.Psi[0][0], 4) + " (τ = " + sig(Math.sqrt(r.Psi[0][0]), 4) + ")"]);
+        else rows.push(["Between-study covariance Ψ", r.Psi.map(function (row) { return row.map(function (v) { return sig(v, 3); }).join(", "); }).join(" ; ")]);
+      } else rows.push(["Between-study variance", "0 (fixed effect)"]);
+      rows.push(["Wald test, all dose coefficients = 0", "χ² = " + fmt(r.wald.chi2, 3) + ", df = " + r.wald.df + ", p = " + pfmt(r.wald.p)]);
+      if (r.waldNonlin) rows.push(["Wald test for non-linearity (terms after the first = 0)", "χ² = " + fmt(r.waldNonlin.chi2, 3) + ", df = " + r.waldNonlin.df + ", p = " + pfmt(r.waldNonlin.p)]);
+      rows.push(["Goodness of fit: deviance (fixed-effect fit to all points)", "D = " + fmt(r.gof.D, 3) + ", df = " + r.gof.df + ", p = " + pfmt(r.gof.p)]);
+      rows.push(["Coefficient of determination R² (adjusted)", fmt(r.gof.R2, 4) + " (" + fmt(r.gof.R2adj, 4) + ")"]);
+      if (r.logLik != null) rows.push(["Log-likelihood" + (r.method === "reml" ? " (restricted)" : "") + " · AIC", fmt(r.logLik, 4) + " · " + fmt(r.aic, 3)]);
+      $("tests-body").innerHTML = rows.map(function (x) { return "<tr><th scope='row'>" + x[0] + "</th><td>" + x[1] + "</td></tr>"; }).join("");
+
+      // predictions
+      $("pred-body").innerHTML = "<tr><td class='num'>" + sig(xref, 4) + " (reference)</td><td class='num'>1</td><td class='num'>—</td><td class='num'>0</td><td class='num'>—</td></tr>" + preds.map(function (p) {
+        return "<tr><td class='num'>" + sig(p.dose, 4) + "</td><td class='num'>" + fmt(p.rr, 3) + "</td><td class='num'>" + fmt(p.rrLo, 3) + " to " + fmt(p.rrHi, 3) + "</td><td class='num'>" + sig(p.logRR, 4) + "</td><td class='num'>" + sig(p.se, 3) + "</td></tr>";
+      }).join("");
+
+      // studies
+      var per = {}; (r.perStudy || []).forEach(function (p) { per[p.id] = p; });
+      $("res-body").innerHTML = r.studies.map(function (s) {
+        var p = per[s.id], c = p ? p.beta.map(function (b, i) { return sig(b, 4) + " (" + sig(Math.sqrt(p.cov[i][i]), 3) + ")"; }).join("; ") : "— (one-stage)";
+        return "<tr><td>" + esc(s.id) + "</td><td>" + esc(s.type) + "</td><td class='num'>" + sig(s.refDose, 4) + "</td><td class='num'>" + s.nNonRef + "</td><td>" + c + "</td></tr>";
+      }).join("") + r.excluded.map(function (e) { return "<tr><td>" + esc(e.id) + "</td><td colspan='4'>excluded: " + esc(e.reason) + "</td></tr>"; }).join("");
+
+      $("curve-host").innerHTML = curvePlot(r, xref, modValue, ui.studies);
+      $("resid-host").innerHTML = residPlot(r);
+
+      _last = { _schema: "dose-response-results-v3", engine: "fitDR (dosresmeta 2.2.0 port)", k: r.k, nobs: r.nobs,
+        shape: r.model === "rcs" ? r.knots.length + "-knot-rcs" : r.model, model: r.model, knots: r.knots, covariance: r.covariance, approach: r.proc, method: ui.M,
+        metaRegression: r.mod, terms: names, beta: r.coef, cov: r.vcov, Psi: r.Psi, logLik: r.logLik, aic: r.aic, converged: r.converged,
+        qtest: r.qtest, I2: r.I2, wald: r.wald, waldNonlinearity: r.waldNonlin || null,
+        gof: { deviance: r.gof.D, df: r.gof.df, p: r.gof.p, R2: r.gof.R2, R2adj: r.gof.R2adj }, referenceDose: xref, covariateValue: modValue,
+        predictions: preds.map(function (p) { return { dose: p.dose, rr: p.rr, lo: p.rrLo, hi: p.rrHi, logRR: p.logRR, se: p.se }; }),
+        perStudy: (r.perStudy || []).map(function (p) { return { id: p.id, beta: p.beta, cov: p.cov }; }), excluded: r.excluded, warnings: r.warnings };
+      if (r.model === "linear" && !r.mod) { _last.slope = r.coef[0]; _last.se = Math.sqrt(r.vcov[0][0]); _last.tau2 = r.Psi ? r.Psi[0][0] : 0; }
+    }
+
+    function dark() { return window.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches; }
+    function axisTicks(lo, hi, n) { var step = Math.pow(10, Math.floor(Math.log10((hi - lo) / n))), t = []; [1, 2, 5, 10].some(function (m) { if ((hi - lo) / (step * m) <= n) { step *= m; return true; } return false; });
+      for (var v = Math.ceil(lo / step) * step; v <= hi + 1e-12; v += step) t.push(+v.toPrecision(10)); return t; }
+    function svgOpen(W, H, label) { var bg = dark() ? "#1c1f23" : "#fff", fg = dark() ? "#e7e4dc" : "#15181d";
+      return ["<svg xmlns='http://www.w3.org/2000/svg' role='img' aria-label='" + label + "' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif' fill='" + fg + "'>", "<rect width='" + W + "' height='" + H + "' fill='" + bg + "'/>"]; }
+
+    // Pooled RR curve (log scale) with 95% band, observed study RRs, knots and reference dose.
+    function curvePlot(r, xref, modValue, studies) {
+      var W = 520, H = 300, L = 58, R = 16, T = 16, B = 44, pw = W - L - R, ph = H - T - B, fg = dark() ? "#e7e4dc" : "#15181d", acc = dark() ? "#6aa6d4" : "#2c5e8a";
+      var d0 = Math.min(r.doseRange[0], xref), d1 = Math.max(r.doseRange[1], xref), grid = [];
+      for (var i = 0; i <= 80; i++) grid.push(d0 + (d1 - d0) * i / 80);
+      var pr = r.predict(grid, xref, modValue), pts = [];
+      studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se != null && isFinite(row.se) && isFinite(row.logrr)) pts.push({ d: row.dose, y: row.logrr }); }); });
+      var ys = []; pr.forEach(function (p) { ys.push(p.ciLo, p.ciHi); }); pts.forEach(function (p) { ys.push(p.y); }); ys.push(0);
+      var ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys), pad = (yhi - ylo) * 0.06 || 0.1; ylo -= pad; yhi += pad;
+      var x = function (d) { return L + (d - d0) / ((d1 - d0) || 1) * pw; }, y = function (v) { return T + ph - (v - ylo) / (yhi - ylo) * ph; };
+      var p = svgOpen(W, H, "Pooled relative risk by dose, log scale, with 95% confidence band");
+      var rrT = []; // keep ticks at least 16 px apart, always including RR = 1
+      [1, 0.8, 0.67, 0.5, 0.33, 0.2, 0.1, 0.05, 1.25, 1.5, 2, 3, 5, 10, 20].forEach(function (v) { var l = Math.log(v); if (l < ylo || l > yhi) return;
+        if (rrT.every(function (u) { return Math.abs(y(Math.log(u)) - y(l)) >= 16; })) rrT.push(v); });
+      rrT.forEach(function (v) { p.push("<line x1='" + L + "' x2='" + (W - R) + "' y1='" + y(Math.log(v)) + "' y2='" + y(Math.log(v)) + "' stroke='" + fg + "' stroke-opacity='" + (v === 1 ? 0.55 : 0.12) + "'" + (v === 1 ? " stroke-dasharray='4,3'" : "") + "/><text x='" + (L - 6) + "' y='" + (y(Math.log(v)) + 4) + "' text-anchor='end' font-size='11'>" + v + "</text>"); });
+      axisTicks(d0, d1, 6).forEach(function (v) { p.push("<line x1='" + x(v) + "' x2='" + x(v) + "' y1='" + (T + ph) + "' y2='" + (T + ph + 4) + "' stroke='" + fg + "'/><text x='" + x(v) + "' y='" + (T + ph + 16) + "' text-anchor='middle' font-size='11'>" + v + "</text>"); });
+      pts.forEach(function (q) { p.push("<circle cx='" + x(q.d).toFixed(1) + "' cy='" + y(q.y).toFixed(1) + "' r='2.6' fill='none' stroke='" + fg + "' stroke-opacity='0.45'/>"); });
+      var up = pr.map(function (q, i) { return (i ? "L" : "M") + x(q.dose).toFixed(1) + "," + y(q.ciHi).toFixed(1); }).join(" "), dn = pr.slice().reverse().map(function (q) { return "L" + x(q.dose).toFixed(1) + "," + y(q.ciLo).toFixed(1); }).join(" ");
+      p.push("<path d='" + up + " " + dn + " Z' fill='" + acc + "' fill-opacity='0.16' stroke='none'/>");
+      p.push("<path d='" + pr.map(function (q, i) { return (i ? "L" : "M") + x(q.dose).toFixed(1) + "," + y(q.logRR).toFixed(1); }).join(" ") + "' fill='none' stroke='" + acc + "' stroke-width='2.2'/>");
+      (r.knots || []).forEach(function (k) { if (k >= d0 && k <= d1) p.push("<path d='M" + x(k).toFixed(1) + "," + (T + ph - 8) + " l-4,7 h8 z' fill='#b23a48'/>"); });
+      p.push("<circle cx='" + x(xref).toFixed(1) + "' cy='" + y(0).toFixed(1) + "' r='3.5' fill='" + acc + "'/>");
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='12'>Dose" + (r.knots ? " (knots: red triangles)" : "") + "</text>");
+      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='12'>Relative risk vs dose " + sig(xref, 4) + " (log scale)</text>");
+      p.push("</svg>");
+      return p.join("") + "<p class='note'>Line and band: pooled RR with 95% confidence interval. Open circles: each study's reported RRs against its own reference dose.</p>";
+    }
+
+    // Decorrelated residuals (dosresmeta gof) against dose.
+    function residPlot(r) {
+      var W = 520, H = 300, L = 50, R = 16, T = 16, B = 44, pw = W - L - R, ph = H - T - B, fg = dark() ? "#e7e4dc" : "#15181d", acc = dark() ? "#6aa6d4" : "#2c5e8a";
+      var res = r.gof.residuals; if (!res.length) return "";
+      var d0 = r.doseRange[0], d1 = r.doseRange[1], m = Math.max(2.5, Math.max.apply(null, res.map(function (q) { return Math.abs(q.resid); })) * 1.08);
+      var x = function (d) { return L + (d - d0) / ((d1 - d0) || 1) * pw; }, y = function (v) { return T + ph / 2 - v / m * ph / 2; };
+      var p = svgOpen(W, H, "Decorrelated residuals against dose");
+      axisTicks(-m, m, 6).forEach(function (v) { p.push("<line x1='" + L + "' x2='" + (W - R) + "' y1='" + y(v) + "' y2='" + y(v) + "' stroke='" + fg + "' stroke-opacity='" + (v === 0 ? 0.55 : 0.12) + "'/><text x='" + (L - 6) + "' y='" + (y(v) + 4) + "' text-anchor='end' font-size='11'>" + v + "</text>"); });
+      [-2, 2].forEach(function (v) { p.push("<line x1='" + L + "' x2='" + (W - R) + "' y1='" + y(v) + "' y2='" + y(v) + "' stroke='#b23a48' stroke-opacity='0.5' stroke-dasharray='4,3'/>"); });
+      axisTicks(d0, d1, 6).forEach(function (v) { p.push("<line x1='" + x(v) + "' x2='" + x(v) + "' y1='" + (T + ph) + "' y2='" + (T + ph + 4) + "' stroke='" + fg + "'/><text x='" + x(v) + "' y='" + (T + ph + 16) + "' text-anchor='middle' font-size='11'>" + v + "</text>"); });
+      res.forEach(function (q) { p.push("<circle cx='" + x(q.dose).toFixed(1) + "' cy='" + y(q.resid).toFixed(1) + "' r='3' fill='" + acc + "' fill-opacity='0.7'/>"); });
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='12'>Dose</text>");
+      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='12'>Decorrelated residual</text>");
+      p.push("</svg>");
+      return p.join("") + "<p class='note'>Residuals of the fixed-effect fit to every non-reference point after removing the within-study correlation (dosresmeta <code>gof()</code>); points beyond ±2 (dashed) or a trend with dose suggest poor fit.</p>";
+    }
+
+    $("f-data").value = EXAMPLE;
+    ["f-data", "f-knots", "f-xref", "f-modval", "f-pdoses"].forEach(function (id) { $(id).addEventListener("input", run); });
+    ["f-shape", "f-cov", "f-proc", "f-method", "f-mod"].forEach(function (id) { $(id).addEventListener("change", run); });
     run();
     (function () { function rdy(f) { document.readyState !== "loading" ? f() : document.addEventListener("DOMContentLoaded", f); }
       rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "dose-response-results", getResults: function () { return _almLastDoseResponse() || {}; } }); });
