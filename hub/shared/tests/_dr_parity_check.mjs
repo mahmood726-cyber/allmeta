@@ -48,7 +48,10 @@ export function compare(app, ref) {
 export function tolerance(f) {
   const iterative = f.proc === '2stage' && (f.method === 'reml' || f.method === 'ml');
   return iterative ? { coef: 1e-3, vcov: 1e-3, Psi: 1e-3, logLik: 1e-6, Q: 1e-9, Qp: 1e-9, wald: 1e-3, waldNonlin: 1e-3, gof: 1e-9, pred: 1e-3 }
-    // Wald χ² inverts the coefficient vcov, which is near-singular for 5-knot splines; last-bit
-    // differences between JS engines are amplified there (seen: 1.9e-6 in Chrome, 4.9e-7 in Node).
-    : { coef: 1e-6, vcov: 1e-6, Psi: 1e-6, logLik: 1e-6, Q: 1e-9, Qp: 1e-9, wald: 1e-5, waldNonlin: 1e-5, gof: 1e-9, pred: 1e-6 };
+    // Derived quantities amplify last-bit differences: Wald χ² inverts the coefficient vcov, which is
+    // near-singular for 5-knot splines (seen: 1.9e-6 in Chrome, 4.9e-7 in Node), and predictions at the
+    // largest dose scale coefficients by dose² for the quadratic; R's own values differ between operating
+    // systems in the last bits, reaching ~1.6e-6 along dosresmeta's unconverged one-stage Nelder–Mead path
+    // (dose-response-ma-reproducible CI). Hence 1e-5 for Wald and predictions.
+    : { coef: 1e-6, vcov: 1e-6, Psi: 1e-6, logLik: 1e-6, Q: 1e-9, Qp: 1e-9, wald: 1e-5, waldNonlin: 1e-5, gof: 1e-9, pred: 1e-5 };
 }
