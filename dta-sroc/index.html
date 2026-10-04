@@ -61,7 +61,7 @@
     button:hover { filter:brightness(0.96); }
     .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
     .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
-    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .k { display:block; font-size:0.74rem; letter-spacing:0.02em; color:var(--muted); }
     .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
     .preview-wrap { position:sticky; top:1rem; }
     .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
@@ -459,12 +459,12 @@
         const sx = x(clip(1 - bivar.spec)), sy = y(clip(bivar.sens));
         p.push("<path d=\"M"+sx+" "+(sy-6)+"L"+(sx+6)+" "+sy+"L"+sx+" "+(sy+6)+"L"+(sx-6)+" "+sy+"Z\" fill=\"#b23a48\" stroke=\"#fff\" stroke-width=\"1\"/>");
         // Legend (top-right inside plot).
-        const lx = L + plotW - 168, ly = T + 12;
-        p.push("<g font-size=\"10\" fill=\"#15181d\">");
-        p.push("<rect x=\""+(lx-8)+"\" y=\""+(ly-10)+"\" width=\"168\" height=\"58\" fill=\"#fff\" fill-opacity=\"0.82\" stroke=\"#d9d5cc\" rx=\"4\"/>");
-        p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+3)+"\">Moses SROC</text>");
-        p.push("<line x1=\""+lx+"\" y1=\""+(ly+15)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+15)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+18)+"\">Bivariate SROC</text>");
-        p.push("<rect x=\""+lx+"\" y=\""+(ly+25)+"\" width=\"22\" height=\"9\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\"/><text x=\""+(lx+28)+"\" y=\""+(ly+33)+"\">95% conf / pred (dashed)</text>");
+        const lx = L + plotW - 206, ly = T + 14;
+        p.push("<g font-size=\"12\" fill=\"#15181d\">");
+        p.push("<rect x=\""+(lx-8)+"\" y=\""+(ly-10)+"\" width=\"206\" height=\"66\" fill=\"#fff\" fill-opacity=\"0.82\" stroke=\"#d9d5cc\" rx=\"4\"/>");
+        p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+4)+"\">Moses SROC</text>");
+        p.push("<line x1=\""+lx+"\" y1=\""+(ly+18)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+18)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+22)+"\">Bivariate SROC</text>");
+        p.push("<rect x=\""+lx+"\" y=\""+(ly+31)+"\" width=\"22\" height=\"10\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\"/><text x=\""+(lx+28)+"\" y=\""+(ly+40)+"\">95% conf / pred (dashed)</text>");
         p.push("</g>");
       }
 
@@ -481,12 +481,12 @@
       const axisY = T + plotH;
       for (let t=0; t<=1.0001; t+=0.25) {
         p.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
-        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+18)+"\" text-anchor=\"middle\" font-size=\"12\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
         p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
-        p.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        p.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+4)+"\" text-anchor=\"end\" font-size=\"12\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
       }
-      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">1 − Specificity (false-positive rate)</text>");
-      p.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Sensitivity</text>");
+      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+40)+"\" text-anchor=\"middle\" font-size=\"13\" fill=\"#15181d\">1 − Specificity (false-positive rate)</text>");
+      p.push("<text transform=\"translate("+(L-50)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"13\" fill=\"#15181d\">Sensitivity</text>");
 
       p.push("</svg>");
       return p.join("");
