@@ -1576,8 +1576,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "new",
     mode: "file",
     category: "Pooling",
-    summary: "Two-stage Greenland-Longnecker linear dose-response meta-analysis: per-study GLS slope with covariance reconstructed from the trend (case-control, incidence-rate, or cumulative-incidence designs), pooled by REML. Verified against dosresmeta(method=\"reml\").",
-    tags: ["dose-response", "greenland-longnecker", "glst", "pooling"]
+    summary: "Dose-response meta-analysis reproducing R dosresmeta: Greenland-Longnecker, Hamling or independent within-study covariance; linear, quadratic or restricted cubic spline curves (3-5 or chosen knots); two-stage (REML/ML/MM/fixed, meta-regression) or one-stage; Q, I2, Wald non-linearity test, goodness of fit, residual plot and predictions at any reference dose. Verified on all 16 multi-study datasets shipped with dosresmeta.",
+    tags: ["dose-response", "greenland-longnecker", "hamling", "spline", "glst", "pooling"]
   },
   {
     name: "RMST Meta-Analysis",
