@@ -1,6 +1,8 @@
 # Writes nma/example-datasets.js: the netmeta 3.7.0 datasets as study contrasts in this app's input
 # format (study, treatment1, treatment2, estimate = treatment2 - treatment1, SE), built with pairwise() and the
 # summary measure each dataset is documented with (as in hub/shared/tests/_nma_parity_gen.R).
+# 'better' (larger) is set where the outcome is beneficial (quitting smoking, response to treatment); for the
+# other datasets the app keeps its default (smaller is better), so check it for your outcome.
 # Left out: parkinson (identical to Franchini2012) and Dong2013 (one three-arm study has two arms without
 # deaths, so one comparison is undefined and netmeta, like this app, refuses the network).
 #   Rscript _make_examples.R example-datasets.js
@@ -14,9 +16,9 @@ spec <- list(
   Franchini2012 = list("Parkinson's disease: off-time, hours (Dias et al. 2013)", "MD", function(x) pairwise(list(Treatment1, Treatment2, Treatment3),
     n = list(n1, n2, n3), mean = list(y1, y2, y3), sd = list(sd1, sd2, sd3), studlab = Study, data = x, sm = "MD")),
   Gurusamy2011 = list("Liver transplantation: mortality (Gurusamy et al. 2011)", "OR", function(x) pairwise(treatment, death, n, studlab = study, data = x, sm = "OR")),
-  Linde2015 = list("Depression: response (Linde et al. 2015)", "OR", function(x) pairwise(list(treatment1, treatment2, treatment3),
+  Linde2015 = list("Depression: response (Linde et al. 2015)", "OR", better = "larger", function(x) pairwise(list(treatment1, treatment2, treatment3),
     event = list(resp1, resp2, resp3), n = list(n1, n2, n3), studlab = id, data = x, sm = "OR")),
-  Linde2016 = list("Depression in primary care: response (Linde et al. 2016)", "OR", function(x)
+  Linde2016 = list("Depression in primary care: response (Linde et al. 2016)", "OR", better = "larger", function(x)
     data.frame(studlab = x$id, treat1 = x$treat1, treat2 = x$treat2, TE = x$lnOR, seTE = x$selnOR)),
   Senn2013 = list("Diabetes: HbA1c, % (Senn et al. 2013)", "MD", function(x)
     data.frame(studlab = x$studlab, treat1 = x$treat1, treat2 = x$treat2, TE = x$TE, seTE = x$seTE)),
@@ -25,16 +27,18 @@ spec <- list(
   Woods2010 = list("Survival count statistics (Woods et al. 2010)", "OR", function(x) pairwise(treatment, event = r, n = N, studlab = author, data = x, sm = "OR")),
   dietaryfat = list("Dietary fat: mortality rate (Dias et al. 2013)", "IRR", function(x) pairwise(list(treat1, treat2, treat3),
     event = list(d1, d2, d3), time = list(years1, years2, years3), studlab = ID, data = x, sm = "IRR")),
-  smokingcessation = list("Smoking cessation (Dias et al. 2013)", "OR", function(x) pairwise(list(treat1, treat2, treat3),
+  smokingcessation = list("Smoking cessation (Dias et al. 2013)", "OR", better = "larger", function(x) pairwise(list(treat1, treat2, treat3),
     event = list(event1, event2, event3), n = list(n1, n2, n3), data = x, sm = "OR"))
 )
 items <- character()
 for (nm in names(spec)) {
-  p <- as.data.frame(spec[[nm]][[3]](get_ds(nm)))
+  f <- Filter(is.function, spec[[nm]])[[1]]
+  p <- as.data.frame(f(get_ds(nm)))
   p <- p[is.finite(p$TE) & is.finite(p$seTE), ]
   # this app's estimate is treatment2 - treatment1, netmeta's TE is treat1 - treat2: list treat2 first
   lines <- sprintf("%s, %s, %s, %.10g, %.10g", gsub(",", "", p$studlab), p$treat2, p$treat1, p$TE, p$seTE)
-  items <- c(items, sprintf('  %s: { title: "%s", measure: "%s", data: "%s" }', nm, spec[[nm]][[1]], spec[[nm]][[2]], paste(lines, collapse = "\\n")))
+  bt <- if (is.null(spec[[nm]]$better)) "" else sprintf(', better: "%s"', spec[[nm]]$better)
+  items <- c(items, sprintf('  %s: { title: "%s", measure: "%s"%s, data: "%s" }', nm, spec[[nm]][[1]], spec[[nm]][[2]], bt, paste(lines, collapse = "\\n")))
 }
 cat("/* Datasets shipped with the R package netmeta 3.7.0 (Balduzzi et al., J Stat Softw 2023;106(2)), as study\n",
     " * contrasts on the analysis scale (log OR, log IRR or mean difference).\n",

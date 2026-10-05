@@ -142,7 +142,7 @@
             <span class="lbl">Model</span>
             <select id="f-model" aria-label="Model">
               <option value="fe" selected>Common effect (inverse-variance)</option>
-              <option value="re">Random effects (common τ², DerSimonian–Laird; netmeta default)</option>
+              <option value="re">Random effects (DerSimonian–Laird τ²)</option>
             </select>
           </label>
           <label>
@@ -459,19 +459,20 @@
         const w = 1 + 4 * (n/maxEdge);
         p.push("<line x1=\""+pa.x+"\" y1=\""+pa.y+"\" x2=\""+pb.x+"\" y2=\""+pb.y+"\" stroke=\"#2c5e8a\" stroke-opacity=\"0.55\" stroke-width=\""+w.toFixed(2)+"\"/>");
         const mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
-        p.push("<text x=\""+mx+"\" y=\""+(my-4)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+n+"</text>");
+        const len = Math.hypot(pb.x - pa.x, pb.y - pa.y) || 1, ox = -(pb.y - pa.y) / len * 11, oy = (pb.x - pa.x) / len * 11;
+        p.push("<text x=\""+(mx+ox)+"\" y=\""+(my+oy+4)+"\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"600\" fill=\"#3d4450\" paint-order=\"stroke\" stroke=\"#fff\" stroke-width=\"3\">"+n+"</text>");
       }
       // Nodes
       for (const node of pos) {
         const isRef = node.name === state.ref;
         const fill = isRef ? "#e6a919" : "#2c5e8a";
-        const rad = isRef ? 22 : 18;
+        const rad = isRef ? 26 : 22;
         p.push("<circle cx=\""+node.x+"\" cy=\""+node.y+"\" r=\""+rad+"\" fill=\""+fill+"\" stroke=\"#15181d\" stroke-width=\"1\"/>");
-        p.push("<text x=\""+node.x+"\" y=\""+(node.y+4)+"\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"700\" fill=\"#fff\">"+escapeXml(node.name)+"</text>");
+        p.push("<text x=\""+node.x+"\" y=\""+(node.y+4)+"\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"700\" fill=\"#fff\">"+escapeXml(node.name)+"</text>");
       }
 
       // Legend
-      p.push("<text x=\"20\" y=\""+(H-15)+"\" font-size=\"10\" fill=\"#5c6470\">Edge labels = # direct comparisons · Yellow node = reference treatment</text>");
+      p.push("<text x=\"20\" y=\""+(H-15)+"\" font-size=\"13\" fill=\"#5c6470\">Numbers: studies comparing the two treatments directly · yellow: reference treatment</text>");
       p.push("</svg>");
       return p.join("");
     }
@@ -550,7 +551,7 @@
           const ps = model === "re" ? a.pscore.random : a.pscore.common, smaller = (state.dir || "desirable") === "desirable";
           const fit = fitNMA(rows, treatments, refTreat, model), mc = fit.error ? null : mcSucra(fit, treatments, 10000, smaller);
           const ranked = treatments.map((t, i) => ({ t, ps: ps[a.treatments.indexOf(t)], pb: mc ? mc.pBest[i] : null })).sort((x, y) => y.ps - x.ps);
-          sucraHost.innerHTML = "<div class=\"sucra-row\" style=\"font-size:0.72rem;color:var(--muted)\"><div>Treatment</div><div>P-score</div><div class=\"sucra-val\">P-score</div><div class=\"sucra-val\">P(best)</div></div>" +
+          sucraHost.innerHTML = "<div class=\"sucra-row\" style=\"font-size:0.72rem;color:var(--muted)\"><div>Treatment</div><div></div><div class=\"sucra-val\">P-score</div><div class=\"sucra-val\">P(best)</div></div>" +
             ranked.map(p => "<div class=\"sucra-row\"><div>" + escapeXml(p.t) + "</div><div class=\"sucra-bar\"><span style=\"width:" + (p.ps * 100).toFixed(1) + "%\"></span></div><div class=\"sucra-val\">" + (p.ps * 100).toFixed(1) + "%</div><div class=\"sucra-val\">" + (p.pb === null ? "--" : (p.pb * 100).toFixed(1) + "%") + "</div></div>").join("") +
             "<p style=\"color:var(--muted);font-size:0.75rem;margin-top:0.5rem\">P-score (netmeta <code>netrank</code>): the mean certainty that a treatment is better than each of the others, with " + (smaller ? "smaller" : "larger") + " estimates better. P(best): probability of ranking first in 10,000 draws from the estimates (fixed seed). Neither is an effect size — read them with the estimates and their intervals.</p>";
           // league table: row versus column
@@ -583,7 +584,7 @@
 
       // Network graph
       const svg = (rows.length && treatments.length >= 2)
-        ? buildNetworkSvg(state, treatments, rows, null)
+        ? buildNetworkSvg(Object.assign({}, state, { ref: refTreat }), treatments, rows, null)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Paste contrasts to render network.</text></svg>";
       svgHost.innerHTML = svg;
 
@@ -609,7 +610,7 @@
       const parsed = parseContrasts(state.data);
       const treatments = uniqueTreatments(parsed.rows);
       if (!parsed.rows.length || treatments.length < 2) return alert("Need ≥2 treatments.");
-      const svg = buildNetworkSvg(state, treatments, parsed.rows, null);
+      const svg = buildNetworkSvg(Object.assign({}, state, { ref: document.getElementById("f-ref").value || treatments[0] }), treatments, parsed.rows, null);
       downloadBlob(new Blob([svg], {type:"image/svg+xml;charset=utf-8"}), "nma-"+slugify(state.title,"network")+".svg");
     }
     function csvCell(v){ var s=String(v==null?"":v); if(/^[=+@\t\r]/.test(s)) s="'"+s; if(/[",\n\r]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }
@@ -666,6 +667,7 @@
         document.getElementById("f-title").value = key + ": " + ex.title;
         document.getElementById("f-scale").value = ex.measure === "MD" ? "log" : "exp";
         document.getElementById("f-model").value = "re";
+        if (ex.better) document.getElementById("f-dir").value = ex.better === "larger" ? "undesirable" : "desirable";
         const trs = uniqueTreatments(parseContrasts(ex.data).rows);
         _pendingRef = trs.find((t) => /^plac/i.test(t)) || null;
       }
