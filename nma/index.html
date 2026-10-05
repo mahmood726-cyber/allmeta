@@ -460,19 +460,19 @@
         p.push("<line x1=\""+pa.x+"\" y1=\""+pa.y+"\" x2=\""+pb.x+"\" y2=\""+pb.y+"\" stroke=\"#2c5e8a\" stroke-opacity=\"0.55\" stroke-width=\""+w.toFixed(2)+"\"/>");
         const mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
         const len = Math.hypot(pb.x - pa.x, pb.y - pa.y) || 1, ox = -(pb.y - pa.y) / len * 11, oy = (pb.x - pa.x) / len * 11;
-        p.push("<text x=\""+(mx+ox)+"\" y=\""+(my+oy+4)+"\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"600\" fill=\"#3d4450\" paint-order=\"stroke\" stroke=\"#fff\" stroke-width=\"3\">"+n+"</text>");
+        p.push("<text x=\""+(mx+ox)+"\" y=\""+(my+oy+4)+"\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"600\" fill=\"#3d4450\" paint-order=\"stroke\" stroke=\"#fff\" stroke-width=\"3\">"+n+"</text>");
       }
       // Nodes
       for (const node of pos) {
         const isRef = node.name === state.ref;
         const fill = isRef ? "#e6a919" : "#2c5e8a";
-        const rad = isRef ? 26 : 22;
+        const rad = isRef ? 28 : 24;
         p.push("<circle cx=\""+node.x+"\" cy=\""+node.y+"\" r=\""+rad+"\" fill=\""+fill+"\" stroke=\"#15181d\" stroke-width=\"1\"/>");
-        p.push("<text x=\""+node.x+"\" y=\""+(node.y+4)+"\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"700\" fill=\"#fff\">"+escapeXml(node.name)+"</text>");
+        p.push("<text x=\""+node.x+"\" y=\""+(node.y+5)+"\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"700\" fill=\"#fff\">"+escapeXml(node.name)+"</text>");
       }
 
       // Legend
-      p.push("<text x=\"20\" y=\""+(H-15)+"\" font-size=\"13\" fill=\"#5c6470\">Numbers: studies comparing the two treatments directly · yellow: reference treatment</text>");
+      p.push("<text x=\"20\" y=\""+(H-15)+"\" font-size=\"15\" fill=\"#5c6470\">Numbers: studies comparing the two treatments directly · yellow: reference treatment</text>");
       p.push("</svg>");
       return p.join("");
     }
