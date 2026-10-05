@@ -1,6 +1,6 @@
 /**
  * NMA-core review fixes:
- *  - nma: SUCRA now reproducible (seeded), + consistency-check banner
+ *  - nma: ranking reproducible (closed-form P-scores, as netmeta netrank), + consistency-check banner
  *  - bucher: transitivity assumption disclosed
  *  - component-nma: multi-arm limitation disclosed
  */
@@ -15,7 +15,7 @@ function errs(page) {
   return e;
 }
 
-test('nma: SUCRA reproducible + consistency banner', async ({ page }) => {
+test('nma: ranking reproducible + consistency banner', async ({ page }) => {
   const e = errs(page);
   await page.goto(`${B}/nma/index.html`, { waitUntil: 'load' });
   await page.waitForFunction(() => typeof window.__almNmaCompute === 'function', { timeout: 10000 });
@@ -23,11 +23,10 @@ test('nma: SUCRA reproducible + consistency banner', async ({ page }) => {
     const text = document.getElementById('f-data').value;
     const a = window.__almNmaCompute(text);
     const b = window.__almNmaCompute(text);
-    return { a: a.sucra, b: b.sucra, banner: /test consistency/i.test(document.body.textContent || '') };
+    return { a: a.pscore, b: b.pscore, banner: /test consistency/i.test(document.body.textContent || '') };
   });
-  console.log('  nma SUCRA a:', JSON.stringify(r.a));
-  expect(r.a, 'SUCRA computed').toBeTruthy();
-  expect(JSON.stringify(r.a), 'two runs identical SUCRA (seeded)').toBe(JSON.stringify(r.b));
+  expect(r.a && r.a.desirable && Object.keys(r.a.desirable.re).length > 1, 'P-scores computed').toBeTruthy();
+  expect(JSON.stringify(r.a), 'two runs give identical P-scores').toBe(JSON.stringify(r.b));
   expect(r.banner, 'consistency banner present').toBe(true);
   expect(e, 'no console errors').toEqual([]);
 });
