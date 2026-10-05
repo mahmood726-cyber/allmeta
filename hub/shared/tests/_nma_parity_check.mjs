@@ -63,7 +63,7 @@ export function compare(appIn, ref) {
     TE_random: relMax(app.random.TE, ref.TE_random, all), seTE_random: relMax(app.random.seTE, ref.seTE_random, all),
     CI_random: Math.max(relMax(app.random.lower, ref.lower_random, ix), relMax(app.random.upper, ref.upper_random, ix)),
     p_random: absMax(app.random.pval, ref.pval_random, ix),
-    Q: nul(app.Q, ref.Q, (a, b) => Math.abs(a - b) / Math.max(1, Math.abs(b))), df: app.df === ref.df_Q ? 0 : Infinity,
+    Q: nul(app.Q, ref.Q, (a, b) => Math.abs(a - b) / Math.max(1, Math.abs(b))), df: Math.abs(app.df - ref.df_Q), // netmeta computes df.Q = 2*sum(1/narms) - (n - 1) in floating point (not always an exact integer on ARM)
     pvalQ: nul(app.pvalQ, ref.pval_Q, (a, b) => Math.abs(a - b)),
     tau2: nul(app.tau2, ref.tau2, (a, b) => Math.abs(a - b) / Math.max(1, Math.abs(b))),
     I2: Math.max(nul(app.I2, ref.I2, (a, b) => Math.abs(a - b)), nul(app.lowerI2, ref.lower_I2, (a, b) => Math.abs(a - b)), nul(app.upperI2, ref.upper_I2, (a, b) => Math.abs(a - b))),
@@ -76,7 +76,7 @@ export function compare(appIn, ref) {
 }
 
 export const TOL = { TE_common: 1e-9, seTE_common: 1e-9, CI_common: 1e-9, p_common: 1e-9, TE_random: 1e-9, seTE_random: 1e-9, CI_random: 1e-9,
-  p_random: 1e-9, Q: 1e-9, df: 0, treatments: 0, pvalQ: 1e-9, tau2: 1e-9, I2: 1e-9, predict: 1e-9, pscore: 1e-9, decomp: 1e-9 };
+  p_random: 1e-9, Q: 1e-9, df: 1e-9, treatments: 0, pvalQ: 1e-9, tau2: 1e-9, I2: 1e-9, predict: 1e-9, pscore: 1e-9, decomp: 1e-9 };
 
 // Check one dataset: failure messages (empty = PASS) and the number of checks.
 export function checkDataset(ds, res) {
