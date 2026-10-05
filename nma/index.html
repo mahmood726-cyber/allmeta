@@ -458,7 +458,7 @@
         const pb = pos[treatments.indexOf(b)];
         const w = 1 + 4 * (n/maxEdge);
         p.push("<line x1=\""+pa.x+"\" y1=\""+pa.y+"\" x2=\""+pb.x+"\" y2=\""+pb.y+"\" stroke=\"#2c5e8a\" stroke-opacity=\"0.55\" stroke-width=\""+w.toFixed(2)+"\"/>");
-        const mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
+        const mx = pa.x + 0.4*(pb.x-pa.x), my = pa.y + 0.4*(pb.y-pa.y);   // 40% along the edge: labels on crossing edges do not meet at the centre
         const len = Math.hypot(pb.x - pa.x, pb.y - pa.y) || 1, ox = -(pb.y - pa.y) / len * 11, oy = (pb.x - pa.x) / len * 11;
         p.push("<text x=\""+(mx+ox)+"\" y=\""+(my+oy+4)+"\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"600\" fill=\"#3d4450\" paint-order=\"stroke\" stroke=\"#fff\" stroke-width=\"3\">"+n+"</text>");
       }
