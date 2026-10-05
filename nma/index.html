@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Network meta-analysis: contrast-based pooling, network graph, SUCRA, league table.">
+  <meta name="description" content="Network meta-analysis in the browser, reproducing R netmeta: common and random effects (multi-arm studies handled), league table, prediction intervals, heterogeneity, design-based decomposition of Q, P-scores.">
   <meta name="color-scheme" content="light dark">
   <title>Network Meta-Analysis</title>
   <style>
@@ -56,7 +56,11 @@
     button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.5rem; }
     .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
-    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .k { display:block; font-size:0.74rem; letter-spacing:0.02em; color:var(--muted); }
+    table.het { width:100%; border-collapse:collapse; font-size:0.82rem; font-variant-numeric:tabular-nums; }
+    table.het th, table.het td { padding:0.3rem 0.5rem; border-bottom:1px solid var(--border); text-align:left; }
+    table.het th { font-weight:600; }
+    .sucra-row { grid-template-columns:8rem 1fr 3.4rem 3.4rem !important; }
     .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
     .preview-wrap { position:sticky; top:1rem; }
     .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; }
@@ -84,6 +88,7 @@
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
   <script src="../shared/nma-multiarm-v1.js"></script>
+  <script src="example-datasets.js"></script>
   <script src="../shared/ma-methods-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
 </head>
@@ -92,8 +97,8 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Network Meta-Analysis</h1>
-    <p>Contrast-based frequentist NMA over an arbitrary treatment network. Connectivity check, network-graph preview, SUCRA with probability-of-best, league table of all relative effects. Multi-arm trials get the shared-control correction (within-study covariance, +τ²/2 for random effects) — verified against R <code>netmeta</code> to 1e-6.</p>
-    <p style="margin-top:.5rem;padding:.5rem .7rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.9rem"><strong>Test consistency before interpreting.</strong> The league table and SUCRA assume the network is consistent (direct and indirect evidence agree). Run a node-split / design-by-treatment check in <a href="../nma-inconsistency/">NMA Inconsistency</a> first; if inconsistency is present, the pooled estimates and rankings can be misleading.</p>
+    <p>Frequentist network meta-analysis of study contrasts, as the R package <code>netmeta</code>: common- and random-effects (DerSimonian–Laird) estimates with multi-arm studies handled, league table, prediction intervals, heterogeneity and the design-based decomposition of Q, and P-scores. Checked against <code>netmeta</code> on every dataset it ships.</p>
+    <p style="margin-top:.5rem;padding:.5rem .7rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.9rem"><strong>Test consistency before interpreting.</strong> The league table and P-scores assume the network is consistent (direct and indirect evidence agree). Run a node-split / design-by-treatment check in <a href="../nma-inconsistency/">NMA Inconsistency</a> first; if inconsistency is present, the pooled estimates and rankings can be misleading.</p>
   </header>
 
   <main id="main" class="layout">
@@ -105,7 +110,25 @@
           <label>
             <span class="lbl">CSV: <code>study, treatment1, treatment2, estimate, SE</code></span>
             <textarea id="f-data" spellcheck="false" aria-label="Contrasts"></textarea>
-            <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. logOR).</span>
+            <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. log OR). A multi-arm study needs a row for every pair of its arms.</span>
+          </label>
+          <label>
+            <span class="lbl">Example data (datasets shipped with the R package netmeta)</span>
+            <select id="f-example" aria-label="Example dataset">
+              <option value="generic">Generic example (5 treatments)</option>
+              <option value="Senn2013">Senn2013: diabetes, HbA1c (26 studies, 10 treatments)</option>
+              <option value="smokingcessation">smokingcessation: smoking cessation (24 studies, 4)</option>
+              <option value="Baker2009">Baker2009: COPD exacerbations (38 studies, 8)</option>
+              <option value="Dogliotti2014">Dogliotti2014: atrial fibrillation, stroke (19 studies, 8)</option>
+              <option value="Franchini2012">Franchini2012: Parkinson's disease (7 studies, 5)</option>
+              <option value="Gurusamy2011">Gurusamy2011: liver transplantation (11 studies, 6)</option>
+              <option value="Linde2015">Linde2015: depression, response (59 studies, 9)</option>
+              <option value="Linde2016">Linde2016: depression in primary care (93 studies, 22)</option>
+              <option value="Stowe2010">Stowe2010: Parkinson's disease (29 studies, 4)</option>
+              <option value="Woods2010">Woods2010: survival counts (3 studies, 4)</option>
+              <option value="dietaryfat">dietaryfat: mortality rate (10 studies, 3)</option>
+            </select>
+            <span class="hint">Choose a dataset, then press <em>Load example</em>.</span>
           </label>
         </fieldset>
         <fieldset>
@@ -118,8 +141,29 @@
           <label>
             <span class="lbl">Model</span>
             <select id="f-model" aria-label="Model">
-              <option value="fe" selected>Fixed effect (inverse-variance)</option>
-              <option value="re">Random effects (shared τ², DerSimonian-Laird on contrasts)</option>
+              <option value="fe" selected>Common effect (inverse-variance)</option>
+              <option value="re">Random effects (common τ², DerSimonian–Laird; netmeta default)</option>
+            </select>
+          </label>
+          <label>
+            <span class="lbl">Random-effects confidence intervals</span>
+            <select id="f-ci" aria-label="Random-effects confidence intervals">
+              <option value="classic" selected>Normal (netmeta default)</option>
+              <option value="t-dist">t distribution (degrees of freedom of Q)</option>
+            </select>
+          </label>
+          <label>
+            <span class="lbl">Ranking: which direction is better?</span>
+            <select id="f-dir" aria-label="Direction of benefit">
+              <option value="desirable" selected>Smaller estimates (e.g. log OR of a harmful event)</option>
+              <option value="undesirable">Larger estimates (e.g. response, survival)</option>
+            </select>
+          </label>
+          <label>
+            <span class="lbl">Show estimates</span>
+            <select id="f-scale" aria-label="Scale of displayed estimates">
+              <option value="log" selected>On the analysis scale, as entered</option>
+              <option value="exp">Exponentiated (OR, RR, HR, IRR)</option>
             </select>
           </label>
           <label>
@@ -149,13 +193,20 @@
         <h2>Network graph</h2>
         <div id="svg-host"></div>
       </div>
-      <div class="panel" aria-label="SUCRA">
-        <h2>SUCRA &amp; rank probabilities (MC, 10k samples)</h2>
-        <p style="margin:.2rem 0 .6rem;padding:.35rem .55rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.82rem"><strong>Direction assumed: lower effect = better.</strong> Rankings and SUCRA below treat a smaller (more negative) relative effect as favourable. For higher-is-better outcomes these are inverted — negate your effects before entry, or use the higher/lower-is-better toggle in <a href="../nma-pro-v2/">NMA Pro v2</a>.</p>
+      <div class="panel" aria-label="Heterogeneity">
+        <h2>Heterogeneity and inconsistency</h2>
+        <div id="het-host"></div>
+      </div>
+      <div class="panel" aria-label="Estimates versus reference">
+        <h2>Estimates versus the reference treatment</h2>
+        <div id="ref-host" style="overflow-x:auto"></div>
+      </div>
+      <div class="panel" aria-label="Ranking">
+        <h2>Ranking: P-scores</h2>
         <div id="sucra-host"></div>
       </div>
       <div class="panel" aria-label="League table">
-        <h2>League table — rows vs columns</h2>
+        <h2>League table: row treatment versus column treatment</h2>
         <div id="league-host" style="overflow-x:auto"></div>
       </div>
     
@@ -163,7 +214,7 @@
 </section>
   </main>
 
-  <p class="footer-note">Contrast-level GLS per Lu G, Ades AE. <em>Stat Med</em> 2004;23:3105–3124, with the multi-arm shared-control correction (within-study covariance recovered from the pairwise SEs; +τ²/2 off-diagonal for random effects) — matching <code>netmeta</code> (Rücker 2012; Jackson-White-Riley 2012). Node-splitting is in <a href="../nma-inconsistency/">NMA Inconsistency</a>. SUCRA: Salanti G, Ades AE, Ioannidis JPA. <em>J Clin Epidemiol</em> 2011;64:163–171 — probability-of-best only; always pair with the relative-effect CrIs in the league table before recommending a ranking (advanced-stats.md). <strong>R-parity:</strong> on a consistent network (τ²=0) the FE/RE network effects and SE match <code>netmeta()</code> to 1e-4 and MC-SUCRA tracks <code>netrank()</code> P-score within Monte-Carlo error (<code>hub/shared/tests/nma-parity.spec.mjs</code>).</p>
+  <p class="footer-note">Network meta-analysis of study contrasts by generalised least squares, as the R package <code>netmeta</code> (Rücker 2012; Balduzzi et al. 2023): a multi-arm study's correlated contrasts are handled through its arm variances; random effects use a common τ² by the generalised DerSimonian–Laird estimator, with τ²/2 covariance between a multi-arm study's contrasts. Studies with an incomplete, duplicated or internally inconsistent set of comparisons are refused, as in <code>netmeta</code>. Prediction intervals use t with the degrees of freedom of Q (when there are at least 2). The decomposition of Q into within-design heterogeneity and between-design inconsistency follows Krahn et al. (2013). P-scores: Rücker &amp; Schwarzer (2015). Checked against <code>netmeta</code> 3.7.0 on all its example datasets (<code>hub/shared/tests/nma-netmeta-parity.spec.mjs</code>). Node-splitting is in <a href="../nma-inconsistency/">NMA Inconsistency</a>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -175,7 +226,8 @@
     // The arm-level contrast bus is read via window.MaComparisons (see
     // busContrastsText); no raw localStorage key is referenced here.
 
-    const fields = { data:"f-data", ref:"f-ref", model:"f-model", title:"f-title" };
+    const fields = { data:"f-data", ref:"f-ref", model:"f-model", ci:"f-ci", dir:"f-dir", scale:"f-scale", title:"f-title" };
+    let _pendingRef = null, _lastAnalysis = null;
     const EXAMPLE = [
       "# study, treatment1, treatment2, est, SE   (logOR)",
       "TRIAL1, Placebo, DrugA, -0.22, 0.12",
@@ -195,6 +247,8 @@
     const statsWrap = document.getElementById("stats-wrap");
     const sucraHost = document.getElementById("sucra-host");
     const leagueHost = document.getElementById("league-host");
+    const hetHost = document.getElementById("het-host");
+    const refHost = document.getElementById("ref-host");
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
@@ -327,21 +381,18 @@
     }
 
 
-    function relEffect(fit, treatA, treatB) {
-      // Return d_{B vs A} = d_B - d_A (with ref as implicit zero)
-      const idx = {}; for (let k=0;k<fit.K;k++) idx[fit.nonref[k]] = k;
-      const dA = treatA === fit.refTreat ? 0 : fit.d[idx[treatA]];
-      const dB = treatB === fit.refTreat ? 0 : fit.d[idx[treatB]];
-      const varA = treatA === fit.refTreat ? 0 : fit.cov[idx[treatA]][idx[treatA]];
-      const varB = treatB === fit.refTreat ? 0 : fit.cov[idx[treatB]][idx[treatB]];
-      const covAB = (treatA === fit.refTreat || treatB === fit.refTreat) ? 0 : fit.cov[idx[treatA]][idx[treatB]];
-      const est = dB - dA;
-      const se = Math.sqrt(Math.max(0, varB + varA - 2*covAB));
-      return { est, se, lo: est - Z975 *se, hi: est + Z975 *se };
+    // Effect of treatA versus treatB (A minus B), with its 95% CI, from analyse(): the league-table cell (row A, column B).
+    function relEffect(a, model, treatA, treatB) {
+      const i = a.treatments.indexOf(treatA), j = a.treatments.indexOf(treatB), L = model === "re" ? a.random : a.common;
+      return { est: L.TE[i][j], se: L.seTE[i][j], lo: L.lower[i][j], hi: L.upper[i][j], p: L.pval[i][j],
+        piLo: model === "re" && a.predict ? a.predict.lower[i][j] : null, piHi: model === "re" && a.predict ? a.predict.upper[i][j] : null };
+    }
+    function analyseState(rows, state) {
+      return window.AlmNmaMultiarm.analyse(rows, { randomCi: state.ci || "classic", smallValues: state.dir || "desirable" });
     }
 
     // MC SUCRA: sample d from MVN(estimate, cov), rank each sample, aggregate
-    function mcSucra(fit, treatments, nSamples) {
+    function mcSucra(fit, treatments, nSamples, smallerIsBetter) {
       if (!nSamples) nSamples = 10000;
       const T = treatments.length;
       const idx = {}; for (let k=0;k<fit.K;k++) idx[fit.nonref[k]] = k;
@@ -364,8 +415,8 @@
         }
         // Build treatment effect array (ref = 0)
         const effs = treatments.map(t => t === fit.refTreat ? 0 : dSample[idx[t]]);
-        // Rank: lower effect = better (for effect favouring intervention)
-        const ordered = effs.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
+        // Rank: by default a smaller effect is better (netmeta small.values = "desirable")
+        const ordered = effs.map((v,i)=>({v,i})).sort((a,b)=> smallerIsBetter === false ? b.v-a.v : a.v-b.v);
         for (let r=0;r<T;r++) rankSum[ordered[r].i] += (r+1);
         bestCount[ordered[0].i] += 1;
       }
@@ -446,7 +497,7 @@
       const rows = parsed.rows;
       const treatments = uniqueTreatments(rows);
 
-      populateRef(treatments, state.ref);
+      populateRef(treatments, _pendingRef || state.ref); _pendingRef = null;
       const refTreat = document.getElementById("f-ref").value || treatments[0] || "";
 
       const extras = [...parsed.warnings];
@@ -461,35 +512,48 @@
       parts.push(statCard("Reference", refTreat));
 
       if (rows.length && treatments.length >= 2 && connected) {
-        const fit = fitNMA(rows, treatments, refTreat, state.model || "fe");
-        if (fit.error) {
-          extras.push(fit.error);
-          sucraHost.innerHTML = "";
-          leagueHost.innerHTML = "";
+        const a = analyseState(rows, state);
+        _lastAnalysis = a.ok ? a : null;
+        if (!a.ok) {
+          extras.push(a.error);
+          sucraHost.innerHTML = ""; leagueHost.innerHTML = ""; hetHost.innerHTML = ""; refHost.innerHTML = "";
         } else {
-          parts.push(statCard("τ²", fmt(fit.tau2, 4)));
-          // Surface the multi-arm correction + any dropped-study warnings.
-          if (fit.multiArmStudies && fit.multiArmStudies.length) {
-            extras.push("Multi-arm correction applied to " + fit.multiArmStudies.length +
-              " study/studies (" + fit.multiArmStudies.join(", ") + "): shared-control covariance + τ²/2 off-diagonal (Handbook §23.3.4).");
+          const model = state.model === "re" ? "re" : "fe", ex = state.scale === "exp";
+          const tv = (v) => (v === null || !isFinite(v)) ? "--" : fmt(ex ? Math.exp(v) : v, ex ? 2 : 3);
+          const pv = (p) => p === null || !isFinite(p) ? "--" : (p < 0.0001 ? "< 0.0001" : fmt(p, 4));
+          if (model === "re") parts.push(statCard("τ²", a.tau2 === null ? "--" : fmt(a.tau2, 4)));
+          parts.push(statCard("I²", a.I2 === null ? "--" : fmt(100 * a.I2, 1) + "%"));
+          if (a.multiArmStudies && a.multiArmStudies.length) {
+            extras.push("Multi-arm correction applied to " + a.multiArmStudies.length + " stud" + (a.multiArmStudies.length === 1 ? "y" : "ies") + " (" + a.multiArmStudies.join(", ") + "): correlated contrasts, as netmeta.");
           }
-          if (fit.warnings && fit.warnings.length) { for (const w of fit.warnings) extras.push(w); }
-
-          // SUCRA
-          const mc = mcSucra(fit, treatments, 10000);
-          if (mc) {
-            const pairs = treatments.map((t, i) => ({ t, sucra: mc.sucra[i], pBest: mc.pBest[i] }))
-              .sort((a, b) => b.sucra - a.sucra);
-            sucraHost.innerHTML = pairs.map(p => [
-              "<div class=\"sucra-row\">",
-              "<div>" + escapeXml(p.t) + "</div>",
-              "<div class=\"sucra-bar\"><span style=\"width:" + (p.sucra*100).toFixed(1) + "%\"></span></div>",
-              "<div class=\"sucra-val\">" + (p.sucra*100).toFixed(1) + "%</div>",
-              "</div>"
-            ].join("")).join("") + "<p style=\"color:var(--muted);font-size:0.75rem;margin-top:0.5rem\">SUCRA: probability of being best over all ranks — <strong>not</strong> an effect size. P(best) and the league table are the decision inputs.</p>";
+          if (a.df === 0) extras.push("No degrees of freedom for heterogeneity (every comparison has a single study and the network has no loops): τ², I² and prediction intervals cannot be estimated.");
+          else if (model === "re" && !a.predict) extras.push("Prediction intervals need at least 2 degrees of freedom for heterogeneity.");
+          // heterogeneity and inconsistency
+          const h = ["<table class=\"het\"><tbody>"];
+          h.push("<tr><th scope=\"row\">τ² (DerSimonian–Laird), τ</th><td>" + (a.tau2 === null ? "not estimable" : fmt(a.tau2, 4) + ", " + fmt(a.tau, 4)) + "</td></tr>");
+          h.push("<tr><th scope=\"row\">I² (95% CI)</th><td>" + (a.I2 === null ? "not estimable" : fmt(100 * a.I2, 1) + "% (" + fmt(100 * a.lowerI2, 1) + "% to " + fmt(100 * a.upperI2, 1) + "%)") + "</td></tr>");
+          const qrow = (lab, q, d, p) => "<tr><th scope=\"row\">" + lab + "</th><td>Q = " + fmt(q, 2) + ", df = " + d + ", p " + (p === null ? "--" : (p < 0.0001 ? "< 0.0001" : "= " + fmt(p, 4))) + "</td></tr>";
+          h.push(qrow("Total", a.Q, a.df, a.pvalQ));
+          if (a.decomp) { h.push(qrow("Within designs (heterogeneity)", a.decomp.Q[1], a.decomp.df[1], a.decomp.pval[1])); h.push(qrow("Between designs (inconsistency)", a.decomp.Q[2], a.decomp.df[2], a.decomp.pval[2])); }
+          h.push("</tbody></table>");
+          hetHost.innerHTML = h.join("");
+          // estimates versus the reference
+          const r = ["<table class=\"het\"><thead><tr><th scope=\"col\">Treatment</th><th scope=\"col\">vs " + escapeXml(refTreat) + " (95% CI)</th>" + (model === "re" ? "<th scope=\"col\">95% prediction interval</th>" : "") + "<th scope=\"col\">p</th></tr></thead><tbody>"];
+          for (const t of treatments) {
+            if (t === refTreat) continue;
+            const e = relEffect(a, model, t, refTreat);
+            r.push("<tr><td>" + escapeXml(t) + "</td><td>" + tv(e.est) + " (" + tv(e.lo) + " to " + tv(e.hi) + ")</td>" + (model === "re" ? "<td>" + (e.piLo === null ? "--" : tv(e.piLo) + " to " + tv(e.piHi)) + "</td>" : "") + "<td>" + pv(e.p) + "</td></tr>");
           }
-
-          // League table
+          r.push("</tbody></table>");
+          refHost.innerHTML = r.join("");
+          // P-scores (netmeta netrank) and the simulated probability of being best (fixed seed)
+          const ps = model === "re" ? a.pscore.random : a.pscore.common, smaller = (state.dir || "desirable") === "desirable";
+          const fit = fitNMA(rows, treatments, refTreat, model), mc = fit.error ? null : mcSucra(fit, treatments, 10000, smaller);
+          const ranked = treatments.map((t, i) => ({ t, ps: ps[a.treatments.indexOf(t)], pb: mc ? mc.pBest[i] : null })).sort((x, y) => y.ps - x.ps);
+          sucraHost.innerHTML = "<div class=\"sucra-row\" style=\"font-size:0.72rem;color:var(--muted)\"><div>Treatment</div><div>P-score</div><div class=\"sucra-val\">P-score</div><div class=\"sucra-val\">P(best)</div></div>" +
+            ranked.map(p => "<div class=\"sucra-row\"><div>" + escapeXml(p.t) + "</div><div class=\"sucra-bar\"><span style=\"width:" + (p.ps * 100).toFixed(1) + "%\"></span></div><div class=\"sucra-val\">" + (p.ps * 100).toFixed(1) + "%</div><div class=\"sucra-val\">" + (p.pb === null ? "--" : (p.pb * 100).toFixed(1) + "%") + "</div></div>").join("") +
+            "<p style=\"color:var(--muted);font-size:0.75rem;margin-top:0.5rem\">P-score (netmeta <code>netrank</code>): the mean certainty that a treatment is better than each of the others, with " + (smaller ? "smaller" : "larger") + " estimates better. P(best): probability of ranking first in 10,000 draws from the estimates (fixed seed). Neither is an effect size — read them with the estimates and their intervals.</p>";
+          // league table: row versus column
           const tbl = ["<table class=\"league\"><thead><tr><th></th>"];
           for (const t of treatments) tbl.push("<th>" + escapeXml(t) + "</th>");
           tbl.push("</tr></thead><tbody>");
@@ -497,9 +561,9 @@
             tbl.push("<tr><th>" + escapeXml(row) + "</th>");
             for (const col of treatments) {
               if (row === col) { tbl.push("<td class=\"diag\">—</td>"); continue; }
-              const re = relEffect(fit, row, col);
-              const cls = re.est > 0 ? "pos" : (re.est < 0 ? "neg" : "");
-              tbl.push("<td class=\"" + cls + "\">" + fmt(re.est) + "<br><span style=\"color:var(--muted);font-size:0.72rem\">[" + fmt(re.lo) + ", " + fmt(re.hi) + "]</span></td>");
+              const e = relEffect(a, model, row, col);
+              const cls = e.est > 0 ? "pos" : (e.est < 0 ? "neg" : "");
+              tbl.push("<td class=\"" + cls + "\">" + tv(e.est) + "<br><span style=\"color:var(--muted);font-size:0.72rem\">[" + tv(e.lo) + ", " + tv(e.hi) + "]</span></td>");
             }
             tbl.push("</tr>");
           }
@@ -507,8 +571,9 @@
           leagueHost.innerHTML = tbl.join("");
         }
       } else {
+        _lastAnalysis = null;
         sucraHost.innerHTML = "<p style=\"color:var(--muted);font-size:0.85rem\">Need ≥2 treatments in a connected network to fit NMA.</p>";
-        leagueHost.innerHTML = "";
+        leagueHost.innerHTML = ""; hetHost.innerHTML = ""; refHost.innerHTML = "";
       }
 
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
@@ -554,16 +619,16 @@
       const treatments = uniqueTreatments(parsed.rows);
       if (!parsed.rows.length || treatments.length < 2) return alert("Need ≥2 treatments.");
       if (!isConnected(treatments, parsed.rows)) return alert("Network disconnected.");
-      const refTreat = document.getElementById("f-ref").value || treatments[0];
-      const fit = fitNMA(parsed.rows, treatments, refTreat, state.model || "fe");
-      if (fit.error) return alert(fit.error);
-      const header = ["vs"].concat(treatments).map(csvCell).join(",");
+      const a = analyseState(parsed.rows, state);
+      if (!a.ok) return alert(a.error);
+      const model = state.model === "re" ? "re" : "fe", ex = state.scale === "exp", tv = (v) => fmt(ex ? Math.exp(v) : v, 4);
+      const header = ["row vs column"].concat(treatments).map(csvCell).join(",");
       const lines = [header];
       for (const row of treatments) {
         const cells = [row];
         for (const col of treatments) {
           if (row === col) cells.push("-");
-          else { const re = relEffect(fit, row, col); cells.push(fmt(re.est)+" ["+fmt(re.lo)+", "+fmt(re.hi)+"]"); }
+          else { const e = relEffect(a, model, row, col); cells.push(tv(e.est)+" ["+tv(e.lo)+", "+tv(e.hi)+"]"); }
         }
         lines.push(cells.map(csvCell).join(","));
       }
@@ -587,11 +652,23 @@
       document.getElementById("f-data").value = "";
       document.getElementById("f-model").value = "fe";
       document.getElementById("f-title").value = "";
+      _pendingRef = null;
       render();
     }
     function onExample() {
-      document.getElementById("f-data").value = EXAMPLE;
-      document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo";
+      const key = document.getElementById("f-example").value, ex = key !== "generic" && window.NMA_EXAMPLES && window.NMA_EXAMPLES[key];
+      if (!ex) {
+        document.getElementById("f-data").value = EXAMPLE;
+        document.getElementById("f-title").value = "Example NMA — 4 drugs vs placebo";
+      } else {
+        const scale = ex.measure === "MD" ? "mean difference" : "log " + ex.measure;
+        document.getElementById("f-data").value = "# " + key + " (netmeta): study, treatment1, treatment2, estimate (treatment2 − treatment1, " + scale + "), SE\n" + ex.data;
+        document.getElementById("f-title").value = key + ": " + ex.title;
+        document.getElementById("f-scale").value = ex.measure === "MD" ? "log" : "exp";
+        document.getElementById("f-model").value = "re";
+        const trs = uniqueTreatments(parseContrasts(ex.data).rows);
+        _pendingRef = trs.find((t) => /^plac/i.test(t)) || null;
+      }
       render();
     }
 
@@ -623,7 +700,7 @@
     }
 
     function attach() {
-      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
+      for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
       document.getElementById("f-ref").addEventListener("change", render);
       document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
       document.getElementById("btn-league").addEventListener("click", onDownloadLeague);
@@ -637,30 +714,20 @@
       });
     }
 
-    // Pure-compute hook for R-parity tests (deterministic FE/RE point
-    // estimates; SUCRA remains MC). Independent of UI state.
-    function _packFit(fit, treatments, ref) {
-      if (!fit || fit.error) return { error: fit && fit.error };
-      const est = {}; est[ref] = { d: 0, se: 0 };
-      fit.nonref.forEach((t, k) => {
-        est[t] = { d: fit.d[k], se: Math.sqrt(Math.max(0, fit.cov[k][k])) };
-      });
-      return { tau2: fit.tau2, est };
-    }
-    window.__almNmaCompute = function (text, refTreat) {
+    // Pure-compute hook for R-parity tests: the netmeta-equivalent analysis (deterministic). Effects are
+    // versus refTreat (treatment minus reference); P-scores for both directions of benefit.
+    window.__almNmaCompute = function (text, refTreat, opts) {
       const { rows } = parseContrasts(text);
-      const treatments = uniqueTreatments(rows);
-      const ref = refTreat || treatments[0];
-      const fe = fitNMA(rows, treatments, ref, "fe");
-      const re = fitNMA(rows, treatments, ref, "re");
-      const base = re && !re.error ? re : fe;
-      const mc = mcSucra(base, treatments, 10000);
-      return {
-        treatments, ref,
-        fe: _packFit(fe, treatments, ref),
-        re: _packFit(re, treatments, ref),
-        sucra: mc ? Object.fromEntries(treatments.map((t, i) => [t, mc.sucra[i]])) : null,
-      };
+      const o = opts || {};
+      const a = window.AlmNmaMultiarm.analyse(rows, { randomCi: o.randomCi || "classic" });
+      if (!a.ok) return { error: a.error };
+      const b = window.AlmNmaMultiarm.analyse(rows, { randomCi: o.randomCi || "classic", smallValues: "undesirable" });
+      const ref = refTreat || a.treatments[0], r = a.treatments.indexOf(ref);
+      const pack = (L, tau2) => ({ tau2, est: Object.fromEntries(a.treatments.map((t, i) => [t, { d: L.TE[i][r], se: L.seTE[i][r] }])) });
+      const named = (v) => Object.fromEntries(a.treatments.map((t, i) => [t, v[i]]));
+      return { treatments: a.treatments, ref, fe: pack(a.common, 0), re: pack(a.random, a.tau2 === null ? 0 : a.tau2),
+        pscore: { desirable: { fe: named(a.pscore.common), re: named(a.pscore.random) }, undesirable: { fe: named(b.pscore.common), re: named(b.pscore.random) } },
+        analysis: a };
     };
 
     const loaded = loadSaved();

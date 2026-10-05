@@ -95,12 +95,17 @@ test('RE τ² (generalised DL), Q, df, point and SE match netmeta to 1e-6', () =
   }
 });
 
-test('multi-arm study with an incomplete clique is reported, not silently mis-fit', () => {
-  // drop one pairwise contrast of the 3-arm S6 → cannot recover arm covariance
+test('multi-arm study with an incomplete clique is refused and named, as netmeta does', () => {
+  // drop one pairwise contrast of the 3-arm S6 → its arm covariance cannot be recovered. Until allmeta
+  // 76d3e9d the engine dropped S6 and fitted the rest (with a warning); netmeta refuses such a network
+  // ("Study ... has an incomplete set of comparisons"), so a different network is not analysed silently.
   const rows = rowsFor(FIX1).filter((r) => !(r.study === 'S6' && ((r.t1 === 'B' && r.t2 === 'C') || (r.t1 === 'C' && r.t2 === 'B'))));
   const fit = NM.fit(rows, { ref: 'A', model: 'fe' });
-  // S6 is dropped from the fit but the other studies still fit; warning recorded
-  assert.ok(fit.ok, fit.error);
-  assert.ok(fit.warnings.some((w) => w.includes('S6')), 'S6 incompleteness warned');
-  assert.ok(!fit.multiArmStudies.includes('S6'));
+  assert.ok(!fit.ok);
+  assert.ok(/'S6' has an incomplete set of comparisons/.test(fit.error), fit.error);
+  // a duplicated comparison and inconsistent multi-arm estimates are refused too
+  const full = rowsFor(FIX1);
+  assert.ok(!NM.fit(full.concat([full[0]]), { model: 'fe' }).ok);
+  const bad = full.map((r) => (r.study === 'S6' && r.t1 === 'B' && r.t2 === 'C') || (r.study === 'S6' && r.t1 === 'C' && r.t2 === 'B') ? { ...r, est: r.est + 0.5 } : r);
+  assert.ok(/inconsistent treatment effects/.test(NM.fit(bad, { model: 'fe' }).error));
 });
