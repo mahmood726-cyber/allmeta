@@ -56,11 +56,11 @@
     button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin:0.5rem 0; }
     .stat { background:var(--accent-soft); padding:0.5rem 0.75rem; border-radius:6px; }
-    .stat .k { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .stat .k { display:block; font-size:0.72rem; letter-spacing:0.02em; color:var(--muted); }
     .stat .v { display:block; font-size:0.95rem; font-weight:600; font-variant-numeric:tabular-nums; }
     table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-top:0.5rem; }
     th,td { padding:0.35rem 0.5rem; text-align:right; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums; }
-    th { font-weight:600; color:var(--muted); text-transform:uppercase; font-size:0.72rem; letter-spacing:0.06em; }
+    th { font-weight:600; color:var(--muted); font-size:0.72rem; letter-spacing:0.02em; }
     th:first-child,td:first-child { text-align:left; }
     .preview-wrap { position:sticky; top:1rem; }
     .preview-wrap svg { width:100%; height:auto; background:#fff; display:block; border-radius:6px; margin-bottom:0.75rem; }
@@ -98,7 +98,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Heterogeneity Explorer</h1>
-    <p>Paste study-level effect sizes. Reports Q, I², τ² under DL / REML / PM, 95% prediction interval, Baujat diagnostic plot, and leave-one-out influence. Follows advanced-stats.md gates (no DL for k&lt;10).</p>
+    <p>Paste study-level effect sizes. Reports Q, I² with its 95% CI, τ² by eight estimators (PM, REML, ML, EB, SJ, HE, HS, DL) with its 95% CI, the pooled estimate with z and HKSJ intervals, the 95% prediction interval, a Baujat plot and leave-one-out influence. DerSimonian-Laird needs at least 10 studies.</p>
   </header>
 
   <main class="layout">
@@ -333,15 +333,11 @@
       return betaInc(df/2, 0.5, x);
     }
     function tQuantile975(df) {
-      // Find t s.t. P(|T|>t) = 0.05
-      if (df <= 0) return NaN;
-      let lo=0, hi=100;
-      for (let i=0;i<80;i++) {
-        const mid=(lo+hi)/2;
-        if (tTwoSidedP(mid, df) > 0.05) lo=mid; else hi=mid;
-        if (hi-lo < 1e-6) break;
-      }
-      return (lo+hi)/2;
+      // 97.5% Student-t quantile from the shared single-source core (exact t-CDF inverted to machine precision).
+      // The previous local bisection stopped at a 1e-6 bracket, so HKSJ and prediction intervals differed from
+      // R's qt() in the 7th significant digit.
+      if (!(df > 0)) return NaN;
+      return window.AlmMaCore._qt(0.975, df);
     }
     function lowerIncGamma(s,x) {
       // P(s,x) = gamma(s,x)/Γ(s) — series for x<s+1, cont. frac. otherwise
@@ -418,10 +414,10 @@
       return points;
     }
 
-    function buildSvg(studies, summary) {
-      const W=680, H=440, L=70, R=30, T=summary?50:20, B=70;
+    function buildSvg(studies, summary, info) {
+      const W=680, H=460, L=78, R=24, T=summary?54:20, B=78;
       const plotW=W-L-R, plotH=H-T-B;
-      const points = buildBaujat(studies, summary.tau2, summary.mu, 1/(summary.se*summary.se));
+      const points = (info && info.baujat) || buildBaujat(studies, summary.tau2, summary.mu, 1/(summary.se*summary.se));
       let xMax = 0, yMax = 0;
       for (const p of points) { if (p.x>xMax) xMax=p.x; if (p.y>yMax) yMax=p.y; }
       if (xMax <= 0) xMax = 1;
@@ -434,7 +430,7 @@
       parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
       parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
       parts.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
-      parts.push("<text x=\""+(W/2)+"\" y=\"24\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"700\" fill=\"#15181d\">Baujat plot — heterogeneity vs influence</text>");
+      parts.push("<text x=\""+(W/2)+"\" y=\"26\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"700\" fill=\"#15181d\">Baujat plot — heterogeneity vs influence</text>");
       // Frame
       parts.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
       // Axes
@@ -442,56 +438,100 @@
       const xTicks = niceTicks(0, xMax, 5);
       for (const t of xTicks) {
         parts.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
-        parts.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        parts.push("<text x=\""+x(t)+"\" y=\""+(axisY+18)+"\" text-anchor=\"middle\" font-size=\"13\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
       }
       const yTicks = niceTicks(0, yMax, 5);
       for (const t of yTicks) {
         parts.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
-        parts.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        parts.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+4)+"\" text-anchor=\"end\" font-size=\"13\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
       }
       // Axis labels
-      parts.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Contribution to Q</text>");
-      parts.push("<text transform=\"translate("+(L-46)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Influence on pooled result (squared standardized)</text>");
-      // Points
-      for (const p of points) {
-        parts.push("<circle cx=\""+x(p.x)+"\" cy=\""+y(p.y)+"\" r=\"5\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
-        parts.push("<text x=\""+(x(p.x)+8)+"\" y=\""+(y(p.y)+3)+"\" font-size=\"10\" fill=\"#15181d\">"+escapeXml(p.label)+"</text>");
+      parts.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+42)+"\" text-anchor=\"middle\" font-size=\"13\" fill=\"#15181d\">Squared Pearson residual (contribution to Q at the fitted τ²)</text>");
+      parts.push("<text transform=\"translate("+(L-52)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"13\" fill=\"#15181d\">Influence on the overall result</text>");
+      // Points: every point carries its label as a tooltip; printed labels go right of the point (left of it near the
+      // right edge) and are skipped where they would overprint one already placed, most influential first.
+      const placed = [];
+      const order = points.map((p, i) => i).sort((a, b) => points[b].y - points[a].y || points[b].x - points[a].x);
+      const labelled = new Set();
+      for (const i of order) {
+        const p = points[i], px = x(p.x), py = y(p.y), w = 7.2 * String(p.label).length;
+        const left = px + 8 + w > L + plotW;
+        const box = { x0: left ? px - 8 - w : px + 8, x1: left ? px - 8 : px + 8 + w, y0: py - 9, y1: py + 5 };
+        const hitsPoint = points.some((q, j) => j !== i && x(q.x) + 6 > box.x0 && x(q.x) - 6 < box.x1 && y(q.y) + 6 > box.y0 && y(q.y) - 6 < box.y1);
+        if (box.x0 < L || hitsPoint || placed.some((b) => box.x0 < b.x1 && b.x0 < box.x1 && box.y0 < b.y1 && b.y0 < box.y1)) continue;
+        placed.push(box); labelled.add(i); p._left = left;
       }
+      points.forEach((p, i) => {
+        parts.push("<circle cx=\""+x(p.x)+"\" cy=\""+y(p.y)+"\" r=\"5\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"><title>"+escapeXml(p.label)+"</title></circle>");
+        if (labelled.has(i))
+          parts.push("<text x=\""+(x(p.x)+(p._left ? -8 : 8))+"\" y=\""+(y(p.y)+4)+"\" font-size=\"13\" fill=\"#15181d\""+(p._left ? " text-anchor=\"end\"" : "")+">"+escapeXml(p.label)+"</text>");
+      });
       parts.push("</svg>");
       return parts.join("");
     }
 
     function statCard(k,v) { return "<div class=\"stat\"><span class=\"k\">"+escapeXml(k)+"</span><span class=\"v\">"+escapeXml(v)+"</span></div>"; }
 
-    function renderStats(studies, chosen) {
+    // Every number the page reports, computed once at full precision. The page renders from this object, the results
+    // export reads it, and the validation suite calls the same function (window.__almHetCompute).
+    function computeAll(studies, chosen) {
       const k = studies.length;
-      if (!k) { statsWrap.innerHTML = ""; looTable.innerHTML = ""; return null; }
+      if (k < 2) return { k, requested: chosen, notPooled: true };
       const tauEstimates = {
         dl: k >= 10 ? tau2_DL(studies) : null,
         reml: tau2_REML(studies),
         pm: tau2_PM(studies)
       };
-      const chosenKey = (chosen === "dl" && tauEstimates.dl == null) ? "pm" : chosen;
+      const dlRefused = chosen === "dl" && tauEstimates.dl == null;
+      const chosenKey = dlRefused ? "pm" : (chosen || "pm");
       const tau2 = tau2For(chosenKey, studies);
       const sum = poolSummary(studies, tau2);
-      // Prediction interval (k ≥ 2). Uses t_{k-1} per Cochrane Handbook v6.5 (matches
-      // metafor predict v4+); the older IntHout-2016 t_{k-2} is superseded and gives a
-      // PI that is too wide — ~3x at k=3 (t_1=12.7 vs t_2=4.3).
-      let piLo=null, piHi=null, piT=null;
-      if (k >= 2) {
-        piT = tQuantile975(k-1);
-        const piSE = Math.sqrt(tau2 + sum.se*sum.se);
-        piLo = sum.mu - piT*piSE;
-        piHi = sum.mu + piT*piSE;
-      }
-
-      // Q-profile 95% CI for I² and τ² (Viechtbauer 2007). Distribution-free of the
-      // chosen point estimator — it profiles the generalised Q-statistic directly.
+      // Prediction interval (k ≥ 2). Uses t_{k-1} per Cochrane Handbook v6.5; the older IntHout-2016 t_{k-2} is
+      // superseded and gives a PI that is too wide — ~3x at k=3 (t_1=12.7 vs t_2=4.3).
+      const piT = tQuantile975(k-1);
+      const piSE = Math.sqrt(tau2 + sum.se*sum.se);
+      const pi = { lo: sum.mu - piT*piSE, hi: sum.mu + piT*piSE, t: piT, df: k-1 };
+      // Q-profile 95% CI for I² and τ² (Viechtbauer 2007). Distribution-free of the chosen point estimator — it
+      // profiles the generalised Q-statistic directly.
       const qpci = qProfileCI(studies);
+      // Leave-one-out with τ² re-estimated by the chosen estimator (DL falls back to PM below k=10, as above).
+      const loo = [];
+      for (let i=0;i<k;i++) {
+        const subset = studies.slice(0,i).concat(studies.slice(i+1));
+        const looKey = chosenKey === "dl" && subset.length < 10 ? "pm" : chosenKey;
+        const t2 = subset.length >= 2 ? tau2For(looKey, subset) : 0;
+        const s2 = poolSummary(subset, t2);
+        loo.push({ label: studies[i].label, k: subset.length, mu: s2.mu, se: s2.se, ciLo: s2.ciLo, ciHi: s2.ciHi,
+                   I2: s2.I2, tau2: t2, estimator: looKey });
+      }
+      // Baujat (Baujat et al. 2002; metafor::baujat): x = squared Pearson residual (y_i - mu)^2 / (v_i + tau2);
+      // y = (mu - mu_(-i))^2 / Var(mu_(-i)), from the leave-one-out refit above (tau2 re-estimated). The plot used to
+      // hold tau2 fixed and divide by the FULL-model variance, which is neither definition.
+      const baujat = studies.map((s, i) => ({
+        label: s.label,
+        x: (s.est - sum.mu) * (s.est - sum.mu) / (s.v + tau2),
+        y: Math.pow(sum.mu - loo[i].mu, 2) / (loo[i].se * loo[i].se)
+      }));
+      return { k, requested: chosen, estimator: chosenKey, dlRefused, tau2, sum, tauEstimates, pi, qpci, loo, baujat };
+    }
+    window.__almHetCompute = function (text, chosen) { return computeAll(parseStudies(text).studies, chosen); };
+
+    function renderStats(studies, chosen) {
+      const k = studies.length;
+      if (!k) { statsWrap.innerHTML = ""; looTable.innerHTML = ""; return null; }
+      if (k < 2) {
+        statsWrap.innerHTML = "<div class=\"stats\">" + statCard("k", String(k)) + "</div>";
+        looTable.innerHTML = "";
+        return null;
+      }
+      const res = computeAll(studies, chosen);
+      const { tauEstimates, tau2, sum, qpci } = res;
+      const piLo = res.pi.lo, piHi = res.pi.hi;
 
       const parts = [];
       parts.push(statCard("k", String(k)));
-      parts.push(statCard("Q (df=" + sum.df + ")", fmt(sum.Q, 2) + "  p=" + fmt(sum.pQ, 3)));
+      // a p-value is never 0: below 0.0005 it is shown as p<0.001
+      parts.push(statCard("Q (df=" + sum.df + ")", fmt(sum.Q, 2) + "  " + (sum.pQ < 0.0005 ? "p<0.001" : "p=" + fmt(sum.pQ, 3))));
       parts.push(statCard("I²", fmt(sum.I2, 1) + "%" +
         (qpci ? " [" + fmt(qpci.I2Lo, 1) + ", " + fmt(qpci.I2Hi, 1) + "]" : "")));
       if (qpci) parts.push(statCard("τ² 95% CI (Q-profile)",
@@ -499,28 +539,23 @@
       parts.push(statCard("τ² (PM)", fmt(tauEstimates.pm, 4)));
       parts.push(statCard("τ² (REML)", fmt(tauEstimates.reml, 4)));
       parts.push(statCard("τ² (DL)", tauEstimates.dl == null ? "k<10 (skipped)" : fmt(tauEstimates.dl, 4)));
+      // the tau^2 the pooled estimate and intervals below actually use, and its estimator (DL below k=10 falls back to PM)
+      parts.push(statCard("τ² used", fmt(tau2, 4) + " (" + ({pm:"PM",reml:"REML",ml:"ML",eb:"EB",sj:"SJ",he:"HE",hs:"HS",dl:"DL"})[res.estimator] + ")"));
       parts.push(statCard("RE pooled (z)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLo, 3) + ", " + fmt(sum.ciHi, 3) + "]"));
       parts.push(statCard("RE pooled (HKSJ + t)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLoHKSJ, 3) + ", " + fmt(sum.ciHiHKSJ, 3) + "]"));
-      if (piLo != null) {
-        parts.push(statCard("95% PI", "[" + fmt(piLo, 3) + ", " + fmt(piHi, 3) + "]"));
-      } else {
-        parts.push(statCard("95% PI", "k<2 (undefined)"));
-      }
+      parts.push(statCard("95% PI", "[" + fmt(piLo, 3) + ", " + fmt(piHi, 3) + "]"));
 
       statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>";
 
       // Leave-one-out
       const rows = [];
       rows.push("<tr><th>Omitted</th><th>k</th><th>μ</th><th title=\"Normal (z) interval — the main panel's pooled CI uses HKSJ+t\">95% CI (z)</th><th>I²</th><th>τ²</th></tr>");
-      for (let i=0;i<k;i++) {
-        const subset = studies.slice(0,i).concat(studies.slice(i+1));
-        const t2 = chosenKey === "dl" && subset.length < 10 ? tau2_PM(subset) : tau2For(chosenKey, subset);
-        const s2 = poolSummary(subset, t2);
-        rows.push("<tr><td>" + escapeXml(studies[i].label) + "</td><td>" + subset.length + "</td><td>" + fmt(s2.mu,3) + "</td><td>[" + fmt(s2.ciLo,3) + ", " + fmt(s2.ciHi,3) + "]</td><td>" + fmt(s2.I2,1) + "%</td><td>" + fmt(t2,4) + "</td></tr>");
+      for (const r of res.loo) {
+        rows.push("<tr><td>" + escapeXml(r.label) + "</td><td>" + r.k + "</td><td>" + fmt(r.mu,3) + "</td><td>[" + fmt(r.ciLo,3) + ", " + fmt(r.ciHi,3) + "]</td><td>" + fmt(r.I2,1) + "%</td><td>" + fmt(r.tau2,4) + "</td></tr>");
       }
       looTable.innerHTML = "<table>" + rows.join("") + "</table>";
 
-      return { sum, tau2 };
+      return res;
     }
 
     function renderWarnings(list, extras) {
@@ -541,13 +576,13 @@
       const parsed = parseStudies(state.data);
       const extras = [];
       if (state.tau2 === "dl" && parsed.studies.length < 10) {
-        extras.push("DL is disabled for k<10 (advanced-stats.md); using Paule-Mandel instead.");
+        extras.push("DerSimonian-Laird is not offered for fewer than 10 studies (it is biased for small k); Paule-Mandel is used instead.");
       }
       const info = renderStats(parsed.studies, state.tau2);
       _lastInfo = info; _lastStudies = parsed.studies;
       renderWarnings(parsed.warnings, extras);
       const svg = (parsed.studies.length >= 2 && info)
-        ? buildSvg(parsed.studies, info.sum)
+        ? buildSvg(parsed.studies, info.sum, info)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥2 study rows.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -591,7 +626,7 @@
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
       const info = renderStats(parsed.studies, state.tau2);
-      let svg = buildSvg(parsed.studies, info.sum);
+      let svg = buildSvg(parsed.studies, info.sum, info);
       const res = await hetReceipt(parsed.studies, info);
       if (res && window.AlmTruthCertExport) svg = AlmTruthCertExport.stampSVG(svg, res);
       downloadBlob(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}), "baujat-"+slugify("","plot")+".svg");
@@ -601,10 +636,10 @@
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
       const info = renderStats(parsed.studies, state.tau2);
-      let svg = buildSvg(parsed.studies, info.sum);
+      let svg = buildSvg(parsed.studies, info.sum, info);
       const res = await hetReceipt(parsed.studies, info);
       if (res && window.AlmTruthCertExport) svg = AlmTruthCertExport.stampSVG(svg, res);
-      const W=680, H=440, scale=2;
+      const W=680, H=460, scale=2;
       const img = new Image();
       const blob = new Blob([svg],{type:"image/svg+xml;charset=utf-8"});
       const url = URL.createObjectURL(blob);
@@ -774,6 +809,12 @@
         out.Q_p = s.pQ;
         out.I2 = s.I2;
         out.tau2 = s.tau2;
+        out.tau2_estimator = info.estimator;
+        out.tau2_pm = info.tauEstimates.pm;
+        out.tau2_reml = info.tauEstimates.reml;
+        out.tau2_dl = info.tauEstimates.dl;
+        out.pi_lb = info.pi.lo;
+        out.pi_ub = info.pi.hi;
       }
       if (studies.length >= 2 && window.__almQProfileCI) {
         var qp = window.__almQProfileCI(studies);
