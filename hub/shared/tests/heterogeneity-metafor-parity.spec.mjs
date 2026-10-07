@@ -54,7 +54,7 @@ test('the page labels the estimator it used, shows Greek letters as written, and
   await page.goto(APP, { waitUntil: 'load' });
   await page.click('#btn-example');   // the built-in example has 8 trials
   await page.evaluate(() => { const s = document.getElementById('f-tau2'); s.value = 'dl'; s.dispatchEvent(new Event('input', { bubbles: true })); });
-  await expect(page.locator('#warn-banner')).toContainText('DL is disabled for k<10');
+  await expect(page.locator('#warn-banner')).toContainText('DerSimonian-Laird is not offered for fewer than 10 studies');
   await expect(page.locator('#stats-wrap')).toContainText('(PM)');
   await expect(page.locator('#loo-table th').nth(2)).toHaveText('μ');
   await expect(page.locator('#loo-table th').nth(5)).toHaveText('τ²');

@@ -98,7 +98,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Heterogeneity Explorer</h1>
-    <p>Paste study-level effect sizes. Reports Q, I² with its 95% CI, τ² by eight estimators (PM, REML, ML, EB, SJ, HE, HS, DL) with its 95% CI, the pooled estimate with z and HKSJ intervals, the 95% prediction interval, a Baujat plot and leave-one-out influence. Follows advanced-stats.md gates (no DL for k&lt;10).</p>
+    <p>Paste study-level effect sizes. Reports Q, I² with its 95% CI, τ² by eight estimators (PM, REML, ML, EB, SJ, HE, HS, DL) with its 95% CI, the pooled estimate with z and HKSJ intervals, the 95% prediction interval, a Baujat plot and leave-one-out influence. DerSimonian-Laird needs at least 10 studies.</p>
   </header>
 
   <main class="layout">
@@ -576,7 +576,7 @@
       const parsed = parseStudies(state.data);
       const extras = [];
       if (state.tau2 === "dl" && parsed.studies.length < 10) {
-        extras.push("DL is disabled for k<10 (advanced-stats.md); using Paule-Mandel instead.");
+        extras.push("DerSimonian-Laird is not offered for fewer than 10 studies (it is biased for small k); Paule-Mandel is used instead.");
       }
       const info = renderStats(parsed.studies, state.tau2);
       _lastInfo = info; _lastStudies = parsed.studies;
