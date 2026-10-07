@@ -90,6 +90,33 @@
     }
     return t2;
   }
+  // Score of the (restricted) profile log-likelihood in tau^2; zero at an interior (RE)ML estimate.
+  function _tau2Score(yi, vi, t2, restricted) {
+    var k = yi.length, sw = 0, sw2 = 0, swy = 0, i;
+    for (i = 0; i < k; i++) { var w = 1 / (vi[i] + t2); sw += w; sw2 += w * w; swy += w * yi[i]; }
+    var mu = swy / sw, s = -0.5 * sw;
+    for (i = 0; i < k; i++) { var w2 = 1 / (vi[i] + t2); s += 0.5 * w2 * w2 * (yi[i] - mu) * (yi[i] - mu); }
+    return restricted ? s + 0.5 * sw2 / sw : s;
+  }
+  // Polish an interior estimate to machine precision by bisection on the score. The fixed-point iteration stops at an
+  // ABSOLUTE change of 1e-12, which leaves a relative error of ~1e-7 when tau^2 is ~1e-5 (studies with tiny variances,
+  // e.g. metadat::dat.hart1999); the polished root is kept only if its log-likelihood is at least as high.
+  function _tau2Polish(yi, vi, t, restricted) {
+    if (!(t > 0) || !isFinite(t)) return t;
+    var lo = t, hi = t, sLo = _tau2Score(yi, vi, lo, restricted), sHi = sLo, guard = 0;
+    if (sLo === 0) return t;
+    if (sLo > 0) { while (sHi > 0 && guard++ < 200) { hi *= 2; sHi = _tau2Score(yi, vi, hi, restricted); } }
+    else { while (sLo < 0 && lo > 1e-300 && guard++ < 2000) { lo /= 2; sLo = _tau2Score(yi, vi, lo, restricted); } }
+    if (!(sLo > 0 && sHi <= 0)) return t;
+    for (var i = 0; i < 400 && hi - lo > 0; i++) {
+      var m = 0.5 * (lo + hi);
+      if (m <= lo || m >= hi) break;
+      if (_tau2Score(yi, vi, m, restricted) > 0) lo = m; else hi = m;
+    }
+    var r = 0.5 * (lo + hi);
+    // a root of the score is the stationary point; the guard (with rounding-level slack) only stops a jump to another mode
+    return _tau2LogLik(yi, vi, r, restricted) >= _tau2LogLik(yi, vi, t, restricted) - 1e-10 ? r : t;
+  }
   function _tau2Guarded(yi, vi, restricted) {
     if (yi.length < 2) return 0;
     var fp = _tau2FixedPoint(yi, vi, restricted, restricted ? 200 : 300);
@@ -99,7 +126,7 @@
       var t = cands[j];
       if (t >= 0 && isFinite(t)) { var l = _tau2LogLik(yi, vi, t, restricted); if (l > bestLL + 1e-9) { bestLL = l; best = t; } }
     }
-    return best;
+    return _tau2Polish(yi, vi, best, restricted);
   }
 
   function tau2REML(yi, vi) { return _tau2Guarded(yi, vi, true); }
