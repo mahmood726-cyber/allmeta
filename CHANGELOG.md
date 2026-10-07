@@ -16,6 +16,40 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.2.0] — 2026-10-07
+
+Release that contains the four app versions validated in F1000Research Software Tool Articles, so that
+the articles can cite one versioned archive. Each validated commit below is an ancestor of this release;
+each has its own reproducibility repository (Docker, CI on Linux, Windows, macOS and Docker, Codespaces).
+
+### Validated against reference software
+- **Screen** (title–abstract screening with active learning): benchmark against ASReview 2.2 on 19
+  labelled datasets; validated at commit `421ba13`
+  ([screen-reproducible](https://github.com/mahmood726-cyber/screen-reproducible)).
+- **Dose-response meta-analysis**: parity with dosresmeta 2.2.0 on its 16 usable multi-study binary
+  datasets (#76; validated at `0f8b86d`)
+  ([dose-response-ma-reproducible](https://github.com/mahmood726-cyber/dose-response-ma-reproducible)).
+- **DTA SROC** (bivariate diagnostic accuracy): parity with mada 0.5.12 on its six datasets
+  (#77; validated at `76d3e9d`) ([dta-sroc-reproducible](https://github.com/mahmood726-cyber/dta-sroc-reproducible)).
+- **NMA**: parity with netmeta 3.7-0 on its 13 datasets (#78, #79; validated at `6e753c6`)
+  ([nma-reproducible](https://github.com/mahmood726-cyber/nma-reproducible)).
+
+### Added
+- New apps: benefit-risk (#20), transitivity (#21), registry-survival (#22, #26, #27), search-completeness
+  (#23), surrogate-validation (#24), registry-pubbias (#25), umbrella-overlap (#29), quantile-ma (#30),
+  Benford screen (#31), population-transported NMA (#32), transportability (#18), Reverse-Bayes (#62),
+  network meta-interpolation and distributional meta-regression (#66, experimental), exact group-sequential
+  boundaries (#67), piecewise-exponential non-PH survival NMA (#69).
+- Review-project studio and end-to-end shell (#5, #7–#11, #34–#46, #49–#55); offline PDF ingestion and
+  extraction (#14, #47, #48); MAIF v1.0 interchange adapter (#68).
+
+### Fixed
+- Statistical-correctness and hardening passes (#4, #56, #61, #63, #70–#72); offline compliance, no external
+  CDN or font references (#58–#60); two apps broken in-browser (#74); SSRF guard order (#75).
+- Accessibility: aria-labels of six dta-sroc and nma controls match their visible labels (#80).
+
+---
+
 ## [1.1.1] — 2026-06-07
 
 Documentation release: consolidate the platform's existing validation evidence
