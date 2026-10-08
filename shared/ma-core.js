@@ -126,6 +126,21 @@
       var t = cands[j];
       if (t >= 0 && isFinite(t)) { var l = _tau2LogLik(yi, vi, t, restricted); if (l > bestLL + 1e-9) { bestLL = l; best = t; } }
     }
+    // With very unequal sampling variances, REML can have a boundary mode
+    // and a better interior mode even when DL and PM are both zero. Those
+    // candidates alone cannot escape the boundary (Pairwise70 CD006536).
+    // Scan positive scales before polishing the best likelihood candidate.
+    if (restricted && best === 0) {
+      var ymin = Math.min.apply(null, yi), ymax = Math.max.apply(null, yi);
+      var lower = Math.max(Math.min.apply(null, vi) * 1e-8, Number.MIN_VALUE);
+      var upper = (ymax - ymin) * (ymax - ymin) + Math.max.apply(null, vi);
+      var logLower = Math.log(lower), logUpper = Math.log(upper);
+      for (var g = 0; g < 64; g++) {
+        var candidate = Math.exp(logLower + (logUpper - logLower) * g / 63);
+        var candidateLL = _tau2LogLik(yi, vi, candidate, true);
+        if (candidateLL > bestLL + 1e-9) { bestLL = candidateLL; best = candidate; }
+      }
+    }
     return _tau2Polish(yi, vi, best, restricted);
   }
 
