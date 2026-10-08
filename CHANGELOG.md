@@ -16,6 +16,35 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.2.1] — 2026-10-08
+
+Patch release that contains the heterogeneity app version validated in an F1000Research Software Tool Article,
+so that the article can cite one versioned archive. The validated commit `7cb5975` (merge of #82) is an ancestor
+of this release; it has its own reproducibility repository (Docker, CI on Linux, Windows, macOS and Docker,
+Codespaces).
+
+### Validated against reference software
+- **Heterogeneity** (τ² estimators, Q, I², Q-profile intervals, HKSJ and prediction intervals, leave-one-out,
+  Baujat): parity with metafor 5.2-1 on every model without moderators in the metadat 1.6-0 help-page examples
+  (88 meta-analyses, 49 datasets, all eight τ² estimators) (#82; validated at `7cb5975`)
+  ([heterogeneity-reproducible](https://github.com/mahmood726-cyber/heterogeneity-reproducible)).
+
+### Fixed
+- heterogeneity: exact t quantile from the shared core (the page's own bisection was off in the 7th significant
+  digit); Baujat influence from the leave-one-out refit, as `metafor::baujat()`; the τ² used and its estimator
+  shown for every estimator; μ and τ no longer uppercased to "M" and "T"; p-values below 0.001 shown as
+  "p<0.001"; plain-language note for the DerSimonian–Laird rule below 10 studies; the export includes the
+  prediction interval and the estimator (#82).
+- ma-core: REML and ML τ² polished to machine precision on the likelihood score instead of stopping at an
+  absolute change of 10⁻¹² (#82).
+- Built-in BCG dataset (shared by several apps): four variances and one year corrected to match
+  `metadat::dat.bcg` (#82).
+
+### Added
+- metafor parity test for the heterogeneity app (`hub/shared/tests/heterogeneity-metafor-parity.spec.mjs`) (#82).
+
+---
+
 ## [1.2.0] — 2026-10-07
 
 Release that contains the four app versions validated in F1000Research Software Tool Articles, so that
