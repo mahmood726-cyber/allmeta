@@ -54,7 +54,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Rare-events GLMM</h1>
-    <p>Binomial-normal random-effects logistic model for rare-event meta-analysis. Avoids the +0.5 continuity correction that biases odds-ratio pooling toward the null when events are rare. Uses 10-point Hermite-Gauss quadrature to integrate the random-effects intercept + damped Newton-Raphson on (θ, log τ). The default UM.FS (unconditional) fit reproduces <code>metafor::rma.glmm(measure="OR", model="UM.FS", method="ML")</code> to ~1e-6.</p>
+    <p>Experimental rare-event logistic meta-analysis. Browser estimates have not established corpus-wide agreement with metafor. The unconditional implementation uses treatment-only random effects and fixed 10-point quadrature; it differs from metafor's default UM.FS model. Use R for analyses requiring metafor estimates.</p>
   </header>
   <main>
     <section class="panel">
@@ -76,12 +76,12 @@ Trial 8, 1, 210, 3, 215</textarea>
       <label style="margin-top:0.5rem">
         <span style="font-size:0.85rem">Model</span>
         <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
-          <option value="UM.FS" selected>UM.FS — unconditional, full likelihood (recommended; matches metafor)</option>
-          <option value="CM.EL">CM.EL — exact conditional (noncentral hypergeometric; matches metafor)</option>
-          <option value="CM.AL">CM.AL — fast approximation (anticonservative CI — see note)</option>
+          <option value="UM.FS" selected>Experimental unconditional fit (not default metafor UM.FS)</option>
+          <option value="CM.EL">CM.EL — conditional likelihood; numerical parity unverified</option>
+          <option value="CM.AL">Fixed-baseline approximation (not metafor CM.AL)</option>
           <option value="UM.RS">UM.RS — unconditional, random study effects (R-only — generates a metafor script)</option>
         </select>
-        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">UM.FS reproduces <code>metafor::rma.glmm(model="UM.FS")</code> for the point estimate, SE and 95% CI to ~1e-6 (verified — <code>rare-events-glmm-parity.spec.mjs</code>). <strong>CM.EL</strong> is the exact conditional model (Fisher's noncentral hypergeometric — the Stijnen 2010 gold standard for rare events): it conditions on each study's event margin so the baseline is eliminated and 0-event arms need no correction; verified vs <code>metafor::rma.glmm(model="CM.EL")</code> to ~1e-7 on θ/τ² (<code>rare-events-glmm-parity.spec.mjs</code>), and converges even on very sparse designs where metafor's CM.EL optimiser does not. CM.AL is a faster profiled approximation whose CI is <strong>anticonservative</strong> (≈12% too narrow) — prefer UM.FS or CM.EL for inference.</span>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">The fixed-baseline approximation is not metafor CM.AL. Its interval error is dataset dependent. CM.EL uses adaptive quadrature and a bounded variance search; finite output alone does not certify convergence or agreement with metafor. UM.RS generates an R script.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
@@ -101,7 +101,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rare-events-glmm.js</code> — Gauss-Hermite quadrature + damped Newton-Raphson. UM.FS = unconditional full likelihood (matches <code>metafor::rma.glmm(model="UM.FS")</code> to ~1e-6); CM.EL = exact conditional via Fisher's noncentral hypergeometric with <strong>adaptive</strong> Gauss-Hermite (matches <code>metafor::rma.glmm(model="CM.EL")</code> to ~1e-7 on θ/τ², ~1e-3 on SE); CM.AL is a faster profiled approximation with anticonservative CIs. For complex / multi-arm rare-event NMA, use <code>metafor::rma.glmm</code> in R.
+    Engine: <code>shared/rare-events-glmm.js</code>. Experimental browser approximations; use <code>metafor::rma.glmm</code> in R for the named reference models.
   </footer>
   <script>
   (function () {
@@ -162,6 +162,8 @@ Trial 8, 1, 210, 3, 215</textarea>
     }
 
     function run() {
+      window.__almLastRareEventsGLMM = null;
+      document.querySelector("#compare tbody").innerHTML = "";
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 2) {
         document.getElementById("summary").innerHTML =
@@ -176,10 +178,10 @@ Trial 8, 1, 210, 3, 215</textarea>
         : model === "CM.AL"
           ? AlmRareEventsGLMM.fit(rows)
           : AlmRareEventsGLMM.fitUnconditional(rows);
-      if (!glmm.ok) {
+      if (!glmm.ok || ![glmm.theta, glmm.se_theta, glmm.tau2, glmm.OR, glmm.OR_lo, glmm.OR_hi].every(Number.isFinite)) {
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +
-          (glmm.error || "") + '</div>';
+          (glmm.error || "Non-finite fit; use R to diagnose this dataset.") + '</div>';
         return;
       }
       var iv = ivPoolWithCC(rows);
@@ -189,10 +191,10 @@ Trial 8, 1, 210, 3, 215</textarea>
         '<div class="card"><span class="k">log-OR θ̂</span><span class="v">' + fmt(glmm.theta, 4) + '</span></div>' +
         '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(glmm.tau2, 4) + '</span></div>' +
         '<div class="card"><span class="k">k studies</span><span class="v">' + glmm.k + '</span></div>' +
-        '<div class="card"><span class="k">0-event studies</span><span class="v">' + glmm.n_zero_cell_studies + '</span></div>';
+        '<div class="card"><span class="k">0-event studies</span><span class="v">' + rows.filter(function (r) { return r.events_T === 0 || r.events_C === 0; }).length + '</span></div>';
 
       document.querySelector("#compare tbody").innerHTML =
-        '<tr><td>GLMM (no CC)</td><td>' + fmt(glmm.OR, 3) + '</td><td>' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</td><td>' + fmt(glmm.tau2, 4) + '</td></tr>' +
+        '<tr><td>Browser approximation</td><td>' + fmt(glmm.OR, 3) + '</td><td>' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</td><td>' + fmt(glmm.tau2, 4) + '</td></tr>' +
         '<tr><td>IV pool + 0.5 CC</td><td>' + fmt(iv.OR, 3) + '</td><td>' + fmt(iv.OR_lo, 3) + ', ' + fmt(iv.OR_hi, 3) + '</td><td>' + fmt(iv.tau2, 4) + '</td></tr>';
 
       window.__almLastRareEventsGLMM = function () { return { glmm: glmm, iv: iv }; };
@@ -226,7 +228,7 @@ Trial 8, 1, 210, 3, 215</textarea>
       document.getElementById("summary").innerHTML =
         '<div class="card" style="grid-column:1/-1">' +
         '<span class="k">UM.RS — random study effects (R-only)</span>' +
-        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">UM.RS adds a random study intercept on top of the random treatment effect, so metafor fits it with <code>glmer</code> (Laplace approximation). That can\'t be reproduced in-browser to metafor tolerance, so allmeta gives you the exact script to run in R instead of an unverified number — use <strong>UM.FS</strong> or <strong>CM.EL</strong> (both verified) for an in-browser fit.</p>' +
+        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">UM.RS adds a random study intercept on top of the random treatment effect, so metafor fits it with <code>glmer</code> (Laplace approximation). That can\'t be reproduced in-browser to metafor tolerance, so allmeta gives you the exact script to run in R instead of an unverified number — use <strong>UM.FS</strong> or <strong>CM.EL</strong> (experimental browser fits) for an in-browser fit.</p>' +
         '<textarea id="umrs-code" readonly rows="11" aria-label="UM.RS metafor R script" style="width:100%;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.5rem">' + esc(code) + '</textarea>' +
         '<div style="margin-top:.4rem;display:flex;gap:.5rem;flex-wrap:wrap">' +
         '<button type="button" id="umrs-copy" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Copy R script</button>' +
