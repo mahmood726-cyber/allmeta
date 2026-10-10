@@ -1,0 +1,93 @@
+{
+  "scope": "Function-level probes of unchanged independent legacy engines; browser routing and full-app behaviour are not established by this probe.",
+  "source_sha256": {
+    "Pairwiseai/app.js": "8b4f4ebe5c581c5fa7ae0141f9a26b40572cf1bafbe44cff72a31554193ae698",
+    "IPD-Meta-Pro/ipd-meta-pro.html": "afc4d44b7728f4282d68e7876c028d32c522bc46a399d49001303f95da1576d7"
+  },
+  "cases": [
+    {
+      "id": "CD005566",
+      "expected_global_tau2": 0.03304213592255,
+      "pairwisePro": {
+        "tau2": 0.025505400324167905,
+        "converged": true,
+        "iterations": 7,
+        "method": "REML",
+        "loglik": -4.52213718842796
+      },
+      "ipdHelper": 0.06922490850740565
+    },
+    {
+      "id": "CD006536",
+      "expected_global_tau2": 0.044954675075,
+      "pairwisePro": {
+        "tau2": 0.044954683006228666,
+        "converged": true,
+        "method": "Profile Likelihood",
+        "loglik": -26.088655231551023,
+        "note": "Fisher scoring failed, used profile likelihood"
+      },
+      "ipdHelper": 0.058814726788739925
+    },
+    {
+      "id": "CD016031",
+      "expected_global_tau2": 0.36480859477776,
+      "pairwisePro": {
+        "tau2": 0.3648086136709713,
+        "converged": true,
+        "method": "Profile Likelihood",
+        "loglik": -20.885715892148703,
+        "note": "Fisher scoring failed, used profile likelihood"
+      },
+      "ipdHelper": 0.8001176487055152
+    },
+    {
+      "id": "seed84084-1530",
+      "expected_global_tau2": 0.060387118607540674,
+      "pairwisePro": {
+        "tau2": 1e-10,
+        "converged": true,
+        "iterations": 6,
+        "method": "REML",
+        "loglik": -3.050608733760109
+      },
+      "ipdHelper": 95.10790338786386
+    },
+    {
+      "id": "seed84084-1917",
+      "expected_global_tau2": 0.7633768741081433,
+      "pairwisePro": {
+        "tau2": 0.026475712393213207,
+        "converged": true,
+        "iterations": 8,
+        "method": "REML",
+        "loglik": -16.510130998866003
+      },
+      "ipdHelper": 524.5012446179145
+    },
+    {
+      "id": "shallow-interior-beats-boundary",
+      "expected_global_tau2": 3.8191653327149386,
+      "pairwisePro": {
+        "tau2": 1e-10,
+        "converged": true,
+        "iterations": 4,
+        "method": "REML",
+        "loglik": -3.057070485240051
+      },
+      "ipdHelper": 133.56601027675583
+    },
+    {
+      "id": "boundary-beats-interior",
+      "expected_global_tau2": 0,
+      "pairwisePro": {
+        "tau2": 1e-10,
+        "converged": true,
+        "iterations": 4,
+        "method": "REML",
+        "loglik": -3.0570558539642034
+      },
+      "ipdHelper": 133.56569787553613
+    }
+  ]
+}
