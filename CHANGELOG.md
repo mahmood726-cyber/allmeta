@@ -16,6 +16,28 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.2.1] — 2026-10-10
+
+Release containing the app versions validated in four further F1000Research Software Tool Articles,
+so that each can cite one versioned archive. Each validated commit below is an ancestor of this release.
+
+### Validated against reference software (full metadat corpora, the page's own code in headless Chrome)
+- **Heterogeneity**: agreement with metafor on every reported number, Baujat axis by its definition, BCG
+  data corrected (#82; validated at `7cb5975`).
+- **Three-level meta-analysis**: exact I² decomposition; method-of-moments results labelled as such; the
+  REML engine agrees with `rma.mv` in 44/44 configurations (#85; validated at `e735558`).
+- **Small-study effect tests**: Begg exact test and ties, Peters/Harbord on raw counts, trim-and-fill by
+  metafor's Fisher scoring; step-function selection model labelled experimental (#88; validated at `3dcc679`).
+- **Meta-regression**: exported R script uses `test = "adhoc"` (the floored Knapp-Hartung test the page
+  computes), precise t quantile, centred sums, exact permutation ties; location-scale labelled
+  experimental (#89; validated at `e47acf1`).
+
+### Fixed
+- Rare-events GLMM: removed unsupported claims of agreement with metafor `rma.glmm`, refuse non-finite
+  fits, count zero-event studies correctly (#86); test for an all-zero treatment arm (#87).
+
+---
+
 ## [1.2.0] — 2026-10-07
 
 Release that contains the four app versions validated in F1000Research Software Tool Articles, so that
