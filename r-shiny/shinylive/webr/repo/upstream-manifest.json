@@ -1,0 +1,262 @@
+{
+ "webr_repo": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/",
+ "fetched": "2026-10-10",
+ "packages": [
+  {
+   "package": "digest",
+   "version": "0.6.39",
+   "file": "digest_0.6.39.tgz",
+   "bytes": 159056,
+   "sha256": "3aaa3c2acf4af9fd93c78db33878aaff91568da71c7de14e30a6baafcac0c6b9",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/digest_0.6.39.tgz"
+  },
+  {
+   "package": "ellipse",
+   "version": "0.5.0",
+   "file": "ellipse_0.5.0.tgz",
+   "bytes": 201772,
+   "sha256": "ad8f45bffce27bb3cef3d420f75022d678e91c618ca7ec8131367e70f400859a",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/ellipse_0.5.0.tgz"
+  },
+  {
+   "package": "mada",
+   "version": "0.5.12",
+   "file": "mada_0.5.12.tgz",
+   "bytes": 384449,
+   "sha256": "3d31a9da554be5cfd5f35cd1acae8410681c051558810720a045bb16ff2a6a0e",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/mada_0.5.12.tgz"
+  },
+  {
+   "package": "mixmeta",
+   "version": "1.2.2",
+   "file": "mixmeta_1.2.2.tgz",
+   "bytes": 319238,
+   "sha256": "3936239f86c341836adb2c6a0c353b657a49c04c56e25b405c385de2fccbab17",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/mixmeta_1.2.2.tgz"
+  },
+  {
+   "package": "mvmeta",
+   "version": "1.0.3",
+   "file": "mvmeta_1.0.3.tgz",
+   "bytes": 231801,
+   "sha256": "37d448220b5b0c4da2b22e7c372986ede7df06837cf0d8222e3b62efae820017",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/mvmeta_1.0.3.tgz"
+  },
+  {
+   "package": "dosresmeta",
+   "version": "2.2.0",
+   "file": "dosresmeta_2.2.0.tgz",
+   "bytes": 369869,
+   "sha256": "cec00cc790be4579ee091a62e0ebf589a1b6aee0d4de87418643431139c08f3b",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/dosresmeta_2.2.0.tgz"
+  },
+  {
+   "package": "CompQuadForm",
+   "version": "1.4.4",
+   "file": "CompQuadForm_1.4.4.tgz",
+   "bytes": 33849,
+   "sha256": "b8934131aba252e0d85fa2511c21a8de2243f297f4256fb2b5b73dfb33665606",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/CompQuadForm_1.4.4.tgz"
+  },
+  {
+   "package": "R6",
+   "version": "2.6.1",
+   "file": "R6_2.6.1.tgz",
+   "bytes": 65151,
+   "sha256": "ec53fbd334e2da75cb9df7d01b81c9b7495d93d3627ae89764b9adb4957e28af",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/R6_2.6.1.tgz"
+  },
+  {
+   "package": "Rcpp",
+   "version": "1.1.1-1.1",
+   "file": "Rcpp_1.1.1-1.1.tgz",
+   "bytes": 2044154,
+   "sha256": "ed011570038e88749503fdcff69cff503692e1f759dbcc3f4e9c12f18ab70ff2",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/Rcpp_1.1.1-1.1.tgz"
+  },
+  {
+   "package": "RcppEigen",
+   "version": "0.3.4.0.2",
+   "file": "RcppEigen_0.3.4.0.2.tgz",
+   "bytes": 1824242,
+   "sha256": "723f1003212c227647226ae7b7979dbc1a9c4da90b87e728adbdaa5eb8f67554",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/RcppEigen_0.3.4.0.2.tgz"
+  },
+  {
+   "package": "Rdpack",
+   "version": "2.6.6",
+   "file": "Rdpack_2.6.6.tgz",
+   "bytes": 514899,
+   "sha256": "bd00a9cb7543c7dc8357b4bbcf8b3d097ca938e5028bdf0de52f1c09095e5e91",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/Rdpack_2.6.6.tgz"
+  },
+  {
+   "package": "abind",
+   "version": "1.4-8",
+   "file": "abind_1.4-8.tgz",
+   "bytes": 43711,
+   "sha256": "cd1965de94fd9b3bb46a9e7d0766bc3cbc574b175c804d6dad5345e90c6da7fc",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/abind_1.4-8.tgz"
+  },
+  {
+   "package": "cli",
+   "version": "3.6.6",
+   "file": "cli_3.6.6.tgz",
+   "bytes": 962689,
+   "sha256": "11906f32dbc4341c1407cfd78055f7fc71ff93548329a12aad34e24fae93b201",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/cli_3.6.6.tgz"
+  },
+  {
+   "package": "colorspace",
+   "version": "2.1-2",
+   "file": "colorspace_2.1-2.tgz",
+   "bytes": 2434044,
+   "sha256": "56546f455db9b6312d5c375b0d68cbca510c13ac05d6b5b06288223b4372b7ad",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/colorspace_2.1-2.tgz"
+  },
+  {
+   "package": "cpp11",
+   "version": "0.5.4",
+   "file": "cpp11_0.5.4.tgz",
+   "bytes": 283062,
+   "sha256": "9b722f3721352612621de878ec826af64348cc0bff0e9255b7f89e8c8728ed3f",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/cpp11_0.5.4.tgz"
+  },
+  {
+   "package": "glue",
+   "version": "1.8.1",
+   "file": "glue_1.8.1.tgz",
+   "bytes": 148532,
+   "sha256": "3e1356f68ef6b3c7f8f41fa872dec796cfc102dd918d83d751cf2458d39f9917",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/glue_1.8.1.tgz"
+  },
+  {
+   "package": "igraph",
+   "version": "2.1.4",
+   "file": "igraph_2.1.4.tgz",
+   "bytes": 3850012,
+   "sha256": "cdfb3641d343ce712d6cd27517d1046f477b83664f2b04d74f2e9c1a191bed0f",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/igraph_2.1.4.tgz"
+  },
+  {
+   "package": "lifecycle",
+   "version": "1.0.5",
+   "file": "lifecycle_1.0.5.tgz",
+   "bytes": 99783,
+   "sha256": "904d21f5f38848a4e35e5abe2afbb70812f62fd2d222fac2c5f302108338d576",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/lifecycle_1.0.5.tgz"
+  },
+  {
+   "package": "lme4",
+   "version": "2.0-1",
+   "file": "lme4_2.0-1.tgz",
+   "bytes": 3973545,
+   "sha256": "5a0253b2758d2103751eec82a31e8d8f4cd282e215303e2a97489824ebde2e9d",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/lme4_2.0-1.tgz"
+  },
+  {
+   "package": "magic",
+   "version": "1.6-1",
+   "file": "magic_1.6-1.tgz",
+   "bytes": 335066,
+   "sha256": "32b517a734cf9a2bcb0c786b61715b3c834d22f4ff66656b275be2a22e42c63d",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/magic_1.6-1.tgz"
+  },
+  {
+   "package": "magrittr",
+   "version": "2.0.5",
+   "file": "magrittr_2.0.5.tgz",
+   "bytes": 213752,
+   "sha256": "c9ea8230f1d2447a9cf505d14da39c7cd18479fd0fcb802c271d99a934fdf6e1",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/magrittr_2.0.5.tgz"
+  },
+  {
+   "package": "meta",
+   "version": "8.3-0",
+   "file": "meta_8.3-0.tgz",
+   "bytes": 1484928,
+   "sha256": "945d0cf9f9e6a04f77f8faab5a84c6265a664b608aae1f37664e298793f5c20c",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/meta_8.3-0.tgz"
+  },
+  {
+   "package": "metabook",
+   "version": "0.2-0",
+   "file": "metabook_0.2-0.tgz",
+   "bytes": 183532,
+   "sha256": "3f29b9e293f423f4e4202753483f6786fc3cad8dc8e92eff66fa0425fabb9b0c",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/metabook_0.2-0.tgz"
+  },
+  {
+   "package": "minqa",
+   "version": "1.2.8",
+   "file": "minqa_1.2.8.tgz",
+   "bytes": 82825,
+   "sha256": "2c9386bfeaff81bc1a32157f67e51f95b3d3cd446d6940bdc8236eb50694f239",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/minqa_1.2.8.tgz"
+  },
+  {
+   "package": "netmeta",
+   "version": "3.4-0",
+   "file": "netmeta_3.4-0.tgz",
+   "bytes": 1234132,
+   "sha256": "2368413c87eb4cbb25b02e68e1b53f954da4f1dc345b59f67754a2c1fe7fe74a",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/netmeta_3.4-0.tgz"
+  },
+  {
+   "package": "nloptr",
+   "version": "2.2.1.9000",
+   "file": "nloptr_2.2.1.9000.tgz",
+   "bytes": 377076,
+   "sha256": "784adf01e61f5e62706ce2510b7eaf304a65aab735881889c31d26fa32bb25ac",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/nloptr_2.2.1.9000.tgz"
+  },
+  {
+   "package": "prettyunits",
+   "version": "1.2.0",
+   "file": "prettyunits_1.2.0.tgz",
+   "bytes": 131069,
+   "sha256": "632e7f90f552717969553b069480c4af4bbee9159e2a75bf152449f0234b369d",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/prettyunits_1.2.0.tgz"
+  },
+  {
+   "package": "progress",
+   "version": "1.2.3",
+   "file": "progress_1.2.3.tgz",
+   "bytes": 44414,
+   "sha256": "0b17229231d1783cacd8eba9e33f9588313be49db09d6e660a6baa2b23b62fdb",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/progress_1.2.3.tgz"
+  },
+  {
+   "package": "rbibutils",
+   "version": "2.4.1",
+   "file": "rbibutils_2.4.1.tgz",
+   "bytes": 1062426,
+   "sha256": "f7e2a89289eb46793a79d79fe4477879f6466b710d3cf2c8a50d80fe49886a17",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/rbibutils_2.4.1.tgz"
+  },
+  {
+   "package": "reformulas",
+   "version": "0.4.4",
+   "file": "reformulas_0.4.4.tgz",
+   "bytes": 116767,
+   "sha256": "afdb1b5dd750144cfc2cc45de66aa0f9142d47f43b3af54a65572f3f2521fc56",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/reformulas_0.4.4.tgz"
+  },
+  {
+   "package": "rlang",
+   "version": "1.2.0",
+   "file": "rlang_1.2.0.tgz",
+   "bytes": 1134268,
+   "sha256": "4f9e79ebf4502da0df88338efab17e707ea9f9c1698f3863f89fb2315ab1fb90",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/rlang_1.2.0.tgz"
+  },
+  {
+   "package": "withr",
+   "version": "3.0.2",
+   "file": "withr_3.0.2.tgz",
+   "bytes": 181425,
+   "sha256": "ca74ea6e4a8be4a8b7425bfaa93213a862aee36c2522e1f5fa97bcc690cc2807",
+   "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/withr_3.0.2.tgz"
+  }
+ ]
+}
