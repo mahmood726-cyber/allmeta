@@ -68,8 +68,9 @@
       var xr = c.map(function (cc, k) { return cc + (cc - simplex[n][k]); }), fr = f(xr);
       if (fr < fv[0]) { var xe = c.map(function (cc, k) { return cc + 2 * (xr[k] - cc); }), fe = f(xe); if (fe < fr) { simplex[n] = xe; fv[n] = fe; } else { simplex[n] = xr; fv[n] = fr; } }
       else if (fr < fv[n - 1]) { simplex[n] = xr; fv[n] = fr; }
-      else { var xc = c.map(function (cc, k) { return cc + 0.5 * (simplex[n][k] - cc); }), fc = f(xc);
-        if (fc < fv[n]) { simplex[n] = xc; fv[n] = fc; }
+      else { var outside = fr < fv[n];
+        var xc = c.map(function (cc, k) { return cc + 0.5 * ((outside ? xr[k] : simplex[n][k]) - cc); }), fc = f(xc);
+        if (fc < (outside ? fr : fv[n])) { simplex[n] = xc; fv[n] = fc; }
         else { for (var s2 = 1; s2 <= n; s2++) { simplex[s2] = simplex[0].map(function (x0v, k) { return x0v + 0.5 * (simplex[s2][k] - x0v); }); fv[s2] = f(simplex[s2]); } } }
     }
     order(); return { x: simplex[0], f: fv[0] };
@@ -103,6 +104,13 @@
     opts = opts || {};
     var k = yi.length, q = Z[0].length, i, j;
     _viShared = vi;
+    var xm=0, xs=1, scaledX=X[0].length===2 && X.every(function(r){return r[0]===1;});
+    if(scaledX){
+      xm=X.reduce(function(a,r){return a+r[1];},0)/k;
+      xs=Math.sqrt(X.reduce(function(a,r){return a+(r[1]-xm)*(r[1]-xm);},0)/k);
+      if(!(xs>0))throw new Error("Constant location moderator");
+      X=X.map(function(r){return [1,(r[1]-xm)/xs];});
+    }
     // Standardise the non-intercept scale columns so the optimiser is well-scaled
     // (a scale slope multiplying a covariate ranging in the tens must be tiny). We
     // optimise in standardised space then map α and its vcov back exactly (linear).
@@ -140,10 +148,15 @@
     if (HsInv) {
       var AH = A.map(function (row) { return _matVec(HsInv, row); }); // A·Hs⁻¹ (rows)
       vcovA = AH.map(function (row, a2) { return A.map(function (rowB) { return row.reduce(function (s, x, c) { return s + x * rowB[c]; }, 0); }); });
-      alphaSE = vcovA.map(function (row, jj) { return Math.sqrt(Math.max(0, row[jj])); });
+      alphaSE = vcovA.map(function (row, jj) { return (row[jj] > 0 ? Math.sqrt(row[jj]) : NaN); });
     }
     var tau2 = _tau2(Z, alpha), g = _gls(yi, X, tau2);
-    var betaSE = g.vcov.map(function (row, jj) { return Math.sqrt(Math.max(0, row[jj])); });
+    if(scaledX){
+      var bb=g.beta, V=g.vcov, a=xm/xs;
+      g.beta=[bb[0]-a*bb[1],bb[1]/xs];
+      g.vcov=[[V[0][0]-2*a*V[0][1]+a*a*V[1][1],(V[0][1]-a*V[1][1])/xs],[(V[1][0]-a*V[1][1])/xs,V[1][1]/(xs*xs)]];
+    }
+    var betaSE = g.vcov.map(function (row, jj) { return (row[jj] > 0 ? Math.sqrt(row[jj]) : NaN); });
     return { beta: g.beta, betaSE: betaSE, betaVcov: g.vcov, alpha: alpha, alphaSE: alphaSE, alphaVcov: vcovA, tau2: tau2, logLik: -opt.f, k: k, q: q };
   }
 

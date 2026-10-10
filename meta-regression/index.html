@@ -108,7 +108,7 @@
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-          <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored. Extra columns beyond <code>moderator</code> are passed through as covariates.</span>
+          <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored. One numeric moderator only; use the four-column format shown above.</span>
         </label>
         <div id="alm-undo-mount" style="display:inline-flex;margin-top:.4rem"></div>
       </fieldset>
@@ -130,7 +130,7 @@
         <div id="alm-axis-mount" style="margin-top:.5rem"></div>
         <label style="margin-top:.5rem;display:flex;gap:.4rem;align-items:flex-start">
           <input type="checkbox" id="f-scale" style="margin-top:.25rem">
-          <span class="lbl" style="font-weight:400">Location-scale model: also let residual heterogeneity vary with the moderator (log&thinsp;τ² = α₀ + α₁·x). Matches <code>metafor::rma(scale=~x, link="log", method="ML")</code>.</span>
+          <span class="lbl" style="font-weight:400">Location-scale model: also let residual heterogeneity vary with the moderator (log&thinsp;τ² = α₀ + α₁·x). Experimental ML fit; R reference: <code>metafor::rma(scale=~x, link="log", method="ML")</code>.</span>
         </label>
       </fieldset>
 
@@ -161,7 +161,7 @@
 </section>
   </main>
 
-  <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> via <abbr data-gloss="PM">Paule-Mandel</abbr> bisection; CIs use <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> <code>t(k−2)</code> with <code>q = max(1, <abbr data-gloss="QE">RSS</abbr>/(k−2))</code> floor (<abbr data-gloss="HKSJ">HKSJ</abbr>). <abbr data-gloss="R2">R²</abbr> measures the proportion of <abbr data-gloss="tau2">τ²</abbr> explained by the moderator; <abbr data-gloss="QE">Q_E</abbr> tests residual heterogeneity (df = k−2). Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="<abbr data-gloss="PM">PM</abbr>", test="knha")</code>.</p>
+  <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> via <abbr data-gloss="PM">Paule-Mandel</abbr> bisection; CIs use <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> <code>t(k−2)</code> with <code>q = max(1, <abbr data-gloss="QE">RSS</abbr>/(k−2))</code> floor (<abbr data-gloss="HKSJ">HKSJ</abbr>). <abbr data-gloss="R2">R²</abbr> measures the proportion of <abbr data-gloss="tau2">τ²</abbr> explained by the moderator; <abbr data-gloss="QE">Q_E</abbr> tests residual heterogeneity (df = k−2). Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="<abbr data-gloss="PM">PM</abbr>", test="adhoc")</code>.</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -204,23 +204,18 @@
     }
 
     function fit(studies, tau2) {
-      let sw=0, swx=0, swxx=0, swy=0, swxy=0;
-      for (const s of studies) {
-        const w = 1/(s.v+tau2);
-        sw += w; swx += w*s.x; swxx += w*s.x*s.x;
-        swy += w*s.est; swxy += w*s.x*s.est;
-      }
-      const det = sw*swxx - swx*swx;
-      if (!isFinite(det) || det <= 0) return null;
-      const b0 = (swxx*swy - swx*swxy) / det;
-      const b1 = (sw*swxy - swx*swy) / det;
-      let rss = 0;
-      for (const s of studies) {
-        const w = 1/(s.v+tau2);
-        const r = s.est - b0 - b1*s.x;
-        rss += w*r*r;
-      }
-      return { b0, b1, rss, sw, swx, swxx, det };
+      // Center the weighted regression to avoid cancellation for e.g. calendar years.
+      let sw=0, swy=0, swx=0;
+      for (const s of studies) { const w=1/(s.v+tau2); sw+=w; swy+=w*s.est; swx+=w*s.x; }
+      const xMean=swx/sw, yMean=swy/sw;
+      let sxx=0, sxy=0;
+      for (const s of studies) { const w=1/(s.v+tau2), dx=s.x-xMean; sxx+=w*dx*dx; sxy+=w*dx*(s.est-yMean); }
+      const det=sw*sxx;
+      if (!isFinite(det) || det<=0) return null;
+      const b1=sxy/sxx, b0=yMean-b1*xMean;
+      let rss=0;
+      for (const s of studies) { const r=(s.est-yMean)-b1*(s.x-xMean); rss+=r*r/(s.v+tau2); }
+      return {b0,b1,rss,sw,swx,swxx:sxx+sw*xMean*xMean,det,xMean,sxx};
     }
 
     // PM τ² for the intercept-only (null) model. Used to compute R² (V6-03).
@@ -267,7 +262,7 @@
         const fm = fit(studies, mid);
         if (!fm) return null;
         if (fm.rss > target) lo = mid; else hi = mid;
-        if (hi-lo < 1e-10) break;
+        if (hi-lo < 1e-15 * Math.max(Number.MIN_VALUE, hi)) break;
       }
       const tau2 = (lo+hi)/2;
       return { tau2, fit: fit(studies, tau2) };
@@ -326,7 +321,7 @@
       return -tmp + Math.log(2.5066282746310005*ser/x);
     }
     function betaCF(x,a,b) {
-      const MAXIT=200, EPS=3e-10, FPMIN=1e-30;
+      const MAXIT=200, EPS=1e-14, FPMIN=1e-30;
       const qab=a+b, qap=a+1, qam=a-1;
       let c=1, d=1-qab*x/qap;
       if (Math.abs(d)<FPMIN) d=FPMIN;
@@ -363,7 +358,7 @@
       for (let i=0;i<80;i++) {
         const mid=(lo+hi)/2;
         if (tTwoSidedP(mid, df) > 0.05) lo=mid; else hi=mid;
-        if (hi-lo < 1e-6) break;
+        if (hi-lo < 1e-13) break;
       }
       return (lo+hi)/2;
     }
@@ -428,7 +423,7 @@
           // Var(β0 + β1·x) = Var(β0) + x²·Var(β1) + 2x·Cov(β0, β1)
           // Cov(β0, β1) = -q·Σwx/det
           const covB01 = -hk.q * f.swx / f.det;
-          const varMean = hk.varB0 + xv*xv*hk.varB1 + 2*xv*covB01;
+          const varMean = hk.q * (1/f.sw + (xv-f.xMean)*(xv-f.xMean)/f.sxx);
           const seMean = Math.sqrt(Math.max(0, varMean));
           linePts.push(x(xv)+","+y(yHat));
           upperPts.push(x(xv)+","+y(yHat + tCrit*seMean));
@@ -518,10 +513,10 @@
         parts.push(statCard("HKSJ q", fmt(hk.q, 3) + (hk.q === 1 ? " (floored)" : "")));
         // 95% prediction interval for a new study at the mean covariate x̄ (t_{k-2},
         // Cochrane v6.5): pred ± t·√(τ² + Var(pred|x̄)), Var HKSJ-scaled. Matches
-        // metafor::predict(rma(method="PM",test="knha"), newmods=mean(x)).
+        // metafor::predict(rma(method="PM",test="adhoc"), newmods=mean(x)).
         const xbar = parsed.studies.reduce((a, s) => a + s.x, 0) / k;
         const predX = f.b0 + f.b1 * xbar;
-        const cMc = (f.swxx - 2 * xbar * f.swx + xbar * xbar * f.sw) / f.det;
+        const cMc = 1/f.sw + (xbar-f.xMean)*(xbar-f.xMean)/f.sxx;
         const sePredX = Math.sqrt(Math.max(0, hk.q * cMc));
         const pi = (window.AlmMaCore && k >= 3)
           ? window.AlmMaCore.predictionInterval({ mu: predX, se: sePredX, tau2: fitted.tau2, k: k, df: k - 2 })
@@ -547,7 +542,7 @@
           parts.push(statCard("Q_E (residual)", fmt(qE, 2) + " (df " + dfE + "), p = " + fmt(pQE, 3)));
         }
       } else {
-        _lastHK = null; _lastR2 = 0; _lastQE = null;
+        _lastHK = null; _lastR2 = 0; _lastQE = null; _lastPI = null; _lastPerm = null;
       }
       // Location-scale model (ML): log τ² = α₀ + α₁·x — heterogeneity varies with the moderator.
       _lastLocScale = null;
@@ -600,7 +595,7 @@
         "x  <- c(" + studies.map(s => s.x).join(", ") + ")",
         "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
         "",
-        "res <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"knha\", slab = labels)",
+        "res <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels)",
         "print(res)",
         "",
         "# Expected browser output (for diff):",
