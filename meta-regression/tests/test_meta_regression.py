@@ -66,10 +66,13 @@ def test_t_quantile_with_k_minus_p():
     # df = k-p for p=2 (intercept + slope)
     assert "k - p" in text or "hk.df" in text
 def test_rma_script_template_present():
-    """Exported R script must use metafor's rma() with PM + knha."""
+    """Exported R script must reproduce the page: rma() with PM and the FLOORED Knapp-Hartung
+    test the page computes (q = max(1, RSS/(k-2))), which is metafor's test = "adhoc", not "knha"
+    (knha does not floor q; 523 corpus configurations differ beyond 1e-9)."""
     text = INDEX.read_text(encoding="utf-8")
     assert 'method = "PM"' in text or "method = \\\"PM\\\"" in text
-    assert 'test = "knha"' in text or "test = \\\"knha\\\"" in text
+    assert 'test = "adhoc"' in text or "test = \\\"adhoc\\\"" in text
+    assert 'test = "knha"' not in text and "test = \\\"knha\\\"" not in text
 def test_script_close_not_in_string():
     text = INDEX.read_text(encoding="utf-8")
     m = re.search(r"<script>\s*(.*?)\s*</script>", text, re.DOTALL)

@@ -6,28 +6,28 @@
  * among the permutation distribution. Exact (enumerate all k! permutations) for small
  * k; Monte-Carlo (fixed, deterministic permutations) otherwise.
  *
- * Mirrors metafor::permutest on a model fit with method="PM", test="knha": each
+ * Mirrors metafor::permutest on a model fit with method="PM", test="adhoc": each
  * permutation refits the PM meta-regression and recomputes the HKSJ t-statistic for the
  * slope; p = #{|t_perm| ≥ |t_obs|} / nperm (the observed/identity permutation included).
  *
  * NOTE: as a CONDUCTOR this module floors the KNHA slope statistic's residual
  * dispersion q at 1 (q = max(1, rss/(k-2)), per advanced-stats.md HKSJ-floor).
- * metafor::permutest uses the RAW statistic, so exact bit-parity holds only when
- * q_raw = rss/(k-2) >= 1 (no flooring active); for over-dispersed fits the floored
- * and raw statistics agree, and they diverge only when q_raw < 1.
+ * Use metafor::permutest on test="adhoc" for the same floor. A test="knha"
+ * reference instead uses the raw statistic and can differ when q_raw < 1.
  * Reference: Higgins JPT, Thompson SG (2004), Stat Med 23:1663-1682.
  */
 (function (global) {
   "use strict";
 
   function _fit(yi, vi, xi, tau2) {
-    var sw = 0, swx = 0, swxx = 0, swy = 0, swxy = 0, n = yi.length;
-    for (var i = 0; i < n; i++) { var w = 1 / (vi[i] + tau2); sw += w; swx += w * xi[i]; swxx += w * xi[i] * xi[i]; swy += w * yi[i]; swxy += w * xi[i] * yi[i]; }
-    var det = sw * swxx - swx * swx;
-    if (!(det > 0)) return null;
-    var b0 = (swxx * swy - swx * swxy) / det, b1 = (sw * swxy - swx * swy) / det, rss = 0;
-    for (var j = 0; j < n; j++) { var w2 = 1 / (vi[j] + tau2); var r = yi[j] - b0 - b1 * xi[j]; rss += w2 * r * r; }
-    return { b0: b0, b1: b1, rss: rss, sw: sw, swx: swx, swxx: swxx, det: det };
+    var sw=0, swx=0, swy=0, n=yi.length;
+    for(var i=0;i<n;i++){var w=1/(vi[i]+tau2);sw+=w;swx+=w*xi[i];swy+=w*yi[i];}
+    var mx=swx/sw,my=swy/sw,sxx=0,sxy=0;
+    for(var i=0;i<n;i++){var w=1/(vi[i]+tau2),dx=xi[i]-mx;sxx+=w*dx*dx;sxy+=w*dx*(yi[i]-my);}
+    var det=sw*sxx;if(!(det>0))return null;
+    var b1=sxy/sxx,b0=my-b1*mx,rss=0;
+    for(var i=0;i<n;i++){var r=yi[i]-my-b1*(xi[i]-mx);rss+=r*r/(vi[i]+tau2);}
+    return {b0:b0,b1:b1,rss:rss,sw:sw,swx:swx,swxx:sxx+sw*mx*mx,det:det};
   }
   function _tau2PM(yi, vi, xi) {
     var k = yi.length, target = k - 2;
@@ -35,7 +35,7 @@
     var f0 = _fit(yi, vi, xi, 0); if (!f0 || f0.rss <= target) return 0;
     var lo = 0, hi = 1, g = 0;
     while (g++ < 80) { var fh = _fit(yi, vi, xi, hi); if (!fh || fh.rss <= target) break; hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 100; i++) { var m = (lo + hi) / 2; var fm = _fit(yi, vi, xi, m); if (!fm) break; if (fm.rss > target) lo = m; else hi = m; if (hi - lo < 1e-12) break; }
+    for (var i = 0; i < 100; i++) { var m = (lo + hi) / 2; var fm = _fit(yi, vi, xi, m); if (!fm) break; if (fm.rss > target) lo = m; else hi = m; if (hi - lo < 1e-15 * Math.max(Number.MIN_VALUE, hi)) break; }
     return (lo + hi) / 2;
   }
   // HKSJ slope t-statistic for the meta-regression (PM τ², q floored at 1).
