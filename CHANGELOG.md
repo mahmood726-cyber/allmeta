@@ -22,8 +22,10 @@ Release containing the app versions validated in four further F1000Research Soft
 so that each can cite one versioned archive. Each validated commit below is an ancestor of this release.
 
 ### Validated against reference software (full metadat corpora, the page's own code in headless Chrome)
-- **Heterogeneity**: agreement with metafor on every reported number, Baujat axis by its definition, BCG
-  data corrected (#82; validated at `7cb5975`).
+- **Heterogeneity** (τ² estimators, Q, I², Q-profile intervals, HKSJ and prediction intervals, leave-one-out,
+  Baujat): parity with metafor 5.2-1 on every model without moderators in the metadat 1.6-0 help-page examples
+  (88 meta-analyses, 49 datasets, all eight τ² estimators) (#82; validated at `7cb5975`)
+  ([heterogeneity-reproducible](https://github.com/mahmood726-cyber/heterogeneity-reproducible)).
 - **Three-level meta-analysis**: exact I² decomposition; method-of-moments results labelled as such; the
   REML engine agrees with `rma.mv` in 44/44 configurations (#85; validated at `e735558`).
 - **Small-study effect tests**: Begg exact test and ties, Peters/Harbord on raw counts, trim-and-fill by
@@ -33,8 +35,20 @@ so that each can cite one versioned archive. Each validated commit below is an a
   experimental (#89; validated at `e47acf1`).
 
 ### Fixed
+- heterogeneity: exact t quantile from the shared core (the page's own bisection was off in the 7th significant
+  digit); Baujat influence from the leave-one-out refit, as `metafor::baujat()`; the τ² used and its estimator
+  shown for every estimator; μ and τ no longer uppercased to "M" and "T"; p-values below 0.001 shown as
+  "p<0.001"; plain-language note for the DerSimonian–Laird rule below 10 studies; the export includes the
+  prediction interval and the estimator (#82).
+- ma-core: REML and ML τ² polished to machine precision on the likelihood score instead of stopping at an
+  absolute change of 10⁻¹² (#82).
+- Built-in BCG dataset (shared by several apps): four variances and one year corrected to match
+  `metadat::dat.bcg` (#82).
 - Rare-events GLMM: removed unsupported claims of agreement with metafor `rma.glmm`, refuse non-finite
   fits, count zero-event studies correctly (#86); test for an all-zero treatment arm (#87).
+
+### Added
+- metafor parity test for the heterogeneity app (`hub/shared/tests/heterogeneity-metafor-parity.spec.mjs`) (#82).
 
 ---
 
