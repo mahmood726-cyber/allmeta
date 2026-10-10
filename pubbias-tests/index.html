@@ -82,7 +82,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Small-study-effect tests</h1>
-    <p>Four small-study tests beyond Egger: Peters' regression for binary outcomes, Begg-Mazumdar rank correlation, Harbord's modified Egger, and Thompson-Sharp. Each has different power and bias properties; report multiple. R-parity: Egger and Begg verified against <code>metafor::regtest()</code> and <code>metafor::ranktest()</code>; Peters and Harbord verified against <code>meta::metabias()</code> (Peters t=-10.68, Harbord t=-7.43 on the test fixture). Thompson-Sharp here is the <em>multiplicative</em>-dispersion variant (<code>meta</code>'s is the additive variant); both are valid Thompson-Sharp forms. Trim-and-fill is a faithful port of <code>metafor:::trimfill.rma.uni</code> (L0 estimator, REML side-detection regression, per-iteration REML trimmed-set estimate, REML augmented refit) &mdash; k0, adjusted estimate and its SE all match <code>metafor::trimfill(rma.uni(method='REML'))</code> to 1e-6.</p>
+    <p>Small-study tests include Egger (unweighted regression, multiplicative dispersion, t test with k-2 degrees of freedom), Begg-Mazumdar rank correlation, Peters and Harbord for binary outcomes, and the multiplicative-dispersion Thompson-Sharp variant. Trim-and-fill uses L0 and REML. Numerical agreement depends on inputs and convergence; these methods do not establish publication bias on their own.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -151,7 +151,7 @@
 </section>
   </main>
   <footer>
-    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. R-parity (Cycle 2.8 Task 3): Egger z=2.012 p=0.079 (intercept b0=0.278), Begg tau=0.432 p=0.087, trim-and-fill k0=3, tf_est=0.494 — verified against metafor 4.x (see <code>tests/fixtures/pb-tiny.R</code>).
+    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. Egger reports a t statistic, not a z statistic. The selection model uses ML and is experimental, not validated against metafor.
   </footer>
   <script>
   (function () {
@@ -164,7 +164,20 @@
       var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
-    function pz(z) { return 2 * (1 - pnorm(Math.abs(z))); }
+    function pz(z) {
+      // Regularized upper incomplete gamma Q(1/2,z^2/2).
+      var x=z*z/2, a=0.5;
+      if (x===0) return 1;
+      if (!isFinite(x)) return 0;
+      var fac=Math.exp(-x+a*Math.log(x)-lnGamma(a));
+      if(x<a+1){var sum=1/a,term=sum,ap=a;
+        for(var j=1;j<1000;j++){ap++;term*=x/ap;sum+=term;if(Math.abs(term)<Math.abs(sum)*1e-15)break;}
+        return Math.max(0,1-fac*sum);
+      }
+      var b=x+1-a,c=1e300,d=1/b,h=d;
+      for(var j=1;j<1000;j++){var an=-j*(j-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;var del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break;}
+      return fac*h;
+    }
 
     // Cycle 7.6: Egger-family regression tests use a t-distribution with
     // df = k - 2, not the normal CDF.  Using pz() gave an anti-conservative
@@ -231,10 +244,11 @@
         var parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
         if (parts.length < 4) return null;
         var e1 = parts[0], n1 = parts[1], e2 = parts[2], n2 = parts[3];
+        var raw = {e1:e1,n1:n1,e2:e2,n2:n2};
         if (e1 === 0 || e2 === 0 || e1 === n1 || e2 === n2) { e1 += 0.5; n1 += 1; e2 += 0.5; n2 += 1; }
         var logOR = Math.log((e1 / (n1 - e1)) / (e2 / (n2 - e2)));
         var varLogOR = 1 / e1 + 1 / (n1 - e1) + 1 / e2 + 1 / (n2 - e2);
-        return { e1: e1, n1: n1, e2: e2, n2: n2, te: logOR, se: Math.sqrt(varLogOR), total: n1 + n2 };
+        return { e1: raw.e1, n1: raw.n1, e2: raw.e2, n2: raw.n2, te: logOR, se: Math.sqrt(varLogOR), total: raw.n1 + raw.n2 };
       }).filter(Boolean);
     }
 
@@ -245,6 +259,7 @@
         swxx += ws[i] * xs[i] * xs[i]; swxy += ws[i] * xs[i] * ys[i];
       }
       var det = sw * swxx - swx * swx;
+      if (!(det > 0)) throw new Error("Singular regression design.");
       var b0 = (swxx * swy - swx * swxy) / det;
       var b1 = (sw * swxy - swx * swy) / det;
       var rss = 0;
@@ -291,7 +306,7 @@
         var diff = v[i] - vStar;
         // Begg-Mazumdar denominator can be zero or near-zero when v_i ≈ v*;
         // in that degenerate case skip (tStar undefined).
-        var tStar = diff > 1e-12 ? (r.te - thetaHat) / Math.sqrt(diff) : null;
+        var tStar = diff > 0 ? (r.te - thetaHat) / Math.sqrt(diff) : null;
         return { tStar: tStar, v: v[i] };
       }).filter(function (p) { return p.tStar !== null; });
 
@@ -306,7 +321,7 @@
         for (var j = i + 1; j < m; j++) {
           var dx = pairs[i].tStar - pairs[j].tStar;
           var dy = pairs[i].v - pairs[j].v;
-          if (dx === 0 && dy === 0) { /* tied in both — neither C/D nor tiedX/Y */ }
+          if (dx === 0 && dy === 0) { tiedX++; tiedY++; }
           else if (dx === 0) tiedX++;
           else if (dy === 0) tiedY++;
           else if (dx * dy > 0) concordant++;
@@ -331,7 +346,7 @@
       function tieSums(vals) {
         var counts = {}, key, t1 = 0, t2 = 0, t3 = 0;
         for (var a = 0; a < vals.length; a++) {
-          key = vals[a].toFixed(12);
+          key = String(vals[a]);
           counts[key] = (counts[key] || 0) + 1;
         }
         for (key in counts) {
@@ -352,13 +367,25 @@
                + (m > 2 ? (tx.t3 * ty.t3) / (9 * m * (m - 1) * (m - 2)) : 0);
       var S = concordant - discordant;
       var z = varS > 0 ? S / Math.sqrt(varS) : 0;
-      return { statistic: tau, p: pz(z), name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: tau };
+      var p = pz(z);
+      if(tiedX===0 && tiedY===0){
+        // ranktest requests exact=TRUE, including n>=50; sliding inversion recurrence.
+        var dist=[1];
+        for(var nn=2;nn<=m;nn++) {var next=Array(dist.length+nn-1).fill(0);
+          var rolling=0;for(var ii=0;ii<next.length;ii++){if(ii<dist.length)rolling+=dist[ii];if(ii>=nn)rolling-=dist[ii-nn];next[ii]=Math.max(0,rolling/nn);}
+          dist=next;
+        }
+        var tail=0, bound=Math.min(concordant,discordant);
+        for(var ii=0;ii<=bound;ii++)tail+=dist[ii];p=Math.min(1,2*tail);
+      }
+      return { statistic: tau, p: p, name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: tau };
     }
 
     // REML slope sign of the meta-regression yi ~ 1 + mod (mod = sqrt(vi)).
     // Used only for metafor's side determination (sign of beta[2]).
     function remlSlopeNeg(y, v, mod) {
       var n = y.length;
+      if (mod.every(function(x){return x===mod[0];})) throw new Error("Constant precision: side regression is singular.");
       function negllReg(t2) {
         var Sw=0,Swm=0,Swmm=0,Swy=0,Swmy=0,sl=0;
         for (var i=0;i<n;i++){ var w=1/(v[i]+t2),m=mod[i];
@@ -392,6 +419,7 @@
     // original model's method); ranks use ties.method='first'.
     function trimFill(rows) {
       var k = rows.length;
+      remlPool(rows);
       var yi0 = rows.map(function (r) { return r.te; });
       var vi0 = rows.map(function (r) { return r.se * r.se; });
       if (k < 3) { var p = remlPool(rows); return { k0: 0, est: p.est, se: p.se, tau2: p.tau2 }; }
@@ -403,8 +431,9 @@
       var y = idx.map(function (i) { return s * yi0[i]; });
       var v = idx.map(function (i) { return vi0[i]; });
 
-      var k0 = 0, k0sav = -1, beta = 0;
+      var k0 = 0, k0sav = -1, beta = 0, iterations = 0;
       while (Math.abs(k0 - k0sav) > 0) {
+        if (++iterations > 100) throw new Error("Trim and fill algorithm did not converge.");
         k0sav = k0;
         var m = k - k0;
         beta = remlPool(y.slice(0, m).map(function (t, i) {
@@ -448,54 +477,37 @@
       return wmu / sw;
     }
 
-    // REML random-effects pool — matches metafor::rma.uni(method='REML')
-    // (and hence the refit metafor::trimfill performs on a REML object).
-    // tau2 is the argmax of the restricted log-likelihood for an
-    // intercept-only model (Viechtbauer 2005):
-    //   l(t2) = -0.5*Σln(v_i+t2) - 0.5*ln(Σ w_i) - 0.5*Σ w_i (y_i-μ)^2
-    // maximised by golden section over [0, hi] with the t2=0 boundary
-    // checked explicitly (metafor truncates negative estimates at 0).
+    // Intercept-only port of metafor 5.2-1 rma.uni default Fisher scoring.
+    // HE start; step halving at zero; threshold=1e-5, maxiter=100.
     function remlPool(rows) {
-      var y = rows.map(function (r) { return r.te; });
-      var v = rows.map(function (r) { return r.se * r.se; });
-      var n = y.length;
-      function llAt(t2) {
-        var sw = 0, swy = 0, sl = 0;
-        for (var i = 0; i < n; i++) {
-          var s = v[i] + t2, w = 1 / s;
-          sw += w; swy += w * y[i]; sl += Math.log(s);
-        }
-        var mu = swy / sw, q = 0;
-        for (var j = 0; j < n; j++) {
-          var d = y[j] - mu;
-          q += d * d / (v[j] + t2);
-        }
-        return -0.5 * sl - 0.5 * Math.log(sw) - 0.5 * q;
+      var y=rows.map(function(r){return r.te;}), v=rows.map(function(r){return r.se*r.se;});
+      var n=y.length, mean=y.reduce(function(a,b){return a+b;},0)/n;
+      if(n===1) return {est:y[0],se:Math.sqrt(v[0]),tau2:0};
+      if(n<1) throw new Error('REML needs observations.');
+      var rss=0, vs=0;
+      for(var i=0;i<n;i++){rss+=(y[i]-mean)*(y[i]-mean);vs+=v[i];}
+      var t=Math.max(0,rss/(n-1)-vs/n), change=Infinity, iter=0;
+      function at(tau){
+        var sw=0,sw2=0,sw3=0,swy=0,sl=0;
+        for(var i=0;i<n;i++){var w=1/(v[i]+tau);sw+=w;sw2+=w*w;sw3+=w*w*w;swy+=w*(y[i]-mean);sl+=Math.log(v[i]+tau);}
+        var mu=swy/sw,q=0,ypy=0;
+        for(var i=0;i<n;i++){var w=1/(v[i]+tau),r=y[i]-mean-mu;q+=w*r*r;ypy+=w*w*r*r;}
+        return {est:mu+mean,se:Math.sqrt(1/sw),tr:sw-sw2/sw,tr2:sw2-2*sw3/sw+sw2*sw2/(sw*sw),ypy:ypy,ll:-0.5*(sl+Math.log(sw)+q)};
       }
-      var ybar = y.reduce(function (a, b) { return a + b; }, 0) / n;
-      var sVar = y.reduce(function (a, b) { return a + (b - ybar) * (b - ybar); }, 0) / Math.max(1, n - 1);
-      var hi = Math.max(1e-6, 100 * (sVar + Math.max.apply(null, v)));
-      // Golden-section maximisation on [lo, hi].
-      var gr = (Math.sqrt(5) - 1) / 2, lo = 0;
-      var a = lo, b = hi;
-      var c = b - gr * (b - a), dd = a + gr * (b - a);
-      var fc = llAt(c), fd = llAt(dd);
-      for (var it = 0; it < 200; it++) {
-        if (fc > fd) { b = dd; dd = c; fd = fc; c = b - gr * (b - a); fc = llAt(c); }
-        else { a = c; c = dd; fc = fd; dd = a + gr * (b - a); fd = llAt(dd); }
-        if (Math.abs(b - a) < 1e-12) break;
+      while(change>1e-5){
+        var old=t,z=at(t),adj=(z.ypy-z.tr)/z.tr2;
+        if(Number.isNaN(adj)) adj=0;
+        while(t+adj<0) adj/=2;
+        t+=adj;change=Math.abs(t-old);
+        if(++iter>100) throw new Error('Fisher scoring algorithm did not converge.');
       }
-      var t2hat = (a + b) / 2;
-      if (llAt(0) >= llAt(t2hat)) t2hat = 0; // boundary solution
-      var sw = 0, swy = 0;
-      for (var k = 0; k < n; k++) {
-        var w = 1 / (v[k] + t2hat);
-        sw += w; swy += w * y[k];
-      }
-      return { tau2: t2hat, est: swy / sw, se: Math.sqrt(1 / sw) };
+      if(t>1e-5 && at(0).ll-at(t).ll>Math.pow(Number.EPSILON,0.25)) t=0;
+      var fit=at(t);return {est:fit.est,se:fit.se,tau2:t};
     }
 
     function petersTest(rows) {
+      rows=rows.filter(function(r){return r.e1+r.e2>0 && r.e1+r.e2<r.n1+r.n2;});
+      if(rows.length<3) throw new Error("Insufficient informative rows.");
       if (!rows[0] || !rows[0].total) return null;
       // Peters et al. (2006): regress logOR on 1/(n1+n2), weighted by the inverse
       // variance of the average event probability — w = 1/(1/m_events + 1/m_nonevents)
@@ -514,6 +526,8 @@
     }
 
     function harbordTest(rows) {
+      rows=rows.filter(function(r){return r.e1+r.e2>0 && r.e1+r.e2<r.n1+r.n2;});
+      if(rows.length<3) throw new Error("Insufficient informative rows.");
       if (!rows[0] || !rows[0].total) return null;
       // Harbord et al. (2006): efficient score Z = a − E[a], information V.
       // Egger's test on the score-scale estimate (effect = Z/V, se = 1/√V) ⇒
@@ -561,6 +575,14 @@
     var _lastResults = null;
 
     function run() {
+      _lastResults = null;
+      try { runAnalysis(); }
+      catch (error) {
+        document.getElementById('body').textContent = 'Analysis unavailable: ' + error.message;
+      }
+    }
+
+    function runAnalysis() {
       var fmt_ = document.getElementById('format').value;
       var text = document.getElementById('src').value;
       var rows = fmt_ === 'te-se' ? parseTESE(text) : parseBinary(text);
@@ -603,11 +625,11 @@
 
       // Vevea-Hedges step-function selection model (publication-bias-adjusted mean).
       var sel = (window.AlmSelModel && rows.length >= 4)
-        ? window.AlmSelModel.fit(rows.map(function (r) { return r.te; }), rows.map(function (r) { return r.se * r.se; }), { steps: [0.025], method: 'REML' })
+        ? window.AlmSelModel.fit(rows.map(function (r) { return r.te; }), rows.map(function (r) { return r.se * r.se; }), { steps: [0.025], method: 'REML' } /* REML starting values only; selection fit and LRT use ML. */)
         : null;
       if (sel && isFinite(sel.mu)) {
         var selCls = (sel.LRTp < 0.05) ? 'bad' : 'ok';
-        body.innerHTML += '<tr><td><code>Selection model (Vevea-Hedges)</code></td><td>&#948;&#8322;=' + fmt(sel.delta[1], 3) + '</td><td>' + fmt(sel.LRTp, 3) + '</td><td>adjusted &#956;=' + fmt(sel.mu, 3) + ' (unadj ' + fmt(sel.unadjusted.mu, 3) + ')</td><td><span class="chip ' + selCls + '">' + (sel.LRTp < 0.05 ? 'evidence of selection' : 'no evidence') + '</span></td></tr>';
+        body.innerHTML += '<tr><td><code>Selection model (Vevea-Hedges, ML)</code><br><strong>experimental, not validated against metafor</strong></td><td>&#948;&#8322;=' + fmt(sel.delta[1], 3) + '</td><td>' + fmt(sel.LRTp, 3) + '</td><td>adjusted &#956;=' + fmt(sel.mu, 3) + ' (unadj ' + fmt(sel.unadjusted.mu, 3) + ')</td><td><span class="chip ' + selCls + '">' + (sel.LRTp < 0.05 ? 'evidence of selection' : 'no evidence') + '</span></td></tr>';
       }
 
       // Store for export
@@ -615,7 +637,8 @@
         _schema:    'pubbias-tests-results-v1',
         k:          rows.length,
         format:     fmt_,
-        egger_z:    egger.statistic,
+        egger_t:    egger.statistic,
+        egger_z:    egger.statistic, // Deprecated compatibility alias; this is a t statistic.
         egger_p:    egger.p,
         egger_b0:   egger.b0,
         egger_se_b0: egger.seB0,
