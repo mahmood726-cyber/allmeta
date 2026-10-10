@@ -101,9 +101,11 @@ def test_fit_handles_all_zero_treatment_arm():
           ok: r.ok, OR: r.OR, zeros: r.n_zero_cell_studies,
         }}));
     """)
-    assert out["ok"] is True
-    # All-zero treatment arms => OR < 1 (and probably small).
-    assert out["OR"] < 1
+    # Every treatment arm has zero events, so the likelihood has no finite maximum (complete
+    # separation; metafor::rma.glmm warns "fitted probabilities numerically 0 or 1"). The
+    # optimiser stops near log OR = -16 with no finite SE. That must be refused, not shown as a
+    # fit (this test used to assert ok=True, defending the defect fixed in #86).
+    assert out["ok"] is False
     assert out["zeros"] == 3
 
 
