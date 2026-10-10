@@ -66,6 +66,7 @@
     return ll;
   }
 
+  // ML's candidate iteration (REML uses the separate global search below).
   // (Restricted) maximum-likelihood τ² via the standard fixed-point update
   //   τ²_{n+1} = [ Σ w²((y−μ)² − v) (+ 1/Σw if restricted) ] / Σ w² ,  w=1/(v+τ²).
   // The bare iteration can boundary-trap (REML) or oscillate without converging
@@ -126,25 +127,135 @@
       var t = cands[j];
       if (t >= 0 && isFinite(t)) { var l = _tau2LogLik(yi, vi, t, restricted); if (l > bestLL + 1e-9) { bestLL = l; best = t; } }
     }
-    // With very unequal sampling variances, REML can have a boundary mode
-    // and a better interior mode even when DL and PM are both zero. Those
-    // candidates alone cannot escape the boundary (Pairwise70 CD006536).
-    // Scan positive scales before polishing the best likelihood candidate.
-    if (restricted && best === 0) {
-      var ymin = Math.min.apply(null, yi), ymax = Math.max.apply(null, yi);
-      var lower = Math.max(Math.min.apply(null, vi) * 1e-8, Number.MIN_VALUE);
-      var upper = (ymax - ymin) * (ymax - ymin) + Math.max.apply(null, vi);
-      var logLower = Math.log(lower), logUpper = Math.log(upper);
-      for (var g = 0; g < 64; g++) {
-        var candidate = Math.exp(logLower + (logUpper - logLower) * g / 63);
-        var candidateLL = _tau2LogLik(yi, vi, candidate, true);
-        if (candidateLL > bestLL + 1e-9) { bestLL = candidateLL; best = candidate; }
-      }
-    }
     return _tau2Polish(yi, vi, best, restricted);
   }
 
-  function tau2REML(yi, vi) { return _tau2Guarded(yi, vi, true); }
+  // REML must compare competing interior modes even if the first estimate is
+  // positive. A fixed log grid (or a single score bracket) cannot establish a
+  // global maximum. Bound the score on each interval and subdivide whenever a
+  // better likelihood remains possible. See docs/reml-global-validation.md.
+  function tau2REML(yi, vi) {
+    var k = yi.length, i, imin = 0, vmax = 0;
+    if (vi.length !== k) throw new RangeError("REML needs equally sized yi and vi arrays");
+    for (i = 0; i < k; i++) {
+      if (typeof yi[i] !== "number" || !isFinite(yi[i]) ||
+          typeof vi[i] !== "number" || !isFinite(vi[i]) || !(vi[i] > 0)) {
+        throw new RangeError("REML needs finite effects and strictly positive finite variances");
+      }
+      if (vi[i] < vi[imin]) imin = i;
+      if (vi[i] > vmax) vmax = vi[i];
+    }
+    if (k < 2) return 0;
+
+    // Centre at the most precise study and scale both y and v. This avoids
+    // overflow in squared weights and makes the search independent of units.
+    var scale = Math.sqrt(vmax), y = [], v = [], ybar = 0;
+    for (i = 0; i < k; i++) scale = Math.max(scale, Math.abs(yi[i] - yi[imin]));
+    for (i = 0; i < k; i++) {
+      y[i] = (yi[i] - yi[imin]) / scale;
+      v[i] = (vi[i] / scale) / scale;
+      if (!isFinite(y[i]) || !(v[i] > 0)) throw new RangeError("REML input range exceeds floating-point precision");
+      ybar += y[i];
+    }
+    ybar /= k;
+    var upper = 0, equalV = true;
+    for (i = 0; i < k; i++) {
+      upper += (y[i] - ybar) * (y[i] - ybar);
+      if (v[i] !== v[0]) equalV = false;
+    }
+    if (upper === 0) return 0;
+    function unscale(t) {
+      var result = t * scale * scale;
+      if (!isFinite(result)) throw new RangeError("REML variance exceeds floating-point range");
+      return result;
+    }
+    // Exact closed forms also preserve very small positive boundary solutions.
+    if (k === 2) return unscale(Math.max(0, ((y[0] - y[1]) * (y[0] - y[1]) - v[0] - v[1]) / 2));
+    if (equalV) return unscale(Math.max(0, upper / (k - 1) - v[0]));
+
+    // In orthogonal residual contrasts, the score is
+    // 1/2 sum_j [z_j^2/(lambda_j+t)^2 - 1/(lambda_j+t)].
+    // sum z_j^2 = upper; hence every term is negative for t >= upper.
+    // No maximum outside [0, upper] can beat the endpoint.
+    var evaluations = 0, weights = [], roundoff = 64 * Number.EPSILON * (k + 1);
+    function at(t) {
+      if (++evaluations > 100000) throw new RangeError("REML global likelihood search did not resolve");
+      var r = v[imin] + t, sw = 0, swy = 0, cross = 0, logdet = 0, j;
+      for (j = 0; j < k; j++) {
+        var w = r / (v[j] + t); weights[j] = w;
+        cross += sw * w; sw += w; swy += w * y[j];
+        // Cancel the most precise study's log(r) analytically in the REML
+        // determinant: sum log(v+t) + log(sum 1/(v+t)).
+        if (j !== imin) logdet += Math.log(v[j] + t);
+      }
+      var mu = swy / sw, rss = 0, a = 0;
+      for (j = 0; j < k; j++) {
+        var d = y[j] - mu;
+        rss += weights[j] * d * d;
+        a += weights[j] * weights[j] * d * d;
+      }
+      // a/r^2 = y'P^2 y, b/r = trace(P). The pair sum avoids cancellation
+      // in sum(w) - sum(w^2)/sum(w) for one overwhelmingly precise study.
+      var b = 2 * cross / sw;
+      return { t: t, ll: -0.5 * (logdet + Math.log(sw) + rss / r),
+               a: a, b: b, r: r, sign: a - b * r };
+    }
+    var boundary = at(0), best = boundary;
+    function take(p) {
+      if (p.ll > best.ll || (best.t === 0 && boundary.sign > 0 && p.t > 0 &&
+          p.ll >= best.ll - roundoff * Math.max(1, Math.abs(best.ll)))) best = p;
+    }
+    function polish(a, b) {
+      if (!(a.sign > 0 && b.sign < 0)) return;
+      // This bracket might contain several roots. Polishing supplies a
+      // candidate; the interval bounds still check the rest of the bracket.
+      for (var j = 0; j < 200; j++) {
+        var mid = a.t + (b.t - a.t) / 2;
+        if (mid === a.t || mid === b.t) break;
+        var m = at(mid);
+        if (m.sign > 0) a = m; else b = m;
+      }
+      take(at(a.t + (b.t - a.t) / 2));
+    }
+    // Geometric seeds cover all positive scales, including [0, min(v)].
+    // They are an acceleration only; interval refinement supplies the guard.
+    var points = [boundary], t = Math.min(v[imin], upper);
+    for (;;) {
+      var p = at(t); take(p); points.push(p);
+      if (t === upper) break;
+      t = Math.min(t * 2, upper);
+    }
+    var stack = [];
+    for (i = 0; i < points.length - 1; i++) {
+      polish(points[i], points[i + 1]);
+      stack.push([points[i], points[i + 1], true]);
+    }
+    while (stack.length) {
+      var interval = stack.pop(), a = interval[0], b = interval[1], width = b.t - a.t;
+      // A(t)=y'P(t)^2 y and B(t)=trace(P(t)) both decrease. Thus
+      // (A(b)-B(a))/2 <= score(t) <= (A(a)-B(b))/2.
+      // Express both bounds in units of b.r^2 to avoid squared tiny weights.
+      var ratio = b.r / a.r, neg = a.b * ratio * b.r, pos = a.a * ratio * ratio;
+      var sLo = b.a - neg, sHi = pos - b.b * b.r;
+      var slackLo = roundoff * (Math.abs(b.a) + Math.abs(neg));
+      var slackHi = roundoff * (Math.abs(pos) + Math.abs(b.b * b.r));
+      sLo -= slackLo; sHi += slackHi;
+      if (sLo > 0 || sHi < 0) continue; // monotone: an endpoint is best
+      var riseA = 0.5 * (width / b.r) * (Math.max(0, sHi) / b.r);
+      var riseB = 0.5 * (width / b.r) * (Math.max(0, -sLo) / b.r);
+      var bound = Math.min(a.ll + riseA + roundoff * (Math.abs(a.ll) + Math.abs(riseA)),
+                           b.ll + riseB + roundoff * (Math.abs(b.ll) + Math.abs(riseB)));
+      var tol = 1e-11 + roundoff * Math.max(k, Math.abs(best.ll));
+      if (bound <= best.ll + tol) continue;
+      if (!interval[2]) polish(a, b);
+      var mid = a.t + width / 2;
+      if (mid === a.t || mid === b.t) continue; // adjacent representable values
+      var m = at(mid); take(m);
+      // Refine new brackets if the first polish selected a different mode.
+      stack.push([a, m, false], [m, b, false]);
+    }
+    return unscale(best.t);
+  }
   function tau2ML(yi, vi) { return _tau2Guarded(yi, vi, false); }
 
   // Hedges (a.k.a. variance-component / "HE"): unweighted moment estimator.

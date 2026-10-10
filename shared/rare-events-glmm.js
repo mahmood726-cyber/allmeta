@@ -221,7 +221,7 @@
 
     var Z975 = 1.959963984540054;
     return {
-      ok: true,
+      ok: Number.isFinite(thetaHat) && Number.isFinite(seTheta) && Number.isFinite(tau2Hat),
       theta: thetaHat, se_theta: seTheta,
       tau2: tau2Hat, tau: tauHat,
       OR: Math.exp(thetaHat),
@@ -307,7 +307,8 @@
 
     // Seed from the conditional fit so we start near the optimum.
     var seed = fit(rowsIn, opts);
-    if (!seed.ok) return seed;
+    // The conditional fit is only an initializer; its SE is not used here.
+    if (!Number.isFinite(seed.theta) || !Number.isFinite(seed.tau)) return seed;
     var phi = [seed.theta, Math.log(Math.max(1e-6, seed.tau))];
 
     var fOf = function (p) {
@@ -354,7 +355,7 @@
 
     var Z975 = 1.959963984540054;
     return {
-      ok: true, model: "UM.FS",
+      ok: Number.isFinite(thetaHat) && Number.isFinite(seTheta) && Number.isFinite(tauHat), model: "UM.FS",
       theta: thetaHat, se_theta: seTheta,
       tau2: tauHat * tauHat, tau: tauHat,
       OR: Math.exp(thetaHat),

@@ -16,8 +16,8 @@
  * (μ, τ², δ₂…) by Nelder-Mead; SE from the inverse numerical Hessian; LRT vs the
  * unadjusted ML (δ all = 1).
  *
- * Verified vs metafor::selmodel(rma(method="ML"), type="stepfun", steps=0.025):
- *   μ=0.59722923 se=0.11093960 τ²=0.02598154 δ₂=0.599915 LRT χ²=0.326738 → ~1e-4.
+ * Experimental, not validated against metafor across the corpus.
+ * The numerical optimiser and Hessian remain approximate.
  *
  * Reference: Vevea JL, Hedges LV (1995), Psychometrika 60:419-435.
  */
@@ -107,6 +107,7 @@
     return { x: simplex[0], f: fv[0] };
   }
 
+  // Experimental ML fit; opts.method controls starting values only.
   // Fit. opts: { steps:[0.025], method:'ML' (τ² estimator for the unadjusted ref) }.
   // Returns { mu, se, tau2, delta:[1,...], LRT, LRTdf, LRTp, unadjusted:{mu,tau2} }.
   function fit(yi, vi, opts) {
@@ -120,11 +121,11 @@
     // Parameterise: [μ, log τ², log δ_2 ...]. Objective in that space.
     function unpack(x) {
       var mu = x[0], tau2 = Math.exp(x[1]);
-      var delta = [1]; for (var d = 0; d < nDelta; d++) delta.push(Math.exp(x[2 + d]));
+      var delta = [1]; for (var d = 0; d < nDelta; d++) delta.push(100 / (1 + Math.exp(-x[2 + d])));
       return { mu: mu, tau2: tau2, delta: delta };
     }
     function obj(x) { var u = unpack(x); return _negLL(yi, vi, steps, u.mu, u.tau2, u.delta); }
-    var x0 = [mu0, Math.log(t20)]; for (var d = 0; d < nDelta; d++) x0.push(0);
+    var x0 = [mu0, Math.log(t20)]; for (var d = 0; d < nDelta; d++) x0.push(Math.log(1 / 99));
     var opt = _nelderMead(obj, x0, { step: 0.3, maxit: 6000 });
     // polish with a tighter restart
     opt = _nelderMead(obj, opt.x, { step: 0.05, maxit: 6000 });

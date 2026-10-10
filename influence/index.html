@@ -177,8 +177,8 @@
       // regime, and metafor::rma.uni's default is REML, so this is also the
       // alignment that lets the R-parity test pass.
       //
-      // REML implementation: Fisher scoring iteration with PM start.  Same
-      // algorithm and convergence tolerance as the heterogeneity engine.
+      // REML delegates to the shared global profile-likelihood search, including
+      // competing boundary and interior modes (as in the heterogeneity app).
       // Paule-Mandel τ² via the audited single-source core (shared/ma-core.js).
       function tau2_PM(rows) {
         return rows.length < 2 ? 0 : window.AlmMaCore.tau2PM(rows.map(r => r.te), rows.map(r => r.se * r.se));
