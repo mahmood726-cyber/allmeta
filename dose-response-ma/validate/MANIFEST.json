@@ -1,0 +1,48 @@
+{
+  "schema": "alm-validation-manifest-v1",
+  "sourceRepo": "https://github.com/mahmood726-cyber/dose-response-ma-reproducible",
+  "doi": "10.5281/zenodo.23135712",
+  "validatedPackages": {
+    "dosresmeta": "2.2.0"
+  },
+  "files": [
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "38f0664a43d8b39fe7ec50eea04b26d62d7f62092e5625f4539388a85c5a5186",
+      "bytes": 1145422
+    },
+    {
+      "path": "validate/corpus/paper_values.json",
+      "sha256": "6389020bc6bc4e007cb381560333a3ca6b8fb95af590120b4686601a102a0118",
+      "bytes": 2365
+    }
+  ],
+  "sources": [
+    {
+      "path": "results/full/corpus.csv",
+      "sha256": "fcaecb2867adb685e25da1b34e908b55842f3f4a1f369c081cd04bb5db19b8b0"
+    },
+    {
+      "path": "results/full/dosresmeta.jsonl",
+      "sha256": "8e1228aa766230e80ab923bd19a72b237bd32a21cef18864e472756aec01360b"
+    },
+    {
+      "path": "expected/paper_values.json",
+      "sha256": "9d20eb33adf898e231a8dd2fc634262a47f31a7d4fd92d235671a883615ba8fc"
+    },
+    {
+      "path": "analysis/make_outputs.py",
+      "sha256": "422ca852debc869a754f4e21c8635080fec5c9f738dfc39a4950707ea988819b"
+    },
+    {
+      "path": "bench/reference_dosresmeta.R",
+      "sha256": "6d5c6946f8b5ce7b2c555a0c0537895a9133b1f14bb6c8b1ef2020f9ab6b5d9d"
+    },
+    {
+      "path": "bench/run_engine.mjs",
+      "sha256": "a2bac2f04608ed4092aa8c38c8625ec90f014df453a56fbcc7519438ee27badc"
+    }
+  ],
+  "transform": "CSV numeric fields parsed without rounding; whole studies with missing cases/n excluded exactly as bench/run_engine.mjs; study covariates from dosresmeta.jsonl. All R fits retained, including the empty dataset. No engine reference results used as app output.",
+  "dataDirectory": "Source data/ has no files; canonical corpus is results/full/corpus.csv."
+}
