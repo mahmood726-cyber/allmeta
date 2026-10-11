@@ -6857,63 +6857,44 @@ S4,DrugC,35,1.02,0.16`;
     return quantiles;
   }
 
-  // Prepare data for residual plot
+  // Adapt the current dose-response fit to diagnostics. The former adapter
+  // expected pooled-meta-analysis fields absent from computeStats(). Use the
+  // same fitted values and variance convention as computeStdResidualSummary.
   function prepareResidualPlotData(stats) {
+    const treatments = new Set(stats.map(stat => stat.treatment));
     const plotData = [];
-
-    for (const stat of stats) {
-      if (!stat.effects || !stat.variances || stat.pooledEffect === undefined) continue;
-
-      const residuals = computeStandardizedResiduals(
-        stat.effects,
-        stat.variances,
-        stat.pooledEffect,
-        stat.tau2 || 0
-      );
-
-      for (const r of residuals) {
-        plotData.push({
-          treatment: stat.treatment,
-          fitted: stat.pooledEffect,
-          residual: r.standardized,
-          weight: r.weight
-        });
-      }
+    for (const point of state.data) {
+      if (!treatments.has(point.treatment)) continue;
+      const fit = state.fits[point.treatment];
+      if (!fit) continue;
+      const fitted = predictModel(fit, point.dose);
+      const variance = point.weight > 0 ? 1 / point.weight : 1;
+      const tau2 = Number.isFinite(state.tau2ByTreatment[point.treatment])
+        ? state.tau2ByTreatment[point.treatment] : 0;
+      const totalVariance = variance + tau2;
+      if (!Number.isFinite(fitted) || !Number.isFinite(point.value)
+          || !Number.isFinite(totalVariance) || totalVariance <= 0) continue;
+      plotData.push({
+        treatment: point.treatment,
+        study: point.study,
+        dose: point.dose,
+        observed: point.value,
+        fitted,
+        variance: totalVariance,
+        residual: (point.value - fitted) / Math.sqrt(totalVariance),
+        weight: 1 / totalVariance
+      });
     }
-
     return plotData;
   }
 
-  // Prepare data for Q-Q plot
   function prepareQQPlotData(stats) {
-    const allResiduals = [];
-
-    for (const stat of stats) {
-      if (!stat.effects || !stat.variances || stat.pooledEffect === undefined) continue;
-
-      const residuals = computeStandardizedResiduals(
-        stat.effects,
-        stat.variances,
-        stat.pooledEffect,
-        stat.tau2 || 0
-      );
-
-      allResiduals.push(...residuals.map(r => ({
-        treatment: stat.treatment,
-        value: r.standardized
-      })));
-    }
-
-    // Sort residuals
-    allResiduals.sort((a, b) => a.value - b.value);
-
-    // Compute theoretical quantiles
-    const theoretical = computeTheoreticalQuantiles(allResiduals.length);
-
-    return allResiduals.map((r, i) => ({
+    const residuals = prepareResidualPlotData(stats).sort((a, b) => a.residual - b.residual);
+    const theoretical = computeTheoreticalQuantiles(residuals.length);
+    return residuals.map((r, i) => ({
       treatment: r.treatment,
       theoretical: theoretical[i],
-      sample: r.value
+      sample: r.residual
     }));
   }
 
@@ -20481,6 +20462,10 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
   window.NMAStudio = {
     runAnalysisFromInput,
+    // Read-only plotting adapter, exposed alongside the existing test utilities.
+    getDiagnosticPlotData(type = 'residual') {
+      return type === 'qq' ? prepareQQPlotData(state.lastStats) : prepareResidualPlotData(state.lastStats);
+    },
     // Statistical utilities
     StatUtils,
 

@@ -82,18 +82,59 @@ for (const width of [1280, 390]) {
       });
     }
 
-    test('NMA Dose-Response: Run opens real plots and all five chart tabs repaint', async ({ page }) => {
+    test('NMA Dose-Response: actual analysis owns all five canvases, including residual and QQ diagnostics', async ({ page }) => {
       test.setTimeout(60000);
+      await page.addInitScript(() => {
+        window.__plotText = [];
+        window.__badCanvasPoints = [];
+        const text = CanvasRenderingContext2D.prototype.fillText;
+        CanvasRenderingContext2D.prototype.fillText = function (value, ...args) {
+          window.__plotText.push({ id: this.canvas.id, text: String(value) });
+          return text.call(this, value, ...args);
+        };
+        const arc = CanvasRenderingContext2D.prototype.arc;
+        CanvasRenderingContext2D.prototype.arc = function (...args) {
+          if (args.slice(0, 5).some(x => !Number.isFinite(x))) window.__badCanvasPoints.push({ id: this.canvas.id, args });
+          return arc.apply(this, args);
+        };
+      });
       await page.goto('/nma-dose-response-app/index.html', { waitUntil: 'load' });
       await page.waitForFunction(() => !!window._nmaState?.wasm && window._nmaState.lastStats?.length > 0);
       await dismissTutorial(page);
       await page.locator('#runAnalysis').click();
       await expect(page.locator('#chartsPanel')).not.toHaveClass(/hidden/);
-      await expect(page.getByText('Analysis engine loading... please try again.', { exact: true })).toHaveCount(0);
+      const before = await page.evaluate(() => JSON.stringify(_nmaState.lastStats));
       for (const [tab, id] of [['dose','doseChart'],['rank','rankChart'],['network','networkChart'],['bias','biasChart'],['diagnostics','diagnosticsChart']]) {
         await page.locator('#chartTabs [data-tab-button="' + tab + '"]').click();
         await canvasHasInk(page, id);
+        // Populated pixels alone are insufficient: a competing demo instance can
+        // otherwise repaint these canvases on animation, hover or resize.
+        expect(await page.locator('#' + id).evaluate(el => !!el.chartInstance || !!window.Chart?.getChart(el))).toBe(false);
       }
+      await expect.poll(() => page.evaluate(() => __plotText.filter(p => p.id === 'diagnosticsChart').map(p => p.text))).toContain('Residuals vs Fitted');
+      const residuals = await page.evaluate(() => NMAStudio.getDiagnosticPlotData());
+      expect(residuals.length).toBeGreaterThan(0);
+      for (const point of residuals) {
+        expect(point.residual).toBeCloseTo((point.observed - point.fitted) / Math.sqrt(point.variance), 12);
+      }
+      await page.locator('#diagnosticPlotSelect').selectOption('qq');
+      await canvasHasInk(page, 'diagnosticsChart');
+      await expect.poll(() => page.evaluate(() => __plotText.filter(p => p.id === 'diagnosticsChart').map(p => p.text))).toContain('Normal Q-Q Plot');
+      const qq = await page.evaluate(() => NMAStudio.getDiagnosticPlotData('qq'));
+      expect(qq.map(p => p.sample)).toEqual(residuals.map(p => p.residual).sort((a, b) => a - b));
+      expect(qq.every(p => Number.isFinite(p.theoretical))).toBe(true);
+      expect(await page.evaluate(() => JSON.stringify(_nmaState.lastStats))).toBe(before);
+      expect(await page.evaluate(() => __plotText.filter(p => /\(Demo\)/.test(p.text)))).toEqual([]);
+      expect(await page.evaluate(() => __badCanvasPoints)).toEqual([]);
+      // A second analysis must show the new input's treatment, not old/demo labels.
+      await page.locator('#csvInput').fill((await page.locator('#csvInput').inputValue()).replaceAll('DrugA', 'AuditTreatment'));
+      await page.locator('#runAnalysis').click();
+      await page.evaluate(() => { window.__plotText = []; });
+      await page.locator('#chartTabs [data-tab-button="network"]').click();
+      await expect.poll(() => page.evaluate(() => __plotText.filter(p => p.id === 'networkChart').map(p => p.text))).toContain('AuditTreatment');
+      expect(await page.evaluate(() => NMAStudio.getDiagnosticPlotData().some(p => p.treatment === 'AuditTreatment'))).toBe(true);
+      await page.locator('#chartTabs [data-tab-button="diagnostics"]').click();
+      await canvasHasInk(page, 'diagnosticsChart');
     });
 
     test('Dose Response Pro: live, main and bias plots survive saved-session reload', async ({ page }) => {
