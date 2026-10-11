@@ -20463,7 +20463,24 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
   // GLOBAL EXPORTS FOR TESTING
   // Expose key classes and utilities to window for validation and testing
   // ============================================================================
+  // Public UI entry point: keep parsing and analysis in the engine closure.
+  function runAnalysisFromInput() {
+    if (!state.wasm) return { ok: false, message: 'Analysis engine is still loading.' };
+    const parsed = parseCSV(dom.csvInput.value);
+    if (!parsed.length) return { ok: false, message: 'CSV parse failed. Check headers.' };
+    state.rawData = parsed;
+    state.lastStats = [];
+    state.lastCurves = [];
+    updateAnalysis();
+    if (!state.lastStats || !state.lastStats.length) {
+      return { ok: false, message: 'No valid comparisons were available for plotting. Check the input data.' };
+    }
+    setStatus(`Parsed ${parsed.length} rows.`);
+    return { ok: true };
+  }
+
   window.NMAStudio = {
+    runAnalysisFromInput,
     // Statistical utilities
     StatUtils,
 

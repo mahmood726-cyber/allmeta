@@ -5019,33 +5019,31 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
     document.addEventListener('DOMContentLoaded', function() {
       // Run Analysis button - main action button
       document.getElementById('runAnalysis')?.addEventListener('click', function() {
-        showNotification('Running analysis...', 'info');
-
-        // First parse the CSV if there's data
         const csvInput = document.getElementById('csvInput');
-        if (csvInput && csvInput.value.trim()) {
-          // Trigger parse first
-          const parseBtn = document.getElementById('parseCsv');
-          if (parseBtn) parseBtn.click();
-
-          // Then trigger updateAnalysis from app.js after a short delay
-          setTimeout(() => {
-            if (typeof updateAnalysis === 'function') {
-              updateAnalysis();
-              showNotification('Analysis complete! Check the Charts panel.', 'success');
-              // Show the charts panel
-              const chartsPanel = document.getElementById('chartsPanel');
-              if (chartsPanel) {
-                chartsPanel.classList.remove('hidden');
-                const btn = document.getElementById('chartsToggleBtn');
-                if (btn) btn.classList.remove('visible');
-              }
-            } else {
-              showNotification('Analysis engine loading... please try again.', 'warning');
-            }
-          }, 500);
-        } else {
+        if (!csvInput || !csvInput.value.trim()) {
           showNotification('Please enter or load CSV data first', 'warning');
+          return;
+        }
+        const run = window.NMAStudio && window.NMAStudio.runAnalysisFromInput;
+        if (typeof run !== 'function') {
+          showNotification('Analysis engine is still loading.', 'warning');
+          return;
+        }
+        try {
+          const result = run();
+          if (!result.ok) {
+            showNotification(result.message, 'warning');
+            return;
+          }
+          document.getElementById('chartsPanel')?.classList.remove('hidden');
+          document.getElementById('chartsToggleBtn')?.classList.remove('visible');
+          // Activate after revealing: the chart renderer now sees its true dimensions.
+          const activeTab = document.querySelector('#chartTabs [data-tab-button].active');
+          (activeTab || document.querySelector('#chartTabs [data-tab-button="dose"]'))?.click();
+          showNotification('Analysis complete! Check the Charts panel.', 'success');
+        } catch (error) {
+          console.error('Analysis failed:', error);
+          showNotification('Analysis failed. Check the input data and try again.', 'error');
         }
       });
 

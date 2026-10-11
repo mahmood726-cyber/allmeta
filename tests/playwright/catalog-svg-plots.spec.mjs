@@ -69,10 +69,11 @@ const cases = [
   ['multivariate-ma/index.html', [], ['#plot-host svg']],
 ];
 
+test.use({ screenshot: 'only-on-failure' });
 test.describe.configure({ mode: 'parallel' });
 for (const width of [1280, 390]) {
   test.describe(`Catalogue SVG at ${width}px`, () => {
-    test.use({ viewport: { width, height: 900 }, screenshot: 'only-on-failure' });
+    test.use({ viewport: { width, height: 900 } });
     for (const [path, actions, plots] of cases) {
       test(path, async ({ page }) => {
         const errors = [];

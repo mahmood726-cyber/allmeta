@@ -8,6 +8,8 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('truthcert_visited', 'true');
     localStorage.setItem('nma-quickstart-dismissed', 'true');
+    localStorage.setItem('nma_wizard_completed', 'true');
+    localStorage.setItem('nma_tutorial_completed', 'true');
     localStorage.setItem('hta_tutorial_seen', 'true');
   });
 });
@@ -36,7 +38,7 @@ async function plotlyHasData(page, id) {
   await expect.poll(() => plot.evaluate(e => e.data?.length || 0)).toBeGreaterThan(0);
 }
 async function pairwisePlots(page) {
-  for (const [tab, id] of [['analysis', 'forestPlot'], ['heterogeneity', 'baujatPlot'], ['bias', 'funnelPlot']]) {
+  for (const [tab, id] of [['analysis', 'forestPlot'], ['heterogeneity', 'funnelPlot'], ['bias', 'baujatPlot']]) {
     await page.locator('.tab-btn[data-tab="' + tab + '"]').click();
     await plotlyHasData(page, id);
   }
