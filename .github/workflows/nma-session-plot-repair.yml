@@ -1,0 +1,75 @@
+name: NMA session plot repair (temporary branch only)
+
+on:
+  push:
+    branches: [fix/nma-session-plots-20261011]
+    paths: [.github/workflows/nma-session-plot-repair.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/nma-session-plots-20261011
+      - name: Apply exact, hash-guarded redraw-only repair
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p = Path('nma-pro-v2/nma-pro-v8.0.html')
+          raw = p.read_bytes()
+          def blob(data):
+              return hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()
+          assert blob(raw) == '2761a50a577fa7fd1c3997148d55f47c5295743b', 'Source changed: review before applying'
+          text = raw.decode('utf-8')
+          start = text.index('function refreshAllPlots()')
+          end = text.index('\nfunction restoreLoadedAnalysisState()', start)
+          redraw = text[start:end]
+          for old, new in [
+              ('renderForestPlot(r);', 'renderForestPlot(r);renderCaterpillarPlot(r);'),
+              ('renderRankogram(AppState.ranking);', 'renderRankogram(AppState.ranking);renderSUCRACurves(AppState.ranking);')
+          ]:
+              assert redraw.count(old) == 1
+              redraw = redraw.replace(old, new)
+          redraw = '// Redraw saved results without refitting; include both cumulative and classic ranking plots.\n' + redraw
+          patched = (text[:start] + redraw + text[end:]).encode('utf-8')
+          assert blob(patched) == '6f4e9bc3be4adda51edfd2e7057d13f8292e19bd'
+          p.write_bytes(patched)
+          PY
+          git diff --check
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/playwright/package-lock.json
+      - run: npm ci
+        working-directory: tests/playwright
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - name: Run six real-browser save/reopen and redraw regressions
+        run: npx playwright test nma-pro-session-plots.spec.mjs --reporter=list,json
+        working-directory: tests/playwright
+        env:
+          CI: 'true'
+      - name: Commit tested repair to the fix branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add nma-pro-v2/nma-pro-v8.0.html
+          git commit -m 'fix(nma-pro): restore caterpillar, SUCRA and classic rankogram plots'
+          git push origin HEAD:fix/nma-session-plots-20261011
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nma-session-plot-regressions
+          path: |
+            tests/playwright/artifacts/
+            tests/playwright/test-results/
+          if-no-files-found: warn
+          retention-days: 7
