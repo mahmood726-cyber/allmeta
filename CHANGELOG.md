@@ -16,6 +16,30 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.2.2] — 2026-10-11
+
+One-click validation against R for the five apps validated in the F1000Research Software Tool Articles
+(Screen, dose-response, DTA SROC, NMA, heterogeneity) (#91). See `VALIDATION-BUTTONS.md`.
+
+### Added
+- **Validate this analysis in R** (live): runs the reference R package on the user's current data in the browser
+  (webR 0.5.5, R 4.5.1) and shows app vs R, difference, tolerance and PASS/FAIL, with the R, webR and package
+  versions (and the paper's version where it differs): metafor 4.8-0 (heterogeneity; paper 5.2-1), dosresmeta
+  2.2.0, mada 0.5.12, netmeta 3.4-0 (NMA; paper 3.7-0). Screen has no R oracle (its comparator, ASReview, is
+  Python); its button says so and links to the reproducible repository.
+- **Re-run full validation** (corpus): replays each paper's published corpus through the app's own code against
+  the stored reference values (SHA-256 pinned; refused on mismatch), offline, reproducing the paper's count:
+  heterogeneity 131,781; dose-response 724 combinations; DTA 855; NMA 410; Screen 29 comparisons over 190
+  simulations. Links to the GitHub Actions run and Codespaces for full R re-execution.
+- 32 webR package binaries vendored in `r-shiny/shinylive/webr/repo/` with SHA-256 pins, installed only from the
+  page's own origin (no unpinned CDN).
+
+### Changed
+- `shared/webr-runner.js`: generic `runR`; pinned same-origin package repository; the unpinned
+  `webr.r-wasm.org/latest` fallback is removed.
+
+---
+
 ## [1.2.1] — 2026-10-10
 
 Release containing the app versions validated in four further F1000Research Software Tool Articles,
