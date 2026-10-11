@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './validation-fixture.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
@@ -27,8 +27,8 @@ async function open(page, baseURL) {
   await page.waitForFunction(() => !!window.AlmDoseValidate);
   return outside;
 }
-const corpusButton = page => page.locator('#alm-validate').getByRole('button', { name: /corpus|paper|published|tier\s*2/i }).first();
-const liveButton = page => page.locator('#alm-validate').getByRole('button', { name: /live|current|tier\s*1|with R|against R/i }).first();
+const corpusButton = page => page.locator('#alm-validate').getByRole('button', { name: /full validation|corpus|paper|published|tier\s*2/i }).first();
+const liveButton = page => page.locator('#alm-validate').getByRole('button', { name: /this analysis in R|live|current|tier\s*1|with R|against R/i }).first();
 
 test('dose corpus hashes and direct offline replay reproduce every paper combination', async ({ page, context, baseURL }) => {
   test.setTimeout(120_000);
@@ -119,15 +119,10 @@ for (const shape of ['linear', 'spline3']) {
     await liveButton(page).click();
     const panel = page.locator('#alm-validate');
     await expect(panel).toContainText(/PASS|R check available via the reproducible repo/, { timeout: 165_000 });
-    if ((await panel.innerText()).includes('R check available via the reproducible repo')) {
-      await expect(panel.getByRole('link').filter({ hasText: /repo|reproduc/i }).first()).toHaveAttribute('href', /dose-response-ma-reproducible/);
-    } else {
-      const rows = panel.locator('table tbody tr');
-      expect(await rows.count()).toBeGreaterThan(10);
-      for (const row of await rows.all()) await expect(row).toContainText('PASS');
-      await expect(panel).not.toContainText(/\bFAIL\b/);
-      await expect(panel).toContainText('2.2.0');
-    }
+    const rows = panel.locator('table tbody tr');
+    expect(await rows.count()).toBeGreaterThan(10);
+    for (const row of await rows.all()) await expect(row.locator('td').last()).toHaveText('PASS');
+    await expect(panel).toContainText('2.2.0');
     expect(outside).toEqual([]);
   });
 }

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './validation-fixture.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -87,8 +87,8 @@ test('NMA live script snapshots current smoking cessation options', async ({page
 test('NMA smoking cessation live R @slow', async ({page}) => {
   test.setTimeout(180_000);
   test.skip(!framework, 'Shared validation framework has not been integrated');
-  // Run with a server bound to 127.0.0.1:8000, including the vendored webR repository.
-  const origin='http://127.0.0.1:8000';
+  // Run with a server bound to localhost:8088, including the vendored webR repository.
+  const origin='http://localhost:8088';
   const external=watch(page,origin);
   await page.goto(origin+'/nma/index.html');
   await page.selectOption('#f-example','smokingcessation');
@@ -97,11 +97,8 @@ test('NMA smoking cessation live R @slow', async ({page}) => {
   await widget.getByRole('button',{name:'Validate this analysis in R'}).click();
   await expect(widget.getByRole('status')).toHaveText(/live R quantities passed\.|Validation refused:/,{timeout:170_000});
   const status=await widget.getByRole('status').innerText();
-  if(status.startsWith('Validation refused:')) {
-    // Only explicit infrastructure unavailability is acceptable, never a numerical or R-script error.
-    expect(status).toMatch(/unavailable|not supported|system\(\).*unsupported under Emscripten|not reachable|Cannot (fetch|read)|HTTP 404|Failed to fetch/i);
-    await expect(widget.locator('tbody tr')).toHaveCount(0);
-  } else {
+  expect(status).not.toContain('Validation refused:');
+  {
     const rows=widget.locator('tbody tr');
     expect(await rows.count()).toBeGreaterThan(20);
     for(const row of await rows.all()) await expect(row.locator('td').last()).toHaveText('PASS');

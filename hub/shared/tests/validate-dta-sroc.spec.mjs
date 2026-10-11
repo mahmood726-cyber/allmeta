@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './validation-fixture.mjs';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const root = new URL('../../../', import.meta.url);
@@ -17,8 +17,8 @@ async function widget(page) {
  await expect(mount.getByRole('button')).toHaveCount(2);
  return mount;
 }
-const corpusButton = mount => mount.getByRole('button').filter({hasText:/paper|corpus|published/i});
-const liveButton = mount => mount.getByRole('button').filter({hasText:/current|live|\bR\b/i}).filter({hasNotText:/paper|corpus|published/i});
+const corpusButton = mount => mount.getByRole('button').filter({hasText:/full validation|paper|corpus|published/i});
+const liveButton = mount => mount.getByRole('button').filter({hasText:/current|live|\bR\b/i}).filter({hasNotText:/full validation|paper|corpus|published/i});
 
 test('DTA verified corpus reproduces all 855 checks offline using shipped engine', async ({page,context})=>{
  const external=await open(page);
@@ -36,7 +36,7 @@ test('DTA validation buttons render and corpus widget passes without off-origin 
  await corpusButton(mount).click();
  await expect(mount).toContainText(/855/, {timeout:60000});
  await expect(mount).toContainText(/PASS/,{timeout:60000});
- await expect(mount).not.toContainText(/\bFAIL\b/);
+ await expect(mount.locator('tbody')).not.toContainText(/\bFAIL\b/);
  expect(external).toEqual([]);
 });
 
@@ -57,14 +57,8 @@ test('DTA AuditC current-data mada check @slow',async({page})=>{
  await page.selectOption('#f-example','AuditC');await page.click('#btn-example');
  const mount=await widget(page);await liveButton(mount).click();
  await expect(mount).toContainText(/PASS|unavailable|not available|cannot load|failed to load/i,{timeout:170000});
- const text=await mount.innerText();
- if(/unavailable|not available|cannot load|failed to load/i.test(text)) {
-  expect(text).toMatch(/R|webR|mada|package/);
- } else {
-  expect(text).not.toMatch(/\bFAIL\b/);
-  expect(text).toContain('0.5.12');
-  const rows=mount.locator('tbody tr');expect(await rows.count()).toBeGreaterThanOrEqual(20);
-  for(const row of await rows.all())await expect(row).toContainText('PASS');
- }
+ await expect(mount).toContainText('0.5.12');
+ const rows=mount.locator('tbody tr');expect(await rows.count()).toBeGreaterThanOrEqual(20);
+ for(const row of await rows.all())await expect(row.locator('td').last()).toHaveText('PASS');
  expect(external).toEqual([]);
 });

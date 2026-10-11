@@ -17,19 +17,16 @@ const adapter=window.ScreenValidationAdapter={
  repoUrl:repo,runUrl:repo+'/actions/workflows/reproduce.yml',
  codespacesUrl:'https://codespaces.new/mahmood726-cyber/screen-reproducible?quickstart=1'},
  live:null,
- corpus:{files:[],mode:'full',run,loadFiles}
+ corpus:{files:[],mode:'full',quickChecks:4,rawFiles:true,fileAccept:'.json,.gz',run,loadFiles}
 };
 async function loadFiles(){
  await adapter.ready;
- if(location.protocol==='file:'){
-  if(!window.ScreenValidationFiles) await script('corpus/offline.js');
-  return window.ScreenValidationFiles;
- }
+ if(location.protocol==='file:')throw Error('Select the 19 benchmark .csv.gz files and reference.json in the validation file picker.');
  const files={};
  for(const f of adapter.corpus.files){
-  const r=await fetch(new URL('../'+f.path,base));
+  const r=await fetch(new URL('../'+f.path,base),{redirect:'error'});
   if(!r.ok)throw Error('Cannot load '+f.path+': HTTP '+r.status);
-  files[f.path]=await r.text();
+  files[f.path]=await r.arrayBuffer();
  }
  return files;
 }
@@ -37,20 +34,36 @@ async function verified(files,f){
  let raw=files instanceof Map?files.get(f.path):files[f.path];
  if(raw===undefined)throw Error('Missing corpus file: '+f.path);
  if(raw&&typeof raw==='object'&&!(raw instanceof ArrayBuffer)&&!ArrayBuffer.isView(raw))raw=JSON.stringify(raw);
- const bytes=typeof raw==='string'?new TextEncoder().encode(raw):new Uint8Array(raw);
+ const bytes=typeof raw==='string'?new TextEncoder().encode(raw):ArrayBuffer.isView(raw)?new Uint8Array(raw.buffer,raw.byteOffset,raw.byteLength):new Uint8Array(raw);
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
  if(hash!==f.sha256)throw Error('SHA-256 mismatch: '+f.path+'; validation refused');
- return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+ return f.path.endsWith('.gz')?bytes:JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
 }
-async function unpack(data){
- if(data.encoding!=='gzip-base64-json')throw Error('Unsupported corpus encoding');
- const packed=Uint8Array.from(atob(data.records),c=>c.charCodeAt(0));
- const stream=new Blob([packed]).stream().pipeThrough(new DecompressionStream('gzip'));
- const rows=JSON.parse(await new Response(stream).text());
- if(rows.length!==data.metadata.n||rows.reduce((n,r)=>n+r[2],0)!==data.metadata.relevant||
- rows.some(r=>r.length!==3||typeof r[0]!=='string'||typeof r[1]!=='string'||![0,1].includes(r[2])))
- throw Error('Corpus schema/count mismatch: '+data.metadata.id);
- return rows.map((r,i)=>({id:'r'+i,title:r[0],abstract:r[1],keywords:[],gold:r[2]}));
+function parseCSV(text) {
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(cur); cur = ""; }
+    else if (c === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
+    else if (c === "\r") { /* skip */ }
+    else cur += c;
+  }
+  if (cur.length || row.length) { row.push(cur); rows.push(row); }
+  if(q)throw Error('Unclosed CSV quote');
+  const header = rows.shift().map((h) => h.trim());
+  if(!['title','abstract','label_included'].every(h=>header.includes(h)))throw Error('Missing corpus CSV columns');
+  return rows.filter((r) => r.length > 1).map((r) => { const o = {}; header.forEach((h, i) => (o[h] = r[i] ?? "")); return o; });
+}
+async function unpack(bytes,metadata){
+ const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+ const text=new TextDecoder('utf-8',{fatal:true}).decode(await new Response(stream).arrayBuffer());
+ const rows=parseCSV(text);
+ const records=rows.map((r,i)=>({id:'r'+i,title:r.title||'',abstract:r.abstract||'',keywords:[],gold:String(r.label_included).trim()==='1'?1:0}));
+ if(records.length!==metadata.n||records.reduce((n,r)=>n+r.gold,0)!==metadata.relevant)
+ throw Error('Corpus schema/count mismatch: '+metadata.id);
+ return records;
 }
 async function run(files,onProgress){
  if(busy)throw Error('A Screen validation is already running');
@@ -85,7 +98,7 @@ async function run(files,onProgress){
   }
   update('Running '+mode);await pause();
   for(const id of ids){
-   const records=await unpack(checked['validate/corpus/'+id+'.json']),values=[];
+   const records=await unpack(checked['../benchmark/data/corpora/'+id+'.csv.gz'],ref.datasets.find(d=>d.id===id)),values=[];
    for(const rngSeed of seeds){
     const out=window.__almScreenpro.simulateActiveLearning({records,batch:1,rngSeed,buscar:true});
     if(!out||!out.ok||!Number.isFinite(out.wss95))throw Error('Simulation refused: '+id+' seed '+rngSeed);

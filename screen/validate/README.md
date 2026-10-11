@@ -7,7 +7,7 @@ row order, titles, abstracts and labels. The protocol is
 both classes forced present, then per-record retraining. Seeds are
 101, 202, 303, 404, 505, 606, 707, 808, 909 and 1010.
 
-Full mode runs 19 datasets ? 10 seeds = 190 simulations. Available published
+Full mode runs 19 datasets x 10 seeds = 190 simulations. Available published
 references support 29 comparisons: 19 WSS@95 dataset means and ten summaries
 (WSS mean, median, minimum, maximum, Cohen mean, SYNERGY mean, three recall percentages and the number of datasets where Buscar never fired).
 **190 is not a count of independently reference-checked results.**
@@ -33,18 +33,25 @@ quick mode). Half the decimal unit is displayed as the tolerance, but the exact
 rounding decision controls PASS/FAIL. A universal 1e-6 comparison would be
 invalid for references supplied only to three decimal places.
 
-Every packaged corpus file has a SHA-256 in `MANIFEST.json` and `pins.js`.
-The original uncompressed CSV hashes were verified against the source
-`data/SHA256SUMS` before packaging; record and positive-label counts were checked
-against the source corpus manifest. Each JSON holds losslessly gzipped,
-base64-encoded JSON arrays of [title, abstract, label]. Compression is storage,
-not a model transformation.
+Tier 2 reuses the 19 existing `../../benchmark/data/corpora/*.csv.gz` files.
+`MANIFEST.json` and `pins.js` pin the compressed bytes by SHA-256; the
+`corpus/reference.json` pin is unchanged. Hashes are checked before decompression
+or any simulation. `DecompressionStream('gzip')` decompresses the CSV; parsing
+preserves quoted commas, escaped quotes, embedded newlines, row order, titles,
+abstracts and the benchmark's trimmed `label_included === '1'` mapping.
+Missing files, changed bytes, missing columns and mismatched counts are refused.
 
-The adapter rechecks all file hashes before any simulation, even if the shared
-widget already checked them. Missing files, malformed datasets and altered bytes
-are refused. `corpus/offline.js` is a file-URL transport of exactly the same JSON
-strings, verified with the same pins. HTTP mode fetches same-origin files only.
-No remote resources, Python service or R package are used.
+Before deleting the duplicate JSON datasets and `offline.js`, all 35,432 ordered
+[title, abstract, label] triples across 19 datasets were compared exactly with
+the old packaged records. Uncompressed CSV hashes also matched each package's
+source hash. Evidence and the original verification procedure are retained in
+`../../integration-evidence/screen-corpus-parity.json` and
+`../../integration-evidence/verify-screen-corpora.mjs`. The procedure requires the
+legacy JSON inputs and original manifest from before this change. `benchmark/data/SHA256SUMS` was not
+present in this checkout.
+
+HTTP mode fetches same-origin files only. No remote resources, Python service
+or R package are used by validation.
 
 ## Framework integration
 
@@ -52,7 +59,7 @@ Mount with `AlmValidate.mount(el, ScreenValidationAdapter)`.
 The adapter is available globally immediately; await
 `ScreenValidationAdapter.ready` before use. It initializes its manifest pins and
 calls the shared mount itself. `corpus.run(files, onProgress)` accepts a path-keyed
-object or Map of JSON text/bytes/parsed objects. Progress uses
+object or Map of compressed CSV bytes and reference JSON text/bytes/parsed objects. Progress uses
 `{done, completed, total, message, elapsed, etaSeconds}`.
 Returned contract fields include checks, passed, failed, maxima, refusals and
 summaryLines; extra fields retain every comparison and actual simulation.
@@ -65,12 +72,17 @@ a.corpus.mode = 'quick'; // or 'full'
 const result = await a.corpus.run(await a.corpus.loadFiles(), console.log);
 ```
 
-The shared widget is not present in this lane's checkout. The adapter shows an
-explicit integration-unavailable message in that case, rather than a pretend
-working validation button. The integration lane must check the shared loader's
-file-URL transport, progress callback shape, and partial-mode display.
-For file URLs, `corpus.loadFiles()` supplies locally bundled verified bytes;
-the shared widget should use that loader rather than browser fetch(file://).
+The shared widget is integrated. Its loader preserves pinned binary bytes,
+accepts progress objects and reports quick mode separately from the full paper
+scope. See `../../INTEGRATION_REPORT.md` for verified results and request logs.
+For `file://`, use the shared file picker to select all 19 `.csv.gz` files from
+`benchmark/data/corpora/` and `reference.json` from `screen/validate/corpus/`.
+Because those files live in two directories, you may copy them into one temporary
+folder for a single multi-file selection. Click **Re-run full validation** after
+choosing full or quick mode. No bundled offline copy is needed. Direct callers
+can pass the selected `File` objects to
+`AlmValidate.loadFiles(a.corpus.files, selectedFiles, true)` and pass the returned
+bytes to `a.corpus.run(files)`. The direct `loadFiles()` example above is for HTTP.
 Quick mode has four checks versus the full paper's 29 Screen comparisons; its
 scope must not be labelled a full-paper PASS.
 
@@ -86,11 +98,10 @@ Wilson disease review is the corpus dataset appenzeller_herzog_2020.
 
 Read SOURCE-README.md and SOURCE-ATTRIBUTION-allmeta.md, copied unchanged from
 the reference checkout. The four SYNERGY corpora are CC-BY 4.0. The upstream
-source explicitly does not redistribute the 15 Cohen MEDLINE abstract datasets
-because redistribution rights were unconfirmed. This local task packages the
-supplied data for offline validation, but **the Cohen corpus and its offline.js
-copy require resolution of that documented redistribution limitation before
-public release**. Nothing has been committed or published by this lane.
+source documents unconfirmed redistribution rights for the 15 Cohen MEDLINE
+abstract datasets. Allmeta already ships these files under `benchmark/`; this
+validation now reuses them rather than adding copies. This change does not
+resolve the upstream rights note. Nothing has been committed or published.
 
 ## Hardcode disclosure
 
@@ -98,7 +109,7 @@ public release**. Nothing has been committed or published by this lane.
 |---|---|---|
 | Expected values, dataset labels, sources, counts | Static source data | Original expected JSON and corpus manifest |
 | Seeds, quick subset, per-record protocol | Static protocol | Source bench/run_screen.mjs and quick references |
-| 190 simulations, 29/4 comparisons | Derived scope | 19 ? 10; 19 dataset + 10 summary checks; quick subset |
+| 190 simulations, 29/4 comparisons | Derived scope | 19 x 10; 19 dataset + 10 summary checks; quick subset |
 | Model results, means, errors, PASS/FAIL | Dynamic | Current page's shipped simulator, never stored substitutes |
 | Runtime and ETA | Dynamic | Measured in the current browser |
 | R availability | Static unavailable | Python comparator; live:null |

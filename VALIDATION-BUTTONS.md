@@ -4,7 +4,7 @@ The shared `AlmValidate.mount(el, adapter)` widget supplies accessible controls,
 
 ## Tier 1: current analysis in R
 
-The current data run locally in webR **0.5.5**, using **metafor 4.8-0** for heterogeneity. The paper used **5.2-1**. Any discrepancy beyond the declared tolerance remains FAIL. R and package versions come from the running session; R normalizes hyphens to dots, so the verified DESCRIPTION spelling is used after checking equivalence with `packageVersion()`.
+The current data run locally in webR **0.5.5**, using **metafor 4.8-0** for heterogeneity, **dosresmeta 2.2.0** for dose-response, **mada 0.5.12** for DTA, and **netmeta 3.4-0** for NMA. The heterogeneity paper used metafor **5.2-1**; the NMA paper used netmeta **3.7-0**. Any discrepancy beyond the declared tolerance remains FAIL. R and package versions come from the running session; R normalizes hyphens to dots, so the verified DESCRIPTION spelling is used after checking equivalence with `packageVersion()`.
 
 `AlmWebR.runR({script, packages, onStatus})` returns `{ok, stdout, versions}` or `{ok:false,error}`. Scripts emit one `ALMJSON:` line without jsonlite. Calls are serialized. Existing `runMetafor`, bus, modal, concordance and R download APIs remain; `buildMetaforScript` shares the extended calculation with the new adapter.
 
@@ -12,7 +12,7 @@ Heterogeneity checks the selected tau-squared estimator, pooled estimate, SE, no
 
 ## Local package repository
 
-The repository layout is `r-shiny/shinylive/webr/repo/bin/emscripten/contrib/4.5/`. It contains all 32 fetched archives plus required dependency archives already present in the shipped bundle. The original metadata is preserved in `upstream-manifest.json`; `manifest.json` records every archive's hash, size, version and dependencies. `PACKAGES` indexes the complete set.
+The repository layout is `r-shiny/shinylive/webr/repo/bin/emscripten/contrib/4.5/`. It contains 32 fetched archives. The 40 byte-identical dependency archives remain in `../packages/<package>/`; manifest `path` entries resolve relative to the webR bundle root. This saves 49,399,233 bytes without changing any SHA-256 pin. The manifest-driven runner, rather than a standard R repository downloader, resolves these shared archives. The original metadata is preserved in `upstream-manifest.json`; `manifest.json` records every archive's hash, size, version and dependencies. `PACKAGES` retains the complete package metadata, but direct `install.packages` downloads are not the supported transport after archive deduplication; use the manifest-driven runner.
 
 The webR 0.5.5 worker forwards `repos` to `webr::install`. The runner sets its `repoUrl` to the local repository root, but deliberately stages and extracts the exact verified binary archive bytes in R's VFS. Calling `installPackages` after a hash preflight would fetch the archive again, creating an unchecked second download. No compilation or remote dependency resolution occurs. SHA-256 and length are verified before exposing archives to R; versions are checked afterward.
 
@@ -22,7 +22,7 @@ The unpinned latest-CDN fallback is removed. Missing local assets cause a visibl
 
 The widget verifies corpus/reference JSON against the adapter's pinned SHA-256 hashes, then runs the shipped JavaScript engine. It does not substitute saved app outputs or start R. It reports hashes, elapsed time, check counts, failures, maxima, refusals and the existing generated build stamp from `shared/build-info.js`. That stamp does not identify uncommitted lane edits.
 
-The first HTTP load reads same-origin corpus files. After `prepare()` or a replay, the verified in-memory corpus replays offline without requests. Cold offline loading still requires previously available assets. On `file://`, a labelled picker lets the user select the manifest-listed JSON files, avoiding browser fetch restrictions while retaining byte verification.
+The first HTTP load reads same-origin corpus files. After `prepare()` or a replay, the verified in-memory corpus replays offline without requests. Cold offline loading still requires previously available assets. On `file://`, a labelled picker lets the user select the manifest-listed JSON files, avoiding browser fetch restrictions while retaining byte verification. Screen additionally loads its packaged offline JavaScript transport automatically and retains raw JSON bytes for its second hash check. Quick Screen mode is labelled as four comparisons rather than the full 29-comparison paper scope. Progress callbacks accept strings, completed/total pairs, or progress objects.
 
 Heterogeneity packages the reproducible repository's real `results/full/corpus.csv` and `reference.jsonl`. Original source hashes and compact-file hashes are in `heterogeneity/validate/MANIFEST.json`. Analysis identifiers and full-precision effect/SE inputs are preserved. No DOI is invented: the source README says one will be added on release.
 
@@ -40,11 +40,11 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 
 | App | Tier 1 | Tier 2 | Integration status |
 |---|---|---|---|
-| Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | Implemented in this lane |
-| Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | Separate lane; not verified here |
-| DTA SROC | mada 0.5.12 vendored | Contract: 855 checks | Separate lane; not verified here |
-| NMA | netmeta 3.4-0 vendored; paper 3.7-0 | Contract: 410 checks | Separate lane; not verified here |
-| Screen | No R oracle; honest repository link with `live:null` | ASReview benchmark replay | Separate lane; not verified here |
+| Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
+| Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | See integration report |
+| DTA SROC | mada 0.5.12 vendored | Contract: 855 checks | See integration report |
+| NMA | netmeta 3.4-0 vendored; paper 3.7-0 | Contract: 410 checks | See integration report |
+| Screen | No R oracle; honest repository link with `live:null` | Screen simulator replay against published values | See integration report |
 
 ## Static versus dynamic disclosure
 
@@ -57,4 +57,4 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 | Live R fits and versions | Dynamic | Actual R session and packageVersion checks |
 | Build SHA | Static generated stamp | Existing shared/build-info.js; regenerate at integration/release |
 
-See `LANE_REPORT.md` for exact commands, results and limitations. This lane does not commit, push, deploy or change submission status.
+See `INTEGRATION_REPORT.md` for exact commands, results and limitations. This lane does not commit, push, deploy or change submission status.

@@ -1,26 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './validation-fixture.mjs';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const ROOT=fileURLToPath(new globalThis.URL('../../../',import.meta.url));
-// Port 8000 may host another worktree. Route the loopback origin to THIS worktree
-// using Playwright's static-file transport; never touch another lane's server.
-test.beforeEach(async({context})=>{
-  await context.route('http://127.0.0.1:8000/**',async route=>{
-    const pathname=decodeURIComponent(new globalThis.URL(route.request().url()).pathname);
-    const file=resolve(ROOT,'.'+pathname);
-    const rel=file.slice(resolve(ROOT).length);
-    if(!file.startsWith(resolve(ROOT)) || !/^[\\/]/.test(rel))return route.abort();
-    const types={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css','.svg':'image/svg+xml'};
-    try{await route.fulfill({body:await readFile(file),contentType:types[extname(file)]||'application/octet-stream'});}
-    catch{await route.fulfill({status:404,body:'Not found'});}
-  });
-});
-
-const URL='http://127.0.0.1:8000/heterogeneity/index.html';
+const URL='http://localhost:8088/heterogeneity/index.html';
 test('published corpus: 131781 numerical checks and separate 120720 rendered numbers',async({page,context})=>{
   test.setTimeout(180000);
-  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://127.0.0.1:8000')outside.push(r.url());});
+  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://localhost:8088')outside.push(r.url());});
   await page.goto(URL);
   await expect(page.getByRole('button',{name:'Validate this analysis in R',exact:true})).toBeVisible();
   const before=await page.locator('#f-data').inputValue();
@@ -33,7 +19,7 @@ test('published corpus: 131781 numerical checks and separate 120720 rendered num
 });
 test('built-in example agrees with pinned metafor; session versions shown @slow',async({page,context})=>{
   test.setTimeout(180000);
-  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://127.0.0.1:8000')outside.push(r.url());});
+  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://localhost:8088')outside.push(r.url());});
   await page.goto(URL);
   page.on('console',m=>console.log('BROWSER',m.type(),m.text()));
   page.on('pageerror',e=>console.log('PAGE ERROR',e.message));

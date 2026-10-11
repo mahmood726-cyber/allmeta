@@ -1,23 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './validation-fixture.mjs';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT=fileURLToPath(new globalThis.URL('../../../',import.meta.url));
-// Port 8000 may host another worktree. Route the loopback origin to THIS worktree
-// using Playwright's static-file transport; never touch another lane's server.
-test.beforeEach(async({context})=>{
-  await context.route('http://127.0.0.1:8000/**',async route=>{
-    const pathname=decodeURIComponent(new globalThis.URL(route.request().url()).pathname);
-    const file=resolve(ROOT,'.'+pathname);
-    const rel=file.slice(resolve(ROOT).length);
-    if(!file.startsWith(resolve(ROOT)) || !/^[\\/]/.test(rel))return route.abort();
-    const types={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css','.svg':'image/svg+xml'};
-    try{await route.fulfill({body:await readFile(file),contentType:types[extname(file)]||'application/octet-stream'});}
-    catch{await route.fulfill({status:404,body:'Not found'});}
-  });
-});
-
-const URL = 'http://127.0.0.1:8000/heterogeneity/index.html';
+const URL = (process.env.ALM_TEST_BASE_URL || 'http://localhost:8088') + '/heterogeneity/index.html';
 function watch(page) {
   const outside=[];
   page.on('request',r=>{if(new globalThis.URL(r.url()).origin!==new globalThis.URL(URL).origin)outside.push(r.url());});
@@ -57,7 +43,7 @@ test('comparison fails closed on absent or nonfinite values; unavailable R links
 test('R package hash mismatch is refused before boot @slow',async({page})=>{
   test.setTimeout(180000);
   const outside=watch(page);await page.goto(URL);
-  await page.route('**/repo/**/*.tgz',route=>route.fulfill({body:'corrupt'}));
+  await page.route('**/*.tgz',route=>route.fulfill({body:'corrupt'}));
   await page.getByRole('button',{name:'Validate this analysis in R',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('mismatch',{timeout:120000});
   expect(outside).toEqual([]);

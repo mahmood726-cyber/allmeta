@@ -56,6 +56,7 @@ the inspected source metadata: DOI is null, and the link goes to repository Acti
 
 `hub/shared/tests/validate-nma.spec.mjs` includes direct offline replay, an engine
 perturbation check, widget buttons, file hash refusal, option-sensitive script
-construction and live R (`@slow`, 180-second timeout). Widget cases skip explicitly
-until the shared framework is integrated. For the live case serve the repository
-at `http://127.0.0.1:8000`; use Chrome channel and the vendored framework assets.
+construction and live R (`@slow`, 180-second timeout). The shared framework is
+integrated. Run with `hub/shared/tests/playwright.config.mjs` and `PW_CHANNEL=chrome`;
+the configuration starts the loopback server on port 8088. See
+`../../INTEGRATION_REPORT.md` for verified results and request logs.

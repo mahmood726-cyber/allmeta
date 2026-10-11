@@ -1,6 +1,6 @@
 /* Allmeta validation widget. Network hosts: current origin only. Tier 2 reads
  * same-origin corpus files once, then replays from verified memory offline.
- * file:// users select the manifest-listed JSON files (browser fetch restrictions).
+ * file:// users select the manifest-listed corpus files (browser fetch restrictions).
  * External github.com / codespaces.new / doi.org links require a user click.
  * Tier 1 lazily loads the local, pinned shared/webr-runner.js and webR 0.5.5.
  */
@@ -16,13 +16,14 @@
     if (!global.crypto || !crypto.subtle) throw new Error('SHA-256 requires a secure context (HTTPS or localhost).');
     return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), b => b.toString(16).padStart(2, '0')).join('');
   }
-  async function verify(bytes, expected, path) {
+  async function verify(bytes, expected, path, raw = false) {
     if (!/^[a-f0-9]{64}$/i.test(expected || '')) throw new Error('Missing or invalid SHA-256: ' + path);
     const actual = await digest(bytes);
     if (actual !== expected.toLowerCase()) throw new Error('SHA-256 mismatch; refused: ' + path);
-    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    return raw ? bytes : JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   }
-  async function loadFiles(specs, selected) {
+  // rawFiles preserves original bytes for adapters that independently recheck pins.
+  async function loadFiles(specs, selected, raw) {
     const files = {};
     for (const spec of specs) {
       const url = localURL(spec.path);
@@ -36,7 +37,7 @@
         if (!response.ok) throw new Error('Cannot read ' + spec.path + ' (HTTP ' + response.status + ')');
         bytes = await response.arrayBuffer();
       }
-      files[spec.path] = await verify(bytes, spec.sha256, spec.path);
+      files[spec.path] = await verify(bytes, spec.sha256, spec.path, raw);
     }
     return files;
   }
@@ -91,8 +92,8 @@
     }
     let selected, cached;
     if (location.protocol === 'file:') {
-      const label = node('label', 'Select the corpus JSON files for offline validation: ', el);
-      const input = node('input', undefined, label); input.type = 'file'; input.multiple = true; input.accept = '.json';
+      const label = node('label', 'Select the corpus files for offline validation: ', el);
+      const input = node('input', undefined, label); input.type = 'file'; input.multiple = true; input.accept = adapter.corpus.fileAccept || '.json';
       input.onchange = () => { selected = [...input.files]; cached = null; };
     }
     function table(rows) {
@@ -113,22 +114,29 @@
       finally { corpusButton.disabled = false; if (adapter.live) live.disabled = false; }
     }
     async function prepare() {
-      if (!cached) cached = await loadFiles(adapter.corpus.files, selected);
+      if (!cached) {
+        if (location.protocol === 'file:' && adapter.corpus.loadFiles && !selected) {
+          const files = await adapter.corpus.loadFiles();
+          for (const f of adapter.corpus.files) await verify(new TextEncoder().encode(files[f.path]), f.sha256, f.path);
+          cached = files;
+        } else cached = await loadFiles(adapter.corpus.files, selected, adapter.corpus.rawFiles);
+      }
       return cached;
     }
     async function runCorpus() {
       return busy(async () => {
         const start = performance.now(); status.textContent = 'Verifying corpus SHA-256 hashes…';
         const files = await prepare();
-        const result = await adapter.corpus.run(files, text => { status.textContent = text; });
+        const result = await adapter.corpus.run(files, (progress, total) => { status.textContent = typeof progress === 'object' ? progress.message : total ? progress + '/' + total : progress; });
         if (!Number.isInteger(result.checks) || result.passed + result.failed.length !== result.checks) throw new Error('Invalid check accounting from adapter');
-        const countOK = result.checks === adapter.paper.checks;
-        status.textContent = result.passed + '/' + result.checks + ' passed; ' + result.failed.length + ' failed. Paper: ' + adapter.paper.checks + ' checks.' + (countOK ? '' : ' FAIL: check count differs from paper.') + (result.displayFails && result.displayFails.length ? ' FAIL: rendered-number audit has failures.' : '');
+        const expected = adapter.corpus.mode === 'quick' ? adapter.corpus.quickChecks : adapter.paper.checks;
+        const countOK = result.checks === expected;
+        status.textContent = result.passed + '/' + result.checks + ' passed; ' + result.failed.length + ' failed. Paper: ' + adapter.paper.checks + ' checks.' + (adapter.corpus.mode === 'quick' ? ' Quick subset: ' + expected + ' checks; not full paper reproduction.' : '') + (countOK ? '' : ' FAIL: check count differs from selected scope.') + (result.displayFails && result.displayFails.length ? ' FAIL: rendered-number audit has failures.' : '');
         node('p', 'Allmeta build ' + (global.AlmBuildInfo ? global.AlmBuildInfo.sha : 'unavailable') + '; elapsed ' + ((performance.now() - start) / 1000).toFixed(2) + ' s', details);
         for (const f of adapter.corpus.files) node('p', 'SHA-256 verified: ' + f.path + ' ' + f.sha256, details);
         for (const line of result.summaryLines || []) node('p', line, details);
         node('pre', 'Maxima: ' + JSON.stringify(result.maxima) + '\nRefusals: ' + JSON.stringify(result.refusals), details);
-        table(result.failed.length ? result.failed.map(f => ({ ...f, pass: false })) : [{ label: 'All numerical checks', app: result.passed, ref: adapter.paper.checks, diff: Math.abs(result.checks - adapter.paper.checks), tol: 0, pass: countOK }]);
+        table(result.failed.length ? result.failed.map(f => ({ ...f, pass: false })) : [{ label: 'All numerical checks', app: result.passed, ref: expected, diff: Math.abs(result.checks - expected), tol: 0, pass: countOK }]);
         return result;
       });
     }
@@ -149,7 +157,7 @@
           return { label: v.label, app: v.value, ref: ref[v.key], tol, ...compare(v.value, ref[v.key], kind, tol) };
         });
         for (const [pkg, version] of Object.entries(r.versions)) node('p', pkg + ' ' + version, details);
-        for (const [pkg, version] of Object.entries(a.paperVersions || {})) if (r.versions[pkg] !== version) node('p', 'Validated version in the paper: ' + pkg + ' ' + version + '. Any differences beyond tolerance are reported as FAIL.', details);
+        for (const [pkg, version] of Object.entries(a.paperVersions || a.validatedVersions || adapter.paper.packageVersions || {})) if (r.versions[pkg] !== version) node('p', 'Validated version in the paper: ' + pkg + ' ' + version + '. Any differences beyond tolerance are reported as FAIL.', details);
         if (state.note) node('p', state.note, details);
         table(rows); status.textContent = rows.filter(r => r.pass).length + '/' + rows.length + ' live R quantities passed.';
         return { rows, versions: r.versions };

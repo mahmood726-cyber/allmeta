@@ -68,5 +68,5 @@ precision. Version metadata is the shared runner's responsibility.
 
 No external resource hosts are used by this adapter. Repository/DOI/Codespaces
 URLs are navigation links only. The only index changes are the validation mount
-and three local script tags. Integration requires the shared widget and vendored
-webR package lane; this lane does not modify either.
+and three local script tags. The shared widget and vendored webR packages are integrated. See
+`../../INTEGRATION_REPORT.md` for verified results and request logs.

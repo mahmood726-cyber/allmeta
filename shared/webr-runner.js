@@ -75,7 +75,9 @@
     for (var p of required.values()) {
       if (!/^[A-Za-z][A-Za-z0-9.]*$/.test(p.package) || !/^[A-Za-z0-9_.+-]+\.tgz$/.test(p.file)) throw new Error('Invalid package manifest entry');
       onStatus('Verifying SHA-256: ' + p.file);
-      var bytes = new Uint8Array(await (await _get(base + 'repo/' + _manifest.layout + p.file)).arrayBuffer());
+      var archivePath = p.path || ('repo/' + _manifest.layout + p.file);
+      if (p.path && p.path !== 'packages/' + p.package + '/' + p.file) throw new Error('Invalid package archive path');
+      var bytes = new Uint8Array(await (await _get(new URL(archivePath, base).href)).arrayBuffer());
       if (!global.crypto || !crypto.subtle) throw new Error('SHA-256 requires HTTPS or localhost');
       var hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
       if (hash !== p.sha256 || bytes.length !== p.bytes) throw new Error('SHA-256/size mismatch; package refused: ' + p.file);

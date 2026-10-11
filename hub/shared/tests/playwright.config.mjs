@@ -15,11 +15,11 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], channel } }],
   webServer: {
-    command: 'python -m http.server 8088 --directory ../../../',
+    command: 'python -m http.server 8088 --bind 127.0.0.1 --directory ../../../',
     port: 8088,
     cwd: '.',
     reuseExistingServer: true,
     stdout: 'ignore',
-    stderr: 'pipe',
+    stderr: 'ignore',
   },
 });
