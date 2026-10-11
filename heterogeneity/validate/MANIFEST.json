@@ -1,0 +1,26 @@
+{
+  "source": "https://github.com/mahmood726-cyber/heterogeneity-reproducible",
+  "source_files": {
+    "corpus.csv": "2f36c0d144fc649a68c88359eff8eb7134769096e6b60af44aaf84743725cd9a",
+    "reference.jsonl": "209420a00f72414083e69f20206fae0d96e2117880d325411d0a9cdad603d570"
+  },
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "b3d7ea381e31a70dc45d2d2f613ac390592fef4184e3fb989cb21ef54ee21fac",
+      "bytes": 109686
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "aecb7c1ef7f3d290fd53b6709c2ce11d3d8f02fe0fcef4cb0e3d6febe47ad8f2",
+      "bytes": 3128201
+    }
+  ],
+  "paperChecks": 131781,
+  "analyses": 88,
+  "configurations": 704,
+  "paperVersions": {
+    "metafor": "5.2-1",
+    "metadat": "1.6-0"
+  }
+}

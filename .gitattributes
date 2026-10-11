@@ -25,3 +25,6 @@ hub/shared/vendor/*.js binary
 *.md text
 *.py text eol=lf
 *.sh text eol=lf
+
+# Validation manifests pin exact JSON bytes across Windows and Unix checkouts.
+**/validate/corpus/*.json text eol=lf

@@ -1,0 +1,1123 @@
+{
+  "webr_repo": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/",
+  "fetched": "2026-10-10",
+  "packages": [
+    {
+      "package": "digest",
+      "version": "0.6.39",
+      "file": "digest_0.6.39.tgz",
+      "bytes": 159056,
+      "sha256": "3aaa3c2acf4af9fd93c78db33878aaff91568da71c7de14e30a6baafcac0c6b9",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/digest_0.6.39.tgz",
+      "dependencies": [
+        "R",
+        "utils"
+      ]
+    },
+    {
+      "package": "ellipse",
+      "version": "0.5.0",
+      "file": "ellipse_0.5.0.tgz",
+      "bytes": 201772,
+      "sha256": "ad8f45bffce27bb3cef3d420f75022d678e91c618ca7ec8131367e70f400859a",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/ellipse_0.5.0.tgz",
+      "dependencies": [
+        "R",
+        "graphics",
+        "stats"
+      ]
+    },
+    {
+      "package": "mada",
+      "version": "0.5.12",
+      "file": "mada_0.5.12.tgz",
+      "bytes": 384449,
+      "sha256": "3d31a9da554be5cfd5f35cd1acae8410681c051558810720a045bb16ff2a6a0e",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/mada_0.5.12.tgz",
+      "dependencies": [
+        "R",
+        "stats",
+        "mvtnorm",
+        "ellipse",
+        "mvmeta",
+        "metafor",
+        "methods"
+      ]
+    },
+    {
+      "package": "mixmeta",
+      "version": "1.2.2",
+      "file": "mixmeta_1.2.2.tgz",
+      "bytes": 319238,
+      "sha256": "3936239f86c341836adb2c6a0c353b657a49c04c56e25b405c385de2fccbab17",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/mixmeta_1.2.2.tgz",
+      "dependencies": [
+        "R",
+        "stats",
+        "graphics",
+        "grDevices",
+        "utils"
+      ]
+    },
+    {
+      "package": "mvmeta",
+      "version": "1.0.3",
+      "file": "mvmeta_1.0.3.tgz",
+      "bytes": 231801,
+      "sha256": "37d448220b5b0c4da2b22e7c372986ede7df06837cf0d8222e3b62efae820017",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/mvmeta_1.0.3.tgz",
+      "dependencies": [
+        "R",
+        "mixmeta",
+        "stats",
+        "graphics",
+        "grDevices",
+        "utils"
+      ]
+    },
+    {
+      "package": "dosresmeta",
+      "version": "2.2.0",
+      "file": "dosresmeta_2.2.0.tgz",
+      "bytes": 369869,
+      "sha256": "cec00cc790be4579ee091a62e0ebf589a1b6aee0d4de87418643431139c08f3b",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/dosresmeta_2.2.0.tgz",
+      "dependencies": [
+        "mixmeta"
+      ]
+    },
+    {
+      "package": "CompQuadForm",
+      "version": "1.4.4",
+      "file": "CompQuadForm_1.4.4.tgz",
+      "bytes": 33849,
+      "sha256": "b8934131aba252e0d85fa2511c21a8de2243f297f4256fb2b5b73dfb33665606",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/CompQuadForm_1.4.4.tgz",
+      "dependencies": []
+    },
+    {
+      "package": "R6",
+      "version": "2.6.1",
+      "file": "R6_2.6.1.tgz",
+      "bytes": 65151,
+      "sha256": "ec53fbd334e2da75cb9df7d01b81c9b7495d93d3627ae89764b9adb4957e28af",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/R6_2.6.1.tgz",
+      "dependencies": [
+        "R"
+      ]
+    },
+    {
+      "package": "Rcpp",
+      "version": "1.1.1-1.1",
+      "file": "Rcpp_1.1.1-1.1.tgz",
+      "bytes": 2044154,
+      "sha256": "ed011570038e88749503fdcff69cff503692e1f759dbcc3f4e9c12f18ab70ff2",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/Rcpp_1.1.1-1.1.tgz",
+      "dependencies": [
+        "R",
+        "methods",
+        "utils"
+      ]
+    },
+    {
+      "package": "RcppEigen",
+      "version": "0.3.4.0.2",
+      "file": "RcppEigen_0.3.4.0.2.tgz",
+      "bytes": 1824242,
+      "sha256": "723f1003212c227647226ae7b7979dbc1a9c4da90b87e728adbdaa5eb8f67554",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/RcppEigen_0.3.4.0.2.tgz",
+      "dependencies": [
+        "R",
+        "Rcpp",
+        "stats",
+        "utils",
+        "Rcpp"
+      ]
+    },
+    {
+      "package": "Rdpack",
+      "version": "2.6.6",
+      "file": "Rdpack_2.6.6.tgz",
+      "bytes": 514899,
+      "sha256": "bd00a9cb7543c7dc8357b4bbcf8b3d097ca938e5028bdf0de52f1c09095e5e91",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/Rdpack_2.6.6.tgz",
+      "dependencies": [
+        "R",
+        "methods",
+        "tools",
+        "utils",
+        "rbibutils"
+      ]
+    },
+    {
+      "package": "abind",
+      "version": "1.4-8",
+      "file": "abind_1.4-8.tgz",
+      "bytes": 43711,
+      "sha256": "cd1965de94fd9b3bb46a9e7d0766bc3cbc574b175c804d6dad5345e90c6da7fc",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/abind_1.4-8.tgz",
+      "dependencies": [
+        "R",
+        "methods",
+        "utils"
+      ]
+    },
+    {
+      "package": "cli",
+      "version": "3.6.6",
+      "file": "cli_3.6.6.tgz",
+      "bytes": 962689,
+      "sha256": "11906f32dbc4341c1407cfd78055f7fc71ff93548329a12aad34e24fae93b201",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/cli_3.6.6.tgz",
+      "dependencies": [
+        "R",
+        "utils"
+      ]
+    },
+    {
+      "package": "colorspace",
+      "version": "2.1-2",
+      "file": "colorspace_2.1-2.tgz",
+      "bytes": 2434044,
+      "sha256": "56546f455db9b6312d5c375b0d68cbca510c13ac05d6b5b06288223b4372b7ad",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/colorspace_2.1-2.tgz",
+      "dependencies": [
+        "R",
+        "methods",
+        "graphics",
+        "grDevices",
+        "stats"
+      ]
+    },
+    {
+      "package": "cpp11",
+      "version": "0.5.4",
+      "file": "cpp11_0.5.4.tgz",
+      "bytes": 283062,
+      "sha256": "9b722f3721352612621de878ec826af64348cc0bff0e9255b7f89e8c8728ed3f",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/cpp11_0.5.4.tgz",
+      "dependencies": [
+        "R"
+      ]
+    },
+    {
+      "package": "glue",
+      "version": "1.8.1",
+      "file": "glue_1.8.1.tgz",
+      "bytes": 148532,
+      "sha256": "3e1356f68ef6b3c7f8f41fa872dec796cfc102dd918d83d751cf2458d39f9917",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/glue_1.8.1.tgz",
+      "dependencies": [
+        "R",
+        "methods"
+      ]
+    },
+    {
+      "package": "igraph",
+      "version": "2.1.4",
+      "file": "igraph_2.1.4.tgz",
+      "bytes": 3850012,
+      "sha256": "cdfb3641d343ce712d6cd27517d1046f477b83664f2b04d74f2e9c1a191bed0f",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/igraph_2.1.4.tgz",
+      "dependencies": [
+        "methods",
+        "R",
+        "cli",
+        "graphics",
+        "grDevices",
+        "lifecycle",
+        "magrittr",
+        "Matrix",
+        "pkgconfig",
+        "rlang",
+        "stats",
+        "utils",
+        "vctrs",
+        "cpp11"
+      ]
+    },
+    {
+      "package": "lifecycle",
+      "version": "1.0.5",
+      "file": "lifecycle_1.0.5.tgz",
+      "bytes": 99783,
+      "sha256": "904d21f5f38848a4e35e5abe2afbb70812f62fd2d222fac2c5f302108338d576",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/lifecycle_1.0.5.tgz",
+      "dependencies": [
+        "R",
+        "cli",
+        "rlang"
+      ]
+    },
+    {
+      "package": "lme4",
+      "version": "2.0-1",
+      "file": "lme4_2.0-1.tgz",
+      "bytes": 3973545,
+      "sha256": "5a0253b2758d2103751eec82a31e8d8f4cd282e215303e2a97489824ebde2e9d",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/lme4_2.0-1.tgz",
+      "dependencies": [
+        "R",
+        "Matrix",
+        "methods",
+        "stats",
+        "MASS",
+        "Rdpack",
+        "boot",
+        "graphics",
+        "grid",
+        "lattice",
+        "minqa",
+        "nlme",
+        "nloptr",
+        "parallel",
+        "reformulas",
+        "rlang",
+        "splines",
+        "utils",
+        "Matrix",
+        "Rcpp",
+        "RcppEigen"
+      ]
+    },
+    {
+      "package": "magic",
+      "version": "1.6-1",
+      "file": "magic_1.6-1.tgz",
+      "bytes": 335066,
+      "sha256": "32b517a734cf9a2bcb0c786b61715b3c834d22f4ff66656b275be2a22e42c63d",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/magic_1.6-1.tgz",
+      "dependencies": [
+        "R",
+        "abind"
+      ]
+    },
+    {
+      "package": "magrittr",
+      "version": "2.0.5",
+      "file": "magrittr_2.0.5.tgz",
+      "bytes": 213752,
+      "sha256": "c9ea8230f1d2447a9cf505d14da39c7cd18479fd0fcb802c271d99a934fdf6e1",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/magrittr_2.0.5.tgz",
+      "dependencies": [
+        "R"
+      ]
+    },
+    {
+      "package": "meta",
+      "version": "8.3-0",
+      "file": "meta_8.3-0.tgz",
+      "bytes": 1484928,
+      "sha256": "945d0cf9f9e6a04f77f8faab5a84c6265a664b608aae1f37664e298793f5c20c",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/meta_8.3-0.tgz",
+      "dependencies": [
+        "R",
+        "metabook",
+        "metadat",
+        "metafor",
+        "grid",
+        "ggplot2",
+        "lme4",
+        "CompQuadForm",
+        "xml2",
+        "methods",
+        "readr",
+        "dplyr",
+        "magrittr",
+        "purrr",
+        "stringr",
+        "rlang",
+        "tibble",
+        "scales"
+      ]
+    },
+    {
+      "package": "metabook",
+      "version": "0.2-0",
+      "file": "metabook_0.2-0.tgz",
+      "bytes": 183532,
+      "sha256": "3f29b9e293f423f4e4202753483f6786fc3cad8dc8e92eff66fa0425fabb9b0c",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/metabook_0.2-0.tgz",
+      "dependencies": [
+        "R"
+      ]
+    },
+    {
+      "package": "minqa",
+      "version": "1.2.8",
+      "file": "minqa_1.2.8.tgz",
+      "bytes": 82825,
+      "sha256": "2c9386bfeaff81bc1a32157f67e51f95b3d3cd446d6940bdc8236eb50694f239",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/minqa_1.2.8.tgz",
+      "dependencies": [
+        "Rcpp",
+        "Rcpp"
+      ]
+    },
+    {
+      "package": "netmeta",
+      "version": "3.4-0",
+      "file": "netmeta_3.4-0.tgz",
+      "bytes": 1234132,
+      "sha256": "2368413c87eb4cbb25b02e68e1b53f954da4f1dc345b59f67754a2c1fe7fe74a",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/netmeta_3.4-0.tgz",
+      "dependencies": [
+        "R",
+        "meta",
+        "Matrix",
+        "metafor",
+        "MASS",
+        "mvtnorm",
+        "magic",
+        "igraph",
+        "ggplot2",
+        "colorspace",
+        "grid",
+        "dplyr",
+        "magrittr",
+        "methods"
+      ]
+    },
+    {
+      "package": "nloptr",
+      "version": "2.2.1.9000",
+      "file": "nloptr_2.2.1.9000.tgz",
+      "bytes": 377076,
+      "sha256": "784adf01e61f5e62706ce2510b7eaf304a65aab735881889c31d26fa32bb25ac",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/nloptr_2.2.1.9000.tgz",
+      "dependencies": []
+    },
+    {
+      "package": "prettyunits",
+      "version": "1.2.0",
+      "file": "prettyunits_1.2.0.tgz",
+      "bytes": 131069,
+      "sha256": "632e7f90f552717969553b069480c4af4bbee9159e2a75bf152449f0234b369d",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/prettyunits_1.2.0.tgz",
+      "dependencies": [
+        "R"
+      ]
+    },
+    {
+      "package": "progress",
+      "version": "1.2.3",
+      "file": "progress_1.2.3.tgz",
+      "bytes": 44414,
+      "sha256": "0b17229231d1783cacd8eba9e33f9588313be49db09d6e660a6baa2b23b62fdb",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/progress_1.2.3.tgz",
+      "dependencies": [
+        "R",
+        "crayon",
+        "hms",
+        "prettyunits",
+        "R6"
+      ]
+    },
+    {
+      "package": "rbibutils",
+      "version": "2.4.1",
+      "file": "rbibutils_2.4.1.tgz",
+      "bytes": 1062426,
+      "sha256": "f7e2a89289eb46793a79d79fe4477879f6466b710d3cf2c8a50d80fe49886a17",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/rbibutils_2.4.1.tgz",
+      "dependencies": [
+        "R",
+        "utils",
+        "tools"
+      ]
+    },
+    {
+      "package": "reformulas",
+      "version": "0.4.4",
+      "file": "reformulas_0.4.4.tgz",
+      "bytes": 116767,
+      "sha256": "afdb1b5dd750144cfc2cc45de66aa0f9142d47f43b3af54a65572f3f2521fc56",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/reformulas_0.4.4.tgz",
+      "dependencies": [
+        "stats",
+        "methods",
+        "Matrix",
+        "Rdpack"
+      ]
+    },
+    {
+      "package": "rlang",
+      "version": "1.2.0",
+      "file": "rlang_1.2.0.tgz",
+      "bytes": 1134268,
+      "sha256": "4f9e79ebf4502da0df88338efab17e707ea9f9c1698f3863f89fb2315ab1fb90",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/rlang_1.2.0.tgz",
+      "dependencies": [
+        "R",
+        "utils"
+      ]
+    },
+    {
+      "package": "withr",
+      "version": "3.0.2",
+      "file": "withr_3.0.2.tgz",
+      "bytes": 181425,
+      "sha256": "ca74ea6e4a8be4a8b7425bfaa93213a862aee36c2522e1f5fa97bcc690cc2807",
+      "source": "https://repo.r-wasm.org/bin/emscripten/contrib/4.5/withr_3.0.2.tgz",
+      "dependencies": [
+        "R",
+        "graphics",
+        "grDevices"
+      ]
+    },
+    {
+      "package": "metafor",
+      "file": "metafor_4.8-0.tgz",
+      "sha256": "746f8ab2d0d85b03a3f07ead0340193a04defd1f871dd6511dd758a9f2ff28b0",
+      "bytes": 3563128,
+      "source": "../packages/metafor/metafor_4.8-0.tgz",
+      "version": "4.8-0",
+      "dependencies": [
+        "R",
+        "methods",
+        "Matrix",
+        "metadat",
+        "numDeriv",
+        "stats",
+        "utils",
+        "graphics",
+        "grDevices",
+        "nlme",
+        "mathjaxr",
+        "pbapply",
+        "digest"
+      ],
+      "path": "packages/metafor/metafor_4.8-0.tgz"
+    },
+    {
+      "package": "mvtnorm",
+      "file": "mvtnorm_1.2-4.tgz",
+      "sha256": "66780ee25dfcaa5094f27b171609e894874b79fb6eef17e498291240a17f62ed",
+      "bytes": 650001,
+      "source": "../packages/mvtnorm/mvtnorm_1.2-4.tgz",
+      "version": "1.2-4",
+      "dependencies": [
+        "R",
+        "stats"
+      ],
+      "path": "packages/mvtnorm/mvtnorm_1.2-4.tgz"
+    },
+    {
+      "package": "Matrix",
+      "file": "Matrix_1.7-5.tgz",
+      "sha256": "408f6f9226d1849eddefbd00c866c4836ccc1803e6ab5bdfc107d5170585685c",
+      "bytes": 2933335,
+      "source": "../packages/Matrix/Matrix_1.7-5.tgz",
+      "version": "1.7-5",
+      "dependencies": [
+        "R",
+        "methods",
+        "grDevices",
+        "graphics",
+        "grid",
+        "lattice",
+        "stats",
+        "utils"
+      ],
+      "path": "packages/Matrix/Matrix_1.7-5.tgz"
+    },
+    {
+      "package": "pkgconfig",
+      "file": "pkgconfig_2.0.3.tgz",
+      "sha256": "b81a553340eaf99efe388b04a2ea5b1e372dc06502cf2cd4221456df34280719",
+      "bytes": 16662,
+      "source": "../packages/pkgconfig/pkgconfig_2.0.3.tgz",
+      "version": "2.0.3",
+      "dependencies": [
+        "utils"
+      ],
+      "path": "packages/pkgconfig/pkgconfig_2.0.3.tgz"
+    },
+    {
+      "package": "vctrs",
+      "file": "vctrs_0.6.5.tgz",
+      "sha256": "93a88b8da351c21bc82f92c6ff2a798fd48408152ca7040b4d0a991d694a622e",
+      "bytes": 945353,
+      "source": "../packages/vctrs/vctrs_0.6.5.tgz",
+      "version": "0.6.5",
+      "dependencies": [
+        "R",
+        "cli",
+        "glue",
+        "lifecycle",
+        "rlang"
+      ],
+      "path": "packages/vctrs/vctrs_0.6.5.tgz"
+    },
+    {
+      "package": "MASS",
+      "file": "MASS_7.3-65.tgz",
+      "sha256": "e04bbb219fa9d8bec2e175d5609cfbc01268ca619ee4d850bfc261ef0960984f",
+      "bytes": 869278,
+      "source": "../packages/MASS/MASS_7.3-65.tgz",
+      "version": "7.3-65",
+      "dependencies": [
+        "R",
+        "grDevices",
+        "graphics",
+        "stats",
+        "utils",
+        "methods"
+      ],
+      "path": "packages/MASS/MASS_7.3-65.tgz"
+    },
+    {
+      "package": "boot",
+      "file": "boot_1.3-32.tgz",
+      "sha256": "acde682846ea7b021301e9369e9d0c4d9022e1b004d57fee45bf3947d9216e2c",
+      "bytes": 508964,
+      "source": "../packages/boot/boot_1.3-32.tgz",
+      "version": "1.3-32",
+      "dependencies": [
+        "R",
+        "graphics",
+        "stats"
+      ],
+      "path": "packages/boot/boot_1.3-32.tgz"
+    },
+    {
+      "package": "lattice",
+      "file": "lattice_0.22-9.tgz",
+      "sha256": "ba5d01351d5a75dbf9193c03ba33ef7141dc27aea835c9dc9e0b1c41544b0822",
+      "bytes": 998458,
+      "source": "../packages/lattice/lattice_0.22-9.tgz",
+      "version": "0.22-9",
+      "dependencies": [
+        "R",
+        "grid",
+        "grDevices",
+        "graphics",
+        "stats",
+        "utils"
+      ],
+      "path": "packages/lattice/lattice_0.22-9.tgz"
+    },
+    {
+      "package": "nlme",
+      "file": "nlme_3.1-169.tgz",
+      "sha256": "cb1b992c11ec78fe4529441ab6e684c3a9929661b86890cec3beff7f45ebdb61",
+      "bytes": 1749870,
+      "source": "../packages/nlme/nlme_3.1-169.tgz",
+      "version": "3.1-169",
+      "dependencies": [
+        "R",
+        "graphics",
+        "stats",
+        "utils",
+        "lattice"
+      ],
+      "path": "packages/nlme/nlme_3.1-169.tgz"
+    },
+    {
+      "package": "metadat",
+      "file": "metadat_1.4-0.tgz",
+      "sha256": "581a0d76b2c0b4a22baa017fee61750740f7a13a22c5a546971d5a64f410a7b2",
+      "bytes": 914229,
+      "source": "../packages/metadat/metadat_1.4-0.tgz",
+      "version": "1.4-0",
+      "dependencies": [
+        "R",
+        "utils",
+        "tools",
+        "mathjaxr"
+      ],
+      "path": "packages/metadat/metadat_1.4-0.tgz"
+    },
+    {
+      "package": "ggplot2",
+      "file": "ggplot2_4.0.3.tgz",
+      "sha256": "46ab0f9dea5e957fb8dfb16e31b5012b67a5d4c58e8fb1a02e42489ef04858cc",
+      "bytes": 7476466,
+      "source": "../packages/ggplot2/ggplot2_4.0.3.tgz",
+      "version": "4.0.3",
+      "dependencies": [
+        "R",
+        "cli",
+        "grDevices",
+        "grid",
+        "gtable",
+        "isoband",
+        "lifecycle",
+        "rlang",
+        "S7",
+        "scales",
+        "stats",
+        "vctrs",
+        "withr"
+      ],
+      "path": "packages/ggplot2/ggplot2_4.0.3.tgz"
+    },
+    {
+      "package": "xml2",
+      "file": "xml2_1.5.2.tgz",
+      "sha256": "5a4e491ab89c60f9b4123fbaa5ea19e9830efa714f880aa552767e1e95d05a30",
+      "bytes": 548922,
+      "source": "../packages/xml2/xml2_1.5.2.tgz",
+      "version": "1.5.2",
+      "dependencies": [
+        "R",
+        "cli",
+        "methods",
+        "rlang"
+      ],
+      "path": "packages/xml2/xml2_1.5.2.tgz"
+    },
+    {
+      "package": "readr",
+      "file": "readr_2.2.0.tgz",
+      "sha256": "bae58460b4046171e20d5eb4957f820a9897fa6495de0b1389903a831b8954c8",
+      "bytes": 491611,
+      "source": "../packages/readr/readr_2.2.0.tgz",
+      "version": "2.2.0",
+      "dependencies": [
+        "R",
+        "cli",
+        "clipr",
+        "crayon",
+        "glue",
+        "hms",
+        "lifecycle",
+        "methods",
+        "R6",
+        "rlang",
+        "tibble",
+        "utils",
+        "vroom",
+        "withr",
+        "cpp11",
+        "tzdb"
+      ],
+      "path": "packages/readr/readr_2.2.0.tgz"
+    },
+    {
+      "package": "dplyr",
+      "file": "dplyr_1.1.4.tgz",
+      "sha256": "f5ada05ec1f33fd9b5c478e64fa2272fcebcdba6ff5af938023a16c1baba8b0c",
+      "bytes": 1080805,
+      "source": "../packages/dplyr/dplyr_1.1.4.tgz",
+      "version": "1.1.4",
+      "dependencies": [
+        "R",
+        "cli",
+        "generics",
+        "glue",
+        "lifecycle",
+        "magrittr",
+        "methods",
+        "pillar",
+        "R6",
+        "rlang",
+        "tibble",
+        "tidyselect",
+        "utils",
+        "vctrs"
+      ],
+      "path": "packages/dplyr/dplyr_1.1.4.tgz"
+    },
+    {
+      "package": "purrr",
+      "file": "purrr_1.2.2.tgz",
+      "sha256": "aa265c458252f3204dd5e0965a4490d63c7b4444326ff414818b1963e921d4d2",
+      "bytes": 445369,
+      "source": "../packages/purrr/purrr_1.2.2.tgz",
+      "version": "1.2.2",
+      "dependencies": [
+        "R",
+        "cli",
+        "lifecycle",
+        "magrittr",
+        "rlang",
+        "vctrs",
+        "cli"
+      ],
+      "path": "packages/purrr/purrr_1.2.2.tgz"
+    },
+    {
+      "package": "stringr",
+      "file": "stringr_1.6.0.tgz",
+      "sha256": "3861d76f2a8a0165ae4454e4dc60583bdc487f9ed43b3365226b1ca55bdcbd65",
+      "bytes": 271780,
+      "source": "../packages/stringr/stringr_1.6.0.tgz",
+      "version": "1.6.0",
+      "dependencies": [
+        "R",
+        "cli",
+        "glue",
+        "lifecycle",
+        "magrittr",
+        "rlang",
+        "stringi",
+        "vctrs"
+      ],
+      "path": "packages/stringr/stringr_1.6.0.tgz"
+    },
+    {
+      "package": "tibble",
+      "file": "tibble_3.3.1.tgz",
+      "sha256": "832fe8f464315402cdf6f666a8ebb30523e92777f7428d79ab220aa777d1b505",
+      "bytes": 530006,
+      "source": "../packages/tibble/tibble_3.3.1.tgz",
+      "version": "3.3.1",
+      "dependencies": [
+        "R",
+        "cli",
+        "lifecycle",
+        "magrittr",
+        "methods",
+        "pillar",
+        "pkgconfig",
+        "rlang",
+        "utils",
+        "vctrs"
+      ],
+      "path": "packages/tibble/tibble_3.3.1.tgz"
+    },
+    {
+      "package": "scales",
+      "file": "scales_1.4.0.tgz",
+      "sha256": "01783e9e66fad70e74ef178befff8ddacd46d8353762a917dc658f72fb550c3f",
+      "bytes": 615080,
+      "source": "../packages/scales/scales_1.4.0.tgz",
+      "version": "1.4.0",
+      "dependencies": [
+        "R",
+        "cli",
+        "farver",
+        "glue",
+        "labeling",
+        "lifecycle",
+        "R6",
+        "RColorBrewer",
+        "rlang",
+        "viridisLite"
+      ],
+      "path": "packages/scales/scales_1.4.0.tgz"
+    },
+    {
+      "package": "crayon",
+      "file": "crayon_1.5.3.tgz",
+      "sha256": "8dacbd3ab02a50dacceae1459140b1799161d6e14198b3d5fb82f5576a32e86c",
+      "bytes": 108153,
+      "source": "../packages/crayon/crayon_1.5.3.tgz",
+      "version": "1.5.3",
+      "dependencies": [
+        "grDevices",
+        "methods",
+        "utils"
+      ],
+      "path": "packages/crayon/crayon_1.5.3.tgz"
+    },
+    {
+      "package": "hms",
+      "file": "hms_1.1.4.tgz",
+      "sha256": "381818b2477f5f15a4ced876e2a5f1c6dd0c45cf47961e7a0af78d018e8143c1",
+      "bytes": 72904,
+      "source": "../packages/hms/hms_1.1.4.tgz",
+      "version": "1.1.4",
+      "dependencies": [
+        "cli",
+        "lifecycle",
+        "methods",
+        "pkgconfig",
+        "rlang",
+        "vctrs"
+      ],
+      "path": "packages/hms/hms_1.1.4.tgz"
+    },
+    {
+      "package": "numDeriv",
+      "file": "numDeriv_2016.8-1.1.tgz",
+      "sha256": "d4a872a6f04de8b74fbc24e479152916f87618295b092930f00ec3ce83b7f866",
+      "bytes": 101738,
+      "source": "../packages/numDeriv/numDeriv_2016.8-1.1.tgz",
+      "version": "2016.8-1.1",
+      "dependencies": [
+        "R"
+      ],
+      "path": "packages/numDeriv/numDeriv_2016.8-1.1.tgz"
+    },
+    {
+      "package": "mathjaxr",
+      "file": "mathjaxr_2.0-0.tgz",
+      "sha256": "0309e3ecbf1363c09f7434c3a02275f98436367d57f20f448090d73bc507945e",
+      "bytes": 2960415,
+      "source": "../packages/mathjaxr/mathjaxr_2.0-0.tgz",
+      "version": "2.0-0",
+      "dependencies": [],
+      "path": "packages/mathjaxr/mathjaxr_2.0-0.tgz"
+    },
+    {
+      "package": "pbapply",
+      "file": "pbapply_1.7-4.tgz",
+      "sha256": "a256290bd68d1e73b129c9483c7746d71c32e62a0cc25bfe595ce7b6a8b495ff",
+      "bytes": 63614,
+      "source": "../packages/pbapply/pbapply_1.7-4.tgz",
+      "version": "1.7-4",
+      "dependencies": [
+        "R",
+        "parallel"
+      ],
+      "path": "packages/pbapply/pbapply_1.7-4.tgz"
+    },
+    {
+      "package": "gtable",
+      "file": "gtable_0.3.6.tgz",
+      "sha256": "c473d1962c7cf06705314fabd44234ca323b998d36ef276cde31db9c2e4ca314",
+      "bytes": 179628,
+      "source": "../packages/gtable/gtable_0.3.6.tgz",
+      "version": "0.3.6",
+      "dependencies": [
+        "R",
+        "cli",
+        "glue",
+        "grid",
+        "lifecycle",
+        "rlang",
+        "stats"
+      ],
+      "path": "packages/gtable/gtable_0.3.6.tgz"
+    },
+    {
+      "package": "isoband",
+      "file": "isoband_0.3.0.tgz",
+      "sha256": "194bb1f35564fe845c524575dfa21c332a6c07cfc1b725726d0cd2cf37c1dfab",
+      "bytes": 1622407,
+      "source": "../packages/isoband/isoband_0.3.0.tgz",
+      "version": "0.3.0",
+      "dependencies": [
+        "cli",
+        "grid",
+        "rlang",
+        "utils",
+        "cpp11"
+      ],
+      "path": "packages/isoband/isoband_0.3.0.tgz"
+    },
+    {
+      "package": "S7",
+      "file": "S7_0.2.2.tgz",
+      "sha256": "5bcad1a4dcfcc61746da27f670aaa116c8661066a5195384b73a08a1c87e791b",
+      "bytes": 221114,
+      "source": "../packages/S7/S7_0.2.2.tgz",
+      "version": "0.2.2",
+      "dependencies": [
+        "R",
+        "utils"
+      ],
+      "path": "packages/S7/S7_0.2.2.tgz"
+    },
+    {
+      "package": "clipr",
+      "file": "clipr_0.8.0.tgz",
+      "sha256": "758b5afd43ae67cd9da76b6ad73a6ec027d1b23817f511b35e885958e71cbde6",
+      "bytes": 39895,
+      "source": "../packages/clipr/clipr_0.8.0.tgz",
+      "version": "0.8.0",
+      "dependencies": [
+        "utils"
+      ],
+      "path": "packages/clipr/clipr_0.8.0.tgz"
+    },
+    {
+      "package": "vroom",
+      "file": "vroom_1.6.5.9000.tgz",
+      "sha256": "97fdb16ffa72b73187c239e5dc9447f5028df811d5e9db0825222cbdba465e13",
+      "bytes": 364356,
+      "source": "../packages/vroom/vroom_1.6.5.9000.tgz",
+      "version": "1.6.5.9000",
+      "dependencies": [
+        "R",
+        "bit64",
+        "cli",
+        "crayon",
+        "glue",
+        "hms",
+        "lifecycle",
+        "methods",
+        "rlang",
+        "stats",
+        "tibble",
+        "tidyselect",
+        "tzdb",
+        "vctrs",
+        "withr",
+        "cpp11",
+        "progress",
+        "tzdb"
+      ],
+      "path": "packages/vroom/vroom_1.6.5.9000.tgz"
+    },
+    {
+      "package": "tzdb",
+      "file": "tzdb_0.5.0.tgz",
+      "sha256": "6b28220ef969ba3fd6c849ea8ad83a4fce5a76b19ba37cf4d7b8fa935feb95e6",
+      "bytes": 614281,
+      "source": "../packages/tzdb/tzdb_0.5.0.tgz",
+      "version": "0.5.0",
+      "dependencies": [
+        "R",
+        "cpp11"
+      ],
+      "path": "packages/tzdb/tzdb_0.5.0.tgz"
+    },
+    {
+      "package": "generics",
+      "file": "generics_0.1.4.tgz",
+      "sha256": "826e2ec9660c6ce52bbad2fc3852438aabfd1fadc9d067f41ebd2f760d59bc46",
+      "bytes": 72107,
+      "source": "../packages/generics/generics_0.1.4.tgz",
+      "version": "0.1.4",
+      "dependencies": [
+        "R",
+        "methods"
+      ],
+      "path": "packages/generics/generics_0.1.4.tgz"
+    },
+    {
+      "package": "pillar",
+      "file": "pillar_1.11.1.tgz",
+      "sha256": "a35503b081fa1636dc019ea706da398889c5a19325d6e364f3b0baea4485a934",
+      "bytes": 493396,
+      "source": "../packages/pillar/pillar_1.11.1.tgz",
+      "version": "1.11.1",
+      "dependencies": [
+        "cli",
+        "glue",
+        "lifecycle",
+        "rlang",
+        "utf8",
+        "utils",
+        "vctrs"
+      ],
+      "path": "packages/pillar/pillar_1.11.1.tgz"
+    },
+    {
+      "package": "tidyselect",
+      "file": "tidyselect_1.2.1.tgz",
+      "sha256": "48f331593806b6344ffe12574f7596384a959bf52dfa16c7053d31d86359d631",
+      "bytes": 163806,
+      "source": "../packages/tidyselect/tidyselect_1.2.1.tgz",
+      "version": "1.2.1",
+      "dependencies": [
+        "R",
+        "cli",
+        "glue",
+        "lifecycle",
+        "rlang",
+        "vctrs",
+        "withr"
+      ],
+      "path": "packages/tidyselect/tidyselect_1.2.1.tgz"
+    },
+    {
+      "package": "stringi",
+      "file": "stringi_1.8.7.tgz",
+      "sha256": "6e167f443d5e104fcf6ab84ebede560f11f9526685e309752de5d1464b1eeb18",
+      "bytes": 14077024,
+      "source": "../packages/stringi/stringi_1.8.7.tgz",
+      "version": "1.8.7",
+      "dependencies": [
+        "R",
+        "tools",
+        "utils",
+        "stats"
+      ],
+      "path": "packages/stringi/stringi_1.8.7.tgz"
+    },
+    {
+      "package": "farver",
+      "file": "farver_2.1.2.tgz",
+      "sha256": "e520d119d69f53fc09a02b753a20905a2cb10a5db2cbbcab9442e42d26512858",
+      "bytes": 1312032,
+      "source": "../packages/farver/farver_2.1.2.tgz",
+      "version": "2.1.2",
+      "dependencies": [],
+      "path": "packages/farver/farver_2.1.2.tgz"
+    },
+    {
+      "package": "labeling",
+      "file": "labeling_0.4.3.tgz",
+      "sha256": "92b8df5d6aef4252e2b4ea53ee1ad1888c5f1c044fbba1652de09f0f24d24a74",
+      "bytes": 41496,
+      "source": "../packages/labeling/labeling_0.4.3.tgz",
+      "version": "0.4.3",
+      "dependencies": [
+        "stats",
+        "graphics"
+      ],
+      "path": "packages/labeling/labeling_0.4.3.tgz"
+    },
+    {
+      "package": "RColorBrewer",
+      "file": "RColorBrewer_1.1-3.tgz",
+      "sha256": "0ec3f647dfcf493c491840dea45e921ac854b2e0dd467e0884cee91333d1563a",
+      "bytes": 25572,
+      "source": "../packages/RColorBrewer/RColorBrewer_1.1-3.tgz",
+      "version": "1.1-3",
+      "dependencies": [
+        "R"
+      ],
+      "path": "packages/RColorBrewer/RColorBrewer_1.1-3.tgz"
+    },
+    {
+      "package": "viridisLite",
+      "file": "viridisLite_0.4.3.tgz",
+      "sha256": "fe770e721a952d67eeac3660cabe699a264d58e44a80a8b345ebd856d4513155",
+      "bytes": 1294467,
+      "source": "../packages/viridisLite/viridisLite_0.4.3.tgz",
+      "version": "0.4.3",
+      "dependencies": [
+        "R"
+      ],
+      "path": "packages/viridisLite/viridisLite_0.4.3.tgz"
+    },
+    {
+      "package": "bit64",
+      "file": "bit64_4.8.0.tgz",
+      "sha256": "ba217f81b267f95d88504b53f8926bdb189c5e4f2207131d712f999c46c2f4bc",
+      "bytes": 357412,
+      "source": "../packages/bit64/bit64_4.8.0.tgz",
+      "version": "4.8.0",
+      "dependencies": [
+        "R",
+        "bit",
+        "graphics",
+        "methods",
+        "stats",
+        "utils"
+      ],
+      "path": "packages/bit64/bit64_4.8.0.tgz"
+    },
+    {
+      "package": "utf8",
+      "file": "utf8_1.2.6.tgz",
+      "sha256": "75bd089015193c141d8b3661ff5bae07950d493d40cc8ec93fa5e82f87ff55a5",
+      "bytes": 116595,
+      "source": "../packages/utf8/utf8_1.2.6.tgz",
+      "version": "1.2.6",
+      "dependencies": [
+        "R"
+      ],
+      "path": "packages/utf8/utf8_1.2.6.tgz"
+    },
+    {
+      "package": "bit",
+      "file": "bit_4.6.0.tgz",
+      "sha256": "b82d8d0bb369a720f6f3a19323df0402f1a6cfc24aff66aa06745c0cd54d922e",
+      "bytes": 487504,
+      "source": "../packages/bit/bit_4.6.0.tgz",
+      "version": "4.6.0",
+      "dependencies": [
+        "R"
+      ],
+      "path": "packages/bit/bit_4.6.0.tgz"
+    }
+  ],
+  "layout": "bin/emscripten/contrib/4.5/",
+  "webR": "0.5.5"
+}
