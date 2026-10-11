@@ -2,10 +2,18 @@ import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
 test.describe.configure({ mode: 'parallel' });
-
+test.beforeEach(async ({ page }) => {
+  page.setDefaultTimeout(10000);
+  // Returning-user plot tests: honour the apps' existing onboarding preferences.
+  await page.addInitScript(() => {
+    localStorage.setItem('truthcert_visited', 'true');
+    localStorage.setItem('nma-quickstart-dismissed', 'true');
+    localStorage.setItem('hta_tutorial_seen', 'true');
+  });
+});
 async function dismissTutorial(page) {
-  for (const text of ['Skip Tutorial', 'GET STARTED']) {
-    const button = page.getByText(text, { exact: true }).first();
+  for (const selector of ['#quickStartModal.active button[onclick="closeQuickStartWizard()"]', '#quickstart-close']) {
+    const button = page.locator(selector).first();
     if (await button.count() && await button.isVisible()) await button.click();
   }
 }
@@ -51,16 +59,24 @@ for (const width of [1280, 390]) {
         await page.waitForFunction(() => !!AppState.results?.pooled);
         await pairwisePlots(page);
         const before = await page.evaluate(() => JSON.parse(JSON.stringify(AppState.results)));
+        const input = await page.evaluate(() => JSON.parse(JSON.stringify(getStudyData())));
         const downloadPromise = page.waitForEvent('download');
         await page.evaluate(() => saveProject('plot-regression.json'));
         const saved = JSON.parse(await readFile(await (await downloadPromise).path(), 'utf8'));
         await info.attach('saved-result-keys', { body: JSON.stringify({ before: Object.keys(before), saved: Object.keys(saved.results || {}) }), contentType: 'application/json' });
         await page.reload({ waitUntil: 'load' });
         await dismissTutorial(page);
+        await page.evaluate(() => {
+          window.__restoreRefits = 0;
+          const run = runAnalysis;
+          window.runAnalysis = function (...args) { window.__restoreRefits++; return run.apply(this, args); };
+        });
         await page.evaluate(state => loadProject(JSON.stringify(state)), saved);
         await pairwisePlots(page);
         expect(saved.results).toEqual(before);
         expect(await page.evaluate(() => JSON.parse(JSON.stringify(AppState.results)))).toEqual(before);
+        expect(await page.evaluate(() => JSON.parse(JSON.stringify(getStudyData())))).toEqual(input);
+        expect(await page.evaluate(() => window.__restoreRefits)).toBe(0);
       });
     }
 
@@ -68,7 +84,6 @@ for (const width of [1280, 390]) {
       test.setTimeout(60000);
       await page.goto('/nma-dose-response-app/index.html', { waitUntil: 'load' });
       await page.waitForFunction(() => !!window._nmaState?.wasm && window._nmaState.lastStats?.length > 0);
-      await page.waitForTimeout(700);
       await dismissTutorial(page);
       await page.locator('#runAnalysis').click();
       await expect(page.locator('#chartsPanel')).not.toHaveClass(/hidden/);
@@ -97,12 +112,14 @@ for (const width of [1280, 390]) {
       await page.waitForTimeout(500);
       await page.evaluate(() => runAnalysis());
       await page.waitForFunction(() => !!APP.results?.pooled);
+      const before = await page.evaluate(() => JSON.stringify(APP.results));
       await page.locator('.nav-tab[data-panel="pubbias"]').click();
       await canvasHasInk(page, 'funnelPlot');
       await canvasHasInk(page, 'trimFillPlot');
+      expect(await page.evaluate(() => JSON.stringify(APP.results))).toBe(before);
     });
 
-    test('IPD Meta-Pro: resizing a data-derived network never replaces it with demo nodes', async ({ page }) => {
+    test('IPD Meta-Pro: resizing a data-derived network never draws demo nodes', async ({ page }) => {
       test.setTimeout(65000);
       await page.goto('/IPD-Meta-Pro/ipd-meta-pro.html', { waitUntil: 'load' });
       await page.evaluate(() => loadExampleData('network_antidepressants'));
@@ -120,14 +137,16 @@ for (const width of [1280, 390]) {
       });
       await canvasHasInk(page, 'networkPlot');
       await page.setViewportSize({ width: width + 60, height: 920 });
-      await page.waitForTimeout(450);
-      expect(await page.evaluate(() => window.__networkDraws.at(-1))).toEqual(expected);
+      await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+      await page.waitForTimeout(650);
+      const draws = await page.evaluate(() => window.__networkDraws);
+      expect(draws.length).toBeGreaterThan(1);
+      for (const nodes of draws) expect(nodes).toEqual(expected);
       await canvasHasInk(page, 'networkPlot');
     });
 
-    test('HTA Pro: base-case trace and PSA charts render after navigation', async ({ page }) => {
+    test('HTA Pro: base-case trace renders after navigation', async ({ page }) => {
       test.setTimeout(65000);
-      await page.addInitScript(() => localStorage.setItem('hta_tutorial_seen', 'true'));
       await page.goto('/HTA/index.html', { waitUntil: 'load' });
       await page.evaluate(async () => { app.loadDemoModel(); await app.runBaseCase(); });
       await canvasHasInk(page, 'trace-chart');
