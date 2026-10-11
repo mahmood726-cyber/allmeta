@@ -198,7 +198,7 @@ const adapter = {
   repoUrl,runUrl:repoUrl+'/actions/workflows/reproduce.yml',codespacesUrl:'https://codespaces.new/mahmood726-cyber/dta-sroc-reproducible', packageVersions:{mada:'0.5.12'}},
  live:{packages:['mada'],validatedVersions:{mada:'0.5.12'},currentState,buildScript,appValues:values,
   compare:{tolerance:{default:1e-6},kind:{lrPos:'rel',lrNeg:'rel',lrPosLo:'rel',lrPosHi:'rel',lrNegLo:'rel',lrNegHi:'rel',dor:'rel',tauSe:'rel',tauFpr:'rel',Theta:'rel',Lambda:'rel',beta:'rel',sigma2theta:'rel',sigma2alpha:'rel'}}},
- corpus:{files:[{"path": "validate/corpus/paper_values.json", "sha256": "1a1ca59c9574d0fcdbcdd5f5191ed9573f707d8b256e0d8c01d60f4849b44616"}, {"path": "validate/corpus/reference.json", "sha256": "755f4d0b6e1af2e448e327a8d208417772220b1ebb5c0a3f89d26cd732d62ce5"}], async run(files,onProgress=()=>{}) {
+ corpus:{files:[{"path": "validate/corpus/paper_values.json", "sha256": "a3cc58b2018720d0467fc40bd673edd6259277802293d5c7b7e5438937a4dfbd"}, {"path": "validate/corpus/reference.json", "sha256": "c27829827ad9772c8a9886c682ad13ef8ff80a8016372052bbc0b91a48105d29"}], async run(files,onProgress=()=>{}) {
   const data=unpack(files,'validate/corpus/reference.json');
   const expected=unpack(files,'validate/corpus/paper_values.json').values;
   if (!data || !Array.isArray(data.datasets) || expected.checks_total.value!==855) throw new Error('Invalid DTA corpus');

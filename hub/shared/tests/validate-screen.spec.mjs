@@ -41,8 +41,8 @@ test('quick corpus replay is offline, uses shipped simulator and reports stored 
 test('full paper WSS benchmark @slow',async({page,context})=>{
  test.setTimeout(30*60*1000);
  const external=[];
- context.on('request', r=>{if(new URL(r.url()).origin !== 'http://127.0.0.1:8000') external.push(r.url());});
- await page.goto('http://127.0.0.1:8000/screen/index.html');
+ context.on('request', r=>{if(new URL(r.url()).origin !== 'http://localhost:8088') external.push(r.url());});
+ await page.goto('/screen/index.html');
  await page.evaluate(()=>ScreenValidationAdapter.ready);
  await page.exposeFunction('screenValidationProgress',p=>{if(p.done%10===0)console.log(p.message);});
  await page.evaluate(()=>{const a=ScreenValidationAdapter,run=a.corpus.run;a.corpus.run=(files,progress)=>run(files,p=>{progress(p);window.screenValidationProgress(p);});});
