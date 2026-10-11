@@ -12,7 +12,7 @@ function watch(page) {
 test('framework refuses changed corpus bytes before running the adapter',async({page})=>{
   const outside=watch(page);await page.goto(URL);
   await page.route('**/validate/corpus/corpus.json',route=>route.fulfill({contentType:'application/json',body:'[]'}));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
   expect(outside).toEqual([]);
 });
@@ -34,11 +34,13 @@ test('comparison fails closed on absent or nonfinite values; unavailable R links
   const result=await page.evaluate(()=>{
     const absent=AlmValidate.compare(undefined,undefined,'abs',1e-6);
     const nan=AlmValidate.compare(NaN,NaN,'abs',1e-6);
+    const unbounded=AlmValidate.compare(10,0,'abs',Infinity);
+    const invalidKind=AlmValidate.compare(0,0,'unknown',1e-6);
     AlmValidate.mount(document.getElementById('alm-validate'),{...AlmHetValidationAdapter,live:null});
-    return {absent:absent.pass,nan:nan.pass};
+    return {absent:absent.pass,nan:nan.pass,unbounded:unbounded.pass,invalidKind:invalidKind.pass};
   });
-  expect(result).toEqual({absent:false,nan:false});
-  await expect(page.getByRole('link',{name:'R check available via the reproducible repo'})).toHaveAttribute('href',/heterogeneity-reproducible$/);
+  expect(result).toEqual({absent:false,nan:false,unbounded:false,invalidKind:false});
+  await expect(page.getByRole('link',{name:'R reference and re-execution'})).toHaveAttribute('href',/heterogeneity-reproducible$/);
 });
 test('R package hash mismatch is refused before boot @slow',async({page})=>{
   test.setTimeout(180000);

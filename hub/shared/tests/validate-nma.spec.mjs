@@ -48,8 +48,9 @@ test('NMA buttons replay hash-verified corpus through file selection offline', a
   const widget = page.locator('#alm-validate');
   await expect(widget.getByRole('button', {name:'Validate this analysis in R'})).toBeVisible();
   await widget.locator('input[type=file]').setInputFiles(corpusPaths);
-  await widget.getByRole('button', {name:'Re-run full validation'}).click();
-  await expect(widget.getByRole('status')).toHaveText('410/410 passed; 0 failed. Paper: 410 checks.');
+  await widget.getByRole('button', {name:'Replay published corpus (stored references)'}).click();
+  await expect(widget.getByRole('status')).toContainText('410/410 passed; 0 failed checks. Paper: 410 checks.');
+  await expect(widget.getByRole('status')).toContainText('R/Python not executed');
   await expect(widget).toContainText('SHA-256 verified');
   expect(external).toEqual([]);
 });
@@ -62,7 +63,7 @@ test('NMA refuses a tampered corpus before calling engine', async ({page, contex
   await page.evaluate(() => { window.__nmaCalls=0; const old=AlmNmaValidateAdapter.corpus.run; AlmNmaValidateAdapter.corpus.run=(...args)=>{window.__nmaCalls++;return old(...args);}; });
   const widget=page.locator('#alm-validate');
   await widget.locator('input[type=file]').setInputFiles(corpusPaths.map((p,i)=>({name:path.basename(p),mimeType:'application/json',buffer:Buffer.from(fs.readFileSync(p,'utf8')+(i===0?' ':''))})));
-  await widget.getByRole('button',{name:'Re-run full validation'}).click();
+  await widget.getByRole('button',{name:'Replay published corpus (stored references)'}).click();
   await expect(widget.getByRole('status')).toContainText('SHA-256 mismatch; refused');
   expect(await page.evaluate(()=>window.__nmaCalls)).toBe(0);
   expect(external).toEqual([]);
