@@ -4,7 +4,8 @@ on:
     branches: [fix/all-app-plot-rendering-20261011]
     paths:
       - .github/workflows/catalog-plot-audit-temp.yml
-      - tests/playwright/audit-catalog-plots.mjs
+      - tests/playwright/flagship-plot-rendering.spec.mjs
+      - tests/playwright/catalog-svg-plots.spec.mjs
 permissions:
   contents: read
 jobs:
@@ -22,14 +23,14 @@ jobs:
         working-directory: tests/playwright
       - run: npx playwright install --with-deps chromium
         working-directory: tests/playwright
-      - name: Exercise every locally hosted catalogue entry at desktop and mobile widths
+      - name: Exercise flagship plots, actual saved sessions and tab navigation
         working-directory: tests/playwright
-        run: |
-          npx http-server ../.. -p 8080 -c-1 --silent &
-          node audit-catalog-plots.mjs
+        run: npx playwright test flagship-plot-rendering.spec.mjs nma-pro-session-plots.spec.mjs --workers=3
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: catalogue-plot-audit
-          path: tests/playwright/artifacts/catalog-plots/
+          name: flagship-plot-audit
+          path: |
+            tests/playwright/artifacts/
+            tests/playwright/test-results/
           retention-days: 7
