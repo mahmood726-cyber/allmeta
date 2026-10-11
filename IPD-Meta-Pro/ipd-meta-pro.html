@@ -30558,9 +30558,30 @@ function switchPanel(panelName) {
 
     });
 
+    requestAnimationFrame(() => {
+        if (panelName === 'network' && APP.data && APP.data.length) buildNetworkFromData();
+        if ((panelName === 'results' || panelName === 'pubbias') && APP.results) updateResults();
+    });
 }
 
 
+
+// This handler is deliberately top-level: the legacy demo resize listener is
+// nested inside kMeans and does not register when the application loads.
+let ipdPlotResizeFrame = null;
+window.addEventListener('resize', () => {
+    if (ipdPlotResizeFrame !== null) cancelAnimationFrame(ipdPlotResizeFrame);
+    ipdPlotResizeFrame = requestAnimationFrame(() => {
+        ipdPlotResizeFrame = null;
+        const active = document.querySelector('.panel.active');
+        if (active && active.id === 'panel-network' && APP.data && APP.data.length) {
+            buildNetworkFromData();
+        }
+        if (active && (active.id === 'panel-results' || active.id === 'panel-pubbias') && APP.results) {
+            updateResults();
+        }
+    });
+});
 
 function drawMissingnessPlot(data) {
 
@@ -33779,7 +33800,8 @@ function detectVariableTypes(data, headers) {
 
  const maxSE = Math.max(...se) * 1.1;
 
- const effectRange = Math.max(...effects.map(e => Math.abs(e - pooled))) * 1.5;
+ // Keep identical-effect datasets finite and include the funnel boundaries.
+ const effectRange = Math.max(Math.max(...effects.map(e => Math.abs(e - pooled))) * 1.5, getConfZ() * maxSE, 1e-12);
 
 
 
@@ -33863,7 +33885,13 @@ function detectVariableTypes(data, headers) {
 
  ctx.arc(toX(e), toY(se[i]), 5, 0, Math.PI * 2);
 
- ctx.fill();
+ if (Number.isInteger(options.observedCount) && i >= options.observedCount) {
+   ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent-primary').trim();
+   ctx.lineWidth = 2;
+   ctx.stroke();
+ } else {
+   ctx.fill();
+ }
 
  });
 
@@ -33902,6 +33930,9 @@ function detectVariableTypes(data, headers) {
  ctx.textAlign = 'center';
 
  ctx.fillText('Effect Size', w / 2, h - 10);
+ if (Number.isInteger(options.observedCount)) {
+   ctx.fillText('Filled: observed; open: imputed', w / 2, 18);
+ }
 
 
 
@@ -38425,6 +38456,18 @@ function updateResults() {
  const tf = PublicationBias.trimAndFill(r.studies.map(s => s.effect), r.studies.map(s => s.variance));
 
  document.getElementById('imputedStudies').textContent = tf.k0;
+
+ // Plot the same observed and imputed effects used by the displayed adjustment.
+ const trimFillCanvas = document.getElementById('trimFillPlot');
+ if (trimFillCanvas) {
+   const observed = r.studies.map(s => ({ effect: s.effect, variance: s.variance }));
+   const filled = observed.concat(tf.imputedStudies || []);
+   setTimeout(() => Plots.drawFunnel(
+     trimFillCanvas, filled.map(s => s.effect), filled.map(s => Math.sqrt(s.variance)),
+     tf.adjusted.pooled, { showContour: true, observedCount: observed.length }
+   ), 100);
+ }
+
 
  const adjEffect = isLogScale ? Math.exp(tf.adjusted.pooled) : tf.adjusted.pooled;
 
@@ -53019,6 +53062,12 @@ function initializeInteractivity() {
 
 
 function initNetworkDemo() {
+
+ // Once data is loaded, redraw its network rather than the startup illustration.
+ if (APP.data && APP.data.length) {
+   buildNetworkFromData();
+   return;
+ }
 
  const canvas = document.getElementById('networkPlot');
 

@@ -5019,33 +5019,31 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
     document.addEventListener('DOMContentLoaded', function() {
       // Run Analysis button - main action button
       document.getElementById('runAnalysis')?.addEventListener('click', function() {
-        showNotification('Running analysis...', 'info');
-
-        // First parse the CSV if there's data
         const csvInput = document.getElementById('csvInput');
-        if (csvInput && csvInput.value.trim()) {
-          // Trigger parse first
-          const parseBtn = document.getElementById('parseCsv');
-          if (parseBtn) parseBtn.click();
-
-          // Then trigger updateAnalysis from app.js after a short delay
-          setTimeout(() => {
-            if (typeof updateAnalysis === 'function') {
-              updateAnalysis();
-              showNotification('Analysis complete! Check the Charts panel.', 'success');
-              // Show the charts panel
-              const chartsPanel = document.getElementById('chartsPanel');
-              if (chartsPanel) {
-                chartsPanel.classList.remove('hidden');
-                const btn = document.getElementById('chartsToggleBtn');
-                if (btn) btn.classList.remove('visible');
-              }
-            } else {
-              showNotification('Analysis engine loading... please try again.', 'warning');
-            }
-          }, 500);
-        } else {
+        if (!csvInput || !csvInput.value.trim()) {
           showNotification('Please enter or load CSV data first', 'warning');
+          return;
+        }
+        const run = window.NMAStudio && window.NMAStudio.runAnalysisFromInput;
+        if (typeof run !== 'function') {
+          showNotification('Analysis engine is still loading.', 'warning');
+          return;
+        }
+        try {
+          const result = run();
+          if (!result.ok) {
+            showNotification(result.message, 'warning');
+            return;
+          }
+          document.getElementById('chartsPanel')?.classList.remove('hidden');
+          document.getElementById('chartsToggleBtn')?.classList.remove('visible');
+          // Activate after revealing: the chart renderer now sees its true dimensions.
+          const activeTab = document.querySelector('#chartTabs [data-tab-button].active');
+          (activeTab || document.querySelector('#chartTabs [data-tab-button="dose"]'))?.click();
+          showNotification('Analysis complete! Check the Charts panel.', 'success');
+        } catch (error) {
+          console.error('Analysis failed:', error);
+          showNotification('Analysis failed. Check the input data and try again.', 'error');
         }
       });
 
@@ -5135,188 +5133,7 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
     }
 
     // ============================================
-    // DEMO CHART INITIALIZATION
-    // ============================================
-    function initializeDemoCharts() {
-      // Only initialize if Chart.js is available
-      if (typeof Chart === 'undefined') {
-        console.error('[NMA Studio] Chart.js not loaded! Charts will not work.');
-        showNotification('Chart.js failed to load. Please check your internet connection.', 'error');
-        return;
-      }
-
-      // Demo dose-response chart
-      const doseCtx = document.getElementById('doseChart');
-      if (doseCtx && !doseCtx.chartInstance) {
-        doseCtx.chartInstance = new Chart(doseCtx, {
-          type: 'line',
-          data: {
-            labels: [0, 5, 10, 15, 20, 25, 30, 40, 50],
-            datasets: [{
-              label: 'Effect Size',
-              data: [0, 0.15, 0.35, 0.52, 0.65, 0.74, 0.80, 0.88, 0.92],
-              borderColor: '#1d9bf0',
-              backgroundColor: 'rgba(29, 155, 240, 0.1)',
-              fill: true,
-              tension: 0.4,
-              pointRadius: 4,
-              pointBackgroundColor: '#1d9bf0'
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: true, labels: { color: '#e7e9ea' } },
-              title: { display: true, text: 'Dose-Response Curve (Demo)', color: '#e7e9ea' }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Dose (mg)', color: '#8b98a5' }, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-              y: { title: { display: true, text: 'Effect Size', color: '#8b98a5' }, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            }
-          }
-        });
-      }
-
-      // Demo ranking chart
-      const rankCtx = document.getElementById('rankChart');
-      if (rankCtx && !rankCtx.chartInstance) {
-        rankCtx.chartInstance = new Chart(rankCtx, {
-          type: 'bar',
-          data: {
-            labels: ['Treatment A', 'Treatment B', 'Treatment C', 'Placebo'],
-            datasets: [{
-              label: 'SUCRA',
-              data: [0.85, 0.72, 0.58, 0.15],
-              backgroundColor: ['#00ba7c', '#1d9bf0', '#ffd700', '#8b98a5'],
-              borderRadius: 6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: 'Treatment Rankings - SUCRA (Demo)', color: '#e7e9ea' }
-            },
-            scales: {
-              x: { max: 1, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-              y: { ticks: { color: '#e7e9ea' }, grid: { display: false } }
-            }
-          }
-        });
-      }
-
-      // Demo funnel plot
-      const biasCtx = document.getElementById('biasChart');
-      if (biasCtx && !biasCtx.chartInstance) {
-        biasCtx.chartInstance = new Chart(biasCtx, {
-          type: 'scatter',
-          data: {
-            datasets: [{
-              label: 'Studies',
-              data: [
-                {x: 0.5, y: 0.15}, {x: 0.3, y: 0.12}, {x: 0.6, y: 0.18},
-                {x: 0.4, y: 0.08}, {x: 0.55, y: 0.22}, {x: 0.45, y: 0.10},
-                {x: 0.35, y: 0.05}, {x: 0.52, y: 0.14}
-              ],
-              backgroundColor: '#1d9bf0',
-              pointRadius: 6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: 'Funnel Plot (Demo)', color: '#e7e9ea' }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Effect Size', color: '#8b98a5' }, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-              y: { title: { display: true, text: 'Standard Error', color: '#8b98a5' }, reverse: true, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            }
-          }
-        });
-      }
-
-      // Demo network chart
-      const networkCtx = document.getElementById('networkChart');
-      if (networkCtx && !networkCtx.chartInstance) {
-        networkCtx.chartInstance = new Chart(networkCtx, {
-          type: 'bubble',
-          data: {
-            datasets: [
-              { label: 'Treatment A', data: [{x: 2, y: 3, r: 15}], backgroundColor: '#00ba7c' },
-              { label: 'Treatment B', data: [{x: 4, y: 3, r: 12}], backgroundColor: '#1d9bf0' },
-              { label: 'Treatment C', data: [{x: 3, y: 1, r: 10}], backgroundColor: '#ffd700' },
-              { label: 'Placebo', data: [{x: 3, y: 5, r: 18}], backgroundColor: '#8b98a5' }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: true, labels: { color: '#e7e9ea' } },
-              title: { display: true, text: 'Treatment Network (Demo)', color: '#e7e9ea' }
-            },
-            scales: {
-              x: { display: false },
-              y: { display: false }
-            }
-          }
-        });
-      }
-
-      // Demo diagnostics chart (Q-Q plot)
-      const diagCtx = document.getElementById('diagnosticsChart');
-      if (diagCtx && !diagCtx.chartInstance) {
-        // Generate Q-Q plot data
-        const n = 15;
-        const qqData = [];
-        for (let i = 1; i <= n; i++) {
-          const theoretical = -2.5 + (5 * (i - 0.5) / n);
-          const observed = theoretical + (nmaRandom() - 0.5) * 0.8;
-          qqData.push({ x: theoretical, y: observed });
-        }
-
-        diagCtx.chartInstance = new Chart(diagCtx, {
-          type: 'scatter',
-          data: {
-            datasets: [
-              {
-                label: 'Residuals',
-                data: qqData,
-                backgroundColor: '#1d9bf0',
-                pointRadius: 6
-              },
-              {
-                label: 'Reference Line',
-                data: [{x: -2.5, y: -2.5}, {x: 2.5, y: 2.5}],
-                type: 'line',
-                borderColor: '#f91880',
-                borderDash: [5, 5],
-                pointRadius: 0,
-                fill: false
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: true, labels: { color: '#e7e9ea' } },
-              title: { display: true, text: 'Normal Q-Q Plot (Demo)', color: '#e7e9ea' }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Theoretical Quantiles', color: '#8b98a5' }, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-              y: { title: { display: true, text: 'Sample Quantiles', color: '#8b98a5' }, ticks: { color: '#8b98a5' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            }
-          }
-        });
-      }
-    }
-
+    // Analysis canvases are owned exclusively by app.js.
     // ============================================
     // DRAGGABLE CHARTS PANEL
     // ============================================
@@ -5514,8 +5331,7 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
         // Initialize draggable charts panel
         initDraggable();
 
-        // Initialize demo charts after a short delay to ensure Chart.js is loaded
-        setTimeout(initializeDemoCharts, 100);
+        // app.js renders these canvases from the selected example or user analysis.
       } catch (error) {
         console.error('[NMA Studio] Initialization error:', error);
         alert('Initialization error: ' + error.message);
