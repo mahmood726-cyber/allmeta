@@ -17,6 +17,7 @@ jobs:
         run: |
           python scripts/repair-netheat-input.py
           python scripts/repair-netheat-components.py
+          python scripts/repair-netheat-capture.py
           python scripts/repair-remaining-plots.py
           python scripts/repair-legacy-and-entrypoints.py
           python - <<'PY'
