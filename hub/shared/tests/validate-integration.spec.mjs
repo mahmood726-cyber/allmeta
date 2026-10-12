@@ -2,7 +2,7 @@ import {test, expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 const root=new URL('../../../',import.meta.url);
-for (const [app,globalName,count] of [['dose-response-ma','AlmDoseValidate',724],['dta-sroc','AlmDTAValidateAdapter',855],['nma','AlmNmaValidateAdapter',410]]) {
+for (const [app,globalName,count] of [['multilevel-ma','AlmMultilevelValidationAdapter',528],['dose-response-ma','AlmDoseValidate',724],['dta-sroc','AlmDTAValidateAdapter',855],['nma','AlmNmaValidateAdapter',410]]) {
  test(`${app} HTTP preparation then offline widget replay`,async({page,context})=>{
   test.setTimeout(180000);
   await page.goto('/'+app+'/index.html');

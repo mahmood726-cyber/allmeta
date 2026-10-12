@@ -293,6 +293,10 @@
     var _lastResults = null, _lastReml = null;
     window.__almReml = function () { return _lastReml; };
 
+    // Validation uses the same parser and render path as the Fit button.
+    window.__almMlmaParse = parse;
+    window.__almMlmaRun = run;
+
     function run() {
       var rows = parse(document.getElementById('src').value);
       if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
@@ -550,5 +554,8 @@
     else document.addEventListener("DOMContentLoaded", init);
   })();
 </script>
+<div id="alm-validate"></div>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>

@@ -55,7 +55,11 @@
 
     return { numbers: 19 + 6 * res.loo.length - (res.tauEstimates.dl == null ? 1 : 0), fails };
   }
-  async function replay(loaded, onProgress) {
+  async function replay(loaded, progress) {
+    if (!window.alm || !alm.urlState || !alm.urlState.withoutWrites) throw new Error('URL-state replay guard unavailable');
+    return alm.urlState.withoutWrites(() => replayWithoutWrites(loaded, progress));
+  }
+  async function replayWithoutWrites(loaded, onProgress) {
     const corpus = loaded[files[0].path], refs = loaded[files[1].path];
     const byID = new Map(refs.map(r => [r.analysis,r]));
     if (byID.size !== refs.length || byID.size !== corpus.length || new Set(corpus.map(c => c.id)).size !== corpus.length) throw new Error('Corpus/reference identifiers differ or duplicate');

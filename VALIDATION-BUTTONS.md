@@ -40,6 +40,7 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 
 | App | Tier 1 | Tier 2 | Integration status |
 |---|---|---|---|
+| Multilevel MA | metafor 4.8-0; paper 5.2-1 | 44 configurations, 528 checks including MoM-share and UI contracts | validate-multilevel-ma + integration specs |
 | Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
 | Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | See integration report |
 | DTA SROC | mada 0.5.12 vendored | Contract: 855 checks | See integration report |
@@ -58,3 +59,5 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 | Build SHA | Static generated stamp | Existing shared/build-info.js; regenerate at integration/release |
 
 See `INTEGRATION_REPORT.md` for exact commands, results and limitations. This lane does not commit, push, deploy or change submission status.
+
+Multilevel details and scope: [multilevel-ma/validate/README.md](multilevel-ma/validate/README.md). Its live check uses `rma.mv(yi, vi, random = ~ 1 | cluster/id, method = "REML")` on current page inputs.
