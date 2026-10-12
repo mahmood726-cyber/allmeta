@@ -17,6 +17,7 @@ jobs:
         run: |
           python scripts/repair-netheat-input.py
           python scripts/repair-netheat-components.py
+          python scripts/repair-netheat-device.py
           python scripts/repair-netheat-capture.py
           python scripts/repair-remaining-plots.py
           python scripts/repair-legacy-and-entrypoints.py
@@ -58,6 +59,15 @@ jobs:
           git add IPD-Meta-Pro/src/diagnostic-plots.js IPD-Meta-Pro/ipd-meta-pro.html IPD-Meta-Pro/legacy/unreachable-kmeans-block.txt webr-studio/index.html r-shiny/dta-diagnostic/app.json hub/projects.js tests/playwright/remaining-plots.spec.mjs tests/playwright/remaining-runtime-plots.spec.mjs
           git commit -m 'fix: complete IPD diagnostic plots and repair R graphics and runtime entrypoints'
           git push origin HEAD:fix/remaining-plots-20261012
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remaining-plot-results-compact
+          path: |
+            tests/playwright/artifacts/*.json
+            tests/playwright/test-results/**/*.png
+            tests/playwright/test-results-prior/**/*.png
+          retention-days: 7
       - if: always()
         uses: actions/upload-artifact@v4
         with:
