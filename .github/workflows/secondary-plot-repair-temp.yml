@@ -1,0 +1,33 @@
+name: Secondary plot repair (temporary branch only)
+on:
+  push:
+    branches: [fix/secondary-plot-fidelity-20261012]
+    paths: [.github/workflows/secondary-plot-repair-temp.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/playwright/package-lock.json
+      - run: npm ci
+        working-directory: tests/playwright
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - name: Baseline secondary plot reproductions
+        working-directory: tests/playwright
+        run: npx playwright test secondary-plot-fidelity.spec.mjs --workers=2 --retries=0
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secondary-plot-baseline
+          path: |
+            tests/playwright/artifacts/
+            tests/playwright/test-results/
+          retention-days: 7
