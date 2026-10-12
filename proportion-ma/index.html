@@ -312,8 +312,10 @@
 
     // ---- results storage for export ----
     var _lastResults = null;
+    var _validationDetails = null;
 
-    function run() {
+    function run(options) {
+      _validationDetails = null;
       var text = document.getElementById('src').value;
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
@@ -416,8 +418,15 @@
 
       render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, poolPiLo: poolPiLo, poolPiHi: poolPiHi, het: pooled });
 
+      // Read-only validation snapshot of the actual computation and render path.
+      _validationDetails = {
+        values: Object.assign({}, _lastResults, {lo:lo, hi:hi, piLo:piT ? piT.lo : null, piHi:piT ? piT.hi : null}),
+        yi: transformed.map(function(r) { return r.y; }),
+        vi: transformed.map(function(r) { return r.v; }), studies: perStudy
+      };
+
       // URL state
-      if (window.alm && window.alm.urlState) {
+      if (!(options && options.suppressURL) && window.alm && window.alm.urlState) {
         window.alm.urlState.write({ src: text, trans: trans, tau: tauEst });
       }
     }
@@ -545,6 +554,12 @@
     };
 
     // Expose last results for export
+    window.__almPropValidation = {
+      run: function () { run({suppressURL:true}); }, parse: parseTable,
+      save: function () { return {results:_lastResults, details:_validationDetails}; },
+      restore: function (s) { _lastResults=s.results; _validationDetails=s.details; },
+      snapshot: function () { return _validationDetails ? JSON.parse(JSON.stringify(_validationDetails)) : null; }
+    };
     window._almLastPropMA = function () { return _lastResults; };
 
     // Cross-tool bus producer (ma-studies-v1): per-study {label, est, se} on the
@@ -692,5 +707,8 @@
   });
 })();
 </script>
+<section id="alm-validate" aria-label="Independent validation"></section>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
