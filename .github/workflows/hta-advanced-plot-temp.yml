@@ -1,0 +1,23 @@
+name: HTA advanced plot contracts (temporary branch only)
+on:
+  push:
+    branches: [fix/hta-advanced-plot-contracts-20261012]
+    paths: [.github/workflows/hta-advanced-plot-temp.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hta-advanced-debug-source
+          path: |
+            HTA/
+            tests/playwright/
+            shared/
+            docs/PLOT_COMPLETION_2026-10-12.md
+            docs/HTA_SYNTHESIS_PLOTS_2026-10-12.md
+          retention-days: 1
