@@ -192,7 +192,10 @@ class NetworkMetaAnalysis {
                         baseline.events, baseline.n - baseline.events,
                         arm.events, arm.n - arm.events
                     );
-                    effect = or.logOR;
+                    // calculateOddsRatio returns baseline/arm, whereas X models
+                    // d_arm - d_baseline. Match the design matrix and league
+                    // table convention: log odds(arm) / odds(baseline).
+                    effect = -or.logOR;
                     variance = or.variance;
                 } else if (outcomeType === 'continuous') {
                     // Standardized mean difference
@@ -999,7 +1002,12 @@ class NetworkMetaAnalysis {
             I2,
             reference: this.treatments[0],
             method: 'frequentist',
-            model: this.options.model,
+            // This fitter uses only within-study variance in W. A requested
+            // random model must not relabel that fixed-effect calculation.
+            model: 'fixed',
+            requestedModel: this.options.model,
+            fittedTauSquared: 0,
+            heterogeneityEstimateUsedInFit: false,
             varCov: varD  // Variance-covariance matrix for P-score calculation
         };
     }
@@ -1173,10 +1181,11 @@ class NetworkMetaAnalysis {
                     // Reference: Rücker & Schwarzer (2015), Biometrical Journal
                     const varDiff = fullVarCov[i][i] + fullVarCov[j][j]
                                   - 2 * fullVarCov[i][j];
-                    const seDiff = Math.sqrt(Math.max(0.0001, varDiff));
-
-                    const z = diff / seDiff;
-                    sumP += this.normalCDF(z);
+                    // An arbitrary variance floor changes ranks for precise
+                    // data. Use the fitted covariance, with its zero-variance
+                    // limit only for a genuinely deterministic comparison.
+                    sumP += varDiff > 0 ? this.normalCDF(diff / Math.sqrt(varDiff))
+                        : (diff === 0 ? 0.5 : (diff > 0 ? 1 : 0));
                 }
             }
 
@@ -1819,28 +1828,39 @@ class NetworkMetaAnalysis {
     }
 
     regularizedGammaQ(a, x) {
-        let f = 1e-30;
-        let c = 1e-30;
-        let d = 0;
+        // Upper incomplete gamma using Legendre continued fraction
+        // Q(a,x) = Gamma(a,x) / Gamma(a)
+        // Reference: Numerical Recipes, Press et al.
+        const FPMIN = 1e-30;
+        const EPS = 1e-10;
+        const ITMAX = 200;
 
-        for (let i = 1; i < 100; i++) {
-            const an = i * (a - i);
-            const bn = (2 * i - 1) + x - a;
-            d = bn + an * d;
-            if (Math.abs(d) < 1e-30) d = 1e-30;
-            c = bn + an / c;
-            if (Math.abs(c) < 1e-30) c = 1e-30;
+        // Modified Lentz method
+        let b = x + 1 - a;
+        let c = 1 / FPMIN;
+        let d = 1 / b;
+        let h = d;
+
+        for (let i = 1; i <= ITMAX; i++) {
+            const an = -i * (i - a);
+            b += 2;
+            d = an * d + b;
+            if (Math.abs(d) < FPMIN) d = FPMIN;
+            c = b + an / c;
+            if (Math.abs(c) < FPMIN) c = FPMIN;
             d = 1 / d;
-            const delta = c * d;
-            f *= delta;
-            if (Math.abs(delta - 1) < 1e-10) break;
+            const delta = d * c;
+            h *= delta;
+            if (Math.abs(delta - 1) < EPS) break;
         }
 
-        return f * Math.exp(-x + a * Math.log(x) - this.logGamma(a));
+        const result = Math.exp(-x + a * Math.log(x) - this.logGamma(a)) * h;
+        // Clamp to valid probability range
+        return Math.max(0, Math.min(1, result));
     }
 
     logGamma(x) {
-        const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+        const c = [76.18009172947146, -86.50532032941678, 24.01409824083091,
                    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
         let y = x;
         let tmp = x + 5.5;
@@ -1849,7 +1869,7 @@ class NetworkMetaAnalysis {
         for (let j = 0; j < 6; j++) {
             ser += c[j] / ++y;
         }
-        return -tmp + Math.log(2.5066282746310005 * ser / x);
+        return -tmp + Math.log(2.5066282746310007 * ser / x);
     }
 
     /**

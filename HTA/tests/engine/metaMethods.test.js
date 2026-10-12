@@ -4,9 +4,9 @@
 
 'use strict';
 
-const { KahanSum, StatUtils } = require('../../src/utils/mathUtils');
-
+const { KahanSum } = require('../../src/utils/kahan');
 global.KahanSum = KahanSum;
+const { StatUtils } = require('../../src/utils/mathUtils');
 global.StatUtils = StatUtils;
 
 const { MetaAnalysisMethods } = require('../../src/engine/metaMethods');
@@ -261,11 +261,13 @@ describe('MetaAnalysisMethods', () => {
             expect(midpoint).toBeCloseTo(result.random.effect, 5);
         });
 
-        test('prediction interval is null for k <= 2', () => {
+        test('two-study prediction interval uses t with one degree of freedom', () => {
             const ma = new MetaAnalysisMethods({ method: 'DL', predictionInterval: true });
             const result = ma.calculatePooledEffect(studies.slice(0, 2));
 
-            expect(result.heterogeneity.predictionInterval).toBeNull();
+            expect(result.heterogeneity.predictionInterval.method).toBe('t-distribution (df=1)');
+            expect(result.heterogeneity.predictionInterval.lower).toBeLessThan(result.random.ci_lower);
+            expect(result.heterogeneity.predictionInterval.upper).toBeGreaterThan(result.random.ci_upper);
         });
     });
 
@@ -446,7 +448,7 @@ describe('MetaAnalysisMethods', () => {
             // No heterogeneity with one study
             expect(result.heterogeneity.Q).toBeCloseTo(0, 10);
             expect(result.heterogeneity.I2).toBe(0);
-            // Prediction interval requires k > 2
+            // Prediction interval requires at least two studies
             expect(result.heterogeneity.predictionInterval).toBeNull();
         });
 
