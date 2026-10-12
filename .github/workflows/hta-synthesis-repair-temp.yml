@@ -13,6 +13,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: fix/hta-beginner-plots-20261012
+      - name: Apply screenshot-driven mobile geometry repair
+        run: |
+          python scripts/repair-hta-mobile-layout.py
+          node --check HTA/src/ui/synthesisPlots.js
+          git diff --check
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -22,33 +27,6 @@ jobs:
         working-directory: tests/playwright
       - run: npx playwright install --with-deps chromium
         working-directory: tests/playwright
-      - name: Baseline missing-plot and numerical reproductions
-        working-directory: tests/playwright
-        run: |
-          set +e
-          npx playwright test hta-synthesis-plots.spec.mjs --grep 'manual entry|network example|REML matches' --workers=2 --retries=0
-          cp artifacts/report.json artifacts/hta-before.json
-          python - <<'PY'
-          import json
-          s=json.load(open('artifacts/hta-before.json'))['stats']
-          print('Baseline:',s)
-          assert s['unexpected']==6 and s['expected']==0
-          PY
-      - name: Apply guarded adapter/REML integration and validate syntax
-        run: |
-          python scripts/repair-hta-synthesis.py
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('tests/playwright/hta-synthesis-plots.spec.mjs')
-          s=p.read_text()
-          a="svg.locator('line,path,circle,polygon')"
-          assert s.count(a)==1
-          p.write_text(s.replace(a,"svg.locator('line,path,circle,polygon,rect[data-pscore]')"))
-          PY
-          node --check HTA/src/ui/synthesisPlots.js
-          node --check HTA/src/ui/beginnerMode.js
-          node --check HTA/src/engine/metaMethods.js
-          git diff --check
       - name: Verify HTA and earlier native plotting workflows
         working-directory: tests/playwright
         run: |
@@ -64,17 +42,17 @@ jobs:
         run: |
           npx playwright test remaining-plots.spec.mjs remaining-runtime-plots.spec.mjs ipd-fitted-display.spec.mjs --workers=2 --retries=0
           cp artifacts/report.json artifacts/hta-ipd-runtime.json
-      - name: Commit only tested production files and regression tests
+      - name: Commit only browser-tested geometry and stronger visibility assertions
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add HTA/index.html HTA/src/engine/metaMethods.js HTA/src/ui/beginnerMode.js tests/playwright/hta-synthesis-plots.spec.mjs
-          git commit -m 'fix(hta): restore beginner synthesis plots and canonical REML estimation'
+          git add HTA/src/ui/synthesisPlots.js tests/playwright/hta-synthesis-plots.spec.mjs
+          git commit -m 'fix(hta): fit plot geometry to phone panels without horizontal clipping'
           git push origin HEAD:fix/hta-beginner-plots-20261012
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: hta-synthesis-plot-evidence
+          name: hta-final-visible-plot-evidence
           path: |
             tests/playwright/artifacts/*.json
             tests/playwright/artifacts/html-report/
