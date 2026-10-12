@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 const APP = '/IPD-Meta-Pro/ipd-meta-pro.html';
 // Deliberately synthetic study effects. No patient information or real trial claims.
@@ -80,11 +81,52 @@ for (const width of [1280,390]) {
     await expect(page.locator('#panel-heterogeneity')).not.toContainText('0.08-0.31');
     expect(await page.evaluate(()=>JSON.parse(JSON.stringify(APP.results)))).toEqual(expected.result);
   });
+  test('downloaded forest SVG preserves saved HKSJ intervals and finite unclipped geometry',async({page},info)=>{
+    const expected=await fitFixture(page,{});await assertPlotAndText(page,expected);
+    await page.evaluate(()=>{Object.assign(APP.config,{effectMeasure:'OR',outcomeType:'binary',confLevel:.99,useHKSJ:false});});
+    const pending=page.waitForEvent('download');
+    await page.evaluate(()=>downloadForest('svg'));
+    const download=await pending, svg=await readFile(await download.path(),'utf8');
+    expect(download.suggestedFilename()).toBe('forest_plot.svg');
+    expect(svg).toContain(`90% CI: [${expected.pooled.lower.toFixed(4)}, ${expected.pooled.upper.toFixed(4)}]`);
+    expect(svg).toContain('Forest Plot - MD');
+    expect(svg).not.toMatch(/NaN|Infinity|95% CI|99% CI/);
+    const geometry=await page.evaluate(text=>{
+      const root=new DOMParser().parseFromString(text,'image/svg+xml').documentElement;
+      const w=+root.getAttribute('width'),h=+root.getAttribute('height');
+      const pts=root.querySelector('polygon').getAttribute('points').trim().split(/\s+/).map(p=>p.split(',').map(Number));
+      const lines=[...root.querySelectorAll('line')].map(l=>[+l.getAttribute('x1'),+l.getAttribute('x2')]);
+      return {w,h,finite:pts.every(p=>p.every(Number.isFinite)),inside:pts.every(([x,y])=>x>0&&x<w&&y>0&&y<h)&&lines.every(a=>a.every(x=>x>=0&&x<=w))};
+    },svg);
+    expect(geometry.finite&&geometry.inside).toBe(true);
+    expect(geometry.w).toBeGreaterThanOrEqual(800);
+    expect(await page.evaluate(()=>JSON.parse(JSON.stringify(APP.results)))).toEqual(expected.result);
+    await info.attach('saved-fit-forest.svg',{body:svg,contentType:'image/svg+xml'});
+  });
+  test('funnel SVG export contains the actual funnel canvas, never a substitute forest',async({page})=>{
+    const expected=await fitFixture(page,{});
+    await page.locator('.nav-tab[data-panel="pubbias"]').click();
+    await expect.poll(()=>page.evaluate(()=>{
+      const c=document.getElementById('funnelPlot');
+      return c.width>0&&c.height>0&&c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((x,i)=>i%4===3&&x>0);
+    })).toBe(true);
+    await page.waitForTimeout(250);
+    const snapshot=await page.evaluate(()=>document.getElementById('funnelPlot').toDataURL('image/png'));
+    const pending=page.waitForEvent('download');await page.evaluate(()=>downloadFunnel('svg'));
+    const svg=await readFile(await(await pending).path(),'utf8');
+    expect(svg).toContain('<image');expect(svg).toContain(snapshot);
+    expect(svg).not.toContain('<polygon');expect(svg).not.toContain('Forest Plot');
+    expect(await page.evaluate(()=>JSON.parse(JSON.stringify(APP.results)))).toEqual(expected.result);
+  });
   test('empty and nonfinite saved limits have prerequisites rather than stale demo charts',async({page})=>{
     await expect(page.locator('#hetI2')).toHaveText('—');
     await expect(page.locator('#eggerP')).toHaveText('—');
     await expect(page.locator('#ipdHetInterpretation')).toContainText('Run an analysis');
-    const expected=await fitFixture(page,{});await assertPlotAndText(page,expected);
+    const expected=await fitFixture(page,{outcomeType:'binary',effectMeasure:'OR'});await assertPlotAndText(page,expected);
+    await page.evaluate(()=>{APP.results.pi={lower:null,upper:null};updateResults();});
+    await page.locator('.nav-tab[data-panel="heterogeneity"]').click();
+    await expect(page.locator('#ipdPredictionInterval')).toContainText('Prediction interval unavailable');
+    await page.locator('.nav-tab[data-panel="results"]').click();
     await page.evaluate(()=>{Object.assign(APP.results.pooled,{lower:null,upper:null,lowerHKSJ:null,upperHKSJ:null});updateResults();});
     await expect(page.locator('#forestPlot')).toBeHidden();
     await expect(page.locator('#ipdForestStatus')).toContainText('Saved confidence limits are unavailable');
