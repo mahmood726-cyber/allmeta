@@ -1,0 +1,30 @@
+name: External plot flows (read-only audit)
+on:
+  push:
+    branches: [test/external-plot-flows-20261012]
+    paths: [.github/workflows/external-plot-flows-temp.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/playwright/package-lock.json
+      - run: npm ci
+        working-directory: tests/playwright
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - run: node external-plot-flows.mjs
+        working-directory: tests/playwright
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-plot-flows
+          path: tests/playwright/artifacts/external-plot-flows/
+          retention-days: 7
