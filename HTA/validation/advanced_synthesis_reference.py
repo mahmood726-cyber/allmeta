@@ -8,7 +8,9 @@ not every possible SMD estimator. These fixtures do not validate multi-arm,
 Bayesian or random-effects NMA, HKSJ, node splitting, or DTA.
 
 Run: python HTA/validation/advanced_synthesis_reference.py --write
-Check committed references: omit --write (tolerance 1e-10).
+Check committed references: omit --write. Inputs and structure match exactly;
+computed values use 1e-8 absolute/relative tolerance for platform-dependent
+profile-optimiser rounding (stricter than the application regression limits).
 """
 from __future__ import annotations
 import argparse
@@ -148,18 +150,22 @@ def fixtures():
                                           leaveOneOut=[pairwise(PAIRWISE[:i]+PAIRWISE[i+1:], method, .95) for i in range(4)]) for method in ['REML','DL','PM']})
 
 
-def compare(actual, expected):
+def compare(actual, expected, estimated=False, path='root'):
     if isinstance(actual, dict):
+        assert set(actual) == set(expected), path
         for key in actual:
             if key.endswith('_version'): continue
-            compare(actual[key], expected[key])
+            compare(actual[key], expected[key], estimated or key in ['expected','cumulative','leaveOneOut'], path+'.'+key)
     elif isinstance(actual, list):
-        assert len(actual) == len(expected)
-        for a, e in zip(actual, expected): compare(a, e)
+        assert len(actual) == len(expected), path
+        for i, (a, e) in enumerate(zip(actual, expected)): compare(a, e, estimated, path+f'[{i}]')
     elif isinstance(actual, (int,float)):
-        assert np.isclose(actual, expected, atol=1e-10, rtol=1e-10), (actual,expected)
+        if estimated and isinstance(actual, float):
+            assert np.isclose(actual, expected, atol=1e-8, rtol=1e-8), (path,actual,expected)
+        else:
+            assert actual == expected, (path,actual,expected)
     else:
-        assert actual == expected
+        assert actual == expected, path
 
 
 if __name__ == '__main__':

@@ -66,3 +66,5 @@ npx playwright test --config hta-advanced.config.mjs
 ```
 
 An optional local Chromium executable can be supplied through `HTA_CHROMIUM_EXECUTABLE` and its launch-argument JSON through `HTA_CHROMIUM_ARGS`. The retained read-only GitHub Actions workflow repeats the independent references and affected unit/browser checks. Its remote result is distinct from the independently executed local result above.
+
+Hosted reference regeneration initially exposed profile-optimiser rounding: one SE was `0.1219105643302243` rather than `0.12191056495460459`, a difference of approximately `6.2e-10`. The regeneration guard now requires exact inputs/structure and uses `1e-8` absolute/relative tolerance for computed values. This is stricter than the application regression limits; the application and browser checks are unchanged. Material drift and changes to input counts remain rejection cases.
