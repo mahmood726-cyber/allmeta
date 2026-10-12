@@ -6,9 +6,11 @@ new="""      if(!capture.images?.length){
         throw new Error(reason || 'R returned no Net Heat graphic for this design.');
       }"""
 assert t.count(old)==1;t=t.replace(old,new,1)
-# Explicit capture flag also supports graphics-device option differences between WebR releases.
 old='captureGraphics:{width:750,height:750}'
 assert t.count(old)==1;t=t.replace(old,'captureGraphics:{width:750,height:750,capture:true}',1)
+old='netmeta::netheat(nm, random=FALSE)'
+assert t.count(old)==1
+t=t.replace(old,"withCallingHandlers(netmeta::netheat(nm, random=FALSE, showall=TRUE), warning=function(w) { cat('Net Heat warning: ',conditionMessage(w),'\\\\n',sep=''); invokeRestart('muffleWarning') })",1)
 p.write_text(t)
 p=Path('tests/playwright/remaining-plots.spec.mjs');t=p.read_text()
 old="      await expect(page.locator('#netHeatPlot')).toHaveAttribute('data-plot-state','ready',{timeout:200000});"
