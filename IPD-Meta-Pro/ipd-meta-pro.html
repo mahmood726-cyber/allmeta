@@ -40279,7 +40279,8 @@ function generateForestPlotSVG(canvas, name) {
 
 
 
- const margin = PlotDefaults.largeLabel();
+ // Reserve separate baselines for tick text and the x-axis label.
+ const margin = { ...PlotDefaults.largeLabel(), bottom: 80 };
 
  const plotWidth = width - margin.left - margin.right;
 

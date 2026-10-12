@@ -96,10 +96,12 @@ for (const width of [1280,390]) {
       const w=+root.getAttribute('width'),h=+root.getAttribute('height');
       const pts=root.querySelector('polygon').getAttribute('points').trim().split(/\s+/).map(p=>p.split(',').map(Number));
       const lines=[...root.querySelectorAll('line')].map(l=>[+l.getAttribute('x1'),+l.getAttribute('x2')]);
-      return {w,h,finite:pts.every(p=>p.every(Number.isFinite)),inside:pts.every(([x,y])=>x>0&&x<w&&y>0&&y<h)&&lines.every(a=>a.every(x=>x>=0&&x<=w))};
+      const labelGap=+root.querySelector('.axis-label').getAttribute('y')-Math.max(...[...root.querySelectorAll('text.tick-label')].map(e=>+e.getAttribute('y')));
+      return {w,h,labelGap,finite:pts.every(p=>p.every(Number.isFinite)),inside:pts.every(([x,y])=>x>0&&x<w&&y>0&&y<h)&&lines.every(a=>a.every(x=>x>=0&&x<=w))};
     },svg);
     expect(geometry.finite&&geometry.inside).toBe(true);
     expect(geometry.w).toBeGreaterThanOrEqual(800);
+    expect(geometry.labelGap).toBeGreaterThanOrEqual(18);
     expect(await page.evaluate(()=>JSON.parse(JSON.stringify(APP.results)))).toEqual(expected.result);
     await info.attach('saved-fit-forest.svg',{body:svg,contentType:'image/svg+xml'});
   });
