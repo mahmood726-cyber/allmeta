@@ -149,6 +149,7 @@ StudyE, 4, 600, 10, 600</textarea>
         <button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">&#128273; Key</button>
       </div>
     </section>
+    <section id="alm-validate" class="panel" style="grid-column:1/-1"></section>
   </main>
   <footer>
     <span data-gloss="mh-or">MH</span> for OR: &Sigma;(a&middot;d/n) / &Sigma;(b&middot;c/n), with Robins-Breslow-Greenland variance.
@@ -201,18 +202,22 @@ StudyE, 4, 600, 10, 600</textarea>
       }).filter(Boolean);
     }
 
-    function pnorm(x) {
-      // Convergent normal-integral series (absolute error below 1e-14).
-      if (x >= 8) return 1;
-      if (x <= -8) return 0;
-      var term = x, sum = x, q = x * x;
-      for (var i = 3; i < 1000; i += 2) {
-        term *= q / i;
-        var next = sum + term;
-        if (next === sum) break;
-        sum = next;
+    function normUpper(x) {
+      // Upper-tail standard normal probability P(Z > x), computed directly: 1 - CDF loses every digit in the tail
+      // (it returned exactly 0 for |z| >= 8). Agrees with R's pnorm(x, lower.tail = FALSE) to < 1e-13 relative.
+      if (!Number.isFinite(x)) return x > 0 ? 0 : (x < 0 ? 1 : NaN);
+      if (x < 0) return 1 - normUpper(-x);
+      var phi = Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+      if (x < 2) {
+        // 1/2 - phi * (x + x^3/3 + x^5/(3*5) + ...); the tail is >= 0.023 here, so no precision is lost.
+        var term = x, sum = x, q = x * x;
+        for (var i = 3; i < 1000; i += 2) { term *= q / i; var next = sum + term; if (next === sum) break; sum = next; }
+        return 0.5 - phi * sum;
       }
-      return Math.max(0, Math.min(1, 0.5 + sum * Math.exp(-q / 2) / Math.sqrt(2 * Math.PI)));
+      // Mills ratio by its continued fraction, evaluated backwards: phi / (x + 1/(x + 2/(x + 3/(x + ...)))).
+      var f = x;
+      for (var k = 300; k >= 1; k--) f = x + k / f;
+      return phi / f;
     }
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
     function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -349,7 +354,7 @@ StudyE, 4, 600, 10, 600</textarea>
         var p = pooled[i];
         if (!p) continue;
         var z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
-        var pval = 2 * (1 - pnorm(Math.abs(z)));
+        var pval = 2 * normUpper(Math.abs(z));
         parts.push('<tr><td><code>' + p.name + '</code></td><td>' + fmt(p.est) + '</td><td>[' + fmt(p.lo) + ', ' + fmt(p.hi) + ']</td><td>' + fmt(z, 2) + '</td><td>' + fmt(pval, 3) + '</td></tr>');
       }
       body.innerHTML = parts.join('');
@@ -385,7 +390,7 @@ StudyE, 4, 600, 10, 600</textarea>
         mh_lo:  firstPooled ? firstPooled.lo  : null,
         mh_hi:  firstPooled ? firstPooled.hi  : null,
         mh_z:   firstZ,
-        mh_p:   firstZ !== null ? 2 * (1 - pnorm(Math.abs(firstZ))) : null,
+        mh_p:   firstZ !== null ? 2 * normUpper(Math.abs(firstZ)) : null,
         fragility_index: frag ? frag.FI : null,
         fragility_quotient: frag ? frag.FQ : null,
       };
@@ -396,7 +401,7 @@ StudyE, 4, 600, 10, 600</textarea>
         _lastResults.peto_lo  = pe2.lo;
         _lastResults.peto_hi  = pe2.hi;
         _lastResults.peto_z   = pZ;
-        _lastResults.peto_p   = 2 * (1 - pnorm(Math.abs(pZ)));
+        _lastResults.peto_p   = 2 * normUpper(Math.abs(pZ));
       }
 
       // Persist URL state
@@ -508,6 +513,9 @@ StudyE, 4, 600, 10, 600</textarea>
       document.getElementById('src').value = lines.join('\n');
       run();
     };
+
+    // Validation hooks use the page parser and rendering path.
+    window.__mhValidation = {parse: parse, run: run, restoreResult: function (r) { _lastResults = r; }};
 
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
@@ -657,5 +665,7 @@ StudyE, 4, 600, 10, 600</textarea>
   });
 })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>

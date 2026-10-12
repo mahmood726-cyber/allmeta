@@ -1,0 +1,32 @@
+{
+  "source": "../codex11 final supplied run",
+  "source_files": {
+    "corpus.json": "902dc7f1b19adf552986116edfd718eb0861f3f830b869abf2154a1a535e5a7a",
+    "reference.json": "f0151117152f974a2f7bf18135291c78e158ef40116639a0b80530be1499a36b",
+    "fragility-reference.json": "69d0c9cc6be2c1578c70cc469c4da1c9a457c6425b165edc99bb43dd9ddfd821"
+  },
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "53bd35b24c11be3acd09bb468af1b35037f3eb4f0c24ad9fd6a4914b2de27f86",
+      "bytes": 193649
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "948b127ccbd7394e05583be836cba2ecac43659634c8c709f41c885630146bef",
+      "bytes": 1869024
+    },
+    {
+      "path": "validate/corpus/fragility-reference.json",
+      "sha256": "cd0ff38e2f2e8f6a62080bf8dc914514fd9b7bb56185b4f4abe47fb5312a534a",
+      "bytes": 164441
+    }
+  ],
+  "paperChecks": 68461,
+  "paperVersions": {
+    "R": "4.6.0",
+    "metafor": "5.2-1",
+    "metadat": "1.6-0"
+  },
+  "replayedOracle": "Independent R greedy FI/FQ and DL baseline records; current page diagnostic recomputed."
+}
