@@ -15,6 +15,7 @@ jobs:
           ref: fix/remaining-plots-20261012
       - name: Apply guarded diagnostic and R graphics repairs
         run: |
+          python scripts/repair-netheat-input.py
           python scripts/repair-remaining-plots.py
           git diff --check
       - uses: actions/setup-node@v4
@@ -29,6 +30,12 @@ jobs:
       - name: Verify remaining plots with actual browser-side R
         run: npx playwright test remaining-plots.spec.mjs --workers=2
         working-directory: tests/playwright
+      - name: Preserve dedicated remaining-plot report
+        if: always()
+        working-directory: tests/playwright
+        run: |
+          test ! -f artifacts/report.json || cp artifacts/report.json artifacts/remaining-report.json
+          test ! -d artifacts/html-report || mv artifacts/html-report artifacts/remaining-html-report
       - name: Preserve earlier cross-app rendering regressions
         run: npx playwright test flagship-plot-rendering.spec.mjs nma-pro-session-plots.spec.mjs catalog-svg-plots.spec.mjs --workers=3 --output=test-results-prior
         working-directory: tests/playwright
@@ -36,7 +43,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add IPD-Meta-Pro/ipd-meta-pro.html webr-studio/index.html
+          git add IPD-Meta-Pro/src/diagnostic-plots.js IPD-Meta-Pro/ipd-meta-pro.html webr-studio/index.html
           git commit -m 'fix: render estimator-matched IPD diagnostics, real Net Heat and complete R plot pages'
           git push origin HEAD:fix/remaining-plots-20261012
       - if: always()
