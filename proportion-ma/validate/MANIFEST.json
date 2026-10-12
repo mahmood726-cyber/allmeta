@@ -1,0 +1,19 @@
+{
+  "protocol": "Full bench/compare.py contract",
+  "checks": 298116,
+  "configurations": 2160,
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "23bf51d1343e49fdcbd08ed612844f25418767ed5b9a9a5af43adddbf792e249",
+      "bytes": 263440,
+      "source_sha256": "d008f48ecbd8b4e1740715ced75a5f6f241d0caa97b7b6396991b88bb23ebbe6"
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "1e0f22fc0bfe2ad7eda7b6bf9443fa2c5d7901ddb0e8360296e94392a4b6c57c",
+      "bytes": 7196578,
+      "source_sha256": "f0c18a50a962a46d0b6760f780e38522694810623fd258d07fa023bd89d67b18"
+    }
+  ]
+}
