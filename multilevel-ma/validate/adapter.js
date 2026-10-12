@@ -31,6 +31,10 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(x),x),collapse=','),'}\\n',sep=
     return !!table && keys.every(k => table.innerText.includes(r[k].toFixed(k.startsWith('sigma2') ? 4 : 3)));
   }
   async function replay(loaded, progress) {
+    if (!window.alm || !alm.urlState || !alm.urlState.withoutWrites) throw new Error('URL-state replay guard unavailable');
+    return alm.urlState.withoutWrites(() => replayWithoutWrites(loaded, progress));
+  }
+  async function replayWithoutWrites(loaded, progress) {
     const corpus=loaded[files[0].path], refs=loaded[files[1].path], names=Object.keys(corpus);
     if(names.length!==44 || Object.keys(refs).length!==names.length || names.some(n=>!Object.hasOwn(refs,n))) throw new Error('Corpus/reference configuration identifiers differ');
     let checks=0, passed=0;
@@ -40,7 +44,7 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(x),x),collapse=','),'}\\n',sep=
       checks++;if(d.pass)passed++;else failed.push({id,quantity,app,ref,tol,...d});
       maxima[group]=Math.max(maxima[group],d.diff);
     }
-    const input=document.getElementById('src'), original=input.value, originalURL=location.href;
+    const input=document.getElementById('src'), original=input.value;
     try {
       for(const [i,name] of names.entries()) {
         const rows=corpus[name], ref=refs[name];
@@ -59,7 +63,6 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(x),x),collapse=','),'}\\n',sep=
       }
     } finally {
       input.value=original;window.__almMlmaRun();
-      if(location.href!==originalURL)history.replaceState(history.state,'',originalURL);
     }
     return {checks,passed,failed,maxima,refusals:[],summaryLines:[
       '44 configurations; 12 checks each. Seven REML quantities: relative tolerance 1e-6; three MoM variance shares versus closed form: 1e-9; row count and historical rounded-value rendering contract: exact.',

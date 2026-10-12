@@ -1,5 +1,6 @@
 (function () {
   let _version = 1;
+  let suspended = 0;
   const MAX_BYTES = 4096;
 
   function init(opts) {
@@ -23,6 +24,7 @@
   };
 
   init.write = function (state) {
+    if (suspended) return false;
     var wrapped = Object.assign({ v: _version }, state);
     var blob = btoa(unescape(encodeURIComponent(JSON.stringify(wrapped))));
     if (blob.length > MAX_BYTES) {
@@ -33,7 +35,13 @@
     return true;
   };
 
-  init.clear = function () { window.location.hash = ''; };
+  init.clear = function () { if (!suspended) window.location.hash = ''; };
+
+  // Includes restoration in the callback; nesting and failures always release the guard.
+  init.withoutWrites = async function (fn) {
+    suspended++;
+    try { return await fn(); } finally { suspended--; }
+  };
 
   window.alm = window.alm || {};
   window.alm.urlState = init;

@@ -59,3 +59,19 @@ test('file protocol verifies selected corpus files and replays without a server'
   const result=await page.evaluate(()=>AlmHetValidation.runCorpus());
   expect(result.checks).toBe(131781);expect(result.passed).toBe(131781);expect(result.displayFails.slice(0,3)).toEqual([]);
 });
+
+// Explicit runner stub: exercises fail-closed UI plumbing, not R numerical parity.
+test('framework snapshot preserves nonfinite values instead of turning them into unavailable nulls', async ({page}) => {
+  await page.goto(URL);
+  const result = await page.evaluate(async () => {
+    const live = {
+      currentState: () => ({value:NaN}), appValues: s => [{key:'x', label:'invalid', value:s.value}],
+      buildScript: () => '', packages:[], compare:{tolerance:{default:0}}
+    };
+    window.AlmWebR = {runR:async () => ({ok:true, stdout:'ALMJSON:{"x":null}', versions:{}})};
+    return AlmValidate.mount(document.getElementById('alm-validate'), {...AlmHetValidationAdapter, live}).runLive();
+  });
+  expect(result.rows[0].pass).toBe(false);
+  expect(Number.isNaN(result.rows[0].app)).toBe(true);
+  await expect(page.locator('#alm-validate tbody tr td').last()).toHaveText('FAIL');
+});

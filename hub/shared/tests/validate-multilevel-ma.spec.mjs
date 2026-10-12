@@ -4,7 +4,9 @@ test('multilevel published corpus: 528/528 checks and restored inputs',async({pa
   test.setTimeout(180000);
   await page.goto(url);
   const before=await page.locator('#src').inputValue();
+  const navigation=await page.evaluate(()=>({href:location.href,length:history.length,state:history.state}));
   const result=await page.evaluate(()=>AlmMultilevelValidation.runCorpus());
+  expect(await page.evaluate(()=>({href:location.href,length:history.length,state:history.state}))).toEqual(navigation);
   console.log('MULTILEVEL CORPUS',JSON.stringify(result));
   expect(result.checks).toBe(528);expect(result.passed).toBe(528);expect(result.failed).toEqual([]);
   await expect(page.locator('#src')).toHaveValue(before);

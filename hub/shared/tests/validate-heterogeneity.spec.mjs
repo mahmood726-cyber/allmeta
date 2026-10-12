@@ -10,7 +10,9 @@ test('published corpus: 131781 numerical checks and separate 120720 rendered num
   await page.goto(URL);
   await expect(page.getByRole('button',{name:'Validate this analysis in R',exact:true})).toBeVisible();
   const before=await page.locator('#f-data').inputValue();
+  const navigation=await page.evaluate(()=>({href:location.href,length:history.length,state:history.state}));
   const result=await page.evaluate(()=>AlmHetValidation.runCorpus());
+  expect(await page.evaluate(()=>({href:location.href,length:history.length,state:history.state}))).toEqual(navigation);
   console.log('CORPUS',JSON.stringify({checks:result.checks,passed:result.passed,displayed:result.displayed,displayFailures:result.displayFails.length,maxima:result.maxima}));
   expect(result.checks).toBe(131781);expect(result.passed).toBe(131781);expect(result.failed).toEqual([]);
   expect(result.refusals).toEqual({configurations:704,refused:28,compared:676});
