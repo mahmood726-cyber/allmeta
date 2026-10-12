@@ -1,0 +1,86 @@
+name: HTA export controls (temporary)
+on:
+  push:
+    branches: [fix/hta-beginner-plots-20261012]
+    paths: [.github/workflows/hta-export-controls-temp.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/hta-beginner-plots-20261012
+      - name: Retain existing result-copy and report controls without changing calculations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('HTA/src/ui/synthesisPlots.js');raw=p.read_bytes()
+          assert hashlib.sha1(f'blob {len(raw)}\0'.encode()+raw).hexdigest()=='4e085bef0596a8a06d55207d0342f0f061798d98'
+          s=raw.decode()
+          old="        button(footer,'Export results CSV',()=>owner.exportToCSV());"
+          assert s.count(old)==1
+          s=s.replace(old,"        button(footer,'Copy Results',()=>owner.copyToClipboard('text'));\n"+old+"\n        button(footer,'Generate Report',()=>owner.generateReport());")
+          old="const footer=element('div',null,box);footer.className='welcome-footer';"
+          assert s.count(old)==1
+          s=s.replace(old,old+"footer.style.flexWrap='wrap';footer.style.gap='8px';")
+          p.write_text(s)
+          p=Path('tests/playwright/hta-synthesis-plots.spec.mjs');s=p.read_text()
+          key="    test('REML matches independent profile-likelihood fixtures rather than a spurious zero boundary',async({page})=>{"
+          assert s.count(key)==1
+          extra="""    test('existing copy and report controls remain reachable and retain fitted results',async({page})=>{
+                await open(page);
+                await page.evaluate(studies=>beginnerMode.runPairwiseAnalysis({name:'Export preservation',studies}),studies);
+                const result=await page.evaluate(()=>JSON.parse(JSON.stringify(lastResults)));
+                await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__copiedResultText=text;}}}));
+                await page.getByRole('button',{name:'Copy Results',exact:true}).click();
+                await expect.poll(()=>page.evaluate(()=>window.__copiedResultText||'')).toContain(result.random.effect.toFixed(4));
+                expect(await page.evaluate(()=>window.__copiedResultText)).toContain(result.heterogeneity.tauSquared.toFixed(4));
+                const download=page.waitForEvent('download');
+                await page.getByRole('button',{name:'Generate Report',exact:true}).click();
+                const file=await download;
+                const report=await readFile(await file.path(),'utf8');
+                expect(report).toContain(result.random.effect.toFixed(4));
+                expect(report).toContain(result.heterogeneity.tauSquared.toFixed(4));
+                expect(await page.evaluate(()=>JSON.parse(JSON.stringify(lastResults)))).toEqual(result);
+                const bounds=await page.locator('#results-modal .welcome-footer').evaluate(el=>{
+                  const r=el.getBoundingClientRect();return [...el.querySelectorAll('button')].every(b=>{const x=b.getBoundingClientRect();return x.left>=r.left-1&&x.right<=r.right+1;});
+                });
+                expect(bounds).toBe(true);
+              });
+          """
+          p.write_text(s.replace(key,extra+key))
+          PY
+          node --check HTA/src/ui/synthesisPlots.js
+          git diff --check
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/playwright/package-lock.json
+      - run: npm ci
+        working-directory: tests/playwright
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - name: Test all twelve HTA rendering, calculation and export cases
+        working-directory: tests/playwright
+        run: npx playwright test hta-synthesis-plots.spec.mjs --workers=2 --retries=0
+      - name: Commit verified controls and regression checks
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add HTA/src/ui/synthesisPlots.js tests/playwright/hta-synthesis-plots.spec.mjs
+          git commit -m 'fix(hta): retain result-copy and report controls alongside new plots'
+          git push origin HEAD:fix/hta-beginner-plots-20261012
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hta-preserved-export-controls
+          path: |
+            tests/playwright/artifacts/report.json
+            tests/playwright/test-results/**/*.png
+            tests/playwright/test-results/**/error-context.md
+          retention-days: 7
