@@ -27,7 +27,6 @@ test('DTA verified corpus reproduces all 855 checks offline using shipped engine
  const result=await page.evaluate(files=>window.AlmDTAValidateAdapter.corpus.run(files),corpus);
  expect(result.checks).toBe(855); expect(result.passed).toBe(855); expect(result.failed).toEqual([]);
  expect(result.refusals).toEqual({reference:25,app:25,matched:25});
- expect(result.summaryLines[0]).toContainText;
  expect(result.summaryLines[0]).toContain('732 quantity checks + 18 Moses-Littenberg checks');
  expect(external).toEqual([]);
 });
