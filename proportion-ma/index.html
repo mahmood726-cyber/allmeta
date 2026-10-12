@@ -195,7 +195,7 @@
     }
 
     function betacf(x, a, b) {
-      var MAX = 200, EPS = 3e-7, FPMIN = 1e-30;
+      var MAX = 200, EPS = 1e-14, FPMIN = 1e-30;
       var qab = a + b, qap = a + 1, qam = a - 1;
       var c = 1, d = 1 - qab * x / qap;
       if (Math.abs(d) < FPMIN) d = FPMIN;
@@ -224,7 +224,7 @@
         var mid = (lo + hi) / 2;
         var q = betaIncReg(mid, a, b);
         if (q < p) lo = mid; else hi = mid;
-        if (hi - lo < 1e-8) break;
+        if (hi - lo < 1e-14) break;
       }
       return (lo + hi) / 2;
     }
@@ -244,6 +244,10 @@
     }
 
     function ftBack(y, n) {
+      if (!Number.isFinite(y) || !Number.isFinite(n) || n <= 0) return NaN;
+      // Match metafor::transf.ipft.hm outside the finite-n transform domain.
+      if (y < ftTransform(0, n).y) return 0;
+      if (y > ftTransform(n, n).y) return 1;
       var s = Math.sin(2 * y);
       if (Math.abs(s) < 1e-8 || !Number.isFinite(n) || n <= 0) return Math.sin(y) * Math.sin(y);
       var inner = s + (s - 1 / s) / n;
