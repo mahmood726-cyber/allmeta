@@ -1169,7 +1169,7 @@
 
                             <div class="stat-box">
 
-                                <div class="stat-value" id="pooledEffect">0.72</div>
+                                <div class="stat-value" id="pooledEffect">—</div>
 
                                 <div class="stat-label">Pooled HR</div>
 
@@ -1177,7 +1177,7 @@
 
                             <div class="stat-box">
 
-                                <div class="stat-value" id="pooledCI">0.58-0.89</div>
+                                <div class="stat-value" id="pooledCI">—</div>
 
                                 <div class="stat-label">95% CI</div>
 
@@ -1185,7 +1185,7 @@
 
                             <div class="stat-box">
 
-                                <div class="stat-value significant" id="pooledP">0.002</div>
+                                <div class="stat-value significant" id="pooledP">—</div>
 
                                 <div class="stat-label">P-value</div>
 
@@ -1193,7 +1193,7 @@
 
                             <div class="stat-box">
 
-                                <div class="stat-value" id="pooledI2">45%</div>
+                                <div class="stat-value" id="pooledI2">—</div>
 
                                 <div class="stat-label">I-squared</div>
 
@@ -1429,7 +1429,7 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="hetI2">45.2%</div>
+                            <div class="stat-value" id="hetI2">—</div>
 
                             <div class="stat-label">I-squared</div>
 
@@ -1437,7 +1437,7 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="hetTau2">0.0234</div>
+                            <div class="stat-value" id="hetTau2">—</div>
 
                             <div class="stat-label">Tau-squared</div>
 
@@ -1445,7 +1445,7 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="hetH2">1.82</div>
+                            <div class="stat-value" id="hetH2">—</div>
 
                             <div class="stat-label">H-squared</div>
 
@@ -1453,9 +1453,9 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="hetQ">18.24</div>
+                            <div class="stat-value" id="hetQ">—</div>
 
-                            <div class="stat-label">Q (p=0.032)</div>
+                            <div class="stat-label">Q (p-value)</div>
 
                         </div>
 
@@ -1463,10 +1463,8 @@
 
 
 
-                    <div class="alert alert-warning">
-
-                        <strong>Interpretation:</strong> Moderate heterogeneity detected (I² = 45.2%). Consider exploring sources through subgroup analysis or meta-regression.
-
+                    <div class="alert alert-info" id="ipdHetInterpretation" role="status">
+                        Run an analysis to assess heterogeneity. No example statistics are used here.
                     </div>
 
 
@@ -1479,13 +1477,13 @@
 
                             <p style="font-size: 0.9rem; color: var(--text-secondary);">
 
-                                95% PI: <strong>0.45 to 1.15</strong>
+                                <span id="ipdPredictionInterval">Run a random-effects analysis to estimate a prediction interval.</span>
 
                             </p>
 
                             <p style="font-size: 0.8rem; color: var(--text-muted);">
 
-                                Range of true effects expected in 95% of similar studies
+                                Prediction intervals depend on the fitted model and its assumptions.
 
                             </p>
 
@@ -1497,7 +1495,7 @@
 
                             <p style="font-size: 0.9rem; color: var(--text-secondary);">
 
-                                Tau = <strong>0.153</strong> (95% CI: 0.08-0.31)
+                                <span id="ipdTauSummary">Run an analysis to estimate between-study variation.</span>
 
                             </p>
 
@@ -2039,15 +2037,15 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="eggerZ">1.82</div>
+                            <div class="stat-value" id="eggerZ">—</div>
 
-                            <div class="stat-label">Egger\'s Z</div>
+                            <div class="stat-label">Egger’s t</div>
 
                         </div>
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="eggerP">0.069</div>
+                            <div class="stat-value" id="eggerP">—</div>
 
                             <div class="stat-label">Egger P-value</div>
 
@@ -2055,7 +2053,7 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="beggZ">1.45</div>
+                            <div class="stat-value" id="beggZ">—</div>
 
                             <div class="stat-label">Begg\'s Z</div>
 
@@ -2063,7 +2061,7 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value" id="beggP">0.147</div>
+                            <div class="stat-value" id="beggP">—</div>
 
                             <div class="stat-label">Begg P-value</div>
 
@@ -2073,12 +2071,8 @@
 
 
 
-                    <div class="alert alert-info">
-
-                        No significant evidence of publication bias detected (Egger p = 0.069, Begg p = 0.147).
-
-                        However, tests have limited power with fewer than 10 studies.
-
+                    <div class="alert alert-info" id="ipdBiasInterpretation" role="status">
+                        Run an analysis to calculate funnel-asymmetry diagnostics.
                     </div>
 
                 </div>
@@ -2129,9 +2123,9 @@
 
                             <p style="font-size: 0.85rem;">
 
-                                <strong>Imputed studies:</strong> <span id="imputedStudies">2</span><br>
+                                <strong>Imputed studies:</strong> <span id="imputedStudies">—</span><br>
 
-                                <strong>Adjusted effect:</strong> <span id="adjustedEffect">0.76 (0.61-0.95)</span>
+                                <strong>Adjusted effect:</strong> <span id="adjustedEffect">—</span>
 
                             </p>
 
@@ -38144,53 +38138,87 @@ function computeQProfile() {
 // ANALYSIS SUMMARY CARD — compact headline after each analysis run
 // =============================================================================
 
+// Display adapters read the saved fit; they never rerun an estimator.
+function getIPDFittedDisplay(r) {
+ const cfg = { ...APP.config, ...(APP.analysisSettings || {}) };
+ const pooled = r.pooled;
+ const ratio = cfg.outcomeType === 'survival' || (cfg.outcomeType === 'binary' && cfg.effectMeasure !== 'RD');
+ const transform = x => ratio ? Math.exp(x) : x;
+ const hksj = !!cfg.useHKSJ;
+ const lower = hksj && Number.isFinite(pooled.lowerHKSJ) ? pooled.lowerHKSJ : pooled.lower;
+ const upper = hksj && Number.isFinite(pooled.upperHKSJ) ? pooled.upperHKSJ : pooled.upper;
+ const ci = [lower, upper].every(Number.isFinite) ? [transform(lower), transform(upper)] : [NaN, NaN];
+ return { cfg, ratio, transform, effect: transform(pooled.pooled),
+  ci: ci.every(Number.isFinite) && ci[0] <= ci[1] ? ci : null,
+  level: Number.isFinite(cfg.confLevel) ? cfg.confLevel : .95,
+  p: hksj && Number.isFinite(pooled.pHKSJ) ? pooled.pHKSJ : pooled.p,
+  measure: cfg.outcomeType === 'survival' ? 'HR' : (cfg.effectMeasure || 'Effect') };
+}
+function ipdDisplayNumber(x, digits = 3) {
+ return Number.isFinite(x) ? x.toFixed(digits) : 'Not estimable';
+}
+function ipdDisplayP(x) {
+ return Number.isFinite(x) && x >= 0 && x <= 1 ? (x < .001 ? '<0.001' : x.toFixed(3)) : 'Not estimable';
+}
+function renderIPDFittedNarratives(r, view, egger, begg) {
+ const set = (id, value) => { const e = document.getElementById(id); if (e) e.textContent = value; };
+ const p = r.pooled, k = r.studies.length, pct = (view.level * 100).toFixed(0);
+ set('ipdHetInterpretation', `Saved ${view.cfg.reMethod || 'REML'} fit: I² = ${ipdDisplayNumber(p.I2, 1)}%; τ² = ${ipdDisplayNumber(p.tau2, 4)}; Q = ${ipdDisplayNumber(p.Q, 2)} (p ${ipdDisplayP(p.pQ)}). Assess these statistics alongside study differences; they do not identify the cause of heterogeneity.`);
+ if (view.cfg.reMethod === 'FE') {
+  set('ipdPredictionInterval', 'Not estimated for the fixed-effect model. Select a random-effects model and rerun to estimate a prediction interval.');
+  set('ipdTauSummary', 'τ² is fixed at 0 in this fixed-effect model; between-study SD is not estimated.');
+ } else {
+  const pi = r.pi && [r.pi.lower, r.pi.upper].every(Number.isFinite)
+   ? [view.transform(r.pi.lower), view.transform(r.pi.upper)] : null;
+  set('ipdPredictionInterval', k >= 3 && pi && pi.every(Number.isFinite) && pi[0] <= pi[1]
+   ? `${pct}% PI (${view.measure}): ${pi[0].toFixed(3)} to ${pi[1].toFixed(3)} — from the saved fit.`
+   : 'Prediction interval unavailable: at least three studies and a finite saved random-effects interval are required.');
+  set('ipdTauSummary', Number.isFinite(p.tau2) && p.tau2 >= 0
+   ? `τ = ${Math.sqrt(p.tau2).toFixed(4)} (model scale). Use Compute Q-Profile for a separate τ² confidence-interval calculation.`
+   : 'Between-study SD is not available for this fit.');
+ }
+ set('ipdBiasInterpretation', `Egger’s test: t = ${ipdDisplayNumber(egger.t, 2)}, p ${ipdDisplayP(egger.p)}. Begg’s test: z = ${ipdDisplayNumber(begg.z, 2)}, p ${ipdDisplayP(begg.p)}. ${k < 10 ? 'Fewer than 10 studies: interpret these tests cautiously. ' : ''}Funnel asymmetry does not by itself establish publication bias; non-significance does not rule it out.`);
+ const effectLabel = document.getElementById('pooledEffect')?.parentElement.querySelector('.stat-label');
+ if (effectLabel) effectLabel.textContent = 'Pooled ' + view.measure;
+ const ciLabel = document.getElementById('pooledCI')?.parentElement.querySelector('.stat-label');
+ if (ciLabel) ciLabel.textContent = pct + '% CI' + (view.cfg.useHKSJ ? ' (HKSJ)' : '');
+ const th = document.getElementById('studyResultsBody')?.closest('table').querySelectorAll('thead th')[4];
+ if (th) th.textContent = pct + '% CI';
+}
+
 function renderAnalysisSummaryCard(r) {
  if (!r || !r.pooled) return;
  const pooled = r.pooled;
- const isLogScale = APP.config.outcomeType === 'survival' ||
-  (APP.config.outcomeType === 'binary' && APP.config.effectMeasure !== 'RD');
-
- const z = (typeof getConfZ === 'function') ? getConfZ() : 1.96;
- const confPct = Math.round((APP.config.confLevel || 0.95) * 100);
-
- const displayEffect = isLogScale ? Math.exp(pooled.pooled) : pooled.pooled;
- const displayLower = isLogScale ? Math.exp(pooled.pooled - z * pooled.se) : (pooled.pooled - z * pooled.se);
- const displayUpper = isLogScale ? Math.exp(pooled.pooled + z * pooled.se) : (pooled.pooled + z * pooled.se);
+ const view = getIPDFittedDisplay(r), cfg = view.cfg;
+ const isLogScale = view.ratio;
+ const confPct = Math.round(view.level * 100);
+ const displayEffect = view.effect;
+ const displayLower = view.ci ? view.ci[0] : NaN;
+ const displayUpper = view.ci ? view.ci[1] : NaN;
 
  const kStudies = r.studies ? r.studies.length : 0;
  const totalN = r.studies ? r.studies.reduce(function(sum, s) { return sum + (s.n || 0); }, 0) : 0;
  const tau2 = pooled.tau2;
  const I2 = pooled.I2;
- const pVal = APP.config.useHKSJ ? pooled.pHKSJ : pooled.p;
- const methodLabel = APP.config.reMethod || 'REML';
- const hksjLabel = APP.config.useHKSJ ? ' + HKSJ' : '';
+ const pVal = cfg.useHKSJ ? pooled.pHKSJ : pooled.p;
+ const methodLabel = cfg.reMethod || 'REML';
+ const hksjLabel = cfg.useHKSJ ? ' + HKSJ' : '';
 
  // Effect measure label
  var measureLabel = 'Effect';
- if (APP.config.outcomeType === 'survival') measureLabel = 'HR';
- else if (APP.config.outcomeType === 'binary') {
-  if (APP.config.effectMeasure === 'OR') measureLabel = 'OR';
-  else if (APP.config.effectMeasure === 'RR') measureLabel = 'RR';
-  else if (APP.config.effectMeasure === 'RD') measureLabel = 'RD';
+ if (cfg.outcomeType === 'survival') measureLabel = 'HR';
+ else if (cfg.outcomeType === 'binary') {
+  if (cfg.effectMeasure === 'OR') measureLabel = 'OR';
+  else if (cfg.effectMeasure === 'RR') measureLabel = 'RR';
+  else if (cfg.effectMeasure === 'RD') measureLabel = 'RD';
   else measureLabel = 'OR';
  } else measureLabel = 'MD';
 
- // Interpretation
- var interp = '';
+ // Describe the saved interval without guessing whether a larger outcome is beneficial.
  var interpColor = 'var(--text-secondary)';
- if (pVal < 0.05) {
-  interpColor = 'var(--accent-success)';
-  if (isLogScale) {
-   if (displayEffect < 1) interp = 'Statistically significant reduction (favours treatment)';
-   else interp = 'Statistically significant increase (favours control)';
-  } else {
-   if (displayEffect < 0) interp = 'Statistically significant reduction (favours treatment)';
-   else interp = 'Statistically significant increase (favours treatment)';
-  }
- } else {
-  interpColor = 'var(--text-muted)';
-  interp = 'No statistically significant difference (p = ' + pVal.toFixed(3) + ')';
- }
+ const nullEffect = isLogScale ? 1 : 0;
+ var interp = view.ci ? `${confPct}% confidence interval ${displayLower > nullEffect || displayUpper < nullEffect ? 'excludes' : 'includes'} the null effect; p ${ipdDisplayP(pVal)}.`
+  : 'Saved confidence limits are unavailable; rerun the analysis before interpreting its interval.';
 
  // Heterogeneity descriptor
  var hetLabel = 'Low';
@@ -38220,7 +38248,7 @@ function renderAnalysisSummaryCard(r) {
   '<div style="background:linear-gradient(135deg,rgba(99,102,241,0.08) 0%,rgba(139,92,246,0.08) 100%);border:1px solid var(--accent-primary);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">' +
    '<div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:0.75rem;margin-bottom:0.75rem;">' +
     '<span style="font-size:2rem;font-weight:700;color:var(--accent-primary);">' + displayEffect.toFixed(2) + '</span>' +
-    '<span style="font-size:1rem;color:var(--text-secondary);">(' + confPct + '% CI: ' + displayLower.toFixed(2) + ' to ' + displayUpper.toFixed(2) + ')</span>' +
+    '<span style="font-size:1rem;color:var(--text-secondary);">(' + confPct + '% CI: ' + ipdDisplayNumber(displayLower, 2) + ' to ' + ipdDisplayNumber(displayUpper, 2) + ')</span>' +
     '<span class="badge badge-info" style="font-size:0.7rem;">' + measureLabel + '</span>' +
    '</div>' +
    '<div style="font-size:0.85rem;color:' + interpColor + ';margin-bottom:0.75rem;font-weight:500;">' + interp + '</div>' +
@@ -38240,31 +38268,21 @@ function updateResults() {
 
  const r = APP.results;
 
+ if (!r || !r.pooled) return;
  const pooled = r.pooled;
+ const view = getIPDFittedDisplay(r), cfg = view.cfg;
 
 
 
- const isLogScale = APP.config.outcomeType === 'survival' ||
-
- (APP.config.outcomeType === 'binary' && APP.config.effectMeasure !== 'RD');
-
-
-
- const displayEffect = isLogScale ? Math.exp(pooled.pooled) : pooled.pooled;
-
- const displayCI = isLogScale ?
-
- `${Math.exp(pooled.pooled - getConfZ() *pooled.se).toFixed(2)}-${Math.exp(pooled.pooled + getConfZ() *pooled.se).toFixed(2)}` :
-
- `${(pooled.pooled - getConfZ() *pooled.se).toFixed(2)}-${(pooled.pooled + getConfZ() *pooled.se).toFixed(2)}`;
-
-
+ const isLogScale = view.ratio;
+ const displayEffect = view.effect;
+ const displayCI = view.ci ? view.ci.map(x => x.toFixed(2)).join('-') : 'Saved CI unavailable';
 
  document.getElementById('pooledEffect').textContent = displayEffect.toFixed(2);
 
  document.getElementById('pooledCI').textContent = displayCI;
 
- document.getElementById('pooledP').textContent = (APP.config.useHKSJ ? pooled.pHKSJ : pooled.p).toFixed(4);
+ document.getElementById('pooledP').textContent = ipdDisplayP(view.p);
 
  document.getElementById('pooledI2').textContent = pooled.I2.toFixed(1) + '%';
 
@@ -38310,6 +38328,12 @@ function updateResults() {
  const forestCanvas = document.getElementById('forestPlot');
 
  if (forestCanvas) {
+ forestCanvas.hidden = !view.ci;
+ let note = document.getElementById('ipdForestStatus');
+ if (!note) { note = document.createElement('p'); note.id = 'ipdForestStatus'; note.setAttribute('role', 'status'); forestCanvas.parentElement.appendChild(note); }
+ note.textContent = view.ci ? '' : 'Saved confidence limits are unavailable. Rerun the analysis before plotting its interval.';
+}
+if (forestCanvas && view.ci) {
 
  const forestStudies = r.studies.map(s => ({
 
@@ -38327,17 +38351,7 @@ function updateResults() {
 
 
 
- const forestPooled = {
-
- effect: displayEffect,
-
- lower: isLogScale ? Math.exp(pooled.pooled - getConfZ() *pooled.se) : pooled.pooled - getConfZ() *pooled.se,
-
- upper: isLogScale ? Math.exp(pooled.pooled + getConfZ() *pooled.se) : pooled.pooled + getConfZ() *pooled.se
-
- };
-
-
+ const forestPooled = { effect: view.effect, lower: view.ci[0], upper: view.ci[1] };
 
  setTimeout(() => {
 
@@ -38367,13 +38381,13 @@ function updateResults() {
 
 
 
- if (APP.config.outcomeType === 'survival') {
+ if (cfg.outcomeType === 'survival') {
 
  const survCanvas = document.getElementById('survivalPlot');
 
  if (survCanvas) {
 
- const armMapping = ipdResolveBinaryArmMapping(APP.data || [], APP.config.treatmentVar);
+ const armMapping = ipdResolveBinaryArmMapping(APP.data || [], cfg.treatmentVar);
 
  if (armMapping.error) {
 
@@ -38383,7 +38397,7 @@ function updateResults() {
 
  }
 
- const overallArms = ipdSplitBinaryArms(APP.data, APP.config.treatmentVar, armMapping);
+ const overallArms = ipdSplitBinaryArms(APP.data, cfg.treatmentVar, armMapping);
 
  const treat1 = overallArms.treat1;
 
@@ -38393,17 +38407,17 @@ function updateResults() {
 
  const km1 = SurvivalAnalysis.kaplanMeier(
 
- treat1.map(d => d[APP.config.timeVar]),
+ treat1.map(d => d[cfg.timeVar]),
 
- treat1.map(d => d[APP.config.eventVar])
+ treat1.map(d => d[cfg.eventVar])
 
  );
 
  const km0 = SurvivalAnalysis.kaplanMeier(
 
- treat0.map(d => d[APP.config.timeVar]),
+ treat0.map(d => d[cfg.timeVar]),
 
- treat0.map(d => d[APP.config.eventVar])
+ treat0.map(d => d[cfg.eventVar])
 
  );
 
@@ -38437,19 +38451,19 @@ function updateResults() {
 
 
 
- const egger = PublicationBias.eggerTest(r.studies.map(s => s.effect), r.studies.map(s => s.se));
+ const egger = r.studies.length < 3 ? {t: NaN, p: NaN} : PublicationBias.eggerTest(r.studies.map(s => s.effect), r.studies.map(s => s.se));
 
- const begg = PublicationBias.beggTest(r.studies.map(s => s.effect), r.studies.map(s => s.variance));
+ const begg = r.studies.length < 2 ? {z: NaN, p: NaN} : PublicationBias.beggTest(r.studies.map(s => s.effect), r.studies.map(s => s.variance));
 
 
 
- document.getElementById('eggerZ').textContent = egger.t.toFixed(2);
+ document.getElementById('eggerZ').textContent = ipdDisplayNumber(egger.t, 2);
 
- document.getElementById('eggerP').textContent = egger.p.toFixed(3);
+ document.getElementById('eggerP').textContent = ipdDisplayP(egger.p);
 
- document.getElementById('beggZ').textContent = begg.z.toFixed(2);
+ document.getElementById('beggZ').textContent = ipdDisplayNumber(begg.z, 2);
 
- document.getElementById('beggP').textContent = begg.p.toFixed(3);
+ document.getElementById('beggP').textContent = ipdDisplayP(begg.p);
 
 
 
@@ -38471,11 +38485,13 @@ function updateResults() {
 
  const adjEffect = isLogScale ? Math.exp(tf.adjusted.pooled) : tf.adjusted.pooled;
 
- const adjLower = isLogScale ? Math.exp(tf.adjusted.pooled - getConfZ() *tf.adjusted.se) : tf.adjusted.pooled - getConfZ() *tf.adjusted.se;
+ const adjLower = isLogScale ? Math.exp(tf.adjusted.pooled - Stats.normalQuantile(1 - (1 - view.level) / 2) *tf.adjusted.se) : tf.adjusted.pooled - Stats.normalQuantile(1 - (1 - view.level) / 2) *tf.adjusted.se;
 
- const adjUpper = isLogScale ? Math.exp(tf.adjusted.pooled + getConfZ() *tf.adjusted.se) : tf.adjusted.pooled + getConfZ() *tf.adjusted.se;
+ const adjUpper = isLogScale ? Math.exp(tf.adjusted.pooled + Stats.normalQuantile(1 - (1 - view.level) / 2) *tf.adjusted.se) : tf.adjusted.pooled + Stats.normalQuantile(1 - (1 - view.level) / 2) *tf.adjusted.se;
 
  document.getElementById('adjustedEffect').textContent = `${adjEffect.toFixed(2)} (${adjLower.toFixed(2)}-${adjUpper.toFixed(2)})`;
+
+ renderIPDFittedNarratives(r, view, egger, begg);
 
  // Announce results to screen readers
  let announcer = document.getElementById('analysisAnnouncer');
@@ -40176,6 +40192,14 @@ function downloadSurvivalPlot(format) {
 
 
 function downloadCanvas(canvas, name, format) {
+ if (!canvas || !canvas.width || !canvas.height) {
+  showNotification('Run the required analysis before exporting this plot.', 'warning');
+  return;
+ }
+ if (name === 'forest_plot' && (!APP.results || !getIPDFittedDisplay(APP.results).ci)) {
+  showNotification('Saved confidence limits are unavailable. Rerun the analysis before exporting.', 'warning');
+  return;
+ }
 
  if (format === 'png') {
 
@@ -40191,7 +40215,9 @@ function downloadCanvas(canvas, name, format) {
 
  // Generate publication-quality SVG for forest plot
 
- const svg = generateForestPlotSVG(canvas, name);
+ let svg;
+ try { svg = generateForestPlotSVG(canvas, name); }
+ catch (error) { showNotification(error.message, 'warning'); return; }
 
  const blob = new Blob([svg], { type: 'image/svg+xml' });
 
@@ -40207,7 +40233,7 @@ function downloadCanvas(canvas, name, format) {
 
  URL.revokeObjectURL(url);
 
- showNotification('SVG exported for publication', 'success');
+ showNotification(name === 'forest_plot' ? 'Vector forest SVG exported from saved results.' : 'Canvas image exported inside an SVG wrapper (not editable vectors).', 'success');
 
  }
 
@@ -40221,9 +40247,10 @@ function downloadCanvas(canvas, name, format) {
 
 function generateForestPlotSVG(canvas, name) {
 
- const width = canvas.width;
-
- const height = canvas.height;
+ // Non-forest requests must export that canvas, never substitute a forest.
+ if (name !== 'forest_plot') return generateCanvasBackedSVG(canvas, canvas.width, canvas.height);
+ const width = Math.max(800, canvas.width);
+ const height = Math.max(400, canvas.height, 140 + 30 * (APP.results?.studies?.length || 0));
 
 
 
@@ -40245,13 +40272,15 @@ function generateForestPlotSVG(canvas, name) {
 
  const pooled = results.pooled;
 
- const isLogScale = APP.config.outcomeType === 'survival' ||
+ const view = getIPDFittedDisplay(results);
+ if (!view.ci || !Number.isFinite(view.effect) || !studies.length) throw new Error('Finite saved confidence limits are required for SVG export.');
+ const isLogScale = view.ratio;
+ const confPct = Math.round(view.level * 100);
 
- (APP.config.outcomeType === 'binary' && APP.config.effectMeasure !== 'RD');
 
 
-
- const margin = PlotDefaults.largeLabel();
+ // Reserve separate baselines for tick text and the x-axis label.
+ const margin = { ...PlotDefaults.largeLabel(), bottom: 80 };
 
  const plotWidth = width - margin.left - margin.right;
 
@@ -40259,23 +40288,20 @@ function generateForestPlotSVG(canvas, name) {
 
 
 
- // Calculate effect range
-
- let effects = studies.map(s => isLogScale ? Math.exp(s.effect) : s.effect);
-
- let lowers = studies.map(s => isLogScale ? Math.exp(s.effect - getConfZ() *s.se) : s.effect - getConfZ() *s.se);
-
- let uppers = studies.map(s => isLogScale ? Math.exp(s.effect + getConfZ() *s.se) : s.effect + getConfZ() *s.se);
-
-
-
- const minVal = Math.min(...lowers, isLogScale ? Math.exp(pooled.pooled - getConfZ() *pooled.se) : pooled.pooled - getConfZ() *pooled.se) * 0.9;
-
- const maxVal = Math.max(...uppers, isLogScale ? Math.exp(pooled.pooled + getConfZ() *pooled.se) : pooled.pooled + getConfZ() *pooled.se) * 1.1;
-
-
-
+ // Saved intervals are the same as those displayed on screen. Include the
+ // null and pad additively; multiplicative padding clips negative intervals.
+ const effects = studies.map(s => view.transform(s.effect));
+ const lowers = studies.map(s => view.transform(s.lower));
+ const uppers = studies.map(s => view.transform(s.upper));
+ if (!studies.every(s => [s.effect, s.lower, s.upper].every(Number.isFinite))
+     || ![...effects, ...lowers, ...uppers].every(Number.isFinite)) {
+  throw new Error('Finite saved study intervals are required for SVG export.');
+ }
  const nullValue = isLogScale ? 1 : 0;
+ const lo = Math.min(...lowers, view.ci[0], nullValue);
+ const hi = Math.max(...uppers, view.ci[1], nullValue);
+ const pad = Math.max((hi - lo) * .08, 1e-6);
+ const minVal = lo - pad, maxVal = hi + pad;
 
  const xScale = (val) => margin.left + ((val - minVal) / (maxVal - minVal)) * plotWidth;
 
@@ -40313,7 +40339,7 @@ function generateForestPlotSVG(canvas, name) {
 
  <!-- Title -->
 
- <text x="${width/2}" y="30" class="title">Forest Plot - ${APP.config.effectMeasure || 'Effect Size'}</text>
+ <text x="${width/2}" y="30" class="title">Forest Plot - ${escapeHTML(view.measure)}</text>
 
 
 
@@ -40331,11 +40357,11 @@ function generateForestPlotSVG(canvas, name) {
 
  const y = margin.top + (i + 0.5) * rowHeight;
 
- const effect = isLogScale ? Math.exp(study.effect) : study.effect;
+ const effect = effects[i];
 
- const lower = isLogScale ? Math.exp(study.effect - getConfZ() *study.se) : study.effect - getConfZ() *study.se;
+ const lower = lowers[i];
 
- const upper = isLogScale ? Math.exp(study.effect + getConfZ() *study.se) : study.effect + getConfZ() *study.se;
+ const upper = uppers[i];
 
  const weight = study.weight || (1 / study.variance);
 
@@ -40383,11 +40409,11 @@ function generateForestPlotSVG(canvas, name) {
 
  const pooledY = margin.top + (studies.length + 0.5) * rowHeight;
 
- const pooledEffect = isLogScale ? Math.exp(pooled.pooled) : pooled.pooled;
+ const pooledEffect = view.effect;
 
- const pooledLower = isLogScale ? Math.exp(pooled.pooled - getConfZ() *pooled.se) : pooled.pooled - getConfZ() *pooled.se;
+ const pooledLower = view.ci[0];
 
- const pooledUpper = isLogScale ? Math.exp(pooled.pooled + getConfZ() *pooled.se) : pooled.pooled + getConfZ() *pooled.se;
+ const pooledUpper = view.ci[1];
 
 
 
@@ -40433,7 +40459,7 @@ function generateForestPlotSVG(canvas, name) {
 
  // X-axis label
 
- const axisLabel = isLogScale ? `${APP.config.effectMeasure} (favors treatment ←→ favors control)` : 'Effect Size';
+ const axisLabel = escapeHTML(view.measure) + (isLogScale ? ' (ratio scale)' : ' (effect scale)');
 
  svg += ` <text x="${width/2}" y="${height - 15}" class="axis-label">${axisLabel}</text>\n`;
 
@@ -40449,7 +40475,7 @@ function generateForestPlotSVG(canvas, name) {
 
  <!-- Pooled Effect: ${pooledEffect.toFixed(4)} -->
 
- <!-- 95% CI: [${pooledLower.toFixed(4)}, ${pooledUpper.toFixed(4)}] -->
+ <!-- ${confPct}% CI: [${pooledLower.toFixed(4)}, ${pooledUpper.toFixed(4)}] -->
 
  <!-- I²: ${pooled.I2.toFixed(1)}% -->
 
