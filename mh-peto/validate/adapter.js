@@ -32,11 +32,25 @@
     return {rows,measure,result,note:'Estimate, CI, z and p are exported on the display scale. Beta and SE are recovered from the full-precision estimate and CI, as in the paper. No MH/Peto heterogeneity statistics are claimed.'};
   }
   function appValues(s) {
-    for(const prefix of (s.measure==='OR'?['mh','peto']:['mh']))fields(s.result,['est','lo','hi','z','p'].map(q=>prefix+'_'+q),'current '+prefix);
-    return (s.measure==='OR'?['mh','peto']:['mh']).flatMap(prefix=>Object.entries(pooled(s.result,prefix,s.measure)).map(([q,value])=>({key:prefix+'_'+q,label:(prefix==='peto'?'Peto OR':'MH '+s.measure)+' '+q,value})));
+    return (s.measure==='OR'?['mh','peto']:['mh']).flatMap(prefix=>{
+      const result={...s.result},p=pooled(result,prefix,s.measure);
+      for(const q of ['z','p']) {
+        const key=prefix+'_'+q;
+        if(s.measure==='RD' && p.est===0 && p.se===0 && Number.isNaN(result[key]))result[key]=null;
+        else if(result[key]===null && p.est!==null)throw new Error('Invalid current evidence: '+key);
+      }
+      fields(result,['est','lo','hi','z','p'].map(q=>prefix+'_'+q),'current '+prefix);
+      const label=prefix==='peto'?'Peto OR':'MH '+s.measure;
+      const values=Object.entries(pooled(result,prefix,s.measure)).map(([q,value])=>({key:prefix+'_'+q,label:label+' '+q,value}));
+      // Shared widget supports scalar comparisons: R emits the supplemental tail
+      // error, compared to zero here, without weakening the ordinary p row.
+      values.push({key:prefix+'_p_tail',label:label+' p tail relative error',value:0});
+      return values;
+    });
   }
   function buildScript(s) {
     const vector=f=>'c('+s.rows.map(f).join(',')+')';
+    const ps=appValues(s).filter(v=>/_p$/.test(v.key));
     return `ai <- as.numeric(${vector(r=>r.e1)})
 bi <- as.numeric(${vector(r=>r.n1-r.e1)})
 ci <- as.numeric(${vector(r=>r.e2)})
@@ -45,7 +59,11 @@ measure <- "${s.measure}"
 get <- function(f) {
  if(inherits(f,'error')) return(setNames(rep(NA_real_,7),c('est','lo','hi','z','p','beta','se')))
  tr <- if(measure=='RD') identity else exp
- c(est=tr(as.numeric(f$beta)),lo=tr(f$ci.lb),hi=tr(f$ci.ub),z=f$zval,p=f$pval,beta=as.numeric(f$beta),se=f$se)
+ out <- c(est=tr(as.numeric(f$beta)),lo=tr(f$ci.lb),hi=tr(f$ci.ub),z=f$zval,p=f$pval,beta=as.numeric(f$beta),se=f$se)
+ declared <- names(out)%in%c('z','p') & measure=='RD' & isTRUE(f$se==0) & isTRUE(as.numeric(f$beta)==0) & is.nan(out)
+ if(any(is.na(out)&!declared)||any(is.infinite(out)))stop('Invalid R evidence')
+ out[declared] <- NA_real_
+ out
 }
 mh <- tryCatch(metafor::rma.mh(ai=ai,bi=bi,ci=ci,di=di,measure=measure,add=c(.5,0),to=c('only0','none'),drop00=c(FALSE,FALSE),correct=FALSE),error=function(e)e)
 x <- setNames(get(mh),paste0('mh_',names(get(mh))))
@@ -55,7 +73,16 @@ if(measure=='OR') {
 }
 if(!is.numeric(x)||any(is.nan(x)|is.infinite(x))) stop('Invalid R evidence')
 v <- ifelse(is.na(x),'null',sprintf('%.17g',x))
-cat('ALMJSON:{',paste(paste0('"',names(x),'":',v),collapse=','),'}\\n',sep='')`;
+app_p <- c(${ps.map(v=>v.key+'='+ (v.value===null?'NA_real_':String(v.value))).join(',')})
+for(key in names(app_p)) {
+ b <- x[[key]]; a <- app_p[[key]]
+ d <- if(is.na(b)) {if(is.na(a)) 0 else 1} else if(b>=0 && b<1e-12) {
+   if(is.na(a)) 1 else if(b==0) {if(a==0) 0 else 1} else abs(a-b)/b
+ } else 0
+ # A finite sentinel above tolerance ensures even overflow reports FAIL.
+ v[paste0(key,'_tail')] <- sprintf('%.17g',if(is.finite(d))d else 1)
+}
+cat('ALMJSON:{',paste(paste0('"',names(v),'":',v),collapse=','),'}\\n',sep='')`;
   }
   async function replay(loaded,progress) {
     const corpus=loaded[files[0].path];
@@ -137,8 +164,14 @@ cat('ALMJSON:{',paste(paste0('"',names(x),'":',v),collapse=','),'}\\n',sep='')`;
         const lb=window.__almLabbe;
         if(lb) {
           fields(lb,['logEff'],id,false);
-          if(!Array.isArray(lb.points)||lb.points.length!==cfg.rows.length||!Array.isArray(lb.curve)||!lb.curve.length)throw new Error('Invalid Labbe shape: '+id);
+          const grid=[],eff=Math.exp(lb.logEff);
+          for(let pc=.001;pc<=.999;pc+=.01) {
+            const pt=m==='RR'?eff*pc:(pc/(1-pc)*eff)/(1+pc/(1-pc)*eff);
+            if(Number.isFinite(pt)&&pt>=0&&pt<=1)grid.push(pc);
+          }
+          if(!Array.isArray(lb.points)||lb.points.length!==cfg.rows.length||!Array.isArray(lb.curve)||!lb.curve.length||lb.curve.length!==grid.length)throw new Error('Invalid Labbe shape: '+id);
           for(const p of [...lb.points,...lb.curve])fields(p,['pc','pt'],id,false);
+          if(lb.curve.some((p,j)=>Math.abs(p.pc-grid[j])>1e-15))throw new Error('Invalid Labbe curve grid: '+id);
           check(id,m+'.labbe_logEff',lb.logEff,r.labbe.logEff);
           lb.points.forEach((p,j)=>['pc','pt'].forEach(q=>check(id,m+'.labbe_'+q,p[q],r.labbe[q][j])));
           const e=r.labbe.eff;check(id,m+'.labbe_curve_max_abs_error',Math.max(0,...lb.curve.map(p=>Math.abs(p.pt-(m==='RR'?e*p.pc:e*p.pc/(1-p.pc+e*p.pc))))),0);
