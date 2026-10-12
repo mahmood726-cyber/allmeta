@@ -1,0 +1,26 @@
+name: Confirmed external plot flows
+on:
+  push:
+    branches: [test/external-plot-flows-20261012]
+    paths: [.github/workflows/confirmed-external-plots-temp.yml]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - run: node confirmed-external-plot-flows.mjs
+        working-directory: tests/playwright
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: confirmed-external-plot-flows
+          path: tests/playwright/artifacts/confirmed-external-plots/
+          retention-days: 7
