@@ -1,0 +1,51 @@
+name: Net Heat contrast check (temporary)
+on:
+  push:
+    branches: [fix/remaining-plots-20261012]
+    paths: [.github/workflows/netheat-contrast-temp.yml]
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/remaining-plots-20261012
+      - name: Preserve black R labels over an opaque white plot page
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          old='    p.ctx.drawImage(netImage,0,0,p.width,p.height);p.canvas.dataset.plotState=\'ready\';'
+          new='    // R labels are black; composite transparent R graphics over a white page.\n    p.ctx.fillStyle="#ffffff";p.ctx.fillRect(0,0,p.width,p.height);\n'+old
+          for name in ['IPD-Meta-Pro/src/diagnostic-plots.js','IPD-Meta-Pro/ipd-meta-pro.html']:
+              p=Path(name);text=p.read_text();assert text.count(old)==1;text=text.replace(old,new,1);p.write_text(text)
+          p=Path('tests/playwright/remaining-plots.spec.mjs');t=p.read_text()
+          old="      await ink(page,'netHeatPlot');\n      await expect(page.locator('#netHeatPlotStatus')).toContainText('netmeta');"
+          new="      await ink(page,'netHeatPlot');\n      expect(await page.locator('#netHeatPlot').evaluate(c=>Array.from(c.getContext('2d').getImageData(0,0,1,1).data))).toEqual([255,255,255,255]);\n      await expect(page.locator('#netHeatPlotStatus')).toContainText('netmeta');"
+          assert t.count(old)==1;p.write_text(t.replace(old,new,1))
+          PY
+          git diff --check
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - run: npx playwright test remaining-plots.spec.mjs --grep 'Net Heat uses' --workers=2
+        working-directory: tests/playwright
+      - name: Commit tested contrast repair
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add IPD-Meta-Pro/src/diagnostic-plots.js IPD-Meta-Pro/ipd-meta-pro.html tests/playwright/remaining-plots.spec.mjs
+          git commit -m 'fix(ipd): keep R Net Heat labels readable in dark mode'
+          git push origin HEAD:fix/remaining-plots-20261012
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netheat-contrast-check
+          path: |
+            tests/playwright/artifacts/report.json
+            tests/playwright/test-results/**/*.png
+          retention-days: 7
