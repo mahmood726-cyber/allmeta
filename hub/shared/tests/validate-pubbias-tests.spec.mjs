@@ -12,11 +12,49 @@ test('pubbias published replay: 2107/2113 and six named Table 2 exceptions',asyn
   const result=await page.evaluate(()=>AlmPubbiasValidation.runCorpus());
   console.log('PUBBIAS CORPUS',JSON.stringify({checks:result.checks,passed:result.passed,failed:result.failed}));
   expect(result.checks).toBe(2113);expect(result.passed).toBe(2107);
-  expect(result.failed.map(f=>f.label).sort()).toEqual(expected);
+  expect(result.failed.map(f=>f.label.replace(' [documented]','')).sort()).toEqual(expected);
+  expect(result.unexpected).toBe(0);
+  expect(result.coverage).toBe(true);
+  expect(result.failed.every(f=>f.knownException)).toBe(true);
   expect(requests).toEqual([]);
   await expect(page.locator('#src')).toHaveValue(before);
   for(const name of expected)await expect(page.locator('#alm-validate')).toContainText(name);
   await expect(page.locator('#alm-validate [role=status]')).toContainText('2107/2113 passed; 6 failed');
+});
+
+for(const mutation of ['missing app','changed exception','matching exception','changed R exception','wrong refusal','missing configuration','empty inputs','changed coverage'])test(`pubbias negative replay ${mutation}`,async({page})=>{
+  test.setTimeout(180000);
+  if(process.env.PUBBIAS_BASELINE_ADAPTER)await page.route('**/validate/adapter.js',route=>route.fulfill({path:process.env.PUBBIAS_BASELINE_ADAPTER,contentType:'application/javascript'}));
+  await page.goto('/pubbias-tests/index.html');
+  const result=await page.evaluate(async mutation=>{
+    const adapter=AlmPubbiasValidationAdapter;
+    const loaded={};
+    for(const f of adapter.corpus.files)loaded[f.path]=await (await fetch(f.path)).json();
+    const corpus=loaded['validate/corpus/corpus.json'];
+    const reference=loaded['validate/corpus/reference.json'].datasets;
+    const engine=window.__almPubBiasEngine;
+    const original=engine.beggMazumdar;
+    const originalPeters=engine.petersTest;
+    if(mutation==='missing app')engine.petersTest=()=>null;
+    if(mutation==='changed exception'||mutation==='matching exception') {
+      const k=corpus.find(d=>d.id==='dat.mccurdy2020').k;
+      engine.beggMazumdar=rows=>{const v=original(rows);return rows.length===k?{...v,tau:mutation==='matching exception'?reference['dat.mccurdy2020'].begg.value.tau:0.75}:v;};
+    }
+    if(mutation==='changed R exception')reference['dat.mccurdy2020'].begg.value.tau=0.75;
+    if(mutation==='wrong refusal')reference['dat.baker2009/OR:Placebo:Salmeterol'].egger_lm.value={error:'Required dependency missing'};
+    if(mutation==='missing configuration')corpus.pop();
+    if(mutation==='empty inputs')corpus[0]={...corpus[0],k:0,yi:[],vi:[]};
+    if(mutation==='changed coverage')reference[corpus[0].id].begg.value={error:'new refusal'};
+    try {return await adapter.corpus.run(loaded,()=>{});}
+    catch(e){return {error:e.message};}
+    finally{engine.beggMazumdar=original;engine.petersTest=originalPeters;}
+  },mutation);
+  console.log('PUBBIAS NEGATIVE',mutation,JSON.stringify(result));
+  if(['missing app','missing configuration','empty inputs','changed coverage'].includes(mutation))expect(result.error).toMatch(/app method record|configuration|source inputs|coverage/i);
+  else {
+    expect(result.unexpected).toBeGreaterThan(0);
+    expect(result.failed.some(f=>!f.knownException&&f.label.includes('[UNEXPECTED]'))).toBe(true);
+  }
 });
 for(const binary of [false,true])test(`pubbias ${binary?'binary':'built-in'} current input live R @slow`,async({page})=>{
   // A cold meta namespace load follows extraction of its vendored dependency
