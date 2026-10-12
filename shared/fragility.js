@@ -52,7 +52,7 @@
     if (yi.length < 1) return null;
     if (yi.length === 1) { var se1 = Math.sqrt(vi[0]); return { mu: yi[0], ciLo: yi[0] - Z975 * se1, ciHi: yi[0] + Z975 * se1 }; }
     var r = global.AlmMaCore.pool(yi, vi, { method: "DL" });
-    return { mu: r.mu, ciLo: r.ciLo, ciHi: r.ciHi };
+    return { mu: r.mu, ciLo: r.mu - Z975 * r.se, ciHi: r.mu + Z975 * r.se };
   }
 
   // fragility(studies, {measure}) — studies: [{e1,n1,e0,n0}]. null.val = 0 (log) / 0 (RD).
