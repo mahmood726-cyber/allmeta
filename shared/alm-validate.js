@@ -86,7 +86,7 @@
     const details = node('div', undefined, el);
     const results = node('div', undefined, el); results.style.overflowX = 'auto';
     const links = node('p', undefined, el);
-    for (const [label, url] of [['Full R re-execution (GitHub Actions)', adapter.paper.runUrl], ['Open Codespaces', adapter.paper.codespacesUrl], ['Reproducible repository', adapter.paper.repoUrl], ['Paper DOI', adapter.paper.doi && 'https://doi.org/' + adapter.paper.doi]]) {
+    for (const [label, url] of [[adapter.paper.runLabel || 'Full R re-execution (GitHub Actions)', adapter.paper.runUrl], ['Open Codespaces', adapter.paper.codespacesUrl], ['Reproducible repository', adapter.paper.repoUrl], ['Paper DOI', adapter.paper.doi && 'https://doi.org/' + adapter.paper.doi]]) {
       if (!url) continue;
       const a = node('a', label, links); a.href = url; links.append(' · ');
     }
