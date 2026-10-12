@@ -21,7 +21,6 @@ p = Path('IPD-Meta-Pro/ipd-meta-pro.html')
 raw = p.read_bytes()
 assert hashlib.sha1(f'blob {len(raw)}\0'.encode()+raw).hexdigest() == 'cfebcafafd4c446c1028138719a8aa4c60fc38bf', 'Audited source changed'
 s = raw.decode('utf-8')
-original = s
 
 # Preserve the existing statistical and sampling implementation byte for byte.
 a = s.index('function fitReferenceNetworkModel(')
@@ -76,8 +75,11 @@ for name in ['drawRankogram','drawCumulativeRankPlot']:
 
 module = Path('IPD-Meta-Pro/src/secondary-plot-adapters.js').read_text()
 assert '</script' not in module.lower()
-assert s.count('</body>') == 1
-s = s.replace('</body>', '<script data-source="src/secondary-plot-adapters.js">\n'+module+'\n</script>\n</body>')
+# Earlier closing-body strings belong to export templates inside JavaScript.
+# Insert only at the final, real document boundary, leaving exports untouched.
+at = s.rfind('</body>')
+assert at >= 0 and s[at:].strip().replace('</body>', '').replace('</html>', '').strip() == ''
+s = s[:at] + '<script data-source="src/secondary-plot-adapters.js">\n'+module+'\n</script>\n' + s[at:]
 assert protected_fit in s and protected_ranks in s
 p.write_bytes(s.encode('utf-8'))
 print('Wired computed ranking matrices, cached survival zoom and Bayesian repaint. Network fit and ranking sampler unchanged.')
