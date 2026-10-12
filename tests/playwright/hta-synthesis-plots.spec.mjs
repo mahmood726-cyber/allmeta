@@ -9,13 +9,22 @@ const studies=[
   {study:'Synthetic4',effect:.4,se:.12,year:2023}
 ];
 async function open(page) {
-  await page.addInitScript(()=>localStorage.setItem('hta_tutorial_seen','true'));
+  // The app has two independent onboarding layers. Test returning-user plots.
+  await page.addInitScript(()=>{localStorage.setItem('hta_tutorial_seen','true');localStorage.setItem('hta-tutorial-completed','true');});
   await page.goto('/HTA/index.html',{waitUntil:'load'});
   await page.waitForFunction(()=>!!window.beginnerMode);
 }
 async function populated(page,id) {
   const svg=page.locator('#'+id);
   await expect(svg).toBeVisible();
+  expect(await svg.evaluate(s=>{
+    const a=s.getBoundingClientRect(),b=s.parentElement.getBoundingClientRect();
+    return a.width>100 && a.left>=b.left-1 && a.right<=b.right+1;
+  })).toBe(true); // A partially off-screen SVG is not a successful mobile plot.
+  expect(await svg.evaluate(s=>{
+    const xml=new XMLSerializer().serializeToString(s);
+    return !new DOMParser().parseFromString(xml,'image/svg+xml').querySelector('parsererror');
+  })).toBe(true);
   expect(await svg.locator('line,path,circle,polygon,rect[data-pscore]').count()).toBeGreaterThan(0);
   expect(await svg.evaluate(s=>[...s.querySelectorAll('*')].flatMap(el=>[...el.attributes]).filter(a=>/^(d|points|x|y|x1|x2|y1|y2|cx|cy|width|height)$/.test(a.name) && /NaN|Infinity/.test(a.value)).map(a=>a.value))).toEqual([]);
   return svg;

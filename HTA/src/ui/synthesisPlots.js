@@ -39,10 +39,11 @@
         const section = element('section', null, parent); section.style.margin = '20px 0';
         element('h3', title, section);
         const scroll = element('div', null, section); scroll.style.overflowX = 'auto';
-        const svg = mark(scroll, 'svg', {id, xmlns: NS, viewBox: `0 0 720 ${height}`, role: 'img', 'aria-label': title});
-        svg.style.cssText = 'display:block;width:100%;min-width:520px;height:auto;background:white;color:#172033';
+        const width = Math.max(240, Math.min(720, scroll.clientWidth || 720));
+        const svg = mark(scroll, 'svg', {id, viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': title});
+        svg.style.cssText = 'display:block;width:100%;height:auto;background:white;color:#172033';
         mark(svg, 'title', {}, title);
-        mark(svg, 'rect', {x:0, y:0, width:720, height, fill:'white'});
+        mark(svg, 'rect', {x:0, y:0, width, height, fill:'white'});
         button(section, 'Download ' + title + ' SVG', () => saveSVG(svg));
         return svg;
     }
@@ -52,14 +53,16 @@
         return [lo-pad, hi+pad];
     }
     function axis(svg, domain, y, description) {
-        const x = value => 210 + (value-domain[0])/(domain[1]-domain[0])*465;
-        mark(svg, 'line', {x1:210, x2:675, y1:y, y2:y, stroke:'#475569'});
-        for (let i=0;i<=4;i++) {
+        const width=svg.viewBox.baseVal.width;
+        const left=width<500?112:210, right=width-20, span=right-left;
+        const x=value=>left+(value-domain[0])/(domain[1]-domain[0])*span;
+        mark(svg,'line',{x1:left,x2:right,y1:y,y2:y,stroke:'#475569'});
+        for(let i=0;i<=4;i++) {
             const v=domain[0]+i*(domain[1]-domain[0])/4;
-            mark(svg,'text',{x:x(v),y:y+18,'text-anchor':'middle',fill:'#172033','font-size':11},v.toFixed(2));
+            mark(svg,'text',{x:x(v),y:y+18,'text-anchor':'middle',fill:'#172033','font-size':width<500?10:11},v.toFixed(2));
         }
-        mark(svg,'text',{x:445,y:y+38,'text-anchor':'middle',fill:'#172033','font-size':12},description);
-        return x;
+        mark(svg,'text',{x:left+span/2,y:y+38,'text-anchor':'middle',fill:'#172033','font-size':width<500?10:12},width<500?'Effect (input scale)':description);
+        x.left=left; return x;
     }
     function forest(parent, id, title, rows, pooled = null) {
         const items = pooled ? [...rows, pooled] : rows;
@@ -71,7 +74,7 @@
         items.forEach((r,i)=>{
             const y=21+i*31;
             const g=mark(svg,'g',{'data-study':r.name,'data-effect':r.effect,'data-lower':r.lo,'data-upper':r.hi,'data-weight':r.weight || 0});
-            mark(g,'text',{x:8,y:y+4,fill:'#172033','font-size':12},r.name.slice(0,27));
+            mark(g,'text',{x:8,y:y+4,fill:'#172033','font-size':12},r.name.slice(0,svg.viewBox.baseVal.width<500?15:27));
             mark(g,'title',{},`${r.name}: ${fmt(r.effect)} [${fmt(r.lo)}, ${fmt(r.hi)}]`);
             mark(g,'line',{x1:x(r.lo),x2:x(r.hi),y1:y,y2:y,stroke:'#172033','stroke-width':1.5});
             if(r===pooled) mark(g,'polygon',{points:`${x(r.lo)},${y} ${x(r.effect)},${y-7} ${x(r.hi)},${y} ${x(r.effect)},${y+7}`,fill:'#176b87'});
@@ -89,7 +92,7 @@
         mark(svg,'path',{d:`M ${x(center-Z*maxSE)} ${y(maxSE)} L ${x(center)} ${y(0)} L ${x(center+Z*maxSE)} ${y(maxSE)}`,fill:'none',stroke:'#64748b','stroke-dasharray':'4 3'});
         mark(svg,'line',{x1:x(center),x2:x(center),y1:y(0),y2:y(maxSE),stroke:'#94a3b8'});
         mark(svg,'text',{x:20,y:25,fill:'#172033','font-size':12},'Standard error (0 at top)');
-        for(let i=0;i<=4;i++) mark(svg,'text',{x:200,y:y(maxSE*i/4)+4,'text-anchor':'end',fill:'#172033','font-size':11},(maxSE*i/4).toFixed(2));
+        for(let i=0;i<=4;i++) mark(svg,'text',{x:x.left-10,y:y(maxSE*i/4)+4,'text-anchor':'end',fill:'#172033','font-size':11},(maxSE*i/4).toFixed(2));
         rows.forEach((r,i)=>{
             const c=mark(svg,'circle',{cx:x(r.effect),cy:y(r.se),r:5,fill:r.imputed?'white':'#176b87',stroke:'#176b87','stroke-width':2,'data-effect':r.effect,'data-se':r.se,'data-imputed':r.imputed});
             mark(c,'title',{},r.name || `Study ${i+1}`);
@@ -146,13 +149,18 @@
         const {body}=modal('hta-nma-results','Network synthesis plots',dataset.name),r=engine.results;
         element('p',`Frequentist fixed-effect network. Reference: ${r.reference}. Plots use the engine's fitted contrast orientation; verify outcome/treatment direction before interpretation. P-scores are summary scores, not probabilities of each rank.`,body);
         const svg=figure(body,'hta-beginner-network','Observed treatment network',360),nodes=engine.network.nodes;
-        const positions=new Map(nodes.map((n,i)=>[n.id,{x:360+190*Math.cos(i*2*Math.PI/nodes.length),y:175+120*Math.sin(i*2*Math.PI/nodes.length)}]));
+        const positions=new Map(nodes.map((n,i)=>[n.id,{x:svg.viewBox.baseVal.width/2+svg.viewBox.baseVal.width*.23*Math.cos(i*2*Math.PI/nodes.length),y:175+120*Math.sin(i*2*Math.PI/nodes.length)}]));
         for(const edge of engine.network.edges){const a=positions.get(edge.treatment1),b=positions.get(edge.treatment2);mark(svg,'line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:'#64748b','stroke-width':Math.max(1,Math.sqrt(edge.nStudies)*3),'data-first':edge.treatment1,'data-second':edge.treatment2,'data-studies':edge.nStudies});}
         for(const node of nodes){const p=positions.get(node.id);mark(svg,'circle',{cx:p.x,cy:p.y,r:12,fill:'#176b87','data-treatment':node.id});mark(svg,'text',{x:p.x,y:p.y+30,'text-anchor':'middle',fill:'#172033','font-size':12},node.id);}
         forest(body,'hta-beginner-nma-forest','Network fitted contrasts',r.effects.map(e=>({name:e.treatment,effect:e.mean,lo:e.ci_lower,hi:e.ci_upper})));
         const scores=engine.calculatePScores();
         const rank=figure(body,'hta-beginner-pscore','Frequentist P-scores',80+scores.length*30);
-        scores.forEach((s,i)=>{mark(rank,'text',{x:10,y:28+i*30,fill:'#172033','font-size':12},s.treatment);mark(rank,'rect',{x:230,y:14+i*30,width:s.pScore*4.1,height:17,fill:'#176b87','data-treatment':s.treatment,'data-pscore':s.pScore});mark(rank,'text',{x:655,y:28+i*30,fill:'#172033','font-size':11},s.pScore.toFixed(1));});
+        const rankWidth=rank.viewBox.baseVal.width, rankLeft=rankWidth<500?120:230, rankSpan=rankWidth-rankLeft-55;
+        scores.forEach((s,i)=>{
+            mark(rank,'text',{x:10,y:28+i*30,fill:'#172033','font-size':12},s.treatment.slice(0,rankWidth<500?15:40));
+            mark(rank,'rect',{x:rankLeft,y:14+i*30,width:s.pScore/100*rankSpan,height:17,fill:'#176b87','data-treatment':s.treatment,'data-pscore':s.pScore});
+            mark(rank,'text',{x:rankWidth-45,y:28+i*30,fill:'#172033','font-size':11},s.pScore.toFixed(1));
+        });
         const f=engine.generateFunnelPlot();
         funnel(body,'hta-beginner-nma-funnel','Comparison-adjusted funnel',f.data.map(d=>({name:d.study,effect:d.adjustedEffect,se:d.se})),0);
         table(body,['Treatment','Fitted effect','95% lower','95% upper'],r.effects.map(e=>[e.treatment,fmt(e.mean),fmt(e.ci_lower),fmt(e.ci_upper)]));
