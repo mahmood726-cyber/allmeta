@@ -66,10 +66,10 @@ class MetaAnalysisMethods {
             if (typeof s !== 'object' || s === null) {
                 throw new Error(`Study ${i + 1}: must be an object`);
             }
-            if (typeof s.effect !== 'number' || isNaN(s.effect)) {
+            if (typeof s.effect !== 'number' || !Number.isFinite(s.effect)) {
                 throw new Error(`Study ${i + 1}: effect must be a valid number`);
             }
-            if (typeof s.se !== 'number' || isNaN(s.se) || s.se <= 0) {
+            if (typeof s.se !== 'number' || !Number.isFinite(s.se) || s.se <= 0) {
                 throw new Error(`Study ${i + 1}: se must be a positive number`);
             }
         }
@@ -244,87 +244,20 @@ class MetaAnalysisMethods {
         return (Q - df) / C;
     }
 
-    /**
-     * REML τ² estimator using Fisher scoring
-     * Reference: Viechtbauer (2005) "Bias and efficiency of meta-analytic variance estimators"
-     *
-     * Corrected implementation with proper REML likelihood derivatives.
-     *
-     * VALIDITY NOTE: This implementation uses a simplified Fisher information
-     * approximation that performs well when:
-     * - Number of studies k >= 5
-     * - Study variances are not extremely heterogeneous (CV < 10)
-     * - τ² is not extremely large relative to within-study variances
-     *
-     * For k < 5, consider using DerSimonian-Laird with HKSJ adjustment instead,
-     * as the REML approximation may be less accurate.
-     *
-     * @param {Array} studies - Array of {effect, se} objects
-     * @param {number} thetaInit - Initial pooled effect estimate (optional)
-     * @returns {number} Estimated τ² (between-study variance)
+    /** Use AllMeta's canonical profile-likelihood-checked REML estimator.
+     * The previous simplified score/information iteration could remain at the
+     * zero boundary despite a better positive restricted-likelihood solution.
+     * Keep the HTA result schema and its existing normal-interval convention.
      */
     estimateTauREML(studies, thetaInit) {
-        const n = studies.length;
-        let tauSq = 0.1;
-        const maxIter = 100;
-        const tol = 1e-8;
-
-        for (let iter = 0; iter < maxIter; iter++) {
-            const w = studies.map(s => 1 / (s.se ** 2 + tauSq));
-            const sumW = w.reduce((a, b) => a + b, 0);
-            const theta = w.reduce((sum, wi, i) => sum + wi * studies[i].effect, 0) / sumW;
-
-            // REML log-likelihood derivatives (Viechtbauer 2005, eq. 6-7)
-            // Score: dL/d(τ²) = -0.5 * Σ(1/vi) + 0.5 * Σ(ri²/vi²) + 0.5 * tr(P)
-            // where P = W - ww'/Σw and ri = yi - θ
-            let score = 0;
-            let info = 0;
-
-            // Calculate P matrix trace term: tr(P) = Σ(wi²)/Σwi
-            const sumW2 = w.reduce((a, b) => a + b ** 2, 0);
-            const trP = sumW2 / sumW;
-
-            for (let i = 0; i < n; i++) {
-                const vi = studies[i].se ** 2 + tauSq;
-                const resid = studies[i].effect - theta;
-                // ML part of score
-                score += -0.5 / vi + 0.5 * (resid ** 2) / (vi ** 2);
-            }
-
-            // REML adjustment: add 0.5 * tr(P * dV/dτ² * P * V) ≈ 0.5 * tr(P²)
-            // Simplified: 0.5 * sumW2 / sumW - 0.5 * (sumW2/sumW)² / sumW
-            const trP2 = (sumW2 / sumW) - (sumW2 ** 2) / (sumW ** 3);
-            score += 0.5 * trP2;
-
-            // Fisher information for REML
-            // I = 0.5 * tr(P * V * P * V) where V = diag(vi)
-            for (let i = 0; i < n; i++) {
-                const vi = studies[i].se ** 2 + tauSq;
-                info += 0.5 * (w[i] ** 2 - 2 * w[i] * sumW2 / (sumW ** 2) + sumW2 ** 2 / (sumW ** 4));
-            }
-            // Simplified Fisher info
-            info = 0.5 * (sumW2 - 2 * sumW2 ** 2 / sumW + n * sumW2 ** 2 / (sumW ** 2)) / sumW;
-            info = Math.max(info, 1e-10); // Prevent division by zero
-
-            if (Math.abs(score) < tol) break;
-
-            // Newton step with step-halving for stability
-            let delta = score / info;
-            let stepSize = 1.0;
-            const oldTauSq = tauSq;
-
-            for (let half = 0; half < 10; half++) {
-                const newTauSq = Math.max(0, oldTauSq + stepSize * delta);
-                // Check if new value is reasonable
-                if (newTauSq < oldTauSq * 100 && newTauSq >= 0) {
-                    tauSq = newTauSq;
-                    break;
-                }
-                stepSize *= 0.5;
-            }
+        const core = typeof globalThis !== 'undefined' && globalThis.AlmMaCore
+            ? globalThis.AlmMaCore
+            : (typeof module !== 'undefined' && module.exports
+                ? require('../../../shared/ma-core.js') : null);
+        if (!core || typeof core.tau2REML !== 'function') {
+            throw new Error('The shared REML engine is unavailable. Reload the application.');
         }
-
-        return tauSq;
+        return core.tau2REML(studies.map(s => s.effect), studies.map(s => s.se * s.se));
     }
 
     /**

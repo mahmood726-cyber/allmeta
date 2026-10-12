@@ -732,29 +732,41 @@ class BeginnerMode {
     }
 
     runPairwiseAnalysis(dataset) {
+        for (const id of ['results-modal','bias-modal','hta-nma-results','hta-synthesis-error']) document.getElementById(id)?.remove();
+        window.lastResults = null;
         try {
-            const ma = new MetaAnalysisMethods({ model: 'random' });
+            if (!dataset || !Array.isArray(dataset.studies) || dataset.studies.length < 2) throw new Error('Enter at least two studies with finite effects and positive standard errors.');
+            // The beginner view explicitly labels the intervals actually used.
+            // It does not claim an automatic HKSJ adjustment that was never applied.
+            const ma = new MetaAnalysisMethods({ method:'REML', model:'random', autoHKSJ:false, useHKSJ:false });
             const results = ma.calculatePooledEffect(dataset.studies);
-
-            // Store results globally for export
+            window.currentDataset = dataset;
             window.lastResults = results;
-
-            // Show results with interpretation
             this.showResultsWithInterpretation(dataset, results);
-        } catch (e) {
-            console.error('Analysis error:', e);
+        } catch (error) {
+            HTASynthesisPlots.error(error.message);
         }
     }
 
-    runNMAAnalysis(dataset) {
+    async runNMAAnalysis(dataset) {
+        for (const id of ['results-modal','bias-modal','hta-nma-results','hta-synthesis-error']) document.getElementById(id)?.remove();
+        window.lastResults = null;
+        window.lastNMAEngine = null;
         try {
-            const nma = new NetworkMetaAnalysis({ method: 'frequentist' });
+            const arms = new Map();
+            for (const row of dataset.studies || []) {
+                if (!arms.has(row.study)) arms.set(row.study, new Set());
+                arms.get(row.study).add(row.treatment);
+            }
+            if ([...arms.values()].some(a => a.size !== 2)) throw new Error('This beginner view requires two-arm studies. Use the dedicated NMA application for a validated multi-arm workflow.');
+            const nma = new NetworkMetaAnalysis({ method:'frequentist', model:'fixed' });
             nma.setData(dataset.studies, 'binary');
-            nma.run().then(() => {
-                this.showNMAResults(dataset, nma.results);
-            });
-        } catch (e) {
-            console.error('NMA error:', e);
+            await nma.run();
+            window.currentDataset = dataset;
+            window.lastNMAEngine = nma;
+            this.showNMAResults(dataset, nma.results, nma);
+        } catch (error) {
+            HTASynthesisPlots.error(error.message);
         }
     }
 
@@ -767,183 +779,19 @@ class BeginnerMode {
     }
 
     showResultsWithInterpretation(dataset, results) {
-        // Create results modal
-        const resultsModal = document.createElement('div');
-        resultsModal.className = 'welcome-modal-overlay active';
-        resultsModal.id = 'results-modal';
-
-        const effect = results.random.effect;
-        const ci = [results.random.ci_lower, results.random.ci_upper];
-        const i2 = results.heterogeneity.I2;
-
-        // Generate interpretation
-        let interpretation = '';
-        if (dataset.name.includes('BCG')) {
-            const or = Math.exp(effect);
-            interpretation = `The pooled odds ratio is ${or.toFixed(2)} (95% CI: ${Math.exp(ci[0]).toFixed(2)} to ${Math.exp(ci[1]).toFixed(2)}).
-            This suggests BCG vaccination reduces TB risk by approximately ${((1 - or) * 100).toFixed(0)}%.
-            ${i2 > 50 ? `The high heterogeneity (I²=${i2.toFixed(0)}%) suggests effects vary substantially across studies, possibly due to latitude differences.` : `Heterogeneity is ${i2 < 25 ? 'low' : 'moderate'} (I²=${i2.toFixed(0)}%).`}`;
-        } else {
-            interpretation = `The pooled effect is ${effect.toFixed(2)} (95% CI: ${ci[0].toFixed(2)} to ${ci[1].toFixed(2)}).
-            ${ci[0] > 0 || ci[1] < 0 ? 'This effect is statistically significant.' : 'This effect is not statistically significant (CI crosses zero).'}
-            ${i2 > 50 ? `High heterogeneity (I²=${i2.toFixed(0)}%) suggests considerable variation between studies.` : `Heterogeneity is ${i2 < 25 ? 'low' : 'moderate'} (I²=${i2.toFixed(0)}%).`}`;
-        }
-
-        resultsModal.innerHTML = `
-            <div class="welcome-modal">
-                <div class="welcome-header">
-                    <h1>Analysis Results</h1>
-                    <p>${dataset.name} - ${dataset.studies.length} studies</p>
-                </div>
-                <div class="welcome-body">
-                    <div class="summary-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-                        <div class="summary-card info" style="padding: 16px; background: #dbeafe; border-radius: 12px;">
-                            <div style="font-size: 12px; color: var(--text-muted);">Pooled Effect</div>
-                            <div style="font-size: 24px; font-weight: 600;">${effect.toFixed(4)}</div>
-                        </div>
-                        <div class="summary-card" style="padding: 16px; background: var(--bg); border-radius: 12px;">
-                            <div style="font-size: 12px; color: var(--text-muted);">95% CI</div>
-                            <div style="font-size: 18px; font-weight: 600;">[${ci[0].toFixed(3)}, ${ci[1].toFixed(3)}]</div>
-                        </div>
-                        <div class="summary-card ${i2 > 50 ? 'warning' : 'success'}" style="padding: 16px; background: ${i2 > 50 ? '#fef3c7' : '#dcfce7'}; border-radius: 12px;">
-                            <div style="font-size: 12px; color: var(--text-muted);">Heterogeneity (I²)</div>
-                            <div style="font-size: 24px; font-weight: 600;">${i2.toFixed(1)}%</div>
-                        </div>
-                    </div>
-
-                    <div class="interpretation-box">
-                        <h4>What does this mean?</h4>
-                        <p>${interpretation}</p>
-                    </div>
-
-                    <h3 style="margin: 20px 0 12px;">Study Details</h3>
-                    <table class="data-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Study</th>
-                                <th>Effect</th>
-                                <th>SE</th>
-                                <th>Weight (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${dataset.studies.map((s, i) => {
-                                const w = 1 / (s.se ** 2);
-                                const totalW = dataset.studies.reduce((sum, st) => sum + 1/(st.se**2), 0);
-                                return `<tr>
-                                    <td>${s.study}</td>
-                                    <td>${s.effect.toFixed(4)}</td>
-                                    <td>${s.se.toFixed(4)}</td>
-                                    <td>${((w/totalW)*100).toFixed(1)}%</td>
-                                </tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="export-bar" style="display: flex; gap: 8px; padding: 12px; background: var(--bg, #f9fafb); border-radius: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center;">
-                    <button class="btn btn-secondary" onclick="beginnerMode.copyToClipboard('text')" style="font-size: 13px;">
-                        Copy Results
-                    </button>
-                    <button class="btn btn-secondary" onclick="beginnerMode.exportToCSV()" style="font-size: 13px;">
-                        Export CSV
-                    </button>
-                    <button class="btn btn-primary" onclick="beginnerMode.generateReport()" style="font-size: 13px;">
-                        Generate Report
-                    </button>
-                </div>
-
-                <div class="welcome-footer">
-                    <div></div>
-                    <div class="welcome-buttons">
-                        <button class="btn btn-secondary" onclick="document.getElementById('results-modal').remove();">Close</button>
-                        <button class="btn btn-primary" onclick="beginnerMode.runPublicationBias();">Check Publication Bias</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(resultsModal);
+        return HTASynthesisPlots.pairwise(this, dataset, results);
     }
 
-    showNMAResults(dataset, results) {
-        if (window.app && window.app.showToast) {
-            window.app.showToast('NMA complete - check Network MA section', 'success');
-        }
+    showNMAResults(dataset, results, engine) {
+        if (!engine) return HTASynthesisPlots.error('A fitted network is required before its plots can be displayed.');
+        return HTASynthesisPlots.nma(this, dataset, engine);
     }
 
     runPublicationBias() {
-        if (!window.currentDataset) return;
-
-        const modal = document.getElementById('results-modal');
-        if (modal) modal.remove();
-
-        const ma = new MetaAnalysisMethods();
-        const studies = window.currentDataset.studies;
-
-        const egger = ma.eggerTest(studies);
-        const begg = ma.beggTest(studies);
-        const trimFill = ma.trimAndFill(studies);
-
-        let biasInterpretation = '';
-        if (egger.pValue < 0.1 || begg.pValue < 0.1) {
-            biasInterpretation = `Warning: There is evidence of publication bias (Egger p=${egger.pValue.toFixed(3)}, Begg p=${begg.pValue.toFixed(3)}).
-            The trim-and-fill method estimates ${trimFill.nMissing} missing studies.
-            The adjusted effect is ${trimFill.adjusted.effect.toFixed(4)} compared to the unadjusted ${trimFill.original.effect.toFixed(4)}.`;
-        } else {
-            biasInterpretation = `Good news: No significant evidence of publication bias was detected (Egger p=${egger.pValue.toFixed(3)}, Begg p=${begg.pValue.toFixed(3)}).
-            The funnel plot appears symmetric and trim-and-fill estimates ${trimFill.nMissing} missing studies.`;
-        }
-
-        const biasModal = document.createElement('div');
-        biasModal.className = 'welcome-modal-overlay active';
-        biasModal.id = 'bias-modal';
-        biasModal.innerHTML = `
-            <div class="welcome-modal">
-                <div class="welcome-header" style="background: ${egger.pValue < 0.1 ? 'linear-gradient(135deg, #d97706, #b45309)' : 'linear-gradient(135deg, #16a34a, #15803d)'}">
-                    <h1>Publication Bias Assessment</h1>
-                    <p>${window.currentDataset.name}</p>
-                </div>
-                <div class="welcome-body">
-                    <div class="summary-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-                        <div class="summary-card" style="padding: 16px; background: var(--bg); border-radius: 12px;">
-                            <div style="font-size: 12px; color: var(--text-muted);">Egger's Test p-value</div>
-                            <div style="font-size: 24px; font-weight: 600; color: ${egger.pValue < 0.1 ? 'var(--warning)' : 'var(--success)'}">${egger.pValue.toFixed(4)}</div>
-                        </div>
-                        <div class="summary-card" style="padding: 16px; background: var(--bg); border-radius: 12px;">
-                            <div style="font-size: 12px; color: var(--text-muted);">Begg's Test p-value</div>
-                            <div style="font-size: 24px; font-weight: 600; color: ${begg.pValue < 0.1 ? 'var(--warning)' : 'var(--success)'}">${begg.pValue.toFixed(4)}</div>
-                        </div>
-                        <div class="summary-card" style="padding: 16px; background: var(--bg); border-radius: 12px;">
-                            <div style="font-size: 12px; color: var(--text-muted);">Trim-Fill Missing</div>
-                            <div style="font-size: 24px; font-weight: 600;">${trimFill.nMissing}</div>
-                        </div>
-                    </div>
-
-                    <div class="interpretation-box" style="background: ${egger.pValue < 0.1 ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : 'linear-gradient(135deg, #dcfce7, #bbf7d0)'}; border-color: ${egger.pValue < 0.1 ? 'var(--warning)' : 'var(--success)'}">
-                        <h4>What does this mean?</h4>
-                        <p>${biasInterpretation}</p>
-                    </div>
-
-                    <h3 style="margin: 20px 0 12px;">Test Details</h3>
-                    <div class="help-item">
-                        <h4>Egger's Regression Test</h4>
-                        <p>Intercept: ${egger.intercept.toFixed(4)}, t-statistic: ${egger.tStatistic.toFixed(3)}, p-value: ${egger.pValue.toFixed(4)}</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>Begg's Rank Correlation</h4>
-                        <p>Kendall's tau: ${begg.tau.toFixed(4)}, p-value: ${begg.pValue.toFixed(4)}</p>
-                    </div>
-                    <div class="help-item">
-                        <h4>Trim-and-Fill Adjustment</h4>
-                        <p>Original effect: ${trimFill.original.effect.toFixed(4)}, Adjusted effect: ${trimFill.adjusted.effect.toFixed(4)}, Studies imputed: ${trimFill.nMissing}</p>
-                    </div>
-                </div>
-                <div class="welcome-footer">
-                    <div></div>
-                    <button class="btn btn-primary" onclick="document.getElementById('bias-modal').remove();">Close</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(biasModal);
+        if (!window.currentDataset || !window.lastResults) return;
+        document.getElementById('results-modal')?.remove();
+        try { return HTASynthesisPlots.bias(this, window.currentDataset); }
+        catch (error) { HTASynthesisPlots.error(error.message); }
     }
 
     // ============ HELP PANEL ============
@@ -1433,21 +1281,21 @@ class BeginnerMode {
         }
 
         let csv = 'Study,Effect,SE,Weight\n';
-        const totalWeight = data.studies.reduce((sum, s) => sum + 1/(s.se**2), 0);
+        const totalWeight = data.studies.reduce((sum, s) => sum + 1/(s.se**2 + (window.lastResults?.heterogeneity?.tauSquared || 0)), 0);
 
         data.studies.forEach(s => {
-            const weight = ((1/(s.se**2)) / totalWeight * 100).toFixed(2);
+            const weight = ((1/(s.se**2 + (window.lastResults?.heterogeneity?.tauSquared || 0))) / totalWeight * 100).toFixed(2);
             csv += `"${s.study}",${s.effect},${s.se},${weight}%\n`;
         });
 
         // Add summary if available
         if (window.lastResults) {
             csv += '\n\nSummary Results\n';
-            csv += `Pooled Effect,${window.lastResults.random?.effect || ''}\n`;
-            csv += `CI Lower,${window.lastResults.random?.ci_lower || ''}\n`;
-            csv += `CI Upper,${window.lastResults.random?.ci_upper || ''}\n`;
+            csv += `Pooled Effect,${window.lastResults.random?.effect ?? ''}\n`;
+            csv += `CI Lower,${window.lastResults.random?.ci_lower ?? ''}\n`;
+            csv += `CI Upper,${window.lastResults.random?.ci_upper ?? ''}\n`;
             csv += `I-squared,${window.lastResults.heterogeneity?.I2 || ''}%\n`;
-            csv += `Tau-squared,${window.lastResults.heterogeneity?.tau2 || ''}\n`;
+            csv += `Tau-squared,${window.lastResults.heterogeneity?.tauSquared ?? ''}\n`;
         }
 
         this.downloadFile(csv, filename, 'text/csv');
@@ -1490,16 +1338,16 @@ class BeginnerMode {
                 text += `Pooled Effect: ${results.random?.effect?.toFixed(4) || 'N/A'}\n`;
                 text += `95% CI: [${results.random?.ci_lower?.toFixed(4) || 'N/A'}, ${results.random?.ci_upper?.toFixed(4) || 'N/A'}]\n`;
                 text += `I²: ${results.heterogeneity?.I2?.toFixed(1) || 'N/A'}%\n`;
-                text += `τ²: ${results.heterogeneity?.tau2?.toFixed(4) || 'N/A'}\n`;
-                text += `Q: ${results.heterogeneity?.Q?.toFixed(2) || 'N/A'} (p=${results.heterogeneity?.pValue?.toFixed(4) || 'N/A'})\n`;
+                text += `τ²: ${results.heterogeneity?.tauSquared?.toFixed(4) || 'N/A'}\n`;
+                text += `Q: ${results.heterogeneity?.Q?.toFixed(2) || 'N/A'} (p=${results.heterogeneity?.pValueQ?.toFixed(4) || 'N/A'})\n`;
             }
         } else if (format === 'table') {
             // Tab-separated for pasting into Excel/Word
             text = 'Study\tEffect\tSE\tWeight\n';
             if (data && data.studies) {
-                const totalWeight = data.studies.reduce((sum, s) => sum + 1/(s.se**2), 0);
+                const totalWeight = data.studies.reduce((sum, s) => sum + 1/(s.se**2 + (window.lastResults?.heterogeneity?.tauSquared || 0)), 0);
                 data.studies.forEach(s => {
-                    const weight = ((1/(s.se**2)) / totalWeight * 100).toFixed(2);
+                    const weight = ((1/(s.se**2 + (window.lastResults?.heterogeneity?.tauSquared || 0))) / totalWeight * 100).toFixed(2);
                     text += `${s.study}\t${s.effect}\t${s.se}\t${weight}%\n`;
                 });
             }
@@ -1607,8 +1455,8 @@ class BeginnerMode {
             <tr><td>Pooled Effect (Random)</td><td>${results?.random?.effect?.toFixed(4) || 'N/A'}</td></tr>
             <tr><td>95% Confidence Interval</td><td>[${results?.random?.ci_lower?.toFixed(4) || 'N/A'}, ${results?.random?.ci_upper?.toFixed(4) || 'N/A'}]</td></tr>
             <tr><td>Heterogeneity (I²)</td><td>${results?.heterogeneity?.I2?.toFixed(1) || 'N/A'}%</td></tr>
-            <tr><td>Between-study variance (τ²)</td><td>${results?.heterogeneity?.tau2?.toFixed(4) || 'N/A'}</td></tr>
-            <tr><td>Cochran's Q</td><td>${results?.heterogeneity?.Q?.toFixed(2) || 'N/A'} (p = ${results?.heterogeneity?.pValue?.toFixed(4) || 'N/A'})</td></tr>
+            <tr><td>Between-study variance (τ²)</td><td>${results?.heterogeneity?.tauSquared?.toFixed(4) || 'N/A'}</td></tr>
+            <tr><td>Cochran's Q</td><td>${results?.heterogeneity?.Q?.toFixed(2) || 'N/A'} (p = ${results?.heterogeneity?.pValueQ?.toFixed(4) || 'N/A'})</td></tr>
         </table>
     </div>
 
@@ -1629,8 +1477,8 @@ class BeginnerMode {
         </thead>
         <tbody>
             ${data.studies.map(s => {
-                const totalW = data.studies.reduce((sum, st) => sum + 1/(st.se**2), 0);
-                const w = ((1/(s.se**2)) / totalW * 100).toFixed(1);
+                const totalW = data.studies.reduce((sum, st) => sum + 1/(st.se**2 + (window.lastResults?.heterogeneity?.tauSquared || 0)), 0);
+                const w = ((1/(s.se**2 + (window.lastResults?.heterogeneity?.tauSquared || 0))) / totalW * 100).toFixed(1);
                 return `<tr><td>${s.study}</td><td>${s.effect.toFixed(4)}</td><td>${s.se.toFixed(4)}</td><td>${w}%</td></tr>`;
             }).join('')}
         </tbody>

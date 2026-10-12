@@ -16,7 +16,7 @@ async function open(page) {
 async function populated(page,id) {
   const svg=page.locator('#'+id);
   await expect(svg).toBeVisible();
-  expect(await svg.locator('line,path,circle,polygon').count()).toBeGreaterThan(0);
+  expect(await svg.locator('line,path,circle,polygon,rect[data-pscore]').count()).toBeGreaterThan(0);
   expect(await svg.evaluate(s=>[...s.querySelectorAll('*')].flatMap(el=>[...el.attributes]).filter(a=>/^(d|points|x|y|x1|x2|y1|y2|cx|cy|width|height)$/.test(a.name) && /NaN|Infinity/.test(a.value)).map(a=>a.value))).toEqual([]);
   return svg;
 }
