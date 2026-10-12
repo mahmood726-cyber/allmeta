@@ -148,6 +148,7 @@ for (const width of [1280, 390]) {
       await expect(page.locator('#ipdNetHeatRun')).toBeEnabled({timeout:200000});
       expect(await page.locator('#netHeatPlot').getAttribute('data-plot-state'), await page.locator('#netHeatPlotStatus').innerText()).toBe('ready');
       await ink(page,'netHeatPlot');
+      expect(await page.locator('#netHeatPlot').evaluate(c=>Array.from(c.getContext('2d').getImageData(0,0,1,1).data))).toEqual([255,255,255,255]);
       await expect(page.locator('#netHeatPlotStatus')).toContainText('netmeta');
       await expect(page.locator('#netHeatPlotStatus')).toContainText('common-effect Net Heat');
       await page.setViewportSize({width:width+30,height:920});

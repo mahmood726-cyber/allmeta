@@ -180,6 +180,8 @@
   function paintNetHeat() {
     if(!netImage)return;
     const p=surface('netHeatPlot',Math.max(340,Math.min(720,document.getElementById('netHeatPlot').parentElement.clientWidth)));if(!p)return;
+    // R labels are black; composite transparent R graphics over a white page.
+    p.ctx.fillStyle="#ffffff";p.ctx.fillRect(0,0,p.width,p.height);
     p.ctx.drawImage(netImage,0,0,p.width,p.height);p.canvas.dataset.plotState='ready';
   }
   async function runNetHeat() {
