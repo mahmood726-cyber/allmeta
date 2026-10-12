@@ -13,7 +13,7 @@ const script = path => new Promise((resolve,reject)=>{
 let busy=false, selector, bar, status;
 const adapter=window.ScreenValidationAdapter={
  app:'screen',
- paper:{title:'Screen: title-abstract screening benchmark',doi:'10.5281/zenodo.23132680',checks:29,
+ paper:{title:'Screen: title-abstract screening benchmark',doi:'10.5281/zenodo.23132680',checks:29,referenceRuntime:'Python',referenceLabel:'Published rounded Screen benchmark values; ASReview is a Python comparator, not a live oracle for this button',
  repoUrl:repo,runUrl:repo+'/actions/workflows/reproduce.yml',
  codespacesUrl:'https://codespaces.new/mahmood726-cyber/screen-reproducible?quickstart=1'},
  live:null,
@@ -122,7 +122,7 @@ async function run(files,onProgress){
   const summaryLines=[line,'Reference: expected/'+(mode==='full'?'paper_values.json':'quick_values.json')+'; exact published rounding required.',
    'Scope: Screen active learning (WSS@95, recall and Buscar stopping). ASReview and de-duplication claims are not validated here.',
    'results/full/ is absent in the supplied checkout; no per-seed oracle is available. Simulation count is not a comparison count.',
-   'R check available via the reproducible repo'];
+   'Live Python comparison is unavailable in this browser. Python/ASReview re-execution is documented in the reproducible repository.'];
   if(mode==='full')summaryLines.push('Mean WSS@95: app '+mean(Object.values(means))+'; paper '+expected.screen_mean_all.value);
   rows.forEach(r=>summaryLines.push((r.pass?'PASS ':'FAIL ')+r.quantity+': app '+r.app+'; expected '+r.ref+'; '+r.rule));
   const result={checks:rows.length,passed,failed,maxima:{wss95:Math.max(...rows.filter(r=>r.id.startsWith('screen_')).map(r=>r.diff))},
@@ -138,7 +138,7 @@ adapter.ready=script('pins.js').then(()=>{
  if(window.AlmValidate)window.AlmValidate.mount(mount,adapter);
  else{
   const p=document.createElement('p');p.textContent='Validation widget unavailable: shared/alm-validate.js must be integrated.';mount.appendChild(p);
-  const a=document.createElement('a');a.href=repo;a.textContent='R check available via the reproducible repo';mount.appendChild(a);
+  const a=document.createElement('a');a.href=repo;a.textContent='Python reference and re-execution';mount.appendChild(a);
  }
  const controls=document.createElement('div'),label=document.createElement('label');
  label.textContent='Screen benchmark scope: ';selector=document.createElement('select');selector.id='screen-validation-mode';

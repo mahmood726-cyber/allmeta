@@ -86,7 +86,7 @@ test('dose validation buttons render; corpus widget works offline', async ({ pag
   await context.setOffline(true);
   await corpusButton(page).click();
   await expect(page.locator('#alm-validate')).toContainText(countLine, { timeout: 100_000 });
-  await expect(page.locator('#alm-validate')).toContainText('0 failures');
+  await expect(page.locator('#alm-validate')).toContainText('0 failed combinations');
   expect(outside).toEqual([]);
 });
 

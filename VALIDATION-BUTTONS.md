@@ -10,6 +10,10 @@ The current data run locally in webR **0.5.5**, using **metafor 4.8-0** for hete
 
 Heterogeneity checks the selected tau-squared estimator, pooled estimate, SE, normal CI, floored HKSJ CI (`test="adhoc"`), prediction interval (`test="t"`), Q, Q-based I-squared (DL definition), Q p-value, counts, and Q-profile intervals. Tight convergence controls and the enlarged Q-profile search range follow the source reference script. When DL is refused below ten studies, the widget explicitly validates the displayed PM fallback. Live tolerance is 1e-6 (relative for estimates/intervals/Q, absolute for I-squared/p-values; exact for counts).
 
+DTA live comparison covers **intercept-only bivariate fits**, not current-data meta-regression. Selecting a covariate causes a visible refusal rather than checking an intercept-only substitute. Its corpus replay still includes the archived meta-regression fits. Screen has no live reference-software comparison in the browser: its reference pipeline uses Python, including ASReview as a comparator.
+
+The live result snapshots the current inputs, app quantities, R script and comparison tolerances together. Edits during the asynchronous R fit refuse the stale result. After completion, changes to relevant data or settings clear the verdict, including programmatic form updates from import/load/reset handlers. No tolerance is relaxed for a package version difference.
+
 ## Local package repository
 
 The repository layout is `r-shiny/shinylive/webr/repo/bin/emscripten/contrib/4.5/`. It contains 32 fetched archives. The 40 byte-identical dependency archives remain in `../packages/<package>/`; manifest `path` entries resolve relative to the webR bundle root. This saves 49,399,233 bytes without changing any SHA-256 pin. The manifest-driven runner, rather than a standard R repository downloader, resolves these shared archives. The original metadata is preserved in `upstream-manifest.json`; `manifest.json` records every archive's hash, size, version and dependencies. `PACKAGES` retains the complete package metadata, but direct `install.packages` downloads are not the supported transport after archive deduplication; use the manifest-driven runner.
@@ -20,7 +24,9 @@ The unpinned latest-CDN fallback is removed. Missing local assets cause a visibl
 
 ## Tier 2: published corpus replay
 
-The widget verifies corpus/reference JSON against the adapter's pinned SHA-256 hashes, then runs the shipped JavaScript engine. It does not substitute saved app outputs or start R. It reports hashes, elapsed time, check counts, failures, maxima, refusals and the existing generated build stamp from `shared/build-info.js`. That stamp does not identify uncommitted lane edits.
+The button is labelled **Replay published corpus (stored references)**. The widget verifies corpus/reference JSON against the adapter's pinned SHA-256 hashes, then runs the shipped JavaScript engine. It does not substitute saved app outputs or start R or Python, and it does not validate the user's current data. The table column says **Stored reference**, while current-analysis comparisons say **Live R**. It reports hashes, elapsed time, check counts, failures, maxima, refusals and the existing generated build stamp from `shared/build-info.js`. That stamp does not identify uncommitted lane edits or independently establish the deployed commit.
+
+A failed check can have several diagnostic rows (for example, several quantities from one dose-response combination). `failedChecks` counts failed checks; `failed` preserves every diagnostic. Other adapters use one row per failed check and may omit `failedChecks`. Coverage and rendered-number failures appear as explicit FAIL rows, separately from numerical accounting. Invalid accounting refuses the run but preserves any available discrepancy rows; a rendered-number failure cannot leave an overall corpus PASS row.
 
 The first HTTP load reads same-origin corpus files. After `prepare()` or a replay, the verified in-memory corpus replays offline without requests. Cold offline loading still requires previously available assets. On `file://`, a labelled picker lets the user select the manifest-listed JSON files, avoiding browser fetch restrictions while retaining byte verification. Screen additionally loads its packaged offline JavaScript transport automatically and retains raw JSON bytes for its second hash check. Quick Screen mode is labelled as four comparisons rather than the full 29-comparison paper scope. Progress callbacks accept strings, completed/total pairs, or progress objects.
 
@@ -42,9 +48,9 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 |---|---|---|---|
 | Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
 | Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | See integration report |
-| DTA SROC | mada 0.5.12 vendored | Contract: 855 checks | See integration report |
+| DTA SROC | mada 0.5.12 vendored; intercept-only bivariate fits | Contract: 855 checks, including meta-regression | See audit report |
 | NMA | netmeta 3.4-0 vendored; paper 3.7-0 | Contract: 410 checks | See integration report |
-| Screen | No R oracle; honest repository link with `live:null` | Screen simulator replay against published values | See integration report |
+| Screen | No live Python oracle; repository link with `live:null` | Screen simulator replay against published rounded benchmark values | See audit report |
 
 ## Static versus dynamic disclosure
 
@@ -57,4 +63,4 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 | Live R fits and versions | Dynamic | Actual R session and packageVersion checks |
 | Build SHA | Static generated stamp | Existing shared/build-info.js; regenerate at integration/release |
 
-See `INTEGRATION_REPORT.md` for exact commands, results and limitations. This lane does not commit, push, deploy or change submission status.
+See `INTEGRATION_REPORT.md` for the original implementation evidence and `docs/validation-audit-2026-10-11.md` for the independent audit, package-version investigation and regression checks. Audit changes require review before merging; they do not deploy or release the applications.
