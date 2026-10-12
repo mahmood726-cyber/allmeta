@@ -734,6 +734,7 @@
     window._almLastPubbias = function () { return _lastResults; };
     // Expose the test engine for R-parity tests (parseBinary + each test).
     window.__almPubBiasEngine = {
+      parseTESE: parseTESE, trimFill: trimFill, remlSlopeNeg: remlSlopeNeg, wls: wls,
       parseBinary: parseBinary, eggerGeneric: eggerGeneric, beggMazumdar: beggMazumdar,
       petersTest: petersTest, harbordTest: harbordTest, thompsonSharp: thompsonSharp,
     };
@@ -918,5 +919,8 @@
   });
 })();
 </script>
+<div id="alm-validate"></div>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>

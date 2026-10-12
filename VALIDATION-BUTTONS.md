@@ -42,6 +42,7 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 |---|---|---|---|
 | Multilevel MA | metafor 4.8-0; paper 5.2-1 | 44 configurations, 528 checks including MoM-share and UI contracts | validate-multilevel-ma + integration specs |
 | Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
+| Publication bias (`pubbias-tests`) | metafor 4.8-0 and meta 8.3-0; paper 5.2-1 / 8.5-0 | 152 configurations, 2,107/2,113; six named failures retained | See pubbias-tests/validate/README.md and validation specs |
 | Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | See integration report |
 | DTA SROC | mada 0.5.12 vendored | Contract: 855 checks | See integration report |
 | NMA | netmeta 3.4-0 vendored; paper 3.7-0 | Contract: 410 checks | See integration report |

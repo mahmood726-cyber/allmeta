@@ -42,6 +42,10 @@
     return files;
   }
   function compare(app, ref, kind, tol) {
+    if (kind === 'exact') {
+      const pass = typeof app === typeof ref && ['string', 'boolean', 'number'].includes(typeof app) && app === ref && (typeof app !== 'number' || Number.isFinite(app));
+      return { diff: pass ? 0 : Infinity, pass };
+    }
     // null is a declared unavailable quantity; undefined/NaN never passes.
     const diff = app === null && ref === null ? 0 :
       typeof app === 'number' && typeof ref === 'number' && Number.isFinite(app) && Number.isFinite(ref) ?
