@@ -38,7 +38,7 @@ jobs:
           print('Baseline:',d['stats'])
           assert d['stats']['unexpected']==6 and d['stats']['expected']==0
           PY
-      - name: Apply audited adapters and verify source syntax
+      - name: Apply audited adapters at the real document boundary
         run: |
           python scripts/repair-secondary-plots.py
           node --check IPD-Meta-Pro/src/secondary-plot-adapters.js
@@ -51,7 +51,7 @@ jobs:
       - name: Verify earlier IPD, export and R-runtime plot repairs
         working-directory: tests/playwright
         run: |
-          npx playwright test remaining-plots.spec.mjs remaining-runtime-plots.spec.mjs ipd-plot-fidelity.spec.mjs --workers=2 --retries=0
+          npx playwright test remaining-plots.spec.mjs remaining-runtime-plots.spec.mjs ipd-fitted-display.spec.mjs --workers=2 --retries=0
           cp artifacts/report.json artifacts/secondary-prior-runtime.json
       - name: Commit only the browser-tested source and retained tests
         run: |
