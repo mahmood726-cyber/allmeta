@@ -1301,7 +1301,7 @@
 
                             <div class="card-title-icon">K</div>
 
-                            Treatment Ranking (SUCRA/P-Score)
+                            Treatment ranking — computed probabilities
 
                         </div>
 
@@ -1313,17 +1313,17 @@
 
                         <div class="stat-box">
 
-                            <div class="stat-value">Treatment A</div>
+                            <div class="stat-value" id="ipdRankFirst">—</div>
 
-                            <div class="stat-label">Best Treatment</div>
+                            <div class="stat-label">First by selected numerical direction</div>
 
                         </div>
 
                         <div class="stat-box">
 
-                            <div class="stat-value">87.3%</div>
+                            <div class="stat-value" id="ipdRankSucra">—</div>
 
-                            <div class="stat-label">Best SUCRA</div>
+                            <div class="stat-label">Highest SUCRA</div>
 
                         </div>
 
@@ -1331,7 +1331,10 @@
 
 
 
-                    <div class="data-table-container">
+                    <p id="ipdRankingStatus" role="status">Run an eligible network analysis to obtain rank probabilities.</p>
+<label for="ipdRankDirection">Numerical ranking direction</label>
+<select id="ipdRankDirection" class="form-select"><option value="higher">Larger fitted effect first</option><option value="lower">Smaller fitted effect first</option></select>
+<div class="data-table-container">
 
                         <table class="results-table" id="rankingTable">
 
@@ -1343,13 +1346,13 @@
 
                                     <th scope="col">SUCRA</th>
 
-                                    <th scope="col">P-Score</th>
+
 
                                     <th scope="col">Mean Rank</th>
 
-                                    <th scope="col">P(Best)</th>
+                                    <th scope="col">P(Rank 1)</th>
 
-                                    <th scope="col">P(Worst)</th>
+                                    <th scope="col">P(Last rank)</th>
 
                                 </tr>
 
@@ -41161,45 +41164,13 @@ function buildNetworkFromData() {
  beyondNetwork.indirectEffects[parts[0] + '_vs_' + parts[1]] = { estimate: indirectEstimates[key].effect, se: indirectEstimates[key].se };
  });
 
- const rankResult = (typeof BeyondR40 !== 'undefined' && BeyondR40 && typeof BeyondR40.rankProbabilityData === 'function') ? BeyondR40.rankProbabilityData(beyondNetwork, 2000) : null;
+ const rankIssue = IPDSecondaryPlots.rankingPrerequisite(pairwiseRows, treatments, outcomeType);
+ const rankResult = !rankIssue && typeof BeyondR40 !== 'undefined' && typeof BeyondR40.rankProbabilityData === 'function'
+   ? BeyondR40.rankProbabilityData(beyondNetwork, 2000) : null;
+ IPDSecondaryPlots.setRanking(rankResult, rankIssue);
  const sucraScores = {};
- if (rankResult && Array.isArray(rankResult.rankings)) {
- rankResult.rankings.forEach(function(r) { sucraScores[r.treatment] = Number(r.SUCRA); });
- }
- treatments.forEach(function(t) {
- if (!Number.isFinite(sucraScores[t])) {
- const score = treatments.reduce(function(acc, other) {
- if (t === other) return acc;
- const est = networkEffects[networkPairKey(t, other)];
- return acc + (est && est.effect > 0 ? 1 : 0);
- }, 0);
- sucraScores[t] = treatments.length > 1 ? (score / (treatments.length - 1)) * 100 : 50;
- }
- });
-
- const rankBody = document.getElementById('rankingTableBody');
- const sorted = treatments.slice().sort((a, b) => sucraScores[b] - sucraScores[a]);
- if (rankBody) {
- rankBody.innerHTML = sorted.map((t, i) => {
- const pScore = sucraScores[t] / 100;
- const meanRank = 1 + (1 - pScore) * (treatments.length - 1);
- const pBest = i === 0 ? Math.round(pScore * 100 / 2) : Math.round((1 - i / treatments.length) * 20);
- const pWorst = i === treatments.length - 1 ? Math.round((1 - pScore) * 100 / 2) : Math.round(i / treatments.length * 15);
- return `<tr>
- <td><strong>${escapeHTML(t)}</strong></td>
- <td>${sucraScores[t].toFixed(1)}%</td>
- <td>${pScore.toFixed(2)}</td>
- <td>${meanRank.toFixed(1)}</td>
- <td>${pBest}%</td>
- <td>${pWorst}%</td>
- </tr>`;
- }).join('');
- }
- if (typeof drawRankogram === 'function') {
- try { drawRankogram(sorted, sucraScores); } catch (e) { console.warn('Rankogram draw failed:', e); }
- }
- if (typeof drawCumulativeRankPlot === 'function') {
- try { drawCumulativeRankPlot(sorted, sucraScores); } catch (e) { console.warn('Cumulative rank plot draw failed:', e); }
+ if (!rankIssue && rankResult && Array.isArray(rankResult.rankings)) {
+   rankResult.rankings.forEach(r => { sucraScores[r.treatment] = r.SUCRA; });
  }
 
  return {
@@ -41207,6 +41178,8 @@ function buildNetworkFromData() {
  indirectEstimates: indirectEstimates,
  networkEffects: networkEffects,
  sucraScores: sucraScores,
+ rankingResult: rankResult,
+ rankingUnavailableReason: rankIssue,
  network: network,
  reference: reference,
  basicEffects: fit.basicEffects,
@@ -42195,74 +42168,8 @@ function addForestPlotInteractivity() {
 
 
 function addSurvivalPlotInteractivity() {
-
- const canvas = document.getElementById('survivalPlot');
-
- if (!canvas) return;
-
-
-
- canvas.style.cursor = 'zoom-in';
-
- canvas.addEventListener('click', () => {
-
-
-
- const modal = document.createElement('div');
-
- modal.className = 'modal-overlay active';
-
- modal.innerHTML = `
-
- <div class="modal" style="max-width: 90vw; max-height: 90vh;">
-
- <div class="modal-header">
-
- <h3>Survival Curves (Enlarged)</h3>
-
- <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-
- </div>
-
- <div class="modal-body" style="padding: 0;">
-
- <canvas id="survivalPlotLarge" style="width: 100%; height: 70vh;"></canvas>
-
- </div>
-
- <div class="modal-footer">
-
- <button class="btn btn-secondary" onclick="downloadSurvivalPlot('png')">Download PNG</button>
-
- <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Close</button>
-
- </div>
-
- </div>
-
- `;
-
- document.body.appendChild(modal);
-
-
-
- setTimeout(() => {
-
- const largeCanvas = document.getElementById('survivalPlotLarge');
-
- if (largeCanvas && APP.results && APP.results.survivalData) {
-
- Plots.drawSurvivalCurve(largeCanvas, APP.results.survivalData.treated, APP.results.survivalData.control);
-
- }
-
- }, 100);
-
- });
-
- }
-
-
+ IPDSecondaryPlots.bindSurvivalZoom();
+}
 
 function addNetworkInteractivity() {
 
@@ -42328,253 +42235,16 @@ function addNetworkInteractivity() {
 
 
 
-function drawRankogram(treatments, sucraScores) {
-
- const canvas = document.getElementById('rankogramPlot');
-
- if (!canvas) return;
-
-
-
- const ctx = canvas.getContext('2d');
-
- const width = canvas.width = Math.max(canvas.offsetWidth * 2, 800);
-
- const height = canvas.height = Math.max(canvas.offsetHeight * 2, 600);
-
- ctx.scale(2, 2);
-
-
-
- const margin = PlotDefaults.mediumStd();
-
- const plotWidth = width / 2 - margin.left - margin.right;
-
- const plotHeight = height / 2 - margin.top - margin.bottom;
-
-
-
- ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-card');
-
- ctx.fillRect(0, 0, width / 2, height / 2);
-
-
-
- ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-
- ctx.font = 'bold 14px system-ui';
-
- ctx.textAlign = 'center';
-
- ctx.fillText('Rankogram (Probability of Each Rank)', width / 4, 20);
-
-
-
- const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899', '#14b8a6'];
-
-
-
- const barWidth = plotWidth / (treatments.length * treatments.length + treatments.length);
-
-
-
- treatments.forEach((t, tIdx) => {
-
- const score = sucraScores[t] / 100;
-
-
-
- treatments.forEach((_, rank) => {
-
-
-
- let prob = 0;
-
- if (rank === 0) prob = score * 0.5;
-
- else if (rank === treatments.length - 1) prob = (1 - score) * 0.5;
-
- else prob = (1 - Math.abs(rank - (1 - score) * (treatments.length - 1)) / treatments.length) * 0.3;
-
-
-
- const x = margin.left + rank * (plotWidth / treatments.length) + tIdx * barWidth + 5;
-
- const barHeight = prob * plotHeight;
-
-
-
- ctx.fillStyle = colors[tIdx % colors.length];
-
- ctx.fillRect(x, margin.top + plotHeight - barHeight, barWidth - 2, barHeight);
-
- });
-
- });
-
-
-
- ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--text-muted');
-
- ctx.beginPath();
-
- ctx.moveTo(margin.left, margin.top);
-
- ctx.lineTo(margin.left, margin.top + plotHeight);
-
- ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
-
- ctx.stroke();
-
-
-
- ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
-
- ctx.font = '11px system-ui';
-
- ctx.textAlign = 'center';
-
- for (let i = 0; i < treatments.length; i++) {
-
- const x = margin.left + (i + 0.5) * (plotWidth / treatments.length);
-
- ctx.fillText(`Rank ${i + 1}`, x, margin.top + plotHeight + 15);
-
- }
-
-
-
- ctx.font = '10px system-ui';
-
- treatments.forEach((t, i) => {
-
- const legendX = margin.left + 10;
-
- const legendY = margin.top + 10 + i * 12;
-
- ctx.fillStyle = colors[i % colors.length];
-
- ctx.fillRect(legendX, legendY - 8, 8, 8);
-
- ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
-
- ctx.fillText(t.substring(0, 15), legendX + 12, legendY);
-
- });
-
- }
-
-
-
-function drawCumulativeRankPlot(treatments, sucraScores) {
-
- const canvas = document.getElementById('cumulativeRankPlot');
-
- if (!canvas || !Array.isArray(treatments) || treatments.length === 0) return;
-
- const ctx = canvas.getContext('2d');
- const width = canvas.width = Math.max(canvas.offsetWidth * 2, 800);
- const height = canvas.height = Math.max(canvas.offsetHeight * 2, 600);
- ctx.scale(2, 2);
-
- const margin = PlotDefaults.mediumStd();
- const w = width / 2 - margin.left - margin.right;
- const h = height / 2 - margin.top - margin.bottom;
- const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#ec4899', '#14b8a6'];
-
- const bg = getComputedStyle(document.body).getPropertyValue('--bg-card') || '#ffffff';
- const text = getComputedStyle(document.body).getPropertyValue('--text-primary') || '#111827';
- const muted = getComputedStyle(document.body).getPropertyValue('--text-muted') || '#6b7280';
-
- ctx.fillStyle = bg;
- ctx.fillRect(0, 0, width / 2, height / 2);
-
- ctx.strokeStyle = muted;
- ctx.beginPath();
- ctx.moveTo(margin.left, margin.top);
- ctx.lineTo(margin.left, margin.top + h);
- ctx.lineTo(margin.left + w, margin.top + h);
- ctx.stroke();
-
- ctx.fillStyle = text;
- ctx.font = 'bold 14px system-ui';
- ctx.textAlign = 'center';
- ctx.fillText('Cumulative Rank Curves', width / 4, 20);
-
- const n = treatments.length;
- const xForRank = function(rankIdx) {
- return margin.left + (rankIdx / (n - 1 || 1)) * w;
- };
- const yForProb = function(prob) {
- return margin.top + h - Math.max(0, Math.min(1, prob)) * h;
- };
-
- for (let r = 0; r < n; r++) {
- const x = xForRank(r);
- ctx.strokeStyle = '#e5e7eb';
- ctx.beginPath();
- ctx.moveTo(x, margin.top);
- ctx.lineTo(x, margin.top + h);
- ctx.stroke();
- ctx.fillStyle = muted;
- ctx.font = '10px system-ui';
- ctx.fillText(String(r + 1), x, margin.top + h + 14);
- }
-
- for (let p = 0; p <= 5; p++) {
- const prob = p / 5;
- const y = yForProb(prob);
- ctx.strokeStyle = '#f1f5f9';
- ctx.beginPath();
- ctx.moveTo(margin.left, y);
- ctx.lineTo(margin.left + w, y);
- ctx.stroke();
- ctx.fillStyle = muted;
- ctx.font = '10px system-ui';
- ctx.textAlign = 'right';
- ctx.fillText(prob.toFixed(1), margin.left - 6, y + 3);
- }
-
- treatments.forEach((t, idx) => {
- const score = Math.max(0, Math.min(1, (Number(sucraScores[t]) / 100) ?? 0));
- const exponent = 1.8 - 1.6 * score;
- ctx.strokeStyle = colors[idx % colors.length];
- ctx.lineWidth = 2;
- ctx.beginPath();
- for (let r = 0; r < n; r++) {
- const rankFrac = (r + 1) / n;
- const cum = Math.pow(rankFrac, exponent);
- const x = xForRank(r);
- const y = yForProb(cum);
- if (r === 0) ctx.moveTo(x, y);
- else ctx.lineTo(x, y);
- }
- ctx.stroke();
- });
-
- ctx.fillStyle = text;
- ctx.font = '11px system-ui';
- ctx.textAlign = 'center';
- ctx.fillText('Rank (1 = best)', margin.left + w / 2, margin.top + h + 30);
- ctx.save();
- ctx.translate(14, margin.top + h / 2);
- ctx.rotate(-Math.PI / 2);
- ctx.fillText('Cumulative Probability', 0, 0);
- ctx.restore();
-
- ctx.font = '10px system-ui';
- ctx.textAlign = 'left';
- treatments.forEach((t, i) => {
- const lx = margin.left + 8;
- const ly = margin.top + 10 + i * 12;
- ctx.fillStyle = colors[i % colors.length];
- ctx.fillRect(lx, ly - 7, 9, 9);
- ctx.fillStyle = text;
- ctx.fillText(t.substring(0, 18), lx + 13, ly);
- });
-
+function drawRankogram(treatments, rankResult) {
+ if (arguments.length > 1) IPDSecondaryPlots.setRanking(rankResult);
+ else IPDSecondaryPlots.renderRanking();
 }
 
+
+function drawCumulativeRankPlot(treatments, rankResult) {
+ if (arguments.length > 1) IPDSecondaryPlots.setRanking(rankResult);
+ else IPDSecondaryPlots.renderRanking();
+}
 
 
 function fitFrailtyModel(data, timeVar, eventVar, treatmentVar, clusterVar) {
@@ -100985,6 +100655,211 @@ function exportIPDData() {
 
 </script>
 <!-- END IPD TESTED CLUSTERING -->
+<script data-source="src/secondary-plot-adapters.js">
+/* Rendering adapters only. Model fitting, KM estimation and MCMC are unchanged.
+ * Ranking input is the existing engine's full simulated probability matrix,
+ * never reconstructed from SUCRA/P-scores. The single-file app embeds this file.
+ */
+(function (root) {
+  'use strict';
+  let ranking = null, rankingError = '', survival = null, bayes = null, frame = null;
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const byId = id => document.getElementById(id);
+  const dataSignature = () => JSON.stringify(APP.data || []);
+  const palette = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#3b82f6','#ec4899','#14b8a6'];
+  const css = (name, fallback) => getComputedStyle(document.body).getPropertyValue(name).trim() || fallback;
+  function sum(values) { return values.reduce((s, x) => s + x, 0); }
+  function validMatrix(result) {
+    const p = result && result.probabilityMatrix;
+    if (!p || !Array.isArray(p.treatments) || !Array.isArray(p.matrix)) return false;
+    const n = p.treatments.length;
+    if (n < 2 || new Set(p.treatments).size !== n || !p.treatments.every(t => typeof t === 'string' && t.length)) return false;
+    if (p.matrix.length !== n || !p.matrix.every(row => Array.isArray(row) && row.length === n && row.every(x => typeof x === 'number' && Number.isFinite(x) && x >= 0 && x <= 1) && Math.abs(sum(row) - 1) < 1e-7)) return false;
+    return p.treatments.every((_, j) => Math.abs(sum(p.matrix.map(row => row[j])) - 1) < 1e-7);
+  }
+  function rankingPrerequisite(rows, treatments, outcomeType) {
+    if (!['continuous','binary'].includes(outcomeType)) return 'Ranking plots require a supported continuous or binary network; survival conversions are not supplied by this model.';
+    const graph = new Map(treatments.map(t => [t, new Set()])), arms = new Map();
+    for (const row of rows) {
+      if (!graph.has(row.treatment1) || !graph.has(row.treatment2)) return 'Network treatment labels do not match the fitted contrasts.';
+      graph.get(row.treatment1).add(row.treatment2); graph.get(row.treatment2).add(row.treatment1);
+      if (!arms.has(row.study)) arms.set(row.study, new Set());
+      arms.get(row.study).add(row.treatment1); arms.get(row.study).add(row.treatment2);
+    }
+    if ([...arms.values()].some(set => set.size > 2)) return 'Ranking plots are unavailable for multi-arm designs in this IPD model: its contrast-covariance handling has not been established. Use a validated multi-arm NMA workflow.';
+    const seen = new Set(), queue = [treatments[0]];
+    while (queue.length) { const t = queue.pop(); if (seen.has(t)) continue; seen.add(t); for (const next of graph.get(t) || []) queue.push(next); }
+    return seen.size === treatments.length ? '' : 'The network is disconnected. Rankings across disconnected components are not estimable; analyse a connected component explicitly.';
+  }
+  function setRanking(result, reason = '') {
+    rankingError = reason || 'Run an eligible network analysis to obtain a valid rank-probability matrix. Summary scores alone cannot determine a rankogram.';
+    ranking = validMatrix(result) && !reason ? { result: clone(result), signature: dataSignature() } : null;
+    renderRanking();
+  }
+  function getRankingView() {
+    if (!ranking || ranking.signature !== dataSignature()) return null;
+    const lower = byId('ipdRankDirection')?.value === 'lower';
+    const { treatments, matrix } = ranking.result.probabilityMatrix;
+    const n = treatments.length;
+    const rows = treatments.map((treatment, i) => {
+      const probabilities = lower ? matrix[i].slice().reverse() : matrix[i].slice();
+      let total = 0;
+      const cumulative = probabilities.map(p => (total += p));
+      return { treatment, probabilities, cumulative, sucra: sum(cumulative.slice(0,-1))/(n-1),
+        meanRank: sum(probabilities.map((p,j) => p*(j+1))), probBest: probabilities[0], probWorst: probabilities[n-1] };
+    }).sort((a,b) => b.sucra-a.sucra || a.treatment.localeCompare(b.treatment));
+    return { rows, direction: lower ? 'lower' : 'higher', nSimulations: ranking.result.nSimulations || null };
+  }
+  function setup(canvas, n) {
+    canvas.hidden = false;
+    // Size from the revealed panel. Do not impose an 800px backing width on a
+    // narrow phone panel and then compress text/geometry into it.
+    const w = Math.max(240, canvas.parentElement.clientWidth || canvas.clientWidth || 500);
+    const h = Math.max(330, 260 + n*18), ratio = Math.min(2, root.devicePixelRatio || 1);
+    canvas.style.width = '100%'; canvas.style.height = h + 'px';
+    canvas.width = Math.round(w*ratio); canvas.height = Math.round(h*ratio);
+    const ctx = canvas.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.fillStyle = css('--bg-card','#fff'); ctx.fillRect(0,0,w,h);
+    return {ctx,w,h,left:44,top:36,pw:w-60,ph:190};
+  }
+  function drawRanking(id, view) {
+    const canvas = byId(id); if (!canvas) return;
+    const {ctx,w,left,top,pw,ph} = setup(canvas,view.rows.length), n = view.rows.length;
+    const cumulative = id === 'cumulativeRankPlot';
+    ctx.fillStyle = css('--text-primary','#111827'); ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui';
+    ctx.fillText(cumulative ? 'Computed cumulative rank probabilities' : 'Computed rank probabilities',w/2,18);
+    ctx.strokeStyle = css('--text-muted','#667085'); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(left,top);ctx.lineTo(left,top+ph);ctx.lineTo(left+pw,top+ph);ctx.stroke();
+    ctx.font='10px system-ui';
+    for(let j=0;j<=4;j++) {
+      const p=j/4,y=top+ph-p*ph;ctx.textAlign='right';ctx.fillText(p.toFixed(2),left-5,y+3);
+    }
+    for(let r=0;r<n;r++) {ctx.textAlign='center';ctx.fillText(String(r+1),left+(r+.5)*pw/n,top+ph+16);}
+    const geometry=[];
+    view.rows.forEach((row,i)=>{
+      ctx.fillStyle=palette[i%palette.length];ctx.strokeStyle=palette[i%palette.length];ctx.lineWidth=2;
+      if(cumulative) {
+        ctx.beginPath();
+        row.cumulative.forEach((p,r)=>{const x=left+(r+.5)*pw/n,y=top+ph-p*ph;(r?ctx.lineTo.bind(ctx):ctx.moveTo.bind(ctx))(x,y);geometry.push({treatment:row.treatment,rank:r+1,probability:p,x,y});});
+        ctx.stroke();
+      } else {
+        const group=pw/n,bar=group*.84/n;
+        row.probabilities.forEach((p,r)=>{const x=left+r*group+group*.08+i*bar,y=top+ph-p*ph;ctx.fillRect(x,y,Math.max(.3,bar-.5),p*ph);geometry.push({treatment:row.treatment,rank:r+1,probability:p,x,y,height:p*ph});});
+      }
+      const y=top+ph+48+i*18;
+      ctx.fillRect(left,y-9,10,10);ctx.fillStyle=css('--text-primary','#111827');ctx.textAlign='left';
+      ctx.font='11px system-ui';ctx.fillText(row.treatment,left+16,y,Math.max(20,pw-20));
+    });
+    ctx.fillStyle=css('--text-primary','#111827');ctx.textAlign='center';ctx.font='11px system-ui';
+    ctx.fillText('Numerical rank (1 = first)',left+pw/2,top+ph+33);
+    // Auditable display geometry, not an additional statistical calculation.
+    canvas.__ipdRankGeometry=geometry;
+    canvas.dataset.plotState='ready';
+  }
+  function renderRanking() {
+    const status=byId('ipdRankingStatus'),table=byId('rankingTableBody');
+    const view=getRankingView();
+    if(!view) {
+      if(status) status.textContent=ranking ? 'Input data changed. Rerun the network analysis before displaying rankings for these data.' : rankingError || 'Run an eligible network analysis to obtain a valid rank-probability matrix.';
+      if(table) table.replaceChildren();
+      for(const id of ['rankogramPlot','cumulativeRankPlot']) {const c=byId(id);if(c){c.hidden=true;c.dataset.plotState='unavailable';c.__ipdRankGeometry=[];}}
+      if(byId('ipdRankFirst')) byId('ipdRankFirst').textContent='—';
+      if(byId('ipdRankSucra')) byId('ipdRankSucra').textContent='—';
+      return;
+    }
+    if(status) status.textContent=`${view.nSimulations || 'Computed'} simulated rankings from the existing fitted network model. ${view.direction==='lower'?'Smaller':'Larger'} fitted effect ranks first. Binary contrasts in this engine use minus log odds ratios. Numerical ranking is not proof of clinical benefit; assess model assumptions and outcome direction.`;
+    if(byId('ipdRankFirst')) byId('ipdRankFirst').textContent=view.rows[0].treatment;
+    if(byId('ipdRankSucra')) byId('ipdRankSucra').textContent=(100*view.rows[0].sucra).toFixed(1)+'%';
+    if(table) {
+      table.replaceChildren();
+      for(const row of view.rows) {
+        const tr=document.createElement('tr');
+        for(const value of [row.treatment,(100*row.sucra).toFixed(1)+'%',row.meanRank.toFixed(1),(100*row.probBest).toFixed(1)+'%',(100*row.probWorst).toFixed(1)+'%']) {const td=document.createElement('td');td.textContent=value;tr.appendChild(td);}
+        table.appendChild(tr);
+      }
+    }
+    for(const id of ['rankogramPlot','cumulativeRankPlot']) drawRanking(id,view);
+  }
+  function survivalAvailable() {return survival && survival.owner===APP.results && survival.signature===dataSignature();}
+  function drawZoom() {
+    const canvas=byId('survivalPlotLarge');if(!canvas || !survivalAvailable()) return;
+    Plots.drawSurvival(canvas,clone(survival.curves),clone(survival.options));
+  }
+  function closeZoom() {const dialog=byId('ipdSurvivalZoom');if(dialog){dialog.remove();byId('survivalPlot')?.focus();}}
+  function openZoom() {
+    if(!survivalAvailable()) {showNotification('Run a survival analysis for the current data before opening this plot.','warning');return;}
+    if(byId('ipdSurvivalZoom')) {drawZoom();return;}
+    const overlay=document.createElement('div');overlay.id='ipdSurvivalZoom';overlay.className='modal-overlay active';
+    overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','ipdSurvivalZoomTitle');
+    overlay.innerHTML='<div class="modal" style="width:92vw;max-width:1200px;max-height:92vh;overflow:auto"><div class="modal-header"><h3 id="ipdSurvivalZoomTitle">Survival curves — enlarged</h3></div><div class="modal-body"><canvas id="survivalPlotLarge" style="width:100%;height:60vh" role="img" aria-label="Enlarged survival curves from the current analysis"></canvas></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-download>Download PNG</button><button type="button" class="btn btn-secondary" data-close>Close</button></div></div>';
+    overlay.querySelector('[data-close]').addEventListener('click',closeZoom);
+    overlay.querySelector('[data-download]').addEventListener('click',()=>downloadSurvivalPlot('png'));
+    overlay.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeZoom();}if(e.key==='Tab'){const buttons=[...overlay.querySelectorAll('button')];if(e.shiftKey && document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1).focus();}else if(!e.shiftKey && document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0].focus();}}});
+    document.body.appendChild(overlay);overlay.querySelector('[data-close]').focus();requestAnimationFrame(drawZoom);
+  }
+  function bindSurvivalZoom() {
+    const canvas=byId('survivalPlot');if(!canvas || canvas.dataset.ipdZoomBound) return;
+    canvas.dataset.ipdZoomBound='true';canvas.style.cursor='zoom-in';canvas.tabIndex=0;
+    canvas.title='Click or press Enter to enlarge the current survival curves';
+    canvas.addEventListener('click',openZoom);
+    canvas.addEventListener('keydown',e=>{if(e.key==='Enter' || e.key===' '){e.preventDefault();openZoom();}});
+  }
+  function setBayesianAvailability(available, message = '') {
+    let status = byId('ipdBayesianPlotStatus');
+    if (!status && byId('tracePlot')) {
+      status = document.createElement('p'); status.id = 'ipdBayesianPlotStatus'; status.setAttribute('role','status');
+      byId('tracePlot').parentElement.insertBefore(status, byId('tracePlot'));
+    }
+    if (status) { status.textContent = message; status.hidden = available; }
+    for (const id of ['tracePlot','posteriorPlot']) if (byId(id)) byId(id).hidden = !available;
+  }
+  function renderBayesian() {
+    const valid = bayes && bayes.owner === APP.bayesianResults && bayes.signature === dataSignature()
+      && APP.bayesianResults?.chains?.length;
+    setBayesianAvailability(!!valid, bayes
+      ? 'The input data or Bayesian fit changed. Rerun MCMC before displaying these diagnostics.'
+      : 'Run Bayesian analysis for the current input data to display trace and posterior plots.');
+    if (!valid) return;
+    const chains=APP.bayesianResults.chains.map(c=>c.muSamples);
+    Plots.drawTrace(byId('tracePlot'),chains);Plots.drawDensity(byId('posteriorPlot'),chains);
+  }
+  function schedule() {
+    if(frame!==null) cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{
+      frame=null;const active=document.querySelector('.panel.active');
+      if(active?.id==='panel-ranking') renderRanking();
+      if(active?.id==='panel-bayesian') renderBayesian();
+      if(byId('ipdSurvivalZoom')) {if(survivalAvailable())drawZoom();else closeZoom();}
+    });
+  }
+  function install() {
+    bindSurvivalZoom();
+    const draw=Plots.drawSurvival;
+    Plots.drawSurvival=function(canvas,curves,options={}) {
+      if(canvas?.id==='survivalPlot' && Array.isArray(curves) && curves.length) {
+        survival={curves:clone(curves),options:clone(options),owner:APP.results,signature:dataSignature()};
+      }
+      return draw.call(this,canvas,curves,options);
+    };
+    const trace=Plots.drawTrace;
+    Plots.drawTrace=function(canvas,...args) {
+      if(canvas?.id==='tracePlot' && APP.bayesianResults) {
+        bayes={owner:APP.bayesianResults,signature:dataSignature()};
+        setBayesianAvailability(true);
+      }
+      return trace.call(this,canvas,...args);
+    };
+    byId('ipdRankDirection')?.addEventListener('change',renderRanking);
+    root.addEventListener('resize',schedule);
+    const observer=new MutationObserver(schedule);
+    document.querySelectorAll('.panel').forEach(panel=>observer.observe(panel,{attributes:true,attributeFilter:['class']}));
+    renderRanking();
+  }
+  root.IPDSecondaryPlots={setRanking,getRankingView,renderRanking,rankingPrerequisite,bindSurvivalZoom,schedule};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})(window);
+
+</script>
 </body>
 
 </html>
