@@ -146,9 +146,22 @@
     canvas.addEventListener('click',openZoom);
     canvas.addEventListener('keydown',e=>{if(e.key==='Enter' || e.key===' '){e.preventDefault();openZoom();}});
   }
+  function setBayesianAvailability(available, message = '') {
+    let status = byId('ipdBayesianPlotStatus');
+    if (!status && byId('tracePlot')) {
+      status = document.createElement('p'); status.id = 'ipdBayesianPlotStatus'; status.setAttribute('role','status');
+      byId('tracePlot').parentElement.insertBefore(status, byId('tracePlot'));
+    }
+    if (status) { status.textContent = message; status.hidden = available; }
+    for (const id of ['tracePlot','posteriorPlot']) if (byId(id)) byId(id).hidden = !available;
+  }
   function renderBayesian() {
-    if(!bayes || bayes.owner!==APP.bayesianResults || bayes.signature!==dataSignature()) return;
-    if(!APP.bayesianResults?.chains?.length) return;
+    const valid = bayes && bayes.owner === APP.bayesianResults && bayes.signature === dataSignature()
+      && APP.bayesianResults?.chains?.length;
+    setBayesianAvailability(!!valid, bayes
+      ? 'The input data or Bayesian fit changed. Rerun MCMC before displaying these diagnostics.'
+      : 'Run Bayesian analysis for the current input data to display trace and posterior plots.');
+    if (!valid) return;
     const chains=APP.bayesianResults.chains.map(c=>c.muSamples);
     Plots.drawTrace(byId('tracePlot'),chains);Plots.drawDensity(byId('posteriorPlot'),chains);
   }
@@ -172,7 +185,10 @@
     };
     const trace=Plots.drawTrace;
     Plots.drawTrace=function(canvas,...args) {
-      if(canvas?.id==='tracePlot' && APP.bayesianResults) bayes={owner:APP.bayesianResults,signature:dataSignature()};
+      if(canvas?.id==='tracePlot' && APP.bayesianResults) {
+        bayes={owner:APP.bayesianResults,signature:dataSignature()};
+        setBayesianAvailability(true);
+      }
       return trace.call(this,canvas,...args);
     };
     byId('ipdRankDirection')?.addEventListener('change',renderRanking);

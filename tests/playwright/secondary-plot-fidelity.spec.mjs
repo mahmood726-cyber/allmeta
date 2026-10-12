@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 test.describe.configure({ mode: 'parallel' });
 const APP_URL = '/IPD-Meta-Pro/ipd-meta-pro.html';
@@ -25,7 +26,7 @@ async function network(page) {
     const treatment = document.getElementById('varTreatment').value;
     const outcome = document.getElementById('varEvent').value;
     document.getElementById('outcomeType').value = 'continuous';
-    APP.config.outcomeType = 'continuous';
+    Object.assign(APP.config, {outcomeType:'continuous',studyVar:study,treatmentVar:treatment,eventVar:outcome,outcomeVar:outcome});
     APP.data = [];
     const pairs = [['A','B',.4],['A','C',.8],['A','D',1.2],['B','C',.3],['B','D',.9],['C','D',.4]];
     for(let j=0;j<pairs.length;j++) for(let repeat=0;repeat<2;repeat++) for(let arm=0;arm<2;arm++) for(let i=0;i<20;i++) {
@@ -70,6 +71,16 @@ for(const width of [1280,390]) {
         row.probabilities.forEach((p,i)=>{cumulative+=p;expect(row.cumulative[i]).toBeCloseTo(cumulative,12);});
         expect(row.meanRank).toBeCloseTo(expected.meanRank,12);
         expect(row.sucra).toBeCloseTo(expected.sucra,12);
+      }
+      for (const [id, key] of [['rankogramPlot','probabilities'],['cumulativeRankPlot','cumulative']]) {
+        const geometry = await page.locator('#'+id).evaluate(c=>c.__ipdRankGeometry);
+        expect(geometry.length).toBe(drawn.rows.length ** 2);
+        for (const mark of geometry) {
+          const row=drawn.rows.find(r=>r.treatment===mark.treatment);
+          expect(mark.probability).toBeCloseTo(row[key][mark.rank-1],12);
+          expect(Number.isFinite(mark.x) && Number.isFinite(mark.y)).toBe(true);
+        }
+        await info.attach(id+'-visible', {body:await page.locator('#'+id).screenshot(),contentType:'image/png'});
       }
       const before=await page.evaluate(()=>JSON.stringify({fit:__networkFit,computed:__computedRanks,data:APP.data,config:APP.config}));
       const count=await page.evaluate(()=>__rankingCalls);
@@ -142,9 +153,12 @@ for(const width of [1280,390]) {
       await ink(page,'survivalPlotLarge');
       const calls=await page.evaluate(()=>__survivalCalls);
       expect(calls.filter(x=>x.id==='survivalPlotLarge').at(-1).curves).toEqual(calls.filter(x=>x.id==='survivalPlot').at(-1).curves);
+      const png=await page.locator('#survivalPlotLarge').evaluate(c=>c.toDataURL('image/png').split(',')[1]);
       const download=page.waitForEvent('download');
       await page.locator('#ipdSurvivalZoom button').filter({hasText:'Download PNG'}).click();
-      expect((await download).suggestedFilename()).toMatch(/survival.*\.png$/);
+      const file=await download;
+      expect(file.suggestedFilename()).toMatch(/survival.*\.png$/);
+      expect(await readFile(await file.path())).toEqual(Buffer.from(png,'base64'));
       await page.setViewportSize({width:width+60,height:960});await ink(page,'survivalPlotLarge');
       expect(await page.evaluate(()=>JSON.stringify({data:APP.data,results:APP.results,config:APP.config}))).toBe(before);
       expect(errors).toEqual([]);
@@ -157,7 +171,7 @@ for(const width of [1280,390]) {
       await page.waitForFunction(()=>!!APP.results?.pooled);
       await page.locator('.nav-tab[data-panel="bayesian"]').click();
       await page.locator('#mcmcIter').fill('500');await page.locator('#mcmcBurnin').fill('100');
-      await page.locator('#mcmcChains').fill('2');
+      await page.locator('#mcmcChains').selectOption('2');
       await page.evaluate(()=>runBayesian());
       await page.waitForFunction(()=>!!APP.bayesianResults?.chains);
       await ink(page,'tracePlot');await ink(page,'posteriorPlot');
@@ -175,6 +189,37 @@ for(const width of [1280,390]) {
       await ink(page,'tracePlot');await ink(page,'posteriorPlot');
       expect(await page.evaluate(()=>__mcmcRefits)).toBe(0);
       expect(await page.evaluate(()=>JSON.stringify({results:APP.results,bayes:APP.bayesianResults,config:APP.config}))).toBe(before);
+      await page.evaluate(()=>{APP.data[0].__changedInput=1;IPDSecondaryPlots.schedule();});
+      await expect(page.locator('#tracePlot')).toBeHidden();
+      await expect(page.locator('#posteriorPlot')).toBeHidden();
+      await expect(page.locator('#ipdBayesianPlotStatus')).toContainText('changed');
+      expect(await page.evaluate(()=>__mcmcRefits)).toBe(0);
+    });
+    test('IPD ranking clears on changed input rather than retaining the previous data',async({page})=>{
+      await open(page);await network(page);
+      await page.evaluate(()=>{APP.data[0].__changedInput=1;IPDSecondaryPlots.schedule();});
+      await expect(page.locator('#rankogramPlot')).toBeHidden();
+      await expect(page.locator('#cumulativeRankPlot')).toBeHidden();
+      await expect(page.locator('#rankingTableBody tr')).toHaveCount(0);
+      await expect(page.locator('#ipdRankingStatus')).toContainText('Input data changed');
+    });
+    test('IPD unsupported networks never receive substitute ranking curves',async({page})=>{
+      await open(page);await page.locator('.nav-tab[data-panel="ranking"]').click();
+      const reasons=await page.evaluate(()=>{
+        const cases=[
+          [[{study:'S1',treatment1:'A',treatment2:'B'},{study:'S2',treatment1:'C',treatment2:'D'}],['A','B','C','D'],'continuous'],
+          [[{study:'Multi',treatment1:'A',treatment2:'B'},{study:'Multi',treatment1:'A',treatment2:'C'}],['A','B','C'],'binary'],
+          [[{study:'S1',treatment1:'A',treatment2:'B'}],['A','B'],'survival']
+        ];
+        return cases.map(c=>IPDSecondaryPlots.rankingPrerequisite(...c));
+      });
+      expect(reasons[0]).toContain('disconnected');expect(reasons[1]).toContain('multi-arm');expect(reasons[2]).toContain('survival');
+      for(const reason of reasons) {
+        await page.evaluate(reason=>IPDSecondaryPlots.setRanking(null,reason),reason);
+        await expect(page.locator('#rankogramPlot')).toBeHidden();
+        await expect(page.locator('#cumulativeRankPlot')).toBeHidden();
+        await expect(page.locator('#ipdRankingStatus')).toHaveText(reason);
+      }
     });
   });
 }
