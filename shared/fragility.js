@@ -67,9 +67,9 @@
     var totalN = studies.reduce(function (t, s) { return t + s.n1 + s.n0; }, 0);
 
     var ori = _pool(a, b, c, d, measure);
-    if (!ori) return { FI: NaN, dir: "undefined" };
+    if (!ori) return { FI: null, FQ: null, dir: "undefined", pooled: { est: null, lo: null, hi: null } };
     var sig = (ori.ciHi < 0) || (ori.ciLo > 0);
-    if (!sig) return { FI: NaN, FQ: NaN, dir: "result is not significant (non-sig FI not computed)", pooled: { est: ori.mu, lo: ori.ciLo, hi: ori.ciHi } };
+    if (!sig) return { FI: null, FQ: null, dir: "result is not significant (non-sig FI not computed)", pooled: { est: ori.mu, lo: ori.ciLo, hi: ori.ciHi } };
     var less = ori.ciHi < 0; // effect below null → move CI upper up toward 0
     var mods = [], moremod = true, guard = 0;
 
@@ -100,9 +100,9 @@
       mods.push({ study: best.k.s + 1, arm: best.k.grp === 0 ? "control" : "treatment", dir: best.k.grp === 0 ? (less ? -1 : 1) : (less ? 1 : -1) });
       if (best.flip) sig = false;
     }
-    var FI = sig ? NaN : mods.length;
+    var FI = sig ? null : mods.length;
     return {
-      FI: FI, FQ: sig ? NaN : FI / totalN, dir: sig ? "significance cannot be altered" : "significance altered to non-significance",
+      FI: FI, FQ: sig ? null : FI / totalN, dir: sig ? "significance cannot be altered" : "significance altered to non-significance",
       pooled: { est: ori.mu, lo: ori.ciLo, hi: ori.ciHi }, modifications: mods,
     };
   }

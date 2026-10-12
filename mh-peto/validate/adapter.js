@@ -3,13 +3,24 @@
   'use strict';
   const files = [{"path": "validate/corpus/corpus.json", "sha256": "53bd35b24c11be3acd09bb468af1b35037f3eb4f0c24ad9fd6a4914b2de27f86", "bytes": 193649}, {"path": "validate/corpus/reference.json", "sha256": "948b127ccbd7394e05583be836cba2ecac43659634c8c709f41c885630146bef", "bytes": 1869024}, {"path": "validate/corpus/fragility-reference.json", "sha256": "cd0ff38e2f2e8f6a62080bf8dc914514fd9b7bb56185b4f4abe47fb5312a534a", "bytes": 164441}];
   const Z = 1.959963984540054;
-  const finite = x => typeof x === 'number' && Number.isFinite(x) ? x : null;
+  const scalar = x => x === null || (typeof x === 'number' && Number.isFinite(x));
+  const finite = x => typeof x === 'number' && Number.isFinite(x) ? x : NaN;
+  function keyed(xs, expected, key='id') {
+    if(!Array.isArray(xs) || xs.some(x=>!x || typeof x!=='object' || Array.isArray(x) || !Object.hasOwn(x,key) || typeof x[key]!=='string' || !x[key]))throw new Error('Invalid record key: '+key);
+    const ids=xs.map(x=>x[key]);
+    if(new Set(ids).size!==ids.length)throw new Error('Duplicate record identifiers: '+key);
+    if(expected && (ids.length!==expected.length || ids.some(id=>!expected.includes(id))))throw new Error('Record cardinality/identifier mismatch: '+key);
+    return new Map(xs.map(x=>[x[key],x]));
+  }
+  function fields(x,keys,where,nullable=true) {
+    if(!x || typeof x!=='object' || Array.isArray(x) || keys.some(k=>!Object.hasOwn(x,k)||!scalar(x[k])||(!nullable&&x[k]===null)))throw new Error('Missing/invalid evidence: '+where);
+  }
   function pooled(res, prefix, measure) {
-    const get = k => finite(res && res[prefix + '_' + k]);
+    const get = k => res && Object.hasOwn(res,prefix+'_'+k) && scalar(res[prefix+'_'+k]) ? res[prefix+'_'+k] : NaN;
     const est=get('est'),lo=get('lo'),hi=get('hi');
     return {est,lo,hi,z:get('z'),p:get('p'),
-      beta:finite(measure==='RD' ? est : est>0 ? Math.log(est) : null),
-      se:finite(lo!==null && hi!==null && (measure==='RD'||(lo>0&&hi>0)) ? (measure==='RD' ? hi-lo : Math.log(hi)-Math.log(lo))/(2*Z) : null)};
+      beta:est===null ? null : finite(measure==='RD' ? est : est>0 ? Math.log(est) : NaN),
+      se:lo===null && hi===null ? null : finite(lo!==null && hi!==null && (measure==='RD'||(lo>0&&hi>0)) ? (measure==='RD' ? hi-lo : Math.log(hi)-Math.log(lo))/(2*Z) : NaN)};
   }
   function currentState() {
     const rows=window.__mhValidation.parse(document.getElementById('src').value);
@@ -21,6 +32,7 @@
     return {rows,measure,result,note:'Estimate, CI, z and p are exported on the display scale. Beta and SE are recovered from the full-precision estimate and CI, as in the paper. No MH/Peto heterogeneity statistics are claimed.'};
   }
   function appValues(s) {
+    for(const prefix of (s.measure==='OR'?['mh','peto']:['mh']))fields(s.result,['est','lo','hi','z','p'].map(q=>prefix+'_'+q),'current '+prefix);
     return (s.measure==='OR'?['mh','peto']:['mh']).flatMap(prefix=>Object.entries(pooled(s.result,prefix,s.measure)).map(([q,value])=>({key:prefix+'_'+q,label:(prefix==='peto'?'Peto OR':'MH '+s.measure)+' '+q,value})));
   }
   function buildScript(s) {
@@ -41,23 +53,37 @@ if(measure=='OR') {
  pe <- tryCatch(metafor::rma.peto(ai=ai,bi=bi,ci=ci,di=di,add=0,to='none',drop00=TRUE),error=function(e)e)
  x <- c(x,setNames(get(pe),paste0('peto_',names(get(pe)))))
 }
-v <- ifelse(is.finite(x),sprintf('%.17g',x),'null')
+if(!is.numeric(x)||any(is.nan(x)|is.infinite(x))) stop('Invalid R evidence')
+v <- ifelse(is.na(x),'null',sprintf('%.17g',x))
 cat('ALMJSON:{',paste(paste0('"',names(x),'":',v),collapse=','),'}\\n',sep='')`;
   }
   async function replay(loaded,progress) {
-    const corpus=loaded[files[0].path],refs=new Map(loaded[files[1].path].map(r=>[r.id,r])),fr=new Map(loaded[files[2].path].map(r=>[r.id,r]));
-    if(new Set(corpus.map(c=>c.id)).size!==corpus.length || refs.size!==corpus.length*4 || fr.size!==corpus.filter(c=>c.rows.length>=2).length*3)throw new Error('Incomplete or duplicate reference identifiers');
+    const corpus=loaded[files[0].path];
+    keyed(corpus);
+    if(corpus.some(c=>!Array.isArray(c.rows)))throw new Error('Invalid corpus rows');
+    const refs=keyed(loaded[files[1].path],corpus.flatMap(c=>['OR','RR','RD','PETO'].map(m=>c.id+'|'+m)));
+    const fr=keyed(loaded[files[2].path],corpus.filter(c=>c.rows.length>=2).flatMap(c=>['OR','RR','RD'].map(m=>c.id+'|'+m)));
+    for(const r of fr.values())fields(r,['FI','FQ','beta','lo','hi'],r.id);
+    for(const cfg of corpus)for(const m of ['OR','RR','RD','PETO']) {
+      const r=refs.get(cfg.id+'|'+m);
+      if(r.k_input!==cfg.rows.length)throw new Error('Reference row count mismatch: '+r.id);
+      if(cfg.rows.length<2)continue;
+      fields(r,['est','lo','hi','zval','pval','beta','se'],r.id);
+      if(m!=='PETO') {
+        if(!Array.isArray(r.studies)||r.studies.length!==cfg.rows.length)throw new Error('Reference study count mismatch: '+r.id);
+        for(const t of r.studies)fields(t,['est','lo','hi','beta','se'],r.id);
+      }
+    }
     for(const cfg of corpus) {
-      if(!cfg.rows.length || new Set(cfg.rows.map(r=>r.source_row)).size!==cfg.rows.length || cfg.rows.some(r=>['ai','bi','ci','di'].some(k=>!Number.isSafeInteger(r[k])||r[k]<0)||r.ai+r.bi<=0||r.ci+r.di<=0))throw new Error('Invalid source rows: '+cfg.id);
+      if(!cfg.rows.length || new Set(cfg.rows.map(r=>String(r.source_row))).size!==cfg.rows.length || cfg.rows.some(r=>['ai','bi','ci','di'].some(k=>!r||!(typeof r.source_row==='string'&&r.source_row.length>0||Number.isSafeInteger(r.source_row))||!Number.isSafeInteger(r[k])||r[k]<0)||r.ai+r.bi<=0||r.ci+r.di<=0))throw new Error('Invalid source rows: '+cfg.id);
       for(const m of ['OR','RR','RD','PETO'])if(!refs.has(cfg.id+'|'+m))throw new Error('Missing reference '+cfg.id+'|'+m);
       for(const m of ['OR','RR','RD'])if(cfg.rows.length>=2&&!fr.has(cfg.id+'|'+m))throw new Error('Missing greedy oracle '+cfg.id+'|'+m);
     }
     const tails=[];let checks=0,passed=0;const failed=[],maxima={},refusals=[];
     function check(id,q,a,b,tol=1e-9,absolute=false) {
-      a=finite(a);b=finite(b);
-      const d=AlmValidate.compare(a,b,absolute||q.endsWith('.p')?'abs':'rel',tol);
-      if(q.endsWith('.p') && b!==null && b>=0 && b<1e-12) {
-        const diff=a===null?Infinity:b>0?Math.abs(a-b)/b:a===0?0:Infinity;
+      const d=scalar(a)&&scalar(b) ? AlmValidate.compare(a,b,absolute||q.endsWith('.p')?'abs':'rel',tol) : {pass:false,diff:Infinity,reason:'Missing/invalid evidence'};
+      if(q.endsWith('.p') && Number.isFinite(b) && b>=0 && b<1e-12) {
+        const diff=!Number.isFinite(a)?Infinity:b>0?Math.abs(a-b)/b:a===0?0:Infinity;
         const row={id,quantity:q,app:a,ref:b,diff,tol:1e-9,pass:diff<=1e-9};
         tails.push(row);
         if(!row.pass)failed.push({...row,quantity:q+'.tail_relative'});
@@ -97,7 +123,7 @@ cat('ALMJSON:{',paste(paste0('"',names(x),'":',v),collapse=','),'}\\n',sep='')`;
         const ss=window.__mhPetoBusStudies(),rs=r.studies||[];
         const expected=rs.filter(t=>t.se!==null&&t.se>0&&t.beta!==null);
         check(id,m+'.study_count',ss.length,expected.length);
-        const byLabel=new Map(ss.map(s=>[s.label,s]));
+        const byLabel=keyed(ss,cfg.rows.filter((row,j)=>rs[j].se!==null&&rs[j].se>0&&rs[j].beta!==null).map(row=>'source-row-'+row.source_row),'label');
         cfg.rows.forEach((row,j)=>{
           const t=rs[j];if(t.se===null||t.se<=0||t.beta===null)return;
           const s=byLabel.get('source-row-'+row.source_row)||{};
@@ -110,6 +136,9 @@ cat('ALMJSON:{',paste(paste0('"',names(x),'":',v),collapse=','),'}\\n',sep='')`;
         });
         const lb=window.__almLabbe;
         if(lb) {
+          fields(lb,['logEff'],id,false);
+          if(!Array.isArray(lb.points)||lb.points.length!==cfg.rows.length||!Array.isArray(lb.curve)||!lb.curve.length)throw new Error('Invalid Labbe shape: '+id);
+          for(const p of [...lb.points,...lb.curve])fields(p,['pc','pt'],id,false);
           check(id,m+'.labbe_logEff',lb.logEff,r.labbe.logEff);
           lb.points.forEach((p,j)=>['pc','pt'].forEach(q=>check(id,m+'.labbe_'+q,p[q],r.labbe[q][j])));
           const e=r.labbe.eff;check(id,m+'.labbe_curve_max_abs_error',Math.max(0,...lb.curve.map(p=>Math.abs(p.pt-(m==='RR'?e*p.pc:e*p.pc/(1-p.pc+e*p.pc))))),0);

@@ -1,0 +1,38 @@
+{
+  "title": "mh-peto rejects invalid live values and preserves explicit undefined",
+  "status": "passed",
+  "panels": [
+    {
+      "url": "http://localhost:8088/mh-peto/index.html#eyJ2IjoxLCJzcmMiOiJTdHVkeUEsIDMsIDUwMCwgOCwgNTAwXG5TdHVkeUIsIDEsIDIwMCwgNSwgMjAwXG5TdHVkeUMsIDAsIDE1MCwgNCwgMTUwXG5TdHVkeUQsIDIsIDQwMCwgNiwgNDAwXG5TdHVkeUUsIDQsIDYwMCwgMTAsIDYwMCIsIm1lYXN1cmUiOiJPUiJ9",
+      "panel": "INDEPENDENT VALIDATION\nValidate this analysis in RRe-run full validation\n\nReady. Full validation replays the published reference corpus locally.\n\nFull R re-execution (one-command instructions) · Open Codespaces · Reproducible repository ·"
+    }
+  ],
+  "requests": [
+    "http://localhost:8088/mh-peto/index.html",
+    "http://localhost:8088/shared/forced-colors.css",
+    "http://localhost:8088/hub/app-style.css",
+    "http://localhost:8088/hub/shared/csv-upload.js",
+    "http://localhost:8088/hub/shared/chart-download.js",
+    "http://localhost:8088/hub/shared/axis-controls.js",
+    "http://localhost:8088/hub/shared/results-export.js",
+    "http://localhost:8088/hub/shared/url-state.js",
+    "http://localhost:8088/hub/shared/reset-undo.js",
+    "http://localhost:8088/hub/shared/tooltips.js",
+    "http://localhost:8088/shared/ma-core.js",
+    "http://localhost:8088/shared/fragility.js",
+    "http://localhost:8088/shared/diagnostic-plots.js",
+    "http://localhost:8088/shared/build-info.js",
+    "http://localhost:8088/shared/ma-studies-v1.js",
+    "http://localhost:8088/shared/truthcert-export.js",
+    "http://localhost:8088/shared/truthcert-ui.js",
+    "http://localhost:8088/shared/ma-comparisons-v1.js",
+    "http://localhost:8088/shared/autosave.js",
+    "http://localhost:8088/hub/shared/glossary.json",
+    "http://localhost:8088/hub/shared/a11y-landmarks.js",
+    "http://localhost:8088/shared/alm-validate.js",
+    "http://localhost:8088/mh-peto/validate/adapter.js"
+  ],
+  "hosts": [
+    "localhost:8088"
+  ]
+}
