@@ -89,3 +89,34 @@ test('pubbias altered reference fails closed',async({page})=>{
   await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
 });
+// TASK3 regressions use the normal page and standard validation fixture.
+for(const method of ['begg','peters','harbord'])test(`task3 live missing ${method}`,async({page})=>{
+  if(process.env.PUBBIAS_BASELINE_ADAPTER)await page.route('**/validate/adapter.js',r=>r.fulfill({path:process.env.PUBBIAS_BASELINE_ADAPTER,contentType:'application/javascript'}));
+  await page.goto('/pubbias-tests/index.html');
+  await page.locator('#format').selectOption('binary');
+  const rows=await page.evaluate(method=>{
+    const e=__almPubBiasEngine;e[{begg:'beggMazumdar',peters:'petersTest',harbord:'harbordTest'}[method]]=()=>null;
+    const a=AlmPubbiasValidationAdapter.live;
+    return a.appValues(a.currentState()).map(r=>({...r,pass:AlmValidate.compare(r.value,0,'abs',1e-9).pass}));
+  },method);
+  expect(rows).toHaveLength(15);
+  expect(rows.filter(r=>r.key.startsWith(method+'_')).every(r=>!r.pass)).toBe(true);
+});
+for(const mutation of ['execution refusal','worker crash'])test(`task3 replay ${mutation}`,async({page})=>{
+  test.setTimeout(180000);
+  if(process.env.PUBBIAS_BASELINE_ADAPTER)await page.route('**/validate/adapter.js',r=>r.fulfill({path:process.env.PUBBIAS_BASELINE_ADAPTER,contentType:'application/javascript'}));
+  await page.goto('/pubbias-tests/index.html');
+  const r=await page.evaluate(async mutation=>{
+    const a=AlmPubbiasValidationAdapter,loaded={};
+    for(const f of a.corpus.files)loaded[f.path]=await(await fetch(f.path)).json();
+    if(mutation==='execution refusal'){
+      const original=__almPubBiasEngine.petersTest;
+      __almPubBiasEngine.petersTest=rows=>{
+        if(rows.filter(r=>r.e1+r.e2>0&&r.e1+r.e2<r.n1+r.n2).length<3)throw new ReferenceError('unbound statistical input');
+        return original(rows);
+      };
+    }else loaded['validate/corpus/reference.json'].datasets['dat.mccurdy2020'].trimfill.value={unavailable:true,error:'Independent method attempt failed; no result',workerStatus:'crash'};
+    return a.corpus.run(loaded,()=>{});
+  },mutation);
+  expect(r.unexpected).toBeGreaterThan(0);
+});
