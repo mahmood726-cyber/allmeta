@@ -114,11 +114,39 @@ for (const width of [1280, 390]) {
       await page.evaluate(() => loadExampleData('network_antidepressants'));
       await page.waitForTimeout(400);
       await page.locator('.nav-tab[data-panel="consistency"]').click();
+      await expect(page.locator('#netHeatPlotStatus')).toContainText('disconnected components');
+      const component=await page.locator('#ipdNetHeatComponent').evaluate(el=>[...el.options].find(o=>o.text.includes('Placebo')).value);
+      await page.locator('#ipdNetHeatComponent').selectOption(component);
       const input = await page.evaluate(() => IPDPlotCompletion.networkInput());
+      expect(input.componentNote).toContain('excluded by your selection');
       expect(input.rows.length).toBeGreaterThan(2);
+      // The built-in example does not supply enough informative designs.
+      await page.locator('#ipdNetHeatRun').click();
+      await expect(page.locator('#ipdNetHeatRun')).toBeEnabled({timeout:200000});
+      await expect(page.locator('#netHeatPlotStatus')).toContainText('Insufficient number of designs');
+      await expect(page.locator('#netHeatPlot')).toBeHidden();
+      // Separate synthetic continuous-outcome fixture: six two-arm designs,
+      // each replicated. No published/example trial is altered or relabelled.
+      await page.evaluate(() => {
+        const studyKey=document.getElementById('varStudy').value;
+        const treatmentKey=document.getElementById('varTreatment').value;
+        const outcomeKey=document.getElementById('varEvent').value;
+        document.getElementById('outcomeType').value='continuous';
+        const pairs=[['A','B',1],['A','C',2],['A','D',3],['B','C',-1],['B','D',4],['C','D',.5]];
+        APP.data=[];
+        for(let j=0;j<pairs.length;j++)for(let repeat=0;repeat<2;repeat++)for(let arm=0;arm<2;arm++)for(let i=0;i<20;i++){
+          const treatment=pairs[j][arm];
+          const row={[studyKey]:'Synthetic_'+j+'_'+repeat,[treatmentKey]:treatment,treatment_name:treatment,
+            [outcomeKey]:(arm?pairs[j][2]:0)+repeat*.1+(i-9.5)*.2};
+          APP.data.push(row);
+        }
+        IPDPlotCompletion.schedule();
+      });
+      await expect(page.locator('#netHeatPlotStatus')).toContainText('Complete connected network');
       const before = await page.evaluate(() => JSON.stringify({data:APP.data,results:APP.results,config:APP.config}));
       await page.locator('#ipdNetHeatRun').click();
-      await expect(page.locator('#netHeatPlot')).toHaveAttribute('data-plot-state','ready',{timeout:200000});
+      await expect(page.locator('#ipdNetHeatRun')).toBeEnabled({timeout:200000});
+      expect(await page.locator('#netHeatPlot').getAttribute('data-plot-state'), await page.locator('#netHeatPlotStatus').innerText()).toBe('ready');
       await ink(page,'netHeatPlot');
       await expect(page.locator('#netHeatPlotStatus')).toContainText('netmeta');
       await expect(page.locator('#netHeatPlotStatus')).toContainText('common-effect Net Heat');

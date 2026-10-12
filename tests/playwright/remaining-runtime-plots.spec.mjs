@@ -41,8 +41,8 @@ for(const width of [1280,390])test.describe(`R and clustering ${width}px`,()=>{
   const f=await shiny(page,'/r-shiny/dta-diagnostic/');
   const csv='status,test_value\n'+Array.from({length:80},(_,i)=>`${i%2},${(i%2?0.4:0.1)+(i%17)/25}`).join('\n');
   await f.locator('#file_dta').setInputFiles({name:'synthetic-dta.csv',mimeType:'text/csv',buffer:Buffer.from(csv)});
-  await expect(f.locator('#var_ref')).toHaveCount(0).catch(()=>{}); // Column detection is automatic in this app.
-  await page.waitForTimeout(1800);await f.locator('#analyze_btn').click();
+  await expect(f.locator('#threshold')).toHaveClass(/shiny-bound-input/);
+  await f.locator('#analyze_btn').click();
   for(const [section,ids,tables] of [['std_metrics',['roc_plot'],['summary_table','conf_matrix_table']],['adv_metrics',['pr_curve_plot'],['advanced_metrics_table','ci_table']],['plots',['boxplot_test','hist_test','density_plot','calibration_plot'],[]]]){
    await tab(page,f,section);for(const id of ids)await image(f,id);for(const id of tables)await expect.poll(()=>f.locator('#'+id+' table tbody tr').count()).toBeGreaterThan(0);
   }

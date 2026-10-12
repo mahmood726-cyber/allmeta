@@ -128,22 +128,50 @@
   }
   function networkInput() {
     if(!Array.isArray(APP.data)||!APP.data.length)throw new Error('Load network data before generating Net Heat.');
-    const cfg=networkOutcomeConfig();
+    // Loading a dataset updates the input controls before a fitted APP.config
+    // exists. Resolve the current controls, without rewriting saved settings.
+    const cfg={
+      outcomeType:document.getElementById('outcomeType')?.value || APP.config.outcomeType,
+      outcomeVar:document.getElementById('varEvent')?.value || APP.config.eventVar || APP.config.outcomeVar
+    };
     if(cfg.outcomeType==='survival')throw new Error('Net Heat needs compatible study contrasts. This adapter supports continuous mean differences or binary log odds ratios, not conversion of censored survival data to binary outcomes.');
-    const trtVar=networkResolveTreatmentVar(),studyVar=APP.config.studyVar||'study_id';
+    if(!['continuous','binary'].includes(cfg.outcomeType)||!cfg.outcomeVar)throw new Error('Select a continuous or binary outcome and its variable in Data & Setup.');
+    if(APP.data.some(row=>row[cfg.outcomeVar]===null||row[cfg.outcomeVar]===undefined||String(row[cfg.outcomeVar]).trim()===''||!finite(Number(row[cfg.outcomeVar]))||(cfg.outcomeType==='binary'&&![0,1].includes(Number(row[cfg.outcomeVar])))))throw new Error('The selected outcome contains missing or invalid values. Binary outcomes must be coded 0 or 1; missing outcomes are not treated as non-events.');
+    let trtVar=document.getElementById('varTreatment')?.value || APP.config.treatmentVar || 'treatment_name';
+    const distinct=key=>new Set(APP.data.map(row=>row[key]).filter(v=>v!==undefined&&v!==null)).size;
+    if(distinct(trtVar)<3&&distinct('treatment_name')>=3)trtVar='treatment_name';
+    const studyVar=document.getElementById('varStudy')?.value || APP.config.studyVar || 'study_id';
     const groups=new Map();
     for(const row of APP.data){const id=row[studyVar],trt=row[trtVar]??row.treatment_name;if(id==null||trt==null)throw new Error('Every network row requires study and treatment labels.');if(!groups.has(String(id)))groups.set(String(id),new Map());const arms=groups.get(String(id));if(!arms.has(String(trt)))arms.set(String(trt),[]);arms.get(String(trt)).push(row);}
-    const rows=[];
+    let rows=[];
     for(const [study,groupsByArm] of groups){const arms=[...groupsByArm].map(([trt,data])=>networkArmSummary(data,cfg.outcomeType,cfg.outcomeVar,trt,study));if(arms.some(a=>!a))throw new Error('A study arm has insufficient usable outcome data.');if(arms.length<2)throw new Error('Every study in Net Heat must contain at least two treatment arms.');for(let i=0;i<arms.length;i++)for(let j=i+1;j<arms.length;j++){const row=networkPairwiseComparison(arms[i],arms[j],cfg.outcomeType);if(!row||!finite(row.effect)||!finite(row.variance)||row.variance<=0)throw new Error('Invalid study contrast: '+study);rows.push({...row,
       effect:cfg.outcomeType==='continuous'?row.effect:-row.effect});}}
-    const trts=[...new Set(rows.flatMap(r=>[r.treatment1,r.treatment2]))];
+    let trts=[...new Set(rows.flatMap(r=>[r.treatment1,r.treatment2]))];
     if(trts.length<3)throw new Error('At least three treatments are required for a Net Heat inconsistency plot.');
     const neighbours=new Map(trts.map(t=>[t,new Set()]));rows.forEach(r=>{neighbours.get(r.treatment1).add(r.treatment2);neighbours.get(r.treatment2).add(r.treatment1);});
-    const seen=new Set([trts[0]]),stack=[trts[0]];while(stack.length){for(const t of neighbours.get(stack.pop()))if(!seen.has(t)){seen.add(t);stack.push(t);}}
-    if(seen.size!==trts.length)throw new Error('The network is disconnected. Analyse a connected component before generating Net Heat.');
+    const allTreatments=trts.slice(), allRows=rows.length, unseen=new Set(trts), components=[];
+    while(unseen.size){const first=unseen.values().next().value,seen=new Set([first]),stack=[first];unseen.delete(first);while(stack.length){for(const treatment of neighbours.get(stack.pop()))if(!seen.has(treatment)){seen.add(treatment);unseen.delete(treatment);stack.push(treatment);}}components.push([...seen].sort());}
+    components.sort((a,b)=>b.length-a.length||a.join('|').localeCompare(b.join('|')));
+    const select=document.getElementById('ipdNetHeatComponent');
+    const signature=JSON.stringify(components);
+    if(select&&select.dataset.components!==signature){
+      const previous=select.value;select.replaceChildren();
+      if(components.length>1){const empty=document.createElement('option');empty.value='';empty.textContent='Choose a connected component';select.appendChild(empty);}
+      for(const component of components){const option=document.createElement('option');option.value=JSON.stringify(component);option.textContent=component.join(', ');select.appendChild(option);}
+      if([...select.options].some(o=>o.value===previous))select.value=previous;
+      select.dataset.components=signature;
+    }
+    if(select)select.parentElement.hidden=components.length<2;
+    if(components.length>1){
+      const chosen=components.find(component=>JSON.stringify(component)===select?.value);
+      if(!chosen)throw new Error('The network has '+components.length+' disconnected components. Choose one above; treatments from different components cannot be combined in a Net Heat plot.');
+      const allowed=new Set(chosen);rows=rows.filter(r=>allowed.has(r.treatment1)&&allowed.has(r.treatment2));trts=chosen;
+    }
+    const componentNote=components.length>1 ? 'Selected component: '+trts.join(', ')+'. '+(allRows-rows.length)+' contrasts from other components excluded by your selection.' : 'Complete connected network.';
+    if(trts.length<3)throw new Error('The selected component needs at least three treatments for Net Heat.');
     const edges=new Set(rows.map(r=>JSON.stringify([r.treatment1,r.treatment2].sort())));
     if(edges.size<trts.length)throw new Error('The network has no closed evidence loop: inconsistency is not estimable, so no Net Heat plot is defined.');
-    return {rows,measure:cfg.outcomeType==='continuous'?'MD':'OR',model:'common',key:JSON.stringify({rows,measure:cfg.outcomeType})};
+    return {rows,measure:cfg.outcomeType==='continuous'?'MD':'OR',model:'common',componentNote,key:JSON.stringify({rows,measure:cfg.outcomeType})};
   }
   async function runtime() {
     if(!runtimePromise)runtimePromise=(async()=>{let url=new URL('../r-shiny/shinylive/webr/webr.mjs',location.href);let mod;try{mod=await import(url.href);}catch{url=new URL('https://webr.r-wasm.org/v0.5.4/webr.mjs');mod=await import(url.href);}const r=new mod.WebR({baseUrl:new URL('.',url).href,interactive:false});await r.init();await r.installPackages(['netmeta']);return r;})().catch(e=>{runtimePromise=null;throw e;});
@@ -164,22 +192,27 @@
     try {
       const r=await runtime();shelter=await new r.Shelter();
       const c=(values)=>'c('+values.map(v=>typeof v==='number'?String(v):JSON.stringify(String(v))).join(',')+')';
-      const code=`d <- data.frame(TE=${c(input.rows.map(x=>x.effect))}, seTE=${c(input.rows.map(x=>Math.sqrt(x.variance)))}, treat1=${c(input.rows.map(x=>x.treatment1))}, treat2=${c(input.rows.map(x=>x.treatment2))}, studlab=${c(input.rows.map(x=>x.study))}, stringsAsFactors=FALSE)\nnm <- netmeta::netmeta(TE, seTE, treat1, treat2, studlab, data=d, sm=${JSON.stringify(input.measure)}, common=TRUE, random=FALSE)\ndec <- netmeta::decomp.design(nm)\nif (is.null(dec) || is.null(dec$Q.inc.detach) || nrow(dec$Q.inc.detach)==0) stop('No detachable design provides estimable inconsistency; Net Heat is not defined for this network.')\nnetmeta::netheat(nm, random=FALSE)\ncat('netmeta ',as.character(utils::packageVersion('netmeta')),'; common-effect Net Heat; ',nrow(d),' study contrasts',sep='')`;
-      capture=await shelter.captureR(code,{withAutoprint:true,captureGraphics:{width:750,height:750}});
+      const code=`d <- data.frame(TE=${c(input.rows.map(x=>x.effect))}, seTE=${c(input.rows.map(x=>Math.sqrt(x.variance)))}, treat1=${c(input.rows.map(x=>x.treatment1))}, treat2=${c(input.rows.map(x=>x.treatment2))}, studlab=${c(input.rows.map(x=>x.study))}, stringsAsFactors=FALSE)\nnm <- netmeta::netmeta(TE, seTE, treat1, treat2, studlab, data=d, sm=${JSON.stringify(input.measure)}, common=TRUE, random=FALSE)\ndec <- netmeta::decomp.design(nm)\nif (is.null(dec) || is.null(dec$Q.inc.detach) || nrow(dec$Q.inc.detach)==0) stop('No detachable design provides estimable inconsistency; Net Heat is not defined for this network.')\ngraphics::plot.new(); withCallingHandlers(netmeta::netheat(nm, random=FALSE, showall=TRUE), warning=function(w) { cat('Net Heat warning: ',conditionMessage(w),'\\n',sep=''); invokeRestart('muffleWarning') })\ncat('netmeta ',as.character(utils::packageVersion('netmeta')),'; common-effect Net Heat; ',nrow(d),' study contrasts',sep='')`;
+      capture=await shelter.captureR(code,{withAutoprint:true,captureGraphics:{width:750,height:750,capture:true}});
+      // Discard the context-initialisation page; it is never user output.
+      if(capture.images?.length){capture.images[0].close();capture.images=capture.images.slice(1);}
       const err=capture.output.find(x=>x.type==='error');if(err)throw new Error(typeof err.data==='string'?err.data:err.data?.message||'R rejected the network.');
-      if(!capture.images?.length)throw new Error('R returned no Net Heat graphic. The network may not have an estimable inconsistency design.');
+      if(!capture.images?.length){
+        const reason=capture.output.filter(x=>['warning','message','stderr','stdout'].includes(x.type)).map(x=>typeof x.data==='string'?x.data:(x.data?.message||JSON.stringify(x.data))).join('; ');
+        throw new Error(reason || 'R returned no Net Heat graphic for this design.');
+      }
       if(networkInput().key!==input.key)throw new Error('Data changed during computation. Generate Net Heat again for the current data.');
       const img=capture.images[capture.images.length-1];if(netImage)netImage.close();netImage=img;netKey=input.key;
       capture.images.slice(0,-1).forEach(x=>x.close());capture.images=[];
       paintNetHeat();document.getElementById('netHeatPlot').dataset.rows=String(input.rows.length);
       const text=capture.output.filter(x=>x.type==='stdout').map(x=>x.data).join('\n');
-      status('netHeatPlot',text+'\nGrey squares: design contributions; colours: changes in inconsistency after detaching designs. This R diagnostic does not replace the app’s fitted results.');
+      status('netHeatPlot',text+'\n'+input.componentNote+'\nGrey squares: design contributions; colours: changes in inconsistency after detaching designs. This R diagnostic does not replace the app’s fitted results.');
     }catch(e){if(netImage){netImage.close();netImage=null;}netKey='';unavailable('netHeatPlot','Net Heat unavailable: '+e.message+' You can retry after checking the data or network connection.');}
     finally{capture?.images?.forEach(x=>x.close());if(shelter)await shelter.purge().catch(()=>{});netBusy=false;button.disabled=false;}
   }
   function renderNetState() {
     if(netBusy)return;
-    try{const input=networkInput();if(netImage&&input.key===netKey){paintNetHeat();return;}if(netImage){netImage.close();netImage=null;}netKey='';unavailable('netHeatPlot','Generate a common-effect Net Heat plot from the current '+input.measure+' contrasts using netmeta in browser-side R. The first run downloads the R package.');}
+    try{const input=networkInput();if(netImage&&input.key===netKey){paintNetHeat();return;}if(netImage){netImage.close();netImage=null;}netKey='';unavailable('netHeatPlot',input.componentNote+' Generate a common-effect Net Heat plot from the current '+input.measure+' contrasts using netmeta in browser-side R. The first run downloads the R package.');}
     catch(e){if(netImage){netImage.close();netImage=null;}netKey='';unavailable('netHeatPlot',e.message);}
   }
   function schedule() {
@@ -187,6 +220,8 @@
     frame=requestAnimationFrame(()=>{frame=null;const active=document.querySelector('.panel.active')?.id;if(active==='panel-heterogeneity')renderDiagnostics();if(active==='panel-consistency')renderNetState();});
   }
   const net=document.getElementById('netHeatPlot');
+  if(net){const label=document.createElement('label');label.hidden=true;label.style.cssText='display:block;margin-bottom:.75rem';label.textContent='Connected component for Net Heat';const select=document.createElement('select');select.id='ipdNetHeatComponent';select.className='form-select';select.setAttribute('aria-label','Connected component for Net Heat');label.appendChild(select);net.parentElement.insertBefore(label,net);}
+
   if(net){const button=document.createElement('button');button.id='ipdNetHeatRun';button.type='button';button.className='btn btn-primary';button.textContent='Generate Net Heat in R';button.addEventListener('click',runNetHeat);net.parentElement.insertBefore(button,net);}
   const observer=new MutationObserver(schedule);document.querySelectorAll('.panel').forEach(p=>observer.observe(p,{attributes:true,attributeFilter:['class']}));
   observer.observe(document.body,{attributes:true,attributeFilter:['class','data-theme']});
