@@ -220,6 +220,25 @@
       window._almLastDiag      = function () { return _lastDiag; };
       window._almStudies       = function () { return _lastStudies; };
 
+      // Preserve both edited inputs and the last rendered analysis across corpus validation.
+      // Recomputing the input on restore would silently change an unsubmitted edit's results.
+      window.__almInfluenceValidationSnapshot = function () {
+        return structuredClone({input: document.getElementById('src').value,
+          autosave: localStorage.getItem('alm-autosave:influence'),
+          diag: _lastDiag, full: _lastFull, studies: _lastStudies,
+          baujat: window.__almBaujat, radial: window.__almRadial,
+          html: Object.fromEntries(['body', 'loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot']
+            .map(id => [id, document.getElementById(id).innerHTML]))});
+      };
+      window.__almInfluenceValidationRestore = function (state) {
+        document.getElementById('src').value = state.input;
+        if (state.autosave === null) localStorage.removeItem('alm-autosave:influence');
+        else localStorage.setItem('alm-autosave:influence', state.autosave);
+        _lastDiag = state.diag; _lastFull = state.full; _lastStudies = state.studies;
+        window.__almBaujat = state.baujat; window.__almRadial = state.radial;
+        for (const [id, html] of Object.entries(state.html)) document.getElementById(id).innerHTML = html;
+      };
+
       function run() {
         const rows = parse(document.getElementById("src").value);
         _lastStudies = rows;
@@ -602,5 +621,8 @@
   });
 })();
 </script>
+<div id="alm-validate"></div>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
