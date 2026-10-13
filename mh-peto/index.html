@@ -125,7 +125,7 @@ StudyE, 4, 600, 10, 600</textarea>
       <h2 style="margin-top:0.5rem">Forest</h2>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of per-study and pooled effects"></svg>
       <h2 style="margin-top:0.5rem">L'Abbé plot</h2>
-      <p style="font-size:0.8rem;color:var(--muted);margin:0 0 .3rem">Control vs treatment event rate per study (point area ∝ study size). The diagonal is no effect; the curve is the pooled effect held constant. Matches <code>metafor::labbe</code>.</p>
+      <p style="font-size:0.8rem;color:var(--muted);margin:0 0 .3rem">Control vs treatment event rate per study (point size increases with study size). The diagonal is no effect; the curve holds an inverse-variance fixed-effect estimate constant (RR for the RR selection, OR otherwise, including the RD selection). It is separate from the MH/Peto estimates above.</p>
       <svg id="labbe" viewBox="0 0 600 320" role="img" aria-label="L'Abbe plot of control vs treatment event rates"></svg>
 
       <!-- chart-download mount -->
@@ -149,6 +149,7 @@ StudyE, 4, 600, 10, 600</textarea>
         <button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">&#128273; Key</button>
       </div>
     </section>
+    <section id="alm-validate" class="panel" style="grid-column:1/-1"></section>
   </main>
   <footer>
     <span data-gloss="mh-or">MH</span> for OR: &Sigma;(a&middot;d/n) / &Sigma;(b&middot;c/n), with Robins-Breslow-Greenland variance.
@@ -201,10 +202,22 @@ StudyE, 4, 600, 10, 600</textarea>
       }).filter(Boolean);
     }
 
-    function pnorm(x) {
-      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+    function normUpper(x) {
+      // Upper-tail standard normal probability P(Z > x), computed directly: 1 - CDF loses every digit in the tail
+      // (it returned exactly 0 for |z| >= 8). Agrees with R's pnorm(x, lower.tail = FALSE) to < 1e-13 relative.
+      if (!Number.isFinite(x)) return x > 0 ? 0 : (x < 0 ? 1 : NaN);
+      if (x < 0) return 1 - normUpper(-x);
+      var phi = Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+      if (x < 2) {
+        // 1/2 - phi * (x + x^3/3 + x^5/(3*5) + ...); the tail is >= 0.023 here, so no precision is lost.
+        var term = x, sum = x, q = x * x;
+        for (var i = 3; i < 1000; i += 2) { term *= q / i; var next = sum + term; if (next === sum) break; sum = next; }
+        return 0.5 - phi * sum;
+      }
+      // Mills ratio by its continued fraction, evaluated backwards: phi / (x + 1/(x + 2/(x + 3/(x + ...)))).
+      var f = x;
+      for (var k = 300; k >= 1; k--) f = x + k / f;
+      return phi / f;
     }
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
     function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -239,7 +252,7 @@ StudyE, 4, 600, 10, 600</textarea>
         denom += c * r.n1 / n;
         varNum += ((r.n1 * r.n2 * (a + c)) / (n * n) - (a * c) / n);
       }
-      if (denom === 0) return null;
+      if (denom === 0 || num === 0) return null;
       var rr = num / denom;
       var varLogRR = varNum / (num * denom);
       var seLog = Math.sqrt(Math.max(varLogRR, 0));
@@ -247,22 +260,20 @@ StudyE, 4, 600, 10, 600</textarea>
     }
 
     function mhRD(rows) {
-      var num = 0, denom = 0, varNum = 0;
+      var num = 0, denom = 0, va = 0, vb = 0;
       for (var i = 0; i < rows.length; i++) {
-        var r = rows[i];
-        var n = r.n1 + r.n2;
-        var w = (r.n1 * r.n2) / n;
-        num += w * (r.e1 / r.n1 - r.e2 / r.n2);
-        denom += w;
-        // var(RD_i) = p1(1-p1)/n1 + p2(1-p2)/n2 = a·b/n1³ + c·d/n2³; the MH pooled
-        // RD is a w-weighted mean so var = Σ wᵢ²·var(RD_i) / (Σwᵢ)². A prior version
-        // multiplied the two terms by n2 and n1 respectively, inflating SE by ~n
-        // (≈21× on the test fixture) and blowing the CI far too wide.
-        varNum += (r.e1 * (r.n1 - r.e1) / (r.n1 * r.n1 * r.n1) + r.e2 * (r.n2 - r.e2) / (r.n2 * r.n2 * r.n2)) * w * w;
+        var r = rows[i], a = r.e1, c = r.e2;
+        var n1 = r.n1, n2 = r.n2, n = n1 + n2;
+        num += a * n2 / n - c * n1 / n;
+        denom += n1 * n2 / n;
+        // Greenland-Robins variance used by metafor::rma.mh(measure="RD").
+        va += c * Math.pow(n1 / n, 2) - a * Math.pow(n2 / n, 2)
+          + (n1 / n) * (n2 / n) * (n2 - n1) / 2;
+        vb += (a * (n2 - c) / n + c * (n1 - a) / n) / 2;
       }
       if (denom === 0) return null;
       var rd = num / denom;
-      var se = Math.sqrt(varNum) / denom;
+      var se = Math.sqrt(rd * va + vb) / denom;
       return { est: rd, se: se, lo: rd - Z975 * se, hi: rd + Z975 * se };
     }
 
@@ -294,8 +305,8 @@ StudyE, 4, 600, 10, 600</textarea>
           return Object.assign({}, r, { est: or, lo: Math.exp(Math.log(or) - Z975 * se), hi: Math.exp(Math.log(or) + Z975 * se) });
         }
         if (measure === 'RR') {
-          var rr = (a / r.n1) / (c / r.n2);
-          var varLogRR = 1 / a - 1 / r.n1 + 1 / c - 1 / r.n2;
+          var rr = (a / (a + b)) / (c / (c + d));
+          var varLogRR = 1 / a - 1 / (a + b) + 1 / c - 1 / (c + d);
           var seRR = Math.sqrt(Math.max(varLogRR, 0));
           return Object.assign({}, r, { est: rr, lo: Math.exp(Math.log(rr) - Z975 * seRR), hi: Math.exp(Math.log(rr) + Z975 * seRR) });
         }
@@ -315,7 +326,12 @@ StudyE, 4, 600, 10, 600</textarea>
     function run() {
       var rows = parse(document.getElementById('src').value);
       var measure = document.getElementById('measure').value;
-      if (rows.length < 2) { _lastResults = null; return; }
+      if (rows.length < 2) {
+        _lastResults = null;
+        ['pooled-body', 'per-body', 'forest', 'labbe'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
+        document.getElementById('fragility-note').textContent = 'Enter at least two valid studies.';
+        return;
+      }
 
       var pooled = [];
       var Q = null, QEp = null;
@@ -333,12 +349,12 @@ StudyE, 4, 600, 10, 600</textarea>
 
       var body = document.getElementById('pooled-body');
       var parts = [];
-      var firstPooled = pooled[0] || null;
+      var firstPooled = pooled.find(function (p) { return p.name.indexOf('MH ') === 0; }) || null;
       for (var i = 0; i < pooled.length; i++) {
         var p = pooled[i];
         if (!p) continue;
         var z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
-        var pval = 2 * (1 - pnorm(Math.abs(z)));
+        var pval = 2 * normUpper(Math.abs(z));
         parts.push('<tr><td><code>' + p.name + '</code></td><td>' + fmt(p.est) + '</td><td>[' + fmt(p.lo) + ', ' + fmt(p.hi) + ']</td><td>' + fmt(z, 2) + '</td><td>' + fmt(pval, 3) + '</td></tr>');
       }
       body.innerHTML = parts.join('');
@@ -348,8 +364,8 @@ StudyE, 4, 600, 10, 600</textarea>
       var frag = null;
       if (window.AlmFragility) {
         frag = window.AlmFragility.fragility(rows.map(function (r) { return { e1: r.e1, n1: r.n1, e0: r.e2, n0: r.n2 }; }), { measure: measure });
-        if (Number.isFinite(frag.FI)) fragNote.textContent = 'Fragility index = ' + frag.FI + ' event modification' + (frag.FI === 1 ? '' : 's') + ' to lose significance (FQ = ' + fmt(frag.FQ, 4) + ').';
-        else fragNote.textContent = 'Fragility index: ' + (frag.dir || 'not applicable') + '.';
+        if (Number.isFinite(frag.FI)) fragNote.textContent = 'DL fragility index = ' + frag.FI + ' event modification' + (frag.FI === 1 ? '' : 's') + ' to lose significance (FQ = ' + fmt(frag.FQ, 4) + ').';
+        else fragNote.textContent = 'DL fragility index: ' + (frag.dir || 'not applicable') + '.';
       }
 
       var studies = perStudy(rows, measure);
@@ -374,18 +390,18 @@ StudyE, 4, 600, 10, 600</textarea>
         mh_lo:  firstPooled ? firstPooled.lo  : null,
         mh_hi:  firstPooled ? firstPooled.hi  : null,
         mh_z:   firstZ,
-        mh_p:   firstZ !== null ? 2 * (1 - pnorm(Math.abs(firstZ))) : null,
+        mh_p:   firstZ !== null ? 2 * normUpper(Math.abs(firstZ)) : null,
         fragility_index: frag ? frag.FI : null,
         fragility_quotient: frag ? frag.FQ : null,
       };
-      if (measure === 'OR' && pooled.length >= 2) {
-        var pe2 = pooled[1];
+      var pe2 = pooled.find(function (p) { return p.name === 'Peto OR'; });
+      if (measure === 'OR' && pe2) {
         var pZ = pe2.logEst / pe2.seLog;
         _lastResults.peto_est = pe2.est;
         _lastResults.peto_lo  = pe2.lo;
         _lastResults.peto_hi  = pe2.hi;
         _lastResults.peto_z   = pZ;
-        _lastResults.peto_p   = 2 * (1 - pnorm(Math.abs(pZ)));
+        _lastResults.peto_p   = 2 * normUpper(Math.abs(pZ));
       }
 
       // Persist URL state
@@ -497,6 +513,9 @@ StudyE, 4, 600, 10, 600</textarea>
       document.getElementById('src').value = lines.join('\n');
       run();
     };
+
+    // Validation hooks use the page parser and rendering path.
+    window.__mhValidation = {parse: parse, run: run, restoreResult: function (r) { _lastResults = r; }};
 
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
@@ -646,5 +665,7 @@ StudyE, 4, 600, 10, 600</textarea>
   });
 })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>

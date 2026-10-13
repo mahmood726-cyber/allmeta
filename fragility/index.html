@@ -144,17 +144,17 @@
       }
       var r = window.AlmFragility.fragility(p.studies, { measure: measure });
       var ratio = (measure !== "RD");
-      var tx = function (v) { return ratio ? Math.exp(v) : v; };
+      var tx = function (v) { return v == null ? null : ratio ? Math.exp(v) : v; };
       var pooled = r.pooled
         ? "<code>" + fmt(tx(r.pooled.est)) + "</code> (95% CI <code>" + fmt(tx(r.pooled.lo)) + "</code>–<code>" + fmt(tx(r.pooled.hi)) + "</code>)"
         : "—";
-      var fiCell = isFinite(r.FI)
+      var fiCell = Number.isFinite(r.FI)
         ? "<td class='big'>" + r.FI + "</td>"
         : "<td>n/a</td>";
       tbody.innerHTML =
         "<tr><th>Pooled " + measure + " (DL)</th><td>" + pooled + "</td></tr>"
         + "<tr><th>Fragility index</th>" + fiCell + "</tr>"
-        + "<tr><th>Fragility quotient (FI ÷ N)</th><td>" + (isFinite(r.FQ) ? fmt(r.FQ, 5) : "n/a") + "</td></tr>"
+        + "<tr><th>Fragility quotient (FI ÷ N)</th><td>" + (Number.isFinite(r.FQ) ? fmt(r.FQ, 5) : "n/a") + "</td></tr>"
         + "<tr><th>Direction</th><td>" + r.dir + "</td></tr>"
         + (p.errs.length ? "<tr><th>Skipped lines</th><td>" + p.errs.join(", ") + "</td></tr>" : "");
       if (r.modifications && r.modifications.length) {

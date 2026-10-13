@@ -46,6 +46,7 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 | Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | See integration report |
 | DTA SROC | mada 0.5.12 vendored | Contract: 855 checks | See integration report |
 | NMA | netmeta 3.4-0 vendored; paper 3.7-0 | Contract: 410 checks | See integration report |
+| MH/Peto | metafor 4.8-0; paper 5.2-1; current OR/RR/RD and Peto OR | Full 68,461-check current-page replay; archived independent R oracle explicitly labelled | validate-mh-peto.spec.mjs and integration cases |
 | Screen | No R oracle; honest repository link with `live:null` | Screen simulator replay against published values | See integration report |
 | Proportion MA | metafor 4.8-0; paper 5.2-1; current PLO/PFT/PR and PM/DL/FE | Full 298116-check primary contract, 2160 configurations including per-study and DOM checks | See proportion-ma/validate/README.md and validate-proportion-ma.spec.mjs |
 
