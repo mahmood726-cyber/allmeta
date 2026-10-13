@@ -40,6 +40,7 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 
 | App | Tier 1 | Tier 2 | Integration status |
 |---|---|---|---|
+| Influence | metafor 4.8-0; paper 5.2-1; all current per-study diagnostics | 142 configurations, full 164802-check primary comparison | validate-influence + integration specs; same-origin, hashes, exact flags and restored history |
 | Multilevel MA | metafor 4.8-0; paper 5.2-1 | 44 configurations, 528 checks including MoM-share and UI contracts | validate-multilevel-ma + integration specs |
 | Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
 | Publication bias (`pubbias-tests`) | metafor 4.8-0 and meta 8.3-0; paper 5.2-1 / 8.5-0 | 152 configurations, 2,107/2,113; six named failures retained | See pubbias-tests/validate/README.md and validation specs |
@@ -64,3 +65,5 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 See `INTEGRATION_REPORT.md` for exact commands, results and limitations. This lane does not commit, push, deploy or change submission status.
 
 Multilevel details and scope: [multilevel-ma/validate/README.md](multilevel-ma/validate/README.md). Its live check uses `rma.mv(yi, vi, random = ~ 1 | cluster/id, method = "REML")` on current page inputs.
+
+Influence details and scope: [influence/validate/README.md](influence/validate/README.md). Live checks use intercept-only REML, leave1out/influence/REML Baujat and FE radial. The primary replay includes every effect row and restores page input/results without URL or history writes. Its historical before-fix denominator additionally included DL Baujat controls. Flags are validated as Booleans, then encoded as 0/1 for zero-tolerance comparison by the unchanged shared widget.
