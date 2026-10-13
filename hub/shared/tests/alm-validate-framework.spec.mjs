@@ -34,6 +34,7 @@ test('comparison fails closed on absent or nonfinite values; unavailable R links
   const result=await page.evaluate(()=>{
     const absent=AlmValidate.compare(undefined,undefined,'abs',1e-6);
     const nan=AlmValidate.compare(NaN,NaN,'abs',1e-6);
+    if(!AlmValidate.compare('left','left','exact',0).pass || AlmValidate.compare('left','right','exact',0).pass || AlmValidate.compare(undefined,undefined,'exact',0).pass)throw new Error('Exact categorical comparison failed');
     AlmValidate.mount(document.getElementById('alm-validate'),{...AlmHetValidationAdapter,live:null});
     return {absent:absent.pass,nan:nan.pass};
   });
