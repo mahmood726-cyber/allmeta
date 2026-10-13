@@ -16,6 +16,43 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.3.0] — 2026-10-13
+
+Validation against R for five more apps validated in F1000Research Software Tool Articles (publication bias,
+three-level, proportions, Mantel–Haenszel/Peto, influence diagnostics), with the faults those validations found
+corrected. Every app with a published validation now has the one-click **Validate in R** panel (see
+`VALIDATION-BUTTONS.md`).
+
+### Added
+- **Validate in R** for `pubbias-tests` (#106), `multilevel-ma` (#103), `proportion-ma` (#107), `mh-peto` (#105) and
+  `influence` (#109): a live check that runs metafor (and meta for Peters/Harbord) in the self-hosted webR on the
+  current data, and an offline replay of each paper's corpus through the page's own code against hash-pinned R
+  references (2,107/2,113 with six documented exceptions; 528/528; 298,116/298,116; 68,461/68,461 plus 106 tail checks;
+  164,802/164,802).
+
+### Changed
+- `shared/alm-validate.js`: a live result is bound to the input revision it was computed for; editing or refitting
+  marks it out of date, and a late result is refused (#103). Adds an exact comparison kind (#106).
+- Corpus replays no longer write URL state or browser history (`hub/shared/url-state.js` `withoutWrites`) (#103).
+- `shared/diagnostic-plots.js`: `baujat()` takes an optional estimator; the default (DerSimonian–Laird) is unchanged (#108).
+- `shared/fragility.js` returns `null`, not `NaN`, for an uncomputed fragility index; the fragility page shows "n/a" (#105).
+
+### Fixed
+- **proportion-ma** (#104): the Freeman–Tukey back-transformation now clamps outside its finite-n domain as
+  `metafor::transf.ipft.hm` does (prediction limits were wrong by up to 0.33); Clopper–Pearson intervals agree with
+  `qbeta` to 1e-9.
+- **mh-peto** (#105): Mantel–Haenszel risk-difference standard error now uses the Greenland–Robins variance (it was wrong
+  in every configuration); p-values are computed from the upper tail directly (they were 0 for |z| ≥ 8); zero-cell study
+  risk ratios use corrected totals; the export no longer labels Peto as Mantel–Haenszel when the latter is undefined;
+  stale results are cleared when fewer than two studies remain.
+- **influence** (#108): DFFITS includes √hat (it was wrong for every study); influential-study flags follow
+  `metafor::influence()`'s rule; the Baujat plot uses the page's REML model.
+- Plot rendering and saved-session fixes: NMA Pro saved-session plots (#93), cross-app plots and demo canvas conflicts
+  (#96), IPD and R plot rendering (#97), IPD fitted plot/export intervals (#98), IPD ranking, survival zoom and Bayesian
+  diagnostics (#99).
+
+---
+
 ## [1.2.2] — 2026-10-11
 
 One-click validation against R for the five apps validated in the F1000Research Software Tool Articles
