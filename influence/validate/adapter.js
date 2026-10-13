@@ -98,6 +98,10 @@
     const expected=new Map([...corpus].map(([id,c])=>[id,referenceValues(c,refs.get(id))]));
     if(!window.alm?.urlState?.withoutWrites)throw new Error('URL-state replay guard unavailable');
     const snapshot=window.__almInfluenceValidationSnapshot();
+    // Lock the page's editable controls for the whole replay: an edit made mid-replay would otherwise be overwritten by
+    // the next configuration and then discarded by the final restore. The Validate panel's own controls stay usable.
+    const locked=[...document.querySelectorAll('textarea,input,select,button')].filter(el=>!el.closest('#alm-validate')).map(el=>[el,el.disabled]);
+    locked.forEach(([el])=>{el.disabled=true;});
     let checks=0,passed=0;const failed=[],maxima={};
     return alm.urlState.withoutWrites(async()=>{
       try {
@@ -114,7 +118,7 @@
           progress(`Replaying ${++done}/142 configurations; ${checks} checks`);
           await new Promise(resolve=>setTimeout(resolve,0));
         }
-      } finally {window.__almInfluenceValidationRestore(snapshot);}
+      } finally {window.__almInfluenceValidationRestore(snapshot);locked.forEach(([el,was])=>{el.disabled=was;});}
       if(JSON.stringify(window.__almInfluenceValidationSnapshot())!==JSON.stringify(snapshot))throw new Error('Page restoration failed');
       if(checks!==164802)throw new Error('Primary paper check cardinality differs');
       return {checks,passed,failed,maxima,refusals:[],summaryLines:['Full primary comparison: 142 configurations; every per-study value and four plot-presence checks. No saved app outputs used.','REML relative tolerance 1e-6; Q/df and FE radial 1e-9; Boolean flags and UI counts exact. Paper metafor 5.2-1. No additional DL controls in this denominator.']};

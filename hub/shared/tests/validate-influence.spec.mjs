@@ -76,3 +76,18 @@ test('influence refuses invalid current input and missing app evidence',async({p
   });
   expect(result).toContain('Invalid app quantity');
 });
+test('influence locks page inputs during corpus replay and restores them afterwards',async({page})=>{
+  // Review finding: an edit made mid-replay was overwritten and then discarded by the final restore. The page's
+  // editable controls must be disabled for the whole replay and returned to their previous state afterwards.
+  test.setTimeout(240000);
+  await page.goto(url);
+  const before=await page.evaluate(()=>[...document.querySelectorAll('textarea,input,select,button')].filter(el=>!el.closest('#alm-validate')).map(el=>el.disabled));
+  await page.evaluate(()=>{window.__replay=AlmInfluenceValidation.runCorpus();});
+  await expect(page.locator('#src')).toBeDisabled();
+  const during=await page.evaluate(()=>[...document.querySelectorAll('textarea,input,select,button')].filter(el=>!el.closest('#alm-validate')).every(el=>el.disabled));
+  expect(during).toBe(true);
+  const result=await page.evaluate(()=>window.__replay);
+  expect(result.checks).toBe(164802);expect(result.passed).toBe(164802);
+  expect(await page.evaluate(()=>[...document.querySelectorAll('textarea,input,select,button')].filter(el=>!el.closest('#alm-validate')).map(el=>el.disabled))).toEqual(before);
+  await expect(page.locator('#src')).toBeEditable();
+});
