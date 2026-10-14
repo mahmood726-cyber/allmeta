@@ -53,6 +53,7 @@
       border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer;
     }
     button.primary:hover { filter: brightness(1.05); }
+     .smd-kind[hidden] { display: none; }
     .results table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     .results th, .results td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
     .results th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -85,6 +86,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/evalue.js"></script>
+  <script src="../shared/effect-size-accuracy.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -94,7 +96,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Effect-Size Converter</h1>
-    <p>Convert between OR, RR, RD, SMD, MD, and HR. Derive standard errors from t-statistic, F-statistic, p-value, or confidence interval. Everything runs in your browser.</p>
+    <p>Convert OR, RR, RD, SMD and MD with explicit assumptions. HR and IRR remain on their own time-to-event/rate scales instead of receiving unsupported binary-outcome conversions. Derive standard errors using design-appropriate inputs. Everything runs in your browser.</p>
   </header>
   <main id="main-content">
     <section class="panel" aria-label="Inputs">
@@ -112,6 +114,14 @@
             <option value="HR">Hazard ratio (HR)</option>
             <option value="IRR">Incidence rate ratio (IRR)</option>
           </select>
+        </label>
+        <label id="smd-kind-field" class="smd-kind" hidden>
+          <span class="lbl">SMD entered as</span>
+          <select id="in-smd-kind" aria-label="SMD estimator">
+            <option value="d">Cohen's d (uncorrected)</option>
+            <option value="g">Hedges' g (already corrected)</option>
+          </select>
+          <span class="hint">Imported mean/SD studies use Hedges' g as in metafor::escalc; never correct it twice.</span>
         </label>
         <div class="grid-2">
           <label>
@@ -155,7 +165,15 @@
           </label>
           <label>
             <span class="lbl">F-statistic (2 groups)</span>
-            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41">
+            <input id="der-f" type="number" min="0" step="any" placeholder="e.g. 4.41">
+          </label>
+          <label>
+            <span class="lbl">Direction for F (required)</span>
+            <select id="der-f-sign" aria-label="Direction for F statistic">
+              <option value="">Choose group difference</option>
+              <option value="1">Group 1 greater (+)</option>
+              <option value="-1">Group 1 less (-)</option>
+            </select>
           </label>
           <label>
             <span class="lbl">n₂</span>
@@ -185,7 +203,8 @@
             <option value="raw">raw scale (e.g. MD)</option>
           </select>
         </label>
-        <button type="button" id="btn-derive" class="primary">Derive & fill SE</button>
+        <p class="hint" style="margin:0 0 0.7rem">t/F: independent two-sample pooled-variance design only; derives Hedges' g and its SE, not the SE of an OR, RR or HR. F must have numerator df=1 and needs the group direction. CI/p: normal/Wald approximation on the analysis scale.</p>
+        <button type="button" id="btn-derive" class="primary">Derive estimate / SE</button>
       </fieldset>
 
       <!-- csv-upload mount: SMD-from-means batch input (m1,sd1,n1,m2,sd2,n2) -->
@@ -205,14 +224,14 @@
         <tbody id="results-body"></tbody>
       </table>
       <div class="plot-wrap">
-        <h2 style="margin-top:1rem">Forest comparison (SMD scale)</h2>
+        <h2 style="margin-top:1rem">Alternative representations of one estimate (SMD scale)</h2>
         <svg id="forest-plot" viewBox="0 0 600 260" role="img" aria-label="Forest plot of converted effect sizes on SMD scale">
           <g id="forest-bg"></g>
           <g id="forest-points"></g>
           <g id="forest-labels"></g>
           <g id="forest-axis"></g>
         </svg>
-        <p class="note">All conversions are mapped to the SMD scale for visual comparison (binary ratios converted via Cox's constant √3/π ≈ 0.5513). The plot area is always rendered so automated checks can confirm the canvas is live; the dot + whisker show each scale's estimate with its 95% CI after conversion.</p>
+        <p class="note">These points are <strong>correlated representations of one input</strong>, not separate studies or independent evidence. OR-to-SMD uses Cox's distributional approximation; RR, HR and IRR are not directly mapped to an SMD. Intervals use the delta method where applicable.</p>
       </div>
       <div class="plot-wrap" style="margin-top:1rem">
         <h2>E-value (sensitivity to unmeasured confounding)</h2>
@@ -226,7 +245,7 @@
         </div>
         <p id="ev-out" style="margin-top:0.6rem;font-size:0.95rem" role="status" aria-live="polite"></p>
       </div>
-      <!-- axis-controls mount: axis range for the SMD forest plot (override deferred — renders, no-op) -->
+      <!-- axis-controls mount: numeric axis range for the SMD representation plot -->
       <div id="alm-axis-mount" style="margin-top:0.75rem;"></div>
       <!-- results-export mount: CSV + JSON export of the conversion table -->
       <div id="alm-export-mount" style="margin-top:0.5rem;"></div>
@@ -234,7 +253,7 @@
     </section>
   </main>
   <footer>
-    Formulas follow Borenstein et al., <em>Introduction to Meta-Analysis</em> (Wiley, 2009). Cox constant <code>√3/π ≈ 0.5513</code>. <abbr data-gloss="HR">HR</abbr> → <abbr data-gloss="OR">OR</abbr> approximation valid only when event rate is low and follow-up balanced. Hedges' <em>g</em> correction applied when df is known. Effect sizes: <abbr data-gloss="SMD">SMD</abbr>, <abbr data-gloss="RR">RR</abbr>, <abbr data-gloss="RD">RD</abbr>, <abbr data-gloss="OR">OR</abbr>. <abbr data-gloss="CI">CI</abbr> = 95% confidence interval; <abbr data-gloss="Effect">SE</abbr> = standard error on the log scale for ratios.
+    References: Borenstein et al., <em>Introduction to Meta-Analysis</em> (2009); Hedges (1981); <a href="https://wviechtb.github.io/metafor/reference/escalc.html">metafor::escalc(SMD, vtype="LS")</a> and <a href="https://wviechtb.github.io/metafor/reference/cmicalc.html">metafor::cmicalc(exact)</a>. Cox constant <code>√3/π ≈ 0.5513</code> relates OR and a latent continuous SMD under distributional assumptions. There is <strong>no general HR/IRR-to-OR conversion</strong>. SE is on the log scale for ratios.
   </footer>
   <script>
     // --- math helpers ---
