@@ -701,8 +701,8 @@
 
     // Snapshot: capture every relevant form field into a flat object.
     window.__almSnapshot = function () {
-      var ids = ['in-type','in-est','in-se','ctx-p0','ctx-sd',
-                 'der-t','der-n1','der-f','der-n2','der-p','der-pointabs',
+      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
                  'der-lo','der-hi','der-scale'];
       var snap = {};
       ids.forEach(function (id) {
@@ -715,15 +715,15 @@
     // Restore: apply snapshot back to form controls and re-render.
     window.__almRestore = function (snap) {
       var isEmpty = !snap || Object.keys(snap).length === 0;
-      var ids = ['in-type','in-est','in-se','ctx-p0','ctx-sd',
-                 'der-t','der-n1','der-f','der-n2','der-p','der-pointabs',
+      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
                  'der-lo','der-hi','der-scale'];
       ids.forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
         if (isEmpty) {
           // restore defaults by clearing derive fields; keep type/est at current
-          if (['der-t','der-n1','der-f','der-n2','der-p','der-pointabs','der-lo','der-hi'].includes(id)) el.value = '';
+          if (['der-t','der-n1','der-f','der-f-sign','der-n2','der-p','der-lo','der-hi'].includes(id)) el.value = '';
         } else {
           if (snap[id] != null) el.value = snap[id];
         }
@@ -756,68 +756,68 @@
     })();
 
     window.__almResults = function () {
-      // Re-sync the results table from the live inputs so the export never
-      // mixes a stale table with fresh input_estimate/input_se (same epoch).
       if (typeof runConvert === 'function') runConvert();
-      var type = (document.getElementById('in-type') || {}).value || '';
-      var est  = parseFloat((document.getElementById('in-est') || {}).value);
-      var se   = parseFloat((document.getElementById('in-se')  || {}).value);
-      var rows = document.querySelectorAll('#results-body tr');
-      var tableRows = [];
-      rows.forEach(function (tr) {
-        var cells = tr.querySelectorAll('td');
-        if (cells.length >= 4) {
-          tableRows.push({
-            scale: cells[0].textContent,
-            point: cells[1].textContent,
-            se:    cells[2].textContent,
-            ci95:  cells[3].textContent,
-          });
-        }
+      var type = document.getElementById('in-type').value;
+      var est = parseFloat(document.getElementById('in-est').value);
+      var se = parseFloat(document.getElementById('in-se').value);
+      var rows = (window.__almResultRows || []).map(function (r) {
+        return {
+          scale: r.scale,
+          point: Number.isFinite(r.point) ? r.point : null,
+          se: Number.isFinite(r.se) ? r.se : null,
+          ci_lower: Number.isFinite(r.lo) ? r.lo : null,
+          ci_upper: Number.isFinite(r.hi) ? r.hi : null,
+          note: r.note || ""
+        };
       });
       return {
         _schema: 'esc-results-v1',
         type: type,
-        input_estimate: isFinite(est) ? est : null,
-        input_se: isFinite(se) ? se : null,
-        rows: tableRows,
+        smd_estimator: type === 'SMD' ? document.getElementById('in-smd-kind').value : null,
+        input_estimate: Number.isFinite(est) ? est : null,
+        input_se: Number.isFinite(se) ? se : null,
+        baseline_risk: document.getElementById('ctx-p0').value.trim() !== '' ?
+          Number(document.getElementById('ctx-p0').value) : null,
+        pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
+          Number(document.getElementById('ctx-sd').value) : null,
+        assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; Cox OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
+        numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::cmicalc(method="exact")',
+        rows: rows
       };
     };
 
     // CSV-upload onParse: set type to SMD, populate means/SD derive fields,
     // run Derive then Convert for the first row.
     window.__almLoadCSV = function (rows) {
-      if (!rows || rows.length === 0) return;
-      window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
-      var r = rows[0];
-      var set = function (id, v) {
-        var el = document.getElementById(id);
-        if (el && v != null && String(v) !== '') el.value = String(v);
-      };
-      // Switch to SMD mode for means-based input
-      set('in-type', 'SMD');
-      // Place group stats into the derive-SE section (n1, n2 already used by t/F derivation)
-      // We compute the SMD ourselves and put it directly into in-est + in-se via escalc formula.
-      var m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), n1 = parseInt(r.n1, 10);
-      var m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2), n2 = parseInt(r.n2, 10);
-      if ([m1,sd1,n1,m2,sd2,n2].every(isFinite) && n1 > 1 && n2 > 1 && sd1 > 0 && sd2 > 0) {
-        var df = n1 + n2 - 2;
-        var Sp = Math.sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / df);
-        var d  = (m1 - m2) / Sp;
-        var J  = 1 - 3 / (4 * df - 1);  // Hedges correction
-        var g  = d * J;
-        // Cycle 7.16: metafor::escalc(SMD).vi = (n1+n2)/(n1*n2) + g^2 / (2*(n1+n2))
-        // was previously written as `g*g / (2*df)` which gave a ~1.3e-4 drift
-        // vs metafor.  The Python pytest fixture (test_smd_formula_matches_escalc_row0)
-        // correctly documents the metafor formula.
-        var vi = (n1 + n2) / (n1 * n2) + g * g / (2 * (n1 + n2));
-        var se = Math.sqrt(vi);
-        set('in-est', g.toFixed(6));
-        set('in-se',  se.toFixed(6));
-        // Also populate n1/n2 for Hedges' g branch in convert()
-        set('der-n1', String(n1));
-        set('der-n2', String(n2));
-        if (typeof runConvert === 'function') runConvert();
+      if (!rows || !rows.length) return;
+      try {
+        var r = rows[0];
+        var stat = AlmEffectAccuracy.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1),
+          Number(r.m2), Number(r.sd2), Number(r.n2));
+        if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
+        var set = function (id, value) {
+          var el = document.getElementById(id);
+          if (el) el.value = String(value);
+        };
+        set('in-type', 'SMD');
+        set('in-smd-kind', 'g');
+        set('in-est', stat.g);   // Never round internal values to 6 digits.
+        set('in-se', stat.se);
+        set('ctx-sd', stat.pooledSd);
+        set('der-n1', Number(r.n1));
+        set('der-n2', Number(r.n2));
+        ['der-t','der-f','der-f-sign','der-p','der-lo','der-hi'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        runConvert();
+        if (window.alm && window.alm.urlState)
+          window.alm.urlState.write(window.__almSnapshot());
+        setWarn('Imported metafor-compatible Hedges g and LS variance from the first means/SDs CSV row (n1=' +
+          r.n1 + ', n2=' + r.n2 + ', df=' + stat.df + '). No additional J correction applied.' +
+          (rows.length > 1 ? ' This single-estimate tool imported only the first of ' + rows.length + ' rows.' : ''));
+      } catch (error) {
+        render([], null);
+        setWarn('CSV rejected: ' + (error && error.message ? error.message : String(error)), 'err');
       }
     };
 
@@ -840,15 +840,16 @@
 
     window.alm.axisControls({
       target: '#alm-axis-mount',
-      axes: [{ key: 'x', label: 'Forest X axis (SMD scale)', range: [null, null], log: false }],
+      axes: [{ key: 'x', label: 'SMD axis', range: [null, null], log: false }],
       onChange: function (state) {
         window.__almAxis = state;
-        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
-        // renderForest() domain — auto-computed from xPad = maxAbs * 1.15.
-        // Wiring lo/hi requires threading overrides through renderForest(); deferred.
+        renderForest(window.__almResultRows || []);
       },
     });
 
+    // An SMD scale is signed and can include 0; a logarithmic X axis is invalid.
+    var axisLog = document.querySelector('#alm-axis-mount [data-edge="log"]');
+    if (axisLog) { axisLog.disabled = true; axisLog.title = 'Log scale is invalid for signed SMD'; }
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'effect-size-converter-results',
