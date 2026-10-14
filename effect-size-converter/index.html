@@ -141,12 +141,12 @@
         <div class="grid-2">
           <label>
             <span class="lbl">Baseline risk p₀</span>
-            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20">
+            <input id="ctx-p0" type="number" step="any" min="0" max="1" placeholder="Enter observed baseline risk">
             <span class="hint">OR ↔ RR ↔ RD.</span>
           </label>
           <label>
             <span class="lbl">Pooled SD</span>
-            <input id="ctx-sd" type="number" step="any" value="1">
+            <input id="ctx-sd" type="number" step="any" placeholder="Enter pooled study SD">
             <span class="hint">MD ↔ SMD.</span>
           </label>
         </div>
@@ -180,12 +180,8 @@
             <input id="der-n2" type="number" step="1" placeholder="group 2 n">
           </label>
           <label>
-            <span class="lbl">Two-sided p-value</span>
+            <span class="lbl">Two-sided Wald p-value (uses current estimate)</span>
             <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031">
-          </label>
-          <label>
-            <span class="lbl">|point estimate| (for p→SE)</span>
-            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD">
           </label>
           <label>
             <span class="lbl">CI lower</span>
@@ -562,27 +558,35 @@
     }
 
     document.getElementById("btn-derive").addEventListener("click", () => {
-      const lo = parseFloat(document.getElementById("der-lo").value);
-      const hi = parseFloat(document.getElementById("der-hi").value);
-      const scale = document.getElementById("der-scale").value;
-
-      // Pre-flight: CI on log scale with non-positive bounds produces silent NaN.
-      // Surface a specific message so the user can correct the scale selection.
-      if (Number.isFinite(lo) && Number.isFinite(hi) && scale === "log" && (lo <= 0 || hi <= 0)) {
-        setWarn(`CI bounds for log-scale effects must be strictly positive. Got [${lo}, ${hi}]. Switch to "raw (linear)" if your effect is a mean difference or SMD.`, "err");
-        return;
-      }
-      if (Number.isFinite(lo) && Number.isFinite(hi) && lo >= hi) {
-        setWarn(`CI lower bound (${lo}) must be less than upper (${hi}).`, "err");
-        return;
-      }
-
-      const se = deriveSE();
-      if (Number.isFinite(se) && se > 0) {
-        document.getElementById("in-se").value = se.toFixed(6);
-        setWarn(null);
-      } else {
-        setWarn("Could not derive SE. Provide either CI bounds, t+n₁+n₂, F+n₁+n₂, or p + |point estimate|.", "err");
+      const el = id => document.getElementById(id);
+      const entered = id => el(id).value.trim() !== "";
+      const type = el("in-type").value;
+      try {
+        // Priority: complete 95% CI > independent two-sample t > F > Wald p.
+        if (!entered("der-lo") && !entered("der-hi") &&
+            (entered("der-t") || entered("der-f"))) {
+          if (type !== "SMD")
+            throw new RangeError("t/F with n1,n2 derives SMD only. Select SMD; it is NOT a valid log(OR), log(RR), HR or MD standard error.");
+          const n1 = Number(el("der-n1").value), n2 = Number(el("der-n2").value);
+          const stat = entered("der-t")
+            ? AlmEffectAccuracy.fromT(Number(el("der-t").value), n1, n2)
+            : AlmEffectAccuracy.fromF(Number(el("der-f").value), n1, n2,
+                Number(el("der-f-sign").value));
+          el("in-smd-kind").value = "g";
+          el("in-est").value = String(stat.g);
+          el("in-se").value = String(stat.se);
+          runConvert();
+          setWarn("Derived Hedges' g and its large-sample SE from an independent two-sample pooled-variance test (df=" + stat.df + ").", "info");
+          return;
+        }
+        const se = deriveSE();
+        if (!(Number.isFinite(se) && se > 0))
+          throw new RangeError("The derived SE is invalid; check the effect estimate and its CI or Wald p-value.");
+        el("in-se").value = String(se);
+        runConvert();
+      } catch (error) {
+        render([], null); // Never retain apparently valid results after bad inputs.
+        setWarn(error && error.message ? error.message : String(error), "err");
       }
     });
 
@@ -602,6 +606,7 @@
       if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return; }
       if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return; }
       if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return; }
+      if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return; }
       const rows = convert(type, est, se, p0, sd);
       const warn = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
