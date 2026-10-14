@@ -386,7 +386,7 @@
 
     function withCI(row) {
       const out = { ...row };
-      if (Number.isFinite(row.se)) {
+      if (Number.isFinite(row.se) && row.se > 0 && Number.isFinite(row.point)) {
         // Tight word-boundary regex: matches "OR", "OR (approx)", "RR (implied)", "HR" —
         // but NOT "ORA", "HRZ", or arbitrary prefixes. Also requires row.point > 0 for
         // log-space back-transform (otherwise Math.log yields NaN silently).
@@ -447,11 +447,14 @@
 
     function render(rows, warn) {
       const warnSlot = document.getElementById("warn-slot");
-      warnSlot.innerHTML = warn ? `<div class="note"><strong>Note:</strong> ${warn}</div>` : "";
+      const escapeHTML = x => String(x).replace(/[&<>"']/g, ch =>
+        ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+      warnSlot.innerHTML = warn ? '<div class="note"><strong>Note:</strong> ' + escapeHTML(warn) + '</div>' : "";
 
       const tbody = document.getElementById("results-body");
       tbody.innerHTML = "";
-      for (const r of rows.map(withCI)) {
+      window.__almResultRows = rows.map(withCI);
+      for (const r of window.__almResultRows) {
         const ci = Number.isFinite(r.lo) && Number.isFinite(r.hi)
           ? `[${fmt(r.lo)}, ${fmt(r.hi)}]`
           : "—";
@@ -465,27 +468,23 @@
 
     // --- forest plot on SMD scale ---
     function toSmdView(r) {
-      // Convert (row) to SMD-scale point + SE for plotting.
-      // Returns { pt, se, lo, hi } or null if not plottable.
+      // Only a true SMD, MD/known SD, OR/Cox, or log(OR)/Cox can be shown.
+      // RR, HR and IRR have NO generic SMD conversion.
       let pt, se;
       if (/^SMD/.test(r.scale)) { pt = r.point; se = r.se; }
       else if (/^MD\b/.test(r.scale)) {
         const sd = parseFloat(document.getElementById("ctx-sd").value);
-        if (!Number.isFinite(sd) || sd <= 0) return null;
+        if (!(Number.isFinite(sd) && sd > 0)) return null;
         pt = r.point / sd; se = r.se / sd;
-      } else if (/^OR\b/.test(r.scale) || /^HR\b/.test(r.scale)) {
+      } else if (/^OR\b/.test(r.scale)) {
+        if (!(r.point > 0 && Number.isFinite(r.point))) return null;
         pt = Math.log(r.point) * COX; se = r.se * COX;
-      } else if (/^ln\(/.test(r.scale)) {
+      } else if (r.scale === "ln(OR)") {
         pt = r.point * COX; se = r.se * COX;
-      } else if (/^RR\b/.test(r.scale)) {
-        pt = Math.log(r.point) * COX; se = r.se * COX;
-      } else {
-        return null;
-      }
+      } else return null;
       if (!Number.isFinite(pt)) return null;
-      const lo = Number.isFinite(se) ? pt - Z95 * se : NaN;
-      const hi = Number.isFinite(se) ? pt + Z95 * se : NaN;
-      return { pt, se, lo, hi };
+      return { pt, se, lo: Number.isFinite(se) ? pt - Z95 * se : NaN,
+        hi: Number.isFinite(se) ? pt + Z95 * se : NaN };
     }
 
     function renderForest(rows) {
@@ -509,10 +508,13 @@
       const xs = views.flatMap(v => [v.pt, v.lo, v.hi].filter(Number.isFinite));
       const maxAbs = Math.max(1, ...xs.map(Math.abs));
       const xPad = maxAbs * 1.15;
+      const limits = window.__almAxis && Array.isArray(window.__almAxis.x) ? window.__almAxis.x : [null, null];
+      const xMin = Number.isFinite(limits[0]) ? limits[0] : -xPad;
+      const xMax = Number.isFinite(limits[1]) ? limits[1] : xPad;
       const leftPad = narrow ? 90 : 160, rightPad = 30;
       const truncLabel = s => narrow && s && s.length > 14 ? s.slice(0, 12) + "…" : s;
       const plotW = W - leftPad - rightPad;
-      const X = x => leftPad + (x + xPad) / (2 * xPad) * plotW;
+      const X = x => leftPad + (x - xMin) / (xMax - xMin) * plotW;
       const y0 = 30;
       const rowH = 28;
 
@@ -526,11 +528,12 @@
       // axis
       axParts.push(`<line x1="${leftPad}" y1="${y0 + views.length * rowH + 10}" x2="${W - rightPad}" y2="${y0 + views.length * rowH + 10}" stroke="currentColor" opacity="0.5"/>`);
       for (const t of [-2, -1, 0, 1, 2]) {
-        if (Math.abs(t) > xPad) continue;
+        if (t < xMin || t > xMax) continue;
         axParts.push(`<line x1="${X(t)}" y1="${y0 + views.length * rowH + 6}" x2="${X(t)}" y2="${y0 + views.length * rowH + 14}" stroke="currentColor" opacity="0.5"/>`);
         axParts.push(`<text x="${X(t)}" y="${y0 + views.length * rowH + 28}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t}</text>`);
       }
-      axParts.push(`<text x="${(leftPad + W - rightPad) / 2}" y="${y0 + views.length * rowH + 46}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">SMD scale</text>`);
+      axParts.push(`<text x="${(leftPad + W - rightPad) / 2}" y="${y0 + views.length * rowH + 46}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">SMD scale (approximations labelled)</text>`);
+      if (!views.length) axParts.push('<text x="300" y="90" text-anchor="middle" font-size="14" fill="currentColor">No defensible SMD representation for this input</text>');
 
       views.forEach((v, i) => {
         const y = y0 + i * rowH;
@@ -585,20 +588,27 @@
 
     document.getElementById("btn-convert").addEventListener("click", runConvert);
     document.getElementById("in-type").addEventListener("change", runConvert);
+    document.getElementById("in-smd-kind").addEventListener("change", runConvert);
 
     function runConvert() {
       const type = document.getElementById("in-type").value;
+      document.getElementById("smd-kind-field").hidden = type !== "SMD";
       const est = parseFloat(document.getElementById("in-est").value);
       const se = parseFloat(document.getElementById("in-se").value);
       const p0 = parseFloat(document.getElementById("ctx-p0").value);
       const sd = parseFloat(document.getElementById("ctx-sd").value);
       if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return; }
       if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return; }
+      if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return; }
+      if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return; }
+      if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return; }
       const rows = convert(type, est, se, p0, sd);
-      const warn = type === "HR"
-        ? "HR ↔ OR / SMD conversions assume proportional hazards (a single constant HR is meaningful) plus low event rate and balanced follow-up. They are exact only as the baseline risk → 0; the implied OR/SMD also depends on the (often unstated) baseline-risk and censoring pattern. If hazards are non-proportional (e.g. crossing survival curves, delayed effects) a single HR — and hence any converted OR/SMD — is undefined; report RMST or time-specific effects instead. For non-rare events the approximation overstates the OR; use caution for survival data with many events."
-        : type === "OR" && Number.isFinite(p0) && p0 > 0.1
-        ? "At baseline risk p₀ > 0.10 the OR can materially differ from RR. Report the metric as specified in the protocol."
+      const warn = type === "HR" || type === "IRR"
+        ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
+        : type === "OR" || type === "RR" || type === "RD"
+        ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; Cox OR-to-SMD is a separate distributional approximation."
+        : type === "SMD"
+        ? "Cox OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
       render(rows, warn);
     }
