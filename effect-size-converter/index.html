@@ -260,16 +260,10 @@
     const Z95 = 1.959963984540054;
     const COX = Math.sqrt(3) / Math.PI;  // 0.5513288954...
 
-    // Abramowitz & Stegun 26.2.23 approximation for qnorm (inverse std normal CDF).
-    // Accurate to ~4.5e-4 over the tails we use. Good enough for two-sided p in [1e-6, 1].
+    // R-grade inverse normal quantiles, also stable for small p-values.
     function qnorm(p) {
-      if (p <= 0 || p >= 1) return NaN;
-      const q = p < 0.5 ? p : 1 - p;
-      const t = Math.sqrt(-2 * Math.log(q));
-      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
-      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
-      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
-      return p < 0.5 ? -x : x;
+      try { return AlmEffectAccuracy.qnorm(p); }
+      catch (_) { return NaN; }
     }
 
     // CDF of std normal (Abramowitz & Stegun 7.1.26 via erf approximation).
@@ -281,8 +275,8 @@
     }
 
     function hedgesJ(df) {
-      if (!Number.isFinite(df) || df <= 1) return 1;
-      return 1 - 3 / (4 * df - 1);
+      try { return AlmEffectAccuracy.hedgesJ(df); }
+      catch (_) { return NaN; }
     }
 
     // --- conversion core ---
@@ -348,53 +342,44 @@
           }
         }
       } else if (type === "SMD") {
-        push("SMD (Cohen's d)", est, se);
-        push("OR (Cox)", Math.exp(est / COX), se / COX, "inverse Cox's constant; log-scale SE");
-        if (Number.isFinite(pooledSd) && pooledSd > 0) {
-          push("MD", est * pooledSd, se * pooledSd, "multiply by pooled SD");
+        // Explicit estimator identity: g is already corrected; never apply J twice.
+        const kind = document.getElementById("in-smd-kind").value;
+        const n1 = Number(document.getElementById("der-n1").value);
+        const n2 = Number(document.getElementById("der-n2").value);
+        const df = Number.isSafeInteger(n1) && Number.isSafeInteger(n2) && n1 >= 2 && n2 >= 2
+          ? n1 + n2 - 2 : NaN;
+        const J = hedgesJ(df);
+        if (kind === "g") {
+          push("SMD (Hedges' g)", est, se, "already bias-corrected (metafor::escalc SMD); no second J applied");
+          if (Number.isFinite(J) && J > 0) {
+            push("SMD (Cohen's d, recovered)", est / J, se / J,
+              "inverse of exact Hedges correction; requires independent group sizes");
+            if (Number.isFinite(pooledSd) && pooledSd > 0)
+              push("MD", est / J * pooledSd, se / J * pooledSd,
+                "recovered raw MD from d = g / J and the pooled SD");
+          }
+        } else {
+          push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
+          if (Number.isFinite(J) && J > 0)
+            push("SMD (Hedges' g)", est * J, se * J, "exact small-sample correction J(df=" + df + ")");
+          if (Number.isFinite(pooledSd) && pooledSd > 0)
+            push("MD", est * pooledSd, se * pooledSd, "raw MD assumes entered SMD is uncorrected Cohen's d");
         }
-        // Hedges' g: only informative when df is known (i.e. user entered n1 + n2)
-        const n1 = parseFloat(document.getElementById("der-n1").value);
-        const n2 = parseFloat(document.getElementById("der-n2").value);
-        if (Number.isFinite(n1) && Number.isFinite(n2) && n1 > 1 && n2 > 1) {
-          const df = n1 + n2 - 2;
-          const J = hedgesJ(df);
-          push("SMD (Hedges' g)", est * J, se * J, `small-sample correction J(df=${df}) = ${J.toFixed(4)}`);
-        }
+        // Cox maps a standardized latent continuous contrast to a log odds ratio.
+        // It is a model-dependent approximation, NOT an empirical 2x2 OR.
+        push("OR (Cox approximation)", Math.exp(est / COX), se / COX,
+          "latent-logistic distributional assumption; not an observed binary odds ratio");
       } else if (type === "MD") {
         push("MD", est, se);
         if (Number.isFinite(pooledSd) && pooledSd > 0) {
           push("SMD", est / pooledSd, se / pooledSd, "divide by pooled SD");
         }
       } else if (type === "HR") {
-        const logHR = Math.log(est);
-        push("HR",     est, se, "log-scale SE");
-        push("ln(HR)", logHR, se);
-        // HR -> OR rare-events approximation: OR ~ HR when event rate is low. Compute the
-        // implied bias at user-supplied p0 if given; only warn loudly when |bias|/OR > 10%.
-        let hrCaveat = "HR -> OR approximation assumes low event rate and balanced follow-up";
-        if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
-          // Under rare-events the OR that would EXACTLY match the HR point follows
-          // OR = HR * (1-p0) / (1 - HR*p0). Fractional bias at the user's p0:
-          const exactOR = est * (1 - p0) / (1 - est * p0);
-          const biasFrac = Math.abs(exactOR - est) / Math.max(exactOR, 1e-9);
-          if (biasFrac > 0.10) {
-            hrCaveat = `event rate p0 = ${p0.toFixed(2)} implies |bias| = ${(biasFrac * 100).toFixed(0)}% between HR and exact OR — DO NOT use the OR (approx) row; compute OR from the 2x2 table instead`;
-          } else {
-            hrCaveat = `at p0 = ${p0.toFixed(2)} the HR-as-OR approximation has |bias| = ${(biasFrac * 100).toFixed(0)}% (<10%); acceptable for rare events + balanced follow-up`;
-          }
-        }
-        push("OR (approx)", est, se, hrCaveat);
-        push("SMD (Cox-ish)", logHR * COX, se * COX, "valid only for rare events (<10% per arm) and balanced follow-up; uses HR->OR->SMD chain");
+        push("HR", est, se, "log-scale SE; requires a specified follow-up estimand");
+        push("ln(HR)", Math.log(est), se, "no general mapping to OR, RR, RD or SMD");
       } else if (type === "IRR") {
-        const logIRR = Math.log(est);
-        push("IRR",     est, se, "log-scale SE");
-        push("ln(IRR)", logIRR, se);
-        // IRR -> OR -> SMD is a double-approximation. Only meaningful under rare events
-        // AND approximately equal follow-up time per arm. The note makes both conditions
-        // explicit so the user doesn't silently use the SMD row outside its domain.
-        push("SMD (Cox-ish, via IRR->OR approx)", logIRR * COX, se * COX,
-          "valid ONLY if event rate < 10% per arm AND follow-up time is approximately equal between arms -- double approximation (IRR -> OR -> SMD)");
+        push("IRR", est, se, "log-scale SE; ratio of event rates per person-time");
+        push("ln(IRR)", Math.log(est), se, "no general mapping to OR or SMD");
       }
       return rows;
     }
@@ -420,40 +405,37 @@
 
     // --- derive SE from one of several sources ---
     function deriveSE() {
-      const t = parseFloat(document.getElementById("der-t").value);
-      const F = parseFloat(document.getElementById("der-f").value);
-      const p = parseFloat(document.getElementById("der-p").value);
-      const ptAbs = parseFloat(document.getElementById("der-pointabs").value);
-      const n1 = parseFloat(document.getElementById("der-n1").value);
-      const n2 = parseFloat(document.getElementById("der-n2").value);
       const lo = parseFloat(document.getElementById("der-lo").value);
       const hi = parseFloat(document.getElementById("der-hi").value);
       const scale = document.getElementById("der-scale").value;
-
-      // Priority: explicit CI > t + n + n > F + n + n > p + |point|
-      // lo == hi yields SE=0 which collapses downstream CIs — reject here so any
-      // caller (not just btn-derive's handler) gets NaN + a chance to warn.
-      if (Number.isFinite(lo) && Number.isFinite(hi) && lo < hi) {
-        if (scale === "log") {
-          if (lo > 0 && hi > 0) return (Math.log(hi) - Math.log(lo)) / (2 * Z95);
-        } else {
-          return (hi - lo) / (2 * Z95);
+      const p = parseFloat(document.getElementById("der-p").value);
+      const type = document.getElementById("in-type").value;
+      const est = parseFloat(document.getElementById("in-est").value);
+      const ratio = ["OR", "RR", "HR", "IRR"].includes(type);
+      if (Number.isFinite(lo) || Number.isFinite(hi)) {
+        if (!(Number.isFinite(lo) && Number.isFinite(hi) && lo < hi))
+          throw new RangeError("Enter both CI bounds with lower < upper.");
+        if (ratio && scale !== "log")
+          throw new RangeError("For ratios, choose log-scale SE and enter positive CI bounds on the ratio scale.");
+        if (!ratio && scale !== "raw")
+          throw new RangeError("For MD, RD or SMD, use raw-scale CI bounds.");
+        if (ratio) {
+          if (!(lo > 0 && hi > 0)) throw new RangeError("Ratio CI bounds must be strictly positive.");
+          if (!(est >= lo && est <= hi))
+            throw new RangeError("The ratio estimate must lie between the entered CI bounds.");
+          return (Math.log(hi) - Math.log(lo)) / (2 * Z95);
         }
+        if (!(est >= lo && est <= hi))
+          throw new RangeError("The estimate must lie between the entered CI bounds.");
+        return (hi - lo) / (2 * Z95);
       }
-      if (Number.isFinite(t) && Number.isFinite(n1) && Number.isFinite(n2) && n1 > 0 && n2 > 0) {
-        // t → SMD: d = t * sqrt((n1+n2)/(n1*n2)); SE(d) ≈ sqrt((n1+n2)/(n1*n2) + d^2/(2*(n1+n2)))
-        const d = t * Math.sqrt((n1 + n2) / (n1 * n2));
-        return Math.sqrt((n1 + n2) / (n1 * n2) + d * d / (2 * (n1 + n2)));
+      if (Number.isFinite(p)) {
+        if (!(Number.isFinite(est) && (!ratio || est > 0)))
+          throw new RangeError("Enter a valid point estimate before recovering SE from p.");
+        const effect = ratio ? Math.abs(Math.log(est)) : Math.abs(est);
+        return AlmEffectAccuracy.seFromTwoSidedWaldP(p, effect);
       }
-      if (Number.isFinite(F) && Number.isFinite(n1) && Number.isFinite(n2) && n1 > 0 && n2 > 0) {
-        const d = Math.sqrt(F * (n1 + n2) / (n1 * n2));
-        return Math.sqrt((n1 + n2) / (n1 * n2) + d * d / (2 * (n1 + n2)));
-      }
-      if (Number.isFinite(p) && p > 0 && p < 1 && Number.isFinite(ptAbs) && ptAbs > 0) {
-        const z = Math.abs(qnorm(1 - p / 2));
-        return ptAbs / z;
-      }
-      return NaN;
+      throw new RangeError("Provide a complete CI, a valid independent-sample t/F statistic, or a Wald p-value.");
     }
 
     // --- render ---
