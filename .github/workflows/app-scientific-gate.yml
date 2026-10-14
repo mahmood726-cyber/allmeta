@@ -1,0 +1,38 @@
+name: App scientific focused gate
+
+# Fast, reviewable scientific UI + numerical regression suite for app-by-app
+# upgrades. Add each accepted app-specific spec to the test command.
+on:
+  pull_request:
+    paths:
+      - 'effect-size-converter/**'
+      - 'shared/effect-size-accuracy.js'
+      - 'hub/shared/tests/effect-size-converter-accuracy.spec.mjs'
+      - '.github/workflows/app-scientific-gate.yml'
+  workflow_dispatch:
+
+jobs:
+  effect-size-scientific-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test effect-size-converter-accuracy.spec.mjs --reporter=line
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: focused-scientific-artifacts
+          path: hub/shared/tests/artifacts/
+          if-no-files-found: ignore
