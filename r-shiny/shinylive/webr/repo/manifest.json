@@ -1116,6 +1116,18 @@
         "R"
       ],
       "path": "packages/bit/bit_4.6.0.tgz"
+    },
+    {
+      "package": "metasens",
+      "file": "metasens_1.5-3.tgz",
+      "sha256": "833a246b270e11363d0990eac767428252ace1ee004509740b66fc93164f997f",
+      "bytes": 170237,
+      "source": "../packages/metasens/metasens_1.5-3.tgz",
+      "version": "1.5-3",
+      "dependencies": [
+        "meta"
+      ],
+      "path": "packages/metasens/metasens_1.5-3.tgz"
     }
   ],
   "layout": "bin/emscripten/contrib/4.5/",
